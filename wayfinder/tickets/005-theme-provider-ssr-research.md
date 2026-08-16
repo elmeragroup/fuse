@@ -2,7 +2,7 @@
 id: 005
 title: Theme provider & SSR research
 type: research
-status: open
+status: closed
 assignee: research-agent
 blocked-by: []
 ---
@@ -19,3 +19,14 @@ Research (primary sources: next-themes source at github.com/pacocoursey/next-the
 4. The wrinkle that our "theme" is variant×brand×segment (usually fixed per deployment, server-known, not user-toggled) while next-themes solves user-toggled light/dark — note where the problems differ. Both refs currently do zero client theme state: brand is an env var rendered into the root className server-side.
 
 Deliverable: `wayfinder/research/005-theme-provider-ssr.md`.
+
+## Resolution
+
+Findings: [research/005-theme-provider-ssr.md](../research/005-theme-provider-ssr.md).
+
+1. next-themes (v0.4.6, MIT, 1.55 kB gz, zero deps) has **zero Next.js imports** — it's pure React; its trick is a blocking inline script applying the theme pre-paint from localStorage/system preference, with `useTheme` undefined during SSR.
+2. Per-framework SSR recipes documented: React Router 7 = cookie in root loader → server-rendered attribute; TanStack Start = `ScriptOnce` or server-fn cookie; Vite SPA = build-time class in index.html.
+3. Vendoring is technically trivial — but a `/next/theme-provider` re-export would be byte-identical to the core, adding nothing.
+4. **Decisive mismatch**: next-themes solves *client-known user preference*; our theme is *server-known and deployment-fixed* (both refs render brand class server-side from env). **Recommendation: don't vendor next-themes for v1.** Ship a data-only micro-provider (pure `themeSlug`/`themeClass` helpers + context + `useTheme`), host apps render the attribute/class at their document root via one-line per-framework recipes; vendor next-themes' 53-line script later only for the roadmap dark-mode toggle on the reserved `data-theme` axis.
+
+This challenges the brief's "re-export next-themes" instruction with evidence — final call lands in *Theme provider API* (now unblocked on this side; still waits on *Theming cascade prototype*).

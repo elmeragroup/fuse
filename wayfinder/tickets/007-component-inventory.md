@@ -2,7 +2,7 @@
 id: 007
 title: Component inventory reconciliation
 type: research
-status: open
+status: closed
 assignee: research-agent
 blocked-by: []
 ---
@@ -18,3 +18,11 @@ Produce, per component: canonical name, source of truth (internal path / externa
 Also inventory: hooks, `Icon`/logo exports, chart, toaster, utilities (`cn`, `tv`), and the not-exported internal composites.
 
 Deliverable: `wayfinder/research/007-component-inventory.md` — the draft inventory table with flagged judgment calls for the human (feeds *Component API spec template*).
+
+## Resolution
+
+Findings: [research/007-component-inventory.md](../research/007-component-inventory.md).
+
+Reconciled inventory: **~75 canonical entries in four tiers** — 33 base-ui (all internal-sourced, incl. avatar and scroll-area), 17 react-aria interim (date cluster + foundational atoms per internal's react-aria/README four-cluster map), plus composite and unheadless tiers. All 30+ overlaps resolved internal-first (phone-number-field, combobox, dropdown-menu⊃menu, toggle/toggle-group⊃toggle-button, base-ui tabs/dialog/select ⊃ RAC ones).
+
+**17 judgment calls flagged for the human**, headline ones: external-only survivors needing base-ui reimplementation decisions (accordion — sole radix consumer, list-box — internal copy is orphaned, numeric-only-text-field, modal, public calendar/range-calendar); the icon fork (78 material SVGs vs ~150 lucide keys) — feeds *Icon system*; dual `./field` vs `./base-ui/field` export-path policy; external's richer card API; Telinet logos for fkse; `chart`'s `export * from "recharts"`; sonner 1.x→2.x. These judgment calls are inputs to *Component API spec template* and *Icon system*.

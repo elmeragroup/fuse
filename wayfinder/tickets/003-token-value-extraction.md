@@ -2,7 +2,7 @@
 id: 003
 title: Token value extraction
 type: research
-status: open
+status: closed
 assignee: research-agent
 blocked-by: []
 ---
@@ -21,3 +21,11 @@ Explicitly flag the gaps and oddities the spec must later resolve:
 - `guen-dark` values (out of scope for v1 but record them).
 
 Deliverable: `wayfinder/research/003-token-values.md` — a matrix + gap list, consumable by the *Brand–segment matrix gaps* ticket.
+
+## Resolution
+
+Findings: [research/003-token-values.md](../research/003-token-values.md).
+
+Complete value matrices extracted with file:line citations: external new-color set (23 vars × fkas/fkas-c/tkas/guen/fkse in oklch), `.guen-dark` block, legacy HSL triplets, per-brand radii, shared status block, and the entire internal theme (`:root` brand accents, neutral ramp, `.dark`/`.inverted`, per-brand blocks, `.v2` grayscale, `@theme` mappings). Fonts: Roboto is primary everywhere; Neo Sans is fkas-external heading only; internal never populates `--font-heading`.
+
+**22 gaps & oddities catalogued** — all five anticipated ones confirmed (no external tkas/guen company palettes; no external fkab and internal `--brand-fkab` ≡ `--brand-fkas`; fkse = Telinet; dead per-brand `--destructive`; guen-dark recorded but never applied), plus extras the contract must handle: internal `.v2.<brand>` specificity kills per-brand `--primary`; `.v2.fkse`/`.v2.ngef` selectors exist with no backing vars; the two vocabularies collide on shared names (`--primary` means different things per ref); `.fkas-c` misses `--inactive`; tkas-only `--primary-light`; shared violet `--ring` across all brands. Feeds *Brand–segment matrix gaps* (now waiting only on *Canonical token contract*).

@@ -17,7 +17,10 @@ An **implementation-ready architecture and product specification** for `@elmerag
 
 <!-- one line per closed ticket: gist + link -->
 
-_None yet — map freshly charted._
+- [anti-slop research](tickets/015-anti-slop-research.md) — vendor it (it's unpublished-by-design; the npm package of that name is a squat) as a third oxlint JS plugin `tooling/oxlint-anti-slop`; compatible with the whole fixed toolchain.
+- [Token value extraction](tickets/003-token-value-extraction.md) — full value matrices for every brand block in both refs, with 22 gaps/oddities catalogued (missing company palettes, fkab aliasing, colliding vocabularies, dead tokens).
+- [Component inventory reconciliation](tickets/007-component-inventory.md) — ~75 canonical components in four tiers, internal-first on all 30+ overlaps; 17 judgment calls flagged for the API-template and icon-system tickets.
+- [Theme provider & SSR research](tickets/005-theme-provider-ssr-research.md) — next-themes is pure React but solves the wrong problem (client preference vs our server-known theme); recommends a data-only micro-provider + per-framework recipes instead of vendoring for v1.
 
 ## Not yet specified
 

@@ -4,7 +4,7 @@ Ubiquitous language for the `@elmeragroup/ui` whitelabel component library effor
 
 ## Glossary
 
-- **Brand**: one of the five consumer-facing energy brands, each with a fixed four-character code: Fjordkraft (`fkas`), Trøndelagkraft (`tkas`), Gudbrandsdal Energi (`guen`), Fjordkraft Företag (`fkab`), Fjordkraft Konsument (`fkse`). Brands found in reference code but outside this effort's scope: Steddi, NGE/ngef, Trumf, Elmera Group.
+- **Brand**: one of the five consumer-facing energy brands, each with a fixed four-character code: Fjordkraft (`fkas`), Trøndelagkraft (`tkas`), Gudbrandsdal Energi (`guen`), Fjordkraft Företag (`fkab`), Fjordkraft Konsument (`fkse`). Note: `fkse` renders under the consumer-facing trade name **Telinet** (logo and palette) while keeping the `fkse` code. Brands found in reference code but outside this effort's scope: Steddi, NGE/ngef, Trumf, Elmera Group.
 - **Segment**: the customer class a surface serves — `private` (B2C) or `company` (B2B).
 - **Pinned brand**: a brand that exists in only one segment. `fkab` is pinned to `company`; `fkse` is pinned to `private`. The other three brands span both segments.
 - **Variant**: the audience axis of a theme — `internal` (grayscale theme for internal tools, brand appears only in accents/logos) or `external` (full brand look-and-feel for customer-facing apps).
