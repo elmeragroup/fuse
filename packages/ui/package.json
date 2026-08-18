@@ -10,7 +10,8 @@
   "exports": {
     "./css": "./src/styles/ui.css",
     "./styles.css": "./dist/styles.css",
-    "./themes.css": "./dist/themes.css"
+    "./themes.css": "./dist/themes.css",
+    "./theme": "./src/theme.ts"
   },
   "scripts": {
     "build": "node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/build-css.ts",
@@ -20,7 +21,7 @@
     "size-limit": "true",
     "test": "vitest run --project unit",
     "test:browser": "vitest run --project browser",
-    "test:types": "vitest typecheck --config vitest.types.config.ts",
+    "test:types": "vitest --config vitest.types.config.ts --typecheck.only --run",
     "type-check": "tsc --noEmit"
   },
   "peerDependencies": {
@@ -34,6 +35,7 @@
     }
   },
   "dependencies": {
+    "@base-ui/react": "catalog:",
     "clsx": "catalog:",
     "tailwind-merge": "catalog:",
     "tailwind-variants": "catalog:",

@@ -26,6 +26,54 @@ export function themeSlug(theme: ThemeInput): ThemeSlug {
   return `${theme.variant}-${theme.brand}-${theme.segment}`;
 }
 
+export function parseThemeSlug(slug: string): ThemeInput | null {
+  const parts = slug.split("-");
+  if (parts.length !== 3) {
+    return null;
+  }
+
+  const variant = parts[0];
+  const brand = parts[1];
+  const segment = parts[2];
+  if (variant !== "internal" && variant !== "external") {
+    return null;
+  }
+  if (segment !== "private" && segment !== "company") {
+    return null;
+  }
+  if (brand === "fkab") {
+    if (segment !== "company") {
+      return null;
+    }
+    return { variant, brand, segment };
+  }
+  if (brand === "fkse") {
+    if (segment !== "private") {
+      return null;
+    }
+    return { variant, brand, segment };
+  }
+  if (brand === "fkas" || brand === "tkas" || brand === "guen") {
+    return { variant, brand, segment };
+  }
+  return null;
+}
+
+export const BRANDS = {
+  fkas: { code: "fkas", displayName: "Fjordkraft", segments: ["private", "company"] },
+  tkas: { code: "tkas", displayName: "TrøndelagKraft", segments: ["private", "company"] },
+  guen: { code: "guen", displayName: "Gudbrandsdal Energi", segments: ["private", "company"] },
+  fkab: { code: "fkab", displayName: "Fjordkraft Företag", segments: ["company"] },
+  fkse: { code: "fkse", displayName: "Telinet", segments: ["private"] },
+} as const satisfies Record<
+  BrandCode,
+  {
+    code: BrandCode;
+    displayName: string;
+    segments: readonly ThemeSegment[];
+  }
+>;
+
 export const LEGAL_THEMES = [
   { variant: "internal", brand: "fkas", segment: "private" },
   { variant: "internal", brand: "fkas", segment: "company" },
