@@ -1,0 +1,71 @@
+# Accessibility guidelines
+
+Normative chapter for `@elmeragroup/ui`. Every component spec's §7 (Accessibility) is read against these library-wide rules; this chapter states what no per-component spec repeats. Sources: [A11y & performance guideline chapters](../../wayfinder/tickets/026-a11y-performance-guidelines.md), [Component spec conventions](components/conventions.md), [Testing strategy](../../wayfinder/tickets/013-testing-strategy.md).
+
+## 1 Conformance target
+
+- The library **targets WCAG 2.2 AA**. This is a design target documented per component, **not a conformance claim** — conformance is a per-page property only consuming apps can achieve. The docs state this split explicitly.
+- Norwegian/EU legal baseline (EN 301 549 / forskrift om universell utforming) tracks WCAG 2.1 AA; 2.2 AA is a strict superset, so meeting the target keeps every consuming app ahead of the legal floor.
+- **Responsibility split**: the library owns widget semantics, keyboard behavior, focus visibility, and correct-language built-in strings. Apps own page structure (landmarks, headings order, skip links), `lang` attributes, focus management across route changes, and final contrast when composing tokens in non-default pairings.
+
+## 2 Keyboard & focus
+
+- Focus rings render on **`:focus-visible` only**, never bare `:focus`, and always via the `focusRing` shared recipe (`styles/utils`): **`ring-2 ring-ring ring-offset-2`**. The offset is mandatory — it keeps the brand-independent violet ring legible on colored fills and pill (`--radius-button`) shapes. No component suppresses or restyles the ring.
+- **Keyboard behavior inherits base-ui verbatim**: arrow-key roving with roving tabindex in composites (tabs, radio-group, menus, toggle-group), typeahead where base-ui provides it, `Escape` dismisses the topmost open overlay only, modal overlays trap focus and return it to the trigger on close.
+- Components never set a **positive `tabindex`**; `tabindex={-1}` only for programmatic focus targets.
+- Skip links, landmark roles, and heading hierarchy are **app responsibility**; the docs Quick start shows the expected page scaffold once.
+- Disabled states: base-ui naming at the primitive level; composites' `isDisabled` renders native `disabled` where a native element exists, `aria-disabled` otherwise (base-ui default). Loader/pending states set `aria-busy` on the affected region, not on `body`.
+
+## 3 Labeling & field composition
+
+- **Field is the canonical labeling mechanism**: `Field.Root` wires `id`/`htmlFor`, `aria-describedby` (description and `errorMessage`), and error announcement. Every input-like component composed under Field gets its accessible name from `Field.Label` — no component invents its own label wiring.
+- Rule: **every interactive element has a programmatic name — via Field, visible text content, or an explicit `aria-label`.**
+- **Type-level enforcement where mechanical**: icon-only renders require the label in the type. `Button` (and any trigger with an icon-only variant, e.g. `PopoverInfoButton`, overlay close buttons) types the icon-only case as requiring `aria-label` (discriminated union on `size: "icon"` / icon-only content). Everything not mechanically expressible is documented convention enforced in review — **no dev-mode runtime label warnings** (false-positive-prone with portals/async labels, and dead code in prod).
+- `aria-*` boolean hygiene per [conventions](components/conventions.md): `x || undefined`, never `"false"`; guard conditional spreads so `mergeProps` can't clobber auto-wired aria with `undefined`.
+
+## 4 Localized strings (i18n)
+
+Adopted architecture: **the react-aria string-dictionary model, adapted to our scale** (ADR [0006](../adr/0006-intl-strings.md)). We take the tiny public runtime and skip Adobe's build machinery entirely.
+
+- **Runtime**: `@internationalized/string` (`LocalizedStringDictionary` + `LocalizedStringFormatter`; ~1 kB, dependency-free, `sideEffects: false`). No glob imports, no JSON, no string-compiler build step, no locale-subsetting plugin — none of it pays off below ~10 locales.
+- **Authoring**: components that render user-visible or AT-only strings own a co-located `intl/` directory of **plain TS modules** — `intl/nb-NO.ts`, `intl/sv-SE.ts`, `intl/en-US.ts`, `intl/fi-FI.ts` — explicitly imported into a per-component dictionary module (`intl/index.ts`). Keys are flat per component. Plural/number cases use `LocalizedStringFormatter`'s `plural`/`number`/`select` helpers with hand-written message functions; we do not ship an ICU parser.
+- **Shipped locales v1**: `nb-NO`, `sv-SE`, `en-US`, `fi-FI` (Finnish market is imminent). All locales ship eagerly — at four locales this is a few hundred bytes per string-bearing component. If the locale set ever approaches ~10, revisit per-locale module splitting + resolver subsetting (the react-aria mitigation) as a roadmap item.
+- **Locale source**: `ElmeraGroupUiProvider` carries `locale: SupportedLocale` (**required**, typed union `"nb-NO" | "sv-SE" | "en-US" | "fi-FI"`). Every string-consuming component reads it from context via a `useLocalizedStrings(dictionary)` internal hook — **apps never pass locale to individual components**. Multilingual whitelabel apps re-render the provider with the user's selected locale; single-country apps set it once. BCP-47 negotiation (from `LocalizedStringDictionary`) maps unlisted regional variants to the nearest shipped locale; final fallback `en-US`.
+- **Override precedence**: explicit string props on a component (e.g. combobox's empty-state message, pagination labels, toast close label) always win over the dictionary. Props are optional — the dictionary guarantees a correct-language default, props exist for copy control.
+- **SSR**: the provider is plain data (no `navigator` sniffing, no hydration correction); locale is app-supplied, so server and client render identically. No inline-script string injection is needed at four eager locales.
+- **Docs**: a Handbook page documents the mechanism, the supported-locale union, the override precedence, and the recipe for a language switcher.
+
+## 5 Semantics rulings
+
+- **Item list-semantics gap (ruled)**: base-ui's `Item.Group` renders `role="list"` while `Item` defaults to no role — a half-list is an AT bug. Our `Item` **adopts `role="listitem"` automatically when rendered inside `Item.Group`** (one context read), overridable via the `role` prop. Recorded as a Divergence in the item spec; component specs no longer push the role to consumers.
+- **Toast**: base-ui Toast announcement defaults — polite for default/success/info toasts, assertive for error toasts.
+- **Skeleton** is `aria-hidden="true"`; the loading region it stands in for carries `aria-busy="true"` until content arrives.
+- **Meter/progress** components carry their base-ui value semantics untouched (`role="meter"`/`role="progressbar"` with `aria-valuenow` etc.).
+
+## 6 Contrast
+
+Token values are **locked** ([Brand–segment matrix gaps](../../wayfinder/tickets/004-brand-segment-matrix-gaps.md): all mints final); this chapter's job is honest classification, not redesign.
+
+- **Text-grade roles** — must meet **4.5:1** against their paired surface in all 16 themes: `foreground`/`background`, `card-foreground`/`card`, `card-soft-foreground`/`card-soft`, `muted-foreground`/`muted` and `/background`, every `*-soft-foreground`/`*-soft` pair, `primary-foreground`/`primary`, `secondary-foreground`/`secondary`, status `*-foreground` pairs.
+- **`feature-foreground` is reclassified as accent/decorative** — the external tints (L ≈ 0.80–0.91 on L ≈ 0.55–0.58 feature panels) are kicker/eyebrow-grade, not body-text-grade. **Text on `feature` panels uses white**, which passes 3:1 large-text/non-text everywhere; body text on feature panels is out of contract.
+- **Known accepted deviations** (documented, not fixed in v1):
+  1. Default `--muted-foreground` `oklch(0.5555 0 0)` on white sits at ≈ 4.5:1 — at the AA line, no margin. Do not use `muted-foreground` below 14px.
+  2. The brand-independent violet `--ring` falls below 3:1 non-text contrast against some strong external `--feature`/`--primary` fills; the mandatory `ring-offset-2` (white gap) is the mitigation. A per-brand ring re-mint is a **roadmap item**.
+  3. External `feature-foreground` tints fail 4.5:1 by design — covered by the reclassification above.
+- **Deliverable at implementation**: a generated per-theme **contrast matrix** (all text-grade pairs × 16 themes) checked as a snapshot test next to the token pipeline's CSS snapshot; new themes/brands must pass the text-grade rules or extend the documented-deviation list explicitly.
+
+## 7 Motion
+
+- One central **`@media (prefers-reduced-motion: reduce)`** block in the library stylesheet: transform/translate/scale motion removed, opacity fades retained (comprehension-aiding transitions survive; movement doesn't). This is a hard requirement — no component opts out or reimplements it.
+- Normative motion band: **UI transitions 150–300 ms, ease-out family** (entering elements ease-out; on-screen morphs ease-in-out; exits at or faster than enters). Only `transform` and `opacity` animate (see [performance](performance.md) §6). This band is the review bar for new and contributed components; marketing-grade motion lives in apps.
+- Nothing animates on keyboard-repeatable actions (e.g. no open/close animation replay while arrowing through a listbox).
+
+## 8 Testing bar
+
+Per [Testing strategy](../../wayfinder/tickets/013-testing-strategy.md), restated as the a11y floor:
+
+- All test queries **role/label-based** (no test-ids, no class queries); this makes every test double as a semantics assertion. **No axe** — matches all reference codebases; the role-based bar plus these rules is the gate.
+- Every spec §7 keyboard behavior has a browser-mode test; the `focusRing` recipe has one shared visual assertion (ring present on `:focus-visible`, absent on mouse focus).
+- The icon-only `aria-label` type enforcement is covered by the **public-API type tests**.
+- String-bearing components get one test per shipped locale asserting the dictionary default renders, plus one prop-override test.
+- The 16-theme contract test covers the contrast matrix snapshot (§6).

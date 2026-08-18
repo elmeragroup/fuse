@@ -6,9 +6,17 @@ Ubiquitous language for the `@elmeragroup/ui` whitelabel component library effor
 
 - **Brand**: one of the five consumer-facing energy brands, each with a fixed four-character code: Fjordkraft (`fkas`), Trøndelagkraft (`tkas`), Gudbrandsdal Energi (`guen`), Fjordkraft Företag (`fkab`), Fjordkraft Konsument (`fkse`). Note: `fkse` renders under the consumer-facing trade name **Telinet** (logo and palette) while keeping the `fkse` code. Brands found in reference code but outside this effort's scope: Steddi, NGE/ngef, Trumf, Elmera Group.
 - **Segment**: the customer class a surface serves — `private` (B2C) or `company` (B2B).
-- **Pinned brand**: a brand that exists in only one segment. `fkab` is pinned to `company`; `fkse` is pinned to `private`. The other three brands span both segments.
+- **Pinned brand**: a brand that exists in only one segment. `fkab` is pinned to `company`; `fkse` is pinned to `private`. The other three brands span both segments. `fkab` shares Fjordkraft's (`fkas`) visual identity by deliberate, permanent policy — it is an alias, not a missing palette.
 - **Variant**: the audience axis of a theme — `internal` (grayscale theme for internal tools, brand appears only in accents/logos) or `external` (full brand look-and-feel for customer-facing apps).
 - **Theme**: a concrete permutation of variant × brand × segment, e.g. `internal-fkas-company`, `external-tkas-private`. 16 permutations exist at v1 (8 internal, 8 external).
 - **Theme slug**: the canonical string name of a theme, `<variant>-<brand>-<segment>`.
-- **Token / token contract**: a CSS custom property that components consume (e.g. a primary color role). The *contract* is the fixed set of token names every theme must supply; themes vary values, never names.
+- **Token / token contract**: a CSS custom property that components consume (e.g. a primary color role). The *contract* is the fixed set of token names; themes vary values, never names. The library ships complete defaults; a theme overrides a subset.
+- **Role token**: a semantic, themable token named for its job (`--primary`, `--card`, `--error`), following the shadcn grammar of base + `-foreground` pairs.
+- **Primitive token**: a public but non-themed token holding a raw palette value — the neutral ramp (`--neutral-50..950`, 50 lightest) and the per-brand accents (`--brand-<code>`). Stable API, same values in every theme.
+- **Soft form (`-soft`)**: the tinted-background companion of a role (`--error-soft`/`--error-soft-foreground`) — the contract's rename of Material-3's `-container` concept.
+- **Feature role**: the strong brand-colored panel role (`--feature`) for promo/hero surfaces — deliberately distinct from `--accent`, which stays a subtle hover tint.
+- **Must-override token**: a contract token a theme is required to supply rather than inherit from library defaults — the brand-defining subset (primary, brand, surfaces, radius, fonts).
 - **Interim tier (react-aria)**: components still built on `react-aria-components` (date/calendar family and a few atoms) pending a base-ui equivalent; part of the library, marked for future migration.
+- **Supported locale**: a language the library ships built-in strings for — `nb-NO`, `sv-SE`, `en-US`, `fi-FI` at v1. Apps set one locale on the UI provider; components never take a locale directly.
+- **String dictionary**: a component's built-in per-locale strings (empty states, nav labels, close buttons). Provides the correct-language default; an explicit string prop always overrides it.
+- **Text-grade role**: a token pairing whose foreground must meet 4.5:1 contrast on its surface in every theme. `feature-foreground` is not text-grade — it is accent/decorative; text on feature panels is white.

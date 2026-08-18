@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PROTOTYPE — Theming cascade mechanism (@elmeragroup/ui)</title>
+<style>
+  /* ---- demo chrome (NOT part of the prototype question; fixed grays) ---- */
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.55 system-ui, -apple-system, sans-serif; background: #f4f4f5; color: #232326; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 28px 20px 80px; }
+  .banner { background: #232326; color: #fff; padding: 10px 20px; font-size: 13px; letter-spacing: .04em; }
+  .banner strong { color: #ffb020; }
+  h1 { font-size: 22px; margin: 18px 0 4px; }
+  .lede { color: #55555c; max-width: 76ch; margin: 0 0 22px; }
+  h2 { font-size: 15px; text-transform: uppercase; letter-spacing: .06em; color: #77777f; margin: 30px 0 10px; }
+  .controls { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start; }
+  .control { background: #fff; border: 1px solid #e2e2e6; border-radius: 10px; padding: 12px 14px; }
+  .control h3 { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: #77777f; }
+  .seg { display: flex; gap: 6px; flex-wrap: wrap; }
+  .seg button { border: 1px solid #d4d4d8; background: #fff; border-radius: 7px; padding: 5px 12px; font: inherit; font-size: 13px; cursor: pointer; }
+  .seg button.on { background: #232326; color: #fff; border-color: #232326; }
+  .seg button:hover:not(.on) { background: #ececef; }
+  .cols { display: grid; grid-template-columns: 1fr 340px; gap: 20px; align-items: start; }
+  @media (max-width: 900px) { .cols { grid-template-columns: 1fr; } }
+  .statepanel { background: #fff; border: 1px solid #e2e2e6; border-radius: 10px; padding: 14px 16px; font-size: 13px; position: sticky; top: 14px; }
+  .statepanel dl { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; margin: 0; }
+  .statepanel dt { color: #77777f; }
+  .statepanel dd { margin: 0; font-family: ui-monospace, monospace; font-size: 12px; overflow-wrap: anywhere; }
+  .statepanel .warn { margin-top: 10px; background: #fef3e2; border: 1px solid #f0c886; color: #7a4d00; padding: 8px 10px; border-radius: 7px; font-size: 12.5px; }
+  .swatch { display: inline-block; width: 11px; height: 11px; border-radius: 3px; border: 1px solid rgba(0,0,0,.18); vertical-align: -1px; margin-right: 5px; }
+  .tabs { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: -1px; }
+  .tabs button { border: 1px solid #e2e2e6; border-bottom: none; background: #ececef; border-radius: 8px 8px 0 0; padding: 7px 14px; font: inherit; font-size: 13px; cursor: pointer; }
+  .tabs button.on { background: #fff; font-weight: 600; }
+  .tabbody { background: #fff; border: 1px solid #e2e2e6; border-radius: 0 10px 10px 10px; padding: 16px 18px; }
+  .tabbody p { margin: 0 0 12px; max-width: 80ch; }
+  .steps { display: flex; flex-direction: column; gap: 6px; }
+  .steps button { text-align: left; border: 1px solid #d4d4d8; background: #fafafa; border-radius: 8px; padding: 8px 12px; font: inherit; font-size: 13.5px; cursor: pointer; }
+  .steps button.done { opacity: .45; text-decoration: line-through; }
+  .steps button.next { border-color: #232326; background: #fff; box-shadow: 0 0 0 1px #232326; }
+  .steps .note { font-size: 12.5px; color: #77777f; padding-left: 12px; }
+  pre.cssview { background: #1b1b1f; color: #d8d8e0; padding: 14px 16px; border-radius: 10px; font-size: 12px; line-height: 1.5; overflow: auto; max-height: 420px; }
+  .stats { font-size: 13px; color: #55555c; margin: 8px 0; }
+  .stats b { color: #232326; }
+  .mechnote { font-size: 13px; color: #55555c; max-width: 80ch; }
+
+  /* ---- themed canvas: everything below consumes ONLY contract tokens ---- */
+  .canvas { border: 1px solid #e2e2e6; border-radius: 12px; overflow: hidden; }
+  .page { background: var(--background); color: var(--foreground); padding: 22px; font-family: var(--font-sans, inherit); }
+  .page h4 { margin: 0 0 2px; font-size: 17px; }
+  .page .muted { color: var(--muted-foreground); font-size: 13px; margin: 0 0 16px; }
+  .card { background: var(--card); color: var(--card-foreground); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.07); }
+  .card.soft { background: var(--card-soft); color: var(--card-soft-foreground); }
+  .card h5 { margin: 0 0 6px; font-size: 14px; }
+  .card p { margin: 0 0 12px; font-size: 13px; }
+  .btn { border: none; font: inherit; font-size: 13.5px; padding: 8px 18px; cursor: pointer; border-radius: var(--radius-button); background: var(--primary); color: var(--primary-foreground); margin-right: 8px; }
+  .btn.softbtn { background: var(--primary-soft); color: var(--primary-soft-foreground); }
+  .btn:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+  .hairline { border: none; border-top: 1px solid var(--secondary-soft); margin: 12px 0; }
+  .feature { background: var(--feature); color: var(--feature-foreground); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 12px; font-size: 13.5px; }
+  .alert { background: var(--error-soft); color: var(--error-soft-foreground); border-radius: var(--radius); padding: 10px 14px; font-size: 13px; margin-bottom: 12px; }
+  .alert.ok { background: var(--success-soft); color: var(--success-soft-foreground); }
+  .chip { display: inline-flex; align-items: center; gap: 7px; background: var(--brand); color: var(--brand-foreground); border-radius: var(--radius-button); padding: 5px 14px; font-size: 12.5px; font-weight: 600; }
+  .island { border: 2px dashed rgba(127,127,127,.55); border-radius: var(--radius); margin-top: 14px; position: relative; }
+  .island > .page { padding: 16px; }
+  .islandlabel { position: absolute; top: -9px; left: 12px; background: inherit; font-size: 11px; letter-spacing: .05em; text-transform: uppercase; padding: 0 6px; color: inherit; opacity: .75; }
+  .dialog { background: var(--card); color: var(--card-foreground); border: 1px solid var(--secondary-soft); border-radius: var(--radius); box-shadow: 0 8px 30px rgba(0,0,0,.18); padding: 14px 16px; margin-top: 12px; max-width: 340px; font-size: 13px; }
+  .dialog h6 { margin: 0 0 4px; font-size: 13.5px; }
+</style>
+</head>
+<body>
+<div class="banner">⚠ <strong>PROTOTYPE</strong> — throwaway demo for wayfinder ticket “Theming cascade prototype”. Not production code.</div>
+<div class="wrap">
+  <h1>Theming cascade mechanism</h1>
+  <p class="lede"><strong>The question:</strong> can 16 theme permutations (variant × brand × segment) be expressed with <em>data-attribute</em> selectors without a combinatorial explosion of CSS — and is the three-attribute form better than one slug attribute or the classes both reference apps use today? All three mechanisms below are generated from <em>one</em> shared value table by a small pure module, so they render identically; what differs is the CSS text, the selector semantics, and what stays free for future dark mode.</p>
+
+  <h2>1 · Pick a mechanism and a theme</h2>
+  <div class="controls">
+    <div class="control"><h3>Mechanism</h3><div class="seg" id="mechSeg"></div></div>
+    <div class="control"><h3>Variant</h3><div class="seg" id="variantSeg"></div></div>
+    <div class="control"><h3>Brand</h3><div class="seg" id="brandSeg"></div></div>
+    <div class="control"><h3>Segment</h3><div class="seg" id="segmentSeg"></div></div>
+  </div>
+
+  <h2>2 · Rendered result + resolved tokens</h2>
+  <div class="cols">
+    <div>
+      <div class="canvas"><div class="page" id="pageRoot">
+        <h4>Strøm til hytta</h4>
+        <p class="muted">Body text uses --foreground on --background; helper text uses --muted-foreground.</p>
+        <div class="feature">--feature: the strong brand promo panel (external ref’s surface-variant). Internal themes point it at a neutral.</div>
+        <div class="card">
+          <h5>Default card (--card / --card-foreground)</h5>
+          <p>White in external themes — this was the ref’s “primary-container”. Buttons keep --radius-button (pill on fkas/fkse).</p>
+          <button class="btn">Bestill strøm</button><button class="btn softbtn">Les mer</button>
+          <hr class="hairline">
+          <span class="chip">● <span id="chipBrand">brand</span></span>
+        </div>
+        <div class="card soft">
+          <h5>Soft card (--card-soft)</h5>
+          <p>The tinted elevated tier (ref’s surface-bright). Collapses to plain white internally.</p>
+        </div>
+        <div class="alert">--error-soft: something went wrong with the meter reading.</div>
+        <div class="alert ok">--success-soft: order confirmed.</div>
+        <div class="island" id="island" hidden>
+          <span class="islandlabel">scoped island — always external · guen · private</span>
+          <div class="page" id="islandRoot">
+            <h4>Embedded checkout</h4>
+            <p class="muted">This subtree carries its own theme markers; every token re-resolves here.</p>
+            <button class="btn">Fortsett</button>
+            <div id="dialogSlotInside"></div>
+          </div>
+        </div>
+        <div id="dialogSlotOutside"></div>
+      </div></div>
+    </div>
+    <div class="statepanel" id="statePanel"></div>
+  </div>
+
+  <h2>3 · Guided walkthroughs</h2>
+  <div class="tabs" id="tabs"></div>
+  <div class="tabbody"><p id="scenarioDesc"></p><div class="steps" id="steps"></div></div>
+
+  <h2>4 · The generated CSS (what a theme file looks like)</h2>
+  <div class="stats" id="cssStats"></div>
+  <p class="mechnote" id="mechNote"></p>
+  <pre class="cssview" id="cssView"></pre>
+</div>
+
+<script>
+/* =====================================================================
+   PURE MODULE — theme value table + CSS generators. No DOM below this
+   comment’s section; this is the liftable part (it is also a first
+   taste of the “token pipeline” codegen shape).
+   ===================================================================== */
+const themeEngine = (() => {
+  // Values from wayfinder/research/003-token-values.md, renamed per the
+  // canonical token contract (ticket 001). Subset of the contract —
+  // enough tokens to exercise the cascade, not all ~77.
+  const LIB_DEFAULTS = { // ships at :root; neutral, complete
+    "background": "oklch(100% 0 0)",
+    "foreground": "oklch(15% 0.0041 49.31)",
+    "muted-foreground": "oklch(55% 0.0117 58.07)",
+    "card": "oklch(100% 0 0)",
+    "card-foreground": "oklch(15% 0.0041 49.31)",
+    "card-soft": "oklch(100% 0 0)",
+    "card-soft-foreground": "oklch(15% 0.0041 49.31)",
+    "primary": "oklch(16% 0 0)",
+    "primary-foreground": "oklch(100% 0 0)",
+    "primary-soft": "oklch(96% 0.002 49)",
+    "primary-soft-foreground": "oklch(16% 0 0)",
+    "secondary-soft": "oklch(92% 0.0026 48.72)",
+    "brand": "oklch(16% 0 0)",
+    "brand-foreground": "oklch(100% 0 0)",
+    "feature": "oklch(96% 0.002 49)",
+    "feature-foreground": "oklch(16% 0 0)",
+    "error-soft": "oklch(93.52% 0.02195 14.08)",
+    "error-soft-foreground": "oklch(45.262% 0.17845 30.42)",
+    "success-soft": "oklch(93.464% 0.02761 150.41)",
+    "success-soft-foreground": "oklch(42.774% 0.13765 144.24)",
+    "ring": "oklch(48.444% 0.20509 296.29)",
+    "radius": "0.375rem",
+    "radius-button": "0.375rem",
+  };
+
+  // Public brand-accent primitives — defined once at :root for all five
+  // brands (fkse minted from Telinet blue; fkab = fkas, flagged gap).
+  const BRAND_ACCENTS = {
+    fkas: "oklch(68% 0.21747 38.8)",
+    tkas: "oklch(86% 0.1035 191.11)",
+    guen: "oklch(21% 0.0399 265.73)",
+    fkab: "oklch(68% 0.21747 38.8)",
+    fkse: "oklch(48.158% 0.09084 240.16)",
+  };
+
+  // Full external palette per brand (private-segment values).
+  const EXTERNAL = {
+    fkas: { "background":"oklch(96.042% 0.0214 46.99)", "foreground":"oklch(32.09% 0.10325 38.8)",
+      "card-soft":"oklch(98.095% 0.01088 54.5)", "card-soft-foreground":"oklch(32.09% 0.10325 38.8)",
+      "card":"oklch(100% 0 0)", "card-foreground":"oklch(23.274% 0.07506 38.69)",
+      "primary":"oklch(48.48% 0.16637 35.92)", "primary-foreground":"oklch(100% 0 0)",
+      "primary-soft":"oklch(94% 0.03 45)", "primary-soft-foreground":"oklch(23.274% 0.07506 38.69)",
+      "secondary-soft":"oklch(88.61% 0.05413 50.48)",
+      "feature":"oklch(57.866% 0.19387 36.96)", "feature-foreground":"oklch(80.097% 0.10434 49.42)",
+      "muted-foreground":"oklch(32.09% 0.10325 38.8 / 0.7)",
+      "radius":"0.75rem", "radius-button":"1.8125rem" },
+    tkas: { "background":"oklch(97.902% 0.02928 188.87)", "foreground":"oklch(30.407% 0.05238 190.82)",
+      "card-soft":"oklch(98.982% 0.01388 185.97)", "card-soft-foreground":"oklch(30.407% 0.05238 190.82)",
+      "card":"oklch(100% 0 0)", "card-foreground":"oklch(22.003% 0.0378 191.8)",
+      "primary":"oklch(47.316% 0.08165 190.23)", "primary-foreground":"oklch(100% 0 0)",
+      "primary-soft":"oklch(94% 0.04 191)", "primary-soft-foreground":"oklch(22.003% 0.0378 191.8)",
+      "secondary-soft":"oklch(94.764% 0.07736 190.94)",
+      "feature":"oklch(55.688% 0.09585 191.06)", "feature-foreground":"oklch(90.178% 0.09399 190.62)",
+      "muted-foreground":"oklch(30.407% 0.05238 190.82 / 0.7)",
+      "radius":"0.95rem", "radius-button":"0.95rem" },
+    guen: { "background":"oklch(95.469% 0.01887 279.53)", "foreground":"oklch(19.922% 0.12072 268.2)",
+      "card-soft":"oklch(99.199% 0.00734 80.72)", "card-soft-foreground":"oklch(19.922% 0.12072 268.2)",
+      "card":"oklch(100% 0 0)", "card-foreground":"oklch(14.028% 0.08604 266.38)",
+      "primary":"oklch(48.63% 0.25238 271.95)", "primary-foreground":"oklch(100% 0 0)",
+      "primary-soft":"oklch(93% 0.035 277)", "primary-soft-foreground":"oklch(14.028% 0.08604 266.38)",
+      "secondary-soft":"oklch(88.401% 0.04497 277.34)",
+      "feature":"oklch(57.814% 0.22881 270.38)", "feature-foreground":"oklch(84.919% 0.07412 279.64)",
+      "muted-foreground":"oklch(19.922% 0.12072 268.2 / 0.7)",
+      "radius":"0.5rem", "radius-button":"0.5rem" },
+    fkse: { "background":"oklch(98.014% 0.01729 210.19)", "foreground":"oklch(36.735% 0.09417 249.17)",
+      "card-soft":"oklch(99.007% 0.00865 210.19)", "card-soft-foreground":"oklch(36.735% 0.09417 249.17)",
+      "card":"oklch(100% 0 0)", "card-foreground":"oklch(22.503% 0.06011 247.68)",
+      "primary":"oklch(48.158% 0.09084 240.16)", "primary-foreground":"oklch(100% 0 0)",
+      "primary-soft":"oklch(93.68% 0.04194 223.32)", "primary-soft-foreground":"oklch(22.503% 0.06011 247.68)",
+      "secondary-soft":"oklch(93.68% 0.04194 223.32)",
+      "feature":"oklch(56.873% 0.09344 229.37)", "feature-foreground":"oklch(90.492% 0.09477 206.46)",
+      "muted-foreground":"oklch(36.735% 0.09417 249.17 / 0.7)",
+      "radius":"0.75rem", "radius-button":"1.8125rem" },
+    // fkab external: NO reference values exist (design gap) → falls back
+    // to fkas values, flagged. Deliberately identical object.
+    fkab: null, // resolved to EXTERNAL.fkas at generate time
+  };
+
+  // Segment deltas — ONLY where values genuinely differ. Today that is
+  // exactly one case: fkas + company (the ref's `.fkas-c`).
+  const EXTERNAL_SEGMENT_DELTAS = {
+    "fkas/company": { "background":"oklch(98.23% 0.01428 213.1)", "foreground":"oklch(30.579% 0.03693 215.45)",
+      "card-soft":"oklch(99.011% 0.0069 219.56)", "card-soft-foreground":"oklch(30.579% 0.03693 215.45)",
+      "card-foreground":"oklch(25.285% 0.03792 212.52)",
+      "primary":"oklch(47.471% 0.07313 217.18)",
+      "primary-soft":"oklch(95.328% 0.03401 215.01)", "primary-soft-foreground":"oklch(25.285% 0.03792 212.52)",
+      "secondary-soft":"oklch(95.328% 0.03401 215.01)",
+      "feature":"oklch(55.738% 0.06979 216.27)", "feature-foreground":"oklch(90.856% 0.05958 225.03)",
+      "muted-foreground":"oklch(30.579% 0.03693 215.45 / 0.7)" },
+  };
+
+  // Internal variant: one grayscale base; brand shows only through the
+  // --brand tokens, which per-brand rules point at the accent primitives.
+  const INTERNAL_BASE = {
+    "background":"oklch(100% 0 0)", "foreground":"oklch(15% 0.0041 49.31)",
+    "card":"oklch(100% 0 0)", "card-foreground":"oklch(15% 0.0041 49.31)",
+    "card-soft":"oklch(97.02% 0 0)", "card-soft-foreground":"oklch(15% 0.0041 49.31)",
+    "primary":"oklch(16% 0 0)", "primary-foreground":"oklch(100% 0 0)",
+    "primary-soft":"oklch(96% 0 0)", "primary-soft-foreground":"oklch(16% 0 0)",
+    "secondary-soft":"oklch(86.99% 0 0)",
+    "feature":"oklch(96% 0 0)", "feature-foreground":"oklch(16% 0 0)",
+    "muted-foreground":"oklch(55.55% 0 0)",
+    "radius":"0.375rem", "radius-button":"0.375rem",
+  };
+
+  const BRANDS = ["fkas", "tkas", "guen", "fkab", "fkse"];
+  const PINNED = { fkab: "company", fkse: "private" };
+
+  // --- selector builders: the ONLY thing that differs per mechanism ---
+  const SELECTORS = {
+    attrs: {
+      label: "Three data attributes",
+      variant: v => `[data-theme-variant="${v}"]`,
+      brand:   b => `[data-theme-brand="${b}"]`,
+      segment: s => `[data-theme-segment="${s}"]`,
+    },
+    slug: {
+      label: "Single slug attribute",
+      // slug = <variant>-<brand>-<segment>; axis matching needs
+      // substring operators (^= / *= / $=). NOTE: this occupies
+      // data-theme, which the contract reserves for light/dark.
+      variant: v => `[data-theme^="${v}-"]`,
+      brand:   b => `[data-theme*="-${b}-"]`,
+      segment: s => `[data-theme$="-${s}"]`,
+    },
+    classes: {
+      label: "Theme classes (status quo)",
+      variant: v => `.${v}`,
+      brand:   b => `.${b}`,
+      segment: s => `.${s}`,
+    },
+  };
+
+  function decls(obj, indent = "  ") {
+    return Object.entries(obj).map(([k, v]) => `${indent}--${k}: ${v};`).join("\n");
+  }
+
+  // Generate the full theme stylesheet for one mechanism.
+  // Structure (identical for all mechanisms — only selectors differ):
+  //   1 rule   :root library defaults (+ brand-accent primitives)
+  //   5 rules  per-brand --brand pointer (works for BOTH variants)
+  //   1 rule   internal grayscale base
+  //   5 rules  external per-brand palette (fkab = fkas fallback)
+  //   1 rule   external fkas company delta (the only real segment delta)
+  //   = 13 rules covering all 16 permutations.
+  function generateCSS(mechanism) {
+    const S = SELECTORS[mechanism];
+    const parts = [];
+    const accents = {};
+    for (const b of BRANDS) {
+      accents[`brand-${b}`] = BRAND_ACCENTS[b];
+      accents[`brand-${b}-foreground`] = "oklch(100% 0 0)";
+    }
+    parts.push(`/* 1 — library defaults: complete, neutral. Every token has a value\n   before any theme marker is present. Brand-accent primitives are\n   public API, defined once, never re-themed. */\n:root {\n${decls(LIB_DEFAULTS)}\n\n${decls(accents)}\n}`);
+
+    const brandRules = BRANDS.map(b =>
+      `${S.brand(b)} {\n  --brand: var(--brand-${b});\n  --brand-foreground: var(--brand-${b}-foreground);\n}`).join("\n");
+    parts.push(`/* 2 — brand pointer, keyed on brand alone: serves BOTH variants. */\n${brandRules}`);
+
+    parts.push(`/* 3 — internal variant: one grayscale base for all 8 internal\n   permutations. No per-brand internal rules exist at all. */\n${S.variant("internal")} {\n${decls(INTERNAL_BASE)}\n}`);
+
+    const extRules = BRANDS.map(b => {
+      const src = EXTERNAL[b] ?? EXTERNAL.fkas;
+      const note = EXTERNAL[b] ? "" : " /* fkab: no reference palette exists — fkas values, flagged design gap */";
+      return `${S.variant("external")}${S.brand(b)} {${note}\n${decls(src)}\n}`;
+    }).join("\n");
+    parts.push(`/* 4 — external per-brand palettes (private-segment values). A brand\n   with no segment delta simply has no segment rule: company falls\n   back to these by absence, not by extra CSS. */\n${extRules}`);
+
+    const deltaRules = Object.entries(EXTERNAL_SEGMENT_DELTAS).map(([key, delta]) => {
+      const [b, s] = key.split("/");
+      return `${S.variant("external")}${S.brand(b)}${S.segment(s)} {\n${decls(delta)}\n}`;
+    }).join("\n");
+    parts.push(`/* 5 — segment deltas: ONLY where values differ. Today: exactly one\n   (the ref's .fkas-c). This is the anti-explosion property — rules\n   scale with real value differences, not with permutations. */\n${deltaRules}`);
+
+    const css = parts.join("\n\n");
+    const rules = (css.match(/\{/g) || []).length;
+    const declarations = (css.match(/--[a-z0-9-]+\s*:/g) || []).length;
+    return { css, stats: { rules, declarations, bytes: new Blob([css]).size } };
+  }
+
+  // Markers a runtime/provider must place on a scope root.
+  function markersFor(mechanism, { variant, brand, segment }) {
+    if (mechanism === "attrs") return { attrs: { "data-theme-variant": variant, "data-theme-brand": brand, "data-theme-segment": segment }, classes: [] };
+    if (mechanism === "slug") return { attrs: { "data-theme": `${variant}-${brand}-${segment}` }, classes: [] };
+    return { attrs: {}, classes: [variant, brand, segment] };
+  }
+
+  function validateTheme({ variant, brand, segment }) {
+    const warnings = [];
+    if (PINNED[brand] && PINNED[brand] !== segment)
+      warnings.push(`Illegal permutation: ${brand} is pinned to the “${PINNED[brand]}” segment. CSS cannot forbid this — the theme-provider API (its own ticket) must.`);
+    if (brand === "fkab" && variant === "external")
+      warnings.push("external-fkab has no reference palette — rendering fkas values (flagged design gap).");
+    return warnings;
+  }
+
+  const slugOf = t => `${t.variant}-${t.brand}-${t.segment}`;
+  return { generateCSS, markersFor, validateTheme, slugOf, BRANDS, SELECTORS, PINNED };
+})();
+
+/* =====================================================================
+   PAGE SHELL — throwaway wiring. Applies generated CSS, drives markers,
+   renders state. Nothing here is liftable.
+   ===================================================================== */
+(() => {
+  const MECHS = ["attrs", "slug", "classes"];
+  const MECH_NOTES = {
+    attrs: "Three attributes: each axis is independently addressable with a plain [attr=value] selector (specificity 0,1,0 per axis — identical to a class). data-theme stays completely free for a future light/dark axis. DevTools shows the three axes explicitly on the element.",
+    slug: "Single slug: one attribute carries variant-brand-segment. Axis-level rules need substring operators (^= for variant, *= for brand, $= for segment) — same specificity, but the selectors read as string tricks, and the attribute OCCUPIES data-theme, colliding with the contract’s reserved light/dark axis (or forces a second nonstandard name).",
+    classes: "Classes (status quo in both refs): same specificity and same rule structure as attributes, but the tokens are bare words — .company or .private can collide with app CSS, nothing groups them as theme markers in DevTools, and dark mode would need yet another bare class.",
+  };
+  const state = { mechanism: "attrs", variant: "external", brand: "fkas", segment: "private", islandOn: false, dialogWhere: "none" };
+
+  // three <style> tags, one per mechanism, generated once by the pure module
+  const styleTags = {}, cssCache = {};
+  for (const m of MECHS) {
+    const { css, stats } = themeEngine.generateCSS(m);
+    cssCache[m] = { css, stats };
+    const tag = document.createElement("style");
+    tag.textContent = css; tag.disabled = true;
+    document.head.appendChild(tag); styleTags[m] = tag;
+  }
+
+  const $ = id => document.getElementById(id);
+  const pageRoot = $("pageRoot"), islandRoot = $("islandRoot");
+
+  function applyMarkers(el, mechanism, theme) {
+    ["data-theme-variant", "data-theme-brand", "data-theme-segment", "data-theme"].forEach(a => el.removeAttribute(a));
+    el.classList.remove("internal", "external", "private", "company", ...themeEngine.BRANDS);
+    const { attrs, classes } = themeEngine.markersFor(mechanism, theme);
+    Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
+    classes.forEach(c => el.classList.add(c));
+  }
+
+  function seg(el, options, get, set) {
+    el.innerHTML = "";
+    for (const o of options) {
+      const b = document.createElement("button");
+      b.textContent = o; b.classList.toggle("on", get() === o);
+      b.onclick = () => { set(o); render(); };
+      el.appendChild(b);
+    }
+  }
+
+  const TOKENS_SHOWN = ["background", "foreground", "primary", "brand", "card", "card-soft", "feature", "radius", "radius-button"];
+  const isColor = t => !t.startsWith("radius");
+
+  function stateHTML() {
+    const cs = getComputedStyle(pageRoot);
+    const rows = TOKENS_SHOWN.map(t => {
+      const v = cs.getPropertyValue(`--${t}`).trim();
+      const sw = isColor(t) ? `<span class="swatch" style="background:${v}"></span>` : "";
+      return `<dt>--${t}</dt><dd>${sw}${v || "—"}</dd>`;
+    }).join("");
+    let island = "";
+    if (state.islandOn) {
+      const ics = getComputedStyle(islandRoot);
+      island = `<dt style="padding-top:8px">island --primary</dt><dd style="padding-top:8px"><span class="swatch" style="background:${ics.getPropertyValue("--primary")}"></span>${ics.getPropertyValue("--primary").trim()} <em>(guen, re-scoped)</em></dd>`;
+    }
+    const warnings = themeEngine.validateTheme(state)
+      .concat(state.mechanism === "slug" ? ["Slug mechanism occupies data-theme — the axis the contract reserves for light/dark."] : []);
+    return `<dl>
+      <dt>mechanism</dt><dd>${themeEngine.SELECTORS[state.mechanism].label}</dd>
+      <dt>theme slug</dt><dd>${themeEngine.slugOf(state)}</dd>
+      <dt>markers on root</dt><dd>${describeMarkers()}</dd>
+      ${rows}${island}</dl>` +
+      warnings.map(w => `<div class="warn">${w}</div>`).join("");
+  }
+
+  function describeMarkers() {
+    const { attrs, classes } = themeEngine.markersFor(state.mechanism, state);
+    const a = Object.entries(attrs).map(([k, v]) => `${k}="${v}"`).join(" ");
+    return a || `class="${classes.join(" ")}"`;
+  }
+
+  /* ---- scenarios ---- */
+  const SCENARIOS = [
+    { name: "Brand tour", desc: "The happy path: flip through all four real external brands (private segment). Watch background tint, primary, radius (guen sharp 0.5rem, tkas 0.95rem) and button shape (fkas/fkse pill) all change from ONE rule per brand.",
+      steps: ["fkas", "tkas", "guen", "fkse"].map(b => ({ label: `Switch to external · ${b} · private`, note: b === "guen" ? "note the sharp corners — radius identity survives" : "", run: () => Object.assign(state, { variant: "external", brand: b, segment: "private" }) })) },
+    { name: "Segment fallback", desc: "The anti-explosion claim: tkas has NO company palette, so switching its segment changes nothing — company falls back to private by the absence of a rule, zero extra CSS. fkas DOES have a company palette (the ref’s .fkas-c), so the same switch there applies real deltas.",
+      steps: [
+        { label: "external · tkas · private", run: () => Object.assign(state, { variant: "external", brand: "tkas", segment: "private" }) },
+        { label: "→ switch segment to company", note: "nothing changes — no rule exists, fallback by absence", run: () => { state.segment = "company"; } },
+        { label: "external · fkas · private", run: () => Object.assign(state, { variant: "external", brand: "fkas", segment: "private" }) },
+        { label: "→ switch segment to company", note: "orange turns petrol-blue: the one real segment delta (fkas-c)", run: () => { state.segment = "company"; } },
+      ] },
+    { name: "Variant flip", desc: "The variant axis is pure values: flip fkas from external to internal. Everything goes grayscale EXCEPT the brand chip — --brand keeps pointing at the fkas orange accent primitive, because the brand-pointer rule is keyed on brand alone and serves both variants.",
+      steps: [
+        { label: "external · fkas · private", run: () => Object.assign(state, { variant: "external", brand: "fkas", segment: "private" }) },
+        { label: "→ flip variant to internal", note: "grayscale UI, orange chip survives via --brand", run: () => { state.variant = "internal"; } },
+        { label: "→ internal · guen (brand switch while internal)", note: "only the chip changes — internal has no per-brand rules at all", run: () => { state.brand = "guen"; } },
+      ] },
+    { name: "Scoped island & portals", desc: "OrderModuleWeb re-scopes a subtree and portals dialogs INSIDE it. Because no selector is anchored to <html>, putting markers on any element re-themes that subtree. A dialog portalled inside the island inherits island tokens; portalled outside, it silently gets the page theme — the exact bug the refs avoid by portalling inside. The mechanism supports scoping; portal discipline stays the provider’s job.",
+      steps: [
+        { label: "Set page to internal · fkas · company", run: () => Object.assign(state, { variant: "internal", brand: "fkas", segment: "company" }) },
+        { label: "→ show island (external · guen · private)", note: "island subtree resolves guen tokens inside a grayscale page", run: () => { state.islandOn = true; } },
+        { label: "→ open dialog portalled INSIDE the island", note: "dialog is guen-themed — correct", run: () => { state.dialogWhere = "inside"; } },
+        { label: "→ re-portal the dialog OUTSIDE the island", note: "same dialog silently becomes page-themed — the footgun", run: () => { state.dialogWhere = "outside"; } },
+        { label: "→ close dialog & island", run: () => { state.dialogWhere = "none"; state.islandOn = false; } },
+      ] },
+    { name: "Mechanism shoot-out", desc: "Same theme, three mechanisms. Rendering is identical (all generated from one value table); compare the markers line in the state panel, the selector text in the CSS view (section 4), and the warnings. The slug’s substring selectors work but read as string tricks, and it burns the data-theme name the contract reserves for dark mode.",
+      steps: [
+        { label: "external · fkas · company via three attributes", run: () => Object.assign(state, { mechanism: "attrs", variant: "external", brand: "fkas", segment: "company" }) },
+        { label: "→ same theme via single slug attribute", note: "see the data-theme collision warning", run: () => { state.mechanism = "slug"; } },
+        { label: "→ same theme via classes (status quo)", note: "bare .company/.private words on the element", run: () => { state.mechanism = "classes"; } },
+        { label: "→ back to three attributes", run: () => { state.mechanism = "attrs"; } },
+      ] },
+  ];
+  let scenario = 0, stepIdx = 0;
+
+  function renderScenario() {
+    const tabs = $("tabs"); tabs.innerHTML = "";
+    SCENARIOS.forEach((s, i) => {
+      const b = document.createElement("button");
+      b.textContent = s.name; b.classList.toggle("on", i === scenario);
+      b.onclick = () => { scenario = i; stepIdx = 0; render(); };
+      tabs.appendChild(b);
+    });
+    $("scenarioDesc").textContent = SCENARIOS[scenario].desc;
+    const steps = $("steps"); steps.innerHTML = "";
+    SCENARIOS[scenario].steps.forEach((st, i) => {
+      const b = document.createElement("button");
+      b.textContent = `${i + 1}. ${st.label}`;
+      b.classList.toggle("done", i < stepIdx);
+      b.classList.toggle("next", i === stepIdx);
+      b.onclick = () => { st.run(); stepIdx = i + 1; render(); };
+      steps.appendChild(b);
+      if (st.note) { const n = document.createElement("div"); n.className = "note"; n.textContent = "↳ " + st.note; steps.appendChild(n); }
+    });
+  }
+
+  function render() {
+    MECHS.forEach(m => { styleTags[m].disabled = m !== state.mechanism; });
+    applyMarkers(pageRoot, state.mechanism, state);
+    applyMarkers(islandRoot, state.mechanism, { variant: "external", brand: "guen", segment: "private" });
+    $("island").hidden = !state.islandOn;
+    $("chipBrand").textContent = state.brand;
+    const dlg = state.dialogWhere === "none" ? "" :
+      `<div class="dialog"><h6>Bekreft bestilling</h6>Portalled ${state.dialogWhere === "inside" ? "inside the island — inherits guen tokens" : "outside the island — silently page-themed"}. My card/button tokens resolve from wherever I live in the DOM.<br><br><button class="btn">Bekreft</button></div>`;
+    $("dialogSlotInside").innerHTML = state.dialogWhere === "inside" ? dlg : "";
+    $("dialogSlotOutside").innerHTML = state.dialogWhere === "outside" ? dlg : "";
+
+    seg($("mechSeg"), MECHS, () => state.mechanism, v => { state.mechanism = v; });
+    seg($("variantSeg"), ["internal", "external"], () => state.variant, v => { state.variant = v; });
+    seg($("brandSeg"), themeEngine.BRANDS, () => state.brand, v => { state.brand = v; });
+    seg($("segmentSeg"), ["private", "company"], () => state.segment, v => { state.segment = v; });
+
+    $("statePanel").innerHTML = stateHTML();
+    const { css, stats } = cssCache[state.mechanism];
+    $("cssStats").innerHTML = `<b>${themeEngine.SELECTORS[state.mechanism].label}</b> — <b>${stats.rules}</b> rules / <b>${stats.declarations}</b> declarations / <b>${(stats.bytes / 1024).toFixed(1)} KB</b> cover all 16 permutations. (Rule count is identical across mechanisms — only selector text differs.)`;
+    $("mechNote").textContent = MECH_NOTES[state.mechanism];
+    $("cssView").textContent = css;
+    renderScenario();
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,105 @@
+# Button
+
+## 1. Header
+
+- **Canonical name:** `Button` — single component, no namespace.
+- **Export path:** `@elmeragroup/ui/base-ui/button`. The `buttonVariants` recipe is **public** in its own runtime-free subpath `@elmeragroup/ui/base-ui/button-variants` — deliberately borrowable by primitive wrappers and react-aria islands without pulling either runtime in.
+- **Tier:** base-ui primitive wrapper.
+- **Source of truth:** `.ref/OrderModuleInternalWeb/packages/ui/src/base-ui/button.tsx` + `base-ui/button-variants.ts`.
+
+## 2. Anatomy
+
+Single part. Wraps `@base-ui/react/button` (`ButtonPrimitive`), which supplies native-button semantics and the `render` prop (per conventions: polymorphism via base-ui `useRender`/`render`, never `as`). Adds the variant recipe, pending/visually-disabled states, and predictive-intent wiring via `usePredictedEvents` + `useMergedRefs`.
+
+## 3. Props
+
+`ButtonProps = Omit<ComponentProps<typeof ButtonPrimitive>, "className"> & VariantProps<typeof buttonVariants> & { … }`
+
+| Prop | Type | Default | Notes |
+| --- | --- | --- | --- |
+| `variant` | see §4 | `"default"` | Recipe axis. |
+| `size` | see §4 | `"default"` | Recipe axis. |
+| `className` | `string` | — | Merged last via `cn`. |
+| `disabled` | `boolean` | `false` | Base-ui naming (primitive tier). Effective disabled is `disabled \|\| isPending`. |
+| `isVisuallyDisabled` | `boolean` | `false` | Adds `opacity-70` and calls `event.preventDefault()` in `onMouseDown` (suppresses focus-on-press) while the button **stays interactive** — click, keyboard, and focus-visible all still work. For "looks disabled but explains itself on activation" flows. |
+| `isPending` | `boolean` | `false` | Sets `disabled` on the element **and** emits `data-pending`. Blocks activation entirely. |
+| `onIntent` | `() => void` | — | Predictive-prefetch callback; fires once when pointer trajectory is predicted to hit the button (see below). |
+| `predictionZoneSize` | `number` | `30` | Pixels the hit rect is inflated on every side for intent prediction. |
+| `onMouseDown` | `MouseEventHandler` | — | Wrapped; user handler runs after the visually-disabled `preventDefault`. |
+| `ref` | `Ref<HTMLButtonElement>` | — | Merged with the prediction hook's ref (see below). |
+| …rest | `ButtonPrimitive` props | — | Includes `render` for polymorphism (link-buttons etc.). |
+
+**`onIntent` mechanics** (`hooks/use-predicted-events.ts`): a document-level `pointermove` listener calls `event.getPredictedEvents()` and fires `onPredictedInteraction` once (one-shot latch) when any predicted point lands inside the element's `getBoundingClientRect()` inflated by `predictionZoneSize`. Enablement condition: `!disabled && !isPending && !isVisuallyDisabled && !!onIntent`. Browsers without `getPredictedEvents` fail soft (`console.debug`). **Ref-merging note:** the hook's callback ref is merged with the incoming `ref` via `useMergedRefs(ref, onIntent ? predictiveProps.ref : null)` — this preserves overlay-trigger refs (popover/menu anchors) while adding predictive prefetch; the prediction ref is only attached when `onIntent` is provided.
+
+## 4. Variants
+
+Recipe: `buttonVariants` (`tv`) — **public**, runtime-free. Defaults: `variant: "default"`, `size: "default"`.
+
+**Base:** `group/button` scope; inline-flex centered, `rounded-md`, transparent border, `bg-clip-padding`, `text-sm font-medium whitespace-nowrap`; transitions color/background/border/shadow/translate/opacity; `focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50`; press feedback `active:not-aria-[haspopup]:translate-y-px` (suppressed for popup triggers); `disabled:pointer-events-none disabled:opacity-50`; invalid state `aria-invalid:border-error aria-invalid:ring-3 aria-invalid:ring-error/20`; svg children non-interactive, default `size-4`.
+
+| `variant` | Classes (summary) |
+| --- | --- |
+| `default` | `bg-primary text-primary-foreground hover:bg-primary/80` |
+| `outline` | `border-border bg-background shadow-xs hover:bg-muted hover:text-foreground` + `aria-expanded:bg-muted aria-expanded:text-foreground` (open-trigger styling) |
+| `secondary` | `bg-secondary text-secondary-foreground`, hover via `color-mix(in oklch, var(--secondary), var(--foreground) 5%)`, `aria-expanded:` pins secondary colors |
+| `ghost` | transparent; `hover:bg-muted hover:text-foreground` + `aria-expanded:bg-muted aria-expanded:text-foreground` |
+| `destructive` | **Tinted, not solid — deliberate, kept:** `border-error/20 bg-error/10 text-error hover:border-error hover:bg-error/20 focus-visible:border-error/40 focus-visible:ring-error/20` |
+| `success` | Same tinted pattern on success tokens: `border-success/20 bg-success/10 text-success hover:border-success hover:bg-success/20 focus-visible:border-success/40 focus-visible:ring-success/20` |
+| `link` | `text-primary underline-offset-4 hover:underline` |
+
+| `size` | Classes (summary) |
+| --- | --- |
+| `default` | `h-9 gap-1.5 px-2.5`; icon-padding hooks `has-data-[icon=inline-start]:pl-2` / `has-data-[icon=inline-end]:pr-2` |
+| `xs` | `h-6 gap-1 px-2 text-xs rounded-[min(var(--radius-md),8px)]`; svg `size-3`; icon hooks `pl-1.5`/`pr-1.5` |
+| `sm` | `h-8 gap-1 px-2.5 rounded-[min(var(--radius-md),10px)]`; icon hooks `pl-1.5`/`pr-1.5` |
+| `lg` | `h-10 gap-1.5 px-2.5`; icon hooks `pl-2`/`pr-2` |
+| `icon` | `size-9` |
+| `icon-xs` | `size-6 rounded-[min(var(--radius-md),8px)]`; svg `size-3` |
+| `icon-sm` | `size-8 rounded-[min(var(--radius-md),10px)]` |
+| `icon-inline` | `hit-area-1 aspect-square h-lh w-auto` — line-height-sized inline icon button with expanded hit area |
+| `icon-lg` | `size-10` |
+
+Sizes `default`, `xs`, `sm`, `icon-xs`, `icon-sm` add `in-data-[slot=button-group]:rounded-md` — inside a ButtonGroup the radius clamp is dropped so the group's own edge-rounding rules govern corners.
+
+## 5. Consumed tokens
+
+`primary`/`primary-foreground`, `secondary`/`secondary-foreground`, `muted`, `background`, `foreground`, `border`, `ring`, `error` (tinted `/10 /20 /40` opacities), `success` (same tints). Radius: `rounded-md` from `--radius`; the xs/sm clamps `min(var(--radius-md), 8px)` and `min(var(--radius-md), 10px)` are **kept and locked** — small buttons never exceed 8/10 px corner radius even under large-radius themes. No raw palette classes; no `dark:` variants (dark axis lives in tokens).
+
+## 6. Data attributes
+
+**Emitted:** `data-slot="button"` (layout contract consumed by ButtonGroup, InputGroup, etc.); `data-pending` (present only while `isPending`).
+**Consumed:** `in-data-[slot=button-group]` (ancestor ButtonGroup → drop radius clamp); `has-data-[icon=inline-start]` / `has-data-[icon=inline-end]` (child icon markers → tightened padding on the icon side); `aria-expanded` (open overlay trigger → pinned hover-style background on `outline`/`secondary`/`ghost`); `aria-invalid` / `aria-haspopup` (base classes above).
+
+## 7. Accessibility
+
+- Native `<button>` semantics via base-ui: Enter and Space activate; `disabled`/`isPending` block activation.
+- `isPending` uses real `disabled` — no ghost clicks mid-mutation. `isVisuallyDisabled` deliberately does **not** set `disabled` or `aria-disabled`: it only dims and suppresses focus-on-mousedown, keeping the control reachable and activatable (consumer decides what activation does).
+- Focus: `focus-visible` ring only; mousedown-focus suppressed when visually disabled.
+- `render`-prop polymorphism must preserve role/keyboard semantics (base-ui `useRender` + `mergeProps`).
+
+## 8. Divergence from reference
+
+1. **Token rename (LOCKED):** the `destructive` **variant value is kept** as the consumer-facing name, but its classes move from `destructive` tokens to canonical `error` tokens (`bg-error/10`, `text-error`, …) per conventions (`destructive` classes are consumer-compat aliases, never library source). Base `aria-invalid:` classes likewise move to `error`.
+2. **`dark:` variants removed** (ref has `dark:bg-input/30`, `dark:aria-invalid:…`, etc.) — forbidden by `no-tailwind-dark-variant`; dark values live behind `[data-theme="dark"]` tokens.
+3. **Kept deliberately:** `isVisuallyDisabled`, `isPending`, `onIntent`/`predictionZoneSize`, tinted (non-solid) `destructive`/`success` variants, radius clamps, public `buttonVariants`.
+4. No namespace conversion — Button is a single component; no flat-export renames.
+
+## 9. Test requirements
+
+Role-based queries only (`getByRole("button", { name })`).
+
+- Enter and Space activate; `onClick` fires once per activation.
+- `disabled` and `isPending` both block click and keyboard activation; `isPending` emits `data-pending` and `disabled` attr.
+- `isVisuallyDisabled`: still activatable by click and keyboard; mousedown does not move focus; `opacity-70` class applied; no `disabled`/`aria-disabled`.
+- `onIntent`: fires once when a predicted pointer path enters the inflated rect; never fires when `disabled`/`isPending`/`isVisuallyDisabled`; external `ref` still receives the element when `onIntent` is set (merged-ref regression test).
+- `variant`/`size` render expected recipe classes; `render` prop swaps the tag while keeping role.
+
+## 10. Demo requirements
+
+Plain runnable `.tsx` demos, one per scenario:
+
+- `button-variant-matrix.tsx` — all 7 variants × default size, incl. tinted destructive/success.
+- `button-sizes.tsx` — all 9 sizes with icon-padding hooks (`data-icon="inline-start"`/`"inline-end"` children).
+- `button-pending.tsx` — `isPending` with `SpinnerGap` (Phosphor) spinner.
+- `button-visually-disabled.tsx` — `isVisuallyDisabled` explaining itself on activation.
+- `button-predictive-intent.tsx` — `onIntent` prefetch with a visible "prefetched" indicator and adjustable `predictionZoneSize`.

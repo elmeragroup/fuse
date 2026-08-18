@@ -2,8 +2,8 @@
 id: 010
 title: Brand assets & licensing
 type: grilling
-status: open
-assignee: null
+status: closed
+assignee: tommy.lunde.barvag
 blocked-by: []
 ---
 
@@ -21,3 +21,14 @@ Decide:
 4. License for the public package code itself (MIT? proprietary-source-visible?) and who in Elmera approves open distribution.
 
 This is HITL: the license facts and sign-off are the human's to bring or chase (spawn a follow-up task ticket if legal/design input must be gathered).
+
+Handed over from [Icon system](009-icon-system.md): the decided logo roster (5 brands incl. Telinet, ElmeraGroup fallback, Steddi + Trumf for internal tools) ships in `@elmeragroup/ui/icons` **contingent on this ticket's licensing outcome**; the fallback is a private assets package. Also relevant: fonts stay app-supplied per the theme contract (`--font-sans`/`--font-heading` are themable tokens), so point 1's cleanest option is already the working assumption elsewhere.
+
+## Resolution
+
+Decided 2026-08-17 via grilling (HITL; the user holds the distribution authority).
+
+1. **Fonts: apps supply them — the library never ships font files.** Themes reference font-family names only via the themable `--font-sans`/`--font-heading` tokens; each app loads its own licensed files (the refs' `next/font` pattern). Neo Sans's commercial license therefore never touches the published package. No `@elmeragroup/fonts` package.
+2. **Logos ship in the public package, pragmatically.** They are publicly visible marks already served in every brand site's bundles; npm changes discoverability, not exposure. The [Icon system](009-icon-system.md) contingency is **cleared** — the full logo roster ships in `@elmeragroup/ui/icons` as decided there. Escalation only if brand/legal objects later.
+3. **Nothing stays private.** No public/private split, no private registry, no CI split — the question dissolves.
+4. **Code license: MIT**, matching the entire dependency stack (base-ui, Phosphor, Tailwind ecosystem). **Approver: the user (Tommy Barvåg) owns the open-distribution decision** — no sign-off task ticket spawns; the spec records this.

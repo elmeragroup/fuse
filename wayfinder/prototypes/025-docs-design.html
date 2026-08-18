@@ -1,0 +1,784 @@
+<!doctype html>
+<!--
+  PROTOTYPE — THROWAWAY. Ticket 025 (Docs site design prototype).
+  Plan: three radically different visual directions for the @elmeragroup/ui docs site
+  (component page + 16-theme matrix page), switchable via the floating bottom bar,
+  the ← / → keys, or the #<variant>/<page> hash. Not production code.
+  Theme CSS below is the real ADR-0002 cascade with real values from research/004.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PROTOTYPE — 025 docs site design directions</title>
+<style>
+/* ============================================================
+   1. LIBRARY THEMES — the real thing.
+   Layer 1 defaults + 5 brand pointers + 4 external palettes
+   (+ fkab alias) + 1 segment delta. Values: research/004.
+   ============================================================ */
+.themed{
+  --brand-fkas:oklch(0.68 0.21747 38.8);
+  --brand-tkas:oklch(0.86 0.1035 191.11);
+  --brand-guen:oklch(0.21 0.0399 265.73);
+  --brand-fkab:var(--brand-fkas);
+  --brand-fkse:oklch(0.4816 0.0908 240.16);
+
+  --background:oklch(1 0 0); --foreground:oklch(0.15 0.0041 49.31);
+  --card:oklch(1 0 0); --card-foreground:oklch(0.15 0.0041 49.31);
+  --card-soft:oklch(0.9702 0 0); --card-soft-foreground:oklch(0.15 0.0041 49.31);
+  --muted:oklch(0.97 0.0013 106.42); --muted-foreground:oklch(0.5555 0 0);
+  --primary:oklch(0.16 0 0); --primary-foreground:oklch(1 0 0);
+  --primary-soft:oklch(0.96 0 0); --primary-soft-foreground:oklch(0.16 0 0);
+  --secondary:oklch(0.97 0 0); --secondary-foreground:oklch(0.22 0 0);
+  --secondary-soft:oklch(0.9219 0 0); --secondary-soft-foreground:oklch(0.16 0 0);
+  --feature:oklch(0.96 0 0); --feature-bright:oklch(0.98 0 0); --feature-foreground:oklch(0.16 0 0);
+  --brand:oklch(0.16 0 0); --brand-foreground:oklch(1 0 0);
+  --border:oklch(0.9219 0 0); --input:oklch(0.9219 0 0);
+  --error:oklch(0.4526 0.17845 30.42); --error-foreground:oklch(1 0 0);
+  --success-soft:oklch(0.9346 0.02761 150.41); --success-soft-foreground:oklch(0.4277 0.13765 144.24);
+  --radius:0.375rem; --radius-button:0.375rem;
+  --font-sans:Roboto,ui-sans-serif,system-ui,sans-serif;
+  --font-heading:var(--font-sans);
+  background:var(--background); color:var(--foreground); font-family:var(--font-sans);
+}
+/* layer 2 — brand pointers */
+.themed[data-theme-brand="fkas"]{--brand:var(--brand-fkas);}
+.themed[data-theme-brand="tkas"]{--brand:var(--brand-tkas);--brand-foreground:oklch(0.15 0.0041 49.31);}
+.themed[data-theme-brand="guen"]{--brand:var(--brand-guen);}
+.themed[data-theme-brand="fkab"]{--brand:var(--brand-fkab);}
+.themed[data-theme-brand="fkse"]{--brand:var(--brand-fkse);}
+/* layer 4 — external palettes (fkab = permanent fkas alias) */
+.themed[data-theme-variant="external"][data-theme-brand="fkas"],
+.themed[data-theme-variant="external"][data-theme-brand="fkab"]{
+  --background:oklch(0.96042 0.0214 46.99); --foreground:oklch(0.3209 0.10325 38.8);
+  --card-foreground:oklch(0.23274 0.07506 38.69);
+  --card-soft:oklch(0.98095 0.01088 54.5); --card-soft-foreground:oklch(0.3209 0.10325 38.8);
+  --muted:oklch(0.97 0.0013 106.42); --muted-foreground:oklch(0.3209 0.10325 38.8 / 0.7);
+  --primary:oklch(0.4848 0.16637 35.92); --primary-foreground:oklch(1 0 0);
+  --primary-soft:oklch(0.94 0.03 45); --primary-soft-foreground:oklch(0.23274 0.07506 38.69);
+  --secondary:oklch(0.3209 0.10325 38.8); --secondary-foreground:oklch(1 0 0);
+  --secondary-soft:oklch(0.8861 0.05413 50.48); --secondary-soft-foreground:oklch(0.3209 0.10325 38.8);
+  --feature:oklch(0.57866 0.19387 36.96); --feature-bright:oklch(0.74389 0.16389 43.68); --feature-foreground:oklch(0.80097 0.10434 49.42);
+  --border:oklch(0.9232 0.0026 48.72); --input:oklch(0.9232 0.0026 48.72);
+  --radius:0.75rem; --radius-button:1.8125rem;
+  --font-heading:"Neo Sans",var(--font-sans);
+}
+.themed[data-theme-variant="external"][data-theme-brand="tkas"]{
+  --background:oklch(0.97902 0.02928 188.87); --foreground:oklch(0.30407 0.05238 190.82);
+  --card-foreground:oklch(0.22003 0.0378 191.8);
+  --card-soft:oklch(0.98982 0.01388 185.97); --card-soft-foreground:oklch(0.30407 0.05238 190.82);
+  --muted:oklch(0.9684 0.0068 247.9); --muted-foreground:oklch(0.30407 0.05238 190.82 / 0.7);
+  --primary:oklch(0.47316 0.08165 190.23); --primary-foreground:oklch(1 0 0);
+  --primary-soft:oklch(0.94 0.04 191); --primary-soft-foreground:oklch(0.22003 0.0378 191.8);
+  --secondary:oklch(0.30407 0.05238 190.82); --secondary-foreground:oklch(1 0 0);
+  --secondary-soft:oklch(0.94764 0.07736 190.94); --secondary-soft-foreground:oklch(0.30407 0.05238 190.82);
+  --feature:oklch(0.55688 0.09585 191.06); --feature-bright:oklch(0.77279 0.10225 190.47); --feature-foreground:oklch(0.90178 0.09399 190.62);
+  --border:oklch(0.929 0.0126 255.53); --input:oklch(0.929 0.0126 255.53);
+  --radius:0.95rem; --radius-button:0.95rem;
+}
+.themed[data-theme-variant="external"][data-theme-brand="guen"]{
+  --background:oklch(0.95469 0.01887 279.53); --foreground:oklch(0.19922 0.12072 268.2);
+  --card-foreground:oklch(0.14028 0.08604 266.38);
+  --card-soft:oklch(0.99199 0.00734 80.72); --card-soft-foreground:oklch(0.19922 0.12072 268.2);
+  --muted:oklch(0.9684 0.0068 247.9); --muted-foreground:oklch(0.19922 0.12072 268.2 / 0.7);
+  --primary:oklch(0.4863 0.25238 271.95); --primary-foreground:oklch(1 0 0);
+  --primary-soft:oklch(0.93 0.035 277); --primary-soft-foreground:oklch(0.14028 0.08604 266.38);
+  --secondary:oklch(0.19922 0.12072 268.2); --secondary-foreground:oklch(1 0 0);
+  --secondary-soft:oklch(0.88401 0.04497 277.34); --secondary-soft-foreground:oklch(0.19922 0.12072 268.2);
+  --feature:oklch(0.57814 0.22881 270.38); --feature-bright:oklch(0.7068 0.1522 275.6); --feature-foreground:oklch(0.84919 0.07412 279.64);
+  --border:oklch(0.929 0.0126 255.53); --input:oklch(0.929 0.0126 255.53);
+  --radius:0.5rem; --radius-button:0.5rem;
+}
+.themed[data-theme-variant="external"][data-theme-brand="fkse"]{
+  --background:oklch(0.98014 0.01729 210.19); --foreground:oklch(0.36735 0.09417 249.17);
+  --card-foreground:oklch(0.22503 0.06011 247.68);
+  --card-soft:oklch(0.99007 0.00865 210.19); --card-soft-foreground:oklch(0.36735 0.09417 249.17);
+  --muted:oklch(0.97 0.0013 106.42); --muted-foreground:oklch(0.36735 0.09417 249.17 / 0.7);
+  --primary:oklch(0.48158 0.09084 240.16); --primary-foreground:oklch(1 0 0);
+  --primary-soft:oklch(0.9368 0.04194 223.32); --primary-soft-foreground:oklch(0.22503 0.06011 247.68);
+  --secondary:oklch(0.36735 0.09417 249.17); --secondary-foreground:oklch(1 0 0);
+  --secondary-soft:oklch(0.9368 0.04194 223.32); --secondary-soft-foreground:oklch(0.36735 0.09417 249.17);
+  --feature:oklch(0.56873 0.09344 229.37); --feature-bright:oklch(0.77836 0.11783 206.21); --feature-foreground:oklch(0.90492 0.09477 206.46);
+  --border:oklch(0.9232 0.0026 48.72); --input:oklch(0.9232 0.0026 48.72);
+  --radius:0.75rem; --radius-button:1.8125rem;
+}
+/* layer 5 — the single segment delta: external-fkas-company */
+.themed[data-theme-variant="external"][data-theme-brand="fkas"][data-theme-segment="company"]{
+  --background:oklch(0.9823 0.01428 213.1); --foreground:oklch(0.30579 0.03693 215.45);
+  --card-foreground:oklch(0.25285 0.03792 212.52);
+  --card-soft:oklch(0.99011 0.0069 219.56); --card-soft-foreground:oklch(0.30579 0.03693 215.45);
+  --muted-foreground:oklch(0.30579 0.03693 215.45 / 0.7);
+  --primary:oklch(0.47471 0.07313 217.18);
+  --primary-soft:oklch(0.95328 0.03401 215.01); --primary-soft-foreground:oklch(0.25285 0.03792 212.52);
+  --secondary:oklch(0.30579 0.03693 215.45);
+  --secondary-soft:oklch(0.95328 0.03401 215.01); --secondary-soft-foreground:oklch(0.30579 0.03693 215.45);
+  --feature:oklch(0.55738 0.06979 216.27); --feature-bright:oklch(0.7871 0.0657 225.82); --feature-foreground:oklch(0.90856 0.05958 225.03);
+}
+
+/* ============================================================
+   2. SHARED DEMO COMPONENTS (rendered with library tokens)
+   ============================================================ */
+:root{
+  --ease-out:cubic-bezier(0.23,1,0.32,1);
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+body{font-family:-apple-system,"Segoe UI",system-ui,sans-serif;background:#fff;color:#17181a;-webkit-font-smoothing:antialiased}
+button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
+a{color:inherit}
+
+.dc-btn{display:inline-flex;align-items:center;gap:.5ch;padding:.55em 1.15em;font-size:.83rem;font-weight:500;
+  background:var(--primary);color:var(--primary-foreground);border-radius:var(--radius-button);
+  transition:transform 140ms var(--ease-out),opacity 140ms var(--ease-out);}
+.dc-btn:active{transform:scale(0.97)}
+.dc-btn--secondary{background:var(--secondary);color:var(--secondary-foreground)}
+.dc-btn--soft{background:var(--primary-soft);color:var(--primary-soft-foreground)}
+.dc-btn--secondary-soft{background:var(--secondary-soft);color:var(--secondary-soft-foreground)}
+.dc-btn--destructive{background:var(--error);color:var(--error-foreground)}
+.dc-btn[disabled]{opacity:.5;cursor:not-allowed}
+.dc-badge{display:inline-block;padding:.2em .7em;font-size:.68rem;font-weight:600;border-radius:999px;
+  background:var(--success-soft);color:var(--success-soft-foreground)}
+.dc-card{background:var(--card);color:var(--card-foreground);border:1px solid var(--border);border-radius:var(--radius);padding:.85rem .95rem}
+.dc-feature{background:var(--feature);color:var(--feature-foreground);border-radius:var(--radius);padding:.7rem .95rem}
+.dc-feature strong{display:block;color:var(--feature-foreground);font-family:var(--font-heading);font-size:1.05rem;margin-top:.15rem}
+.themed[data-theme-variant="external"]>.dc-feature strong,
+.themed[data-theme-variant="external"]>.hero .dc-feature strong{color:#fff}
+.dc-input{width:100%;padding:.5em .8em;font-size:.8rem;background:var(--card);color:var(--card-foreground);
+  border:1px solid var(--input);border-radius:var(--radius)}
+.dc-input::placeholder{color:var(--muted-foreground)}
+
+/* the mini product-cluster used in matrix tiles */
+.dtile{padding:1rem;border-radius:10px;display:grid;gap:.6rem;font-size:.8rem;min-width:0}
+.dtile .dc-feature{padding:.55rem .8rem}
+.dtile .dc-feature .k{font-size:.62rem;letter-spacing:.06em;text-transform:uppercase;opacity:.95}
+.dtile .row{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+.dtile .t{font-family:var(--font-heading);font-weight:600;font-size:.9rem}
+.dtile .m{color:var(--muted-foreground);font-size:.72rem;margin:.15rem 0 .55rem}
+.dtile .dc-btn{font-size:.72rem;padding:.5em 1em}
+
+/* ============================================================
+   3. PROTOTYPE SCAFFOLD + SWITCHER BAR
+   ============================================================ */
+.variant{display:none;min-height:100vh}
+.variant.on{display:block}
+.page{display:none}
+.page.on{display:block}
+
+#bar{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:999;
+  display:flex;align-items:center;gap:2px;padding:5px;border-radius:999px;
+  background:#101113;color:#fff;box-shadow:0 10px 30px rgb(0 0 0/.28),0 0 0 1px rgb(255 255 255/.08);
+  font-size:12.5px;white-space:nowrap}
+#bar .arw{width:30px;height:30px;border-radius:999px;display:grid;place-items:center;color:#9aa0a8;
+  transition:background 120ms ease,color 120ms ease}
+#bar .arw:hover{background:#26282c;color:#fff}
+#bar .arw:active{transform:scale(.94)}
+#bar #vlabel{padding:0 10px;min-width:158px;text-align:center;font-weight:600;letter-spacing:.01em}
+#bar .sep{width:1px;height:18px;background:#33363b;margin:0 6px}
+#bar .pg{padding:6px 12px;border-radius:999px;color:#9aa0a8;transition:background 120ms ease,color 120ms ease}
+#bar .pg:hover{color:#fff}
+#bar .pg.on{background:#2e3136;color:#fff}
+@media (prefers-reduced-motion:reduce){
+  .dc-btn,.dc-btn:active{transition:none;transform:none}
+}
+
+/* ============================================================
+   4. DIRECTION A — “Manual” (quiet reference)
+   Light-only chrome. Hairlines. The theme is a mono coordinate.
+   ============================================================ */
+.va{--ink:#1a1b1e;--sub:#6b7078;--line:#e8e9eb;--soft:#f6f7f8;
+  font-family:-apple-system,"Segoe UI",system-ui,sans-serif;color:var(--ink);background:#fff}
+.va header{display:flex;align-items:center;gap:1.5rem;padding:0 1.5rem;height:56px;border-bottom:1px solid var(--line);
+  position:sticky;top:0;background:rgb(255 255 255/.92);backdrop-filter:blur(8px);z-index:10}
+.va .wordmark{font-weight:650;font-size:.95rem;letter-spacing:-.01em}
+.va .wordmark span{color:var(--sub);font-weight:400}
+.va .search{margin-left:1.25rem;font-size:.82rem;color:var(--sub)}
+.va .search kbd{font:500 11px var(--mono);border:1px solid var(--line);border-radius:5px;padding:2px 5px;background:var(--soft);margin-left:.35ch}
+.va .coord{margin-left:auto;display:flex;align-items:center;gap:0}
+.va .coord select{appearance:none;border:1px solid var(--line);background:var(--soft);font:500 11.5px var(--mono);
+  color:var(--ink);padding:5px 9px;cursor:pointer}
+.va .coord select:first-child{border-radius:6px 0 0 6px}
+.va .coord select+select{border-left:0}
+.va .coord select:last-child{border-radius:0 6px 6px 0}
+.va .cols{display:grid;grid-template-columns:240px minmax(0,1fr) 180px;max-width:1200px;margin:0 auto;gap:0}
+.va aside.nav{border-right:1px solid var(--line);padding:1.5rem 1rem 4rem;font-size:.82rem;
+  position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto}
+.va aside.nav .grp{margin-bottom:1.4rem}
+.va aside.nav .grp>b{display:block;font-size:.82rem;font-weight:450;color:var(--sub);margin-bottom:.4rem;padding-left:.6rem}
+.va aside.nav a{display:block;padding:.28rem .6rem;color:var(--sub);text-decoration:none;border-radius:6px}
+.va aside.nav a:hover{color:var(--ink);background:var(--soft)}
+.va aside.nav a.cur{color:var(--ink);background:var(--soft);font-weight:550}
+.va main{padding:2.5rem 3rem 6rem;min-width:0}
+.va .crumb{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--sub);margin-bottom:.9rem}
+.va h1{font-size:2rem;font-weight:650;letter-spacing:-.02em;margin-bottom:.6rem}
+.va .lede{font-size:.95rem;line-height:1.6;color:#3f434a;max-width:56ch}
+.va .demo-frame{margin:2rem 0 0;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.va .demo-stage{padding:2.8rem 2rem;display:flex;gap:.75rem;align-items:center;justify-content:center;flex-wrap:wrap;
+  background-image:radial-gradient(color-mix(in oklab,var(--foreground) 14%,transparent) 1px,transparent 1px);background-size:18px 18px}
+.va .demo-frame pre{margin:0;border:0;border-top:1px solid var(--line);border-radius:0}
+.va .metalinks{display:flex;gap:1.4rem;margin-top:1.1rem;font-size:.8rem;color:var(--sub)}
+.va .metalinks a{text-decoration:none}
+.va .metalinks a:hover{color:var(--ink)}
+.toklist{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:.5rem}
+.tok{display:flex;align-items:center;gap:.55rem;border:1px solid #e4e5e9;border-radius:7px;padding:.5rem .65rem;font:550 11px var(--mono)}
+.tok i{width:14px;height:14px;border-radius:4px;border:1px solid rgb(0 0 0/.12)}
+.va .demo-meta{display:flex;align-items:center;border-top:1px solid var(--line);background:var(--soft);
+  padding:.45rem .9rem;font:11.5px var(--mono);color:var(--sub)}
+.va .demo-meta .slug{color:var(--ink)}
+.va pre{margin:1rem 0 0;background:#fbfbfc;border:1px solid var(--line);border-radius:10px;padding:1rem 1.2rem;
+  font:12.5px/1.7 var(--mono);overflow-x:auto;color:#33363c}
+.va pre .c{color:#9aa0a8}.va pre .k{color:#7c3aed}.va pre .s{color:#0e7490}
+.va h2{font-size:1.15rem;font-weight:650;letter-spacing:-.01em;margin:3rem 0 .9rem;padding-top:1.5rem;border-top:1px solid var(--line)}
+.va table{width:100%;border-collapse:collapse;font-size:.82rem}
+.va th{text-align:left;font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--sub);font-weight:600;
+  padding:.5rem .75rem .5rem 0;border-bottom:1px solid var(--line)}
+.va td{padding:.6rem .75rem .6rem 0;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.5}
+.va td code,.va p code{font:11.5px var(--mono);background:var(--soft);border:1px solid var(--line);border-radius:4px;padding:.1em .35em}
+.va td.dim{color:var(--sub)}
+.va aside.toc{padding:2.5rem 1rem;font-size:.78rem;color:var(--sub);position:sticky;top:56px;height:max-content}
+.va aside.toc b{display:block;font-size:.66rem;letter-spacing:.09em;text-transform:uppercase;margin-bottom:.6rem}
+.va aside.toc a{display:block;padding:.22rem 0;text-decoration:none}
+.va aside.toc a:hover{color:var(--ink)}
+.va p{font-size:.88rem;line-height:1.65;color:#3f434a;max-width:62ch;margin-bottom:.8rem}
+/* A matrix page */
+.va .mhead{max-width:1200px;margin:0 auto;padding:3rem 3rem 0}
+.va .mgrid{max-width:1104px;margin:1.8rem auto 6rem;display:grid;grid-template-columns:repeat(4,1fr);gap:1px;
+  background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.va .mcell{background:#fff;padding:1rem}
+.va .mcell .slugchip{display:inline-flex;font:500 10.5px var(--mono);color:var(--sub);margin-bottom:.7rem}
+.va .mcell .slugchip em{font-style:normal;color:var(--ink)}
+.va .mcell .dtile{border:1px solid var(--line)}
+
+/* ============================================================
+   5. DIRECTION B — “Showroom” (theme-aware chrome)
+   The site itself is rendered with the library’s tokens.
+   ============================================================ */
+.vb{font-family:var(--font-sans)}
+.vb .topbar{display:flex;align-items:center;gap:1.25rem;padding:0 1.75rem;height:64px;
+  border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;
+  background:color-mix(in oklab,var(--background) 88%,transparent);backdrop-filter:blur(10px)}
+.vb .wordmark{font-family:var(--font-heading);font-weight:800;font-size:1.02rem;letter-spacing:-.015em}
+.vb .topbar nav{display:flex;gap:1.1rem;font-size:.85rem;opacity:.75}
+.vb .topbar nav a{text-decoration:none}
+.vb .brandchips{margin-left:auto;display:flex;gap:.35rem;align-items:center}
+.vb .chip{display:flex;align-items:center;gap:.45ch;padding:.35em .8em;font-size:.74rem;font-weight:600;border-radius:999px;
+  border:1px solid var(--border);background:var(--card);color:var(--card-foreground);
+  transition:transform 140ms var(--ease-out),box-shadow 140ms var(--ease-out)}
+.vb .chip .dot{width:9px;height:9px;border-radius:99px;background:var(--sw)}
+.vb .chip:hover{transform:translateY(-1px)}
+.vb .chip:active{transform:scale(.97)}
+.vb .chip.on{border-color:var(--primary);box-shadow:0 0 0 1px var(--primary)}
+.vb .minitog{display:flex;border:1px solid var(--border);border-radius:999px;overflow:hidden;font-size:.7rem;font-weight:600}
+.vb .minitog button{padding:.4em .85em;opacity:.55}
+.vb .minitog button.on{background:var(--primary);color:var(--primary-foreground);opacity:1}
+.vb .hero{background:var(--feature);color:var(--feature-foreground);padding:4.5rem 1.75rem 4rem}
+.vb .hero-in{max-width:1080px;margin:0 auto}
+.vb .hero .eyebrow{font-size:.72rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;opacity:.9}
+.vb .hero h1{font-family:var(--font-heading);font-size:clamp(3rem,7vw,4.8rem);font-weight:800;letter-spacing:-.03em;
+  color:#fff;line-height:1.02;margin:.35rem 0 .9rem}
+.vb .hero .lede{font-size:1.02rem;line-height:1.6;max-width:52ch}
+.vb .hero .slugline{margin-top:1.6rem;font:600 12px var(--mono);opacity:.9}
+.vb .band{padding:3.2rem 1.75rem}
+.vb .band-in{max-width:1080px;margin:0 auto}
+.vb .band h2{font-family:var(--font-heading);font-size:1.5rem;font-weight:800;letter-spacing:-.02em;margin-bottom:1.2rem}
+.vb .stage{display:flex;gap:.8rem;align-items:center;justify-content:center;flex-wrap:wrap;
+  background:var(--card);border:1px solid var(--border);border-radius:calc(var(--radius) * 2);padding:3.2rem 2rem}
+.vb .band--soft{background:var(--card-soft);color:var(--card-soft-foreground)}
+.vb pre{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.1rem 1.3rem;
+  font:12.5px/1.7 var(--mono);overflow-x:auto}
+.vb .propcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:.8rem}
+.vb .propcard{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.1rem;font-size:.82rem}
+.vb .propcard code{font:600 12px var(--mono)}
+.vb .propcard .ty{display:block;font:11px var(--mono);color:var(--muted-foreground);margin:.3rem 0 .5rem}
+.vb .propcard p{line-height:1.5;opacity:.85}
+/* B matrix page */
+.vb .mp-hero{padding:4.5rem 1.75rem 3.4rem;text-align:center}
+.vb .mp-hero h1{font-family:var(--font-heading);font-size:clamp(2.4rem,5.5vw,4rem);font-weight:800;letter-spacing:-.03em;line-height:1.05}
+.vb .mp-hero p{margin-top:.9rem;font-size:1rem;opacity:.8}
+.vb .brandrow{padding:2.2rem 1.75rem;border-top:1px solid var(--border)}
+.vb .brandrow-in{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:200px 1fr;gap:1.6rem;align-items:start}
+.vb .brandrow .bname{font-family:var(--font-heading);font-weight:800;font-size:1.35rem;letter-spacing:-.02em;line-height:1.15}
+.vb .brandrow .bcode{font:600 11px var(--mono);opacity:.65;display:block;margin-top:.4rem}
+.vb .brandrow .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:.8rem}
+.vb .brandrow .tilewrap>span{display:block;font:600 10.5px var(--mono);opacity:.7;margin-bottom:.4rem}
+.vb .brandrow .dtile{border:1px solid var(--border);background:var(--background)}
+
+/* ============================================================
+   6. DIRECTION C — “Workbench” (split-pane spec sheet)
+   Sticky live canvas left, dense numbered spec right.
+   ============================================================ */
+.vc{--ink:#17181a;--sub:#787d86;--line:#e4e5e9;--paper:#f7f7f8;
+  font-family:-apple-system,"Segoe UI",system-ui,sans-serif;background:#fff;color:var(--ink)}
+.vc .toolbar{display:flex;align-items:center;height:48px;border-bottom:1px solid var(--line);padding:0 1.25rem;
+  font:600 12px var(--mono);position:sticky;top:0;background:#fff;z-index:10}
+.vc .toolbar .wordmark{letter-spacing:-.01em}
+.vc .toolbar .path{color:var(--sub);font-weight:500;margin-left:1.5rem}
+.vc .toolbar .path b{color:var(--ink);font-weight:600}
+.vc .toolbar .right{margin-left:auto;color:var(--sub);font-weight:500}
+.vc .split{display:grid;grid-template-columns:minmax(380px,44%) 1fr;min-height:calc(100vh - 48px)}
+.vc .canvas{border-right:1px solid var(--line);position:sticky;top:48px;height:calc(100vh - 48px);
+  display:flex;flex-direction:column;background:var(--paper);
+  background-image:radial-gradient(#d9dade 1px,transparent 1px);background-size:18px 18px}
+.vc .controls{display:grid;gap:.45rem;padding:.9rem 1rem;border-bottom:1px solid var(--line);background:rgb(255 255 255/.75);backdrop-filter:blur(6px)}
+.vc .ctl{display:grid;grid-template-columns:64px 1fr;align-items:center;gap:.6rem}
+.vc .ctl>span{font:600 10px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--sub)}
+.vc .seg{display:flex;gap:2px;background:#e9eaee;border-radius:7px;padding:2px;width:max-content;flex-wrap:wrap}
+.vc .seg button{font:550 11px var(--mono);padding:.35em .7em;border-radius:5px;color:var(--sub);
+  transition:background 120ms ease,color 120ms ease}
+.vc .seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgb(0 0 0/.08)}
+.vc .seg button:disabled{opacity:.32;cursor:not-allowed}
+.vc .canvas .live{flex:1;display:grid;place-items:center;padding:2rem}
+.vc .canvas .readout{padding:.7rem 1rem;border-top:1px solid var(--line);font:550 11px var(--mono);color:var(--sub);
+  background:rgb(255 255 255/.75)}
+.vc .canvas .readout em{font-style:normal;color:var(--ink)}
+.vc .spec{padding:0 0 6rem;min-width:0}
+.vc .sec{border-bottom:1px solid var(--line);padding:1.9rem 2.2rem}
+.vc .sec .no{font:600 10px var(--mono);letter-spacing:.1em;color:var(--sub);display:block;margin-bottom:.55rem}
+.vc h1{font-size:1.7rem;font-weight:650;letter-spacing:-.02em}
+.vc .sec>p{font-size:.87rem;line-height:1.65;color:#43464d;max-width:60ch;margin-top:.6rem}
+.vc h2{font-size:.95rem;font-weight:650;margin-bottom:.9rem}
+.vc pre{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:.95rem 1.1rem;
+  font:12px/1.7 var(--mono);overflow-x:auto;color:#33363c}
+.vc table{width:100%;border-collapse:collapse;font-size:.8rem}
+.vc th{text-align:left;font:600 10px var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--sub);
+  padding:.45rem .7rem;border:1px solid var(--line);background:var(--paper)}
+.vc td{padding:.55rem .7rem;border:1px solid var(--line);vertical-align:top;line-height:1.5}
+.vc td:first-child{font:600 11.5px var(--mono);white-space:nowrap}
+.vc td.ty{font:11px var(--mono);color:var(--sub)}
+/* C matrix page */
+.vc .mwrap{padding:2.4rem 2.2rem 6rem;max-width:1280px;margin:0 auto}
+.vc .mwrap h1{margin-bottom:.5rem}
+.vc .mwrap>p{font-size:.87rem;color:#43464d;max-width:64ch;line-height:1.6}
+.vc .mtable{margin-top:1.8rem;display:grid;grid-template-columns:150px repeat(4,1fr);border:1px solid var(--line)}
+.vc .mtable>div{border:1px solid var(--line);margin:-.5px}
+.vc .axis{background:var(--paper);padding:.6rem .7rem;font:600 10px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--sub)}
+.vc .axis b{display:block;color:var(--ink);font-size:11px;letter-spacing:.02em;text-transform:none;margin-top:.15rem}
+.vc .rowhead{background:var(--paper);padding:.8rem .7rem;font:600 11px var(--mono)}
+.vc .rowhead span{display:block;font-weight:500;color:var(--sub);font-size:10px;margin-top:.3rem;text-transform:none;letter-spacing:0}
+.vc .mcellc{padding:.6rem}
+.vc .mcellc .dtile{border:1px solid var(--line);border-radius:8px}
+.vc .illegal{background:repeating-linear-gradient(-45deg,#fafafb 0 6px,#f0f1f3 6px 12px);
+  display:grid;place-items:center;padding:1rem}
+.vc .illegal span{font:550 10.5px var(--mono);color:var(--sub);background:#fff;border:1px solid var(--line);
+  border-radius:5px;padding:.35em .7em}
+
+@media (max-width:960px){
+  .va .cols{grid-template-columns:1fr}
+  .va aside.nav,.va aside.toc{display:none}
+  .va .mgrid{grid-template-columns:repeat(2,1fr)}
+  .vb .brandrow-in{grid-template-columns:1fr}
+  .vc .split{grid-template-columns:1fr}
+  .vc .canvas{position:static;height:auto;min-height:380px}
+  .vc .mtable{grid-template-columns:110px repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+
+<!-- ================= DIRECTION A — Manual ================= -->
+<section class="variant va" id="v-a">
+  <header>
+    <div class="wordmark">elmera<span>/ui</span></div>
+    <div class="coord">
+      <select data-pick="v"><option value="internal">internal</option><option value="external">external</option></select>
+      <select data-pick="b"><option value="fkas">fkas</option><option value="tkas">tkas</option><option value="guen">guen</option><option value="fkab">fkab</option><option value="fkse">fkse</option></select>
+      <select data-pick="s"><option value="private">private</option><option value="company">company</option></select>
+    </div>
+    <span class="search">Search<kbd>⌘K</kbd></span>
+  </header>
+
+  <div class="page page-component">
+    <div class="cols">
+      <aside class="nav">
+        <div class="grp"><b>Overview</b><a>Quick start</a><a>Accessibility</a><a>Releases</a><a>About</a></div>
+        <div class="grp"><b>Handbook</b><a>Theming</a><a href="#a/matrix">Theme matrix</a><a>Tokens</a><a>Brands &amp; segments</a><a>Icons</a><a>llms.txt</a></div>
+        <div class="grp"><b>Components</b><a>Accordion</a><a>Alert Dialog</a><a>Avatar</a><a>Badge</a><a class="cur">Button</a><a>Button Group</a><a>Card</a><a>Checkbox</a><a>Combobox</a><a>Dialog</a><a>Field</a><a>Input</a><a>Number Field</a><a>Pagination</a><a>Phone Number Field</a><a>Select</a><a>Sidebar</a><a>Switch</a><a>Table</a><a>Tabs</a><a>Toast</a><a>Tooltip</a></div>
+      </aside>
+      <main>
+        <div class="crumb">Components / Forms</div>
+        <h1>Button</h1>
+        <p class="lede">Triggers an action. Renders a native <code>&lt;button&gt;</code>; compose with links or router primitives through the <code>render</code> prop.</p>
+        <div class="metalinks"><a href="#a/component">View as Markdown</a><a href="#a/component">View source</a></div>
+        <div class="demo-frame">
+          <div class="demo-stage themed" data-live-theme>
+            <button class="dc-btn">Bestill avtale</button>
+            <button class="dc-btn dc-btn--secondary">Se detaljer</button>
+            <button class="dc-btn dc-btn--soft">Avbryt</button>
+            <button class="dc-btn dc-btn--destructive">Si opp</button>
+            <button class="dc-btn" disabled>Bestill avtale</button>
+          </div>
+          <div class="demo-meta">theme&nbsp;=&nbsp;<span class="slug" data-slug></span></div>
+          <pre><span class="k">import</span> { Button } <span class="k">from</span> <span class="s">"@elmeragroup/ui/button"</span>
+
+<span class="k">export function</span> OrderActions() {
+  <span class="k">return</span> (
+    &lt;&gt;
+      &lt;Button&gt;Bestill avtale&lt;/Button&gt;
+      &lt;Button variant=<span class="s">"secondary"</span>&gt;Se detaljer&lt;/Button&gt;
+      &lt;Button variant=<span class="s">"soft"</span>&gt;Avbryt&lt;/Button&gt;
+    &lt;/&gt;
+  )
+}</pre>
+        </div>
+        <h2 id="a-props">Props</h2>
+        <table>
+          <tr><th>Prop</th><th>Type</th><th>Default</th><th></th></tr>
+          <tr><td><code>variant</code></td><td class="dim"><code>"primary" | "secondary" | "soft" | "secondary-soft" | "destructive" | "ghost"</code></td><td><code>"primary"</code></td><td>Visual style, resolved from the active theme's role tokens.</td></tr>
+          <tr><td><code>size</code></td><td class="dim"><code>"sm" | "md" | "lg" | "icon"</code></td><td><code>"md"</code></td><td>Height and padding scale.</td></tr>
+          <tr><td><code>render</code></td><td class="dim"><code>ReactElement | (props) =&gt; ReactElement</code></td><td><code>&lt;button /&gt;</code></td><td>Replace the rendered element; props are merged with <code>mergeProps</code>.</td></tr>
+          <tr><td><code>disabled</code></td><td class="dim"><code>boolean</code></td><td><code>false</code></td><td>Blocks interaction and dims the button.</td></tr>
+        </table>
+        <h2 id="a-tokens">Tokens consumed</h2>
+        <p>Every token this component's recipe reads, per theme. Generated at docs build from the recipe source.</p>
+        <div class="toklist">
+          <div class="tok"><i style="background:oklch(0.4848 0.16637 35.92)"></i>--primary</div>
+          <div class="tok"><i style="background:oklch(1 0 0)"></i>--primary-foreground</div>
+          <div class="tok"><i style="background:oklch(0.94 0.03 45)"></i>--primary-soft</div>
+          <div class="tok"><i style="background:oklch(0.3209 0.10325 38.8)"></i>--secondary</div>
+          <div class="tok"><i style="background:oklch(0.4526 0.17845 30.42)"></i>--error</div>
+          <div class="tok"><i style="background:oklch(0.4844 0.20509 296.29)"></i>--ring</div>
+          <div class="tok"><i style="background:#fff"></i>--radius-button</div>
+        </div>
+        <h2 id="a-a11y">Accessibility</h2>
+        <p>Renders a focusable native button with a visible focus ring (<code>--ring</code>) in every theme. When <code>render</code> swaps the element, the button semantics travel with it — role, disabled state, and keyboard activation are merged onto the replacement.</p>
+      </main>
+      <aside class="toc"><b>On this page</b><a href="#a-props">Props</a><a href="#a-tokens">Tokens consumed</a><a href="#a-a11y">Accessibility</a></aside>
+    </div>
+  </div>
+
+  <div class="page page-matrix">
+    <div class="mhead">
+      <div class="crumb">Themes</div>
+      <h1>Sixteen themes, one import</h1>
+      <p class="lede">Every legal permutation of variant × brand × segment, rendered from the same components. Three data attributes select the theme; absence falls back.</p>
+    </div>
+    <div class="mgrid" id="a-mgrid"></div>
+  </div>
+</section>
+
+<!-- ================= DIRECTION B — Showroom ================= -->
+<section class="variant vb themed" id="v-b" data-live-theme>
+  <div class="topbar">
+    <div class="wordmark">elmera ui</div>
+    <nav><a href="#b/component">Components</a><a href="#b/matrix">The matrix</a><a>Docs</a></nav>
+    <div class="brandchips">
+      <button class="chip" data-brand="fkas" style="--sw:oklch(0.68 0.21747 38.8)"><span class="dot"></span>Fjordkraft</button>
+      <button class="chip" data-brand="tkas" style="--sw:oklch(0.86 0.1035 191.11)"><span class="dot"></span>Trøndelagkraft</button>
+      <button class="chip" data-brand="guen" style="--sw:oklch(0.21 0.0399 265.73)"><span class="dot"></span>Gudbrandsdal</button>
+      <button class="chip" data-brand="fkse" style="--sw:oklch(0.4816 0.0908 240.16)"><span class="dot"></span>Telinet</button>
+      <div class="minitog" data-tog="v"><button data-val="internal">Internal</button><button data-val="external">External</button></div>
+      <div class="minitog" data-tog="s"><button data-val="private">Private</button><button data-val="company">Company</button></div>
+    </div>
+  </div>
+
+  <div class="page page-component">
+    <div class="hero">
+      <div class="hero-in">
+        <div class="eyebrow">Components / Forms</div>
+        <h1>Button</h1>
+        <p class="lede">One button. Five brands, two audiences, two segments — the theme decides how it lands. You're looking at it: this whole page is painted with the library's own tokens.</p>
+        <div class="slugline" data-slug></div>
+      </div>
+    </div>
+    <div class="band">
+      <div class="band-in">
+        <div class="stage">
+          <button class="dc-btn">Bestill avtale</button>
+          <button class="dc-btn dc-btn--secondary">Se detaljer</button>
+          <button class="dc-btn dc-btn--soft">Avbryt</button>
+          <button class="dc-btn dc-btn--destructive">Si opp</button>
+        </div>
+      </div>
+    </div>
+    <div class="band band--soft">
+      <div class="band-in">
+        <h2>Usage</h2>
+        <pre>import { Button } from "@elmeragroup/ui/button"
+
+&lt;Button&gt;Bestill avtale&lt;/Button&gt;
+&lt;Button variant="secondary"&gt;Se detaljer&lt;/Button&gt;
+&lt;Button render={&lt;a href="/avtaler" /&gt;}&gt;Alle avtaler&lt;/Button&gt;</pre>
+      </div>
+    </div>
+    <div class="band">
+      <div class="band-in">
+        <h2>Props</h2>
+        <div class="propcards">
+          <div class="propcard"><code>variant</code><span class="ty">"primary" | "secondary" | "soft" | "secondary-soft" | "destructive" | "ghost"</span><p>Visual style, resolved from the theme's role tokens.</p></div>
+          <div class="propcard"><code>size</code><span class="ty">"sm" | "md" | "lg" | "icon"</span><p>Height and padding scale.</p></div>
+          <div class="propcard"><code>render</code><span class="ty">ReactElement | (props) =&gt; ReactElement</span><p>Swap the element; props merge via mergeProps.</p></div>
+          <div class="propcard"><code>disabled</code><span class="ty">boolean</span><p>Blocks interaction and dims the button.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page page-matrix">
+    <div class="mp-hero">
+      <h1>Five brands.<br>Sixteen themes.<br>Zero forks.</h1>
+      <p>Every row below is the same component tree. Only three data attributes change.</p>
+    </div>
+    <div id="b-rows"></div>
+  </div>
+</section>
+
+<!-- ================= DIRECTION C — Workbench ================= -->
+<section class="variant vc" id="v-c">
+  <div class="toolbar">
+    <div class="wordmark">@elmeragroup/ui</div>
+    <div class="path">components / forms / <b>button</b></div>
+    <div class="right"><a href="#c/matrix" style="text-decoration:none">theme-matrix →</a></div>
+  </div>
+
+  <div class="page page-component">
+    <div class="split">
+      <div class="canvas">
+        <div class="controls">
+          <div class="ctl"><span>variant</span><div class="seg" data-seg="v"><button data-val="internal">internal</button><button data-val="external">external</button></div></div>
+          <div class="ctl"><span>brand</span><div class="seg" data-seg="b"><button data-val="fkas">fkas</button><button data-val="tkas">tkas</button><button data-val="guen">guen</button><button data-val="fkab">fkab</button><button data-val="fkse">fkse</button></div></div>
+          <div class="ctl"><span>segment</span><div class="seg" data-seg="s"><button data-val="private">private</button><button data-val="company">company</button></div></div>
+        </div>
+        <div class="live">
+          <div class="themed" data-live-theme style="background:transparent;display:flex;gap:.7rem;flex-wrap:wrap;justify-content:center">
+            <button class="dc-btn">Bestill avtale</button>
+            <button class="dc-btn dc-btn--secondary">Se detaljer</button>
+            <button class="dc-btn dc-btn--soft">Avbryt</button>
+          </div>
+        </div>
+        <div class="readout">resolved&nbsp;→&nbsp;<em data-slug></em></div>
+      </div>
+      <div class="spec">
+        <div class="sec">
+          <span class="no">BUTTON / SPEC</span>
+          <h1>Button</h1>
+          <p>Triggers an action. Native <code style="font:11.5px var(--mono)">&lt;button&gt;</code> by default; polymorphic through <code style="font:11.5px var(--mono)">render</code> + mergeProps. No <code style="font:11.5px var(--mono)">as</code> prop.</p>
+        </div>
+        <div class="sec">
+          <span class="no">01 — INSTALL</span>
+          <pre>pnpm add @elmeragroup/ui</pre>
+        </div>
+        <div class="sec">
+          <span class="no">02 — USAGE</span>
+          <pre>import { Button } from "@elmeragroup/ui/button"
+
+&lt;Button&gt;Bestill avtale&lt;/Button&gt;
+&lt;Button variant="secondary" size="sm"&gt;Se detaljer&lt;/Button&gt;
+&lt;Button render={&lt;a href="/avtaler" /&gt;}&gt;Alle avtaler&lt;/Button&gt;</pre>
+        </div>
+        <div class="sec">
+          <span class="no">03 — PROPS</span>
+          <table>
+            <tr><th>prop</th><th>type</th><th>default</th><th>notes</th></tr>
+            <tr><td>variant</td><td class="ty">"primary" | "secondary" | "soft" | "secondary-soft" | "destructive" | "ghost"</td><td class="ty">"primary"</td><td>Style resolved from role tokens.</td></tr>
+            <tr><td>size</td><td class="ty">"sm" | "md" | "lg" | "icon"</td><td class="ty">"md"</td><td>Height and padding scale.</td></tr>
+            <tr><td>render</td><td class="ty">ReactElement | fn</td><td class="ty">&lt;button /&gt;</td><td>Element replacement via useRender.</td></tr>
+            <tr><td>disabled</td><td class="ty">boolean</td><td class="ty">false</td><td>Blocks interaction, dims.</td></tr>
+          </table>
+        </div>
+        <div class="sec">
+          <span class="no">04 — TOKENS CONSUMED</span>
+          <div class="toklist">
+            <div class="tok"><i style="background:oklch(0.4848 0.16637 35.92)"></i>--primary</div>
+            <div class="tok"><i style="background:oklch(1 0 0)"></i>--primary-foreground</div>
+            <div class="tok"><i style="background:oklch(0.94 0.03 45)"></i>--primary-soft</div>
+            <div class="tok"><i style="background:oklch(0.3209 0.10325 38.8)"></i>--secondary</div>
+            <div class="tok"><i style="background:oklch(0.4526 0.17845 30.42)"></i>--error</div>
+            <div class="tok"><i style="background:oklch(0.4844 0.20509 296.29)"></i>--ring</div>
+            <div class="tok"><i style="background:#fff"></i>--radius-button</div>
+          </div>
+        </div>
+        <div class="sec">
+          <span class="no">05 — ACCESSIBILITY</span>
+          <p>Focusable native button; visible <code style="font:11.5px var(--mono)">--ring</code> focus in all 16 themes. Semantics travel with the rendered element when replaced.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page page-matrix">
+    <div class="mwrap">
+      <span class="no" style="font:600 10px var(--mono);letter-spacing:.1em;color:#787d86">THEME MATRIX / 5 × 2 × 2</span>
+      <h1 style="margin-top:.5rem">The whole space, including the holes</h1>
+      <p>Twenty coordinates exist; sixteen are legal. fkab is pinned to company, fkse to private — the illegal four are a type error at the provider, a throw in dev, a coerce in prod.</p>
+      <div class="mtable" id="c-mtable"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SWITCHER BAR ================= -->
+<div id="bar">
+  <button class="arw" id="prev" aria-label="Previous direction">←</button>
+  <span id="vlabel"></span>
+  <button class="arw" id="next" aria-label="Next direction">→</button>
+  <span class="sep"></span>
+  <button class="pg" data-page="component">Component</button>
+  <button class="pg" data-page="matrix">Matrix</button>
+</div>
+
+<script>
+/* ---------- data ---------- */
+const VARIANTS=[
+  {key:'a',name:'A — Manual'},
+  {key:'b',name:'B — Showroom'},
+  {key:'c',name:'C — Workbench'},
+];
+const BRAND_NAME={fkas:'Fjordkraft',tkas:'Trøndelagkraft',guen:'Gudbrandsdal Energi',fkab:'Fjordkraft Företag',fkse:'Telinet'};
+const PINNED={fkab:'company',fkse:'private'};
+const BRANDS=['fkas','tkas','guen','fkab','fkse'];
+const legalPerms=b=>{
+  const segs=PINNED[b]?[PINNED[b]]:['private','company'];
+  const out=[];
+  for(const v of['internal','external'])for(const s of segs)out.push([v,b,s]);
+  return out;
+};
+
+/* ---------- state ---------- */
+const state={vi:0,page:'component',theme:{v:'external',b:'fkas',s:'private'}};
+
+/* ---------- theme application ---------- */
+function coerce(){const p=PINNED[state.theme.b];if(p)state.theme.s=p;}
+function applyTheme(){
+  coerce();
+  const {v,b,s}=state.theme;
+  document.querySelectorAll('[data-live-theme]').forEach(el=>{
+    el.dataset.themeVariant=v;el.dataset.themeBrand=b;el.dataset.themeSegment=s;
+  });
+  document.querySelectorAll('[data-slug]').forEach(el=>{el.textContent=`${v}-${b}-${s}`});
+  /* A selects */
+  document.querySelectorAll('.va [data-pick]').forEach(sel=>{
+    sel.value=state.theme[sel.dataset.pick];
+    if(sel.dataset.pick==='s'){
+      const p=PINNED[b];
+      [...sel.options].forEach(o=>{o.disabled=p?o.value!==p:false});
+    }
+  });
+  /* B chips + toggles */
+  document.querySelectorAll('.vb .chip').forEach(c=>c.classList.toggle('on',c.dataset.brand===b));
+  document.querySelectorAll('.vb [data-tog]').forEach(t=>{
+    const k=t.dataset.tog;
+    t.querySelectorAll('button').forEach(btn=>{
+      btn.classList.toggle('on',btn.dataset.val===state.theme[k]);
+      if(k==='s')btn.disabled=PINNED[b]?btn.dataset.val!==PINNED[b]:false;
+    });
+  });
+  /* C segments */
+  document.querySelectorAll('.vc [data-seg]').forEach(t=>{
+    const k=t.dataset.seg;
+    t.querySelectorAll('button').forEach(btn=>{
+      btn.classList.toggle('on',btn.dataset.val===state.theme[k]);
+      if(k==='s')btn.disabled=PINNED[b]?btn.dataset.val!==PINNED[b]:false;
+    });
+  });
+}
+function setTheme(k,val){state.theme[k]=val;applyTheme();}
+
+/* ---------- variant / page switching ---------- */
+function sync(){
+  const v=VARIANTS[state.vi];
+  document.querySelectorAll('.variant').forEach(el=>el.classList.toggle('on',el.id==='v-'+v.key));
+  document.querySelectorAll('.page').forEach(el=>{
+    el.classList.toggle('on',el.classList.contains('page-'+state.page));
+  });
+  document.getElementById('vlabel').textContent=v.name;
+  document.querySelectorAll('#bar .pg').forEach(b=>b.classList.toggle('on',b.dataset.page===state.page));
+  history.replaceState(null,'','#'+v.key+'/'+state.page);
+  window.scrollTo(0,0);
+}
+function cycle(d){state.vi=(state.vi+d+VARIANTS.length)%VARIANTS.length;sync();}
+document.getElementById('prev').onclick=()=>cycle(-1);
+document.getElementById('next').onclick=()=>cycle(1);
+document.querySelectorAll('#bar .pg').forEach(b=>b.onclick=()=>{state.page=b.dataset.page;sync();});
+addEventListener('keydown',e=>{
+  const t=e.target;
+  if(t.matches('input,textarea,select,[contenteditable]'))return;
+  if(e.key==='ArrowLeft')cycle(-1);
+  if(e.key==='ArrowRight')cycle(1);
+});
+
+/* ---------- tile template ---------- */
+function tile(v,b,s){
+  return `<div class="themed dtile" data-theme-variant="${v}" data-theme-brand="${b}" data-theme-segment="${s}">
+    <div class="dc-feature"><span class="k">Spotpris nå</span><strong>78,4 øre/kWh</strong></div>
+    <div class="dc-card">
+      <div class="row" style="justify-content:space-between"><span class="t">Strømavtale</span><span class="dc-badge">Aktiv</span></div>
+      <div class="m">Spotpris + 39 kr/mnd · Hyttegata 12</div>
+      <div class="row"><button class="dc-btn">Bestill</button><button class="dc-btn dc-btn--soft">Detaljer</button></div>
+    </div>
+  </div>`;
+}
+
+/* ---------- A matrix: quiet 16-grid ---------- */
+{
+  let html='';
+  for(const v of['internal','external'])
+    for(const b of BRANDS)
+      for(const[pv,pb,ps]of legalPerms(b))
+        if(pv===v&&pb===b)
+          html+=`<div class="mcell"><span class="slugchip">${pv}-<em>${pb}</em>-${ps}</span>${tile(pv,pb,ps)}</div>`;
+  document.getElementById('a-mgrid').innerHTML=html;
+}
+
+/* ---------- B matrix: brand rows, chrome-painted ---------- */
+{
+  let html='';
+  for(const b of BRANDS){
+    const tiles=legalPerms(b).map(([v,pb,s])=>
+      `<div class="tilewrap"><span>${v}-${s}</span>${tile(v,pb,s)}</div>`).join('');
+    html+=`<div class="brandrow themed" data-theme-variant="external" data-theme-brand="${b}" data-theme-segment="${PINNED[b]||'private'}">
+      <div class="brandrow-in">
+        <div><div class="bname">${BRAND_NAME[b]}</div><span class="bcode">${b}${PINNED[b]?` · pinned to ${PINNED[b]}`:''}</span></div>
+        <div class="tiles">${tiles}</div>
+      </div></div>`;
+  }
+  document.getElementById('b-rows').innerHTML=html;
+}
+
+/* ---------- C matrix: full 5×4 coordinate table with illegal cells ---------- */
+{
+  const cols=[['internal','private'],['internal','company'],['external','private'],['external','company']];
+  let html=`<div class="axis">brand ↓ / theme →</div>`;
+  for(const[v,s]of cols)html+=`<div class="axis">${v}<b>${s}</b></div>`;
+  for(const b of BRANDS){
+    html+=`<div class="rowhead">${b}<span>${BRAND_NAME[b]}</span></div>`;
+    for(const[v,s]of cols){
+      const p=PINNED[b];
+      if(p&&s!==p){
+        html+=`<div class="illegal"><span>illegal — ${b} pinned to ${p}</span></div>`;
+      }else{
+        html+=`<div class="mcellc">${tile(v,b,s)}</div>`;
+      }
+    }
+  }
+  document.getElementById('c-mtable').innerHTML=html;
+}
+
+/* ---------- picker wiring ---------- */
+document.querySelectorAll('.va [data-pick]').forEach(sel=>{
+  sel.addEventListener('change',()=>setTheme(sel.dataset.pick,sel.value));
+});
+document.querySelectorAll('.vb .chip').forEach(c=>c.onclick=()=>setTheme('b',c.dataset.brand));
+document.querySelectorAll('.vb [data-tog] button').forEach(btn=>{
+  btn.onclick=()=>setTheme(btn.closest('[data-tog]').dataset.tog,btn.dataset.val);
+});
+document.querySelectorAll('.vc [data-seg] button').forEach(btn=>{
+  btn.onclick=()=>setTheme(btn.closest('[data-seg]').dataset.seg,btn.dataset.val);
+});
+/* in-page nav links that switch pages */
+document.querySelectorAll('a[href^="#"]').forEach(a=>{
+  const m=a.getAttribute('href').match(/^#([abc])\/(component|matrix)$/);
+  if(m)a.addEventListener('click',e=>{
+    e.preventDefault();
+    state.vi=VARIANTS.findIndex(v=>v.key===m[1]);state.page=m[2];sync();
+  });
+});
+
+/* ---------- boot from hash ---------- */
+{
+  const m=location.hash.match(/^#([abc])\/(component|matrix)$/);
+  if(m){state.vi=VARIANTS.findIndex(v=>v.key===m[1]);state.page=m[2];}
+  sync();applyTheme();
+}
+</script>
+</body>
+</html>

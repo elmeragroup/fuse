@@ -1,0 +1,171 @@
+# Combobox
+
+## 1 Header
+
+- **Canonical name**: `Combobox` (namespace compound) + `useComboboxAnchor` hook
+- **Export path**: `@elmeragroup/ui` (`import { Combobox, useComboboxAnchor } from "@elmeragroup/ui"`)
+- **Tier**: styled base-ui primitive wrapper (overlay component), tightly coupled to `InputGroup` and `Button`
+- **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/base-ui/combobox.tsx`
+
+## 2 Anatomy
+
+| Part | Base | Notes |
+| --- | --- | --- |
+| `Combobox.Root` | `ComboboxPrimitive.Root` | bare re-export; state owner (value, inputValue, open, selection mode, filtering). **Must come from the `@base-ui/react` root import** (§8) |
+| `Combobox.Input` | `InputGroup > ComboboxPrimitive.Input(render=InputGroup.Input) + InputGroup.Addon(inline-end)` | the whole field chrome; addon holds the trigger and/or clear buttons; `children` render inside the InputGroup (extra addons, hidden inputs) |
+| `Combobox.Trigger` | `ComboboxPrimitive.Trigger` | appends a rotating `CaretDown` after `children`; inside `Combobox.Input` it is rendered through `InputGroup.Button` (ghost, icon-sm) |
+| `Combobox.Clear` | `ComboboxPrimitive.Clear` | `render={<InputGroup.Button variant="ghost" size="icon-sm" />}` with an `X` icon; **unexported in the ref**, exported here (§8) |
+| `Combobox.Content` | `Portal > Positioner > Popup` | popup surface; declares `group/combobox-content`; emits `data-chips` |
+| `Combobox.List` | `ComboboxPrimitive.List` | scroll container with the `--spacing()` max-height calc (§8-kept) |
+| `Combobox.Item` | `ComboboxPrimitive.Item` | `children` + auto `ItemIndicator` (`span` render, `Check`, absolute right-2) |
+| `Combobox.Group` | `ComboboxPrimitive.Group` | passthrough (no default classes) |
+| `Combobox.Label` | `ComboboxPrimitive.GroupLabel` | muted `text-xs` group heading |
+| `Combobox.Collection` | `ComboboxPrimitive.Collection` | render-prop iteration over (filtered) `items` |
+| `Combobox.Empty` | `ComboboxPrimitive.Empty` | hidden until the popup's `data-empty` flips it to `flex` |
+| `Combobox.Separator` | `ComboboxPrimitive.Separator` | `h-px bg-border` |
+| `Combobox.Chips` | `ComboboxPrimitive.Chips` | multi-select chip container with full input-like chrome (border, focus ring, invalid ring) |
+| `Combobox.Chip` | `ComboboxPrimitive.Chip` | one selected value; auto `ChipRemove` (`Button` ghost icon-sm, `X`) unless `showRemove={false}` |
+| `Combobox.ChipsInput` | `ComboboxPrimitive.Input` | bare inline input for use inside `Combobox.Chips` (no InputGroup wrapper) |
+| `Combobox.Value` | `ComboboxPrimitive.Value` | selected-value display (render-prop capable) |
+| `useComboboxAnchor()` | `useRef<HTMLDivElement \| null>(null)` | typed ref helper to anchor `Combobox.Content` to an external element (e.g. the `Combobox.Chips` container or an `InputGroup.Root`) |
+
+```tsx
+<Combobox.Root items={items}>
+  <Combobox.Input placeholder="Search…" showClear />
+  <Combobox.Content>
+    <Combobox.Empty>No results.</Combobox.Empty>
+    <Combobox.List>
+      <Combobox.Collection>{(item) => <Combobox.Item key={item} value={item}>{item}</Combobox.Item>}</Combobox.Collection>
+    </Combobox.List>
+  </Combobox.Content>
+</Combobox.Root>
+```
+
+## 3 Props
+
+All rendering parts take `className` (merged via `cn`) and forward the rest of their base-ui part's props. Primitive-tier naming per conventions.
+
+**Combobox.Root** — `ComponentProps<ComboboxPrimitive.Root>` verbatim (`items`, `value`/`defaultValue`/`onValueChange`, `inputValue`/`defaultInputValue`/`onInputValueChange`, `multiple`, `filter`, `openOnInputClick`, `autoHighlight`, `disabled`, `readOnly`, `required`, `name`, `locale`, …).
+
+**Combobox.Input** — `ComponentProps<ComboboxPrimitive.Input>` plus:
+
+| Prop | Type | Default | Notes |
+| --- | --- | --- | --- |
+| `showTrigger` | `boolean` | `true` | renders the caret trigger button in the inline-end addon |
+| `showClear` | `boolean` | `false` | renders `Combobox.Clear` in the same addon |
+| `disabled` | `boolean` | `false` | forwarded to the inner `InputGroup.Input` **and** to the trigger/clear buttons |
+| `className` | `string` | — | applied to the **outer InputGroup** (`w-auto`), not the input element |
+| `children` | `ReactNode` | — | rendered inside the InputGroup after the addon |
+
+Runtime note (kept, §8): `showTrigger` and `showClear` are effectively mutually exclusive — the trigger button carries `group-has-data-[slot=combobox-clear]/input-group:hidden`, so whenever a clear button exists in the group the trigger is hidden even if both flags are true.
+
+**Combobox.Trigger** — `ComponentProps<ComboboxPrimitive.Trigger>`; `children` render before the built-in caret.
+
+**Combobox.Clear** — `ComponentProps<ComboboxPrimitive.Clear>`; fixed ghost icon-sm InputGroup.Button face with `X`.
+
+**Combobox.Content** — `ComponentProps<ComboboxPrimitive.Popup>` plus positioner props (forwarded to `ComboboxPrimitive.Positioner`) plus the conventions' overlay `container`:
+
+| Prop | Type | Default | Notes |
+| --- | --- | --- | --- |
+| `side` | Positioner `side` | `"bottom"` | |
+| `sideOffset` | `number` | `6` | (Select uses 4 — faithful to each ref) |
+| `align` | Positioner `align` | `"start"` | |
+| `alignOffset` | `number` | `0` | |
+| `anchor` | Positioner `anchor` (element/ref/virtual) | — | pass `useComboboxAnchor()`'s ref; also flips `data-chips` (§6) |
+| `container` | `HTMLElement \| ref` | active `ThemeScope` element | portal target (§8) |
+
+**Combobox.Chip** — `ComponentProps<ComboboxPrimitive.Chip>` plus:
+
+| Prop | Type | Default | Notes |
+| --- | --- | --- | --- |
+| `showRemove` | `boolean` | `true` | renders the `ChipRemove` button with `X` |
+
+**Combobox.Value / List / Item / Group / Label / Collection / Empty / Separator / Chips / ChipsInput** — their base-ui part's props verbatim (`Combobox.Item`: `value`, `disabled`; `Combobox.ChipsInput` is `ComboboxPrimitive.Input` props without the InputGroup extras).
+
+**useComboboxAnchor** — no arguments; returns `RefObject<HTMLDivElement | null>` to spread on the anchor element and pass as `anchor`.
+
+## 4 Variants
+
+No `tv` recipes and no axes — all styling is inline per part; nothing exported (no borrow pattern). Button faces are borrowed from `InputGroup.Button` (ghost/icon-sm) and `Button` (ghost/icon-sm for chip remove).
+
+## 5 Consumed tokens
+
+- `popover` / `popover-foreground` — popup surface and text.
+- `ring-foreground/10` — popup hairline (`ring-1`).
+- `accent` / `accent-foreground` — highlighted item (`data-highlighted:`).
+- `muted` — chip fill (`bg-muted`); `muted-foreground` — trigger caret, group labels, empty text.
+- `input` — Chips border (`border-input`); popup-embedded InputGroup restyle (`*:data-[slot=input-group]:border-input/30 …bg-input/30`).
+- `ring` — Chips focus-within chrome (`focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50`).
+- `error` — Chips invalid chrome (`has-aria-invalid:border-error has-aria-invalid:ring-3 has-aria-invalid:ring-error/20`, §8).
+- `card` — field surface via the composed `InputGroup` (per its own spec).
+- `foreground` — chip text; `border` — separator fill.
+- Radii: popup `rounded-md`, Chips `rounded-md`, chip `rounded-sm`, item `rounded-sm` — `--radius`-derived, no hardcoded values.
+
+## 6 Data attributes
+
+**Emitted (by our wrappers)**:
+
+- `data-slot`: `combobox-value` · `combobox-trigger` · `combobox-clear` · `combobox-content` · `combobox-list` · `combobox-item` · `combobox-group` · `combobox-label` · `combobox-collection` · `combobox-empty` · `combobox-separator` · `combobox-chips` · `combobox-chip` · `combobox-chip-remove` · `combobox-chip-input` (ChipsInput — the ref's singular spelling, kept) — plus `data-slot="input-group-button"` on the trigger's InputGroup.Button face inside `Combobox.Input`. Root emits nothing.
+- `data-chips="true" | "false"` on Content — `!!anchor`; true switches popup sizing from `min-w-[calc(var(--anchor-width)+--spacing(7))]` to `min-w-(--anchor-width)` (anchored/chips mode hugs the anchor exactly).
+
+**Emitted (by base-ui, styled by us)**: `data-popup-open` (trigger ancestry — caret rotation via `in-data-popup-open:rotate-180`), `data-open`/`data-closed` + `data-side` (popup), `data-highlighted`/`data-disabled` (items), `data-empty` (popup + list), `data-pressed` (trigger button), `disabled` (chip children via `has-disabled:`).
+
+**Consumed selectors**:
+
+- `Combobox.Input`'s trigger button: `group-has-data-[slot=combobox-clear]/input-group:hidden` (trigger/clear exclusivity) and `data-pressed:bg-transparent`.
+- Popup: `data-open:animate-in fade-in-0 zoom-in-95`, `data-closed:animate-out fade-out-0 zoom-out-95`, `data-[side=bottom|top|left|right|inline-start|inline-end]:slide-in-from-*`, `data-[chips=true]:min-w-(--anchor-width)`; sizing vars `max-h-(--available-height) w-(--anchor-width) max-w-(--available-width) origin-(--transform-origin)`; child restyle `*:data-[slot=input-group]:m-1 …mb-0 …h-8 …border-input/30 …bg-input/30 …shadow-none` for a popup-embedded search InputGroup. Bare `data-open:`/`data-closed:` stay scoped to the popup element (conventions trap).
+- List: `data-empty:p-0` and the kept max-height calc `max-h-[min(calc(--spacing(72)---spacing(9)),calc(var(--available-height)---spacing(9)))]` — caps the list at 72 spacing units minus a 9-unit allowance for popup-embedded chrome, never exceeding available height minus the same allowance.
+- Empty: `group-data-empty/combobox-content:flex` (visible only when the popup reports no matches).
+- Item: `data-highlighted:bg-accent data-highlighted:text-accent-foreground`, `data-disabled:pointer-events-none data-disabled:opacity-50`.
+- Chips: `has-aria-invalid:` invalid chrome, `has-data-[slot=combobox-chip]:px-1.5` (tighter padding once chips exist), `focus-within:` ring.
+- Chip: `has-disabled:pointer-events-none …cursor-not-allowed …opacity-50`, `has-data-[slot=combobox-chip-remove]:pr-0`.
+- Cross-component: `InputGroup.Root` neutralizes its own focus ring when rendered inside `[data-slot=combobox-content]` (see input-group spec §6) — the popup owns focus treatment.
+
+## 7 Accessibility
+
+- Base-ui wires `role="combobox"` + `aria-expanded`/`aria-controls`/`aria-autocomplete` on the input, `role="listbox"`/`role="option"` + `aria-selected` in the popup; label association via base-ui Field when composed.
+- Keyboard: typing filters the list (Root `filter`); ArrowDown/ArrowUp open the popup and move highlight; Enter selects the highlighted item (in single mode closes and fills the input; in multiple mode keeps the popup open and appends a chip); Escape closes; Backspace in an empty `ChipsInput` removes the last chip; Arrow keys navigate between chips, Delete/Backspace removes the focused chip.
+- Trigger and Clear are real buttons in the inline-end addon, focusable in DOM order after the input; Clear only renders while there is something to clear (base-ui behavior) and returns focus to the input.
+- Chip remove buttons are `Button`s with icon-only content — demos/tests must give them accessible names (`aria-label`); the popup `Empty` text is announced when no options match.
+- Invalid state: `aria-invalid` on the input surfaces on the InputGroup chrome; in chips mode the `has-aria-invalid:` ring surfaces on the Chips container.
+
+## 8 Divergence from reference
+
+1. **Renames (flat → namespace)**: `Combobox`→`Combobox.Root`, `ComboboxInput`→`Combobox.Input`, `ComboboxTrigger`→`Combobox.Trigger`, `ComboboxContent`→`Combobox.Content`, `ComboboxList`→`Combobox.List`, `ComboboxItem`→`Combobox.Item`, `ComboboxGroup`→`Combobox.Group`, `ComboboxLabel`→`Combobox.Label`, `ComboboxCollection`→`Combobox.Collection`, `ComboboxEmpty`→`Combobox.Empty`, `ComboboxSeparator`→`Combobox.Separator`, `ComboboxChips`→`Combobox.Chips`, `ComboboxChip`→`Combobox.Chip`, `ComboboxChipsInput`→`Combobox.ChipsInput`, `ComboboxValue`→`Combobox.Value`. `useComboboxAnchor` keeps its name.
+2. **`Combobox.Clear` exported**: the ref defines `ComboboxClear` but leaves it out of the export list (only reachable via `showClear`). Decide-as-spec: exported as a namespace part — the namespace makes it a natural public part and enables custom compositions.
+3. **Overlay `container` prop added** to `Combobox.Content` — forwarded to `ComboboxPrimitive.Portal`, defaulting to the active `ThemeScope` element (portal-inside-ThemeScope discipline). Ref portals to `document.body`.
+4. **Dead `data-variant=destructive` selector removed** from `Combobox.Item` (`not-data-[variant=destructive]:data-highlighted:**:text-accent-foreground` → unconditional): copied from dropdown-menu; nothing here sets `data-variant`.
+5. **`destructive` → `error`** token renames (Chips `has-aria-invalid:` chrome).
+6. **All `dark:` classes dropped** (`dark:bg-input/30 dark:has-aria-invalid:border-destructive/50 dark:has-aria-invalid:ring-destructive/40` on Chips) — dark axis lives in tokens.
+7. **Duplicated stacking classes deduped**: the Positioner keeps `isolate z-50`; the Popup drops its duplicate (ref repeats them on Select's popup; combobox's popup has no `z-50` but the ruling is applied family-wide — Positioner owns stacking).
+8. **Icons → Phosphor**: `CheckIcon`→`Check` (item indicator), `ChevronDownIcon`→`CaretDown` (trigger caret), `XIcon`→`X` (clear + chip remove).
+
+Kept faithfully:
+
+- **Root import requirement**: `import { Combobox } from "@base-ui/react"` — the `@base-ui/react/combobox` subpath type-checks but crashes at runtime with a null React context (same issue as phone-number-field). Keep the root import until upstream fixes it; guard with a comment in source.
+- `showTrigger`/`showClear` runtime mutual exclusivity via `group-has-data-[slot=combobox-clear]/input-group:hidden` (§3).
+- `Combobox.Input` wrapping itself in an `InputGroup` (className goes to the group; `w-auto`).
+- The `--spacing()` max-height calc on `Combobox.List` (§6).
+- `data-chips={!!anchor}` on Content and its `min-w` switch.
+- The chips family (multi-select) incl. `has-aria-invalid:` chrome, `has-data-[slot=combobox-chip]:px-1.5`, chip `showRemove`, `ChipsInput` as a bare input.
+- `data-slot="combobox-chip-input"` singular spelling on ChipsInput.
+- Popup-embedded InputGroup restyle selectors and the InputGroup ring-neutralization coupling.
+- `useComboboxAnchor` as a plain typed `useRef` helper.
+
+## 9 Test requirements
+
+Role/label-based queries throughout; keyboard flows per §7:
+
+- Filtering: type into `getByRole("combobox")`; assert the listbox narrows to matching options and `Combobox.Empty` text appears for a no-match query (and disappears again).
+- Selection: ArrowDown + Enter selects the highlighted option, closes the popup, fills the input; `onValueChange` receives the value.
+- Trigger button: click opens/closes; caret rotation state via `data-popup-open` (attribute assertion, query by role).
+- Clear button: with `showClear`, after a selection `getByRole("button", { name: /clear/i })` empties the value and the trigger button stays hidden while Clear is present (assert exclusivity); focus returns to the input.
+- Chips multi-select: with `multiple` + Chips/Chip/ChipsInput, selecting options appends chips (popup stays open); chip remove button deletes its chip; Backspace in the empty ChipsInput removes the last chip; `aria-invalid` surfaces the Chips error ring.
+- Anchored mode: passing `anchor` from `useComboboxAnchor` sets `data-chips="true"` on the popup and positions against the anchor element.
+- `container`: popup renders inside the provided element / active ThemeScope, not `document.body`.
+- Disabled: `Combobox.Input disabled` disables input, trigger, and clear.
+- Import-shape guard: source-level test/lint asserting the base-ui root import (no `@base-ui/react/combobox` subpath).
+
+## 10 Demo requirements
+
+Plain runnable `.tsx` demos: `combobox-basic.tsx` (Input with trigger, filtered list, Empty state), `combobox-groups.tsx` (Groups + Labels + Separator, Collection over grouped items), `combobox-multi-chips.tsx` (`multiple` with Chips/Chip/ChipsInput anchored via `useComboboxAnchor`, showClear, invalid state), `combobox-input-group-anchor.tsx` (popup anchored to an outer `InputGroup.Root` — phone-number-field pattern — with a popup-embedded search InputGroup exercising the `*:data-[slot=input-group]` restyle).
