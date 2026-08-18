@@ -92,6 +92,7 @@
     "**/node_modules/**",
     ".ref/**",
     ".scratch/**",
+    "packages/ui/scripts/*.mjs",
     ".agent/**",
     ".agents/**",
     ".claude/**",

@@ -7,8 +7,13 @@
   "sideEffects": [
     "**/*.css"
   ],
+  "exports": {
+    "./css": "./src/styles/ui.css",
+    "./styles.css": "./dist/styles.css",
+    "./themes.css": "./dist/themes.css"
+  },
   "scripts": {
-    "build": "true",
+    "build": "node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/build-css.ts",
     "ci:checks": "true",
     "pack": "mkdir -p .artifacts && pnpm pack --pack-destination .artifacts",
     "package:check": "true",
@@ -20,10 +25,24 @@
   },
   "peerDependencies": {
     "react": "catalog:",
-    "react-dom": "catalog:"
+    "react-dom": "catalog:",
+    "tailwindcss": "catalog:"
+  },
+  "peerDependenciesMeta": {
+    "tailwindcss": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "clsx": "catalog:",
+    "tailwind-merge": "catalog:",
+    "tailwind-variants": "catalog:",
+    "tailwindcss-react-aria-components": "catalog:",
+    "tw-animate-css": "catalog:"
   },
   "devDependencies": {
     "@elmeragroup/typescript-config": "workspace:*",
+    "@tailwindcss/cli": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
@@ -31,6 +50,7 @@
     "playwright": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
+    "tailwindcss": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }

@@ -48,6 +48,7 @@
     "tooling/oxlint-anti-slop/**",
     "docs/**",
     "wayfinder/**",
+    "**/__snapshots__/**",
     "CONTEXT.md",
     "pnpm-lock.yaml",
     "*.lock",
