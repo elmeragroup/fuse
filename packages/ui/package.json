@@ -13,6 +13,10 @@
       "import": "./src/index.ts"
     },
     "./css": "./src/styles/ui.css",
+    "./icons": {
+      "types": "./src/icons.ts",
+      "import": "./src/icons.ts"
+    },
     "./styles.css": "./dist/styles.css",
     "./theme": {
       "types": "./src/theme.ts",
@@ -47,6 +51,7 @@
   },
   "dependencies": {
     "@base-ui/react": "catalog:",
+    "@phosphor-icons/react": "catalog:",
     "clsx": "catalog:",
     "tailwind-merge": "catalog:",
     "tailwind-variants": "catalog:",

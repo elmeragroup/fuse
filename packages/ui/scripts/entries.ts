@@ -2,6 +2,8 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { PHOSPHOR_ICON_NAMES } from "../src/icons/roster.ts";
+
 /** Appendix A — 56 bare component entries. */
 export const BARE_COMPONENT_ENTRIES = [
   "accordion",
@@ -147,7 +149,7 @@ function isBareComponent(subpath: string): boolean {
   }
   return false;
 }
-const IMPLEMENTATION_DIRECTORIES = new Set(["components", "styles", "theme", "react-aria"]);
+const IMPLEMENTATION_DIRECTORIES = new Set(["components", "icons", "styles", "theme", "react-aria"]);
 const RELATIVE_IMPORT = /(?:import|export)(?:\s+type)?\s+(?:[^'"\n;]*?\sfrom\s+)?["'](\.[^"']+)["']/g;
 const SOURCE_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"] as const;
 
@@ -314,6 +316,9 @@ function resolveJsSource(packageRoot: string, subpath: string): string | undefin
 function runtimeExportsFor(subpath: string): readonly string[] {
   if (subpath === "." || subpath === "theme") {
     return THEME_RUNTIME_EXPORTS;
+  }
+  if (subpath === "icons") {
+    return PHOSPHOR_ICON_NAMES;
   }
   return [];
 }

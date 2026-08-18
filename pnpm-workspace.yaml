@@ -7,6 +7,7 @@ catalog:
   "@arethetypeswrong/cli": 0.18.5
   "@arethetypeswrong/core": 0.18.5
   "@base-ui/react": 1.6.0
+  "@phosphor-icons/react": 2.1.10
   "@oxlint/plugins": 1.78.0
   "@tailwindcss/cli": 4.3.3
   "@types/node": 25.9.5

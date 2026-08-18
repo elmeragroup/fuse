@@ -10,6 +10,7 @@ import {
   exportBindingsObject,
   exportBindingTarget,
 } from "../scripts/generate-exports";
+import { PHOSPHOR_ICON_NAMES } from "./icons/roster";
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -19,7 +20,7 @@ describe("exports map", () => {
   const publishExports = buildPublishExportMap(discovered);
 
   it("is generated from discovered source entries, not a hand-maintained list of files", () => {
-    expect(discovered.jsEntries.map((entry) => entry.subpath)).toEqual([".", "theme"]);
+    expect(discovered.jsEntries.map((entry) => entry.subpath)).toEqual([".", "theme", "icons"]);
     expect(unexpectedJsEntryFiles(packageRoot)).toEqual([]);
     expect(BARE_COMPONENT_ENTRIES).toHaveLength(56);
   });
@@ -36,12 +37,16 @@ describe("exports map", () => {
       types: "./src/index.ts",
       import: "./src/index.ts",
     });
+    expect(exportBindingTarget(sourceExports, "./icons")).toEqual({
+      types: "./src/icons.ts",
+      import: "./src/icons.ts",
+    });
   });
 
   it("does not invent component entries before their source files exist", () => {
     expect(exportBindingTarget(sourceExports, "./button")).toBeUndefined();
     expect(exportBindingTarget(sourceExports, "./scroll-area")).toBeUndefined();
-    expect(exportBindingTarget(sourceExports, "./icons")).toBeUndefined();
+    expect(exportBindingTarget(sourceExports, "./illustrations")).toBeUndefined();
     expect(exportBindingTarget(sourceExports, "./react-aria/calendar")).toBeUndefined();
   });
 
@@ -59,6 +64,10 @@ describe("exports map", () => {
     expect(exportBindingTarget(publishExports, ".")).toEqual({
       types: "./index.d.ts",
       import: "./index.js",
+    });
+    expect(exportBindingTarget(publishExports, "./icons")).toEqual({
+      types: "./icons.d.ts",
+      import: "./icons.js",
     });
     expect(exportBindingTarget(publishExports, "./css")).toBe("./styles/ui.css");
     expect(exportBindingTarget(publishExports, "./themes.css")).toBe("./themes.css");
@@ -87,5 +96,12 @@ describe("exports map", () => {
     expect(theme?.runtimeExports).toContain("ThemeProvider");
     expect(theme?.runtimeExports).toContain("themeAttributes");
     expect(theme?.runtimeExports).toContain("ColorSchemeScript");
+  });
+
+  it("keeps /icons as a subpath-only entry with the curated roster", () => {
+    const icons = discovered.jsEntries.find((entry) => entry.subpath === "icons");
+    expect(icons?.inRootBarrel).toBe(false);
+    expect(icons?.runtimeExports).toEqual(PHOSPHOR_ICON_NAMES);
+    expect(icons?.runtimeExports).not.toContain("Icon");
   });
 });
