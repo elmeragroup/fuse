@@ -3,7 +3,8 @@
 ## 1 Header
 
 - **Canonical name**: `Toggle` (single component); recipe `toggleVariants` (PUBLIC)
-- **Export path**: `@elmeragroup/ui` (`import { Toggle, toggleVariants } from "@elmeragroup/ui"`)
+- **Export path**: `@elmeragroup/ui/toggle` (also re-exported from `@elmeragroup/ui`); `toggleVariants` comes from the same entry
+- **RSC**: client
 - **Tier**: base-ui control primitive (a two-state pressed button; grouped usage goes through `ToggleGroup.Item`)
 - **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/base-ui/toggle.tsx`
 
@@ -13,7 +14,7 @@ Single element wrapping `Toggle` from `@base-ui/react/toggle` (renders a `<butto
 
 ```tsx
 <Toggle aria-label="Bold" pressed={bold} onPressedChange={setBold}>
-  <Icon.TextB data-icon="inline-start" />
+  <TextB data-icon="inline-start" aria-hidden />
 </Toggle>
 ```
 
@@ -48,7 +49,7 @@ Base notes:
 
 - `muted` / `foreground` — hover and pressed fills (`hover:bg-muted hover:text-foreground`, pressed `bg-muted`).
 - `input` — outline variant border.
-- `ring` — focus border + ring (`focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50`).
+- `ring` — shared `focusRing({ target: "self" })`; no local focus classes.
 - `error` — invalid border + ring (`aria-invalid:border-error aria-invalid:ring-error/20`).
 
 ## 6 Data attributes
@@ -66,7 +67,7 @@ Base notes:
 
 ## 8 Divergence from reference
 
-1. **`focus-visible:ring-[3px]` → `focus-visible:ring-3`** — the ref uses the arbitrary-value form here while sibling components use the `ring-3` utility; normalized to `ring-3` (minor divergence, identical output).
+1. **Focus unified:** the ref's local three-pixel ring becomes shared `focusRing({ target: "self" })` with the library-wide two-pixel ring and offset.
 2. **`dark:` variant class dropped** (`dark:aria-invalid:ring-destructive/40`) per `no-tailwind-dark-variant`.
 3. **`destructive` → `error`** token rename on `aria-invalid:` classes.
 4. Kept as-is, documented (not divergences): the doubled `aria-pressed:` + `data-pressed:` selectors, the `has-data-[icon=…]` padding hooks, and the xs `rounded-[min(var(--radius-md),10px)]` radius clamp.

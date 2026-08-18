@@ -12,7 +12,7 @@ Normative chapter for how `@elmeragroup/ui` is versioned, published to public np
 
 The pipeline is the kumo pattern verbatim: **changesets** + `changesets/action`.
 
-1. **Changeset per user-facing PR.** Every PR that changes published behavior (API, styles, tokens, types, docs strings shipped in the package) includes a changeset file declaring bump level (`patch`/`minor`/`major`) and a human-readable summary. Internal-only PRs (CI, docs site, tests) ship an empty changeset or none. Presence is enforced in the merge gate (see [tooling](tooling.md)).
+1. **Changeset per user-facing PR.** Every PR that changes published behavior (API, styles, tokens, types, docs strings shipped in the package) includes a changeset file declaring bump level (`patch`/`minor`/`major`) and a human-readable summary. Internal-only PRs (CI, docs site, tests) carry the `no-changeset` label instead. Presence is enforced in the merge gate (see [tooling](tooling.md)): a PR fails without a changeset unless it is labeled `no-changeset`.
 2. **Version-Packages PR.** `changesets/action` maintains a bot-owned "Version Packages" PR on `main` that accumulates pending changesets, bumps `package.json`, and writes `CHANGELOG.md` entries from the changeset summaries.
 3. **Publish on merge.** Merging the Version-Packages PR triggers the release workflow, which builds, runs the publish gates (§5), and publishes to npm. **Publishing happens only from this workflow** — never from a developer machine; local `npm publish` is unauthorized by construction because no token exists (§6).
 4. Git tags and GitHub Releases are created by the action per published version.
@@ -34,15 +34,19 @@ These facts bound what the published tarball may contain; they are settled, not 
 
 ## 5 Publish-time gates
 
-The release workflow publishes only when all gates pass. Gate definitions live with their owners; this section is the release-side contract.
+The release workflow publishes only when all gates pass. The table below is the **single exhaustive publish-gate list**; owning chapters define each check but must link here instead of maintaining competing release lists.
 
 | Gate | Asserts | Owner |
 |---|---|---|
 | **publint** | package.json/exports correctness for the published shape | [architecture](architecture.md) |
 | **arethetypeswrong (attw)** | type resolution across module modes | [architecture](architecture.md) |
 | **exports-map test** | every codegen'd subpath resolves against the **published** shape (`publishConfig.directory` swap: in-repo `src`, published `dist`) | [architecture](architecture.md) |
-| **size-limit budgets** | per-entry bundle budgets not exceeded | [performance](performance.md) |
+| **emitted-directive parity** | all and only source modules with a leading `"use client"` retain it in the packed JavaScript graph | [architecture](architecture.md) |
+| **packed-asset contract** | flag filenames/manifest/hashes and license/provenance files match the spec; every flag-bearing phone country resolves locally | [architecture](architecture.md), [icons](icons.md) |
+| **size-limit budgets** | every JS-entry, built-CSS, and aggregate raw-flag ceiling in the budget table holds against the packed artifact | [performance](performance.md) |
 | **theme-contract test** | the 16-theme token contract holds in the built CSS | [tooling](tooling.md) |
+| **packed fixture: Next App Router** | the `pnpm pack` tarball installs and builds in a Next App Router app (Tailwind-source mode, RSC boundaries: server page + client island); flag SVG assets resolve | [tooling](tooling.md) |
+| **packed fixture: Vite** | the `pnpm pack` tarball installs and builds in a Vite app (standalone-CSS mode); flag SVG assets resolve | [tooling](tooling.md) |
 
 The full merge gate (lint, types, unit/browser tests, changeset presence) runs on every PR and is specified in [tooling](tooling.md); the publish gates above additionally run against the built artifact in the release workflow, so a package that installs broken can never reach the registry.
 

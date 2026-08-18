@@ -4,6 +4,7 @@
 
 - **Canonical name**: `FileTrigger` (single component)
 - **Export path**: `@elmeragroup/ui/react-aria/file-trigger` — exports `FileTrigger` + `FileTriggerProps`. `react-aria/` prefix marks the quarantined RAC dependency.
+- **RSC**: client
 - **Tier**: **react-aria interim** — foundational-layer atom (cluster README group 4).
 - **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/react-aria/file-trigger.tsx` (composes the tier-internal RAC `button.tsx`, which borrows the base-ui `buttonVariants` recipe)
 
@@ -13,9 +14,9 @@
 FileTriggerPrimitive (RAC; renders a hidden <input type="file">, ref target)
 └─ Button (RAC button styled by base-ui buttonVariants; size default "sm")
    ├─ leading icon — when withIcon (default):
-   │    Icon.Camera     when defaultCamera set
-   │    Icon.Folder     when acceptDirectory
-   │    Icon.Paperclip  otherwise
+   │    Camera     when defaultCamera set
+   │    Folder     when acceptDirectory
+   │    Paperclip  otherwise
    └─ children (label content)
 ```
 
@@ -58,7 +59,7 @@ All via `buttonVariants` (button surface/foreground/focus tokens); this module a
 ## 8 Divergence from reference
 
 1. **Export path**: bare export → `@elmeragroup/ui/react-aria/file-trigger` (interim quarantine prefix).
-2. **Icons**: `Icon.Camera` / `Icon.Folder` / `Icon.Paperclip` → Phosphor `Camera` / `Folder` / `Paperclip` (verified — all three exist under those exact names in Phosphor), curated via `@elmeragroup/ui/icons`, regular weight, `aria-hidden` added.
+2. **Icons**: the reference namespace icons become named Phosphor `Camera` / `Folder` / `Paperclip` imports (verified — all three exist under those exact names), curated via `@elmeragroup/ui/icons`, regular weight, `aria-hidden` added.
 3. **Ref bugs fixed**: (a) `variant` is typed via `VariantProps<typeof buttonVariants>` but the ref never passes it to `Button` — it leaks into the `...props` spread onto `FileTriggerPrimitive`; we route it to the Button. (b) `isDisabled` likewise leaks onto `FileTriggerPrimitive` (not a RAC FileTrigger prop) while also being read for the Button; we pass it to the Button only.
 4. No raw colors, no `destructive` classes, no `dark:`/`inverted:` variants present — nothing to convert.
 5. Dies with the tier: the base-ui replacement is a plain hidden-input + Button composition.

@@ -3,9 +3,10 @@
 ## 1 Header
 
 - **Canonical name**: `CheckboxCard` (single component)
-- **Export path**: `@elmeragroup/ui`
+- **Export path**: `@elmeragroup/ui/checkbox-card` (also re-exported from `@elmeragroup/ui`)
+- **RSC**: client
 - **Tier**: labeled composite — an opinionated selectable card over the base-ui Checkbox primitive with a circle/check-circle crossfade indicator. Distinct from `CheckboxItem` (the `SelectionItem.Shell` row): CheckboxCard is a marketing/product-card surface with tags, large title, and right-content slot.
-- **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/base-ui/checkbox-card.tsx` (crossfade classes from `.ref/.../styles/utils.ts`)
+- **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/base-ui/checkbox-card.tsx` (crossfade classes from `.ref/OrderModuleInternalWeb/packages/ui/src/styles/utils.ts`)
 
 ## 2 Anatomy
 
@@ -57,7 +58,7 @@ No `className` prop in the ref surface (styling axes are `variant`/`isDisabled` 
 - `card` / `muted` — card surface per `variant`.
 - `foreground` — unchecked circle icon, title, description, control text.
 - `success` — checked `CheckCircle` icon color.
-- `brand` — focus ring on the control (`focus-visible:ring-brand`) with `ring-offset-background`.
+- `ring` — the control composes shared `focusRing({ target: "self" })`; brand-colored focus is not allowed.
 - `background` — ring offset.
 - Badge tokens come from the canonical `Badge` component.
 
@@ -70,7 +71,7 @@ No `className` prop in the ref surface (styling axes are `variant`/`isDisabled` 
 ## 7 Accessibility
 
 - Base-ui `Field.Label` associates the label block with the checkbox: clicking title/description/tags/children toggles; `rightContent` sits outside the label and does not toggle.
-- `role="checkbox"` with Space toggle from the base-ui primitive; focus ring (`focus-visible:ring-2 ring-brand`) on the control span.
+- `role="checkbox"` with Space toggle from the base-ui primitive; the control uses the shared focus ring.
 - **Field.Root-ancestor requirement (KEPT)**: `Field.Item`/`Field.Label` throw outside a base-ui `Field.Root`; CheckboxCard does not create one. Consumers must wrap in `Field.Root` (typically via `CheckboxGroup` or a form field). Documented, not fixed.
 - Disabled state: `has-disabled:cursor-not-allowed` on the label, `opacity-75` card; the checkbox primitive is disabled so it is skipped in tab order.
 - The icon indicator is decorative (`state.checked` swap); checked state is conveyed by `aria-checked`, not color alone plus the shape change (circle → check-circle) satisfies non-color signaling.
@@ -78,7 +79,7 @@ No `className` prop in the ref surface (styling axes are `variant`/`isDisabled` 
 ## 8 Divergence from reference
 
 1. **Parity ruling recorded**: internal `CheckboxCard` is a **strict superset of the external ref's `CheckboxCardHorizontal`** — full parity, no migration action required.
-2. **Icons → Phosphor**: `Icon.Circle` → `Circle`, `Icon.CheckCircle` → `CheckCircle` from `@elmeragroup/ui/icons`. **`fill` weight is permitted for the checked `CheckCircle`** (selected/active state exception per the icon conventions); the unchecked `Circle` stays regular.
+2. **Icons → Phosphor**: the reference circle/check-circle namespace icons become named `Circle` / `CheckCircle` imports from `@elmeragroup/ui/icons`. **`fill` weight is permitted for the checked `CheckCircle`** (selected/active state exception per the icon conventions); the unchecked `Circle` stays regular.
 3. **`checkboxCardStyles` stays module-private** — no export, consumers get `variant`/`isDisabled` only.
 4. **Spread-after-render constraint KEPT and documented**: `{...other}` is spread onto `Checkbox.Root` *after* the internal `render` prop, so a consumer-supplied `render` would override the icon indicator — which is why `render` is Omit-ted from the prop type. Net effect: **consumers cannot override the icon rendering**; the crossfade indicator is fixed. Any future custom-indicator need routes through `SelectionItem.Shell`'s `control` escape hatch instead.
 5. **No renames** — `CheckboxCard` was already a single flat export; it stays a single component (no namespace).

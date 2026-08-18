@@ -3,9 +3,10 @@
 ## 1 Header
 
 - **Canonical name**: `SelectionItem` (namespace compound)
-- **Export path**: `@elmeragroup/ui` (`import { SelectionItem } from "@elmeragroup/ui"`)
+- **Export path**: `@elmeragroup/ui/selection-item` (also re-exported from `@elmeragroup/ui`)
+- **RSC**: client
 - **Tier**: base-ui structural primitive — the shared card row shell that `CheckboxItem` and `RadioItem` (labeled selection rows) plug a control into. Not usable standalone without a `Field.Root` + group primitive supplying context.
-- **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/base-ui/selection-item.tsx` (part styling reused from `.ref/.../base-ui/item.tsx`; `disabledHatch` from `.ref/.../styles/utils.ts`)
+- **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/base-ui/selection-item.tsx` (part styling reused from `.ref/OrderModuleInternalWeb/packages/ui/src/base-ui/item.tsx`; `disabledHatch` from `.ref/OrderModuleInternalWeb/packages/ui/src/styles/utils.ts`)
 
 ## 2 Anatomy
 
@@ -67,7 +68,7 @@ Renders `null` when `Children.toArray(children).length === 0`.
 - `muted` — checked surface (`has-data-checked:bg-muted`) and disabled surface.
 - `primary` — checked border (`has-data-checked:border-primary`).
 - `border` — resting border via `itemVariants` outline variant.
-- `ring` — focus ring via `itemVariants` base (`focus-visible:ring-ring/50`).
+- `ring` + `background` — the plugged-in Checkbox/Radio control's shared focus recipe. `itemVariants` contains a self-focus adapter for interactive Item uses, but it remains inert on this non-focusable shell.
 - `muted-foreground` — Description text (from `ItemDescription`).
 - `disabledHatch` overlay is a shared recipe from `styles/utils` (near-transparent black repeating gradient — deliberate non-token texture, shared so it stays identical across CheckboxItem/RadioItem/addon badges).
 
@@ -83,7 +84,7 @@ Renders `null` when `Children.toArray(children).length === 0`.
 - **SubSections render outside the label** deliberately: interactive content in a sub-section must not toggle the control when clicked. The shell partitions direct children by `child.type === SelectionItem.SubSection` reflection (§8.5).
 - The sub-section band indents under the text column via an `aria-hidden` spacer `<span>` whose width must equal the control slot width (§8.2); it carries no semantics.
 - `isDisabled` styles the surface but does not disable anything itself — disabling is the control's/group's job; the label picks up `has-disabled:cursor-not-allowed`.
-- Focus ring comes from `itemVariants` base (`focus-visible:` on the item), with the control's own ring on top.
+- Keyboard focus remains on the plugged-in Checkbox/Radio control, which renders the single canonical ring. The non-focusable shell never draws a second ring.
 
 ## 8 Divergence from reference
 

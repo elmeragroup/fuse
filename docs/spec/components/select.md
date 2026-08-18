@@ -3,7 +3,8 @@
 ## 1 Header
 
 - **Canonical name**: `Select` (namespace compound)
-- **Export path**: `@elmeragroup/ui` (`import { Select } from "@elmeragroup/ui"`)
+- **Export path**: `@elmeragroup/ui/select` (also re-exported from `@elmeragroup/ui`)
+- **RSC**: client
 - **Tier**: styled base-ui primitive wrapper (overlay component)
 - **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/base-ui/select.tsx`
 
@@ -59,7 +60,7 @@ All rendering parts take `className` (merged via `cn`) and forward the rest of t
 | `align` | Positioner `align` | `"center"` | |
 | `alignOffset` | `number` | `0` | |
 | `alignItemWithTrigger` | `boolean` | `true` | macOS-style: selected item overlays the trigger; emitted as `data-align-trigger` |
-| `container` | `HTMLElement \| ref` | active `ThemeScope` element | portal target (§8) |
+| `container` | `HTMLElement \| RefObject<HTMLElement>` | nearest `ThemeScope` element | portal target (§8) |
 
 `children` are wrapped in `SelectPrimitive.List` between the two scroll buttons.
 
@@ -75,7 +76,7 @@ No `tv` recipe — the trigger's `size` axis is a hand-rolled `data-size` attrib
 
 - `card` — trigger surface (`bg-card`, replaces ref `bg-white`, §8).
 - `input` — trigger border.
-- `ring` — trigger focus chrome (`focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50`).
+- `ring` — trigger composes shared `focusRing({ target: "self" })`.
 - `error` — trigger invalid chrome (`aria-invalid:border-error aria-invalid:ring-3 aria-invalid:ring-error/20`, §8).
 - `popover` / `popover-foreground` — popup surface and text; scroll buttons repeat `bg-popover` to mask scrolled items.
 - `ring-foreground/10` — popup hairline (`ring-1`).
@@ -97,7 +98,7 @@ No `tv` recipe — the trigger's `size` axis is a hand-rolled `data-size` attrib
 **Consumed selectors**:
 
 - Trigger: `data-placeholder:text-muted-foreground`, `data-[size=…]` heights, `group-data-[popup-open]/select-trigger:rotate-180` on the caret (trigger declares `group/select-trigger`), `*:data-[slot=select-value]:line-clamp-1 …flex …items-center …gap-1.5` child styling for the Value part.
-- Popup: `data-open:animate-in fade-in-0 zoom-in-95`, `data-closed:animate-out fade-out-0 zoom-out-95`, `data-[side=bottom|top|left|right|inline-start|inline-end]:slide-in-from-*`, and `data-[align-trigger=true]:animate-none` — when item-with-trigger alignment is active (the default) the entrance animation is suppressed, since the popup must appear exactly over the trigger without motion. Bare `data-open:`/`data-closed:` variants stay scoped to the popup element (conventions' ancestor-match trap).
+- Popup: `data-open:animate-in fade-in-0 zoom-in-95`, `data-closed:animate-out fade-out-0 zoom-out-95`, `data-[side=bottom|top|left|right|inline-start|inline-end]:slide-in-from-*`, and `data-[align-trigger=true]:animate-none` — when item-with-trigger alignment is active (the default) the entrance animation is suppressed, since the popup must appear exactly over the trigger without motion. Bare `data-open:`/`data-closed:` are self-scoped custom variants and stay on the popup that emits the state.
 - Popup sizing vars: `max-h-(--available-height) w-(--anchor-width) origin-(--transform-origin)` from the Positioner.
 - Item: `focus:bg-accent focus:text-accent-foreground`, `data-disabled:pointer-events-none data-disabled:opacity-50`, `*:[span]:last:…` legacy shadcn child layout (kept).
 
@@ -113,7 +114,7 @@ No `tv` recipe — the trigger's `size` axis is a hand-rolled `data-size` attrib
 ## 8 Divergence from reference
 
 1. **Renames (flat → namespace)**: `Select`→`Select.Root`, `SelectTrigger`→`Select.Trigger`, `SelectValue`→`Select.Value`, `SelectContent`→`Select.Content`, `SelectItem`→`Select.Item`, `SelectGroup`→`Select.Group`, `SelectLabel`→`Select.Label`, `SelectSeparator`→`Select.Separator`, `SelectScrollUpButton`→`Select.ScrollUpButton`, `SelectScrollDownButton`→`Select.ScrollDownButton`.
-2. **Overlay `container` prop added** to `Select.Content` — forwarded to `SelectPrimitive.Portal`, defaulting to the active `ThemeScope` element so the popup inherits scoped theme tokens (portal-inside-ThemeScope discipline). The ref portals to `document.body`.
+2. **Overlay `container` prop added** to `Select.Content` — forwarded to `SelectPrimitive.Portal`, defaulting to the nearest `ThemeScope` element so the popup inherits scoped theme tokens (portal-inside-ThemeScope discipline). The ref portals to `document.body`.
 3. **`bg-white` → `bg-card`** on the trigger (input-like surface convention; ref hardcodes white).
 4. **Dead `data-variant=destructive` selector removed** from `Select.Item` (`not-data-[variant=destructive]:focus:**:text-accent-foreground` → unconditional `focus:**:text-accent-foreground`): copied from dropdown-menu, but nothing in select ever sets `data-variant`.
 5. **`destructive` → `error`** token renames on trigger invalid chrome.
@@ -133,7 +134,7 @@ Role/label-based queries throughout; keyboard flows per §7:
 - `data-size` reflects `size` for both values; `data-align-trigger` reflects `alignItemWithTrigger`.
 - `aria-invalid` on the trigger surfaces error chrome (attribute assertion); `disabled` root disables the trigger.
 - Groups: `Select.Label` names its group in the accessibility tree (`getByRole("group", { name })`).
-- `container`: popup renders inside the provided element / active ThemeScope, not `document.body`.
+- `container`: popup renders inside the provided element / nearest ThemeScope, not `document.body`.
 
 ## 10 Demo requirements
 

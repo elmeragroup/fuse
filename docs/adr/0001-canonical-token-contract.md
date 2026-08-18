@@ -1,6 +1,6 @@
 # 0001 — Canonical token contract: shadcn grammar with a soft form, two public tiers
 
-Date: 2026-08-17. Status: accepted.
+Date: 2026-08-17. Status: accepted; amended 2026-08-18 after the accepted shared brand-pointer cascade.
 
 ## Context
 
@@ -11,11 +11,11 @@ Date: 2026-08-17. Status: accepted.
 - **shadcn grammar** (`--x` / `--x-foreground`), per standing directive, extended with a **soft form** `--x-soft(-foreground)` replacing M3's `-container`/`on-` — applied to the four statuses (`error/info/success/warning`), `primary`, `secondary`, and `card`.
 - **M3 roles remapped by evidence, not by name**: `surface→background`, `on-surface→foreground`, `primary-container→card` (the real default card), `surface-bright→card-soft`, `secondary-container→secondary-soft`, `surface-variant family→` a minted `--feature/--feature-bright/--feature-foreground` role (strong brand promo panels).
 - **Two public tiers**: semantic role tokens (themable) plus public primitives — `--neutral-50..950` (renumbered to Tailwind convention from the internal inverted ramp, normalized to pure gray) and `--brand-<code>(-foreground)` for all five brands at `:root`.
-- **`--brand/--brand-foreground` are first-class**: external themes set brand = primary; internal themes keep primary neutral and express brand identity only here (and in `--sidebar-brand`). The variant axis lives entirely in values, never in names.
-- **Defaults + must-override**: the library ships a complete neutral `:root` default layer; themes override subsets; brand-defining tokens are marked must-override. Locked (not themable): derived radii arithmetic, breakpoints, easing, spacing, `--font-mono`.
+- **`--brand/--brand-foreground` are first-class**: the later accepted cascade selects the global brand accent in both variants. External `--primary` is the brand palette's action/surface color and may differ; internal themes keep primary neutral and express brand identity only through the brand pair (and `--sidebar-brand`). The variant axis lives entirely in values, never in names.
+- **Defaults + must-override**: the library ships a complete neutral `:root` default layer; themes override subsets; compose-time, variant-specific must-override sets prevent brand identity from falling through to defaults. External themes supply their brand/surface/interactive/shape identity; internal themes supply the brand pair while inheriting the neutral system. This is an obligation on the composed theme, not on each partial layer module. Locked (not themable): derived radii arithmetic, breakpoints, easing, spacing, `--font-mono`.
 - **Clean break on legacy**: all values oklch; no HSL-triplet wrappers; `--popover` never eager-bound to `var(--card)`; dead tokens (`--surface-text`, `--tertiary*`, `--secondary-variant`, `--inactive`, `--primary-light`) shed. Sole compat concession: `--destructive(-foreground)` shipped as aliases of error.
 
-The complete enumeration lives in the resolution of [wayfinder ticket 001](../../wayfinder/tickets/001-canonical-token-contract.md).
+The complete normative enumeration, values, and legacy rename table live in [theming](../spec/theming.md) §§2–5. Ticket 001 is provenance only.
 
 ## Alternatives rejected
 

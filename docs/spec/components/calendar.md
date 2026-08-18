@@ -4,6 +4,7 @@
 
 - **Canonical name:** `Calendar` (secondary exports: `CalendarHeader`, `CalendarGridHeader`)
 - **Export path:** `@elmeragroup/ui/react-aria/calendar` — `react-aria/` quarantine prefix (path-policy ruling).
+- **RSC:** client
 - **Tier:** **react-aria interim** — composite over `react-aria-components` `Calendar`. **Public by user ruling:** the ref had zero direct consumers outside the pickers, but the export is a deliberate API addition. **Migration roadmap:** replaced by a base-ui/custom calendar; bare `@elmeragroup/ui/calendar` is minted for the successor and this module deleted.
 - **Source of truth:** `.ref/OrderModuleInternalWeb/packages/ui/src/react-aria/calendar.tsx` + `styles/calendar.ts`.
 
@@ -12,9 +13,9 @@
 ```
 AriaCalendar                       (RAC Calendar; base slot: bordered card surface)
 ├─ CalendarHeader                  (plain <header>)
-│  ├─ Button slot="previous"       (private RAC Button, ghost/icon) > Icon.CaretLeft
+│  ├─ Button slot="previous"       (private RAC Button, ghost/icon) > CaretLeft (named icon import)
 │  ├─ Heading                      (RAC Heading via private heading internal, size="lg")
-│  └─ Button slot="next"           > Icon.CaretRight            (icons swap in RTL)
+│  └─ Button slot="next"           > CaretRight                  (named import; icons swap in RTL)
 ├─ CalendarGrid  (body slot)       weekdayStyle="short"
 │  ├─ CalendarGridHeader > CalendarHeaderCell (×7, headerCell slot)
 │  └─ CalendarGridBody > CalendarCell (render prop per date, cell slot)
@@ -29,14 +30,14 @@ AriaCalendar                       (RAC Calendar; base slot: bordered card surfa
 
 | Prop | Type | Default | Notes |
 | --- | --- | --- | --- |
-| `errorMessage` | `string` | — | Plain string (NOT the pickers' validation-function face — RAC Calendar has no `ValidationResult`); renders `Text slot="errorMessage"` |
+| `errorMessage` | `ReactNode` | — | renders `Text slot="errorMessage"`; Calendar has no ValidationResult render face |
 | `className` | `string \| (renderProps) => string` | — | Composed onto the `base` slot |
 
 `CalendarHeader` takes no props (reads `useLocale()` for RTL icon flipping). `CalendarGridHeader` takes no props.
 
 ## 4 Variants
 
-`calendarVariants` — slotted tv recipe in `styles/calendar.ts`, **module-private**. Slots: `base`, `header`, `heading`, `headerCell`, `body`, `cell` (base extends the shared `focusRing` via a flattened `cellVariants`), `error`. Variant axes on `cell`, driven by RAC cell render props: `isSelected` (false → hover/pressed fills; true → primary fill), `isDisabled`, `isUnavailable`. No public recipe export.
+`calendarVariants` — slotted tv recipe in `styles/calendar.ts`, **module-private**. Slots: `base`, `header`, `heading`, `headerCell`, `body`, `cell` (extends shared `focusRing({ target: "state", isFocusVisible })` via a flattened `cellVariants`), `error`. Variant axes on `cell`, driven by RAC cell render props: `isSelected` (false → hover/pressed fills; true → primary fill), `isDisabled`, `isUnavailable`. No public recipe export. Private previous/next Buttons borrow `buttonVariants`, including its self-focus adapter.
 
 ## 5 Consumed tokens
 
@@ -59,8 +60,9 @@ AriaCalendar                       (RAC Calendar; base slot: bordered card surfa
 1. **Becomes a public export** (user ruling, overriding zero-usage evidence) at `react-aria/calendar` — deliberate API addition; ref treated it as picker plumbing.
 2. **Icon swaps:** lucide `ChevronLeft`/`ChevronRight` → Phosphor `CaretLeft`/`CaretRight` from `@elmeragroup/ui/icons` (curated set; conventions §Icons).
 3. **Token renames (lint guardrail applies to interim code):** `text-zinc-900` → `text-foreground`; `bg-gray-100` → `bg-muted`; `bg-gray-200` → `bg-accent`; `text-gray-500`/`text-gray-300` → `text-muted-foreground`; `text-white` → `text-primary-foreground`; `destructive` → `error`; `border-black/10` → `border-border`.
-4. **Kept:** `visibleDuration` omitted (single month); `errorMessage: string` (weaker than the pickers' face — see contradiction note in range-calendar §8); private RAC Button for slot navigation.
-5. **Interim-only devDependency:** RAC Tailwind modifiers used by cluster styles come from `tailwindcss-react-aria-components`; dies with the tier.
+4. **Kept:** `visibleDuration` omitted (single month); private RAC Button for slot navigation. `errorMessage` is widened from string to ReactNode for the shared composite convention.
+5. **Interim-only regular dependency:** RAC Tailwind modifiers used by cluster styles come from `tailwindcss-react-aria-components`; it dies with the tier.
+6. **Focus unified:** cells use the canonical RAC state adapter; navigation Buttons inherit the canonical Button recipe.
 
 ## 9 Test requirements
 

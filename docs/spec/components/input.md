@@ -3,8 +3,9 @@
 ## 1 Header
 
 - **Canonical name**: `Input` (single component, no compound parts)
-- **Export path**: `@elmeragroup/ui` (`import { Input } from "@elmeragroup/ui"`)
+- **Export path**: `@elmeragroup/ui/input` (`import { Input } from "@elmeragroup/ui/input"`)
 - **Tier**: base-ui control primitive (unlabeled; labeled usage goes through `TextField`, grouped usage through `InputGroup.Input`)
+- **RSC**: client (base-ui `Input` participates in Field context wiring)
 - **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/base-ui/input.tsx`
 
 ## 2 Anatomy
@@ -46,7 +47,7 @@ Fixed metrics from the ref: `h-9 w-full min-w-0 rounded-md px-2.5 py-1 text-base
 
 - `card` — resting background (`bg-card`; see §8).
 - `input` — border color (`border-input`); disabled fill (`disabled:bg-input/50`).
-- `ring` — focus border + ring (`focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50`).
+- `ring` — shared `focusRing({ target: "self" })`; exact classes live only in styles/utils.
 - `error` — invalid border + ring (`aria-invalid:border-error aria-invalid:ring-3 aria-invalid:ring-error/20`).
 - `muted-foreground` — placeholder.
 - `foreground` — file-selector button text.
@@ -70,6 +71,7 @@ Fixed metrics from the ref: `h-9 w-full min-w-0 rounded-md px-2.5 py-1 text-base
 2. **`inverted:` variant classes DROPPED** (`inverted:bg-input/30 inverted:disabled:bg-input/80`) — the ref's custom `.inverted` Tailwind variant/mechanism does not exist in the new theme system; inverted surfaces are a theme-scope concern.
 3. **`dark:` variant classes dropped** (`dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40`) — dark axis lives in tokens behind `[data-theme="dark"]`, per `no-tailwind-dark-variant`.
 4. **`destructive` → `error`** token rename on the invalid border/ring classes.
+5. **Focus ring unified** — the ref's local border/three-pixel ring becomes shared `focusRing({ target: "self" })`; the focus-tinted border is dropped.
 
 No API divergence — prop surface is identical to the ref.
 

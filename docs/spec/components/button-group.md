@@ -3,7 +3,8 @@
 ## 1. Header
 
 - **Canonical name:** `ButtonGroup` — namespace compound: `ButtonGroup.Root`, `ButtonGroup.Separator`, `ButtonGroup.Text`.
-- **Export path:** `@elmeragroup/ui/base-ui/button-group`. The `buttonGroupVariants` recipe stays **public** (ref already exports it) from the same module.
+- **Export path:** `@elmeragroup/ui/button-group` (also re-exported from `@elmeragroup/ui`); `buttonGroupVariants` comes from the same entry.
+- **RSC:** client — uses base-ui `useRender`
 - **Tier:** styled composite over plain DOM + the canonical Separator.
 - **Source of truth:** `.ref/OrderModuleInternalWeb/packages/ui/src/base-ui/button-group.tsx` (separator import corrected to `base-ui/separator.tsx`, see §8).
 

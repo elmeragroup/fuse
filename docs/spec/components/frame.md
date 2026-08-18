@@ -3,7 +3,8 @@
 ## 1 Header
 
 - **Canonical name**: `Frame` — namespace compound: `Frame.Root`, `Frame.Panel`, `Frame.Header`, `Frame.Title`, `Frame.Description`, `Frame.Footer`
-- **Export path**: `@elmeragroup/ui` (`import { Frame } from "@elmeragroup/ui"`)
+- **Export path**: `@elmeragroup/ui/frame` (also re-exported from `@elmeragroup/ui`)
+- **RSC**: server
 - **Tier**: plain-element composite (no base-ui primitive; pure layout/styling shell)
 - **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/frame.tsx`
 

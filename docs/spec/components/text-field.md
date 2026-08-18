@@ -3,7 +3,8 @@
 ## 1 Header
 
 - **Canonical name:** `TextField`
-- **Export path:** `@elmeragroup/ui/text-field` (also exports `textFieldVariants`)
+- **Export path:** `@elmeragroup/ui/text-field` (also re-exported from `@elmeragroup/ui`); `textFieldVariants` comes from the same entry
+- **RSC:** client
 - **Tier:** labeled composite (single-component export; not a namespace compound)
 - **Source of truth:** `.ref/OrderModuleInternalWeb/packages/ui/src/base-ui/text-field.tsx` + `.ref/OrderModuleInternalWeb/packages/ui/src/styles/text-field.ts`; absorbed: `.ref/OrderModuleWeb/packages/ui/src/numeric-only-text-field.tsx`
 
@@ -14,8 +15,8 @@ Field.Root                          (base-ui Field.Root; slot `base`)
 ├─ label row (div, slot `labelContainer`)          — rendered when label || isPending || isSuccess
 │  ├─ Field.Label (slot `label`)                   — when `label`
 │  └─ pending/success indicator (div, size-3.5)    — when isPending || isSuccess
-│     ├─ Icon.SpinnerGap (animate-spin, crossfade) — pending face
-│     └─ Icon.Check (crossfade)                    — success face
+│     ├─ SpinnerGap (named import, animate-spin, crossfade) — pending face
+│     └─ Check (named import, crossfade)                    — success face
 ├─ container (div, slot `container`)
 │  ├─ relative wrapper (div)
 │  │  ├─ Input (base-ui Input; Field.Control; slot `input`, + `fieldGroup` when variant set)
@@ -63,7 +64,7 @@ Slots: `base`, `fieldGroup`, `input`, `labelContainer`, `label`, `container`, `d
 | Axis | Values | Default | Effect |
 | --- | --- | --- | --- |
 | `variant` | `card` | — | `base` composes `cardVariants.slots.base` + `gap-0 px-6 py-4`; borderless full-width `fieldGroup`; `input` unstyled `text-lg`; `label`/`description` `text-muted-foreground`; `container` becomes horizontal `flex-row items-center gap-3` |
-| | `inline` | | `base` adds `group/inline-field`; `fieldGroup` transparent at rest, `border-ring` + `bg-background` on focus-within, `border-input` + `bg-background` on hover, `border-error` + `bg-background` on `group-data-[invalid]` |
+| | `inline` | | `base` adds `group/inline-field`; the inner input retains shared `focusRing({ target: "self" })` and is transparent at rest, `border-input` + `bg-background` on hover, `border-error` + `bg-background` on `group-data-[invalid]` |
 | `hidden` | `true \| false` | `false` | `base: hidden` |
 | `isIconActive` | `true \| false` | `false` | `fieldGroup: relative`; `input: truncate overflow-hidden pr-10 whitespace-nowrap` |
 
@@ -71,7 +72,7 @@ Slots: `base`, `fieldGroup`, `input`, `labelContainer`, `label`, `container`, `d
 
 ## 5 Consumed tokens
 
-`card` (input surface + `variant="card"` shell via `cardVariants`), `input` (border), `ring` (focus ring + `ring/50`), `error` (invalid border/ring — canonical name for the ref's `destructive` classes), `muted-foreground` (description, placeholder, card label), `background` (inline variant hover/focus fill), `foreground`. Radius from `--radius`-derived `rounded-md`; no raw palette classes — the ref Input's `bg-white` becomes `bg-card` per conventions.
+`card` (input surface + `variant="card"` shell via `cardVariants`), `input` (border), `ring` + `background` (shared focus recipe), `error` (invalid border/ring — canonical name for the ref's `destructive` classes), `muted-foreground` (description, placeholder, card label), `foreground`. Radius from `--radius`-derived `rounded-md`; no raw palette classes — the ref Input's `bg-white` becomes `bg-card` per conventions.
 
 ## 6 Data attributes
 
@@ -93,7 +94,7 @@ Slots: `base`, `fieldGroup`, `input`, `labelContainer`, `label`, `container`, `d
 2. **Bugfix: `isDisabled` forwards to the input.** The ref only set `disabled` on `Field.Root`; the spec requires the inner input to receive `disabled` as well so the control is natively disabled regardless of Field-context propagation.
 3. **`textArea` slot removed** from `textFieldVariants` — never referenced by any component in the ref.
 4. **Pending/success placement kept but flagged:** `isPending`/`isSuccess` render in the label row and force that row to exist even when `label` is absent (layout shifts by one row). Kept for ref parity; candidates for a later in-input placement.
-5. **Icon swaps:** ref `Icon.Loader` → Phosphor `SpinnerGap` (with `animate-spin`), `Icon.Check` → Phosphor `Check`.
+5. **Icon swaps:** the reference loader/check icons become named Phosphor `SpinnerGap` (with `animate-spin`) / `Check` imports.
 6. **Token renames:** `destructive` → `error`, `bg-white` → `bg-card`, `dark:`/`inverted:` input-surface variants dropped in favor of token-level dark axis.
 
 ## 9 Test requirements

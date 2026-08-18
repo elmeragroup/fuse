@@ -3,7 +3,8 @@
 ## 1 Header
 
 - **Canonical name**: `PopoverInfoButton` (single component; convenience composite, no namespace)
-- **Export path**: `@elmeragroup/ui` (`import { PopoverInfoButton } from "@elmeragroup/ui"`)
+- **Export path**: `@elmeragroup/ui/popover-info-button` (also re-exported from `@elmeragroup/ui`)
+- **RSC**: client
 - **Tier**: convenience composite over `Popover` + base-ui `Button` (client component)
 - **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/popover-info-button.tsx`
 
@@ -29,11 +30,11 @@ Trigger uses the **render slot-merging pattern** (kept): `Popover.Trigger render
 | Prop | Type | Default | Notes |
 | --- | --- | --- | --- |
 | `children` | `ReactNode` | required | popover content |
-| `label` | `string` | `"More information"` | trigger `aria-label` — i18n-injectable (§8.2) |
+| `label` | `string` | locale dictionary | trigger `aria-label`; explicit override wins |
 | `size` | Button size | `"icon-sm"` | trigger button size |
 | `variant` | Button variant | `"ghost"` | trigger button variant |
 | `contentSize` | see §4 | `"default"` | max-width of the popover content |
-| `container` | `HTMLElement` | active `ThemeScope` | overlay portal target, forwarded to `Popover.Content` per overlay conventions |
+| `container` | `HTMLElement \| RefObject<HTMLElement>` | nearest `ThemeScope` | overlay portal target, forwarded to `Popover.Content` per overlay conventions |
 
 ## 4 Variants
 
@@ -55,21 +56,22 @@ None directly — the recipe is sizing-only. Colors/radii arrive via Button (`gh
 
 ## 7 Accessibility
 
-- Trigger is `getByRole("button", { name: label })` — icon-only, named by `aria-label` (default `"More information"`, overridable for i18n).
+- Trigger is `getByRole("button", { name: label })` — icon-only, named by the localized `aria-label` or explicit override.
 - Popover open/close, focus, `Escape`, and outside-press dismissal are entirely base-ui Popover semantics (see popover spec §7); `aria-expanded`/`aria-haspopup` wiring is automatic via the render-merged trigger.
 - The `Info` glyph is decorative (`aria-hidden`).
 
 ## 8 Divergence from reference
 
 1. **DE-RAC (ruled)**: ref imports `Button` from `./button` (the react-aria button); ours composes base-ui `Button`. The `render` slot-merging pattern on `Popover.Trigger` is kept unchanged — only the button implementation swaps. No react-aria API surface remains.
-2. **`aria-label` becomes the `label` prop (ruled divergence)**: ref hardcodes `aria-label="More information"` — baked English, and a consumer-passed `aria-label` in `{...other}` spreads *after* it (silently winning, undocumented). Ours makes it an explicit `label` prop defaulting to `"More information"`, i18n-injectable per the no-baked-English convention.
-3. **Icon → Phosphor**: `Icon.Info` (lucide) → `Info` from `@elmeragroup/ui/icons`, regular weight.
+2. **`aria-label` becomes the `label` prop (ruled divergence)**: ref hardcodes English. Ours defaults through `popoverInfoButton.moreInformation`; explicit `label` wins.
+3. **Icon → Phosphor**: the reference lucide info icon becomes the named `Info` import from `@elmeragroup/ui/icons`, regular weight.
 4. **`container` prop added** per overlay conventions (ref exposes no portal control).
 5. Kept verbatim: `ghost`/`icon-sm` defaults, `side="right" sideOffset={8} showArrow`, the `contentSize` axis and its `w-auto p-4 text-sm` content base, recipe privacy.
 
 ## 9 Test requirements
 
-- `getByRole("button", { name: "More information" })` by default; `label` prop renames it.
+- Under an `en-US` provider, `getByRole("button", { name: "More information" })` finds the dictionary default; `label` overrides it.
+- All four locale defaults and explicit override precedence are covered.
 - Click/Enter opens: `children` visible in the popover (`getByRole("dialog")` or popup role per Popover spec), `aria-expanded` toggles on the trigger; `Escape` closes and returns focus to the trigger.
 - Exactly one button in the DOM (render slot-merge guard — no nested trigger/button).
 - `contentSize` maps to the expected `max-w-*` class on the content; Button props (`variant`, `disabled`) reach the trigger.

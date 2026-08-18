@@ -3,8 +3,9 @@
 ## 1 Header
 
 - **Canonical name**: `ConfirmButton` (single component; behavioral wrapper, no namespace)
-- **Export path**: `@elmeragroup/ui` (`import { ConfirmButton, type ConfirmButtonProps } from "@elmeragroup/ui"`)
+- **Export path**: `@elmeragroup/ui/confirm-button` (also re-exported from `@elmeragroup/ui`)
 - **Tier**: behavioral composite over base-ui `Button` (client component — owns armed state)
+- **RSC**: client
 - **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/confirm-button.tsx`
 
 ## 2 Anatomy

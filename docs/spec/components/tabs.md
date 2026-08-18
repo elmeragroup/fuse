@@ -3,7 +3,8 @@
 ## 1 Header
 
 - **Canonical name**: `Tabs` — namespace compound: `Tabs.Root`, `Tabs.List`, `Tabs.Trigger`, `Tabs.Content`
-- **Export path**: `@elmeragroup/ui` (`import { Tabs } from "@elmeragroup/ui"`)
+- **Export path**: `@elmeragroup/ui/tabs` (also re-exported from `@elmeragroup/ui`)
+- **RSC**: client
 - **Tier**: base-ui composite (tabbed panel switcher)
 - **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/base-ui/tabs.tsx`
 
@@ -55,7 +56,7 @@ Root establishes the `group/tabs` Tailwind group scope; List establishes `group/
 
 ### Tabs.Content
 
-`ComponentProps<typeof TabsPrimitive.Panel>` — pass-through includes `value`, `keepMounted`, `render`. `className` merged onto `flex-1 text-sm outline-none`.
+`ComponentProps<typeof TabsPrimitive.Panel>` — pass-through includes `value`, `keepMounted`, `render`. `className` merged onto `flex-1 text-sm` plus `focusRing({ target: "self" })`; base-ui gives the open panel `tabIndex={0}`.
 
 ## 4 Variants
 
@@ -68,7 +69,7 @@ Trigger styling is plain classes (no recipe): active tab gets `data-active:bg-ba
 
 ## 5 Consumed tokens
 
-`muted`, `muted-foreground`, `foreground` (incl. `text-foreground/60` resting trigger), `background` (active trigger fill), `ring` (`focus-visible:ring-ring/50`, `border-ring`, `outline-ring`). `rounded-lg`/`rounded-md` derive from `--radius`.
+`muted`, `muted-foreground`, `foreground` (incl. `text-foreground/60` resting trigger), `background` (active trigger fill), `ring` through the shared self-focus recipe on both triggers and the open panel. `rounded-lg`/`rounded-md` derive from `--radius`.
 
 ## 6 Data attributes
 
@@ -80,8 +81,8 @@ Trigger styling is plain classes (no recipe): active tab gets `data-active:bg-ba
 
 - base-ui wires `role="tablist"` / `role="tab"` / `role="tabpanel"` with `aria-selected`, `aria-controls`/`aria-labelledby` pairing automatically.
 - Keyboard: one tab stop on the list; Arrow keys move and activate tabs (←/→ horizontal, ↑/↓ vertical per `orientation`); Home/End jump to first/last.
-- Disabled triggers: `disabled:`/`aria-disabled:` both render `pointer-events-none opacity-50`.
-- Focus ring: `focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 focus-visible:outline-ring` on the trigger; panels get `outline-none`.
+- Disabled triggers: `disabled:`/`aria-disabled:` both render `pointer-events-none opacity-50`. Base-ui deliberately keeps disabled tabs in the roving-focus sequence but does not activate them.
+- Triggers and panels both compose `focusRing({ target: "self" })`. This is required for panels: the open base-ui panel has `tabIndex={0}` and is a keyboard tab stop.
 
 ## 8 Divergence from reference
 
@@ -90,6 +91,7 @@ Trigger styling is plain classes (no recipe): active tab gets `data-active:bg-ba
 3. **KEPT: two-group coupling** — the `group/tabs` (orientation) + `group/tabs-list` (variant) scopes and the trigger's cross-scope selectors are retained unchanged; it is the mechanism that lets one trigger class string serve both list variants and both orientations.
 4. **KEPT: redundant pre-hydration `data-orientation`** — Root sets `data-orientation={orientation}` explicitly even though base-ui emits it, so SSR markup carries orientation before hydration and the `data-horizontal:flex-col` layout class applies on first paint. Documented as deliberate, not dead code.
 5. **KEPT: `tabsListVariants` stays public** — exported from the package as in the ref.
+6. **Panel focus fixed:** the ref's unconditional `outline-none` on `Tabs.Content` is removed and the shared self-focus recipe is composed. The pinned base-ui primitive sets the open panel to `tabIndex={0}`, so suppressing its outline without replacement violated the cluster focus contract.
 
 ## 9 Test requirements
 
@@ -97,7 +99,8 @@ Trigger styling is plain classes (no recipe): active tab gets `data-active:bg-ba
 - Clicking a tab activates it: `aria-selected="true"`, matching panel visible, previous panel hidden.
 - **Arrow-key activation**: focus the tablist, ArrowRight moves to and activates the next tab (base-ui activate-on-focus), ArrowLeft back; Home/End reach first/last.
 - **Orientation**: `orientation="vertical"` → `data-orientation="vertical"` on Root, ↑/↓ drive navigation instead of ←/→.
-- Disabled trigger is skipped by arrow navigation and not activatable by click.
+- Disabled trigger can receive roving keyboard focus but does not activate; click likewise cannot activate it.
+- Tabbing from the active trigger reaches the open `tabpanel`; keyboard focus on that panel renders the shared focus ring.
 - `variant="line"` list emits `data-variant="line"`; active trigger has no `bg-background` (asserted via class/data-attr, not screenshots).
 
 ## 10 Demo requirements

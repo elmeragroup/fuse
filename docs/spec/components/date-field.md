@@ -4,6 +4,7 @@
 
 - **Canonical name:** `DateField` (secondary export: `DateInput`)
 - **Export path:** `@elmeragroup/ui/react-aria/date-field` — the `react-aria/` prefix is the quarantine marker (path-policy ruling): interim exports never occupy bare paths.
+- **RSC:** client
 - **Tier:** **react-aria interim** — labeled composite over `react-aria-components` `DateField`. **Migration roadmap:** replaced by a base-ui date field when base-ui ships one; at that point the bare path `@elmeragroup/ui/date-field` is minted for the successor and this module is deleted. New consumers should expect churn.
 - **Source of truth:** `.ref/OrderModuleInternalWeb/packages/ui/src/react-aria/date-field.tsx` + `styles/date-field.ts`, `styles/field.ts` (`fieldGroupVariants`).
 
@@ -30,7 +31,7 @@ AriaDateField                       (RAC DateField, flex flex-col gap-1)
 | --- | --- | --- | --- |
 | `label` | `string` | — | Renders internal `Label` |
 | `description` | `string` | — | Renders `Description` |
-| `errorMessage` | `string \| ((v: ValidationResult) => string)` | — | RAC `FieldError` face — kept faithfully for the interim tier (see §8) |
+| `errorMessage` | `ReactNode \| ((v: ValidationResult) => ReactNode)` | — | unified composite face |
 | `shouldForceLeadingZeros` | `boolean` | **`true`** | Ref flips RAC's locale-dependent default; kept |
 | `className` | `string \| (renderProps) => string` | — | Composed via `composeTailwindRenderProps` |
 
@@ -40,11 +41,11 @@ AriaDateField                       (RAC DateField, flex flex-col gap-1)
 
 ## 4 Variants
 
-`dateFieldVariants` — slotted tv recipe in `styles/date-field.ts`, **module-private** (not exported from the package). Slots: `base` (column), `input` (segment row), `segment`. Variant axes on `segment` (driven by RAC render props): `isPlaceholder`, `isDisabled`, `isFocused`. No size axis. `DateInput` additionally runs `fieldGroupVariants` (shared field-box recipe: `h-9 rounded-lg border bg-background`, focus-within ring, invalid/disabled/read-only borders) with the `input` slot class as `class`.
+`dateFieldVariants` — slotted tv recipe in `styles/date-field.ts`, **module-private** (not exported from the package). Slots: `base` (column), `input` (segment row), `segment`. Variant axes on `segment` (driven by RAC render props): `isPlaceholder`, `isDisabled`, `isFocused`. No size axis. `DateInput` additionally runs private `fieldGroupVariants` (shared field-box recipe: `h-9 rounded-lg border bg-card`, invalid/disabled/read-only borders) with the `input` slot class as `class`; that recipe composes `focusRing({ target: "state", isFocusVisible })` from `DateInputRenderProps` and contains no separate focus ring.
 
 ## 5 Consumed tokens
 
-`background` (field box), `input` + `ring` (fieldGroup borders), `foreground` (segment text), `muted-foreground` (placeholder segments — ref `text-gray-600 italic`; disabled segments — ref `text-gray-200`), `primary` + `primary-foreground` (focused segment highlight — ref `bg-primary text-white`), `error` (FieldError text + invalid border — ref `destructive`), `muted` (read-only/disabled fill via fieldGroupVariants). Radii: `rounded-lg` field box, `rounded-xs` segments. Forced-colors fallbacks (`[ButtonText]`, `[GrayText]`, `[Highlight]`, `[HighlightText]`, `[Field]`) kept as-is.
+`card` (field box), `input` + `ring` (fieldGroup borders), `foreground` (segment text), `muted-foreground` (placeholder segments — ref `text-gray-600 italic`; disabled segments — ref `text-gray-200`), `primary` + `primary-foreground` (focused segment highlight — ref `bg-primary text-white`), `error` (FieldError text + invalid border — ref `destructive`), `muted` (read-only/disabled fill via fieldGroupVariants). Radii: `rounded-lg` field box, `rounded-xs` segments. Forced-colors fallbacks (`[ButtonText]`, `[GrayText]`, `[Highlight]`, `[HighlightText]`, `[Field]`) kept as-is.
 
 ## 6 Data attributes
 
@@ -54,7 +55,7 @@ AriaDateField                       (RAC DateField, flex flex-col gap-1)
 ## 7 Accessibility
 
 - RAC DateField renders a `role="group"` segment row; each editable segment is `role="spinbutton"` with `aria-valuenow/-valuetext`, literals are presentational.
-- Keyboard: Left/Right move between segments; Up/Down (and typing digits) change the focused segment; Backspace clears it. Segments show `caret-transparent` — the highlight (`bg-primary`) is the focus indication.
+- Keyboard: Left/Right move between segments; Up/Down (and typing digits) change the focused segment; Backspace clears it. The focused segment highlight identifies the active segment inside the composite, while the shared outer ring identifies keyboard focus on the field as a whole.
 - Label/description/error are wired by RAC (`aria-labelledby`/`aria-describedby`); `FieldError` only renders when invalid, and accepts the validation-function face for granular messages.
 - `aria-label` passthrough supports label-less usage.
 
@@ -62,9 +63,11 @@ AriaDateField                       (RAC DateField, flex flex-col gap-1)
 
 1. **Export path quarantine:** ref path `./date-field` → `react-aria/date-field` (locked path-policy ruling; self-documenting migration marker).
 2. **Token renames:** segment `text-gray-600` → `text-muted-foreground` (placeholder), `text-gray-200` → `text-muted-foreground` (disabled), focused `text-white` → `text-primary-foreground`, `destructive` → `error` — `no-primitive-colors` lint applies to interim code too.
-3. **`errorMessage: string | ((v: ValidationResult) => string)` kept** — a deliberate interim-tier exception to the conventions' unified `errorMessage: ReactNode`. It is RAC FieldError's native face; the base-ui successor adopts `ReactNode`.
+3. **`errorMessage` widened** to the library-wide `ReactNode | ((ValidationResult) => ReactNode)` face.
 4. **Kept (documented, not divergence):** `shouldForceLeadingZeros = true` default; `DateInput` public; open RAC prop spread.
-5. **Interim-only devDependency:** RAC state modifiers in classes (`type-literal:` on segments, plus the cluster's `selected:`, `outside-month:`, `group-pressed:`, `selection-start:`, `invalid:selected:` etc.) come from `tailwindcss-react-aria-components`. That plugin is interim-tier surface and uninstalls with this cluster.
+5. **Interim-only regular dependency:** RAC state modifiers in classes come from `tailwindcss-react-aria-components`; it uninstalls with this cluster.
+6. **Focus unified:** private `fieldGroupVariants` replaces the ref's outline recipe/border tint with the canonical state-driven `focusRing`; segment highlight remains an internal-position indicator, not a substitute for the field ring.
+7. **Field surface aligned:** private RAC `fieldGroupVariants` uses `bg-card`, not the reference's `bg-background`, so SearchField and both date pickers follow the library-wide input-surface rule in [conventions](conventions.md).
 
 ## 9 Test requirements
 

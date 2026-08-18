@@ -3,7 +3,8 @@
 ## 1 Header
 
 - **Canonical name**: `AlertDialog` (namespace compound, three parts)
-- **Export path**: `@elmeragroup/ui` (`import { AlertDialog } from "@elmeragroup/ui"`)
+- **Export path**: `@elmeragroup/ui/alert-dialog` (`import { AlertDialog } from "@elmeragroup/ui/alert-dialog"`)
+- **RSC**: client
 - **Tier**: prop-driven composite over Dialog (overlay component)
 - **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/base-ui/alert-dialog.tsx`
 
@@ -44,13 +45,13 @@
 | `variant` | `"destructive" \| "neutral"` | `"destructive"` | drives action-button variant and fallback icon |
 | `children` | `ReactNode` | — (required) | body copy, rendered in a real `Dialog.Description` part (§8) |
 | `actionLabel` | `string` | — (required) | primary button label |
-| `cancelLabel` | `string` | `"Cancel"` | secondary button label |
+| `cancelLabel` | `string` | locale dictionary | secondary button label; explicit prop overrides `alertDialog.cancel` |
 | `onAction` | `() => void` | — | primary button click |
 | `onCancel` | `() => void` | — | cancel button click (button always closes via `Dialog.Close`) |
 | `isPerformingAction` | `boolean` | `false` | primary button `isPending` (spinner, per Button spec) |
 | `isActionDisabled` | `boolean` | `false` | primary button `disabled` |
 | `isAutomaticallyCloseOnActionEnabled` | `boolean` | `false` | opt-in: wraps the action button in `Dialog.Close` so clicking it also closes; default leaves closing to the caller (async flows close after success) |
-| `container` | `HTMLElement \| RefObject<HTMLElement>` | active `ThemeScope` element | inherited from `Dialog.Content` (§8) |
+| `container` | `HTMLElement \| RefObject<HTMLElement>` | nearest `ThemeScope` element | inherited from `Dialog.Content` (§8) |
 
 Composite-tier prop naming per conventions (`is*` booleans, callback props).
 
@@ -96,10 +97,10 @@ Animation strategy: inherited from Dialog (keyframe `animate-in`/`animate-out`, 
 2. **Stays prop-driven (internal-wins ruling)**: the ref's prop-driven API is kept over shadcn's compound AlertDialog. Documented explicitly: it reuses `Dialog.Root` machinery + `role="alertdialog"`, **not** base-ui's AlertDialog component.
 3. **BUGFIX (ruled)**: the body becomes a real `Dialog.Description` part so `aria-describedby` is wired. The ref renders the body as a raw `<div className="text-sm text-pretty text-muted-foreground">` — visually identical to `DialogDescription` but with **no** describedby association; screen readers never announce the consequence text. Same classes, correct primitive.
 4. **Overlay `container` prop (mandated)**: inherited from `Dialog.Content` and forwarded to the internal Portal; the ref's `DialogContent` hardcodes its Portal with nothing forwarded (see dialog spec §8; portal-inside-ThemeScope guidance applies).
-5. **Icons → Phosphor**: `Icon.OctagonX` → `WarningOctagon` (Phosphor has no X-in-octagon glyph; `WarningOctagon` is the closest equivalent — verified against `@phosphor-icons` naming), `Icon.Info` → `Info`. Imported from `@elmeragroup/ui/icons`, regular weight.
+5. **Icons → Phosphor**: the reference octagon-X/info namespace icons become named `WarningOctagon` / `Info` imports (`WarningOctagon` is the closest available Phosphor equivalent to an X-in-octagon), imported from `@elmeragroup/ui/icons` at regular weight.
 6. **`destructive` → `error` token rename** on the fallback icon (`text-destructive` → `text-error`); the Button `variant="destructive"` alias resolves to error tokens per the Button spec.
 
-Kept faithfully: `showCloseButton` forced `false` (deliberate, not the unification gap); `autoFocus` on the action button; `isAutomaticallyCloseOnActionEnabled` opt-in close-on-action; `data-dialog-action-type` primary/secondary hooks; `variant` default `"destructive"`; `cancelLabel` fallback `"Cancel"`; `size-5 shrink-0` fallback-icon sizing; Header override `flex-row items-start justify-between gap-4` (icon right of title).
+Kept faithfully: `showCloseButton` forced `false` (deliberate, not the unification gap); `autoFocus` on the action button; `isAutomaticallyCloseOnActionEnabled` opt-in close-on-action; `data-dialog-action-type` primary/secondary hooks; `variant` default `"destructive"`; `size-5 shrink-0` fallback-icon sizing; Header override `flex-row items-start justify-between gap-4` (icon right of title). Divergence: `cancelLabel` defaults through the provider dictionary rather than literal English.
 
 ## 9 Test requirements
 
@@ -109,8 +110,9 @@ Role/label-based queries throughout:
 - describedby: the `alertdialog` element's `aria-describedby` resolves to the body copy (regression guard for the §8 bugfix).
 - Focus: on open, focus is on the action button (`getByRole("button", { name: actionLabel })` has focus); focus is trapped; Escape closes and restores trigger focus.
 - Actions: clicking action fires `onAction` and does **not** close by default; with `isAutomaticallyCloseOnActionEnabled` it closes; clicking cancel fires `onCancel` and always closes.
+- Cancel copy is asserted in all four locales; explicit `cancelLabel` wins.
 - States: `isPerformingAction` shows Button pending state; `isActionDisabled` disables the action button; cancel stays enabled.
-- No corner close button rendered (`queryByRole("button", { name: "Close" })` is null).
+- No corner close button is rendered: query for the current locale's `dialog.close` label returns null (repeat across all four provider locales).
 - Hooks: action/cancel buttons carry `data-dialog-action-type` `"primary"`/`"secondary"`.
 - Variant: `"destructive"` renders destructive action button + `WarningOctagon` fallback; `"neutral"` renders default button + `Info`; a custom `icon` replaces the fallback.
 

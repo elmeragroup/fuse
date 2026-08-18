@@ -19,8 +19,8 @@ Adopt **the runtime, not the machinery**. String-bearing components own a co-loc
 
 ## Consequences
 
-- `ElmeraGroupUiProvider` becomes required for string-bearing components (it already existed for `userAgent`/`locale` in the internal ref; `locale` is now typed and load-bearing).
+- `ElmeraGroupUiProvider` becomes required for string-bearing components. The internal reference's browser-detection field is intentionally not carried forward; the public provider contains only the typed, load-bearing locale contract.
 - Adding a locale = adding one TS module per string-bearing component + widening the `SupportedLocale` union — a mechanical, type-guided change.
 - All shipped locales are in every consumer bundle. Accepted at ≤ ~10 locales; past that, move to per-locale modules kept separate through the build + resolver-level subsetting (react-aria's model). The public API is unchanged by that switch.
-- BCP-47 negotiation (built into the dictionary) maps regional variants to the nearest shipped locale; final fallback `en-US`.
+- `SupportedLocale` is the exact four-value public input union, so normal typed use selects a shipped module directly. The dictionary's `en-US` fallback remains defensive runtime behavior for untyped JavaScript input, not an additional supported-locale negotiation contract.
 - Tests: one dictionary-default render test per shipped locale per string-bearing component, plus prop-override tests; the `SupportedLocale` union is covered by public-API type tests.

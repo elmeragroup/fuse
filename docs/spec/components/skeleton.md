@@ -3,8 +3,9 @@
 ## 1 Header
 
 - **Canonical name**: `Skeleton` — single component, no namespace (locked: stays single; no `.Root`)
-- **Export path**: `@elmeragroup/ui` (`import { Skeleton } from "@elmeragroup/ui"`)
+- **Export path**: `@elmeragroup/ui/skeleton` (`import { Skeleton } from "@elmeragroup/ui/skeleton"`)
 - **Tier**: plain element (one `<div>`; no base-ui primitive, no state)
+- **RSC**: server
 - **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/skeleton.tsx`
 
 ## 2 Anatomy

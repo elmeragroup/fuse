@@ -58,7 +58,7 @@ Top to bottom:
 One **bordered frame** per demo (base-ui's demo-then-source card), three stacked regions:
 
 1. **Stage**: a **dotted canvas** rendering the live demo under the active theme. The dots are `color-mix`ed from the active theme's `--foreground` so the theme's **real background stays visible** — the stage is theme-tinted, not a neutral checkerboard.
-2. **Theme-slug meta row**: the active theme coordinate (e.g. `default·elmera·private`) printed in mono between stage and source.
+2. **Theme-slug meta row**: the active theme coordinate (e.g. `external·fkas·private`) printed in mono between stage and source.
 3. **Demo source code**: the demo file's extracted source, syntax-highlighted.
 
 ## 4 Theme switching
@@ -91,7 +91,7 @@ The whitelabel pitch page, under Handbook:
 
 ## 8 API reference generation
 
-- API tables are **generated from TS types at docs build**; prop descriptions come from **JSDoc on the props** — once code exists, code is the single source of truth. The spec chapters' hand-written §3 tables are the **authoring input until then**, then demoted to provenance.
+- API tables are **generated from TS types at docs build**; prop descriptions come from **JSDoc on the props**. Code is the mechanical source for generated reference pages, while this spec remains the normative contract: an API change updates the implementation, its component spec, tests, JSDoc, and changeset together. Generated output never silently overrules the spec.
 - Every generated table carries an **RSC-status column** (server-safe vs `"use client"`) per [performance](performance.md) §3 — RSC status is public contract, and the docs surface it mechanically, not editorially.
 - Generation failures (unresolvable type, missing JSDoc on a public prop) **fail the docs build** — no silent empty cells.
 

@@ -3,7 +3,8 @@
 ## 1 Header
 
 - **Canonical name**: `TextareaField` (single labeled composite; renamed from the ref's `TextArea` — mirrors `input` → `TextField`)
-- **Export path**: `@elmeragroup/ui` (`import { TextareaField } from "@elmeragroup/ui"`)
+- **Export path**: `@elmeragroup/ui/textarea-field` (also re-exported from `@elmeragroup/ui`)
+- **RSC**: client
 - **Tier**: labeled composite (composite prop face: `is*` booleans, `onChange(value)`, `errorMessage: ReactNode`)
 - **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/text-area.tsx`
 

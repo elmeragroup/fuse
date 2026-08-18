@@ -1,6 +1,6 @@
 # 0004 — Phosphor Icons as the single icon family
 
-Date: 2026-08-17. Status: accepted.
+Date: 2026-08-17. Status: accepted; amended 2026-08-18 after inspection of the pinned package's SSR exports.
 
 ## Context
 
@@ -8,7 +8,7 @@ The two reference codebases use different icon families: internal re-exports ~15
 
 ## Decision
 
-**Phosphor is the only icon family.** `@elmeragroup/ui/icons` ships curated per-icon named re-exports over `@phosphor-icons/react` (pinned version, regular dependency, our own `'use client'` banner since upstream lacks one). No namespace `Icon` object — per-icon exports tree-shake. ESM-only publishing avoids upstream's 5 MB CJS monolith. Components render `regular` weight everywhere; re-export types narrow `weight` to `'regular' | 'fill'`. Bespoke SVGs (payment/signing/product marks, brand illustrations) ship as precompiled React components in `/icons` and `/illustrations`. Brand logos: one component per brand with `variant="full" | "mark"`; `BrandLogo` keys off the `BRANDS` record (fkse → Telinet).
+**Phosphor is the only icon family.** `@elmeragroup/ui/icons` ships curated per-icon named wrappers over the pinned `@phosphor-icons/react/dist/ssr/<Icon>` exports (regular dependency). Those explicit SSR modules use no hooks, so our adapters remain server-safe and need no `'use client'` banner. No namespace `Icon` object — named exports tree-shake. ESM-only publishing avoids upstream's 5 MB CJS monolith. Components render `regular` weight everywhere; wrapper types narrow `weight` to `'regular' | 'fill'`. Bespoke SVGs (payment/signing/product marks, brand illustrations) ship as precompiled React components in `/icons` and `/illustrations`. Brand logos: one component per brand with `variant="full" | "mark"`; `BrandLogo` keys off the `BRANDS` record (fkse → Telinet).
 
 ## Alternatives rejected
 
@@ -21,5 +21,6 @@ The two reference codebases use different icon families: internal re-exports ~15
 
 - Every component port (from either ref) swaps its icons; the spec's icon chapter carries the lucide→Phosphor mapping table.
 - Each used icon carries all six Phosphor weights in the bundle — accepted consciously; the codegen path recovers it without API changes.
+- Curated adapters are safe to import from React Server Components; packed Next fixtures pin that contract against dependency or build drift.
 - The weight prop's type narrowing (`regular`/`fill`) guides consistency but does not reduce bytes.
-- Logo distribution in the public package is contingent on the brand-asset licensing decision.
+- Logos and the decided illustration roster ship in the public package under the settled distribution ruling; new artwork still requires recorded public-distribution rights.

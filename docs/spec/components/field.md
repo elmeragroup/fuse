@@ -3,7 +3,8 @@
 ## 1 Header
 
 - **Canonical name**: `Field` (namespace compound)
-- **Export path**: `@elmeragroup/ui` (`import { Field } from "@elmeragroup/ui"`)
+- **Export path**: `@elmeragroup/ui/field` (also re-exported from `@elmeragroup/ui`)
+- **RSC**: client — base-ui Field validity/context wiring
 - **Tier**: base-ui structural primitive (unlabeled building block; labeled composites such as `TextField`/`TextareaField` build on it)
 - **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/base-ui/field.tsx`
 

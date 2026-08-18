@@ -3,7 +3,8 @@
 ## 1 Header
 
 - **Canonical name**: `ToggleGroup` — namespace compound: `ToggleGroup.Root`, `ToggleGroup.Item`
-- **Export path**: `@elmeragroup/ui` (`import { ToggleGroup } from "@elmeragroup/ui"`)
+- **Export path**: `@elmeragroup/ui/toggle-group` (also re-exported from `@elmeragroup/ui`)
+- **RSC**: client
 - **Tier**: base-ui composite control (a set of toggles with single or multiple selection)
 - **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/base-ui/toggle-group.tsx`
 
@@ -18,9 +19,9 @@ Root provides a React context (`variant`, `size`, `spacing`, `orientation`) that
 
 ```tsx
 <ToggleGroup.Root value={align} onValueChange={setAlign} toggleMultiple={false}>
-  <ToggleGroup.Item value="left" aria-label="Align left"><Icon.TextAlignLeft /></ToggleGroup.Item>
-  <ToggleGroup.Item value="center" aria-label="Align center"><Icon.TextAlignCenter /></ToggleGroup.Item>
-  <ToggleGroup.Item value="right" aria-label="Align right"><Icon.TextAlignRight /></ToggleGroup.Item>
+  <ToggleGroup.Item value="left" aria-label="Align left"><TextAlignLeft aria-hidden /></ToggleGroup.Item>
+  <ToggleGroup.Item value="center" aria-label="Align center"><TextAlignCenter aria-hidden /></ToggleGroup.Item>
+  <ToggleGroup.Item value="right" aria-label="Align right"><TextAlignRight aria-hidden /></ToggleGroup.Item>
 </ToggleGroup.Root>
 ```
 

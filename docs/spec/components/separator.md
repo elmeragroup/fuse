@@ -3,7 +3,8 @@
 ## 1 Header
 
 - **Canonical name**: `Separator` (single component — no namespace parts)
-- **Export path**: `@elmeragroup/ui` (`import { Separator } from "@elmeragroup/ui"`)
+- **Export path**: `@elmeragroup/ui/separator` (also re-exported from `@elmeragroup/ui`)
+- **RSC**: client — base-ui Separator primitive
 - **Tier**: base-ui leaf primitive wrapper
 - **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/base-ui/separator.tsx` — the ref also ships a second, older `src/separator.tsx` at the root; **the base-ui version wins** (template ruling, §8) and the root file is retired.
 

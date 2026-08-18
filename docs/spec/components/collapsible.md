@@ -3,8 +3,9 @@
 ## 1 Header
 
 - **Canonical name**: `Collapsible` (namespace compound)
-- **Export path**: `@elmeragroup/ui` (`import { Collapsible } from "@elmeragroup/ui"`)
+- **Export path**: `@elmeragroup/ui/collapsible` (also re-exported from `@elmeragroup/ui`)
 - **Tier**: unstyled base-ui primitive passthrough
+- **RSC**: client
 - **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/base-ui/collapsible.tsx`
 
 ## 2 Anatomy
@@ -46,11 +47,11 @@ Pure passthrough — every part forwards `ComponentProps` of its base-ui part ve
 
 ## 4 Variants
 
-None — **deliberately unstyled** (kept from the ref). No `tv` recipe, no `variant`/`radius` axes, no default classes on any part. Consumers style via `className`/`render`; animation hooks are base-ui's data attributes and `--collapsible-panel-height`/`--collapsible-panel-width` CSS vars on the panel (e.g. `h-0 overflow-hidden transition-[height] data-[open]:h-(--collapsible-panel-height)`). Styled disclosure UIs belong to `Accordion` (accordion.md).
+None — **deliberately visually unstyled** (kept from the ref) except the mandatory shared `focusRing({ target: "self" })` on Trigger. No `tv` recipe, no `variant`/`radius` axes, and no layout/surface classes. Consumers style via `className`/`render`; animation hooks are base-ui's data attributes and `--collapsible-panel-height`/`--collapsible-panel-width` CSS vars on the panel (e.g. `h-0 overflow-hidden transition-[height] data-[open]:h-(--collapsible-panel-height)`). Styled disclosure UIs belong to `Accordion` (accordion.md).
 
 ## 5 Consumed tokens
 
-None — the component ships no classes.
+`ring` + `background` only, through Trigger's mandatory focus recipe; no surface/layout token consumption.
 
 ## 6 Data attributes
 
@@ -58,7 +59,7 @@ None — the component ships no classes.
 
 **Emitted (by base-ui, available to consumers)**: `data-open`/`data-closed` + `data-starting-style`/`data-ending-style` on Root and Panel; `data-panel-open` on Trigger (the trigger does **not** get `data-open`). Panel exposes `--collapsible-panel-height`/`--collapsible-panel-width`.
 
-**Consumed selectors**: none in library source (unstyled). Consumers scoping `data-open:` must follow the conventions' ancestor-match trap note.
+**Consumed selectors**: Trigger's shared self-focus selector only. Consumer `data-open:` classes follow conventions' self-scoped custom-variant contract and belong on the state-emitting element.
 
 ## 7 Accessibility
 
@@ -71,8 +72,9 @@ None — the component ships no classes.
 
 1. **Renames (flat → namespace)**: `Collapsible`→`Collapsible.Root`, `CollapsibleTrigger`→`Collapsible.Trigger`, `CollapsibleContent`→`Collapsible.Content`.
 2. **base-ui `Panel` → our `Content`**: the ref already exposes the Panel primitive as `CollapsibleContent`; the rename is kept and mirrored by Accordion's `Panel`→`Content` (accordion.md §8).
-3. **Unstyled passthrough kept deliberately**: the ref adds no classes, recipes, or icons — only `data-slot` attributes over the raw primitive. This is the intended tier: Collapsible is the styling-free single-disclosure primitive; the styled sibling is Accordion.
+3. **Visually unstyled passthrough kept deliberately**: the ref adds no layout/surface classes, recipes, or icons — only `data-slot` attributes over the raw primitive. The one addition is the library-wide focus recipe on Trigger. This is the intended tier: Collapsible is the styling-free single-disclosure primitive; the styled sibling is Accordion.
 4. **Absorbs retired ungrouped `Disclosure`**: `.ref/OrderModuleInternalWeb/packages/ui/src/base-ui/disclosure.tsx` is retired (accordion.md §8). Ungrouped `Disclosure`/`DisclosureHeader`/`DisclosurePanel` usage migrates here: `defaultExpanded` → `defaultOpen`, `isExpanded` → `open`, `onExpandedChange` → `onOpenChange`, `shouldUnmountOnCollapse` → `!keepMounted` (inverted default: Disclosure kept panels mounted, Collapsible unmounts by default), `DisclosureHeader` → consumer heading + `Collapsible.Trigger`, `DisclosurePanel` → `Collapsible.Content`. Grouped usage migrates to Accordion.
+5. **Focus unified:** the otherwise-unstyled Trigger composes the canonical self-focus adapter; there is no v1 focus exception for unheadless primitives.
 
 ## 9 Test requirements
 

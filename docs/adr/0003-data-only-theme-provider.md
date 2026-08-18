@@ -10,7 +10,7 @@ Themes (variant × brand × segment) are **server-known and deployment-fixed** �
 
 `@elmeragroup/ui/theme` ships a **data-only provider**: React context + pure helpers (`themeSlug`, `parseThemeSlug`, `themeAttributes`), no effects, no script, no DOM mutation for the brand theme. The host spreads `themeAttributes(theme)` onto `<html>` in its root layout — zero flash by construction. The provider is fully controlled; no `setTheme` (switching is host state). `ThemeScope` (polymorphic via base-ui `useRender`) covers per-request subtree theming and multi-theme pages. A discriminated `ThemeInput` union makes pinned-brand violations unrepresentable; runtime validation dev-throws / prod-coerces for untyped inputs. One entry point — no per-framework re-exports; framework integration is four documentation recipes.
 
-The dark axis ships **wired but valueless**: `<ColorSchemeScript>` + `useColorScheme()` are functional in v1 (adapted from next-themes' `script.ts`, MIT notice retained), setting the reserved `data-theme` before first paint; theme CSS carries an empty commented `[data-theme="dark"]` section until dark values are specced.
+The dark axis ships **wired but valueless**: `<ColorSchemeScript>` + `useColorScheme()` are functional in v1 (adapted from next-themes' `script.ts`, MIT notice retained), setting the reserved `data-theme` before first paint; theme CSS carries a terminal comment reserving the future `[data-theme="dark"]` block (not an empty CSS rule node) until dark values are specced.
 
 ## Alternatives rejected
 

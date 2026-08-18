@@ -3,7 +3,8 @@
 ## 1 Header
 
 - **Canonical name**: `InputGroup` (namespace compound)
-- **Export path**: `@elmeragroup/ui` (`import { InputGroup } from "@elmeragroup/ui"`)
+- **Export path**: `@elmeragroup/ui/input-group` (also re-exported from `@elmeragroup/ui`)
+- **RSC**: client
 - **Tier**: structural primitive composing `Input`/`Textarea`/`Button`
 - **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/base-ui/input-group.tsx`
 
@@ -71,16 +72,16 @@ Both recipes are **module-private** (no borrow pattern; stated per convention):
 ## 5 Consumed tokens
 
 - `input` — Root border (`border-input`), disabled fill (`has-disabled:bg-input/50`).
-- `ring` — focus chrome re-derived on Root (`has-[[data-slot=input-group-control]:focus-visible]:border-ring …ring-3 …ring-ring/50`).
+- `ring` — Root composes shared `focusRing({ target: "within" })` around the focused control.
 - `error` — invalid chrome (`has-[[data-slot][aria-invalid=true]]:border-error …ring-error/20`).
 - `muted-foreground` — Addon and Text foreground.
 - Radius: Root `rounded-md`; nested compact radii use the kept `calc(var(--radius)-5px)` arithmetic.
 
 ## 6 Data attributes
 
-**Emitted**: `data-slot="input-group"` (Root), `"input-group-addon"` + `data-align` (Addon), `"input-group-text"` (Text — added, §8), `"input-group-control"` (Input/Textarea, overriding the primitives' own slot), `data-size` (Button).
+**Emitted**: `data-slot="input-group"` (Root), `"input-group-addon"` + `data-align` (Addon), `"input-group-text"` (Text — added, §8), `"input-group-control"` + `data-focus-ring-control` (Input/Textarea, overriding the primitives' own slot and identifying the owned focus receiver), `data-size` (Button).
 
-**Consumed**: `[data-slot=input-group-control]:focus-visible` and `[data-slot][aria-invalid=true]` (Root chrome); `>[data-align=block-start/end]` and `>[data-align=inline-start/end]` (Root layout + input padding); `group-data-[disabled=true]/input-group` (Addon dimming); **`in-data-[slot=combobox-content]`** — focus-ring neutralization coupling: when an InputGroup sits inside combobox popup content, Root's focus-within border/ring is suppressed (`border-inherit ring-0`) because the popup owns the focus treatment; this couples InputGroup to the combobox's `data-slot="combobox-content"` contract. `InputGroup.Text`'s slot participates in the ButtonGroup `[data-slot]` sizing contract (§8).
+**Consumed**: `[data-slot=input-group-control]:focus-visible` and `[data-slot][aria-invalid=true]` (Root chrome); `>[data-align=block-start/end]` and `>[data-align=inline-start/end]` (Root layout + input padding); `group-data-[disabled=true]/input-group` (Addon dimming). `InputGroup.Text`'s slot participates in the ButtonGroup `[data-slot]` sizing contract (§8). There is no popup-specific focus exception: an InputGroup inside Combobox content keeps the same visible ring as every other instance.
 
 ## 7 Accessibility
 
@@ -98,8 +99,10 @@ Both recipes are **module-private** (no borrow pattern; stated per convention):
 3. **`destructive` → `error`** token rename on invalid chrome.
 4. **`dark:` variant classes dropped** (`dark:bg-input/30 dark:has-disabled:bg-input/80 dark:has-[…]:ring-destructive/40` on Root; `dark:bg-transparent dark:disabled:bg-transparent` on Input/Textarea) — dark axis lives in tokens. Control-level transparent overrides remain in the light-set only.
 5. Recipes `inputGroupAddonVariants` / `inputGroupButtonVariants` confirmed module-private (ref does not export them; pinned here against drift).
+6. `data-focus-ring-control` marks only Input/Textarea for the shared within adapter; addon Buttons keep their independent Button ring and do not light the group chrome.
+7. **Popup focus exception removed:** the ref's `in-data-[slot=combobox-content]:focus-within:border-inherit/ring-0` suppression is deleted. A static popup hairline is not a keyboard focus indicator, so embedded search inputs keep the canonical group ring.
 
-Kept faithfully: Addon focus-sibling-input `onClick`; Button size re-typing via `data-size`; combobox-content ring neutralization; Input/Textarea chrome-stripping overrides (`rounded-none border-0 bg-transparent shadow-none ring-0 focus-visible:ring-0 disabled:bg-transparent aria-invalid:ring-0`, textarea additionally `resize-none py-2`).
+Kept faithfully: Addon focus-sibling-input `onClick`; Button size re-typing via `data-size`; Input/Textarea chrome stripping (`rounded-none border-0 bg-transparent shadow-none disabled:bg-transparent aria-invalid:ring-0`, textarea additionally `resize-none py-2`). The shared `focusRing({ target: "within" })` adapter owns both the Root's focus-visible ring and the nested control's self-ring neutralization; this component contains no local focus-ring literal.
 
 ## 9 Test requirements
 
@@ -110,6 +113,7 @@ Kept faithfully: Addon focus-sibling-input `onClick`; Button size re-typing via 
 - `aria-invalid` on the control surfaces group invalid chrome (attribute assertion on control; chrome via state attr, not snapshot).
 - `align` reflected as `data-align` for all four values; block alignments render Root as column.
 - Disabled input dims the group (`has-disabled` state) and addon.
+- A popup-embedded search InputGroup retains the same keyboard-visible Root ring (regression for §8.7).
 
 ## 10 Demo requirements
 

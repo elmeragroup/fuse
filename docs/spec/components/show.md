@@ -3,7 +3,8 @@
 ## 1 Header
 
 - **Canonical name**: `Show` (single component; control-flow helper, no namespace)
-- **Export path**: `@elmeragroup/ui` (`import { Show } from "@elmeragroup/ui"`)
+- **Export path**: `@elmeragroup/ui/show` (also re-exported from `@elmeragroup/ui`)
+- **RSC**: server
 - **Tier**: render helper — no DOM of its own, no state, server-component safe
 - **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/show.tsx`
 

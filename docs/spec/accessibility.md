@@ -10,7 +10,7 @@ Normative chapter for `@elmeragroup/ui`. Every component spec's §7 (Accessibili
 
 ## 2 Keyboard & focus
 
-- Focus rings render on **`:focus-visible` only**, never bare `:focus`, and always via the `focusRing` shared recipe (`styles/utils`): **`ring-2 ring-ring ring-offset-2`**. The offset is mandatory — it keeps the brand-independent violet ring legible on colored fills and pill (`--radius-button`) shapes. No component suppresses or restyles the ring.
+- Focus rings render on **`:focus-visible` only**, never bare `:focus`, and always via the package-private `focusRing` recipe (`styles/utils`): **`ring-2 ring-ring ring-offset-2 ring-offset-background`**. The offset is mandatory — it keeps the brand-independent violet ring legible on colored fills and pill (`--radius-button`) shapes. The recipe supports native self-focus, focus-within containers, and RAC's explicit `isFocusVisible` state; those are selector adapters around one visual definition. The `within` adapter applies the visual ring to the group and neutralizes the marked nested control's self ring inside that same shared recipe, preventing a double ring without hiding keyboard focus. Every focusable element that a library component creates composes one adapter; a consumer-supplied `render` target or `Focusable` child must itself be a correctly styled interactive primitive. No component suppresses, recolors, or locally redefines the focus ring outside these adapters. The lint rule forbids literal classes that create or suppress a **focus** ring outside `styles/utils`; it deliberately permits invalid-state rings and static one-pixel popup hairlines.
 - **Keyboard behavior inherits base-ui verbatim**: arrow-key roving with roving tabindex in composites (tabs, radio-group, menus, toggle-group), typeahead where base-ui provides it, `Escape` dismisses the topmost open overlay only, modal overlays trap focus and return it to the trigger on close.
 - Components never set a **positive `tabindex`**; `tabindex={-1}` only for programmatic focus targets.
 - Skip links, landmark roles, and heading hierarchy are **app responsibility**; the docs Quick start shows the expected page scaffold once.
@@ -30,15 +30,50 @@ Adopted architecture: **the react-aria string-dictionary model, adapted to our s
 - **Runtime**: `@internationalized/string` (`LocalizedStringDictionary` + `LocalizedStringFormatter`; ~1 kB, dependency-free, `sideEffects: false`). No glob imports, no JSON, no string-compiler build step, no locale-subsetting plugin — none of it pays off below ~10 locales.
 - **Authoring**: components that render user-visible or AT-only strings own a co-located `intl/` directory of **plain TS modules** — `intl/nb-NO.ts`, `intl/sv-SE.ts`, `intl/en-US.ts`, `intl/fi-FI.ts` — explicitly imported into a per-component dictionary module (`intl/index.ts`). Keys are flat per component. Plural/number cases use `LocalizedStringFormatter`'s `plural`/`number`/`select` helpers with hand-written message functions; we do not ship an ICU parser.
 - **Shipped locales v1**: `nb-NO`, `sv-SE`, `en-US`, `fi-FI` (Finnish market is imminent). All locales ship eagerly — at four locales this is a few hundred bytes per string-bearing component. If the locale set ever approaches ~10, revisit per-locale module splitting + resolver subsetting (the react-aria mitigation) as a roadmap item.
-- **Locale source**: `ElmeraGroupUiProvider` carries `locale: SupportedLocale` (**required**, typed union `"nb-NO" | "sv-SE" | "en-US" | "fi-FI"`). Every string-consuming component reads it from context via a `useLocalizedStrings(dictionary)` internal hook — **apps never pass locale to individual components**. Multilingual whitelabel apps re-render the provider with the user's selected locale; single-country apps set it once. BCP-47 negotiation (from `LocalizedStringDictionary`) maps unlisted regional variants to the nearest shipped locale; final fallback `en-US`.
+- **Locale source**: `ElmeraGroupUiProvider` carries `locale: SupportedLocale` (**required**, typed union `"nb-NO" | "sv-SE" | "en-US" | "fi-FI"`). Every string-consuming component reads it from context via a `useLocalizedStrings(dictionary)` internal hook — **apps never pass locale to individual components**. Multilingual whitelabel apps re-render the provider with the user's selected locale; single-country apps set it once. Typed callers select one of the four shipped modules directly; `LocalizedStringDictionary`'s `en-US` fallback is defensive behavior for invalid untyped JavaScript input, not a fifth public locale or a regional-variant promise.
 - **Override precedence**: explicit string props on a component (e.g. combobox's empty-state message, pagination labels, toast close label) always win over the dictionary. Props are optional — the dictionary guarantees a correct-language default, props exist for copy control.
 - **SSR**: the provider is plain data (no `navigator` sniffing, no hydration correction); locale is app-supplied, so server and client render identically. No inline-script string injection is needed at four eager locales.
 - **Docs**: a Handbook page documents the mechanism, the supported-locale union, the override precedence, and the recipe for a language switcher.
 
+### 4.1 Locked v1 string manifest
+
+The keys and copy below are implementation data, not examples. Each owner keeps only its rows in a co-located dictionary; this table is the cross-component audit source. `{item}` is a message-function argument, not an ICU string.
+
+| Owner/key | `nb-NO` | `sv-SE` | `en-US` | `fi-FI` |
+| --- | --- | --- | --- | --- |
+| `alertDialog.cancel` | Avbryt | Avbryt | Cancel | Peruuta |
+| `breadcrumb.landmark` | Brødsmuler | Brödsmulor | Breadcrumb | Murupolku |
+| `breadcrumb.more` | Mer | Mer | More | Lisää |
+| `combobox.empty` | Ingen resultater. | Inga resultat. | No results. | Ei tuloksia. |
+| `combobox.clear` | Tøm valg | Rensa val | Clear selection | Tyhjennä valinta |
+| `combobox.removeItem({item})` | Fjern {item} | Ta bort {item} | Remove {item} | Poista {item} |
+| `datePicker.presets` | Datoforvalg | Datumalternativ | Date presets | Päivämäärän pikavalinnat |
+| `dialog.close` | Lukk | Stäng | Close | Sulje |
+| `meter.warning` | Advarsel | Varning | Warning | Varoitus |
+| `meter.success` | Vellykket | Lyckades | Success | Onnistui |
+| `pagination.landmark` | Sidenavigasjon | Sidnavigering | Pagination | Sivutus |
+| `pagination.previous` | Forrige | Föregående | Previous | Edellinen |
+| `pagination.next` | Neste | Nästa | Next | Seuraava |
+| `pagination.goToPrevious` | Gå til forrige side | Gå till föregående sida | Go to previous page | Siirry edelliselle sivulle |
+| `pagination.goToNext` | Gå til neste side | Gå till nästa sida | Go to next page | Siirry seuraavalle sivulle |
+| `pagination.morePages` | Flere sider | Fler sidor | More pages | Lisää sivuja |
+| `phoneNumberField.selectCountry` | Velg land | Välj land | Select country | Valitse maa |
+| `phoneNumberField.searchCountries` | Søk etter land | Sök efter länder | Search countries | Hae maita |
+| `phoneNumberField.noCountries` | Ingen land funnet. | Inga länder hittades. | No countries found. | Maita ei löytynyt. |
+| `popoverInfoButton.moreInformation` | Mer informasjon | Mer information | More information | Lisätietoja |
+| `searchField.clear` | Tøm søket | Rensa sökningen | Clear search | Tyhjennä haku |
+| `sheet.close` | Lukk | Stäng | Close | Sulje |
+| `sidebar.toggle` | Vis eller skjul sidepanelet | Visa eller dölj sidopanelen | Toggle sidebar | Näytä tai piilota sivupalkki |
+| `sidebar.title` | Sidepanel | Sidopanel | Sidebar | Sivupalkki |
+| `sidebar.description` | Viser sidepanelet. | Visar sidopanelen. | Displays the sidebar. | Näyttää sivupalkin. |
+| `toast.close` | Lukk | Stäng | Close | Sulje |
+
+Visible consumer content is not translated by the library. In particular, preset item labels come from the radio's visible children/value, loader labels remain consumer-supplied because their surrounding pending action provides the wording, and confirm-button confirmation copy remains consumer-owned.
+
 ## 5 Semantics rulings
 
 - **Item list-semantics gap (ruled)**: base-ui's `Item.Group` renders `role="list"` while `Item` defaults to no role — a half-list is an AT bug. Our `Item` **adopts `role="listitem"` automatically when rendered inside `Item.Group`** (one context read), overridable via the `role` prop. Recorded as a Divergence in the item spec; component specs no longer push the role to consumers.
-- **Toast**: base-ui Toast announcement defaults — polite for default/success/info toasts, assertive for error toasts.
+- **Toast**: the library's manager adapter defaults neutral/info/success/warning/loading announcements to polite and error announcements to assertive; an explicit priority remains the caller override. Base-ui's type-agnostic low default is not exposed unchanged.
 - **Skeleton** is `aria-hidden="true"`; the loading region it stands in for carries `aria-busy="true"` until content arrives.
 - **Meter/progress** components carry their base-ui value semantics untouched (`role="meter"`/`role="progressbar"` with `aria-valuenow` etc.).
 

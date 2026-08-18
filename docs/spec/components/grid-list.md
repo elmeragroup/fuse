@@ -4,6 +4,7 @@
 
 - **Canonical name**: `GridList` / `GridListItem` (flat pair, kept as the ref exports them — no namespace for the interim)
 - **Export path**: `@elmeragroup/ui/react-aria/grid-list` — exports `GridList`, `GridListItem`. `react-aria/` prefix is the quarantine marker for the remaining RAC dependency.
+- **RSC**: client
 - **Tier**: **react-aria interim**. One of the two facet-filter remnants (with SearchField) — the Autocomplete/filter toolbars still run on RAC; migration is deferred until the listbox/filter rewrite (per the react-aria cluster README).
 - **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/react-aria/grid-list.tsx` (+ `styles/checkbox.ts`, `styles/utils.ts` `focusRing`, `react-aria/utils.ts` `composeTailwindRenderProps`)
 
@@ -14,7 +15,7 @@ AriaGridList data-slot="grid-list"          (role="grid"; empty-state centering 
 └─ AriaGridListItem data-slot="grid-list-item"  (role="row" > gridcell; itemStyles = tv extend focusRing)
    ├─ Button slot="drag" "≡"                 — only when allowsDragging
    ├─ Checkbox slot="selection"              — only when selectionMode !== "none" && selectionBehavior === "toggle"
-   │  └─ box div + Icon.Check / Icon.Minus   (module-private RAC Checkbox styled by checkboxVariants)
+   │  └─ box div + Check / Minus             (named icon imports; module-private RAC Checkbox styled by checkboxVariants)
    └─ children (render props composed)
 ```
 
@@ -35,12 +36,12 @@ Both parts accept `className` (string or render-prop function, composed via `com
 
 ## 4 Variants
 
-- `itemStyles` — module-private tv, `extend: focusRing`; boolean axes `isSelected` (false: `hover:bg-muted`; true: `z-20 border bg-muted hover:bg-muted/80`) and `isDisabled` (`z-10 text-muted-foreground`)
+- `itemStyles` — module-private tv, composes `focusRing({ target: "state", isFocusVisible })`; boolean axes `isSelected` (false: `hover:bg-muted`; true: `z-20 border bg-muted hover:bg-muted/80`) and `isDisabled` (`z-10 text-muted-foreground`)
 - Internal Checkbox uses `checkboxVariants` (shared slot recipe, private) with axes `variant("success")`, `isSelected`, `isDisabled`, `isInvalid`, `isFocusVisible`
 
 ## 5 Consumed tokens
 
-`bg-muted` (hover/selected rows), `text-muted-foreground` (disabled rows), `outline-ring` (focusRing), `border` default token; checkbox slot: `bg-primary`/`border-primary` (selected), `bg-background`, `border` (`--border`), `text-primary-foreground` (icon), `bg-success`/`border-success`, `border-error` (invalid, renamed §8). Forced-colors system colors (`GrayText`, `Highlight`, `Mark`) kept.
+`bg-muted` (hover/selected rows), `text-muted-foreground` (disabled rows), `ring` + `background` (shared `focusRing`), `border` default token; checkbox slot: `bg-primary`/`border-primary` (selected), `bg-background`, `border` (`--border`), `text-primary-foreground` (icon), `bg-success`/`border-success`, `border-error` (invalid, renamed §8). Forced-colors system colors (`GrayText`, `Highlight`, `Mark`) kept.
 
 ## 6 Data attributes
 

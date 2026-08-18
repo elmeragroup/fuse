@@ -3,7 +3,8 @@
 ## 1 Header
 
 - **Canonical name**: `Tooltip` (namespace compound)
-- **Export path**: `@elmeragroup/ui` (`import { Tooltip } from "@elmeragroup/ui"`)
+- **Export path**: `@elmeragroup/ui/tooltip` (also re-exported from `@elmeragroup/ui`)
+- **RSC**: client
 - **Tier**: styled base-ui primitive wrapper (overlay component)
 - **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/base-ui/tooltip.tsx`
 
@@ -56,15 +57,16 @@ All rendering parts take `className` (merged via `cn`) and forward the rest of t
 | `alignOffset` | `number` | `0` | |
 | `side` | Positioner `side` | `"top"` | tooltips open upward by default (vs Popover/DropdownMenu `"bottom"`) |
 | `sideOffset` | `number` | `4` | |
-| `container` | `HTMLElement \| ref` | active `ThemeScope` element | forwarded to the internal `TooltipPrimitive.Portal` (§8) |
+| `container` | `HTMLElement \| RefObject<HTMLElement>` | nearest `ThemeScope` element | forwarded to the internal `TooltipPrimitive.Portal` (§8) |
 
 ## 4 Variants
 
-No `tv` recipe and no variant axes — single inverted style, all inline on Content.
+No component-specific `tv` recipe and no variant axes — single inverted style inline on Content; Trigger composes shared `focusRing({ target: "self" })`.
 
 ## 5 Consumed tokens
 
 - `foreground` / `background` — inverted surface: `bg-foreground text-background` popup, `bg-foreground fill-foreground` arrow. Token-inverted by design (no raw colors; flips correctly per theme), kept as-is (§8).
+- `ring` — Trigger focus treatment (`background` also supplies its ring offset).
 - Radii: popup `rounded-md`, arrow `rounded-[2px]` tip softening — kept from the ref (documented: the 2px literal is the arrow tip's corner soften, below token granularity).
 
 ## 6 Data attributes
@@ -75,7 +77,7 @@ No `tv` recipe and no variant axes — single inverted style, all inline on Cont
 
 **Consumed selectors**:
 
-- Popup: `data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95`, `data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95`, `data-[side=bottom|top|left|right|inline-start|inline-end]:slide-in-from-*`, `origin-(--transform-origin)`. Bare `data-open:`/`data-closed:` variants stay scoped to the popup element (conventions' ancestor-match trap).
+- Popup: `data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95`, `data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95`, `data-[side=bottom|top|left|right|inline-start|inline-end]:slide-in-from-*`, `origin-(--transform-origin)`. Bare `data-open:`/`data-closed:` are self-scoped custom variants and stay on the popup that emits the state.
 - Arrow: `size-2.5 rotate-45` diamond with per-side offset/centering — `data-[side=top]:-bottom-2.5`, `data-[side=bottom]:top-1`, and for left/right/inline-start/inline-end a `top-1/2!` + `-translate-y-1/2` vertical centering with `-left-1`/`-right-1` — kept verbatim.
 
 ## 7 Accessibility
@@ -89,12 +91,13 @@ No `tv` recipe and no variant axes — single inverted style, all inline on Cont
 ## 8 Divergence from reference
 
 1. **Renames (flat → namespace)**: `TooltipProvider`→`Tooltip.Provider`, `Tooltip`→`Tooltip.Root`, `TooltipTrigger`→`Tooltip.Trigger`, `TooltipContent`→`Tooltip.Content`.
-2. **Overlay `container` prop added (mandated)** to `Tooltip.Content`, forwarded to the internal `TooltipPrimitive.Portal`, defaulting to the active `ThemeScope` element. The ref hardcodes the portal with no target (→ `document.body`) and exports no Portal part — `container` on Content is the only portal-control surface (Portal/Positioner/Popup stay unexported).
+2. **Overlay `container` prop added (mandated)** to `Tooltip.Content`, forwarded to the internal `TooltipPrimitive.Portal`, defaulting to the nearest `ThemeScope` element. The ref hardcodes the portal with no target (→ `document.body`) and exports no Portal part — `container` on Content is the only portal-control surface (Portal/Positioner/Popup stay unexported).
 3. **Dead Radix classes removed (LOCKED ruling)**: the ref popup carries `data-[state=delayed-open]:animate-in/fade-in-0/zoom-in-95` — a Radix state attribute base-ui never emits (base-ui emits `data-open`/`data-closed`). Dead selectors dropped; the parallel `data-open:` set already covers the entrance.
 4. **Phantom `kbd` hooks removed (LOCKED ruling)**: the ref popup carries `has-data-[slot=kbd]:pr-1.5` and four `**:data-[slot=kbd]:*` descendant selectors for a `Kbd` component that does not exist in the package. Removed; to be reconsidered if/when a `Kbd` component is specced.
 5. **Per-tooltip `delay` behavior KEPT, prominently documented (LOCKED ruling)**: `Tooltip.Root`'s `delay` prop silently wraps the Root in a *nested scoped* `TooltipPrimitive.Provider` (base-ui puts per-tooltip delay on a Provider). Consequence: that tooltip forms its own provider group — it no longer participates in the outer Provider's shared delay or skip-delay hand-off. Kept as the proven face; the reset-outer-grouping consequence must appear in the prop's docs.
 6. **Arrow show-behavior deliberately not unified with Popover**: Tooltip keeps its *always-rendered* `bg-foreground fill-foreground` token-inverted arrow (already token-clean in the ref); Popover keeps opt-in `showArrow` default `false`. Documented as an intentional family difference, not a divergence to fix.
 7. **`z-50` deduped**: the ref sets `isolate z-50` on the Positioner *and* `z-50` on the Popup (plus `z-50` on the Arrow, which becomes redundant): kept once on the outermost layer (Positioner) per the flat z-strategy — every overlay gets exactly one `z-50` at its outermost portalled element.
+8. **Focus unified:** Trigger composes the canonical self-focus adapter, including when rendered without a Button target.
 
 Kept faithfully: Provider `delay` default `0`; inverted `bg-foreground text-background` pill with `text-xs max-w-xs px-3 py-1.5`; the full arrow placement class set incl. `rounded-[2px]` and `translate-y-[calc(-50%-2px)]`; no shadow/ring on the popup (tooltips fly frameless); `side="top"` default.
 
@@ -108,7 +111,7 @@ Role/label-based queries throughout; keyboard flows per §7:
 - Provider grouping: two tooltips under one Provider — after opening the first, moving to the second opens without delay (skip-delay window).
 - Per-tooltip `delay`: a Root with `delay={500}` does not open before the delay elapses and does not inherit the outer Provider's skip-delay state (scoped-provider consequence, §8.5).
 - Positioner forwarding: `side`/`align` overrides surface as `data-side` on the popup; default is `data-side="top"`.
-- `container`: popup renders inside the provided element / active ThemeScope, not `document.body`.
+- `container`: popup renders inside the provided element / nearest ThemeScope, not `document.body`.
 
 ## 10 Demo requirements
 

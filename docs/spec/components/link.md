@@ -4,8 +4,9 @@
 
 - **Canonical name**: `Link` (single component)
 - **Export path**: `@elmeragroup/ui/react-aria/link` — exports `Link` + `LinkProps`. `react-aria/` prefix marks the remaining RAC dependency (quarantine, self-documenting migration marker).
+- **RSC**: client
 - **Tier**: **react-aria interim** — foundational-layer atom (cluster README group 4). Migrates to a base-ui/native anchor when the tier retires.
-- **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/react-aria/link.tsx` + `.ref/.../src/styles/link.ts`
+- **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/react-aria/link.tsx` + `.ref/OrderModuleInternalWeb/packages/ui/src/styles/link.ts`
 
 ## 2 Anatomy
 
@@ -40,21 +41,21 @@ No `usePredictedEvents`/intent props exist in the ref's surface — it is a plai
 | `align` | `left` · `center` · `right` · `justify` | — |
 | `weight` | `normal` (font-normal) · `bold` (font-medium — faithful quirk, §8) | `normal` |
 
-Base: `font-sans transition-opacity hover:opacity-80`.
+Base: `font-sans transition-opacity hover:opacity-80`; composes shared `focusRing({ target: "state", isFocusVisible })` from RAC render props.
 
 ## 5 Consumed tokens
 
-`text-foreground`, `text-primary`, `text-secondary`, `text-brand`, `text-muted-foreground`, `text-error` (renamed). `default`/`inherit` use `text-inherit` (no token).
+`text-foreground`, `text-primary`, `text-secondary`, `text-brand`, `text-muted-foreground`, `text-error` (renamed), plus `ring`/`background` through the shared focus recipe. `default`/`inherit` use `text-inherit` (no text-color token).
 
 ## 6 Data attributes
 
-Emitted by RAC: `data-hovered`, `data-pressed`, `data-focused`, `data-focus-visible`, `data-disabled`, `data-current` (from `aria-current`). None consumed.
+Emitted by RAC: `data-hovered`, `data-pressed`, `data-focused`, `data-focus-visible`, `data-disabled`, `data-current` (from `aria-current`). `isFocusVisible` is consumed through the recipe's state adapter.
 
 ## 7 Accessibility
 
 - With `href`: native `<a>` semantics. Without: `role="link"` + `tabIndex=0` with Enter activation, provided by RAC
 - `isDisabled` removes it from the tab order and sets `aria-disabled` (RAC behavior)
-- Hover-only affordance (`hover:opacity-80`) is supplemented by the RAC focus-visible outline from the browser default; port keeps RAC's focus handling untouched
+- Hover opacity is supplemented by the canonical shared focus ring when RAC reports keyboard-visible focus; pointer focus does not show it.
 
 ## 8 Divergence from reference
 
@@ -63,6 +64,7 @@ Emitted by RAC: `data-hovered`, `data-pressed`, `data-focused`, `data-focus-visi
 3. Faithful quirks kept: `variant="default"` and `variant="inherit"` are duplicates (both `text-inherit`); `weight="bold"` maps to `font-medium`. Recorded, not fixed — this atom dies with the tier.
 4. No icons in this module.
 5. The RAC `Link` surface is captured as-is; router integration relies on `UiProviders`' `RouterProvider` (which also dies with the tier — base-ui replaces this with render props on the consuming component).
+6. **Focus unified:** the ref relied on an outline inherited from its shared RAC styles/browser handling; this entry explicitly composes the library-wide `focusRing` state adapter.
 
 ## 9 Test requirements
 
@@ -70,6 +72,7 @@ Emitted by RAC: `data-hovered`, `data-pressed`, `data-focused`, `data-focus-visi
 - `isDisabled`: not tabbable, `data-disabled` present, `onPress` suppressed
 - Inside `UiProviders`: clicking an internal `href` calls the provided `navigate` (client-side routing path)
 - Variant classes: `variant="error"` applies `text-error`; `className` merges last
+- Keyboard focus shows the shared ring; pointer focus does not.
 
 ## 10 Demo requirements
 

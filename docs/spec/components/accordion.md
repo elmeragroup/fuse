@@ -3,7 +3,8 @@
 ## 1 Header
 
 - **Canonical name**: `Accordion` (namespace compound)
-- **Export path**: `@elmeragroup/ui` (`import { Accordion, accordionVariants } from "@elmeragroup/ui"`)
+- **Export path**: `@elmeragroup/ui/accordion` (`import { Accordion, accordionVariants } from "@elmeragroup/ui/accordion"`)
+- **RSC**: client
 - **Tier**: styled base-ui primitive wrapper (NEW component — user-ruled reimplementation of the external radix accordion on the base-ui primitive)
 - **Source of truth (API shape)**: `.ref/OrderModuleWeb/packages/ui/src/accordion.tsx` (radix-based; the API being reimplemented)
 - **Source of truth (primitive)**: `.ref/base-ui/packages/react/src/accordion/` (`Root`/`Item`/`Header`/`Trigger`/`Panel`)
@@ -75,7 +76,7 @@ Base slot classes (variant-independent):
 
 - `item`: `p-4`
 - `header`: `flex`
-- `trigger`: `flex flex-1 cursor-pointer items-center justify-between gap-2 font-medium hover:underline data-[panel-open]:pb-4` (open-state selectors moved from radix `data-[state=open]` to base-ui attributes, §6/§8)
+- `trigger`: `flex flex-1 cursor-pointer items-center justify-between gap-2 font-medium hover:underline data-[panel-open]:pb-4` plus shared `focusRing({ target: "self" })` (open-state selectors moved from radix `data-[state=open]` to base-ui attributes, §6/§8)
 - `icon`: `text-foreground size-4 shrink-0 transition-transform duration-200`, plus `rotate-180` when open (keyed off the trigger's `data-panel-open` via a group selector, §6)
 - `content`: `h-0 overflow-hidden transition-[height] duration-200 ease-in-out motion-reduce:transition-none data-[open]:h-(--accordion-panel-height)` — base-ui height-var transition replacing the radix keyframes (§8)
 - `contentInner`: `pt-1.5`
@@ -90,6 +91,7 @@ Material tokens re-expressed as contract tokens (§8 mapping):
 - `card` + `foreground` — card-variant item/content surface and text (raised white surface role; never literal `bg-white`).
 - `border` — card-variant item border and infodropdown separator (`border-b`).
 - `foreground` — caret icon (all variants; card restates it).
+- `ring` + `background` — Trigger's shared focus recipe.
 - Radii: `rounded-sm` / `rounded-lg` / `rounded-xl` — `--radius`-derived scale steps, no hardcoded values.
 
 ## 6 Data attributes
@@ -98,7 +100,7 @@ Material tokens re-expressed as contract tokens (§8 mapping):
 
 **Emitted (by base-ui, styled by us)**: `data-open`/`data-disabled`/`data-index` on Item, Header and Panel; `data-panel-open`/`data-disabled` on Trigger (the trigger does **not** get `data-open`); `data-starting-style`/`data-ending-style` on Panel; `data-orientation`/`data-disabled` on Root. Panel exposes `--accordion-panel-height`/`--accordion-panel-width` CSS vars.
 
-**Consumed selectors**: trigger `data-[panel-open]:pb-4` (and infodropdown `data-[panel-open]:pb-0`); icon rotation via the trigger group (`group/accordion-trigger` on the trigger, `group-data-[panel-open]/accordion-trigger:rotate-180` on the icon); content `data-[open]:h-(--accordion-panel-height)`. All open-state selectors are scoped to their own element per the conventions' bare-`data-open:` ancestor-match trap.
+**Consumed selectors**: trigger `data-[panel-open]:pb-4` (and infodropdown `data-[panel-open]:pb-0`); icon rotation via the trigger group (`group/accordion-trigger` on the trigger, `group-data-[panel-open]/accordion-trigger:rotate-180` on the icon); content `data-[open]:h-(--accordion-panel-height)`. All arbitrary state selectors are self-scoped; the named group selector is the explicit ancestor-state channel per conventions.
 
 ## 7 Accessibility
 
@@ -124,7 +126,8 @@ Material tokens re-expressed as contract tokens (§8 mapping):
 12. **`data-slot` attributes added** on every part (the radix ref emits none), consistent with the internal-ref convention.
 13. **`accordionVariants` stays public** — the ref exports it and the borrow pattern exists; kept per conventions.
 14. **New capability surfaced**: root-level `hiddenUntilFound`/`keepMounted` and per-item `disabled`/`onOpenChange` come free from base-ui; the radix ref had no equivalents.
-15. **Disclosure retired**: `.ref/OrderModuleInternalWeb/packages/ui/src/base-ui/disclosure.tsx` (`Disclosure`/`DisclosureGroup`/`DisclosureHeader`/`DisclosurePanel`, a RAC-shaped API over these same base-ui primitives) is **not carried forward**. Migration mapping:
+15. **Focus unified:** Trigger composes the canonical self-focus adapter rather than inheriting the ref/browser outline.
+16. **Disclosure retired**: `.ref/OrderModuleInternalWeb/packages/ui/src/base-ui/disclosure.tsx` (`Disclosure`/`DisclosureGroup`/`DisclosureHeader`/`DisclosurePanel`, a RAC-shaped API over these same base-ui primitives) is **not carried forward**. Migration mapping:
     - `DisclosureGroup` + `Disclosure` → `Accordion.Root` + `Accordion.Item`: `defaultExpandedKeys` → `defaultValue`, `allowsMultipleExpanded` → `multiple`, `Disclosure id` → `Item value`, `DisclosureHeader` → `Header`+`Trigger`, `DisclosurePanel` → `Content` (`shouldUnmountOnCollapse` → `!keepMounted`; note the inverted default — Disclosure kept panels mounted by default, Accordion unmounts by default).
     - Ungrouped `Disclosure` → `Collapsible` (see collapsible.md): `defaultExpanded` → `defaultOpen`, `isExpanded` → `open`, `onExpandedChange` → `onOpenChange`, `shouldUnmountOnCollapse` → `!keepMounted`.
     - This retirement removes the last react-aria dependency (`react-aria/heading`) outside the date/calendar cluster.

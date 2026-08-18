@@ -4,6 +4,7 @@
 
 - **Canonical name**: `Focusable` (+ `useFocusable` hook)
 - **Export path**: `@elmeragroup/ui/react-aria/focusable` — re-exports `Focusable` (from `react-aria-components`), `useFocusable` and type `FocusableOptions` (from `react-aria`). `react-aria/` prefix marks the quarantined RAC dependency.
+- **RSC**: client
 - **Tier**: **react-aria interim** — foundational-layer atom (cluster README group 4). Notably the tier's **only consumer of `react-aria` proper** (the hooks package) in addition to `react-aria-components`; both dependencies retire together.
 - **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/react-aria/focusable.tsx` (a 4-line re-export module — no styling, no wrapper logic)
 
@@ -41,7 +42,7 @@ None emitted by this module (RAC may set `data-focused`/`data-focus-visible` on 
 
 - Ensures the wrapped element participates in the tab order (`tabIndex=0` when needed) and emits proper focus events for aria hooks (tooltips, overlays)
 - `excludeFromTabOrder` keeps programmatic focusability while removing tab-stop
-- The consumer remains responsible for the wrapped element's role/name — `Focusable` adds focus behavior, not semantics
+- The consumer remains responsible for the wrapped element's role, name, and visible focus treatment — `Focusable` adds behavior but renders no library-owned element to style. In library compositions its child must be a library interactive primitive that already composes `focusRing`; custom consumer elements must provide an equivalent visible focus indicator.
 
 ## 8 Divergence from reference
 

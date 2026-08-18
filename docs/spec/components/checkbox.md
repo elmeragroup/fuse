@@ -3,7 +3,8 @@
 ## 1 Header
 
 - **Canonical name**: `Checkbox` (primitive), `CheckboxGroup` (labeled composite), `CheckboxItem` (labeled selection row, also a namespace), `CheckboxItemGroup`, `CheckboxDescription`
-- **Export path**: `@elmeragroup/ui`
+- **Export path**: `@elmeragroup/ui/checkbox` (also re-exported from `@elmeragroup/ui`)
+- **RSC**: client
 - **Tier**: `Checkbox` is a base-ui primitive; `CheckboxGroup`/`CheckboxItemGroup` are labeled composites (isX/onChange(value) face); `CheckboxItem` is a labeled composite over `SelectionItem.Shell`.
 - **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/base-ui/checkbox.tsx`
 
@@ -35,7 +36,7 @@
 | --- | --- | --- | --- |
 | `label` | `string` | — | `FieldLegend variant="label"`; row omitted when absent |
 | `description` | `string` | — | `FieldDescription` |
-| `errorMessage` | `string` | — | `FieldError` (rendered only when truthy) |
+| `errorMessage` | `ReactNode` | — | `FieldError` (rendered only when truthy); widened per the labeled-composite convention (§8) |
 | `orientation` | `"vertical" \| "horizontal"` | `"vertical"` | vertical: `flex-col gap-2`; horizontal: `flex-wrap gap-4` |
 | `value` / `defaultValue` | `string[]` | — | controlled/uncontrolled |
 | `onChange` | `(value: string[]) => void` | — | mapped to base-ui `onValueChange` |
@@ -67,7 +68,7 @@ No tv recipes in this file; all styling is inline class strings. `CheckboxGroup`
 - `card` — checkbox resting surface (`bg-card`; §8.3).
 - `input` — resting border (`border-input`).
 - `primary` / `primary-foreground` — checked and indeterminate surface/border/glyph.
-- `ring` — focus ring (`focus-visible:ring-ring/50`, `focus-visible:border-ring`).
+- `ring` — shared `focusRing({ target: "self" })`.
 - `error` — invalid border/ring (`aria-invalid:border-error aria-invalid:ring-error/20`; §8.4).
 - `muted-foreground` — `CheckboxDescription` note text.
 - Group label/description/error tokens come from the Field parts (see field.md §5).
@@ -97,6 +98,7 @@ No tv recipes in this file; all styling is inline class strings. `CheckboxGroup`
 6. **`name` threading asymmetry KEPT and documented**: base-ui's CheckboxGroup primitive has no `name` prop, so `CheckboxGroup` sets `name` on the wrapping `Field` and Field context threads it to member hidden inputs. `RadioGroup` puts `name` directly on its primitive (radio-group.md §8). The asymmetry is upstream-driven; both faces expose the same `name?: string`.
 7. **Tri-state parent via `allValues` KEPT** — the `parent` union on `CheckboxItem`/`Checkbox` and the group's `allValues` are documented base-ui behavior, not library logic.
 8. **`CheckboxItem` gains `controlPosition` pass-through** — consequence of the new shell axis (selection-item.md §8.2).
+9. **`errorMessage` widened `string` → `ReactNode`** — the group follows the library-wide labeled-composite contract; `FieldError` already accepts node children.
 
 ## 9 Test requirements
 
@@ -105,7 +107,7 @@ Role/label-based queries only.
 - `Checkbox`: `getByRole("checkbox")`; Space toggles; `disabled` blocks toggling; `readOnly` renders but doesn't change on click.
 - `CheckboxGroup` labeled: group content queryable via the legend text; `onChange` receives `string[]` (value, not event); controlled `value` wins over clicks without `onChange` feedback.
 - Tri-state: group with `allValues` + parent `CheckboxItem` — checking two of three members gives parent `aria-checked="mixed"`; clicking parent checks all; clicking again unchecks all.
-- `errorMessage` renders with `role="alert"` and `isInvalid` sets `aria-invalid`/`data-invalid` on members; checked+invalid member keeps the primary border (pinned override).
+- A non-string `errorMessage` renders intact with `role="alert"`; `isInvalid` sets `aria-invalid`/`data-invalid` on members; checked+invalid member keeps the primary border (pinned override).
 - `name`: hidden inputs carry the group `name` (threaded via Field).
 - `CheckboxItem`: row click toggles; SubSection click does not (shared shell behavior, one smoke test here).
 - Hit-target: click 8px outside the painted box still toggles (browser test on the `after:` inset).

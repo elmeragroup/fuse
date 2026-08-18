@@ -4,8 +4,9 @@
 
 - **Canonical name**: `Chart` — namespace compound: `Chart.Container`, `Chart.Tooltip`, `Chart.TooltipContent`, `Chart.Legend`, `Chart.LegendContent`, `Chart.Style` + exported `ChartConfig` type
 - **Export path**: `@elmeragroup/ui/chart` (`import { Chart, type ChartConfig } from "@elmeragroup/ui/chart"`) — separate subpath so the recharts dependency never taxes non-chart consumers
+- **RSC**: client
 - **Tier**: recharts composition wrappers (shadcn chart pattern). **recharts is an optional peer dependency** of `@elmeragroup/ui`; consumers who render charts install it and import primitives (`AreaChart`, `Bar`, `XAxis`, …) directly from `recharts`
-- **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/chart/chart.tsx` + `.ref/.../chart/index.ts`
+- **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/chart/chart.tsx` + `.ref/OrderModuleInternalWeb/packages/ui/src/chart/index.ts`
 
 ## 2 Anatomy
 
@@ -89,7 +90,7 @@ None — no tv recipes. `indicator` on `Chart.TooltipContent` is a plain prop wi
 
 **Emitted**: `data-chart="chart-<id>"` on the Container root — the scoping hook for `Chart.Style`'s generated rules. No `data-slot` attributes (pre-dates the convention; kept).
 
-**Consumed**: Container's class string targets recharts internals by class and hardcoded attribute selectors — `[&_.recharts-cartesian-grid_line[stroke='#ccc']]:stroke-border/50`, `[&_.recharts-dot[stroke='#fff']]:stroke-transparent`, `[&_.recharts-sector[stroke='#fff']]:stroke-transparent`, `[&_.recharts-polar-grid_[stroke='#ccc']]:stroke-border`, `[&_.recharts-reference-line_[stroke='#ccc']]:stroke-border`, plus `outline-none` on layers/sectors/surface and `fill-muted` on radial-bar backgrounds. These `#ccc`/`#fff` literals are the documented recharts escape hatch — recharts hardcodes those defaults, and the selectors rewrite them to tokens. **Kept verbatim, no-refactor**; they are exempt from the `no-primitive-colors` rule (selector matching, not painting).
+**Consumed**: Container's class string targets recharts internals by class and hardcoded attribute selectors — `[&_.recharts-cartesian-grid_line[stroke='#ccc']]:stroke-border/50`, `[&_.recharts-dot[stroke='#fff']]:stroke-transparent`, `[&_.recharts-sector[stroke='#fff']]:stroke-transparent`, `[&_.recharts-polar-grid_[stroke='#ccc']]:stroke-border`, `[&_.recharts-reference-line_[stroke='#ccc']]:stroke-border`, plus `fill-muted` on radial-bar backgrounds. These `#ccc`/`#fff` literals are the documented recharts escape hatch — recharts hardcodes those defaults, and the selectors rewrite them to tokens. They are exempt from the `no-primitive-colors` rule (selector matching, not painting). The ref's descendant `outline-none` selectors are removed: Recharts may make SVG layers/sectors focusable when its accessibility layer is enabled, and dependency-owned focus targets retain their browser outline rather than being suppressed without a compatible SVG ring adapter.
 
 ## 7 Accessibility
 
@@ -106,7 +107,8 @@ None — no tv recipes. `indicator` on `Chart.TooltipContent` is a plain prop wi
 4. **forwardRef → React 19 ref-in-props** on Container/TooltipContent/LegendContent (minor modernization; behavior identical).
 5. **Rename: flat → namespace** — `ChartContainer`/`ChartTooltip`/`ChartTooltipContent`/`ChartLegend`/`ChartLegendContent`/`ChartStyle` → `Chart.*`.
 6. **KEPT verbatim + documented**: the `[stroke='#ccc']`/`[stroke='#fff']` escape-hatch selectors (§6, no-refactor) and the `dangerouslySetInnerHTML` style injection in `Chart.Style` — input is the caller's `ChartConfig` colors interpolated into CSS, same trust boundary as inline `style`.
-7. **KEPT**: `Chart.LegendContent` forwards only `className`/`onClick` from its div props (ref drops the rest silently); `Chart.TooltipContent` likewise consumes a fixed prop list. Documented rather than widened.
+7. **Recharts focus visibility fixed:** descendant `outline-none` selectors are deleted. Recharts-owned focusable SVG nodes keep their native browser outline; the library does not suppress focus it cannot replace with the HTML-oriented shared recipe.
+8. **KEPT**: `Chart.LegendContent` forwards only `className`/`onClick` from its div props (ref drops the rest silently); `Chart.TooltipContent` likewise consumes a fixed prop list. Documented rather than widened.
 
 ## 9 Test requirements
 

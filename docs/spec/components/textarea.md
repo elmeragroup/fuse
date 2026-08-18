@@ -3,7 +3,8 @@
 ## 1 Header
 
 - **Canonical name**: `Textarea` (single component, no compound parts)
-- **Export path**: `@elmeragroup/ui` (`import { Textarea } from "@elmeragroup/ui"`)
+- **Export path**: `@elmeragroup/ui/textarea` (also re-exported from `@elmeragroup/ui`)
+- **RSC**: server — plain native element; Field wiring belongs to `TextareaField`
 - **Tier**: control primitive (unlabeled; **labeled usage goes through `TextareaField`**, grouped usage through `InputGroup.Textarea`)
 - **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/base-ui/textarea.tsx`
 
@@ -45,7 +46,7 @@ Fixed metrics from the ref: `field-sizing-content min-h-16 w-full rounded-md px-
 
 - `card` — resting background (`bg-card`; see §8).
 - `input` — border (`border-input`); disabled fill (`disabled:bg-input/50`).
-- `ring` — focus border + ring (`focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50`).
+- `ring` — shared `focusRing({ target: "self" })`; no local focus classes.
 - `error` — invalid border + ring (`aria-invalid:border-error aria-invalid:ring-3 aria-invalid:ring-error/20`).
 - `muted-foreground` — placeholder.
 

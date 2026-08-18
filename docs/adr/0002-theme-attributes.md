@@ -8,7 +8,7 @@ Themes are variant × brand × segment (16 permutations); both reference apps se
 
 ## Decision
 
-Theme markers are **three data attributes** — `data-theme-variant`, `data-theme-brand`, `data-theme-segment` — placeable on any element; no selector anchors to `<html>`, so subtrees re-scope by carrying their own markers. `data-theme` remains reserved for light/dark. Theme CSS is structured as: `:root` defaults → brand-pointer rules keyed on brand alone → one internal base → per-brand external palettes → segment deltas only where values differ. Missing segment palettes fall back by absence of a rule.
+Theme markers are **three data attributes** — `data-theme-variant`, `data-theme-brand`, `data-theme-segment` — placeable on any element; no selector anchors to `<html>`, so subtrees re-scope by carrying their own markers. `data-theme` remains reserved for light/dark. Theme CSS is structured as: `:root` defaults → brand-pointer rules keyed on brand alone → one internal reset → per-brand external palettes → segment deltas only where values differ. The internal rule and every emitted external palette directly declare the complete set of values that any external/segment layer can override, using defaults for source-level omissions; this prevents an outer scoped theme from leaking into an inner one. Missing segment palettes fall back by absence of a rule.
 
 ## Alternatives rejected
 

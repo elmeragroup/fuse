@@ -3,7 +3,8 @@
 ## 1 Header
 
 - **Canonical name**: `Alert` — namespace compound: `Alert.Root`, `Alert.Icon`, `Alert.Title`, `Alert.Description`
-- **Export path**: `@elmeragroup/ui` (`import { Alert } from "@elmeragroup/ui"`)
+- **Export path**: `@elmeragroup/ui/alert` (`import { Alert } from "@elmeragroup/ui/alert"`)
+- **RSC**: server (owns no state/effects; `onAction` is a forwarded consumer handler — passing it requires a client boundary at the consumer)
 - **Tier**: styled composite over the base-ui Item family (**FULL RE-HOME**, user-ruled: ref composes on `react-aria/item.tsx`; ours composes on `base-ui/item.tsx` — Item.Root/.Media/.Content/.Actions — and base-ui `Button`)
 - **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/alert.tsx` (composition re-homed; see §8)
 
@@ -36,7 +37,7 @@ Internally Root renders `ItemMedia` (icon), `ItemContent` (children), and — wh
 | `actionLabel` | `ReactNode` | — | action button children |
 | `children` | `ReactNode` | — | flows into `Item.Content` (typically Title + Description) |
 
-**Alert.Icon** — Phosphor icon props (`ComponentProps<typeof Icon.Info>`) plus required `variant` (same union). Glyph map: `default → Info`, `warning → Warning`, `destructive → WarningOctagon`, `success → CheckCircle`.
+**Alert.Icon** — Phosphor icon props (`ComponentProps<typeof Info>`, per-icon named import from `@elmeragroup/ui/icons`) plus required `variant` (same union). Glyph map: `default → Info`, `warning → Warning`, `destructive → WarningOctagon`, `success → CheckCircle`.
 
 **Alert.Title** — `ComponentProps<"h3">` plus `level?: 1–6` (default `3`; renders the matching `h*` element). No variant prop (§8.3).
 
@@ -50,14 +51,14 @@ Recipe: `alertVariants` — **module-private** slot recipe (`tv` slots: `base`, 
 | --- | --- | --- | --- |
 | `default` | `bg-background text-foreground` | `text-foreground` | `bg-background text-foreground` |
 | `destructive` | `border-error bg-error/5 text-error` | `text-error` | `bg-error text-error-foreground hover:bg-error/90` |
-| `warning` | `border-warning-accent bg-warning text-warning-foreground` | `text-warning-accent` | `bg-warning-foreground text-warning hover:bg-warning-foreground/90` |
+| `warning` | `border-warning bg-warning-soft text-warning-soft-foreground` | `text-warning` | `bg-warning text-warning-foreground hover:bg-warning/90` |
 | `success` | `border-success bg-success/5 text-foreground` | `text-success` | `bg-success text-success-foreground hover:bg-success/90` |
 
 Slot bases: `base: "relative"`, `icon: "block size-5 shrink-0 text-foreground"`, `description: "text-foreground"`; `content`/`title` empty. Default variant: `default`. Underneath, `Item`'s own `variant="outline"`/`size="sm"` axes provide border + padding.
 
 ## 5 Consumed tokens
 
-`background`, `foreground`, `error`/`error-foreground` (border, `/5` tint, solid action button), `warning`/`warning-foreground`/`warning-accent`, `success`/`success-foreground`; via Item: `border`, `ring` (focus ring, inert here), `muted-foreground` (Description base, overridden to `foreground`). Radius via Item's `rounded-md`. No raw palette classes.
+`background`, `foreground`, `error`/`error-foreground` (border, `/5` tint, solid action button), `warning`/`warning-foreground`/`warning-soft`/`warning-soft-foreground` (soft alert surface + solid action button), `success`/`success-foreground`; via Item: `border`, `ring` (focus ring, inert here), `muted-foreground` (Description base, overridden to `foreground`). Radius via Item's `rounded-md`. No raw palette classes.
 
 ## 6 Data attributes
 
@@ -79,7 +80,7 @@ Slot bases: `base: "relative"`, `icon: "block size-5 shrink-0 text-foreground"`,
 2. **Alert.Title renders its own `h3`**: react-aria `ItemTitle` wrapped `Heading` (`level={3}`); base-ui `ItemTitle` is a plain `div`. Ours renders an `h*` element directly (default `h3`, `level` prop) carrying `data-slot="item-title"` and base-ui's title classes, preserving the ref's heading semantics on the new base.
 3. **FIX (ruled): dead `VariantProps` removed from Title/Description** — ref types both as `… & VariantProps<typeof alertVariants>` but calls `alertVariants()` with no arguments, so a passed `variant` is silently ignored *and* leaks into the DOM as an invalid `variant="…"` attribute. Ours drops the prop entirely.
 4. **FIX (ruled): dead base-slot style removed** — ref's `base: "relative bg-destructive/10"`; every variant overrides the background, so `bg-destructive/10` is unreachable. Base becomes `relative`.
-5. **Token renames (LOCKED)**: `destructive` variant **value kept**; its classes move `destructive* → error*` (`border-error bg-error/5 text-error`, button `bg-error text-error-foreground hover:bg-error/90`) per canonical status tokens.
+5. **Token alignment (LOCKED)**: `destructive` variant **value kept**; its classes move `destructive* → error*` (`border-error bg-error/5 text-error`, button `bg-error text-error-foreground hover:bg-error/90`) per canonical status tokens. The reference-only, undefined `warning-accent` name is not added to the token contract: warning uses the existing soft status pair for its surface and the solid warning pair for icon/action emphasis, exactly as §4 specifies.
 6. **Icons → Phosphor**: lucide `Info → Info`, `AlertTriangle → Warning`, `OctagonX → WarningOctagon`, `CheckCircle → CheckCircle`, regular weight, from `@elmeragroup/ui/icons`.
 7. **Rename: flat → namespace** — `Alert`/`AlertIcon`/`AlertTitle`/`AlertDescription` → `Alert.Root/.Icon/.Title/.Description`. `alertVariants` stays private (ref also does not export it).
 
@@ -90,7 +91,7 @@ Slot bases: `base: "relative"`, `icon: "block size-5 shrink-0 text-foreground"`,
 - `getByRole("heading", { level: 3, name })` finds Title; `level={2}` renders an `h2`.
 - Action: with `onAction`/`actionLabel`, `getByRole("button", { name })` exists and fires the handler; without `onAction` no button renders.
 - Regression for §8.3: passing `variant` to Title/Description is a type error and no `variant` attribute appears in the DOM.
-- No `bg-destructive`/raw palette class appears in rendered class lists (token-rename guard).
+- No `bg-destructive`, `warning-accent`, or raw palette class appears in rendered class lists (token-contract guard).
 
 ## 10 Demo requirements
 

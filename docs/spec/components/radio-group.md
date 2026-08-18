@@ -3,7 +3,8 @@
 ## 1 Header
 
 - **Canonical name**: `RadioGroup` (labeled composite), `RadioGroupItem` (primitive), `Radio` (labeled inline row), `RadioItem` (labeled selection row, also a namespace), `RadioItemGroup`, `RadioIconButton`
-- **Export path**: `@elmeragroup/ui`
+- **Export path**: `@elmeragroup/ui/radio-group` (also re-exported from `@elmeragroup/ui`)
+- **RSC**: client
 - **Tier**: `RadioGroupItem` and `RadioIconButton` are base-ui primitives; `RadioGroup`/`RadioItemGroup` are labeled composites (isX/onChange(value) face); `Radio` and `RadioItem` are labeled composites over `Field.Item` / `SelectionItem.Shell`.
 - **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/base-ui/radio-group.tsx`
 
@@ -37,7 +38,7 @@
 | --- | --- | --- | --- |
 | `label` | `string` | — | `FieldLegend variant="label"` in the header row |
 | `description` | `string` | — | `FieldDescription` |
-| `errorMessage` | `string` | — | `FieldError` (rendered only when truthy) |
+| `errorMessage` | `ReactNode` | — | `FieldError` (rendered only when truthy); widened per the labeled-composite convention (§8) |
 | `isPending` | `boolean` | — | spinner (`SpinnerGap`, `size-3 animate-spin`) at the header row's end; header renders when `label || isPending` is truthy (§8.2) |
 | `orientation` | `"vertical" \| "horizontal"` | `"vertical"` | vertical: `flex-col gap-2`; horizontal: `flex-wrap gap-4` |
 | `value` | `string \| null` | — | `null` coerced to `undefined` before the primitive |
@@ -77,7 +78,7 @@
 
 - `input` — resting borders (`border-input` on RadioGroupItem and RadioIconButton).
 - `primary` / `primary-foreground` — checked border/fill and indicator dot.
-- `ring` — focus ring (`focus-visible:border-ring`, `ring-ring/50`).
+- `ring` — interactive radio controls compose shared `focusRing({ target: "self" })`.
 - `error` — invalid border/ring (`aria-invalid:`/`data-invalid:`; §8.4).
 - `card` — RadioIconButton resting surface (§8.3).
 - `muted` — RadioIconButton hover and checked surface.
@@ -111,6 +112,7 @@
 7. **`name` placement asymmetry KEPT and documented**: `RadioGroup` sets `name` directly on the base-ui radio-group primitive (which supports it); `CheckboxGroup` must thread `name` via Field context because base-ui's checkbox-group has no `name` (checkbox.md §8.6). Same external face, different plumbing — upstream-driven.
 8. **`RadioItem` gains `controlPosition` pass-through** — consequence of the new shell axis (selection-item.md §8.2).
 9. **`onChange` `String(next)` coercion and `value ?? undefined` null-mapping KEPT** — the `string | null` controlled face tolerates cleared form state without switching the primitive to uncontrolled-with-warning.
+10. **`errorMessage` widened `string` → `ReactNode`** — the group follows the library-wide labeled-composite contract; `FieldError` already accepts node children.
 
 ## 9 Test requirements
 
@@ -120,7 +122,7 @@ Role/label-based queries only.
 - Arrow-key navigation: focus checked item, ArrowDown moves selection to next item, wraps at the end, skips disabled items; Tab exits the group.
 - `onChange` receives the string value (not an event); controlled `value` including `null` (nothing checked) works without React uncontrolled warnings.
 - Header-row gate pinned: `isPending={false}` with no `label` renders **no** legend row (bugfix assertion); `isPending` true shows the spinner alongside the label.
-- `errorMessage` renders with `role="alert"`; `isInvalid` sets invalid state on items; checked+invalid item keeps primary border (pinned override).
+- A non-string `errorMessage` renders intact with `role="alert"`; `isInvalid` sets invalid state on items; checked+invalid item keeps primary border (pinned override).
 - `isReadOnly` / `isRequired` / `name` forwarded (hidden input carries `name`).
 - `Radio`: label click selects; disabled row is skipped by arrow navigation.
 - `RadioItem`: row click selects; SubSection click does not change selection (isolation smoke test); `controlPosition="end"` renders trailing control.

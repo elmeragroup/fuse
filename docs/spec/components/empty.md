@@ -3,8 +3,9 @@
 ## 1 Header
 
 - **Canonical name**: `Empty` (namespace: `Empty.Root`, `Empty.Header`, `Empty.Media`, `Empty.Title`, `Empty.Description`, `Empty.Content`)
-- **Export path**: `@elmeragroup/ui` (`import { Empty } from "@elmeragroup/ui"`)
+- **Export path**: `@elmeragroup/ui/empty` (also re-exported from `@elmeragroup/ui`)
 - **Tier**: styled layout composite (plain elements; no base-ui primitive)
+- **RSC**: server
 - **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/empty.tsx`
 
 ## 2 Anatomy
@@ -14,7 +15,7 @@ Centered empty-state block: media/icon, then header (title + description), then 
 ```tsx
 <Empty.Root variant="outline-dashed">
   <Empty.Header>
-    <Empty.Media variant="icon"><Icon.Tray /></Empty.Media>
+    <Empty.Media variant="icon"><Tray /></Empty.Media>
     <Empty.Title>No orders yet</Empty.Title>
     <Empty.Description>Orders you create will show up here.</Empty.Description>
   </Empty.Header>

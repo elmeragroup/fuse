@@ -3,7 +3,8 @@
 ## 1 Header
 
 - **Canonical name**: `Heading` (single component); recipe `headingVariants` (PUBLIC)
-- **Export path**: `@elmeragroup/ui/heading` — the ref's existing bare path, kept (`import { Heading } from "@elmeragroup/ui/heading"`); recipe also via the styles layer
+- **Export path**: `@elmeragroup/ui/heading` (also re-exported from `@elmeragroup/ui`); `headingVariants` comes from the same entry
+- **RSC**: client — uses base-ui `useRender`
 - **Tier**: styled typography primitive (plain `h1`–`h6`; no base-ui primitive, no RAC)
 - **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/react-aria/heading.tsx` + `src/styles/heading.ts`
 
@@ -40,7 +41,7 @@ The ref's `slot` prop (RAC slot wiring) is **dropped** (§8).
 
 ## 4 Variants
 
-Recipe: **`headingVariants`** — **PUBLIC**. It lives in the borrowable styles layer and other families compose it (de-RAC'd card/table titles render heading classes on plain elements); sanctioned borrow, exported and typed via `VariantProps`.
+Recipe: **`headingVariants`** — **PUBLIC** from `@elmeragroup/ui/heading`. Other package modules import its private source file relatively; consumers borrow it from the component entry. Typed via `VariantProps`.
 
 | Axis | Values | Default |
 | --- | --- | --- |

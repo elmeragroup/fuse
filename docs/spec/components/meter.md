@@ -3,9 +3,10 @@
 ## 1 Header
 
 - **Canonical name**: `Meter` (single component with a composite face — label row + track baked in); constants `METER_CONSTANTS` (public)
-- **Export path**: `@elmeragroup/ui` (`import { Meter, METER_CONSTANTS } from "@elmeragroup/ui"`)
+- **Export path**: `@elmeragroup/ui/meter` (also re-exported from `@elmeragroup/ui`)
+- **RSC**: client — wraps the base-ui Meter primitive
 - **Tier**: labeled composite over `@base-ui/react/meter` (read-only value display — never an input)
-- **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/base-ui/meter.tsx`, `.ref/…/src/constants/meter-constants.ts`, `.ref/…/src/styles/meter.ts`
+- **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/base-ui/meter.tsx`, `.ref/OrderModuleInternalWeb/packages/ui/src/constants/meter-constants.ts`, `.ref/OrderModuleInternalWeb/packages/ui/src/styles/meter.ts`
 
 ## 2 Anatomy
 
@@ -27,7 +28,7 @@ An internal `MeterIcon` renders a status icon inside the value span; internal `g
 
 ## 3 Props
 
-`MeterProps = { label?, mode?, value, minValue?, maxValue?, valueLabel?, className? } & Omit<ComponentProps<typeof MeterPrimitive.Root>, "value" | "min" | "max" | "className">`.
+`MeterProps = { label?, mode?, value, minValue?, maxValue?, valueLabel?, className? } & Omit<ComponentProps<typeof MeterPrimitive.Root>, "value" | "min" | "max" | "className" | "locale">`.
 
 | Prop | Type | Default | Notes |
 | --- | --- | --- | --- |
@@ -37,8 +38,10 @@ An internal `MeterIcon` renders a status icon inside the value span; internal `g
 | `label` | `string` | — | rendered in `Meter.Label` |
 | `valueLabel` | `ReactNode` | — | replaces the auto-formatted `<Meter.Value />` |
 | `mode` | `MeterMode` | `"default"` | see §4 |
+| `warningLabel` | `string` | locale dictionary | accessible name for Warning icon |
+| `successLabel` | `string` | locale dictionary | accessible name for CheckCircle icon |
 | `className` | `string` | — | merged onto the root |
-| …rest | `Meter.Root` props minus `value/min/max/className` | — | e.g. `format`, `getAriaValueText`, `locale` |
+| …rest | `Meter.Root` props minus `value/min/max/className/locale` | — | e.g. `format`, `getAriaValueText`; the implementation passes the provider locale to the primitive |
 
 Percentage math: `max > min ? clamp(((value - min) / (max - min)) * 100, 0, 100) : 0`. Level: `value > maxValue` (explicit maxValue only) → `EXCEEDED_MAX_VALUE`; `percentage === 100` → `FULL`; `> 80` → `MEDIUM`; else `LOW`.
 
@@ -61,7 +64,7 @@ Full mode × level color matrix (`barFill` / `labelValue`), base level styles + 
 
 \* falls through to the base level styles — the ref defines no `EXCEEDED_MAX_VALUE` compound for `inverted`/`success-only-when-full` (ref-faithful; arguably surprising for `inverted`, kept as-is).
 
-Icon logic (`MeterIcon`): `default` mode → `Icon.Warning` when percentage ≥ 80, else nothing; `success-only-when-full` → `Icon.CheckCircle` at `FULL`, `Icon.Warning` otherwise; **`inverted` and `neutral` → always `null`** (kept, documented — `inverted` gets colors but never an icon).
+Icon logic (`MeterIcon`): `default` mode → named `Warning` when percentage ≥ 80, else nothing; `success-only-when-full` → named `CheckCircle` at `FULL`, `Warning` otherwise; **`inverted` and `neutral` → always `null`** (kept, documented — `inverted` gets colors but never an icon).
 
 Fixed styling: track `h-1.5 rounded-full bg-muted` with transparent inset outline (forced-colors affordance); fill `transition-all forced-colors:bg-[Highlight]`; value span `text-sm tabular-nums`; label `text-sm font-medium`.
 
@@ -84,15 +87,17 @@ Fixed styling: track `h-1.5 rounded-full bg-muted` with transparent inset outlin
 - base-ui `Meter.Root` renders `role="meter"` with `aria-valuenow`/`aria-valuemin`/`aria-valuemax` and `aria-valuetext` (customizable via `format`/`getAriaValueText` pass-through).
 - `Meter.Label` is auto-associated with the root (`aria-labelledby`).
 - Read-only — no keyboard interaction surface.
-- Icons carry `aria-label` (`"Alert"` for Warning, `"Success"` for CheckCircle); level color is never the sole signal in `default`/`success-only-when-full` because the icon accompanies the ≥80% states. Forced-colors mode gets `bg-[Highlight]` on the fill.
+- Icons carry localized accessible names (`meter.warning`, `meter.success`) with explicit prop overrides; level color is never the sole signal in `default`/`success-only-when-full` because the icon accompanies the ≥80% states. Forced-colors mode gets `bg-[Highlight]` on the fill.
 
 ## 8 Divergence from reference
 
 1. **BUGFIX (ruled): `data-slot` attributes added** (`meter`, `meter-label`, `meter-bar`, `meter-bar-fill`, `meter-value`) — the ref Meter is the only component in the library emitting no `data-slot` at all; the omission is documented and corrected.
-2. **Icons → Phosphor**: `Icon.AlertTriangle` → `Warning`, `Icon.CheckCircle` → `CheckCircle` (from `@elmeragroup/ui/icons`, regular weight).
+2. **Icons → Phosphor**: the reference alert/check-circle icons become named `Warning` / `CheckCircle` imports from `@elmeragroup/ui/icons`, regular weight.
 3. **`destructive` → `error`** token renames throughout `meterVariants` (`bg-destructive` → `bg-error`, `text-destructive` → `text-error`).
 4. Not divergences, ref-verbatim and documented: the `minValue`/`maxValue` prop names (composite-tier convention, already renamed in the ref); `meterVariants` staying private; `MeterIcon` returning `null` for `inverted`/`neutral`; the missing `EXCEEDED_MAX_VALUE` compounds noted in §4; the 80/100 level thresholds.
 5. **Naming caution restated**: mode `"inverted"` ≠ the dropped `inverted:` Tailwind variant from the ref's theme system. The mode survives unchanged; the Tailwind variant does not exist in this library.
+6. Hardcoded English icon labels become provider-locale dictionary defaults with `warningLabel`/`successLabel` overrides.
+7. **Locale is provider-only:** the primitive's component-level `locale` prop is omitted from `MeterProps`; `useElmeraGroupUi().locale` drives both number formatting and the icon-label dictionary.
 
 No API divergence — `MeterProps` is identical to the ref.
 
@@ -102,7 +107,8 @@ No API divergence — `MeterProps` is identical to the ref.
 - `valueLabel` replaces the formatted value; default renders base-ui's formatted `Meter.Value`.
 - **`getMeterLevel` unit tests** (thresholds): percentage ≤ 80 → `LOW`; 80 < p < 100 → `MEDIUM` (boundary: exactly 80 is `LOW`); p === 100 → `FULL`; `value > maxValue` with explicit `maxValue` → `EXCEEDED_MAX_VALUE`; no explicit `maxValue` → never `EXCEEDED_MAX_VALUE`; `max <= min` → percentage 0 → `LOW`.
 - Mode × level classes: spot-check each column of the §4 matrix via the emitted `data-slot="meter-bar-fill"` element's classes.
-- Icon behavior: `default` at 79% → no icon; at 85% → Warning (`getByLabelText("Alert")`); `success-only-when-full` at 100% → CheckCircle (`getByLabelText("Success")`); `inverted`/`neutral` → no icon at any value.
+- Icon behavior under an `ElmeraGroupUiProvider locale="en-US"`: `default` at 79% → no icon; at 85% → Warning (`getByLabelText("Warning")`); `success-only-when-full` at 100% → CheckCircle (`getByLabelText("Success")`); `inverted`/`neutral` → no icon at any value.
+- Warning/success labels render in all four locales; explicit overrides win.
 - All five `data-slot` attributes present.
 
 ## 10 Demo requirements

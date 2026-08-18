@@ -3,9 +3,10 @@
 ## 1 Header
 
 - **Canonical name**: `Loader` (single component, no namespace)
-- **Export path**: `@elmeragroup/ui` (`import { Loader, loaderVariants } from "@elmeragroup/ui"`)
+- **Export path**: `@elmeragroup/ui/loader` (also re-exported from `@elmeragroup/ui`); `loaderVariants` comes from the same entry
+- **RSC**: server
 - **Tier**: plain-element leaf (styled div + spinning icon; no base-ui primitive, no client state)
-- **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/loader.tsx` + `.ref/.../styles/loader.ts`
+- **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/loader.tsx` + `.ref/OrderModuleInternalWeb/packages/ui/src/styles/loader.ts`
 
 ## 2 Anatomy
 
@@ -57,7 +58,7 @@ Recipe: `loaderVariants` — **PUBLIC** (ref exports it; kept as a borrow surfac
 
 ## 8 Divergence from reference
 
-1. **Icon → Phosphor (LOCKED)**: `Icon.Loader` (lucide `Loader2`) → `SpinnerGap` from `@elmeragroup/ui/icons`, the canonical spin-animation swap.
+1. **Icon → Phosphor (LOCKED)**: the reference lucide `Loader2` becomes the named `SpinnerGap` import from `@elmeragroup/ui/icons`, the canonical spin-animation swap.
 2. **`loaderVariants` stays PUBLIC** — ref exports it from both `styles/loader.ts` and `loader.tsx`; ours exports it once, alongside the component.
 3. **Added a11y**: `role="status"` + `aria-hidden` icon + `data-slot="loader"` (ref renders a bare, AT-invisible div).
 4. **Single-value `variant` axis kept verbatim** — deliberately not collapsed; see §4.

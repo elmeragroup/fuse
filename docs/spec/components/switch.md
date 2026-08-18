@@ -3,7 +3,8 @@
 ## 1 Header
 
 - **Canonical name**: `Switch` (single component, no compound parts exposed)
-- **Export path**: `@elmeragroup/ui` (`import { Switch } from "@elmeragroup/ui"`)
+- **Export path**: `@elmeragroup/ui/switch` (also re-exported from `@elmeragroup/ui`)
+- **RSC**: client
 - **Tier**: base-ui control primitive (unlabeled; labeled usage composes with `Field.Root` + `Field.Label`)
 - **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/base-ui/switch.tsx`
 
@@ -59,7 +60,7 @@ Other fixed styling: `rounded-full border border-transparent shadow-xs transitio
 - `primary` — checked track fill (`data-checked:bg-primary`).
 - `input` — unchecked track fill (`data-unchecked:bg-input`).
 - `background` — thumb fill (`bg-background`).
-- `ring` — focus border + ring (`focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50`).
+- `ring` — shared `focusRing({ target: "self" })`; no local focus classes.
 - `error` — invalid border + ring (`aria-invalid:border-error aria-invalid:ring-3 aria-invalid:ring-error/20`).
 
 ## 6 Data attributes

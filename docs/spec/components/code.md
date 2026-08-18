@@ -3,7 +3,8 @@
 ## 1 Header
 
 - **Canonical name**: `Code` (single component, no namespace)
-- **Export path**: `@elmeragroup/ui` (`import { Code } from "@elmeragroup/ui"`)
+- **Export path**: `@elmeragroup/ui/code` (also re-exported from `@elmeragroup/ui`)
+- **RSC**: server
 - **Tier**: plain-element leaf (no base-ui primitive, no client state — server-component safe, no `"use client"`)
 - **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/code.tsx`
 
@@ -37,7 +38,7 @@ None — no tv recipe, no variant axes.
 
 ## 5 Consumed tokens
 
-Syntax colors come entirely from the **`--sh-*` token family** that `sugar-high` reads: `--sh-class`, `--sh-identifier`, `--sh-sign`, `--sh-property`, `--sh-entity`, `--sh-jsxliterals`, `--sh-string`, `--sh-keyword`, `--sh-comment`. These are defined in the theme layer (light values on `:root`, dark overrides under `[data-theme="dark"]`) as part of the canonical token contract — the component itself paints no colors. The `<pre>` inherits `foreground` from context.
+Syntax colors come entirely from the **`--sh-*` token family** that `sugar-high` reads: `--sh-class`, `--sh-identifier`, `--sh-sign`, `--sh-property`, `--sh-entity`, `--sh-jsxliterals`, `--sh-string`, `--sh-keyword`, `--sh-comment`. Their v1 Ayu Light values are defined at `:root` as part of the canonical token contract; `[data-theme="dark"]` is reserved but has no values at v1, so no dark syntax override is specified. The component itself paints no colors. The `<pre>` inherits `foreground` from context.
 
 ## 6 Data attributes
 

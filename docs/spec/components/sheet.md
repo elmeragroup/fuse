@@ -3,7 +3,8 @@
 ## 1 Header
 
 - **Canonical name**: `Sheet` (namespace compound)
-- **Export path**: `@elmeragroup/ui` (`import { Sheet } from "@elmeragroup/ui"`)
+- **Export path**: `@elmeragroup/ui/sheet` (also re-exported from `@elmeragroup/ui`)
+- **RSC**: client
 - **Tier**: styled base-ui primitive wrapper (overlay component)
 - **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/base-ui/sheet.tsx`
 
@@ -61,8 +62,9 @@ All rendering parts take `className` (merged via `cn`) and forward the rest of t
 | Prop | Type | Default | Notes |
 | --- | --- | --- | --- |
 | `size` | 13-value axis, see §4 | `"md"` | max-width; only affects `left`/`right` sides at the `sm:` breakpoint and up |
-| `showCloseButton` | `boolean` | `true` | shared close-button rendering (§8): `Sheet.Close` rendered as `Button variant="ghost" size="icon-sm"` with `hit-area-1 absolute top-4 right-4`, Phosphor `X` + `sr-only` "Close" |
-| `container` | `HTMLElement \| RefObject<HTMLElement>` | active `ThemeScope` element | forwarded to the internal Portal (§8) |
+| `showCloseButton` | `boolean` | `true` | shared close-button rendering (§8): `Sheet.Close` rendered as `Button variant="ghost" size="icon-sm"` with `hit-area-1 absolute top-4 right-4`, Phosphor `X` + locale-dictionary `closeLabel` rendered sr-only |
+| `closeLabel` | `string` | locale dictionary | accessible name for the built-in close button |
+| `container` | `HTMLElement \| RefObject<HTMLElement>` | nearest `ThemeScope` element | forwarded to the internal Portal (§8) |
 
 **Sheet.Header / Body / Footer** — `ComponentProps<"div">`.
 **Sheet.Title / Sheet.Description** — their base-ui part's props verbatim.
@@ -70,6 +72,8 @@ All rendering parts take `className` (merged via `cn`) and forward the rest of t
 ## 4 Variants
 
 `sheetContentVariants` — `tv` recipe, **module-private** (not exported).
+
+`Sheet.Trigger` and a directly rendered public `Sheet.Close` compose shared `focusRing({ target: "self" })`. The built-in corner close control renders through Button and therefore uses Button's identical adapter.
 
 - Base: `pointer-events-auto fixed z-50 bg-popover bg-clip-padding text-sm text-popover-foreground shadow-lg` + per-side positioning (`data-[side=right]:inset-y-0 right-0 h-full w-full border-l`, mirrored for left/top/bottom; top/bottom are `inset-x-0 h-auto` with `border-b`/`border-t`) + the transition/swipe classes below.
 - Axis `size` (13 values, default `"md"`): same scale as Dialog — `sm…7xl` → `max-w-[min(var(--container-*),90%)]`, `8xl` → `min(1366px,90%)`, `9xl` → `min(1536px,90%)`, `10xl` → `min(1920px,90%)` — but every value is doubly gated: `data-[side=left]:sm:` and `data-[side=right]:sm:`. Below the `sm:` breakpoint, and always for `top`/`bottom` sides, the panel is full-width (`w-full`) and `size` is inert.
@@ -90,6 +94,7 @@ All rendering parts take `className` (merged via `cn`) and forward the rest of t
 - `foreground` / `muted-foreground` — Title / Description.
 - Overlay scrim is **literal `bg-black/10`** + backdrop blur — same deliberate exception as Dialog; dark-mode token on the roadmap (§8).
 - Close button consumes Button ghost tokens (§8 unification).
+- `ring` + `background` — Trigger and directly rendered Close focus treatment.
 - No radius: sheets are edge-anchored and square by design.
 
 ## 6 Data attributes
@@ -106,19 +111,21 @@ All rendering parts take `className` (merged via `cn`) and forward the rest of t
 - Keyboard: Escape closes; Tab cycles within the trap; focus returns to the trigger on close.
 - Touch: swipe toward the anchored edge dismisses (direction locked to `side`); partial swipes spring back; fling strength shortens the exit.
 - `VirtualKeyboardProvider` keeps the panel usable when the on-screen keyboard appears (mobile forms in sheets).
-- Corner close button carries `sr-only` "Close" + `hit-area-1`.
+- Corner close button carries localized sr-only `closeLabel` + `hit-area-1`.
 - `Sheet.Body` is the scroll container (`overflow-y-auto`), keeping Header/Footer pinned for long content.
 
 ## 8 Divergence from reference
 
 1. **Renames (flat → namespace)**: `Sheet`→`Sheet.Root`, `SheetTrigger`→`Sheet.Trigger`, `SheetClose`→`Sheet.Close`, `SheetPortal`→`Sheet.Portal`, `SheetOverlay`→`Sheet.Overlay`, `SheetContent`→`Sheet.Content`, `SheetHeader`→`Sheet.Header`, `SheetBody`→`Sheet.Body`, `SheetFooter`→`Sheet.Footer`, `SheetTitle`→`Sheet.Title`, `SheetDescription`→`Sheet.Description`.
-2. **Overlay `container` prop added (mandated)** to `Sheet.Content` — forwarded to the internal `SheetPrimitive.Portal`, defaulting to the active `ThemeScope` element (portal-inside-ThemeScope discipline). The ref hardcodes `<SheetPortal>` with nothing forwarded.
+2. **Overlay `container` prop added (mandated)** to `Sheet.Content` — forwarded to the internal `SheetPrimitive.Portal`, defaulting to the nearest `ThemeScope` element (portal-inside-ThemeScope discipline). The ref hardcodes `<SheetPortal>` with nothing forwarded.
 3. **Close-button unification**: the ref hand-rolls the corner close button as raw `SheetPrimitive.Close` markup (`inline-flex size-8 … opacity-70 hover:opacity-100 focus-visible:ring-[3px] … active:scale-[0.96]`) — duplicating Button's focus/active styles by hand. Replaced with the **shared** close-button rendering from Dialog (`Button variant="ghost" size="icon-sm"` render + `sr-only` label + `hit-area-1`). Minor visual delta (ghost hover surface instead of opacity fade) accepted for one canonical close button.
-4. **`data-slot="sheet"` added to `Sheet.Root`** — the ref omits it (every other Root in the family stamps its slot; consistency fix).
-5. **z-index deduped**: the ref stamps `z-50` on Overlay, Viewport, **and** Popup (triple). One `z-50` at the outermost layer per overlay; DOM order stacks Backdrop < Viewport < Popup within it. Flat z-50 strategy (all overlays at one level, DOM-order stacking) is deliberate.
-6. **Icons → Phosphor**: `XIcon` → `X`.
-7. **Overlay scrim** stays literal `bg-black/10` (matches ref); dark-mode token migration on the roadmap.
-8. `sheetContentVariants` stays **private**.
+4. **Localized close label:** built-in copy comes from `sheet.close`; `closeLabel` overrides it.
+5. **`data-slot="sheet"` added to `Sheet.Root`** — the ref omits it (every other Root in the family stamps its slot; consistency fix).
+6. **z-index deduped**: the ref stamps `z-50` on Overlay, Viewport, **and** Popup (triple). One `z-50` at the outermost layer per overlay; DOM order stacks Backdrop < Viewport < Popup within it. Flat z-50 strategy (all overlays at one level, DOM-order stacking) is deliberate.
+7. **Icons → Phosphor**: `XIcon` → `X`.
+8. **Overlay scrim** stays literal `bg-black/10` (matches ref); dark-mode token migration on the roadmap.
+9. `sheetContentVariants` stays **private**.
+10. **Focus unified:** public Trigger/Close parts compose the canonical self-focus adapter; the built-in Close button inherits it from Button.
 
 Kept faithfully: Drawer foundation with `Viewport` + `VirtualKeyboardProvider`-inside-Root; `side` default `"right"`; `SIDE_TO_SWIPE_DIRECTION` coupling with `swipeDirection` omitted from props; the entire transition-based animation strategy incl. `--drawer-swipe-movement-*` deference, `--drawer-swipe-strength` exit duration, and `data-swiping:transition-none`; the pointer-events viewport hack; size gating to left/right at `sm:`; Header/Body/Footer padding split (Body owns scroll); Title `text-xl` (larger than Dialog's `text-base`).
 
@@ -130,10 +137,11 @@ Role/label-based queries throughout. **Swipe-to-dismiss per side is not unit-tes
 - Open/close: trigger click → `getByRole("dialog")`; Escape closes and restores trigger focus; `onOpenChange` fires.
 - Focus trap: focus enters on open, Tab wraps, never escapes.
 - Labeling: Title names the dialog; Description wired via `aria-describedby`.
-- Close: corner button (`getByRole("button", { name: "Close" })`) closes; `showCloseButton={false}` removes it; explicit `Sheet.Close` works.
+- Close: under the `en-US` provider, the corner button (`getByRole("button", { name: "Close" })`) closes; `showCloseButton={false}` removes it; explicit `Sheet.Close` works.
+- The built-in close button renders in all four locales and respects `closeLabel`.
 - Layout: `Sheet.Body` has the scroll-container classes; `data-slot` attributes present incl. `sheet` on Root's primitive and `sheet-viewport`.
 - `size`: Popup carries the expected `data-[side=…]:sm:max-w-…` class for a sample (`sm`, `md`, `10xl`).
-- `container`: panel renders inside the provided element / active ThemeScope, not `document.body`.
+- `container`: panel renders inside the provided element / nearest ThemeScope, not `document.body`.
 
 ## 10 Demo requirements
 

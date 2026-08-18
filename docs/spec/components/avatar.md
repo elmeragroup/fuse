@@ -3,7 +3,8 @@
 ## 1 Header
 
 - **Canonical name**: `Avatar` (namespace: `Avatar.Root`, `Avatar.Image`, `Avatar.Fallback`)
-- **Export path**: `@elmeragroup/ui` (`import { Avatar } from "@elmeragroup/ui"`)
+- **Export path**: `@elmeragroup/ui/avatar` (`import { Avatar } from "@elmeragroup/ui/avatar"`)
+- **RSC**: client — base-ui Avatar owns image loading state
 - **Tier**: base-ui passthrough (`@base-ui/react/avatar`)
 - **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/avatar.tsx`
 

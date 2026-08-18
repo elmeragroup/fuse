@@ -3,7 +3,8 @@
 ## 1 Header
 
 - **Canonical name**: `Text` (single component); recipe `textVariants` (PUBLIC)
-- **Export path**: `@elmeragroup/ui/text` — the ref's existing bare path, kept (`import { Text } from "@elmeragroup/ui/text"`); recipe also via the styles layer
+- **Export path**: `@elmeragroup/ui/text` (also re-exported from `@elmeragroup/ui`); `textVariants` comes from the same entry
+- **RSC**: client — uses base-ui `useRender`
 - **Tier**: styled typography primitive (plain `p` by default; no base-ui primitive, no RAC)
 - **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/react-aria/text.tsx` + `src/styles/text.ts`
 
@@ -40,7 +41,7 @@ The ref's `slot` prop (RAC slot wiring) is **dropped** (§8 — migration note).
 
 ## 4 Variants
 
-Recipe: **`textVariants`** — **PUBLIC**. It lives in the borrowable styles layer; `spanVariants` extends it (span.md) and de-RAC'd families (card descriptions, table cells) render these classes on plain elements — sanctioned borrow, exported and typed via `VariantProps`.
+Recipe: **`textVariants`** — **PUBLIC** from `@elmeragroup/ui/text`. `spanVariants` and other package modules import its private source relatively; consumers borrow it from the component entry. Typed via `VariantProps`.
 
 | Axis | Values | Default |
 | --- | --- | --- |

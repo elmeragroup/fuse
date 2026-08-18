@@ -3,8 +3,9 @@
 ## 1 Header
 
 - **Canonical name**: `Sidebar` (namespace compound) + `useSidebar` hook
-- **Export path**: `@elmeragroup/ui` (`import { Sidebar, useSidebar } from "@elmeragroup/ui"`)
-- **Tier**: composed application-shell component (context provider + 23 parts; largest component in the library — 24 exports)
+- **Export path**: `@elmeragroup/ui/sidebar` (also re-exported from `@elmeragroup/ui`) — exports `Sidebar`, `useSidebar`, and the documented constants; `useIsMobile` is package-private
+- **Tier**: composed application-shell component (context provider + 23 parts; largest component in the library)
+- **RSC**: client (context provider, open/mobile state, cookie writes, window keydown listener, `matchMedia`)
 - **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/base-ui/sidebar.tsx` + `.ref/OrderModuleInternalWeb/packages/ui/src/hooks/use-is-mobile.ts`
 
 ## 2 Anatomy
@@ -15,8 +16,8 @@ Not a base-ui primitive wrapper — a composed shell built from plain elements, 
 | --- | --- | --- |
 | `Sidebar.Provider` | `SidebarContext.Provider > div` | owns open state, cookie persistence, cmd/ctrl+B shortcut; wrapper div sets `--sidebar-width`/`--sidebar-width-icon` inline and `group/sidebar-wrapper` |
 | `Sidebar.Root` | `div` (desktop) / `Sheet` (mobile) / bare `div` (`collapsible="none"`) | three render branches, see §3; desktop branch = outer `group peer` div > `sidebar-gap` spacer + fixed `sidebar-container` > `sidebar-inner` (the `bg-sidebar` surface) |
-| `Sidebar.Trigger` | `Button variant="ghost" size="icon-sm"` (§8.5) | toggles via context; Phosphor `SidebarSimple` icon + `sr-only` "Toggle Sidebar" |
-| `Sidebar.Rail` | `button` | invisible 4px grab strip on the sidebar edge; click toggles; `tabIndex={-1}`, `aria-label`/`title` "Toggle Sidebar"; direction-aware resize cursors |
+| `Sidebar.Trigger` | `Button variant="ghost" size="icon-sm"` (§8.5) | toggles via context; Phosphor `SidebarSimple` icon + localized sr-only label |
+| `Sidebar.Rail` | `button` | invisible 4px grab strip on the sidebar edge; click toggles; `tabIndex={-1}`, localized `aria-label`/`title`; direction-aware resize cursors |
 | `Sidebar.Inset` | `main` | the content area sibling; `peer-data-[variant=inset]:` margins/rounding/shadow react to Root's peer attrs |
 | `Sidebar.Input` | base-ui `Input` | `h-8 w-full bg-background shadow-none`; typed as `ComponentProps<"input">` (string `className`) because base-ui's `className` can be a render-prop function `cn` can't merge |
 | `Sidebar.Header` / `Sidebar.Footer` | `div` | `flex flex-col gap-2 p-2` |
@@ -88,9 +89,9 @@ Throws `"useSidebar must be used within a SidebarProvider."` outside the provide
 | `isMobile` | `boolean` | from `useIsMobile()` |
 | `toggleSidebar` | `() => void` | toggles `openMobile` on mobile, `setOpen(o => !o)` on desktop |
 
-### `useIsMobile()`
+### Private `useIsMobile()`
 
-Companion hook (exported from the hooks entry): `matchMedia("(max-width: 767px)")` against a 768px breakpoint; state starts `undefined` and is coerced with `Boolean(...)`, so **SSR and first client render report `false`** (desktop-first; the mobile branch appears after mount). Listener on the MQL `change` event; initial value set in effect via a `useEffectEvent`.
+Package-private implementation detail: `matchMedia("(max-width: 767px)")` against a 768px breakpoint; state starts `undefined` and is coerced with `Boolean(...)`, so SSR and first client render report `false`. It is imported only by Sidebar source and is absent from every public entry.
 
 ## 3 Props
 
@@ -103,6 +104,7 @@ All parts take `className` (merged via `cn`) and forward remaining props to thei
 | `defaultOpen` | `boolean` | `true` | uncontrolled initial state; SSR pattern: parse the `sidebar:state` cookie server-side and pass it here |
 | `open` | `boolean` | — | controlled |
 | `onOpenChange` | `(open: boolean) => void` | — | controlled setter; when provided, internal state is bypassed but the cookie is still written |
+| `labels` | `Partial<{ toggle: string; title: string; description: string }>` | locale dictionary | copy overrides; stored in private context for Root, Trigger, and Rail |
 
 **Sidebar.Root** — `ComponentProps<"div">` plus:
 
@@ -113,7 +115,7 @@ All parts take `className` (merged via `cn`) and forward remaining props to thei
 | `collapsible` | `"offcanvas" \| "icon" \| "none"` | `"offcanvas"` | `offcanvas`: gap collapses to 0, container slides off-screen; `icon`: collapses to `--sidebar-width-icon` (+ padding/2px for floating/inset); `none`: static branch — but **still emits `group peer` + `data-state/variant/side`** (deliberate funnel deviation from the shadcn template: the wizard dialogs use `variant="inset" collapsible="none"` and rely on `Sidebar.Inset`'s `peer-data-[variant=inset]:` and the wrapper's `has-data-[variant=inset]:bg-sidebar`) |
 | `dir` | `string` | — | forwarded to `SheetContent` in the mobile branch (RTL) |
 
-Mobile branch (when `isMobile` and `collapsible !== "none"`): renders `Sheet` (`side`, `open={openMobile}`, `onOpenChange={setOpenMobile}`) > `SheetContent` with `data-mobile="true"`, `showCloseButton={false}`, `--sidebar-width: 18rem` inline, `w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground`, an `sr-only` SheetHeader (Title "Sidebar" / Description "Displays the mobile sidebar."), and children in a full-height column. Caller `className` is merged onto `SheetContent` (§8.2 bugfix); remaining `...props` spread onto the Sheet root (faithful to ref). Desktop collapse state (`open`) is irrelevant on mobile; the Sheet is a separate overlay surface — `openMobile` is session-only, never cookie-persisted.
+Mobile branch (when `isMobile` and `collapsible !== "none"`): renders `Sheet` (`side`, `open={openMobile}`, `onOpenChange={setOpenMobile}`) > `SheetContent` with `data-mobile="true"`, `showCloseButton={false}`, `--sidebar-width: 18rem` inline, `w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground`, a locale-labeled sr-only SheetHeader, and children in a full-height column. Caller `className` is merged onto `SheetContent` (§8.2 bugfix); remaining `...props` spread onto the Sheet root. Desktop collapse state is irrelevant on mobile; `openMobile` is session-only.
 
 SSR pattern (the funnel contract this component exists to serve):
 
@@ -180,7 +182,7 @@ Constrained to the canonical contract's **eight sidebar tokens** (ticket 001): `
 - `sidebar` / `sidebar-foreground` — surface (inner container, mobile Sheet, `none` branch, wrapper `has-data-[variant=inset]:bg-sidebar`) and text.
 - `sidebar-accent` / `sidebar-accent-foreground` — hover/active/`isActive` states on MenuButton, MenuAction, GroupAction, MenuSubButton; sub-button icons.
 - `sidebar-border` — sidebar edge borders, floating ring, Separator, MenuSub `border-l`, Rail hover line, outline-variant shadow ring.
-- `sidebar-ring` — `ring-sidebar-ring` focus-visible rings on all interactive parts.
+- `ring` — all interactive parts compose the canonical shared `focusRing` recipe. `--sidebar-ring` remains a compatibility alias in the token contract but Sidebar does not create a distinct focus style from it.
 - `sidebar-brand` / `sidebar-brand-foreground` — reserved for brand emphasis (e.g. `Sidebar.Icon` logo surface); not consumed by the recipe itself.
 - Neutral tokens: `background` (Inset, Input, outline MenuButton), `accent`/`accent-foreground` + `ring` via Button ghost (Trigger, §8.5).
 - Widths flow through the component-scoped vars `--sidebar-width` / `--sidebar-width-icon` — never hardcoded in parts.
@@ -193,15 +195,15 @@ Dead ref references to `--sidebar-background` / `--sidebar-primary` are removed 
 
 State attributes: Root — `data-state="expanded|collapsed"`, `data-variant`, `data-side`, `data-collapsible` (set to the collapsible mode **only while collapsed**, else `""`; also on the `none` branch: `data-state/variant/side` but no `data-collapsible`); mobile SheetContent — `data-mobile="true"`; `sidebar-container` re-emits `data-side`; MenuButton — `data-size`, `data-active`; MenuSubButton — `data-size`, `data-active`.
 
-**Consumed selectors**: the component is a peer/group machine — wrapper `group/sidebar-wrapper` + `has-data-[variant=inset]:`; Root `group peer` feeding `group-data-[collapsible=icon|offcanvas]:`, `group-data-[side=…]:`, `group-data-[variant=…]:` throughout, and `Sidebar.Inset`'s `peer-data-[variant=inset]:`/`peer-data-[state=collapsed]:`; `group/menu-item` + `peer/menu-button` feeding MenuAction/MenuBadge positioning (`peer-data-[size=…]/menu-button:top-*`), hover reveal, and `peer-data-active/menu-button:` text; Rail's `[[data-side=left][data-state=collapsed]_&]:cursor-e-resize` family. `data-open:`/`data-active:` variants are bracket-scoped per the conventions' `data-open:` trap.
+**Consumed selectors**: the component is a peer/group machine — wrapper `group/sidebar-wrapper` + `has-data-[variant=inset]:`; Root `group peer` feeding `group-data-[collapsible=icon|offcanvas]:`, `group-data-[side=…]:`, `group-data-[variant=…]:` throughout, and `Sidebar.Inset`'s `peer-data-[variant=inset]:`/`peer-data-[state=collapsed]:`; `group/menu-item` + `peer/menu-button` feeding MenuAction/MenuBadge positioning (`peer-data-[size=…]/menu-button:top-*`), hover reveal, and `peer-data-active/menu-button:` text; Rail's `[[data-side=left][data-state=collapsed]_&]:cursor-e-resize` family. Bare `data-open:`/`data-active:` variants are the self-scoped custom variants from conventions; ancestor state remains explicit through named group/peer selectors.
 
 ## 7 Accessibility
 
 - **Keyboard shortcut**: cmd/ctrl+B toggles the sidebar (window-level `keydown`, `preventDefault`), on desktop and mobile alike.
-- **Trigger**: real `<button>` with `sr-only` "Toggle Sidebar".
-- **Rail**: `tabIndex={-1}` (deliberate — mouse affordance only; keyboard users have Trigger and cmd+B), `aria-label` + `title` "Toggle Sidebar".
+- **Trigger**: real `<button>` with the locale's `sidebar.toggle` string rendered sr-only.
+- **Rail**: `tabIndex={-1}` (deliberate — mouse affordance only; keyboard users have Trigger and cmd+B), localized `aria-label` + `title`.
 - **Collapsed icon mode**: `tooltip` on MenuButton restores the hidden label — Tooltip.Content `side="right"`, `hidden` unless `state === "collapsed" && !isMobile`. Base-ui Tooltip wires `aria-describedby`.
-- **Mobile**: full Sheet dialog semantics (focus trap, Escape, `aria-modal`), labeled by the `sr-only` SheetTitle "Sidebar" + SheetDescription.
+- **Mobile**: full Sheet dialog semantics (focus trap, Escape, `aria-modal`), labeled by sr-only content from `sidebar.title` + `sidebar.description`.
 - **Menus are semantic lists** (`ul`/`li`); MenuSubButton defaults to `<a>` for navigation; use `render` to compose router links. Active state is `data-active` styling — pair with `aria-current="page"` at the call site.
 - Disabled states honor both `disabled:` and `aria-disabled:` (for rendered anchors).
 - `Sidebar.Content` is the single scroll region; MenuAction/GroupAction carry `after:-inset-2` expanded hit areas on touch (`md:after:hidden`).
@@ -218,7 +220,9 @@ State attributes: Root — `data-state="expanded|collapsed"`, `data-variant`, `d
 8. **Separator import pinned** to the canonical base-ui separator. Spread-order note: `Sidebar.Separator` passes `data-slot="sidebar-separator"` into `Separator`, which stamps its own `data-slot="separator"` — the wrapper's attribute must be spread **after** the inner default so `sidebar-separator` wins in the DOM.
 9. **Renames (flat → namespace)**, one entry each: `SidebarProvider`→`Sidebar.Provider`, `Sidebar`→`Sidebar.Root`, `SidebarTrigger`→`Sidebar.Trigger`, `SidebarRail`→`Sidebar.Rail`, `SidebarInset`→`Sidebar.Inset`, `SidebarInput`→`Sidebar.Input`, `SidebarHeader`→`Sidebar.Header`, `SidebarFooter`→`Sidebar.Footer`, `SidebarSeparator`→`Sidebar.Separator`, `SidebarContent`→`Sidebar.Content`, `SidebarGroup`→`Sidebar.Group`, `SidebarGroupLabel`→`Sidebar.GroupLabel`, `SidebarGroupAction`→`Sidebar.GroupAction`, `SidebarGroupContent`→`Sidebar.GroupContent`, `SidebarMenu`→`Sidebar.Menu`, `SidebarMenuItem`→`Sidebar.MenuItem`, `SidebarMenuButton`→`Sidebar.MenuButton`, `SidebarMenuAction`→`Sidebar.MenuAction`, `SidebarMenuBadge`→`Sidebar.MenuBadge`, `SidebarMenuSkeleton`→`Sidebar.MenuSkeleton`, `SidebarMenuSub`→`Sidebar.MenuSub`, `SidebarMenuSubItem`→`Sidebar.MenuSubItem`, `SidebarMenuSubButton`→`Sidebar.MenuSubButton`, `SidebarIcon`→`Sidebar.Icon`. `useSidebar` keeps its name.
 10. **Icons → Phosphor**: lucide `PanelLeftIcon` → Phosphor **`SidebarSimple`** — the closest Phosphor glyph to PanelLeft (a plain frame with a left-panel divider; Phosphor's `Sidebar` adds content lines inside the panel), and its name doesn't collide with the `Sidebar` namespace export.
-11. **`useIsMobile` documented as part of the contract**: 768px breakpoint (`max-width: 767px` MQL), `undefined`-then-`Boolean` state so SSR/first paint is `false`.
+11. **Helper privacy and strings:** `useIsMobile` is no longer public. Toggle/mobile-sheet copy comes from provider-locale keys with a `labels` override object.
+12. **Mobile detection behavior kept, helper private:** 768px breakpoint (`max-width: 767px` MQL), `undefined`-then-`Boolean` state so SSR/first paint is `false`; observable through `useSidebar().isMobile`, not a `useIsMobile` export.
+13. **Focus rings unified:** ref `ring-sidebar-ring` literals are replaced by canonical `focusRing`; Sidebar has no focus-color exception.
 
 Kept faithfully: all constants (§2) incl. cookie write on **every** `setOpen` (even controlled); the three-branch Root incl. the `collapsible="none"` branch **still emitting `group peer` + `data-state/variant/side`** (deliberate funnel deviation from shadcn — inset wizard dialogs depend on the peer/has selectors); the gap+fixed-container desktop layout with 200ms ease-linear width/offset transitions; floating/inset icon-width arithmetic (`+ spacing(4)` gap, `+ 2px` container); mobile Sheet composition (`18rem`, no close button, `sr-only` header); the nested `TooltipTrigger render={render}` composition and `hidden` gating on MenuButton tooltips; `data-collapsible` only-when-collapsed; MenuAction/MenuBadge size-tracking peers; `SidebarInput`'s `ComponentProps<"input">` typing rationale; `Sidebar.Icon` (funnel addition); RTL `dir` forwarding and the Rail's ltr/rtl cursor logic.
 
@@ -226,7 +230,8 @@ Kept faithfully: all constants (§2) incl. cookie write on **every** `setOpen` (
 
 Role/label-based queries throughout; keyboard tests cover §7.
 
-- **Toggle paths**: cmd+B and ctrl+B toggle `data-state` on Root (and `preventDefault`); Trigger (`getByRole("button", { name: "Toggle Sidebar" })`) toggles; Rail click toggles (queried by its `aria-label`; assert `tabIndex={-1}`).
+- **Toggle paths**: cmd+B and ctrl+B toggle `data-state` on Root (and `preventDefault`); under an `en-US` provider, Trigger (`getByRole("button", { name: "Toggle sidebar" })`) toggles; Rail click toggles (queried by its localized `aria-label`; assert `tabIndex={-1}`).
+- Toggle/title/description copy renders in all four locales; `Provider labels` overrides win. Public export tests reject `useIsMobile`.
 - **Cookie write**: toggling writes `document.cookie` → `sidebar:state=<bool>; path=/; max-age=604800` — the exact name asserted as a hard invariant; also written when controlled (`onOpenChange` fires *and* cookie updates).
 - **Controlled/uncontrolled**: `defaultOpen={false}` starts collapsed; controlled `open` wins over internal state; `setOpen` accepts both boolean and updater.
 - **`useSidebar` outside provider throws** the documented message.
@@ -237,7 +242,7 @@ Role/label-based queries throughout; keyboard tests cover §7.
 - **MenuSkeleton**: deterministic width across renders (two mounts produce identical DOM — the §8.4 guarantee); `showIcon`.
 - **MenuSubButton**: defaults to `<a>`; `size`/`isActive` attributes.
 - **`data-slot` audit**: every part stamps its slot; **no `data-sidebar` attributes anywhere** (§8.1 regression); `Sidebar.Separator` wins the spread-order fight (`data-slot="sidebar-separator"` in DOM).
-- **`useIsMobile`**: false before/at 768px, true below; responds to MQL change events; initial render false.
+- **Mobile behavior**: `useSidebar().isMobile` is false before/at 768px, true below; responds to MQL change events; initial render false.
 
 ## 10 Demo requirements
 

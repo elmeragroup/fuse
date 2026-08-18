@@ -4,6 +4,7 @@
 
 - **Canonical name:** `RangeCalendar`
 - **Export path:** `@elmeragroup/ui/react-aria/range-calendar` — `react-aria/` quarantine prefix (path-policy ruling).
+- **RSC:** client
 - **Tier:** **react-aria interim** — composite over `react-aria-components` `RangeCalendar`. **Public by user ruling** (zero-usage evidence overridden — deliberate API addition). **Migration roadmap:** replaced alongside Calendar by a base-ui/custom implementation; bare `@elmeragroup/ui/range-calendar` is reserved for the successor.
 - **Source of truth:** `.ref/OrderModuleInternalWeb/packages/ui/src/react-aria/range-calendar.tsx` (+ `calendar.tsx`/`styles/calendar.ts` for the shared header parts).
 
@@ -12,9 +13,9 @@
 ```
 AriaRangeCalendar                  (RAC RangeCalendar)
 ├─ CalendarHeader                  (shared export from react-aria/calendar)
-│  ├─ Button slot="previous" > Icon.CaretLeft   (private RAC Button; RTL flips)
+│  ├─ Button slot="previous" > CaretLeft        (named icon import; private RAC Button; RTL flips)
 │  ├─ Heading (size="lg")
-│  └─ Button slot="next" > Icon.CaretRight
+│  └─ Button slot="next" > CaretRight           (named icon import)
 ├─ CalendarGrid ([&_td]:px-0)
 │  ├─ CalendarGridHeader           (shared export from react-aria/calendar)
 │  └─ CalendarGridBody > CalendarCell (render prop per date)
@@ -30,12 +31,12 @@ Two-layer cell geometry (kept): the outer `CalendarCell` is a square `size-9` ba
 
 | Prop | Type | Default | Notes |
 | --- | --- | --- | --- |
-| `errorMessage` | `string` | — | Plain string, same face as Calendar; renders `Text slot="errorMessage"` |
+| `errorMessage` | `ReactNode` | — | same face as Calendar; renders `Text slot="errorMessage"` |
 | `className` | RAC className | — | Spread onto the root (ref applies no root recipe — see §8) |
 
 ## 4 Variants
 
-`rangeCalendarVariants` — **moved to `styles/range-calendar.ts`** (the ref defines an inline `tv()` inside the component file; every sibling keeps recipes in `styles/` — locked ruling). Slotted recipe, **module-private**. The inner-pill `cell` slot extends `focusRing`; axes: `selectionState` (`none`/`middle`/`cap`), `isDisabled`, plus `isFocusVisible` from `focusRing`. The outer-cell class string joins the recipe as an `outerCell` slot so no styling stays inline. No public recipe export.
+`rangeCalendarVariants` — **moved to `styles/range-calendar.ts`** (the ref defines an inline `tv()` inside the component file; every sibling keeps recipes in `styles/` — locked ruling). Slotted recipe, **module-private**. The inner-pill `cell` slot composes `focusRing({ target: "state", isFocusVisible })`; axes: `selectionState` (`none`/`middle`/`cap`) and `isDisabled`. The outer-cell class string joins the recipe as an `outerCell` slot so no styling stays inline. No public recipe export.
 
 ## 5 Consumed tokens
 
@@ -66,8 +67,8 @@ Locked palette mapping (ref raw grays/blues → contract tokens, `no-primitive-c
 2. **Inline `tv()` moves to `styles/range-calendar.ts`** as `rangeCalendarVariants`, matching every sibling; the raw outer-cell class string becomes a recipe slot.
 3. **Palette → tokens** per §5: `bg-gray-100/200` → `muted`/`accent`, `bg-blue-300` → `primary/40`, `text-gray-300` → `muted-foreground`, `text-white` → `primary-foreground`, `destructive` → `error`.
 4. **Icon swaps** (via shared `CalendarHeader`): lucide chevrons → Phosphor `CaretLeft`/`CaretRight`.
-5. **Kept:** two-layer cell geometry; `visibleDuration` omitted; `errorMessage: string` face. Source contradiction (documented): RangeCalendar hand-rolls its own cell recipe instead of reusing `calendarVariants`' cell, and unlike Calendar its root takes **no** card-surface recipe — standalone it renders borderless; the card chrome comes from the picker dialog. Kept as-is; the successor unifies.
-6. **Interim-only devDependency:** `selection-start:`, `selection-end:`, `selected:`, `invalid:selected:`, `outside-month:`, `group-pressed:` modifiers come from `tailwindcss-react-aria-components`; the plugin uninstalls with the tier.
+5. **Kept:** two-layer cell geometry; `visibleDuration` omitted. `errorMessage` widens from string to ReactNode. RangeCalendar hand-rolls its own cell recipe instead of reusing `calendarVariants`' cell, and unlike Calendar its root takes no card-surface recipe — standalone it renders borderless; picker dialog supplies chrome.
+6. **Interim-only regular dependency:** RAC state modifiers come from `tailwindcss-react-aria-components`; the plugin uninstalls with the tier.
 
 ## 9 Test requirements
 

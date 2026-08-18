@@ -3,7 +3,8 @@
 ## 1 Header
 
 - **Canonical name**: `Span` (single component); recipe `spanVariants` (PUBLIC)
-- **Export path**: `@elmeragroup/ui/span` — the ref's existing bare path, kept (`import { Span } from "@elmeragroup/ui/span"`); recipe also via the styles layer
+- **Export path**: `@elmeragroup/ui/span` (also re-exported from `@elmeragroup/ui`); `spanVariants` comes from the same entry
+- **RSC**: client — uses base-ui `useRender`
 - **Tier**: styled typography primitive (plain `span`; no base-ui primitive, no RAC)
 - **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/react-aria/span.tsx` + `src/styles/span.ts` (extends `styles/text.ts`)
 
@@ -38,7 +39,7 @@ The ref's `slot` prop (RAC slot wiring) is **dropped** (§8 — migration note).
 
 ## 4 Variants
 
-Recipe: **`spanVariants`** — **PUBLIC**. Defined as `tv({ extend: textVariants, defaultVariants: { leading: "snug" } })` — it inherits every axis/value from `textVariants` (see text.md §4 for the full tables) and overrides only the `leading` default. Lives in the borrowable styles layer alongside its parent; exported and typed via `VariantProps`.
+Recipe: **`spanVariants`** — **PUBLIC** from `@elmeragroup/ui/span`. Defined as `tv({ extend: textVariants, defaultVariants: { leading: "snug" } })`; it inherits the text axes and overrides only `leading`. Internal composition uses relative source imports; consumers use component entries.
 
 | Axis | Values | Default |
 | --- | --- | --- |

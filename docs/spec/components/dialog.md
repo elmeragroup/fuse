@@ -3,7 +3,8 @@
 ## 1 Header
 
 - **Canonical name**: `Dialog` (namespace compound)
-- **Export path**: `@elmeragroup/ui` (`import { Dialog } from "@elmeragroup/ui"`)
+- **Export path**: `@elmeragroup/ui/dialog` (also re-exported from `@elmeragroup/ui`)
+- **RSC**: client
 - **Tier**: styled base-ui primitive wrapper (overlay component)
 - **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/base-ui/dialog.tsx`
 
@@ -53,8 +54,9 @@ All rendering parts take `className` (merged via `cn`) and forward the rest of t
 | Prop | Type | Default | Notes |
 | --- | --- | --- | --- |
 | `size` | 13-value axis, see §4 | `"md"` | max-width of the popup |
-| `showCloseButton` | `boolean` | `true` | corner close button: `Dialog.Close` rendered as `Button variant="ghost" size="icon-sm"` with `hit-area-1 absolute top-4 right-4`, Phosphor `X` icon + `sr-only` "Close" label |
-| `container` | `HTMLElement \| RefObject<HTMLElement>` | active `ThemeScope` element | forwarded to the internal Portal (§8) |
+| `showCloseButton` | `boolean` | `true` | corner close button: `Dialog.Close` rendered as `Button variant="ghost" size="icon-sm"` with `hit-area-1 absolute top-4 right-4`, Phosphor `X` icon + locale-dictionary `closeLabel` rendered sr-only |
+| `container` | `HTMLElement \| RefObject<HTMLElement>` | nearest `ThemeScope` element | forwarded to the internal Portal (§8) |
+| `closeLabel` | `string` | locale dictionary | accessible name for the built-in corner close button |
 
 `children` render before the corner close button inside the Popup.
 
@@ -64,7 +66,8 @@ All rendering parts take `className` (merged via `cn`) and forward the rest of t
 
 | Prop | Type | Default | Notes |
 | --- | --- | --- | --- |
-| `showCloseButton` | `boolean` | `false` | appends `Dialog.Close` rendered as `Button variant="outline"` with literal children "Close", after `children` |
+| `showCloseButton` | `boolean` | `false` | appends `Dialog.Close` rendered as `Button variant="outline"` with the resolved `closeLabel` as visible children, after `children` |
+| `closeLabel` | `string` | locale dictionary | visible text for the built-in footer close action |
 
 Footer's `showCloseButton` is a different job from Content's (a footer action, not the corner dismiss affordance); both stay.
 
@@ -74,10 +77,12 @@ Footer's `showCloseButton` is a different job from Content's (a footer action, n
 
 `dialogContentVariants` — `tv` recipe, **module-private** (no borrow pattern; not exported).
 
-- Base: `fixed top-1/2 left-1/2 z-50 grid max-h-[calc(100%-2rem)] w-full -translate-x-1/2 -translate-y-1/2 gap-6 overflow-y-auto rounded-xl bg-popover p-6 text-sm text-popover-foreground shadow-lg ring-1 ring-foreground/10 duration-100 outline-none` + enter/exit animation classes (§6).
+`Dialog.Trigger` and a directly rendered public `Dialog.Close` compose shared `focusRing({ target: "self" })`. Close controls rendered through `Button` use Button's identical adapter; `cn` deduplicates the classes.
+
+- Base: `fixed top-1/2 left-1/2 z-50 grid max-h-[calc(100%-2rem)] w-full -translate-x-1/2 -translate-y-1/2 gap-6 overflow-y-auto rounded-xl bg-popover p-6 text-sm text-popover-foreground shadow-lg ring-1 ring-foreground/10 duration-100` + `focusRing({ target: "self" })` + enter/exit animation classes (§6). The static one-pixel hairline remains when unfocused; the canonical two-pixel offset ring wins on keyboard-visible focus.
 - Axis `size` (13 values, default `"md"`): `sm | md | lg | xl | 2xl | 3xl | 4xl | 5xl | 6xl | 7xl` map to `max-w-[min(var(--container-*),90%)]`; the top three are hardcoded pixel caps — `8xl` → `min(1366px,90%)`, `9xl` → `min(1536px,90%)`, `10xl` → `min(1920px,90%)` (no `--container-8xl+` vars exist; kept as literals, documented).
 
-Animation strategy: **keyframe-based** (`tailwindcss-animate`) — `data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95` / `data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95`, `duration-100`. Contrast with Sheet, which is transition-based (see sheet spec §4).
+Animation strategy: **keyframe-based** (`tw-animate-css`) — `data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95` / `data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95`, `duration-100`. Contrast with Sheet, which is transition-based (see sheet spec §4).
 
 ## 5 Consumed tokens
 
@@ -86,6 +91,7 @@ Animation strategy: **keyframe-based** (`tailwindcss-animate`) — `data-open:an
 - `muted-foreground` — Description text; `foreground` — Description link hover.
 - Overlay scrim is **literal `bg-black/10`** + `supports-backdrop-filter:backdrop-blur-xs` — deliberately not tokenized yet; a dark-mode-ready `--overlay` token is a roadmap item (§8).
 - Corner close button consumes Button ghost tokens.
+- `ring` + `background` — Trigger, Content fallback target, and directly rendered Close focus treatment.
 - Radii: popup `rounded-xl` — `--radius` scale step, no hardcoded values.
 
 ## 6 Data attributes
@@ -94,7 +100,7 @@ Animation strategy: **keyframe-based** (`tailwindcss-animate`) — `data-open:an
 
 **Emitted (by base-ui, styled by us)**: `data-open` / `data-closed` on Popup and Backdrop.
 
-**Consumed selectors**: `data-open:animate-in …` / `data-closed:animate-out …` on Content and Overlay. Per conventions' ancestor-match trap, these variants must stay on the element that owns the attribute (Popup/Backdrop themselves) — never on descendants.
+**Consumed selectors**: `data-open:animate-in …` / `data-closed:animate-out …` on Content and Overlay. These are the self-scoped custom variants from conventions and stay on the elements that own the attributes (Popup/Backdrop themselves).
 
 ## 7 Accessibility
 
@@ -102,20 +108,22 @@ Animation strategy: **keyframe-based** (`tailwindcss-animate`) — `data-open:an
 - Focus is trapped inside the popup while open; on open, focus moves into the popup; on close, focus returns to the trigger.
 - Keyboard: Escape closes (unless `dismissible={false}`); Tab cycles within the trap.
 - Backdrop click dismisses when `modal`/`dismissible` allow it (base-ui defaults).
-- Corner close button carries an `sr-only` "Close" label and a `hit-area-1` expanded hit target.
+- Corner close button carries the localized `closeLabel` as sr-only text and a `hit-area-1` expanded hit target.
 - Consumers should always render `Dialog.Title` (base-ui warns otherwise); `Dialog.Description` is optional but recommended.
 
 ## 8 Divergence from reference
 
 1. **Renames (flat → namespace)**: `Dialog`→`Dialog.Root`, `DialogTrigger`→`Dialog.Trigger`, `DialogPortal`→`Dialog.Portal`, `DialogClose`→`Dialog.Close`, `DialogOverlay`→`Dialog.Overlay`, `DialogContent`→`Dialog.Content`, `DialogHeader`→`Dialog.Header`, `DialogFooter`→`Dialog.Footer`, `DialogTitle`→`Dialog.Title`, `DialogDescription`→`Dialog.Description`.
-2. **Overlay `container` prop added (mandated)** to `Dialog.Content` — forwarded to the internal `DialogPrimitive.Portal`, defaulting to the active `ThemeScope` element (portal-inside-ThemeScope discipline). The ref hardcodes `<DialogPortal>` with **nothing forwarded** — no way to retarget the portal without recomposing Content manually; this gap is closed.
+2. **Overlay `container` prop added (mandated)** to `Dialog.Content` — forwarded to the internal `DialogPrimitive.Portal`, defaulting to the nearest `ThemeScope` element (portal-inside-ThemeScope discipline). The ref hardcodes `<DialogPortal>` with **nothing forwarded** — no way to retarget the portal without recomposing Content manually; this gap is closed.
 3. **Close-button unification**: the corner close button (Button ghost `icon-sm` + `sr-only` label + `hit-area-1`) becomes the **shared** close-button rendering also used by `Sheet.Content` (Dialog's pattern wins; see sheet spec §8).
 4. **z-index deduped**: the ref stamps `z-50` on both Overlay and Popup. One `z-50` at the outermost layer per overlay; within it, DOM order stacks Backdrop under Popup. The flat z-50 strategy (every overlay component at the same level, DOM-order stacking) is deliberate and documented.
 5. **Icons → Phosphor**: `XIcon` (lucide) → `X`.
 6. **Overlay scrim** stays literal `bg-black/10` (matches ref); flagged as the one deliberate primitive-color exception, with a dark-mode token migration on the roadmap.
 7. `dialogContentVariants` stays **private** (ref does not export it; no borrow pattern).
+8. **Focus unified:** public Trigger/Close parts compose the canonical self-focus adapter; built-in Close buttons inherit the same adapter from Button.
+9. **Popup fallback focus fixed:** the ref's unconditional Content `outline-none` becomes the canonical self-focus adapter. Base-ui normally focuses the first tabbable descendant; when none exists it focuses the popup fallback, which must retain a visible keyboard indicator.
 
-Kept faithfully: the 13-value size axis incl. hardcoded 8xl–10xl pixel caps and default `md`; `showCloseButton` defaults (`true` on Content, `false` on Footer); Footer's outline Close button with literal "Close" children; `duration-100` keyframe animations; `max-h-[calc(100%-2rem)]` + `overflow-y-auto` scroll containment; Description's child-link styling; Overlay `isolate` + backdrop blur.
+Kept faithfully: the 13-value size axis incl. hardcoded 8xl–10xl pixel caps and default `md`; `showCloseButton` defaults (`true` on Content, `false` on Footer); Footer's outline close action; `duration-100` keyframe animations; `max-h-[calc(100%-2rem)]` + `overflow-y-auto` scroll containment; Description's child-link styling; Overlay `isolate` + backdrop blur. Divergence: both built-in close affordances use the provider-locale dictionary and optional `closeLabel` override instead of literal English.
 
 ## 9 Test requirements
 
@@ -123,10 +131,12 @@ Role/label-based queries throughout; keyboard flows per §7:
 
 - Open/close: click trigger → `getByRole("dialog")` appears; Escape closes and returns focus to the trigger; `onOpenChange` fires.
 - Focus trap: on open, focus lands inside the popup; Tab from the last tabbable wraps to the first; Shift+Tab wraps backwards; focus never escapes to the page behind.
+- With no tabbable descendant, the popup itself receives fallback focus and renders the canonical focus ring.
 - Labeling: `Dialog.Title` names the dialog (`getByRole("dialog", { name })`); `Dialog.Description` is wired via `aria-describedby` (attribute assertion).
-- Close affordances: corner button (`getByRole("button", { name: "Close" })`) closes; `showCloseButton={false}` removes it; Footer `showCloseButton` renders an outline "Close" button that closes.
+- Close affordances: under the `en-US` provider, the corner button (`getByRole("button", { name: "Close" })`) closes; `showCloseButton={false}` removes it; Footer `showCloseButton` renders an outline button carrying the resolved locale label and closes.
+- Close affordances render and operate in all four locales; `closeLabel` overrides dictionary copy on Content and Footer.
 - `size`: `data-slot="dialog-content"` element carries the expected max-width class for a sample of values (`sm`, `md`, `10xl`).
-- `container`: popup renders inside the provided element / active ThemeScope, not `document.body`.
+- `container`: popup renders inside the provided element / nearest ThemeScope, not `document.body`.
 - `dismissible={false}`: Escape and backdrop click do not close.
 
 ## 10 Demo requirements

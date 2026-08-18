@@ -3,7 +3,8 @@
 ## 1 Header
 
 - **Canonical name**: `Table` — namespace compound: `Table.Root`, `Table.Header`, `Table.Body`, `Table.Footer`, `Table.Row`, `Table.Head`, `Table.Cell`, `Table.Caption`. Companion namespace `VerticalTable`: `VerticalTable.Root`, `VerticalTable.Header`, `VerticalTable.Body`, `VerticalTable.Row`, `VerticalTable.Key`, `VerticalTable.Value`.
-- **Export path**: `@elmeragroup/ui` (`import { Table, VerticalTable } from "@elmeragroup/ui"`)
+- **Export path**: `@elmeragroup/ui/table` (also re-exported from `@elmeragroup/ui`)
+- **RSC**: client — `VerticalTable.Header` uses base-ui `useRender`; no sortable or selection API is part of v1
 - **Tier**: plain-element composite (no base-ui state primitive; semantic `<table>` markup)
 - **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/table.tsx`
 

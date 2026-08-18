@@ -3,8 +3,9 @@
 ## 1 Header
 
 - **Canonical name**: `DescriptionList` — namespace compound: `DescriptionList.Root`, `DescriptionList.Heading`, `DescriptionList.Content`, `DescriptionList.Term`, `DescriptionList.Details`
-- **Export path**: `@elmeragroup/ui` (`import { DescriptionList } from "@elmeragroup/ui"`)
+- **Export path**: `@elmeragroup/ui/description-list` (also re-exported from `@elmeragroup/ui`)
 - **Tier**: plain-element composite (semantic `<dl>/<dt>/<dd>` markup; no base-ui primitive)
+- **RSC**: server — the stateless wrapper may render client `Heading` as a child
 - **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/description-list.tsx`
 
 ## 2 Anatomy

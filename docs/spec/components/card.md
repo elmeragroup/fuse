@@ -3,7 +3,8 @@
 ## 1 Header
 
 - **Canonical name**: `Card` (namespace: `Card.Root`, `Card.Header`, `Card.Tag`, `Card.Title`, `Card.Description`, `Card.Action`, `Card.Content`, `Card.Footer`); recipe `cardVariants` (PUBLIC)
-- **Export path**: `@elmeragroup/ui` (`import { Card, cardVariants } from "@elmeragroup/ui"`)
+- **Export path**: `@elmeragroup/ui/card` (also re-exported from `@elmeragroup/ui`); `cardVariants` comes from the same entry
+- **RSC**: server
 - **Tier**: styled layout surface (no base-ui primitive; plain elements)
 - **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/card.tsx` + `styles/card.ts`. The rich external card (`.ref/OrderModuleWeb/packages/ui/src/card.tsx`) is **decomposed away** — see §8.
 
@@ -15,7 +16,7 @@ All parts are plain elements styled by the `cardVariants` slot recipe. Every par
 <Card.Root>
   <Card.Header>
     <Card.Tag>Invoice</Card.Tag>
-    <Card.Title icon={<Icon.Lightning />}>March usage</Card.Title>
+    <Card.Title icon={<Lightning aria-hidden />}>March usage</Card.Title>
     <Card.Description>Estimated consumption for the period.</Card.Description>
     <Card.Action><Button size="sm">Export</Button></Card.Action>
   </Card.Header>

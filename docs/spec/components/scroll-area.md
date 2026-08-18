@@ -3,7 +3,8 @@
 ## 1 Header
 
 - **Canonical name**: `ScrollArea` — namespace compound: `ScrollArea.Root`, `ScrollArea.Bar`
-- **Export path**: `@elmeragroup/ui` (`import { ScrollArea } from "@elmeragroup/ui"`)
+- **Export path**: `@elmeragroup/ui/scroll-area` (also re-exported from `@elmeragroup/ui`)
+- **RSC**: client
 - **Tier**: base-ui composite (styled custom scrollbars over native scrolling)
 - **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/scroll-area.tsx` (the legacy `styles/scroll-area.ts` tv is retired — §8)
 
@@ -70,18 +71,18 @@ const SCROLLBAR_TYPE = {
 
 ## 5 Consumed tokens
 
-`border` (thumb fill `bg-border`; scrollbar edge borders are `*-transparent`), `ring` (viewport `focus-visible:ring-ring/50`, `focus-visible:outline-1`). Viewport radius is `rounded-[inherit]` — inherits the consumer's radius, no hardcoded value.
+`border` (thumb fill `bg-border`; scrollbar edge borders are `*-transparent`), `ring` (viewport composes shared self-focus recipe). Viewport radius is `rounded-[inherit]` — inherits the consumer's radius, no hardcoded value.
 
 ## 6 Data attributes
 
 **Emitted**: `data-slot` per part as tabled in §2; base-ui emits `data-orientation` on the scrollbar plus state attributes `data-hovering`, `data-scrolling`, and `data-has-overflow`/`data-overflow-*` family on Root/Viewport.
 
-**Consumed**: the `hover` type's visibility classes key off `data-[hovering]` and `data-[scrolling]` on the scrollbar itself (scoped selectors — not bare ancestor-matching variants, per the `data-open:` trap rule).
+**Consumed**: the `hover` type's visibility classes key off `data-[hovering]` and `data-[scrolling]` on the scrollbar itself (self-scoped arbitrary data variants per conventions).
 
 ## 7 Accessibility
 
 - Native scrolling underneath: the viewport remains a real scroll container, so wheel, touch, PageUp/PageDown, arrows, and screen-reader scrolling all work natively; the custom bars are presentational overlays (`touch-none select-none` on the bar only).
-- Viewport is focusable-when-scrollable per base-ui and shows the ring: `focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1`, `outline-none` otherwise.
+- Viewport is focusable when scrollable per base-ui and composes `focusRing({ target: "self" })`.
 - Thumb is pointer-draggable via base-ui; no ARIA roles added — base-ui manages scrollbar semantics.
 - `type="hover"` bars set `pointer-events-none` while hidden so they never block content clicks.
 

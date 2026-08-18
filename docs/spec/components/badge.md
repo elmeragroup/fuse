@@ -3,7 +3,8 @@
 ## 1 Header
 
 - **Canonical name**: `Badge` (single component); recipe `badgeVariants` (PUBLIC)
-- **Export path**: `@elmeragroup/ui` (`import { Badge, badgeVariants } from "@elmeragroup/ui"`)
+- **Export path**: `@elmeragroup/ui/badge` (also re-exported from `@elmeragroup/ui`); `badgeVariants` comes from the same entry
+- **RSC**: server
 - **Tier**: styled display primitive (plain `div`; no base-ui primitive)
 - **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/badge.tsx` + `styles/badge.ts`
 
@@ -42,7 +43,7 @@ Variant notes:
 - **`info` — sanctioned `color-mix`**: `border-[color-mix(in_oklch,var(--info)_16%,transparent)] bg-[color-mix(in_oklch,var(--info)_8%,transparent)] text-info-foreground shadow-xs hover:bg-[color-mix(in_oklch,var(--info)_16%,transparent)]`. The arbitrary values are **token-derived** (`var(--info)` mixed to 8/16% alpha in oklch) — KEPT and documented as a sanctioned exception to the arbitrary-value ban; it does not trip `no-primitive-colors` because no raw palette appears.
 - `outline` = `text-foreground` (bare base border); `outline-{status}` variants are border+text with hover fill inversion.
 - Every size carries `[&>span]:text-{xs|sm} [&>span]:font-medium` span-normalizing hooks — kept from ref.
-- Base: `inline-flex items-center rounded-lg border font-medium transition-colors focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden`. The ref's `focus:` (not `focus-visible:`) scoping is kept — a badge is only focusable when a consumer makes it so.
+- Base: `inline-flex items-center rounded-lg border font-medium transition-colors`. Badge is deliberately non-interactive and carries no focus styling; consumers needing an actionable pill compose `Button`/`Link` instead of making a Badge focusable.
 
 ## 5 Consumed tokens
 
@@ -50,7 +51,6 @@ Variant notes:
 - `error` / `success` / `warning` + `-foreground` — status fills and outline borders (`error` via the destructive-named variants).
 - `--info` / `info-foreground` — the `info` variant's color-mix derivations.
 - `foreground` — `outline` variant text.
-- `ring` — focus ring.
 - `--radius` — `rounded-lg`.
 
 ## 6 Data attributes
@@ -71,6 +71,7 @@ Variant notes:
 2. **`data-slot="badge"` added** — the ref badge emits no data-slot (unique among internal-ref components); normalized to the family convention.
 3. **`info` color-mix kept** — documented as sanctioned token-derived arbitrary values (see §4), not a divergence but recorded here as an explicit ruling.
 4. `badgeVariants` publicity: the internal ref does **not** export `badgeVariants` from `badge.tsx` (only via `styles/`); the external ref exported it and checkbox-card borrows it — spec exports it publicly.
+5. **Legacy focus classes removed:** the ref styled bare `:focus` on a non-interactive `div`, contradicting the shared `focus-visible` rule and implying Badge could be used as a control. It cannot; use an interactive primitive.
 
 No other API divergence — prop surface identical to ref.
 
