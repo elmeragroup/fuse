@@ -1,0 +1,34 @@
+{
+  "name": "elmera-group-ui",
+  "private": true,
+  "scripts": {
+    "build": "turbo run build",
+    "ci:checks": "oxfmt --check && turbo run ci:checks",
+    "dev": "turbo run dev",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
+    "lint": "oxlint .",
+    "lint:fix": "oxlint --fix .",
+    "test": "turbo run test",
+    "test:browser": "turbo run test:browser",
+    "test:types": "turbo run test:types",
+    "type-check": "turbo run type-check"
+  },
+  "devDependencies": {
+    "@elmeragroup/oxlint-plugin": "workspace:*",
+    "@elmeragroup/oxlint-plugin-anti-slop": "workspace:*",
+    "@elmeragroup/typescript-config": "workspace:*",
+    "@oxlint/plugins": "catalog:",
+    "@types/node": "catalog:",
+    "eslint-plugin-turbo": "catalog:",
+    "oxfmt": "catalog:",
+    "oxlint": "catalog:",
+    "oxlint-tsgolint": "catalog:",
+    "turbo": "catalog:",
+    "typescript": "catalog:"
+  },
+  "engines": {
+    "node": ">=24.13.0 <25"
+  },
+  "packageManager": "pnpm@11.20.0"
+}

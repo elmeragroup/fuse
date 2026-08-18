@@ -2,3 +2,16 @@
 .scratch/
 .DS_Store
 node_modules/
+.pnpm-store/
+.pnp
+.pnp.js
+.turbo/
+dist/
+.artifacts/
+coverage/
+.cache/
+.vitest-attachments/
+__screenshots__/
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+.idea/

@@ -1,0 +1,53 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "ui": "stream",
+  "tasks": {
+    "//#lint": {
+      "inputs": ["$TURBO_DEFAULT$", "tooling/oxlint-plugin/**", "tooling/oxlint-anti-slop/**"]
+    },
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
+    },
+    "lint": {
+      "inputs": ["$TURBO_DEFAULT$", "tooling/oxlint-plugin/**", "tooling/oxlint-anti-slop/**"]
+    },
+    "type-check": {
+      "dependsOn": ["^build"]
+    },
+    "test": {},
+    "test:browser": {
+      "dependsOn": ["build"]
+    },
+    "test:types": {
+      "dependsOn": ["build"]
+    },
+    "pack": {
+      "dependsOn": ["build"],
+      "outputs": [".artifacts/**"]
+    },
+    "package:check": {
+      "dependsOn": ["pack"]
+    },
+    "size-limit": {
+      "dependsOn": ["pack"]
+    },
+    "dev": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "persistent": true
+    },
+    "ci:checks": {
+      "dependsOn": [
+        "//#lint",
+        "type-check",
+        "test",
+        "test:browser",
+        "test:types",
+        "build",
+        "package:check",
+        "size-limit"
+      ]
+    }
+  }
+}

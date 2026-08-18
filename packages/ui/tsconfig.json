@@ -1,0 +1,5 @@
+{
+  "extends": "@elmeragroup/typescript-config/react-library.json",
+  "include": ["src", "vitest.config.ts", "vitest.types.config.ts"],
+  "exclude": ["dist", "build", "node_modules", ".artifacts"]
+}

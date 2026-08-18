@@ -1,0 +1,68 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "bracketSpacing": true,
+  "bracketSameLine": true,
+  "singleQuote": false,
+  "jsxSingleQuote": false,
+  "trailingComma": "es5",
+  "semi": true,
+  "printWidth": 110,
+  "arrowParens": "always",
+  "endOfLine": "lf",
+  "sortTailwindcss": {
+    "stylesheet": "./packages/ui/src/styles/ui.css",
+    "functions": ["tv", "cn"]
+  },
+  "sortImports": {
+    "newlinesBetween": true,
+    "sortSideEffects": true,
+    "customGroups": [
+      {
+        "groupName": "react",
+        "elementNamePattern": ["react", "react/**"]
+      },
+      {
+        "groupName": "elmera",
+        "elementNamePattern": ["@elmeragroup", "@elmeragroup/**"]
+      }
+    ],
+    "groups": [
+      "react",
+      ["builtin", "external", "internal", "subpath"],
+      "elmera",
+      ["parent", "sibling", "index"],
+      "unknown"
+    ]
+  },
+  "sortPackageJson": false,
+  "ignorePatterns": [
+    "node_modules",
+    "**/node_modules/**",
+    "dist",
+    "**/dist/**",
+    ".turbo",
+    ".artifacts",
+    ".cache",
+    ".ref",
+    ".scratch",
+    "tooling/oxlint-anti-slop/**",
+    "docs/**",
+    "wayfinder/**",
+    "CONTEXT.md",
+    "pnpm-lock.yaml",
+    "*.lock",
+    "*.log",
+    ".DS_Store",
+    ".agent/**",
+    ".agents/**",
+    ".claude/**",
+    ".codex/**",
+    ".continue/**",
+    ".cursor/**",
+    ".gemini/**",
+    ".opencode/**",
+    ".pi/**",
+    ".roo/**",
+    ".windsurf/**"
+  ]
+}
