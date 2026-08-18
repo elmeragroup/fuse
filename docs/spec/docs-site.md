@@ -8,13 +8,16 @@ Normative chapter for the `@elmeragroup/ui` docs site, demo pipeline, playground
 - The docs site is a **workspace app** in this repo (alongside the packages, per [architecture](architecture.md)), consuming the library via **workspace source exports** (`publishConfig.directory` mapping) — never the built artifacts. Demos, docs pages, and the playground all import the same source the package publishes.
 - Docs chrome is **light-only**; brand color appears **only inside demo surfaces**. The site itself never repaints when the theme picker changes (that was direction B, rejected).
 
-## 2 Implementation sequencing — dogfood before building the site (mandatory)
+## 2 Implementation sequencing — docs-app MVP is the allowed dogfood
 
-This ordering rule is normative; the docs site MUST NOT be started ahead of it.
+This ordering rule **replaces** the former constraint that `apps/docs` must wait for an in-package prototype (Button plus a complex overlay such as Combobox or Dialog, with extracted source and generated API tables). A later agent reading only this chapter **starts** `apps/docs` at the MVP scope below. Do **not** wait for an in-package prototype, Combobox/Dialog, or library Sidebar, and do **not** treat any leftover “must not start the docs site” sentence as current.
 
-1. Once components are scaffolded into the `ui` package, build a **docs-page prototype inside this repo, bounded to the ui package**, consuming the **real library components** — not the HTML mock. Wiring is inspired by base-ui's own docs wiring (MDX page → demo component → extracted source).
-2. The prototype must wire **1–2 real components: Button plus one complex component** (e.g. Combobox or Dialog): full page anatomy — demo frame, extracted source, generated API table, Tokens-consumed section, TOC.
-3. **That dogfooded prototype is the working reference** for the docs-site implementation. The HTML artifact ([`wayfinder/prototypes/025-docs-design.html`](../../wayfinder/prototypes/025-docs-design.html)) is the layout/aesthetic source the prototype copies — never the wiring reference.
+1. **Allowed first consumer.** After foundation (`/theme`, tokens, public entries) plus `Button` and `ScrollArea` ship, the first consumer **may be the docs app itself** (`apps/docs`). It consumes the real library via workspace source exports — not the HTML mock, and not a prototype bounded inside `packages/ui`.
+2. **MVP scope (this first slice / PoC).** Next workspace app, base-ui docs route-group shape:
+   - `(docs)` — the working three-column shell: light-only header (wordmark + host-owned theme-coordinate selects; **no** command-palette / ⌘K search in this slice), a **docs-local SideNav** (left), content, and a **docs-local QuickNav** (right-column on-page TOC). Both navs are app-local compositions over `@elmeragroup/ui/scroll-area` (a `<nav>` wrapping a `ScrollArea` viewport and vertical scrollbar). They are **not** the library [Sidebar](components/sidebar.md) and **must not** import `@elmeragroup/ui/sidebar`. Library Sidebar is not required for docs chrome.
+   - `(private)` and `(website)` — **reserved blank shells** (empty layouts/pages) so those groups can be filled later without restructuring.
+   - Live pages for **Button** and **ScrollArea** that render the library components (package §10 demos may be reused). The HTML artifact ([`wayfinder/prototypes/025-docs-design.html`](../../wayfinder/prototypes/025-docs-design.html)) remains the layout/aesthetic source — never the wiring reference.
+3. **Still forbidden in this PoC.** The MVP is **not** the full docs pipeline. Do **not** implement generated API tables (§8), demo AST extraction (§6), or command-palette / ⌘K search (§3.2 item 3) in this slice. Full §3.4 page anatomy (generated Tokens-consumed, extracted source frames) waits on that pipeline. Those remain the later, complete-site contract in the sections below; they are not a gate on starting `apps/docs`.
 
 ## 3 Visual design
 
@@ -22,20 +25,20 @@ The chosen direction mirrors base-ui's docs closely. Everything in this section 
 
 ### 3.1 Layout
 
-- **Three columns**: sidebar nav / content column (max-width ≈ 720 px) / on-page TOC. Hairline dividers between regions; quiet system-font typography; no decorative chrome.
-- The **on-page TOC** (right column) lists the current page's headings; it collapses away below the width that fits three columns.
+- **Three columns**: docs-local SideNav / content column (max-width ≈ 720 px) / docs-local QuickNav (on-page TOC). Hairline dividers between regions; quiet system-font typography; no decorative chrome. Neither column is the library Sidebar; both scroll via `ScrollArea` (§2).
+- The **on-page TOC** (right column, QuickNav) lists the current page's headings; it collapses away below the width that fits three columns.
 
 ### 3.2 Header
 
-**No header navigation.** The header carries exactly three things:
+**No header navigation.** The complete-site header carries exactly three things:
 
 1. The **wordmark** (left).
 2. The **global theme coordinate picker**: three **joined mono-font selects** — variant · brand · segment. Pinned brands **disable the illegal segment option** (the picker can never express one of the four illegal permutations); legality rules per [theming](theming.md).
-3. **Search, ⌘K** (right).
+3. **Search, ⌘K** (right). Complete-site contract; **omitted from the docs-app MVP** (§2). The MVP header is wordmark + theme-coordinate selects only.
 
 ### 3.3 Sidebar navigation
 
-All navigation lives in the sidebar, grouped base-ui-style with **muted, normal-case group labels**. The groups and their contents:
+This left column is the **docs-local SideNav** (base-ui docs pattern), not `@elmeragroup/ui/sidebar`. All navigation lives there, grouped base-ui-style with **muted, normal-case group labels**. The groups and their contents:
 
 - **Overview** — Quick start, Accessibility, Releases, About.
 - **Handbook** — Theming, Theme matrix, Tokens, Brands & segments, Icons, Localization, llms.txt.
