@@ -8,16 +8,27 @@
     "**/*.css"
   ],
   "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts"
+    },
     "./css": "./src/styles/ui.css",
     "./styles.css": "./dist/styles.css",
-    "./themes.css": "./dist/themes.css",
-    "./theme": "./src/theme.ts"
+    "./theme": {
+      "types": "./src/theme.ts",
+      "import": "./src/theme.ts"
+    },
+    "./themes.css": "./dist/themes.css"
+  },
+  "publishConfig": {
+    "directory": "dist",
+    "access": "public"
   },
   "scripts": {
-    "build": "node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/build-css.ts",
+    "build": "node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/build.ts",
     "ci:checks": "true",
-    "pack": "mkdir -p .artifacts && pnpm pack --pack-destination .artifacts",
-    "package:check": "true",
+    "pack": "node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/pack.ts",
+    "package:check": "node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/package-check.ts",
     "size-limit": "true",
     "test": "vitest run --project unit",
     "test:browser": "vitest run --project browser",
@@ -43,6 +54,8 @@
     "tw-animate-css": "catalog:"
   },
   "devDependencies": {
+    "@arethetypeswrong/cli": "catalog:",
+    "@arethetypeswrong/core": "catalog:",
     "@elmeragroup/typescript-config": "workspace:*",
     "@tailwindcss/cli": "catalog:",
     "@types/node": "catalog:",
@@ -50,9 +63,11 @@
     "@types/react-dom": "catalog:",
     "@vitest/browser-playwright": "catalog:",
     "playwright": "catalog:",
+    "publint": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "tailwindcss": "catalog:",
+    "tsdown": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }

@@ -1,0 +1,91 @@
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { describe, expect, it } from "vitest";
+
+import { BARE_COMPONENT_ENTRIES, discoverEntries, unexpectedJsEntryFiles } from "../scripts/entries";
+import {
+  buildPublishExportMap,
+  buildSourceExportMap,
+  exportBindingsObject,
+  exportBindingTarget,
+} from "../scripts/generate-exports";
+
+const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
+
+describe("exports map", () => {
+  const discovered = discoverEntries(packageRoot);
+  const sourceExports = buildSourceExportMap(discovered);
+  const publishExports = buildPublishExportMap(discovered);
+
+  it("is generated from discovered source entries, not a hand-maintained list of files", () => {
+    expect(discovered.jsEntries.map((entry) => entry.subpath)).toEqual([".", "theme"]);
+    expect(unexpectedJsEntryFiles(packageRoot)).toEqual([]);
+    expect(BARE_COMPONENT_ENTRIES).toHaveLength(56);
+  });
+
+  it("always includes the CSS dual-mode entries and /theme", () => {
+    expect(exportBindingTarget(sourceExports, "./css")).toBe("./src/styles/ui.css");
+    expect(exportBindingTarget(sourceExports, "./themes.css")).toBe("./dist/themes.css");
+    expect(exportBindingTarget(sourceExports, "./styles.css")).toBe("./dist/styles.css");
+    expect(exportBindingTarget(sourceExports, "./theme")).toEqual({
+      types: "./src/theme.ts",
+      import: "./src/theme.ts",
+    });
+    expect(exportBindingTarget(sourceExports, ".")).toEqual({
+      types: "./src/index.ts",
+      import: "./src/index.ts",
+    });
+  });
+
+  it("does not invent component entries before their source files exist", () => {
+    expect(exportBindingTarget(sourceExports, "./button")).toBeUndefined();
+    expect(exportBindingTarget(sourceExports, "./scroll-area")).toBeUndefined();
+    expect(exportBindingTarget(sourceExports, "./icons")).toBeUndefined();
+    expect(exportBindingTarget(sourceExports, "./react-aria/calendar")).toBeUndefined();
+  });
+
+  it("does not use a custom source or development export condition", () => {
+    const serialized = JSON.stringify(sourceExports);
+    expect(serialized).not.toContain('"source"');
+    expect(serialized).not.toContain('"development"');
+  });
+
+  it("maps the published layout to package-root files, not nested dist/", () => {
+    expect(exportBindingTarget(publishExports, "./theme")).toEqual({
+      types: "./theme.d.ts",
+      import: "./theme.js",
+    });
+    expect(exportBindingTarget(publishExports, ".")).toEqual({
+      types: "./index.d.ts",
+      import: "./index.js",
+    });
+    expect(exportBindingTarget(publishExports, "./css")).toBe("./styles/ui.css");
+    expect(exportBindingTarget(publishExports, "./themes.css")).toBe("./themes.css");
+    expect(exportBindingTarget(publishExports, "./styles.css")).toBe("./styles.css");
+    expect(JSON.stringify(publishExports)).not.toContain("/dist/");
+  });
+
+  it("keeps the committed package.json exports in sync with the generator", () => {
+    const parsed: unknown = JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8"));
+    if (parsed === null || Array.isArray(parsed)) {
+      throw new Error("package.json is not an object");
+    }
+    // SAFETY: this test only reads the generated exports map and publishConfig.directory.
+    const pkg = parsed as {
+      exports: ReturnType<typeof exportBindingsObject>;
+      publishConfig: { directory: string };
+    };
+    expect(pkg.exports).toEqual(exportBindingsObject(sourceExports));
+    expect(pkg.publishConfig.directory).toBe("dist");
+  });
+
+  it("re-exports the theme API from the root barrel and the /theme entry", () => {
+    const theme = discovered.jsEntries.find((entry) => entry.subpath === "theme");
+    const root = discovered.jsEntries.find((entry) => entry.subpath === ".");
+    expect(theme?.runtimeExports).toEqual(root?.runtimeExports);
+    expect(theme?.runtimeExports).toContain("ThemeProvider");
+    expect(theme?.runtimeExports).toContain("themeAttributes");
+    expect(theme?.runtimeExports).toContain("ColorSchemeScript");
+  });
+});

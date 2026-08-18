@@ -1,0 +1,295 @@
+import { copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+
+import {
+  discoverEntries,
+  exportKey,
+  PUBLISHED_DEPENDENCY_RANGES,
+  PUBLISHED_PEER_RANGES,
+  publishCssTarget,
+  publishExportTarget,
+  sourceCssTarget,
+  sourceExportTarget,
+} from "./entries";
+import type { CssExportEntry, DiscoveredEntries, ExportCondition, JsExportEntry } from "./entries";
+
+export type { ExportCondition };
+
+export type ExportBinding = {
+  key: string;
+  target: ExportCondition | string;
+};
+
+type WorkspaceScripts = {
+  build: string;
+  "ci:checks": string;
+  pack: string;
+  "package:check": string;
+  "size-limit": string;
+  test: string;
+  "test:browser": string;
+  "test:types": string;
+  "type-check": string;
+};
+
+type WorkspacePeers = {
+  react: string;
+  "react-dom": string;
+  tailwindcss: string;
+  recharts?: string;
+};
+
+type WorkspaceDependencies = {
+  "@base-ui/react": string;
+  clsx: string;
+  "tailwind-merge": string;
+  "tailwind-variants": string;
+  "tailwindcss-react-aria-components": string;
+  "tw-animate-css": string;
+  "react-aria-components"?: string;
+  "react-aria"?: string;
+  "@internationalized/date"?: string;
+  "@phosphor-icons/react"?: string;
+  "@internationalized/string"?: string;
+  "libphonenumber-js"?: string;
+  "sugar-high"?: string;
+};
+
+type WorkspaceDevDependencies = {
+  "@arethetypeswrong/cli": string;
+  "@arethetypeswrong/core": string;
+  "@elmeragroup/typescript-config": string;
+  "@tailwindcss/cli": string;
+  "@types/node": string;
+  "@types/react": string;
+  "@types/react-dom": string;
+  "@vitest/browser-playwright": string;
+  playwright: string;
+  publint: string;
+  react: string;
+  "react-dom": string;
+  tailwindcss: string;
+  tsdown: string;
+  typescript: string;
+  vitest: string;
+};
+
+type WorkspaceManifest = {
+  name: string;
+  version: string;
+  private: boolean;
+  license: string;
+  type: string;
+  sideEffects: string[];
+  exports: ExportBinding[];
+  publishConfig: { directory: string; access: string };
+  scripts: WorkspaceScripts;
+  peerDependencies: WorkspacePeers;
+  peerDependenciesMeta: { tailwindcss: { optional: boolean }; recharts?: { optional: boolean } };
+  dependencies: WorkspaceDependencies;
+  devDependencies: WorkspaceDevDependencies;
+};
+
+function sortExportKeys(left: string, right: string): number {
+  if (left === ".") {
+    return -1;
+  }
+  if (right === ".") {
+    return 1;
+  }
+  return left.localeCompare(right);
+}
+
+function pushJsBindings(
+  bindings: ExportBinding[],
+  jsEntries: readonly JsExportEntry[],
+  target: (entry: JsExportEntry) => ExportCondition
+): void {
+  for (const entry of jsEntries) {
+    bindings.push({ key: exportKey(entry.subpath), target: target(entry) });
+  }
+}
+
+function pushCssBindings(
+  bindings: ExportBinding[],
+  cssEntries: readonly CssExportEntry[],
+  target: (entry: CssExportEntry) => string
+): void {
+  for (const entry of cssEntries) {
+    bindings.push({ key: exportKey(entry.subpath), target: target(entry) });
+  }
+}
+
+export function buildSourceExportMap(discovered: DiscoveredEntries): ExportBinding[] {
+  const bindings: ExportBinding[] = [];
+  pushJsBindings(bindings, discovered.jsEntries, sourceExportTarget);
+  pushCssBindings(bindings, discovered.cssEntries, sourceCssTarget);
+  for (const pattern of discovered.assetPatterns) {
+    bindings.push({ key: exportKey(pattern.subpath), target: `./${pattern.sourceFile}` });
+  }
+  return bindings.toSorted((left, right) => sortExportKeys(left.key, right.key));
+}
+
+export function buildPublishExportMap(discovered: DiscoveredEntries): ExportBinding[] {
+  const bindings: ExportBinding[] = [];
+  pushJsBindings(bindings, discovered.jsEntries, publishExportTarget);
+  pushCssBindings(bindings, discovered.cssEntries, publishCssTarget);
+  for (const pattern of discovered.assetPatterns) {
+    bindings.push({ key: exportKey(pattern.subpath), target: `./${pattern.publishFile}` });
+  }
+  return bindings.toSorted((left, right) => sortExportKeys(left.key, right.key));
+}
+
+export function exportBindingTarget(
+  bindings: readonly ExportBinding[],
+  key: string
+): ExportCondition | string | undefined {
+  return bindings.find((binding) => binding.key === key)?.target;
+}
+
+export function exportBindingsObject(bindings: readonly ExportBinding[]) {
+  return Object.fromEntries(bindings.map((binding) => [binding.key, binding.target]));
+}
+
+function requiredString(value: string | undefined, field: string): string {
+  if (value === undefined || value.length === 0) {
+    throw new Error(`package.json missing string field ${field}`);
+  }
+  return value;
+}
+
+function readWorkspaceManifest(path: string): WorkspaceManifest {
+  const parsed: unknown = JSON.parse(readFileSync(path, "utf8"));
+  if (parsed === null || Array.isArray(parsed)) {
+    throw new Error(`${path} must be a JSON object`);
+  }
+  // SAFETY: workspace package.json is the I/O boundary; exports are always regenerated.
+  const raw = parsed as Omit<WorkspaceManifest, "exports">;
+  return {
+    name: requiredString(raw.name, "name"),
+    version: requiredString(raw.version, "version"),
+    private: raw.private,
+    license: requiredString(raw.license, "license"),
+    type: requiredString(raw.type, "type"),
+    sideEffects: raw.sideEffects,
+    exports: [],
+    publishConfig: raw.publishConfig,
+    scripts: raw.scripts,
+    peerDependencies: raw.peerDependencies,
+    peerDependenciesMeta: raw.peerDependenciesMeta,
+    dependencies: raw.dependencies,
+    devDependencies: raw.devDependencies,
+  };
+}
+
+function writeWorkspacePackageJson(path: string, manifest: WorkspaceManifest): void {
+  writeFileSync(
+    path,
+    `${JSON.stringify({ ...manifest, exports: exportBindingsObject(manifest.exports) }, null, 2)}\n`
+  );
+}
+
+function writePublishPackageJson(path: string, manifest: PublishManifest): void {
+  writeFileSync(path, `${JSON.stringify(manifest, null, 2)}\n`);
+}
+
+type PublishManifest = {
+  name: string;
+  version: string;
+  license: string;
+  type: "module";
+  sideEffects: string[];
+  exports: ReturnType<typeof exportBindingsObject>;
+  peerDependencies: WorkspacePeers;
+  peerDependenciesMeta: WorkspaceManifest["peerDependenciesMeta"];
+  dependencies: WorkspaceDependencies;
+  publishConfig: { access: "public" };
+};
+
+function publishedPeerDependencies(declared: WorkspacePeers): WorkspacePeers {
+  const peers: WorkspacePeers = {
+    react: PUBLISHED_PEER_RANGES.react,
+    "react-dom": PUBLISHED_PEER_RANGES["react-dom"],
+    tailwindcss: PUBLISHED_PEER_RANGES.tailwindcss,
+  };
+  if (declared.recharts !== undefined) {
+    peers.recharts = PUBLISHED_PEER_RANGES.recharts;
+  }
+  return peers;
+}
+
+function publishedDependencies(declared: WorkspaceDependencies): WorkspaceDependencies {
+  const dependencies: WorkspaceDependencies = {
+    "@base-ui/react": PUBLISHED_DEPENDENCY_RANGES["@base-ui/react"],
+    clsx: PUBLISHED_DEPENDENCY_RANGES.clsx,
+    "tailwind-merge": PUBLISHED_DEPENDENCY_RANGES["tailwind-merge"],
+    "tailwind-variants": PUBLISHED_DEPENDENCY_RANGES["tailwind-variants"],
+    "tailwindcss-react-aria-components": PUBLISHED_DEPENDENCY_RANGES["tailwindcss-react-aria-components"],
+    "tw-animate-css": PUBLISHED_DEPENDENCY_RANGES["tw-animate-css"],
+  };
+  if (declared["react-aria-components"] !== undefined) {
+    dependencies["react-aria-components"] = PUBLISHED_DEPENDENCY_RANGES["react-aria-components"];
+  }
+  if (declared["react-aria"] !== undefined) {
+    dependencies["react-aria"] = PUBLISHED_DEPENDENCY_RANGES["react-aria"];
+  }
+  if (declared["@internationalized/date"] !== undefined) {
+    dependencies["@internationalized/date"] = PUBLISHED_DEPENDENCY_RANGES["@internationalized/date"];
+  }
+  if (declared["@phosphor-icons/react"] !== undefined) {
+    dependencies["@phosphor-icons/react"] = PUBLISHED_DEPENDENCY_RANGES["@phosphor-icons/react"];
+  }
+  if (declared["@internationalized/string"] !== undefined) {
+    dependencies["@internationalized/string"] = PUBLISHED_DEPENDENCY_RANGES["@internationalized/string"];
+  }
+  if (declared["libphonenumber-js"] !== undefined) {
+    dependencies["libphonenumber-js"] = PUBLISHED_DEPENDENCY_RANGES["libphonenumber-js"];
+  }
+  if (declared["sugar-high"] !== undefined) {
+    dependencies["sugar-high"] = PUBLISHED_DEPENDENCY_RANGES["sugar-high"];
+  }
+  return dependencies;
+}
+
+export function writeSourceExports(packageRoot: string): DiscoveredEntries {
+  const discovered = discoverEntries(packageRoot);
+  const packageJsonPath = join(packageRoot, "package.json");
+  const pkg = readWorkspaceManifest(packageJsonPath);
+  pkg.exports = buildSourceExportMap(discovered);
+  pkg.publishConfig = { directory: "dist", access: "public" };
+  writeWorkspacePackageJson(packageJsonPath, pkg);
+  return discovered;
+}
+
+export function writePublishManifest(packageRoot: string): void {
+  const discovered = discoverEntries(packageRoot);
+  const workspace = readWorkspaceManifest(join(packageRoot, "package.json"));
+  const licensePath = join(packageRoot, "LICENSE");
+  const readmePath = join(packageRoot, "README.md");
+  if (!existsSync(licensePath)) {
+    throw new Error("packages/ui/LICENSE is required in the published package");
+  }
+
+  const published: PublishManifest = {
+    name: workspace.name,
+    version: workspace.version,
+    license: workspace.license,
+    type: "module",
+    sideEffects: ["**/*.css"],
+    exports: exportBindingsObject(buildPublishExportMap(discovered)),
+    peerDependencies: publishedPeerDependencies(workspace.peerDependencies),
+    peerDependenciesMeta: workspace.peerDependenciesMeta,
+    dependencies: publishedDependencies(workspace.dependencies),
+    publishConfig: { access: "public" },
+  };
+
+  writePublishPackageJson(join(packageRoot, "dist/package.json"), published);
+  copyFileSync(licensePath, join(packageRoot, "dist/LICENSE"));
+  if (existsSync(readmePath)) {
+    copyFileSync(readmePath, join(packageRoot, "dist/README.md"));
+  }
+  writeFileSync(
+    join(packageRoot, "dist/.npmignore"),
+    "# published package root — include the built tree\n.artifacts\n"
+  );
+}

@@ -4,6 +4,8 @@ packages:
   - tooling/*
 
 catalog:
+  "@arethetypeswrong/cli": 0.18.5
+  "@arethetypeswrong/core": 0.18.5
   "@base-ui/react": 1.6.0
   "@oxlint/plugins": 1.78.0
   "@tailwindcss/cli": 4.3.3
@@ -17,6 +19,7 @@ catalog:
   oxlint: 1.78.0
   oxlint-tsgolint: 7.0.2001
   playwright: 1.62.1
+  publint: 0.3.23
   react: 19.2.8
   react-dom: 19.2.8
   tailwind-merge: 3.6.0
