@@ -48,7 +48,7 @@ The release workflow publishes only when all gates pass. The table below is the 
 | **packed fixture: Next App Router** | the `pnpm pack` tarball installs and builds in a Next App Router app (Tailwind-source mode, RSC boundaries: server page + client island); flag SVG assets resolve | [tooling](tooling.md) |
 | **packed fixture: Vite** | the `pnpm pack` tarball installs and builds in a Vite app (standalone-CSS mode); flag SVG assets resolve | [tooling](tooling.md) |
 
-The full merge gate (lint, types, unit/browser tests, changeset presence) runs on every PR and is specified in [tooling](tooling.md); the publish gates above additionally run against the built artifact in the release workflow, so a package that installs broken can never reach the registry.
+The full merge gate (lint, types, unit/browser tests, changeset presence) runs on every PR and is specified in [tooling](tooling.md); the publish gates above additionally run against the built artifact in the release workflow, so a package that installs broken can never reach the registry. Host first-paint proofs (`apps/docs`, `apps/static-theme`) are merge-gate adapter tests, not rows in this publish-gate table and not substitutes for the packed Next/Vite consumer fixtures.
 
 ## 6 Provenance & supply-chain security
 

@@ -6,7 +6,7 @@ Normative chapter for the `@elmeragroup/ui` docs site, demo pipeline, playground
 
 - **Framework: Next + a custom MDX pipeline** — the base-ui route. This is a deliberate trade: aesthetics and total design freedom **outrank automation**, and the higher build cost versus an off-the-shelf docs framework (fumadocs et al.) is accepted knowingly. Do not substitute a docs framework "to save time" — that decision is closed.
 - The docs site is a **workspace app** in this repo (alongside the packages, per [architecture](architecture.md)), consuming the library via **workspace source exports** (`publishConfig.directory` mapping) — never the built artifacts. Demos, docs pages, and the playground all import the same source the package publishes.
-- Docs chrome is **light-only**; brand color appears **only inside demo surfaces**. The site itself never repaints when the theme picker changes (that was direction B, rejected).
+- Docs chrome is **light-only**; brand color appears **only inside demo surfaces**. The **document** theme is fixed at `internal-elma-private` on every route that emits `<html>` and does not follow the demo picker (direction B remains rejected).
 
 ## 2 Implementation sequencing — docs-app MVP is the allowed dogfood
 
@@ -14,8 +14,8 @@ This ordering rule **replaces** the former constraint that `apps/docs` must wait
 
 1. **Allowed first consumer.** After foundation (`/theme`, tokens, public entries) plus `Button` and `ScrollArea` ship, the first consumer **may be the docs app itself** (`apps/docs`). It consumes the real library via workspace source exports — not the HTML mock, and not a prototype bounded inside `packages/ui`.
 2. **MVP scope (this first slice / PoC).** Next workspace app, base-ui docs route-group shape:
-   - `(docs)` — the working three-column shell: light-only header (wordmark + host-owned theme-coordinate selects; **no** command-palette / ⌘K search in this slice), a **docs-local SideNav** (left), content, and a **docs-local QuickNav** (right-column on-page TOC). Both navs are app-local compositions over `@elmeragroup/ui/scroll-area` (a `<nav>` wrapping a `ScrollArea` viewport and vertical scrollbar). They are **not** the library [Sidebar](components/sidebar.md) and **must not** import `@elmeragroup/ui/sidebar`. Library Sidebar is not required for docs chrome.
-   - `(private)` and `(website)` — **reserved blank shells** (empty layouts/pages) so those groups can be filled later without restructuring.
+   - `(docs)` — the working three-column shell: light-only header (wordmark + preview theme-coordinate selects; **no** command-palette / ⌘K search in this slice), a **docs-local SideNav** (left), content, and a **docs-local QuickNav** (right-column on-page TOC). Both navs are app-local compositions over `@elmeragroup/ui/scroll-area` (a `<nav>` wrapping a `ScrollArea` viewport and vertical scrollbar). They are **not** the library [Sidebar](components/sidebar.md) and **must not** import `@elmeragroup/ui/sidebar`. Library Sidebar is not required for docs chrome. This route is the verified Next App Router first-paint host: `themeAttributes` on `<html>`, `ColorSchemeScript` in `<head>` before SkipNav/shell, one `ThemeProvider` with `theme={DOCUMENT_THEME}` (`internal-elma-private`) and `injectColorSchemeScript={false}`, token-backed canvas, `suppressHydrationWarning` for `data-theme`.
+   - `(private)` and `(website)` — **reserved blank shells** (empty pages) so those groups can be filled later without restructuring. Their document roots still stamp the three `internal-elma-private` brand attributes and import token CSS so JS-disabled brand is visible. They do **not** mount `ThemeProvider`, picker, preview context, or a color bootstrap while they remain empty. If they later grow paintable chrome, they adopt the `(docs)` adapter.
    - Live pages for **Button** and **ScrollArea** that render the library components (package §10 demos may be reused). The HTML artifact ([`wayfinder/prototypes/025-docs-design.html`](../../wayfinder/prototypes/025-docs-design.html)) remains the layout/aesthetic source — never the wiring reference.
 3. **Still forbidden in this PoC.** The MVP is **not** the full docs pipeline. Do **not** implement generated API tables (§8), demo AST extraction (§6), or command-palette / ⌘K search (§3.2 item 3) in this slice. Full §3.4 page anatomy (generated Tokens-consumed, extracted source frames) waits on that pipeline. Those remain the later, complete-site contract in the sections below; they are not a gate on starting `apps/docs`.
 
@@ -33,7 +33,7 @@ The chosen direction mirrors base-ui's docs closely. Everything in this section 
 **No header navigation.** The complete-site header carries exactly three things:
 
 1. The **wordmark** (left).
-2. The **global theme coordinate picker**: three **joined mono-font selects** — variant · brand · segment. Pinned brands **disable the illegal segment option** (the picker can never express one of the four illegal permutations); legality rules per [theming](theming.md).
+2. The **preview theme coordinate picker**: three **joined mono-font selects** — variant · brand · segment. It writes docs-local preview state consumed by demo `ThemeScope`s; it does **not** change the document `ThemeProvider` or `<html>` brand attributes (§4). Pinned brands **disable the illegal segment option** (the picker can never express one of the four illegal permutations); legality rules per [theming](theming.md).
 3. **Search, ⌘K** (right). Complete-site contract; **omitted from the docs-app MVP** (§2). The MVP header is wordmark + theme-coordinate selects only.
 
 ### 3.3 Sidebar navigation
@@ -66,9 +66,10 @@ One **bordered frame** per demo (base-ui's demo-then-source card), three stacked
 
 ## 4 Theme switching
 
-- The header picker is **host-owned state that re-renders the `ThemeProvider`** — the provider-consumption model specified in [theming](theming.md). The docs site is itself the first consumer exercising that API: no bespoke theme plumbing, no docs-only escape hatch.
-- Demo stages render under the globally selected theme; every demo is therefore viewable in all 20 permutations by driving the picker.
-- Nested per-cell theming (matrix page, any side-by-side comparison) uses **`ThemeScope`** per [theming](theming.md) — overlays portalled inside the active scope per [conventions](components/conventions.md).
+- The **document** `ThemeProvider` is fixed at `internal-elma-private`. The header picker does **not** re-render that provider and must not change `document.documentElement` brand attributes.
+- Picker state lives in a docs-local **preview** context. Only `DemoFrame` / `ThemeScope` consume it. Changing the picker updates demo scope attributes and live token appearance; chrome stays internal/Elmera/private.
+- Demo stages render under the preview-selected theme; every demo is therefore viewable in all 20 permutations by driving the picker.
+- Nested per-cell theming (matrix page, any side-by-side comparison) uses **`ThemeScope`** per [theming](theming.md) — overlays portalled inside the active scope per [conventions](components/conventions.md). The preview context is docs-local, not a library export.
 
 ## 5 Theme matrix page
 

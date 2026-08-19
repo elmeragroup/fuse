@@ -106,7 +106,17 @@ Normative chapter for `@elmeragroup/ui`. Sources: [A11y & performance guideline 
   Bespoke SVG icons, illustrations, logos, emoji, flag assets, and curated Phosphor adapters are server-safe. The adapters import the pinned package's explicit `@phosphor-icons/react/dist/ssr/<Icon>` modules, never its client or root barrel ([icons](icons.md) §2); `/icons` is therefore a server-safe, directive-free facade.
 - **RSC status is part of the public contract**: an `RSC` line in every component spec's §1 Header and a matching field in the generated docs API tables.
 - **Composition rule**: a server-safe component may render a client child; a change that flips a server-safe component to client is a **breaking change to its spec** — it must be flagged in §8 Divergence/changelog, never happen silently.
-- The `"use client"` directive is **per source file, not per entry**: a single entry may expose both server modules and client modules — `/theme` does exactly this (`themeAttributes` and `ColorSchemeScript` are server modules; the provider and hooks are client modules). Within one module there is still exactly one directive decision: no `-client` wrapper entries, no double exports.
+- The `"use client"` directive is **per source file, not per entry**: a single entry may expose both server modules and client modules — `/theme` does exactly this. Within one module there is still exactly one directive decision: no `-client` wrapper entries, no double exports.
+
+  | `/theme` export | RSC status | Role |
+  | --- | --- | --- |
+  | `themeAttributes`, `themeSlug`, `parseThemeSlug`, `validateTheme`, `BRANDS` | server | brand kernel; safe in layouts, `_document`, Vite config |
+  | `ColorSchemeScript`, `colorSchemeScriptSource` | server | host-placed first-paint bootstrap. `ColorSchemeScript` stays a server-safe `<script>` renderer so `<head>` placement remains true; `colorSchemeScriptSource` returns closed IIFE text for `transformIndexHtml` / `ScriptOnce` |
+  | `ThemeProvider`, `useTheme`, `useColorScheme`, `ForceColorScheme` | client | document writer, hooks, runtime force. Not first-paint adapters |
+  | `ThemeScope` | client | subtree brand writer |
+  | `ElmeraGroupUiProvider`, `useElmeraGroupUi` | client | locale context |
+
+  Hosts import the server bootstrap from a server or config module. Importing `ColorSchemeScript` through a client component and rendering it after `createRoot` is not a first-paint path.
 
 ## 4 CSS
 

@@ -240,7 +240,7 @@ Markers on any element re-theme that subtree (the OrderModuleWeb per-track `<mai
 
 ### 3.6 `data-theme` stays free
 
-None of the three attributes is `data-theme`. That attribute is reserved for the light/dark color-scheme axis, set by `<ColorSchemeScript>` from v1 (§7.8) and given CSS meaning only when dark values land.
+None of the three attributes is `data-theme`. That attribute is reserved for the light/dark color-scheme axis. A host-placed closed bootstrap (`ColorSchemeScript` or `colorSchemeScriptSource`, §7.3 / §7.8) writes the resolved `"light"` or `"dark"` marker before paint; `ThemeProvider` owns the same marker at runtime. The attribute is given CSS meaning only when dark values land.
 
 ## 4 Value matrix — all layers, all brands
 
@@ -440,12 +440,25 @@ All `[ref]` unless marked. Two notational conventions in this table:
 
 ## 7 Theme provider API
 
-Single entry **`@elmeragroup/ui/theme`** — no per-framework entry points (a Next-specific export would be a byte-identical alias; ADR 0003). The provider is **data-only**: no effects, no inline script for the brand theme, no DOM mutation, no hydration suppression. The theme is server-known and deployment-fixed, so zero flash holds by construction. next-themes is **not vendored**. Package/export mechanics → [architecture](architecture.md).
+Single entry **`@elmeragroup/ui/theme`** — no per-framework entry points (`/theme/next`, `/theme/vite`, and the rest would be byte-identical aliases; ADR 0003). next-themes is **not vendored**; color-scheme ideas and MIT-notice text are copied, not taken as an npm dependency.
 
-Minimal app setup:
+Brand and color scheme are separate writers. Treating `ThemeProvider` as a portable first-paint adapter is false: it cannot stamp `<html>` from `_app`, and React 19 `createRoot` `<script>` nodes do not execute on Vite.
+
+| Axis | Source of truth | Initial-paint writer | Runtime writer | Persistence |
+| --- | --- | --- | --- | --- |
+| Brand (variant × brand × segment) | Controlled `theme` from deployment, loader, or host config | SSR or build-time attributes on `<html>` via `themeAttributes(theme)` | `ThemeProvider` echoes the same validated `theme` | None. Brand is never written to `localStorage`, cookies, or `data-theme` |
+| Color scheme (`light` / `dark` / `system`) | Mount-level `forcedColorScheme` if set, else persisted preference / default / system | Host-placed closed classic script (`ColorSchemeScript` or `colorSchemeScriptSource`) before paintable content | Provider-owned state; setters and browser events apply synchronously | `localStorage` under `storageKey` (default `elmera-color-scheme`). Cookie persistence is a later SSR adapter, not this wave |
+| Scoped brand | `ThemeScope.theme` | Attributes on the scope element via `themeAttributes` | React reconciliation on that element | None |
+
+The host constructs **one** resolved brand configuration and **one** color-scheme configuration. The same brand object is passed to `themeAttributes` and `ThemeProvider.theme`. The same color-scheme literals (`storageKey`, `defaultColorScheme`, `enableSystem`, optional `forcedColorScheme`) are passed to the host bootstrap and to `ThemeProvider`. `injectColorSchemeScript` defaults to **`false`**: a host adapter is always the declared bootstrap owner.
+
+Until dark token values land, “correct color scheme” means the correct pre-paint `data-theme` marker (`light` or `dark`). The painted canvas **intentionally remains light**. Do not set `document.documentElement.style.colorScheme`, do not add `<meta name="color-scheme">`, and do not enable Tailwind `class="dark"`. Hash-based CSP is not promised; a `nonce` on `ColorSchemeScript` is.
+
+Package/export mechanics and which `/theme` names are server-safe vs client → [architecture](architecture.md) and [performance](performance.md) §3.
+
+Minimal app setup (Next App Router shape; every host follows the same split):
 
 ```tsx
-// Server layout
 import {
   ColorSchemeScript,
   ElmeraGroupUiProvider,
@@ -456,13 +469,29 @@ import "@elmeragroup/ui/styles.css";
 import "@elmeragroup/ui/themes.css";
 
 const theme = { variant: "external", brand: "fkas", segment: "private" } as const;
+const colorScheme = {
+  storageKey: "elmera-color-scheme",
+  defaultColorScheme: "system",
+  enableSystem: true,
+} as const;
 
 export function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="nb" {...themeAttributes(theme)} suppressHydrationWarning>
-      <head><ColorSchemeScript /></head>
+      <head>
+        <ColorSchemeScript
+          storageKey={colorScheme.storageKey}
+          defaultColorScheme={colorScheme.defaultColorScheme}
+          enableSystem={colorScheme.enableSystem}
+        />
+      </head>
       <body>
-        <ThemeProvider theme={theme}>
+        <ThemeProvider
+          theme={theme}
+          storageKey={colorScheme.storageKey}
+          defaultColorScheme={colorScheme.defaultColorScheme}
+          enableSystem={colorScheme.enableSystem}
+          injectColorSchemeScript={false}>
           <ElmeraGroupUiProvider locale="nb-NO">
             {children}
           </ElmeraGroupUiProvider>
@@ -473,17 +502,48 @@ export function RootLayout({ children }: { children: React.ReactNode }) {
 }
 ```
 
-`suppressHydrationWarning` is required only because `ColorSchemeScript` sets the reserved `data-theme` attribute before hydration; it is unrelated to the server-known brand attributes. Apps not using the color-scheme machinery omit both. RAC consumers replace `ElmeraGroupUiProvider` in the example with `UiProviders` from `@elmeragroup/ui/react-aria/ui-providers`, because that wrapper includes the same locale provider plus RAC routing/i18n context; they do not nest both locale providers. `UiProviders` requires a function-valued `navigate` prop, so a Next App Router layout renders a small app-owned `"use client"` provider wrapper that calls `useRouter()` and passes `url => router.push(url)`—it does not pass a server function through the layout boundary.
+Token-backed canvas (required on every host so a missing attribute cannot flash the UA default):
+
+```css
+html,
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+```
+
+`suppressHydrationWarning` on `<html>` is required wherever the color-scheme script mutates `data-theme` before hydration. Brand attributes match on server and client and do not themselves require it. Apps that omit color-scheme machinery omit the script, the warning, and the provider color-scheme props. RAC consumers replace `ElmeraGroupUiProvider` with `UiProviders` from `@elmeragroup/ui/react-aria/ui-providers`; they do not nest both locale providers. `UiProviders` requires a function-valued `navigate` prop, so a Next App Router layout renders a small app-owned `"use client"` wrapper that calls `useRouter()` and passes `url => router.push(url)` — it does not pass a server function through the layout boundary.
 
 ### 7.1 `ThemeProvider`
 
 ```tsx
-<ThemeProvider theme={{ variant, brand, segment }}>
+<ThemeProvider theme={{ variant, brand, segment }} injectColorSchemeScript={false}>
 ```
 
 - Input is the **decomposed object** (primary representation); the slug is always derivable. Pure, isomorphic helpers exported: `themeSlug(theme)` and `parseThemeSlug(slug)`.
-- Fully controlled context carrier. **No `setTheme`** — switching is host-owned state (docs/Storybook pickers re-render the provider).
-- Props: `{ theme: ThemeInput; children: ReactNode }`. `useTheme()` returns `{ ...theme, slug }` and throws outside `ThemeProvider` or `ThemeScope`.
+- Fully controlled **brand**. **No `setTheme`** for variant/brand/segment. Hosts change brand by passing a new `theme` prop. Docs/Storybook pickers that preview other identities do **not** re-render this document provider; they feed `ThemeScope` (§7.4, [docs-site](docs-site.md) §4).
+- Exact props:
+
+  ```ts
+  type ThemeProviderProps = ColorSchemeOptions & {
+    theme: ThemeInput; // required, controlled brand
+    children: ReactNode;
+    disableTransitionOnChange?: boolean; // default false; runtime writes only
+    injectColorSchemeScript?: boolean; // default false
+    nonce?: string; // used only if injection is on
+    scriptProps?: ColorSchemeScriptElementProps; // used only if injection is on
+  };
+  ```
+
+  There is **no** `enableColorScheme`. `ColorSchemeOptions` is `{ storageKey?; defaultColorScheme?; enableSystem?; forcedColorScheme? }` with defaults `storageKey: "elmera-color-scheme"`, `defaultColorScheme: "system"`, `enableSystem: true`.
+- `useTheme()` returns `{ ...theme, slug }` and throws outside `ThemeProvider` or `ThemeScope`. Brand data is defined whenever the controlled prop is defined.
+- `useColorScheme()` takes **no** options, reads this document writer, and **throws** outside `ThemeProvider`. Two consumers cannot fork storage keys.
+- Nested `ThemeProvider`s passthrough only when an outer **document writer** already exists. `ThemeScope` does not set that flag; a provider inside a scope-only tree still becomes the writer.
+- Runtime brand echo happens in the insertion/layout phase so descendant layout work never measures a stale document brand. Color-scheme setters, storage events, and media events write `data-theme` in the same event turn. Passive effects hydrate preference, recover a missing marker, and subscribe to listeners.
+- `disableTransitionOnChange` wraps **runtime** document writes only. It is not present in the parser-time bootstrap and no-ops safely if `document.body` is null.
+- Opt-in `injectColorSchemeScript` renders a server-safe classic inline script as the **first child of the provider**. The host must still guarantee no paintable sibling precedes it. Prefer a host-placed script (§7.3). If a host bootstrap already ran, development warns.
+- Development diagnostics (no extra `data-*` attributes, no HTML comments): missing `__ELMERA_COLOR_SCHEME_BOOTSTRAP__`; mismatch of `{ storageKey, defaultColorScheme, enableSystem, forcedColorScheme }` against the provider; host-plus-provider duplicate bootstrap; SSR/build brand attributes that disagree with the validated `theme` (recovery writes only that validated triple).
+- Brand writes never persist. Color-scheme writes never touch the three brand attributes, `style.colorScheme`, or a color-scheme meta tag.
 
 ### 7.2 `themeAttributes(theme)`
 
@@ -497,18 +557,170 @@ type ThemeAttributes = {
 };
 ```
 
-It validates untyped input before returning the three attributes. The headline recipe is spreading it on `<html>` in the framework's root layout, with the theme sourced from env.
+It validates untyped input before returning the three attributes. The headline brand recipe is spreading it on `<html>` from one host-owned configuration that is also passed to `ThemeProvider.theme`. Brand first paint is those attributes, never a script and never provider injection.
 
-### 7.3 SSR recipes (documentation, not code)
+### 7.3 First-paint adapters (host recipes)
 
-All four reduce to "spread the attributes on your root element, server-side":
+The library does not ship per-framework entries. Each named host places **brand attributes** and the **closed classic bootstrap** in a host-owned location **before any paintable application content**. `ThemeProvider` is context + runtime echo, not a universal first-paint adapter.
 
-1. **Next App Router** — `app/layout.tsx`: `<html {...themeAttributes(theme)}>`.
-2. **React Router 7** — `root.tsx` `Layout` component, same spread on `<html>`.
-3. **TanStack Start** — root route's document shell, same spread.
-4. **Vite SPA** — `%VITE_*%` placeholders in `index.html`, or set the attributes on `document.documentElement` pre-mount (before `createRoot(...).render()`).
+Shared invariants for every recipe:
 
-No framework needs an inline script or hydration suppression for the brand theme.
+- One resolved `theme` object to `themeAttributes` and `ThemeProvider`.
+- Matching color-scheme literals to the bootstrap and the provider, including document-level `forcedColorScheme` when used.
+- Import `themes.css` (and the chosen JS stylesheet). Set a token-backed `html, body { background: var(--background) }` so the UA canvas cannot flash.
+- `suppressHydrationWarning` on `<html>` wherever a color-scheme script mutates `data-theme` on a React-owned document.
+- `injectColorSchemeScript={false}` unless the host has no other place to put a classic script and can guarantee the injected node is first.
+- Never a client-rendered `createRoot` `<script>`, never a copied generated IIFE checked into source, never `style.colorScheme`, never `<meta name="color-scheme">`, never cookie persistence, never hash-CSP.
+
+Verified guarantees vs written guidance:
+
+| Host | Status |
+| --- | --- |
+| Next App Router | **Fixture-verified** (`apps/docs` production HTML + delayed-hydration / JS-disabled / nonce probes) |
+| Vite / pure CSR | **Fixture-verified** (`apps/static-theme` production HTML + React-blocked probes). That app is not `fixtures/vite` and is not a publish gate |
+| Next Pages | Documented recipe only. Do not claim verified no-flash |
+| TanStack Start | Documented recipe only. Do not claim verified no-flash |
+| React Router 7 (framework/SSR) | Documented recipe only. Do not claim verified no-flash |
+
+Route-specific forced **first paint** is a **document-adapter** job: a distinct root layout, `_document`, HTML entry, or `transformIndexHtml` path that knows the route’s force at HTML-generation time and passes the same primitive to bootstrap and provider. Descendant `<ForceColorScheme>` is **runtime-only** (hydration and later). Do not document it as a no-flash page lock.
+
+#### Next App Router (fixture-verified)
+
+Root layout spreads `{...themeAttributes(theme)}` on `<html>` and passes that same `theme` to `ThemeProvider`. Place server-rendered `ColorSchemeScript` in `<head>` **or** as the first child of `<body>` before SkipNav/shell. This repo’s docs fixture uses `<head>`: Next App Router injects a hidden streaming preamble as the first body node, so first-in-`<body>` is not first paint on that host. `injectColorSchemeScript={false}`. `suppressHydrationWarning` on `<html>`. Token-backed canvas as above.
+
+A route that must first-paint forced dark uses a route-group layout (or equivalent document) that passes `forcedColorScheme` into **both** `ColorSchemeScript` and `ThemeProvider`. A page-level `<ForceColorScheme value="dark">` does not change the first frame.
+
+#### Next Pages (recipe only)
+
+`pages/_document` owns first paint. `_app` cannot stamp `<html>` and must not be asked to.
+
+```tsx
+// pages/_document.tsx
+import { Head, Html, Main, NextScript } from "next/document";
+import { ColorSchemeScript, themeAttributes } from "@elmeragroup/ui/theme";
+import { colorScheme, theme } from "../lib/theme";
+
+export default function Document() {
+  return (
+    <Html lang="nb" {...themeAttributes(theme)} suppressHydrationWarning>
+      <Head>
+        <ColorSchemeScript
+          storageKey={colorScheme.storageKey}
+          defaultColorScheme={colorScheme.defaultColorScheme}
+          enableSystem={colorScheme.enableSystem}
+        />
+      </Head>
+      <body>
+        <Main />
+        <NextScript />
+      </body>
+    </Html>
+  );
+}
+
+// pages/_app.tsx
+import type { AppProps } from "next/app";
+import { ThemeProvider } from "@elmeragroup/ui/theme";
+import { colorScheme, theme } from "../lib/theme";
+
+export default function App({ Component, pageProps }: AppProps) {
+  return (
+    <ThemeProvider
+      theme={theme}
+      storageKey={colorScheme.storageKey}
+      defaultColorScheme={colorScheme.defaultColorScheme}
+      enableSystem={colorScheme.enableSystem}
+      injectColorSchemeScript={false}>
+      <Component {...pageProps} />
+    </ThemeProvider>
+  );
+}
+```
+
+The classic script may live in `<Head>` or as the first body child ahead of `<Main />`. Token-backed canvas belongs in the global stylesheet. Route-specific force is a distinct `_document` (or equivalent) that passes the same `forcedColorScheme` into the script and the `_app` provider.
+
+#### TanStack Start (recipe only)
+
+Root document shell spreads `themeAttributes(theme)` on `<html>`. Place `ScriptOnce` with `colorSchemeScriptSource(colorScheme)` **before** children and module scripts. Pass the same `theme` and color-scheme literals to `ThemeProvider` with injection off. `suppressHydrationWarning` on `<html>`. Token-backed canvas as above.
+
+```tsx
+import { ScriptOnce } from "@tanstack/react-router";
+import { colorSchemeScriptSource, ThemeProvider, themeAttributes } from "@elmeragroup/ui/theme";
+import { colorScheme, theme } from "./theme";
+
+export function RootDocument({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="nb" {...themeAttributes(theme)} suppressHydrationWarning>
+      <head>
+        <ScriptOnce>{colorSchemeScriptSource(colorScheme)}</ScriptOnce>
+      </head>
+      <body>
+        <ThemeProvider theme={theme} {...colorScheme} injectColorSchemeScript={false}>
+          {children}
+        </ThemeProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+`colorSchemeScriptSource` is called at document-render time and returns closed IIFE text; do not import an apply function through the app graph. Route-specific force is a document that passes the same `forcedColorScheme` into `colorSchemeScriptSource` and `ThemeProvider`.
+
+#### React Router 7 framework/SSR (recipe only)
+
+Root `Layout` spreads `themeAttributes(theme)` on `<html>` and renders `ColorSchemeScript` in `<head>` (parser-time) before `Meta`/`Links` content that depends on the marker. Same `theme` and color-scheme literals on `ThemeProvider`, injection off. Cookie/loader color state is a later optional SSR adapter; this wave does not persist color scheme in cookies.
+
+```tsx
+import { Links, Meta, Scripts, ScrollRestoration } from "react-router";
+import { ColorSchemeScript, ThemeProvider, themeAttributes } from "@elmeragroup/ui/theme";
+import { colorScheme, theme } from "./theme";
+
+export function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="nb" {...themeAttributes(theme)} suppressHydrationWarning>
+      <head>
+        <ColorSchemeScript
+          storageKey={colorScheme.storageKey}
+          defaultColorScheme={colorScheme.defaultColorScheme}
+          enableSystem={colorScheme.enableSystem}
+        />
+        <Meta />
+        <Links />
+      </head>
+      <body>
+        <ThemeProvider
+          theme={theme}
+          storageKey={colorScheme.storageKey}
+          defaultColorScheme={colorScheme.defaultColorScheme}
+          enableSystem={colorScheme.enableSystem}
+          injectColorSchemeScript={false}>
+          {children}
+        </ThemeProvider>
+        <ScrollRestoration />
+        <Scripts />
+      </body>
+    </html>
+  );
+}
+```
+
+Token-backed canvas in the root stylesheet. Route-specific force is a layout that emits the same `forcedColorScheme` on the head script and the provider.
+
+#### Vite / pure CSR (fixture-verified)
+
+Brand attributes are substituted into `index.html` at **build time**. Color scheme is a **raw classic** inline script in that file **before** the module bundle. First paint must not depend on `createRoot`: React 19 creates client `<script>` nodes that do not execute.
+
+The proven adapter is Vite’s `transformIndexHtml` hook (`order: "post"`) in `vite.config.ts`:
+
+1. Import `themeAttributes` and `colorSchemeScriptSource` from `@elmeragroup/ui/theme` **in the Vite config**, not from the client graph. Call them at config/build time with the same `DOCUMENT_THEME` / `DOCUMENT_COLOR_SCHEME` the React tree will receive.
+2. Stamp the three brand attributes on `<html>`. Source HTML must not already contain them.
+3. Inject `<script>${colorSchemeScriptSource(options)}</script>` immediately before the first `type="module"` tag. Do **not** hand-copy the generated IIFE into `index.html`. Do **not** render `ColorSchemeScript` from `createRoot`.
+4. Token CSS that **defines** `--background` must precede that parser-blocking script. Vite production builds often emit the hashed `themes.css` link at or after the module entry; hoist those `rel="stylesheet"` links to immediately before the bootstrap. Keep `html, body { background: var(--background) }`.
+5. Mount `ThemeProvider` with the same theme and color-scheme literals and `injectColorSchemeScript={false}`.
+6. A bundling Vite config loader can rewrite `Function.prototype.toString()` and break the closed IIFE. Keep the generator on the published module (this repo’s fixture uses `--configLoader native` and the packed `dist/theme.js` so workspace TypeScript source is not re-emitted).
+7. Route-specific forced first paint is a second HTML entry (or a transform that inspects the filename/URL) that passes the same `forcedColorScheme` into `colorSchemeScriptSource` and `ThemeProvider`.
+
+`apps/static-theme` is the verified private workspace proof of this recipe. It is not `fixtures/vite` and not a release packed-consumer gate.
 
 ### 7.4 `ThemeScope`
 
@@ -518,7 +730,8 @@ Escape hatch for per-request/multi-theme subtrees (the sms-accept per-customer p
 - Polymorphic via base-ui **`useRender`** (`render` prop + `mergeProps`, default tag `div`). Standing convention: **all library polymorphism uses `useRender`, never an `as` prop**.
 - A merged callback ref stores the rendered `HTMLElement` in state and publishes it through a private context, so ref attachment triggers the dependent overlays to re-render. The context distinguishes **no scope** (`undefined`) from **scope present but target not attached yet** (`null`).
 - Every overlay resolves its portal target in this order: explicit `container` element/ref → nearest `ThemeScope` element → primitive default (`document.body`) only when no scope exists. If an explicit ref or nearest scope exists but its element is still `null`, portal content waits rather than briefly escaping to `document.body`. Base-ui entries forward the resolved element to their portal/container API; RAC private Popover/Modal adapters forward it to the matching RAC portal-container API. The private `useThemeScopeContainer` hook and context are not exported.
-- `ThemeScope` provides the same `{ ...theme, slug }` value as `ThemeProvider`; a nested scope always wins for `useTheme()` consumers within it.
+- `ThemeScope` provides the same `{ ...theme, slug }` value as `ThemeProvider`; a nested scope always wins for `useTheme()` consumers within it. `useTheme()` outside the scope returns the document brand.
+- `ThemeScope` is never a document writer: it does not set the private writer flag, does not stamp `<html>`, and cannot suppress a real `ThemeProvider`. Color-scheme state stays on the document writer; scopes do not fork it.
 
 ### 7.5 `BRANDS`
 
@@ -570,32 +783,47 @@ Logo components live with the icon system, keyed by the same codes.
 
 `ElmeraGroupUiProvider` is permanent and exported from `/theme`: `{ locale: SupportedLocale; children: ReactNode }`. It provides a memoized `{ locale }` value; `useElmeraGroupUi()` returns it and throws outside the provider. It performs no browser or user-agent detection. The interim `UiProviders` wrapper is specified in [ui-providers](components/ui-providers.md).
 
-### 7.8 Dark axis: wired, valueless
+### 7.8 Color-scheme axis: wired, valueless
 
-- `<ColorSchemeScript>` and `useColorScheme()` ship functional in v1 — adapted from next-themes' script with its MIT notice retained. Their exact public types are:
+`<ColorSchemeScript>`, `colorSchemeScriptSource`, `useColorScheme()`, and `<ForceColorScheme>` ship functional in v1 — adapted from next-themes' script with its MIT notice retained. They write only reserved `data-theme`. They do not write brand attributes, `style.colorScheme`, or a color-scheme meta tag.
 
-  ```ts
-  type ColorScheme = "light" | "dark" | "system";
-  type ColorSchemeOptions = {
-    storageKey?: string;
-    defaultColorScheme?: ColorScheme;
-    enableSystem?: boolean;
-  };
-  type ColorSchemeScriptProps = ColorSchemeOptions & { nonce?: string };
-  type UseColorSchemeResult = {
-    colorScheme: ColorScheme;
-    resolvedColorScheme: "light" | "dark" | undefined;
-    setColorScheme: (value: ColorScheme) => void;
-  };
+```ts
+type ColorScheme = "light" | "dark" | "system";
+type ColorSchemeOptions = {
+  storageKey?: string;
+  defaultColorScheme?: ColorScheme;
+  enableSystem?: boolean;
+  forcedColorScheme?: ColorScheme;
+};
+type ColorSchemeScriptElementProps = Omit<
+  ScriptHTMLAttributes<HTMLScriptElement>,
+  "type" | "src" | "children" | "dangerouslySetInnerHTML"
+> & { "data-cfasync"?: string };
+type ColorSchemeScriptProps = ColorSchemeOptions & {
+  nonce?: string;
+  scriptProps?: ColorSchemeScriptElementProps;
+};
+type UseColorSchemeResult = {
+  colorScheme: ColorScheme;
+  resolvedColorScheme: "light" | "dark" | undefined;
+  setColorScheme: (value: ColorScheme) => void;
+};
+type ForceColorSchemeProps = { value: ColorScheme; children?: ReactNode };
 
-  function useColorScheme(options?: ColorSchemeOptions): UseColorSchemeResult;
-  ```
+function colorSchemeScriptSource(options?: ColorSchemeOptions): string;
+function useColorScheme(): UseColorSchemeResult;
+```
 
-  All options default to `storageKey: "elmera-color-scheme"`, `defaultColorScheme: "system"`, and `enableSystem: true`; an app overriding one passes the same options to the script and hook. Before paint, the script accepts a stored value only when it is one of the three `ColorScheme` literals, otherwise uses the default, consults `prefers-color-scheme` only when system mode is both selected and enabled, and sets reserved `data-theme` to the resolved literal `"light"` or `"dark"`. Disabled system mode resolves `"system"` to `"light"` deterministically. Storage or media-query failures also fall back without throwing.
-
-  The client hook's server snapshot and first hydration render are `{ colorScheme: defaultColorScheme, resolvedColorScheme: undefined }`; after mount it reads the validated preference and the script-set DOM attribute. `setColorScheme` updates local state, storage, and the root attribute. The hook listens for same-key `storage` events and, while in enabled system mode, `prefers-color-scheme` changes; it removes both listeners on cleanup. This makes multi-tab and OS changes observable without making hydration depend on browser state.
+- **`colorSchemeScriptSource`** is a public `/theme` export. It returns a self-contained IIFE string with only primitive arguments. No imported bindings, no `process.env`, no bundler helpers, no `themeAttributes` / `validateTheme` names. After `JSON.stringify`, `<` becomes `\u003c`, U+2028 / U+2029 become `\u2028` / `\u2029`; quotes and ampersands are **not** HTML-entity-encoded. After applying `data-theme`, the IIFE overwrites `globalThis.__ELMERA_COLOR_SCHEME_BOOTSTRAP__` with `{ storageKey, defaultColorScheme, enableSystem, forcedColorScheme }` — the only mismatch-detection channel.
+- **`ColorSchemeScript`** is a **server-safe** renderer of that source (`<script nonce={…} dangerouslySetInnerHTML={…} />`). `scriptProps` cannot set `type`, `src`, `children`, or `dangerouslySetInnerHTML`; `data-cfasync="false"` is allowed. A matching CSP `nonce` executes; a missing or wrong nonce leaves a testable failing sentinel. This spec does not promise hash-based CSP.
+- Resolution order: document `forcedColorScheme` if present (does **not** read storage for the document write, including when the force is `"system"` → media); else a valid stored preference; else the default. `"system"` uses `prefers-color-scheme` when `enableSystem` is true, otherwise `"light"`. Invalid storage is ignored. Output is `"light"` | `"dark"` on `data-theme`.
+- **`useColorScheme()`** takes **no** options. Configuration lives only on `ThemeProvider` and the matching host script. The server snapshot and first hydration render keep `resolvedColorScheme` undefined until mounted. After mount it reports the resolved marker. `setColorScheme` writes storage and, when no force is active, `data-theme` in the same event turn. Same-key `storage` events and enabled-system media changes apply synchronously. Listeners are removed on cleanup.
+- **Two force layers, not interchangeable for first paint:**
+  1. **Document-level force (no-flash).** `ThemeProvider forcedColorScheme` **and** the same primitive on `ColorSchemeScript` / `colorSchemeScriptSource` for that HTML document. Use this for a whole app or a route-specific document adapter.
+  2. **Descendant `<ForceColorScheme value="dark">` (runtime-only).** Writes into the document-writer context after hydration. First paint is **not** forced unless the host also used layer 1. Innermost tree depth wins. Nested providers do not fork this stack.
+- While either force is active: document `data-theme` follows the forced resolution; `resolvedColorScheme` reports that value; `setColorScheme` updates **storage only**; storage/media events update hidden preference and **must not** write the document; removing the force applies the stored preference synchronously. Forcing never changes brand attributes.
 - `ThemeInput` has **no dark field** — color scheme is an orthogonal, layered axis, never part of the brand theme.
-- The emitted theme CSS ends with a ready-to-go **commented `[data-theme="dark"]` placeholder**, not an empty rule node. Values land there with the dark-mode roadmap item. When they do, nothing about the brand-theme API changes.
+- The emitted theme CSS ends with a ready-to-go **commented `[data-theme="dark"]` placeholder**, not an empty rule node. Values land there with the dark-mode roadmap item. When they do, nothing about the brand-theme API changes, and this wave still does not enable `style.colorScheme`.
 
 ## 8 Token pipeline (codegen)
 

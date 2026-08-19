@@ -25,7 +25,14 @@ Adjust the `@source` path only when the stylesheet is not one directory below th
 ## JavaScript
 
 ```ts
-import { ThemeProvider, ElmeraGroupUiProvider } from "@elmeragroup/ui/theme";
+import {
+  ColorSchemeScript,
+  ElmeraGroupUiProvider,
+  ThemeProvider,
+  themeAttributes,
+} from "@elmeragroup/ui/theme";
 ```
+
+Brand is a controlled host value: spread `themeAttributes(theme)` on `<html>` and pass the same object to `ThemeProvider`. Color scheme uses a host-placed `ColorSchemeScript` or `colorSchemeScriptSource` **before** paintable content — the provider is not a first-paint adapter (`injectColorSchemeScript` defaults false). Next App Router and Vite recipes are fixture-verified; Next Pages, TanStack Start, and React Router 7 are written recipes only. Full recipes: [theming.md](../../docs/spec/theming.md) §7.3.
 
 Workspace apps import the same public subpaths. Do not deep-import `src/` internals.

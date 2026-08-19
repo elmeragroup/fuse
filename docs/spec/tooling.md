@@ -10,7 +10,8 @@ pnpm workspaces + turborepo, mirroring the internal reference repo (the stated c
 
 ```
 packages/ui/                  # @elmeragroup/ui — the library (only published package)
-apps/docs/                    # Next.js custom-MDX docs site
+apps/docs/                    # Next.js custom-MDX docs site; verified Next App Router first-paint fixture
+apps/static-theme/            # private Vite/CSR first-paint fixture (not fixtures/vite, not a publish gate)
 apps/playground/              # scratch consumer app (dev + manual QA)
 tooling/typescript/           # @elmeragroup/typescript-config — shared tsconfig bases
 tooling/oxlint-plugin/        # @elmeragroup/oxlint-plugin — elmera/* custom rules
@@ -19,7 +20,7 @@ tooling/oxlint-anti-slop/     # @elmeragroup/oxlint-plugin-anti-slop — vendore
 
 - Everything under `tooling/*` and `apps/*` is `"private": true`; `packages/ui` is the sole publish target ([release](release.md)).
 - `pnpm-workspace.yaml` globs: `packages/*`, `apps/*`, `tooling/*`.
-- Tests, demos, and intl dictionaries are **co-located inside `packages/ui`** — no tests live in consuming apps (explicit break from the internal ref, which kept all component tests app-side).
+- Tests, demos, and intl dictionaries for the **library** are **co-located inside `packages/ui`**. Component tests do not live in consuming apps (explicit break from the internal ref, which kept all component tests app-side). The two specified **host first-paint proofs** live in `apps/docs/test` and `apps/static-theme/test` because they must inspect production HTML before React; that exception is not permission to move library tests into apps. Those apps' `test` tasks `dependsOn: ["build"]`. They are not the release packed-consumer fixtures in §7.5.
 
 ## 2 Package manager & supply chain
 
@@ -30,7 +31,7 @@ tooling/oxlint-anti-slop/     # @elmeragroup/oxlint-plugin-anti-slop — vendore
 - **Node 24**, pinned as `"engines": { "node": ">=24.13.0 <25" }` and `.node-version` containing `24.13.0`. Node 24 and pnpm 11 majors are normative; patch bumps within those majors are maintenance changes.
 - **TypeScript configs** split in `tooling/typescript` per the internal ref: `base.json`, `react-library.json` (packages/ui), `internal-package.json` (tooling/*); apps extend base + framework preset. `strict` everywhere; no per-package compiler-option drift outside these files.
 
-The initial scaffold uses this reviewed, registry-verified exact catalog baseline; reference-derived versions are retained where applicable, while missing tool pins are explicit project choices. Upgrading one is a deliberate maintenance change, not an install-time choice: React/React DOM `19.2.8`, corresponding types `19.2.17`/`19.2.3`, Tailwind `4.3.3`, TypeScript `7.0.2`, tsdown `0.22.14`, turbo `2.10.2`, Vitest and `@vitest/browser-playwright` `4.1.10`, Playwright `1.62.1`, oxfmt `0.60.0`, oxlint and `@oxlint/plugins` `1.78.0`, and oxlint-tsgolint `7.0.2001`. Runtime package pins/ranges are the canonical table in [architecture](architecture.md) §6; duplicate literals do not appear in workspace package manifests.
+The initial scaffold uses this reviewed, registry-verified exact catalog baseline; reference-derived versions are retained where applicable, while missing tool pins are explicit project choices. Upgrading one is a deliberate maintenance change, not an install-time choice: React/React DOM `19.2.8`, corresponding types `19.2.17`/`19.2.3`, Tailwind `4.3.3`, TypeScript `7.0.2`, tsdown `0.22.14`, turbo `2.10.2`, Vite `8.2.1`, Vitest and `@vitest/browser-playwright` `4.1.10`, Playwright `1.62.1`, oxfmt `0.60.0`, oxlint and `@oxlint/plugins` `1.78.0`, and oxlint-tsgolint `7.0.2001`. Runtime package pins/ranges are the canonical table in [architecture](architecture.md) §6; duplicate literals do not appear in workspace package manifests.
 
 ## 3 Turbo task graph
 
@@ -144,6 +145,8 @@ Two fixture apps under a root `fixtures/` directory prove the package installs a
 - **`fixtures/vite`** — Vite app consuming **standalone-CSS mode**.
 
 Both install the **`pnpm pack` tarball** — never `workspace:` protocol — and must build. Both additionally assert that the flag SVG assets resolve. These fixtures run in the **release workflow as a publish gate** ([release](release.md) §5), not in the per-PR merge gate.
+
+They are **not** the first-paint proofs. `apps/docs` verifies the Next App Router host adapter; `apps/static-theme` verifies the Vite `transformIndexHtml` adapter. Neither is `fixtures/next-app-router` / `fixtures/vite`, and neither is a publish gate.
 
 ## 8 CI gates
 
