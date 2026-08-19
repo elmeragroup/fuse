@@ -1,0 +1,9 @@
+{
+  "extends": ["//"],
+  "tasks": {
+    "test": {
+      "dependsOn": ["build"],
+      "env": ["STATIC_THEME_BASE_URL"]
+    }
+  }
+}
