@@ -152,6 +152,7 @@ function isBareComponent(subpath: string): boolean {
 const IMPLEMENTATION_DIRECTORIES = new Set(["components", "hooks", "icons", "styles", "theme", "react-aria"]);
 
 const BUTTON_RUNTIME_EXPORTS = ["Button", "buttonVariants"] as const;
+const SCROLL_AREA_RUNTIME_EXPORTS = ["ScrollArea"] as const;
 const RELATIVE_IMPORT = /(?:import|export)(?:\s+type)?\s+(?:[^'"\n;]*?\sfrom\s+)?["'](\.[^"']+)["']/g;
 const SOURCE_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"] as const;
 
@@ -320,13 +321,16 @@ function runtimeExportsFor(subpath: string): readonly string[] {
     return THEME_RUNTIME_EXPORTS;
   }
   if (subpath === ".") {
-    return [...THEME_RUNTIME_EXPORTS, ...BUTTON_RUNTIME_EXPORTS];
+    return [...THEME_RUNTIME_EXPORTS, ...BUTTON_RUNTIME_EXPORTS, ...SCROLL_AREA_RUNTIME_EXPORTS];
   }
   if (subpath === "icons") {
     return PHOSPHOR_ICON_NAMES;
   }
   if (subpath === "button") {
     return BUTTON_RUNTIME_EXPORTS;
+  }
+  if (subpath === "scroll-area") {
+    return SCROLL_AREA_RUNTIME_EXPORTS;
   }
   return [];
 }

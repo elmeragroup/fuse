@@ -21,6 +21,10 @@
       "types": "./src/icons.ts",
       "import": "./src/icons.ts"
     },
+    "./scroll-area": {
+      "types": "./src/scroll-area.ts",
+      "import": "./src/scroll-area.ts"
+    },
     "./styles.css": "./dist/styles.css",
     "./theme": {
       "types": "./src/theme.ts",

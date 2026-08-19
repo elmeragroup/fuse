@@ -1,10 +1,15 @@
 import { expectTypeOf, test } from "vitest";
 
-import type { Button as RootButton, ThemeInput as RootThemeInput } from "@elmeragroup/ui";
+import type {
+  Button as RootButton,
+  ScrollArea as RootScrollArea,
+  ThemeInput as RootThemeInput,
+} from "@elmeragroup/ui";
 import type { Button } from "@elmeragroup/ui/button";
 import { buttonVariants } from "@elmeragroup/ui/button";
 import type * as Icons from "@elmeragroup/ui/icons";
 import type { ElmeraIconProps } from "@elmeragroup/ui/icons";
+import type { ScrollArea } from "@elmeragroup/ui/scroll-area";
 import type { ThemeInput, ThemeProviderProps } from "@elmeragroup/ui/theme";
 
 test("workspace consumers resolve the same public subpaths as the published package", () => {
@@ -13,5 +18,6 @@ test("workspace consumers resolve the same public subpaths as the published pack
   expectTypeOf<(typeof Icons)["Check"]>().toBeFunction();
   expectTypeOf<ElmeraIconProps["weight"]>().toEqualTypeOf<"regular" | "fill" | undefined>();
   expectTypeOf<typeof Button>().toEqualTypeOf<typeof RootButton>();
+  expectTypeOf<typeof ScrollArea>().toEqualTypeOf<typeof RootScrollArea>();
   expectTypeOf(buttonVariants).toBeFunction();
 });
