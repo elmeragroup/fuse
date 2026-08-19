@@ -8,7 +8,7 @@
     },
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**"]
+      "outputs": ["dist/**", ".next/**"]
     },
     "lint": {
       "inputs": ["$TURBO_DEFAULT$", "tooling/oxlint-plugin/**", "tooling/oxlint-anti-slop/**"]

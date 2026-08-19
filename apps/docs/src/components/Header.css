@@ -1,0 +1,67 @@
+.Header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0 1.5rem;
+  height: var(--docs-header-height);
+  border-bottom: 1px solid var(--docs-line);
+  position: sticky;
+  top: 0;
+  background: rgb(255 255 255 / 0.92);
+  backdrop-filter: blur(8px);
+  z-index: 10;
+}
+
+.HeaderWordmark {
+  font-weight: 650;
+  font-size: 0.95rem;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  color: var(--docs-ink);
+}
+
+.HeaderWordmark span {
+  color: var(--docs-sub);
+  font-weight: 400;
+}
+
+.HeaderWordmark:focus-visible {
+  outline: 2px solid var(--docs-ink);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.ThemePicker {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+}
+
+.ThemePicker select {
+  appearance: none;
+  border: 1px solid var(--docs-line);
+  background: var(--docs-soft);
+  font: 500 11.5px var(--docs-mono);
+  color: var(--docs-ink);
+  padding: 5px 9px;
+  cursor: pointer;
+}
+
+.ThemePicker select:first-child {
+  border-radius: 6px 0 0 6px;
+}
+
+.ThemePicker select + select {
+  border-left: 0;
+}
+
+.ThemePicker select:last-child {
+  border-radius: 0 6px 6px 0;
+}
+
+.ThemePicker select:focus-visible {
+  outline: 2px solid var(--docs-ink);
+  outline-offset: -1px;
+  position: relative;
+  z-index: 1;
+}

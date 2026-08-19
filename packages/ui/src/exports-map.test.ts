@@ -100,13 +100,14 @@ describe("exports map", () => {
     if (parsed === null || Array.isArray(parsed)) {
       throw new Error("package.json is not an object");
     }
-    // SAFETY: this test only reads the generated exports map and publishConfig.directory.
+    // SAFETY: this test only reads the generated exports map and publishConfig.
     const pkg = parsed as {
       exports: ReturnType<typeof exportBindingsObject>;
-      publishConfig: { directory: string };
+      publishConfig: { directory: string; linkDirectory: boolean };
     };
     expect(pkg.exports).toEqual(exportBindingsObject(sourceExports));
     expect(pkg.publishConfig.directory).toBe("dist");
+    expect(pkg.publishConfig.linkDirectory).toBe(false);
   });
 
   it("re-exports the theme API from the root barrel and the /theme entry", () => {

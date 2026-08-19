@@ -1,0 +1,67 @@
+.SideNavRoot {
+  border-right: 1px solid var(--docs-line);
+  padding: 1.5rem 1rem 4rem;
+  font-size: 0.82rem;
+}
+
+.SideNavScroll {
+  height: auto;
+  max-height: 12rem;
+}
+
+.SideNavSection {
+  margin-bottom: 1.4rem;
+}
+
+.SideNavHeading {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 450;
+  color: var(--docs-sub);
+  margin-bottom: 0.4rem;
+  padding-left: 0.6rem;
+}
+
+.SideNavList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.SideNavLink {
+  display: block;
+  padding: 0.28rem 0.6rem;
+  color: var(--docs-sub);
+  text-decoration: none;
+  border-radius: 6px;
+}
+
+.SideNavLink:hover {
+  color: var(--docs-ink);
+  background: var(--docs-soft);
+}
+
+.SideNavLink[data-active] {
+  color: var(--docs-ink);
+  background: var(--docs-soft);
+  font-weight: 550;
+}
+
+.SideNavLink:focus-visible {
+  outline: 2px solid var(--docs-ink);
+  outline-offset: -2px;
+}
+
+@media (min-width: 720px) {
+  .SideNavRoot {
+    position: sticky;
+    top: var(--docs-header-height);
+    height: calc(100vh - var(--docs-header-height));
+    overflow: hidden;
+  }
+
+  .SideNavScroll {
+    height: 100%;
+    max-height: none;
+  }
+}

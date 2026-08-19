@@ -87,6 +87,7 @@
     "**/dist/**",
     "**/coverage/**",
     "**/.turbo/**",
+    "**/.next/**",
     "**/.artifacts/**",
     "**/.cache/**",
     "**/node_modules/**",
@@ -110,7 +111,7 @@
   },
   "overrides": [
     {
-      "files": ["packages/ui/**/*.{ts,tsx}"],
+      "files": ["apps/**/*.{ts,tsx}", "packages/ui/**/*.{ts,tsx}"],
       "globals": {
         "React": "writable"
       },

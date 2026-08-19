@@ -41,6 +41,8 @@
     "dist",
     "**/dist/**",
     ".turbo",
+    "**/.next/**",
+    "**/next-env.d.ts",
     ".artifacts",
     ".cache",
     ".ref",

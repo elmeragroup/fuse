@@ -34,7 +34,8 @@
   },
   "publishConfig": {
     "directory": "dist",
-    "access": "public"
+    "access": "public",
+    "linkDirectory": false
   },
   "scripts": {
     "build": "node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/build.ts",

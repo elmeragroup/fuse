@@ -82,7 +82,7 @@ type WorkspaceManifest = {
   type: string;
   sideEffects: string[];
   exports: ExportBinding[];
-  publishConfig: { directory: string; access: string };
+  publishConfig: { directory: string; access: string; linkDirectory: false };
   scripts: WorkspaceScripts;
   peerDependencies: WorkspacePeers;
   peerDependenciesMeta: { tailwindcss: { optional: boolean }; recharts?: { optional: boolean } };
@@ -256,7 +256,7 @@ export function writeSourceExports(packageRoot: string): DiscoveredEntries {
   const packageJsonPath = join(packageRoot, "package.json");
   const pkg = readWorkspaceManifest(packageJsonPath);
   pkg.exports = buildSourceExportMap(discovered);
-  pkg.publishConfig = { directory: "dist", access: "public" };
+  pkg.publishConfig = { directory: "dist", access: "public", linkDirectory: false };
   writeWorkspacePackageJson(packageJsonPath, pkg);
   return discovered;
 }
