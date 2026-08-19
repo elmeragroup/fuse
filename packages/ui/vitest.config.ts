@@ -20,7 +20,18 @@ export default defineConfig({
       },
       {
         optimizeDeps: {
-          include: ["react", "react-dom", "react-dom/client", "react/jsx-runtime"],
+          include: [
+            "react",
+            "react-dom",
+            "react-dom/client",
+            "react/jsx-runtime",
+            "@base-ui/react/button",
+            "@base-ui/react/merge-props",
+            "@base-ui/react/use-render",
+            "clsx",
+            "tailwind-merge",
+            "tailwind-variants",
+          ],
         },
         test: {
           name: "browser",

@@ -149,7 +149,9 @@ function isBareComponent(subpath: string): boolean {
   }
   return false;
 }
-const IMPLEMENTATION_DIRECTORIES = new Set(["components", "icons", "styles", "theme", "react-aria"]);
+const IMPLEMENTATION_DIRECTORIES = new Set(["components", "hooks", "icons", "styles", "theme", "react-aria"]);
+
+const BUTTON_RUNTIME_EXPORTS = ["Button", "buttonVariants"] as const;
 const RELATIVE_IMPORT = /(?:import|export)(?:\s+type)?\s+(?:[^'"\n;]*?\sfrom\s+)?["'](\.[^"']+)["']/g;
 const SOURCE_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"] as const;
 
@@ -194,7 +196,7 @@ export function toPosix(path: string): string {
 
 export function isSkippedSourceFile(relativePath: string): boolean {
   const posix = toPosix(relativePath);
-  if (posix.includes("/__snapshots__/")) {
+  if (posix.includes("/__snapshots__/") || posix.includes("/demos/")) {
     return true;
   }
   return (
@@ -314,11 +316,17 @@ function resolveJsSource(packageRoot: string, subpath: string): string | undefin
 }
 
 function runtimeExportsFor(subpath: string): readonly string[] {
-  if (subpath === "." || subpath === "theme") {
+  if (subpath === "theme") {
     return THEME_RUNTIME_EXPORTS;
+  }
+  if (subpath === ".") {
+    return [...THEME_RUNTIME_EXPORTS, ...BUTTON_RUNTIME_EXPORTS];
   }
   if (subpath === "icons") {
     return PHOSPHOR_ICON_NAMES;
+  }
+  if (subpath === "button") {
+    return BUTTON_RUNTIME_EXPORTS;
   }
   return [];
 }

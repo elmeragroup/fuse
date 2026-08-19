@@ -1,6 +1,8 @@
 import { expectTypeOf, test } from "vitest";
 
-import type { ThemeInput as RootThemeInput } from "@elmeragroup/ui";
+import type { Button as RootButton, ThemeInput as RootThemeInput } from "@elmeragroup/ui";
+import type { Button } from "@elmeragroup/ui/button";
+import { buttonVariants } from "@elmeragroup/ui/button";
 import type * as Icons from "@elmeragroup/ui/icons";
 import type { ElmeraIconProps } from "@elmeragroup/ui/icons";
 import type { ThemeInput, ThemeProviderProps } from "@elmeragroup/ui/theme";
@@ -10,4 +12,6 @@ test("workspace consumers resolve the same public subpaths as the published pack
   expectTypeOf<ThemeProviderProps["theme"]>().toEqualTypeOf<ThemeInput>();
   expectTypeOf<(typeof Icons)["Check"]>().toBeFunction();
   expectTypeOf<ElmeraIconProps["weight"]>().toEqualTypeOf<"regular" | "fill" | undefined>();
+  expectTypeOf<typeof Button>().toEqualTypeOf<typeof RootButton>();
+  expectTypeOf(buttonVariants).toBeFunction();
 });

@@ -20,7 +20,7 @@ describe("exports map", () => {
   const publishExports = buildPublishExportMap(discovered);
 
   it("is generated from discovered source entries, not a hand-maintained list of files", () => {
-    expect(discovered.jsEntries.map((entry) => entry.subpath)).toEqual([".", "theme", "icons"]);
+    expect(discovered.jsEntries.map((entry) => entry.subpath)).toEqual([".", "theme", "icons", "button"]);
     expect(unexpectedJsEntryFiles(packageRoot)).toEqual([]);
     expect(BARE_COMPONENT_ENTRIES).toHaveLength(56);
   });
@@ -41,10 +41,13 @@ describe("exports map", () => {
       types: "./src/icons.ts",
       import: "./src/icons.ts",
     });
+    expect(exportBindingTarget(sourceExports, "./button")).toEqual({
+      types: "./src/button.ts",
+      import: "./src/button.ts",
+    });
   });
 
   it("does not invent component entries before their source files exist", () => {
-    expect(exportBindingTarget(sourceExports, "./button")).toBeUndefined();
     expect(exportBindingTarget(sourceExports, "./scroll-area")).toBeUndefined();
     expect(exportBindingTarget(sourceExports, "./illustrations")).toBeUndefined();
     expect(exportBindingTarget(sourceExports, "./react-aria/calendar")).toBeUndefined();
@@ -69,6 +72,10 @@ describe("exports map", () => {
       types: "./icons.d.ts",
       import: "./icons.js",
     });
+    expect(exportBindingTarget(publishExports, "./button")).toEqual({
+      types: "./button.d.ts",
+      import: "./button.js",
+    });
     expect(exportBindingTarget(publishExports, "./css")).toBe("./styles/ui.css");
     expect(exportBindingTarget(publishExports, "./themes.css")).toBe("./themes.css");
     expect(exportBindingTarget(publishExports, "./styles.css")).toBe("./styles.css");
@@ -92,10 +99,16 @@ describe("exports map", () => {
   it("re-exports the theme API from the root barrel and the /theme entry", () => {
     const theme = discovered.jsEntries.find((entry) => entry.subpath === "theme");
     const root = discovered.jsEntries.find((entry) => entry.subpath === ".");
-    expect(theme?.runtimeExports).toEqual(root?.runtimeExports);
     expect(theme?.runtimeExports).toContain("ThemeProvider");
     expect(theme?.runtimeExports).toContain("themeAttributes");
     expect(theme?.runtimeExports).toContain("ColorSchemeScript");
+    expect(root?.runtimeExports).toEqual([...(theme?.runtimeExports ?? []), "Button", "buttonVariants"]);
+  });
+
+  it("publishes Button and buttonVariants from /button and the root barrel", () => {
+    const button = discovered.jsEntries.find((entry) => entry.subpath === "button");
+    expect(button?.inRootBarrel).toBe(true);
+    expect(button?.runtimeExports).toEqual(["Button", "buttonVariants"]);
   });
 
   it("keeps /icons as a subpath-only entry with the curated roster", () => {

@@ -12,6 +12,10 @@
       "types": "./src/index.ts",
       "import": "./src/index.ts"
     },
+    "./button": {
+      "types": "./src/button.ts",
+      "import": "./src/button.ts"
+    },
     "./css": "./src/styles/ui.css",
     "./icons": {
       "types": "./src/icons.ts",
