@@ -21,7 +21,7 @@ Every component spec has exactly ten sections: **1 Header** (canonical name, can
 ## Styling conventions
 
 - **Tokens only** — the `no-primitive-colors` lint rule forbids raw palette classes in library source. Canonical status names are `error/info/success/warning` (+`-soft`); `destructive` classes are consumer-compat aliases and never appear in library source.
-- **Input-like surfaces use `bg-card`** (white in all 16 themes today, dark-ready) — never literal `bg-white`.
+- **Input-like surfaces use `bg-card`** (white in all 20 themes today, dark-ready) — never literal `bg-white`.
 - **No `dark:` variants** (`no-tailwind-dark-variant` rule) — the dark axis lives in tokens behind `[data-theme="dark"]`.
 - **State-variant scope**: the raw CSS entry defines the internal reference's base-ui variants exactly. For example, `data-open:` expands to `&:where([data-state="open"]), &:where([data-open]:not([data-open="false"]))` and is therefore **self-scoped**, not an ancestor selector; `data-closed:` follows the same pattern. Put these classes on the element that emits the state. Ancestor state is always explicit through a named `group-*`, `peer-*`, or `in-data-*` variant—never inferred from bare `data-open:`. The copied set and snapshot cover exactly nine variants: `data-open`, `data-closed`, `data-checked`, `data-unchecked`, `data-selected`, `data-disabled`, `data-active`, `data-horizontal`, and `data-vertical`.
 - Class merging goes through the package-private `cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)); }` helper; the package has no dependency on `@elmeragroup/lib`. Recipe composition goes through `tv`.

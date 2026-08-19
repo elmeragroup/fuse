@@ -28,7 +28,14 @@ function asThemeVariant(value: ThemeAxisValue): ThemeVariant | undefined {
 }
 
 function asBrandCode(value: ThemeAxisValue): BrandCode | undefined {
-  if (value === "fkas" || value === "tkas" || value === "guen" || value === "fkab" || value === "fkse") {
+  if (
+    value === "fkas" ||
+    value === "tkas" ||
+    value === "guen" ||
+    value === "fkab" ||
+    value === "fkse" ||
+    value === "elma"
+  ) {
     return value;
   }
   return undefined;

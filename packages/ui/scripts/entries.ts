@@ -326,7 +326,7 @@ function runtimeExportsFor(subpath: string): readonly string[] {
     return [...THEME_RUNTIME_EXPORTS, ...BUTTON_RUNTIME_EXPORTS, ...SCROLL_AREA_RUNTIME_EXPORTS];
   }
   if (subpath === "icons") {
-    return PHOSPHOR_ICON_NAMES;
+    return [...PHOSPHOR_ICON_NAMES, "BrandLogo"];
   }
   if (subpath === "button") {
     return BUTTON_RUNTIME_EXPORTS;

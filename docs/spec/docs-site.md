@@ -67,15 +67,15 @@ One **bordered frame** per demo (base-ui's demo-then-source card), three stacked
 ## 4 Theme switching
 
 - The header picker is **host-owned state that re-renders the `ThemeProvider`** — the provider-consumption model specified in [theming](theming.md). The docs site is itself the first consumer exercising that API: no bespoke theme plumbing, no docs-only escape hatch.
-- Demo stages render under the globally selected theme; every demo is therefore viewable in all 16 permutations by driving the picker.
+- Demo stages render under the globally selected theme; every demo is therefore viewable in all 20 permutations by driving the picker.
 - Nested per-cell theming (matrix page, any side-by-side comparison) uses **`ThemeScope`** per [theming](theming.md) — overlays portalled inside the active scope per [conventions](components/conventions.md).
 
 ## 5 Theme matrix page
 
 The whitelabel pitch page, under Handbook:
 
-- A **quiet 16-cell grid (4×4)** — every legal brand × segment × variant permutation. Each cell is **slug-labelled** (mono) and renders a fixed set of key components inside its own `ThemeScope`.
-- Chrome stays light-only; the cells carry all the color. No hatched illegal cells, no coordinate-table framing (direction C, rejected) — the 16 legal permutations only.
+- A **quiet 20-cell grid** — every legal brand × segment × variant permutation, including `elma`. Each cell is **slug-labelled** (mono) and renders a fixed set of key components inside its own `ThemeScope`.
+- Chrome stays light-only; the cells carry all the color. No hatched illegal cells, no coordinate-table framing (direction C, rejected) — the 20 legal permutations only.
 
 ## 6 Demo pipeline
 

@@ -22,6 +22,8 @@ export const PRIMITIVE_NAMES = [
   "brand-fkab-foreground",
   "brand-fkse",
   "brand-fkse-foreground",
+  "brand-elma",
+  "brand-elma-foreground",
 ] as const;
 
 export type PrimitiveName = (typeof PRIMITIVE_NAMES)[number];
@@ -52,4 +54,6 @@ export const PRIMITIVES = {
   "brand-fkab-foreground": WHITE,
   "brand-fkse": "oklch(0.4816 0.0908 240.16)",
   "brand-fkse-foreground": WHITE,
+  "brand-elma": "oklch(0.29 0.05 220.14)",
+  "brand-elma-foreground": WHITE,
 } as const satisfies PrimitiveTokens;

@@ -6,9 +6,9 @@ import { LEGAL_THEMES, themeSlug } from "./tokens/themes";
 describe("contrast matrix", () => {
   const matrix = buildContrastMatrix();
 
-  it("snapshots text-grade pairs across the 16 themes", async () => {
-    expect(LEGAL_THEMES).toHaveLength(16);
-    expect(Object.keys(matrix)).toHaveLength(16);
+  it("snapshots text-grade pairs across the 20 themes", async () => {
+    expect(LEGAL_THEMES).toHaveLength(20);
+    expect(Object.keys(matrix)).toHaveLength(20);
     await expect(matrix).toMatchFileSnapshot("./__snapshots__/contrast-matrix.json");
   });
 

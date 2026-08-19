@@ -81,13 +81,13 @@ Visible consumer content is not translated by the library. In particular, preset
 
 Token values are **locked** ([Brand–segment matrix gaps](../../wayfinder/tickets/004-brand-segment-matrix-gaps.md): all mints final); this chapter's job is honest classification, not redesign.
 
-- **Text-grade roles** — must meet **4.5:1** against their paired surface in all 16 themes: `foreground`/`background`, `card-foreground`/`card`, `card-soft-foreground`/`card-soft`, `muted-foreground`/`muted` and `/background`, every `*-soft-foreground`/`*-soft` pair, `primary-foreground`/`primary`, `secondary-foreground`/`secondary`, status `*-foreground` pairs.
+- **Text-grade roles** — must meet **4.5:1** against their paired surface in all 20 themes: `foreground`/`background`, `card-foreground`/`card`, `card-soft-foreground`/`card-soft`, `muted-foreground`/`muted` and `/background`, every `*-soft-foreground`/`*-soft` pair, `primary-foreground`/`primary`, `secondary-foreground`/`secondary`, status `*-foreground` pairs.
 - **`feature-foreground` is reclassified as accent/decorative** — the external tints (L ≈ 0.80–0.91 on L ≈ 0.55–0.58 feature panels) are kicker/eyebrow-grade, not body-text-grade. **Text on `feature` panels uses white**, which passes 3:1 large-text/non-text everywhere; body text on feature panels is out of contract.
 - **Known accepted deviations** (documented, not fixed in v1):
   1. Default `--muted-foreground` `oklch(0.5555 0 0)` on white sits at ≈ 4.5:1 — at the AA line, no margin. Do not use `muted-foreground` below 14px.
   2. The brand-independent violet `--ring` falls below 3:1 non-text contrast against some strong external `--feature`/`--primary` fills; the mandatory `ring-offset-2` (white gap) is the mitigation. A per-brand ring re-mint is a **roadmap item**.
   3. External `feature-foreground` tints fail 4.5:1 by design — covered by the reclassification above.
-- **Deliverable at implementation**: a generated per-theme **contrast matrix** (all text-grade pairs × 16 themes) checked as a snapshot test next to the token pipeline's CSS snapshot; new themes/brands must pass the text-grade rules or extend the documented-deviation list explicitly.
+- **Deliverable at implementation**: a generated per-theme **contrast matrix** (all text-grade pairs × 20 themes) checked as a snapshot test next to the token pipeline's CSS snapshot; new themes/brands must pass the text-grade rules or extend the documented-deviation list explicitly.
 
 ## 7 Motion
 
@@ -103,4 +103,4 @@ Per [Testing strategy](../../wayfinder/tickets/013-testing-strategy.md), restate
 - Every spec §7 keyboard behavior has a browser-mode test; the `focusRing` recipe has one shared visual assertion (ring present on `:focus-visible`, absent on mouse focus).
 - The icon-only `aria-label` type enforcement is covered by the **public-API type tests**.
 - String-bearing components get one test per shipped locale asserting the dictionary default renders, plus one prop-override test.
-- The 16-theme contract test covers the contrast matrix snapshot (§6).
+- The 20-theme contract test covers the contrast matrix snapshot (§6).

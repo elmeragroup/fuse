@@ -15,7 +15,7 @@ Directional chapter for `@elmeragroup/ui`: work deliberately deferred out of v1,
 ## 2 Dark mode rollout
 
 - **What**: mint and ship dark token values across the theme matrix, activated by the `data-theme="dark"` axis.
-- **Why deferred**: no product surface requires dark today; minting 16 permutations of dark values without design demand would be speculative. The out-of-scope ruling covers **values only** — the axis itself is v1 architecture.
+- **Why deferred**: no product surface requires dark today; minting 20 permutations of dark values without design demand would be speculative. The out-of-scope ruling covers **values only** — the axis itself is v1 architecture.
 - **Trigger**: a consuming product committing to a dark surface; design supplying (or commissioning) dark palettes.
 - **Already prepared**: `data-theme` is reserved for dark in the attribute cascade (ADR [0002](../adr/0002-theme-attributes.md) — variant/brand/segment use their own attributes, leaving `data-theme` free); the token pipeline ends `themes.css` with a **commented dark-axis placeholder** (not an empty CSS rule); `ColorSchemeScript` on the theme provider is **already functional** (ticket [006](../../wayfinder/tickets/006-theme-provider-api.md)); the `no-tailwind-dark-variant` lint rule keeps components token-driven so dark lands by values alone. The external ref's `.guen-dark` block is recorded as reference input ([token extraction](../../wayfinder/research/003-token-values.md) §1.2) — recorded, not specced, and of limited quality (double-gated, never applied by any code, hex not oklch, status-containers only).
 - **Cost when triggered**: dark values per theme layer in the codegen modules, an extended contrast-matrix snapshot ([accessibility](accessibility.md) §6 applies unchanged), docs picker gains the axis.
@@ -23,17 +23,17 @@ Directional chapter for `@elmeragroup/ui`: work deliberately deferred out of v1,
 ## 3 Visual-regression testing
 
 - **What**: screenshot-based VR over the component demos, joining the publish gate. Leading tool candidate at deferral time: **Playwright + Argos**.
-- **Why deferred**: user call in the testing strategy — v1's assurance is behavioral (role-based + keyboard + 16-theme contract test); VR tooling choice and baseline management were fogged rather than specced.
+- **Why deferred**: user call in the testing strategy — v1's assurance is behavioral (role-based + keyboard + 20-theme contract test); VR tooling choice and baseline management were fogged rather than specced.
 - **Trigger**: first visual regression that the behavioral suite misses, or the docs demo corpus reaching the size where manual review of theme renders stops scaling.
-- **Already prepared**: the demo pipeline is designed VR-ready — plain runnable `.tsx` demos are multi-output (docs source + live render + AI registry + **VR targets**), so the target corpus exists the day a tool is chosen; the 16-permutation matrix page enumerates exactly the theme surface VR should sweep.
+- **Already prepared**: the demo pipeline is designed VR-ready — plain runnable `.tsx` demos are multi-output (docs source + live render + AI registry + **VR targets**), so the target corpus exists the day a tool is chosen; the 20-permutation matrix page enumerates exactly the theme surface VR should sweep.
 - **Completion criteria**: VR added to the **publish** gate (per the CI-gates decision), not the merge gate.
 
-## 4 Additional brands (Steddi, NGE/ngef, Trumf, Elmera Group)
+## 4 Additional brands (Steddi, NGE/ngef, Trumf)
 
-- **What**: theme the brands beyond the five (fkas, fkab, tkas, guen, fkse).
+- **What**: theme the brands beyond the six visual identities (fkas, fkab, tkas, guen, fkse, elma). Corporate Elmera is in v1 as `elma`; Steddi, NGE/ngef, and Trumf remain out of this theme set.
 - **Why deferred**: no product surface renders them as themes today; the effort's ruling was that the architecture must make adding brands **cheap**, not that their themes be specced.
 - **Trigger**: a whitelabel or internal surface onboarding one of these brands.
-- **Already prepared / cost per brand in the current architecture**: adding a brand is a closed, mechanical list — (1) extend the `BRANDS` record and widen the brand type union (illegal-permutation typing extends with it); (2) mint the exact **must-override** subset from [theming](theming.md) §2.5 (external: background/foreground plus complete card, muted, primary, secondary, and feature families; border/input; radius pair; brand pair; internal: brand pair only). Source-level typography remains optional; aliases such as the sidebar-brand pair are not separate coverage obligations; (3) add one TS theme-layer module to the token pipeline, whose generator materializes the full external reset set for nested-scope isolation and uses fallback-by-absence only for missing segment variants; (4) pass or explicitly extend the contrast-matrix and nested-scope snapshots; (5) add the brand logo component — Steddi and Trumf logo components **already ship** in `/icons` per ADR [0004](../adr/0004-phosphor-icons.md); NGE/ngef would be added, while `ElmeraGroupLogo` already ships. No component code changes.
+- **Already prepared / cost per brand in the current architecture**: adding a brand is a closed, mechanical list — (1) extend the `BRANDS` record and widen the brand type union (illegal-permutation typing extends with it); (2) mint the exact **must-override** subset from [theming](theming.md) §2.5 (external: background/foreground plus complete card, muted, primary, secondary, and feature families; border/input; radius pair; brand pair; internal: brand pair only). Source-level typography remains optional; aliases such as the sidebar-brand pair are not separate coverage obligations; (3) add one TS theme-layer module to the token pipeline, whose generator materializes the full external reset set for nested-scope isolation and uses fallback-by-absence only for missing segment variants; (4) pass or explicitly extend the contrast-matrix and nested-scope snapshots; (5) add the brand logo component — Steddi and Trumf logo components are specified in `/icons` per ADR [0004](../adr/0004-phosphor-icons.md); NGE/ngef would be added. `elma` already uses the `BrandLogo` text/`displayName` fallback. No component code changes.
 
 ## 5 Per-brand focus-ring re-mint
 

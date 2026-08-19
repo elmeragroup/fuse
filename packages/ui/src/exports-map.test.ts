@@ -141,7 +141,7 @@ describe("exports map", () => {
   it("keeps /icons as a subpath-only entry with the curated roster", () => {
     const icons = discovered.jsEntries.find((entry) => entry.subpath === "icons");
     expect(icons?.inRootBarrel).toBe(false);
-    expect(icons?.runtimeExports).toEqual(PHOSPHOR_ICON_NAMES);
+    expect(icons?.runtimeExports).toEqual([...PHOSPHOR_ICON_NAMES, "BrandLogo"]);
     expect(icons?.runtimeExports).not.toContain("Icon");
   });
 });

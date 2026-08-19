@@ -39,6 +39,8 @@ export function generatedFacadeSource(names: readonly PhosphorIconName[]): strin
     .join("\n");
   return `${GENERATED_FILE_HEADER}export type { ElmeraIconProps } from "./icons/create-elmera-icon";
 ${iconExports}
+export type { BrandLogoProps } from "./icons/brand-logo";
+export { BrandLogo } from "./icons/brand-logo";
 `;
 }
 

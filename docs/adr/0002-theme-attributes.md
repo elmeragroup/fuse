@@ -4,7 +4,7 @@ Date: 2026-08-17. Status: accepted.
 
 ## Context
 
-Themes are variant × brand × segment (16 permutations); both reference apps select themes with bare classes (`.fkas`, `.fkas-c`, `.v2 .fkas`). The token contract (ADR 0001) reserves `data-theme` for a future light/dark axis. A throwaway prototype (`wayfinder/prototypes/002-theming-cascade.html`) generated all candidate mechanisms' CSS from one value table and compared them live, including scoped-subtree and portal behavior.
+Themes are variant × brand × segment (20 permutations); both reference apps select themes with bare classes (`.fkas`, `.fkas-c`, `.v2 .fkas`). The token contract (ADR 0001) reserves `data-theme` for a future light/dark axis. A throwaway prototype (`wayfinder/prototypes/002-theming-cascade.html`) generated all candidate mechanisms' CSS from one value table and compared them live, including scoped-subtree and portal behavior.
 
 ## Decision
 
@@ -17,7 +17,7 @@ Theme markers are **three data attributes** — `data-theme-variant`, `data-them
 
 ## Consequences
 
-- 13 rules cover 16 permutations; adding a brand adds ~2 rules (accent pointer + external palette), satisfying "adding brands must be cheap".
+- 15 rules cover 20 permutations; adding a brand adds ~2 rules (accent pointer + external palette), satisfying "adding brands must be cheap".
 - Works unchanged with Tailwind v4 `@theme inline` (utilities reference `var(--token)` at the use site, re-resolving per scope).
 - Portals must render *inside* the themed scope or they silently take the outer theme — the theme-provider API owns that discipline.
 - Each axis is independently visible on the element and independently switchable at runtime.

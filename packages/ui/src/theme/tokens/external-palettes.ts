@@ -1,4 +1,6 @@
+import { EXTERNAL_RESET_KEYS, pickTokenKeys } from "./contract";
 import type { TokenContract } from "./contract";
+import { DEFAULTS } from "./defaults";
 import { WHITE } from "./primitives";
 import type { BrandCode } from "./themes";
 
@@ -109,6 +111,9 @@ export const EXTERNAL_PALETTES = {
     "radius-button": "1.8125rem",
     "font-heading": "var(--font-sans)",
   },
+  // Reviewed exception: grayscale default-copy for isolation/must-override, not a
+  // template for inventing other customer palettes. No segment delta.
+  elma: pickTokenKeys(DEFAULTS, EXTERNAL_RESET_KEYS),
 } as const satisfies Record<ExternalBrandCode, Partial<TokenContract>>;
 
 export function externalPalette(brand: BrandCode): Partial<TokenContract> {

@@ -27,6 +27,16 @@ test("ThemeInput and ThemeSlug reject illegal pinned-brand permutations", () => 
     brand: "fkse";
     segment: "private";
   }>().toExtend<ThemeInput>();
+  expectTypeOf<{
+    variant: "internal";
+    brand: "elma";
+    segment: "private";
+  }>().toExtend<ThemeInput>();
+  expectTypeOf<{
+    variant: "external";
+    brand: "elma";
+    segment: "company";
+  }>().toExtend<ThemeInput>();
 
   expectTypeOf<{
     variant: "internal";
@@ -41,6 +51,8 @@ test("ThemeInput and ThemeSlug reject illegal pinned-brand permutations", () => 
 
   expectTypeOf<"internal-fkab-company">().toExtend<ThemeSlug>();
   expectTypeOf<"external-fkse-private">().toExtend<ThemeSlug>();
+  expectTypeOf<"internal-elma-private">().toExtend<ThemeSlug>();
+  expectTypeOf<"external-elma-company">().toExtend<ThemeSlug>();
   expectTypeOf<"internal-fkab-private">().not.toExtend<ThemeSlug>();
   expectTypeOf<"external-fkse-company">().not.toExtend<ThemeSlug>();
 });

@@ -1,6 +1,6 @@
 # Theming
 
-Normative chapter for `@elmeragroup/ui`: the token contract, the cascade mechanism, the complete value matrix for all 16 themes, the theme provider API, and the token pipeline. Sources: [Canonical token contract](../../wayfinder/tickets/001-canonical-token-contract.md) + [ADR 0001](../adr/0001-canonical-token-contract.md), [Theming cascade prototype](../../wayfinder/tickets/002-theming-cascade-prototype.md) + [ADR 0002](../adr/0002-theme-attributes.md), [Brand–segment matrix gaps](../../wayfinder/tickets/004-brand-segment-matrix-gaps.md), [Theme value matrix](../../wayfinder/research/004-theme-value-matrix.md), [Theme provider API](../../wayfinder/tickets/006-theme-provider-api.md) + [ADR 0003](../adr/0003-data-only-theme-provider.md), [Token pipeline](../../wayfinder/tickets/018-token-pipeline.md).
+Normative chapter for `@elmeragroup/ui`: the token contract, the cascade mechanism, the complete value matrix for all 20 themes, the theme provider API, and the token pipeline. Sources: [Canonical token contract](../../wayfinder/tickets/001-canonical-token-contract.md) + [ADR 0001](../adr/0001-canonical-token-contract.md), [Theming cascade prototype](../../wayfinder/tickets/002-theming-cascade-prototype.md) + [ADR 0002](../adr/0002-theme-attributes.md), [Brand–segment matrix gaps](../../wayfinder/tickets/004-brand-segment-matrix-gaps.md), [Theme value matrix](../../wayfinder/research/004-theme-value-matrix.md), [Theme provider API](../../wayfinder/tickets/006-theme-provider-api.md) + [ADR 0003](../adr/0003-data-only-theme-provider.md), [Token pipeline](../../wayfinder/tickets/018-token-pipeline.md).
 
 Cross-links: package layout, exports, and where `themes.css` ships → [architecture](architecture.md). Contrast obligations of token pairings (text-grade roles, documented deviations, contrast-matrix snapshot) → [accessibility](accessibility.md) §6. CSS size budget for the emitted theme stylesheet → [performance](performance.md).
 
@@ -8,9 +8,9 @@ Cross-links: package layout, exports, and where `themes.css` ships → [architec
 
 - A **theme** is a concrete permutation of three axes:
   - **Variant** — audience axis: `internal` (grayscale theme for internal tools; brand appears only in accents/logos) or `external` (full brand look-and-feel for customer-facing apps).
-  - **Brand** — one of five consumer-facing energy brands with fixed four-character codes: Fjordkraft (`fkas`), TrøndelagKraft (`tkas`), Gudbrandsdal Energi (`guen`), Fjordkraft Företag (`fkab`), Fjordkraft Konsument (`fkse`). `fkse` renders under the consumer-facing trade name **Telinet** (logo and palette) while keeping the `fkse` code everywhere in code, slugs, attributes, and types; brand metadata carries `displayName: "Telinet"` (§7.5).
+  - **Brand** — a visual-identity code: the five consumer-facing energy brands plus corporate Elmera, with fixed four-character codes: Fjordkraft (`fkas`), TrøndelagKraft (`tkas`), Gudbrandsdal Energi (`guen`), Fjordkraft Företag (`fkab`), Fjordkraft Konsument (`fkse`), Elmera (`elma`). `fkse` renders under the consumer-facing trade name **Telinet** (logo and palette) while keeping the `fkse` code everywhere in code, slugs, attributes, and types; brand metadata carries `displayName: "Telinet"` (§7.5). `elma` carries `displayName: "Elmera"`. Steddi, NGE, and Trumf remain outside this theme set.
   - **Segment** — customer class: `private` (B2C) or `company` (B2B).
-- **Pinned brands**: `fkab` is pinned to `company`; `fkse` is pinned to `private`. The other three brands span both segments. This yields **16 legal themes** at v1 (8 internal, 8 external). Illegal permutations (`*-fkab-private`, `*-fkse-company`) are handled per §6.
+- **Pinned brands**: `fkab` is pinned to `company`; `fkse` is pinned to `private`. The other four brands span both segments. This yields **20 legal themes** at v1 (10 internal, 10 external). Illegal permutations (`*-fkab-private`, `*-fkse-company`) are handled per §6.
 - **Theme slug**: the canonical string name of a theme, `<variant>-<brand>-<segment>` — e.g. `internal-fkas-company`, `external-tkas-private`. Slugs are derived, never authoritative: the decomposed axes are the primary representation (§7.1).
 - **Dark is not an axis of the theme.** Color scheme (light/dark) is an orthogonal, layered axis reserved on the `data-theme` attribute (§3.6, §7.8). No dark values are specced at v1; the machinery ships functional and valueless.
 
@@ -54,7 +54,7 @@ The contract is the fixed set of CSS custom-property names every component consu
 ### 2.3 Public primitives
 
 - **Neutral ramp** `--neutral-50` … `--neutral-950` — Tailwind convention (50 lightest → 950 darkest), pure gray (chroma 0). Pure white is `--background`, not a ramp member. The legacy inverted ramp (0 = black) and its warm hue on steps 70–95 are retired.
-- **Brand accents** `--brand-<code>` / `--brand-<code>-foreground` for all five brand codes, defined globally at `:root` and never re-themed. Every accent `-foreground` is white `oklch(1 0 0)`.
+- **Brand accents** `--brand-<code>` / `--brand-<code>-foreground` for all six visual-identity codes, defined globally at `:root` and never re-themed. Every accent `-foreground` is white `oklch(1 0 0)`.
 
 Values are in §4.2.
 
@@ -85,7 +85,7 @@ The library ships a **complete neutral default layer at `:root`** — every cont
 - **Internal themes must supply**: `--brand` and `--brand-foreground`, satisfied by the brand-pointer layer. `--sidebar-brand` and `--sidebar-brand-foreground` are complete defaults that resolve through that pair and therefore are not separate coverage obligations.
 - Statuses, ring, charts, and syntax colors stay shared-by-default; themes *may* override them but none does at v1.
 
-Must-override is a **theme-level** obligation, not a per-module one. Individual layer modules are `Partial<TokenContract>` and never have to carry the full set themselves (internal themes, for instance, satisfy their brand-pair obligation via the brand-pointer layer). Enforcement happens at **compose time** in the token pipeline — each of the 16 themes is resolved through its layers and the build fails if a resolved theme lacks any must-override token (§8) — and is re-checked at the CSS level by the theme-contract test.
+Must-override is a **theme-level** obligation, not a per-module one. Individual layer modules are `Partial<TokenContract>` and never have to carry the full set themselves (internal themes, for instance, satisfy their brand-pair obligation via the brand-pointer layer). Enforcement happens at **compose time** in the token pipeline — each of the 20 themes is resolved through its layers and the build fails if a resolved theme lacks any must-override token (§8) — and is re-checked at the CSS level by the theme-contract test.
 
 ### 2.6 Legacy bridging: clean break
 
@@ -119,22 +119,22 @@ Theme markers are three data attributes, **placeable on any element** — no sel
 ```
 
 - `data-theme-variant`: `internal` | `external`
-- `data-theme-brand`: `fkas` | `tkas` | `guen` | `fkab` | `fkse`
+- `data-theme-brand`: `fkas` | `tkas` | `guen` | `fkab` | `fkse` | `elma`
 - `data-theme-segment`: `private` | `company`
 
 Rejected alternatives (ADR 0002): a single slug attribute (needs `^=`/`*=` substring selectors for axis rules and occupies the reserved `data-theme`); classes (equal power, but bare `.company`/`.private` collide with app CSS and are illegible in DevTools). Each axis is independently visible on the element and independently switchable at runtime.
 
-### 3.2 Layer structure — 13 theme rules cover 16 themes
+### 3.2 Layer structure — 15 theme rules cover 20 themes
 
 The emitted theme CSS has exactly five layers:
 
 1. **`:root` defaults** (1 rule) — the complete neutral default layer (§4.2). This layer *is* the internal look, by design.
-2. **Brand pointers** (5 rules) — keyed on brand alone, serving both variants: `[data-theme-brand="<code>"] { --brand: var(--brand-<code>); --brand-foreground: var(--brand-<code>-foreground); }`.
+2. **Brand pointers** (6 rules) — keyed on brand alone, serving both variants: `[data-theme-brand="<code>"] { --brand: var(--brand-<code>); --brand-foreground: var(--brand-<code>-foreground); }`.
 3. **Internal reset** (1 rule) — `[data-theme-variant="internal"]` re-declares the exact `EXTERNAL_RESET_KEYS` set with values copied from defaults: `background`, `foreground`; all card, muted, primary, and secondary tokens; all feature tokens; `border`, `input`; `radius`, `radius-button`; and `font-heading`. It does **not** reset primitives, the brand pair, or roles external palettes never override. This is what makes an internal scope nested under an external scope return to internal values while still receiving its layer-2 brand pointer.
-4. **External brand palettes** (5 rules) — `[data-theme-variant="external"][data-theme-brand="<code>"]`; each emitted rule contains every `EXTERNAL_RESET_KEYS` declaration, taking a brand value where its source palette supplies one and the `DEFAULTS` value otherwise. This materialization is mandatory scope isolation: an inner external scope must reset every value an outer external/segment layer could have changed. fkab gets its **own selector** carrying a generator-level copy of the fkas value set (permanent alias, §5).
-5. **Segment deltas** (1 rule) — only where values genuinely differ: `[data-theme-variant="external"][data-theme-brand="fkas"][data-theme-segment="company"]` is the sole delta at v1.
+4. **External brand palettes** (6 rules) — `[data-theme-variant="external"][data-theme-brand="<code>"]`; each emitted rule contains every `EXTERNAL_RESET_KEYS` declaration, taking a brand value where its source palette supplies one and the `DEFAULTS` value otherwise. This materialization is mandatory scope isolation: an inner external scope must reset every value an outer external/segment layer could have changed. fkab gets its **own selector** carrying a generator-level copy of the fkas value set (permanent alias, §5). `elma` gets its **own selector** carrying a generator-level copy of `DEFAULTS` for the reset set (reviewed must-override/isolation exception, not a template for inventing other customer palettes).
+5. **Segment deltas** (1 rule) — only where values genuinely differ: `[data-theme-variant="external"][data-theme-brand="fkas"][data-theme-segment="company"]` is the sole delta at v1. `elma` has no segment delta.
 
-The count is exact: 1 + 5 + 1 + 5 + 1 = **13 emitted theme rules**, the now-full internal rule counting as 1. Every rule owns its selector — the generator never merges layers or brands into shared selectors; deduplication is allowed only in the TS source modules (§8). Rules grow with **value differences, not permutations**. Adding a brand adds ~2 rules (accent pointer + external palette). The reserved dark-axis placeholder (§7.8) is a comment, not a fourteenth CSS rule.
+The count is exact: 1 + 6 + 1 + 6 + 1 = **15 emitted theme rules**, the now-full internal rule counting as 1. Every rule owns its selector — the generator never merges layers or brands into shared selectors; deduplication is allowed only in the TS source modules (§8). Rules grow with **value differences, not permutations**. Adding a brand adds ~2 rules (accent pointer + external palette). The reserved dark-axis placeholder (§7.8) is a comment, not a sixteenth CSS rule.
 
 ### 3.3 Fallback by absence
 
@@ -278,7 +278,7 @@ Neutral ramp (internal ramp renumbered to Tailwind order, normalized to pure gra
 | `--neutral-400` | `oklch(0.66 0 0)` | `--neutral-900` | `oklch(0.23 0 0)` |
 | | | `--neutral-950` | `oklch(0.16 0 0)` |
 
-Brand accents (all five, `:root`, never re-themed; every `-foreground` is white `oklch(1 0 0)`):
+Brand accents (all six, `:root`, never re-themed; every `-foreground` is white `oklch(1 0 0)`):
 
 | Token | Value | Provenance |
 |---|---|---|
@@ -287,6 +287,7 @@ Brand accents (all five, `:root`, never re-themed; every `-foreground` is white 
 | `--brand-guen` | `oklch(0.21 0.0399 265.73)` | [ref] |
 | `--brand-fkab` | `var(--brand-fkas)` | **permanent alias by design** (not a gap, no design task) |
 | `--brand-fkse` | `oklch(0.4816 0.0908 240.16)` | [mint] — Telinet blue (external fkse `--primary`) |
+| `--brand-elma` | `oklch(0.29 0.05 220.14)` | [user] — reviewed Elmera brand pair (~13.93:1 on white) |
 
 #### 4.2.2 Role-token defaults
 
@@ -327,9 +328,9 @@ Brand accents (all five, `:root`, never re-themed; every `-foreground` is white 
 | `--font-sans` | `Roboto, ui-sans-serif, system-ui, sans-serif` | [ref] |
 | `--font-heading` | `var(--font-sans)` | fallback semantics |
 
-### 4.3 Layer 2 — brand pointers (5 rules, both variants)
+### 4.3 Layer 2 — brand pointers (6 rules, both variants)
 
-For each of `fkas`, `tkas`, `guen`, `fkab`, `fkse`:
+For each of `fkas`, `tkas`, `guen`, `fkab`, `fkse`, `elma`:
 
 ```css
 [data-theme-brand="<code>"] {
@@ -340,11 +341,11 @@ For each of `fkas`, `tkas`, `guen`, `fkab`, `fkse`:
 
 ### 4.4 Layer 3 — internal variant (1 rule)
 
-`[data-theme-variant="internal"]` introduces no new design values. It re-declares `EXTERNAL_RESET_KEYS` from §3.2 with literals copied from `DEFAULTS`; it must not reset `--brand`/`--brand-foreground`, because the earlier brand-pointer layer is meant to survive. Primitives and shared roles that no external layer overrides are also omitted. All eight internal permutations resolve as defaults + internal reset + brand pointer. Segment has no internal value axis.
+`[data-theme-variant="internal"]` introduces no new design values. It re-declares `EXTERNAL_RESET_KEYS` from §3.2 with literals copied from `DEFAULTS`; it must not reset `--brand`/`--brand-foreground`, because the earlier brand-pointer layer is meant to survive. Primitives and shared roles that no external layer overrides are also omitted. All ten internal permutations resolve as defaults + internal reset + brand pointer. Segment has no internal value axis.
 
-### 4.5 Layer 4 — external variant per brand (4 palettes + 1 alias)
+### 4.5 Layer 4 — external variant per brand (4 palettes + 1 alias + 1 default-copy)
 
-Selector: `[data-theme-variant="external"][data-theme-brand="<code>"]`. fkab has **no palette of its own in source**: the generator emits the fkas value set under fkab's **own selector** — a generator-level copy, permanent alias by design, indefinitely. Before emission, every external source palette is overlaid on `pick(DEFAULTS, EXTERNAL_RESET_KEYS)`, so all five rules directly declare the complete reset set. This prevents values from a themed ancestor—including fkas's heading font and the company segment delta—from leaking into a nested external scope. Deduplication is allowed only in the source modules, never via shared selectors in the output; the emitted rule count stays exactly 13 (§3.2).
+Selector: `[data-theme-variant="external"][data-theme-brand="<code>"]`. fkab has **no palette of its own in source**: the generator emits the fkas value set under fkab's **own selector** — a generator-level copy, permanent alias by design, indefinitely. `elma` has **no unique customer palette**: the generator emits `pick(DEFAULTS, EXTERNAL_RESET_KEYS)` under elma's **own selector** so compose-time must-override and nested-scope isolation still pass. **Reviewed exception:** this is not a template for inventing other customer external palettes. Before emission, every external source palette is overlaid on `pick(DEFAULTS, EXTERNAL_RESET_KEYS)`, so all six rules directly declare the complete reset set. This prevents values from a themed ancestor—including fkas's heading font and the company segment delta—from leaking into a nested external scope. Deduplication is allowed only in the source modules, never via shared selectors in the output; the emitted rule count stays exactly 15 (§3.2).
 
 Tokens not listed per brand *(inherit)* from `:root`: popover pair, accent pair, statuses, ring, sidebar family, right-panel, charts, syntax colors.
 
@@ -401,19 +402,21 @@ All `[ref]` unless marked. Two notational conventions in this table:
 | `--feature-bright` | `oklch(0.7871 0.0657 225.82)` |
 | `--feature-foreground` | `oklch(0.90856 0.05958 225.03)` |
 
-### 4.7 Composition matrix — how each of the 16 themes resolves
+### 4.7 Composition matrix — how each of the 20 themes resolves
 
 | Theme slug | Layers applied | Notes |
 |---|---|---|
 | `internal-fkas-private` / `-company` | 1 + 2(fkas) + 3 | segment axis valueless internally |
 | `internal-tkas-private` / `-company` | 1 + 2(tkas) + 3 | |
 | `internal-guen-private` / `-company` | 1 + 2(guen) + 3 | sidebar accent = navy `--brand` on the light sidebar (old dark-sidebar orange retired) |
+| `internal-elma-private` / `-company` | 1 + 2(elma) + 3 | grayscale defaults + Elmera brand pair; no segment delta |
 | `internal-fkab-company` | 1 + 2(fkab→fkas alias) + 3 | `internal-fkab-private` is **illegal** (pinned) |
 | `internal-fkse-private` | 1 + 2(fkse) + 3 | first time fkse has internal accents; `internal-fkse-company` **illegal** |
 | `external-fkas-private` | 1 + 2(fkas) + 4(fkas) | |
 | `external-fkas-company` | 1 + 2(fkas) + 4(fkas) + 5 | the only segment delta |
 | `external-tkas-private` / `-company` | 1 + 2(tkas) + 4(tkas) | company *(inherits private — no rule)* |
 | `external-guen-private` / `-company` | 1 + 2(guen) + 4(guen) | company *(inherits private — no rule)* |
+| `external-elma-private` / `-company` | 1 + 2(elma) + 4(default-copy) | reviewed isolation exception; company *(inherits private — no rule)* |
 | `external-fkab-company` | 1 + 2(fkab) + 4(fkas values) | permanent alias by design; `external-fkab-private` **illegal** |
 | `external-fkse-private` | 1 + 2(fkse) + 4(fkse) | renders as Telinet (displayName + logo); `external-fkse-company` **illegal** |
 
@@ -422,6 +425,7 @@ All `[ref]` unless marked. Two notational conventions in this table:
 - **All minted values are final** (primary-soft tints, fkse accents, light-sidebar fills) — no provisional flags, no pending design review. Contrast consequences of these locked values are classified, not redesigned, in [accessibility](accessibility.md) §6.
 - **fkab is a permanent, deliberate alias of fkas** — "100% how it should be for the foreseeable future". Not a gap, no design task, no flag. (This superseded ADR 0001's original "design-input gap" framing; the ADR is amended.)
 - **fkse** keeps code `fkse` everywhere; only presentation metadata (`displayName: "Telinet"`, Telinet logo) differs.
+- **elma** is corporate Elmera, not pinned, four legal themes. External `elma` copies internal grayscale defaults (`pick(DEFAULTS, EXTERNAL_RESET_KEYS)`) plus the reviewed brand pair; this isolation/must-override exception is not a template for inventing other customer palettes. No segment delta.
 - The library's sidebar defaults spec the **new light sidebar**, not the dark one in the internal reference; guen's dark-sidebar orange accent is retired.
 
 ## 6 Illegal permutations
@@ -508,7 +512,7 @@ No framework needs an inline script or hydration suppression for the brand theme
 
 ### 7.4 `ThemeScope`
 
-Escape hatch for per-request/multi-theme subtrees (the sms-accept per-customer pattern; the docs playground's 16-permutation grid). One component that **fuses** the three data attributes and a nested provider context so CSS and `useTheme()` cannot drift apart.
+Escape hatch for per-request/multi-theme subtrees (the sms-accept per-customer pattern; the docs playground's 20-permutation grid). One component that **fuses** the three data attributes and a nested provider context so CSS and `useTheme()` cannot drift apart.
 
 - Props: `{ theme: ThemeInput; children?: ReactNode }` plus the native `div` props/ref and base-ui `useRender`'s `render` prop; theme data attributes generated by `themeAttributes(theme)` are owned by the component and cannot be overridden through the remaining props.
 - Polymorphic via base-ui **`useRender`** (`render` prop + `mergeProps`, default tag `div`). Standing convention: **all library polymorphism uses `useRender`, never an `as` prop**.
@@ -521,7 +525,7 @@ Escape hatch for per-request/multi-theme subtrees (the sms-accept per-customer p
 Exported readonly record with this exact value and inferred literal types:
 
 ```ts
-type BrandCode = "fkas" | "tkas" | "guen" | "fkab" | "fkse";
+type BrandCode = "fkas" | "tkas" | "guen" | "fkab" | "fkse" | "elma";
 type ThemeSegment = "private" | "company";
 
 const BRANDS = {
@@ -530,6 +534,7 @@ const BRANDS = {
   guen: { code: "guen", displayName: "Gudbrandsdal Energi", segments: ["private", "company"] },
   fkab: { code: "fkab", displayName: "Fjordkraft Företag", segments: ["company"] },
   fkse: { code: "fkse", displayName: "Telinet", segments: ["private"] },
+  elma: { code: "elma", displayName: "Elmera", segments: ["private", "company"] },
 } as const satisfies Record<BrandCode, {
   code: BrandCode;
   displayName: string;
@@ -545,14 +550,14 @@ Logo components live with the icon system, keyed by the same codes.
 
   ```ts
   type ThemeVariant = "internal" | "external";
-  type BrandCode = "fkas" | "tkas" | "guen" | "fkab" | "fkse";
+  type BrandCode = "fkas" | "tkas" | "guen" | "fkab" | "fkse" | "elma";
   type ThemeSegment = "private" | "company";
   type ThemeInput =
-    | { variant: ThemeVariant; brand: "fkas" | "tkas" | "guen"; segment: "private" | "company" }
+    | { variant: ThemeVariant; brand: "fkas" | "tkas" | "guen" | "elma"; segment: "private" | "company" }
     | { variant: ThemeVariant; brand: "fkab"; segment: "company" }
     | { variant: ThemeVariant; brand: "fkse"; segment: "private" };
   type ThemeSlug =
-    | `${ThemeVariant}-${"fkas" | "tkas" | "guen"}-${ThemeSegment}`
+    | `${ThemeVariant}-${"fkas" | "tkas" | "guen" | "elma"}-${ThemeSegment}`
     | `${ThemeVariant}-fkab-company`
     | `${ThemeVariant}-fkse-private`;
   type SupportedLocale = "nb-NO" | "sv-SE" | "en-US" | "fi-FI";
@@ -598,6 +603,6 @@ Codegen across the board — hand-authored theme CSS is prohibited. The value ma
 
 1. **Source shape**: `TokenContract` contains all role tokens except locked values. `DEFAULTS` is `Required<TokenContract>`; every other layer module is `Partial<TokenContract>`. `EXTERNAL_RESET_KEYS` is the literal tuple from §3.2 and must contain every key any external palette or segment delta can override; a contract test compares that computed union to the tuple so a new override cannot bypass scope isolation. Brand pointers, external palettes, and segment deltas are separate data modules. Locked tokens (§2.4) are not accepted by layer types.
 2. **Coverage before fallback**: `composeTheme(theme)` first records the keys supplied by all non-default layers, validates the appropriate must-override set from §2.5 against that record, and only then overlays those layers on `DEFAULTS`. Applying defaults first and checking the final object is forbidden because it masks missing brand data. The internal reset is generated by picking `EXTERNAL_RESET_KEYS` from `DEFAULTS`; it is never hand-maintained.
-3. **Generator**: emits the 13-rule, five-layer structure of §3.2 — defaults → brand pointers → internal reset → external palettes → segment deltas, fallback by absence — followed by the commented `[data-theme="dark"]` placeholder (§7.8). The internal reset emits `pick(DEFAULTS, EXTERNAL_RESET_KEYS)`; every external brand rule emits that same default pick overlaid with its source palette; segment deltas remain partial final overrides. Every selector remains separate, including fkab's copied external palette.
-4. **Execution**: generation runs in the turbo build task; **generated output is not committed**. The committed, reviewable artifact is a CSS snapshot. Contract tests cover all 16 themes and every outer/inner combination of the 16 themes (**256 nested-scope cases**), asserting computed reset-key values, the inner brand pointer, exactly 13 CSS rule nodes, the terminal dark-placeholder comment, and the per-theme contrast matrix.
-5. **Distribution**: a **single `themes.css` entry** containing all 16 permutations (tiny by construction — 13 CSS rules plus one comment), included in both distribution modes ([architecture](architecture.md)). Per-theme file splitting is rejected as premature at this size; size budget → [performance](performance.md).
+3. **Generator**: emits the 15-rule, five-layer structure of §3.2 — defaults → brand pointers → internal reset → external palettes → segment deltas, fallback by absence — followed by the commented `[data-theme="dark"]` placeholder (§7.8). The internal reset emits `pick(DEFAULTS, EXTERNAL_RESET_KEYS)`; every external brand rule emits that same default pick overlaid with its source palette; segment deltas remain partial final overrides. Every selector remains separate, including fkab's copied external palette and elma's default-copy external palette.
+4. **Execution**: generation runs in the turbo build task; **generated output is not committed**. The committed, reviewable artifact is a CSS snapshot. Contract tests cover all 20 themes and every outer/inner combination of the 20 themes (**400 nested-scope cases**), asserting computed reset-key values, the inner brand pointer, exactly 15 CSS rule nodes, the terminal dark-placeholder comment, and the per-theme contrast matrix.
+5. **Distribution**: a **single `themes.css` entry** containing all 20 permutations (tiny by construction — 15 CSS rules plus one comment), included in both distribution modes ([architecture](architecture.md)). Per-theme file splitting is rejected as premature at this size; size budget → [performance](performance.md).

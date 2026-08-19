@@ -4,11 +4,11 @@ Ubiquitous language for the `@elmeragroup/ui` whitelabel component library effor
 
 ## Glossary
 
-- **Brand**: one of the five consumer-facing energy brands, each with a fixed four-character code: Fjordkraft (`fkas`), TrøndelagKraft (`tkas`), Gudbrandsdal Energi (`guen`), Fjordkraft Företag (`fkab`), Fjordkraft Konsument (`fkse`). Note: `fkse` renders under the consumer-facing trade name **Telinet** (logo and palette) while keeping the `fkse` code. Brands found in reference code but outside this effort's scope: Steddi, NGE/ngef, Trumf, Elmera Group.
+- **Brand**: a visual-identity code used on `data-theme-brand` — the five consumer-facing energy brands plus corporate Elmera (`elma`), each with a fixed four-character code: Fjordkraft (`fkas`), TrøndelagKraft (`tkas`), Gudbrandsdal Energi (`guen`), Fjordkraft Företag (`fkab`), Fjordkraft Konsument (`fkse`), Elmera (`elma`). Note: `fkse` renders under the consumer-facing trade name **Telinet** (logo and palette) while keeping the `fkse` code. Brands found in reference code but outside this theme set: Steddi, NGE/ngef, Trumf.
 - **Segment**: the customer class a surface serves — `private` (B2C) or `company` (B2B).
-- **Pinned brand**: a brand that exists in only one segment. `fkab` is pinned to `company`; `fkse` is pinned to `private`. The other three brands span both segments. `fkab` shares Fjordkraft's (`fkas`) visual identity by deliberate, permanent policy — it is an alias, not a missing palette.
+- **Pinned brand**: a brand that exists in only one segment. `fkab` is pinned to `company`; `fkse` is pinned to `private`. The other four brands span both segments. `fkab` shares Fjordkraft's (`fkas`) visual identity by deliberate, permanent policy — it is an alias, not a missing palette.
 - **Variant**: the audience axis of a theme — `internal` (grayscale theme for internal tools, brand appears only in accents/logos) or `external` (full brand look-and-feel for customer-facing apps).
-- **Theme**: a concrete permutation of variant × brand × segment, e.g. `internal-fkas-company`, `external-tkas-private`. 16 permutations exist at v1 (8 internal, 8 external).
+- **Theme**: a concrete permutation of variant × brand × segment, e.g. `internal-fkas-company`, `external-tkas-private`, `internal-elma-private`. 20 permutations exist at v1 (10 internal, 10 external).
 - **Theme slug**: the canonical string name of a theme, `<variant>-<brand>-<segment>`.
 - **Token / token contract**: a CSS custom property that components consume (e.g. a primary color role). The *contract* is the fixed set of token names; themes vary values, never names. The library ships complete defaults; a theme overrides a subset.
 - **Role token**: a semantic, themable token named for its job (`--primary`, `--card`, `--error`), following the shadcn grammar of base + `-foreground` pairs.

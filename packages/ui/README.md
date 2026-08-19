@@ -1,6 +1,6 @@
 # `@elmeragroup/ui`
 
-Whitelabel React components for Elmera Group's energy brands. One package, 16 theme permutations, ESM-only.
+Whitelabel React components for Elmera Group's energy brands and corporate Elmera. One package, 20 theme permutations, ESM-only.
 
 ## Tailwind v4
 

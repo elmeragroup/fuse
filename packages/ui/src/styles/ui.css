@@ -102,6 +102,8 @@
   --color-brand-fkab-foreground: var(--brand-fkab-foreground);
   --color-brand-fkse: var(--brand-fkse);
   --color-brand-fkse-foreground: var(--brand-fkse-foreground);
+  --color-brand-elma: var(--brand-elma);
+  --color-brand-elma-foreground: var(--brand-elma-foreground);
 
   --radius-xs: calc(var(--radius) - 6px);
   --radius-sm: calc(var(--radius) - 4px);

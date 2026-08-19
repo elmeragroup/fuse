@@ -1,5 +1,5 @@
 export const THEME_VARIANTS = ["internal", "external"] as const;
-export const BRAND_CODES = ["fkas", "tkas", "guen", "fkab", "fkse"] as const;
+export const BRAND_CODES = ["fkas", "tkas", "guen", "fkab", "fkse", "elma"] as const;
 export const THEME_SEGMENTS = ["private", "company"] as const;
 
 export type ThemeVariant = (typeof THEME_VARIANTS)[number];
@@ -7,12 +7,12 @@ export type BrandCode = (typeof BRAND_CODES)[number];
 export type ThemeSegment = (typeof THEME_SEGMENTS)[number];
 
 export type ThemeInput =
-  | { variant: ThemeVariant; brand: "fkas" | "tkas" | "guen"; segment: ThemeSegment }
+  | { variant: ThemeVariant; brand: "fkas" | "tkas" | "guen" | "elma"; segment: ThemeSegment }
   | { variant: ThemeVariant; brand: "fkab"; segment: "company" }
   | { variant: ThemeVariant; brand: "fkse"; segment: "private" };
 
 export type ThemeSlug =
-  | `${ThemeVariant}-${"fkas" | "tkas" | "guen"}-${ThemeSegment}`
+  | `${ThemeVariant}-${"fkas" | "tkas" | "guen" | "elma"}-${ThemeSegment}`
   | `${ThemeVariant}-fkab-company`
   | `${ThemeVariant}-fkse-private`;
 
@@ -53,7 +53,7 @@ export function parseThemeSlug(slug: string): ThemeInput | null {
     }
     return { variant, brand, segment };
   }
-  if (brand === "fkas" || brand === "tkas" || brand === "guen") {
+  if (brand === "fkas" || brand === "tkas" || brand === "guen" || brand === "elma") {
     return { variant, brand, segment };
   }
   return null;
@@ -65,6 +65,7 @@ export const BRANDS = {
   guen: { code: "guen", displayName: "Gudbrandsdal Energi", segments: ["private", "company"] },
   fkab: { code: "fkab", displayName: "Fjordkraft Företag", segments: ["company"] },
   fkse: { code: "fkse", displayName: "Telinet", segments: ["private"] },
+  elma: { code: "elma", displayName: "Elmera", segments: ["private", "company"] },
 } as const satisfies Record<
   BrandCode,
   {
@@ -81,6 +82,8 @@ export const LEGAL_THEMES = [
   { variant: "internal", brand: "tkas", segment: "company" },
   { variant: "internal", brand: "guen", segment: "private" },
   { variant: "internal", brand: "guen", segment: "company" },
+  { variant: "internal", brand: "elma", segment: "private" },
+  { variant: "internal", brand: "elma", segment: "company" },
   { variant: "internal", brand: "fkab", segment: "company" },
   { variant: "internal", brand: "fkse", segment: "private" },
   { variant: "external", brand: "fkas", segment: "private" },
@@ -89,6 +92,8 @@ export const LEGAL_THEMES = [
   { variant: "external", brand: "tkas", segment: "company" },
   { variant: "external", brand: "guen", segment: "private" },
   { variant: "external", brand: "guen", segment: "company" },
+  { variant: "external", brand: "elma", segment: "private" },
+  { variant: "external", brand: "elma", segment: "company" },
   { variant: "external", brand: "fkab", segment: "company" },
   { variant: "external", brand: "fkse", segment: "private" },
 ] as const satisfies readonly ThemeInput[];

@@ -146,7 +146,7 @@ The variant-to-source mapping is exact and prefers the internal snapshot where b
 
 Steddi has only one pinned glyph, so both variants intentionally render that same source until a separately licensed wordmark is added. All logo variants use the same optional-title accessibility behavior as bespoke icons. Their SVG paint is copied unchanged: fixed official colors stay fixed, while existing `currentColor` artwork remains consumer-colorable. Neither form is remapped to theme role tokens.
 
-`BrandLogo` maps `fkas` and `fkab` to Fjordkraft, `tkas` to TrøndelagKraft, `guen` to Gudbrandsdal Energi, and `fkse` to Telinet. It is an exhaustive switch with a `never` assertion and reads no context; consumers pass the brand explicitly.
+`BrandLogo` maps `fkas` and `fkab` to Fjordkraft, `tkas` to TrøndelagKraft, `guen` to Gudbrandsdal Energi, and `fkse` to Telinet. For `elma`, it renders an accessible text/`displayName` fallback for both `full` and `mark` until an Elmera mark is specified; no SVG or marketing artwork is invented. It is an exhaustive switch with a `never` assertion and reads no context; consumers pass the brand explicitly. Energy-brand SVG marks ship with the icon-system roster; until those components exist, energy-brand cases use the same accessible display-name renderer so adding `elma` does not leave a hole in the mapping.
 
 `@elmeragroup/ui/illustrations` initially exports `FkasMeter`, copied from `.ref/OrderModuleWeb/packages/ui/src/illustrations/fkas-meter.tsx`. Illustrations accept SVG props plus the same optional-title accessibility contract. New artwork joins only with recorded public-distribution rights.
 
@@ -159,7 +159,7 @@ Flags reuse the vendored two-letter SVG set described in [architecture](architec
 - Type tests reject `thin`, `light`, `bold`, and `duotone` on public Phosphor adapters and accept `regular`/`fill`.
 - Export tests import every curated icon and bespoke asset by name; there is no `Icon` export.
 - The Next packed fixture imports and renders both a Phosphor adapter and a bespoke logo directly in a server component; a second client-island render proves the same adapter remains usable from client code.
-- Snapshot tests cover `BrandLogo`'s five-code mapping and both variants.
+- Snapshot tests cover `BrandLogo`'s six-code mapping and both variants. `elma` asserts accessible text/`displayName` output and no SVG.
 - Accessibility tests cover titled and decorative bespoke SVG modes.
 - The `Signing` render test asserts the four canonical fill classes above and rejects every legacy class; fixed-paint and `currentColor` assets retain their source paint behavior.
 - Packed fixtures resolve representative `NO.svg`, `SE.svg`, and `FI.svg` URLs and assert no manifest URL has an HTTP(S), data, or blob scheme.

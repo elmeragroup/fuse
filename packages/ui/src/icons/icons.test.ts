@@ -20,7 +20,10 @@ describe("Phosphor adapters", () => {
   });
 
   it("exports every curated name from /icons and does not export Icon", () => {
-    expect(Object.keys(Icons).toSorted((left, right) => left.localeCompare(right))).toEqual(byName);
+    expect(Object.keys(Icons).toSorted((left, right) => left.localeCompare(right))).toEqual(
+      ["BrandLogo", ...byName].toSorted((left, right) => left.localeCompare(right))
+    );
+    expect(Icons).toHaveProperty("BrandLogo");
     expect(Icons).not.toHaveProperty("Icon");
   });
 
@@ -28,6 +31,7 @@ describe("Phosphor adapters", () => {
     const rootKeys = new Set(Object.keys(Root));
     expect(byName.some((name) => rootKeys.has(name))).toBe(false);
     expect(Root).not.toHaveProperty("Icon");
+    expect(Root).not.toHaveProperty("BrandLogo");
   });
 
   it("keeps generated modules and the facade in lock-step with the roster", () => {

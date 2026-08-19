@@ -67,7 +67,7 @@ Fixed metrics from the ref: `h-9 w-full min-w-0 rounded-md px-2.5 py-1 text-base
 
 ## 8 Divergence from reference
 
-1. **`bg-white` → `bg-card`** — input-like surfaces use the `card` token (white in all 16 themes today, dark-ready); literal `bg-white` violates `no-primitive-colors`.
+1. **`bg-white` → `bg-card`** — input-like surfaces use the `card` token (white in all 20 themes today, dark-ready); literal `bg-white` violates `no-primitive-colors`.
 2. **`inverted:` variant classes DROPPED** (`inverted:bg-input/30 inverted:disabled:bg-input/80`) — the ref's custom `.inverted` Tailwind variant/mechanism does not exist in the new theme system; inverted surfaces are a theme-scope concern.
 3. **`dark:` variant classes dropped** (`dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40`) — dark axis lives in tokens behind `[data-theme="dark"]`, per `no-tailwind-dark-variant`.
 4. **`destructive` → `error`** token rename on the invalid border/ring classes.

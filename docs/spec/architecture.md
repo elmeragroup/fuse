@@ -28,7 +28,7 @@ All entries are ESM (§4). The published surface:
 | `@elmeragroup/ui/illustrations` | Brand artwork component `FkasMeter` | **no** |
 | `@elmeragroup/ui/css` | Raw Tailwind v4 source stylesheet (§5) | n/a |
 | `@elmeragroup/ui/styles.css` | Precompiled standalone stylesheet for non-Tailwind apps (§5) | n/a |
-| `@elmeragroup/ui/themes.css` | Theme token CSS: 16 brand/segment/variant permutations + the terminal commented `[data-theme="dark"]` placeholder (§5) | n/a |
+| `@elmeragroup/ui/themes.css` | Theme token CSS: 20 brand/segment/variant permutations + the terminal commented `[data-theme="dark"]` placeholder (§5) | n/a |
 | `@elmeragroup/ui/flags` | Generated `flagAssets` country-code→asset manifest plus `FlagAssetCode` for the flag SVGs (§6) | **no** |
 | `@elmeragroup/ui/flags/<CC>.svg` | Static two-letter country flag SVG assets (§6) | n/a |
 
@@ -110,7 +110,7 @@ Published code in `node_modules` is not scanned by a consumer's Tailwind content
    ```
 
    `styles.css` is built at package build time by running Tailwind over the library's own dist. It contains the generated component utilities, custom variants, and package utilities but **excludes Tailwind Preflight**: a reusable library must not reset the host page. Components explicitly declare the element defaults they depend on; the consuming app owns its global reset. The file is otherwise self-contained and requires no consumer build step.
-3. **`themes.css` is its own entry in both modes** — the 16 brand/segment/variant permutations plus a terminal comment reserving the `[data-theme="dark"]` block (no empty CSS rule node), plain custom-property CSS with no Tailwind dependency. It is **codegen output, uncommitted**; generation mechanics, layer structure, and the CSS snapshot test belong to [theming](theming.md). Its size ceiling lives in [performance](performance.md) §2.
+3. **`themes.css` is its own entry in both modes** — the 20 brand/segment/variant permutations plus a terminal comment reserving the `[data-theme="dark"]` block (no empty CSS rule node), plain custom-property CSS with no Tailwind dependency. It is **codegen output, uncommitted**; generation mechanics, layer structure, and the CSS snapshot test belong to [theming](theming.md). Its size ceiling lives in [performance](performance.md) §2.
 
 Both CSS modes ship in the same package version; there is no separate CSS package.
 

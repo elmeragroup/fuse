@@ -8,7 +8,14 @@ export const DEFAULT_THEME = {
 
 export const THEME_VARIANTS = ["internal", "external"] as const satisfies readonly ThemeVariant[];
 
-export const THEME_BRANDS = ["fkas", "tkas", "guen", "fkab", "fkse"] as const satisfies readonly BrandCode[];
+export const THEME_BRANDS = [
+  "fkas",
+  "tkas",
+  "guen",
+  "fkab",
+  "fkse",
+  "elma",
+] as const satisfies readonly BrandCode[];
 
 export const THEME_SEGMENTS = ["private", "company"] as const satisfies readonly ThemeSegment[];
 
@@ -20,7 +27,14 @@ export function parseThemeVariant(value: string): ThemeVariant | null {
 }
 
 export function parseThemeBrand(value: string): BrandCode | null {
-  if (value === "fkas" || value === "tkas" || value === "guen" || value === "fkab" || value === "fkse") {
+  if (
+    value === "fkas" ||
+    value === "tkas" ||
+    value === "guen" ||
+    value === "fkab" ||
+    value === "fkse" ||
+    value === "elma"
+  ) {
     return value;
   }
   return null;

@@ -2,9 +2,10 @@ import type { ComponentProps } from "react";
 
 import { expectTypeOf, test } from "vitest";
 
-import type { ElmeraIconProps } from "../icons";
+import type { BrandLogoProps, ElmeraIconProps } from "../icons";
 import type * as Icons from "../icons";
 import type * as Root from "../index";
+import type { BrandCode } from "../theme";
 
 test("public adapters accept regular and fill and reject other weights", () => {
   expectTypeOf<ElmeraIconProps["weight"]>().toEqualTypeOf<"regular" | "fill" | undefined>();
@@ -33,4 +34,15 @@ test("there is no Icon namespace on /icons or the root barrel", () => {
   expectTypeOf<typeof Icons>().not.toHaveProperty("Icon");
   expectTypeOf<typeof Root>().not.toHaveProperty("Icon");
   expectTypeOf<typeof Root>().not.toHaveProperty("Check");
+});
+
+test("BrandLogo accepts every brand code including elma", () => {
+  expectTypeOf<BrandLogoProps["brand"]>().toEqualTypeOf<BrandCode>();
+  expectTypeOf<BrandLogoProps["variant"]>().toEqualTypeOf<"full" | "mark" | undefined>();
+
+  const _elma: BrandLogoProps = { brand: "elma", variant: "mark" };
+  const _full: BrandLogoProps = { brand: "elma", variant: "full" };
+
+  // @ts-expect-error steddi is outside this theme set
+  const _steddi: BrandLogoProps = { brand: "steddi" };
 });

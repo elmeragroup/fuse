@@ -116,3 +116,5 @@ export { WarningCircle } from "./icons/generated/warning-circle";
 export { WarningOctagon } from "./icons/generated/warning-octagon";
 export { X } from "./icons/generated/x";
 export { XCircle } from "./icons/generated/x-circle";
+export type { BrandLogoProps } from "./icons/brand-logo";
+export { BrandLogo } from "./icons/brand-logo";

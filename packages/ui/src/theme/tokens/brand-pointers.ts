@@ -16,4 +16,5 @@ export const BRAND_POINTERS = {
   guen: brandPointer("guen"),
   fkab: brandPointer("fkab"),
   fkse: brandPointer("fkse"),
+  elma: brandPointer("elma"),
 } as const satisfies Record<BrandCode, BrandPointer>;

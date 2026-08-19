@@ -56,8 +56,8 @@ afterEach(() => {
 });
 
 describe("themeSlug / parseThemeSlug", () => {
-  it("is a total inverse over the 16 legal themes", () => {
-    expect(LEGAL_THEMES).toHaveLength(16);
+  it("is a total inverse over the 20 legal themes", () => {
+    expect(LEGAL_THEMES).toHaveLength(20);
     for (const theme of LEGAL_THEMES) {
       expect(parseThemeSlug(themeSlug(theme))).toEqual(theme);
     }
@@ -74,6 +74,16 @@ describe("themeSlug / parseThemeSlug", () => {
       variant: "external",
       brand: "fkas",
       segment: "private",
+    });
+    expect(parseThemeSlug("internal-elma-private")).toEqual({
+      variant: "internal",
+      brand: "elma",
+      segment: "private",
+    });
+    expect(parseThemeSlug("external-elma-company")).toEqual({
+      variant: "external",
+      brand: "elma",
+      segment: "company",
     });
   });
 });
@@ -174,6 +184,16 @@ describe("themeAttributes", () => {
       "data-theme-brand": "fkas",
       "data-theme-segment": "private",
     });
+    expect(themeAttributes({ variant: "internal", brand: "elma", segment: "private" })).toEqual({
+      "data-theme-variant": "internal",
+      "data-theme-brand": "elma",
+      "data-theme-segment": "private",
+    });
+    expect(themeAttributes({ variant: "external", brand: "elma", segment: "company" })).toEqual({
+      "data-theme-variant": "external",
+      "data-theme-brand": "elma",
+      "data-theme-segment": "company",
+    });
   });
 
   it("validates untyped input before returning attributes", () => {
@@ -191,6 +211,7 @@ describe("BRANDS", () => {
       guen: { code: "guen", displayName: "Gudbrandsdal Energi", segments: ["private", "company"] },
       fkab: { code: "fkab", displayName: "Fjordkraft Företag", segments: ["company"] },
       fkse: { code: "fkse", displayName: "Telinet", segments: ["private"] },
+      elma: { code: "elma", displayName: "Elmera", segments: ["private", "company"] },
     });
   });
 });

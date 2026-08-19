@@ -44,7 +44,7 @@ The release workflow publishes only when all gates pass. The table below is the 
 | **emitted-directive parity** | all and only source modules with a leading `"use client"` retain it in the packed JavaScript graph | [architecture](architecture.md) |
 | **packed-asset contract** | flag filenames/manifest/hashes and license/provenance files match the spec; every flag-bearing phone country resolves locally | [architecture](architecture.md), [icons](icons.md) |
 | **size-limit budgets** | every JS-entry, built-CSS, and aggregate raw-flag ceiling in the budget table holds against the packed artifact | [performance](performance.md) |
-| **theme-contract test** | the 16-theme token contract holds in the built CSS | [tooling](tooling.md) |
+| **theme-contract test** | the 20-theme token contract holds in the built CSS | [tooling](tooling.md) |
 | **packed fixture: Next App Router** | the `pnpm pack` tarball installs and builds in a Next App Router app (Tailwind-source mode, RSC boundaries: server page + client island); flag SVG assets resolve | [tooling](tooling.md) |
 | **packed fixture: Vite** | the `pnpm pack` tarball installs and builds in a Vite app (standalone-CSS mode); flag SVG assets resolve | [tooling](tooling.md) |
 
