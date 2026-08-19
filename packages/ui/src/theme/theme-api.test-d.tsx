@@ -47,6 +47,8 @@ test("SupportedLocale is the four shipped locales and locale is required", () =>
   expectTypeOf<ElmeraGroupUiProviderProps>().toHaveProperty("locale");
   expectTypeOf<ElmeraGroupUiProviderProps["locale"]>().toEqualTypeOf<SupportedLocale>();
   expectTypeOf<ThemeProviderProps["theme"]>().toEqualTypeOf<ThemeInput>();
+  expectTypeOf<ThemeProviderProps>().toHaveProperty("children");
+  expectTypeOf<ThemeProviderProps>().not.toHaveProperty("setTheme");
 
   // @ts-expect-error locale is required
   const _missingLocale: ElmeraGroupUiProviderProps = { children: null };

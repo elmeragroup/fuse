@@ -8,6 +8,10 @@ type LooseThemeAxes = {
   segment?: ThemeAxisValue;
 };
 
+export function isThemeDevelopment(): boolean {
+  return process.env.NODE_ENV !== "production";
+}
+
 function pinnedSegmentError(brand: "fkab" | "fkse", segment: "company" | "private"): Error {
   return new Error(`Invalid theme: ${brand} is pinned to ${segment}.`);
 }
@@ -42,7 +46,7 @@ function resolvePinnedTheme(variant: ThemeVariant, brand: BrandCode, segment: Th
     if (segment === "company") {
       return { variant, brand, segment };
     }
-    if (process.env.NODE_ENV !== "production") {
+    if (isThemeDevelopment()) {
       throw pinnedSegmentError("fkab", "company");
     }
     console.warn(pinnedSegmentWarning("fkab", "company"));
@@ -53,7 +57,7 @@ function resolvePinnedTheme(variant: ThemeVariant, brand: BrandCode, segment: Th
     if (segment === "private") {
       return { variant, brand, segment };
     }
-    if (process.env.NODE_ENV !== "production") {
+    if (isThemeDevelopment()) {
       throw pinnedSegmentError("fkse", "private");
     }
     console.warn(pinnedSegmentWarning("fkse", "private"));

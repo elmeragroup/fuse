@@ -1,11 +1,12 @@
-import { Component } from "react";
+import { Component, useLayoutEffect } from "react";
 import type { ReactNode, RefObject } from "react";
 
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ElmeraGroupUiProvider, useElmeraGroupUi } from "./elmera-group-ui";
+import { themeAttributes } from "./theme-attributes";
 import { ThemeProvider, useTheme } from "./theme-provider";
 import { ThemeScope } from "./theme-scope";
 import { ThemeScopeContainerContext, useThemeScopeContainer } from "./theme-scope-container";
@@ -14,6 +15,7 @@ import { useColorScheme } from "./use-color-scheme";
 
 const fkasPrivate = { variant: "internal", brand: "fkas", segment: "private" } as const;
 const tkasCompany = { variant: "external", brand: "tkas", segment: "company" } as const;
+const guenPrivate = { variant: "internal", brand: "guen", segment: "private" } as const;
 
 const cleanups: Array<() => void> = [];
 
@@ -22,8 +24,29 @@ afterEach(() => {
     cleanup();
   }
   document.documentElement.removeAttribute("data-theme");
+  document.documentElement.removeAttribute("data-theme-variant");
+  document.documentElement.removeAttribute("data-theme-brand");
+  document.documentElement.removeAttribute("data-theme-segment");
   window.localStorage.clear();
+  window.sessionStorage.clear();
+  vi.unstubAllEnvs();
+  vi.restoreAllMocks();
 });
+
+function stampDocumentBrand(theme: ThemeInput) {
+  const attributes = themeAttributes(theme);
+  document.documentElement.setAttribute("data-theme-variant", attributes["data-theme-variant"]);
+  document.documentElement.setAttribute("data-theme-brand", attributes["data-theme-brand"]);
+  document.documentElement.setAttribute("data-theme-segment", attributes["data-theme-segment"]);
+}
+
+function readDocumentBrand() {
+  return {
+    variant: document.documentElement.getAttribute("data-theme-variant"),
+    brand: document.documentElement.getAttribute("data-theme-brand"),
+    segment: document.documentElement.getAttribute("data-theme-segment"),
+  };
+}
 
 function render(node: ReactNode) {
   const host = document.createElement("div");
@@ -144,6 +167,167 @@ describe("ThemeProvider / ThemeScope", () => {
     expect(scope?.getAttribute("data-theme-brand")).toBe("fkas");
     expect(scope?.getAttribute("data-theme-variant")).toBe("internal");
     expect(scope?.getAttribute("data-theme-segment")).toBe("private");
+  });
+
+  it("keeps matching host brand attributes stable and updates all three before descendant layout work", () => {
+    stampDocumentBrand(fkasPrivate);
+    const seen: string[] = [];
+    function LayoutChild() {
+      useLayoutEffect(() => {
+        const brand = readDocumentBrand();
+        seen.push(`${brand.variant}-${brand.brand}-${brand.segment}`);
+      });
+      return null;
+    }
+
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const { host, rerender } = render(
+      <ThemeProvider theme={fkasPrivate}>
+        <ThemeProbe />
+        <LayoutChild />
+      </ThemeProvider>
+    );
+
+    expect(host.textContent).toBe("internal-fkas-private-internal-fkas-private");
+    expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkas", segment: "private" });
+    expect(seen).toEqual(["internal-fkas-private"]);
+    expect(warn).not.toHaveBeenCalled();
+
+    rerender(
+      <ThemeProvider theme={tkasCompany}>
+        <ThemeProbe />
+        <LayoutChild />
+      </ThemeProvider>
+    );
+
+    expect(host.textContent).toBe("external-tkas-company-external-tkas-company");
+    expect(readDocumentBrand()).toEqual({ variant: "external", brand: "tkas", segment: "company" });
+    expect(seen).toEqual(["internal-fkas-private", "external-tkas-company"]);
+    expect(document.documentElement.getAttribute("data-theme")).toBeNull();
+  });
+
+  it("does not read or write local storage or cookies when brand changes", () => {
+    stampDocumentBrand(fkasPrivate);
+    const localGet = vi.spyOn(window.localStorage, "getItem");
+    const localSet = vi.spyOn(window.localStorage, "setItem");
+    const sessionGet = vi.spyOn(window.sessionStorage, "getItem");
+    const sessionSet = vi.spyOn(window.sessionStorage, "setItem");
+    const cookiesBefore = document.cookie;
+
+    const { rerender } = render(
+      <ThemeProvider theme={fkasPrivate}>
+        <ThemeProbe />
+      </ThemeProvider>
+    );
+    rerender(
+      <ThemeProvider theme={tkasCompany}>
+        <ThemeProbe />
+      </ThemeProvider>
+    );
+
+    expect(readDocumentBrand()).toEqual({ variant: "external", brand: "tkas", segment: "company" });
+    expect(localGet).not.toHaveBeenCalled();
+    expect(localSet).not.toHaveBeenCalled();
+    expect(sessionGet).not.toHaveBeenCalled();
+    expect(sessionSet).not.toHaveBeenCalled();
+    expect(document.cookie).toBe(cookiesBefore);
+    expect(window.localStorage.length).toBe(0);
+    expect(window.sessionStorage.length).toBe(0);
+  });
+
+  it("diagnoses mismatched server brand attributes and recovers to the validated theme", () => {
+    stampDocumentBrand(tkasCompany);
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+
+    render(
+      <ThemeProvider theme={fkasPrivate}>
+        <ThemeProbe />
+      </ThemeProvider>
+    );
+
+    expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkas", segment: "private" });
+    expect(warn).toHaveBeenCalled();
+    expect(String(warn.mock.calls[0]?.[0])).toMatch(/Recovering to the validated controlled theme/);
+  });
+
+  it("does not let a nested provider compete for the document", () => {
+    const { host } = render(
+      <ThemeProvider theme={fkasPrivate}>
+        <ThemeProvider theme={tkasCompany}>
+          <ThemeProbe />
+        </ThemeProvider>
+      </ThemeProvider>
+    );
+
+    expect(host.textContent).toBe("internal-fkas-private-internal-fkas-private");
+    expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkas", segment: "private" });
+  });
+
+  it("owns the document when mounted inside a lone ThemeScope", () => {
+    const { host } = render(
+      <ThemeScope theme={tkasCompany}>
+        <ThemeProvider theme={fkasPrivate}>
+          <ThemeProbe />
+        </ThemeProvider>
+      </ThemeScope>
+    );
+
+    expect(host.textContent).toBe("internal-fkas-private-internal-fkas-private");
+    expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkas", segment: "private" });
+    expect(host.querySelector("[data-theme-brand]")?.getAttribute("data-theme-brand")).toBe("tkas");
+    expect(host.querySelector("[data-theme-variant]")?.getAttribute("data-theme-variant")).toBe("external");
+    expect(host.querySelector("[data-theme-segment]")?.getAttribute("data-theme-segment")).toBe("company");
+  });
+
+  it("lets ThemeScope win useTheme while a surrounding document writer keeps the document", () => {
+    const { host } = render(
+      <ThemeProvider theme={fkasPrivate}>
+        <ThemeScope theme={tkasCompany}>
+          <ThemeProvider theme={guenPrivate}>
+            <ThemeProbe />
+          </ThemeProvider>
+        </ThemeScope>
+      </ThemeProvider>
+    );
+
+    expect(host.textContent).toBe("external-tkas-company-external-tkas-company");
+    expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkas", segment: "private" });
+    expect(host.querySelector("[data-theme-brand]")?.getAttribute("data-theme-brand")).toBe("tkas");
+  });
+
+  it("updates only the nested scope element when its theme changes", () => {
+    stampDocumentBrand(fkasPrivate);
+    const { host, rerender } = render(
+      <ThemeScope theme={fkasPrivate} className="outer">
+        <ThemeScope theme={tkasCompany} className="inner">
+          <ThemeProbe />
+        </ThemeScope>
+      </ThemeScope>
+    );
+
+    const outer = host.querySelector(".outer");
+    const inner = host.querySelector(".inner");
+    expect(outer?.getAttribute("data-theme-brand")).toBe("fkas");
+    expect(inner?.getAttribute("data-theme-brand")).toBe("tkas");
+    expect(host.textContent).toBe("external-tkas-company-external-tkas-company");
+    expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkas", segment: "private" });
+
+    rerender(
+      <ThemeScope theme={fkasPrivate} className="outer">
+        <ThemeScope theme={guenPrivate} className="inner">
+          <ThemeProbe />
+        </ThemeScope>
+      </ThemeScope>
+    );
+
+    expect(outer?.getAttribute("data-theme-variant")).toBe("internal");
+    expect(outer?.getAttribute("data-theme-brand")).toBe("fkas");
+    expect(outer?.getAttribute("data-theme-segment")).toBe("private");
+    expect(inner?.getAttribute("data-theme-variant")).toBe("internal");
+    expect(inner?.getAttribute("data-theme-brand")).toBe("guen");
+    expect(inner?.getAttribute("data-theme-segment")).toBe("private");
+    expect(host.textContent).toBe("internal-guen-private-internal-guen-private");
+    expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkas", segment: "private" });
   });
 
   it("throws the validator error — not a hooks-count mismatch — after a valid-then-illegal update", () => {

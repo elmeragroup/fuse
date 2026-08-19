@@ -4,10 +4,15 @@ import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { colorSchemeScriptSource } from "./color-scheme-script";
+import {
+  documentBrandDisagrees,
+  documentBrandMismatchMessage,
+  warnDocumentBrandMismatch,
+} from "./document-brand";
 import { themeAttributes } from "./theme-attributes";
 import { BRANDS, LEGAL_THEMES, parseThemeSlug, themeSlug } from "./tokens/themes";
 import type { ThemeInput } from "./tokens/themes";
-import { validateTheme } from "./validate-theme";
+import { isThemeDevelopment, validateTheme } from "./validate-theme";
 
 const srcRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -95,6 +100,52 @@ describe("validateTheme", () => {
       segment: "private",
     });
     expect(warn).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("document brand mismatch", () => {
+  const expected = themeAttributes({ variant: "internal", brand: "fkas", segment: "private" });
+  const matching = {
+    "data-theme-variant": "internal",
+    "data-theme-brand": "fkas",
+    "data-theme-segment": "private",
+  } as const;
+  const mismatching = {
+    "data-theme-variant": "external",
+    "data-theme-brand": "tkas",
+    "data-theme-segment": "company",
+  } as const;
+  const missing = {
+    "data-theme-variant": null,
+    "data-theme-brand": null,
+    "data-theme-segment": null,
+  };
+
+  it("treats missing server attributes as no disagreement", () => {
+    expect(documentBrandDisagrees(missing, expected)).toBe(false);
+    expect(documentBrandDisagrees(matching, expected)).toBe(false);
+    expect(documentBrandDisagrees(mismatching, expected)).toBe(true);
+    expect(documentBrandDisagrees({ ...matching, "data-theme-brand": null }, expected)).toBe(true);
+  });
+
+  it("warns in development and stays silent in production", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+
+    vi.stubEnv("NODE_ENV", "development");
+    expect(isThemeDevelopment()).toBe(true);
+    warnDocumentBrandMismatch(mismatching, expected);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]?.[0]).toBe(documentBrandMismatchMessage(mismatching, expected));
+
+    warn.mockClear();
+    warnDocumentBrandMismatch(matching, expected);
+    warnDocumentBrandMismatch(missing, expected);
+    expect(warn).not.toHaveBeenCalled();
+
+    vi.stubEnv("NODE_ENV", "production");
+    expect(isThemeDevelopment()).toBe(false);
+    warnDocumentBrandMismatch(mismatching, expected);
+    expect(warn).not.toHaveBeenCalled();
   });
 });
 
