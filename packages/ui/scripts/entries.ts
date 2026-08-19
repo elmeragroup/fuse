@@ -87,6 +87,7 @@ export const THEME_RUNTIME_EXPORTS = [
   "BRANDS",
   "ColorSchemeScript",
   "ElmeraGroupUiProvider",
+  "ForceColorScheme",
   "ThemeProvider",
   "ThemeScope",
   "colorSchemeScriptSource",

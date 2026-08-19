@@ -10,12 +10,19 @@ import { buttonVariants } from "@elmeragroup/ui/button";
 import type * as Icons from "@elmeragroup/ui/icons";
 import type { ElmeraIconProps } from "@elmeragroup/ui/icons";
 import type { ScrollArea } from "@elmeragroup/ui/scroll-area";
-import { ColorSchemeScript, colorSchemeScriptSource } from "@elmeragroup/ui/theme";
+import {
+  ColorSchemeScript,
+  colorSchemeScriptSource,
+  ForceColorScheme,
+  useColorScheme,
+} from "@elmeragroup/ui/theme";
 import type {
   ColorSchemeOptions,
   ColorSchemeScriptProps,
+  ForceColorSchemeProps,
   ThemeInput,
   ThemeProviderProps,
+  UseColorSchemeResult,
 } from "@elmeragroup/ui/theme";
 
 test("workspace consumers resolve the same public subpaths as the published package", () => {
@@ -31,4 +38,10 @@ test("workspace consumers resolve the same public subpaths as the published pack
   expectTypeOf(ColorSchemeScript).toBeFunction();
   expectTypeOf<ColorSchemeScriptProps>().toMatchTypeOf<ColorSchemeOptions>();
   expectTypeOf<ColorSchemeOptions>().toHaveProperty("forcedColorScheme");
+  expectTypeOf(ForceColorScheme).toBeFunction();
+  expectTypeOf<ForceColorSchemeProps>().toHaveProperty("value");
+  expectTypeOf(useColorScheme).parameters.toEqualTypeOf<[]>();
+  expectTypeOf(useColorScheme).returns.toEqualTypeOf<UseColorSchemeResult>();
+  expectTypeOf<ThemeProviderProps>().toHaveProperty("injectColorSchemeScript");
+  expectTypeOf<ThemeProviderProps>().not.toHaveProperty("enableColorScheme");
 });

@@ -26,15 +26,17 @@
 import type { FunctionComponent, ReactNode, ScriptHTMLAttributes } from "react";
 
 import {
-  closedColorScheme,
+  COLOR_SCHEME_BOOTSTRAP_SOURCE_DESCRIPTION,
+  COLOR_SCHEME_BOOTSTRAP_SOURCE_DUPLICATE,
+  COLOR_SCHEME_BOOTSTRAP_SOURCE_PROVIDER,
   DEFAULT_COLOR_SCHEME,
   DEFAULT_COLOR_SCHEME_STORAGE_KEY,
   DEFAULT_ENABLE_SYSTEM,
+  resolveColorSchemeOptions,
   serializeScriptData,
 } from "./color-scheme";
 import type {
   ColorScheme,
-  ColorSchemeBootstrapManifest,
   ColorSchemeOptions,
   ColorSchemeScriptElementProps,
   ColorSchemeScriptProps,
@@ -57,20 +59,6 @@ function serializeScriptArgument(value: string | boolean | undefined): string {
     return "undefined";
   }
   return serializeScriptData(value);
-}
-
-function resolveColorSchemeOptions({
-  storageKey = DEFAULT_COLOR_SCHEME_STORAGE_KEY,
-  defaultColorScheme = DEFAULT_COLOR_SCHEME,
-  enableSystem = DEFAULT_ENABLE_SYSTEM,
-  forcedColorScheme,
-}: ColorSchemeOptions = {}): ColorSchemeBootstrapManifest {
-  return {
-    storageKey,
-    defaultColorScheme: closedColorScheme(defaultColorScheme) ?? DEFAULT_COLOR_SCHEME,
-    enableSystem,
-    forcedColorScheme: closedColorScheme(forcedColorScheme),
-  };
 }
 
 function scriptPassthroughProps(
@@ -155,14 +143,19 @@ export function colorSchemeScriptSource(options: ColorSchemeOptions = {}): strin
   return `(${applyClosedColorSchemeBootstrap.toString()})(${serializeScriptArgument(storageKey)},${serializeScriptArgument(defaultColorScheme)},${serializeScriptArgument(enableSystem)},${serializeScriptArgument(forcedColorScheme)})`;
 }
 
-export const ColorSchemeScript: FunctionComponent<ColorSchemeScriptProps> = ({
-  storageKey = DEFAULT_COLOR_SCHEME_STORAGE_KEY,
-  defaultColorScheme = DEFAULT_COLOR_SCHEME,
-  enableSystem = DEFAULT_ENABLE_SYSTEM,
-  forcedColorScheme,
+export function injectedColorSchemeScriptSource(options: ColorSchemeOptions = {}): string {
+  const inner = colorSchemeScriptSource(options);
+  const sourceKey = JSON.stringify(COLOR_SCHEME_BOOTSTRAP_SOURCE_DESCRIPTION);
+  const provider = JSON.stringify(COLOR_SCHEME_BOOTSTRAP_SOURCE_PROVIDER);
+  const duplicate = JSON.stringify(COLOR_SCHEME_BOOTSTRAP_SOURCE_DUPLICATE);
+  return `(function(){var h=typeof globalThis.__ELMERA_COLOR_SCHEME_BOOTSTRAP__!=="undefined";${inner};var m=globalThis.__ELMERA_COLOR_SCHEME_BOOTSTRAP__;if(m)Object.defineProperty(m,Symbol.for(${sourceKey}),{value:h?${duplicate}:${provider}})})()`;
+}
+
+function ColorSchemeScriptMarkup({
   nonce,
   scriptProps,
-}) => {
+  source,
+}: ColorSchemeScriptProps & { source: string }) {
   const { nonce: scriptNonce, passthrough } = scriptPassthroughProps(scriptProps);
 
   return (
@@ -170,13 +163,50 @@ export const ColorSchemeScript: FunctionComponent<ColorSchemeScriptProps> = ({
       {...passthrough}
       nonce={nonce ?? scriptNonce}
       dangerouslySetInnerHTML={{
-        __html: colorSchemeScriptSource({
-          storageKey,
-          defaultColorScheme,
-          enableSystem,
-          forcedColorScheme,
-        }),
+        __html: source,
       }}
     />
   );
-};
+}
+
+export const ColorSchemeScript: FunctionComponent<ColorSchemeScriptProps> = ({
+  storageKey = DEFAULT_COLOR_SCHEME_STORAGE_KEY,
+  defaultColorScheme = DEFAULT_COLOR_SCHEME,
+  enableSystem = DEFAULT_ENABLE_SYSTEM,
+  forcedColorScheme,
+  nonce,
+  scriptProps,
+}) => (
+  <ColorSchemeScriptMarkup
+    nonce={nonce}
+    scriptProps={scriptProps}
+    source={colorSchemeScriptSource({
+      storageKey,
+      defaultColorScheme,
+      enableSystem,
+      forcedColorScheme,
+    })}
+  />
+);
+
+export function InjectedColorSchemeScript({
+  storageKey = DEFAULT_COLOR_SCHEME_STORAGE_KEY,
+  defaultColorScheme = DEFAULT_COLOR_SCHEME,
+  enableSystem = DEFAULT_ENABLE_SYSTEM,
+  forcedColorScheme,
+  nonce,
+  scriptProps,
+}: ColorSchemeScriptProps) {
+  return (
+    <ColorSchemeScriptMarkup
+      nonce={nonce}
+      scriptProps={scriptProps}
+      source={injectedColorSchemeScriptSource({
+        storageKey,
+        defaultColorScheme,
+        enableSystem,
+        forcedColorScheme,
+      })}
+    />
+  );
+}

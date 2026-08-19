@@ -3,9 +3,18 @@ import type { ReactNode, RefObject } from "react";
 
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { DEFAULT_COLOR_SCHEME_STORAGE_KEY, resolveColorSchemeOptions } from "./color-scheme";
+import type { ColorScheme, ColorSchemeBootstrapManifest } from "./color-scheme";
+import {
+  COLOR_SCHEME_BOOTSTRAP_DUPLICATE_MESSAGE,
+  COLOR_SCHEME_BOOTSTRAP_MISSING_MESSAGE,
+  colorSchemeBootstrapMismatchMessage,
+} from "./color-scheme-diagnostics";
+import { colorSchemeScriptSource, injectedColorSchemeScriptSource } from "./color-scheme-script";
 import { ElmeraGroupUiProvider, useElmeraGroupUi } from "./elmera-group-ui";
+import { ForceColorScheme } from "./force-color-scheme";
 import { themeAttributes } from "./theme-attributes";
 import { ThemeProvider, useTheme } from "./theme-provider";
 import { ThemeScope } from "./theme-scope";
@@ -18,6 +27,26 @@ const tkasCompany = { variant: "external", brand: "tkas", segment: "company" } a
 const guenPrivate = { variant: "internal", brand: "guen", segment: "private" } as const;
 
 const cleanups: Array<() => void> = [];
+const defaultManifest = resolveColorSchemeOptions();
+
+function writeManifest(manifest: ColorSchemeBootstrapManifest | undefined) {
+  if (manifest === undefined) {
+    delete globalThis.__ELMERA_COLOR_SCHEME_BOOTSTRAP__;
+    return;
+  }
+  globalThis.__ELMERA_COLOR_SCHEME_BOOTSTRAP__ = manifest;
+}
+
+function runBootstrap(source: string) {
+  const script = document.createElement("script");
+  script.textContent = source;
+  document.head.append(script);
+  script.remove();
+}
+
+beforeEach(() => {
+  writeManifest(defaultManifest);
+});
 
 afterEach(() => {
   for (const cleanup of cleanups.splice(0)) {
@@ -27,6 +56,11 @@ afterEach(() => {
   document.documentElement.removeAttribute("data-theme-variant");
   document.documentElement.removeAttribute("data-theme-brand");
   document.documentElement.removeAttribute("data-theme-segment");
+  document.documentElement.style.removeProperty("color-scheme");
+  for (const meta of document.querySelectorAll('meta[name="color-scheme"]')) {
+    meta.remove();
+  }
+  writeManifest(undefined);
   window.localStorage.clear();
   window.sessionStorage.clear();
   vi.unstubAllEnvs();
@@ -203,7 +237,7 @@ describe("ThemeProvider / ThemeScope", () => {
     expect(host.textContent).toBe("external-tkas-company-external-tkas-company");
     expect(readDocumentBrand()).toEqual({ variant: "external", brand: "tkas", segment: "company" });
     expect(seen).toEqual(["internal-fkas-private", "external-tkas-company"]);
-    expect(document.documentElement.getAttribute("data-theme")).toBeNull();
+    expect(document.documentElement.getAttribute("data-theme")).toMatch(/^(light|dark)$/);
   });
 
   it("does not read or write local storage or cookies when brand changes", () => {
@@ -226,7 +260,8 @@ describe("ThemeProvider / ThemeScope", () => {
     );
 
     expect(readDocumentBrand()).toEqual({ variant: "external", brand: "tkas", segment: "company" });
-    expect(localGet).not.toHaveBeenCalled();
+    expect(localGet.mock.calls.length).toBeGreaterThan(0);
+    expect(localGet.mock.calls.every((call) => call[0] === DEFAULT_COLOR_SCHEME_STORAGE_KEY)).toBe(true);
     expect(localSet).not.toHaveBeenCalled();
     expect(sessionGet).not.toHaveBeenCalled();
     expect(sessionSet).not.toHaveBeenCalled();
@@ -420,28 +455,652 @@ describe("overlay containment", () => {
   });
 });
 
+function ColorSchemeOutput() {
+  const theme = useTheme();
+  const { colorScheme, resolvedColorScheme } = useColorScheme();
+  return (
+    <output>
+      {theme.slug}:{colorScheme}/{resolvedColorScheme ?? "pending"}
+    </output>
+  );
+}
+
+function ColorSchemeSetter({ value, label = "set" }: { value: ColorScheme; label?: string }) {
+  const { setColorScheme } = useColorScheme();
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        setColorScheme(value);
+      }}>
+      {label}
+    </button>
+  );
+}
+
+async function mountedColorScheme(host: HTMLElement, expected: string) {
+  await expect.poll(() => host.querySelector("output")?.textContent).toBe(expected);
+}
+
+function stubPrefersColorScheme(prefersDark: boolean) {
+  let matches = prefersDark;
+  const listeners = new Set<(event: MediaQueryListEvent) => void>();
+  // SAFETY: test double implements the MediaQueryList surface the provider listens to.
+  const media = {
+    get matches() {
+      return matches;
+    },
+    media: "(prefers-color-scheme: dark)",
+    onchange: null,
+    addEventListener(type: string, listener: EventListenerOrEventListenerObject) {
+      if (type !== "change") {
+        return;
+      }
+      listeners.add((event) => {
+        if ("handleEvent" in listener) {
+          listener.handleEvent(event);
+          return;
+        }
+        listener(event);
+      });
+    },
+    removeEventListener() {
+      return undefined;
+    },
+    addListener() {
+      return undefined;
+    },
+    removeListener() {
+      return undefined;
+    },
+    dispatchEvent() {
+      return true;
+    },
+  } as MediaQueryList;
+  const nativeMatchMedia = window.matchMedia.bind(window);
+
+  vi.spyOn(window, "matchMedia").mockImplementation((query) => {
+    if (query === "(prefers-color-scheme: dark)") {
+      return media;
+    }
+    return nativeMatchMedia(query);
+  });
+
+  return {
+    setPrefersDark(next: boolean) {
+      matches = next;
+      // SAFETY: listeners only read matches/media from the change payload.
+      const event = { matches: next, media: media.media } as MediaQueryListEvent;
+      for (const listener of listeners) {
+        listener(event);
+      }
+    },
+  };
+}
+
 describe("useColorScheme", () => {
-  it("hydrates as unresolved then reads the script-set attribute", async () => {
+  it("throws outside a document writer, including a ThemeScope-only tree", () => {
+    function Probe() {
+      try {
+        useColorScheme();
+        return <span>ok</span>;
+      } catch (error) {
+        return <span>{error instanceof Error ? error.message : "error"}</span>;
+      }
+    }
+
+    const { host, rerender } = render(<Probe />);
+    expect(host.textContent).toBe("useColorScheme must be used within ThemeProvider");
+
+    rerender(
+      <ThemeScope theme={fkasPrivate}>
+        <Probe />
+      </ThemeScope>
+    );
+    expect(host.textContent).toBe("useColorScheme must be used within ThemeProvider");
+  });
+
+  it("keeps resolvedColorScheme undefined on first hydration while brand stays defined", async () => {
     window.localStorage.setItem("elmera-color-scheme", "dark");
     document.documentElement.setAttribute("data-theme", "dark");
 
     const first: string[] = [];
     function FirstRenderProbe() {
+      const theme = useTheme();
       const { colorScheme, resolvedColorScheme } = useColorScheme();
       if (first.length === 0) {
-        first.push(`${colorScheme}/${resolvedColorScheme ?? "pending"}`);
+        first.push(`${theme.slug}:${colorScheme}/${resolvedColorScheme ?? "pending"}`);
       }
       return (
         <output>
-          {colorScheme}/{resolvedColorScheme ?? "pending"}
+          {theme.slug}:{colorScheme}/{resolvedColorScheme ?? "pending"}
         </output>
       );
     }
 
-    const { host } = render(<FirstRenderProbe />);
+    const { host } = render(
+      <ThemeProvider theme={fkasPrivate}>
+        <FirstRenderProbe />
+      </ThemeProvider>
+    );
 
-    expect(first[0]).toBe("system/pending");
-    await expect.poll(() => host.querySelector("output")?.textContent).toBe("dark/dark");
+    expect(first[0]).toBe("internal-fkas-private:system/pending");
+    await mountedColorScheme(host, "internal-fkas-private:dark/dark");
     expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+  });
+
+  it("writes data-theme in the same setter turn and leaves brand attributes untouched", async () => {
+    window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "light");
+    stampDocumentBrand(fkasPrivate);
+    const seen: Array<string | null> = [];
+
+    function ImmediateSetter() {
+      const { setColorScheme } = useColorScheme();
+      return (
+        <button
+          type="button"
+          onClick={() => {
+            setColorScheme("dark");
+            seen.push(document.documentElement.getAttribute("data-theme"));
+          }}>
+          set
+        </button>
+      );
+    }
+
+    const { host } = render(
+      <ThemeProvider theme={fkasPrivate}>
+        <ColorSchemeOutput />
+        <ImmediateSetter />
+      </ThemeProvider>
+    );
+    await mountedColorScheme(host, "internal-fkas-private:light/light");
+
+    host.querySelector("button")?.click();
+    expect(seen).toEqual(["dark"]);
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkas", segment: "private" });
+    expect(document.documentElement.style.colorScheme).toBe("");
+    expect(document.querySelector('meta[name="color-scheme"]')).toBeNull();
+    expect(window.localStorage.getItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY)).toBe("dark");
+    await mountedColorScheme(host, "internal-fkas-private:dark/dark");
+  });
+
+  it("applies storage and media events in the same turn", async () => {
+    const media = stubPrefersColorScheme(false);
+    window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "system");
+
+    const { host } = render(
+      <ThemeProvider theme={fkasPrivate}>
+        <ColorSchemeOutput />
+      </ThemeProvider>
+    );
+    await mountedColorScheme(host, "internal-fkas-private:system/light");
+
+    window.dispatchEvent(
+      new StorageEvent("storage", {
+        key: DEFAULT_COLOR_SCHEME_STORAGE_KEY,
+        newValue: "dark",
+        storageArea: window.localStorage,
+      })
+    );
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    await mountedColorScheme(host, "internal-fkas-private:dark/dark");
+
+    window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "system");
+    window.dispatchEvent(
+      new StorageEvent("storage", {
+        key: DEFAULT_COLOR_SCHEME_STORAGE_KEY,
+        newValue: "system",
+        storageArea: window.localStorage,
+      })
+    );
+    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+    await mountedColorScheme(host, "internal-fkas-private:system/light");
+
+    media.setPrefersDark(true);
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    await mountedColorScheme(host, "internal-fkas-private:system/dark");
+    expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkas", segment: "private" });
+    expect(document.documentElement.style.colorScheme).toBe("");
+  });
+
+  it("shares one state machine and configuration across consumers", async () => {
+    writeManifest(resolveColorSchemeOptions({ storageKey: "app-color-scheme" }));
+    window.localStorage.setItem("app-color-scheme", "light");
+    function Dual() {
+      const first = useColorScheme();
+      const second = useColorScheme();
+      return (
+        <>
+          <output>{`${first.colorScheme}/${first.resolvedColorScheme ?? "pending"}:${second.colorScheme}/${second.resolvedColorScheme ?? "pending"}`}</output>
+          <button
+            type="button"
+            onClick={() => {
+              first.setColorScheme("dark");
+            }}>
+            set
+          </button>
+        </>
+      );
+    }
+
+    const { host } = render(
+      <ThemeProvider theme={fkasPrivate} storageKey="app-color-scheme">
+        <ThemeProvider theme={tkasCompany} storageKey="forked-color-scheme">
+          <Dual />
+        </ThemeProvider>
+      </ThemeProvider>
+    );
+    await expect.poll(() => host.querySelector("output")?.textContent).toBe("light/light:light/light");
+
+    host.querySelector("button")?.click();
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    expect(window.localStorage.getItem("app-color-scheme")).toBe("dark");
+    expect(window.localStorage.getItem("forked-color-scheme")).toBeNull();
+    expect(window.localStorage.getItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY)).toBeNull();
+    await expect
+      .poll(() => host.querySelector("output")?.textContent)
+      .toBe(["dark/dark", "dark/dark"].join(":"));
+  });
+});
+
+describe("forced color-scheme", () => {
+  it("applies mount-level forced light, dark, and system before descendant layout work", async () => {
+    writeManifest(resolveColorSchemeOptions({ forcedColorScheme: "dark" }));
+    window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "light");
+    const media = stubPrefersColorScheme(true);
+    const seen: Array<string | null> = [];
+    function LayoutChild() {
+      useLayoutEffect(() => {
+        seen.push(document.documentElement.getAttribute("data-theme"));
+      });
+      return null;
+    }
+
+    const { host, rerender } = render(
+      <ThemeProvider theme={fkasPrivate} forcedColorScheme="dark">
+        <ColorSchemeOutput />
+        <LayoutChild />
+      </ThemeProvider>
+    );
+    await mountedColorScheme(host, "internal-fkas-private:light/dark");
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+
+    rerender(
+      <ThemeProvider theme={fkasPrivate} forcedColorScheme="light">
+        <ColorSchemeOutput />
+        <LayoutChild />
+      </ThemeProvider>
+    );
+    expect(seen.at(-1)).toBe("light");
+    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+    await mountedColorScheme(host, "internal-fkas-private:light/light");
+
+    rerender(
+      <ThemeProvider theme={fkasPrivate} forcedColorScheme="system">
+        <ColorSchemeOutput />
+        <LayoutChild />
+      </ThemeProvider>
+    );
+    expect(seen.at(-1)).toBe("dark");
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    await mountedColorScheme(host, "internal-fkas-private:light/dark");
+
+    media.setPrefersDark(false);
+    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+    await mountedColorScheme(host, "internal-fkas-private:light/light");
+    media.setPrefersDark(true);
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    await mountedColorScheme(host, "internal-fkas-private:light/dark");
+  });
+
+  it("hides preference changes under force and applies them synchronously when force is removed", async () => {
+    writeManifest(resolveColorSchemeOptions({ forcedColorScheme: "light" }));
+    window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "light");
+    const seen: Array<string | null> = [];
+    function LayoutChild() {
+      useLayoutEffect(() => {
+        seen.push(document.documentElement.getAttribute("data-theme"));
+      });
+      return null;
+    }
+    function ImmediateSetter() {
+      const { setColorScheme } = useColorScheme();
+      return (
+        <button
+          type="button"
+          onClick={() => {
+            setColorScheme("dark");
+            seen.push(document.documentElement.getAttribute("data-theme"));
+          }}>
+          set
+        </button>
+      );
+    }
+
+    const { host, rerender } = render(
+      <ThemeProvider theme={fkasPrivate} forcedColorScheme="light">
+        <ColorSchemeOutput />
+        <ImmediateSetter />
+        <LayoutChild />
+      </ThemeProvider>
+    );
+    await mountedColorScheme(host, "internal-fkas-private:light/light");
+
+    host.querySelector("button")?.click();
+    expect(seen.at(-1)).toBe("light");
+    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+    expect(window.localStorage.getItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY)).toBe("dark");
+    await mountedColorScheme(host, "internal-fkas-private:dark/light");
+
+    rerender(
+      <ThemeProvider theme={fkasPrivate}>
+        <ColorSchemeOutput />
+        <ImmediateSetter />
+        <LayoutChild />
+      </ThemeProvider>
+    );
+    expect(seen.at(-1)).toBe("dark");
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    await mountedColorScheme(host, "internal-fkas-private:dark/dark");
+  });
+
+  it("follows prefers-color-scheme while forced system is active and ignores it for forced light", async () => {
+    writeManifest(resolveColorSchemeOptions({ forcedColorScheme: "light" }));
+    window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "system");
+    const media = stubPrefersColorScheme(true);
+
+    const { host, rerender } = render(
+      <ThemeProvider theme={fkasPrivate} forcedColorScheme="light">
+        <ColorSchemeOutput />
+      </ThemeProvider>
+    );
+    await mountedColorScheme(host, "internal-fkas-private:system/light");
+
+    media.setPrefersDark(false);
+    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+    await mountedColorScheme(host, "internal-fkas-private:system/light");
+
+    rerender(
+      <ThemeProvider theme={fkasPrivate} forcedColorScheme="system">
+        <ColorSchemeOutput />
+      </ThemeProvider>
+    );
+    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+    await mountedColorScheme(host, "internal-fkas-private:system/light");
+
+    media.setPrefersDark(true);
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    await mountedColorScheme(host, "internal-fkas-private:system/dark");
+  });
+
+  it("applies descendant runtime force and restores nested locks without treating them as first paint", async () => {
+    window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "light");
+    document.documentElement.setAttribute("data-theme", "light");
+    const first: Array<string | null> = [];
+
+    function FirstPaintProbe() {
+      if (first.length === 0) {
+        first.push(document.documentElement.getAttribute("data-theme"));
+      }
+      return <ColorSchemeOutput />;
+    }
+
+    const { host, rerender } = render(
+      <ThemeProvider theme={fkasPrivate}>
+        <ForceColorScheme value="dark">
+          <FirstPaintProbe />
+        </ForceColorScheme>
+      </ThemeProvider>
+    );
+
+    expect(first[0]).toBe("light");
+    await mountedColorScheme(host, "internal-fkas-private:light/dark");
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+
+    rerender(
+      <ThemeProvider theme={fkasPrivate}>
+        <ForceColorScheme value="dark">
+          <ForceColorScheme value="light">
+            <ColorSchemeOutput />
+          </ForceColorScheme>
+        </ForceColorScheme>
+      </ThemeProvider>
+    );
+    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+    await mountedColorScheme(host, "internal-fkas-private:light/light");
+
+    rerender(
+      <ThemeProvider theme={fkasPrivate}>
+        <ForceColorScheme value="dark">
+          <ColorSchemeOutput />
+        </ForceColorScheme>
+      </ThemeProvider>
+    );
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    await mountedColorScheme(host, "internal-fkas-private:light/dark");
+
+    rerender(
+      <ThemeProvider theme={fkasPrivate}>
+        <ColorSchemeOutput />
+      </ThemeProvider>
+    );
+    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+    await mountedColorScheme(host, "internal-fkas-private:light/light");
+  });
+
+  it("applies the innermost lock on the first commit of nested ForceColorScheme", async () => {
+    window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "dark");
+    document.documentElement.setAttribute("data-theme", "dark");
+    const seen: Array<string | null> = [];
+    function LayoutChild() {
+      useLayoutEffect(() => {
+        seen.push(document.documentElement.getAttribute("data-theme"));
+      });
+      return null;
+    }
+
+    const { host, rerender } = render(
+      <ThemeProvider theme={fkasPrivate}>
+        <ForceColorScheme value="dark">
+          <ForceColorScheme value="light">
+            <ColorSchemeOutput />
+            <LayoutChild />
+          </ForceColorScheme>
+        </ForceColorScheme>
+      </ThemeProvider>
+    );
+
+    expect(seen[0]).toBe("light");
+    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+    await mountedColorScheme(host, "internal-fkas-private:dark/light");
+
+    rerender(
+      <ThemeProvider theme={fkasPrivate}>
+        <ForceColorScheme value="dark">
+          <ColorSchemeOutput />
+          <LayoutChild />
+        </ForceColorScheme>
+      </ThemeProvider>
+    );
+    expect(seen.at(-1)).toBe("dark");
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    await mountedColorScheme(host, "internal-fkas-private:dark/dark");
+  });
+
+  it("keeps storage and media updates hidden while a descendant force is active", async () => {
+    const media = stubPrefersColorScheme(false);
+    window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "system");
+
+    const { host } = render(
+      <ThemeProvider theme={fkasPrivate}>
+        <ForceColorScheme value="dark">
+          <ColorSchemeOutput />
+          <ColorSchemeSetter value="light" />
+        </ForceColorScheme>
+      </ThemeProvider>
+    );
+    await mountedColorScheme(host, "internal-fkas-private:system/dark");
+
+    host.querySelector("button")?.click();
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    expect(window.localStorage.getItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY)).toBe("light");
+    await mountedColorScheme(host, "internal-fkas-private:light/dark");
+
+    window.dispatchEvent(
+      new StorageEvent("storage", {
+        key: DEFAULT_COLOR_SCHEME_STORAGE_KEY,
+        newValue: "system",
+        storageArea: window.localStorage,
+      })
+    );
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    await mountedColorScheme(host, "internal-fkas-private:system/dark");
+
+    media.setPrefersDark(true);
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    await mountedColorScheme(host, "internal-fkas-private:system/dark");
+  });
+
+  it("follows prefers-color-scheme while a descendant forced system is active", async () => {
+    const media = stubPrefersColorScheme(false);
+    window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "light");
+
+    const { host } = render(
+      <ThemeProvider theme={fkasPrivate}>
+        <ForceColorScheme value="system">
+          <ColorSchemeOutput />
+        </ForceColorScheme>
+      </ThemeProvider>
+    );
+    await mountedColorScheme(host, "internal-fkas-private:light/light");
+    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+
+    media.setPrefersDark(true);
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    await mountedColorScheme(host, "internal-fkas-private:light/dark");
+  });
+});
+
+describe("color-scheme transition suppression", () => {
+  function transitionStyleCount() {
+    return [...document.head.querySelectorAll("style")].filter((style) =>
+      style.textContent.includes("transition:none")
+    ).length;
+  }
+
+  it("wraps runtime writes, removes the temporary style, and never belongs to the bootstrap", async () => {
+    window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "light");
+    document.documentElement.setAttribute("data-theme", "light");
+    const { host } = render(
+      <ThemeProvider theme={fkasPrivate} disableTransitionOnChange nonce="csp">
+        <ColorSchemeOutput />
+        <ColorSchemeSetter value="dark" />
+      </ThemeProvider>
+    );
+    await mountedColorScheme(host, "internal-fkas-private:light/light");
+    expect(transitionStyleCount()).toBe(0);
+
+    host.querySelector("button")?.click();
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    expect(transitionStyleCount()).toBe(1);
+    const injected = [...document.head.querySelectorAll("style")].find((style) =>
+      style.textContent.includes("transition:none")
+    );
+    expect(injected?.getAttribute("nonce")).toBe("csp");
+    await expect.poll(() => transitionStyleCount()).toBe(0);
+  });
+
+  it("is safe when document.body is missing", async () => {
+    window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "light");
+    document.documentElement.setAttribute("data-theme", "light");
+    const { host } = render(
+      <ThemeProvider theme={fkasPrivate} disableTransitionOnChange>
+        <ColorSchemeOutput />
+        <ColorSchemeSetter value="dark" />
+      </ThemeProvider>
+    );
+    await mountedColorScheme(host, "internal-fkas-private:light/light");
+
+    const body = document.body;
+    body.remove();
+    try {
+      host.querySelector("button")?.click();
+      expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+      await expect.poll(() => transitionStyleCount()).toBe(0);
+    } finally {
+      document.documentElement.append(body);
+    }
+  });
+});
+
+describe("color-scheme bootstrap diagnostics", () => {
+  it("diagnoses missing, mismatched, matching, and duplicate bootstrap configurations", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const expected = resolveColorSchemeOptions();
+
+    writeManifest(undefined);
+    render(
+      <ThemeProvider theme={fkasPrivate}>
+        <ColorSchemeOutput />
+      </ThemeProvider>
+    );
+    expect(warn).toHaveBeenCalledWith(COLOR_SCHEME_BOOTSTRAP_MISSING_MESSAGE);
+
+    warn.mockClear();
+    const found = resolveColorSchemeOptions({
+      storageKey: "other-key",
+      defaultColorScheme: "light",
+      enableSystem: false,
+      forcedColorScheme: "dark",
+    });
+    writeManifest(found);
+    render(
+      <ThemeProvider theme={fkasPrivate}>
+        <ColorSchemeOutput />
+      </ThemeProvider>
+    );
+    expect(warn).toHaveBeenCalledWith(colorSchemeBootstrapMismatchMessage(expected, found));
+
+    warn.mockClear();
+    writeManifest(expected);
+    render(
+      <ThemeProvider theme={fkasPrivate}>
+        <ColorSchemeOutput />
+      </ThemeProvider>
+    );
+    expect(warn).not.toHaveBeenCalled();
+
+    warn.mockClear();
+    writeManifest(expected);
+    render(
+      <ThemeProvider theme={fkasPrivate} injectColorSchemeScript>
+        <ColorSchemeOutput />
+      </ThemeProvider>
+    );
+    expect(warn).toHaveBeenCalledWith(COLOR_SCHEME_BOOTSTRAP_DUPLICATE_MESSAGE);
+    expect(warn).not.toHaveBeenCalledWith(COLOR_SCHEME_BOOTSTRAP_MISSING_MESSAGE);
+
+    warn.mockClear();
+    writeManifest(undefined);
+    runBootstrap(injectedColorSchemeScriptSource());
+    render(
+      <ThemeProvider theme={fkasPrivate} injectColorSchemeScript>
+        <ColorSchemeOutput />
+      </ThemeProvider>
+    );
+    expect(warn).not.toHaveBeenCalledWith(COLOR_SCHEME_BOOTSTRAP_DUPLICATE_MESSAGE);
+    expect(warn).not.toHaveBeenCalledWith(COLOR_SCHEME_BOOTSTRAP_MISSING_MESSAGE);
+
+    warn.mockClear();
+    writeManifest(undefined);
+    runBootstrap(colorSchemeScriptSource());
+    render(
+      <ThemeProvider theme={fkasPrivate} injectColorSchemeScript>
+        <ColorSchemeOutput />
+      </ThemeProvider>
+    );
+    expect(warn).toHaveBeenCalledWith(COLOR_SCHEME_BOOTSTRAP_DUPLICATE_MESSAGE);
   });
 });

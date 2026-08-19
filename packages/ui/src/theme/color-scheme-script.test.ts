@@ -5,16 +5,52 @@ import { describe, expect, it } from "vitest";
 
 import { evaluateColorSchemeBootstrapScript } from "../../scripts/color-scheme-bootstrap-harness";
 import {
+  COLOR_SCHEME_BOOTSTRAP_SOURCE_DESCRIPTION,
+  COLOR_SCHEME_BOOTSTRAP_SOURCE_DUPLICATE,
+  COLOR_SCHEME_BOOTSTRAP_SOURCE_PROVIDER,
   DEFAULT_COLOR_SCHEME,
   DEFAULT_COLOR_SCHEME_STORAGE_KEY,
   DEFAULT_ENABLE_SYSTEM,
   serializeScriptData,
 } from "./color-scheme";
-import type { ColorScheme, ColorSchemeScriptElementProps } from "./color-scheme";
-import { ColorSchemeScript, colorSchemeScriptSource } from "./color-scheme-script";
+import type {
+  ColorScheme,
+  ColorSchemeBootstrapManifest,
+  ColorSchemeScriptElementProps,
+} from "./color-scheme";
+import {
+  ColorSchemeScript,
+  colorSchemeScriptSource,
+  injectedColorSchemeScriptSource,
+} from "./color-scheme-script";
 
 const LINE_SEPARATOR = "\u2028";
 const PARAGRAPH_SEPARATOR = "\u2029";
+
+function bootstrapSource(
+  manifest: ColorSchemeBootstrapManifest | undefined
+):
+  | typeof COLOR_SCHEME_BOOTSTRAP_SOURCE_PROVIDER
+  | typeof COLOR_SCHEME_BOOTSTRAP_SOURCE_DUPLICATE
+  | undefined {
+  if (manifest === undefined) {
+    return undefined;
+  }
+  const key = Object.getOwnPropertySymbols(manifest).find(
+    (symbol) => symbol.description === COLOR_SCHEME_BOOTSTRAP_SOURCE_DESCRIPTION
+  );
+  if (key === undefined) {
+    return undefined;
+  }
+  const descriptor = Object.getOwnPropertyDescriptor(manifest, key);
+  if (descriptor?.value === COLOR_SCHEME_BOOTSTRAP_SOURCE_PROVIDER) {
+    return COLOR_SCHEME_BOOTSTRAP_SOURCE_PROVIDER;
+  }
+  if (descriptor?.value === COLOR_SCHEME_BOOTSTRAP_SOURCE_DUPLICATE) {
+    return COLOR_SCHEME_BOOTSTRAP_SOURCE_DUPLICATE;
+  }
+  return undefined;
+}
 
 function scriptInnerHtml(markup: string): string {
   const prefix = "<script";
@@ -156,6 +192,26 @@ describe("colorSchemeScriptSource resolution", () => {
       forcedColorScheme: "dark",
     });
     expect(second.storageReads).toEqual([]);
+    expect(bootstrapSource(first.manifest)).toBeUndefined();
+  });
+
+  it("tags a provider-owned inject as self-inject and a second run as duplicate", () => {
+    const first = evaluateColorSchemeBootstrapScript(injectedColorSchemeScriptSource(), {
+      storedValue: "light",
+    });
+    expect(first.manifest).toEqual({
+      storageKey: DEFAULT_COLOR_SCHEME_STORAGE_KEY,
+      defaultColorScheme: DEFAULT_COLOR_SCHEME,
+      enableSystem: DEFAULT_ENABLE_SYSTEM,
+      forcedColorScheme: undefined,
+    });
+    expect(bootstrapSource(first.manifest)).toBe(COLOR_SCHEME_BOOTSTRAP_SOURCE_PROVIDER);
+
+    const second = evaluateColorSchemeBootstrapScript(injectedColorSchemeScriptSource(), {
+      existingManifest: first.manifest,
+      storedValue: "light",
+    });
+    expect(bootstrapSource(second.manifest)).toBe(COLOR_SCHEME_BOOTSTRAP_SOURCE_DUPLICATE);
   });
 
   it("fails closed evaluation when the source has a free identifier", () => {

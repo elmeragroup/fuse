@@ -3,6 +3,10 @@ import type { ScriptHTMLAttributes } from "react";
 export type ColorScheme = "light" | "dark" | "system";
 
 export const COLOR_SCHEME_BOOTSTRAP_MANIFEST_KEY = "__ELMERA_COLOR_SCHEME_BOOTSTRAP__";
+export const COLOR_SCHEME_BOOTSTRAP_SOURCE_DESCRIPTION = "elmera.colorScheme.bootstrapSource";
+export const COLOR_SCHEME_BOOTSTRAP_SOURCE_KEY = Symbol.for(COLOR_SCHEME_BOOTSTRAP_SOURCE_DESCRIPTION);
+export const COLOR_SCHEME_BOOTSTRAP_SOURCE_PROVIDER = "provider";
+export const COLOR_SCHEME_BOOTSTRAP_SOURCE_DUPLICATE = "duplicate";
 
 export type ColorSchemeBootstrapManifest = {
   storageKey: string;
@@ -49,6 +53,40 @@ export function closedColorScheme(value: string | null | undefined): ColorScheme
     return value;
   }
   return undefined;
+}
+
+export function resolveColorSchemeOptions({
+  storageKey = DEFAULT_COLOR_SCHEME_STORAGE_KEY,
+  defaultColorScheme = DEFAULT_COLOR_SCHEME,
+  enableSystem = DEFAULT_ENABLE_SYSTEM,
+  forcedColorScheme,
+}: ColorSchemeOptions = {}): ColorSchemeBootstrapManifest {
+  return {
+    storageKey,
+    defaultColorScheme: closedColorScheme(defaultColorScheme) ?? DEFAULT_COLOR_SCHEME,
+    enableSystem,
+    forcedColorScheme: closedColorScheme(forcedColorScheme),
+  };
+}
+
+export function colorSchemeManifestsEqual(
+  left: ColorSchemeBootstrapManifest,
+  right: ColorSchemeBootstrapManifest
+): boolean {
+  return (
+    left.storageKey === right.storageKey &&
+    left.defaultColorScheme === right.defaultColorScheme &&
+    left.enableSystem === right.enableSystem &&
+    left.forcedColorScheme === right.forcedColorScheme
+  );
+}
+
+export function readColorSchemeBootstrapManifest(): ColorSchemeBootstrapManifest | undefined {
+  try {
+    return globalThis[COLOR_SCHEME_BOOTSTRAP_MANIFEST_KEY];
+  } catch {
+    return undefined;
+  }
 }
 
 export function serializeScriptData(value: string | boolean): string {

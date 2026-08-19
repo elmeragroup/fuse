@@ -12,6 +12,8 @@ export type {
   ElmeraGroupUiProviderProps,
   SupportedLocale,
 } from "./theme/elmera-group-ui";
+export { ForceColorScheme } from "./theme/force-color-scheme";
+export type { ForceColorSchemeProps } from "./theme/force-color-scheme";
 export { themeAttributes } from "./theme/theme-attributes";
 export type { ThemeAttributes } from "./theme/theme-attributes";
 export type { Theme } from "./theme/theme-context";

@@ -1,8 +1,24 @@
+import { createElement } from "react";
+
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import {
+  COLOR_SCHEME_BOOTSTRAP_SOURCE_DUPLICATE,
+  COLOR_SCHEME_BOOTSTRAP_SOURCE_KEY,
+  COLOR_SCHEME_BOOTSTRAP_SOURCE_PROVIDER,
+  resolveColorSchemeOptions,
+} from "./color-scheme";
+import type { ColorSchemeBootstrapManifest } from "./color-scheme";
+import {
+  COLOR_SCHEME_BOOTSTRAP_DUPLICATE_MESSAGE,
+  COLOR_SCHEME_BOOTSTRAP_MISSING_MESSAGE,
+  colorSchemeBootstrapMismatchMessage,
+  diagnoseColorSchemeBootstrap,
+} from "./color-scheme-diagnostics";
 import { colorSchemeScriptSource } from "./color-scheme-script";
 import {
   documentBrandDisagrees,
@@ -10,8 +26,10 @@ import {
   warnDocumentBrandMismatch,
 } from "./document-brand";
 import { themeAttributes } from "./theme-attributes";
+import { ThemeProvider, useTheme } from "./theme-provider";
 import { BRANDS, LEGAL_THEMES, parseThemeSlug, themeSlug } from "./tokens/themes";
 import type { ThemeInput } from "./tokens/themes";
+import { useColorScheme } from "./use-color-scheme";
 import { isThemeDevelopment, validateTheme } from "./validate-theme";
 
 const srcRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -196,6 +214,137 @@ describe("ColorSchemeScript", () => {
     expect(source).toContain('"light"');
     expect(source).toContain("false");
     expect(source).toContain('"dark"');
+  });
+
+  it("does not include runtime transition suppression in the parser-time bootstrap", () => {
+    const source = colorSchemeScriptSource();
+    expect(source).not.toMatch(/transition:none|disableTransition|createElement\("style"\)/);
+  });
+});
+
+describe("color-scheme bootstrap diagnostics", () => {
+  const expected = resolveColorSchemeOptions();
+
+  function writeManifest(manifest: ColorSchemeBootstrapManifest | undefined) {
+    if (manifest === undefined) {
+      delete globalThis.__ELMERA_COLOR_SCHEME_BOOTSTRAP__;
+      return;
+    }
+    globalThis.__ELMERA_COLOR_SCHEME_BOOTSTRAP__ = manifest;
+  }
+
+  afterEach(() => {
+    writeManifest(undefined);
+  });
+
+  it("warns for a missing manifest in development and stays silent in production", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    writeManifest(undefined);
+
+    vi.stubEnv("NODE_ENV", "development");
+    diagnoseColorSchemeBootstrap(expected, false);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]?.[0]).toBe(COLOR_SCHEME_BOOTSTRAP_MISSING_MESSAGE);
+
+    warn.mockClear();
+    vi.stubEnv("NODE_ENV", "production");
+    expect(isThemeDevelopment()).toBe(false);
+    diagnoseColorSchemeBootstrap(expected, false);
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it("warns for a mismatched manifest and stays silent when it matches", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    vi.stubEnv("NODE_ENV", "development");
+
+    const found = resolveColorSchemeOptions({
+      storageKey: "other-key",
+      defaultColorScheme: "light",
+      enableSystem: false,
+      forcedColorScheme: "dark",
+    });
+    writeManifest(found);
+    diagnoseColorSchemeBootstrap(expected, false);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]?.[0]).toBe(colorSchemeBootstrapMismatchMessage(expected, found));
+
+    warn.mockClear();
+    writeManifest(expected);
+    diagnoseColorSchemeBootstrap(expected, false);
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it("warns for host-plus-provider injection when a manifest already exists", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    vi.stubEnv("NODE_ENV", "development");
+    writeManifest(expected);
+    diagnoseColorSchemeBootstrap(expected, true);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]?.[0]).toBe(COLOR_SCHEME_BOOTSTRAP_DUPLICATE_MESSAGE);
+  });
+
+  it("does not warn duplicate for a matching provider-owned self-inject", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    vi.stubEnv("NODE_ENV", "development");
+    const selfInjected = { ...expected };
+    Object.defineProperty(selfInjected, COLOR_SCHEME_BOOTSTRAP_SOURCE_KEY, {
+      value: COLOR_SCHEME_BOOTSTRAP_SOURCE_PROVIDER,
+    });
+    writeManifest(selfInjected);
+    diagnoseColorSchemeBootstrap(expected, true);
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it("warns duplicate when a provider inject overwrites a host bootstrap", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    vi.stubEnv("NODE_ENV", "development");
+    const overwritten = { ...expected };
+    Object.defineProperty(overwritten, COLOR_SCHEME_BOOTSTRAP_SOURCE_KEY, {
+      value: COLOR_SCHEME_BOOTSTRAP_SOURCE_DUPLICATE,
+    });
+    writeManifest(overwritten);
+    diagnoseColorSchemeBootstrap(expected, true);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]?.[0]).toBe(COLOR_SCHEME_BOOTSTRAP_DUPLICATE_MESSAGE);
+  });
+});
+
+describe("ThemeProvider server snapshot", () => {
+  const theme = { variant: "internal", brand: "fkas", segment: "private" } as const;
+
+  function SnapshotProbe() {
+    const resolvedTheme = useTheme();
+    const { colorScheme, resolvedColorScheme } = useColorScheme();
+    return createElement(
+      "span",
+      null,
+      `${resolvedTheme.slug}:${colorScheme}:${resolvedColorScheme ?? "pending"}`
+    );
+  }
+
+  it("keeps resolvedColorScheme undefined on the server while brand stays defined", () => {
+    const html = renderToStaticMarkup(
+      createElement(ThemeProvider, { theme, children: createElement(SnapshotProbe) })
+    );
+    expect(html).toBe("<span>internal-fkas-private:system:pending</span>");
+  });
+
+  it("renders an opt-in classic script as the first child and defaults injection off", () => {
+    const injected = renderToStaticMarkup(
+      createElement(ThemeProvider, {
+        theme,
+        injectColorSchemeScript: true,
+        children: createElement("span", null, "child"),
+      })
+    );
+    expect(injected.startsWith("<script>")).toBe(true);
+    expect(injected).toContain(colorSchemeScriptSource());
+    expect(injected.endsWith("<span>child</span>")).toBe(true);
+
+    const plain = renderToStaticMarkup(
+      createElement(ThemeProvider, { theme, children: createElement("span", null, "child") })
+    );
+    expect(plain).toBe("<span>child</span>");
   });
 });
 
