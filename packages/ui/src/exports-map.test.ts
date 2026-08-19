@@ -116,6 +116,7 @@ describe("exports map", () => {
     expect(theme?.runtimeExports).toContain("ThemeProvider");
     expect(theme?.runtimeExports).toContain("themeAttributes");
     expect(theme?.runtimeExports).toContain("ColorSchemeScript");
+    expect(theme?.runtimeExports).toContain("colorSchemeScriptSource");
     expect(root?.runtimeExports).toEqual([
       ...(theme?.runtimeExports ?? []),
       "Button",

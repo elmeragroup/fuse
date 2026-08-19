@@ -1,7 +1,8 @@
-export { ColorSchemeScript } from "./theme/color-scheme-script";
+export { ColorSchemeScript, colorSchemeScriptSource } from "./theme/color-scheme-script";
 export type {
   ColorScheme,
   ColorSchemeOptions,
+  ColorSchemeScriptElementProps,
   ColorSchemeScriptProps,
   UseColorSchemeResult,
 } from "./theme/color-scheme";

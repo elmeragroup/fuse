@@ -131,6 +131,7 @@ describe("ColorSchemeScript", () => {
     const source = colorSchemeScriptSource();
     expect(source).toContain("data-theme");
     expect(source).toContain("elmera-color-scheme");
+    expect(source).toContain("__ELMERA_COLOR_SCHEME_BOOTSTRAP__");
   });
 
   it("forwards option overrides into the script", () => {
@@ -138,10 +139,12 @@ describe("ColorSchemeScript", () => {
       storageKey: "app-color-scheme",
       defaultColorScheme: "light",
       enableSystem: false,
+      forcedColorScheme: "dark",
     });
     expect(source).toContain("app-color-scheme");
     expect(source).toContain('"light"');
     expect(source).toContain("false");
+    expect(source).toContain('"dark"');
   });
 });
 

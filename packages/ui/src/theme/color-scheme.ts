@@ -1,12 +1,38 @@
+import type { ScriptHTMLAttributes } from "react";
+
 export type ColorScheme = "light" | "dark" | "system";
+
+export const COLOR_SCHEME_BOOTSTRAP_MANIFEST_KEY = "__ELMERA_COLOR_SCHEME_BOOTSTRAP__";
+
+export type ColorSchemeBootstrapManifest = {
+  storageKey: string;
+  defaultColorScheme: ColorScheme;
+  enableSystem: boolean;
+  forcedColorScheme: ColorScheme | undefined;
+};
+
+declare global {
+  var __ELMERA_COLOR_SCHEME_BOOTSTRAP__: ColorSchemeBootstrapManifest | undefined;
+}
 
 export type ColorSchemeOptions = {
   storageKey?: string;
   defaultColorScheme?: ColorScheme;
   enableSystem?: boolean;
+  forcedColorScheme?: ColorScheme;
 };
 
-export type ColorSchemeScriptProps = ColorSchemeOptions & { nonce?: string };
+export type ColorSchemeScriptElementProps = Omit<
+  ScriptHTMLAttributes<HTMLScriptElement>,
+  "type" | "src" | "children" | "dangerouslySetInnerHTML"
+> & {
+  "data-cfasync"?: string;
+};
+
+export type ColorSchemeScriptProps = ColorSchemeOptions & {
+  nonce?: string;
+  scriptProps?: ColorSchemeScriptElementProps;
+};
 
 export type UseColorSchemeResult = {
   colorScheme: ColorScheme;
@@ -17,6 +43,20 @@ export type UseColorSchemeResult = {
 export const DEFAULT_COLOR_SCHEME_STORAGE_KEY = "elmera-color-scheme";
 export const DEFAULT_COLOR_SCHEME: ColorScheme = "system";
 export const DEFAULT_ENABLE_SYSTEM = true;
+
+export function closedColorScheme(value: string | null | undefined): ColorScheme | undefined {
+  if (value === "light" || value === "dark" || value === "system") {
+    return value;
+  }
+  return undefined;
+}
+
+export function serializeScriptData(value: string | boolean): string {
+  return JSON.stringify(value)
+    .replaceAll("<", "\\u003c")
+    .replaceAll("\u2028", "\\u2028")
+    .replaceAll("\u2029", "\\u2029");
+}
 
 export function parseColorScheme(value: string | null | undefined, fallback: ColorScheme): ColorScheme {
   if (value === "light" || value === "dark" || value === "system") {

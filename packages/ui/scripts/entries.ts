@@ -89,6 +89,7 @@ export const THEME_RUNTIME_EXPORTS = [
   "ElmeraGroupUiProvider",
   "ThemeProvider",
   "ThemeScope",
+  "colorSchemeScriptSource",
   "parseThemeSlug",
   "themeAttributes",
   "themeSlug",

@@ -13,6 +13,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { evaluateColorSchemeBootstrapScript } from "./color-scheme-bootstrap-harness";
 import { discoverEntries, exportKey, isSkippedSourceFile, toPosix } from "./entries";
 import { buildPublishExportMap, exportBindingsObject } from "./generate-exports";
 import type { ExportBinding, ExportCondition } from "./generate-exports";
@@ -239,6 +240,79 @@ function checkPackedAssets(extracted: string): void {
   }
 }
 
+function packedColorSchemeScriptSource(consumerRoot: string, optionsLiteral: string): string {
+  const result = spawnSync(
+    process.execPath,
+    [
+      "--input-type=module",
+      "--eval",
+      `import { colorSchemeScriptSource } from "@elmeragroup/ui/theme";
+process.stdout.write(colorSchemeScriptSource(${optionsLiteral}));`,
+    ],
+    { cwd: consumerRoot, encoding: "utf8" }
+  );
+  if (result.status !== 0) {
+    fail(`Packed colorSchemeScriptSource failed:\n${result.stderr || result.stdout}`);
+  }
+  return result.stdout;
+}
+
+function checkPackedColorSchemeBootstrap(consumerRoot: string): void {
+  const names = importPackedModule(consumerRoot, "@elmeragroup/ui/theme");
+  if (!names.includes("colorSchemeScriptSource") || !names.includes("ColorSchemeScript")) {
+    fail(`Packed /theme is missing bootstrap exports: ${names.join(", ")}`);
+  }
+
+  const scriptBreak = "</script>";
+  const lineSeparator = "\u2028";
+  const paragraphSeparator = "\u2029";
+  const primitives = {
+    storageKey: `${scriptBreak}"&${lineSeparator}${paragraphSeparator}`,
+    defaultColorScheme: "system",
+    enableSystem: true,
+    forcedColorScheme: "dark",
+  };
+  const source = packedColorSchemeScriptSource(consumerRoot, JSON.stringify(primitives));
+  if (source.includes(scriptBreak)) {
+    fail("Packed bootstrap serialized a raw </script> sequence");
+  }
+  if (!source.includes("\\u003c/script>")) {
+    fail("Packed bootstrap did not escape </script> as \\u003c/script>");
+  }
+  if (!source.includes("\\u2028") || !source.includes("\\u2029")) {
+    fail("Packed bootstrap did not escape U+2028 / U+2029");
+  }
+  if (source.includes("&quot;") || source.includes("&amp;") || source.includes("&lt;")) {
+    fail("Packed bootstrap HTML-entity-encoded script data");
+  }
+  if (!source.includes("&") || !source.includes('\\"')) {
+    fail("Packed bootstrap lost raw quotes or ampersands");
+  }
+
+  const result = evaluateColorSchemeBootstrapScript(source, { storedValue: "light", prefersDark: false });
+  if (result.attributes["data-theme"] !== "dark") {
+    fail(`Packed forced bootstrap wrote data-theme=${String(result.attributes["data-theme"])}`);
+  }
+  if (result.storageReads.length > 0) {
+    fail("Packed forced bootstrap read storage");
+  }
+  if (JSON.stringify(result.manifest) !== JSON.stringify(primitives)) {
+    fail(`Packed bootstrap manifest mismatch: ${JSON.stringify(result.manifest)}`);
+  }
+  if (result.style.colorScheme !== undefined || result.createdElements.length > 0) {
+    fail("Packed bootstrap wrote CSS color-scheme or created elements");
+  }
+
+  const systemSource = packedColorSchemeScriptSource(consumerRoot, `{ enableSystem: false }`);
+  const systemResult = evaluateColorSchemeBootstrapScript(systemSource, {
+    storedValue: "system",
+    prefersDark: true,
+  });
+  if (systemResult.attributes["data-theme"] !== "light") {
+    fail("Packed bootstrap did not resolve disabled system to light");
+  }
+}
+
 function checkValidateThemeEnv(extracted: string): void {
   const packed = join(extracted, "theme/validate-theme.js");
   if (!existsSync(packed)) {
@@ -273,6 +347,7 @@ try {
   checkEmittedDirectives(extracted);
   checkPackedAssets(extracted);
   checkValidateThemeEnv(extracted);
+  checkPackedColorSchemeBootstrap(consumerRoot);
 } finally {
   rmSync(scratch, { recursive: true, force: true });
 }

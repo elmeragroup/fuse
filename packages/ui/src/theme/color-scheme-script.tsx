@@ -23,31 +23,107 @@
  * SOFTWARE.
  */
 
+import type { FunctionComponent, ReactNode, ScriptHTMLAttributes } from "react";
+
 import {
+  closedColorScheme,
   DEFAULT_COLOR_SCHEME,
   DEFAULT_COLOR_SCHEME_STORAGE_KEY,
   DEFAULT_ENABLE_SYSTEM,
+  serializeScriptData,
 } from "./color-scheme";
-import type { ColorSchemeScriptProps } from "./color-scheme";
+import type {
+  ColorScheme,
+  ColorSchemeBootstrapManifest,
+  ColorSchemeOptions,
+  ColorSchemeScriptElementProps,
+  ColorSchemeScriptProps,
+} from "./color-scheme";
 
-export function applyColorSchemeAttribute(
+type ColorSchemeScriptPassthrough = {
+  nonce: string | undefined;
+  passthrough: ColorSchemeScriptElementProps;
+};
+
+type IncomingColorSchemeScriptProps = ColorSchemeScriptElementProps & {
+  type?: ScriptHTMLAttributes<HTMLScriptElement>["type"];
+  src?: ScriptHTMLAttributes<HTMLScriptElement>["src"];
+  children?: ReactNode;
+  dangerouslySetInnerHTML?: ScriptHTMLAttributes<HTMLScriptElement>["dangerouslySetInnerHTML"];
+};
+
+function serializeScriptArgument(value: string | boolean | undefined): string {
+  if (value === undefined) {
+    return "undefined";
+  }
+  return serializeScriptData(value);
+}
+
+function resolveColorSchemeOptions({
+  storageKey = DEFAULT_COLOR_SCHEME_STORAGE_KEY,
+  defaultColorScheme = DEFAULT_COLOR_SCHEME,
+  enableSystem = DEFAULT_ENABLE_SYSTEM,
+  forcedColorScheme,
+}: ColorSchemeOptions = {}): ColorSchemeBootstrapManifest {
+  return {
+    storageKey,
+    defaultColorScheme: closedColorScheme(defaultColorScheme) ?? DEFAULT_COLOR_SCHEME,
+    enableSystem,
+    forcedColorScheme: closedColorScheme(forcedColorScheme),
+  };
+}
+
+function scriptPassthroughProps(
+  scriptProps: IncomingColorSchemeScriptProps | undefined
+): ColorSchemeScriptPassthrough {
+  if (scriptProps === undefined) {
+    return { nonce: undefined, passthrough: {} };
+  }
+
+  const {
+    type: _type,
+    src: _src,
+    children: _children,
+    dangerouslySetInnerHTML: _dangerouslySetInnerHTML,
+    nonce: scriptNonce,
+    ...passthrough
+  } = scriptProps;
+  void _type;
+  void _src;
+  void _children;
+  void _dangerouslySetInnerHTML;
+
+  return { nonce: scriptNonce, passthrough };
+}
+
+function applyClosedColorSchemeBootstrap(
   storageKey: string,
-  defaultColorScheme: string,
-  enableSystem: boolean
+  defaultColorScheme: ColorScheme,
+  enableSystem: boolean,
+  forcedColorScheme: ColorScheme | undefined
 ): void {
   try {
-    let preference = defaultColorScheme;
+    let preference: string = defaultColorScheme;
     if (preference !== "light" && preference !== "dark" && preference !== "system") {
       preference = "system";
     }
 
-    try {
-      const stored = localStorage.getItem(storageKey);
-      if (stored === "light" || stored === "dark" || stored === "system") {
-        preference = stored;
+    const force =
+      forcedColorScheme === "light" || forcedColorScheme === "dark" || forcedColorScheme === "system"
+        ? forcedColorScheme
+        : undefined;
+
+    if (force !== undefined) {
+      preference = force;
+    } else {
+      try {
+        const stored = localStorage.getItem(storageKey);
+        if (stored === "light" || stored === "dark" || stored === "system") {
+          preference = stored;
+        }
+      } catch {
+        // storage unavailable
       }
-    } catch {
-      // storage unavailable
     }
 
     let resolved = "light";
@@ -62,31 +138,45 @@ export function applyColorSchemeAttribute(
     }
 
     document.documentElement.setAttribute("data-theme", resolved);
+    globalThis.__ELMERA_COLOR_SCHEME_BOOTSTRAP__ = {
+      storageKey,
+      defaultColorScheme,
+      enableSystem,
+      forcedColorScheme,
+    };
   } catch {
     // never throw before paint
   }
 }
 
-export function colorSchemeScriptSource({
-  storageKey = DEFAULT_COLOR_SCHEME_STORAGE_KEY,
-  defaultColorScheme = DEFAULT_COLOR_SCHEME,
-  enableSystem = DEFAULT_ENABLE_SYSTEM,
-}: ColorSchemeScriptProps = {}): string {
-  return `(${applyColorSchemeAttribute.toString()})(${JSON.stringify(storageKey)},${JSON.stringify(defaultColorScheme)},${JSON.stringify(enableSystem)})`;
+export function colorSchemeScriptSource(options: ColorSchemeOptions = {}): string {
+  const { storageKey, defaultColorScheme, enableSystem, forcedColorScheme } =
+    resolveColorSchemeOptions(options);
+  return `(${applyClosedColorSchemeBootstrap.toString()})(${serializeScriptArgument(storageKey)},${serializeScriptArgument(defaultColorScheme)},${serializeScriptArgument(enableSystem)},${serializeScriptArgument(forcedColorScheme)})`;
 }
 
-export function ColorSchemeScript({
+export const ColorSchemeScript: FunctionComponent<ColorSchemeScriptProps> = ({
   storageKey = DEFAULT_COLOR_SCHEME_STORAGE_KEY,
   defaultColorScheme = DEFAULT_COLOR_SCHEME,
   enableSystem = DEFAULT_ENABLE_SYSTEM,
+  forcedColorScheme,
   nonce,
-}: ColorSchemeScriptProps = {}) {
+  scriptProps,
+}) => {
+  const { nonce: scriptNonce, passthrough } = scriptPassthroughProps(scriptProps);
+
   return (
     <script
-      nonce={nonce}
+      {...passthrough}
+      nonce={nonce ?? scriptNonce}
       dangerouslySetInnerHTML={{
-        __html: colorSchemeScriptSource({ storageKey, defaultColorScheme, enableSystem }),
+        __html: colorSchemeScriptSource({
+          storageKey,
+          defaultColorScheme,
+          enableSystem,
+          forcedColorScheme,
+        }),
       }}
     />
   );
-}
+};
