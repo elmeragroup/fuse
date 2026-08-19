@@ -5,6 +5,8 @@
   "scripts": {
     "build": "next build",
     "dev": "next dev --port 3000",
+    "start": "next start --port 3000",
+    "test": "vitest run",
     "type-check": "next typegen && tsc --noEmit"
   },
   "dependencies": {
@@ -19,7 +21,9 @@
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
+    "playwright": "catalog:",
     "tailwindcss": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }

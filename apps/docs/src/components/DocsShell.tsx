@@ -1,13 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 
-import { ElmeraGroupUiProvider, ThemeProvider } from "@elmeragroup/ui/theme";
-import type { ThemeInput } from "@elmeragroup/ui/theme";
+import { ElmeraGroupUiProvider } from "@elmeragroup/ui/theme";
 
-import { DEFAULT_THEME } from "../lib/theme";
 import { Header } from "./Header";
+import { PreviewThemeProvider } from "./PreviewTheme";
 import { QuickNav } from "./QuickNav";
 import { SideNav } from "./SideNav";
 import { MAIN_CONTENT_ID } from "./SkipNav";
@@ -17,13 +15,11 @@ export type DocsShellProps = {
 };
 
 export function DocsShell({ children }: DocsShellProps): ReactElement {
-  const [theme, setTheme] = useState<ThemeInput>(DEFAULT_THEME);
-
   return (
-    <ThemeProvider theme={theme}>
+    <PreviewThemeProvider>
       <ElmeraGroupUiProvider locale="en-US">
         <div className="DocsRoot">
-          <Header theme={theme} onThemeChange={setTheme} />
+          <Header />
           <div className="DocsCols">
             <SideNav />
             <main className="DocsMain" id={MAIN_CONTENT_ID}>
@@ -33,6 +29,6 @@ export function DocsShell({ children }: DocsShellProps): ReactElement {
           </div>
         </div>
       </ElmeraGroupUiProvider>
-    </ThemeProvider>
+    </PreviewThemeProvider>
   );
 }

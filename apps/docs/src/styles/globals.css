@@ -2,3 +2,13 @@
 @import "@elmeragroup/ui/css";
 @import "@elmeragroup/ui/themes.css";
 @source "../../../../packages/ui/src";
+
+html,
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+body {
+  margin: 0;
+}

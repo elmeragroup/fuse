@@ -2,8 +2,12 @@ import type { ReactElement, ReactNode } from "react";
 
 import type { Metadata } from "next";
 
+import { ColorSchemeScript, ThemeProvider } from "@elmeragroup/ui/theme";
+
 import { DocsShell } from "../../components/DocsShell";
+import { DocumentRoot } from "../../components/DocumentRoot";
 import { SkipNav } from "../../components/SkipNav";
+import { DOCUMENT_COLOR_SCHEME, DOCUMENT_THEME } from "../../lib/theme";
 import "../../styles/globals.css";
 import "./layout.css";
 
@@ -20,11 +24,25 @@ export type DocsLayoutProps = {
 
 export default function DocsLayout({ children }: DocsLayoutProps): ReactElement {
   return (
-    <html lang="en">
+    <DocumentRoot suppressHydrationWarning>
+      <head>
+        <ColorSchemeScript
+          storageKey={DOCUMENT_COLOR_SCHEME.storageKey}
+          defaultColorScheme={DOCUMENT_COLOR_SCHEME.defaultColorScheme}
+          enableSystem={DOCUMENT_COLOR_SCHEME.enableSystem}
+        />
+      </head>
       <body>
-        <SkipNav />
-        <DocsShell>{children}</DocsShell>
+        <ThemeProvider
+          theme={DOCUMENT_THEME}
+          storageKey={DOCUMENT_COLOR_SCHEME.storageKey}
+          defaultColorScheme={DOCUMENT_COLOR_SCHEME.defaultColorScheme}
+          enableSystem={DOCUMENT_COLOR_SCHEME.enableSystem}
+          injectColorSchemeScript={false}>
+          <SkipNav />
+          <DocsShell>{children}</DocsShell>
+        </ThemeProvider>
       </body>
-    </html>
+    </DocumentRoot>
   );
 }

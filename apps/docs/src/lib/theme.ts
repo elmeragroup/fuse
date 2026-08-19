@@ -1,4 +1,22 @@
-import type { BrandCode, ThemeInput, ThemeSegment, ThemeVariant } from "@elmeragroup/ui/theme";
+import type {
+  BrandCode,
+  ColorSchemeOptions,
+  ThemeInput,
+  ThemeSegment,
+  ThemeVariant,
+} from "@elmeragroup/ui/theme";
+
+export const DOCUMENT_THEME = {
+  variant: "internal",
+  brand: "elma",
+  segment: "private",
+} as const satisfies ThemeInput;
+
+export const DOCUMENT_COLOR_SCHEME = {
+  storageKey: "elmera-color-scheme",
+  defaultColorScheme: "system",
+  enableSystem: true,
+} as const satisfies ColorSchemeOptions;
 
 export const DEFAULT_THEME = {
   variant: "internal",

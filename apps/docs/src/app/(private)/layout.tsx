@@ -2,6 +2,9 @@ import type { ReactElement, ReactNode } from "react";
 
 import type { Metadata } from "next";
 
+import { DocumentRoot } from "../../components/DocumentRoot";
+import "../../styles/globals.css";
+
 export const metadata: Metadata = {
   robots: {
     index: false,
@@ -15,8 +18,8 @@ export type PrivateLayoutProps = {
 
 export default function PrivateLayout({ children }: PrivateLayoutProps): ReactElement {
   return (
-    <html lang="en">
+    <DocumentRoot>
       <body>{children}</body>
-    </html>
+    </DocumentRoot>
   );
 }
