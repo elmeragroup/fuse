@@ -7,7 +7,7 @@
     "dev": "turbo run dev",
     "format": "oxfmt",
     "format:check": "oxfmt --check",
-    "lint": "oxlint .",
+    "lint": "oxlint . --deny-warnings",
     "lint:fix": "oxlint --fix .",
     "test": "turbo run test",
     "test:browser": "turbo run test:browser",

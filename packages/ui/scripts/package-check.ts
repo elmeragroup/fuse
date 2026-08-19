@@ -104,10 +104,11 @@ process.stdout.write(JSON.stringify(Object.keys(mod).sort()));`,
   }
   const names: string[] = [];
   for (const item of parsed) {
-    if (typeof item !== "string") {
+    if (Object.prototype.toString.call(item) !== "[object String]") {
       fail(`Unexpected import payload for ${specifier}: ${result.stdout}`);
     }
-    names.push(item);
+    // SAFETY: JSON.parse of Object.keys only yields primitive strings; non-strings were rejected above.
+    names.push(item as string);
   }
   return names;
 }
@@ -124,7 +125,7 @@ type PackedManifest = {
 };
 
 function isExportCondition(target: ExportBinding["target"]): target is ExportCondition {
-  return typeof target !== "string";
+  return Object(target) === target;
 }
 
 function checkExportPaths(extracted: string, consumerRoot: string): void {

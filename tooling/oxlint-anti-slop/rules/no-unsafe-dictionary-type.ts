@@ -4,8 +4,8 @@ import {
 	classifyUnsafeDictionary,
 	classifyUnsafeDictionaryValue,
 	createTypeEnvironment,
-	type TypeEnvironment,
 } from "../shared/dictionary-types.ts";
+import type { TypeEnvironment } from "../shared/dictionary-types.ts";
 
 import type { ESTree } from "@oxlint/plugins";
 
