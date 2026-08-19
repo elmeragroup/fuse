@@ -369,6 +369,30 @@ describe("ThemeProvider server snapshot", () => {
   });
 });
 
+describe("ThemeProvider color-scheme store seam", () => {
+  it("resolves theme context from axes rather than object identity", () => {
+    const source = readFileSync(join(srcRoot, "theme/theme-context.ts"), "utf8");
+    expect(source).toContain("validateTheme(theme)");
+    expect(source).toMatch(/axes\?\.brand, axes\?\.segment, axes\?\.variant/);
+    expect(source).not.toMatch(/\}, \[theme\]\);/);
+  });
+
+  it("does not mutate the retained color-scheme store during render", () => {
+    const source = readFileSync(join(srcRoot, "theme/theme-provider.tsx"), "utf8");
+    const writerStart = source.indexOf("function DocumentThemeWriter");
+    const writerEnd = source.indexOf("export function useTheme");
+    expect(writerStart).toBeGreaterThan(-1);
+    expect(writerEnd).toBeGreaterThan(writerStart);
+    const writer = source.slice(writerStart, writerEnd);
+    const [renderPhase, ...insertionAndRest] = writer.split("useInsertionEffect");
+    expect(insertionAndRest.length).toBeGreaterThan(0);
+    expect(renderPhase).not.toMatch(/store\.(updateConfig|applyConfig|commitConfig|discardConfig)\(/);
+    expect(writer).toMatch(/store\.applyConfig\(/);
+    expect(writer).toMatch(/store\.commitConfig\(/);
+    expect(writer).toMatch(/useInsertionEffect\(/);
+  });
+});
+
 describe("source contract", () => {
   it("does not ship userAgent, UserAgentParserResult, or @elmeragroup/lib", () => {
     const files = walkSourceFiles(srcRoot).filter((file) => !file.includes(".test"));

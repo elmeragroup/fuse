@@ -7,6 +7,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DEFAULT_COLOR_SCHEME_STORAGE_KEY, resolveColorSchemeOptions } from "./color-scheme";
 import type { ColorScheme, ColorSchemeBootstrapManifest } from "./color-scheme";
+import { createColorSchemeRuntimeStore } from "./color-scheme-runtime";
+import type { ColorSchemeRuntimeConfig } from "./color-scheme-runtime";
 import {
   COLOR_SCHEME_BOOTSTRAP_DUPLICATE_MESSAGE,
   COLOR_SCHEME_BOOTSTRAP_MISSING_MESSAGE,
@@ -1102,5 +1104,161 @@ describe("color-scheme bootstrap diagnostics", () => {
       </ThemeProvider>
     );
     expect(warn).toHaveBeenCalledWith(COLOR_SCHEME_BOOTSTRAP_DUPLICATE_MESSAGE);
+  });
+});
+
+function runtimeConfig(overrides: Partial<ColorSchemeRuntimeConfig> = {}): ColorSchemeRuntimeConfig {
+  return {
+    storageKey: DEFAULT_COLOR_SCHEME_STORAGE_KEY,
+    defaultColorScheme: "light",
+    enableSystem: false,
+    mountForce: undefined,
+    disableTransitionOnChange: false,
+    nonce: undefined,
+    ...overrides,
+  };
+}
+
+function brandAttributeWrites(calls: ReadonlyArray<readonly unknown[]>) {
+  return calls.filter(
+    (call) =>
+      call[0] === "data-theme-variant" || call[0] === "data-theme-brand" || call[0] === "data-theme-segment"
+  );
+}
+
+describe("color-scheme store commit vs discard", () => {
+  it("does not write data-theme for apply-then-discard, and does for apply-and-commit", () => {
+    document.documentElement.setAttribute("data-theme", "light");
+    const store = createColorSchemeRuntimeStore(runtimeConfig());
+    store.markMounted();
+
+    store.applyConfig(runtimeConfig({ mountForce: "dark" }));
+    store.discardConfig();
+    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+    expect(store.getSnapshot().resolvedColorScheme).toBe("light");
+
+    store.applyConfig(runtimeConfig({ mountForce: "dark" }));
+    store.commitConfig();
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    expect(store.getSnapshot().resolvedColorScheme).toBe("dark");
+  });
+});
+
+describe("ThemeProvider committed color-scheme options", () => {
+  it("updates document and consumer resolvedColorScheme when committed options change", async () => {
+    writeManifest(resolveColorSchemeOptions({ forcedColorScheme: "dark", enableSystem: false }));
+    window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "light");
+
+    const { host, rerender } = render(
+      <ThemeProvider theme={fkasPrivate} forcedColorScheme="dark" enableSystem={false}>
+        <ColorSchemeOutput />
+      </ThemeProvider>
+    );
+    await mountedColorScheme(host, "internal-fkas-private:light/dark");
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+
+    rerender(
+      <ThemeProvider theme={fkasPrivate} forcedColorScheme="light" enableSystem={false}>
+        <ColorSchemeOutput />
+      </ThemeProvider>
+    );
+    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+    await mountedColorScheme(host, "internal-fkas-private:light/light");
+  });
+
+  it("does not call matchMedia during a post-mount ThemeProvider render to compute resolvedColorScheme", async () => {
+    stubPrefersColorScheme(true);
+    window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "system");
+
+    const { host, rerender } = render(
+      <ThemeProvider theme={fkasPrivate}>
+        <ColorSchemeOutput />
+      </ThemeProvider>
+    );
+    await mountedColorScheme(host, "internal-fkas-private:system/dark");
+
+    const matchMedia = vi.mocked(window.matchMedia);
+    matchMedia.mockClear();
+    rerender(
+      <ThemeProvider theme={fkasPrivate}>
+        <ColorSchemeOutput />
+        <span>extra</span>
+      </ThemeProvider>
+    );
+    expect(host.querySelector("output")?.textContent).toBe("internal-fkas-private:system/dark");
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    expect(matchMedia).not.toHaveBeenCalled();
+  });
+
+  it("updates snapshot-owned resolvedColorScheme when runtime force changes", async () => {
+    writeManifest(resolveColorSchemeOptions({ enableSystem: false }));
+    window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "light");
+    document.documentElement.setAttribute("data-theme", "light");
+
+    const { host, rerender } = render(
+      <ThemeProvider theme={fkasPrivate} enableSystem={false}>
+        <ColorSchemeOutput />
+      </ThemeProvider>
+    );
+    await mountedColorScheme(host, "internal-fkas-private:light/light");
+
+    rerender(
+      <ThemeProvider theme={fkasPrivate} enableSystem={false}>
+        <ForceColorScheme value="dark">
+          <ColorSchemeOutput />
+        </ForceColorScheme>
+      </ThemeProvider>
+    );
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    await mountedColorScheme(host, "internal-fkas-private:light/dark");
+  });
+});
+
+describe("ThemeProvider equal-axis theme identity", () => {
+  it("does not rewrite brand attributes or replace theme context for equal-axis literals", () => {
+    stampDocumentBrand(fkasPrivate);
+    const setAttribute = vi.spyOn(document.documentElement, "setAttribute");
+    const themes: object[] = [];
+
+    function IdentityProbe() {
+      themes.push(useTheme());
+      return <ThemeProbe />;
+    }
+
+    const { host, rerender } = render(
+      <ThemeProvider theme={{ variant: "internal", brand: "fkas", segment: "private" }}>
+        <IdentityProbe />
+      </ThemeProvider>
+    );
+
+    const brandWritesAfterFirst = brandAttributeWrites(setAttribute.mock.calls).length;
+    const firstTheme = themes.at(-1);
+    expect(brandWritesAfterFirst).toBeGreaterThan(0);
+    expect(firstTheme).toBeDefined();
+    expect(host.textContent).toBe("internal-fkas-private-internal-fkas-private");
+
+    rerender(
+      <ThemeProvider theme={{ variant: "internal", brand: "fkas", segment: "private" }}>
+        <IdentityProbe />
+      </ThemeProvider>
+    );
+
+    expect(brandAttributeWrites(setAttribute.mock.calls).length).toBe(brandWritesAfterFirst);
+    expect(themes.at(-1)).toBe(firstTheme);
+    expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkas", segment: "private" });
+
+    rerender(
+      <ThemeProvider theme={{ variant: "internal", brand: "tkas", segment: "private" }}>
+        <IdentityProbe />
+      </ThemeProvider>
+    );
+
+    expect(brandAttributeWrites(setAttribute.mock.calls).length).toBeGreaterThan(brandWritesAfterFirst);
+    expect(themes.at(-1)).not.toBe(firstTheme);
+    expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "tkas", segment: "private" });
+    expect(host.textContent).toBe("internal-tkas-private-internal-tkas-private");
+    expect(document.documentElement.getAttribute("data-theme-variant")).toBe("internal");
+    expect(document.documentElement.getAttribute("data-theme-brand")).toBe("tkas");
+    expect(document.documentElement.getAttribute("data-theme-segment")).toBe("private");
   });
 });

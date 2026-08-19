@@ -1,7 +1,7 @@
 import {
   parseColorScheme,
   readDocumentColorScheme,
-  resolveColorScheme,
+  resolveSystemColorScheme,
   writeDocumentColorScheme,
   writeStoredColorScheme,
 } from "./color-scheme";
@@ -22,13 +22,16 @@ export type ColorSchemeRuntimeSnapshot = {
   runtimeForce: ColorScheme | undefined;
   mounted: boolean;
   systemRevision: number;
+  resolvedColorScheme: "light" | "dark" | undefined;
 };
 
 export type ColorSchemeRuntimeStore = {
   subscribe: (listener: () => void) => () => void;
   getSnapshot: () => ColorSchemeRuntimeSnapshot;
   getServerSnapshot: () => ColorSchemeRuntimeSnapshot;
-  updateConfig: (next: ColorSchemeRuntimeConfig) => void;
+  applyConfig: (next: ColorSchemeRuntimeConfig) => void;
+  commitConfig: () => void;
+  discardConfig: () => void;
   markMounted: () => void;
   hydratePreference: (next: ColorScheme) => void;
   setPreference: (next: ColorScheme) => void;
@@ -52,13 +55,27 @@ function applyDocumentColorScheme(
   }
 }
 
+function configsEqual(left: ColorSchemeRuntimeConfig, right: ColorSchemeRuntimeConfig): boolean {
+  return (
+    left.storageKey === right.storageKey &&
+    left.defaultColorScheme === right.defaultColorScheme &&
+    left.enableSystem === right.enableSystem &&
+    left.mountForce === right.mountForce &&
+    left.disableTransitionOnChange === right.disableTransitionOnChange &&
+    left.nonce === right.nonce
+  );
+}
+
 export function createColorSchemeRuntimeStore(
   initialConfig: ColorSchemeRuntimeConfig
 ): ColorSchemeRuntimeStore {
   let config = initialConfig;
+  let stagedConfig: ColorSchemeRuntimeConfig | undefined;
   let preference = initialConfig.defaultColorScheme;
   let mounted = false;
   let systemRevision = 0;
+  let systemScheme: "light" | "dark" = "light";
+  let systemSchemeRead = false;
   const forceStack: Array<{ id: symbol; value: ColorScheme; depth: number }> = [];
   const listeners = new Set<() => void>();
   let notifyScheduled = false;
@@ -67,6 +84,7 @@ export function createColorSchemeRuntimeStore(
     runtimeForce: undefined,
     mounted,
     systemRevision,
+    resolvedColorScheme: undefined,
   };
 
   function peekRuntimeForce(): ColorScheme | undefined {
@@ -79,13 +97,51 @@ export function createColorSchemeRuntimeStore(
     return winner?.value;
   }
 
-  function emit(): void {
+  function activeForce(): ColorScheme | undefined {
+    return peekRuntimeForce() ?? config.mountForce;
+  }
+
+  function resolvedSource(): ColorScheme {
+    return activeForce() ?? preference;
+  }
+
+  function currentSystemScheme(): "light" | "dark" {
+    if (!systemSchemeRead) {
+      systemScheme = resolveSystemColorScheme();
+      systemSchemeRead = true;
+    }
+    return systemScheme;
+  }
+
+  function resolveFromCachedSystem(source: ColorScheme): "light" | "dark" {
+    if (source === "light" || source === "dark") {
+      return source;
+    }
+    if (!config.enableSystem) {
+      return "light";
+    }
+    return currentSystemScheme();
+  }
+
+  function resolvedForConsumers(): "light" | "dark" | undefined {
+    if (!mounted) {
+      return undefined;
+    }
+    return resolveFromCachedSystem(resolvedSource());
+  }
+
+  function refreshSnapshot(): void {
     snapshot = {
       preference,
       runtimeForce: peekRuntimeForce(),
       mounted,
       systemRevision,
+      resolvedColorScheme: resolvedForConsumers(),
     };
+  }
+
+  function emit(): void {
+    refreshSnapshot();
     for (const listener of listeners) {
       listener();
     }
@@ -102,17 +158,9 @@ export function createColorSchemeRuntimeStore(
     });
   }
 
-  function activeForce(): ColorScheme | undefined {
-    return peekRuntimeForce() ?? config.mountForce;
-  }
-
-  function resolvedSource(): ColorScheme {
-    return activeForce() ?? preference;
-  }
-
   function writeResolvedNow(): void {
     applyDocumentColorScheme(
-      resolveColorScheme(resolvedSource(), config.enableSystem),
+      resolveFromCachedSystem(resolvedSource()),
       config.disableTransitionOnChange,
       config.nonce
     );
@@ -123,6 +171,10 @@ export function createColorSchemeRuntimeStore(
       return;
     }
     writeResolvedNow();
+  }
+
+  function readSystemScheme(): "light" | "dark" {
+    return resolveSystemColorScheme();
   }
 
   return {
@@ -138,11 +190,30 @@ export function createColorSchemeRuntimeStore(
     getServerSnapshot() {
       return snapshot;
     },
-    updateConfig(next) {
+    applyConfig(next) {
+      stagedConfig = next;
+    },
+    commitConfig() {
+      if (stagedConfig === undefined) {
+        return;
+      }
+      const next = stagedConfig;
+      stagedConfig = undefined;
+      if (configsEqual(config, next)) {
+        return;
+      }
       config = next;
+      writeResolvedIfReady();
+      refreshSnapshot();
+      scheduleNotify();
+    },
+    discardConfig() {
+      stagedConfig = undefined;
     },
     markMounted() {
       mounted = true;
+      systemScheme = readSystemScheme();
+      systemSchemeRead = true;
       emit();
     },
     hydratePreference(next) {
@@ -182,28 +253,19 @@ export function createColorSchemeRuntimeStore(
       writeResolvedIfReady();
     },
     recoverDocument() {
-      const resolved = resolveColorScheme(resolvedSource(), config.enableSystem);
+      const resolved = resolveFromCachedSystem(resolvedSource());
       if (readDocumentColorScheme() !== resolved) {
         applyDocumentColorScheme(resolved, config.disableTransitionOnChange, config.nonce);
       }
     },
     bumpSystem() {
       systemRevision += 1;
+      systemScheme = readSystemScheme();
+      systemSchemeRead = true;
       if (resolvedSource() === "system" && config.enableSystem) {
         writeResolvedNow();
       }
       emit();
     },
   };
-}
-
-export function resolvedColorSchemeFromSnapshot(
-  snapshot: ColorSchemeRuntimeSnapshot,
-  mountForce: ColorScheme | undefined,
-  enableSystem: boolean
-): "light" | "dark" | undefined {
-  if (!snapshot.mounted) {
-    return undefined;
-  }
-  return resolveColorScheme(snapshot.runtimeForce ?? mountForce ?? snapshot.preference, enableSystem);
 }

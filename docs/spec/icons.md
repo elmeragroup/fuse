@@ -126,9 +126,10 @@ type LogoProps = ComponentPropsWithoutRef<"svg"> & {
   variant?: "full" | "mark";
 };
 
-type BrandLogoProps = Omit<LogoProps, "variant"> & {
+type BrandLogoProps = Omit<ComponentPropsWithoutRef<"span">, "children"> & {
   brand: ThemeInput["brand"];
   variant?: "full" | "mark";
+  title?: string;
 };
 ```
 
@@ -146,7 +147,7 @@ The variant-to-source mapping is exact and prefers the internal snapshot where b
 
 Steddi has only one pinned glyph, so both variants intentionally render that same source until a separately licensed wordmark is added. All logo variants use the same optional-title accessibility behavior as bespoke icons. Their SVG paint is copied unchanged: fixed official colors stay fixed, while existing `currentColor` artwork remains consumer-colorable. Neither form is remapped to theme role tokens.
 
-`BrandLogo` maps `fkas` and `fkab` to Fjordkraft, `tkas` to TrøndelagKraft, `guen` to Gudbrandsdal Energi, and `fkse` to Telinet. For `elma`, it renders an accessible text/`displayName` fallback for both `full` and `mark` until an Elmera mark is specified; no SVG or marketing artwork is invented. It is an exhaustive switch with a `never` assertion and reads no context; consumers pass the brand explicitly. Energy-brand SVG marks ship with the icon-system roster; until those components exist, energy-brand cases use the same accessible display-name renderer so adding `elma` does not leave a hole in the mapping.
+`BrandLogo` maps `fkas` and `fkab` to Fjordkraft, `tkas` to TrøndelagKraft, `guen` to Gudbrandsdal Energi, and `fkse` to Telinet. Until energy-brand SVG marks exist, every brand — including `elma` — renders an accessible text/`displayName` fallback as a `<span>` for both `full` and `mark`; no SVG or marketing artwork is invented. Public props are that fallback host's props, not SVG attributes; advertised host props are applied on the span. `title` is the accessible name (`aria-label`), defaulting to the brand display name. It is an exhaustive switch with a `never` assertion and reads no context; consumers pass the brand explicitly. Energy-brand SVG marks ship with the icon-system roster; adding `elma` does not leave a hole in the mapping.
 
 `@elmeragroup/ui/illustrations` initially exports `FkasMeter`, copied from `.ref/OrderModuleWeb/packages/ui/src/illustrations/fkas-meter.tsx`. Illustrations accept SVG props plus the same optional-title accessibility contract. New artwork joins only with recorded public-distribution rights.
 

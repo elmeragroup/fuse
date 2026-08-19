@@ -24,7 +24,7 @@ import type { ColorScheme, ColorSchemeOptions, ColorSchemeScriptElementProps } f
 import { ColorSchemeContext, ColorSchemeControllerContext } from "./color-scheme-context";
 import type { ColorSchemeController } from "./color-scheme-context";
 import { diagnoseColorSchemeBootstrap } from "./color-scheme-diagnostics";
-import { createColorSchemeRuntimeStore, resolvedColorSchemeFromSnapshot } from "./color-scheme-runtime";
+import { createColorSchemeRuntimeStore } from "./color-scheme-runtime";
 import type { ColorSchemeRuntimeConfig } from "./color-scheme-runtime";
 import { InjectedColorSchemeScript } from "./color-scheme-script";
 import { DocumentWriterContext, echoDocumentBrandAttributes } from "./document-writer";
@@ -63,6 +63,9 @@ function DocumentThemeWriter({
   scriptProps,
 }: ThemeProviderProps) {
   const diagnosed = useRef(false);
+  // SAFETY: untyped CMS/env input is the §7.6 boundary; optional axis reads keep insertion deps from
+  // throwing before remaining hooks register.
+  const themeAxes = theme as ThemeInput | null;
   const options = useMemo(
     () =>
       resolveColorSchemeOptions({
@@ -73,19 +76,23 @@ function DocumentThemeWriter({
       }),
     [defaultColorScheme, enableSystem, forcedColorScheme, storageKey]
   );
-  const runtimeConfig: ColorSchemeRuntimeConfig = {
-    storageKey: options.storageKey,
-    defaultColorScheme: options.defaultColorScheme,
-    enableSystem: options.enableSystem,
-    mountForce: options.forcedColorScheme,
-    disableTransitionOnChange,
-    nonce,
-  };
+  const runtimeConfig = useMemo(
+    (): ColorSchemeRuntimeConfig => ({
+      storageKey: options.storageKey,
+      defaultColorScheme: options.defaultColorScheme,
+      enableSystem: options.enableSystem,
+      mountForce: options.forcedColorScheme,
+      disableTransitionOnChange,
+      nonce,
+    }),
+    [disableTransitionOnChange, nonce, options]
+  );
   const [store] = useState(() => createColorSchemeRuntimeStore(runtimeConfig));
-  store.updateConfig(runtimeConfig);
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getServerSnapshot);
 
   useInsertionEffect(() => {
+    store.applyConfig(runtimeConfig);
+    store.commitConfig();
     const attributes = themeAttributes(theme);
     const shouldDiagnose = !diagnosed.current;
     diagnosed.current = true;
@@ -96,7 +103,17 @@ function DocumentThemeWriter({
     }
     // Skip unforced preference writes until mounted so the host bootstrap is not overwritten.
     store.applyDocument();
-  }, [injectColorSchemeScript, options, store, theme]);
+    // Axis primitives, not object identity: equal inline theme literals must not rewrite the document.
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    injectColorSchemeScript,
+    options,
+    runtimeConfig,
+    store,
+    themeAxes?.brand,
+    themeAxes?.segment,
+    themeAxes?.variant,
+  ]);
 
   useEffect(() => {
     store.markMounted();
@@ -139,14 +156,10 @@ function DocumentThemeWriter({
   const colorSchemeValue = useMemo(() => {
     return {
       colorScheme: snapshot.preference,
-      resolvedColorScheme: resolvedColorSchemeFromSnapshot(
-        snapshot,
-        options.forcedColorScheme,
-        options.enableSystem
-      ),
+      resolvedColorScheme: snapshot.resolvedColorScheme,
       setColorScheme,
     };
-  }, [options.enableSystem, options.forcedColorScheme, setColorScheme, snapshot]);
+  }, [setColorScheme, snapshot]);
 
   const value = useResolvedTheme(theme);
 
