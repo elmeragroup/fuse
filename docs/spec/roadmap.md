@@ -69,3 +69,12 @@ Directional chapter for `@elmeragroup/ui`: work deliberately deferred out of v1,
 - **Why deferred**: v1's playground is a standalone workspace app consuming source exports with instant HMR — full-fidelity for the team that owns the library; an in-browser editor mainly serves external contributors and issue reproductions.
 - **Trigger**: external-contribution or bug-repro friction once the package is public on npmjs.com.
 - **Already prepared**: demos are plain runnable `.tsx` with no docs-specific format, so they load into any editor runtime unmodified; the standalone bundle CSS distribution gives an in-browser sandbox a single stylesheet to attach.
+
+## 10 Density user preference (Wave 2)
+
+- **What**: let an end user override the deployment density default (`internal → dense`, `external → comfortable`) with an explicit `dense` | `comfortable` preference; persist it; sync across tabs; stamp the resolved value before first paint without layout shift. Hosts keep calling `densityAttributes` on the document root. A later preference is `densityAttributes(preference ?? defaultDensityForVariant(theme.variant))`.
+- **Why deferred**: Wave 1 is deployment-fixed. There is no runtime density state, no density bootstrap script, and no product surface asking to persist a user choice. Shipping a `ThemeProvider` density prop now would freeze the public interface before the preference model exists.
+- **Trigger**: a consuming product committing to a user-visible density control (settings, first-run, or equivalent), with a defined persistence store.
+- **Already prepared**: `Density` / `densityAttributes` / `defaultDensityForVariant` are public and server-safe ([theming](theming.md) §7.2). Variant does not select `--control-*` in generated theme CSS. Library metrics stay `:root[data-density]`-anchored. `ThemeProvider` and `ThemeScope` have no `density` prop.
+- **Out of this item**: nested `data-density` in library CSS; a reserved `"system"` density value (there is no system density resolver); table row density (`h-10` / cell `p-2` / in-frame calc — [conventions](components/conventions.md)); OrderModule app migrations.
+- **Cost when triggered**: a host-placed pre-paint density stamp (not a copied IIFE); persistence and storage-failure behaviour; cross-tab sync; scroll/form/overlay preservation on toggle; docs picker only if product wants an override preview. Revisit `ThemeProvider` only if diagnosis/runtime echo is actually required — do not add a prop solely to repeat a server-known primitive.

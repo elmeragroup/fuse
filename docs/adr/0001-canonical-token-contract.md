@@ -44,4 +44,4 @@ Density control metrics (`--control-h-*`, `--control-px-*`, `--control-px-icon-*
 
 They do not join the two public contract tiers in this ADR. Their distributed CSS names remain observable on `:root` / `:root[data-density="comfortable"]` in the existing main stylesheet. Direct consumer override is unsupported. Theme variant supplies only the deployment default for `data-density`; it does not select these values in generated theme CSS.
 
-Normative detail: [theming](../spec/theming.md) §2.7 and `.scratch/theme-density/SPEC.md`.
+Normative detail: [theming](../spec/theming.md) §2.7. Deferred preference/persistence work: [roadmap](../spec/roadmap.md) §10.

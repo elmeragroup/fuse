@@ -2,7 +2,7 @@
 
 Normative chapter for the `@elmeragroup/ui` monorepo: workspace layout, package manager and supply-chain settings, turbo task graph, lint/format stack, custom lint guardrails, scaffolding, and the full testing strategy including the merge gate. Sources: [Repo & tooling spec](../../wayfinder/tickets/016-repo-tooling-spec.md), [Testing strategy](../../wayfinder/tickets/013-testing-strategy.md), [anti-slop research](../../wayfinder/research/015-anti-slop.md), [Component spec conventions](components/conventions.md).
 
-Package build, exports map, and `publishConfig` are owned by [architecture](architecture.md); bundle/CSS budgets by [performance](performance.md); the publish pipeline itself by [release](release.md); the accessibility test floor by [accessibility](accessibility.md) §8.
+Package build, exports map, and `publishConfig` are owned by [architecture](architecture.md); bundle/CSS budgets by [performance](performance.md); the publish pipeline itself by [release](release.md); the accessibility test floor by [accessibility](accessibility.md) §9.
 
 ## 1 Workspace layout
 
@@ -133,7 +133,7 @@ Vitest only. **Two co-located projects** declared in `packages/ui/vitest.config.
 
 - Environment: `@vitest/browser` + playwright, real Chromium. Files: `*.browser.test.tsx` next to sources; requires the built library CSS (`test:browser` depends on this package's `build` task).
 - Tests: all component behavior. **Written fresh against each spec's §9 test requirements** — the internal ref's `base-ui-*.test.tsx` files are reference reading only, never ported.
-- **All queries role/label-based** (no test-ids, no class queries) and every spec §7 keyboard behavior has an explicit keyboard test — the a11y floor of [accessibility](accessibility.md) §8. **No axe/scanner.** String-bearing components: one render test per shipped locale + one prop-override test.
+- **All queries role/label-based** (no test-ids, no class queries) and every spec §7 keyboard behavior has an explicit keyboard test — the a11y floor of [accessibility](accessibility.md) §9. **No axe/scanner.** String-bearing components: one render test per shipped locale + one prop-override test.
 
 ### 7.3 Type tests
 

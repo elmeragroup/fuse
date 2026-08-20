@@ -122,6 +122,10 @@ function measureIconEdge(name: string) {
   return px(getComputedStyle(buttonNamed(name)).paddingInlineStart);
 }
 
+function measureIconEdgeEnd(name: string) {
+  return px(getComputedStyle(buttonNamed(name)).paddingInlineEnd);
+}
+
 function measureSquare(name: string) {
   const style = getComputedStyle(buttonNamed(name));
   return { height: px(style.height), width: px(style.width) };
@@ -170,6 +174,30 @@ function textFixture(density: Density) {
         </span>
         Label
       </Button>
+      <Button size="xs" aria-label={`xs icon-end ${density}`}>
+        Label
+        <span data-icon="inline-end" aria-hidden>
+          *
+        </span>
+      </Button>
+      <Button size="sm" aria-label={`sm icon-end ${density}`}>
+        Label
+        <span data-icon="inline-end" aria-hidden>
+          *
+        </span>
+      </Button>
+      <Button size="default" aria-label={`default icon-end ${density}`}>
+        Label
+        <span data-icon="inline-end" aria-hidden>
+          *
+        </span>
+      </Button>
+      <Button size="lg" aria-label={`lg icon-end ${density}`}>
+        Label
+        <span data-icon="inline-end" aria-hidden>
+          *
+        </span>
+      </Button>
       <Button size="icon-xs" aria-label={`icon-xs ${density}`} />
       <Button size="icon-sm" aria-label={`icon-sm ${density}`} />
       <Button size="icon" aria-label={`icon ${density}`} />
@@ -191,6 +219,9 @@ describe("Button density metrics", () => {
         expect(box.px, `${density} ${size} padding`).toBe(expected.px);
         expect(box.gap, `${density} ${size} gap`).toBe(expected.gap);
         expect(measureIconEdge(`${size} icon ${density}`), `${density} ${size} icon-edge`).toBe(
+          expected.icon
+        );
+        expect(measureIconEdgeEnd(`${size} icon-end ${density}`), `${density} ${size} icon-edge-end`).toBe(
           expected.icon
         );
       }

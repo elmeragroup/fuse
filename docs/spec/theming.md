@@ -116,6 +116,8 @@ They must not enter `TOKEN_NAMES` or `EXTERNAL_RESET_KEYS`. The generator, the 2
 
 Names and values live in the non-generated portion of `ui.css` as `:root` (dense) and `:root[data-density="comfortable"]` (comfortable) declarations. The density attribute is `data-density`, not a `data-theme-*` key (ADR [0002](../adr/0002-theme-attributes.md)). See ADR [0001](../adr/0001-canonical-token-contract.md) amendment 2026-08-20. Hosts stamp the attribute with `densityAttributes` after resolving `defaultDensityForVariant(theme.variant)`.
 
+Wave 1 is deployment-fixed density only. User preference, persistence, cross-tab sync, a pre-paint density bootstrap, and a public density hook are deferred ([roadmap](roadmap.md) §10). The host seam for a later override is `densityAttributes(preference ?? defaultDensityForVariant(theme.variant))`. `ThemeProvider` does not grow a `density` prop in Wave 1. Table row density is outside this axis.
+
 ## 3 Cascade mechanism
 
 ### 3.1 Three data attributes
@@ -573,7 +575,7 @@ type ThemeAttributes = {
 
 It validates untyped input before returning the three attributes. The headline brand recipe is spreading it on `<html>` from one host-owned configuration that is also passed to `ThemeProvider.theme`. Brand first paint is those attributes, never a script and never provider injection.
 
-Document roots compose `themeAttributes(theme)` with `densityAttributes(defaultDensityForVariant(theme.variant))`. Both density values are stamped explicitly, including `dense`. `ThemeScope` does not stamp `data-density`. `ThemeProvider` has no density prop.
+Document roots compose `themeAttributes(theme)` with `densityAttributes(defaultDensityForVariant(theme.variant))`. Both density values are stamped explicitly, including `dense`. `ThemeProvider` and `ThemeScope` have no `density` prop. `ThemeScope` does not compute density, does not own it, and has no `density` prop. Hosts may still spread `densityAttributes(...)` onto the ThemeScope host element as a DOM attribute (the docs `DemoFrame` sandbox does this). Library CSS ignores nested `data-density`; that sandbox retargets `--control-*` in docs-local CSS ([docs-site](docs-site.md) §4).
 
 ```ts
 type Density = "dense" | "comfortable";
@@ -595,7 +597,7 @@ The library does not ship per-framework entries. Each named host places **brand 
 Shared invariants for every recipe:
 
 - One resolved `theme` object to `themeAttributes` and `ThemeProvider`.
-- One resolved density on the document root via `densityAttributes(defaultDensityForVariant(theme.variant))` (or an already-resolved override of that primitive). `ThemeProvider` and `ThemeScope` do not receive density.
+- One resolved density on the document root via `densityAttributes(defaultDensityForVariant(theme.variant))` (or an already-resolved override of that primitive). `ThemeProvider` and `ThemeScope` have no `density` prop. Forwarding `data-density` as a DOM attribute onto a ThemeScope host is allowed for the docs preview sandbox; it is not library nested density.
 - Matching color-scheme literals to the bootstrap and the provider, including document-level `forcedColorScheme` when used.
 - Import `themes.css` (and the chosen JS stylesheet). Set a token-backed `html, body { background: var(--background) }` so the UA canvas cannot flash.
 - `suppressHydrationWarning` on `<html>` wherever a color-scheme script mutates `data-theme` on a React-owned document.
@@ -836,7 +838,7 @@ Logo components live with the icon system, keyed by the same codes.
   ```
 - `themeSlug(theme: ThemeInput): ThemeSlug` is total. `parseThemeSlug(slug: string): ThemeInput | null` returns `null` for malformed axes and illegal pinned-brand combinations; it never coerces or logs.
 - `validateTheme(input: unknown): ThemeInput` rejects non-objects and unknown/missing axis values in every environment. When all three axes are known but a pinned brand has the wrong segment, it follows §6: `process.env.NODE_ENV !== "production"` throws; production returns the same variant/brand with the pinned segment and calls `console.warn` once for that invocation. This is the library's sole environment read; consumer bundlers replace the conventional expression and Node SSR supplies it natively. `themeAttributes` and both theme providers call the validator at their runtime boundary even though their public prop is typed.
-- Covered by the public-API type tests ([accessibility](accessibility.md) §8's pattern; testing strategy).
+- Covered by the public-API type tests ([accessibility](accessibility.md) §9's pattern; testing strategy).
 
 ### 7.7 Locale provider
 

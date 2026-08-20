@@ -81,7 +81,7 @@ describe("BrandLogo", () => {
     expect(html).toContain('lang="nb"');
     expect(html).toContain("hidden");
     expect(html).toContain("color:red");
-    expect(html).toContain("tabindex=\"0\"");
+    expect(html).toContain('tabindex="0"');
     expect(html).toContain('data-variant="mark"');
     expect(html).toContain('role="img"');
     expect(html).toContain('aria-label="Elmera Group"');

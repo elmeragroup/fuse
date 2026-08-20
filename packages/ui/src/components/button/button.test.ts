@@ -40,24 +40,32 @@ describe("buttonVariants", () => {
     expect(defaults).toContain("gap-(--control-gap-md)");
     expect(defaults).toContain("px-(--control-px-md)");
     expect(defaults).toContain("has-data-[icon=inline-start]:pl-(--control-px-icon-md)");
+    expect(defaults).toContain("has-data-[icon=inline-end]:pr-(--control-px-icon-md)");
     expect(defaults).toContain("[font-size:var(--control-text)]");
     expect(defaults).toContain("[line-height:var(--control-leading)]");
     expect(defaults).not.toContain("h-9");
 
-    expect(buttonVariants({ size: "xs" })).toContain("h-(--control-h-xs)");
-    expect(buttonVariants({ size: "xs" })).toContain("text-xs");
-    expect(buttonVariants({ size: "xs" })).toContain("rounded-[min(var(--radius-md),8px)]");
+    const xs = buttonVariants({ size: "xs" });
+    expect(xs).toContain("h-(--control-h-xs)");
+    expect(xs).toContain("text-xs");
+    expect(xs).toContain("rounded-[min(var(--radius-md),8px)]");
+    expect(xs).toContain("has-data-[icon=inline-start]:pl-(--control-px-icon-xs)");
+    expect(xs).toContain("has-data-[icon=inline-end]:pr-(--control-px-icon-xs)");
 
     const sm = buttonVariants({ size: "sm" });
     expect(sm).toContain("h-(--control-h-sm)");
     expect(sm).toContain("text-sm");
     expect(sm).toContain("rounded-[min(var(--radius-md),10px)]");
     expect(sm).not.toContain("[font-size:var(--control-text)]");
+    expect(sm).toContain("has-data-[icon=inline-start]:pl-(--control-px-icon-sm)");
+    expect(sm).toContain("has-data-[icon=inline-end]:pr-(--control-px-icon-sm)");
 
     const lg = buttonVariants({ size: "lg" });
     expect(lg).toContain("h-(--control-h-lg)");
     expect(lg).toContain("[font-size:var(--control-text)]");
     expect(lg).toContain("[line-height:var(--control-leading)]");
+    expect(lg).toContain("has-data-[icon=inline-start]:pl-(--control-px-icon-lg)");
+    expect(lg).toContain("has-data-[icon=inline-end]:pr-(--control-px-icon-lg)");
 
     expect(buttonVariants({ size: "icon" })).toContain("size-(--control-h-md)");
     expect(buttonVariants({ size: "icon" })).not.toContain("h-(--control-h-md)");
