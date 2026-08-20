@@ -14,6 +14,7 @@ import {
   moduleScriptIndex,
   packedColorSchemeScriptSource,
   readDocumentBrand,
+  readDocumentDensity,
   tokenBackgroundDefinitionIndex,
 } from "./html";
 
@@ -45,6 +46,7 @@ function expectHostFirstPaintHtml(
   expectedBrand = DOCUMENT_BRAND
 ): void {
   expect(readDocumentBrand(html)).toEqual(expectedBrand);
+  expect(readDocumentDensity(html)).toBe("dense");
 
   const bootstraps = bootstrapScripts(html);
   expect(bootstraps).toHaveLength(1);
@@ -111,13 +113,20 @@ describe("static theme built HTML", () => {
     expect(bootstrap?.start ?? -1).toBeLessThan(moduleScriptIndex(lateCss));
   });
 
+  it("stamps comfortable density on the isolated preview document", () => {
+    const html = readFixtureFile("dist/comfortable.html");
+    expect(readDocumentBrand(html)).toEqual(DOCUMENT_BRAND);
+    expect(readDocumentDensity(html)).toBe("comfortable");
+  });
+
   it("does not hand-copy the bootstrap or brand attributes into source HTML", () => {
-    for (const relativePath of ["index.html", "forced-dark.html"] as const) {
+    for (const relativePath of ["index.html", "forced-dark.html", "comfortable.html"] as const) {
       const html = readFixtureFile(relativePath);
       expect(html).not.toContain(BOOTSTRAP_MANIFEST_KEY);
       expect(html).not.toContain("data-theme-variant");
       expect(html).not.toContain("data-theme-brand");
       expect(html).not.toContain("data-theme-segment");
+      expect(html).not.toContain("data-density");
       expect(html).not.toContain("createRoot");
     }
   });
@@ -127,6 +136,8 @@ describe("static theme built HTML", () => {
     expect(config).toContain("packages/ui/dist/theme.js");
     expect(config).toContain("colorSchemeScriptSource");
     expect(config).toContain("themeAttributes");
+    expect(config).toContain("densityAttributes");
+    expect(config).toContain("defaultDensityForVariant");
     expect(config).toContain("transformIndexHtml");
     expect(config).not.toContain("createRoot");
     expect(config).not.toContain("dangerouslySetInnerHTML");
@@ -136,6 +147,7 @@ describe("static theme built HTML", () => {
     for (const relativePath of [
       "src/main.tsx",
       "src/forced-dark.tsx",
+      "src/comfortable.tsx",
       "src/render.tsx",
       "src/app.tsx",
     ] as const) {

@@ -16,6 +16,7 @@ type FirstPaintProbe = {
   variant: string | null;
   brand: string | null;
   segment: string | null;
+  density: string | null;
   dataTheme: string | null;
   manifest: ColorSchemeBootstrapManifest | undefined;
   background: string;
@@ -99,6 +100,7 @@ async function probeFirstPaint(page: Page): Promise<FirstPaintProbe> {
       variant: root.getAttribute("data-theme-variant"),
       brand: root.getAttribute("data-theme-brand"),
       segment: root.getAttribute("data-theme-segment"),
+      density: root.getAttribute("data-density"),
       dataTheme: root.getAttribute("data-theme"),
       manifest:
         manifest === undefined
@@ -136,6 +138,13 @@ function expectFixedDocumentBrand(probe: Pick<FirstPaintProbe, "variant" | "bran
   expect(probe.variant).toBe(DOCUMENT_BRAND.variant);
   expect(probe.brand).toBe(DOCUMENT_BRAND.brand);
   expect(probe.segment).toBe(DOCUMENT_BRAND.segment);
+}
+
+function expectDocumentDensity(
+  probe: Pick<FirstPaintProbe, "density">,
+  density: "dense" | "comfortable"
+): void {
+  expect(probe.density).toBe(density);
 }
 
 function expectLightTokenCanvas(probe: FirstPaintProbe): void {
@@ -178,6 +187,7 @@ describe("static theme first paint with React blocked", () => {
 
       const probe = await probeFirstPaint(page);
       expectFixedDocumentBrand(probe);
+      expectDocumentDensity(probe, "dense");
       expect(probe.dataTheme).toBe(expectedTheme);
       expect(probe.manifest).toEqual(EXPECTED_BOOTSTRAP_MANIFEST);
       expectLightTokenCanvas(probe);
@@ -198,10 +208,26 @@ describe("static theme first paint with React blocked", () => {
 
     const probe = await probeFirstPaint(page);
     expectFixedDocumentBrand(probe);
+    expectDocumentDensity(probe, "dense");
     expect(probe.dataTheme).toBe("dark");
     expect(probe.manifest).toEqual(EXPECTED_FORCED_DARK_MANIFEST);
     expectLightTokenCanvas(probe);
     expect(probe.bootstrapScriptCount).toBe(1);
+    expect(probe.reactMounted).toBe(false);
+
+    await context.close();
+  });
+
+  it("stamps comfortable density on the isolated preview before React", async () => {
+    const context = await browser.newContext({ colorScheme: "light" });
+    const page = await context.newPage();
+    await page.route("**/*", abortModuleScripts);
+    await page.goto(`${staticThemeBaseUrl()}/comfortable.html`, { waitUntil: "commit" });
+    await waitForBootstrap(page);
+
+    const probe = await probeFirstPaint(page);
+    expectFixedDocumentBrand(probe);
+    expectDocumentDensity(probe, "comfortable");
     expect(probe.reactMounted).toBe(false);
 
     await context.close();
@@ -231,6 +257,7 @@ describe("static theme delayed React mount", () => {
 
     const beforeReact = await probeFirstPaint(page);
     expectFixedDocumentBrand(beforeReact);
+    expectDocumentDensity(beforeReact, "dense");
     expect(beforeReact.dataTheme).toBe("light");
     expect(beforeReact.manifest).toEqual(EXPECTED_BOOTSTRAP_MANIFEST);
     expectLightTokenCanvas(beforeReact);
@@ -242,6 +269,7 @@ describe("static theme delayed React mount", () => {
 
     const afterMount = await probeFirstPaint(page);
     expectFixedDocumentBrand(afterMount);
+    expectDocumentDensity(afterMount, "dense");
     expect(afterMount.dataTheme).toBe("light");
     expect(afterMount.manifest).toEqual(EXPECTED_BOOTSTRAP_MANIFEST);
     expectLightTokenCanvas(afterMount);
@@ -252,6 +280,7 @@ describe("static theme delayed React mount", () => {
     await page.getByRole("button", { name: "Use dark color scheme" }).click();
     const afterToggle = await probeFirstPaint(page);
     expectFixedDocumentBrand(afterToggle);
+    expectDocumentDensity(afterToggle, "dense");
     expect(afterToggle.dataTheme).toBe("dark");
     expectLightTokenCanvas(afterToggle);
     expect(afterToggle.bootstrapScriptCount).toBe(1);
@@ -291,6 +320,7 @@ describe("static theme delayed React mount", () => {
 
     const afterMount = await probeFirstPaint(page);
     expectFixedDocumentBrand(afterMount);
+    expectDocumentDensity(afterMount, "dense");
     expect(afterMount.dataTheme).toBe("dark");
     expect(afterMount.manifest).toEqual(EXPECTED_FORCED_DARK_MANIFEST);
     expectLightTokenCanvas(afterMount);

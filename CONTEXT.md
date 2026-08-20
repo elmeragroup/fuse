@@ -8,6 +8,7 @@ Ubiquitous language for the `@elmeragroup/ui` whitelabel component library effor
 - **Segment**: the customer class a surface serves — `private` (B2C) or `company` (B2B).
 - **Pinned brand**: a brand that exists in only one segment. `fkab` is pinned to `company`; `fkse` is pinned to `private`. The other four brands span both segments. `fkab` shares Fjordkraft's (`fkas`) visual identity by deliberate, permanent policy — it is an alias, not a missing palette.
 - **Variant**: the audience axis of a theme — `internal` (grayscale theme for internal tools, brand appears only in accents/logos) or `external` (full brand look-and-feel for customer-facing apps).
+- **Density**: a document-level control-metric axis, independent of theme. Legal values `dense` and `comfortable`, stamped as `data-density` on the document root. Variant supplies only the deployment default (`internal → dense`, `external → comfortable`).
 - **Theme**: a concrete permutation of variant × brand × segment, e.g. `internal-fkas-company`, `external-tkas-private`, `internal-elma-private`. 20 permutations exist at v1 (10 internal, 10 external).
 - **Theme slug**: the canonical string name of a theme, `<variant>-<brand>-<segment>`.
 - **Token / token contract**: a CSS custom property that components consume (e.g. a primary color role). The *contract* is the fixed set of token names; themes vary values, never names. The library ships complete defaults; a theme overrides a subset.

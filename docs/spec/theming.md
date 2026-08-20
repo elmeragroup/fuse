@@ -114,7 +114,7 @@ A third classification exists **outside** the two public contract tiers. Density
 
 They must not enter `TOKEN_NAMES` or `EXTERNAL_RESET_KEYS`. The generator, the 20-theme matrix, nested-scope isolation, and the contrast matrix do not mention them. Brand themes do not override them. Direct consumer override is unsupported.
 
-Names and values live in `.scratch/theme-density/SPEC.md` until Wave 1 lands them in the non-generated portion of `ui.css` as `:root` (dense) and `:root[data-density="comfortable"]` (comfortable) declarations. The density attribute is `data-density`, not a `data-theme-*` key (ADR [0002](../adr/0002-theme-attributes.md)). See ADR [0001](../adr/0001-canonical-token-contract.md) amendment 2026-08-20.
+Names and values live in the non-generated portion of `ui.css` as `:root` (dense) and `:root[data-density="comfortable"]` (comfortable) declarations. The density attribute is `data-density`, not a `data-theme-*` key (ADR [0002](../adr/0002-theme-attributes.md)). See ADR [0001](../adr/0001-canonical-token-contract.md) amendment 2026-08-20. Hosts stamp the attribute with `densityAttributes` after resolving `defaultDensityForVariant(theme.variant)`.
 
 ## 3 Cascade mechanism
 
@@ -471,6 +471,8 @@ import {
   ColorSchemeScript,
   ElmeraGroupUiProvider,
   ThemeProvider,
+  defaultDensityForVariant,
+  densityAttributes,
   themeAttributes,
 } from "@elmeragroup/ui/theme";
 import "@elmeragroup/ui/styles.css";
@@ -485,7 +487,11 @@ const colorScheme = {
 
 export function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="nb" {...themeAttributes(theme)} suppressHydrationWarning>
+    <html
+      lang="nb"
+      {...themeAttributes(theme)}
+      {...densityAttributes(defaultDensityForVariant(theme.variant))}
+      suppressHydrationWarning>
       <head>
         <ColorSchemeScript
           storageKey={colorScheme.storageKey}
@@ -567,6 +573,21 @@ type ThemeAttributes = {
 
 It validates untyped input before returning the three attributes. The headline brand recipe is spreading it on `<html>` from one host-owned configuration that is also passed to `ThemeProvider.theme`. Brand first paint is those attributes, never a script and never provider injection.
 
+Document roots compose `themeAttributes(theme)` with `densityAttributes(defaultDensityForVariant(theme.variant))`. Both density values are stamped explicitly, including `dense`. `ThemeScope` does not stamp `data-density`. `ThemeProvider` has no density prop.
+
+```ts
+type Density = "dense" | "comfortable";
+
+type DensityAttributes = {
+  "data-density": Density;
+};
+
+function defaultDensityForVariant(variant: ThemeVariant): Density;
+function densityAttributes(density: Density): DensityAttributes;
+```
+
+`defaultDensityForVariant` is the exact map `internal → dense`, `external → comfortable`. Unknown untyped values fail explicitly. `densityAttributes` serializes an already-resolved density.
+
 ### 7.3 First-paint adapters (host recipes)
 
 The library does not ship per-framework entries. Each named host places **brand attributes** and the **closed classic bootstrap** in a host-owned location **before any paintable application content**. `ThemeProvider` is context + runtime echo, not a universal first-paint adapter.
@@ -574,6 +595,7 @@ The library does not ship per-framework entries. Each named host places **brand 
 Shared invariants for every recipe:
 
 - One resolved `theme` object to `themeAttributes` and `ThemeProvider`.
+- One resolved density on the document root via `densityAttributes(defaultDensityForVariant(theme.variant))` (or an already-resolved override of that primitive). `ThemeProvider` and `ThemeScope` do not receive density.
 - Matching color-scheme literals to the bootstrap and the provider, including document-level `forcedColorScheme` when used.
 - Import `themes.css` (and the chosen JS stylesheet). Set a token-backed `html, body { background: var(--background) }` so the UA canvas cannot flash.
 - `suppressHydrationWarning` on `<html>` wherever a color-scheme script mutates `data-theme` on a React-owned document.
@@ -594,7 +616,7 @@ Route-specific forced **first paint** is a **document-adapter** job: a distinct 
 
 #### Next App Router (fixture-verified)
 
-Root layout spreads `{...themeAttributes(theme)}` on `<html>` and passes that same `theme` to `ThemeProvider`. Place server-rendered `ColorSchemeScript` in `<head>` **or** as the first child of `<body>` before SkipNav/shell. This repo’s docs fixture uses `<head>`: Next App Router injects a hidden streaming preamble as the first body node, so first-in-`<body>` is not first paint on that host. `injectColorSchemeScript={false}`. `suppressHydrationWarning` on `<html>`. Token-backed canvas as above.
+Root layout spreads `{...themeAttributes(theme)}` and `{...densityAttributes(defaultDensityForVariant(theme.variant))}` on `<html>` and passes that same `theme` to `ThemeProvider`. Place server-rendered `ColorSchemeScript` in `<head>` **or** as the first child of `<body>` before SkipNav/shell. This repo’s docs fixture uses `<head>`: Next App Router injects a hidden streaming preamble as the first body node, so first-in-`<body>` is not first paint on that host. `injectColorSchemeScript={false}`. `suppressHydrationWarning` on `<html>`. Token-backed canvas as above.
 
 A route that must first-paint forced dark uses a route-group layout (or equivalent document) that passes `forcedColorScheme` into **both** `ColorSchemeScript` and `ThemeProvider`. A page-level `<ForceColorScheme value="dark">` does not change the first frame.
 
@@ -605,12 +627,21 @@ A route that must first-paint forced dark uses a route-group layout (or equivale
 ```tsx
 // pages/_document.tsx
 import { Head, Html, Main, NextScript } from "next/document";
-import { ColorSchemeScript, themeAttributes } from "@elmeragroup/ui/theme";
+import {
+  ColorSchemeScript,
+  defaultDensityForVariant,
+  densityAttributes,
+  themeAttributes,
+} from "@elmeragroup/ui/theme";
 import { colorScheme, theme } from "../lib/theme";
 
 export default function Document() {
   return (
-    <Html lang="nb" {...themeAttributes(theme)} suppressHydrationWarning>
+    <Html
+      lang="nb"
+      {...themeAttributes(theme)}
+      {...densityAttributes(defaultDensityForVariant(theme.variant))}
+      suppressHydrationWarning>
       <Head>
         <ColorSchemeScript
           storageKey={colorScheme.storageKey}
@@ -649,16 +680,26 @@ The classic script may live in `<Head>` or as the first body child ahead of `<Ma
 
 #### TanStack Start (recipe only)
 
-Root document shell spreads `themeAttributes(theme)` on `<html>`. Place `ScriptOnce` with `colorSchemeScriptSource(colorScheme)` **before** children and module scripts. Pass the same `theme` and color-scheme literals to `ThemeProvider` with injection off. `suppressHydrationWarning` on `<html>`. Token-backed canvas as above.
+Root document shell spreads `themeAttributes(theme)` and `densityAttributes(defaultDensityForVariant(theme.variant))` on `<html>`. Place `ScriptOnce` with `colorSchemeScriptSource(colorScheme)` **before** children and module scripts. Pass the same `theme` and color-scheme literals to `ThemeProvider` with injection off. `suppressHydrationWarning` on `<html>`. Token-backed canvas as above.
 
 ```tsx
 import { ScriptOnce } from "@tanstack/react-router";
-import { colorSchemeScriptSource, ThemeProvider, themeAttributes } from "@elmeragroup/ui/theme";
+import {
+  colorSchemeScriptSource,
+  defaultDensityForVariant,
+  densityAttributes,
+  ThemeProvider,
+  themeAttributes,
+} from "@elmeragroup/ui/theme";
 import { colorScheme, theme } from "./theme";
 
 export function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="nb" {...themeAttributes(theme)} suppressHydrationWarning>
+    <html
+      lang="nb"
+      {...themeAttributes(theme)}
+      {...densityAttributes(defaultDensityForVariant(theme.variant))}
+      suppressHydrationWarning>
       <head>
         <ScriptOnce>{colorSchemeScriptSource(colorScheme)}</ScriptOnce>
       </head>
@@ -676,16 +717,26 @@ export function RootDocument({ children }: { children: React.ReactNode }) {
 
 #### React Router 7 framework/SSR (recipe only)
 
-Root `Layout` spreads `themeAttributes(theme)` on `<html>` and renders `ColorSchemeScript` in `<head>` (parser-time) before `Meta`/`Links` content that depends on the marker. Same `theme` and color-scheme literals on `ThemeProvider`, injection off. Cookie/loader color state is a later optional SSR adapter; this wave does not persist color scheme in cookies.
+Root `Layout` spreads `themeAttributes(theme)` and `densityAttributes(defaultDensityForVariant(theme.variant))` on `<html>` and renders `ColorSchemeScript` in `<head>` (parser-time) before `Meta`/`Links` content that depends on the marker. Same `theme` and color-scheme literals on `ThemeProvider`, injection off. Cookie/loader color state is a later optional SSR adapter; this wave does not persist color scheme in cookies.
 
 ```tsx
 import { Links, Meta, Scripts, ScrollRestoration } from "react-router";
-import { ColorSchemeScript, ThemeProvider, themeAttributes } from "@elmeragroup/ui/theme";
+import {
+  ColorSchemeScript,
+  defaultDensityForVariant,
+  densityAttributes,
+  ThemeProvider,
+  themeAttributes,
+} from "@elmeragroup/ui/theme";
 import { colorScheme, theme } from "./theme";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="nb" {...themeAttributes(theme)} suppressHydrationWarning>
+    <html
+      lang="nb"
+      {...themeAttributes(theme)}
+      {...densityAttributes(defaultDensityForVariant(theme.variant))}
+      suppressHydrationWarning>
       <head>
         <ColorSchemeScript
           storageKey={colorScheme.storageKey}
@@ -720,8 +771,8 @@ Brand attributes are substituted into `index.html` at **build time**. Color sche
 
 The proven adapter is Vite’s `transformIndexHtml` hook (`order: "post"`) in `vite.config.ts`:
 
-1. Import `themeAttributes` and `colorSchemeScriptSource` from `@elmeragroup/ui/theme` **in the Vite config**, not from the client graph. Call them at config/build time with the same `DOCUMENT_THEME` / `DOCUMENT_COLOR_SCHEME` the React tree will receive.
-2. Stamp the three brand attributes on `<html>`. Source HTML must not already contain them.
+1. Import `themeAttributes`, `defaultDensityForVariant`, `densityAttributes`, and `colorSchemeScriptSource` from `@elmeragroup/ui/theme` **in the Vite config**, not from the client graph. Call them at config/build time with the same `DOCUMENT_THEME` / `DOCUMENT_COLOR_SCHEME` the React tree will receive.
+2. Stamp the three brand attributes and `data-density` on `<html>`. Source HTML must not already contain them.
 3. Inject `<script>${colorSchemeScriptSource(options)}</script>` immediately before the first `type="module"` tag. Do **not** hand-copy the generated IIFE into `index.html`. Do **not** render `ColorSchemeScript` from `createRoot`.
 4. Token CSS that **defines** `--background` must precede that parser-blocking script. Vite production builds often emit the hashed `themes.css` link at or after the module entry; hoist those `rel="stylesheet"` links to immediately before the bootstrap. Keep `html, body { background: var(--background) }`.
 5. Mount `ThemeProvider` with the same theme and color-scheme literals and `injectColorSchemeScript={false}`.

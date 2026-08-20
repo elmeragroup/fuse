@@ -32,7 +32,7 @@ Every component spec has exactly ten sections: **1 Header** (canonical name, can
 
 ## Density metrics
 
-A `size` axis that encodes a **control box** shares four rungs — `xs`, `sm`, `md`, `lg` — and a default control-type pair (`--control-text` / `--control-leading` once those implementation variables exist). Density-owned metrics are control height, control inline padding, icon-edge inline padding, and control gap on every rung, plus font-size and line-height on `md` and `lg` only.
+A `size` axis that encodes a **control box** shares four rungs — `xs`, `sm`, `md`, `lg` — and a default control-type pair (`--control-text` / `--control-leading`). Density-owned metrics are control height, control inline padding, icon-edge inline padding, and control gap on every rung, plus font-size and line-height on `md` and `lg` only.
 
 | Rung | Box metrics | Type |
 | --- | --- | --- |
@@ -43,17 +43,15 @@ A `size` axis that encodes a **control box** shares four rungs — `xs`, `sm`, `
 
 `xs` and `sm` type must not read the control-type pair. Default size **must pin height**; it is never content-sized. Once height is pinned, do not also set `py-*` on that rung — vertical padding is leftover space in the box.
 
-This rule applies to a `size` axis that encodes those control-box metrics (for example Button or Toggle). Type-scale axes (`Text`, `Heading`), overlay-width axes (`Dialog`, `Sheet`), and decorative sizes are not density rungs. Do not mass-map existing specs; the rule binds any size-axis control spec written or implemented before Wave 1.
+This rule applies to a `size` axis that encodes those control-box metrics (for example Button or Toggle). Type-scale axes (`Text`, `Heading`), overlay-width axes (`Dialog`, `Sheet`), and decorative sizes are not density rungs. Do not mass-map existing specs; new size-axis control work must map onto these rungs.
 
 These `--control-*` names are **library-owned implementation variables**, not a public token tier ([theming](../theming.md) §2.7, ADR [0001](../../adr/0001-canonical-token-contract.md) amendment 2026-08-20). They are not role tokens, not brand override keys, and not a consumer customization interface.
 
-**Prospective ownership, not premature reads.** Until Wave 1 lands the variables in `ui.css`, recipes keep today's literals for these metrics. Specs map each density-owned metric to a rung; they do not put undefined `--control-*` names in recipe class lists. A size-axis spec that encodes any of these control metrics and is started before Wave 1 **must** either map those metrics onto `xs|sm|md|lg` (and the type split above) or record that the shared dense variables must land first. Do not silently add another unmapped literal ladder.
-
-Once the corresponding variables exist, recipes **do not** hardcode those metrics (including `md`/`lg` font-size and line-height) inside a `size` axis. Do not introduce `dense:` / `comfortable:` custom variants for them; recipes read the variables, density retargets the variables on `:root`, and local exceptions stay on `size`.
+Recipes **do not** hardcode those metrics (including `md`/`lg` font-size and line-height) inside a `size` axis. They read the `--control-*` implementation variables declared on `:root` in `ui.css`. Do not introduce `dense:` / `comfortable:` custom variants for them; density retargets the variables on `:root[data-density="comfortable"]`, and local exceptions stay on `size`. Do not silently add another unmapped literal ladder.
 
 **Numeric spacing remains legal** for unrelated geometry: borders, translations, hit-area expansion, layout spacing, and explicitly documented optical values outside the density ladder. Radius stays brand-owned. Icon glyph size, shadows, transitions, and table-cell block padding are outside this remit.
 
-Signed ladder values live in `.scratch/theme-density/SPEC.md` until Wave 1 ([theming](../theming.md) §2.7). [Button](button.md) records the first size→rung map.
+Signed ladder values live in `ui.css` ([theming](../theming.md) §2.7). [Button](button.md) records the first size→rung map.
 
 ## Icons
 

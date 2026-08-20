@@ -115,6 +115,8 @@ describe("exports map", () => {
     const root = discovered.jsEntries.find((entry) => entry.subpath === ".");
     expect(theme?.runtimeExports).toContain("ThemeProvider");
     expect(theme?.runtimeExports).toContain("themeAttributes");
+    expect(theme?.runtimeExports).toContain("defaultDensityForVariant");
+    expect(theme?.runtimeExports).toContain("densityAttributes");
     expect(theme?.runtimeExports).toContain("ColorSchemeScript");
     expect(theme?.runtimeExports).toContain("ForceColorScheme");
     expect(theme?.runtimeExports).toContain("colorSchemeScriptSource");

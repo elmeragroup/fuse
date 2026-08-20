@@ -36,7 +36,7 @@ Single part. Wraps `@base-ui/react/button` (`ButtonPrimitive`), which supplies n
 
 Recipe: `buttonVariants` (`tv`) — **public**, runtime-free. Defaults: `variant: "default"`, `size: "default"`.
 
-**Base:** `group/button` scope; inline-flex centered, `rounded-md`, transparent border, `bg-clip-padding`, `text-sm font-medium whitespace-nowrap`; transitions color/background/border/shadow/translate/opacity; composes `focusRing({ target: "self" })`; press feedback `active:not-aria-[haspopup]:translate-y-px` (suppressed for popup triggers); `disabled:pointer-events-none disabled:opacity-50`; invalid state `aria-invalid:border-error aria-invalid:ring-3 aria-invalid:ring-error/20`; svg children non-interactive, default `size-4`.
+**Base:** `group/button` scope; inline-flex centered, `rounded-md`, transparent border, `bg-clip-padding`, `font-medium whitespace-nowrap`; transitions color/background/border/shadow/translate/opacity; composes `focusRing({ target: "self" })`; press feedback `active:not-aria-[haspopup]:translate-y-px` (suppressed for popup triggers); `disabled:pointer-events-none disabled:opacity-50`; invalid state `aria-invalid:border-error aria-invalid:ring-3 aria-invalid:ring-error/20`; svg children non-interactive, default `size-4`. Type is not on the base: `md`/`lg` consume `--control-text` / `--control-leading`; `sm` sets `text-sm`; `xs` sets `text-xs`.
 
 | `variant` | Classes (summary) |
 | --- | --- |
@@ -50,25 +50,25 @@ Recipe: `buttonVariants` (`tv`) — **public**, runtime-free. Defaults: `variant
 
 | `size` | Classes (summary) |
 | --- | --- |
-| `default` | `h-9 gap-1.5 px-2.5`; icon-padding hooks `has-data-[icon=inline-start]:pl-2` / `has-data-[icon=inline-end]:pr-2` |
-| `xs` | `h-6 gap-1 px-2 text-xs rounded-[min(var(--radius-md),8px)]`; svg `size-3`; icon hooks `pl-1.5`/`pr-1.5` |
-| `sm` | `h-8 gap-1 px-2.5 rounded-[min(var(--radius-md),10px)]`; icon hooks `pl-1.5`/`pr-1.5` |
-| `lg` | `h-10 gap-1.5 px-2.5`; icon hooks `pl-2`/`pr-2` |
-| `icon` | `size-9` |
-| `icon-xs` | `size-6 rounded-[min(var(--radius-md),8px)]`; svg `size-3` |
-| `icon-sm` | `size-8 rounded-[min(var(--radius-md),10px)]` |
+| `default` | `h-(--control-h-md) gap-(--control-gap-md) px-(--control-px-md)` plus `[font-size:var(--control-text)] [line-height:var(--control-leading)]`; icon-padding hooks `has-data-[icon=inline-start]:pl-(--control-px-icon-md)` / `has-data-[icon=inline-end]:pr-(--control-px-icon-md)` |
+| `xs` | `h-(--control-h-xs) gap-(--control-gap-xs) px-(--control-px-xs) text-xs rounded-[min(var(--radius-md),8px)]`; svg `size-3`; icon hooks `pl-(--control-px-icon-xs)` / `pr-(--control-px-icon-xs)` |
+| `sm` | `h-(--control-h-sm) gap-(--control-gap-sm) px-(--control-px-sm) text-sm rounded-[min(var(--radius-md),10px)]`; icon hooks `pl-(--control-px-icon-sm)` / `pr-(--control-px-icon-sm)` |
+| `lg` | `h-(--control-h-lg) gap-(--control-gap-lg) px-(--control-px-lg)` plus the control-type pair; icon hooks `pl-(--control-px-icon-lg)` / `pr-(--control-px-icon-lg)` |
+| `icon` | `size-(--control-h-md)` |
+| `icon-xs` | `size-(--control-h-xs) rounded-[min(var(--radius-md),8px)]`; svg `size-3` |
+| `icon-sm` | `size-(--control-h-sm) rounded-[min(var(--radius-md),10px)]` |
 | `icon-inline` | `hit-area-1 aspect-square h-lh w-auto` — line-height-sized inline icon button with expanded hit area |
-| `icon-lg` | `size-10` |
+| `icon-lg` | `size-(--control-h-lg)` |
 
 Sizes `default`, `xs`, `sm`, `icon-xs`, `icon-sm` add `in-data-[slot=button-group]:rounded-md` — inside a ButtonGroup the radius clamp is dropped so the group's own edge-rounding rules govern corners.
 
-**Density mapping (prospective).** Button `size` selects a shared density rung per [conventions](conventions.md). Density-owned literals in the table above stay until Wave 1. Do not add `dense:` / `comfortable:` variants. Do not put undefined `--control-*` names in this recipe.
+**Density mapping.** Button `size` selects a shared density rung per [conventions](conventions.md). Recipes read `--control-*` implementation variables; do not add `dense:` / `comfortable:` variants.
 
 | Button `size` | Density rung | Notes |
 | --- | --- | --- |
 | `xs`, `icon-xs` | `xs` | Type stays `text-xs`. Icon-only uses the `xs` height as a square. |
-| `sm`, `icon-sm` | `sm` | Type is size-owned. The `sm` variant **must set `text-sm` itself** so it does not inherit `--control-text` once `md`/`lg` consume the control-type pair. Today `text-sm` lives only on the recipe base — Wave 1 puts it on `sm`. Icon-edge padding on this rung is distinct; it is not a uniform `base − 2px` derivation. |
-| `default`, `icon` | `md` | Default size **pins height** (`h-9` today). The size value is never an empty class list and is never content-sized. Do not also set `py-*` on this rung. Text `default` maps height, inline padding, icon-edge padding, gap, font-size, and line-height to `md` / the control-type pair. |
+| `sm`, `icon-sm` | `sm` | Type is size-owned. The `sm` variant **sets `text-sm` itself** so it does not inherit `--control-text`. Icon-edge padding on this rung is distinct; it is not a uniform `base − 2px` derivation. |
+| `default`, `icon` | `md` | Default size **pins height** with `h-(--control-h-md)`. The size value is never an empty class list and is never content-sized. Do not also set `py-*` on this rung. Text `default` reads height, inline padding, icon-edge padding, gap, font-size, and line-height from `md` / the control-type pair. |
 | `lg`, `icon-lg` | `lg` | Text `lg` maps type to the control-type pair. Icon-only uses the `lg` height as a square. |
 | `icon-inline` | none | Line-height sizing plus `hit-area-*` is density-independent geometry. |
 
@@ -94,6 +94,7 @@ Sizes `default`, `xs`, `sm`, `icon-xs`, `icon-sm` add `in-data-[slot=button-grou
 2. **`dark:` variants removed** (ref has `dark:bg-input/30`, `dark:aria-invalid:…`, etc.) — forbidden by `no-tailwind-dark-variant`; dark values live behind `[data-theme="dark"]` tokens.
 3. **Kept deliberately:** `isVisuallyDisabled`, `isPending`, `onIntent`/`predictionZoneSize`, tinted (non-solid) `destructive`/`success` variants, radius clamps, public `buttonVariants`.
 4. No namespace conversion — Button is a single component; no flat-export renames.
+5. **Density retokenization:** size-axis height, inline padding, icon-edge padding, gap, and `md`/`lg` type read `--control-*` implementation variables instead of the ref's literal `h-9` / `px-2.5` / `text-sm` ladder. Dense computed metrics match the ref; comfortable is the new column. `sm` sets `text-sm` itself. `icon-inline` stays density-independent.
 
 ## 9. Test requirements
 
@@ -104,6 +105,7 @@ Role-based queries only (`getByRole("button", { name })`).
 - `isVisuallyDisabled`: still activatable by click and keyboard; mousedown does not move focus; `opacity-70` class applied; no `disabled`/`aria-disabled`.
 - `onIntent`: fires once when a predicted pointer path enters the inflated rect; never fires when `disabled`/`isPending`/`isVisuallyDisabled`; external `ref` still receives the element when `onIntent` is set (merged-ref regression test).
 - `variant`/`size` render expected recipe classes; `render` prop swaps the tag while keeping role.
+- Built stylesheet: at document `dense` and `comfortable`, computed height, inline padding, icon-edge padding, and gap match the signed ladder for every mapped rung; font-size and line-height match on `default` and `lg`; `xs`/`sm` type is identical across densities; `icon-inline` is density-independent; smallest square rung is at least 24×24 CSS px. Nested `data-density` and `ThemeScope` variant changes do not rescope metrics.
 
 ## 10. Demo requirements
 
