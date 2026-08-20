@@ -269,7 +269,7 @@ describe("docs picker vs document theme", () => {
     expect(initial.documentBrand).toBe(DOCUMENT_BRAND.brand);
     expect(initial.documentSegment).toBe(DOCUMENT_BRAND.segment);
     expect(initial.documentDensity).toBe("dense");
-    expect(initial.stageDensity).toBeNull();
+    expect(initial.stageDensity).toBe("dense");
     expect(initial.stageVariant).toBe(DEFAULT_THEME.variant);
     expect(initial.stageBrand).toBe(DEFAULT_THEME.brand);
     expect(initial.stageSegment).toBe(DEFAULT_THEME.segment);
@@ -287,6 +287,7 @@ describe("docs picker vs document theme", () => {
         documentSegment: root.getAttribute("data-theme-segment"),
         documentDensity: root.getAttribute("data-density"),
         stageBrand: stage?.getAttribute("data-theme-brand") ?? null,
+        stageDensity: stage?.getAttribute("data-density") ?? null,
         stageToken: stage === null ? "" : getComputedStyle(stage).getPropertyValue("--brand").trim(),
         documentToken: getComputedStyle(root).getPropertyValue("--brand").trim(),
         slug: document.querySelector(".DemoSlug")?.textContent ?? "",
@@ -297,12 +298,73 @@ describe("docs picker vs document theme", () => {
     expect(next.documentBrand).toBe("elma");
     expect(next.documentSegment).toBe("private");
     expect(next.documentDensity).toBe("dense");
+    expect(next.stageDensity).toBe("dense");
     expect(next.stageBrand).toBe("tkas");
     expect(next.slug).toContain("tkas");
     expect(next.stageToken).not.toBe(next.documentToken);
     expect(next.stageToken).not.toBe(initial.stageToken);
 
     expect(hydrationWarnings.filter((text) => /data-theme|mismatch/i.test(text))).toEqual([]);
+    await page.close();
+  });
+
+  it("retargets demo-stage control metrics to the preview variant default without restamping the document", async () => {
+    const page = await browser.newPage();
+    await page.goto(`${docsBaseUrl()}/components/button`, { waitUntil: "networkidle" });
+    await page.getByRole("heading", { name: "Button", exact: true }).waitFor();
+
+    const initial = await page.evaluate(() => {
+      const root = document.documentElement;
+      const stage = document.querySelector(".DemoStage");
+      const button = stage?.querySelector("button");
+      return {
+        documentDensity: root.getAttribute("data-density"),
+        stageDensity: stage?.getAttribute("data-density") ?? null,
+        stageVariant: stage?.getAttribute("data-theme-variant") ?? null,
+        documentControlH: getComputedStyle(root).getPropertyValue("--control-h-md").trim(),
+        stageControlH:
+          stage === null ? "" : getComputedStyle(stage).getPropertyValue("--control-h-md").trim(),
+        buttonHeight: button ? getComputedStyle(button).height : "",
+        densityLabel: document.querySelector(".DemoDensity")?.textContent ?? "",
+      };
+    });
+
+    expect(initial.documentDensity).toBe("dense");
+    expect(initial.stageDensity).toBe("dense");
+    expect(initial.stageVariant).toBe("internal");
+    expect(initial.documentControlH).toBe("2.25rem");
+    expect(initial.stageControlH).toBe("2.25rem");
+    expect(initial.buttonHeight).toBe("36px");
+    expect(initial.densityLabel).toBe("dense");
+
+    await page.getByRole("combobox", { name: "Variant" }).selectOption("external");
+
+    const next = await page.evaluate(() => {
+      const root = document.documentElement;
+      const stage = document.querySelector(".DemoStage");
+      const button = stage?.querySelector("button");
+      return {
+        documentVariant: root.getAttribute("data-theme-variant"),
+        documentDensity: root.getAttribute("data-density"),
+        stageVariant: stage?.getAttribute("data-theme-variant") ?? null,
+        stageDensity: stage?.getAttribute("data-density") ?? null,
+        documentControlH: getComputedStyle(root).getPropertyValue("--control-h-md").trim(),
+        stageControlH:
+          stage === null ? "" : getComputedStyle(stage).getPropertyValue("--control-h-md").trim(),
+        buttonHeight: button ? getComputedStyle(button).height : "",
+        densityLabel: document.querySelector(".DemoDensity")?.textContent ?? "",
+      };
+    });
+
+    expect(next.documentVariant).toBe("internal");
+    expect(next.documentDensity).toBe("dense");
+    expect(next.stageVariant).toBe("external");
+    expect(next.stageDensity).toBe("comfortable");
+    expect(next.documentControlH).toBe("2.25rem");
+    expect(next.stageControlH).toBe("2.75rem");
+    expect(next.buttonHeight).toBe("44px");
+    expect(next.densityLabel).toBe("comfortable");
+
     await page.close();
   });
 });

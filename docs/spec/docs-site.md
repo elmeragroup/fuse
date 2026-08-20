@@ -61,14 +61,14 @@ Top to bottom:
 One **bordered frame** per demo (base-ui's demo-then-source card), three stacked regions:
 
 1. **Stage**: a **dotted canvas** rendering the live demo under the active theme. The dots are `color-mix`ed from the active theme's `--foreground` so the theme's **real background stays visible** — the stage is theme-tinted, not a neutral checkerboard.
-2. **Theme-slug meta row**: the active theme coordinate (e.g. `external·fkas·private`) printed in mono between stage and source.
+2. **Theme-slug meta row**: the active theme coordinate (e.g. `external·fkas·private`) and its deployment-default density (`dense` / `comfortable`) printed in mono between stage and source.
 3. **Demo source code**: the demo file's extracted source, syntax-highlighted.
 
 ## 4 Theme switching
 
 - The **document** `ThemeProvider` is fixed at `internal-elma-private`. The header picker does **not** re-render that provider and must not change `document.documentElement` brand attributes.
 - Picker state lives in a docs-local **preview** context. Only `DemoFrame` / `ThemeScope` consume it. Changing the picker updates demo scope attributes and live token appearance; chrome stays internal/Elmera/private.
-- Demo stages render under the preview-selected theme; every demo is therefore viewable in all 20 permutations by driving the picker.
+- Demo stages render under the preview-selected theme; every demo is therefore viewable in all 20 permutations by driving the picker. `DemoFrame` also stamps `data-density` from `defaultDensityForVariant(preview.variant)` on the stage and retargets `--control-*` with a **docs-local** comfortable override. That is a preview sandbox, not nested density in library CSS: `ThemeScope` still does not own density, the document root stays `dense`, and the 20-cell matrix stays a colour grid (no 20×2). Honest document-root comfortable remains the isolated static-theme stamp.
 - Nested per-cell theming (matrix page, any side-by-side comparison) uses **`ThemeScope`** per [theming](theming.md) — overlays portalled inside the active scope per [conventions](components/conventions.md). The preview context is docs-local, not a library export.
 
 ## 5 Theme matrix page
