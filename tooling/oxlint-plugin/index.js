@@ -1,6 +1,7 @@
 import { eslintCompatPlugin } from "@oxlint/plugins";
 
 import enforceVariantStandard from "./rules/enforce-variant-standard.js";
+import noHardcodedDensityMetrics from "./rules/no-hardcoded-density-metrics.js";
 import noInternalDynamicImport from "./rules/no-internal-dynamic-import.js";
 import noLocalFocusRing from "./rules/no-local-focus-ring.js";
 import noPrimitiveColors from "./rules/no-primitive-colors.js";
@@ -14,6 +15,7 @@ export default eslintCompatPlugin({
   },
   rules: {
     "enforce-variant-standard": enforceVariantStandard,
+    "no-hardcoded-density-metrics": noHardcodedDensityMetrics,
     "no-internal-dynamic-import": noInternalDynamicImport,
     "no-local-focus-ring": noLocalFocusRing,
     "no-primitive-colors": noPrimitiveColors,

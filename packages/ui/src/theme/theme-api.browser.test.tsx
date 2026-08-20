@@ -7,13 +7,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DEFAULT_COLOR_SCHEME_STORAGE_KEY, resolveColorSchemeOptions } from "./color-scheme";
 import type { ColorScheme, ColorSchemeBootstrapManifest } from "./color-scheme";
-import { createColorSchemeRuntimeStore } from "./color-scheme-runtime";
-import type { ColorSchemeRuntimeConfig } from "./color-scheme-runtime";
 import {
   COLOR_SCHEME_BOOTSTRAP_DUPLICATE_MESSAGE,
   COLOR_SCHEME_BOOTSTRAP_MISSING_MESSAGE,
   colorSchemeBootstrapMismatchMessage,
 } from "./color-scheme-diagnostics";
+import { createColorSchemeRuntimeStore } from "./color-scheme-runtime";
+import type { ColorSchemeRuntimeConfig } from "./color-scheme-runtime";
 import { colorSchemeScriptSource, injectedColorSchemeScriptSource } from "./color-scheme-script";
 import { ElmeraGroupUiProvider, useElmeraGroupUi } from "./elmera-group-ui";
 import { ForceColorScheme } from "./force-color-scheme";

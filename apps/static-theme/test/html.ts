@@ -66,6 +66,14 @@ export function readDocumentBrand(html: string): DocumentBrand {
   };
 }
 
+export function readDocumentDensity(html: string): string | null {
+  const htmlTag = openTag(html, "html");
+  if (htmlTag === null) {
+    return null;
+  }
+  return tagAttribute(htmlTag, "data-density");
+}
+
 export function inlineScripts(html: string): Array<{ start: number; attrs: string; source: string }> {
   const scripts: Array<{ start: number; attrs: string; source: string }> = [];
   const pattern = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi;

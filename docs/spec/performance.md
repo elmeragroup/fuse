@@ -110,7 +110,7 @@ Normative chapter for `@elmeragroup/ui`. Sources: [A11y & performance guideline 
 
   | `/theme` export | RSC status | Role |
   | --- | --- | --- |
-  | `themeAttributes`, `themeSlug`, `parseThemeSlug`, `validateTheme`, `BRANDS` | server | brand kernel; safe in layouts, `_document`, Vite config |
+  | `themeAttributes`, `defaultDensityForVariant`, `densityAttributes`, `themeSlug`, `parseThemeSlug`, `validateTheme`, `BRANDS` | server | brand and density kernel; safe in layouts, `_document`, Vite config |
   | `ColorSchemeScript`, `colorSchemeScriptSource` | server | host-placed first-paint bootstrap. `ColorSchemeScript` stays a server-safe `<script>` renderer so `<head>` placement remains true; `colorSchemeScriptSource` returns closed IIFE text for `transformIndexHtml` / `ScriptOnce` |
   | `ThemeProvider`, `useTheme`, `useColorScheme`, `ForceColorScheme` | client | document writer, hooks, runtime force. Not first-paint adapters |
   | `ThemeScope` | client | subtree brand writer |

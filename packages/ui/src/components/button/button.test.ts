@@ -17,7 +17,8 @@ describe("buttonVariants", () => {
     const classes = buttonVariants();
     expect(classes).toContain("bg-primary");
     expect(classes).toContain("text-primary-foreground");
-    expect(classes).toContain("h-9");
+    expect(classes).toContain("h-(--control-h-md)");
+    expect(classes.split(/\s+/).length).toBeGreaterThan(1);
   });
 
   it("renders each variant recipe", () => {
@@ -34,17 +35,45 @@ describe("buttonVariants", () => {
   });
 
   it("renders each size recipe and icon-padding hooks", () => {
-    expect(buttonVariants({ size: "default" })).toContain("has-data-[icon=inline-start]:pl-2");
-    expect(buttonVariants({ size: "xs" })).toContain("h-6");
-    expect(buttonVariants({ size: "xs" })).toContain("rounded-[min(var(--radius-md),8px)]");
-    expect(buttonVariants({ size: "sm" })).toContain("h-8");
-    expect(buttonVariants({ size: "sm" })).toContain("rounded-[min(var(--radius-md),10px)]");
-    expect(buttonVariants({ size: "lg" })).toContain("h-10");
-    expect(buttonVariants({ size: "icon" })).toContain("size-9");
-    expect(buttonVariants({ size: "icon-xs" })).toContain("size-6");
-    expect(buttonVariants({ size: "icon-sm" })).toContain("size-8");
+    const defaults = buttonVariants({ size: "default" });
+    expect(defaults).toContain("h-(--control-h-md)");
+    expect(defaults).toContain("gap-(--control-gap-md)");
+    expect(defaults).toContain("px-(--control-px-md)");
+    expect(defaults).toContain("has-data-[icon=inline-start]:pl-(--control-px-icon-md)");
+    expect(defaults).toContain("has-data-[icon=inline-end]:pr-(--control-px-icon-md)");
+    expect(defaults).toContain("[font-size:var(--control-text)]");
+    expect(defaults).toContain("[line-height:var(--control-leading)]");
+    expect(defaults).not.toContain("h-9");
+
+    const xs = buttonVariants({ size: "xs" });
+    expect(xs).toContain("h-(--control-h-xs)");
+    expect(xs).toContain("text-xs");
+    expect(xs).toContain("rounded-[min(var(--radius-md),8px)]");
+    expect(xs).toContain("has-data-[icon=inline-start]:pl-(--control-px-icon-xs)");
+    expect(xs).toContain("has-data-[icon=inline-end]:pr-(--control-px-icon-xs)");
+
+    const sm = buttonVariants({ size: "sm" });
+    expect(sm).toContain("h-(--control-h-sm)");
+    expect(sm).toContain("text-sm");
+    expect(sm).toContain("rounded-[min(var(--radius-md),10px)]");
+    expect(sm).not.toContain("[font-size:var(--control-text)]");
+    expect(sm).toContain("has-data-[icon=inline-start]:pl-(--control-px-icon-sm)");
+    expect(sm).toContain("has-data-[icon=inline-end]:pr-(--control-px-icon-sm)");
+
+    const lg = buttonVariants({ size: "lg" });
+    expect(lg).toContain("h-(--control-h-lg)");
+    expect(lg).toContain("[font-size:var(--control-text)]");
+    expect(lg).toContain("[line-height:var(--control-leading)]");
+    expect(lg).toContain("has-data-[icon=inline-start]:pl-(--control-px-icon-lg)");
+    expect(lg).toContain("has-data-[icon=inline-end]:pr-(--control-px-icon-lg)");
+
+    expect(buttonVariants({ size: "icon" })).toContain("size-(--control-h-md)");
+    expect(buttonVariants({ size: "icon" })).not.toContain("h-(--control-h-md)");
+    expect(buttonVariants({ size: "icon-xs" })).toContain("size-(--control-h-xs)");
+    expect(buttonVariants({ size: "icon-sm" })).toContain("size-(--control-h-sm)");
     expect(buttonVariants({ size: "icon-inline" })).toContain("hit-area-1");
-    expect(buttonVariants({ size: "icon-lg" })).toContain("size-10");
+    expect(buttonVariants({ size: "icon-lg" })).toContain("size-(--control-h-lg)");
+    expect(buttonVariants({ size: "default" })).not.toMatch(/\b(?:dense|comfortable):/);
   });
 
   it("composes the shared self focus ring and keeps invalid rings on error tokens", () => {

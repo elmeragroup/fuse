@@ -133,7 +133,8 @@
         "elmera/no-local-focus-ring": "error",
         "elmera/require-icon-button-label": "error",
         "elmera/restrict-process-env": "error",
-        "elmera/no-internal-dynamic-import": "error"
+        "elmera/no-internal-dynamic-import": "error",
+        "elmera/no-hardcoded-density-metrics": "warn"
       }
     },
     {

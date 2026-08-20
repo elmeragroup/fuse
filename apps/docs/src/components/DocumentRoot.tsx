@@ -1,6 +1,6 @@
 import type { ReactElement, ReactNode } from "react";
 
-import { themeAttributes } from "@elmeragroup/ui/theme";
+import { defaultDensityForVariant, densityAttributes, themeAttributes } from "@elmeragroup/ui/theme";
 
 import { DOCUMENT_THEME } from "../lib/theme";
 
@@ -19,6 +19,7 @@ export function DocumentRoot({
     <html
       lang={lang}
       {...themeAttributes(DOCUMENT_THEME)}
+      {...densityAttributes(defaultDensityForVariant(DOCUMENT_THEME.variant))}
       suppressHydrationWarning={suppressHydrationWarning}>
       {children}
     </html>

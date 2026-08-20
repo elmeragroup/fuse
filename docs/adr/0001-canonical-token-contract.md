@@ -1,6 +1,6 @@
 # 0001 — Canonical token contract: shadcn grammar with a soft form, two public tiers
 
-Date: 2026-08-17. Status: accepted; amended 2026-08-18 after the accepted shared brand-pointer cascade.
+Date: 2026-08-17. Status: accepted; amended 2026-08-18 after the accepted shared brand-pointer cascade; amended 2026-08-20 — density control metrics are library-owned implementation variables, not a third public token-contract tier.
 
 ## Context
 
@@ -31,3 +31,17 @@ The complete normative enumeration, values, and legacy rename table live in [the
 - The white default-card look and the tinted elevation ramp both survive under new names (`--card`, `--card-soft`).
 - `--brand-fkse` must be minted (Telinet blue). `--brand-fkab` aliases `--brand-fkas` — originally flagged as a design gap, later ruled a **permanent, deliberate alias** (see the Brand–segment matrix gaps ticket resolution).
 - Any future OrderModule migration re-maps names via the spec's reference table; no runtime bridge exists to lean on.
+
+## Amendment 2026-08-20 — density implementation variables
+
+Density control metrics (`--control-h-*`, `--control-px-*`, `--control-px-icon-*`, `--control-gap-*`, `--control-text`, `--control-leading`) are **library-owned implementation variables**. They are consumed by library component recipes. They are not:
+
+- themable semantic roles,
+- public primitives,
+- members of `TOKEN_NAMES` or `EXTERNAL_RESET_KEYS`,
+- brand override keys,
+- or a supported consumer customization interface.
+
+They do not join the two public contract tiers in this ADR. Their distributed CSS names remain observable on `:root` / `:root[data-density="comfortable"]` in the existing main stylesheet. Direct consumer override is unsupported. Theme variant supplies only the deployment default for `data-density`; it does not select these values in generated theme CSS.
+
+Normative detail: [theming](../spec/theming.md) §2.7. Deferred preference/persistence work: [roadmap](../spec/roadmap.md) §10.

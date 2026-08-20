@@ -34,6 +34,28 @@
   background-size: 18px 18px;
 }
 
+/* Docs preview sandbox only. Library density CSS stays :root-anchored. Keep these literals in lockstep with packages/ui/src/styles/ui.css :root[data-density="comfortable"]. */
+.DemoStage[data-density="comfortable"] {
+  --control-h-xs: 2rem;
+  --control-h-sm: 2.25rem;
+  --control-h-md: 2.75rem;
+  --control-h-lg: 3rem;
+  --control-px-xs: 0.75rem;
+  --control-px-sm: 0.875rem;
+  --control-px-md: 0.875rem;
+  --control-px-lg: 0.875rem;
+  --control-px-icon-xs: 0.625rem;
+  --control-px-icon-sm: 0.625rem;
+  --control-px-icon-md: 0.75rem;
+  --control-px-icon-lg: 0.75rem;
+  --control-gap-xs: 0.375rem;
+  --control-gap-sm: 0.375rem;
+  --control-gap-md: 0.5rem;
+  --control-gap-lg: 0.5rem;
+  --control-text: 1.125rem;
+  --control-leading: 1.5rem;
+}
+
 .DemoMeta {
   display: flex;
   align-items: center;
@@ -44,6 +66,7 @@
   color: var(--docs-sub);
 }
 
-.DemoSlug {
+.DemoSlug,
+.DemoDensity {
   color: var(--docs-ink);
 }

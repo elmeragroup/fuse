@@ -91,6 +91,8 @@ export const THEME_RUNTIME_EXPORTS = [
   "ThemeProvider",
   "ThemeScope",
   "colorSchemeScriptSource",
+  "defaultDensityForVariant",
+  "densityAttributes",
   "parseThemeSlug",
   "themeAttributes",
   "themeSlug",

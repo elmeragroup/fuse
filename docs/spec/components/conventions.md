@@ -30,6 +30,29 @@ Every component spec has exactly ten sections: **1 Header** (canonical name, can
 - Every focusable component composes `focusRing`; invalid-state rings and static one-pixel popup hairlines are separate styling concerns and do not count as focus-ring definitions.
 - Radii derive from `--radius`/`--radius-button` and the locked arithmetic; components never hardcode radius values (the ref's `min(var(--radius-md), 8px)` clamps are kept and documented per component).
 
+## Density metrics
+
+A `size` axis that encodes a **control box** shares four rungs — `xs`, `sm`, `md`, `lg` — and a default control-type pair (`--control-text` / `--control-leading`). Density-owned metrics are control height, control inline padding, icon-edge inline padding, and control gap on every rung, plus font-size and line-height on `md` and `lg` only.
+
+| Rung | Box metrics | Type |
+| --- | --- | --- |
+| `xs` | density-owned | size-owned (`text-xs`) |
+| `sm` | density-owned | size-owned (`text-sm`) |
+| `md` | density-owned | density-owned (control-type pair) |
+| `lg` | density-owned | density-owned (control-type pair) |
+
+`xs` and `sm` type must not read the control-type pair. Default size **must pin height**; it is never content-sized. Once height is pinned, do not also set `py-*` on that rung — vertical padding is leftover space in the box.
+
+This rule applies to a `size` axis that encodes those control-box metrics (for example Button or Toggle). Type-scale axes (`Text`, `Heading`), overlay-width axes (`Dialog`, `Sheet`), and decorative sizes are not density rungs. Do not mass-map existing specs; new size-axis control work must map onto these rungs.
+
+These `--control-*` names are **library-owned implementation variables**, not a public token tier ([theming](../theming.md) §2.7, ADR [0001](../../adr/0001-canonical-token-contract.md) amendment 2026-08-20). They are not role tokens, not brand override keys, and not a consumer customization interface.
+
+Recipes **do not** hardcode those metrics (including `md`/`lg` font-size and line-height) inside a `size` axis. They read the `--control-*` implementation variables declared on `:root` in `ui.css`. The `elmera/no-hardcoded-density-metrics` rule warns when a size-axis recipe hardcodes those families; it does not flag the legal numeric spacing below. Do not introduce `dense:` / `comfortable:` custom variants for them; density retargets the variables on `:root[data-density="comfortable"]`, and local exceptions stay on `size`. Do not silently add another unmapped literal ladder.
+
+**Numeric spacing remains legal** for unrelated geometry: borders, translations, hit-area expansion, layout spacing, and explicitly documented optical values outside the density ladder. Radius stays brand-owned. Icon glyph size, shadows, transitions, and table-cell block padding are outside this remit.
+
+Signed ladder values live in `ui.css` ([theming](../theming.md) §2.7). [Button](button.md) records the first size→rung map.
+
 ## Icons
 
 Phosphor only, imported by named export from `@elmeragroup/ui/icons` (curated server-safe adapters). Components render **regular** weight; `fill` is reserved for selected/active states. Canonical swaps from the refs: `Loader2 → SpinnerGap` (spin animation), `Check → Check`, `ChevronUp/ChevronDown → CaretUp/CaretDown`, `ChevronsUpDown → CaretUpDown`, `Search → MagnifyingGlass`, `X → X`.

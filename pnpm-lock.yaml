@@ -303,6 +303,13 @@ importers:
       '@oxlint/plugins':
         specifier: 'catalog:'
         version: 1.78.0
+    devDependencies:
+      oxlint:
+        specifier: 'catalog:'
+        version: 1.78.0(oxlint-tsgolint@7.0.2001)
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.10(@types/node@25.9.5)(@vitest/browser-playwright@4.1.10)(vite@8.2.1(@types/node@25.9.5)(jiti@2.7.0))
 
   tooling/typescript: {}
 

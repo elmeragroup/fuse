@@ -15,6 +15,7 @@ type OxlintFileOverride = {
   files: string[];
   rules: {
     "anti-slop/no-runtime-typeof"?: string;
+    "elmera/no-hardcoded-density-metrics"?: string;
   };
 };
 
@@ -56,5 +57,10 @@ describe("workspace lint script", () => {
       entry.files.includes("tooling/oxlint-anti-slop/**")
     );
     expect(antiSlopOverride?.rules["anti-slop/no-runtime-typeof"]).toBe("off");
+
+    const uiSrcOverride = config.overrides.find((entry) =>
+      entry.files.includes("packages/ui/src/**/*.{ts,tsx}")
+    );
+    expect(uiSrcOverride?.rules["elmera/no-hardcoded-density-metrics"]).toBe("warn");
   });
 });

@@ -95,9 +95,15 @@ Token values are **locked** ([Brand–segment matrix gaps](../../wayfinder/ticke
 - Normative motion band: **UI transitions 150–300 ms, ease-out family** (entering elements ease-out; on-screen morphs ease-in-out; exits at or faster than enters). Only `transform` and `opacity` animate (see [performance](performance.md) §6). This band is the review bar for new and contributed components; marketing-grade motion lives in apps.
 - Nothing animates on keyboard-repeatable actions (e.g. no open/close animation replay while arrowing through a listbox).
 
-## 8 Testing bar
+## 8 Target size
 
-Per [Testing strategy](../../wayfinder/tickets/013-testing-strategy.md), restated as the a11y floor:
+Interactive controls meet **WCAG 2.2 AA 2.5.8 Target Size (Minimum)**: at least **24×24 CSS pixels**, via the rendered box or a documented `hit-area-*` expansion. The 2.5.8 spacing and inline exceptions remain available. Density does not change this floor.
+
+Dense `xs` / `icon-xs` Button is a 24px box (`1.5rem` at a 16px root). Comfortable `xs` is 32px. `icon-inline` is line-height sized and expands with `hit-area-1`. Do not introduce a control whose undilated box and hit-area both fall under 24px.
+
+## 9 Testing bar
+
+Per [Testing strategy](../../wayfinder/tickets/013-testing-strategy.md), restated as the a11y floor. The target-size floor in §8 is verified on the smallest interactive Button rung at each density through the rendered box or documented hit-area expansion.
 
 - All test queries **role/label-based** (no test-ids, no class queries); this makes every test double as a semantics assertion. **No axe** — matches all reference codebases; the role-based bar plus these rules is the gate.
 - Every spec §7 keyboard behavior has a browser-mode test; the `focusRing` recipe has one shared visual assertion (ring present on `:focus-visible`, absent on mouse focus).

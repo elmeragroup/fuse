@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 import { createRoot } from "react-dom/client";
 
 import { ThemeProvider } from "@elmeragroup/ui/theme";
@@ -10,7 +12,8 @@ export function renderFixture(
   storageKey: string,
   defaultColorScheme: ColorScheme,
   enableSystem: boolean,
-  forcedColorScheme: ColorScheme | undefined
+  forcedColorScheme: ColorScheme | undefined,
+  preview?: ReactNode
 ): void {
   const host = document.getElementById("root");
   if (host === null) {
@@ -25,7 +28,7 @@ export function renderFixture(
       enableSystem={enableSystem}
       forcedColorScheme={forcedColorScheme}
       injectColorSchemeScript={false}>
-      <App />
+      {preview ?? <App />}
     </ThemeProvider>
   );
 }

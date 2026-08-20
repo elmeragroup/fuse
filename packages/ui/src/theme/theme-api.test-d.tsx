@@ -5,15 +5,26 @@ import type {
   ColorSchemeOptions,
   ColorSchemeScriptElementProps,
   ColorSchemeScriptProps,
+  Density,
+  DensityAttributes,
   ElmeraGroupUiProviderProps,
   ForceColorSchemeProps,
   SupportedLocale,
   ThemeInput,
   ThemeSlug,
   ThemeProviderProps,
+  ThemeScopeProps,
+  ThemeVariant,
   UseColorSchemeResult,
 } from "../theme";
-import { ColorSchemeScript, colorSchemeScriptSource, ForceColorScheme, useColorScheme } from "../theme";
+import {
+  ColorSchemeScript,
+  colorSchemeScriptSource,
+  defaultDensityForVariant,
+  densityAttributes,
+  ForceColorScheme,
+  useColorScheme,
+} from "../theme";
 import type * as ThemeApi from "../theme";
 
 test("ThemeInput and ThemeSlug reject illegal pinned-brand permutations", () => {
@@ -79,6 +90,9 @@ test("SupportedLocale is the four shipped locales and locale is required", () =>
   expectTypeOf<ThemeProviderProps["injectColorSchemeScript"]>().toEqualTypeOf<boolean | undefined>();
   expectTypeOf<ThemeProviderProps>().not.toHaveProperty("setTheme");
   expectTypeOf<ThemeProviderProps>().not.toHaveProperty("enableColorScheme");
+  expectTypeOf<ThemeProviderProps>().not.toHaveProperty("density");
+  expectTypeOf<ThemeProviderProps>().not.toHaveProperty("defaultDensity");
+  expectTypeOf<ThemeScopeProps>().not.toHaveProperty("density");
 
   // @ts-expect-error locale is required
   const _missingLocale: ElmeraGroupUiProviderProps = { children: null };
@@ -101,6 +115,15 @@ test("SupportedLocale is the four shipped locales and locale is required", () =>
 
 test("UserAgentParserResult is not a public theme export", () => {
   expectTypeOf<typeof ThemeApi>().not.toHaveProperty("UserAgentParserResult");
+});
+
+test("density helpers stamp a two-rung document attribute", () => {
+  expectTypeOf<Density>().toEqualTypeOf<"dense" | "comfortable">();
+  expectTypeOf<DensityAttributes>().toEqualTypeOf<{ "data-density": Density }>();
+  expectTypeOf(defaultDensityForVariant).parameter(0).toEqualTypeOf<ThemeVariant>();
+  expectTypeOf(defaultDensityForVariant).returns.toEqualTypeOf<Density>();
+  expectTypeOf(densityAttributes).parameter(0).toEqualTypeOf<Density>();
+  expectTypeOf(densityAttributes).returns.toEqualTypeOf<DensityAttributes>();
 });
 
 test("color-scheme bootstrap exports share ColorSchemeOptions including document force", () => {

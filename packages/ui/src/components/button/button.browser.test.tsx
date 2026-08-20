@@ -244,7 +244,7 @@ describe("Button", () => {
     );
 
     const outlineButton = buttonNamed("Outline");
-    for (const token of ["border-border", "h-10", "shadow-xs"]) {
+    for (const token of ["border-border", "h-(--control-h-lg)", "shadow-xs"]) {
       expect(outline).toContain(token);
       expect(outlineButton.className.split(/\s+/)).toContain(token);
     }

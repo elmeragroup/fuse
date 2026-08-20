@@ -8,6 +8,7 @@ import {
   bootstrapScripts,
   firstPaintableIndex,
   readDocumentBrand,
+  readDocumentDensity,
 } from "./html";
 
 async function fetchHtml(pathname: string): Promise<string> {
@@ -22,6 +23,7 @@ describe("docs response HTML", () => {
     async (pathname) => {
       const html = await fetchHtml(pathname);
       expect(readDocumentBrand(html)).toEqual(DOCUMENT_BRAND);
+      expect(readDocumentDensity(html)).toBe("dense");
     }
   );
 
@@ -49,6 +51,7 @@ describe("docs response HTML", () => {
     for (const pathname of ["/private", "/website"] as const) {
       const html = await fetchHtml(pathname);
       expect(readDocumentBrand(html)).toEqual(DOCUMENT_BRAND);
+      expect(readDocumentDensity(html)).toBe("dense");
       expect(bootstrapScripts(html)).toHaveLength(0);
       expect(html).not.toContain(BOOTSTRAP_MANIFEST_KEY);
       expect(html).not.toContain('aria-label="Variant"');

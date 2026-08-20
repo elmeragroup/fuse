@@ -2,7 +2,7 @@
 
 Normative chapter for the `@elmeragroup/ui` monorepo: workspace layout, package manager and supply-chain settings, turbo task graph, lint/format stack, custom lint guardrails, scaffolding, and the full testing strategy including the merge gate. Sources: [Repo & tooling spec](../../wayfinder/tickets/016-repo-tooling-spec.md), [Testing strategy](../../wayfinder/tickets/013-testing-strategy.md), [anti-slop research](../../wayfinder/research/015-anti-slop.md), [Component spec conventions](components/conventions.md).
 
-Package build, exports map, and `publishConfig` are owned by [architecture](architecture.md); bundle/CSS budgets by [performance](performance.md); the publish pipeline itself by [release](release.md); the accessibility test floor by [accessibility](accessibility.md) §8.
+Package build, exports map, and `publishConfig` are owned by [architecture](architecture.md); bundle/CSS budgets by [performance](performance.md); the publish pipeline itself by [release](release.md); the accessibility test floor by [accessibility](accessibility.md) §9.
 
 ## 1 Workspace layout
 
@@ -100,6 +100,12 @@ Exactly these existing rules carry over from the internal plugin and run as `err
 
 Per [performance](performance.md) §5, the library never lazy-loads internally: this rule (in `@elmeragroup/oxlint-plugin`) forbids dynamic `import()` anywhere in `packages/ui/src/**`. Apps own code splitting.
 
+### 5.5 `elmera/no-hardcoded-density-metrics` — `warn`
+
+Library `tv()` recipes that declare a `size` axis must not hardcode signed density-owned metrics (control height, inline padding, icon-edge padding, gap, or `md`/`lg` control type). The rule inspects only that axis and warns when those families use a numeric/scale literal instead of the matching `--control-*` variable.
+
+It does **not** ban `p-*` / `h-*` / `gap-*` across the package. Type-scale axes (`Text`, `Heading`), overlay-width axes (`Dialog`, `Sheet`), and other non-control `size` keys stay quiet. Legal geometry also stays quiet: borders, translations, `hit-area-*` expansion, `h-lh`, radius clamps, descendant icon glyph `size-3`/`size-4`, size-owned `xs`/`sm` type, layout spacing, and `py-*` / `p-*`. Severity is warning only; do not promote to error without a fresh ruling.
+
 ## 6 Scaffolding (plop, v1)
 
 `pnpm gen component <name>` (plop generator in the repo root) stubs, via templates + inject markers:
@@ -127,7 +133,7 @@ Vitest only. **Two co-located projects** declared in `packages/ui/vitest.config.
 
 - Environment: `@vitest/browser` + playwright, real Chromium. Files: `*.browser.test.tsx` next to sources; requires the built library CSS (`test:browser` depends on this package's `build` task).
 - Tests: all component behavior. **Written fresh against each spec's §9 test requirements** — the internal ref's `base-ui-*.test.tsx` files are reference reading only, never ported.
-- **All queries role/label-based** (no test-ids, no class queries) and every spec §7 keyboard behavior has an explicit keyboard test — the a11y floor of [accessibility](accessibility.md) §8. **No axe/scanner.** String-bearing components: one render test per shipped locale + one prop-override test.
+- **All queries role/label-based** (no test-ids, no class queries) and every spec §7 keyboard behavior has an explicit keyboard test — the a11y floor of [accessibility](accessibility.md) §9. **No axe/scanner.** String-bearing components: one render test per shipped locale + one prop-override test.
 
 ### 7.3 Type tests
 
