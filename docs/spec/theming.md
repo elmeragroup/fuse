@@ -108,6 +108,14 @@ No HSL-triplet wrappers, no bridge layer. This table is the complete semantic re
 
 New roles with no faithful legacy alias are `--popover(-foreground)`, `--primary-soft(-foreground)`, and the trimmed sidebar contract; ports choose them by the component semantics documented in §5 and each component's consumed-token section. Deliberately dead with **no replacement alias**: `--surface-text`, `--tertiary*` (all forms), `--secondary-variant`, `--inactive`, `--primary-light`, `--sidebar-background`, `--sidebar-primary(-foreground)`, per-brand `--destructive` triplets, `--on-primary-container-muted` (use opacity utilities), and the `.ngeas` block. The `--destructive` alias pair is the only runtime compatibility concession.
 
+### 2.7 Library-owned implementation variables (density)
+
+A third classification exists **outside** the two public contract tiers. Density control metrics are library-owned implementation variables shared by library component recipes. They are not role tokens, not public primitives, and not locked theme-contract keys.
+
+They must not enter `TOKEN_NAMES` or `EXTERNAL_RESET_KEYS`. The generator, the 20-theme matrix, nested-scope isolation, and the contrast matrix do not mention them. Brand themes do not override them. Direct consumer override is unsupported.
+
+Names and values live in `.scratch/theme-density/SPEC.md` until Wave 1 lands them in the non-generated portion of `ui.css` as `:root` (dense) and `:root[data-density="comfortable"]` (comfortable) declarations. The density attribute is `data-density`, not a `data-theme-*` key (ADR [0002](../adr/0002-theme-attributes.md)). See ADR [0001](../adr/0001-canonical-token-contract.md) amendment 2026-08-20.
+
 ## 3 Cascade mechanism
 
 ### 3.1 Three data attributes
