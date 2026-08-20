@@ -47,7 +47,7 @@ This rule applies to a `size` axis that encodes those control-box metrics (for e
 
 These `--control-*` names are **library-owned implementation variables**, not a public token tier ([theming](../theming.md) §2.7, ADR [0001](../../adr/0001-canonical-token-contract.md) amendment 2026-08-20). They are not role tokens, not brand override keys, and not a consumer customization interface.
 
-Recipes **do not** hardcode those metrics (including `md`/`lg` font-size and line-height) inside a `size` axis. They read the `--control-*` implementation variables declared on `:root` in `ui.css`. Do not introduce `dense:` / `comfortable:` custom variants for them; density retargets the variables on `:root[data-density="comfortable"]`, and local exceptions stay on `size`. Do not silently add another unmapped literal ladder.
+Recipes **do not** hardcode those metrics (including `md`/`lg` font-size and line-height) inside a `size` axis. They read the `--control-*` implementation variables declared on `:root` in `ui.css`. The `elmera/no-hardcoded-density-metrics` rule warns when a size-axis recipe hardcodes those families; it does not flag the legal numeric spacing below. Do not introduce `dense:` / `comfortable:` custom variants for them; density retargets the variables on `:root[data-density="comfortable"]`, and local exceptions stay on `size`. Do not silently add another unmapped literal ladder.
 
 **Numeric spacing remains legal** for unrelated geometry: borders, translations, hit-area expansion, layout spacing, and explicitly documented optical values outside the density ladder. Radius stays brand-owned. Icon glyph size, shadows, transitions, and table-cell block padding are outside this remit.
 

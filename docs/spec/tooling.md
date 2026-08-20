@@ -100,6 +100,12 @@ Exactly these existing rules carry over from the internal plugin and run as `err
 
 Per [performance](performance.md) §5, the library never lazy-loads internally: this rule (in `@elmeragroup/oxlint-plugin`) forbids dynamic `import()` anywhere in `packages/ui/src/**`. Apps own code splitting.
 
+### 5.5 `elmera/no-hardcoded-density-metrics` — `warn`
+
+Library `tv()` recipes that declare a `size` axis must not hardcode signed density-owned metrics (control height, inline padding, icon-edge padding, gap, or `md`/`lg` control type). The rule inspects only that axis and warns when those families use a numeric/scale literal instead of the matching `--control-*` variable.
+
+It does **not** ban `p-*` / `h-*` / `gap-*` across the package. Type-scale axes (`Text`, `Heading`), overlay-width axes (`Dialog`, `Sheet`), and other non-control `size` keys stay quiet. Legal geometry also stays quiet: borders, translations, `hit-area-*` expansion, `h-lh`, radius clamps, descendant icon glyph `size-3`/`size-4`, size-owned `xs`/`sm` type, layout spacing, and `py-*` / `p-*`. Severity is warning only; do not promote to error without a fresh ruling.
+
 ## 6 Scaffolding (plop, v1)
 
 `pnpm gen component <name>` (plop generator in the repo root) stubs, via templates + inject markers:
