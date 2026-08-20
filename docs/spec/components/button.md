@@ -62,6 +62,16 @@ Recipe: `buttonVariants` (`tv`) — **public**, runtime-free. Defaults: `variant
 
 Sizes `default`, `xs`, `sm`, `icon-xs`, `icon-sm` add `in-data-[slot=button-group]:rounded-md` — inside a ButtonGroup the radius clamp is dropped so the group's own edge-rounding rules govern corners.
 
+**Density mapping (prospective).** Button `size` selects a shared density rung per [conventions](conventions.md). Density-owned literals in the table above stay until Wave 1. Do not add `dense:` / `comfortable:` variants. Do not put undefined `--control-*` names in this recipe.
+
+| Button `size` | Density rung | Notes |
+| --- | --- | --- |
+| `xs`, `icon-xs` | `xs` | Type stays `text-xs`. Icon-only uses the `xs` height as a square. |
+| `sm`, `icon-sm` | `sm` | Type is size-owned. The `sm` variant **must set `text-sm` itself** so it does not inherit `--control-text` once `md`/`lg` consume the control-type pair. Today `text-sm` lives only on the recipe base — Wave 1 puts it on `sm`. Icon-edge padding on this rung is distinct; it is not a uniform `base − 2px` derivation. |
+| `default`, `icon` | `md` | Default size **pins height** (`h-9` today). The size value is never an empty class list and is never content-sized. Do not also set `py-*` on this rung. Text `default` maps height, inline padding, icon-edge padding, gap, font-size, and line-height to `md` / the control-type pair. |
+| `lg`, `icon-lg` | `lg` | Text `lg` maps type to the control-type pair. Icon-only uses the `lg` height as a square. |
+| `icon-inline` | none | Line-height sizing plus `hit-area-*` is density-independent geometry. |
+
 ## 5. Consumed tokens
 
 `primary`/`primary-foreground`, `secondary`/`secondary-foreground`, `muted`, `background`, `foreground`, `border`, `ring`, `error` (tinted `/10 /20 /40` opacities), `success` (same tints). Radius: `rounded-md` from `--radius`; the xs/sm clamps `min(var(--radius-md), 8px)` and `min(var(--radius-md), 10px)` are **kept and locked** — small buttons never exceed 8/10 px corner radius even under large-radius themes. No raw palette classes; no `dark:` variants (dark axis lives in tokens).
