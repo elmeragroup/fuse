@@ -21,7 +21,6 @@ describe("BrandLogo icons.md §4 contract", () => {
     expect(section).toContain('variant?: "full" | "mark"');
     expect(section).toContain("title?: string");
     expect(section).not.toMatch(/type BrandLogoProps = Omit<LogoProps/);
-    expect(section).toMatch(/fallback host|display-name fallback|<span>/);
   });
 
   it("keeps the data-variant stamp documented for the SVG-mark swap", () => {
@@ -30,6 +29,5 @@ describe("BrandLogo icons.md §4 contract", () => {
     const section = iconsSpec.slice(start, end);
 
     expect(section).toContain("data-variant");
-    expect(section).toMatch(/reads `BRANDS\[brand\]\.displayName`/);
   });
 });

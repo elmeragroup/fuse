@@ -125,7 +125,7 @@ Vitest only. **Two co-located projects** declared in `packages/ui/vitest.config.
 ### 7.1 `unit` project
 
 - Environment: Node. Files: `*.test.ts` next to sources; DOM/component behavior belongs exclusively to the browser project.
-- Tests: `themeSlug`/`parseThemeSlug`/`validateTheme`, tv recipe class output, exports-map logic, token-pipeline logic.
+- Tests: `themeSlug`/`parseThemeSlug`/`coerceTheme`/`validateTheme`, tv recipe class output, exports-map logic, token-pipeline logic.
 - **CSS snapshot test for `themes.css`**: the generated stylesheet (15 CSS rule nodes / 20 permutations plus one terminal dark-placeholder comment) is snapshot-asserted so codegen drift is a reviewed diff, paired with the size ceiling in [performance](performance.md) §4. The per-theme **contrast matrix snapshot** ([accessibility](accessibility.md) §6) lives here too.
 - **20-theme contract test**: asserts every one of the 20 brand×segment themes supplies its must-override tokens and the generated CSS matches the value matrix. Functional component tests run under exactly **`internal-fkas-private`** — the first legal matrix row and the named default test theme. Theming correctness is proven once, centrally, not per component.
 

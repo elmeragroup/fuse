@@ -3,13 +3,20 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
+import { parseStyleRules } from "./css-rules";
 import { generateThemesCss } from "./generate-css";
+import {
+  DEMO_STAGE_COMFORTABLE_SELECTOR,
+  LIBRARY_COMFORTABLE_SELECTOR,
+  generateDemoStageComfortableCss,
+} from "./generate-demo-stage-css";
 import { EXTERNAL_RESET_KEYS, TOKEN_NAMES } from "./tokens/contract";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const uiCss = readFileSync(join(here, "../styles/ui.css"), "utf8");
 const compiledCssPath = join(here, "../../dist/styles.css");
 const packedRawCssPath = join(here, "../../dist/styles/ui.css");
+const demoStageCssPath = join(here, "../../dist/demo-stage-comfortable.css");
 
 const DENSITY_VARIABLE_NAMES = [
   "--control-h-xs",
@@ -107,4 +114,36 @@ describe("density CSS", () => {
       expect(packedRaw).toContain(':root[data-density="comfortable"]');
     }
   );
+});
+
+function controlPairs(css: string, selector: string): string[] {
+  const atTheme = css.indexOf("@theme");
+  const source = atTheme === -1 ? css : css.slice(0, atTheme);
+  const rule = parseStyleRules(source).find((entry) => entry.selector === selector);
+  if (rule === undefined) {
+    throw new Error(`missing ${selector}`);
+  }
+  return rule.declarations
+    .filter((declaration) => declaration.name.startsWith("control-"))
+    .map((declaration) => `--${declaration.name}:${declaration.value}`);
+}
+
+describe("DemoStage comfortable density artifact", () => {
+  it("re-scopes the library comfortable block onto .DemoStage", () => {
+    const derived = generateDemoStageComfortableCss(uiCss);
+    expect(controlPairs(derived, DEMO_STAGE_COMFORTABLE_SELECTOR)).toEqual(
+      controlPairs(uiCss, LIBRARY_COMFORTABLE_SELECTOR)
+    );
+  });
+
+  it("throws when the library comfortable block is missing", () => {
+    expect(() => generateDemoStageComfortableCss(":root { --control-h-md: 2.25rem; }")).toThrow(
+      LIBRARY_COMFORTABLE_SELECTOR
+    );
+  });
+
+  it.skipIf(!existsSync(demoStageCssPath))("is emitted next to themes.css", () => {
+    const emitted = readFileSync(demoStageCssPath, "utf8");
+    expect(emitted).toBe(generateDemoStageComfortableCss(uiCss));
+  });
 });

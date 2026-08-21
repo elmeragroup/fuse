@@ -1,10 +1,9 @@
 import type { ReactNode } from "react";
 
-import { flushSync } from "react-dom";
-import { createRoot } from "react-dom/client";
 import { afterEach, describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
+import { render as renderBrowser } from "../../../test/browser-render";
 import { focusRing } from "../../styles/utils";
 import { ThemeScope } from "../../theme";
 import { ScrollArea } from "./scroll-area";
@@ -12,41 +11,21 @@ import { ScrollArea } from "./scroll-area";
 const fkasPrivate = { variant: "internal", brand: "fkas", segment: "private" } as const;
 const focusSelf = focusRing({ target: "self" }).root();
 
-const cleanups: Array<() => void> = [];
-
 afterEach(() => {
-  for (const cleanup of cleanups.splice(0)) {
-    cleanup();
+  for (const styles of document.querySelectorAll("[data-scroll-area-test-styles]")) {
+    styles.remove();
   }
 });
 
 function render(node: ReactNode) {
-  const host = document.createElement("div");
   const styles = document.createElement("style");
+  styles.dataset.scrollAreaTestStyles = "";
   styles.textContent = [
     "html, body { margin: 0; height: 100%; overflow: hidden; }",
     '[data-slot="scroll-area-viewport"] { width: 100%; height: 100%; box-sizing: border-box; }',
   ].join("");
   document.head.append(styles);
-  document.body.append(host);
-  const root = createRoot(host);
-  flushSync(() => {
-    root.render(<ThemeScope theme={fkasPrivate}>{node}</ThemeScope>);
-  });
-  let didUnmount = false;
-  const unmount = () => {
-    if (didUnmount) {
-      return;
-    }
-    didUnmount = true;
-    flushSync(() => {
-      root.unmount();
-    });
-    host.remove();
-    styles.remove();
-  };
-  cleanups.push(unmount);
-  return { host, unmount };
+  return renderBrowser(<ThemeScope theme={fkasPrivate}>{node}</ThemeScope>);
 }
 
 function labeledText(name: string): HTMLElement {

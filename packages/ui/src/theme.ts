@@ -26,4 +26,4 @@ export type { ThemeScopeProps } from "./theme/theme-scope";
 export { BRAND_CODES, BRANDS, isBrandCode, parseThemeSlug, themeSlug } from "./theme/tokens/themes";
 export type { BrandCode, ThemeInput, ThemeSegment, ThemeSlug, ThemeVariant } from "./theme/tokens/themes";
 export { useColorScheme } from "./theme/use-color-scheme";
-export { validateTheme } from "./theme/validate-theme";
+export { coerceTheme, validateTheme } from "./theme/validate-theme";

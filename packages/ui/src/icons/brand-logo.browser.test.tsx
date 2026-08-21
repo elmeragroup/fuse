@@ -1,42 +1,9 @@
-import type { ReactNode } from "react";
-
-import { flushSync } from "react-dom";
-import { createRoot } from "react-dom/client";
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
 
+import { render } from "../../test/browser-render";
 import { BRAND_CODES, BRANDS } from "../theme/tokens/themes";
 import { BrandLogo } from "./brand-logo";
-
-const cleanups: Array<() => void> = [];
-
-afterEach(() => {
-  for (const cleanup of cleanups.splice(0)) {
-    cleanup();
-  }
-});
-
-function render(node: ReactNode) {
-  const host = document.createElement("div");
-  document.body.append(host);
-  const root = createRoot(host);
-  flushSync(() => {
-    root.render(node);
-  });
-  let didUnmount = false;
-  const unmount = () => {
-    if (didUnmount) {
-      return;
-    }
-    didUnmount = true;
-    flushSync(() => {
-      root.unmount();
-    });
-    host.remove();
-  };
-  cleanups.push(unmount);
-  return { host, unmount };
-}
 
 describe("BrandLogo", () => {
   it("renders an accessible display-name fallback for elma full and mark", () => {

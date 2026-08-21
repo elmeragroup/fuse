@@ -1,10 +1,9 @@
 import { Component, useLayoutEffect } from "react";
 import type { ReactNode, RefObject } from "react";
 
-import { flushSync } from "react-dom";
-import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { render } from "../../test/browser-render";
 import { DEFAULT_COLOR_SCHEME_STORAGE_KEY, resolveColorSchemeOptions } from "./color-scheme";
 import type { ColorScheme, ColorSchemeBootstrapManifest } from "./color-scheme";
 import {
@@ -28,7 +27,6 @@ const fkasPrivate = { variant: "internal", brand: "fkas", segment: "private" } a
 const tkasCompany = { variant: "external", brand: "tkas", segment: "company" } as const;
 const guenPrivate = { variant: "internal", brand: "guen", segment: "private" } as const;
 
-const cleanups: Array<() => void> = [];
 const defaultManifest = resolveColorSchemeOptions();
 
 function writeManifest(manifest: ColorSchemeBootstrapManifest | undefined) {
@@ -51,9 +49,6 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  for (const cleanup of cleanups.splice(0)) {
-    cleanup();
-  }
   document.documentElement.removeAttribute("data-theme");
   document.documentElement.removeAttribute("data-theme-variant");
   document.documentElement.removeAttribute("data-theme-brand");
@@ -82,28 +77,6 @@ function readDocumentBrand() {
     brand: document.documentElement.getAttribute("data-theme-brand"),
     segment: document.documentElement.getAttribute("data-theme-segment"),
   };
-}
-
-function render(node: ReactNode) {
-  const host = document.createElement("div");
-  document.body.append(host);
-  const root = createRoot(host);
-  flushSync(() => {
-    root.render(node);
-  });
-  const rerender = (next: ReactNode) => {
-    flushSync(() => {
-      root.render(next);
-    });
-  };
-  const unmount = () => {
-    flushSync(() => {
-      root.unmount();
-    });
-    host.remove();
-  };
-  cleanups.push(unmount);
-  return { host, rerender, unmount };
 }
 
 function ThemeProbe() {

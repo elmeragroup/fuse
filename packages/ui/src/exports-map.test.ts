@@ -33,6 +33,9 @@ describe("exports map", () => {
 
   it("always includes the CSS dual-mode entries and /theme", () => {
     expect(exportBindingTarget(sourceExports, "./css")).toBe("./src/styles/ui.css");
+    expect(exportBindingTarget(sourceExports, "./demo-stage-comfortable.css")).toBe(
+      "./dist/demo-stage-comfortable.css"
+    );
     expect(exportBindingTarget(sourceExports, "./themes.css")).toBe("./dist/themes.css");
     expect(exportBindingTarget(sourceExports, "./styles.css")).toBe("./dist/styles.css");
     expect(exportBindingTarget(sourceExports, "./theme")).toEqual({
@@ -90,6 +93,9 @@ describe("exports map", () => {
       import: "./scroll-area.js",
     });
     expect(exportBindingTarget(publishExports, "./css")).toBe("./styles/ui.css");
+    expect(exportBindingTarget(publishExports, "./demo-stage-comfortable.css")).toBe(
+      "./demo-stage-comfortable.css"
+    );
     expect(exportBindingTarget(publishExports, "./themes.css")).toBe("./themes.css");
     expect(exportBindingTarget(publishExports, "./styles.css")).toBe("./styles.css");
     expect(JSON.stringify(publishExports)).not.toContain("/dist/");
@@ -114,6 +120,7 @@ describe("exports map", () => {
     const theme = discovered.jsEntries.find((entry) => entry.subpath === "theme");
     const root = discovered.jsEntries.find((entry) => entry.subpath === ".");
     expect(theme?.runtimeExports).toContain("ThemeProvider");
+    expect(theme?.runtimeExports).toContain("coerceTheme");
     expect(theme?.runtimeExports).toContain("themeAttributes");
     expect(theme?.runtimeExports).toContain("defaultDensityForVariant");
     expect(theme?.runtimeExports).toContain("densityAttributes");

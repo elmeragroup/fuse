@@ -48,13 +48,3 @@ export function parseThemeSegment(value: string): ThemeSegment | null {
   }
   return null;
 }
-
-export function themeFromAxes(variant: ThemeVariant, brand: BrandCode, segment: ThemeSegment): ThemeInput {
-  if (brand === "fkab") {
-    return { variant, brand, segment: "company" };
-  }
-  if (brand === "fkse") {
-    return { variant, brand, segment: "private" };
-  }
-  return { variant, brand, segment };
-}

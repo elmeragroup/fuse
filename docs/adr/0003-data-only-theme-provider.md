@@ -17,7 +17,7 @@ The original call treated the provider as data-only (context + helpers, no DOM w
 
 - Fully controlled `theme: ThemeInput`. No library `setTheme` for variant/brand/segment.
 - Brand is never stored in `localStorage` or cookies.
-- Pure helpers (`themeSlug`, `parseThemeSlug`, `themeAttributes`, `validateTheme`) stay the mapper and boundary. Unknown/missing axes throw everywhere; pinned-segment mistakes throw in development and coerce + warn in production.
+- Pure helpers (`themeSlug`, `parseThemeSlug`, `themeAttributes`, `coerceTheme`, `validateTheme`) stay the mapper and boundary. Unknown/missing axes throw everywhere from `validateTheme`; pinned-segment mistakes throw in development and coerce + warn in production. `coerceTheme` is the env-free pin-table parse used by host pickers that need silent pinning.
 - `ThemeScope` (polymorphic via base-ui `useRender`) covers per-request subtree theming and multi-theme pages. It writes its own element via `themeAttributes` and never owns `document.documentElement`.
 - A discriminated `ThemeInput` union makes pinned-brand violations unrepresentable.
 

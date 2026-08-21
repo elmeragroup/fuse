@@ -335,6 +335,7 @@ runInherited("pnpm", [
   "esm-only",
   "--exclude-entrypoints",
   "css",
+  "demo-stage-comfortable.css",
   "styles.css",
   "themes.css",
 ]);

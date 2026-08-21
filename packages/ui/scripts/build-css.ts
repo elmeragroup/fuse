@@ -1,9 +1,10 @@
 import { spawnSync } from "node:child_process";
-import { copyFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { generateThemesCss } from "../src/theme/generate-css";
+import { generateDemoStageComfortableCss } from "../src/theme/generate-demo-stage-css";
 
 export function buildCss(packageRoot: string): void {
   const distDir = join(packageRoot, "dist");
@@ -11,9 +12,11 @@ export function buildCss(packageRoot: string): void {
   mkdirSync(distDir, { recursive: true });
   mkdirSync(join(distDir, "styles"), { recursive: true });
 
-  const themesCss = generateThemesCss();
-  writeFileSync(join(distDir, "themes.css"), themesCss);
-  copyFileSync(join(srcStylesDir, "ui.css"), join(distDir, "styles/ui.css"));
+  const uiCssPath = join(srcStylesDir, "ui.css");
+  const uiCss = readFileSync(uiCssPath, "utf8");
+  writeFileSync(join(distDir, "themes.css"), generateThemesCss());
+  writeFileSync(join(distDir, "demo-stage-comfortable.css"), generateDemoStageComfortableCss(uiCss));
+  copyFileSync(uiCssPath, join(distDir, "styles/ui.css"));
 
   const compiled = spawnSync(
     "pnpm",

@@ -30,7 +30,7 @@ import { ThemeProvider, useTheme } from "./theme-provider";
 import { BRANDS, LEGAL_THEMES, parseThemeSlug, themeSlug } from "./tokens/themes";
 import type { ThemeInput } from "./tokens/themes";
 import { useColorScheme } from "./use-color-scheme";
-import { isThemeDevelopment, validateTheme } from "./validate-theme";
+import { coerceTheme, isThemeDevelopment, validateTheme } from "./validate-theme";
 
 const srcRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -57,7 +57,7 @@ afterEach(() => {
 
 describe("BRANDS pin table", () => {
   it("keeps the single-segment pins in lockstep with the ThemeInput union", () => {
-    // resolvePinnedTheme coerces to segments[0]; these pins are the segment ThemeInput encodes.
+    // coerceTheme pins to segments[0]; these pins are the segment ThemeInput encodes.
     expect(BRANDS.fkab.segments).toEqual(["company"]);
     expect(BRANDS.fkse.segments).toEqual(["private"]);
     expect(BRANDS.fkas.segments).toEqual(["private", "company"]);
@@ -96,6 +96,35 @@ describe("themeSlug / parseThemeSlug", () => {
       variant: "external",
       brand: "elma",
       segment: "company",
+    });
+  });
+});
+
+describe("coerceTheme", () => {
+  it("accepts every legal theme", () => {
+    for (const theme of LEGAL_THEMES) {
+      expect(coerceTheme(theme)).toEqual(theme);
+    }
+  });
+
+  it("returns null for non-objects and unknown or missing axes", () => {
+    expect(coerceTheme(null)).toBeNull();
+    expect(coerceTheme("external-fkas-private")).toBeNull();
+    expect(coerceTheme({ variant: "internal", brand: "fkas" })).toBeNull();
+    expect(coerceTheme({ variant: "internal", brand: "zz", segment: "private" })).toBeNull();
+  });
+
+  it("silently pins illegal segments in every environment", () => {
+    vi.stubEnv("NODE_ENV", "development");
+    expect(coerceTheme({ variant: "internal", brand: "fkab", segment: "private" })).toEqual({
+      variant: "internal",
+      brand: "fkab",
+      segment: "company",
+    });
+    expect(coerceTheme({ variant: "external", brand: "fkse", segment: "company" })).toEqual({
+      variant: "external",
+      brand: "fkse",
+      segment: "private",
     });
   });
 });

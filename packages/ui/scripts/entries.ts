@@ -81,7 +81,7 @@ export const RAC_ENTRIES = [
 
 export const NON_COMPONENT_JS_ENTRIES = [".", "theme", "icons", "illustrations", "flags"] as const;
 
-export const CSS_ENTRY_NAMES = ["css", "styles.css", "themes.css"] as const;
+export const CSS_ENTRY_NAMES = ["css", "demo-stage-comfortable.css", "styles.css", "themes.css"] as const;
 
 export const THEME_RUNTIME_EXPORTS = [
   "BRANDS",
@@ -90,6 +90,7 @@ export const THEME_RUNTIME_EXPORTS = [
   "ForceColorScheme",
   "ThemeProvider",
   "ThemeScope",
+  "coerceTheme",
   "colorSchemeScriptSource",
   "defaultDensityForVariant",
   "densityAttributes",
@@ -385,6 +386,11 @@ function cssEntries(packageRoot: string): CssExportEntry[] {
   }
   return [
     { subpath: "css", sourceFile: rawCss, publishFile: "styles/ui.css" },
+    {
+      subpath: "demo-stage-comfortable.css",
+      sourceFile: "dist/demo-stage-comfortable.css",
+      publishFile: "demo-stage-comfortable.css",
+    },
     { subpath: "styles.css", sourceFile: "dist/styles.css", publishFile: "styles.css" },
     { subpath: "themes.css", sourceFile: "dist/themes.css", publishFile: "themes.css" },
   ];
