@@ -17,6 +17,7 @@
       "import": "./src/button.ts"
     },
     "./css": "./src/styles/ui.css",
+    "./demo-stage-comfortable.css": "./dist/demo-stage-comfortable.css",
     "./icons": {
       "types": "./src/icons.ts",
       "import": "./src/icons.ts"

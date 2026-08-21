@@ -2,6 +2,8 @@
 
 Input for `/to-tickets` and a later loop/wave spec. Written against the current implementation specification and the accepted PoC (tickets 01–09), not recollection. This ticket implements no library or docs features and does not start the waves below.
 
+> **Amended 2026-08-21** against the post-PoC theme track (`7d60222..31ef4eb`): the Elmera visual identity (`elma`) landed — the matrix is **20 themes / 6 brands**, not 16/5; the color-scheme runtime moved to a host-placed closed bootstrap (`ColorSchemeScript` / `colorSchemeScriptSource`, `ForceColorScheme`, `injectColorSchemeScript` defaulting `false`); deployment-fixed **density** landed (`data-density` on the document root, `--control-*` implementation variables in `ui.css`, `defaultDensityForVariant` / `densityAttributes` on `/theme`, `elmera/no-hardcoded-density-metrics` lint); `BrandLogo` shipped early in `/icons` as an accessible text/`displayName` span fallback (icons.md §4 contract — SVG marks still owed); `apps/static-theme` (Vite first-paint fixture) exists; oxlint runs deny-warnings. Density preference/persistence is roadmap §10, not v1.
+
 **PoC kept.** Tickets 01–09 are accepted. Keep the workspace, token pipeline, `/theme`, generated exports + tsdown pack gates, Phosphor adapters, Button, ScrollArea, and the docs-app MVP. Do not restart foundation.
 
 **Counts.** Appendix A is exhaustive: **56** bare component entries + **11** quarantined `react-aria/` entries = **67** canonical components, plus non-component JS (`theme`, `icons`, `illustrations`, `flags`) and CSS/assets. PoC shipped **2** bare components (`button`, `scroll-area`). Remaining: **54** bare + **11** RAC = **65** components, plus leftover assets, leftover spine, leftover docs pipeline, leftover release, and a short list of foundation leftovers.
@@ -35,8 +37,11 @@ Keep this layer. Later waves must not re-open it except to extend it (new entry 
 | Layer | Landed | Evidence |
 | --- | --- | --- |
 | Workspace | pnpm 11 catalog, turbo graph, oxlint + anti-slop, oxfmt, vitest unit/browser/types, shared TS configs | tickets 02 |
-| Tokens / CSS | 16-permutation `themes.css` codegen, dual CSS (`/css` + `/styles.css`), contrast-matrix snapshot, 16-theme contract test, central reduced-motion | tickets 03 |
-| Theme + locale | `ThemeProvider` / `ThemeScope` / `useTheme` / `themeAttributes` / `validateTheme` / `BRANDS` / `ColorSchemeScript` / `useColorScheme` / `ElmeraGroupUiProvider` / `useElmeraGroupUi` | tickets 04 |
+| Tokens / CSS | 20-permutation `themes.css` codegen (15 emitted rules, `elma` included), dual CSS (`/css` + `/styles.css`), contrast-matrix snapshot, 20-theme contract test, central reduced-motion, `--control-*` density variables (`:root` dense / `:root[data-density="comfortable"]`) | tickets 03 + theme track |
+| Theme + locale | `ThemeProvider` / `ThemeScope` / `useTheme` / `themeAttributes` / `validateTheme` / `BRANDS` / `ColorSchemeScript` / `colorSchemeScriptSource` / `ForceColorScheme` / `useColorScheme` / `defaultDensityForVariant` / `densityAttributes` / `ElmeraGroupUiProvider` / `useElmeraGroupUi` | tickets 04 + theme track |
+| Color scheme + density | Host-placed closed color-scheme bootstrap + provider-owned runtime marker (`data-theme`), commit-safe store; deployment-fixed density stamped by the host on `<html>` (`dense` internal / `comfortable` external); painted canvas stays light until dark values land | theme track (`7d60222..31ef4eb`) |
+| BrandLogo (fallback) | `/icons` exports `BrandLogo` — exhaustive six-code `BRANDS` lookup rendering an accessible `<span>` `displayName` fallback per icons.md §4; already in `runtimeExportsFor("icons")` | theme track |
+| First-paint hosts | `apps/docs` verified Next App Router recipe (attrs + density on `<html>`, script in `<head>`, `suppressHydrationWarning`); `apps/static-theme` Vite HTML-adapter fixture incl. isolated comfortable stamp | theme track |
 | Overlay resolver | package-private `useThemeScopeContainer`: explicit element/ref → nearest `ThemeScope` → `undefined`; `null` means wait, not `document.body` | ticket 04 browser tests; **no overlay consumer yet** |
 | Package shape | generated `exports`, tsdown unbundle, `publishConfig.directory: "dist"` + `linkDirectory: false`, publint / attw / export-path / emitted-directive | tickets 05, 09 |
 | Phosphor | 111 SSR adapters, `weight` narrowed, `/icons` subpath-only | ticket 06 |
@@ -105,9 +110,11 @@ Bespoke (hand-authored SVG React components, `ComponentPropsWithoutRef<"svg"> & 
 
 `Alert` asset is named `AlertMark` to avoid colliding with the `Alert` component. `Signing` is the one theme-aware bespoke: four Material class renames (`fill-secondary-container` → `fill-secondary-soft`, etc.). Raw `.svg` inputs become ordinary React modules; no SVGR consumer requirement.
 
-Logos: `FjordkraftLogo`, `TrondelagkraftLogo`, `GudbrandsdalEnergiLogo`, `TelinetLogo`, `ElmeraGroupLogo`, `SteddiLogo`, `TrumfLogo` — `variant?: "full" | "mark"` (no `Small`/`Mini`). `BrandLogo` is an exhaustive switch on `ThemeInput["brand"]` (`fkas`/`fkab` → Fjordkraft, `tkas` → TrøndelagKraft, `guen` → Gudbrandsdal Energi, `fkse` → Telinet); reads no context. Steddi has one glyph for both variants.
+Logos: `FjordkraftLogo`, `TrondelagkraftLogo`, `GudbrandsdalEnergiLogo`, `TelinetLogo`, `ElmeraGroupLogo`, `SteddiLogo`, `TrumfLogo` — `variant?: "full" | "mark"` (no `Small`/`Mini`). Steddi has one glyph for both variants.
 
-Tests already named in icons.md §6: titled vs decorative SVG, `Signing` fill classes, `BrandLogo` five-code snapshot, Next packed fixture later.
+`BrandLogo` **already shipped** (theme track) as the icons.md §4 fallback contract: exhaustive six-code `BRANDS` lookup (`fkas`/`fkab` → Fjordkraft, `tkas` → TrøndelagKraft, `guen` → Gudbrandsdal Energi, `fkse` → Telinet, `elma` → Elmera Group) rendering an accessible text/`displayName` `<span>`; reads no context; six-code snapshot + type tests exist. The A2 remaining work for it is swapping energy-brand fallbacks to the real SVG marks when the logo components land — do not re-ticket the switch or the contract.
+
+Tests already named in icons.md §6: titled vs decorative SVG, `Signing` fill classes, `BrandLogo` six-code snapshot (`elma` asserts text fallback, no SVG), Next packed fixture later.
 
 #### 2.2.2 Illustrations (`/illustrations`)
 
@@ -320,7 +327,7 @@ Still owed:
 | Component page anatomy | §3.4 | H1 + lede, View as Markdown + View source, demo frames, generated API tables, generated Tokens-consumed (drop the section rather than hand-maintain). |
 | Demo frames with extracted source | §3.5 / §6 | One `.tsx` per spec §10. AST-extract at docs build into live render + displayed source. Same files are future VR targets and the markdown endpoint. Demos already exist for Button/ScrollArea as copy-pasted examples — switch to extraction, do not keep a third copy. |
 | API reference generation | §8 | From TS types + JSDoc. RSC-status column. Fail the docs build on missing JSDoc / unresolvable types. |
-| Theme matrix page | §5 | 16 legal `ThemeScope` cells only. Needs a small set of key components inside each cell — wait until spine + a few overlays/forms exist, not until all 67. |
+| Theme matrix page | §5 | 20 legal `ThemeScope` cells only (incl. `elma`), colour grid — no 20×2 density axis. Needs a small set of key components inside each cell — wait until spine + a few overlays/forms exist, not until all 67. |
 | Handbook pages | §3.3 + accessibility.md §4 + performance.md §2 | Theming, matrix, tokens (measured sizes), brands & segments, icons, localization, llms.txt explainer. |
 | `llms.txt` + per-component `.md` endpoints | §9 | Generated from the same pipeline. No shadcn registry. |
 | Playground | §7 | Separate app. Instant HMR. No Sandpack. |
@@ -354,7 +361,10 @@ Use this when writing tickets: if it is proven, copy the PoC pattern; if it is f
 
 | Risk | Status | What “done” means |
 | --- | --- | --- |
-| Token pipeline / 16 themes | **Proven** | Do not re-open. |
+| Token pipeline / 20 themes (incl. `elma`) | **Proven** | Do not re-open. |
+| Color-scheme bootstrap + runtime marker | **Proven** | Host-placed script + provider-owned `data-theme`; painted canvas stays light. Do not re-open; dark is roadmap. |
+| Deployment-fixed density (`data-density` + `--control-*`) | **Proven** | Button is the density exemplar. Every size-axis control recipe reads `--control-*` per conventions.md §density; `elmera/no-hardcoded-density-metrics` enforces. Density preference is roadmap §10 — no `ThemeProvider` density prop in v1. |
+| BrandLogo fallback contract | **Proven** | Six-code span fallback shipped. A2 only swaps energy-brand marks to SVG. |
 | Data-only ThemeProvider + ThemeScope attributes | **Proven** | Docs picker is the host-owned model. |
 | Overlay *resolver* (`null` vs `undefined` vs element) | **Proven in isolation** | First overlay (Dialog) is the first portal consumer. Nested DatePicker-in-Modal (`OVERLAY_CONTAINER_ATTR`) is a **second** first-of-kind, RAC-only. |
 | Generated exports + tsdown unbundle + `"use client"` parity | **Proven** | Adding an entry = add `src/<name>.ts` + regenerate. Still missing: barrel + runtime export-name map generation. |
@@ -403,7 +413,8 @@ B8  RAC private support stack + RAC dep pins   (before any react-aria/ public en
 
 ```text
 A1  Flags vendor + /flags + packed-asset contract     (blocks PhoneNumberField only)
-A2  Bespoke icons + logos + BrandLogo + FkasMeter     (blocks nothing in the 67
+A2  Bespoke icons + logos + FkasMeter (+ swap BrandLogo
+    energy-brand fallbacks to real SVG marks)          (blocks nothing in the 67
                                                        except docs/icon roster completeness;
                                                        do before any ticket that would
                                                        otherwise invent a mark)
@@ -485,7 +496,7 @@ Each bullet is a **set**: multiple tickets that do not import each other. Still 
 | `packages/ui/scripts/generate-exports.ts` | foundation only | Never in a component ticket |
 | `packages/ui/scripts/entries.ts` discovery / allowlists | foundation only | Component tickets must not grow `BARE_COMPONENT_ENTRIES` (already complete) |
 | `runtimeExportsFor` / `src/index.ts` | B0 then mechanical | After B0, component tickets only add a facade file + a small export-name list |
-| `packages/ui/src/styles/ui.css` | tokens (done) + RAC plugin (done) | Component tickets do not add custom variants. The nine `data-*` variants already exist. |
+| `packages/ui/src/styles/ui.css` | tokens (done) + RAC plugin (done) + density `--control-*` block (done) | Component tickets do not add custom variants and do not grow the density variable set. The nine `data-*` variants already exist. Size-axis recipes *read* `--control-*`; no `dense:`/`comfortable:` variants. |
 | `packages/ui/src/styles/utils.ts` | already has `focusRing`, `disabledHatch`, icon crossfade | Do not add a second focus recipe. Dialog/Sheet close-button helper is a new private module, not utils soup. |
 | `packages/ui/src/theme/**` | frozen after PoC | Overlay tickets *use* `useThemeScopeContainer`; they do not change it unless a spec bug is found |
 | `pnpm-workspace.yaml` catalog | first ticket that needs the dep | One dep pin per ticket that introduces it; do not batch unused pins |
@@ -562,7 +573,7 @@ Gate: pack still green; a dummy dictionary test passes in four locales; lint for
 ### Wave 2 — Assets (A1 ∥ A2 after Wave 1)
 
 6. **Flags:** vendor 249 SVGs, manifest, provenance, hashes, 800 KiB ceiling, four-code gap test vs `libphonenumber-js` metadata (pin the dep here or in the PhoneNumberField ticket; **prefer here** so the gap test is real). Fill in `package-check` packed-asset contract. Subpath-only (`@elmeragroup/ui/flags`); extend `runtimeExportsFor` / `entries.ts` if B0 left `[]` — **do not** add flags to `src/index.ts`.
-7. **Bespoke icons, logos, BrandLogo, FkasMeter.** Extend `/icons` + add `/illustrations`. `Signing` class rename. CC notices where required. Same rule: subpath-only; new names go on `runtimeExportsFor`, not the root barrel.
+7. **Bespoke icons, logos, FkasMeter; swap BrandLogo fallbacks to SVG marks.** Extend `/icons` + add `/illustrations`. `Signing` class rename. CC notices where required. Same rule: subpath-only; new names go on `runtimeExportsFor`, not the root barrel (`BrandLogo` is already listed there — do not re-add).
 
 Gate: packed tarball has `flags/NO.svg` etc.; `/icons` export test includes bespoke names; no `.ref/` path in source.
 
@@ -617,13 +628,13 @@ Gate: PhoneNumberField picker never contains AC/BQ/EH/TA; packed flag URLs; RAC 
 - **Chart** (optional `recharts` peer, lint, budget excluding recharts)
 - **Sidebar** last (after Sheet + Tooltip)
 - **Docs MDX + demo AST extraction + API tables + Tokens-consumed**
-- **Handbook pages + 16-cell theme matrix + Localization page**
+- **Handbook pages + 20-cell theme matrix + Localization page**
 - **⌘K search** (docs-local, not a library Command component)
 - **`llms.txt` + per-component markdown endpoints**
 - **Playground app**
 - Register every published component in SideNav (flat alphabetical)
 
-Gate: docs build fails on missing JSDoc; demos extract; Sidebar not imported from `apps/docs`; matrix shows 16 legal cells only.
+Gate: docs build fails on missing JSDoc; demos extract; Sidebar not imported from `apps/docs`; matrix shows 20 legal cells only.
 
 ### Wave 8 — Release completeness
 
@@ -673,7 +684,7 @@ Do not invent names. One public Appendix A entry = one implementation ticket unl
 
 **RAC (after private stack ticket):** `react-aria/ui-providers`, `react-aria/date-field`, `react-aria/calendar`, `react-aria/range-calendar`, `react-aria/date-picker`, `react-aria/date-range-picker`, `react-aria/search-field`, `react-aria/grid-list`, `react-aria/link`, `react-aria/focusable`, `react-aria/file-trigger`.
 
-Every component ticket reads: that spec file, conventions.md, architecture.md (exports + RSC), the component’s §8, and the named `.ref` source of truth. Tests written fresh. Demos co-located `src/components/<name>/demos/`. Public recipe exported from the same entry when the spec says PUBLIC.
+Every component ticket reads: that spec file, conventions.md (including the **density ladder** — size-axis control recipes read the `--control-*` variables, never hardcode the metric families; `elmera/no-hardcoded-density-metrics` enforces, Button is the shipped exemplar), architecture.md (exports + RSC), the component’s §8, and the named `.ref` source of truth. Tests written fresh. Demos co-located `src/components/<name>/demos/`. Public recipe exported from the same entry when the spec says PUBLIC.
 
 ---
 

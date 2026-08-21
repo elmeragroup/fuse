@@ -3,14 +3,20 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
+import { parseStyleRules } from "./css-rules";
 import { generateThemesCss } from "./generate-css";
+import {
+  DEMO_STAGE_COMFORTABLE_SELECTOR,
+  LIBRARY_COMFORTABLE_SELECTOR,
+  generateDemoStageComfortableCss,
+} from "./generate-demo-stage-css";
 import { EXTERNAL_RESET_KEYS, TOKEN_NAMES } from "./tokens/contract";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const uiCss = readFileSync(join(here, "../styles/ui.css"), "utf8");
 const compiledCssPath = join(here, "../../dist/styles.css");
 const packedRawCssPath = join(here, "../../dist/styles/ui.css");
-const docsCssPath = join(here, "../../../../apps/docs/src/components/DemoFrame.css");
+const demoStageCssPath = join(here, "../../dist/demo-stage-comfortable.css");
 
 const DENSITY_VARIABLE_NAMES = [
   "--control-h-xs",
@@ -32,22 +38,6 @@ const DENSITY_VARIABLE_NAMES = [
   "--control-text",
   "--control-leading",
 ] as const;
-
-function controlDeclarationPairs(block: string): string[] {
-  const pairs: string[] = [];
-  const re = /(--control-[a-z0-9-]+):\s*([^;]+);/g;
-  let match = re.exec(block);
-  while (match !== null) {
-    const name = match[1];
-    const value = match[2];
-    if (name === undefined || value === undefined) {
-      throw new Error("density declaration capture failed");
-    }
-    pairs.push(`${name}:${value.trim()}`);
-    match = re.exec(block);
-  }
-  return pairs;
-}
 
 describe("density CSS", () => {
   it("declares dense defaults on :root and comfortable overrides on the rooted attribute", () => {
@@ -99,29 +89,6 @@ describe("density CSS", () => {
     expect(uiCss).not.toMatch(/(?<!:root)\[data-density="comfortable"\]/);
   });
 
-  it("keeps the docs comfortable DemoStage copy in lockstep with the library block", () => {
-    const docsCss = readFileSync(docsCssPath, "utf8");
-    const libraryBlock = /:root\[data-density="comfortable"\]\s*\{[^}]*\}/s.exec(uiCss)?.[0];
-    const docsBlock = /\.DemoStage\[data-density="comfortable"\]\s*\{[^}]*\}/s.exec(docsCss)?.[0];
-
-    if (libraryBlock === undefined || libraryBlock === "") {
-      throw new Error(
-        'failed to extract :root[data-density="comfortable"] from packages/ui/src/styles/ui.css'
-      );
-    }
-    if (docsBlock === undefined || docsBlock === "") {
-      throw new Error(
-        'failed to extract .DemoStage[data-density="comfortable"] from apps/docs/src/components/DemoFrame.css'
-      );
-    }
-
-    expect(controlDeclarationPairs(docsBlock)).toEqual(controlDeclarationPairs(libraryBlock));
-    for (const name of DENSITY_VARIABLE_NAMES) {
-      expect(docsBlock).toContain(name);
-    }
-    expect(docsCss).toContain("packages/ui/src/styles/ui.css");
-  });
-
   it("never enters TOKEN_NAMES or EXTERNAL_RESET_KEYS", () => {
     for (const name of DENSITY_VARIABLE_NAMES) {
       const token = name.replace(/^--/, "");
@@ -147,4 +114,36 @@ describe("density CSS", () => {
       expect(packedRaw).toContain(':root[data-density="comfortable"]');
     }
   );
+});
+
+function controlPairs(css: string, selector: string): string[] {
+  const atTheme = css.indexOf("@theme");
+  const source = atTheme === -1 ? css : css.slice(0, atTheme);
+  const rule = parseStyleRules(source).find((entry) => entry.selector === selector);
+  if (rule === undefined) {
+    throw new Error(`missing ${selector}`);
+  }
+  return rule.declarations
+    .filter((declaration) => declaration.name.startsWith("control-"))
+    .map((declaration) => `--${declaration.name}:${declaration.value}`);
+}
+
+describe("DemoStage comfortable density artifact", () => {
+  it("re-scopes the library comfortable block onto .DemoStage", () => {
+    const derived = generateDemoStageComfortableCss(uiCss);
+    expect(controlPairs(derived, DEMO_STAGE_COMFORTABLE_SELECTOR)).toEqual(
+      controlPairs(uiCss, LIBRARY_COMFORTABLE_SELECTOR)
+    );
+  });
+
+  it("throws when the library comfortable block is missing", () => {
+    expect(() => generateDemoStageComfortableCss(":root { --control-h-md: 2.25rem; }")).toThrow(
+      LIBRARY_COMFORTABLE_SELECTOR
+    );
+  });
+
+  it.skipIf(!existsSync(demoStageCssPath))("is emitted next to themes.css", () => {
+    const emitted = readFileSync(demoStageCssPath, "utf8");
+    expect(emitted).toBe(generateDemoStageComfortableCss(uiCss));
+  });
 });

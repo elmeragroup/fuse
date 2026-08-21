@@ -12,6 +12,7 @@ export type ColorSchemeRuntimeConfig = {
   storageKey: string;
   defaultColorScheme: ColorScheme;
   enableSystem: boolean;
+  /** Same primitive as ColorSchemeOptions.forcedColorScheme / ColorSchemeBootstrapManifest.forcedColorScheme. */
   mountForce: ColorScheme | undefined;
   disableTransitionOnChange: boolean;
   nonce: string | undefined;
@@ -173,10 +174,6 @@ export function createColorSchemeRuntimeStore(
     writeResolvedNow();
   }
 
-  function readSystemScheme(): "light" | "dark" {
-    return resolveSystemColorScheme();
-  }
-
   return {
     subscribe(listener) {
       listeners.add(listener);
@@ -212,7 +209,7 @@ export function createColorSchemeRuntimeStore(
     },
     markMounted() {
       mounted = true;
-      systemScheme = readSystemScheme();
+      systemScheme = resolveSystemColorScheme();
       systemSchemeRead = true;
       emit();
     },
@@ -260,7 +257,7 @@ export function createColorSchemeRuntimeStore(
     },
     bumpSystem() {
       systemRevision += 1;
-      systemScheme = readSystemScheme();
+      systemScheme = resolveSystemColorScheme();
       systemSchemeRead = true;
       if (resolvedSource() === "system" && config.enableSystem) {
         writeResolvedNow();

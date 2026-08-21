@@ -2,7 +2,7 @@
 
 import type { ChangeEvent, ReactElement } from "react";
 
-import { BRANDS } from "@elmeragroup/ui/theme";
+import { BRANDS, coerceTheme } from "@elmeragroup/ui/theme";
 import type { ThemeInput, ThemeSegment } from "@elmeragroup/ui/theme";
 
 import {
@@ -12,7 +12,6 @@ import {
   THEME_BRANDS,
   THEME_SEGMENTS,
   THEME_VARIANTS,
-  themeFromAxes,
 } from "../lib/theme";
 
 export type ThemePickerProps = {
@@ -28,7 +27,7 @@ export function ThemePicker({ theme, onThemeChange }: ThemePickerProps): ReactEl
     if (variant === null) {
       return;
     }
-    onThemeChange(themeFromAxes(variant, theme.brand, theme.segment));
+    commitTheme({ variant, brand: theme.brand, segment: theme.segment }, onThemeChange);
   };
 
   const handleBrandChange = (event: ChangeEvent<HTMLSelectElement>): void => {
@@ -36,7 +35,7 @@ export function ThemePicker({ theme, onThemeChange }: ThemePickerProps): ReactEl
     if (brand === null) {
       return;
     }
-    onThemeChange(themeFromAxes(theme.variant, brand, theme.segment));
+    commitTheme({ variant: theme.variant, brand, segment: theme.segment }, onThemeChange);
   };
 
   const handleSegmentChange = (event: ChangeEvent<HTMLSelectElement>): void => {
@@ -44,7 +43,7 @@ export function ThemePicker({ theme, onThemeChange }: ThemePickerProps): ReactEl
     if (segment === null) {
       return;
     }
-    onThemeChange(themeFromAxes(theme.variant, theme.brand, segment));
+    commitTheme({ variant: theme.variant, brand: theme.brand, segment }, onThemeChange);
   };
 
   return (
@@ -72,6 +71,17 @@ export function ThemePicker({ theme, onThemeChange }: ThemePickerProps): ReactEl
       </select>
     </div>
   );
+}
+
+function commitTheme(
+  next: { variant: ThemeInput["variant"]; brand: ThemeInput["brand"]; segment: ThemeSegment },
+  onThemeChange: (theme: ThemeInput) => void
+): void {
+  const coerced = coerceTheme(next);
+  if (coerced === null) {
+    return;
+  }
+  onThemeChange(coerced);
 }
 
 function isSegmentAllowed(allowedSegments: readonly ThemeSegment[], segment: ThemeSegment): boolean {

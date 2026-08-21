@@ -29,6 +29,7 @@ import type { ColorSchemeRuntimeConfig } from "./color-scheme-runtime";
 import { InjectedColorSchemeScript } from "./color-scheme-script";
 import { DocumentWriterContext, echoDocumentBrandAttributes } from "./document-writer";
 import { themeAttributes } from "./theme-attributes";
+import { themeAxisDeps } from "./theme-axes";
 import { ThemeContext, useResolvedTheme } from "./theme-context";
 import type { Theme } from "./theme-context";
 import type { ThemeInput } from "./tokens/themes";
@@ -45,9 +46,17 @@ export type ThemeProviderProps = ColorSchemeOptions & {
 export function ThemeProvider(props: ThemeProviderProps) {
   const hasDocumentWriter = use(DocumentWriterContext);
   if (hasDocumentWriter) {
-    return props.children;
+    return <NestedThemeValidator theme={props.theme}>{props.children}</NestedThemeValidator>;
   }
   return <DocumentThemeWriter {...props} />;
+}
+
+// Nested providers never fork the document writer; they only validate their own theme.
+// useResolvedTheme memoizes on axis primitives so a production coercion warns once per
+// illegal theme, not on every re-render.
+function NestedThemeValidator({ theme, children }: { theme: ThemeInput; children: ReactNode }) {
+  useResolvedTheme(theme);
+  return children;
 }
 
 function DocumentThemeWriter({
@@ -63,9 +72,7 @@ function DocumentThemeWriter({
   scriptProps,
 }: ThemeProviderProps) {
   const diagnosed = useRef(false);
-  // SAFETY: untyped CMS/env input is the §7.6 boundary; optional axis reads keep insertion deps from
-  // throwing before remaining hooks register.
-  const themeAxes = theme as ThemeInput | null;
+  const [themeVariant, themeBrand, themeSegment] = themeAxisDeps(theme);
   const options = useMemo(
     () =>
       resolveColorSchemeOptions({
@@ -105,15 +112,7 @@ function DocumentThemeWriter({
     store.applyDocument();
     // Axis primitives, not object identity: equal inline theme literals must not rewrite the document.
     // oxlint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    injectColorSchemeScript,
-    options,
-    runtimeConfig,
-    store,
-    themeAxes?.brand,
-    themeAxes?.segment,
-    themeAxes?.variant,
-  ]);
+  }, [injectColorSchemeScript, options, runtimeConfig, store, themeVariant, themeBrand, themeSegment]);
 
   useEffect(() => {
     store.markMounted();

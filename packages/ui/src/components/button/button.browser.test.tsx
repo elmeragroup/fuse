@@ -1,45 +1,18 @@
 import { createRef } from "react";
 import type { ReactNode } from "react";
 
-import { flushSync } from "react-dom";
-import { createRoot } from "react-dom/client";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
+import { render as renderBrowser } from "../../../test/browser-render";
 import { ThemeScope } from "../../theme";
 import { Button } from "./button";
 import { buttonVariants } from "./button-variants";
 
 const fkasPrivate = { variant: "internal", brand: "fkas", segment: "private" } as const;
 
-const cleanups: Array<() => void> = [];
-
-afterEach(() => {
-  for (const cleanup of cleanups.splice(0)) {
-    cleanup();
-  }
-});
-
 function render(node: ReactNode) {
-  const host = document.createElement("div");
-  document.body.append(host);
-  const root = createRoot(host);
-  flushSync(() => {
-    root.render(<ThemeScope theme={fkasPrivate}>{node}</ThemeScope>);
-  });
-  let didUnmount = false;
-  const unmount = () => {
-    if (didUnmount) {
-      return;
-    }
-    didUnmount = true;
-    flushSync(() => {
-      root.unmount();
-    });
-    host.remove();
-  };
-  cleanups.push(unmount);
-  return { host, unmount };
+  return renderBrowser(<ThemeScope theme={fkasPrivate}>{node}</ThemeScope>);
 }
 
 function flushEffects(): Promise<void> {

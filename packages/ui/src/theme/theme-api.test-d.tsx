@@ -18,6 +18,7 @@ import type {
   UseColorSchemeResult,
 } from "../theme";
 import {
+  coerceTheme,
   ColorSchemeScript,
   colorSchemeScriptSource,
   defaultDensityForVariant,
@@ -115,6 +116,11 @@ test("SupportedLocale is the four shipped locales and locale is required", () =>
 
 test("UserAgentParserResult is not a public theme export", () => {
   expectTypeOf<typeof ThemeApi>().not.toHaveProperty("UserAgentParserResult");
+});
+
+test("coerceTheme is the env-free pin-table parse", () => {
+  expectTypeOf(coerceTheme).parameter(0).toEqualTypeOf<unknown>();
+  expectTypeOf(coerceTheme).returns.toEqualTypeOf<ThemeInput | null>();
 });
 
 test("density helpers stamp a two-rung document attribute", () => {

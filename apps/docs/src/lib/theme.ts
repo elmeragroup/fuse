@@ -1,3 +1,4 @@
+import { BRAND_CODES, isBrandCode } from "@elmeragroup/ui/theme";
 import type {
   BrandCode,
   ColorSchemeOptions,
@@ -26,14 +27,7 @@ export const DEFAULT_THEME = {
 
 export const THEME_VARIANTS = ["internal", "external"] as const satisfies readonly ThemeVariant[];
 
-export const THEME_BRANDS = [
-  "fkas",
-  "tkas",
-  "guen",
-  "fkab",
-  "fkse",
-  "elma",
-] as const satisfies readonly BrandCode[];
+export const THEME_BRANDS = BRAND_CODES;
 
 export const THEME_SEGMENTS = ["private", "company"] as const satisfies readonly ThemeSegment[];
 
@@ -45,17 +39,7 @@ export function parseThemeVariant(value: string): ThemeVariant | null {
 }
 
 export function parseThemeBrand(value: string): BrandCode | null {
-  if (
-    value === "fkas" ||
-    value === "tkas" ||
-    value === "guen" ||
-    value === "fkab" ||
-    value === "fkse" ||
-    value === "elma"
-  ) {
-    return value;
-  }
-  return null;
+  return isBrandCode(value) ? value : null;
 }
 
 export function parseThemeSegment(value: string): ThemeSegment | null {
@@ -63,14 +47,4 @@ export function parseThemeSegment(value: string): ThemeSegment | null {
     return value;
   }
   return null;
-}
-
-export function themeFromAxes(variant: ThemeVariant, brand: BrandCode, segment: ThemeSegment): ThemeInput {
-  if (brand === "fkab") {
-    return { variant, brand, segment: "company" };
-  }
-  if (brand === "fkse") {
-    return { variant, brand, segment: "private" };
-  }
-  return { variant, brand, segment };
 }

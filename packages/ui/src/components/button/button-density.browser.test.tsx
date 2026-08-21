@@ -1,18 +1,15 @@
 import type { ReactNode } from "react";
 
-import { flushSync } from "react-dom";
-import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { render as renderBrowser } from "../../../test/browser-render";
 import { ThemeScope } from "../../theme";
 import { Button } from "./button";
 
 const fkasPrivate = { variant: "internal", brand: "fkas", segment: "private" } as const;
 const fkasExternal = { variant: "external", brand: "fkas", segment: "private" } as const;
-
-const cleanups: Array<() => void> = [];
 
 const BOX = {
   dense: {
@@ -58,28 +55,12 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  for (const cleanup of cleanups.splice(0)) {
-    cleanup();
-  }
   document.documentElement.removeAttribute("data-density");
   document.documentElement.style.removeProperty("font-size");
 });
 
 function render(node: ReactNode) {
-  const host = document.createElement("div");
-  document.body.append(host);
-  const root = createRoot(host);
-  flushSync(() => {
-    root.render(<ThemeScope theme={fkasPrivate}>{node}</ThemeScope>);
-  });
-  const unmount = () => {
-    flushSync(() => {
-      root.unmount();
-    });
-    host.remove();
-  };
-  cleanups.push(unmount);
-  return { host, unmount };
+  return renderBrowser(<ThemeScope theme={fkasPrivate}>{node}</ThemeScope>);
 }
 
 function stampDensity(density: Density): void {

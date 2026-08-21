@@ -30,7 +30,7 @@ import { ThemeProvider, useTheme } from "./theme-provider";
 import { BRANDS, LEGAL_THEMES, parseThemeSlug, themeSlug } from "./tokens/themes";
 import type { ThemeInput } from "./tokens/themes";
 import { useColorScheme } from "./use-color-scheme";
-import { isThemeDevelopment, validateTheme } from "./validate-theme";
+import { coerceTheme, isThemeDevelopment, validateTheme } from "./validate-theme";
 
 const srcRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -53,6 +53,18 @@ function walkSourceFiles(directory: string): string[] {
 afterEach(() => {
   vi.unstubAllEnvs();
   vi.restoreAllMocks();
+});
+
+describe("BRANDS pin table", () => {
+  it("keeps the single-segment pins in lockstep with the ThemeInput union", () => {
+    // coerceTheme pins to segments[0]; these pins are the segment ThemeInput encodes.
+    expect(BRANDS.fkab.segments).toEqual(["company"]);
+    expect(BRANDS.fkse.segments).toEqual(["private"]);
+    expect(BRANDS.fkas.segments).toEqual(["private", "company"]);
+    expect(BRANDS.tkas.segments).toEqual(["private", "company"]);
+    expect(BRANDS.guen.segments).toEqual(["private", "company"]);
+    expect(BRANDS.elma.segments).toEqual(["private", "company"]);
+  });
 });
 
 describe("themeSlug / parseThemeSlug", () => {
@@ -84,6 +96,36 @@ describe("themeSlug / parseThemeSlug", () => {
       variant: "external",
       brand: "elma",
       segment: "company",
+    });
+  });
+});
+
+describe("coerceTheme", () => {
+  it("accepts every legal theme", () => {
+    for (const theme of LEGAL_THEMES) {
+      expect(coerceTheme(theme)).toEqual(theme);
+    }
+  });
+
+  it("returns null for non-objects and unknown or missing axes", () => {
+    expect(coerceTheme(null)).toBeNull();
+    expect(coerceTheme("external-fkas-private")).toBeNull();
+    expect(coerceTheme({ variant: "internal", brand: "fkas" })).toBeNull();
+    expect(coerceTheme({ variant: "internal", brand: "zz", segment: "private" })).toBeNull();
+  });
+
+  it("silently pins illegal segments regardless of environment", () => {
+    vi.stubEnv("NODE_ENV", "development");
+    expect(coerceTheme({ variant: "internal", brand: "fkab", segment: "private" })).toEqual({
+      variant: "internal",
+      brand: "fkab",
+      segment: "company",
+    });
+    vi.stubEnv("NODE_ENV", "production");
+    expect(coerceTheme({ variant: "external", brand: "fkse", segment: "company" })).toEqual({
+      variant: "external",
+      brand: "fkse",
+      segment: "private",
     });
   });
 });
@@ -350,6 +392,28 @@ describe("ThemeProvider server snapshot", () => {
     expect(html).toBe("<span>internal-fkas-private:system:pending</span>");
   });
 
+  it("coerce-and-warns an illegal nested theme in production and still renders children", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const outer = { variant: "internal", brand: "fkas", segment: "private" } as const;
+    // @ts-expect-error untyped CMS/env input is the §7.6 runtime boundary
+    const illegalPinned: ThemeInput = { variant: "internal", brand: "fkab", segment: "private" };
+
+    const html = renderToStaticMarkup(
+      createElement(ThemeProvider, {
+        theme: outer,
+        children: createElement(ThemeProvider, {
+          theme: illegalPinned,
+          children: createElement("span", null, "nested-child"),
+        }),
+      })
+    );
+
+    expect(html).toBe("<span>nested-child</span>");
+    expect(warn).toHaveBeenCalled();
+    expect(String(warn.mock.calls[0]?.[0])).toMatch(/fkab is pinned to company/);
+  });
+
   it("renders an opt-in classic script as the first child and defaults injection off", () => {
     const injected = renderToStaticMarkup(
       createElement(ThemeProvider, {
@@ -370,13 +434,6 @@ describe("ThemeProvider server snapshot", () => {
 });
 
 describe("ThemeProvider color-scheme store seam", () => {
-  it("resolves theme context from axes rather than object identity", () => {
-    const source = readFileSync(join(srcRoot, "theme/theme-context.ts"), "utf8");
-    expect(source).toContain("validateTheme(theme)");
-    expect(source).toMatch(/axes\?\.brand, axes\?\.segment, axes\?\.variant/);
-    expect(source).not.toMatch(/\}, \[theme\]\);/);
-  });
-
   it("does not mutate the retained color-scheme store during render", () => {
     const source = readFileSync(join(srcRoot, "theme/theme-provider.tsx"), "utf8");
     const writerStart = source.indexOf("function DocumentThemeWriter");

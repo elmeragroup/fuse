@@ -23,12 +23,13 @@ All entries are ESM (§4). The published surface:
 | `@elmeragroup/ui` | Root barrel: **components + `/theme` API only** | — |
 | `@elmeragroup/ui/<component>` | One bare path for each of the 56 non-interim components (`/button`, `/field`, `/select`, …) | yes |
 | `@elmeragroup/ui/react-aria/<component>` | Eleven quarantined react-aria interim entries (§2.2) | **no** |
-| `@elmeragroup/ui/theme` | Server-safe: `themeAttributes`, `defaultDensityForVariant`, `densityAttributes`, `themeSlug`/`parseThemeSlug`, `validateTheme`, `BRANDS`, `ColorSchemeScript`, `colorSchemeScriptSource`, and their public types. Client: `ThemeProvider`, `ThemeScope`, `useTheme`, `useColorScheme`, `ForceColorScheme`, `ElmeraGroupUiProvider`, `useElmeraGroupUi`, and their public types. No per-framework `/theme/*` entries | yes |
+| `@elmeragroup/ui/theme` | Server-safe: `themeAttributes`, `defaultDensityForVariant`, `densityAttributes`, `themeSlug`/`parseThemeSlug`, `coerceTheme`, `validateTheme`, `BRANDS`, `ColorSchemeScript`, `colorSchemeScriptSource`, and their public types. Client: `ThemeProvider`, `ThemeScope`, `useTheme`, `useColorScheme`, `ForceColorScheme`, `ElmeraGroupUiProvider`, `useElmeraGroupUi`, and their public types. No per-framework `/theme/*` entries | yes |
 | `@elmeragroup/ui/icons` | Curated per-icon Phosphor re-exports + bespoke payment/signing/product marks + brand logo components (`BrandLogo`, per-brand logos, `ElmeraGroupLogo`, Steddi, Trumf) | **no** |
 | `@elmeragroup/ui/illustrations` | Brand artwork component `FkasMeter` | **no** |
 | `@elmeragroup/ui/css` | Raw Tailwind v4 source stylesheet (§5) | n/a |
 | `@elmeragroup/ui/styles.css` | Precompiled standalone stylesheet for non-Tailwind apps (§5) | n/a |
 | `@elmeragroup/ui/themes.css` | Theme token CSS: 20 brand/segment/variant permutations + the terminal commented `[data-theme="dark"]` placeholder (§5) | n/a |
+| `@elmeragroup/ui/demo-stage-comfortable.css` | Generated DemoStage nested-density overlay: the library `:root[data-density="comfortable"]` block re-scoped onto `.DemoStage`. Docs preview sandbox only; not nested density in `ui.css` | n/a |
 | `@elmeragroup/ui/flags` | Generated `flagAssets` country-code→asset manifest plus `FlagAssetCode` for the flag SVGs (§6) | **no** |
 | `@elmeragroup/ui/flags/<CC>.svg` | Static two-letter country flag SVG assets (§6) | n/a |
 
@@ -111,6 +112,7 @@ Published code in `node_modules` is not scanned by a consumer's Tailwind content
 
    `styles.css` is built at package build time by running Tailwind over the library's own dist. It contains the generated component utilities, custom variants, and package utilities but **excludes Tailwind Preflight**: a reusable library must not reset the host page. Components explicitly declare the element defaults they depend on; the consuming app owns its global reset. The file is otherwise self-contained and requires no consumer build step.
 3. **`themes.css` is its own entry in both modes** — the 20 brand/segment/variant permutations plus a terminal comment reserving the `[data-theme="dark"]` block (no empty CSS rule node), plain custom-property CSS with no Tailwind dependency. It is **codegen output, uncommitted**; generation mechanics, layer structure, and the CSS snapshot test belong to [theming](theming.md). Its size ceiling lives in [performance](performance.md) §2.
+4. **`demo-stage-comfortable.css`** is generated at package build from the `:root[data-density="comfortable"]` block in `ui.css`, re-scoped onto `.DemoStage`. The docs preview sandbox imports it; `ui.css` stays `:root`-anchored. This is not nested density in library CSS.
 
 Both CSS modes ship in the same package version; there is no separate CSS package.
 
@@ -171,6 +173,6 @@ This list is exhaustive. Every **bare** component entry is also re-exported by t
 - **Bare component entries (56):** `accordion`, `alert`, `alert-dialog`, `avatar`, `badge`, `breadcrumb`, `button`, `button-group`, `card`, `chart`, `checkbox`, `checkbox-card`, `code`, `collapsible`, `combobox`, `confirm-button`, `description-list`, `dialog`, `dropdown-menu`, `emoji`, `empty`, `field`, `frame`, `heading`, `input`, `input-group`, `item`, `loader`, `meter`, `number-field`, `pagination`, `phone-number-field`, `popover`, `popover-info-button`, `radio-group`, `scroll-area`, `select`, `selection-item`, `separator`, `sheet`, `show`, `sidebar`, `skeleton`, `span`, `switch`, `table`, `tabs`, `text`, `text-field`, `textarea`, `textarea-field`, `timeline-list`, `toast`, `toggle`, `toggle-group`, `tooltip`.
 - **Interim RAC entries (11):** `react-aria/calendar`, `react-aria/date-field`, `react-aria/date-picker`, `react-aria/date-range-picker`, `react-aria/file-trigger`, `react-aria/focusable`, `react-aria/grid-list`, `react-aria/link`, `react-aria/range-calendar`, `react-aria/search-field`, `react-aria/ui-providers`.
 - **Non-component JS entries:** `.`, `theme`, `icons`, `illustrations`, `flags`.
-- **CSS/assets:** `css`, `styles.css`, `themes.css`, `flags/*.svg`.
+- **CSS/assets:** `css`, `styles.css`, `themes.css`, `demo-stage-comfortable.css`, `flags/*.svg`.
 
 The manifest codegen rejects duplicate names, missing source files, unexpected source entries, or an entry not represented here. `flags/*.svg` is the sole pattern export; every JS/CSS export is enumerated.

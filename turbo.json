@@ -4,6 +4,10 @@
   "globalEnv": ["NODE_ENV"],
   "tasks": {
     "//#lint": {
+      // apps/static-theme/vite.config.ts must import packages/ui/dist/theme.js (architecture.md:
+      // colorSchemeScriptSource's Function#toString() has to be the packed IIFE, not re-emitted
+      // TypeScript), and import/no-cycle resolves that import — so lint needs the ui build.
+      "dependsOn": ["@elmeragroup/ui#build"],
       "inputs": ["$TURBO_DEFAULT$", "tooling/oxlint-plugin/**", "tooling/oxlint-anti-slop/**"]
     },
     "build": {
@@ -16,7 +20,10 @@
     "type-check": {
       "dependsOn": ["^build"]
     },
-    "test": {},
+    // Density-artifact tripwires assert dist output; without the ui build they skip silently.
+    "test": {
+      "dependsOn": ["@elmeragroup/ui#build"]
+    },
     "test:browser": {
       "dependsOn": ["build"]
     },
