@@ -338,6 +338,30 @@ describe("ThemeProvider / ThemeScope", () => {
     expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkas", segment: "private" });
   });
 
+  it("keeps theme identity and skips document rewrites for equal inline theme literals", () => {
+    const seen: unknown[] = [];
+    function IdentityProbe() {
+      seen.push(useTheme());
+      return null;
+    }
+    const { rerender } = render(
+      <ThemeProvider theme={{ variant: "internal", brand: "fkas", segment: "private" }}>
+        <IdentityProbe />
+      </ThemeProvider>
+    );
+
+    const setAttribute = vi.spyOn(document.documentElement, "setAttribute");
+    rerender(
+      <ThemeProvider theme={{ variant: "internal", brand: "fkas", segment: "private" }}>
+        <IdentityProbe />
+      </ThemeProvider>
+    );
+
+    expect(seen.length).toBeGreaterThanOrEqual(2);
+    expect(Object.is(seen[0], seen.at(-1))).toBe(true);
+    expect(setAttribute).not.toHaveBeenCalled();
+  });
+
   it("owns the document when mounted inside a lone ThemeScope", () => {
     const { host } = render(
       <ThemeScope theme={tkasCompany}>

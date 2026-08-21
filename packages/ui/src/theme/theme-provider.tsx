@@ -33,7 +33,6 @@ import { themeAxisDeps } from "./theme-axes";
 import { ThemeContext, useResolvedTheme } from "./theme-context";
 import type { Theme } from "./theme-context";
 import type { ThemeInput } from "./tokens/themes";
-import { validateTheme } from "./validate-theme";
 
 export type ThemeProviderProps = ColorSchemeOptions & {
   theme: ThemeInput;
@@ -47,10 +46,17 @@ export type ThemeProviderProps = ColorSchemeOptions & {
 export function ThemeProvider(props: ThemeProviderProps) {
   const hasDocumentWriter = use(DocumentWriterContext);
   if (hasDocumentWriter) {
-    validateTheme(props.theme);
-    return props.children;
+    return <NestedThemeValidator theme={props.theme}>{props.children}</NestedThemeValidator>;
   }
   return <DocumentThemeWriter {...props} />;
+}
+
+// Nested providers never fork the document writer; they only validate their own theme.
+// useResolvedTheme memoizes on axis primitives so a production coercion warns once per
+// illegal theme, not on every re-render.
+function NestedThemeValidator({ theme, children }: { theme: ThemeInput; children: ReactNode }) {
+  useResolvedTheme(theme);
+  return children;
 }
 
 function DocumentThemeWriter({

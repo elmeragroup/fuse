@@ -17,13 +17,9 @@ export type ThemeSlug =
   | `${ThemeVariant}-fkse-private`;
 
 export function themeSlug(theme: ThemeInput): ThemeSlug {
-  if (theme.brand === "fkab") {
-    return `${theme.variant}-fkab-company`;
-  }
-  if (theme.brand === "fkse") {
-    return `${theme.variant}-fkse-private`;
-  }
-  return `${theme.variant}-${theme.brand}-${theme.segment}`;
+  // SAFETY: ThemeInput already correlates pinned brands with their segment; TS loses that
+  // correlation across separate property reads, so the joined template is re-asserted.
+  return `${theme.variant}-${theme.brand}-${theme.segment}` as ThemeSlug;
 }
 
 export const BRANDS = {
@@ -77,25 +73,10 @@ export function parseThemeSlug(slug: string): ThemeInput | null {
   return { variant, brand, segment } as ThemeInput;
 }
 
-export const LEGAL_THEMES = [
-  { variant: "internal", brand: "fkas", segment: "private" },
-  { variant: "internal", brand: "fkas", segment: "company" },
-  { variant: "internal", brand: "tkas", segment: "private" },
-  { variant: "internal", brand: "tkas", segment: "company" },
-  { variant: "internal", brand: "guen", segment: "private" },
-  { variant: "internal", brand: "guen", segment: "company" },
-  { variant: "internal", brand: "elma", segment: "private" },
-  { variant: "internal", brand: "elma", segment: "company" },
-  { variant: "internal", brand: "fkab", segment: "company" },
-  { variant: "internal", brand: "fkse", segment: "private" },
-  { variant: "external", brand: "fkas", segment: "private" },
-  { variant: "external", brand: "fkas", segment: "company" },
-  { variant: "external", brand: "tkas", segment: "private" },
-  { variant: "external", brand: "tkas", segment: "company" },
-  { variant: "external", brand: "guen", segment: "private" },
-  { variant: "external", brand: "guen", segment: "company" },
-  { variant: "external", brand: "elma", segment: "private" },
-  { variant: "external", brand: "elma", segment: "company" },
-  { variant: "external", brand: "fkab", segment: "company" },
-  { variant: "external", brand: "fkse", segment: "private" },
-] as const satisfies readonly ThemeInput[];
+export const LEGAL_THEMES: readonly ThemeInput[] = THEME_VARIANTS.flatMap((variant) =>
+  BRAND_CODES.flatMap((brand) =>
+    // SAFETY: brand and segment come from the BRANDS pin table, so every combination is a
+    // legal ThemeInput member; TS cannot correlate the mapped axes back to the union.
+    BRANDS[brand].segments.map((segment): ThemeInput => ({ variant, brand, segment }) as ThemeInput)
+  )
+);

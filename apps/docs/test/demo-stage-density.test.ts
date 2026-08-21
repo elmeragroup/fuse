@@ -1,14 +1,15 @@
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import postcss from "postcss";
 import { describe, expect, it } from "vitest";
 
+import type { PostCssConfig } from "../postcss.config";
 import elmeraDemoStageDensity, {
   DEMO_STAGE_COMFORTABLE_SELECTOR,
   LIBRARY_COMFORTABLE_SELECTOR,
   deriveDemoStageComfortableCss,
 } from "../scripts/elmera-demo-stage-density";
-import type { PostCssConfig } from "../postcss.config";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const docsRoot = join(here, "..");
@@ -42,29 +43,22 @@ function controlDeclarationPairs(block: string): string[] {
 }
 
 function runPlugin(css: string, from: string): string {
-  let output = css;
-  elmeraDemoStageDensity().Once({
-    source: { input: { file: from } },
-    append: (node: string) => {
-      output = `${output}\n${node}`;
-    },
-  });
-  return output;
+  return postcss([elmeraDemoStageDensity()]).process(css, { from }).css;
 }
 
 describe("DemoStage comfortable density", () => {
   it("derives the DemoStage block from the single library block", () => {
     const derived = deriveDemoStageComfortableCss(libraryCss);
-    expect(
-      controlDeclarationPairs(extractRuleBlock(derived, DEMO_STAGE_COMFORTABLE_SELECTOR))
-    ).toEqual(controlDeclarationPairs(extractRuleBlock(libraryCss, LIBRARY_COMFORTABLE_SELECTOR)));
+    expect(controlDeclarationPairs(extractRuleBlock(derived, DEMO_STAGE_COMFORTABLE_SELECTOR))).toEqual(
+      controlDeclarationPairs(extractRuleBlock(libraryCss, LIBRARY_COMFORTABLE_SELECTOR))
+    );
   });
 
   it("appends the derived block while processing DemoFrame.css", () => {
     const output = runPlugin(demoFrameCss, demoFrameCssPath);
-    expect(
-      controlDeclarationPairs(extractRuleBlock(output, DEMO_STAGE_COMFORTABLE_SELECTOR))
-    ).toEqual(controlDeclarationPairs(extractRuleBlock(libraryCss, LIBRARY_COMFORTABLE_SELECTOR)));
+    expect(controlDeclarationPairs(extractRuleBlock(output, DEMO_STAGE_COMFORTABLE_SELECTOR))).toEqual(
+      controlDeclarationPairs(extractRuleBlock(libraryCss, LIBRARY_COMFORTABLE_SELECTOR))
+    );
   });
 
   it("skips stylesheets other than DemoFrame.css", () => {

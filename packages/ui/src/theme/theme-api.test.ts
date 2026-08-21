@@ -55,6 +55,18 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+describe("BRANDS pin table", () => {
+  it("keeps the single-segment pins in lockstep with the ThemeInput union", () => {
+    // resolvePinnedTheme coerces to segments[0]; these pins are the segment ThemeInput encodes.
+    expect(BRANDS.fkab.segments).toEqual(["company"]);
+    expect(BRANDS.fkse.segments).toEqual(["private"]);
+    expect(BRANDS.fkas.segments).toEqual(["private", "company"]);
+    expect(BRANDS.tkas.segments).toEqual(["private", "company"]);
+    expect(BRANDS.guen.segments).toEqual(["private", "company"]);
+    expect(BRANDS.elma.segments).toEqual(["private", "company"]);
+  });
+});
+
 describe("themeSlug / parseThemeSlug", () => {
   it("is a total inverse over the 20 legal themes", () => {
     expect(LEGAL_THEMES).toHaveLength(20);
@@ -392,18 +404,6 @@ describe("ThemeProvider server snapshot", () => {
 });
 
 describe("ThemeProvider color-scheme store seam", () => {
-  it("resolves theme context from axes rather than object identity", () => {
-    const source = readFileSync(join(srcRoot, "theme/theme-context.ts"), "utf8");
-    const provider = readFileSync(join(srcRoot, "theme/theme-provider.tsx"), "utf8");
-    const axes = readFileSync(join(srcRoot, "theme/theme-axes.ts"), "utf8");
-    expect(source).toContain("validateTheme(theme)");
-    expect(source).toContain("themeAxisDeps(theme)");
-    expect(provider).toContain("themeAxisDeps(theme)");
-    expect(provider).toContain("validateTheme(props.theme)");
-    expect(axes).toMatch(/axes\?\.variant, axes\?\.brand, axes\?\.segment/);
-    expect(source).not.toMatch(/\}, \[theme\]\);/);
-  });
-
   it("does not mutate the retained color-scheme store during render", () => {
     const source = readFileSync(join(srcRoot, "theme/theme-provider.tsx"), "utf8");
     const writerStart = source.indexOf("function DocumentThemeWriter");

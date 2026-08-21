@@ -60,6 +60,9 @@ catalogs:
     playwright:
       specifier: 1.62.1
       version: 1.62.1
+    postcss:
+      specifier: 8.5.26
+      version: 8.5.26
     publint:
       specifier: 0.3.23
       version: 0.3.23
@@ -171,6 +174,9 @@ importers:
       playwright:
         specifier: 'catalog:'
         version: 1.62.1
+      postcss:
+        specifier: 'catalog:'
+        version: 8.5.26
       tailwindcss:
         specifier: 'catalog:'
         version: 4.3.3

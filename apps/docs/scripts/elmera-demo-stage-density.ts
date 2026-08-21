@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
+import type { Plugin } from "postcss";
 
 const LIBRARY_CSS_FROM_ROOT = join("packages", "ui", "src", "styles", "ui.css");
 
@@ -46,29 +47,19 @@ export function deriveDemoStageComfortableCss(uiCss: string): string {
   return `${DEMO_STAGE_COMFORTABLE_SELECTOR} {${block}}`;
 }
 
-type PostCssPlugin = {
-  postcssPlugin: "elmera-demo-stage-density";
-  Once(root: {
-    source?: { input?: { file?: string } };
-    append(node: string): void;
-  }): void;
-};
-
 /**
  * PostCSS plugin: append the derived block while DemoFrame.css is processed, so the
  * committed stylesheet never carries hand-copied density metrics.
  */
-export default function elmeraDemoStageDensity(): PostCssPlugin {
+export default function elmeraDemoStageDensity(): Plugin {
   return {
     postcssPlugin: "elmera-demo-stage-density",
     Once(root) {
-      const file = root.source?.input?.file ?? "";
+      const file = root.source?.input.file ?? "";
       if (!file.endsWith("DemoFrame.css")) {
         return;
       }
-      root.append(
-        deriveDemoStageComfortableCss(readFileSync(findLibraryCssPath(file), "utf8"))
-      );
+      root.append(deriveDemoStageComfortableCss(readFileSync(findLibraryCssPath(file), "utf8")));
     },
   };
 }
