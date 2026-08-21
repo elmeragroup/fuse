@@ -3,6 +3,7 @@ import { page } from "vitest/browser";
 
 import { render } from "../../test/browser-render";
 import { BRAND_CODES, BRANDS } from "../theme/tokens/themes";
+import type { ThemeInput } from "../theme/tokens/themes";
 import { BrandLogo } from "./brand-logo";
 
 describe("BrandLogo", () => {
@@ -63,6 +64,13 @@ describe("BrandLogo", () => {
       expect(page.getByRole("img", { name, exact: true }).element().textContent).toBe(name);
       unmount();
     }
+  });
+
+  it("throws an explicit error for an unknown brand code", () => {
+    // React 19 createRoot + flushSync reports render errors as unhandled instead of
+    // rethrowing to the caller, so assert the throw on the component function.
+    // SAFETY: runtime rejection is the contract under test; the public type is BrandCode.
+    expect(() => BrandLogo({ brand: "zz" as ThemeInput["brand"] })).toThrow(/Unhandled brand: zz/);
   });
 
   it("applies advertised fallback-host props on the rendered span", () => {

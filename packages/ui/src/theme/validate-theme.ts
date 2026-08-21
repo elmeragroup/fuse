@@ -61,13 +61,9 @@ function parseThemeAxes(input: unknown): ParsedThemeAxes {
   return { ok: true, variant, brand, segment };
 }
 
-function pinTheme(variant: ThemeVariant, brand: BrandCode, segment: ThemeSegment): ThemeInput {
-  if (brandAllowsSegment(brand, segment)) {
-    // SAFETY: BRANDS.segments is the pin table that ThemeInput encodes; membership is the runtime check.
-    return { variant, brand, segment } as ThemeInput;
-  }
-  // SAFETY: a single-segment BRANDS entry is the pinned segment for that brand.
-  return { variant, brand, segment: BRANDS[brand].segments[0] } as ThemeInput;
+function resolvePinnedSegment(brand: BrandCode, segment: ThemeSegment): ThemeSegment {
+  // BRANDS.segments entries are unique, so result !== segment exactly when pinned.
+  return brandAllowsSegment(brand, segment) ? segment : BRANDS[brand].segments[0];
 }
 
 // theming.md §7.6: coerceTheme is the env-free pin-table parse. validateTheme layers diagnostics.
@@ -77,7 +73,13 @@ export function coerceTheme(input: unknown): ThemeInput | null {
   if (!parsed.ok) {
     return null;
   }
-  return pinTheme(parsed.variant, parsed.brand, parsed.segment);
+  // SAFETY: resolvePinnedSegment returns a member of BRANDS[brand].segments, the pin
+  // table ThemeInput encodes.
+  return {
+    variant: parsed.variant,
+    brand: parsed.brand,
+    segment: resolvePinnedSegment(parsed.brand, parsed.segment),
+  } as ThemeInput;
 }
 
 // theming.md §7.6: validateTheme is the untyped I/O boundary.
@@ -91,13 +93,14 @@ export function validateTheme(input: unknown): ThemeInput {
     throw new Error("Invalid theme: unknown or missing variant, brand, or segment.");
   }
 
-  if (!brandAllowsSegment(parsed.brand, parsed.segment)) {
-    const pinned = BRANDS[parsed.brand].segments[0];
+  const segment = resolvePinnedSegment(parsed.brand, parsed.segment);
+  if (segment !== parsed.segment) {
     if (isThemeDevelopment()) {
-      throw pinnedSegmentError(parsed.brand, pinned);
+      throw pinnedSegmentError(parsed.brand, segment);
     }
-    console.warn(pinnedSegmentWarning(parsed.brand, pinned));
+    console.warn(pinnedSegmentWarning(parsed.brand, segment));
   }
 
-  return pinTheme(parsed.variant, parsed.brand, parsed.segment);
+  // SAFETY: segment came from resolvePinnedSegment over the BRANDS pin table.
+  return { variant: parsed.variant, brand: parsed.brand, segment } as ThemeInput;
 }

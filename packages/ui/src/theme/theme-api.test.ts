@@ -114,13 +114,14 @@ describe("coerceTheme", () => {
     expect(coerceTheme({ variant: "internal", brand: "zz", segment: "private" })).toBeNull();
   });
 
-  it("silently pins illegal segments in every environment", () => {
+  it("silently pins illegal segments regardless of environment", () => {
     vi.stubEnv("NODE_ENV", "development");
     expect(coerceTheme({ variant: "internal", brand: "fkab", segment: "private" })).toEqual({
       variant: "internal",
       brand: "fkab",
       segment: "company",
     });
+    vi.stubEnv("NODE_ENV", "production");
     expect(coerceTheme({ variant: "external", brand: "fkse", segment: "company" })).toEqual({
       variant: "external",
       brand: "fkse",

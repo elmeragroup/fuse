@@ -15,7 +15,11 @@ export function BrandLogo({
   className,
   ...rest
 }: BrandLogoProps): ReactElement {
-  const displayName = BRANDS[brand].displayName;
+  // SAFETY: BrandCode is a compile-time contract; a JS consumer can pass an unknown code.
+  const displayName = (BRANDS as Record<string, (typeof BRANDS)[BrandCode] | undefined>)[brand]?.displayName;
+  if (displayName === undefined) {
+    throw new Error(`Unhandled brand: ${String(brand)}`);
+  }
   return (
     <span {...rest} className={className} data-variant={variant} role="img" aria-label={title ?? displayName}>
       {displayName}

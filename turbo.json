@@ -20,7 +20,10 @@
     "type-check": {
       "dependsOn": ["^build"]
     },
-    "test": {},
+    // Density-artifact tripwires assert dist output; without the ui build they skip silently.
+    "test": {
+      "dependsOn": ["@elmeragroup/ui#build"]
+    },
     "test:browser": {
       "dependsOn": ["build"]
     },
