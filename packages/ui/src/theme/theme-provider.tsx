@@ -29,9 +29,11 @@ import type { ColorSchemeRuntimeConfig } from "./color-scheme-runtime";
 import { InjectedColorSchemeScript } from "./color-scheme-script";
 import { DocumentWriterContext, echoDocumentBrandAttributes } from "./document-writer";
 import { themeAttributes } from "./theme-attributes";
+import { themeAxisDeps } from "./theme-axes";
 import { ThemeContext, useResolvedTheme } from "./theme-context";
 import type { Theme } from "./theme-context";
 import type { ThemeInput } from "./tokens/themes";
+import { validateTheme } from "./validate-theme";
 
 export type ThemeProviderProps = ColorSchemeOptions & {
   theme: ThemeInput;
@@ -45,6 +47,7 @@ export type ThemeProviderProps = ColorSchemeOptions & {
 export function ThemeProvider(props: ThemeProviderProps) {
   const hasDocumentWriter = use(DocumentWriterContext);
   if (hasDocumentWriter) {
+    validateTheme(props.theme);
     return props.children;
   }
   return <DocumentThemeWriter {...props} />;
@@ -63,9 +66,7 @@ function DocumentThemeWriter({
   scriptProps,
 }: ThemeProviderProps) {
   const diagnosed = useRef(false);
-  // SAFETY: untyped CMS/env input is the §7.6 boundary; optional axis reads keep insertion deps from
-  // throwing before remaining hooks register.
-  const themeAxes = theme as ThemeInput | null;
+  const [themeVariant, themeBrand, themeSegment] = themeAxisDeps(theme);
   const options = useMemo(
     () =>
       resolveColorSchemeOptions({
@@ -105,15 +106,7 @@ function DocumentThemeWriter({
     store.applyDocument();
     // Axis primitives, not object identity: equal inline theme literals must not rewrite the document.
     // oxlint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    injectColorSchemeScript,
-    options,
-    runtimeConfig,
-    store,
-    themeAxes?.brand,
-    themeAxes?.segment,
-    themeAxes?.variant,
-  ]);
+  }, [injectColorSchemeScript, options, runtimeConfig, store, themeVariant, themeBrand, themeSegment]);
 
   useEffect(() => {
     store.markMounted();

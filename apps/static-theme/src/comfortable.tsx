@@ -15,11 +15,4 @@ function ComfortablePreview() {
   );
 }
 
-renderFixture(
-  DOCUMENT_THEME,
-  DOCUMENT_COLOR_SCHEME.storageKey,
-  DOCUMENT_COLOR_SCHEME.defaultColorScheme,
-  DOCUMENT_COLOR_SCHEME.enableSystem,
-  undefined,
-  <ComfortablePreview />
-);
+renderFixture(DOCUMENT_THEME, DOCUMENT_COLOR_SCHEME, <ComfortablePreview />);

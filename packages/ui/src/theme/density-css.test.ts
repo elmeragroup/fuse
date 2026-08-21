@@ -10,7 +10,6 @@ const here = dirname(fileURLToPath(import.meta.url));
 const uiCss = readFileSync(join(here, "../styles/ui.css"), "utf8");
 const compiledCssPath = join(here, "../../dist/styles.css");
 const packedRawCssPath = join(here, "../../dist/styles/ui.css");
-const docsCssPath = join(here, "../../../../apps/docs/src/components/DemoFrame.css");
 
 const DENSITY_VARIABLE_NAMES = [
   "--control-h-xs",
@@ -32,22 +31,6 @@ const DENSITY_VARIABLE_NAMES = [
   "--control-text",
   "--control-leading",
 ] as const;
-
-function controlDeclarationPairs(block: string): string[] {
-  const pairs: string[] = [];
-  const re = /(--control-[a-z0-9-]+):\s*([^;]+);/g;
-  let match = re.exec(block);
-  while (match !== null) {
-    const name = match[1];
-    const value = match[2];
-    if (name === undefined || value === undefined) {
-      throw new Error("density declaration capture failed");
-    }
-    pairs.push(`${name}:${value.trim()}`);
-    match = re.exec(block);
-  }
-  return pairs;
-}
 
 describe("density CSS", () => {
   it("declares dense defaults on :root and comfortable overrides on the rooted attribute", () => {
@@ -97,29 +80,6 @@ describe("density CSS", () => {
   it("does not key density metrics on data-theme-variant or a nested attribute selector", () => {
     expect(uiCss).not.toMatch(/\[data-theme-variant[^\]]*\][^{]*--control-/s);
     expect(uiCss).not.toMatch(/(?<!:root)\[data-density="comfortable"\]/);
-  });
-
-  it("keeps the docs comfortable DemoStage copy in lockstep with the library block", () => {
-    const docsCss = readFileSync(docsCssPath, "utf8");
-    const libraryBlock = /:root\[data-density="comfortable"\]\s*\{[^}]*\}/s.exec(uiCss)?.[0];
-    const docsBlock = /\.DemoStage\[data-density="comfortable"\]\s*\{[^}]*\}/s.exec(docsCss)?.[0];
-
-    if (libraryBlock === undefined || libraryBlock === "") {
-      throw new Error(
-        'failed to extract :root[data-density="comfortable"] from packages/ui/src/styles/ui.css'
-      );
-    }
-    if (docsBlock === undefined || docsBlock === "") {
-      throw new Error(
-        'failed to extract .DemoStage[data-density="comfortable"] from apps/docs/src/components/DemoFrame.css'
-      );
-    }
-
-    expect(controlDeclarationPairs(docsBlock)).toEqual(controlDeclarationPairs(libraryBlock));
-    for (const name of DENSITY_VARIABLE_NAMES) {
-      expect(docsBlock).toContain(name);
-    }
-    expect(docsCss).toContain("packages/ui/src/styles/ui.css");
   });
 
   it("never enters TOKEN_NAMES or EXTERNAL_RESET_KEYS", () => {

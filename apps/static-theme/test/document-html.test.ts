@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
+import { applyHostRootAttributes } from "../src/host-html";
 import { DOCUMENT_COLOR_SCHEME } from "../src/theme";
 import {
   BOOTSTRAP_MANIFEST_KEY,
@@ -117,6 +118,34 @@ describe("static theme built HTML", () => {
     const html = readFixtureFile("dist/comfortable.html");
     expect(readDocumentBrand(html)).toEqual(DOCUMENT_BRAND);
     expect(readDocumentDensity(html)).toBe("comfortable");
+  });
+
+  it("throws when source HTML already contains theme or density attributes", () => {
+    const attributes = {
+      "data-theme-variant": "internal",
+      "data-theme-brand": "elma",
+      "data-theme-segment": "private",
+    } as const;
+    const density = { "data-density": "dense" } as const;
+
+    expect(() => applyHostRootAttributes('<html data-theme-brand="fkas">', attributes, density)).toThrow(
+      /must not already contain data-theme-brand/
+    );
+    expect(() =>
+      applyHostRootAttributes('<html data-theme-variant="external">', attributes, density)
+    ).toThrow(/must not already contain data-theme-variant/);
+    expect(() => applyHostRootAttributes('<html data-theme-segment="company">', attributes, density)).toThrow(
+      /must not already contain data-theme-segment/
+    );
+    expect(() => applyHostRootAttributes('<html data-density="comfortable">', attributes, density)).toThrow(
+      /must not already contain data-density/
+    );
+
+    const stamped = applyHostRootAttributes('<html lang="nb">', attributes, density);
+    expect(stamped).toContain('data-theme-variant="internal"');
+    expect(stamped).toContain('data-theme-brand="elma"');
+    expect(stamped).toContain('data-theme-segment="private"');
+    expect(stamped).toContain('data-density="dense"');
   });
 
   it("does not hand-copy the bootstrap or brand attributes into source HTML", () => {

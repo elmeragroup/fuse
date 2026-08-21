@@ -1,3 +1,4 @@
+import { brandAllowsSegment, BRANDS, isBrandCode } from "./tokens/themes";
 import type { BrandCode, ThemeInput, ThemeSegment, ThemeVariant } from "./tokens/themes";
 
 type ThemeAxisValue = string | number | boolean | symbol | bigint | null | undefined;
@@ -12,11 +13,11 @@ export function isThemeDevelopment(): boolean {
   return process.env.NODE_ENV !== "production";
 }
 
-function pinnedSegmentError(brand: "fkab" | "fkse", segment: "company" | "private"): Error {
+function pinnedSegmentError(brand: BrandCode, segment: ThemeSegment): Error {
   return new Error(`Invalid theme: ${brand} is pinned to ${segment}.`);
 }
 
-function pinnedSegmentWarning(brand: "fkab" | "fkse", segment: "company" | "private"): string {
+function pinnedSegmentWarning(brand: BrandCode, segment: ThemeSegment): string {
   return `Invalid theme: ${brand} is pinned to ${segment}. Coercing segment to "${segment}".`;
 }
 
@@ -28,17 +29,7 @@ function asThemeVariant(value: ThemeAxisValue): ThemeVariant | undefined {
 }
 
 function asBrandCode(value: ThemeAxisValue): BrandCode | undefined {
-  if (
-    value === "fkas" ||
-    value === "tkas" ||
-    value === "guen" ||
-    value === "fkab" ||
-    value === "fkse" ||
-    value === "elma"
-  ) {
-    return value;
-  }
-  return undefined;
+  return isBrandCode(value) ? value : undefined;
 }
 
 function asThemeSegment(value: ThemeAxisValue): ThemeSegment | undefined {
@@ -49,29 +40,17 @@ function asThemeSegment(value: ThemeAxisValue): ThemeSegment | undefined {
 }
 
 function resolvePinnedTheme(variant: ThemeVariant, brand: BrandCode, segment: ThemeSegment): ThemeInput {
-  if (brand === "fkab") {
-    if (segment === "company") {
-      return { variant, brand, segment };
-    }
-    if (isThemeDevelopment()) {
-      throw pinnedSegmentError("fkab", "company");
-    }
-    console.warn(pinnedSegmentWarning("fkab", "company"));
-    return { variant, brand: "fkab", segment: "company" };
+  if (brandAllowsSegment(brand, segment)) {
+    // SAFETY: BRANDS.segments is the pin table that ThemeInput encodes; membership is the runtime check.
+    return { variant, brand, segment } as ThemeInput;
   }
-
-  if (brand === "fkse") {
-    if (segment === "private") {
-      return { variant, brand, segment };
-    }
-    if (isThemeDevelopment()) {
-      throw pinnedSegmentError("fkse", "private");
-    }
-    console.warn(pinnedSegmentWarning("fkse", "private"));
-    return { variant, brand: "fkse", segment: "private" };
+  const pinned = BRANDS[brand].segments[0];
+  if (isThemeDevelopment()) {
+    throw pinnedSegmentError(brand, pinned);
   }
-
-  return { variant, brand, segment };
+  console.warn(pinnedSegmentWarning(brand, pinned));
+  // SAFETY: a single-segment BRANDS entry is the pinned segment for that brand.
+  return { variant, brand, segment: pinned } as ThemeInput;
 }
 
 // theming.md §7.6: validateTheme is the untyped I/O boundary.

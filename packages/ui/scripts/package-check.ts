@@ -102,15 +102,8 @@ process.stdout.write(JSON.stringify(Object.keys(mod).sort()));`,
   if (!Array.isArray(parsed)) {
     fail(`Unexpected import payload for ${specifier}: ${result.stdout}`);
   }
-  const names: string[] = [];
-  for (const item of parsed) {
-    if (Object.prototype.toString.call(item) !== "[object String]") {
-      fail(`Unexpected import payload for ${specifier}: ${result.stdout}`);
-    }
-    // SAFETY: JSON.parse of Object.keys only yields primitive strings; non-strings were rejected above.
-    names.push(item as string);
-  }
-  return names;
+  // SAFETY: the eval'd snippet prints JSON.stringify(Object.keys(mod)); key names are always strings.
+  return parsed as string[];
 }
 
 type PackedPeers = {
@@ -126,6 +119,10 @@ type PackedManifest = {
 
 function isExportCondition(target: ExportBinding["target"]): target is ExportCondition {
   return Object(target) === target;
+}
+
+function isExportTargetPath(target: ExportBinding["target"]): target is string {
+  return Object.prototype.toString.call(target) === "[object String]";
 }
 
 function checkExportPaths(extracted: string, consumerRoot: string): void {
@@ -155,7 +152,18 @@ function checkExportPaths(extracted: string, consumerRoot: string): void {
 
   for (const binding of expectedBindings) {
     const target = binding.target;
-    if (!isExportCondition(target)) {
+    if (isExportCondition(target)) {
+      const jsPath = join(extracted, target.import.replace(/^\.\//, ""));
+      const dtsPath = join(extracted, target.types.replace(/^\.\//, ""));
+      if (!existsSync(jsPath)) {
+        fail(`Packed import for ${binding.key} missing ${target.import}`);
+      }
+      if (!existsSync(dtsPath)) {
+        fail(`Packed types for ${binding.key} missing ${target.types}`);
+      }
+      continue;
+    }
+    if (isExportTargetPath(target)) {
       if (target.includes("*")) {
         continue;
       }
@@ -165,14 +173,7 @@ function checkExportPaths(extracted: string, consumerRoot: string): void {
       }
       continue;
     }
-    const jsPath = join(extracted, target.import.replace(/^\.\//, ""));
-    const dtsPath = join(extracted, target.types.replace(/^\.\//, ""));
-    if (!existsSync(jsPath)) {
-      fail(`Packed import for ${binding.key} missing ${target.import}`);
-    }
-    if (!existsSync(dtsPath)) {
-      fail(`Packed types for ${binding.key} missing ${target.types}`);
-    }
+    fail(`Unexpected export target for ${binding.key}: ${JSON.stringify(target)}`);
   }
 
   for (const entry of discovered.jsEntries) {

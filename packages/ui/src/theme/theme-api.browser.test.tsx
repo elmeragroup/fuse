@@ -300,6 +300,44 @@ describe("ThemeProvider / ThemeScope", () => {
     expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkas", segment: "private" });
   });
 
+  it("throws the validator error for an illegal nested theme without a hooks-count mismatch", () => {
+    stampDocumentBrand(fkasPrivate);
+    // @ts-expect-error untyped CMS/env input is the §7.6 runtime boundary
+    const illegalPinned: ThemeInput = { variant: "internal", brand: "fkab", segment: "private" };
+    const { host } = render(
+      <ThemeProvider theme={fkasPrivate}>
+        <ValidatorErrorBoundary>
+          <ThemeProvider theme={illegalPinned}>
+            <span>nested-child</span>
+          </ThemeProvider>
+        </ValidatorErrorBoundary>
+      </ThemeProvider>
+    );
+
+    expect(host.textContent).toBe("Invalid theme: fkab is pinned to company.");
+    expect(host.textContent).not.toMatch(/Rendered fewer hooks|Rendered more hooks|hook/i);
+    expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkas", segment: "private" });
+  });
+
+  it("throws the validator error for an unknown nested brand without a hooks-count mismatch", () => {
+    stampDocumentBrand(fkasPrivate);
+    // @ts-expect-error untyped CMS/env input is the §7.6 runtime boundary
+    const unknownBrand: ThemeInput = { variant: "internal", brand: "zz", segment: "private" };
+    const { host } = render(
+      <ThemeProvider theme={fkasPrivate}>
+        <ValidatorErrorBoundary>
+          <ThemeProvider theme={unknownBrand}>
+            <span>nested-child</span>
+          </ThemeProvider>
+        </ValidatorErrorBoundary>
+      </ThemeProvider>
+    );
+
+    expect(host.textContent).toBe("Invalid theme: unknown or missing variant, brand, or segment.");
+    expect(host.textContent).not.toMatch(/Rendered fewer hooks|Rendered more hooks|hook/i);
+    expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkas", segment: "private" });
+  });
+
   it("owns the document when mounted inside a lone ThemeScope", () => {
     const { host } = render(
       <ThemeScope theme={tkasCompany}>

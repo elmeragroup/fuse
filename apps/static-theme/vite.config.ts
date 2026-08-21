@@ -11,11 +11,11 @@ import {
   densityAttributes,
   themeAttributes,
 } from "../../packages/ui/dist/theme.js";
+import { applyHostRootAttributes } from "./src/host-html.ts";
 import { DOCUMENT_COLOR_SCHEME, DOCUMENT_THEME } from "./src/theme.ts";
 
 const fixtureRoot = path.dirname(fileURLToPath(import.meta.url));
 const MODULE_ENTRY_SCRIPT = /<script\b[^>]*\btype=(["'])module\1[^>]*>/i;
-const HTML_OPEN_TAG = /<html\b[^>]*>/i;
 
 function isForcedDarkDocument(filename: string, urlPath: string): boolean {
   return filename.includes("forced-dark") || urlPath.includes("forced-dark");
@@ -37,27 +37,14 @@ function colorSchemeOptionsForDocument(filename: string, urlPath: string): Color
   };
 }
 
-function applyHostRootAttributes(html: string, filename: string, urlPath: string): string {
+function stampHostRootAttributes(html: string, filename: string, urlPath: string): string {
   const attributes = themeAttributes(DOCUMENT_THEME);
   const density = densityAttributes(
     isComfortableDocument(filename, urlPath)
       ? "comfortable"
       : defaultDensityForVariant(DOCUMENT_THEME.variant)
   );
-  const open = HTML_OPEN_TAG.exec(html);
-  if (open === null) {
-    throw new Error("Vite HTML is missing the <html> tag");
-  }
-  const next = open[0]
-    .replace(/\sdata-theme-variant="[^"]*"/gi, "")
-    .replace(/\sdata-theme-brand="[^"]*"/gi, "")
-    .replace(/\sdata-theme-segment="[^"]*"/gi, "")
-    .replace(/\sdata-density="[^"]*"/gi, "")
-    .replace(
-      />$/,
-      ` data-theme-variant="${attributes["data-theme-variant"]}" data-theme-brand="${attributes["data-theme-brand"]}" data-theme-segment="${attributes["data-theme-segment"]}" data-density="${density["data-density"]}">`
-    );
-  return `${html.slice(0, open.index)}${next}${html.slice(open.index + open[0].length)}`;
+  return applyHostRootAttributes(html, attributes, density);
 }
 
 function hoistStylesheetsBefore(html: string, beforeIndex: number): string {
@@ -103,7 +90,7 @@ function injectClassicBootstrap(html: string, source: string): string {
 }
 
 function injectHostFirstPaint(html: string, filename: string, urlPath: string): string {
-  const branded = applyHostRootAttributes(html, filename, urlPath);
+  const branded = stampHostRootAttributes(html, filename, urlPath);
   const source = colorSchemeScriptSource(colorSchemeOptionsForDocument(filename, urlPath));
   if (source === "") {
     throw new Error("colorSchemeScriptSource returned an empty bootstrap");

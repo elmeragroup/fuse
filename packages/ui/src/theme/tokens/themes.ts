@@ -26,39 +26,6 @@ export function themeSlug(theme: ThemeInput): ThemeSlug {
   return `${theme.variant}-${theme.brand}-${theme.segment}`;
 }
 
-export function parseThemeSlug(slug: string): ThemeInput | null {
-  const parts = slug.split("-");
-  if (parts.length !== 3) {
-    return null;
-  }
-
-  const variant = parts[0];
-  const brand = parts[1];
-  const segment = parts[2];
-  if (variant !== "internal" && variant !== "external") {
-    return null;
-  }
-  if (segment !== "private" && segment !== "company") {
-    return null;
-  }
-  if (brand === "fkab") {
-    if (segment !== "company") {
-      return null;
-    }
-    return { variant, brand, segment };
-  }
-  if (brand === "fkse") {
-    if (segment !== "private") {
-      return null;
-    }
-    return { variant, brand, segment };
-  }
-  if (brand === "fkas" || brand === "tkas" || brand === "guen" || brand === "elma") {
-    return { variant, brand, segment };
-  }
-  return null;
-}
-
 export const BRANDS = {
   fkas: { code: "fkas", displayName: "Fjordkraft", segments: ["private", "company"] },
   tkas: { code: "tkas", displayName: "TrøndelagKraft", segments: ["private", "company"] },
@@ -74,6 +41,41 @@ export const BRANDS = {
     segments: readonly ThemeSegment[];
   }
 >;
+
+// oxlint-disable-next-line anti-slop/no-unknown-parameters
+export function isBrandCode(value: unknown): value is BrandCode {
+  return BRAND_CODES.some((code) => code === value);
+}
+
+export function brandAllowsSegment(brand: BrandCode, segment: ThemeSegment): boolean {
+  return BRANDS[brand].segments.some((allowed) => allowed === segment);
+}
+
+export function parseThemeSlug(slug: string): ThemeInput | null {
+  const parts = slug.split("-");
+  if (parts.length !== 3) {
+    return null;
+  }
+
+  const variant = parts[0];
+  const brand = parts[1];
+  const segment = parts[2];
+  if (variant !== "internal" && variant !== "external") {
+    return null;
+  }
+  if (segment !== "private" && segment !== "company") {
+    return null;
+  }
+  if (!isBrandCode(brand)) {
+    return null;
+  }
+  if (!brandAllowsSegment(brand, segment)) {
+    return null;
+  }
+  // SAFETY: variant/brand/segment passed BRANDS membership; pinned brands are rejected when the
+  // segment is not in BRANDS[brand].segments.
+  return { variant, brand, segment } as ThemeInput;
+}
 
 export const LEGAL_THEMES = [
   { variant: "internal", brand: "fkas", segment: "private" },

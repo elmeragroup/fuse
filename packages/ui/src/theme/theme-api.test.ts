@@ -350,6 +350,28 @@ describe("ThemeProvider server snapshot", () => {
     expect(html).toBe("<span>internal-fkas-private:system:pending</span>");
   });
 
+  it("coerce-and-warns an illegal nested theme in production and still renders children", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const outer = { variant: "internal", brand: "fkas", segment: "private" } as const;
+    // @ts-expect-error untyped CMS/env input is the §7.6 runtime boundary
+    const illegalPinned: ThemeInput = { variant: "internal", brand: "fkab", segment: "private" };
+
+    const html = renderToStaticMarkup(
+      createElement(ThemeProvider, {
+        theme: outer,
+        children: createElement(ThemeProvider, {
+          theme: illegalPinned,
+          children: createElement("span", null, "nested-child"),
+        }),
+      })
+    );
+
+    expect(html).toBe("<span>nested-child</span>");
+    expect(warn).toHaveBeenCalled();
+    expect(String(warn.mock.calls[0]?.[0])).toMatch(/fkab is pinned to company/);
+  });
+
   it("renders an opt-in classic script as the first child and defaults injection off", () => {
     const injected = renderToStaticMarkup(
       createElement(ThemeProvider, {
@@ -372,8 +394,13 @@ describe("ThemeProvider server snapshot", () => {
 describe("ThemeProvider color-scheme store seam", () => {
   it("resolves theme context from axes rather than object identity", () => {
     const source = readFileSync(join(srcRoot, "theme/theme-context.ts"), "utf8");
+    const provider = readFileSync(join(srcRoot, "theme/theme-provider.tsx"), "utf8");
+    const axes = readFileSync(join(srcRoot, "theme/theme-axes.ts"), "utf8");
     expect(source).toContain("validateTheme(theme)");
-    expect(source).toMatch(/axes\?\.brand, axes\?\.segment, axes\?\.variant/);
+    expect(source).toContain("themeAxisDeps(theme)");
+    expect(provider).toContain("themeAxisDeps(theme)");
+    expect(provider).toContain("validateTheme(props.theme)");
+    expect(axes).toMatch(/axes\?\.variant, axes\?\.brand, axes\?\.segment/);
     expect(source).not.toMatch(/\}, \[theme\]\);/);
   });
 

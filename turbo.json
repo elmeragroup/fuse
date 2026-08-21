@@ -4,6 +4,7 @@
   "globalEnv": ["NODE_ENV"],
   "tasks": {
     "//#lint": {
+      "dependsOn": ["@elmeragroup/ui#build"],
       "inputs": ["$TURBO_DEFAULT$", "tooling/oxlint-plugin/**", "tooling/oxlint-anti-slop/**"]
     },
     "build": {
