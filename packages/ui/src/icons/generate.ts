@@ -1,7 +1,7 @@
 import { mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { PHOSPHOR_ICON_NAMES } from "./roster";
+import { BESPOKE_ICON_NAMES, LOGO_NAMES, PHOSPHOR_ICON_NAMES } from "./roster";
 import type { PhosphorIconName } from "./roster";
 
 const GENERATED_FILE_HEADER = `/**
@@ -37,8 +37,17 @@ export function generatedFacadeSource(names: readonly PhosphorIconName[]): strin
   const iconExports = names
     .map((name) => `export { ${name} } from "./icons/generated/${iconModuleSlug(name)}";`)
     .join("\n");
+  const bespokeExports = BESPOKE_ICON_NAMES.map(
+    (name) => `export { ${name} } from "./icons/bespoke/${iconModuleSlug(name)}";`
+  ).join("\n");
+  const logoExports = LOGO_NAMES.map(
+    (name) => `export { ${name} } from "./icons/bespoke/${iconModuleSlug(name)}";`
+  ).join("\n");
   return `${GENERATED_FILE_HEADER}export type { ElmeraIconProps } from "./icons/create-elmera-icon";
 ${iconExports}
+${bespokeExports}
+export type { BespokeSvgProps, LogoProps } from "./icons/bespoke-svg";
+${logoExports}
 export type { BrandLogoProps } from "./icons/brand-logo";
 export { BrandLogo } from "./icons/brand-logo";
 `;

@@ -35,5 +35,7 @@ describe("workspace lint script", () => {
       entry.files.includes("packages/ui/src/**/*.{ts,tsx}")
     );
     expect(uiSrcOverride?.rules["elmera/no-hardcoded-density-metrics"]).toBe("warn");
+    expect(uiSrcOverride?.rules["elmera/facade-reexport-grammar"]).toBe("error");
+    expect(uiSrcOverride?.rules["elmera/no-rac-outside-quarantine"]).toBe("error");
   });
 });

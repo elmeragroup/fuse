@@ -24,18 +24,18 @@ RAC's `Text` slot mechanism is NOT re-created standalone — the date cluster ke
 
 `TextProps = React.ComponentPropsWithoutRef<"p"> & VariantProps<typeof textVariants> & { elementType?: string; render?: useRender.RenderProp }` — exported (name disambiguated, §8).
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `elementType` | `string` (tag name) | `"p"` | ref's public face kept exactly — the ref forwards it to RAC `Text`, which renders that tag; app code passes `"span"` and `"div"` today, so the prop stays even though `render` (below) also covers polymorphism |
-| `variant` | see §4 | `"default"` | tv axis |
-| `size` | see §4 | `"default"` | tv axis; classes also cascade to children via `*:`/`**:` selectors (kept from ref) |
-| `leading` | `"none" \| "tight" \| "snug" \| "relaxed" \| "loose"` | `"relaxed"` | line-height axis |
-| `truncate` | `boolean` | — | adds `truncate` |
-| `weight` | `"normal" \| "medium" \| "bold"` | `"normal"` | note: ref maps `bold` to `font-medium` (§4) |
-| `align` | `"left" \| "center" \| "right" \| "justify"` | — | tv axis present in the recipe (reachable via variant spread in the ref — kept public) |
-| `render` | `useRender` render prop | — | polymorphism, ADDED (§8) |
-| `className` | `string` | — | merged via `cn`, wins over recipe |
-| …rest | native element props | — | spread onto the element |
+| Prop          | Type                                                  | Default     | Notes                                                                                                                                                                                                           |
+| ------------- | ----------------------------------------------------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `elementType` | `string` (tag name)                                   | `"p"`       | ref's public face kept exactly — the ref forwards it to RAC `Text`, which renders that tag; app code passes `"span"` and `"div"` today, so the prop stays even though `render` (below) also covers polymorphism |
+| `variant`     | see §4                                                | `"default"` | tv axis                                                                                                                                                                                                         |
+| `size`        | see §4                                                | `"default"` | tv axis; classes also cascade to children via `*:`/`**:` selectors (kept from ref)                                                                                                                              |
+| `leading`     | `"none" \| "tight" \| "snug" \| "relaxed" \| "loose"` | `"relaxed"` | line-height axis                                                                                                                                                                                                |
+| `truncate`    | `boolean`                                             | —           | adds `truncate`                                                                                                                                                                                                 |
+| `weight`      | `"normal" \| "medium" \| "bold"`                      | `"normal"`  | note: ref maps `bold` to `font-medium` (§4)                                                                                                                                                                     |
+| `align`       | `"left" \| "center" \| "right" \| "justify"`          | —           | tv axis present in the recipe (reachable via variant spread in the ref — kept public)                                                                                                                           |
+| `render`      | `useRender` render prop                               | —           | polymorphism, ADDED (§8)                                                                                                                                                                                        |
+| `className`   | `string`                                              | —           | merged via `cn`, wins over recipe                                                                                                                                                                               |
+| …rest         | native element props                                  | —           | spread onto the element                                                                                                                                                                                         |
 
 The ref's `slot` prop (RAC slot wiring) is **dropped** (§8 — migration note).
 
@@ -43,14 +43,14 @@ The ref's `slot` prop (RAC slot wiring) is **dropped** (§8 — migration note).
 
 Recipe: **`textVariants`** — **PUBLIC** from `@elmeragroup/ui/text`. `spanVariants` and other package modules import its private source relatively; consumers borrow it from the component entry. Typed via `VariantProps`.
 
-| Axis | Values | Default |
-| --- | --- | --- |
-| `variant` | `default` (`text-inherit`) · `foreground` · `primary` · `secondary` · `brand` · `muted` (`text-muted-foreground`) · `inherit` · `destructive` · `success` (9) | `default` |
-| `size` | `xs` · `sm` · `default` (`text-base`) · `lg` · `xl` · `2xl` — each as `text-{s} *:text-{s} **:text-{s}` (6) | `default` |
-| `leading` | `none` · `tight` · `snug` · `relaxed` · `loose` | `relaxed` |
-| `truncate` | `true` (`truncate`) | — |
-| `align` | `left` · `center` · `right` · `justify` | — |
-| `weight` | `normal` (`font-normal`) · `medium` (`font-medium`) · `bold` (**`font-medium`** — ref maps bold to medium; KEPT, deliberate cap on body-copy weight) | `normal` |
+| Axis       | Values                                                                                                                                                        | Default   |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| `variant`  | `default` (`text-inherit`) · `foreground` · `primary` · `secondary` · `brand` · `muted` (`text-muted-foreground`) · `inherit` · `destructive` · `success` (9) | `default` |
+| `size`     | `xs` · `sm` · `default` (`text-base`) · `lg` · `xl` · `2xl` — each as `text-{s} *:text-{s} **:text-{s}` (6)                                                   | `default` |
+| `leading`  | `none` · `tight` · `snug` · `relaxed` · `loose`                                                                                                               | `relaxed` |
+| `truncate` | `true` (`truncate`)                                                                                                                                           | —         |
+| `align`    | `left` · `center` · `right` · `justify`                                                                                                                       | —         |
+| `weight`   | `normal` (`font-normal`) · `medium` (`font-medium`) · `bold` (**`font-medium`** — ref maps bold to medium; KEPT, deliberate cap on body-copy weight)          | `normal`  |
 
 Base: `font-sans`. The `size` classes deliberately restyle descendants (`*:`/`**:`) so nested inline elements inherit the scale — kept from ref. `destructive` keeps its value name but its class renames to `text-error` (§8).
 

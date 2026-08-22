@@ -10,14 +10,14 @@
 
 ## 2 Anatomy
 
-| Part | Base | Notes |
-| --- | --- | --- |
-| `Popover.Root` | `PopoverPrimitive.Root` | bare re-export; open-state owner, no DOM of its own |
-| `Popover.Trigger` | `PopoverPrimitive.Trigger` | bare re-export; anchor button |
-| `Popover.Content` | `Portal > Positioner > Popup` | popup surface (`w-72 p-4`, flex column, `gap-4`); optional `Arrow` when `showArrow` |
-| `Popover.Header` | plain `div` | `flex flex-col gap-1 text-sm`; groups Title + Description |
-| `Popover.Title` | `PopoverPrimitive.Title` | `font-medium text-balance`; wired as the popup's accessible name |
-| `Popover.Description` | `PopoverPrimitive.Description` | `text-pretty text-muted-foreground`; wired as accessible description |
+| Part                  | Base                           | Notes                                                                               |
+| --------------------- | ------------------------------ | ----------------------------------------------------------------------------------- |
+| `Popover.Root`        | `PopoverPrimitive.Root`        | bare re-export; open-state owner, no DOM of its own                                 |
+| `Popover.Trigger`     | `PopoverPrimitive.Trigger`     | bare re-export; anchor button                                                       |
+| `Popover.Content`     | `Portal > Positioner > Popup`  | popup surface (`w-72 p-4`, flex column, `gap-4`); optional `Arrow` when `showArrow` |
+| `Popover.Header`      | plain `div`                    | `flex flex-col gap-1 text-sm`; groups Title + Description                           |
+| `Popover.Title`       | `PopoverPrimitive.Title`       | `font-medium text-balance`; wired as the popup's accessible name                    |
+| `Popover.Description` | `PopoverPrimitive.Description` | `text-pretty text-muted-foreground`; wired as accessible description                |
 
 ```tsx
 <Popover.Root>
@@ -44,14 +44,14 @@ All rendering parts take `className` (merged via `cn`) and forward the rest of t
 
 **Popover.Content** — `ComponentProps<PopoverPrimitive.Popup>` plus `Pick<ComponentProps<PopoverPrimitive.Positioner>, "align" | "alignOffset" | "side" | "sideOffset">` (destructured and forwarded to the internal Positioner) plus:
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `align` | Positioner `align` | `"center"` | |
-| `alignOffset` | `number` | `0` | |
-| `side` | Positioner `side` | `"bottom"` | |
-| `sideOffset` | `number` | `4` | |
-| `showArrow` | `boolean` | `false` | renders `PopoverPrimitive.Arrow` after `children` |
-| `container` | `HTMLElement \| RefObject<HTMLElement>` | nearest `ThemeScope` element | forwarded to the internal `PopoverPrimitive.Portal` (§8) |
+| Prop          | Type                                    | Default                      | Notes                                                    |
+| ------------- | --------------------------------------- | ---------------------------- | -------------------------------------------------------- |
+| `align`       | Positioner `align`                      | `"center"`                   |                                                          |
+| `alignOffset` | `number`                                | `0`                          |                                                          |
+| `side`        | Positioner `side`                       | `"bottom"`                   |                                                          |
+| `sideOffset`  | `number`                                | `4`                          |                                                          |
+| `showArrow`   | `boolean`                               | `false`                      | renders `PopoverPrimitive.Arrow` after `children`        |
+| `container`   | `HTMLElement \| RefObject<HTMLElement>` | nearest `ThemeScope` element | forwarded to the internal `PopoverPrimitive.Portal` (§8) |
 
 **Popover.Header** — `ComponentProps<"div">`.
 **Popover.Title** / **Popover.Description** — their base-ui part's props verbatim.
@@ -90,9 +90,9 @@ No component-specific `tv` recipe and no variant axes — Content styling is inl
 ## 8 Divergence from reference
 
 1. **Renames (flat → namespace)**: `Popover`→`Popover.Root`, `PopoverTrigger`→`Popover.Trigger`, `PopoverContent`→`Popover.Content`, `PopoverHeader`→`Popover.Header`, `PopoverTitle`→`Popover.Title`, `PopoverDescription`→`Popover.Description`.
-2. **Overlay `container` prop added (mandated)** to `Popover.Content`, forwarded to the internal `PopoverPrimitive.Portal`, defaulting to the nearest `ThemeScope` element. The ref hardcodes the portal with no target (→ `document.body`) and does not export a Portal part at all — `container` on Content is therefore the *only* portal-control surface; documented as intentional (Portal/Positioner/Popup stay unexported here too).
-3. **Arrow tokenized (LOCKED ruling)**: the ref arrow hardcodes `before:bg-white` plus `dark:before:border-white dark:before:bg-neutral-950` — raw palette colors, the family's worst `no-primitive-colors` violation, and mismatched with the token-driven `bg-popover` popup it decorates. Re-expressed as `before:bg-popover before:border-border` so the arrow always matches its popup across all 20 themes; the `sqrt(2)` clip-window geometry is kept verbatim. All `dark:` classes dropped per conventions. `showArrow` stays default `false`. Deliberately *not* unified with Tooltip's always-rendered arrow — the two components' differing arrow show-behavior is intentional (see tooltip.md §8).
-4. **`z-50` deduped**: the ref sets `isolate z-50` on the Positioner *and* `z-50` on the Popup; kept on the outermost layer (Positioner) only. Flat z-strategy: every overlay gets exactly one `z-50` at its outermost portalled element.
+2. **Overlay `container` prop added (mandated)** to `Popover.Content`, forwarded to the internal `PopoverPrimitive.Portal`, defaulting to the nearest `ThemeScope` element. The ref hardcodes the portal with no target (→ `document.body`) and does not export a Portal part at all — `container` on Content is therefore the _only_ portal-control surface; documented as intentional (Portal/Positioner/Popup stay unexported here too).
+3. **Arrow tokenized (LOCKED ruling)**: the ref arrow hardcodes `before:bg-white` plus `dark:before:border-white dark:before:bg-neutral-950` — raw palette colors, the family's worst `no-primitive-colors` violation, and mismatched with the token-driven `bg-popover` popup it decorates. Re-expressed as `before:bg-popover before:border-border` so the arrow always matches its popup across all 20 themes; the `sqrt(2)` clip-window geometry is kept verbatim. All `dark:` classes dropped per conventions. `showArrow` stays default `false`. Deliberately _not_ unified with Tooltip's always-rendered arrow — the two components' differing arrow show-behavior is intentional (see tooltip.md §8).
+4. **`z-50` deduped**: the ref sets `isolate z-50` on the Positioner _and_ `z-50` on the Popup; kept on the outermost layer (Positioner) only. Flat z-strategy: every overlay gets exactly one `z-50` at its outermost portalled element.
 5. **Focus unified:** Trigger composes the canonical self-focus adapter, including when rendered without a Button target.
 
 Kept faithfully: `w-72 p-4 gap-4` popup dimensions; `shadow-md` + `ring-1 ring-foreground/10` elevation; `duration-100` animation timing and the full slide/fade/zoom class set; `Header` as a plain unstyled-primitive div; `showArrow` default `false`; Title/Description typography.

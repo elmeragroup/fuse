@@ -10,14 +10,14 @@
 
 ## 2 Anatomy
 
-| Part | Renders | Role |
-| --- | --- | --- |
-| `Chart.Container` | `<div data-chart={id}>` wrapping `ChartContext.Provider` + injected `Chart.Style` + recharts `ResponsiveContainer` | config owner; sets base typography and the recharts escape-hatch styling |
-| `Chart.Tooltip` | recharts `Tooltip` (bare re-export) | positioning/activation engine; pair with `content={<Chart.TooltipContent />}` |
-| `Chart.TooltipContent` | styled `<div>` tooltip body | config-aware label/indicator/value rows |
-| `Chart.Legend` | recharts `Legend` (bare re-export) | pair with `content={<Chart.LegendContent />}` |
-| `Chart.LegendContent` | styled `<div>` legend row | config-aware swatch/icon + label list |
-| `Chart.Style` | `<style>` via `dangerouslySetInnerHTML` | generates per-chart `--color-<key>` CSS custom properties from config (rendered automatically by `Chart.Container`; exported for advanced use) |
+| Part                   | Renders                                                                                                            | Role                                                                                                                                           |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Chart.Container`      | `<div data-chart={id}>` wrapping `ChartContext.Provider` + injected `Chart.Style` + recharts `ResponsiveContainer` | config owner; sets base typography and the recharts escape-hatch styling                                                                       |
+| `Chart.Tooltip`        | recharts `Tooltip` (bare re-export)                                                                                | positioning/activation engine; pair with `content={<Chart.TooltipContent />}`                                                                  |
+| `Chart.TooltipContent` | styled `<div>` tooltip body                                                                                        | config-aware label/indicator/value rows                                                                                                        |
+| `Chart.Legend`         | recharts `Legend` (bare re-export)                                                                                 | pair with `content={<Chart.LegendContent />}`                                                                                                  |
+| `Chart.LegendContent`  | styled `<div>` legend row                                                                                          | config-aware swatch/icon + label list                                                                                                          |
+| `Chart.Style`          | `<style>` via `dangerouslySetInnerHTML`                                                                            | generates per-chart `--color-<key>` CSS custom properties from config (rendered automatically by `Chart.Container`; exported for advanced use) |
 
 ```tsx
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
@@ -37,7 +37,7 @@ const config = {
     <Area dataKey="desktop" fill="var(--color-desktop)" stroke="var(--color-desktop)" />
     <Area dataKey="mobile" fill="var(--color-mobile)" stroke="var(--color-mobile)" />
   </AreaChart>
-</Chart.Container>
+</Chart.Container>;
 ```
 
 `ChartConfig` (exported): `Record<string, { label?: ReactNode; icon?: ComponentType } & ({ color?: string; theme?: never } | { color?: never; theme: Record<"light" | "dark", string> })>`. The internal `useChart` hook and `ChartContext` stay private; `Chart.TooltipContent`/`Chart.LegendContent` throw ("useChart must be used within a <ChartContainer />") outside `Chart.Container`.
@@ -46,33 +46,33 @@ const config = {
 
 **Chart.Container** — `ComponentProps<"div">` (React 19 `ref`-in-props) plus:
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `config` | `ChartConfig` | required | drives `Chart.Style` var generation and label/icon lookup in content parts |
-| `id` | `string` | `useId()` | suffix of the `data-chart="chart-…"` scope id (`:` stripped from the generated id) |
-| `children` | `ResponsiveContainer` children | required | a single recharts chart element |
+| Prop       | Type                           | Default   | Notes                                                                              |
+| ---------- | ------------------------------ | --------- | ---------------------------------------------------------------------------------- |
+| `config`   | `ChartConfig`                  | required  | drives `Chart.Style` var generation and label/icon lookup in content parts         |
+| `id`       | `string`                       | `useId()` | suffix of the `data-chart="chart-…"` scope id (`:` stripped from the generated id) |
+| `children` | `ResponsiveContainer` children | required  | a single recharts chart element                                                    |
 
 **Chart.Tooltip / Chart.Legend** — recharts `Tooltip` / `Legend` props verbatim (bare re-exports; no wrapping).
 
 **Chart.TooltipContent** — recharts `Tooltip` props (`active`, `payload`, `label`, `labelFormatter`, `labelClassName`, `formatter`, `color`) ∩ `ComponentProps<"div">` plus:
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `hideLabel` | `boolean` | `false` | suppress the header label row |
-| `hideIndicator` | `boolean` | `false` | suppress the color swatch (config `icon` still renders) |
-| `indicator` | `"dot" \| "line" \| "dashed"` | `"dot"` | swatch shape; single-item non-dot payloads nest the label beside the value |
-| `nameKey` | `string` | — | override payload key used for config lookup per series |
-| `labelKey` | `string` | — | override payload key used for the header label |
+| Prop            | Type                          | Default | Notes                                                                      |
+| --------------- | ----------------------------- | ------- | -------------------------------------------------------------------------- |
+| `hideLabel`     | `boolean`                     | `false` | suppress the header label row                                              |
+| `hideIndicator` | `boolean`                     | `false` | suppress the color swatch (config `icon` still renders)                    |
+| `indicator`     | `"dot" \| "line" \| "dashed"` | `"dot"` | swatch shape; single-item non-dot payloads nest the label beside the value |
+| `nameKey`       | `string`                      | —       | override payload key used for config lookup per series                     |
+| `labelKey`      | `string`                      | —       | override payload key used for the header label                             |
 
 Renders `null` unless `active && payload?.length`. Only the destructured props are consumed — arbitrary extra div props are not spread onto the root (kept from ref, documented; `className` is merged).
 
 **Chart.LegendContent** — `ComponentProps<"div">` plus `Pick<LegendProps, "payload" | "verticalAlign">` and:
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `hideIcon` | `boolean` | `false` | force color swatch even when config provides `icon` |
-| `nameKey` | `string` | — | override payload key for config lookup |
-| `verticalAlign` | `"top" \| "bottom" \| …` | `"bottom"` | flips padding side (`pb-3` vs `pt-3`) |
+| Prop            | Type                     | Default    | Notes                                               |
+| --------------- | ------------------------ | ---------- | --------------------------------------------------- |
+| `hideIcon`      | `boolean`                | `false`    | force color swatch even when config provides `icon` |
+| `nameKey`       | `string`                 | —          | override payload key for config lookup              |
+| `verticalAlign` | `"top" \| "bottom" \| …` | `"bottom"` | flips padding side (`pb-3` vs `pt-3`)               |
 
 Renders `null` when `payload` is empty.
 

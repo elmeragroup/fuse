@@ -28,7 +28,7 @@ AriaDatePicker                        (RAC DatePicker; base slot)
 
 **Private internals this composes (all stay private, die with the tier):** the styled `Dialog` (RAC Dialog + heading/close chrome), `Modal`, the RAC `Button` (exists solely because RAC slots — here the picker trigger, in Calendar `previous`/`next` — can't be filled by the base-ui Button), and the RAC `Popover` (dropped from public exports; zero consumers).
 
-**Normative private RAC support stack:** `internal/button.tsx` wraps RAC Button while borrowing `buttonVariants` by a relative package-private import; `internal/field.tsx` owns Label/Input/Description/FieldError/FieldGroup and private `fieldGroupVariants`; `internal/checkbox.ts` owns private `checkboxVariants` used by GridList; `internal/dialog.tsx`, `modal.tsx`, and `popover.tsx` own overlay chrome and containment. `fieldGroupVariants` composes shared `focusRing({ target: "state", isFocusVisible })`, never its own outline/ring. Popover resolves portal target explicit `container` → nearest ThemeScope → RAC default, then forwards RAC's portal-container prop. Modal and Popover share the package-private `OVERLAY_CONTAINER_ATTR` constant solely for nested outside-interaction detection. None of these modules or recipes appears in `package.json#exports`.
+**Normative private RAC support stack:** `internal/button.tsx` wraps RAC Button while borrowing `buttonVariants` by a relative package-private import; `internal/field.tsx` owns Label/Input/Description/FieldError/FieldGroup and private `fieldGroupVariants`; `internal/checkbox.ts` owns private `checkboxVariants` used by GridList; `internal/dialog.tsx`, `modal.tsx`, and `popover.tsx` own overlay chrome and containment. `fieldGroupVariants` is a single-height field box pinning the `md` rung (`h-(--control-h-md)`, not literal `h-9`) per [conventions](conventions.md) ruling 2, and composes shared `focusRing({ target: "state", isFocusVisible })`, never its own outline/ring. Popover resolves portal target explicit `container` → nearest ThemeScope → RAC default, then forwards RAC's portal-container prop. Modal and Popover share the package-private `OVERLAY_CONTAINER_ATTR` constant solely for nested outside-interaction detection. None of these modules or recipes appears in `package.json#exports`.
 
 **Focused-month sync (kept faithfully):** local `focusedValue` state initialized from `props.value` via `toCalendarDate` (falling back to `today(getLocalTimeZone())` when null/undefined) and re-synced by `useEffect` on every `props.value` change; passed to `Calendar` as `focusedValue`/`onFocusChange`. Effect: reopening the popover always lands on the selected (or current) month, even after the user paged away. The three helpers `toCalendarDate`, `today`, and `getLocalTimeZone` are imported only by this module at v1. The `@internationalized/date` dependency itself remains available to the whole private date cluster and uninstalls with that cluster, as [architecture](../architecture.md) §6 requires.
 
@@ -38,17 +38,17 @@ AriaDatePicker                        (RAC DatePicker; base slot)
 
 `DatePickerProps<T extends DateValue>` — spreads onto RAC `DatePicker` (open surface: `value`, `defaultValue`, `onChange`, `minValue`, `maxValue`, `granularity`, `placeholderValue`, `isDisabled`, `isReadOnly`, `isRequired`, `isInvalid`, `isDateUnavailable`, `validate`, `name`, `isOpen`/`onOpenChange`, …).
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `label` | `string` | — | |
-| `description` | `string` | — | |
-| `errorMessage` | `ReactNode \| ((v: ValidationResult) => ReactNode)` | — | unified composite face; forwarded as FieldError children |
-| `defaultValue` | `T \| null` | — | Widened to allow explicit `null` (kept from ref) |
-| `presetGroup` | `ReactNode` | — | Rendered beside the calendar; triggers the `divide-x` two-pane layout |
-| `isReadOnly` | `boolean` | `false` | Destructured to drive the `isReadOnly` tv variant (`bg-muted` group/icon) |
-| `shouldForceLeadingZeros` | `boolean` | **`true`** | |
-| `className` | RAC className | — | Composed onto `base` slot |
-| `container` | `HTMLElement \| RefObject<HTMLElement>` | nearest `ThemeScope` | forwarded to private Popover; explicit value wins |
+| Prop                      | Type                                                | Default              | Notes                                                                     |
+| ------------------------- | --------------------------------------------------- | -------------------- | ------------------------------------------------------------------------- |
+| `label`                   | `string`                                            | —                    |                                                                           |
+| `description`             | `string`                                            | —                    |                                                                           |
+| `errorMessage`            | `ReactNode \| ((v: ValidationResult) => ReactNode)` | —                    | unified composite face; forwarded as FieldError children                  |
+| `defaultValue`            | `T \| null`                                         | —                    | Widened to allow explicit `null` (kept from ref)                          |
+| `presetGroup`             | `ReactNode`                                         | —                    | Rendered beside the calendar; triggers the `divide-x` two-pane layout     |
+| `isReadOnly`              | `boolean`                                           | `false`              | Destructured to drive the `isReadOnly` tv variant (`bg-muted` group/icon) |
+| `shouldForceLeadingZeros` | `boolean`                                           | **`true`**           |                                                                           |
+| `className`               | RAC className                                       | —                    | Composed onto `base` slot                                                 |
+| `container`               | `HTMLElement \| RefObject<HTMLElement>`             | nearest `ThemeScope` | forwarded to private Popover; explicit value wins                         |
 
 ### DatePickerPresetGroup
 
@@ -89,6 +89,7 @@ Via composed parts: `card` (FieldGroup, popover, and calendar surfaces) + `card-
 7. **Interim-only regular dependencies:** `tailwindcss-react-aria-components` modifiers and `@internationalized/date` uninstall with the cluster.
 8. Adds `container` and nearest-ThemeScope default; preset group copy uses the locale dictionary and preset items use visible names.
 9. Inherited RAC `fieldGroupVariants` uses `bg-card` instead of `bg-background`, aligning the date field box with the input-surface convention.
+10. **Density retokenization:** `fieldGroupVariants` pins `--control-h-md` instead of literal `h-9` (gates the RAC private stack).
 
 ## 9 Test requirements
 
@@ -99,6 +100,7 @@ Via composed parts: `card` (FieldGroup, popover, and calendar surfaces) + `card-
 - Overlay seam: DatePicker inside a Modal — clicking a calendar day must not dismiss the Modal (regression test for `OVERLAY_CONTAINER_ATTR`).
 - `shouldForceLeadingZeros` default; `errorMessage` function form renders per `ValidationResult`; `isReadOnly` applies `bg-muted` state and keeps the popover closed.
 - Explicit/nearest-scope portal container behavior; all four preset-group locale defaults and the `label` override.
+- Dual-density: FieldGroup height matches the signed `md` rung at `dense` and `comfortable`; nested `data-density` does not rescope.
 
 ## 10 Demo requirements
 

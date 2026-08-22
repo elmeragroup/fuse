@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import * as Icons from "../icons";
 import * as Root from "../index";
 import { generatedAdapterSource, generatedFacadeSource, iconModuleSlug } from "./generate";
-import { PHOSPHOR_ICON_NAMES } from "./roster";
+import { BESPOKE_ICON_NAMES, LOGO_NAMES, PHOSPHOR_ICON_NAMES } from "./roster";
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "../..");
 const generatedDir = join(packageRoot, "src/icons/generated");
@@ -21,7 +21,9 @@ describe("Phosphor adapters", () => {
 
   it("exports every curated name from /icons and does not export Icon", () => {
     expect(Object.keys(Icons).toSorted((left, right) => left.localeCompare(right))).toEqual(
-      ["BrandLogo", ...byName].toSorted((left, right) => left.localeCompare(right))
+      ["BrandLogo", ...BESPOKE_ICON_NAMES, ...LOGO_NAMES, ...byName].toSorted((left, right) =>
+        left.localeCompare(right)
+      )
     );
     expect(Icons).toHaveProperty("BrandLogo");
     expect(Icons).not.toHaveProperty("Icon");

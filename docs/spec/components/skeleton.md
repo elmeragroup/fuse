@@ -10,8 +10,8 @@
 
 ## 2 Anatomy
 
-| Part | Renders | data-slot |
-| --- | --- | --- |
+| Part       | Renders                                           | data-slot  |
+| ---------- | ------------------------------------------------- | ---------- |
 | `Skeleton` | `<div class="animate-pulse rounded-md bg-muted">` | `skeleton` |
 
 ```tsx
@@ -22,9 +22,9 @@ A shape-only placeholder: it has no intrinsic size — consumers size it via `cl
 
 ## 3 Props
 
-| Part | Type | Notes |
-| --- | --- | --- |
-| `Skeleton` | `ComponentProps<"div">` | `className` merged via `cn`; everything else passes through. No `isLoading` prop — rendering the component *is* the loading state; consumers conditionally render it |
+| Part       | Type                    | Notes                                                                                                                                                                |
+| ---------- | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Skeleton` | `ComponentProps<"div">` | `className` merged via `cn`; everything else passes through. No `isLoading` prop — rendering the component _is_ the loading state; consumers conditionally render it |
 
 ## 4 Variants
 
@@ -56,7 +56,7 @@ None — no tv recipe, no variant axes. Shape, size, and count are entirely cons
 
 ## 9 Test requirements
 
-- Renders a `<div>` with `data-slot="skeleton"`; no role queries apply (assert it is *absent* from the accessibility tree when the consumer pattern `aria-hidden` is applied — the demo pattern is the tested pattern).
+- Renders a `<div>` with `data-slot="skeleton"`; no role queries apply (assert it is _absent_ from the accessibility tree when the consumer pattern `aria-hidden` is applied — the demo pattern is the tested pattern).
 - `className` merges via `cn`: consumer sizing classes coexist with the base classes; a consumer `bg-*` override wins over `bg-muted`.
 - Arbitrary props (`id`, `data-*`, event handlers) and `ref` pass through to the div (regression guard for §8.1).
 - Static/type-level: props type is `ComponentProps<"div">`.

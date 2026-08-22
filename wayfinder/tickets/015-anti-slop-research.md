@@ -13,7 +13,7 @@ What exactly is `https://github.com/dmmulroy/anti-slop`, and how does it integra
 
 Research from the repo/readme/npm: what it does (lint rules? agent guardrails? oxlint plugin?), how it's installed and configured, compatibility with oxlint `^1.x`/oxfmt/pnpm/turborepo, maturity (releases, maintenance), and any conflicts with the refs' existing oxlint setup (type-aware rules, custom `@elmeragroup/oxlint-plugin` with design-system rules like `elmera/require-icon-button-label`).
 
-Deliverable: `wayfinder/research/015-anti-slop.md` — findings + a concrete recommended wiring, consumed by *Repo & tooling spec*.
+Deliverable: `wayfinder/research/015-anti-slop.md` — findings + a concrete recommended wiring, consumed by _Repo & tooling spec_.
 
 ## Resolution
 
@@ -23,4 +23,4 @@ anti-slop is a pack of 15 opinionated AST-only **oxlint JS-plugin rules** (`anti
 
 Key facts: it is **vendor-first by design** — `private: true`, unreleased, not npm-published by the author; `oxlint-plugin-anti-slop@0.0.0` on npm is a **third-party name-squat, never install it**. Repo is days old, single author — immature as a dependency, fine as vendored code.
 
-Recommended wiring (feeds *Repo & tooling spec*): vendor as `tooling/oxlint-anti-slop` (`@elmeragroup/oxlint-plugin-anti-slop`), register as a third `jsPlugins` entry, ~11 rules at `error`, the contentious ones (`no-module-mocking`, `no-shape-in-symbol-names`, `require-safety-comment-for-type-assertion`) at `warn`/overrides, record the vendored commit SHA.
+Recommended wiring (feeds _Repo & tooling spec_): vendor as `tooling/oxlint-anti-slop` (`@elmeragroup/oxlint-plugin-anti-slop`), register as a third `jsPlugins` entry, ~11 rules at `error`, the contentious ones (`no-module-mocking`, `no-shape-in-symbol-names`, `require-safety-comment-for-type-assertion`) at `warn`/overrides, record the vendored commit SHA.

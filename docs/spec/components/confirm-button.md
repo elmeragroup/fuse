@@ -10,8 +10,8 @@
 
 ## 2 Anatomy
 
-| Part | Renders | Notes |
-| --- | --- | --- |
+| Part            | Renders                                              | Notes                                             |
+| --------------- | ---------------------------------------------------- | ------------------------------------------------- |
 | `ConfirmButton` | base-ui `Button` + conditional `sr-only` live region | single element; two-press arm/confirm interaction |
 
 ```tsx
@@ -24,13 +24,13 @@
 
 `ConfirmButtonProps = Omit<ButtonProps, "onClick" | "children"> & { … }` — all Button props (`variant`, `size`, `disabled`, `isPending`, …) pass through except `onClick`, which the component owns:
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `onConfirm` | `() => void` | required | fired on the **second** press only |
-| `children` | `ReactNode` | — | resting label |
-| `armedChildren` | `ReactNode` | — | label swapped in while armed; resting label kept when omitted |
-| `armedAriaLabel` | `string` | — | explicit armed announcement/label override |
-| `disabled` | `boolean` | — | disables the button; **also disarms** (§8.1) |
+| Prop             | Type         | Default  | Notes                                                         |
+| ---------------- | ------------ | -------- | ------------------------------------------------------------- |
+| `onConfirm`      | `() => void` | required | fired on the **second** press only                            |
+| `children`       | `ReactNode`  | —        | resting label                                                 |
+| `armedChildren`  | `ReactNode`  | —        | label swapped in while armed; resting label kept when omitted |
+| `armedAriaLabel` | `string`     | —        | explicit armed announcement/label override                    |
+| `disabled`       | `boolean`    | —        | disables the button; **also disarms** (§8.1)                  |
 
 **Behavior (fully specced):**
 
@@ -45,10 +45,10 @@
 
 Recipe: `confirmButtonVariants` — **module-private**. Mirrors the Button `variant` axis with **deliberately empty keys** (`default`, `outline`, `secondary`, `ghost`, `link` map to `""`) — they exist purely so `VariantProps` type-aligns 1:1 with Button's axis; only two add armed styling:
 
-| `variant` | armed classes |
-| --- | --- |
-| `destructive` | `data-[armed=true]:bg-error data-[armed=true]:text-error-foreground` |
-| `success` | `data-[armed=true]:bg-success data-[armed=true]:text-success-foreground` |
+| `variant`     | armed classes                                                            |
+| ------------- | ------------------------------------------------------------------------ |
+| `destructive` | `data-[armed=true]:bg-error data-[armed=true]:text-error-foreground`     |
+| `success`     | `data-[armed=true]:bg-success data-[armed=true]:text-success-foreground` |
 
 The underlying `variant` also passes to `Button` unchanged, so resting looks are Button's. No `defaultVariants` (undefined variant adds nothing).
 

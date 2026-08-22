@@ -11,7 +11,7 @@ blocked-by: [002, 005]
 
 What is the exact public API of the theme provider(s)?
 
-Decide, given the cascade mechanism (*Theming cascade prototype*) and the SSR research (*Theme provider & SSR research*):
+Decide, given the cascade mechanism (_Theming cascade prototype_) and the SSR research (_Theme provider & SSR research_):
 
 1. Input shape: full slug (`internal-fkas-company`) and/or decomposed props (`variant` + `brand` + `segment`) — the brief allows either; pick one primary with the other derived, and define validation (pinned-brand rules).
 2. Export layout: `@elmeragroup/ui/react/theme-provider` (core) and `@elmeragroup/ui/next/theme-provider` (Next re-export of vendored next-themes or of the core) — confirm and spec both signatures.
@@ -20,7 +20,7 @@ Decide, given the cascade mechanism (*Theming cascade prototype*) and the SSR re
 5. Runtime theme switching (needed at least for docs/playground and Storybook-style brand pickers): supported in v1? API?
 6. Future `data-theme` light/dark axis: how the API reserves it without implementing it.
 
-Handed over from [Theming cascade prototype](002-theming-cascade-prototype.md)'s resolution: the mechanism is three data attributes on any element; markers re-theme subtrees natively, but a portal rendered *outside* a scoped subtree silently takes the outer theme — the provider API owns portal-inside discipline (point 4) and pinned-brand validation (fkab→company, fkse→private; CSS cannot forbid illegal combos — point 1).
+Handed over from [Theming cascade prototype](002-theming-cascade-prototype.md)'s resolution: the mechanism is three data attributes on any element; markers re-theme subtrees natively, but a portal rendered _outside_ a scoped subtree silently takes the outer theme — the provider API owns portal-inside discipline (point 4) and pinned-brand validation (fkab→company, fkse→private; CSS cannot forbid illegal combos — point 1).
 
 ## Resolution
 
@@ -34,4 +34,4 @@ Decided 2026-08-17 via grilling, user-confirmed. Rationale for the central call 
 4. **`ThemeScope`** — escape hatch for per-request/multi-theme subtrees (the sms-accept per-customer pattern; the docs playground's 16-permutation grid): one component fusing the data attributes and a nested context so CSS and `useTheme()` cannot drift. Polymorphism via base-ui **`useRender`** (`render` prop + `mergeProps`, default tag `div`) — **standing convention: all library polymorphism uses `useRender`, never an `as` prop** (added to map Notes; feeds [Component API spec template](011-component-api-spec-template.md)). Overlay components take a `container` prop; docs mandate portalling inside the scope.
 5. **Types**: discriminated `ThemeInput` union makes `fkab-private`/`fkse-company` unrepresentable at compile time; `validateTheme` covers untyped inputs — throw in dev, coerce-to-pinned-segment + console warning in prod (per [Brand–segment matrix gaps](004-brand-segment-matrix-gaps.md)).
 6. **`BRANDS`** record — `{ code, displayName, segments }` per brand (fkse → `displayName: "Telinet"`); logo components live with the icon system, keyed by the same codes.
-7. **Dark axis: fully wired except CSS values** (user direction). `<ColorSchemeScript>` + `useColorScheme()` ship *functional* in v1 — adapted from next-themes' `script.ts` (53 lines, MIT notice retained), reading preference and setting the reserved `data-theme` attribute before first paint. The theme CSS ships a ready-to-go **empty dark section** (`[data-theme="dark"]`-guarded block containing only a comment: values land with the dark-mode roadmap item) — requirement handed to [Token pipeline](018-token-pipeline.md). `ThemeInput` gets no dark field; color scheme stays an orthogonal, layered axis.
+7. **Dark axis: fully wired except CSS values** (user direction). `<ColorSchemeScript>` + `useColorScheme()` ship _functional_ in v1 — adapted from next-themes' `script.ts` (53 lines, MIT notice retained), reading preference and setting the reserved `data-theme` attribute before first paint. The theme CSS ships a ready-to-go **empty dark section** (`[data-theme="dark"]`-guarded block containing only a comment: values land with the dark-mode roadmap item) — requirement handed to [Token pipeline](018-token-pipeline.md). `ThemeInput` gets no dark field; color scheme stays an orthogonal, layered axis.

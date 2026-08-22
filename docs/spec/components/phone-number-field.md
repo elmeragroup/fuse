@@ -40,39 +40,39 @@ Internal parts: `Flag` renders the packaged `@elmeragroup/ui/flags` SVG URL as a
 
 State options (from `UsePhoneNumberFieldStateOptions` — all public via the component):
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `value` | `string` | `""` | Controlled outer value; URI-decoded on sync (may arrive from URL params) |
-| `onChange` | `(value: string) => void` | — | Receives the **formatted output value** (per `outputFormat`), not raw digits |
-| `defaultCountryCode` | `Extract<CountryCode, FlagAssetCode>` | `"NO"` | `FlagAssetCode` comes from `@elmeragroup/ui/flags`; untyped unresolved values follow the fallback below |
-| `metadata` | `MetadataJson` | `libphonenumber-js/metadata.min.json` | Custom/trimmed metadata injection; country rows are intersected with `flagAssets` |
-| `autoDetectCountry` | `boolean` | `true` | Detect country from `+`/`00` prefix while typing/pasting |
-| `international` | `boolean` | `false` | Store/display full number with prefix vs. national digits |
-| `preserveOnCountryChange` | `boolean` | `false` | Keep digits when switching country (default clears and emits `""`) |
-| `outputFormat` | `"e164" \| "international" \| "national" \| "raw"` | `"e164"` | Format of `onChange`/hidden-input value; type is declared privately and reflected into `PhoneNumberFieldProps` |
-| `formatOnType` | `boolean` | `false` | As-you-type display formatting |
-| `isRequired` | `boolean` | `false` | Feeds validation; sets `aria-required` on the visible input |
-| `onCountryChange` | `(country: PhoneNumberCountry) => void` | — | |
+| Prop                      | Type                                               | Default                               | Notes                                                                                                          |
+| ------------------------- | -------------------------------------------------- | ------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `value`                   | `string`                                           | `""`                                  | Controlled outer value; URI-decoded on sync (may arrive from URL params)                                       |
+| `onChange`                | `(value: string) => void`                          | —                                     | Receives the **formatted output value** (per `outputFormat`), not raw digits                                   |
+| `defaultCountryCode`      | `Extract<CountryCode, FlagAssetCode>`              | `"NO"`                                | `FlagAssetCode` comes from `@elmeragroup/ui/flags`; untyped unresolved values follow the fallback below        |
+| `metadata`                | `MetadataJson`                                     | `libphonenumber-js/metadata.min.json` | Custom/trimmed metadata injection; country rows are intersected with `flagAssets`                              |
+| `autoDetectCountry`       | `boolean`                                          | `true`                                | Detect country from `+`/`00` prefix while typing/pasting                                                       |
+| `international`           | `boolean`                                          | `false`                               | Store/display full number with prefix vs. national digits                                                      |
+| `preserveOnCountryChange` | `boolean`                                          | `false`                               | Keep digits when switching country (default clears and emits `""`)                                             |
+| `outputFormat`            | `"e164" \| "international" \| "national" \| "raw"` | `"e164"`                              | Format of `onChange`/hidden-input value; type is declared privately and reflected into `PhoneNumberFieldProps` |
+| `formatOnType`            | `boolean`                                          | `false`                               | As-you-type display formatting                                                                                 |
+| `isRequired`              | `boolean`                                          | `false`                               | Feeds validation; sets `aria-required` on the visible input                                                    |
+| `onCountryChange`         | `(country: PhoneNumberCountry) => void`            | —                                     |                                                                                                                |
 
 Field props:
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `label` / `description` | `string` | — | |
-| `errorMessage` | `ReactNode` | — | `Field.Error`, truthy-gated |
-| `placeholder` | `string` | — | Visible input |
-| `endContent` | `ReactNode` | — | Trailing content inside the InputGroup |
-| `isInvalid` | `boolean` | `false` | → `Field.Root invalid`; InputGroup gets `aria-invalid \|\| undefined` |
-| `isDisabled` | `boolean` | `false` | → Field + Combobox.Root disabled |
-| `isReadOnly` | `boolean` | `false` | → Combobox.Root + visible input readOnly |
-| `isRequired` | `boolean` | — | (shared with state options above) |
-| `name` | `string` | — | Hidden input gets `name`; visible input gets `${name}-display-value` (default `"phone-number-display-value"`) |
-| `className` | `string` | — | Root |
-| `selectCountryLabel` | `string` | locale dictionary | Explicit override for the built-in `selectCountry` key |
-| `searchCountriesLabel` | `string` | locale dictionary | Explicit override for `searchCountries` |
-| `noCountriesFoundText` | `string` | locale dictionary | Explicit override for `noCountries` |
-| `container` | `HTMLElement \| RefObject<HTMLElement>` | nearest `ThemeScope` | forwarded to the country Combobox content |
-| `id`, `autoFocus`, `onBlur`, `inputMode` (`"tel"` default), `enterKeyHint`, `autoComplete`, `aria-label`, `aria-labelledby`, `aria-describedby` | native input | — | `autoComplete` also forwarded to Combobox.Root; aria/id keys forwarded via conditional-spread guard (§8) |
+| Prop                                                                                                                                            | Type                                    | Default              | Notes                                                                                                         |
+| ----------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `label` / `description`                                                                                                                         | `string`                                | —                    |                                                                                                               |
+| `errorMessage`                                                                                                                                  | `ReactNode`                             | —                    | `Field.Error`, truthy-gated                                                                                   |
+| `placeholder`                                                                                                                                   | `string`                                | —                    | Visible input                                                                                                 |
+| `endContent`                                                                                                                                    | `ReactNode`                             | —                    | Trailing content inside the InputGroup                                                                        |
+| `isInvalid`                                                                                                                                     | `boolean`                               | `false`              | → `Field.Root invalid`; InputGroup gets `aria-invalid \|\| undefined`                                         |
+| `isDisabled`                                                                                                                                    | `boolean`                               | `false`              | → Field + Combobox.Root disabled                                                                              |
+| `isReadOnly`                                                                                                                                    | `boolean`                               | `false`              | → Combobox.Root + visible input readOnly                                                                      |
+| `isRequired`                                                                                                                                    | `boolean`                               | —                    | (shared with state options above)                                                                             |
+| `name`                                                                                                                                          | `string`                                | —                    | Hidden input gets `name`; visible input gets `${name}-display-value` (default `"phone-number-display-value"`) |
+| `className`                                                                                                                                     | `string`                                | —                    | Root                                                                                                          |
+| `selectCountryLabel`                                                                                                                            | `string`                                | locale dictionary    | Explicit override for the built-in `selectCountry` key                                                        |
+| `searchCountriesLabel`                                                                                                                          | `string`                                | locale dictionary    | Explicit override for `searchCountries`                                                                       |
+| `noCountriesFoundText`                                                                                                                          | `string`                                | locale dictionary    | Explicit override for `noCountries`                                                                           |
+| `container`                                                                                                                                     | `HTMLElement \| RefObject<HTMLElement>` | nearest `ThemeScope` | forwarded to the country Combobox content                                                                     |
+| `id`, `autoFocus`, `onBlur`, `inputMode` (`"tel"` default), `enterKeyHint`, `autoComplete`, `aria-label`, `aria-labelledby`, `aria-describedby` | native input                            | —                    | `autoComplete` also forwarded to Combobox.Root; aria/id keys forwarded via conditional-spread guard (§8)      |
 
 Internal hook return (not public API, informs behavior): `displayValue`, `rawValue`, `outputValue`, `handleInputChange` (runs private `cleanPhoneInput` + detection), `handleCountrySelect`, `handlePaste` (preventDefault + reroute through input pipeline), `setCountry`, `country`, `selectedCountry`, `callingCode`, `validation`, `nationalNumber`, `countries`, `getCountryName`. Locale comes only from `useElmeraGroupUi().locale`; `Intl.DisplayNames` falls back to `en-US`, then the raw code.
 

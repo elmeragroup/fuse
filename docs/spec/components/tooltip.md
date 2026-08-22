@@ -10,12 +10,12 @@
 
 ## 2 Anatomy
 
-| Part | Base | Notes |
-| --- | --- | --- |
-| `Tooltip.Provider` | `TooltipPrimitive.Provider` | app/section-level grouping: shared `delay` (our default `0`) and skip-delay hand-off between neighboring tooltips; no DOM |
-| `Tooltip.Root` | `TooltipPrimitive.Root` | open-state owner, no DOM; per-tooltip `delay` prop wraps a scoped Provider (§8) |
-| `Tooltip.Trigger` | `TooltipPrimitive.Trigger` | bare re-export; hover/focus anchor |
-| `Tooltip.Content` | `Portal > Positioner > Popup` | inverted pill (`bg-foreground text-background`, `text-xs`, `max-w-xs`); always renders `TooltipPrimitive.Arrow` after `children` |
+| Part               | Base                          | Notes                                                                                                                            |
+| ------------------ | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `Tooltip.Provider` | `TooltipPrimitive.Provider`   | app/section-level grouping: shared `delay` (our default `0`) and skip-delay hand-off between neighboring tooltips; no DOM        |
+| `Tooltip.Root`     | `TooltipPrimitive.Root`       | open-state owner, no DOM; per-tooltip `delay` prop wraps a scoped Provider (§8)                                                  |
+| `Tooltip.Trigger`  | `TooltipPrimitive.Trigger`    | bare re-export; hover/focus anchor                                                                                               |
+| `Tooltip.Content`  | `Portal > Positioner > Popup` | inverted pill (`bg-foreground text-background`, `text-xs`, `max-w-xs`); always renders `TooltipPrimitive.Arrow` after `children` |
 
 ```tsx
 <Tooltip.Provider>
@@ -36,28 +36,28 @@ All rendering parts take `className` (merged via `cn`) and forward the rest of t
 
 **Tooltip.Provider** — `ComponentProps<TooltipPrimitive.Provider>` with one changed default:
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `delay` | `number` | `0` | ref overrides base-ui's default (600ms) to instant; kept |
-| `closeDelay`, `timeout` | base-ui | base-ui defaults | forwarded verbatim |
+| Prop                    | Type     | Default          | Notes                                                    |
+| ----------------------- | -------- | ---------------- | -------------------------------------------------------- |
+| `delay`                 | `number` | `0`              | ref overrides base-ui's default (600ms) to instant; kept |
+| `closeDelay`, `timeout` | base-ui  | base-ui defaults | forwarded verbatim                                       |
 
 **Tooltip.Root** — `ComponentProps<TooltipPrimitive.Root>` (`open`/`defaultOpen`/`onOpenChange`, `hoverable`, `disabled`, …) plus:
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `delay` | `number` | — | when set, wraps this Root in a *scoped* `TooltipPrimitive.Provider` with that delay (§8 — resets outer grouping) |
+| Prop    | Type     | Default | Notes                                                                                                            |
+| ------- | -------- | ------- | ---------------------------------------------------------------------------------------------------------------- |
+| `delay` | `number` | —       | when set, wraps this Root in a _scoped_ `TooltipPrimitive.Provider` with that delay (§8 — resets outer grouping) |
 
 **Tooltip.Trigger** — `ComponentProps<TooltipPrimitive.Trigger>` verbatim.
 
 **Tooltip.Content** — `ComponentProps<TooltipPrimitive.Popup>` plus `Pick<ComponentProps<TooltipPrimitive.Positioner>, "align" | "alignOffset" | "side" | "sideOffset">` (destructured and forwarded to the internal Positioner) plus:
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `align` | Positioner `align` | `"center"` | |
-| `alignOffset` | `number` | `0` | |
-| `side` | Positioner `side` | `"top"` | tooltips open upward by default (vs Popover/DropdownMenu `"bottom"`) |
-| `sideOffset` | `number` | `4` | |
-| `container` | `HTMLElement \| RefObject<HTMLElement>` | nearest `ThemeScope` element | forwarded to the internal `TooltipPrimitive.Portal` (§8) |
+| Prop          | Type                                    | Default                      | Notes                                                                |
+| ------------- | --------------------------------------- | ---------------------------- | -------------------------------------------------------------------- |
+| `align`       | Positioner `align`                      | `"center"`                   |                                                                      |
+| `alignOffset` | `number`                                | `0`                          |                                                                      |
+| `side`        | Positioner `side`                       | `"top"`                      | tooltips open upward by default (vs Popover/DropdownMenu `"bottom"`) |
+| `sideOffset`  | `number`                                | `4`                          |                                                                      |
+| `container`   | `HTMLElement \| RefObject<HTMLElement>` | nearest `ThemeScope` element | forwarded to the internal `TooltipPrimitive.Portal` (§8)             |
 
 ## 4 Variants
 
@@ -94,9 +94,9 @@ No component-specific `tv` recipe and no variant axes — single inverted style 
 2. **Overlay `container` prop added (mandated)** to `Tooltip.Content`, forwarded to the internal `TooltipPrimitive.Portal`, defaulting to the nearest `ThemeScope` element. The ref hardcodes the portal with no target (→ `document.body`) and exports no Portal part — `container` on Content is the only portal-control surface (Portal/Positioner/Popup stay unexported).
 3. **Dead Radix classes removed (LOCKED ruling)**: the ref popup carries `data-[state=delayed-open]:animate-in/fade-in-0/zoom-in-95` — a Radix state attribute base-ui never emits (base-ui emits `data-open`/`data-closed`). Dead selectors dropped; the parallel `data-open:` set already covers the entrance.
 4. **Phantom `kbd` hooks removed (LOCKED ruling)**: the ref popup carries `has-data-[slot=kbd]:pr-1.5` and four `**:data-[slot=kbd]:*` descendant selectors for a `Kbd` component that does not exist in the package. Removed; to be reconsidered if/when a `Kbd` component is specced.
-5. **Per-tooltip `delay` behavior KEPT, prominently documented (LOCKED ruling)**: `Tooltip.Root`'s `delay` prop silently wraps the Root in a *nested scoped* `TooltipPrimitive.Provider` (base-ui puts per-tooltip delay on a Provider). Consequence: that tooltip forms its own provider group — it no longer participates in the outer Provider's shared delay or skip-delay hand-off. Kept as the proven face; the reset-outer-grouping consequence must appear in the prop's docs.
-6. **Arrow show-behavior deliberately not unified with Popover**: Tooltip keeps its *always-rendered* `bg-foreground fill-foreground` token-inverted arrow (already token-clean in the ref); Popover keeps opt-in `showArrow` default `false`. Documented as an intentional family difference, not a divergence to fix.
-7. **`z-50` deduped**: the ref sets `isolate z-50` on the Positioner *and* `z-50` on the Popup (plus `z-50` on the Arrow, which becomes redundant): kept once on the outermost layer (Positioner) per the flat z-strategy — every overlay gets exactly one `z-50` at its outermost portalled element.
+5. **Per-tooltip `delay` behavior KEPT, prominently documented (LOCKED ruling)**: `Tooltip.Root`'s `delay` prop silently wraps the Root in a _nested scoped_ `TooltipPrimitive.Provider` (base-ui puts per-tooltip delay on a Provider). Consequence: that tooltip forms its own provider group — it no longer participates in the outer Provider's shared delay or skip-delay hand-off. Kept as the proven face; the reset-outer-grouping consequence must appear in the prop's docs.
+6. **Arrow show-behavior deliberately not unified with Popover**: Tooltip keeps its _always-rendered_ `bg-foreground fill-foreground` token-inverted arrow (already token-clean in the ref); Popover keeps opt-in `showArrow` default `false`. Documented as an intentional family difference, not a divergence to fix.
+7. **`z-50` deduped**: the ref sets `isolate z-50` on the Positioner _and_ `z-50` on the Popup (plus `z-50` on the Arrow, which becomes redundant): kept once on the outermost layer (Positioner) per the flat z-strategy — every overlay gets exactly one `z-50` at its outermost portalled element.
 8. **Focus unified:** Trigger composes the canonical self-focus adapter, including when rendered without a Button target.
 
 Kept faithfully: Provider `delay` default `0`; inverted `bg-foreground text-background` pill with `text-xs max-w-xs px-3 py-1.5`; the full arrow placement class set incl. `rounded-[2px]` and `translate-y-[calc(-50%-2px)]`; no shadow/ring on the popup (tooltips fly frameless); `side="top"` default.

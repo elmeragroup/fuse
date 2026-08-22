@@ -23,19 +23,19 @@ Internal composers in the ref (`card`, `table`, `description-list`, `timeline-li
 
 `HeadingProps = React.ComponentPropsWithoutRef<"h2"> & VariantProps<typeof headingVariants> & { level?: 1|2|3|4|5|6; render?: useRender.RenderProp }` — exported.
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `level` | `1–6` | `2` | picks the rendered `h{level}` element (ref default kept) |
-| `variant` | see §4 | `"default"` | tv axis |
-| `size` | see §4 | auto from `level` | explicit `size` wins; else `1→"2xl"`, `2→"lg"`, else `"default"` (ref's `getSizeByHeadingLevel`, kept verbatim) |
-| `font` | `"default" \| "normal" \| "semi-bold"` | `"default"` | weight axis (medium/normal/semibold) |
-| `prose` | `boolean` | — | tv axis; ref maps `true` to an empty class string (kept — reserved hook) |
-| `noMargin` | `boolean` | — | adds `mb-0` |
-| `uppercase` | `boolean` | — | adds `uppercase` |
-| `align` | `"left" \| "center" \| "right"` | — | tv axis present in the recipe (undocumented in the ref component destructure but reachable via variant spread — kept public) |
-| `render` | `useRender` render prop | — | polymorphism, ADDED (§8) |
-| `className` | `string` | — | merged via `cn`, wins over recipe |
-| …rest | native heading props | — | spread onto the element |
+| Prop        | Type                                   | Default           | Notes                                                                                                                        |
+| ----------- | -------------------------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `level`     | `1–6`                                  | `2`               | picks the rendered `h{level}` element (ref default kept)                                                                     |
+| `variant`   | see §4                                 | `"default"`       | tv axis                                                                                                                      |
+| `size`      | see §4                                 | auto from `level` | explicit `size` wins; else `1→"2xl"`, `2→"lg"`, else `"default"` (ref's `getSizeByHeadingLevel`, kept verbatim)              |
+| `font`      | `"default" \| "normal" \| "semi-bold"` | `"default"`       | weight axis (medium/normal/semibold)                                                                                         |
+| `prose`     | `boolean`                              | —                 | tv axis; ref maps `true` to an empty class string (kept — reserved hook)                                                     |
+| `noMargin`  | `boolean`                              | —                 | adds `mb-0`                                                                                                                  |
+| `uppercase` | `boolean`                              | —                 | adds `uppercase`                                                                                                             |
+| `align`     | `"left" \| "center" \| "right"`        | —                 | tv axis present in the recipe (undocumented in the ref component destructure but reachable via variant spread — kept public) |
+| `render`    | `useRender` render prop                | —                 | polymorphism, ADDED (§8)                                                                                                     |
+| `className` | `string`                               | —                 | merged via `cn`, wins over recipe                                                                                            |
+| …rest       | native heading props                   | —                 | spread onto the element                                                                                                      |
 
 The ref's `slot` prop (RAC slot wiring) is **dropped** (§8).
 
@@ -43,15 +43,15 @@ The ref's `slot` prop (RAC slot wiring) is **dropped** (§8).
 
 Recipe: **`headingVariants`** — **PUBLIC** from `@elmeragroup/ui/heading`. Other package modules import its private source file relatively; consumers borrow it from the component entry. Typed via `VariantProps`.
 
-| Axis | Values | Default |
-| --- | --- | --- |
-| `variant` | `default` (`text-inherit`) · `foreground` · `primary` · `secondary` · `brand` · `muted` (`text-muted-foreground`) · `inherit` · `destructive` (8) | `default` |
-| `size` | `default` (`text-base`) · `sm` · `lg` · `xl` · `2xl` · `3xl` · `4xl` · `5xl` (all `leading-snug`) · `6xl` (`leading-tight`) (9) | `default` (auto from `level`) |
-| `font` | `default` (`font-medium`) · `normal` (`font-normal`) · `semi-bold` (`font-semibold`) | `default` |
-| `prose` | `true` (empty string — reserved) | — |
-| `noMargin` | `true` (`mb-0`) | — |
-| `uppercase` | `true` (`uppercase`) | — |
-| `align` | `left` · `center` · `right` | — |
+| Axis        | Values                                                                                                                                            | Default                       |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
+| `variant`   | `default` (`text-inherit`) · `foreground` · `primary` · `secondary` · `brand` · `muted` (`text-muted-foreground`) · `inherit` · `destructive` (8) | `default`                     |
+| `size`      | `default` (`text-base`) · `sm` · `lg` · `xl` · `2xl` · `3xl` · `4xl` · `5xl` (all `leading-snug`) · `6xl` (`leading-tight`) (9)                   | `default` (auto from `level`) |
+| `font`      | `default` (`font-medium`) · `normal` (`font-normal`) · `semi-bold` (`font-semibold`)                                                              | `default`                     |
+| `prose`     | `true` (empty string — reserved)                                                                                                                  | —                             |
+| `noMargin`  | `true` (`mb-0`)                                                                                                                                   | —                             |
+| `uppercase` | `true` (`uppercase`)                                                                                                                              | —                             |
+| `align`     | `left` · `center` · `right`                                                                                                                       | —                             |
 
 Base: `font-heading text-foreground`. Note the base sets `text-foreground` while `variant: default` overrides to `text-inherit` — kept from ref (headings inherit surrounding color unless a variant pins one). `destructive` keeps its value name but its class renames to `text-error` (§8).
 

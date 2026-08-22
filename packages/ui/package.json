@@ -18,15 +18,44 @@
     },
     "./css": "./src/styles/ui.css",
     "./demo-stage-comfortable.css": "./dist/demo-stage-comfortable.css",
+    "./field": {
+      "types": "./src/field.ts",
+      "import": "./src/field.ts"
+    },
+    "./flags": {
+      "types": "./src/flags.ts",
+      "import": "./src/flags.ts"
+    },
+    "./flags/*.svg": "./src/flags/*.svg",
     "./icons": {
       "types": "./src/icons.ts",
       "import": "./src/icons.ts"
+    },
+    "./illustrations": {
+      "types": "./src/illustrations.ts",
+      "import": "./src/illustrations.ts"
+    },
+    "./input": {
+      "types": "./src/input.ts",
+      "import": "./src/input.ts"
+    },
+    "./item": {
+      "types": "./src/item.ts",
+      "import": "./src/item.ts"
     },
     "./scroll-area": {
       "types": "./src/scroll-area.ts",
       "import": "./src/scroll-area.ts"
     },
+    "./separator": {
+      "types": "./src/separator.ts",
+      "import": "./src/separator.ts"
+    },
     "./styles.css": "./dist/styles.css",
+    "./textarea": {
+      "types": "./src/textarea.ts",
+      "import": "./src/textarea.ts"
+    },
     "./theme": {
       "types": "./src/theme.ts",
       "import": "./src/theme.ts"
@@ -43,7 +72,7 @@
     "ci:checks": "true",
     "pack": "node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/pack.ts",
     "package:check": "node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/package-check.ts",
-    "size-limit": "true",
+    "size-limit": "node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/size-limit.ts",
     "test": "vitest run --project unit",
     "test:browser": "vitest run --project browser",
     "test:types": "vitest --config vitest.types.config.ts --typecheck.only --run",
@@ -61,6 +90,7 @@
   },
   "dependencies": {
     "@base-ui/react": "catalog:",
+    "@internationalized/string": "catalog:",
     "@phosphor-icons/react": "catalog:",
     "clsx": "catalog:",
     "tailwind-merge": "catalog:",
@@ -77,8 +107,10 @@
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@vitest/browser-playwright": "catalog:",
+    "libphonenumber-js": "catalog:",
     "playwright": "catalog:",
     "publint": "catalog:",
+    "rolldown": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "tailwindcss": "catalog:",

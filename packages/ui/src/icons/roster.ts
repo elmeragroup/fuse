@@ -114,3 +114,34 @@ export const PHOSPHOR_ICON_NAMES = [
 ] as const;
 
 export type PhosphorIconName = (typeof PHOSPHOR_ICON_NAMES)[number];
+
+/** Bespoke icon and logo names published from `/icons`. Extended only by the assets ticket. */
+export const BESPOKE_ICON_NAMES = [
+  "AlertMark",
+  "BankIdDna",
+  "BankIdSweden",
+  "CollectLogo",
+  "Contract",
+  "DeviateLogo",
+  "DoubleCheck",
+  "FunnelLogo",
+  "HomeTitleIcon",
+  "OrderLogo",
+  "Signing",
+  "StromSmart",
+  "Vipps",
+] as const;
+
+export type BespokeIconName = (typeof BESPOKE_ICON_NAMES)[number];
+
+export const LOGO_NAMES = [
+  "ElmeraGroupLogo",
+  "FjordkraftLogo",
+  "GudbrandsdalEnergiLogo",
+  "SteddiLogo",
+  "TelinetLogo",
+  "TrondelagkraftLogo",
+  "TrumfLogo",
+] as const;
+
+export type LogoName = (typeof LOGO_NAMES)[number];

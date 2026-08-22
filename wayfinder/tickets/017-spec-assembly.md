@@ -9,7 +9,7 @@ blocked-by: [004, 006, 009, 011, 012, 013, 014, 016, 018, 019, 020, 021, 022, 02
 
 ## Question
 
-Assemble the final deliverable: the implementation-ready architecture & product specification as markdown documents under `docs/spec/`, synthesizing every closed ticket (plus the per-family component API specs that graduate from *Component API spec template*).
+Assemble the final deliverable: the implementation-ready architecture & product specification as markdown documents under `docs/spec/`, synthesizing every closed ticket (plus the per-family component API specs that graduate from _Component API spec template_).
 
 Expected document set (adjust as decisions dictate): `architecture.md` (packages, build, distribution), `theming.md` (token contract, cascade mechanism, full value matrix, theme provider), `components/` (per-family API specs + inventory), `tooling.md` (repo scaffold, lint/format/test/CI), `docs-site.md`, `release.md`, `accessibility.md`, `performance.md`, `roadmap.md` (incl. react-aria→base-ui migration path, dark mode, VR testing if deferred), plus a top-level `README`/overview. Each doc must be executable by an implementing agent without returning to the tickets; cross-check for contradictions between decisions before closing.
 
@@ -24,6 +24,7 @@ The assembled specification: [docs/spec/README.md](../../docs/spec/README.md) (e
 Assembled 2026-08-18. Nine top-level chapters + 66 component specs + 6 ADRs; every chapter self-contained (executable without returning to tickets), cross-linked by ownership, with a Sources provenance line. `roadmap.md` absorbs every deferred item with its trigger (react-aria→base-ui migration, dark mode, VR, brands, ring re-mint, locales/subsetting, registry, playground editor, icon codegen) and explicitly excludes the OrderModule migrations.
 
 Cross-check outcomes (contradictions found and reconciled, recorded in the affected doc):
+
 1. **Gate placement**: size-limit runs in the merge gate over built publish artifacts (performance §2, tooling §merge-gate); the publish workflow re-runs it with publint/attw/export-path/theme-contract against the published shape (release §5). Ticket 013's publish-only framing superseded.
 2. **CSS entries**: `@elmeragroup/ui/css` (Tailwind source) + `@elmeragroup/ui/themes.css` (token stylesheet) — ticket 008's question-text `ui.css` path superseded by its own resolution; tooling's oxfmt config now references the entry, not a filename.
 3. **Handbook nav**: a **Localization** page added to the docs sidebar Handbook group — accessibility §4 mandates the page; ticket 025's group list predated the i18n decision.

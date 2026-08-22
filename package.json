@@ -3,6 +3,7 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
+    "changeset": "changeset",
     "ci:checks": "oxfmt --check && turbo run ci:checks",
     "dev": "turbo run dev",
     "format": "oxfmt",
@@ -15,6 +16,7 @@
     "type-check": "turbo run type-check"
   },
   "devDependencies": {
+    "@changesets/cli": "catalog:",
     "@elmeragroup/oxlint-plugin": "workspace:*",
     "@elmeragroup/oxlint-plugin-anti-slop": "workspace:*",
     "@elmeragroup/typescript-config": "workspace:*",

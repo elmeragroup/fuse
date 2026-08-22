@@ -44,8 +44,12 @@ describe("BrandLogo", () => {
       expect(img.getAttribute("data-variant")).toBe("full");
       expect(img.getAttribute("role")).toBe("img");
       expect(img.getAttribute("aria-label")).toBe(BRANDS[brand].displayName);
-      expect(img.textContent).toBe(BRANDS[brand].displayName);
-      expect(host.querySelector("svg")).toBeNull();
+      if (brand === "elma") {
+        expect(img.textContent).toBe(BRANDS[brand].displayName);
+        expect(host.querySelector("svg")).toBeNull();
+      } else {
+        expect(host.querySelector("svg")).not.toBeNull();
+      }
       unmount();
     }
   });
@@ -61,7 +65,13 @@ describe("BrandLogo", () => {
     ] as const;
     for (const [brand, name] of cases) {
       const { unmount } = render(<BrandLogo brand={brand} />);
-      expect(page.getByRole("img", { name, exact: true }).element().textContent).toBe(name);
+      const img = page.getByRole("img", { name, exact: true }).element();
+      if (brand === "elma") {
+        expect(img.textContent).toBe(name);
+        expect(img.querySelector("svg")).toBeNull();
+      } else {
+        expect(img.querySelector("svg")).not.toBeNull();
+      }
       unmount();
     }
   });

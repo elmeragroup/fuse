@@ -12,18 +12,18 @@ React 19 · base-ui primitives · Tailwind v4 · tv (tailwind-variants) · Phosp
 
 ## The document set
 
-| Document | Owns |
-| --- | --- |
-| [architecture.md](architecture.md) | Package structure, entries/exports, tsdown build, JS + CSS distribution, dependency policy |
-| [icons.md](icons.md) | Curated Phosphor exports, bespoke icons/logos/illustrations, country-flag asset contract |
-| [theming.md](theming.md) | Token contract, cascade mechanism, the full 20-permutation value matrix, theme provider API, token pipeline |
-| [components/](components/) | Per-component API specs (68 files) — start at [conventions.md](components/conventions.md), the shared-conventions chapter every spec references |
-| [accessibility.md](accessibility.md) | WCAG 2.2 AA target, focus/keyboard/labeling rules, i18n string architecture, contrast policy, motion |
-| [performance.md](performance.md) | Bundle budgets, RSC/client-boundary policy, CSS budgets, lazy-loading stance, runtime practices |
-| [tooling.md](tooling.md) | Repo workspace, lint/format guardrails, scaffolding, full testing strategy, merge gate |
-| [docs-site.md](docs-site.md) | Docs site (design + pipeline), playground, API-reference generation, llms.txt |
-| [release.md](release.md) | Changesets flow, channels, npm Trusted Publishing, org-setup prerequisites |
-| [roadmap.md](roadmap.md) | Deferred work with triggers: react-aria→base-ui migration, dark mode, VR, new brands/locales |
+| Document                             | Owns                                                                                                                                            |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| [architecture.md](architecture.md)   | Package structure, entries/exports, tsdown build, JS + CSS distribution, dependency policy                                                      |
+| [icons.md](icons.md)                 | Curated Phosphor exports, bespoke icons/logos/illustrations, country-flag asset contract                                                        |
+| [theming.md](theming.md)             | Token contract, cascade mechanism, the full 20-permutation value matrix, theme provider API, token pipeline                                     |
+| [components/](components/)           | Per-component API specs (68 files) — start at [conventions.md](components/conventions.md), the shared-conventions chapter every spec references |
+| [accessibility.md](accessibility.md) | WCAG 2.2 AA target, focus/keyboard/labeling rules, i18n string architecture, contrast policy, motion                                            |
+| [performance.md](performance.md)     | Bundle budgets, RSC/client-boundary policy, CSS budgets, lazy-loading stance, runtime practices                                                 |
+| [tooling.md](tooling.md)             | Repo workspace, lint/format guardrails, scaffolding, full testing strategy, merge gate                                                          |
+| [docs-site.md](docs-site.md)         | Docs site (design + pipeline), playground, API-reference generation, llms.txt                                                                   |
+| [release.md](release.md)             | Changesets flow, channels, npm Trusted Publishing, org-setup prerequisites                                                                      |
+| [roadmap.md](roadmap.md)             | Deferred work with triggers: react-aria→base-ui migration, dark mode, VR, new brands/locales                                                    |
 
 Hard-to-reverse trade-offs are recorded as ADRs in [../adr/](../adr/) (0001 token contract · 0002 theme attributes · 0003 controlled brand / host first-paint · 0004 Phosphor · 0005 package architecture · 0006 intl strings). The spec documents are normative; ADRs carry the why.
 
@@ -43,16 +43,16 @@ Hard-to-reverse trade-offs are recorded as ADRs in [../adr/](../adr/) (0001 toke
 
 `.ref/` is intentionally gitignored because it contains large upstream checkouts and two access-controlled company repositories. It is not a runtime/build dependency of the published package, but it **is an implementation prerequisite** for every §1 `Source of truth` path and every asset explicitly copied from a reference. A clean-clone implementer creates the exact directory names below, clones the listed remote, checks out the detached commit, and verifies `git -C .ref/<name> rev-parse HEAD` equals the table. Missing access to either company repository is a stop condition for affected components—not permission to invent replacement behavior or artwork.
 
-| Directory | Clone remote | Required commit |
-| --- | --- | --- |
-| `.ref/base-ui` | `https://github.com/mui/base-ui.git` | `582d51a8383b2b86b9bf466ba2ff7708807c1639` |
-| `.ref/coss` | `https://github.com/cosscom/coss.git` | `e43fa4a8da4c490ebf3e1e1707b2a9af6fa2a217` |
-| `.ref/flag-icons` | `https://github.com/yammadev/flag-icons.git` | `a3d5adcf4fe650536d7694ca6d93c607ebf16c4e` |
-| `.ref/kumo` | `https://github.com/cloudflare/kumo.git` | `bba0f5eb1249e9936f83e04319e6db0458e98717` |
+| Directory                     | Clone remote                                                       | Required commit                            |
+| ----------------------------- | ------------------------------------------------------------------ | ------------------------------------------ |
+| `.ref/base-ui`                | `https://github.com/mui/base-ui.git`                               | `582d51a8383b2b86b9bf466ba2ff7708807c1639` |
+| `.ref/coss`                   | `https://github.com/cosscom/coss.git`                              | `e43fa4a8da4c490ebf3e1e1707b2a9af6fa2a217` |
+| `.ref/flag-icons`             | `https://github.com/yammadev/flag-icons.git`                       | `a3d5adcf4fe650536d7694ca6d93c607ebf16c4e` |
+| `.ref/kumo`                   | `https://github.com/cloudflare/kumo.git`                           | `bba0f5eb1249e9936f83e04319e6db0458e98717` |
 | `.ref/OrderModuleInternalWeb` | `git@ssh.dev.azure.com:v3/fjordkraft/ITUTV/OrderModuleInternalWeb` | `83a2097485367ace2dc66d46b62b3878a044c73a` |
-| `.ref/OrderModuleWeb` | `git@ssh.dev.azure.com:v3/fjordkraft/ITUTV/OrderModuleWeb` | `ac5727784ff37cfc761b234517fe0270df663e02` |
-| `.ref/react-spectrum` | `https://github.com/adobe/react-spectrum.git` | `de6bc849cc36ed441123cbefb8b2e542b03020f4` |
-| `.ref/shadcn-ui` | `https://github.com/shadcn-ui/ui.git` | `d4fc45b1fbabfccb7a6a4333d8004cf19481caa9` |
+| `.ref/OrderModuleWeb`         | `git@ssh.dev.azure.com:v3/fjordkraft/ITUTV/OrderModuleWeb`         | `ac5727784ff37cfc761b234517fe0270df663e02` |
+| `.ref/react-spectrum`         | `https://github.com/adobe/react-spectrum.git`                      | `de6bc849cc36ed441123cbefb8b2e542b03020f4` |
+| `.ref/shadcn-ui`              | `https://github.com/shadcn-ui/ui.git`                              | `d4fc45b1fbabfccb7a6a4333d8004cf19481caa9` |
 
 References supply code and immutable source artwork only. They do **not** decide package paths, public API, tokens, focus styling, localization, client boundaries, dependency policy, or test expectations; this spec does. Lifted files retain applicable license/copyright notices, and no `.ref/` path may appear in package source, generated declarations, or the packed artifact.
 

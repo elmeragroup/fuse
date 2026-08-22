@@ -1,0 +1,11 @@
+import { Textarea } from "@elmeragroup/ui/textarea";
+
+export function TextareaStates() {
+  return (
+    <div className="flex flex-col gap-3">
+      <Textarea aria-label="Disabled" disabled />
+      <Textarea aria-label="Read only" readOnly defaultValue="Locked" />
+      <Textarea aria-label="Invalid" aria-invalid />
+    </div>
+  );
+}

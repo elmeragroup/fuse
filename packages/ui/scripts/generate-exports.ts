@@ -12,6 +12,7 @@ import {
   sourceExportTarget,
 } from "./entries";
 import type { CssExportEntry, DiscoveredEntries, ExportCondition, JsExportEntry } from "./entries";
+import { ARTIFACTS_DIR } from "./tarball";
 
 export type { ExportCondition };
 
@@ -64,8 +65,10 @@ type WorkspaceDevDependencies = {
   "@types/react": string;
   "@types/react-dom": string;
   "@vitest/browser-playwright": string;
+  "libphonenumber-js": string;
   playwright: string;
   publint: string;
+  rolldown: string;
   react: string;
   "react-dom": string;
   tailwindcss: string;
@@ -218,7 +221,7 @@ function publishedPeerDependencies(declared: WorkspacePeers): WorkspacePeers {
   return peers;
 }
 
-function publishedDependencies(declared: WorkspaceDependencies): WorkspaceDependencies {
+export function publishedDependencies(declared: WorkspaceDependencies): WorkspaceDependencies {
   const dependencies: WorkspaceDependencies = {
     "@base-ui/react": PUBLISHED_DEPENDENCY_RANGES["@base-ui/react"],
     clsx: PUBLISHED_DEPENDENCY_RANGES.clsx,
@@ -251,8 +254,27 @@ function publishedDependencies(declared: WorkspaceDependencies): WorkspaceDepend
   return dependencies;
 }
 
+const ROOT_BARREL_BANNER = `/**
+ * AUTO-GENERATED FILE — DO NOT EDIT DIRECTLY.
+ *
+ * Root barrel of bare component entries plus /theme.
+ * Icons, illustrations, flags, and react-aria/* stay subpath-only.
+ */
+
+`;
+
+export function renderRootBarrel(discovered: DiscoveredEntries): string {
+  const lines = discovered.jsEntries
+    .filter((entry) => entry.inRootBarrel && entry.subpath !== ".")
+    .map((entry) => entry.subpath)
+    .toSorted((left, right) => left.localeCompare(right))
+    .map((subpath) => `export * from "./${subpath}";`);
+  return `${ROOT_BARREL_BANNER}${lines.join("\n")}\n`;
+}
+
 export function writeSourceExports(packageRoot: string): DiscoveredEntries {
   const discovered = discoverEntries(packageRoot);
+  writeFileSync(join(packageRoot, "src/index.ts"), renderRootBarrel(discovered));
   const packageJsonPath = join(packageRoot, "package.json");
   const pkg = readWorkspaceManifest(packageJsonPath);
   pkg.exports = buildSourceExportMap(discovered);
@@ -290,6 +312,6 @@ export function writePublishManifest(packageRoot: string): void {
   }
   writeFileSync(
     join(packageRoot, "dist/.npmignore"),
-    "# published package root — include the built tree\n.artifacts\n"
+    `# published package root — include the built tree\n${ARTIFACTS_DIR}\n`
   );
 }

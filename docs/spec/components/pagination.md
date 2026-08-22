@@ -10,24 +10,36 @@
 
 ## 2 Anatomy
 
-| Part | Renders | data-slot |
-| --- | --- | --- |
-| `Pagination.Root` | `<nav role="navigation">` with localized label | `pagination` |
-| `Pagination.Content` | `<ul>` | `pagination-content` |
-| `Pagination.Item` | `<li>` | `pagination-item` |
-| `Pagination.Link` | `<a>` styled via `buttonVariants` | `pagination-link` |
-| `Pagination.Previous` | `Pagination.Link` (`size="default"`) with `<CaretLeft />` + text | `pagination-previous` |
-| `Pagination.Next` | `Pagination.Link` (`size="default"`) with text + `<CaretRight />` | `pagination-next` |
+| Part                  | Renders                                                            | data-slot             |
+| --------------------- | ------------------------------------------------------------------ | --------------------- |
+| `Pagination.Root`     | `<nav role="navigation">` with localized label                     | `pagination`          |
+| `Pagination.Content`  | `<ul>`                                                             | `pagination-content`  |
+| `Pagination.Item`     | `<li>`                                                             | `pagination-item`     |
+| `Pagination.Link`     | `<a>` styled via `buttonVariants`                                  | `pagination-link`     |
+| `Pagination.Previous` | `Pagination.Link` (`size="default"`) with `<CaretLeft />` + text   | `pagination-previous` |
+| `Pagination.Next`     | `Pagination.Link` (`size="default"`) with text + `<CaretRight />`  | `pagination-next`     |
 | `Pagination.Ellipsis` | `<span>` with aria-hidden `<DotsThree />` + localized sr-only text | `pagination-ellipsis` |
 
 ```tsx
 <Pagination.Root>
   <Pagination.Content>
-    <Pagination.Item><Pagination.Previous href="#" /></Pagination.Item>
-    <Pagination.Item><Pagination.Link href="#" isActive>1</Pagination.Link></Pagination.Item>
-    <Pagination.Item><Pagination.Link href="#">2</Pagination.Link></Pagination.Item>
-    <Pagination.Item><Pagination.Ellipsis /></Pagination.Item>
-    <Pagination.Item><Pagination.Next href="#" /></Pagination.Item>
+    <Pagination.Item>
+      <Pagination.Previous href="#" />
+    </Pagination.Item>
+    <Pagination.Item>
+      <Pagination.Link href="#" isActive>
+        1
+      </Pagination.Link>
+    </Pagination.Item>
+    <Pagination.Item>
+      <Pagination.Link href="#">2</Pagination.Link>
+    </Pagination.Item>
+    <Pagination.Item>
+      <Pagination.Ellipsis />
+    </Pagination.Item>
+    <Pagination.Item>
+      <Pagination.Next href="#" />
+    </Pagination.Item>
   </Pagination.Content>
 </Pagination.Root>
 ```
@@ -36,15 +48,15 @@
 
 All parts are plain functions (no `forwardRef`; React 19 `ref` flows as a prop). `className` merged via `cn`.
 
-| Part | Type | Notes |
-| --- | --- | --- |
-| `Pagination.Root` | `ComponentProps<"nav"> & { label?: string }` | localized `landmark` default; explicit `aria-label` wins |
-| `Pagination.Content` | `ComponentProps<"ul">` | `flex flex-row items-center gap-1` |
-| `Pagination.Item` | `ComponentProps<"li">` | structural only |
-| `Pagination.Link` | `{ isActive?: boolean } & Pick<ButtonProps, "size"> & ComponentProps<"a">` | `size` default `"icon"`; see mapping below |
+| Part                  | Type                                                                         | Notes                                                                                                           |
+| --------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `Pagination.Root`     | `ComponentProps<"nav"> & { label?: string }`                                 | localized `landmark` default; explicit `aria-label` wins                                                        |
+| `Pagination.Content`  | `ComponentProps<"ul">`                                                       | `flex flex-row items-center gap-1`                                                                              |
+| `Pagination.Item`     | `ComponentProps<"li">`                                                       | structural only                                                                                                 |
+| `Pagination.Link`     | `{ isActive?: boolean } & Pick<ButtonProps, "size"> & ComponentProps<"a">`   | `size` default `"icon"`; see mapping below                                                                      |
 | `Pagination.Previous` | `ComponentProps<typeof Pagination.Link> & { text?: string; label?: string }` | visible `text` defaults to localized `previous`; `label` defaults to `goToPrevious`; explicit `aria-label` wins |
-| `Pagination.Next` | same as Previous | visible `next` and `goToNext` defaults |
-| `Pagination.Ellipsis` | `ComponentProps<"span"> & { label?: string }` | localized `morePages` sr-only text; not interactive |
+| `Pagination.Next`     | same as Previous                                                             | visible `next` and `goToNext` defaults                                                                          |
+| `Pagination.Ellipsis` | `ComponentProps<"span"> & { label?: string }`                                | localized `morePages` sr-only text; not interactive                                                             |
 
 **`isActive` → button-variant mapping**: `Pagination.Link` renders `buttonVariants({ variant: isActive ? "outline" : "ghost", size })` — the current page reads as an outlined button, all other pages as ghost buttons. `isActive` also drives `aria-current="page"` via the `isActive ? "page" : undefined` idiom.
 

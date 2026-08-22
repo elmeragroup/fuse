@@ -10,8 +10,8 @@
 
 ## 2 Anatomy
 
-| Part | Renders | Notes |
-| --- | --- | --- |
+| Part     | Renders                                                      | Notes                                                   |
+| -------- | ------------------------------------------------------------ | ------------------------------------------------------- |
 | `Loader` | `<div role="status">` containing a spinning `<SpinnerGap />` | icon carries `animate-spin`; wrapper centers with `p-4` |
 
 ```tsx
@@ -22,11 +22,11 @@
 
 `LoaderProps = HTMLAttributes<HTMLDivElement> & VariantProps<typeof loaderVariants>`:
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `variant` | `"default"` | `"default"` | single-value axis, kept for future variants (§4) |
-| `size` | `"default" \| "small" \| "medium" \| "large" \| "xl"` | `"default"` | icon size only; wrapper padding is constant |
-| `aria-label` | `string` | — | consumer-supplied accessible name (no baked English — i18n) |
+| Prop         | Type                                                  | Default     | Notes                                                       |
+| ------------ | ----------------------------------------------------- | ----------- | ----------------------------------------------------------- |
+| `variant`    | `"default"`                                           | `"default"` | single-value axis, kept for future variants (§4)            |
+| `size`       | `"default" \| "small" \| "medium" \| "large" \| "xl"` | `"default"` | icon size only; wrapper padding is constant                 |
+| `aria-label` | `string`                                              | —           | consumer-supplied accessible name (no baked English — i18n) |
 
 `className` merges onto the wrapper via `cn`; all other div props pass through.
 

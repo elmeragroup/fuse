@@ -134,6 +134,8 @@
         "elmera/require-icon-button-label": "error",
         "elmera/restrict-process-env": "error",
         "elmera/no-internal-dynamic-import": "error",
+        "elmera/facade-reexport-grammar": "error",
+        "elmera/no-rac-outside-quarantine": "error",
         "elmera/no-hardcoded-density-metrics": "warn"
       }
     },

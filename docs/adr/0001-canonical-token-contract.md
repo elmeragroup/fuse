@@ -45,3 +45,12 @@ Density control metrics (`--control-h-*`, `--control-px-*`, `--control-px-icon-*
 They do not join the two public contract tiers in this ADR. Their distributed CSS names remain observable on `:root` / `:root[data-density="comfortable"]` in the existing main stylesheet. Direct consumer override is unsupported. Theme variant supplies only the deployment default for `data-density`; it does not select these values in generated theme CSS.
 
 Normative detail: [theming](../spec/theming.md) §2.7. Deferred preference/persistence work: [roadmap](../spec/roadmap.md) §10.
+
+## Amendment 2026-08-21 — density source and field-box pinning
+
+Recorded from the density spec-amendment ticket:
+
+1. **Comfortable source.** Dense control metrics come from the internal-ref lift (`:root` defaults; Button §8.5). Comfortable is the signed `--control-*` column in `ui.css`, never derived from the external ref. External deployments render comfortable via `defaultDensityForVariant` only.
+2. **Single-height field boxes pin `md`.** Input-class fixed-height surfaces (no `size` axis) read `h-(--control-h-md)`, `--control-px-md`, and the control-type pair where type is density-owned. They do not gain a `size` axis so density can retarget them.
+
+Normative detail: [conventions](../spec/components/conventions.md) density metrics.

@@ -32,20 +32,20 @@ Only (2) and (3) are RAC; (1) lives in the theme entry and survives the tier.
 
 **ElmeraGroupUiProvider** (`@elmeragroup/ui/theme`)
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `children` | `ReactNode` | required | |
-| `locale` | `SupportedLocale` (`"nb-NO" \| "sv-SE" \| "en-US" \| "fi-FI"`) | **required** | the single locale source for component dictionaries (ADR 0006); apps never pass locale per component |
+| Prop       | Type                                                           | Default      | Notes                                                                                                |
+| ---------- | -------------------------------------------------------------- | ------------ | ---------------------------------------------------------------------------------------------------- |
+| `children` | `ReactNode`                                                    | required     |                                                                                                      |
+| `locale`   | `SupportedLocale` (`"nb-NO" \| "sv-SE" \| "en-US" \| "fi-FI"`) | **required** | the single locale source for component dictionaries (ADR 0006); apps never pass locale per component |
 
 `useElmeraGroupUi(): { locale: SupportedLocale }` — the read hook; throws outside the provider (the provider is required for string-bearing components).
 
 **UiProviders** (`@elmeragroup/ui/react-aria/ui-providers`)
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `children` | `ReactNode` | required | |
-| `navigate` | `(url: string) => void` | required | the app router's navigate (e.g. Next.js `router.push`) |
-| `locale` | `SupportedLocale` | **required** | forwarded to the composed `ElmeraGroupUiProvider` and RAC `I18nProvider` |
+| Prop       | Type                    | Default      | Notes                                                                    |
+| ---------- | ----------------------- | ------------ | ------------------------------------------------------------------------ |
+| `children` | `ReactNode`             | required     |                                                                          |
+| `navigate` | `(url: string) => void` | required     | the app router's navigate (e.g. Next.js `router.push`)                   |
+| `locale`   | `SupportedLocale`       | **required** | forwarded to the composed `ElmeraGroupUiProvider` and RAC `I18nProvider` |
 
 ## 4 Variants
 

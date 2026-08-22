@@ -37,19 +37,19 @@ The initial scaffold uses this reviewed, registry-verified exact catalog baselin
 
 `turbo.json` declares, with explicit `outputs` and env allowlists (no implicit env passthrough):
 
-| Task | Depends on | Outputs | Notes |
-| --- | --- | --- | --- |
-| `build` | `^build` | `dist/**` | tsdown for packages/ui ([architecture](architecture.md)); Next build for apps |
-| `lint` | — | — | oxlint; `inputs` include `tooling/oxlint-plugin/**` and `tooling/oxlint-anti-slop/**` so rule edits bust the cache |
-| `type-check` | `^build` | — | `tsc --noEmit` per package |
-| `test` | — | — | vitest `unit` project (§7.1) |
-| `test:browser` | `build` | — | vitest `browser` project; needs this package's built CSS |
-| `test:types` | `build` | — | type tests (§7.3), `*.test-d.tsx` — a dedicated task, not folded into `test` |
-| `pack` | `build` | `.artifacts/**` | `pnpm pack --pack-destination .artifacts`; produces the one ignored tarball all package-shape checks consume |
-| `package:check` | `pack` | — | `publint`, `attw --pack`, export-path resolution, emitted-directive parity, and packed-asset contract checks against that tarball |
-| `size-limit` | `pack` | — | consumer-bundled entries plus built CSS and raw flag assets enforce every [performance](performance.md) §2 ceiling against that tarball |
-| `dev` | `^build` | — | `persistent: true`, uncached |
-| `ci:checks` | aggregate | — | fans out to lint + type-check + test + test:browser + test:types + build + package:check + size-limit (§8) |
+| Task            | Depends on | Outputs         | Notes                                                                                                                                   |
+| --------------- | ---------- | --------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `build`         | `^build`   | `dist/**`       | tsdown for packages/ui ([architecture](architecture.md)); Next build for apps                                                           |
+| `lint`          | —          | —               | oxlint; `inputs` include `tooling/oxlint-plugin/**` and `tooling/oxlint-anti-slop/**` so rule edits bust the cache                      |
+| `type-check`    | `^build`   | —               | `tsc --noEmit` per package                                                                                                              |
+| `test`          | —          | —               | vitest `unit` project (§7.1)                                                                                                            |
+| `test:browser`  | `build`    | —               | vitest `browser` project; needs this package's built CSS                                                                                |
+| `test:types`    | `build`    | —               | type tests (§7.3), `*.test-d.tsx` — a dedicated task, not folded into `test`                                                            |
+| `pack`          | `build`    | `.artifacts/**` | `pnpm pack --pack-destination .artifacts`; produces the one ignored tarball all package-shape checks consume                            |
+| `package:check` | `pack`     | —               | `publint`, `attw --pack`, export-path resolution, emitted-directive parity, and packed-asset contract checks against that tarball       |
+| `size-limit`    | `pack`     | —               | consumer-bundled entries plus built CSS and raw flag assets enforce every [performance](performance.md) §2 ceiling against that tarball |
+| `dev`           | `^build`   | —               | `persistent: true`, uncached                                                                                                            |
+| `ci:checks`     | aggregate  | —               | fans out to lint + type-check + test + test:browser + test:types + build + package:check + size-limit (§8)                              |
 
 Format checking (`oxfmt --check`) runs as a root script, not a per-package turbo task.
 
@@ -102,9 +102,13 @@ Per [performance](performance.md) §5, the library never lazy-loads internally: 
 
 ### 5.5 `elmera/no-hardcoded-density-metrics` — `warn`
 
-Library `tv()` recipes that declare a `size` axis must not hardcode signed density-owned metrics (control height, inline padding, icon-edge padding, gap, or `md`/`lg` control type). The rule inspects only that axis and warns when those families use a numeric/scale literal instead of the matching `--control-*` variable.
+Library `tv()` recipes that declare a `size` axis must not hardcode signed density-owned metrics (control height, inline padding, icon-edge padding, gap, or `md`/`lg` control type). The rule also warns on those families in `data-[size=…]` class strings (Select-style, including outside `tv`) and in `tv()` `base` recipes that have no `size` axis (single-height field boxes). Optical arbitrary pixel tracks (`h-[18.4px]`) stay quiet.
 
-It does **not** ban `p-*` / `h-*` / `gap-*` across the package. Type-scale axes (`Text`, `Heading`), overlay-width axes (`Dialog`, `Sheet`), and other non-control `size` keys stay quiet. Legal geometry also stays quiet: borders, translations, `hit-area-*` expansion, `h-lh`, radius clamps, descendant icon glyph `size-3`/`size-4`, size-owned `xs`/`sm` type, layout spacing, and `py-*` / `p-*`. Severity is warning only; do not promote to error without a fresh ruling.
+It does **not** ban `p-*` / `h-*` / `gap-*` across the package. Type-scale axes (`Text`, `Heading`), overlay-width axes (`Dialog`, `Sheet`), and other non-control `size` keys stay quiet. Legal geometry also stays quiet: borders, translations, `hit-area-*` expansion, `h-lh`, radius clamps, descendant icon glyph `size-3`/`size-4`, size-owned `xs`/`sm` type, layout spacing, and `py-*` / `p-*`. Severity is warning only; do not promote to error without a fresh ruling. CI is deny-warnings, so a hit still blocks.
+
+### 5.6 `elmera/no-rac-outside-quarantine` — `error`
+
+`react-aria-components`, `react-aria`, and `@internationalized/date` (and their subpaths) may be imported only from `packages/ui/src/react-aria/**`. Imports from `src/components/**` and every other library path fail. The rule is the quarantine; it lands before any RAC source exists.
 
 ## 6 Scaffolding (plop, v1)
 
@@ -156,7 +160,7 @@ They are **not** the first-paint proofs. `apps/docs` verifies the Next App Route
 
 ## 8 CI gates
 
-- **Merge workflow** (required on every PR) runs three ordered stages: (1) root `oxfmt --check`; (2) turbo `ci:checks`, which fans out to type-check, oxlint (all three plugins), unit tests (including theme/CSS/contrast snapshots), browser tests, type tests, build, one `pnpm pack`, package-shape checks, and `size-limit`; (3) changeset presence. The changeset stage fails a PR without a changeset file unless GitHub applies the **`no-changeset`** label, reserved for non-publishing changes such as CI, docs-site-only work, and tests. The root `pnpm ci:checks` script covers stages 1–2 for local reproduction; the label-aware stage is necessarily a workflow check.
+- **Merge workflow** (required on every PR, and on push to `main`) runs three ordered stages: (1) root `oxfmt --check`; (2) turbo `ci:checks`, which fans out to type-check, oxlint (all three plugins), unit tests (including theme/CSS/contrast snapshots), browser tests, type tests, build, one `pnpm pack`, package-shape checks, and `size-limit`; (3) changeset presence. The changeset stage runs only on `pull_request`, fails a PR without a changeset file unless GitHub applies the **`no-changeset`** label (matched as a whole label name, not a substring), and skips Version-Packages PRs whose head branch is `changeset-release/*` so the release PR is not blocked for consuming its own changesets. The root `pnpm ci:checks` script covers stages 1–2 for local reproduction; the label-aware stage is necessarily a workflow check.
 - The `pack` task is the single producer: `package:check` and `size-limit` consume its exact tarball rather than measuring raw source facades or repacking independently. `.artifacts/` is ignored; its tarball may be turbo-cached for the run but is never committed.
 - **Publish gate:** [release §5](release.md#5-publish-time-gates) is the single exhaustive table. The release workflow reuses the exact packed artifact described above and must not maintain a second gate list in this chapter.
 - Visual regression is **roadmap, not v1**: the plain-`.tsx` demo pipeline keeps VR-target readiness designed in; tool candidate Playwright + Argos joins the publish gate when the roadmap lands it.

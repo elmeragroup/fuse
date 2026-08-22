@@ -10,18 +10,24 @@
 
 ## 2 Anatomy
 
-| Part | base-ui primitive | data-slot |
-| --- | --- | --- |
-| `ToggleGroup.Root` | `ToggleGroup` from `@base-ui/react/toggle-group` | `toggle-group` |
+| Part               | base-ui primitive                                                         | data-slot           |
+| ------------------ | ------------------------------------------------------------------------- | ------------------- |
+| `ToggleGroup.Root` | `ToggleGroup` from `@base-ui/react/toggle-group`                          | `toggle-group`      |
 | `ToggleGroup.Item` | `Toggle` from `@base-ui/react/toggle` (group-aware when inside the group) | `toggle-group-item` |
 
 Root provides a React context (`variant`, `size`, `spacing`, `orientation`) that items consume; items borrow the public `toggleVariants` recipe from `toggle.tsx` (the sanctioned borrow pattern) and layer group-specific overrides on top.
 
 ```tsx
 <ToggleGroup.Root value={align} onValueChange={setAlign} toggleMultiple={false}>
-  <ToggleGroup.Item value="left" aria-label="Align left"><TextAlignLeft aria-hidden /></ToggleGroup.Item>
-  <ToggleGroup.Item value="center" aria-label="Align center"><TextAlignCenter aria-hidden /></ToggleGroup.Item>
-  <ToggleGroup.Item value="right" aria-label="Align right"><TextAlignRight aria-hidden /></ToggleGroup.Item>
+  <ToggleGroup.Item value="left" aria-label="Align left">
+    <TextAlignLeft aria-hidden />
+  </ToggleGroup.Item>
+  <ToggleGroup.Item value="center" aria-label="Align center">
+    <TextAlignCenter aria-hidden />
+  </ToggleGroup.Item>
+  <ToggleGroup.Item value="right" aria-label="Align right">
+    <TextAlignRight aria-hidden />
+  </ToggleGroup.Item>
 </ToggleGroup.Root>
 ```
 
@@ -31,22 +37,22 @@ Root provides a React context (`variant`, `size`, `spacing`, `orientation`) that
 
 `ComponentProps<typeof ToggleGroupPrimitive> & VariantProps<typeof toggleVariants> & { spacing?: number; orientation?: "horizontal" | "vertical" }` — primitive pass-through includes `value`, `defaultValue`, `onValueChange`, `toggleMultiple`, `disabled`, `loop`, `render`.
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `variant` | `"default" \| "outline"` | — (items default) | fed to context + `data-variant` |
-| `size` | `"xs" \| "sm" \| "default" \| "lg"` | — (items default) | fed to context + `data-size` |
-| `spacing` | `number` | `2` | Tailwind spacing units between items; `0` = segmented-control mode (see §4) |
-| `orientation` | `"horizontal" \| "vertical"` | `"horizontal"` | layout + rounding direction; emitted as `data-orientation` |
-| `className` | `string` | — | merged via `cn` |
+| Prop          | Type                                | Default           | Notes                                                                       |
+| ------------- | ----------------------------------- | ----------------- | --------------------------------------------------------------------------- |
+| `variant`     | `"default" \| "outline"`            | — (items default) | fed to context + `data-variant`                                             |
+| `size`        | `"xs" \| "sm" \| "default" \| "lg"` | — (items default) | fed to context + `data-size`                                                |
+| `spacing`     | `number`                            | `2`               | Tailwind spacing units between items; `0` = segmented-control mode (see §4) |
+| `orientation` | `"horizontal" \| "vertical"`        | `"horizontal"`    | layout + rounding direction; emitted as `data-orientation`                  |
+| `className`   | `string`                            | —                 | merged via `cn`                                                             |
 
 ### ToggleGroup.Item
 
 `ComponentProps<typeof TogglePrimitive> & VariantProps<typeof toggleVariants>` — pass-through includes `value` (required for group selection), `disabled`, `render`.
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
+| Prop               | Type     | Default                   | Notes                                                                                       |
+| ------------------ | -------- | ------------------------- | ------------------------------------------------------------------------------------------- |
 | `variant` / `size` | as above | `"default"` / `"default"` | resolved as `itemProp ?? contextValue` (§8 bugfix — the ref resolves `context ?? itemProp`) |
-| `className` | `string` | — | merged after group overrides + `toggleVariants` |
+| `className`        | `string` | —                         | merged after group overrides + `toggleVariants`                                             |
 
 Resolution rule (ruled, §8): **`itemProp ?? contextValue`** — an explicit item-level `variant`/`size` wins over the group's; the group value applies when the item doesn't specify one.
 
@@ -79,7 +85,7 @@ No recipe of its own — `ToggleGroup.Item` **borrows the public `toggleVariants
 ## 8 Divergence from reference
 
 1. **Rename: flat → namespace** — ref exports `ToggleGroup` + `ToggleGroupItem`; ours are `ToggleGroup.Root` + `ToggleGroup.Item` per compound-component convention.
-2. **BUGFIX (ruled): item-level `variant`/`size` become effective** — the ref resolves `context.variant ?? variant` (context wins). Combined with a createContext default of non-undefined values (`size: "default"`, `variant: "default"`), item props are inert whenever the Root sets the axis, and *always* inert outside a Root (the default context supplies a value); they only take effect inside a Root that leaves the axis unset (provider value `undefined`). Ours resolves **`itemProp ?? contextValue`** everywhere (item prop wins, group is the fallback), with an all-`undefined` context default so standalone items fall through to `toggleVariants` defaults.
+2. **BUGFIX (ruled): item-level `variant`/`size` become effective** — the ref resolves `context.variant ?? variant` (context wins). Combined with a createContext default of non-undefined values (`size: "default"`, `variant: "default"`), item props are inert whenever the Root sets the axis, and _always_ inert outside a Root (the default context supplies a value); they only take effect inside a Root that leaves the axis unset (provider value `undefined`). Ours resolves **`itemProp ?? contextValue`** everywhere (item prop wins, group is the fallback), with an all-`undefined` context default so standalone items fall through to `toggleVariants` defaults.
 3. **BUGFIX (ruled): dead Radix selector removed** — the ref item carries `data-[state=on]:bg-muted`, a Radix-era leftover; base-ui emits `data-pressed`, never `data-state="on"`, so the selector can never match. Removed (pressed styling already comes from `toggleVariants`).
 4. `dark:`/`destructive` cleanups arrive via the borrowed `toggleVariants` (see toggle spec §8); no group-local token divergences.
 

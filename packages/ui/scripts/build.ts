@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import { copyFileSync, mkdirSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -18,4 +19,14 @@ if (tsdown.status !== 0) {
 }
 
 buildCss(packageRoot);
+
+const flagsSource = join(packageRoot, "src/flags");
+const flagsDest = join(packageRoot, "dist/flags");
+mkdirSync(flagsDest, { recursive: true });
+for (const name of readdirSync(flagsSource)) {
+  if (name.endsWith(".svg") || name === "LICENSE" || name === "PROVENANCE.md") {
+    copyFileSync(join(flagsSource, name), join(flagsDest, name));
+  }
+}
+
 writePublishManifest(packageRoot);

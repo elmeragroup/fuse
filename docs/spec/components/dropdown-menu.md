@@ -10,24 +10,24 @@
 
 ## 2 Anatomy
 
-| Part | Base | Notes |
-| --- | --- | --- |
-| `DropdownMenu.Root` | `MenuPrimitive.Root` | bare re-export; open-state owner, no DOM |
-| `DropdownMenu.Trigger` | `MenuPrimitive.Trigger` | bare re-export; anchor button |
-| `DropdownMenu.Portal` | `MenuPrimitive.Portal` | bare re-export; exported (unlike Popover/Tooltip) for advanced composition |
-| `DropdownMenu.Content` | `Portal > Positioner > Popup` | scrollable menu surface (`min-w-32 p-1`, `max-h-(--available-height)`) |
-| `DropdownMenu.Group` | `MenuPrimitive.Group` | bare re-export |
-| `DropdownMenu.Label` | `MenuPrimitive.GroupLabel` | muted `text-xs font-medium` heading; `inset` |
-| `DropdownMenu.Item` | `MenuPrimitive.Item` | shared item recipe; `inset`, `variant` |
-| `DropdownMenu.LinkItem` | `MenuPrimitive.LinkItem` | Funnel addition (no shadcn equivalent): navigational item rendering an `<a>`; pass `render={<Link href=… />}` for router links; styled identically to Item |
-| `DropdownMenu.CheckboxItem` | `MenuPrimitive.CheckboxItem` | auto-renders indicator span (absolute right-2) with `CheckboxItemIndicator > Check`; `inset` |
-| `DropdownMenu.RadioGroup` | `MenuPrimitive.RadioGroup` | bare re-export |
-| `DropdownMenu.RadioItem` | `MenuPrimitive.RadioItem` | auto-renders indicator span with `RadioItemIndicator > Check` — a check, not a dot (§8); `inset` |
-| `DropdownMenu.Separator` | `MenuPrimitive.Separator` | `-mx-1 my-1 h-px bg-border` |
-| `DropdownMenu.Shortcut` | plain `span` | `ml-auto` muted shortcut hint; recolors on item focus via the item's group scope |
-| `DropdownMenu.Sub` | `MenuPrimitive.SubmenuRoot` | submenu state owner, no DOM |
-| `DropdownMenu.SubTrigger` | `MenuPrimitive.SubmenuTrigger` | item-styled trigger; auto-appends `CaretRight` (`ml-auto`); `inset` |
-| `DropdownMenu.SubContent` | `Portal > Positioner > Popup` | own thin popup with sub-specific defaults — does **not** reuse Content (§8 bugfix) |
+| Part                        | Base                           | Notes                                                                                                                                                      |
+| --------------------------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DropdownMenu.Root`         | `MenuPrimitive.Root`           | bare re-export; open-state owner, no DOM                                                                                                                   |
+| `DropdownMenu.Trigger`      | `MenuPrimitive.Trigger`        | bare re-export; anchor button                                                                                                                              |
+| `DropdownMenu.Portal`       | `MenuPrimitive.Portal`         | bare re-export; exported (unlike Popover/Tooltip) for advanced composition                                                                                 |
+| `DropdownMenu.Content`      | `Portal > Positioner > Popup`  | scrollable menu surface (`min-w-32 p-1`, `max-h-(--available-height)`)                                                                                     |
+| `DropdownMenu.Group`        | `MenuPrimitive.Group`          | bare re-export                                                                                                                                             |
+| `DropdownMenu.Label`        | `MenuPrimitive.GroupLabel`     | muted `text-xs font-medium` heading; `inset`                                                                                                               |
+| `DropdownMenu.Item`         | `MenuPrimitive.Item`           | shared item recipe; `inset`, `variant`                                                                                                                     |
+| `DropdownMenu.LinkItem`     | `MenuPrimitive.LinkItem`       | Funnel addition (no shadcn equivalent): navigational item rendering an `<a>`; pass `render={<Link href=… />}` for router links; styled identically to Item |
+| `DropdownMenu.CheckboxItem` | `MenuPrimitive.CheckboxItem`   | auto-renders indicator span (absolute right-2) with `CheckboxItemIndicator > Check`; `inset`                                                               |
+| `DropdownMenu.RadioGroup`   | `MenuPrimitive.RadioGroup`     | bare re-export                                                                                                                                             |
+| `DropdownMenu.RadioItem`    | `MenuPrimitive.RadioItem`      | auto-renders indicator span with `RadioItemIndicator > Check` — a check, not a dot (§8); `inset`                                                           |
+| `DropdownMenu.Separator`    | `MenuPrimitive.Separator`      | `-mx-1 my-1 h-px bg-border`                                                                                                                                |
+| `DropdownMenu.Shortcut`     | plain `span`                   | `ml-auto` muted shortcut hint; recolors on item focus via the item's group scope                                                                           |
+| `DropdownMenu.Sub`          | `MenuPrimitive.SubmenuRoot`    | submenu state owner, no DOM                                                                                                                                |
+| `DropdownMenu.SubTrigger`   | `MenuPrimitive.SubmenuTrigger` | item-styled trigger; auto-appends `CaretRight` (`ml-auto`); `inset`                                                                                        |
+| `DropdownMenu.SubContent`   | `Portal > Positioner > Popup`  | own thin popup with sub-specific defaults — does **not** reuse Content (§8 bugfix)                                                                         |
 
 ```tsx
 <DropdownMenu.Root>
@@ -61,30 +61,30 @@ All rendering parts take `className` (merged via `cn`) and forward the rest of t
 
 **DropdownMenu.Content** — `ComponentProps<MenuPrimitive.Popup>` plus `Pick<ComponentProps<MenuPrimitive.Positioner>, "align" | "alignOffset" | "side" | "sideOffset">` plus:
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `align` | Positioner `align` | `"start"` | menus lead from the trigger edge (vs Popover/Tooltip `"center"`) |
-| `alignOffset` | `number` | `0` | |
-| `side` | Positioner `side` | `"bottom"` | |
-| `sideOffset` | `number` | `4` | |
-| `container` | `HTMLElement \| RefObject<HTMLElement>` | nearest `ThemeScope` element | forwarded to the internal `MenuPrimitive.Portal` (§8) |
+| Prop          | Type                                    | Default                      | Notes                                                            |
+| ------------- | --------------------------------------- | ---------------------------- | ---------------------------------------------------------------- |
+| `align`       | Positioner `align`                      | `"start"`                    | menus lead from the trigger edge (vs Popover/Tooltip `"center"`) |
+| `alignOffset` | `number`                                | `0`                          |                                                                  |
+| `side`        | Positioner `side`                       | `"bottom"`                   |                                                                  |
+| `sideOffset`  | `number`                                | `4`                          |                                                                  |
+| `container`   | `HTMLElement \| RefObject<HTMLElement>` | nearest `ThemeScope` element | forwarded to the internal `MenuPrimitive.Portal` (§8)            |
 
 **DropdownMenu.SubContent** — same surface as Content but with sub-specific defaults and its own thin popup (§8):
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `align` | Positioner `align` | `"start"` | |
-| `alignOffset` | `number` | `-3` | tucks the submenu's first item level with its trigger |
-| `side` | Positioner `side` | `"right"` | |
-| `sideOffset` | `number` | `0` | flush against the parent menu |
-| `container` | `HTMLElement \| RefObject<HTMLElement>` | nearest `ThemeScope` element | forwarded to its own Portal (§8) |
+| Prop          | Type                                    | Default                      | Notes                                                 |
+| ------------- | --------------------------------------- | ---------------------------- | ----------------------------------------------------- |
+| `align`       | Positioner `align`                      | `"start"`                    |                                                       |
+| `alignOffset` | `number`                                | `-3`                         | tucks the submenu's first item level with its trigger |
+| `side`        | Positioner `side`                       | `"right"`                    |                                                       |
+| `sideOffset`  | `number`                                | `0`                          | flush against the parent menu                         |
+| `container`   | `HTMLElement \| RefObject<HTMLElement>` | nearest `ThemeScope` element | forwarded to its own Portal (§8)                      |
 
 **DropdownMenu.Item** — `ComponentProps<MenuPrimitive.Item>` plus:
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `inset` | `boolean` | — | emitted as `data-inset`; pads `pl-8` to align with indicator-bearing items |
-| `variant` | `"default" \| "destructive"` | `"default"` | emitted as `data-variant`; the *value* stays `"destructive"` (consumer-compat), classes use `error` tokens (§8) |
+| Prop      | Type                         | Default     | Notes                                                                                                           |
+| --------- | ---------------------------- | ----------- | --------------------------------------------------------------------------------------------------------------- |
+| `inset`   | `boolean`                    | —           | emitted as `data-inset`; pads `pl-8` to align with indicator-bearing items                                      |
+| `variant` | `"default" \| "destructive"` | `"default"` | emitted as `data-variant`; the _value_ stays `"destructive"` (consumer-compat), classes use `error` tokens (§8) |
 
 **DropdownMenu.LinkItem** — `ComponentProps<MenuPrimitive.LinkItem>` (incl. `href`, `render`). No `inset`/`variant` in the ref; kept faithful.
 **DropdownMenu.CheckboxItem** — `ComponentProps<MenuPrimitive.CheckboxItem>` (`checked`/`defaultChecked`/`onCheckedChange`, `closeOnClick`, …) plus `inset?: boolean`.
@@ -134,10 +134,10 @@ No component-specific `tv` recipe. Trigger composes shared `focusRing({ target: 
 
 1. **Renames (flat → namespace)**: `DropdownMenu`→`DropdownMenu.Root`, and `DropdownMenuTrigger/Portal/Content/Group/Label/Item/LinkItem/CheckboxItem/RadioGroup/RadioItem/Separator/Shortcut/Sub/SubTrigger/SubContent` → the matching `DropdownMenu.*` parts.
 2. **Overlay `container` prop added (mandated)** to `DropdownMenu.Content` and `DropdownMenu.SubContent`, forwarded to their internal `MenuPrimitive.Portal`, defaulting to the nearest `ThemeScope` element. The ref hardcodes both portals (→ `document.body`) even though it also exports a standalone `Portal` part that `Content` never consumes; the standalone `DropdownMenu.Portal` export is kept for advanced composition.
-3. **SubContent BUGFIX (LOCKED ruling)**: the ref implements `DropdownMenuSubContent` by *rendering `DropdownMenuContent`* — so the submenu double-wraps Portal+Positioner through Content's internals and double-applies popup base classes (Content's full base string *and* SubContent's near-duplicate string are both fed through `cn`, leaving conflicts like `shadow-md` vs `shadow-lg` and `min-w-32` vs `min-w-[96px]` to tailwind-merge ordering — a standing merge hazard). Ruled: `DropdownMenu.SubContent` gets its own thin `Portal > Positioner > Popup` with a single class string (`w-auto min-w-[96px] p-1 shadow-lg ring-1 ring-foreground/10 rounded-md bg-popover text-popover-foreground` + the shared open/close animation set) and the sub-specific positioner defaults `start / -3 / right / 0`.
-4. **`destructive` classes → `error` tokens; variant value unchanged**: `dropdownMenuItemClassName`'s `data-[variant=destructive]:text-destructive`, `…focus:bg-destructive/10`, `…focus:text-destructive`, `…*:[svg]:text-destructive` are re-expressed on `error` tokens per conventions (library source never says `destructive` in class names). The `variant` prop *value* stays `"destructive"` and so does the emitted `data-variant="destructive"` — consumer-facing API compat.
+3. **SubContent BUGFIX (LOCKED ruling)**: the ref implements `DropdownMenuSubContent` by _rendering `DropdownMenuContent`_ — so the submenu double-wraps Portal+Positioner through Content's internals and double-applies popup base classes (Content's full base string _and_ SubContent's near-duplicate string are both fed through `cn`, leaving conflicts like `shadow-md` vs `shadow-lg` and `min-w-32` vs `min-w-[96px]` to tailwind-merge ordering — a standing merge hazard). Ruled: `DropdownMenu.SubContent` gets its own thin `Portal > Positioner > Popup` with a single class string (`w-auto min-w-[96px] p-1 shadow-lg ring-1 ring-foreground/10 rounded-md bg-popover text-popover-foreground` + the shared open/close animation set) and the sub-specific positioner defaults `start / -3 / right / 0`.
+4. **`destructive` classes → `error` tokens; variant value unchanged**: `dropdownMenuItemClassName`'s `data-[variant=destructive]:text-destructive`, `…focus:bg-destructive/10`, `…focus:text-destructive`, `…*:[svg]:text-destructive` are re-expressed on `error` tokens per conventions (library source never says `destructive` in class names). The `variant` prop _value_ stays `"destructive"` and so does the emitted `data-variant="destructive"` — consumer-facing API compat.
 5. **Only `dark:` class dropped**: `dark:data-[variant=destructive]:focus:bg-destructive/20` removed per the no-`dark:`-variants convention (dark axis lives in tokens).
-6. **`z-50` deduped**: the ref sets `isolate z-50` on the Positioner *and* `z-50` on the Popup; kept once on the outermost layer (Positioner) per the flat z-strategy — every overlay gets exactly one `z-50` at its outermost portalled element.
+6. **`z-50` deduped**: the ref sets `isolate z-50` on the Positioner _and_ `z-50` on the Popup; kept once on the outermost layer (Positioner) per the flat z-strategy — every overlay gets exactly one `z-50` at its outermost portalled element.
 7. **Icons → Phosphor**: `Check`→`Check` (checkbox + radio indicators), `ChevronRight`→`CaretRight` (SubTrigger caret).
 8. **Radio indicator is a check, not a dot (documented, kept)**: the ref renders `Check` inside `RadioItemIndicator` where shadcn uses a filled circle; kept as the proven Funnel face.
 9. **Focus unified:** Trigger and every focusable menu-item face compose the canonical self-focus adapter; the accent background remains the roving-highlight cue but is not used as a focus-ring substitute.

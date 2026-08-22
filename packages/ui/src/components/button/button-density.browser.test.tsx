@@ -1,37 +1,38 @@
-import type { ReactNode } from "react";
-
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { render as renderBrowser } from "../../../test/browser-render";
+import {
+  CONTROL_MD,
+  fkasExternal,
+  px,
+  renderThemed,
+  stampDensity,
+} from "../../../test/themed-browser-render";
+import type { Density } from "../../theme";
 import { ThemeScope } from "../../theme";
 import { Button } from "./button";
-
-const fkasPrivate = { variant: "internal", brand: "fkas", segment: "private" } as const;
-const fkasExternal = { variant: "external", brand: "fkas", segment: "private" } as const;
 
 const BOX = {
   dense: {
     xs: { height: 24, px: 8, icon: 6, gap: 4 },
     sm: { height: 32, px: 10, icon: 6, gap: 4 },
-    md: { height: 36, px: 10, icon: 8, gap: 6 },
+    md: { height: CONTROL_MD.dense.height, px: CONTROL_MD.dense.px, icon: 8, gap: 6 },
     lg: { height: 40, px: 10, icon: 8, gap: 6 },
   },
   comfortable: {
     xs: { height: 32, px: 12, icon: 10, gap: 6 },
     sm: { height: 36, px: 14, icon: 10, gap: 6 },
-    md: { height: 44, px: 14, icon: 12, gap: 8 },
+    md: { height: CONTROL_MD.comfortable.height, px: CONTROL_MD.comfortable.px, icon: 12, gap: 8 },
     lg: { height: 48, px: 14, icon: 12, gap: 8 },
   },
 } as const;
 
 const TYPE = {
-  dense: { font: 14, leading: 20 },
-  comfortable: { font: 18, leading: 24 },
+  dense: { font: CONTROL_MD.dense.font, leading: CONTROL_MD.dense.leading },
+  comfortable: { font: CONTROL_MD.comfortable.font, leading: CONTROL_MD.comfortable.leading },
 } as const;
 
-type Density = keyof typeof BOX;
 type TextSize = "xs" | "sm" | "default" | "lg";
 type IconSize = "icon-xs" | "icon-sm" | "icon" | "icon-lg";
 type Rung = keyof (typeof BOX)["dense"];
@@ -55,17 +56,8 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  document.documentElement.removeAttribute("data-density");
   document.documentElement.style.removeProperty("font-size");
 });
-
-function render(node: ReactNode) {
-  return renderBrowser(<ThemeScope theme={fkasPrivate}>{node}</ThemeScope>);
-}
-
-function stampDensity(density: Density): void {
-  document.documentElement.setAttribute("data-density", density);
-}
 
 function buttonNamed(name: string): HTMLElement {
   const element = page.getByRole("button", { name, exact: true }).element();
@@ -73,14 +65,6 @@ function buttonNamed(name: string): HTMLElement {
     throw new Error(`Expected an HTML button named ${name}`);
   }
   return element;
-}
-
-function px(value: string): number {
-  const parsed = Number.parseFloat(value);
-  if (!Number.isFinite(parsed)) {
-    throw new Error(`Expected a pixel length, received ${value}`);
-  }
-  return parsed;
 }
 
 function gap(style: CSSStyleDeclaration): number {
@@ -191,7 +175,7 @@ describe("Button density metrics", () => {
   it("resolves signed box and type metrics for every mapped rung at both densities", () => {
     for (const density of ["dense", "comfortable"] as const) {
       stampDensity(density);
-      render(textFixture(density));
+      renderThemed(textFixture(density));
 
       for (const size of ["xs", "sm", "default", "lg"] as const) {
         const expected = BOX[density][TEXT_TO_RUNG[size]];
@@ -225,7 +209,7 @@ describe("Button density metrics", () => {
 
   it("keeps xs and sm type identical across densities", () => {
     stampDensity("dense");
-    render(
+    renderThemed(
       <>
         <Button size="xs">xs dense type</Button>
         <Button size="sm">sm dense type</Button>
@@ -235,7 +219,7 @@ describe("Button density metrics", () => {
     const denseSm = measureText("sm dense type");
 
     stampDensity("comfortable");
-    render(
+    renderThemed(
       <>
         <Button size="xs">xs comfortable type</Button>
         <Button size="sm">sm comfortable type</Button>
@@ -252,7 +236,7 @@ describe("Button density metrics", () => {
 
   it("lets comfortable differ on every density-owned metric", () => {
     stampDensity("dense");
-    render(
+    renderThemed(
       <>
         <Button aria-label="dense default">
           <span>A</span>
@@ -270,7 +254,7 @@ describe("Button density metrics", () => {
     const denseIcon = measureIconEdge("dense default icon");
 
     stampDensity("comfortable");
-    render(
+    renderThemed(
       <>
         <Button aria-label="comfortable default">
           <span>A</span>
@@ -296,14 +280,14 @@ describe("Button density metrics", () => {
 
   it("does not rescope metrics from a nested data-density or ThemeScope variant change", () => {
     stampDensity("dense");
-    render(
+    renderThemed(
       <div data-density="comfortable">
         <Button>nested</Button>
       </div>
     );
     expect(measureText("nested").height).toBe(BOX.dense.md.height);
 
-    render(
+    renderThemed(
       <ThemeScope theme={fkasExternal}>
         <Button>scoped</Button>
       </ThemeScope>
@@ -313,11 +297,11 @@ describe("Button density metrics", () => {
 
   it("keeps icon-inline geometry independent of density", () => {
     stampDensity("dense");
-    render(<Button size="icon-inline" aria-label="inline dense" />);
+    renderThemed(<Button size="icon-inline" aria-label="inline dense" />);
     const dense = measureSquare("inline dense");
 
     stampDensity("comfortable");
-    render(<Button size="icon-inline" aria-label="inline comfortable" />);
+    renderThemed(<Button size="icon-inline" aria-label="inline comfortable" />);
     const comfortable = measureSquare("inline comfortable");
 
     expect(comfortable.height).toBe(dense.height);
@@ -327,7 +311,7 @@ describe("Button density metrics", () => {
   it("meets the 24px target-size minimum on the smallest square rung at each density", () => {
     for (const density of ["dense", "comfortable"] as const) {
       stampDensity(density);
-      render(<Button size="icon-xs" aria-label={`smallest ${density}`} />);
+      renderThemed(<Button size="icon-xs" aria-label={`smallest ${density}`} />);
       const square = measureSquare(`smallest ${density}`);
       expect(square.height).toBeGreaterThanOrEqual(24);
       expect(square.width).toBeGreaterThanOrEqual(24);

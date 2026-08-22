@@ -10,13 +10,13 @@
 
 ## 2 Anatomy
 
-| Part | Renders | data-slot |
-| --- | --- | --- |
-| `DescriptionList.Root` | `<div>` — bare grouping wrapper | `description-list` |
-| `DescriptionList.Heading` | `<h2>` (plain semantic heading) | `description-list-heading` |
+| Part                      | Renders                             | data-slot                  |
+| ------------------------- | ----------------------------------- | -------------------------- |
+| `DescriptionList.Root`    | `<div>` — bare grouping wrapper     | `description-list`         |
+| `DescriptionList.Heading` | `<h2>` (plain semantic heading)     | `description-list-heading` |
 | `DescriptionList.Content` | `<dl>` — responsive two-column grid | `description-list-content` |
-| `DescriptionList.Term` | `<dt>` | `description-list-term` |
-| `DescriptionList.Details` | `<dd>` | `description-list-details` |
+| `DescriptionList.Term`    | `<dt>`                              | `description-list-term`    |
+| `DescriptionList.Details` | `<dd>`                              | `description-list-details` |
 
 ```tsx
 <DescriptionList.Root>
@@ -36,13 +36,13 @@
 
 All styled parts take `className` (merged via `cn`) plus native element pass-through; none hold state.
 
-| Part | Type | Notes |
-| --- | --- | --- |
-| `DescriptionList.Root` | `ComponentProps<"div">` | no default classes; passes everything through |
-| `DescriptionList.Heading` | `ComponentProps<"h2">` | plain `<h2>` by default; polymorphic via `render` (`useRender`) for other levels |
-| `DescriptionList.Content` | `ComponentProps<"dl">` | `grid grid-cols-1 text-base/6 sm:grid-cols-[min(50%,calc(var(--spacing)*80))_auto] sm:text-sm/6` — single column on mobile; ≥`sm`, term column is `min(50%, 20rem)` |
-| `DescriptionList.Term` | `ComponentProps<"dt">` | `col-start-1 border-t py-2 pr-2 text-muted-foreground first-of-type:border-none` |
-| `DescriptionList.Details` | `ComponentProps<"dd">` | `py-2 text-foreground first-of-type:border-none sm:border-t` — top border only at ≥`sm`; on mobile the `<dt>` alone carries the row divider |
+| Part                      | Type                    | Notes                                                                                                                                                               |
+| ------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DescriptionList.Root`    | `ComponentProps<"div">` | no default classes; passes everything through                                                                                                                       |
+| `DescriptionList.Heading` | `ComponentProps<"h2">`  | plain `<h2>` by default; polymorphic via `render` (`useRender`) for other levels                                                                                    |
+| `DescriptionList.Content` | `ComponentProps<"dl">`  | `grid grid-cols-1 text-base/6 sm:grid-cols-[min(50%,calc(var(--spacing)*80))_auto] sm:text-sm/6` — single column on mobile; ≥`sm`, term column is `min(50%, 20rem)` |
+| `DescriptionList.Term`    | `ComponentProps<"dt">`  | `col-start-1 border-t py-2 pr-2 text-muted-foreground first-of-type:border-none`                                                                                    |
+| `DescriptionList.Details` | `ComponentProps<"dd">`  | `py-2 text-foreground first-of-type:border-none sm:border-t` — top border only at ≥`sm`; on mobile the `<dt>` alone carries the row divider                         |
 
 ## 4 Variants
 

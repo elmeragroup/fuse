@@ -1,5 +1,7 @@
 import { defineRule } from "@oxlint/plugins";
 
+import { normalizeFilename } from "../filename-normalizer.js";
+
 const MESSAGE =
   "Direct process.env access is forbidden except the process.env.NODE_ENV comparison in the theme validator module.";
 
@@ -85,7 +87,7 @@ function isNodeEnvComparison(processEnvNode) {
  * @param {string} filename
  */
 function isThemeValidatorModule(filename) {
-  return filename.replaceAll("\\", "/").endsWith(ALLOWED_VALIDATOR_SUFFIX);
+  return normalizeFilename(filename).endsWith(ALLOWED_VALIDATOR_SUFFIX);
 }
 
 export default defineRule({

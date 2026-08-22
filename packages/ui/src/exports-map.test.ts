@@ -3,14 +3,21 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-import { BARE_COMPONENT_ENTRIES, discoverEntries, unexpectedJsEntryFiles } from "../scripts/entries";
+import {
+  BARE_COMPONENT_ENTRIES,
+  discoverEntries,
+  unexpectedJsEntryFiles,
+  uniqueBarrelRuntimeExports,
+} from "../scripts/entries";
 import {
   buildPublishExportMap,
   buildSourceExportMap,
   exportBindingsObject,
   exportBindingTarget,
+  renderRootBarrel,
 } from "../scripts/generate-exports";
-import { PHOSPHOR_ICON_NAMES } from "./icons/roster";
+import { parseFacadeValueExports } from "../scripts/parse-facade";
+import { BESPOKE_ICON_NAMES, LOGO_NAMES, PHOSPHOR_ICON_NAMES } from "./icons/roster";
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -24,8 +31,15 @@ describe("exports map", () => {
       ".",
       "theme",
       "icons",
+      "illustrations",
+      "flags",
       "button",
+      "field",
+      "input",
+      "item",
       "scroll-area",
+      "separator",
+      "textarea",
     ]);
     expect(unexpectedJsEntryFiles(packageRoot)).toEqual([]);
     expect(BARE_COMPONENT_ENTRIES).toHaveLength(56);
@@ -58,10 +72,18 @@ describe("exports map", () => {
       types: "./src/scroll-area.ts",
       import: "./src/scroll-area.ts",
     });
+    expect(exportBindingTarget(sourceExports, "./flags")).toEqual({
+      types: "./src/flags.ts",
+      import: "./src/flags.ts",
+    });
+    expect(exportBindingTarget(sourceExports, "./flags/*.svg")).toBe("./src/flags/*.svg");
+    expect(exportBindingTarget(sourceExports, "./illustrations")).toEqual({
+      types: "./src/illustrations.ts",
+      import: "./src/illustrations.ts",
+    });
   });
 
   it("does not invent component entries before their source files exist", () => {
-    expect(exportBindingTarget(sourceExports, "./illustrations")).toBeUndefined();
     expect(exportBindingTarget(sourceExports, "./react-aria/calendar")).toBeUndefined();
   });
 
@@ -92,6 +114,15 @@ describe("exports map", () => {
       types: "./scroll-area.d.ts",
       import: "./scroll-area.js",
     });
+    expect(exportBindingTarget(publishExports, "./flags")).toEqual({
+      types: "./flags.d.ts",
+      import: "./flags.js",
+    });
+    expect(exportBindingTarget(publishExports, "./flags/*.svg")).toBe("./flags/*.svg");
+    expect(exportBindingTarget(publishExports, "./illustrations")).toEqual({
+      types: "./illustrations.d.ts",
+      import: "./illustrations.js",
+    });
     expect(exportBindingTarget(publishExports, "./css")).toBe("./styles/ui.css");
     expect(exportBindingTarget(publishExports, "./demo-stage-comfortable.css")).toBe(
       "./demo-stage-comfortable.css"
@@ -119,6 +150,11 @@ describe("exports map", () => {
   it("re-exports the theme API from the root barrel and the /theme entry", () => {
     const theme = discovered.jsEntries.find((entry) => entry.subpath === "theme");
     const root = discovered.jsEntries.find((entry) => entry.subpath === ".");
+    expect(theme?.runtimeExports).toEqual(
+      parseFacadeValueExports("src/theme.ts", readFileSync(join(packageRoot, "src/theme.ts"), "utf8"))
+    );
+    expect(theme?.runtimeExports).toContain("BRAND_CODES");
+    expect(theme?.runtimeExports).toContain("isBrandCode");
     expect(theme?.runtimeExports).toContain("ThemeProvider");
     expect(theme?.runtimeExports).toContain("coerceTheme");
     expect(theme?.runtimeExports).toContain("themeAttributes");
@@ -127,12 +163,11 @@ describe("exports map", () => {
     expect(theme?.runtimeExports).toContain("ColorSchemeScript");
     expect(theme?.runtimeExports).toContain("ForceColorScheme");
     expect(theme?.runtimeExports).toContain("colorSchemeScriptSource");
-    expect(root?.runtimeExports).toEqual([
-      ...(theme?.runtimeExports ?? []),
-      "Button",
-      "buttonVariants",
-      "ScrollArea",
-    ]);
+    expect(root?.runtimeExports).toEqual(uniqueBarrelRuntimeExports(discovered.jsEntries));
+    expect(root?.runtimeExports).toContain("Button");
+    expect(root?.runtimeExports).toContain("buttonVariants");
+    expect(root?.runtimeExports).toContain("ScrollArea");
+    expect(root?.runtimeExports).toContain("ThemeProvider");
   });
 
   it("publishes Button and buttonVariants from /button and the root barrel", () => {
@@ -147,10 +182,53 @@ describe("exports map", () => {
     expect(scrollArea?.runtimeExports).toEqual(["ScrollArea"]);
   });
 
+  it("publishes the Wave 3 spine entries from the barrel", () => {
+    const separator = discovered.jsEntries.find((entry) => entry.subpath === "separator");
+    const field = discovered.jsEntries.find((entry) => entry.subpath === "field");
+    const item = discovered.jsEntries.find((entry) => entry.subpath === "item");
+    const input = discovered.jsEntries.find((entry) => entry.subpath === "input");
+    const textarea = discovered.jsEntries.find((entry) => entry.subpath === "textarea");
+    expect(separator?.inRootBarrel).toBe(true);
+    expect(separator?.runtimeExports).toEqual(["Separator"]);
+    expect(field?.inRootBarrel).toBe(true);
+    expect(field?.runtimeExports).toEqual(["Field"]);
+    expect(item?.inRootBarrel).toBe(true);
+    expect(item?.runtimeExports).toEqual(["Item", "itemVariants"]);
+    expect(input?.inRootBarrel).toBe(true);
+    expect(input?.runtimeExports).toEqual(["Input"]);
+    expect(textarea?.inRootBarrel).toBe(true);
+    expect(textarea?.runtimeExports).toEqual(["Textarea"]);
+  });
+
   it("keeps /icons as a subpath-only entry with the curated roster", () => {
     const icons = discovered.jsEntries.find((entry) => entry.subpath === "icons");
     expect(icons?.inRootBarrel).toBe(false);
-    expect(icons?.runtimeExports).toEqual([...PHOSPHOR_ICON_NAMES, "BrandLogo"]);
+    expect(icons?.runtimeExports).toEqual([
+      ...PHOSPHOR_ICON_NAMES,
+      ...BESPOKE_ICON_NAMES,
+      ...LOGO_NAMES,
+      "BrandLogo",
+    ]);
     expect(icons?.runtimeExports).not.toContain("Icon");
+  });
+
+  it("keeps /illustrations as a subpath-only entry with FkasMeter", () => {
+    const illustrations = discovered.jsEntries.find((entry) => entry.subpath === "illustrations");
+    expect(illustrations?.inRootBarrel).toBe(false);
+    expect(illustrations?.runtimeExports).toEqual(["FkasMeter"]);
+  });
+
+  it("keeps the committed root barrel in sync with the generator", () => {
+    const committed = readFileSync(join(packageRoot, "src/index.ts"), "utf8");
+    expect(committed).toEqual(renderRootBarrel(discovered));
+  });
+
+  it("does not hardcode component runtime-export lists in entries.ts", () => {
+    // Source-grep: absence of hardcoded lists has no packed-export probe beyond package-check.
+    const source = readFileSync(join(packageRoot, "scripts/entries.ts"), "utf8");
+    expect(source).not.toContain("BUTTON_RUNTIME_EXPORTS");
+    expect(source).not.toContain("SCROLL_AREA_RUNTIME_EXPORTS");
+    expect(source).not.toContain('["Button", "buttonVariants"]');
+    expect(source).not.toContain('["ScrollArea"]');
   });
 });

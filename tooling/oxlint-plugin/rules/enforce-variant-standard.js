@@ -1,12 +1,7 @@
 // Adapted from kumo lint/enforce-variant-standard.js (MIT, Copyright (c) 2026 Cloudflare, Inc.).
 import { defineRule } from "@oxlint/plugins";
 
-/**
- * @param {string} filename
- */
-function normalizeFilename(filename) {
-  return filename.replaceAll("\\", "/");
-}
+import { normalizeFilename } from "../filename-normalizer.js";
 
 /**
  * Component entry: src/components/<name>/<name>.tsx

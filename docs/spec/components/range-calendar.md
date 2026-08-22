@@ -29,10 +29,10 @@ Two-layer cell geometry (kept): the outer `CalendarCell` is a square `size-9` ba
 
 `RangeCalendarProps<T extends DateValue>` — spreads onto RAC `RangeCalendar` with `visibleDuration` omitted (single month). Open RAC surface: `value`/`defaultValue`/`onChange` (all `RangeValue<DateValue>`: `{ start, end }`), `focusedValue`, `onFocusChange`, `minValue`, `maxValue`, `isDateUnavailable`, `allowsNonContiguousRanges`, `isDisabled`, `isReadOnly`, `isInvalid`, `autoFocus`, …
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `errorMessage` | `ReactNode` | — | same face as Calendar; renders `Text slot="errorMessage"` |
-| `className` | RAC className | — | Spread onto the root (ref applies no root recipe — see §8) |
+| Prop           | Type          | Default | Notes                                                      |
+| -------------- | ------------- | ------- | ---------------------------------------------------------- |
+| `errorMessage` | `ReactNode`   | —       | same face as Calendar; renders `Text slot="errorMessage"`  |
+| `className`    | RAC className | —       | Spread onto the root (ref applies no root recipe — see §8) |
 
 ## 4 Variants
 

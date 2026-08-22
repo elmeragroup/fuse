@@ -47,7 +47,7 @@ An **implementation-ready architecture and product specification** for `@elmerag
 
 ## Not yet specified
 
-*(empty — the destination is reached; only [npm & GitHub org setup](tickets/027-org-setup-task.md) remains open, and it blocks publishing, not the spec.)*
+_(empty — the destination is reached; only [npm & GitHub org setup](tickets/027-org-setup-task.md) remains open, and it blocks publishing, not the spec.)_
 
 ## Out of scope
 

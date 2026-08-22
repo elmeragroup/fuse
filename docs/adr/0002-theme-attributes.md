@@ -19,5 +19,5 @@ Theme markers are **three data attributes** — `data-theme-variant`, `data-them
 
 - 15 rules cover 20 permutations; adding a brand adds ~2 rules (accent pointer + external palette), satisfying "adding brands must be cheap".
 - Works unchanged with Tailwind v4 `@theme inline` (utilities reference `var(--token)` at the use site, re-resolving per scope).
-- Portals must render *inside* the themed scope or they silently take the outer theme — the theme-provider API owns that discipline.
+- Portals must render _inside_ the themed scope or they silently take the outer theme — the theme-provider API owns that discipline.
 - Each axis is independently visible on the element and independently switchable at runtime.

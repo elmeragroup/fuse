@@ -1,19 +1,11 @@
 import { createRef } from "react";
-import type { ReactNode } from "react";
 
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
-import { render as renderBrowser } from "../../../test/browser-render";
-import { ThemeScope } from "../../theme";
+import { renderThemed } from "../../../test/themed-browser-render";
 import { Button } from "./button";
 import { buttonVariants } from "./button-variants";
-
-const fkasPrivate = { variant: "internal", brand: "fkas", segment: "private" } as const;
-
-function render(node: ReactNode) {
-  return renderBrowser(<ThemeScope theme={fkasPrivate}>{node}</ThemeScope>);
-}
 
 function flushEffects(): Promise<void> {
   return new Promise((resolve) => {
@@ -42,7 +34,7 @@ function buttonNamed(name: string): HTMLElement {
 describe("Button", () => {
   it("activates once on click, Enter, and Space", async () => {
     const onClick = vi.fn();
-    render(<Button onClick={onClick}>Save</Button>);
+    renderThemed(<Button onClick={onClick}>Save</Button>);
 
     await userEvent.click(page.getByRole("button", { name: "Save" }));
     expect(onClick).toHaveBeenCalledTimes(1);
@@ -60,7 +52,7 @@ describe("Button", () => {
   it("blocks click and keyboard activation when disabled or pending", async () => {
     const onDisabledClick = vi.fn();
     const onPendingClick = vi.fn();
-    render(
+    renderThemed(
       <>
         <Button disabled onClick={onDisabledClick}>
           Disabled
@@ -93,7 +85,7 @@ describe("Button", () => {
   it("stays activatable when visually disabled and suppresses mousedown focus", async () => {
     const onClick = vi.fn();
     const onMouseDown = vi.fn();
-    render(
+    renderThemed(
       <>
         <button type="button">Other</button>
         <Button isVisuallyDisabled onClick={onClick} onMouseDown={onMouseDown}>
@@ -129,7 +121,7 @@ describe("Button", () => {
     const pending = vi.fn();
     const visual = vi.fn();
 
-    render(
+    renderThemed(
       <>
         <Button onIntent={live}>Prefetch</Button>
         <Button disabled onIntent={disabled}>
@@ -168,7 +160,7 @@ describe("Button", () => {
     const secondRef = createRef<HTMLButtonElement>();
     const add = vi.spyOn(document, "addEventListener");
 
-    render(
+    renderThemed(
       <>
         <Button ref={firstRef} onIntent={() => undefined}>
           First
@@ -189,7 +181,7 @@ describe("Button", () => {
 
   it("clears a callback ref on unmount", () => {
     let trigger: HTMLElement | null = null;
-    const { unmount } = render(
+    const { unmount } = renderThemed(
       <Button
         ref={(element) => {
           trigger = element;
@@ -205,7 +197,7 @@ describe("Button", () => {
 
   it("renders variant and size recipe classes and keeps role when render swaps the tag", () => {
     const outline = buttonVariants({ variant: "outline", size: "lg" });
-    render(
+    renderThemed(
       <>
         <Button variant="outline" size="lg">
           Outline

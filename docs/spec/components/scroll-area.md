@@ -10,20 +10,18 @@
 
 ## 2 Anatomy
 
-| Part | base-ui primitive | data-slot |
-| --- | --- | --- |
-| `ScrollArea.Root` | `ScrollArea.Root` from `@base-ui/react/scroll-area` | `scroll-area` |
-| (internal) viewport | `ScrollArea.Viewport` | `scroll-area-viewport` |
-| (internal) content | `ScrollArea.Content` | `scroll-area-content` |
-| `ScrollArea.Bar` | `ScrollArea.Scrollbar` + `ScrollArea.Thumb` | `scroll-area-scrollbar` / `scroll-area-thumb` |
-| (internal) corner | `ScrollArea.Corner` | — |
+| Part                | base-ui primitive                                   | data-slot                                     |
+| ------------------- | --------------------------------------------------- | --------------------------------------------- |
+| `ScrollArea.Root`   | `ScrollArea.Root` from `@base-ui/react/scroll-area` | `scroll-area`                                 |
+| (internal) viewport | `ScrollArea.Viewport`                               | `scroll-area-viewport`                        |
+| (internal) content  | `ScrollArea.Content`                                | `scroll-area-content`                         |
+| `ScrollArea.Bar`    | `ScrollArea.Scrollbar` + `ScrollArea.Thumb`         | `scroll-area-scrollbar` / `scroll-area-thumb` |
+| (internal) corner   | `ScrollArea.Corner`                                 | —                                             |
 
 `ScrollArea.Root` is batteries-included: it renders Viewport → Content around `children`, one `ScrollArea.Bar` for its `orientation`, and a `Corner`. `ScrollArea.Bar` is exported for consumers composing base-ui primitives directly.
 
 ```tsx
-<ScrollArea.Root className="h-72 rounded-md border">
-  {longContent}
-</ScrollArea.Root>
+<ScrollArea.Root className="h-72 rounded-md border">{longContent}</ScrollArea.Root>
 ```
 
 ## 3 Props
@@ -32,21 +30,21 @@
 
 `ComponentProps<typeof ScrollAreaPrimitive.Root> & { orientation?; type? }`.
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `orientation` | `"vertical" \| "horizontal"` | `"vertical"` | which single scrollbar Root renders (§8.3 limitation) |
-| `type` | `"auto" \| "always" \| "hover"` | `"hover"` | Radix-style visibility API mapped onto base-ui (§4) |
-| `className` | `string` | — | merged onto `relative overflow-hidden` |
-| `children` | `ReactNode` | — | wrapped in Viewport → Content |
+| Prop          | Type                            | Default      | Notes                                                 |
+| ------------- | ------------------------------- | ------------ | ----------------------------------------------------- |
+| `orientation` | `"vertical" \| "horizontal"`    | `"vertical"` | which single scrollbar Root renders (§8.3 limitation) |
+| `type`        | `"auto" \| "always" \| "hover"` | `"hover"`    | Radix-style visibility API mapped onto base-ui (§4)   |
+| `className`   | `string`                        | —            | merged onto `relative overflow-hidden`                |
+| `children`    | `ReactNode`                     | —            | wrapped in Viewport → Content                         |
 
 ### ScrollArea.Bar
 
 `ComponentProps<typeof ScrollAreaPrimitive.Scrollbar> & { type?: ScrollAreaType }` — pass-through includes `keepMounted` (overridden by `type` mapping), `render`.
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `orientation` | `"vertical" \| "horizontal"` | `"vertical"` | vertical: `w-2.5 border-l`; horizontal: `h-2.5 flex-col border-t` |
-| `type` | `"auto" \| "always" \| "hover"` | `"hover"` | as above |
+| Prop          | Type                            | Default      | Notes                                                             |
+| ------------- | ------------------------------- | ------------ | ----------------------------------------------------------------- |
+| `orientation` | `"vertical" \| "horizontal"`    | `"vertical"` | vertical: `w-2.5 border-l`; horizontal: `h-2.5 flex-col border-t` |
+| `type`        | `"auto" \| "always" \| "hover"` | `"hover"`    | as above                                                          |
 
 ## 4 Variants
 

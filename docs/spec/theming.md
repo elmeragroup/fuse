@@ -28,26 +28,26 @@ The contract is the fixed set of CSS custom-property names every component consu
 
 ### 2.2 Themable role tokens (77)
 
-| Family | Tokens | Count |
-|---|---|---|
-| Surfaces | `--background`, `--foreground` | 2 |
-| | `--card`, `--card-foreground`, `--card-soft`, `--card-soft-foreground` | 4 |
-| | `--popover`, `--popover-foreground` | 2 |
-| | `--muted`, `--muted-foreground` | 2 |
-| | `--accent`, `--accent-foreground` | 2 |
-| | `--feature`, `--feature-bright`, `--feature-foreground` | 3 |
-| Interactive | `--primary`, `--primary-foreground`, `--primary-soft`, `--primary-soft-foreground` | 4 |
-| | `--secondary`, `--secondary-foreground`, `--secondary-soft`, `--secondary-soft-foreground` | 4 |
-| Brand | `--brand`, `--brand-foreground` | 2 |
-| Status | `--error`, `--info`, `--success`, `--warning`, each × `-foreground`, `-soft`, `-soft-foreground` | 16 |
-| | `--destructive`, `--destructive-foreground` — **shipped aliases** of `--error`/`--error-foreground` (sole shadcn-snippet compat concession) | 2 |
-| Lines/focus | `--border`, `--input`, `--ring` | 3 |
-| Sidebar | `--sidebar`, `--sidebar-foreground`, `--sidebar-accent`, `--sidebar-accent-foreground`, `--sidebar-border`, `--sidebar-ring`, `--sidebar-brand`, `--sidebar-brand-foreground` | 8 |
-| Right panel | `--right-panel`, `--right-panel-foreground` | 2 |
-| Charts | `--chart-1` … `--chart-8` | 8 |
-| Syntax | `--sh-identifier`, `--sh-keyword`, `--sh-string`, `--sh-class`, `--sh-property`, `--sh-entity`, `--sh-jsxliterals`, `--sh-sign`, `--sh-comment` | 9 |
-| Shape | `--radius`, `--radius-button` | 2 |
-| Type | `--font-sans`, `--font-heading` | 2 |
+| Family      | Tokens                                                                                                                                                                        | Count |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
+| Surfaces    | `--background`, `--foreground`                                                                                                                                                | 2     |
+|             | `--card`, `--card-foreground`, `--card-soft`, `--card-soft-foreground`                                                                                                        | 4     |
+|             | `--popover`, `--popover-foreground`                                                                                                                                           | 2     |
+|             | `--muted`, `--muted-foreground`                                                                                                                                               | 2     |
+|             | `--accent`, `--accent-foreground`                                                                                                                                             | 2     |
+|             | `--feature`, `--feature-bright`, `--feature-foreground`                                                                                                                       | 3     |
+| Interactive | `--primary`, `--primary-foreground`, `--primary-soft`, `--primary-soft-foreground`                                                                                            | 4     |
+|             | `--secondary`, `--secondary-foreground`, `--secondary-soft`, `--secondary-soft-foreground`                                                                                    | 4     |
+| Brand       | `--brand`, `--brand-foreground`                                                                                                                                               | 2     |
+| Status      | `--error`, `--info`, `--success`, `--warning`, each × `-foreground`, `-soft`, `-soft-foreground`                                                                              | 16    |
+|             | `--destructive`, `--destructive-foreground` — **shipped aliases** of `--error`/`--error-foreground` (sole shadcn-snippet compat concession)                                   | 2     |
+| Lines/focus | `--border`, `--input`, `--ring`                                                                                                                                               | 3     |
+| Sidebar     | `--sidebar`, `--sidebar-foreground`, `--sidebar-accent`, `--sidebar-accent-foreground`, `--sidebar-border`, `--sidebar-ring`, `--sidebar-brand`, `--sidebar-brand-foreground` | 8     |
+| Right panel | `--right-panel`, `--right-panel-foreground`                                                                                                                                   | 2     |
+| Charts      | `--chart-1` … `--chart-8`                                                                                                                                                     | 8     |
+| Syntax      | `--sh-identifier`, `--sh-keyword`, `--sh-string`, `--sh-class`, `--sh-property`, `--sh-entity`, `--sh-jsxliterals`, `--sh-sign`, `--sh-comment`                               | 9     |
+| Shape       | `--radius`, `--radius-button`                                                                                                                                                 | 2     |
+| Type        | `--font-sans`, `--font-heading`                                                                                                                                               | 2     |
 
 `--brand`/`--brand-foreground` are first-class in every theme: the brand-pointer layer selects the globally available brand accent in both variants. External `--primary` remains the brand palette's action/surface color and can differ from that accent; internal themes keep `--primary` neutral and express brand identity only in `--brand` (and `--sidebar-brand`). The variant axis lives entirely in **values**, never in names — no internal-only tokens exist.
 
@@ -62,19 +62,19 @@ Values are in §4.2.
 
 Themes cannot override these values and the theme generator does not accept them:
 
-| Token | Value |
-| --- | --- |
-| `--radius-xs` | `calc(var(--radius) - 6px)` |
-| `--radius-sm` | `calc(var(--radius) - 4px)` |
-| `--radius-md` | `calc(var(--radius) - 2px)` |
-| `--radius-lg` | `var(--radius)` |
-| `--radius-xl` | `calc(var(--radius) + 4px)` |
-| `--radius-popover` | `calc(var(--radius) - 8px)` |
-| `--breakpoint-xs` | `574px` |
-| `--breakpoint-lg` | `60rem` |
-| `--breakpoint-3xl` | `1920px` |
-| `--spacing` | `0.25rem` |
-| `--font-mono` | `ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace` |
+| Token              | Value                                                                                                                                                                              |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--radius-xs`      | `calc(var(--radius) - 6px)`                                                                                                                                                        |
+| `--radius-sm`      | `calc(var(--radius) - 4px)`                                                                                                                                                        |
+| `--radius-md`      | `calc(var(--radius) - 2px)`                                                                                                                                                        |
+| `--radius-lg`      | `var(--radius)`                                                                                                                                                                    |
+| `--radius-xl`      | `calc(var(--radius) + 4px)`                                                                                                                                                        |
+| `--radius-popover` | `calc(var(--radius) - 8px)`                                                                                                                                                        |
+| `--breakpoint-xs`  | `574px`                                                                                                                                                                            |
+| `--breakpoint-lg`  | `60rem`                                                                                                                                                                            |
+| `--breakpoint-3xl` | `1920px`                                                                                                                                                                           |
+| `--spacing`        | `0.25rem`                                                                                                                                                                          |
+| `--font-mono`      | `ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace`                                                                               |
 | `--ease-overshoot` | the exact `linear(0, 0.402 7.4%, 0.711 15.3%, 0.929 23.7%, 1.008 28.2%, 1.067 33%, 1.099 36.9%, 1.12 41%, 1.13 45.4%, 1.13 50.1%, 1.111 58.5%, 1.019 83.2%, 1.004 91.3%, 1)` curve |
 
 ### 2.5 Defaults + must-override model
@@ -83,7 +83,7 @@ The library ships a **complete neutral default layer at `:root`** — every cont
 
 - **External themes must supply**, across their composed non-default layers: `--background`, `--foreground`, the complete card, muted, primary, and secondary families; the feature triple; `--border`, `--input`; `--radius`, `--radius-button`; and `--brand`, `--brand-foreground`. Typography is optional in the source palette: all brands use the default `--font-sans`, and only fkas overrides `--font-heading`. The generator still materializes the default heading value in every other emitted external rule so a nested scope cannot inherit an outer fkas font (§3.2).
 - **Internal themes must supply**: `--brand` and `--brand-foreground`, satisfied by the brand-pointer layer. `--sidebar-brand` and `--sidebar-brand-foreground` are complete defaults that resolve through that pair and therefore are not separate coverage obligations.
-- Statuses, ring, charts, and syntax colors stay shared-by-default; themes *may* override them but none does at v1.
+- Statuses, ring, charts, and syntax colors stay shared-by-default; themes _may_ override them but none does at v1.
 
 Must-override is a **theme-level** obligation, not a per-module one. Individual layer modules are `Partial<TokenContract>` and never have to carry the full set themselves (internal themes, for instance, satisfy their brand-pair obligation via the brand-pointer layer). Enforcement happens at **compose time** in the token pipeline — each of the 20 themes is resolved through its layers and the build fails if a resolved theme lacks any must-override token (§8) — and is re-checked at the CSS level by the theme-contract test.
 
@@ -91,20 +91,20 @@ Must-override is a **theme-level** obligation, not a per-module one. Individual 
 
 No HSL-triplet wrappers, no bridge layer. This table is the complete semantic rename guide for lifting reference styles; it is documentation only and does not create aliases:
 
-| Reference token/concept | Canonical token |
-| --- | --- |
-| `--surface` / `--on-surface` | `--background` / `--foreground` |
-| `--primary-container` / `--on-primary-container` | `--card` / `--card-foreground` |
-| `--surface-bright` | `--card-soft` (foreground uses `--card-soft-foreground`) |
-| `--surface-variant` / `--surface-variant-bright` / `--on-surface-variant` | `--feature` / `--feature-bright` / `--feature-foreground` |
-| `--on-surface-muted` | `--muted-foreground` |
-| `--primary` / `--on-primary` | `--primary` / `--primary-foreground` |
-| `--secondary` / `--on-secondary` | `--secondary` / `--secondary-foreground` |
-| `--secondary-container` / `--on-secondary-container` | `--secondary-soft` / `--secondary-soft-foreground` |
-| `--<status>` / `--on-<status>` | `--<status>` / `--<status>-foreground` for `error`, `info`, `success`, `warning` |
-| `--<status>-container` / `--on-<status>-container` | `--<status>-soft` / `--<status>-soft-foreground` |
-| legacy per-brand accent selected for the current brand | `--brand` / `--brand-foreground` (primitives remain `--brand-<code>` pairs) |
-| internal inverted neutral ramp | `--neutral-50..950`, renumbered light-to-dark and normalized to chroma 0 (§4.2) |
+| Reference token/concept                                                   | Canonical token                                                                  |
+| ------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `--surface` / `--on-surface`                                              | `--background` / `--foreground`                                                  |
+| `--primary-container` / `--on-primary-container`                          | `--card` / `--card-foreground`                                                   |
+| `--surface-bright`                                                        | `--card-soft` (foreground uses `--card-soft-foreground`)                         |
+| `--surface-variant` / `--surface-variant-bright` / `--on-surface-variant` | `--feature` / `--feature-bright` / `--feature-foreground`                        |
+| `--on-surface-muted`                                                      | `--muted-foreground`                                                             |
+| `--primary` / `--on-primary`                                              | `--primary` / `--primary-foreground`                                             |
+| `--secondary` / `--on-secondary`                                          | `--secondary` / `--secondary-foreground`                                         |
+| `--secondary-container` / `--on-secondary-container`                      | `--secondary-soft` / `--secondary-soft-foreground`                               |
+| `--<status>` / `--on-<status>`                                            | `--<status>` / `--<status>-foreground` for `error`, `info`, `success`, `warning` |
+| `--<status>-container` / `--on-<status>-container`                        | `--<status>-soft` / `--<status>-soft-foreground`                                 |
+| legacy per-brand accent selected for the current brand                    | `--brand` / `--brand-foreground` (primitives remain `--brand-<code>` pairs)      |
+| internal inverted neutral ramp                                            | `--neutral-50..950`, renumbered light-to-dark and normalized to chroma 0 (§4.2)  |
 
 New roles with no faithful legacy alias are `--popover(-foreground)`, `--primary-soft(-foreground)`, and the trimmed sidebar contract; ports choose them by the component semantics documented in §5 and each component's consumed-token section. Deliberately dead with **no replacement alias**: `--surface-text`, `--tertiary*` (all forms), `--secondary-variant`, `--inactive`, `--primary-light`, `--sidebar-background`, `--sidebar-primary(-foreground)`, per-brand `--destructive` triplets, `--on-primary-container-muted` (use opacity utilities), and the `.ngeas` block. The `--destructive` alias pair is the only runtime compatibility concession.
 
@@ -125,7 +125,7 @@ Wave 1 is deployment-fixed density only. User preference, persistence, cross-tab
 Theme markers are three data attributes, **placeable on any element** — no selector anchors to `<html>`:
 
 ```html
-<html data-theme-variant="external" data-theme-brand="fkas" data-theme-segment="company">
+<html data-theme-variant="external" data-theme-brand="fkas" data-theme-segment="company"></html>
 ```
 
 - `data-theme-variant`: `internal` | `external`
@@ -138,7 +138,7 @@ Rejected alternatives (ADR 0002): a single slug attribute (needs `^=`/`*=` subst
 
 The emitted theme CSS has exactly five layers:
 
-1. **`:root` defaults** (1 rule) — the complete neutral default layer (§4.2). This layer *is* the internal look, by design.
+1. **`:root` defaults** (1 rule) — the complete neutral default layer (§4.2). This layer _is_ the internal look, by design.
 2. **Brand pointers** (6 rules) — keyed on brand alone, serving both variants: `[data-theme-brand="<code>"] { --brand: var(--brand-<code>); --brand-foreground: var(--brand-<code>-foreground); }`.
 3. **Internal reset** (1 rule) — `[data-theme-variant="internal"]` re-declares the exact `EXTERNAL_RESET_KEYS` set with values copied from defaults: `background`, `foreground`; all card, muted, primary, and secondary tokens; all feature tokens; `border`, `input`; `radius`, `radius-button`; and `font-heading`. It does **not** reset primitives, the brand pair, or roles external palettes never override. This is what makes an internal scope nested under an external scope return to internal values while still receiving its layer-2 brand pointer.
 4. **External brand palettes** (6 rules) — `[data-theme-variant="external"][data-theme-brand="<code>"]`; each emitted rule contains every `EXTERNAL_RESET_KEYS` declaration, taking a brand value where its source palette supplies one and the `DEFAULTS` value otherwise. This materialization is mandatory scope isolation: an inner external scope must reset every value an outer external/segment layer could have changed. fkab gets its **own selector** carrying a generator-level copy of the fkas value set (permanent alias, §5). `elma` gets its **own selector** carrying a generator-level copy of `DEFAULTS` for the reset set (reviewed must-override/isolation exception, not a template for inventing other customer palettes).
@@ -148,7 +148,7 @@ The count is exact: 1 + 6 + 1 + 6 + 1 = **15 emitted theme rules**, the now-full
 
 ### 3.3 Fallback by absence
 
-Permutations without distinct palettes get **no CSS rule** and resolve from lower layers. `external-tkas-company` and `external-guen-company` inherit their private palettes because no company rule exists — zero fallback CSS is written. The value matrix marks these *(inherits private)* so the gaps stay visible and fillable without restructuring.
+Permutations without distinct palettes get **no CSS rule** and resolve from lower layers. `external-tkas-company` and `external-guen-company` inherit their private palettes because no company rule exists — zero fallback CSS is written. The value matrix marks these _(inherits private)_ so the gaps stay visible and fillable without restructuring.
 
 ### 3.4 Specificity and Tailwind interop
 
@@ -172,13 +172,36 @@ Permutations without distinct palettes get **no CSS rule** and resolve from lowe
   --breakpoint-lg: 60rem;
   --breakpoint-3xl: 1920px;
   --spacing: 0.25rem;
-  --ease-overshoot: linear(0, 0.402 7.4%, 0.711 15.3%, 0.929 23.7%, 1.008 28.2%, 1.067 33%, 1.099 36.9%, 1.12 41%, 1.13 45.4%, 1.13 50.1%, 1.111 58.5%, 1.019 83.2%, 1.004 91.3%, 1);
+  --ease-overshoot: linear(
+    0,
+    0.402 7.4%,
+    0.711 15.3%,
+    0.929 23.7%,
+    1.008 28.2%,
+    1.067 33%,
+    1.099 36.9%,
+    1.12 41%,
+    1.13 45.4%,
+    1.13 50.1%,
+    1.111 58.5%,
+    1.019 83.2%,
+    1.004 91.3%,
+    1
+  );
 }
 
-@utility font-sans { font-family: var(--font-sans); }
-@utility font-heading { font-family: var(--font-heading); }
-@utility font-mono { font-family: var(--font-mono); }
-@utility rounded-button { border-radius: var(--radius-button); }
+@utility font-sans {
+  font-family: var(--font-sans);
+}
+@utility font-heading {
+  font-family: var(--font-heading);
+}
+@utility font-mono {
+  font-family: var(--font-mono);
+}
+@utility rounded-button {
+  border-radius: var(--radius-button);
+}
 ```
 
 Font and button-radius utilities are explicit because their public backing-token names would otherwise self-reference Tailwind theme variables. This contract follows Tailwind's documented [`@theme inline`](https://tailwindcss.com/docs/theme#referencing-other-variables) behavior. Component source uses the named radius utilities; it does not rely on Tailwind's unrelated default radii.
@@ -187,31 +210,55 @@ The raw entry's selector/utility lift source is `.ref/OrderModuleInternalWeb/pac
 
 ```css
 @custom-variant data-open {
-  &:where([data-state="open"]), &:where([data-open]:not([data-open="false"])) { @slot; }
+  &:where([data-state="open"]),
+  &:where([data-open]:not([data-open="false"])) {
+    @slot;
+  }
 }
 @custom-variant data-closed {
-  &:where([data-state="closed"]), &:where([data-closed]:not([data-closed="false"])) { @slot; }
+  &:where([data-state="closed"]),
+  &:where([data-closed]:not([data-closed="false"])) {
+    @slot;
+  }
 }
 @custom-variant data-checked {
-  &:where([data-state="checked"]), &:where([data-checked]:not([data-checked="false"])) { @slot; }
+  &:where([data-state="checked"]),
+  &:where([data-checked]:not([data-checked="false"])) {
+    @slot;
+  }
 }
 @custom-variant data-unchecked {
-  &:where([data-state="unchecked"]), &:where([data-unchecked]:not([data-unchecked="false"])) { @slot; }
+  &:where([data-state="unchecked"]),
+  &:where([data-unchecked]:not([data-unchecked="false"])) {
+    @slot;
+  }
 }
 @custom-variant data-selected {
-  &:where([data-selected="true"]) { @slot; }
+  &:where([data-selected="true"]) {
+    @slot;
+  }
 }
 @custom-variant data-disabled {
-  &:where([data-disabled="true"]), &:where([data-disabled]:not([data-disabled="false"])) { @slot; }
+  &:where([data-disabled="true"]),
+  &:where([data-disabled]:not([data-disabled="false"])) {
+    @slot;
+  }
 }
 @custom-variant data-active {
-  &:where([data-state="active"]), &:where([data-active]:not([data-active="false"])) { @slot; }
+  &:where([data-state="active"]),
+  &:where([data-active]:not([data-active="false"])) {
+    @slot;
+  }
 }
 @custom-variant data-horizontal {
-  &:where([data-orientation="horizontal"]) { @slot; }
+  &:where([data-orientation="horizontal"]) {
+    @slot;
+  }
 }
 @custom-variant data-vertical {
-  &:where([data-orientation="vertical"]) { @slot; }
+  &:where([data-orientation="vertical"]) {
+    @slot;
+  }
 }
 
 @utility hit-area-* {
@@ -236,7 +283,9 @@ The raw entry's selector/utility lift source is `.ref/OrderModuleInternalWeb/pac
 }
 
 @utility no-scrollbar {
-  &::-webkit-scrollbar { display: none; }
+  &::-webkit-scrollbar {
+    display: none;
+  }
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
@@ -260,16 +309,16 @@ The tables below are the **final, normative values** (Brand–segment matrix gap
 - `[conv]` — legacy HSL converted to oklch (exact sRGB→OKLab math; conversion table in §4.1)
 - `[mint]` — minted value, **final** (user decision, no design review pending)
 - `[user]` — value supplied directly by the user (new light sidebar)
-- *(inherit)* — no rule emitted; the permutation resolves the value from a lower layer (fallback by absence)
+- _(inherit)_ — no rule emitted; the permutation resolves the value from a lower layer (fallback by absence)
 
 ### 4.1 Conversions performed
 
-| Legacy | oklch |
-|---|---|
-| `hsl(20 5.9% 90%)` (fkas/fkse border) | `oklch(0.9232 0.0026 48.72)` |
+| Legacy                                      | oklch                        |
+| ------------------------------------------- | ---------------------------- |
+| `hsl(20 5.9% 90%)` (fkas/fkse border)       | `oklch(0.9232 0.0026 48.72)` |
 | `hsl(214.3 31.8% 91.4%)` (tkas/guen border) | `oklch(0.929 0.0126 255.53)` |
-| `hsl(60 4.8% 95.9%)` (fkas/fkse muted) | `oklch(0.97 0.0013 106.42)` |
-| `hsl(210 40% 96.1%)` (tkas/guen muted) | `oklch(0.9684 0.0068 247.9)` |
+| `hsl(60 4.8% 95.9%)` (fkas/fkse muted)      | `oklch(0.97 0.0013 106.42)`  |
+| `hsl(210 40% 96.1%)` (tkas/guen muted)      | `oklch(0.9684 0.0068 247.9)` |
 
 ### 4.2 Layer 1 — library defaults (`:root`), complete
 
@@ -279,64 +328,64 @@ Every token has a value before any theme marker exists. Internal themes are near
 
 Neutral ramp (internal ramp renumbered to Tailwind order, normalized to pure gray; old inverted 0=black scale retired; pure white is `--background`, not a ramp member):
 
-| Token | Value | Token | Value |
-|---|---|---|---|
-| `--neutral-50` | `oklch(0.96 0 0)` | `--neutral-500` | `oklch(0.57 0 0)` |
+| Token           | Value             | Token           | Value             |
+| --------------- | ----------------- | --------------- | ----------------- |
+| `--neutral-50`  | `oklch(0.96 0 0)` | `--neutral-500` | `oklch(0.57 0 0)` |
 | `--neutral-100` | `oklch(0.91 0 0)` | `--neutral-600` | `oklch(0.48 0 0)` |
 | `--neutral-200` | `oklch(0.83 0 0)` | `--neutral-700` | `oklch(0.40 0 0)` |
 | `--neutral-300` | `oklch(0.74 0 0)` | `--neutral-800` | `oklch(0.31 0 0)` |
 | `--neutral-400` | `oklch(0.66 0 0)` | `--neutral-900` | `oklch(0.23 0 0)` |
-| | | `--neutral-950` | `oklch(0.16 0 0)` |
+|                 |                   | `--neutral-950` | `oklch(0.16 0 0)` |
 
 Brand accents (all six, `:root`, never re-themed; every `-foreground` is white `oklch(1 0 0)`):
 
-| Token | Value | Provenance |
-|---|---|---|
-| `--brand-fkas` | `oklch(0.68 0.21747 38.8)` | [ref] |
-| `--brand-tkas` | `oklch(0.86 0.1035 191.11)` | [ref] |
-| `--brand-guen` | `oklch(0.21 0.0399 265.73)` | [ref] |
-| `--brand-fkab` | `var(--brand-fkas)` | **permanent alias by design** (not a gap, no design task) |
-| `--brand-fkse` | `oklch(0.4816 0.0908 240.16)` | [mint] — Telinet blue (external fkse `--primary`) |
-| `--brand-elma` | `oklch(0.29 0.05 220.14)` | [user] — reviewed Elmera brand pair (~13.93:1 on white) |
+| Token          | Value                         | Provenance                                                |
+| -------------- | ----------------------------- | --------------------------------------------------------- |
+| `--brand-fkas` | `oklch(0.68 0.21747 38.8)`    | [ref]                                                     |
+| `--brand-tkas` | `oklch(0.86 0.1035 191.11)`   | [ref]                                                     |
+| `--brand-guen` | `oklch(0.21 0.0399 265.73)`   | [ref]                                                     |
+| `--brand-fkab` | `var(--brand-fkas)`           | **permanent alias by design** (not a gap, no design task) |
+| `--brand-fkse` | `oklch(0.4816 0.0908 240.16)` | [mint] — Telinet blue (external fkse `--primary`)         |
+| `--brand-elma` | `oklch(0.29 0.05 220.14)`     | [user] — reviewed Elmera brand pair (~13.93:1 on white)   |
 
 #### 4.2.2 Role-token defaults
 
-| Token | Default | Provenance |
-|---|---|---|
-| `--background` / `--foreground` | `oklch(1 0 0)` / `oklch(0.15 0.0041 49.31)` | [ref] internal |
-| `--card` / `--card-foreground` | `oklch(1 0 0)` / `oklch(0.15 0.0041 49.31)` | [ref] internal |
-| `--card-soft` / `--card-soft-foreground` | `oklch(0.9702 0 0)` / `oklch(0.15 0.0041 49.31)` | [ref] internal v2 |
-| `--popover` / `--popover-foreground` | `oklch(1 0 0)` / `oklch(0.15 0.0041 49.31)` | independent literals (never `var(--card)`) |
-| `--muted` / `--muted-foreground` | `oklch(0.97 0.0013 106.42)` / `oklch(0.5555 0 0)` | [ref] internal |
-| `--accent` / `--accent-foreground` | `oklch(0.96 0 0)` / `oklch(0.16 0 0)` | [ref] internal v2, normalized |
-| `--feature` / `--feature-bright` / `--feature-foreground` | `oklch(0.96 0 0)` / `oklch(0.98 0 0)` / `oklch(0.16 0 0)` | [mint] neutral (internal points feature at a neutral per contract) |
-| `--primary` / `--primary-foreground` | `oklch(0.16 0 0)` / `oklch(1 0 0)` | [ref] internal (neutral-950/white) |
-| `--primary-soft` / `--primary-soft-foreground` | `oklch(0.96 0 0)` / `oklch(0.16 0 0)` | [mint] |
-| `--secondary` / `--secondary-foreground` | `oklch(0.97 0 0)` / `oklch(0.22 0 0)` | [ref] internal, normalized |
-| `--secondary-soft` / `--secondary-soft-foreground` | `oklch(0.9219 0 0)` / `oklch(0.16 0 0)` | [mint] |
-| `--brand` / `--brand-foreground` | `oklch(0.16 0 0)` / `oklch(1 0 0)` | neutral until a brand pointer applies |
-| `--error` / `--error-foreground` | `oklch(0.4526 0.17845 30.42)` / `oklch(1 0 0)` | [ref] shared status block |
-| `--error-soft` / `--error-soft-foreground` | `oklch(0.9352 0.02195 14.08)` / `oklch(0.4526 0.17845 30.42)` | [ref] |
-| `--info` / `--info-foreground` | `oklch(0.4 0.09979 263.74)` / `oklch(1 0 0)` | [ref] |
-| `--info-soft` / `--info-soft-foreground` | `oklch(0.9315 0.02014 233.86)` / `oklch(0.4 0.09979 263.74)` | [ref] |
-| `--success` / `--success-foreground` | `oklch(0.4277 0.13765 144.24)` / `oklch(1 0 0)` | [ref] |
-| `--success-soft` / `--success-soft-foreground` | `oklch(0.9346 0.02761 150.41)` / `oklch(0.4277 0.13765 144.24)` | [ref] |
-| `--warning` / `--warning-foreground` | `oklch(0.468 0.10443 65.71)` / `oklch(1 0 0)` | [ref] |
-| `--warning-soft` / `--warning-soft-foreground` | `oklch(0.9349 0.04795 81.5)` / `oklch(0.468 0.10443 65.71)` | [ref] |
-| `--destructive` / `--destructive-foreground` | `var(--error)` / `var(--error-foreground)` | contract aliases |
-| `--border` / `--input` | `oklch(0.9219 0 0)` / `oklch(0.9219 0 0)` | [user] |
-| `--ring` | `oklch(0.4844 0.20509 296.29)` | [ref] shared violet, brand-independent |
-| `--sidebar` / `--sidebar-foreground` | `oklch(0.9851 0 0)` / `oklch(0.16 0 0)` | [user] — **new light sidebar** (dark ref sidebar retired) |
-| `--sidebar-accent` / `--sidebar-accent-foreground` | `oklch(0.9219 0 0)` / `oklch(0.16 0 0)` | [mint] light selection per mock |
-| `--sidebar-border` | `oklch(0.9219 0 0)` | [user] |
-| `--sidebar-ring` | `var(--ring)` | alias |
-| `--sidebar-brand` / `--sidebar-brand-foreground` | `var(--brand)` / `var(--brand-foreground)` | alias — guen's dark-sidebar orange accent is **retired** with the light sidebar |
-| `--right-panel` / `--right-panel-foreground` | `oklch(0.9851 0 0)` / `oklch(0.1448 0 0)` | [ref] internal |
-| `--chart-1..8` | `oklch(0.289 0.0518 217.7)`, `oklch(0.3629 0.0619 204.44)`, `oklch(0.4322 0.0777 181.31)`, `oklch(0.4933 0.1113 160.18)`, `oklch(0.5623 0.139 143.03)`, `oklch(0.6348 0.1494 124.51)`, `oklch(0.714 0.1487 100.58)`, `oklch(0.7945 0.1709 71.19)` | [ref] internal teal→amber |
-| `--sh-identifier/keyword/string/class/property/entity/jsxliterals/sign/comment` | `#5c6773`, `#ff7733`, `#86b300`, `#a37acc`, `#36a3d9`, `#f29718`, `#4cbf99`, `#ed9366`, `#abb0b6` | [ref] Ayu Light |
-| `--radius` / `--radius-button` | `0.375rem` / `0.375rem` | [ref] internal |
-| `--font-sans` | `Roboto, ui-sans-serif, system-ui, sans-serif` | [ref] |
-| `--font-heading` | `var(--font-sans)` | fallback semantics |
+| Token                                                                           | Default                                                                                                                                                                                                                                           | Provenance                                                                      |
+| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `--background` / `--foreground`                                                 | `oklch(1 0 0)` / `oklch(0.15 0.0041 49.31)`                                                                                                                                                                                                       | [ref] internal                                                                  |
+| `--card` / `--card-foreground`                                                  | `oklch(1 0 0)` / `oklch(0.15 0.0041 49.31)`                                                                                                                                                                                                       | [ref] internal                                                                  |
+| `--card-soft` / `--card-soft-foreground`                                        | `oklch(0.9702 0 0)` / `oklch(0.15 0.0041 49.31)`                                                                                                                                                                                                  | [ref] internal v2                                                               |
+| `--popover` / `--popover-foreground`                                            | `oklch(1 0 0)` / `oklch(0.15 0.0041 49.31)`                                                                                                                                                                                                       | independent literals (never `var(--card)`)                                      |
+| `--muted` / `--muted-foreground`                                                | `oklch(0.97 0.0013 106.42)` / `oklch(0.5555 0 0)`                                                                                                                                                                                                 | [ref] internal                                                                  |
+| `--accent` / `--accent-foreground`                                              | `oklch(0.96 0 0)` / `oklch(0.16 0 0)`                                                                                                                                                                                                             | [ref] internal v2, normalized                                                   |
+| `--feature` / `--feature-bright` / `--feature-foreground`                       | `oklch(0.96 0 0)` / `oklch(0.98 0 0)` / `oklch(0.16 0 0)`                                                                                                                                                                                         | [mint] neutral (internal points feature at a neutral per contract)              |
+| `--primary` / `--primary-foreground`                                            | `oklch(0.16 0 0)` / `oklch(1 0 0)`                                                                                                                                                                                                                | [ref] internal (neutral-950/white)                                              |
+| `--primary-soft` / `--primary-soft-foreground`                                  | `oklch(0.96 0 0)` / `oklch(0.16 0 0)`                                                                                                                                                                                                             | [mint]                                                                          |
+| `--secondary` / `--secondary-foreground`                                        | `oklch(0.97 0 0)` / `oklch(0.22 0 0)`                                                                                                                                                                                                             | [ref] internal, normalized                                                      |
+| `--secondary-soft` / `--secondary-soft-foreground`                              | `oklch(0.9219 0 0)` / `oklch(0.16 0 0)`                                                                                                                                                                                                           | [mint]                                                                          |
+| `--brand` / `--brand-foreground`                                                | `oklch(0.16 0 0)` / `oklch(1 0 0)`                                                                                                                                                                                                                | neutral until a brand pointer applies                                           |
+| `--error` / `--error-foreground`                                                | `oklch(0.4526 0.17845 30.42)` / `oklch(1 0 0)`                                                                                                                                                                                                    | [ref] shared status block                                                       |
+| `--error-soft` / `--error-soft-foreground`                                      | `oklch(0.9352 0.02195 14.08)` / `oklch(0.4526 0.17845 30.42)`                                                                                                                                                                                     | [ref]                                                                           |
+| `--info` / `--info-foreground`                                                  | `oklch(0.4 0.09979 263.74)` / `oklch(1 0 0)`                                                                                                                                                                                                      | [ref]                                                                           |
+| `--info-soft` / `--info-soft-foreground`                                        | `oklch(0.9315 0.02014 233.86)` / `oklch(0.4 0.09979 263.74)`                                                                                                                                                                                      | [ref]                                                                           |
+| `--success` / `--success-foreground`                                            | `oklch(0.4277 0.13765 144.24)` / `oklch(1 0 0)`                                                                                                                                                                                                   | [ref]                                                                           |
+| `--success-soft` / `--success-soft-foreground`                                  | `oklch(0.9346 0.02761 150.41)` / `oklch(0.4277 0.13765 144.24)`                                                                                                                                                                                   | [ref]                                                                           |
+| `--warning` / `--warning-foreground`                                            | `oklch(0.468 0.10443 65.71)` / `oklch(1 0 0)`                                                                                                                                                                                                     | [ref]                                                                           |
+| `--warning-soft` / `--warning-soft-foreground`                                  | `oklch(0.9349 0.04795 81.5)` / `oklch(0.468 0.10443 65.71)`                                                                                                                                                                                       | [ref]                                                                           |
+| `--destructive` / `--destructive-foreground`                                    | `var(--error)` / `var(--error-foreground)`                                                                                                                                                                                                        | contract aliases                                                                |
+| `--border` / `--input`                                                          | `oklch(0.9219 0 0)` / `oklch(0.9219 0 0)`                                                                                                                                                                                                         | [user]                                                                          |
+| `--ring`                                                                        | `oklch(0.4844 0.20509 296.29)`                                                                                                                                                                                                                    | [ref] shared violet, brand-independent                                          |
+| `--sidebar` / `--sidebar-foreground`                                            | `oklch(0.9851 0 0)` / `oklch(0.16 0 0)`                                                                                                                                                                                                           | [user] — **new light sidebar** (dark ref sidebar retired)                       |
+| `--sidebar-accent` / `--sidebar-accent-foreground`                              | `oklch(0.9219 0 0)` / `oklch(0.16 0 0)`                                                                                                                                                                                                           | [mint] light selection per mock                                                 |
+| `--sidebar-border`                                                              | `oklch(0.9219 0 0)`                                                                                                                                                                                                                               | [user]                                                                          |
+| `--sidebar-ring`                                                                | `var(--ring)`                                                                                                                                                                                                                                     | alias                                                                           |
+| `--sidebar-brand` / `--sidebar-brand-foreground`                                | `var(--brand)` / `var(--brand-foreground)`                                                                                                                                                                                                        | alias — guen's dark-sidebar orange accent is **retired** with the light sidebar |
+| `--right-panel` / `--right-panel-foreground`                                    | `oklch(0.9851 0 0)` / `oklch(0.1448 0 0)`                                                                                                                                                                                                         | [ref] internal                                                                  |
+| `--chart-1..8`                                                                  | `oklch(0.289 0.0518 217.7)`, `oklch(0.3629 0.0619 204.44)`, `oklch(0.4322 0.0777 181.31)`, `oklch(0.4933 0.1113 160.18)`, `oklch(0.5623 0.139 143.03)`, `oklch(0.6348 0.1494 124.51)`, `oklch(0.714 0.1487 100.58)`, `oklch(0.7945 0.1709 71.19)` | [ref] internal teal→amber                                                       |
+| `--sh-identifier/keyword/string/class/property/entity/jsxliterals/sign/comment` | `#5c6773`, `#ff7733`, `#86b300`, `#a37acc`, `#36a3d9`, `#f29718`, `#4cbf99`, `#ed9366`, `#abb0b6`                                                                                                                                                 | [ref] Ayu Light                                                                 |
+| `--radius` / `--radius-button`                                                  | `0.375rem` / `0.375rem`                                                                                                                                                                                                                           | [ref] internal                                                                  |
+| `--font-sans`                                                                   | `Roboto, ui-sans-serif, system-ui, sans-serif`                                                                                                                                                                                                    | [ref]                                                                           |
+| `--font-heading`                                                                | `var(--font-sans)`                                                                                                                                                                                                                                | fallback semantics                                                              |
 
 ### 4.3 Layer 2 — brand pointers (6 rules, both variants)
 
@@ -357,33 +406,33 @@ For each of `fkas`, `tkas`, `guen`, `fkab`, `fkse`, `elma`:
 
 Selector: `[data-theme-variant="external"][data-theme-brand="<code>"]`. fkab has **no palette of its own in source**: the generator emits the fkas value set under fkab's **own selector** — a generator-level copy, permanent alias by design, indefinitely. `elma` has **no unique customer palette**: the generator emits `pick(DEFAULTS, EXTERNAL_RESET_KEYS)` under elma's **own selector** so compose-time must-override and nested-scope isolation still pass. **Reviewed exception:** this is not a template for inventing other customer external palettes. Before emission, every external source palette is overlaid on `pick(DEFAULTS, EXTERNAL_RESET_KEYS)`, so all six rules directly declare the complete reset set. This prevents values from a themed ancestor—including fkas's heading font and the company segment delta—from leaking into a nested external scope. Deduplication is allowed only in the source modules, never via shared selectors in the output; the emitted rule count stays exactly 15 (§3.2).
 
-Tokens not listed per brand *(inherit)* from `:root`: popover pair, accent pair, statuses, ring, sidebar family, right-panel, charts, syntax colors.
+Tokens not listed per brand _(inherit)_ from `:root`: popover pair, accent pair, statuses, ring, sidebar family, right-panel, charts, syntax colors.
 
-| Token | fkas | tkas | guen | fkse |
-|---|---|---|---|---|
-| `--background` | `oklch(0.96042 0.0214 46.99)` | `oklch(0.97902 0.02928 188.87)` | `oklch(0.95469 0.01887 279.53)` | `oklch(0.98014 0.01729 210.19)` |
-| `--foreground` | `oklch(0.3209 0.10325 38.8)` | `oklch(0.30407 0.05238 190.82)` | `oklch(0.19922 0.12072 268.2)` | `oklch(0.36735 0.09417 249.17)` |
-| `--card` | `oklch(1 0 0)` | `oklch(1 0 0)` | `oklch(1 0 0)` | `oklch(1 0 0)` |
-| `--card-foreground` | `oklch(0.23274 0.07506 38.69)` | `oklch(0.22003 0.0378 191.8)` | `oklch(0.14028 0.08604 266.38)` | `oklch(0.22503 0.06011 247.68)` |
-| `--card-soft` | `oklch(0.98095 0.01088 54.5)` | `oklch(0.98982 0.01388 185.97)` | `oklch(0.99199 0.00734 80.72)` | `oklch(0.99007 0.00865 210.19)` |
-| `--card-soft-foreground` | = `--foreground` value | = `--foreground` value | = `--foreground` value | = `--foreground` value |
-| `--muted` | `oklch(0.97 0.0013 106.42)` [conv] | `oklch(0.9684 0.0068 247.9)` [conv] | `oklch(0.9684 0.0068 247.9)` [conv] | `oklch(0.97 0.0013 106.42)` [conv] |
-| `--muted-foreground` | fg `/ 0.7` | fg `/ 0.7` | fg `/ 0.7` | fg `/ 0.7` |
-| `--primary` | `oklch(0.4848 0.16637 35.92)` | `oklch(0.47316 0.08165 190.23)` | `oklch(0.4863 0.25238 271.95)` | `oklch(0.48158 0.09084 240.16)` |
-| `--primary-foreground` | `oklch(1 0 0)` | `oklch(1 0 0)` | `oklch(1 0 0)` | `oklch(1 0 0)` |
-| `--primary-soft` | `oklch(0.94 0.03 45)` [mint] | `oklch(0.94 0.04 191)` [mint] | `oklch(0.93 0.035 277)` [mint] | `oklch(0.9368 0.04194 223.32)` [mint] |
-| `--primary-soft-foreground` | = `--card-foreground` value | = `--card-foreground` value | = `--card-foreground` value | = `--card-foreground` value |
-| `--secondary` | `oklch(0.3209 0.10325 38.8)` | `oklch(0.30407 0.05238 190.82)` | `oklch(0.19922 0.12072 268.2)` | `oklch(0.36735 0.09417 249.17)` |
-| `--secondary-foreground` | `oklch(1 0 0)` | `oklch(1 0 0)` | `oklch(1 0 0)` | `oklch(1 0 0)` |
-| `--secondary-soft` | `oklch(0.8861 0.05413 50.48)` | `oklch(0.94764 0.07736 190.94)` | `oklch(0.88401 0.04497 277.34)` | `oklch(0.9368 0.04194 223.32)` |
-| `--secondary-soft-foreground` | = `--secondary` value | = `--secondary` value | = `--secondary` value | = `--secondary` value |
-| `--feature` | `oklch(0.57866 0.19387 36.96)` | `oklch(0.55688 0.09585 191.06)` | `oklch(0.57814 0.22881 270.38)` | `oklch(0.56873 0.09344 229.37)` |
-| `--feature-bright` | `oklch(0.74389 0.16389 43.68)` | `oklch(0.77279 0.10225 190.47)` | `oklch(0.7068 0.1522 275.6)` | `oklch(0.77836 0.11783 206.21)` |
-| `--feature-foreground` | `oklch(0.80097 0.10434 49.42)` | `oklch(0.90178 0.09399 190.62)` | `oklch(0.84919 0.07412 279.64)` | `oklch(0.90492 0.09477 206.46)` |
-| `--border` / `--input` | `oklch(0.9232 0.0026 48.72)` [conv] | `oklch(0.929 0.0126 255.53)` [conv] | `oklch(0.929 0.0126 255.53)` [conv] | `oklch(0.9232 0.0026 48.72)` [conv] |
-| `--radius` | `0.75rem` | `0.95rem` | `0.5rem` | `0.75rem` |
-| `--radius-button` | `1.8125rem` | `0.95rem` | `0.5rem` | `1.8125rem` |
-| `--font-heading` | `"Neo Sans", var(--font-sans)` | `var(--font-sans)` [default reset] | `var(--font-sans)` [default reset] | `var(--font-sans)` [default reset] |
+| Token                         | fkas                                | tkas                                | guen                                | fkse                                  |
+| ----------------------------- | ----------------------------------- | ----------------------------------- | ----------------------------------- | ------------------------------------- |
+| `--background`                | `oklch(0.96042 0.0214 46.99)`       | `oklch(0.97902 0.02928 188.87)`     | `oklch(0.95469 0.01887 279.53)`     | `oklch(0.98014 0.01729 210.19)`       |
+| `--foreground`                | `oklch(0.3209 0.10325 38.8)`        | `oklch(0.30407 0.05238 190.82)`     | `oklch(0.19922 0.12072 268.2)`      | `oklch(0.36735 0.09417 249.17)`       |
+| `--card`                      | `oklch(1 0 0)`                      | `oklch(1 0 0)`                      | `oklch(1 0 0)`                      | `oklch(1 0 0)`                        |
+| `--card-foreground`           | `oklch(0.23274 0.07506 38.69)`      | `oklch(0.22003 0.0378 191.8)`       | `oklch(0.14028 0.08604 266.38)`     | `oklch(0.22503 0.06011 247.68)`       |
+| `--card-soft`                 | `oklch(0.98095 0.01088 54.5)`       | `oklch(0.98982 0.01388 185.97)`     | `oklch(0.99199 0.00734 80.72)`      | `oklch(0.99007 0.00865 210.19)`       |
+| `--card-soft-foreground`      | = `--foreground` value              | = `--foreground` value              | = `--foreground` value              | = `--foreground` value                |
+| `--muted`                     | `oklch(0.97 0.0013 106.42)` [conv]  | `oklch(0.9684 0.0068 247.9)` [conv] | `oklch(0.9684 0.0068 247.9)` [conv] | `oklch(0.97 0.0013 106.42)` [conv]    |
+| `--muted-foreground`          | fg `/ 0.7`                          | fg `/ 0.7`                          | fg `/ 0.7`                          | fg `/ 0.7`                            |
+| `--primary`                   | `oklch(0.4848 0.16637 35.92)`       | `oklch(0.47316 0.08165 190.23)`     | `oklch(0.4863 0.25238 271.95)`      | `oklch(0.48158 0.09084 240.16)`       |
+| `--primary-foreground`        | `oklch(1 0 0)`                      | `oklch(1 0 0)`                      | `oklch(1 0 0)`                      | `oklch(1 0 0)`                        |
+| `--primary-soft`              | `oklch(0.94 0.03 45)` [mint]        | `oklch(0.94 0.04 191)` [mint]       | `oklch(0.93 0.035 277)` [mint]      | `oklch(0.9368 0.04194 223.32)` [mint] |
+| `--primary-soft-foreground`   | = `--card-foreground` value         | = `--card-foreground` value         | = `--card-foreground` value         | = `--card-foreground` value           |
+| `--secondary`                 | `oklch(0.3209 0.10325 38.8)`        | `oklch(0.30407 0.05238 190.82)`     | `oklch(0.19922 0.12072 268.2)`      | `oklch(0.36735 0.09417 249.17)`       |
+| `--secondary-foreground`      | `oklch(1 0 0)`                      | `oklch(1 0 0)`                      | `oklch(1 0 0)`                      | `oklch(1 0 0)`                        |
+| `--secondary-soft`            | `oklch(0.8861 0.05413 50.48)`       | `oklch(0.94764 0.07736 190.94)`     | `oklch(0.88401 0.04497 277.34)`     | `oklch(0.9368 0.04194 223.32)`        |
+| `--secondary-soft-foreground` | = `--secondary` value               | = `--secondary` value               | = `--secondary` value               | = `--secondary` value                 |
+| `--feature`                   | `oklch(0.57866 0.19387 36.96)`      | `oklch(0.55688 0.09585 191.06)`     | `oklch(0.57814 0.22881 270.38)`     | `oklch(0.56873 0.09344 229.37)`       |
+| `--feature-bright`            | `oklch(0.74389 0.16389 43.68)`      | `oklch(0.77279 0.10225 190.47)`     | `oklch(0.7068 0.1522 275.6)`        | `oklch(0.77836 0.11783 206.21)`       |
+| `--feature-foreground`        | `oklch(0.80097 0.10434 49.42)`      | `oklch(0.90178 0.09399 190.62)`     | `oklch(0.84919 0.07412 279.64)`     | `oklch(0.90492 0.09477 206.46)`       |
+| `--border` / `--input`        | `oklch(0.9232 0.0026 48.72)` [conv] | `oklch(0.929 0.0126 255.53)` [conv] | `oklch(0.929 0.0126 255.53)` [conv] | `oklch(0.9232 0.0026 48.72)` [conv]   |
+| `--radius`                    | `0.75rem`                           | `0.95rem`                           | `0.5rem`                            | `0.75rem`                             |
+| `--radius-button`             | `1.8125rem`                         | `0.95rem`                           | `0.5rem`                            | `1.8125rem`                           |
+| `--font-heading`              | `"Neo Sans", var(--font-sans)`      | `var(--font-sans)` [default reset]  | `var(--font-sans)` [default reset]  | `var(--font-sans)` [default reset]    |
 
 All `[ref]` unless marked. Two notational conventions in this table:
 
@@ -394,41 +443,41 @@ All `[ref]` unless marked. Two notational conventions in this table:
 
 `[data-theme-variant="external"][data-theme-brand="fkas"][data-theme-segment="company"]` (the ref's `.fkas-c`):
 
-| Token | Value |
-|---|---|
-| `--background` | `oklch(0.9823 0.01428 213.1)` |
-| `--foreground` | `oklch(0.30579 0.03693 215.45)` |
-| `--card-foreground` | `oklch(0.25285 0.03792 212.52)` |
-| `--card-soft` | `oklch(0.99011 0.0069 219.56)` |
-| `--card-soft-foreground` | `oklch(0.30579 0.03693 215.45)` |
-| `--muted-foreground` | fg `/ 0.7` |
-| `--primary` | `oklch(0.47471 0.07313 217.18)` |
-| `--primary-soft` | `oklch(0.95328 0.03401 215.01)` |
-| `--primary-soft-foreground` | `oklch(0.25285 0.03792 212.52)` |
-| `--secondary` | `oklch(0.30579 0.03693 215.45)` |
-| `--secondary-soft` | `oklch(0.95328 0.03401 215.01)` |
+| Token                         | Value                           |
+| ----------------------------- | ------------------------------- |
+| `--background`                | `oklch(0.9823 0.01428 213.1)`   |
+| `--foreground`                | `oklch(0.30579 0.03693 215.45)` |
+| `--card-foreground`           | `oklch(0.25285 0.03792 212.52)` |
+| `--card-soft`                 | `oklch(0.99011 0.0069 219.56)`  |
+| `--card-soft-foreground`      | `oklch(0.30579 0.03693 215.45)` |
+| `--muted-foreground`          | fg `/ 0.7`                      |
+| `--primary`                   | `oklch(0.47471 0.07313 217.18)` |
+| `--primary-soft`              | `oklch(0.95328 0.03401 215.01)` |
+| `--primary-soft-foreground`   | `oklch(0.25285 0.03792 212.52)` |
+| `--secondary`                 | `oklch(0.30579 0.03693 215.45)` |
+| `--secondary-soft`            | `oklch(0.95328 0.03401 215.01)` |
 | `--secondary-soft-foreground` | `oklch(0.30579 0.03693 215.45)` |
-| `--feature` | `oklch(0.55738 0.06979 216.27)` |
-| `--feature-bright` | `oklch(0.7871 0.0657 225.82)` |
-| `--feature-foreground` | `oklch(0.90856 0.05958 225.03)` |
+| `--feature`                   | `oklch(0.55738 0.06979 216.27)` |
+| `--feature-bright`            | `oklch(0.7871 0.0657 225.82)`   |
+| `--feature-foreground`        | `oklch(0.90856 0.05958 225.03)` |
 
 ### 4.7 Composition matrix — how each of the 20 themes resolves
 
-| Theme slug | Layers applied | Notes |
-|---|---|---|
-| `internal-fkas-private` / `-company` | 1 + 2(fkas) + 3 | segment axis valueless internally |
-| `internal-tkas-private` / `-company` | 1 + 2(tkas) + 3 | |
-| `internal-guen-private` / `-company` | 1 + 2(guen) + 3 | sidebar accent = navy `--brand` on the light sidebar (old dark-sidebar orange retired) |
-| `internal-elma-private` / `-company` | 1 + 2(elma) + 3 | grayscale defaults + Elmera brand pair; no segment delta |
-| `internal-fkab-company` | 1 + 2(fkab→fkas alias) + 3 | `internal-fkab-private` is **illegal** (pinned) |
-| `internal-fkse-private` | 1 + 2(fkse) + 3 | first time fkse has internal accents; `internal-fkse-company` **illegal** |
-| `external-fkas-private` | 1 + 2(fkas) + 4(fkas) | |
-| `external-fkas-company` | 1 + 2(fkas) + 4(fkas) + 5 | the only segment delta |
-| `external-tkas-private` / `-company` | 1 + 2(tkas) + 4(tkas) | company *(inherits private — no rule)* |
-| `external-guen-private` / `-company` | 1 + 2(guen) + 4(guen) | company *(inherits private — no rule)* |
-| `external-elma-private` / `-company` | 1 + 2(elma) + 4(default-copy) | reviewed isolation exception; company *(inherits private — no rule)* |
-| `external-fkab-company` | 1 + 2(fkab) + 4(fkas values) | permanent alias by design; `external-fkab-private` **illegal** |
-| `external-fkse-private` | 1 + 2(fkse) + 4(fkse) | renders as Telinet (displayName + logo); `external-fkse-company` **illegal** |
+| Theme slug                           | Layers applied                | Notes                                                                                  |
+| ------------------------------------ | ----------------------------- | -------------------------------------------------------------------------------------- |
+| `internal-fkas-private` / `-company` | 1 + 2(fkas) + 3               | segment axis valueless internally                                                      |
+| `internal-tkas-private` / `-company` | 1 + 2(tkas) + 3               |                                                                                        |
+| `internal-guen-private` / `-company` | 1 + 2(guen) + 3               | sidebar accent = navy `--brand` on the light sidebar (old dark-sidebar orange retired) |
+| `internal-elma-private` / `-company` | 1 + 2(elma) + 3               | grayscale defaults + Elmera brand pair; no segment delta                               |
+| `internal-fkab-company`              | 1 + 2(fkab→fkas alias) + 3    | `internal-fkab-private` is **illegal** (pinned)                                        |
+| `internal-fkse-private`              | 1 + 2(fkse) + 3               | first time fkse has internal accents; `internal-fkse-company` **illegal**              |
+| `external-fkas-private`              | 1 + 2(fkas) + 4(fkas)         |                                                                                        |
+| `external-fkas-company`              | 1 + 2(fkas) + 4(fkas) + 5     | the only segment delta                                                                 |
+| `external-tkas-private` / `-company` | 1 + 2(tkas) + 4(tkas)         | company _(inherits private — no rule)_                                                 |
+| `external-guen-private` / `-company` | 1 + 2(guen) + 4(guen)         | company _(inherits private — no rule)_                                                 |
+| `external-elma-private` / `-company` | 1 + 2(elma) + 4(default-copy) | reviewed isolation exception; company _(inherits private — no rule)_                   |
+| `external-fkab-company`              | 1 + 2(fkab) + 4(fkas values)  | permanent alias by design; `external-fkab-private` **illegal**                         |
+| `external-fkse-private`              | 1 + 2(fkse) + 4(fkse)         | renders as Telinet (displayName + logo); `external-fkse-company` **illegal**           |
 
 ## 5 Value policy rulings
 
@@ -454,11 +503,11 @@ Single entry **`@elmeragroup/ui/theme`** — no per-framework entry points (`/th
 
 Brand and color scheme are separate writers. Treating `ThemeProvider` as a portable first-paint adapter is false: it cannot stamp `<html>` from `_app`, and React 19 `createRoot` `<script>` nodes do not execute on Vite.
 
-| Axis | Source of truth | Initial-paint writer | Runtime writer | Persistence |
-| --- | --- | --- | --- | --- |
-| Brand (variant × brand × segment) | Controlled `theme` from deployment, loader, or host config | SSR or build-time attributes on `<html>` via `themeAttributes(theme)` | `ThemeProvider` echoes the same validated `theme` | None. Brand is never written to `localStorage`, cookies, or `data-theme` |
+| Axis                                       | Source of truth                                                                      | Initial-paint writer                                                                                          | Runtime writer                                                       | Persistence                                                                                                                 |
+| ------------------------------------------ | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Brand (variant × brand × segment)          | Controlled `theme` from deployment, loader, or host config                           | SSR or build-time attributes on `<html>` via `themeAttributes(theme)`                                         | `ThemeProvider` echoes the same validated `theme`                    | None. Brand is never written to `localStorage`, cookies, or `data-theme`                                                    |
 | Color scheme (`light` / `dark` / `system`) | Mount-level `forcedColorScheme` if set, else persisted preference / default / system | Host-placed closed classic script (`ColorSchemeScript` or `colorSchemeScriptSource`) before paintable content | Provider-owned state; setters and browser events apply synchronously | `localStorage` under `storageKey` (default `elmera-color-scheme`). Cookie persistence is a later SSR adapter, not this wave |
-| Scoped brand | `ThemeScope.theme` | Attributes on the scope element via `themeAttributes` | React reconciliation on that element | None |
+| Scoped brand                               | `ThemeScope.theme`                                                                   | Attributes on the scope element via `themeAttributes`                                                         | React reconciliation on that element                                 | None                                                                                                                        |
 
 The host constructs **one** resolved brand configuration and **one** color-scheme configuration. The same brand object is passed to `themeAttributes` and `ThemeProvider.theme`. The same color-scheme literals (`storageKey`, `defaultColorScheme`, `enableSystem`, optional `forcedColorScheme`) are passed to the host bootstrap and to `ThemeProvider`. `injectColorSchemeScript` defaults to **`false`**: a host adapter is always the declared bootstrap owner.
 
@@ -508,9 +557,7 @@ export function RootLayout({ children }: { children: React.ReactNode }) {
           defaultColorScheme={colorScheme.defaultColorScheme}
           enableSystem={colorScheme.enableSystem}
           injectColorSchemeScript={false}>
-          <ElmeraGroupUiProvider locale="nb-NO">
-            {children}
-          </ElmeraGroupUiProvider>
+          <ElmeraGroupUiProvider locale="nb-NO">{children}</ElmeraGroupUiProvider>
         </ThemeProvider>
       </body>
     </html>
@@ -552,6 +599,7 @@ body {
   ```
 
   There is **no** `enableColorScheme`. `ColorSchemeOptions` is `{ storageKey?; defaultColorScheme?; enableSystem?; forcedColorScheme? }` with defaults `storageKey: "elmera-color-scheme"`, `defaultColorScheme: "system"`, `enableSystem: true`.
+
 - `useTheme()` returns `{ ...theme, slug }` and throws outside `ThemeProvider` or `ThemeScope`. Brand data is defined whenever the controlled prop is defined.
 - `useColorScheme()` takes **no** options, reads this document writer, and **throws** outside `ThemeProvider`. Two consumers cannot fork storage keys.
 - Nested `ThemeProvider`s passthrough only when an outer **document writer** already exists. `ThemeScope` does not set that flag; a provider inside a scope-only tree still becomes the writer.
@@ -606,13 +654,13 @@ Shared invariants for every recipe:
 
 Verified guarantees vs written guidance:
 
-| Host | Status |
-| --- | --- |
-| Next App Router | **Fixture-verified** (`apps/docs` production HTML + delayed-hydration / JS-disabled / nonce probes) |
-| Vite / pure CSR | **Fixture-verified** (`apps/static-theme` production HTML + React-blocked probes). That app is not `fixtures/vite` and is not a publish gate |
-| Next Pages | Documented recipe only. Do not claim verified no-flash |
-| TanStack Start | Documented recipe only. Do not claim verified no-flash |
-| React Router 7 (framework/SSR) | Documented recipe only. Do not claim verified no-flash |
+| Host                           | Status                                                                                                                                       |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Next App Router                | **Fixture-verified** (`apps/docs` production HTML + delayed-hydration / JS-disabled / nonce probes)                                          |
+| Vite / pure CSR                | **Fixture-verified** (`apps/static-theme` production HTML + React-blocked probes). That app is not `fixtures/vite` and is not a publish gate |
+| Next Pages                     | Documented recipe only. Do not claim verified no-flash                                                                                       |
+| TanStack Start                 | Documented recipe only. Do not claim verified no-flash                                                                                       |
+| React Router 7 (framework/SSR) | Documented recipe only. Do not claim verified no-flash                                                                                       |
 
 Route-specific forced **first paint** is a **document-adapter** job: a distinct root layout, `_document`, HTML entry, or `transformIndexHtml` path that knows the route’s force at HTML-generation time and passes the same primitive to bootstrap and provider. Descendant `<ForceColorScheme>` is **runtime-only** (hydration and later). Do not document it as a no-flash page lock.
 
@@ -809,11 +857,14 @@ const BRANDS = {
   fkab: { code: "fkab", displayName: "Fjordkraft Företag", segments: ["company"] },
   fkse: { code: "fkse", displayName: "Telinet", segments: ["private"] },
   elma: { code: "elma", displayName: "Elmera", segments: ["private", "company"] },
-} as const satisfies Record<BrandCode, {
-  code: BrandCode;
-  displayName: string;
-  segments: readonly ThemeSegment[];
-}>;
+} as const satisfies Record<
+  BrandCode,
+  {
+    code: BrandCode;
+    displayName: string;
+    segments: readonly ThemeSegment[];
+  }
+>;
 ```
 
 Logo components live with the icon system, keyed by the same codes.
@@ -836,6 +887,7 @@ Logo components live with the icon system, keyed by the same codes.
     | `${ThemeVariant}-fkse-private`;
   type SupportedLocale = "nb-NO" | "sv-SE" | "en-US" | "fi-FI";
   ```
+
 - `themeSlug(theme: ThemeInput): ThemeSlug` is total. `parseThemeSlug(slug: string): ThemeInput | null` returns `null` for malformed axes and illegal pinned-brand combinations; it never coerces or logs.
 - `coerceTheme(input: unknown): ThemeInput | null` is the env-free pin-table parse: `null` for non-objects and unknown/missing axes; a pinned brand with the wrong segment returns the same variant/brand with `BRANDS[brand].segments[0]`. It never throws or logs. Host pickers that need silent pinning (docs `ThemePicker`) call this, not `validateTheme`.
 - `validateTheme(input: unknown): ThemeInput` layers §6 diagnostics on `coerceTheme`. It rejects non-objects and unknown/missing axis values in every environment. When all three axes are known but a pinned brand has the wrong segment, it follows §6: `process.env.NODE_ENV !== "production"` throws; production returns the coerced theme and calls `console.warn` once for that invocation. This is the library's sole environment read; consumer bundlers replace the conventional expression and Node SSR supplies it natively. `themeAttributes` and both theme providers call the validator at their runtime boundary even though their public prop is typed.

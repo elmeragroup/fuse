@@ -10,15 +10,15 @@
 
 ## 2 Anatomy
 
-| Part | Base | Notes |
-| --- | --- | --- |
-| `RadioGroup` | `Field` + `FieldSet`/`FieldLegend`/`FieldDescription`/`FieldError` wrapping `@base-ui/react/radio-group` | header row hosts legend + pending spinner |
-| `RadioGroupItem` | `@base-ui/react/radio` `Radio.Root` + `.Indicator` | 16px circle, 8px dot indicator |
-| `Radio` | `Field.Item` + base-ui `Field.Label` + `RadioGroupItem` | compact inline label row |
-| `RadioItem` | `SelectionItem.Shell` with a `RadioGroupItem` control | card row; carries namespace aliases (§8.1) |
-| `RadioItem.Title/.Description/.Content/.Actions/.SubSection` | aliases of `SelectionItem.*` | **the same objects** as the SelectionItem parts |
-| `RadioItemGroup` | `RadioGroup` + `ItemGroup` (`role="list"`, `gap-0 select-none`) | stacked-card variant |
-| `RadioIconButton` | base-ui `Radio.Root` styled as an icon button | segmented icon picker |
+| Part                                                         | Base                                                                                                     | Notes                                           |
+| ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| `RadioGroup`                                                 | `Field` + `FieldSet`/`FieldLegend`/`FieldDescription`/`FieldError` wrapping `@base-ui/react/radio-group` | header row hosts legend + pending spinner       |
+| `RadioGroupItem`                                             | `@base-ui/react/radio` `Radio.Root` + `.Indicator`                                                       | 16px circle, 8px dot indicator                  |
+| `Radio`                                                      | `Field.Item` + base-ui `Field.Label` + `RadioGroupItem`                                                  | compact inline label row                        |
+| `RadioItem`                                                  | `SelectionItem.Shell` with a `RadioGroupItem` control                                                    | card row; carries namespace aliases (§8.1)      |
+| `RadioItem.Title/.Description/.Content/.Actions/.SubSection` | aliases of `SelectionItem.*`                                                                             | **the same objects** as the SelectionItem parts |
+| `RadioItemGroup`                                             | `RadioGroup` + `ItemGroup` (`role="list"`, `gap-0 select-none`)                                          | stacked-card variant                            |
+| `RadioIconButton`                                            | base-ui `Radio.Root` styled as an icon button                                                            | segmented icon picker                           |
 
 ```tsx
 <RadioGroup label="Contract" value={value} onChange={setValue} isPending={isLoading}>
@@ -34,20 +34,20 @@
 
 **RadioGroup** (`RadioGroupProps`)
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `label` | `string` | — | `FieldLegend variant="label"` in the header row |
-| `description` | `string` | — | `FieldDescription` |
-| `errorMessage` | `ReactNode` | — | `FieldError` (rendered only when truthy); widened per the labeled-composite convention (§8) |
-| `isPending` | `boolean` | — | spinner (`SpinnerGap`, `size-3 animate-spin`) at the header row's end; header renders when `label || isPending` is truthy (§8.2) |
-| `orientation` | `"vertical" \| "horizontal"` | `"vertical"` | vertical: `flex-col gap-2`; horizontal: `flex-wrap gap-4` |
-| `value` | `string \| null` | — | `null` coerced to `undefined` before the primitive |
-| `defaultValue` | `string` | — | uncontrolled initial value |
-| `onChange` | `(value: string) => void` | — | wraps `onValueChange`; coerces with `String(next)` |
-| `isDisabled` / `isInvalid` | `boolean` | — | on `Field` (and `disabled` on the primitive) |
-| `isReadOnly` / `isRequired` | `boolean` | — | `readOnly` / `required` on the primitive |
-| `name` | `string` | — | set **directly on the radio-group primitive** (unlike CheckboxGroup — §8.7) |
-| `id` / `className` / `children` | — | — | on the primitive |
+| Prop                            | Type                         | Default      | Notes                                                                                             |
+| ------------------------------- | ---------------------------- | ------------ | ------------------------------------------------------------------------------------------------- |
+| `label`                         | `string`                     | —            | `FieldLegend variant="label"` in the header row                                                   |
+| `description`                   | `string`                     | —            | `FieldDescription`                                                                                |
+| `errorMessage`                  | `ReactNode`                  | —            | `FieldError` (rendered only when truthy); widened per the labeled-composite convention (§8)       |
+| `isPending`                     | `boolean`                    | —            | spinner (`SpinnerGap`, `size-3 animate-spin`) at the header row's end; header renders when `label |     | isPending` is truthy (§8.2) |
+| `orientation`                   | `"vertical" \| "horizontal"` | `"vertical"` | vertical: `flex-col gap-2`; horizontal: `flex-wrap gap-4`                                         |
+| `value`                         | `string \| null`             | —            | `null` coerced to `undefined` before the primitive                                                |
+| `defaultValue`                  | `string`                     | —            | uncontrolled initial value                                                                        |
+| `onChange`                      | `(value: string) => void`    | —            | wraps `onValueChange`; coerces with `String(next)`                                                |
+| `isDisabled` / `isInvalid`      | `boolean`                    | —            | on `Field` (and `disabled` on the primitive)                                                      |
+| `isReadOnly` / `isRequired`     | `boolean`                    | —            | `readOnly` / `required` on the primitive                                                          |
+| `name`                          | `string`                     | —            | set **directly on the radio-group primitive** (unlike CheckboxGroup — §8.7)                       |
+| `id` / `className` / `children` | —                            | —            | on the primitive                                                                                  |
 
 **RadioItemGroup** — same `RadioGroupProps`; wraps `children` in `ItemGroup`.
 
@@ -57,17 +57,17 @@
 
 **RadioItem** (`RadioItemProps`)
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `value` | `string` | — (required) | forwarded to the inner `RadioGroupItem` |
-| `isDisabled` | `boolean` | — | control + shell disabled styling |
-| `controlPosition` | `"start" \| "end"` | `"start"` | forwarded to `SelectionItem.Shell` (new axis, selection-item.md §8.2) |
-| `className` / `children` | — | — | children partitioned by the shell |
+| Prop                     | Type               | Default      | Notes                                                                 |
+| ------------------------ | ------------------ | ------------ | --------------------------------------------------------------------- |
+| `value`                  | `string`           | — (required) | forwarded to the inner `RadioGroupItem`                               |
+| `isDisabled`             | `boolean`          | —            | control + shell disabled styling                                      |
+| `controlPosition`        | `"start" \| "end"` | `"start"`    | forwarded to `SelectionItem.Shell` (new axis, selection-item.md §8.2) |
+| `className` / `children` | —                  | —            | children partitioned by the shell                                     |
 
 **RadioIconButton** (`RadioIconButtonProps`) — `value: string` (required), `isDisabled?`, `className?`, `children?` (the icon), and:
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
+| Prop   | Type                                                          | Default  | Notes                                                                                                                                                                                   |
+| ------ | ------------------------------------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `size` | `"icon" \| "icon-xxs" \| "icon-xs" \| "icon-sm" \| "icon-lg"` | `"icon"` | size map: `icon-xxs` size-6/svg-3, `icon-xs` size-7/svg-3.5, `icon-sm` size-8/svg-4, `icon` size-9/svg-4, `icon-lg` size-10/svg-5 (svg sizes apply only to `svg:not([class*='size-'])`) |
 
 ## 4 Variants

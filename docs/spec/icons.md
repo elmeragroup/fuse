@@ -31,57 +31,57 @@ These names were checked against the pinned package tarball. Adding or removing 
 
 The old namespace is not reproduced. When porting reference code, use these canonical substitutions; concepts not listed use an identically named curated export.
 
-| Reference concept | Public export |
-| --- | --- |
-| `AlertCircle` | `WarningCircle` |
-| `AlertTriangle` | `Warning` |
-| `BadgeCheck` | `SealCheck` |
-| `BadgePercent` | `SealPercent` |
-| `Ban` | `Prohibit` |
-| `Banknote` | `Money` |
-| `Blocks` | `Stack` |
-| `Box` | `Package` |
-| `Building2` | `Buildings` |
-| `Calendar` | `CalendarBlank` |
-| `ChartBarIncreasing` | `ChartLineUp` |
-| `ChartNetwork` | `Graph` |
-| `ChevronDown/Left/Right/Up` | `CaretDown/Left/Right/Up` |
-| `ChevronsUpDown` | `CaretUpDown` |
-| `CircleDollarSign` | `CurrencyCircleDollar` |
-| `CloudUpload` | `CloudArrowUp` |
-| `Delete` | `Backspace` |
-| `Ellipsis` / `MoreHorizontal` | `DotsThree` |
-| `EllipsisVertical` | `DotsThreeVertical` |
-| `Expand` | `ArrowsOut` |
-| `ExternalLink` | `ArrowSquareOut` |
-| `EyeOff` | `EyeSlash` |
-| `FileStack` | `Files` |
-| `FileUp` | `FileArrowUp` |
-| `GaugeCircle` | `Gauge` |
-| `History` | `ArrowsClockwise` |
-| `Home` | `House` |
-| `Languages` | `Translate` |
-| `LineChart` | `ChartLine` |
-| `ListOrdered` | `ListNumbers` |
-| `Loader2` | `SpinnerGap` |
-| `LogOut` | `SignOut` |
-| `Mail` | `Envelope` |
-| `MapPinHouse` | `MapPin` |
-| `NotebookPen` | `Notebook` |
-| `PencilLine` | `NotePencil` |
-| `RefreshCw` | `ArrowsClockwise` |
-| `Save` | `FloppyDisk` |
-| `Search` | `MagnifyingGlass` |
-| `Send` | `PaperPlaneTilt` |
-| `Settings` | `Gear` |
-| `ShoppingCart` | `ShoppingCart` |
-| `Smartphone` | `DeviceMobile` |
-| `Store` | `Storefront` |
-| `TextSearch` | `FileMagnifyingGlass` |
-| `Trash2` | `Trash` |
-| `TrendingDown/Up` | `TrendDown/Up` |
-| `TrendingUpDown` | `ArrowsDownUp` |
-| `Zap` | `Lightning` |
+| Reference concept             | Public export             |
+| ----------------------------- | ------------------------- |
+| `AlertCircle`                 | `WarningCircle`           |
+| `AlertTriangle`               | `Warning`                 |
+| `BadgeCheck`                  | `SealCheck`               |
+| `BadgePercent`                | `SealPercent`             |
+| `Ban`                         | `Prohibit`                |
+| `Banknote`                    | `Money`                   |
+| `Blocks`                      | `Stack`                   |
+| `Box`                         | `Package`                 |
+| `Building2`                   | `Buildings`               |
+| `Calendar`                    | `CalendarBlank`           |
+| `ChartBarIncreasing`          | `ChartLineUp`             |
+| `ChartNetwork`                | `Graph`                   |
+| `ChevronDown/Left/Right/Up`   | `CaretDown/Left/Right/Up` |
+| `ChevronsUpDown`              | `CaretUpDown`             |
+| `CircleDollarSign`            | `CurrencyCircleDollar`    |
+| `CloudUpload`                 | `CloudArrowUp`            |
+| `Delete`                      | `Backspace`               |
+| `Ellipsis` / `MoreHorizontal` | `DotsThree`               |
+| `EllipsisVertical`            | `DotsThreeVertical`       |
+| `Expand`                      | `ArrowsOut`               |
+| `ExternalLink`                | `ArrowSquareOut`          |
+| `EyeOff`                      | `EyeSlash`                |
+| `FileStack`                   | `Files`                   |
+| `FileUp`                      | `FileArrowUp`             |
+| `GaugeCircle`                 | `Gauge`                   |
+| `History`                     | `ArrowsClockwise`         |
+| `Home`                        | `House`                   |
+| `Languages`                   | `Translate`               |
+| `LineChart`                   | `ChartLine`               |
+| `ListOrdered`                 | `ListNumbers`             |
+| `Loader2`                     | `SpinnerGap`              |
+| `LogOut`                      | `SignOut`                 |
+| `Mail`                        | `Envelope`                |
+| `MapPinHouse`                 | `MapPin`                  |
+| `NotebookPen`                 | `Notebook`                |
+| `PencilLine`                  | `NotePencil`              |
+| `RefreshCw`                   | `ArrowsClockwise`         |
+| `Save`                        | `FloppyDisk`              |
+| `Search`                      | `MagnifyingGlass`         |
+| `Send`                        | `PaperPlaneTilt`          |
+| `Settings`                    | `Gear`                    |
+| `ShoppingCart`                | `ShoppingCart`            |
+| `Smartphone`                  | `DeviceMobile`            |
+| `Store`                       | `Storefront`              |
+| `TextSearch`                  | `FileMagnifyingGlass`     |
+| `Trash2`                      | `Trash`                   |
+| `TrendingDown/Up`             | `TrendDown/Up`            |
+| `TrendingUpDown`              | `ArrowsDownUp`            |
+| `Zap`                         | `Lightning`               |
 
 No compatibility aliases are exported. A port must choose the semantic result explicitly instead of mechanically preserving a legacy glyph name.
 
@@ -94,21 +94,21 @@ These are hand-authored SVG React components under `/icons`, copied from the pin
 
 The source-to-export mapping is exact:
 
-| Public export | Pinned source |
-| --- | --- |
-| `BankIdDna` | `.ref/OrderModuleWeb/packages/ui/src/icons/bankid-dna.svg` |
-| `BankIdSweden` | `.ref/OrderModuleWeb/packages/ui/src/icons/bankid-sweden.svg` |
-| `Vipps` | `.ref/OrderModuleWeb/packages/ui/src/icons/vipps.svg` |
-| `Signing` | `.ref/OrderModuleWeb/packages/ui/src/icons/signing.tsx` |
-| `Contract` | `.ref/OrderModuleWeb/packages/ui/src/icons/contract.svg` |
-| `StromSmart` | `.ref/OrderModuleWeb/packages/ui/src/icons/strom-smart.svg` |
-| `AlertMark` | `.ref/OrderModuleWeb/packages/ui/src/icons/alert.svg` |
-| `HomeTitleIcon` | `.ref/OrderModuleWeb/packages/ui/src/icons/home-title-icon.svg` |
-| `OrderLogo` | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/order-logo.tsx` |
-| `CollectLogo` | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/collect-logo.tsx` |
-| `DeviateLogo` | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/deviate-logo.tsx` |
-| `FunnelLogo` | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/funnel-logo.tsx` |
-| `DoubleCheck` | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/double-check.tsx` |
+| Public export   | Pinned source                                                        |
+| --------------- | -------------------------------------------------------------------- |
+| `BankIdDna`     | `.ref/OrderModuleWeb/packages/ui/src/icons/bankid-dna.svg`           |
+| `BankIdSweden`  | `.ref/OrderModuleWeb/packages/ui/src/icons/bankid-sweden.svg`        |
+| `Vipps`         | `.ref/OrderModuleWeb/packages/ui/src/icons/vipps.svg`                |
+| `Signing`       | `.ref/OrderModuleWeb/packages/ui/src/icons/signing.tsx`              |
+| `Contract`      | `.ref/OrderModuleWeb/packages/ui/src/icons/contract.svg`             |
+| `StromSmart`    | `.ref/OrderModuleWeb/packages/ui/src/icons/strom-smart.svg`          |
+| `AlertMark`     | `.ref/OrderModuleWeb/packages/ui/src/icons/alert.svg`                |
+| `HomeTitleIcon` | `.ref/OrderModuleWeb/packages/ui/src/icons/home-title-icon.svg`      |
+| `OrderLogo`     | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/order-logo.tsx`   |
+| `CollectLogo`   | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/collect-logo.tsx` |
+| `DeviateLogo`   | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/deviate-logo.tsx` |
+| `FunnelLogo`    | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/funnel-logo.tsx`  |
+| `DoubleCheck`   | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/double-check.tsx` |
 
 The generic external `Alert` asset is named `AlertMark` to avoid collision with the `Alert` component. Every component accepts `ComponentPropsWithoutRef<"svg"> & { title?: string }`. With `title`, it renders `role="img"` and an associated `<title>`; without one it renders `aria-hidden="true"` and `focusable="false"`. Decorative uses must not acquire an accessible name accidentally.
 
@@ -135,19 +135,19 @@ type BrandLogoProps = Omit<ComponentPropsWithoutRef<"span">, "children"> & {
 
 The variant-to-source mapping is exact and prefers the internal snapshot where both references contain an asset:
 
-| Public export | `full` source | `mark` source |
-| --- | --- | --- |
-| `FjordkraftLogo` | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/fjordkraft-logo.tsx` | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/fjordkraft-logo-small.tsx` |
-| `TrondelagkraftLogo` | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/trondelagkraft-logo.tsx` | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/trondelagkraft-logo-small.tsx` |
+| Public export            | `full` source                                                                    | `mark` source                                                                          |
+| ------------------------ | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `FjordkraftLogo`         | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/fjordkraft-logo.tsx`          | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/fjordkraft-logo-small.tsx`          |
+| `TrondelagkraftLogo`     | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/trondelagkraft-logo.tsx`      | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/trondelagkraft-logo-small.tsx`      |
 | `GudbrandsdalEnergiLogo` | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/gudbrandsdal-energi-logo.tsx` | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/gudbrandsdal-energi-logo-small.tsx` |
-| `TelinetLogo` | `.ref/OrderModuleWeb/packages/ui/src/icons/telinet-logo.tsx` | `.ref/OrderModuleWeb/packages/ui/src/icons/telinet-logo-mini.tsx` |
-| `ElmeraGroupLogo` | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/elmera-group-logo.tsx` | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/elmera-group-logo-small.tsx` |
-| `SteddiLogo` | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/steddi-logo.tsx` | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/steddi-logo.tsx` |
-| `TrumfLogo` | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/trumf-logo.tsx` | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/trumf-logo-small.tsx` |
+| `TelinetLogo`            | `.ref/OrderModuleWeb/packages/ui/src/icons/telinet-logo.tsx`                     | `.ref/OrderModuleWeb/packages/ui/src/icons/telinet-logo-mini.tsx`                      |
+| `ElmeraGroupLogo`        | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/elmera-group-logo.tsx`        | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/elmera-group-logo-small.tsx`        |
+| `SteddiLogo`             | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/steddi-logo.tsx`              | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/steddi-logo.tsx`                    |
+| `TrumfLogo`              | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/trumf-logo.tsx`               | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/trumf-logo-small.tsx`               |
 
 Steddi has only one pinned glyph, so both variants intentionally render that same source until a separately licensed wordmark is added. All logo variants use the same optional-title accessibility behavior as bespoke icons. Their SVG paint is copied unchanged: fixed official colors stay fixed, while existing `currentColor` artwork remains consumer-colorable. Neither form is remapped to theme role tokens.
 
-`BrandLogo` maps `fkas` and `fkab` to Fjordkraft, `tkas` to TrøndelagKraft, `guen` to Gudbrandsdal Energi, and `fkse` to Telinet. Until energy-brand SVG marks exist, every brand — including `elma` — renders an accessible text/`displayName` fallback as a `<span>` for both `full` and `mark`; no SVG or marketing artwork is invented. Public props are that fallback host's props, not SVG attributes; advertised host props are applied on the span. The fallback host stamps `data-variant` with the resolved `"full"` or `"mark"` value so the later SVG-mark swap can keep the same variant hook. `title` is the accessible name (`aria-label`), defaulting to the brand display name. It reads `BRANDS[brand].displayName`, is exhaustive over `BrandCode`, and reads no context; consumers pass the brand explicitly. Energy-brand SVG marks ship with the icon-system roster; adding `elma` does not leave a hole in the mapping.
+`BrandLogo` maps `fkas` and `fkab` to Fjordkraft, `tkas` to TrøndelagKraft, `guen` to Gudbrandsdal Energi, and `fkse` to Telinet. Energy-brand codes render the matching SVG mark inside the same accessible `<span>` host for both `full` and `mark`. `elma` keeps the text/`displayName` fallback and invents no SVG. Public props are that host's props, not SVG attributes; advertised host props are applied on the span. The host stamps `data-variant` with the resolved `"full"` or `"mark"` value. `title` is the accessible name (`aria-label`), defaulting to the brand display name. It reads `BRANDS[brand].displayName`, is exhaustive over `BrandCode`, and reads no context; consumers pass the brand explicitly. Adding `elma` does not leave a hole in the mapping.
 
 `@elmeragroup/ui/illustrations` initially exports `FkasMeter`, copied from `.ref/OrderModuleWeb/packages/ui/src/illustrations/fkas-meter.tsx`. Illustrations accept SVG props plus the same optional-title accessibility contract. New artwork joins only with recorded public-distribution rights.
 
@@ -160,7 +160,7 @@ Flags reuse the vendored two-letter SVG set described in [architecture](architec
 - Type tests reject `thin`, `light`, `bold`, and `duotone` on public Phosphor adapters and accept `regular`/`fill`.
 - Export tests import every curated icon and bespoke asset by name; there is no `Icon` export.
 - The Next packed fixture imports and renders both a Phosphor adapter and a bespoke logo directly in a server component; a second client-island render proves the same adapter remains usable from client code.
-- Browser tests cover `BrandLogo`'s six-code mapping and both variants, including `role="img"`, the accessible name, `data-variant`, and no SVG. `elma` asserts accessible text/`displayName` output and no SVG.
+- Browser tests cover `BrandLogo`'s six-code mapping and both variants, including `role="img"`, the accessible name, and `data-variant`. Energy brands render SVG marks; `elma` asserts accessible text/`displayName` output and no SVG.
 - Accessibility tests cover titled and decorative bespoke SVG modes.
 - The `Signing` render test asserts the four canonical fill classes above and rejects every legacy class; fixed-paint and `currentColor` assets retain their source paint behavior.
 - Packed fixtures resolve representative `NO.svg`, `SE.svg`, and `FI.svg` URLs and assert no manifest URL has an HTTP(S), data, or blob scheme.

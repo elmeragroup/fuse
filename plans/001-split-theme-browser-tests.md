@@ -36,26 +36,26 @@ all test cases move verbatim.
   file being split. Its layout (verify with
   `rg -n "^describe|^function|^const [A-Z]" packages/ui/src/theme/theme-api.browser.test.tsx`):
 
-  | Lines (at `85aa892`) | Content |
-  | --- | --- |
-  | 1–24 | imports |
-  | 26–28 | theme constants `fkasPrivate`, `tkasCompany`, `guenPrivate` |
-  | 30–45 | `defaultManifest`, `writeManifest()`, `runBootstrap()` |
-  | 47–65 | file-scoped `beforeEach` (writes default manifest) and `afterEach` (document/storage/env cleanup) |
-  | 67–80 | `stampDocumentBrand()`, `readDocumentBrand()` |
-  | 82–130 | probes: `ThemeProbe`, `LocaleProbe`, `ScopeProbe`, `ValidatorErrorBoundary` |
-  | 132–431 | `describe("ThemeProvider / ThemeScope")` |
-  | 433–466 | `describe("ElmeraGroupUiProvider")` |
-  | 468–493 | `describe("overlay containment")` |
-  | 495–576 | color-scheme helpers: `ColorSchemeOutput`, `ColorSchemeSetter`, `mountedColorScheme`, `stubPrefersColorScheme` |
-  | 578–743 | `describe("useColorScheme")` |
-  | 745–1021 | `describe("forced color-scheme")` |
-  | 1023–1073 | `describe("color-scheme transition suppression")` |
-  | 1075–1143 | `describe("color-scheme bootstrap diagnostics")` |
-  | 1145–1162 | `runtimeConfig()`, `brandAttributeWrites()` helpers |
-  | 1164–1180 | `describe("color-scheme store commit vs discard")` |
-  | 1182–1250 | `describe("ThemeProvider committed color-scheme options")` |
-  | 1252–1299 | `describe("ThemeProvider equal-axis theme identity")` |
+  | Lines (at `85aa892`) | Content                                                                                                        |
+  | -------------------- | -------------------------------------------------------------------------------------------------------------- |
+  | 1–24                 | imports                                                                                                        |
+  | 26–28                | theme constants `fkasPrivate`, `tkasCompany`, `guenPrivate`                                                    |
+  | 30–45                | `defaultManifest`, `writeManifest()`, `runBootstrap()`                                                         |
+  | 47–65                | file-scoped `beforeEach` (writes default manifest) and `afterEach` (document/storage/env cleanup)              |
+  | 67–80                | `stampDocumentBrand()`, `readDocumentBrand()`                                                                  |
+  | 82–130               | probes: `ThemeProbe`, `LocaleProbe`, `ScopeProbe`, `ValidatorErrorBoundary`                                    |
+  | 132–431              | `describe("ThemeProvider / ThemeScope")`                                                                       |
+  | 433–466              | `describe("ElmeraGroupUiProvider")`                                                                            |
+  | 468–493              | `describe("overlay containment")`                                                                              |
+  | 495–576              | color-scheme helpers: `ColorSchemeOutput`, `ColorSchemeSetter`, `mountedColorScheme`, `stubPrefersColorScheme` |
+  | 578–743              | `describe("useColorScheme")`                                                                                   |
+  | 745–1021             | `describe("forced color-scheme")`                                                                              |
+  | 1023–1073            | `describe("color-scheme transition suppression")`                                                              |
+  | 1075–1143            | `describe("color-scheme bootstrap diagnostics")`                                                               |
+  | 1145–1162            | `runtimeConfig()`, `brandAttributeWrites()` helpers                                                            |
+  | 1164–1180            | `describe("color-scheme store commit vs discard")`                                                             |
+  | 1182–1250            | `describe("ThemeProvider committed color-scheme options")`                                                     |
+  | 1252–1299            | `describe("ThemeProvider equal-axis theme identity")`                                                          |
 
 - `packages/ui/test/browser-render.ts` — existing shared browser-test helper exporting
   `render(node)` (`createRoot` + `flushSync` + tracked unmount). New files import it exactly
@@ -71,13 +71,13 @@ all test cases move verbatim.
 
 Run from the repo root unless noted.
 
-| Purpose | Command | Expected on success |
-| --- | --- | --- |
-| Unit tests (ui pkg) | `pnpm --filter @elmeragroup/ui test` | exit 0, all pass |
-| Browser tests (ui pkg) | `pnpm --filter @elmeragroup/ui test:browser` | exit 0, all pass |
-| Single browser file | `pnpm --filter @elmeragroup/ui exec vitest run --project browser src/theme/<file>` | exit 0 |
-| Typecheck (ui pkg) | `pnpm --filter @elmeragroup/ui type-check` | exit 0 |
-| Lint | `pnpm lint` | exit 0, no warnings |
+| Purpose                | Command                                                                            | Expected on success |
+| ---------------------- | ---------------------------------------------------------------------------------- | ------------------- |
+| Unit tests (ui pkg)    | `pnpm --filter @elmeragroup/ui test`                                               | exit 0, all pass    |
+| Browser tests (ui pkg) | `pnpm --filter @elmeragroup/ui test:browser`                                       | exit 0, all pass    |
+| Single browser file    | `pnpm --filter @elmeragroup/ui exec vitest run --project browser src/theme/<file>` | exit 0              |
+| Typecheck (ui pkg)     | `pnpm --filter @elmeragroup/ui type-check`                                         | exit 0              |
+| Lint                   | `pnpm lint`                                                                        | exit 0, no warnings |
 
 Browser tests need Playwright browsers installed; they were green at planning time via
 `pnpm turbo test:browser`.
@@ -85,6 +85,7 @@ Browser tests need Playwright browsers installed; they were green at planning ti
 ## Scope
 
 **In scope** (the only files you should create or modify):
+
 - `packages/ui/src/theme/theme-api.browser.test.tsx` (modify: shrink to provider/scope tests)
 - `packages/ui/src/theme/use-color-scheme.browser.test.tsx` (create)
 - `packages/ui/src/theme/color-scheme-runtime.browser.test.tsx` (create)
@@ -92,6 +93,7 @@ Browser tests need Playwright browsers installed; they were green at planning ti
 - `plans/README.md` (status row only)
 
 **Out of scope** (do NOT touch):
+
 - Any non-test source file under `packages/ui/src/**` — this is a pure test move; if a test
   seems to require a production change, STOP.
 - `packages/ui/test/browser-render.ts` — already correct; import it, don't edit it.
@@ -144,6 +146,7 @@ uses, the three theme constants imported from the shared fixtures module,
 listed below).
 
 **A. `theme-provider.browser.test.tsx`** (~500 lines)
+
 - `describe` blocks: `"ThemeProvider / ThemeScope"` (132–431), `"ElmeraGroupUiProvider"`
   (433–466), `"overlay containment"` (468–493), `"ThemeProvider equal-axis theme identity"`
   (1252–1299)
@@ -151,10 +154,12 @@ listed below).
   `ScopeProbe` (104–113), `ValidatorErrorBoundary` (115–130)
 
 **B. `use-color-scheme.browser.test.tsx`** (~550 lines)
+
 - `describe` blocks: `"useColorScheme"` (578–743), `"forced color-scheme"` (745–1021),
   `"color-scheme transition suppression"` (1023–1073)
 
 **C. `color-scheme-runtime.browser.test.tsx`** (~250 lines)
+
 - `describe` blocks: `"color-scheme bootstrap diagnostics"` (1075–1143),
   `"color-scheme store commit vs discard"` (1164–1180),
   `"ThemeProvider committed color-scheme options"` (1182–1250)

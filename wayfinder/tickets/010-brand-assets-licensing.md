@@ -17,7 +17,7 @@ Decide:
 
 1. Fonts: keep the refs' pattern where **apps supply fonts** via `--font-primary`/`--font-heading` CSS variables (library never ships font files — cleanest), vs a separate private `@elmeragroup/fonts` package, vs public shipping (needs license verification with the font vendor).
 2. Logos: public package (logos are publicly visible marks anyway) vs private assets package; who signs off?
-3. Whether *any* part needs to stay private, and if so how the public/private split works in CI.
+3. Whether _any_ part needs to stay private, and if so how the public/private split works in CI.
 4. License for the public package code itself (MIT? proprietary-source-visible?) and who in Elmera approves open distribution.
 
 This is HITL: the license facts and sign-off are the human's to bring or chase (spawn a follow-up task ticket if legal/design input must be gathered).

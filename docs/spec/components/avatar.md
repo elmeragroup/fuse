@@ -19,21 +19,21 @@ Thin styled wrappers over the base-ui Avatar parts — pure passthrough, no adde
 </Avatar.Root>
 ```
 
-| Part | base-ui primitive | Notes |
-| --- | --- | --- |
-| `Avatar.Root` | `AvatarPrimitive.Root` | `size-8` circle, `overflow-hidden`, `select-none`; sizing overridden via `className` |
-| `Avatar.Image` | `AvatarPrimitive.Image` | `size-full object-cover`; base-ui tracks load state |
-| `Avatar.Fallback` | `AvatarPrimitive.Fallback` | centered flex fill; shown until/unless the image loads |
+| Part              | base-ui primitive          | Notes                                                                                |
+| ----------------- | -------------------------- | ------------------------------------------------------------------------------------ |
+| `Avatar.Root`     | `AvatarPrimitive.Root`     | `size-8` circle, `overflow-hidden`, `select-none`; sizing overridden via `className` |
+| `Avatar.Image`    | `AvatarPrimitive.Image`    | `size-full object-cover`; base-ui tracks load state                                  |
+| `Avatar.Fallback` | `AvatarPrimitive.Fallback` | centered flex fill; shown until/unless the image loads                               |
 
 ## 3 Props
 
 All parts: `ComponentProps<typeof AvatarPrimitive.{Part}>` — full primitive passthrough (`render`, `className`, and for `Image`: `src`, `onLoadingStatusChange`; for `Fallback`: `delay`). No wrapper-added props beyond `className` merging via `cn`.
 
-| Part | Notable passthrough | Notes |
-| --- | --- | --- |
-| `Avatar.Image` | `src`, `alt`, `onLoadingStatusChange` | base-ui swaps to fallback on error |
-| `Avatar.Fallback` | `delay` | debounce fallback flash on fast loads |
-| all | `render` | base-ui `useRender` polymorphism |
+| Part              | Notable passthrough                   | Notes                                 |
+| ----------------- | ------------------------------------- | ------------------------------------- |
+| `Avatar.Image`    | `src`, `alt`, `onLoadingStatusChange` | base-ui swaps to fallback on error    |
+| `Avatar.Fallback` | `delay`                               | debounce fallback flash on fast loads |
+| all               | `render`                              | base-ui `useRender` polymorphism      |
 
 ## 4 Variants
 

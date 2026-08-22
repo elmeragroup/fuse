@@ -1,68 +1,31 @@
 import { spawnSync } from "node:child_process";
-import {
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readdirSync,
-  readFileSync,
-  rmSync,
-  statSync,
-  symlinkSync,
-} from "node:fs";
+import { mkdirSync, mkdtempSync, readdirSync, rmSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { evaluateColorSchemeBootstrapScript } from "./color-scheme-bootstrap-harness";
-import { discoverEntries, exportKey, isSkippedSourceFile, toPosix } from "./entries";
-import { buildPublishExportMap, exportBindingsObject } from "./generate-exports";
-import type { ExportBinding, ExportCondition } from "./generate-exports";
+import { discoverEntries } from "./entries";
+import {
+  checkPackedBootstrap,
+  checkPackedDirectives,
+  checkPackedExports,
+  checkPackedFlags,
+  checkPackedPeers,
+  checkPackedRuntimeExports,
+  checkValidateThemeEnv,
+  fail,
+  importPackedModules,
+  importSpecifier,
+} from "./package-check-packed";
+import { extractPackedPackage, findTarball } from "./tarball";
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
-
-function fail(message: string): never {
-  console.error(message);
-  process.exit(1);
-}
-
-function findTarball(): string {
-  const artifactsDir = join(packageRoot, ".artifacts");
-  if (!existsSync(artifactsDir)) {
-    fail("No .artifacts directory. Run the pack task first.");
-  }
-  const tarballs = readdirSync(artifactsDir).filter((name) => name.endsWith(".tgz"));
-  if (tarballs.length !== 1) {
-    fail(`Expected exactly one tarball in .artifacts, found ${tarballs.join(", ") || "none"}`);
-  }
-  const name = tarballs[0];
-  if (name === undefined) {
-    fail("Expected exactly one tarball in .artifacts");
-  }
-  return join(artifactsDir, name);
-}
 
 function runInherited(command: string, args: string[]): void {
   const result = spawnSync(command, args, { cwd: packageRoot, stdio: "inherit" });
   if (result.status !== 0) {
     process.exit(result.status ?? 1);
   }
-}
-
-function extractTarball(tarball: string, destination: string): string {
-  const result = spawnSync("tar", ["-xzf", tarball, "-C", destination], { encoding: "utf8" });
-  if (result.status !== 0) {
-    fail(`tar extract failed: ${result.stderr}`);
-  }
-  const extracted = join(destination, "package");
-  if (!existsSync(join(extracted, "package.json"))) {
-    fail("Packed tarball is missing package/package.json");
-  }
-  const extractedModules = join(extracted, "node_modules");
-  if (!existsSync(extractedModules)) {
-    // Peer/regular deps resolve from the packed package realpath, not the consumer symlink.
-    symlinkSync(join(packageRoot, "node_modules"), extractedModules);
-  }
-  return extracted;
 }
 
 function linkConsumerModules(consumerRoot: string, extracted: string): void {
@@ -80,252 +43,12 @@ function linkConsumerModules(consumerRoot: string, extracted: string): void {
   symlinkSync(extracted, join(scoped, "ui"));
 }
 
-function importSpecifier(subpath: string): string {
-  return subpath === "." ? "@elmeragroup/ui" : `@elmeragroup/ui/${subpath}`;
+let tarball: string;
+try {
+  tarball = findTarball(packageRoot);
+} catch (error) {
+  fail(error instanceof Error ? error.message : String(error));
 }
-
-function importPackedModule(consumerRoot: string, specifier: string): string[] {
-  const result = spawnSync(
-    process.execPath,
-    [
-      "--input-type=module",
-      "--eval",
-      `const mod = await import(${JSON.stringify(specifier)});
-process.stdout.write(JSON.stringify(Object.keys(mod).sort()));`,
-    ],
-    { cwd: consumerRoot, encoding: "utf8" }
-  );
-  if (result.status !== 0) {
-    fail(`Node ESM import failed for ${specifier}:\n${result.stderr || result.stdout}`);
-  }
-  const parsed: unknown = JSON.parse(result.stdout);
-  if (!Array.isArray(parsed)) {
-    fail(`Unexpected import payload for ${specifier}: ${result.stdout}`);
-  }
-  // SAFETY: the eval'd snippet prints JSON.stringify(Object.keys(mod)); key names are always strings.
-  return parsed as string[];
-}
-
-type PackedPeers = {
-  react?: string;
-  "react-dom"?: string;
-  tailwindcss?: string;
-};
-
-type PackedManifest = {
-  exports: ReturnType<typeof exportBindingsObject>;
-  peerDependencies: PackedPeers;
-};
-
-function isExportCondition(target: ExportBinding["target"]): target is ExportCondition {
-  return Object(target) === target;
-}
-
-function isExportTargetPath(target: ExportBinding["target"]): target is string {
-  return Object.prototype.toString.call(target) === "[object String]";
-}
-
-function checkExportPaths(extracted: string, consumerRoot: string): void {
-  const discovered = discoverEntries(packageRoot);
-  const expectedBindings = buildPublishExportMap(discovered);
-  const packedText = readFileSync(join(extracted, "package.json"), "utf8");
-  const parsed: unknown = JSON.parse(packedText);
-  if (parsed === null || Array.isArray(parsed)) {
-    fail("Packed package.json is not an object");
-  }
-  // SAFETY: packed package.json is generated by writePublishManifest.
-  const packed = parsed as PackedManifest;
-  if (JSON.stringify(packed.exports) !== JSON.stringify(exportBindingsObject(expectedBindings))) {
-    fail("Packed package.json exports do not match the generated publish map.");
-  }
-
-  const peers = packed.peerDependencies;
-  if (peers.react !== "^19" || peers["react-dom"] !== "^19") {
-    fail(`Packed react peer ranges must be ^19, got ${JSON.stringify(peers)}`);
-  }
-  if (peers.tailwindcss !== "^4") {
-    fail(`Packed tailwindcss peer range must be ^4, got ${JSON.stringify(peers.tailwindcss)}`);
-  }
-  if (packedText.includes("catalog:")) {
-    fail("Packed package.json leaked catalog: pins");
-  }
-
-  for (const binding of expectedBindings) {
-    const target = binding.target;
-    if (isExportCondition(target)) {
-      const jsPath = join(extracted, target.import.replace(/^\.\//, ""));
-      const dtsPath = join(extracted, target.types.replace(/^\.\//, ""));
-      if (!existsSync(jsPath)) {
-        fail(`Packed import for ${binding.key} missing ${target.import}`);
-      }
-      if (!existsSync(dtsPath)) {
-        fail(`Packed types for ${binding.key} missing ${target.types}`);
-      }
-      continue;
-    }
-    if (isExportTargetPath(target)) {
-      if (target.includes("*")) {
-        continue;
-      }
-      const filePath = join(extracted, target.replace(/^\.\//, ""));
-      if (!existsSync(filePath)) {
-        fail(`Packed CSS/asset export ${binding.key} missing file ${target}`);
-      }
-      continue;
-    }
-    fail(`Unexpected export target for ${binding.key}: ${JSON.stringify(target)}`);
-  }
-
-  for (const entry of discovered.jsEntries) {
-    const names = importPackedModule(consumerRoot, importSpecifier(entry.subpath));
-    const missing = entry.runtimeExports.filter((name) => !names.includes(name));
-    if (missing.length > 0) {
-      fail(`${exportKey(entry.subpath)} missing runtime exports: ${missing.join(", ")}`);
-    }
-  }
-}
-
-function leadingUseClient(source: string): boolean {
-  return /^["']use client["']\s*;?/.test(source.replace(/^\uFEFF/, "").trimStart());
-}
-
-function walkFiles(directory: string, predicate: (path: string) => boolean): string[] {
-  const files: string[] = [];
-  for (const entry of readdirSync(directory)) {
-    const path = join(directory, entry);
-    if (statSync(path).isDirectory()) {
-      files.push(...walkFiles(path, predicate));
-      continue;
-    }
-    if (predicate(path)) {
-      files.push(path);
-    }
-  }
-  return files;
-}
-
-function checkEmittedDirectives(extracted: string): void {
-  const srcRoot = join(packageRoot, "src");
-  const sources = walkFiles(srcRoot, (path) => path.endsWith(".ts") || path.endsWith(".tsx"));
-  for (const sourcePath of sources) {
-    const relative = toPosix(sourcePath.slice(srcRoot.length + 1));
-    if (isSkippedSourceFile(`src/${relative}`)) {
-      continue;
-    }
-    const sourceHasDirective = leadingUseClient(readFileSync(sourcePath, "utf8"));
-    const packedJs = join(extracted, relative.replace(/\.(tsx|ts)$/u, ".js"));
-    if (!existsSync(packedJs)) {
-      if (sourceHasDirective) {
-        fail(`Source ${relative} has "use client" but no packed JS counterpart`);
-      }
-      continue;
-    }
-    const packedHasDirective = leadingUseClient(readFileSync(packedJs, "utf8"));
-    if (sourceHasDirective !== packedHasDirective) {
-      fail(
-        `Directive mismatch for ${relative}: source ${sourceHasDirective ? "has" : "lacks"} "use client", packed ${packedHasDirective ? "has" : "lacks"} it`
-      );
-    }
-  }
-}
-
-function checkPackedAssets(extracted: string): void {
-  const flagsDir = join(extracted, "flags");
-  if (!existsSync(flagsDir)) {
-    return;
-  }
-  if (!existsSync(join(flagsDir, "LICENSE"))) {
-    fail("Packed flags/ is missing LICENSE");
-  }
-  if (!existsSync(join(flagsDir, "PROVENANCE.md"))) {
-    fail("Packed flags/ is missing PROVENANCE.md");
-  }
-}
-
-function packedColorSchemeScriptSource(consumerRoot: string, optionsLiteral: string): string {
-  const result = spawnSync(
-    process.execPath,
-    [
-      "--input-type=module",
-      "--eval",
-      `import { colorSchemeScriptSource } from "@elmeragroup/ui/theme";
-process.stdout.write(colorSchemeScriptSource(${optionsLiteral}));`,
-    ],
-    { cwd: consumerRoot, encoding: "utf8" }
-  );
-  if (result.status !== 0) {
-    fail(`Packed colorSchemeScriptSource failed:\n${result.stderr || result.stdout}`);
-  }
-  return result.stdout;
-}
-
-function checkPackedColorSchemeBootstrap(consumerRoot: string): void {
-  const names = importPackedModule(consumerRoot, "@elmeragroup/ui/theme");
-  if (!names.includes("colorSchemeScriptSource") || !names.includes("ColorSchemeScript")) {
-    fail(`Packed /theme is missing bootstrap exports: ${names.join(", ")}`);
-  }
-
-  const scriptBreak = "</script>";
-  const lineSeparator = "\u2028";
-  const paragraphSeparator = "\u2029";
-  const primitives = {
-    storageKey: `${scriptBreak}"&${lineSeparator}${paragraphSeparator}`,
-    defaultColorScheme: "system",
-    enableSystem: true,
-    forcedColorScheme: "dark",
-  };
-  const source = packedColorSchemeScriptSource(consumerRoot, JSON.stringify(primitives));
-  if (source.includes(scriptBreak)) {
-    fail("Packed bootstrap serialized a raw </script> sequence");
-  }
-  if (!source.includes("\\u003c/script>")) {
-    fail("Packed bootstrap did not escape </script> as \\u003c/script>");
-  }
-  if (!source.includes("\\u2028") || !source.includes("\\u2029")) {
-    fail("Packed bootstrap did not escape U+2028 / U+2029");
-  }
-  if (source.includes("&quot;") || source.includes("&amp;") || source.includes("&lt;")) {
-    fail("Packed bootstrap HTML-entity-encoded script data");
-  }
-  if (!source.includes("&") || !source.includes('\\"')) {
-    fail("Packed bootstrap lost raw quotes or ampersands");
-  }
-
-  const result = evaluateColorSchemeBootstrapScript(source, { storedValue: "light", prefersDark: false });
-  if (result.attributes["data-theme"] !== "dark") {
-    fail(`Packed forced bootstrap wrote data-theme=${String(result.attributes["data-theme"])}`);
-  }
-  if (result.storageReads.length > 0) {
-    fail("Packed forced bootstrap read storage");
-  }
-  if (JSON.stringify(result.manifest) !== JSON.stringify(primitives)) {
-    fail(`Packed bootstrap manifest mismatch: ${JSON.stringify(result.manifest)}`);
-  }
-  if (result.style.colorScheme !== undefined || result.createdElements.length > 0) {
-    fail("Packed bootstrap wrote CSS color-scheme or created elements");
-  }
-
-  const systemSource = packedColorSchemeScriptSource(consumerRoot, `{ enableSystem: false }`);
-  const systemResult = evaluateColorSchemeBootstrapScript(systemSource, {
-    storedValue: "system",
-    prefersDark: true,
-  });
-  if (systemResult.attributes["data-theme"] !== "light") {
-    fail("Packed bootstrap did not resolve disabled system to light");
-  }
-}
-
-function checkValidateThemeEnv(extracted: string): void {
-  const packed = join(extracted, "theme/validate-theme.js");
-  if (!existsSync(packed)) {
-    fail("Packed graph is missing theme/validate-theme.js");
-  }
-  if (!readFileSync(packed, "utf8").includes("process.env.NODE_ENV")) {
-    fail("Packed validateTheme lost the runtime process.env.NODE_ENV branch");
-  }
-}
-
-const tarball = findTarball();
 runInherited("pnpm", ["exec", "publint", tarball]);
 runInherited("pnpm", [
   "exec",
@@ -342,15 +65,27 @@ runInherited("pnpm", [
 
 const scratch = mkdtempSync(join(tmpdir(), "elmera-ui-pack-"));
 try {
-  const extracted = extractTarball(tarball, scratch);
+  let extracted: string;
+  try {
+    extracted = extractPackedPackage(tarball, scratch, packageRoot);
+  } catch (error) {
+    fail(error instanceof Error ? error.message : String(error));
+  }
   const consumerRoot = join(scratch, "consumer");
   mkdirSync(consumerRoot, { recursive: true });
   linkConsumerModules(consumerRoot, extracted);
-  checkExportPaths(extracted, consumerRoot);
-  checkEmittedDirectives(extracted);
-  checkPackedAssets(extracted);
+  const discovered = discoverEntries(packageRoot);
+  const exported = importPackedModules(
+    consumerRoot,
+    discovered.jsEntries.map((entry) => importSpecifier(entry.subpath))
+  );
+  checkPackedExports(extracted, discovered);
+  checkPackedPeers(extracted);
+  checkPackedRuntimeExports(exported, discovered);
+  checkPackedDirectives(extracted, discovered);
+  checkPackedFlags(extracted, consumerRoot, exported[importSpecifier("flags")]);
   checkValidateThemeEnv(extracted);
-  checkPackedColorSchemeBootstrap(consumerRoot);
+  checkPackedBootstrap(consumerRoot, exported[importSpecifier("theme")]);
 } finally {
   rmSync(scratch, { recursive: true, force: true });
 }

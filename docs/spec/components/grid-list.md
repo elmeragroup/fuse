@@ -23,14 +23,14 @@ The internal `Checkbox` exists solely because RAC GridList requires RAC's `<Chec
 
 ## 3 Props
 
-| Part | Prop | Type | Default | Notes |
-| --- | --- | --- | --- | --- |
-| GridList | `items` / `children` | RAC collection API | — | static or dynamic collection |
-| GridList | `selectionMode` | `"none" \| "single" \| "multiple"` | `"none"` | |
-| GridList | `selectionBehavior` | `"toggle" \| "replace"` | `"toggle"` | toggle shows the selection checkbox |
-| GridList | `selectedKeys` / `defaultSelectedKeys` / `onSelectionChange` | RAC | — | |
-| GridList | `disabledKeys`, `disallowEmptySelection`, `onAction`, `renderEmptyState`, `dragAndDropHooks` | RAC | — | pass-through |
-| GridListItem | `id`, `textValue`, `isDisabled`, `onAction`, `href` | RAC | — | `textValue` auto-derived when `children` is a string |
+| Part         | Prop                                                                                         | Type                               | Default    | Notes                                                |
+| ------------ | -------------------------------------------------------------------------------------------- | ---------------------------------- | ---------- | ---------------------------------------------------- |
+| GridList     | `items` / `children`                                                                         | RAC collection API                 | —          | static or dynamic collection                         |
+| GridList     | `selectionMode`                                                                              | `"none" \| "single" \| "multiple"` | `"none"`   |                                                      |
+| GridList     | `selectionBehavior`                                                                          | `"toggle" \| "replace"`            | `"toggle"` | toggle shows the selection checkbox                  |
+| GridList     | `selectedKeys` / `defaultSelectedKeys` / `onSelectionChange`                                 | RAC                                | —          |                                                      |
+| GridList     | `disabledKeys`, `disallowEmptySelection`, `onAction`, `renderEmptyState`, `dragAndDropHooks` | RAC                                | —          | pass-through                                         |
+| GridListItem | `id`, `textValue`, `isDisabled`, `onAction`, `href`                                          | RAC                                | —          | `textValue` auto-derived when `children` is a string |
 
 Both parts accept `className` (string or render-prop function, composed via `composeTailwindRenderProps` / tv).
 

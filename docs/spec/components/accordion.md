@@ -11,13 +11,13 @@
 
 ## 2 Anatomy
 
-| Part | Base | Notes |
-| --- | --- | --- |
-| `Accordion.Root` | `AccordionPrimitive.Root` | `div`; owns value state; applies `base` slot; provides the variant context |
-| `Accordion.Item` | `AccordionPrimitive.Item` | `div`; one expandable section; applies `item` slot |
-| `Accordion.Header` | `AccordionPrimitive.Header` | native `h3`; applies `header` slot |
-| `Accordion.Trigger` | `AccordionPrimitive.Trigger` | native `button` inside Header; applies `trigger` slot, renders the caret icon after `children` |
-| `Accordion.Content` | `AccordionPrimitive.Panel` | `div role="region"`; applies `content` slot; wraps `children` in an inner `div` with the `contentInner` slot |
+| Part                | Base                         | Notes                                                                                                        |
+| ------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `Accordion.Root`    | `AccordionPrimitive.Root`    | `div`; owns value state; applies `base` slot; provides the variant context                                   |
+| `Accordion.Item`    | `AccordionPrimitive.Item`    | `div`; one expandable section; applies `item` slot                                                           |
+| `Accordion.Header`  | `AccordionPrimitive.Header`  | native `h3`; applies `header` slot                                                                           |
+| `Accordion.Trigger` | `AccordionPrimitive.Trigger` | native `button` inside Header; applies `trigger` slot, renders the caret icon after `children`               |
+| `Accordion.Content` | `AccordionPrimitive.Panel`   | `div role="region"`; applies `content` slot; wraps `children` in an inner `div` with the `contentInner` slot |
 
 ```tsx
 <Accordion.Root variant="card" defaultValue={["shipping"]}>
@@ -38,18 +38,18 @@ All parts take `className` (merged into their slot via the recipe's `className` 
 
 **Accordion.Root** — `ComponentProps<AccordionPrimitive.Root> & VariantProps<typeof accordionVariants>`:
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `value` | `Value[]` | — | controlled open item(s); always an array, even in single mode |
-| `defaultValue` | `Value[]` | — | uncontrolled initial open item(s) |
-| `onValueChange` | `(value: Value[], eventDetails) => void` | — | base-ui signature; second arg is `AccordionRoot.ChangeEventDetails` |
-| `multiple` | `boolean` | `false` | replaces radix `type="single" \| "multiple"` (§8) |
-| `disabled` | `boolean` | `false` | disables every item |
-| `hiddenUntilFound` | `boolean` | `false` | panels use `hidden="until-found"`; find-in-page can expand them; overrides `keepMounted` |
-| `keepMounted` | `boolean` | `false` | keep closed panels in the DOM |
-| `variant` | `"default" \| "card" \| "infodropdown"` | `"default"` | §4; provided to parts via context |
-| `radius` | `"none" \| "lg" \| "xl"` | `"none"` | §4; provided to parts via context |
-| `orientation`, `loopFocus` | — | — | accepted (base-ui passthrough) but **deprecated upstream** — they no longer affect keyboard focus after the APG roving-focus removal; not part of our documented API (§7, §8) |
+| Prop                       | Type                                     | Default     | Notes                                                                                                                                                                         |
+| -------------------------- | ---------------------------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `value`                    | `Value[]`                                | —           | controlled open item(s); always an array, even in single mode                                                                                                                 |
+| `defaultValue`             | `Value[]`                                | —           | uncontrolled initial open item(s)                                                                                                                                             |
+| `onValueChange`            | `(value: Value[], eventDetails) => void` | —           | base-ui signature; second arg is `AccordionRoot.ChangeEventDetails`                                                                                                           |
+| `multiple`                 | `boolean`                                | `false`     | replaces radix `type="single" \| "multiple"` (§8)                                                                                                                             |
+| `disabled`                 | `boolean`                                | `false`     | disables every item                                                                                                                                                           |
+| `hiddenUntilFound`         | `boolean`                                | `false`     | panels use `hidden="until-found"`; find-in-page can expand them; overrides `keepMounted`                                                                                      |
+| `keepMounted`              | `boolean`                                | `false`     | keep closed panels in the DOM                                                                                                                                                 |
+| `variant`                  | `"default" \| "card" \| "infodropdown"`  | `"default"` | §4; provided to parts via context                                                                                                                                             |
+| `radius`                   | `"none" \| "lg" \| "xl"`                 | `"none"`    | §4; provided to parts via context                                                                                                                                             |
+| `orientation`, `loopFocus` | —                                        | —           | accepted (base-ui passthrough) but **deprecated upstream** — they no longer affect keyboard focus after the APG roving-focus removal; not part of our documented API (§7, §8) |
 
 **Accordion.Item** — `ComponentProps<AccordionPrimitive.Item>` verbatim: `value` (identity for Root's `value` arrays; auto-generated when omitted), `disabled`, `onOpenChange(open, eventDetails)`.
 
@@ -63,14 +63,14 @@ All parts take `className` (merged into their slot via the recipe's `className` 
 
 Recipe: `accordionVariants` — **public export** (the ref exports it; kept). `tv` slots: `base`, `item`, `header`, `trigger`, `icon`, `content`, `contentInner`.
 
-| Axis | Values | Default | Effect |
-| --- | --- | --- | --- |
-| `variant` | `default` | ✓ | `item`: `bg-muted rounded-sm`; `trigger`: `transition-all` |
-| | `card` | | `base`: `space-y-3`; `item`: `bg-card text-foreground rounded-lg border`; `content`: `bg-card text-foreground rounded-lg`; `icon`: `text-foreground` |
-| | `infodropdown` | | `base`: `border-border border-b`; `trigger`: `relative justify-start data-[panel-open]:pb-0`; `icon`: `absolute right-0`; `content`: `pl-7` |
-| `radius` | `none` | ✓ | no-op |
-| | `lg` | | `item`: `overflow-hidden rounded-lg` |
-| | `xl` | | `item`: `overflow-hidden rounded-xl` |
+| Axis      | Values         | Default | Effect                                                                                                                                               |
+| --------- | -------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `variant` | `default`      | ✓       | `item`: `bg-muted rounded-sm`; `trigger`: `transition-all`                                                                                           |
+|           | `card`         |         | `base`: `space-y-3`; `item`: `bg-card text-foreground rounded-lg border`; `content`: `bg-card text-foreground rounded-lg`; `icon`: `text-foreground` |
+|           | `infodropdown` |         | `base`: `border-border border-b`; `trigger`: `relative justify-start data-[panel-open]:pb-0`; `icon`: `absolute right-0`; `content`: `pl-7`          |
+| `radius`  | `none`         | ✓       | no-op                                                                                                                                                |
+|           | `lg`           |         | `item`: `overflow-hidden rounded-lg`                                                                                                                 |
+|           | `xl`           |         | `item`: `overflow-hidden rounded-xl`                                                                                                                 |
 
 Base slot classes (variant-independent):
 

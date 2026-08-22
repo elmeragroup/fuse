@@ -10,18 +10,18 @@
 
 ## 2 Anatomy
 
-| Part | Base | Notes |
-| --- | --- | --- |
-| `Dialog.Root` | `DialogPrimitive.Root` | state owner (open/close, modality); renders no DOM; ref stamps `data-slot="dialog"` on it |
-| `Dialog.Trigger` | `DialogPrimitive.Trigger` | opens the dialog |
-| `Dialog.Portal` | `DialogPrimitive.Portal` | exported for manual composition; `Dialog.Content` renders its own internally |
-| `Dialog.Close` | `DialogPrimitive.Close` | closes; also used internally for the corner close button and Footer's close button |
-| `Dialog.Overlay` | `DialogPrimitive.Backdrop` | fixed scrim; auto-rendered by `Dialog.Content` |
-| `Dialog.Content` | `Portal > Overlay > DialogPrimitive.Popup` | centered popup surface; `size` axis; auto-renders the corner close button (`showCloseButton`) |
-| `Dialog.Header` | `div` | `flex flex-col gap-2` |
-| `Dialog.Footer` | `div` | `flex flex-col-reverse gap-2 sm:flex-row sm:justify-end`; optional built-in outline Close button |
-| `Dialog.Title` | `DialogPrimitive.Title` | `font-heading text-base leading-none font-medium text-balance` |
-| `Dialog.Description` | `DialogPrimitive.Description` | muted `text-sm`, styles child `<a>` links (underline, hover foreground) |
+| Part                 | Base                                       | Notes                                                                                            |
+| -------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------ |
+| `Dialog.Root`        | `DialogPrimitive.Root`                     | state owner (open/close, modality); renders no DOM; ref stamps `data-slot="dialog"` on it        |
+| `Dialog.Trigger`     | `DialogPrimitive.Trigger`                  | opens the dialog                                                                                 |
+| `Dialog.Portal`      | `DialogPrimitive.Portal`                   | exported for manual composition; `Dialog.Content` renders its own internally                     |
+| `Dialog.Close`       | `DialogPrimitive.Close`                    | closes; also used internally for the corner close button and Footer's close button               |
+| `Dialog.Overlay`     | `DialogPrimitive.Backdrop`                 | fixed scrim; auto-rendered by `Dialog.Content`                                                   |
+| `Dialog.Content`     | `Portal > Overlay > DialogPrimitive.Popup` | centered popup surface; `size` axis; auto-renders the corner close button (`showCloseButton`)    |
+| `Dialog.Header`      | `div`                                      | `flex flex-col gap-2`                                                                            |
+| `Dialog.Footer`      | `div`                                      | `flex flex-col-reverse gap-2 sm:flex-row sm:justify-end`; optional built-in outline Close button |
+| `Dialog.Title`       | `DialogPrimitive.Title`                    | `font-heading text-base leading-none font-medium text-balance`                                   |
+| `Dialog.Description` | `DialogPrimitive.Description`              | muted `text-sm`, styles child `<a>` links (underline, hover foreground)                          |
 
 ```tsx
 <Dialog.Root>
@@ -51,12 +51,12 @@ All rendering parts take `className` (merged via `cn`) and forward the rest of t
 
 **Dialog.Content** — `ComponentProps<DialogPrimitive.Popup>` + `VariantProps<dialogContentVariants>` plus:
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `size` | 13-value axis, see §4 | `"md"` | max-width of the popup |
-| `showCloseButton` | `boolean` | `true` | corner close button: `Dialog.Close` rendered as `Button variant="ghost" size="icon-sm"` with `hit-area-1 absolute top-4 right-4`, Phosphor `X` icon + locale-dictionary `closeLabel` rendered sr-only |
-| `container` | `HTMLElement \| RefObject<HTMLElement>` | nearest `ThemeScope` element | forwarded to the internal Portal (§8) |
-| `closeLabel` | `string` | locale dictionary | accessible name for the built-in corner close button |
+| Prop              | Type                                    | Default                      | Notes                                                                                                                                                                                                 |
+| ----------------- | --------------------------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `size`            | 13-value axis, see §4                   | `"md"`                       | max-width of the popup                                                                                                                                                                                |
+| `showCloseButton` | `boolean`                               | `true`                       | corner close button: `Dialog.Close` rendered as `Button variant="ghost" size="icon-sm"` with `hit-area-1 absolute top-4 right-4`, Phosphor `X` icon + locale-dictionary `closeLabel` rendered sr-only |
+| `container`       | `HTMLElement \| RefObject<HTMLElement>` | nearest `ThemeScope` element | forwarded to the internal Portal (§8)                                                                                                                                                                 |
+| `closeLabel`      | `string`                                | locale dictionary            | accessible name for the built-in corner close button                                                                                                                                                  |
 
 `children` render before the corner close button inside the Popup.
 
@@ -64,10 +64,10 @@ All rendering parts take `className` (merged via `cn`) and forward the rest of t
 
 **Dialog.Footer** — `ComponentProps<"div">` plus:
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `showCloseButton` | `boolean` | `false` | appends `Dialog.Close` rendered as `Button variant="outline"` with the resolved `closeLabel` as visible children, after `children` |
-| `closeLabel` | `string` | locale dictionary | visible text for the built-in footer close action |
+| Prop              | Type      | Default           | Notes                                                                                                                              |
+| ----------------- | --------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `showCloseButton` | `boolean` | `false`           | appends `Dialog.Close` rendered as `Button variant="outline"` with the resolved `closeLabel` as visible children, after `children` |
+| `closeLabel`      | `string`  | locale dictionary | visible text for the built-in footer close action                                                                                  |
 
 Footer's `showCloseButton` is a different job from Content's (a footer action, not the corner dismiss affordance); both stay.
 

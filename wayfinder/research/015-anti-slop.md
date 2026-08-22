@@ -14,22 +14,22 @@ Researched: 2026-08-16, against primary sources (repo README, package.json, `src
 
 ### The 15 rules (from README + `src/index.ts`)
 
-| Rule | Rejects |
-|---|---|
-| `no-chained-type-assertions` | nested/chained type assertions (`x as unknown as T`) |
-| `no-conditional-empty-object-spread` | conditional spreads using `{}` to omit fields |
-| `no-known-value-widening` | explicit broad types that discard known value evidence |
-| `no-module-mocking` | `vi.mock`/`vi.doMock`/`vi.unstable_mockModule` and jest equivalents (AST-only, no options, no exceptions) |
-| `no-object-parameters` | the broad `object` type on function inputs |
-| `no-reflect-apply` / `no-reflect-get` | `Reflect.apply` / `Reflect.get` |
-| `no-runtime-typeof` | ad hoc `typeof` narrowing instead of boundary parsing |
-| `no-shape-in-symbol-names` | any **declared** identifier containing the substring "shape" (case-insensitive; does not flag property access like `zodSchema.shape`) |
-| `no-unknown-parameters` | `unknown` inputs (explicit `cause` convention excepted) |
-| `no-unknown-returns` | contracts returning `unknown` / `Promise<unknown>` |
-| `no-unknown-type-aliases` | aliases that merely conceal `unknown` |
-| `no-unsafe-dictionary-type` | dictionary value contracts based on unsafe types |
-| `no-widen-then-assert` | widening a known value then asserting it back |
-| `require-safety-comment-for-type-assertion` | type assertions without a documented safety comment |
+| Rule                                        | Rejects                                                                                                                               |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `no-chained-type-assertions`                | nested/chained type assertions (`x as unknown as T`)                                                                                  |
+| `no-conditional-empty-object-spread`        | conditional spreads using `{}` to omit fields                                                                                         |
+| `no-known-value-widening`                   | explicit broad types that discard known value evidence                                                                                |
+| `no-module-mocking`                         | `vi.mock`/`vi.doMock`/`vi.unstable_mockModule` and jest equivalents (AST-only, no options, no exceptions)                             |
+| `no-object-parameters`                      | the broad `object` type on function inputs                                                                                            |
+| `no-reflect-apply` / `no-reflect-get`       | `Reflect.apply` / `Reflect.get`                                                                                                       |
+| `no-runtime-typeof`                         | ad hoc `typeof` narrowing instead of boundary parsing                                                                                 |
+| `no-shape-in-symbol-names`                  | any **declared** identifier containing the substring "shape" (case-insensitive; does not flag property access like `zodSchema.shape`) |
+| `no-unknown-parameters`                     | `unknown` inputs (explicit `cause` convention excepted)                                                                               |
+| `no-unknown-returns`                        | contracts returning `unknown` / `Promise<unknown>`                                                                                    |
+| `no-unknown-type-aliases`                   | aliases that merely conceal `unknown`                                                                                                 |
+| `no-unsafe-dictionary-type`                 | dictionary value contracts based on unsafe types                                                                                      |
+| `no-widen-then-assert`                      | widening a known value then asserting it back                                                                                         |
+| `require-safety-comment-for-type-assertion` | type assertions without a documented safety comment                                                                                   |
 
 All rules are **AST-only** (verified for `no-module-mocking` and `no-shape-in-symbol-names` source; the plugin does not consume type information). They do not use or require oxlint's type-aware mode.
 
@@ -49,15 +49,15 @@ The project is intentionally **vendor-first, not a dependency**:
 
 ## Compatibility
 
-| Concern | Verdict |
-|---|---|
-| oxlint `^1.x` | Compatible. anti-slop pins `oxlint@1.78.0` / `@oxlint/plugins@1.78.0`; the ref repo uses `oxlint@^1.75.0` / `@oxlint/plugins@^1.75.0`. Same JS-plugin API (`eslintCompatPlugin`). |
-| Type-aware rules (`options.typeAware`, `oxlint-tsgolint`) | No interaction. anti-slop rules are AST-only jsPlugin rules; they run in the JS-plugin pass, orthogonal to tsgolint. |
-| Custom `@elmeragroup/oxlint-plugin` | No collision. Plugin namespaces differ (`anti-slop/*` vs `elmera/*`); the ref `.oxlintrc.json` already loads multiple `jsPlugins` (eslint-plugin-turbo + elmera), so adding a third entry is routine. |
-| oxfmt | Orthogonal — anti-slop is lint-only, no formatting opinions. |
-| pnpm | Fine — repo itself is a pnpm project (`packageManager: pnpm@10.33.0`); vendored code has one dependency, `@oxlint/plugins`. |
-| turborepo | Fine — lint-only. Only caveat: include the vendored plugin dir in the `lint` task's inputs so rule edits bust the turbo cache (the refs' `tooling/oxlint/` has the same need). |
-| TS entry point | README loads `index.ts` directly as a jsPlugin specifier, which the author validates against oxlint 1.78. On oxlint 1.75 this is unproven; the safe route is either upgrading oxlint to ≥1.78 or vendoring the rules as `.js` like the existing `tooling/oxlint/rules/*.js`. |
+| Concern                                                   | Verdict                                                                                                                                                                                                                                                                      |
+| --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| oxlint `^1.x`                                             | Compatible. anti-slop pins `oxlint@1.78.0` / `@oxlint/plugins@1.78.0`; the ref repo uses `oxlint@^1.75.0` / `@oxlint/plugins@^1.75.0`. Same JS-plugin API (`eslintCompatPlugin`).                                                                                            |
+| Type-aware rules (`options.typeAware`, `oxlint-tsgolint`) | No interaction. anti-slop rules are AST-only jsPlugin rules; they run in the JS-plugin pass, orthogonal to tsgolint.                                                                                                                                                         |
+| Custom `@elmeragroup/oxlint-plugin`                       | No collision. Plugin namespaces differ (`anti-slop/*` vs `elmera/*`); the ref `.oxlintrc.json` already loads multiple `jsPlugins` (eslint-plugin-turbo + elmera), so adding a third entry is routine.                                                                        |
+| oxfmt                                                     | Orthogonal — anti-slop is lint-only, no formatting opinions.                                                                                                                                                                                                                 |
+| pnpm                                                      | Fine — repo itself is a pnpm project (`packageManager: pnpm@10.33.0`); vendored code has one dependency, `@oxlint/plugins`.                                                                                                                                                  |
+| turborepo                                                 | Fine — lint-only. Only caveat: include the vendored plugin dir in the `lint` task's inputs so rule edits bust the turbo cache (the refs' `tooling/oxlint/` has the same need).                                                                                               |
+| TS entry point                                            | README loads `index.ts` directly as a jsPlugin specifier, which the author validates against oxlint 1.78. On oxlint 1.75 this is unproven; the safe route is either upgrading oxlint to ≥1.78 or vendoring the rules as `.js` like the existing `tooling/oxlint/rules/*.js`. |
 
 ## Maturity assessment
 
@@ -65,14 +65,14 @@ The project is intentionally **vendor-first, not a dependency**:
 - 1,589 stars, 26 forks, 1 open issue (viral launch, tiny track record).
 - **No releases, no tags, no npm publish, no versioning story.** Version pinning is impossible; "upstream updates" means re-copying files.
 - Tests exist for 12 of 15 rules (plain `tsx`-run test files); CI via `.github/`.
-- Mitigation: the project *explicitly designs for vendoring* — you own the copy, so upstream abandonment is a non-risk and upstream churn is opt-in.
+- Mitigation: the project _explicitly designs for vendoring_ — you own the copy, so upstream abandonment is a non-risk and upstream churn is opt-in.
 
 Verdict: **immature as a dependency, acceptable as vendored code.** Treat it as a starting-point rule pack you fork and own, not as maintained third-party tooling.
 
 ## Conflicts / friction with the existing setup
 
 1. **`no-module-mocking` will fire immediately**: 17 files in the ref repo use `vi.mock`/`vi.doMock` (e.g. `apps/web-stormwind/test/*.test.ts`, `test/browser/*.test.tsx`). The rule has no options. Either adopt the DI-over-mocking philosophy (aligned with the refs' Effect service-seam patterns, but a real migration) or turn the rule off for `**/test/**` in an override.
-2. **`no-shape-in-symbol-names` is a philosophy rule with false-positive risk**: it flags *any declared identifier* containing "shape". Grep shows shape-named symbols already exist in the refs (`packages/env-sync/src/runtime/with-pim-recovery.ts`, `packages/env-sync/test/helpers/stubs.ts`, UI logo components). Zod `.shape` property *access* is safe. Recommend starting this rule at `warn` or `off`.
+2. **`no-shape-in-symbol-names` is a philosophy rule with false-positive risk**: it flags _any declared identifier_ containing "shape". Grep shows shape-named symbols already exist in the refs (`packages/env-sync/src/runtime/with-pim-recovery.ts`, `packages/env-sync/test/helpers/stubs.ts`, UI logo components). Zod `.shape` property _access_ is safe. Recommend starting this rule at `warn` or `off`.
 3. **`require-safety-comment-for-type-assertion`** stacks on top of `typescript/no-non-null-assertion: error` and `typescript/non-nullable-type-assertion-style: error` — complementary, not conflicting, but existing `as` casts will need `// SAFETY:`-style comments or the rule disabled where casts are pre-audited (the ref already carves out `tooling/oxlint/rules/*.js` from unsafe-type rules; the vendored anti-slop dir needs the same carve-out, which the README's own config shows).
 4. **`no-unknown-parameters`/`no-unknown-returns`** may fight generic utility code (e.g. `to()` from `@elmeragroup/lib`, error-cause plumbing). The `cause` exception covers the common case; expect a handful of per-file overrides.
 5. **`no-runtime-typeof`** is philosophically aligned with the refs' zod-at-the-boundary convention but will flag legitimate narrowing in low-level utilities.

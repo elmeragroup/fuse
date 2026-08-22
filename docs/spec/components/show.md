@@ -20,12 +20,12 @@ No parts, no wrapper element: returns `<>{children}</>` when `when` is true, `nu
 
 ## 3 Props
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `when` | `boolean` | required | render condition (strict boolean — callers coerce, e.g. `items.length > 0`, not `items.length`) |
-| `children` | `ReactNode` | — | rendered inside a fragment when `when` is true |
+| Prop       | Type        | Default  | Notes                                                                                           |
+| ---------- | ----------- | -------- | ----------------------------------------------------------------------------------------------- |
+| `when`     | `boolean`   | required | render condition (strict boolean — callers coerce, e.g. `items.length > 0`, not `items.length`) |
+| `children` | `ReactNode` | —        | rendered inside a fragment when `when` is true                                                  |
 
-**Eager evaluation (documented)**: `children` is an ordinary prop — the JSX (and any expressions inside it) is **evaluated by the parent before** `Show` decides anything; only *rendering* is skipped. Guarding expressions that throw when the condition is false (`data!.name`) is not safe here — use an inline ternary or optional chaining. A Solid-style render-prop overload (`children: () => ReactNode`) was considered and **NOT added** — kept minimal (§8).
+**Eager evaluation (documented)**: `children` is an ordinary prop — the JSX (and any expressions inside it) is **evaluated by the parent before** `Show` decides anything; only _rendering_ is skipped. Guarding expressions that throw when the condition is false (`data!.name`) is not safe here — use an inline ternary or optional chaining. A Solid-style render-prop overload (`children: () => ReactNode`) was considered and **NOT added** — kept minimal (§8).
 
 ## 4 Variants
 

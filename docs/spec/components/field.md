@@ -12,20 +12,20 @@
 
 Twelve parts. Base UI owns id/aria wiring; validation visibility stays external (see §7).
 
-| Part | Base | Notes |
-| --- | --- | --- |
-| `Field.Root` | `@base-ui/react/field` `Field.Root` | orientation layout owner |
-| `Field.Label` | base-ui `Field.Label` | auto-associated label |
-| `Field.Description` | base-ui `Field.Description` | auto `aria-describedby` |
-| `Field.Error` | base-ui `Field.Error` | renders `null` without children; `match` + `role="alert"` |
-| `Field.Control` | base-ui `Field.Control` | wires any control via `render` |
-| `Field.Item` | base-ui `Field.Item` | per-item scope inside grouped fields |
-| `Field.Content` | `div` | flex column for label+description beside a control |
-| `Field.Group` | `div` | vertical stack of fields; `@container/field-group` |
-| `Field.Set` | `@base-ui/react/fieldset` `Fieldset.Root` | fieldset semantics |
-| `Field.Legend` | base-ui `Fieldset.Legend` | `variant` prop styles as legend or label |
-| `Field.Separator` | `div` wrapping the canonical base-ui `Separator` | optional inline content |
-| `Field.Title` | `div` | label-look heading without label semantics |
+| Part                | Base                                             | Notes                                                     |
+| ------------------- | ------------------------------------------------ | --------------------------------------------------------- |
+| `Field.Root`        | `@base-ui/react/field` `Field.Root`              | orientation layout owner                                  |
+| `Field.Label`       | base-ui `Field.Label`                            | auto-associated label                                     |
+| `Field.Description` | base-ui `Field.Description`                      | auto `aria-describedby`                                   |
+| `Field.Error`       | base-ui `Field.Error`                            | renders `null` without children; `match` + `role="alert"` |
+| `Field.Control`     | base-ui `Field.Control`                          | wires any control via `render`                            |
+| `Field.Item`        | base-ui `Field.Item`                             | per-item scope inside grouped fields                      |
+| `Field.Content`     | `div`                                            | flex column for label+description beside a control        |
+| `Field.Group`       | `div`                                            | vertical stack of fields; `@container/field-group`        |
+| `Field.Set`         | `@base-ui/react/fieldset` `Fieldset.Root`        | fieldset semantics                                        |
+| `Field.Legend`      | base-ui `Fieldset.Legend`                        | `variant` prop styles as legend or label                  |
+| `Field.Separator`   | `div` wrapping the canonical base-ui `Separator` | optional inline content                                   |
+| `Field.Title`       | `div`                                            | label-look heading without label semantics                |
 
 ```tsx
 <Field.Root>
@@ -42,17 +42,17 @@ All parts accept `className` (merged via `cn`) and the underlying element/primit
 
 **Field.Root** — `ComponentProps<FieldPrimitive.Root>` plus:
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `orientation` | `"vertical" \| "horizontal" \| "responsive"` | `"vertical"` | tv axis; also emitted as `data-orientation` |
-| `disabled` | `boolean` | — | base-ui; cascades `data-disabled` to parts |
-| `invalid` | `boolean` | — | base-ui; forces invalid state |
-| `name` / `validate` / `validationMode` / `validationDebounceTime` | base-ui | base-ui defaults | pass-through; external validators own visibility |
+| Prop                                                              | Type                                         | Default          | Notes                                            |
+| ----------------------------------------------------------------- | -------------------------------------------- | ---------------- | ------------------------------------------------ |
+| `orientation`                                                     | `"vertical" \| "horizontal" \| "responsive"` | `"vertical"`     | tv axis; also emitted as `data-orientation`      |
+| `disabled`                                                        | `boolean`                                    | —                | base-ui; cascades `data-disabled` to parts       |
+| `invalid`                                                         | `boolean`                                    | —                | base-ui; forces invalid state                    |
+| `name` / `validate` / `validationMode` / `validationDebounceTime` | base-ui                                      | base-ui defaults | pass-through; external validators own visibility |
 
 **Field.Legend** — `ComponentProps<Fieldset.Legend>` plus:
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
+| Prop      | Type                  | Default    | Notes                                       |
+| --------- | --------------------- | ---------- | ------------------------------------------- |
 | `variant` | `"legend" \| "label"` | `"legend"` | emitted as `data-variant`; drives text size |
 
 **Field.Separator** — `ComponentProps<"div">` plus optional `children?: ReactNode` rendered as inline content over the rule (`data-content` reflects presence).
@@ -71,7 +71,7 @@ Polymorphism via base-ui `useRender` (`render` prop); never `as`.
 
 ## 5 Consumed tokens
 
-- `error` — invalid text on `Field.Root` (`data-[invalid=true]:text-error`) and `Field.Error` text.
+- `error` — invalid text on `Field.Root` (`data-invalid:text-error`) and `Field.Error` text.
 - `muted-foreground` — `Field.Description` text, `Field.Separator` inline content.
 - `primary` — `Field.Label` checked-card border (`has-data-checked:border-primary/30`); link hover in descriptions.
 - `background` — `Field.Separator` content chip backdrop.
@@ -79,9 +79,9 @@ Polymorphism via base-ui `useRender` (`render` prop); never `as`.
 
 ## 6 Data attributes
 
-**Emitted**: `data-slot` per part — `field`, `field-label` (on **both** `Field.Label` and `Field.Title` — deliberate, see §8), `field-description`, `field-error`, `field-control`, `field-item`, `field-content`, `field-group`, `field-set`, `field-legend`, `field-separator`, `field-separator-content`; `data-orientation` on Root; `data-variant` on Legend; `data-content` (boolean) on Separator.
+**Emitted**: `data-slot` per part — `field`, `field-label` (`Field.Label`), `field-title` (`Field.Title`), `field-description`, `field-error`, `field-control`, `field-item`, `field-content`, `field-group`, `field-set`, `field-legend`, `field-separator`, `field-separator-content`; `data-field-heading` on Label and Title (layout hook, not a slot); `data-orientation` on Root; `data-variant` on Legend; `data-content` (boolean) on Separator.
 
-**Consumed**: base-ui state attrs `data-disabled`/`data-invalid` (label opacity via `group-data-[disabled=true]/field`, root text color via `data-[invalid=true]`); child `data-slot` values `checkbox-group`, `radio-group` (Set/Group gap tightening), `field-content` (horizontal alignment), `field` (card-style labels: nested Field inside Label gets border, radius, padding), `field-label` (horizontal flex-auto); `data-variant=legend` adjacency (`[[data-variant=legend]+&]:-mt-1.5` on Description); `group-data-[variant=outline]/field-group` on Separator (consumed from a variant-carrying group wrapper).
+**Consumed**: base-ui state attrs `data-disabled`/`data-invalid` (label/title opacity via `group-data-disabled/field` on the heading hook, root text color via `data-invalid`). These use presence variants, not `data-[…=true]`, because FieldRoot stamps `data-disabled=""` / `data-invalid=""` for boolean true. Child `data-slot` values `checkbox-group`, `radio-group` (Set/Group gap tightening), `field-content` (horizontal alignment), `field` (card-style labels: nested Field inside Label gets border, radius, padding); `data-field-heading` (horizontal flex-auto — later composites target this hook, never the label slot, when they mean heading-shaped parts); `data-variant=legend` adjacency (`[[data-variant=legend]+&]:-mt-1.5` on Description); `group-data-[variant=outline]/field-group` on Separator (consumed from a variant-carrying group wrapper).
 
 ## 7 Accessibility
 
@@ -94,19 +94,20 @@ Polymorphism via base-ui `useRender` (`render` prop); never `as`.
 ## 8 Divergence from reference
 
 1. **Renames (flat → namespace)**: `Field`→`Field.Root`, `FieldLabel`→`Field.Label`, `FieldDescription`→`Field.Description`, `FieldError`→`Field.Error`, `FieldGroup`→`Field.Group`, `FieldContent`→`Field.Content`, `FieldItem`→`Field.Item`, `FieldLegend`→`Field.Legend`, `FieldSet`→`Field.Set`, `FieldSeparator`→`Field.Separator`, `FieldTitle`→`Field.Title`, `FieldControl`→`Field.Control`.
-2. **`Field.Item` gains `cn` class merge** — the ref passes `className` raw (`className={className}`), silently dropping base styles ordering guarantees every other part has; inconsistency fixed.
+2. **`Field.Item` passes `className` through** — same shape as `Field.Control`: stamp `data-slot`, spread props. No no-op `cn(className)` wrapper.
 3. **`destructive` → `error`** token rename throughout (root invalid text, error text) per the canonical token contract.
 4. **`dark:` variant dropped** (`dark:has-data-checked:border-primary/20` on Label) — dark axis lives in tokens behind `[data-theme="dark"]`.
-5. **`FieldTitle` `data-slot="field-label"` duplication KEPT deliberately** — the orientation recipe and disabled-opacity selectors target `[data-slot=field-label]`; Title must participate in the same layout/disabled contract as Label while remaining a non-label element. Renaming its slot would fork every sibling selector.
+5. **`Field.Title` slot is honest** — `data-slot="field-title"` (Label keeps `field-label`). Orientation and disabled-opacity target the shared `data-field-heading` hook both parts emit, so later composites (Select, CheckboxCard, horizontal fields) style heading-shaped parts via the hook, never the label slot. Deliberate divergence from shadcn, which duplicates `field-label` on Title.
 6. **Separator import unified** to the canonical base-ui `Separator` component (single source; the ref already imported `./separator` — the spec pins this against drift).
+7. **Boolean data-attrs match Base UI empty-string mapping** — `data-invalid:text-error` and `group-data-disabled/field:opacity-50` instead of the ref's `data-[invalid=true]` / `group-data-[disabled=true]/field`. FieldRoot's `fieldValidityMapping` stamps `data-invalid=""` / `data-disabled=""` for boolean true; the `=true` form never matches.
 
 ## 9 Test requirements
 
 - Label association: render Root+Label+Control(Input); query the input by accessible name (`getByRole("textbox", { name: … })`).
 - Description wiring: input's `aria-describedby` resolves to the Description text (role/label queries only, no test-ids).
 - Error: absent from DOM when `children` is falsy; with children, present with `role="alert"` and associated to the control.
-- `disabled` on Root cascades: control disabled, label rendered with `data-disabled` state.
-- `invalid` on Root: control gets `aria-invalid`; root emits `data-invalid`.
+- `disabled` on Root cascades: control disabled, label rendered with `data-disabled` state; Label and Title computed opacity matches the `opacity-50` dim (`group-data-disabled/field`).
+- `invalid` on Root: control gets `aria-invalid`; root emits `data-invalid`; Root computed color matches the `error` token (`data-invalid:text-error`).
 - `orientation` prop reflected as `data-orientation` for all three values.
 - Legend `variant` reflected as `data-variant`.
 - Separator: `data-content="true"` with children, `"false"` without.

@@ -10,11 +10,11 @@
 
 ## 2 Anatomy
 
-| Part | Base | Notes |
-| --- | --- | --- |
-| `Collapsible.Root` | `CollapsiblePrimitive.Root` | `div`; owns open state |
-| `Collapsible.Trigger` | `CollapsiblePrimitive.Trigger` | native `button`; toggles the panel |
-| `Collapsible.Content` | `CollapsiblePrimitive.Panel` | `div`; the expandable region (base-ui `Panel` renamed, §8) |
+| Part                  | Base                           | Notes                                                      |
+| --------------------- | ------------------------------ | ---------------------------------------------------------- |
+| `Collapsible.Root`    | `CollapsiblePrimitive.Root`    | `div`; owns open state                                     |
+| `Collapsible.Trigger` | `CollapsiblePrimitive.Trigger` | native `button`; toggles the panel                         |
+| `Collapsible.Content` | `CollapsiblePrimitive.Panel`   | `div`; the expandable region (base-ui `Panel` renamed, §8) |
 
 ```tsx
 <Collapsible.Root defaultOpen>
@@ -29,21 +29,21 @@ Pure passthrough — every part forwards `ComponentProps` of its base-ui part ve
 
 **Collapsible.Root**:
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `open` | `boolean` | — | controlled open state |
-| `defaultOpen` | `boolean` | `false` | uncontrolled initial state |
-| `onOpenChange` | `(open: boolean, eventDetails) => void` | — | base-ui signature; second arg is `CollapsibleRoot.ChangeEventDetails` |
-| `disabled` | `boolean` | `false` | ignores user interaction |
+| Prop           | Type                                    | Default | Notes                                                                 |
+| -------------- | --------------------------------------- | ------- | --------------------------------------------------------------------- |
+| `open`         | `boolean`                               | —       | controlled open state                                                 |
+| `defaultOpen`  | `boolean`                               | `false` | uncontrolled initial state                                            |
+| `onOpenChange` | `(open: boolean, eventDetails) => void` | —       | base-ui signature; second arg is `CollapsibleRoot.ChangeEventDetails` |
+| `disabled`     | `boolean`                               | `false` | ignores user interaction                                              |
 
 **Collapsible.Trigger** — `disabled`, `nativeButton` (default `true`), `render`.
 
 **Collapsible.Content**:
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
+| Prop               | Type      | Default | Notes                                                                              |
+| ------------------ | --------- | ------- | ---------------------------------------------------------------------------------- |
 | `hiddenUntilFound` | `boolean` | `false` | `hidden="until-found"`; find-in-page can expand the panel; overrides `keepMounted` |
-| `keepMounted` | `boolean` | `false` | keep the element in the DOM while closed |
+| `keepMounted`      | `boolean` | `false` | keep the element in the DOM while closed                                           |
 
 ## 4 Variants
 

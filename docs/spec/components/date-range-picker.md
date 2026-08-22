@@ -30,15 +30,15 @@ Composes the same private internals as DatePicker (styled Dialog, Modal, RAC But
 
 `DateRangePickerProps<T extends DateValue>` — spreads onto RAC `DateRangePicker` (open surface: `value`/`defaultValue`/`onChange` as `RangeValue<T>` `{ start, end }`, `minValue`, `maxValue`, `granularity`, `placeholderValue`, `isDisabled`, `isReadOnly`, `isRequired`, `isInvalid`, `isDateUnavailable`, `allowsNonContiguousRanges`, `validate`, `startName`/`endName`, `isOpen`/`onOpenChange`, …).
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `label` | `string` | — | |
-| `description` | `string` | — | |
-| `errorMessage` | `ReactNode \| ((v: ValidationResult) => ReactNode)` | — | unified composite face |
-| `isReadOnly` | `boolean` | `false` | Destructured to drive the `isReadOnly` tv variant (ruled addition — parity with DatePicker) |
-| `shouldForceLeadingZeros` | `boolean` | **`true`** | **Ruled addition** — the ref omits it here while DatePicker/DateField default it true; aligned |
-| `className` | RAC className | — | Composed onto `base` slot |
-| `container` | `HTMLElement \| RefObject<HTMLElement>` | nearest `ThemeScope` | forwarded to private Popover; explicit value wins |
+| Prop                      | Type                                                | Default              | Notes                                                                                          |
+| ------------------------- | --------------------------------------------------- | -------------------- | ---------------------------------------------------------------------------------------------- |
+| `label`                   | `string`                                            | —                    |                                                                                                |
+| `description`             | `string`                                            | —                    |                                                                                                |
+| `errorMessage`            | `ReactNode \| ((v: ValidationResult) => ReactNode)` | —                    | unified composite face                                                                         |
+| `isReadOnly`              | `boolean`                                           | `false`              | Destructured to drive the `isReadOnly` tv variant (ruled addition — parity with DatePicker)    |
+| `shouldForceLeadingZeros` | `boolean`                                           | **`true`**           | **Ruled addition** — the ref omits it here while DatePicker/DateField default it true; aligned |
+| `className`               | RAC className                                       | —                    | Composed onto `base` slot                                                                      |
+| `container`               | `HTMLElement \| RefObject<HTMLElement>`             | nearest `ThemeScope` | forwarded to private Popover; explicit value wins                                              |
 
 No `presetGroup` (DatePicker-only; DatePickerStateContext has no range counterpart in this tier).
 

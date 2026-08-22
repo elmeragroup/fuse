@@ -34,20 +34,24 @@ Every component spec has exactly ten sections: **1 Header** (canonical name, can
 
 A `size` axis that encodes a **control box** shares four rungs — `xs`, `sm`, `md`, `lg` — and a default control-type pair (`--control-text` / `--control-leading`). Density-owned metrics are control height, control inline padding, icon-edge inline padding, and control gap on every rung, plus font-size and line-height on `md` and `lg` only.
 
-| Rung | Box metrics | Type |
-| --- | --- | --- |
-| `xs` | density-owned | size-owned (`text-xs`) |
-| `sm` | density-owned | size-owned (`text-sm`) |
+| Rung | Box metrics   | Type                              |
+| ---- | ------------- | --------------------------------- |
+| `xs` | density-owned | size-owned (`text-xs`)            |
+| `sm` | density-owned | size-owned (`text-sm`)            |
 | `md` | density-owned | density-owned (control-type pair) |
 | `lg` | density-owned | density-owned (control-type pair) |
 
 `xs` and `sm` type must not read the control-type pair. Default size **must pin height**; it is never content-sized. Once height is pinned, do not also set `py-*` on that rung — vertical padding is leftover space in the box.
 
-This rule applies to a `size` axis that encodes those control-box metrics (for example Button or Toggle). Type-scale axes (`Text`, `Heading`), overlay-width axes (`Dialog`, `Sheet`), and decorative sizes are not density rungs. Do not mass-map existing specs; new size-axis control work must map onto these rungs.
+**Field-box pinning (ruling 2, 2026-08-21).** Input-class surfaces that ship a single fixed height and **no `size` axis** (Input, Textarea inline padding, NumberField, Tabs list, RAC `fieldGroupVariants`) pin the `md` rung: `h-(--control-h-md)`, `--control-px-md`, and the control-type pair where type is density-owned. They do not grow a `size` axis to express density. Comfortable Input therefore matches comfortable Button `default`.
+
+This rule applies to a `size` axis that encodes those control-box metrics (for example Button or Toggle) **and** to those single-height field boxes. Type-scale axes (`Text`, `Heading`), overlay-width axes (`Dialog`, `Sheet`), and decorative sizes are not density rungs. Do not mass-map existing specs; new size-axis control work must map onto these rungs.
+
+**Comfortable source (ruling 1, 2026-08-21).** Dense metrics come from the internal-ref lift (`:root` defaults). Comfortable is the signed `--control-*` column in `ui.css` — never derived from the external ref. External deployments render comfortable via `defaultDensityForVariant` only.
 
 These `--control-*` names are **library-owned implementation variables**, not a public token tier ([theming](../theming.md) §2.7, ADR [0001](../../adr/0001-canonical-token-contract.md) amendment 2026-08-20). They are not role tokens, not brand override keys, and not a consumer customization interface.
 
-Recipes **do not** hardcode those metrics (including `md`/`lg` font-size and line-height) inside a `size` axis. They read the `--control-*` implementation variables declared on `:root` in `ui.css`. The `elmera/no-hardcoded-density-metrics` rule warns when a size-axis recipe hardcodes those families; it does not flag the legal numeric spacing below. Do not introduce `dense:` / `comfortable:` custom variants for them; density retargets the variables on `:root[data-density="comfortable"]`, and local exceptions stay on `size`. Do not silently add another unmapped literal ladder.
+Recipes **do not** hardcode those metrics (including `md`/`lg` font-size and line-height) inside a `size` axis, a `data-[size=…]` class string, or a field-box recipe without a size axis. They read the `--control-*` implementation variables declared on `:root` in `ui.css`. The `elmera/no-hardcoded-density-metrics` rule warns when those families are hardcoded; it does not flag the legal numeric spacing below. Do not introduce `dense:` / `comfortable:` custom variants for them; density retargets the variables on `:root[data-density="comfortable"]`, and local exceptions stay on `size`. Do not silently add another unmapped literal ladder.
 
 **Numeric spacing remains legal** for unrelated geometry: borders, translations, hit-area expansion, layout spacing, and explicitly documented optical values outside the density ladder. Radius stays brand-owned. Icon glyph size, shadows, transitions, and table-cell block padding are outside this remit.
 
@@ -60,4 +64,5 @@ Phosphor only, imported by named export from `@elmeragroup/ui/icons` (curated se
 ## Tests & demos
 
 - Tests co-located: `*.test.ts` (unit project) / `*.browser.test.tsx` (browser project). **All queries role/label-based**; keyboard-interaction tests cover each spec's §7 behaviors. Written fresh — never ported.
+- Dual-density browser tests follow Button: stamp `data-density` on `document.documentElement` (`dense` and `comfortable`), assert computed metrics against the signed `--control-*` ladder, and prove nested `data-density` / `ThemeScope` variant changes do not rescope. Ticket 79's generator stubs this pattern. Focus rings use the shared helper in `packages/ui/test/assert-focus-ring.ts` (ring on `:focus-visible`, absent on mouse focus, both density stamps).
 - Demos are plain runnable `.tsx` files (one per spec §10 scenario), consumed by docs extraction and future VR targets.

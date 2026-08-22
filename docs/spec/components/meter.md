@@ -12,13 +12,13 @@
 
 One export rendering five internal parts (not consumer-composable):
 
-| Internal part | base-ui primitive | data-slot (ours, see §8) |
-| --- | --- | --- |
-| root | `Meter.Root` | `meter` |
-| label row | `<div>` + `Meter.Label` | `meter-label` (on the Label) |
-| value (icon + `valueLabel ?? Meter.Value`) | `<span>` wrapping `Meter.Value` | `meter-value` |
-| track | `Meter.Track` | `meter-bar` |
-| indicator | `Meter.Indicator` | `meter-bar-fill` |
+| Internal part                              | base-ui primitive               | data-slot (ours, see §8)     |
+| ------------------------------------------ | ------------------------------- | ---------------------------- |
+| root                                       | `Meter.Root`                    | `meter`                      |
+| label row                                  | `<div>` + `Meter.Label`         | `meter-label` (on the Label) |
+| value (icon + `valueLabel ?? Meter.Value`) | `<span>` wrapping `Meter.Value` | `meter-value`                |
+| track                                      | `Meter.Track`                   | `meter-bar`                  |
+| indicator                                  | `Meter.Indicator`               | `meter-bar-fill`             |
 
 An internal `MeterIcon` renders a status icon inside the value span; internal `getMeterLevel(value, maxValue, percentage)` derives the level.
 
@@ -30,18 +30,18 @@ An internal `MeterIcon` renders a status icon inside the value span; internal `g
 
 `MeterProps = { label?, mode?, value, minValue?, maxValue?, valueLabel?, className? } & Omit<ComponentProps<typeof MeterPrimitive.Root>, "value" | "min" | "max" | "className" | "locale">`.
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `value` | `number` | — (required) | current value |
-| `minValue` | `number` | `0` | labeled-composite naming (ref-verbatim; the `min`/`max` → `minValue`/`maxValue` rename is the composite-tier convention). Mapped to primitive `min` |
-| `maxValue` | `number` | `100` | mapped to primitive `max`; also drives `EXCEEDED_MAX_VALUE` (only when explicitly provided) |
-| `label` | `string` | — | rendered in `Meter.Label` |
-| `valueLabel` | `ReactNode` | — | replaces the auto-formatted `<Meter.Value />` |
-| `mode` | `MeterMode` | `"default"` | see §4 |
-| `warningLabel` | `string` | locale dictionary | accessible name for Warning icon |
-| `successLabel` | `string` | locale dictionary | accessible name for CheckCircle icon |
-| `className` | `string` | — | merged onto the root |
-| …rest | `Meter.Root` props minus `value/min/max/className/locale` | — | e.g. `format`, `getAriaValueText`; the implementation passes the provider locale to the primitive |
+| Prop           | Type                                                      | Default           | Notes                                                                                                                                               |
+| -------------- | --------------------------------------------------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `value`        | `number`                                                  | — (required)      | current value                                                                                                                                       |
+| `minValue`     | `number`                                                  | `0`               | labeled-composite naming (ref-verbatim; the `min`/`max` → `minValue`/`maxValue` rename is the composite-tier convention). Mapped to primitive `min` |
+| `maxValue`     | `number`                                                  | `100`             | mapped to primitive `max`; also drives `EXCEEDED_MAX_VALUE` (only when explicitly provided)                                                         |
+| `label`        | `string`                                                  | —                 | rendered in `Meter.Label`                                                                                                                           |
+| `valueLabel`   | `ReactNode`                                               | —                 | replaces the auto-formatted `<Meter.Value />`                                                                                                       |
+| `mode`         | `MeterMode`                                               | `"default"`       | see §4                                                                                                                                              |
+| `warningLabel` | `string`                                                  | locale dictionary | accessible name for Warning icon                                                                                                                    |
+| `successLabel` | `string`                                                  | locale dictionary | accessible name for CheckCircle icon                                                                                                                |
+| `className`    | `string`                                                  | —                 | merged onto the root                                                                                                                                |
+| …rest          | `Meter.Root` props minus `value/min/max/className/locale` | —                 | e.g. `format`, `getAriaValueText`; the implementation passes the provider locale to the primitive                                                   |
 
 Percentage math: `max > min ? clamp(((value - min) / (max - min)) * 100, 0, 100) : 0`. Level: `value > maxValue` (explicit maxValue only) → `EXCEEDED_MAX_VALUE`; `percentage === 100` → `FULL`; `> 80` → `MEDIUM`; else `LOW`.
 
@@ -55,12 +55,12 @@ Modes (`METER_CONSTANTS.MODES`): `default` (full bar = error colors), `inverted`
 
 Full mode × level color matrix (`barFill` / `labelValue`), base level styles + compoundVariants applied:
 
-| Level | `default` | `inverted` | `success-only-when-full` | `neutral` |
-| --- | --- | --- | --- | --- |
-| `LOW` (≤80%) | `bg-success` / `text-success` | `bg-error` / `text-error` | `bg-error` / `text-error` | `bg-primary` / `text-foreground` |
-| `MEDIUM` (>80%) | `bg-warning` / `text-warning-foreground` | `bg-warning` / `text-warning-foreground` | `bg-error` / `text-error` | `bg-primary` / `text-foreground` |
-| `FULL` (100%) | `bg-error` / `text-error` | `bg-success` / `text-success` | `bg-success` / `text-success` | `bg-primary` / `text-foreground` |
-| `EXCEEDED_MAX_VALUE` (value > maxValue) | `bg-error` / `text-error` | `bg-error` / `text-error`* | `bg-error` / `text-error`* | `bg-primary` / `text-foreground` |
+| Level                                   | `default`                                | `inverted`                               | `success-only-when-full`      | `neutral`                        |
+| --------------------------------------- | ---------------------------------------- | ---------------------------------------- | ----------------------------- | -------------------------------- |
+| `LOW` (≤80%)                            | `bg-success` / `text-success`            | `bg-error` / `text-error`                | `bg-error` / `text-error`     | `bg-primary` / `text-foreground` |
+| `MEDIUM` (>80%)                         | `bg-warning` / `text-warning-foreground` | `bg-warning` / `text-warning-foreground` | `bg-error` / `text-error`     | `bg-primary` / `text-foreground` |
+| `FULL` (100%)                           | `bg-error` / `text-error`                | `bg-success` / `text-success`            | `bg-success` / `text-success` | `bg-primary` / `text-foreground` |
+| `EXCEEDED_MAX_VALUE` (value > maxValue) | `bg-error` / `text-error`                | `bg-error` / `text-error`*               | `bg-error` / `text-error`*    | `bg-primary` / `text-foreground` |
 
 \* falls through to the base level styles — the ref defines no `EXCEEDED_MAX_VALUE` compound for `inverted`/`success-only-when-full` (ref-faithful; arguably surprising for `inverted`, kept as-is).
 

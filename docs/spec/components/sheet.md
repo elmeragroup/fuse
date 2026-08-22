@@ -12,19 +12,19 @@
 
 Built on **`@base-ui/react/drawer`** (not Dialog): a dialog with swipe-to-dismiss. This choice imposes real structure — a `Viewport` layer, a `VirtualKeyboardProvider`, and inline swipe transforms — all documented below.
 
-| Part | Base | Notes |
-| --- | --- | --- |
-| `Sheet.Root` | `SheetSideContext.Provider > SheetPrimitive.Root > SheetPrimitive.VirtualKeyboardProvider` | owns `side`; derives `swipeDirection`; `VirtualKeyboardProvider` **must** sit inside `Root` — it reads Root's dialog store |
-| `Sheet.Trigger` | `SheetPrimitive.Trigger` | opens |
-| `Sheet.Close` | `SheetPrimitive.Close` | closes |
-| `Sheet.Portal` | `SheetPrimitive.Portal` | exported for manual composition; `Sheet.Content` renders its own internally |
-| `Sheet.Overlay` | `SheetPrimitive.Backdrop` | fixed scrim; auto-rendered by `Sheet.Content` |
-| `Sheet.Content` | `Portal > Overlay > Viewport > Popup > SheetPrimitive.Content` | panel; reads side from context, re-emits `data-side`; auto-renders the corner close button |
-| `Sheet.Header` | `div` | `flex flex-col gap-1.5 px-4 pt-4` |
-| `Sheet.Body` | `div` | `min-h-0 flex-1 space-y-6 overflow-y-auto px-4` — the scroll container |
-| `Sheet.Footer` | `div` | `mt-auto flex flex-col gap-2 p-4` |
-| `Sheet.Title` | `SheetPrimitive.Title` | `font-heading text-xl font-medium text-balance text-foreground` |
-| `Sheet.Description` | `SheetPrimitive.Description` | muted `text-base text-pretty` |
+| Part                | Base                                                                                       | Notes                                                                                                                      |
+| ------------------- | ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| `Sheet.Root`        | `SheetSideContext.Provider > SheetPrimitive.Root > SheetPrimitive.VirtualKeyboardProvider` | owns `side`; derives `swipeDirection`; `VirtualKeyboardProvider` **must** sit inside `Root` — it reads Root's dialog store |
+| `Sheet.Trigger`     | `SheetPrimitive.Trigger`                                                                   | opens                                                                                                                      |
+| `Sheet.Close`       | `SheetPrimitive.Close`                                                                     | closes                                                                                                                     |
+| `Sheet.Portal`      | `SheetPrimitive.Portal`                                                                    | exported for manual composition; `Sheet.Content` renders its own internally                                                |
+| `Sheet.Overlay`     | `SheetPrimitive.Backdrop`                                                                  | fixed scrim; auto-rendered by `Sheet.Content`                                                                              |
+| `Sheet.Content`     | `Portal > Overlay > Viewport > Popup > SheetPrimitive.Content`                             | panel; reads side from context, re-emits `data-side`; auto-renders the corner close button                                 |
+| `Sheet.Header`      | `div`                                                                                      | `flex flex-col gap-1.5 px-4 pt-4`                                                                                          |
+| `Sheet.Body`        | `div`                                                                                      | `min-h-0 flex-1 space-y-6 overflow-y-auto px-4` — the scroll container                                                     |
+| `Sheet.Footer`      | `div`                                                                                      | `mt-auto flex flex-col gap-2 p-4`                                                                                          |
+| `Sheet.Title`       | `SheetPrimitive.Title`                                                                     | `font-heading text-xl font-medium text-balance text-foreground`                                                            |
+| `Sheet.Description` | `SheetPrimitive.Description`                                                               | muted `text-base text-pretty`                                                                                              |
 
 Inside Content, `SheetPrimitive.Popup` (slot `sheet-content`) carries positioning/animation; `SheetPrimitive.Content` (slot `sheet-content-inner`, `flex h-full w-full flex-col gap-4`) is the drawer's swipeable content region wrapping `children` + close button. Both layers are load-bearing.
 
@@ -37,7 +37,9 @@ Inside Content, `SheetPrimitive.Popup` (slot `sheet-content`) carries positionin
       <Sheet.Description>Supporting copy.</Sheet.Description>
     </Sheet.Header>
     <Sheet.Body>…</Sheet.Body>
-    <Sheet.Footer><Button>Save</Button></Sheet.Footer>
+    <Sheet.Footer>
+      <Button>Save</Button>
+    </Sheet.Footer>
   </Sheet.Content>
 </Sheet.Root>
 ```
@@ -48,10 +50,10 @@ All rendering parts take `className` (merged via `cn`) and forward the rest of t
 
 **Sheet.Root** — `Omit<ComponentProps<SheetPrimitive.Root>, "swipeDirection" | "children">` plus:
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `side` | `"top" \| "right" \| "bottom" \| "left"` | `"right"` | placed in `SheetSideContext`; also mapped through `SIDE_TO_SWIPE_DIRECTION` (`top→"up"`, `right→"right"`, `bottom→"down"`, `left→"left"`) to the primitive's `swipeDirection` |
-| `children` | `ReactNode` | — | re-typed because they are wrapped in `VirtualKeyboardProvider` |
+| Prop       | Type                                     | Default   | Notes                                                                                                                                                                         |
+| ---------- | ---------------------------------------- | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `side`     | `"top" \| "right" \| "bottom" \| "left"` | `"right"` | placed in `SheetSideContext`; also mapped through `SIDE_TO_SWIPE_DIRECTION` (`top→"up"`, `right→"right"`, `bottom→"down"`, `left→"left"`) to the primitive's `swipeDirection` |
+| `children` | `ReactNode`                              | —         | re-typed because they are wrapped in `VirtualKeyboardProvider`                                                                                                                |
 
 `swipeDirection` is **deliberately omitted** from the public props — it is coupled to `side` and must never diverge (swiping toward the panel's edge dismisses it). This side-in-context mechanism is the component's spine: Root broadcasts `side`, Content consumes it and re-emits `data-side` for styling.
 
@@ -59,12 +61,12 @@ All rendering parts take `className` (merged via `cn`) and forward the rest of t
 
 **Sheet.Content** — `ComponentProps<SheetPrimitive.Popup>` + `VariantProps<sheetContentVariants>` plus:
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `size` | 13-value axis, see §4 | `"md"` | max-width; only affects `left`/`right` sides at the `sm:` breakpoint and up |
-| `showCloseButton` | `boolean` | `true` | shared close-button rendering (§8): `Sheet.Close` rendered as `Button variant="ghost" size="icon-sm"` with `hit-area-1 absolute top-4 right-4`, Phosphor `X` + locale-dictionary `closeLabel` rendered sr-only |
-| `closeLabel` | `string` | locale dictionary | accessible name for the built-in close button |
-| `container` | `HTMLElement \| RefObject<HTMLElement>` | nearest `ThemeScope` element | forwarded to the internal Portal (§8) |
+| Prop              | Type                                    | Default                      | Notes                                                                                                                                                                                                          |
+| ----------------- | --------------------------------------- | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `size`            | 13-value axis, see §4                   | `"md"`                       | max-width; only affects `left`/`right` sides at the `sm:` breakpoint and up                                                                                                                                    |
+| `showCloseButton` | `boolean`                               | `true`                       | shared close-button rendering (§8): `Sheet.Close` rendered as `Button variant="ghost" size="icon-sm"` with `hit-area-1 absolute top-4 right-4`, Phosphor `X` + locale-dictionary `closeLabel` rendered sr-only |
+| `closeLabel`      | `string`                                | locale dictionary            | accessible name for the built-in close button                                                                                                                                                                  |
+| `container`       | `HTMLElement \| RefObject<HTMLElement>` | nearest `ThemeScope` element | forwarded to the internal Portal (§8)                                                                                                                                                                          |
 
 **Sheet.Header / Body / Footer** — `ComponentProps<"div">`.
 **Sheet.Title / Sheet.Description** — their base-ui part's props verbatim.

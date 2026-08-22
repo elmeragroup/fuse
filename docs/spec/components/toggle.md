@@ -22,28 +22,37 @@ Single element wrapping `Toggle` from `@base-ui/react/toggle` (renders a `<butto
 
 `Omit<ComponentProps<typeof TogglePrimitive>, "className"> & { className?: string } & VariantProps<typeof toggleVariants>` — full primitive pass-through (`pressed`, `defaultPressed`, `onPressedChange`, `disabled`, `value`, `render`, native button props). The ref's `className` re-widening to plain `string` (the primitive accepts a state-callback className; the wrapper narrows it for `cn`) is kept.
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `variant` | `"default" \| "outline"` | `"default"` | tv axis |
-| `size` | `"xs" \| "sm" \| "default" \| "lg"` | `"default"` | tv axis |
-| `className` | `string` | — | merged via tv's `className` slot inside `cn` |
-| …rest | `TogglePrimitive` props | — | spread onto the primitive |
+| Prop        | Type                                | Default     | Notes                                        |
+| ----------- | ----------------------------------- | ----------- | -------------------------------------------- |
+| `variant`   | `"default" \| "outline"`            | `"default"` | tv axis                                      |
+| `size`      | `"xs" \| "sm" \| "default" \| "lg"` | `"default"` | tv axis                                      |
+| `className` | `string`                            | —           | merged via tv's `className` slot inside `cn` |
+| …rest       | `TogglePrimitive` props             | —           | spread onto the primitive                    |
 
 ## 4 Variants
 
 Recipe: **`toggleVariants`** — **PUBLIC**. The ref exports it and `ToggleGroup.Item` borrows it; this is the sanctioned borrow pattern (same as `buttonVariants`), so it stays exported and typed via `VariantProps`.
 
-| Axis | Values | Default |
-| --- | --- | --- |
+| Axis      | Values                                                                                                 | Default   |
+| --------- | ------------------------------------------------------------------------------------------------------ | --------- |
 | `variant` | `default` (transparent bg) · `outline` (`border border-input bg-transparent shadow-xs hover:bg-muted`) | `default` |
-| `size` | `xs` (`h-6 min-w-6 px-2 text-xs`, `rounded-[min(var(--radius-md),10px)]` clamp — kept and documented per conventions, icons `size-3`) · `sm` (`h-8 min-w-8 px-2.5`) · `default` (`h-9 min-w-9 px-2.5`) · `lg` (`h-10 min-w-10 px-2.5`) | `default` |
+| `size`    | see density mapping below                                                                              | `default` |
 
 Base notes:
 
 - **Pressed state, belt-and-braces**: base carries both `aria-pressed:bg-muted` **and** `data-pressed:bg-muted`. base-ui emits both `aria-pressed` and `data-pressed`; the doubled selector is kept deliberately so the style survives either channel (and consumer `render`-prop substitutions that only forward aria).
-- **Icon-padding hooks**: every size defines `has-data-[icon=inline-start]:pl-*` / `has-data-[icon=inline-end]:pr-*` — consumers tag icon children with `data-icon="inline-start" | "inline-end"` and the button tightens padding on that side (xs/sm → `1.5`, default/lg → `2`).
+- **Icon-padding hooks**: every size defines `has-data-[icon=inline-start]:pl-(--control-px-icon-*)` / `has-data-[icon=inline-end]:pr-(--control-px-icon-*)` — consumers tag icon children with `data-icon="inline-start" | "inline-end"` and the button tightens padding on that side.
 - Icon sizing guard: `[&_svg:not([class*='size-'])]:size-4` (xs: `size-3`); `[&_svg]:pointer-events-none [&_svg]:shrink-0`.
 - Press feedback `active:scale-[0.96]` with `transition-[color,box-shadow,scale]`.
+
+**Density mapping.** Toggle `size` selects a shared density rung per [conventions](conventions.md). Recipes read `--control-*` implementation variables; do not add `dense:` / `comfortable:` variants. Keep the xs radius clamp.
+
+| Toggle `size` | Density rung | Notes                                                                                                                                                  |
+| ------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `xs`          | `xs`         | `h-(--control-h-xs) min-w-(--control-h-xs) px-(--control-px-xs)`; type stays `text-xs`; radius `rounded-[min(var(--radius-md),10px)]`; icons `size-3`. |
+| `sm`          | `sm`         | `h-(--control-h-sm) min-w-(--control-h-sm) px-(--control-px-sm)`; type is size-owned (`text-sm`).                                                      |
+| `default`     | `md`         | Pins `h-(--control-h-md) min-w-(--control-h-md) px-(--control-px-md)` plus the control-type pair.                                                      |
+| `lg`          | `lg`         | `h-(--control-h-lg) min-w-(--control-h-lg) px-(--control-px-lg)` plus the control-type pair.                                                           |
 
 ## 5 Consumed tokens
 
@@ -71,6 +80,7 @@ Base notes:
 2. **`dark:` variant class dropped** (`dark:aria-invalid:ring-destructive/40`) per `no-tailwind-dark-variant`.
 3. **`destructive` → `error`** token rename on `aria-invalid:` classes.
 4. Kept as-is, documented (not divergences): the doubled `aria-pressed:` + `data-pressed:` selectors, the `has-data-[icon=…]` padding hooks, and the xs `rounded-[min(var(--radius-md),10px)]` radius clamp.
+5. **Density retokenization:** size-axis height, min-width, inline padding, icon-edge padding, and `md`/`lg` type read `--control-*` instead of the ref's literal `h-6`/`h-8`/`h-9`/`h-10` ladder. Dense computed metrics match the ref; comfortable is the signed `ui.css` column.
 
 No API divergence — prop surface and the public `toggleVariants` export are identical to the ref.
 
@@ -81,7 +91,8 @@ No API divergence — prop surface and the public `toggleVariants` export are id
 - Controlled (`pressed` + `onPressedChange`) and uncontrolled (`defaultPressed`) both work.
 - `data-pressed` and `aria-pressed` both reach the DOM when on.
 - Variant/size render without leaking invalid classes; `data-icon="inline-start"` child triggers the tightened padding class (assert via class state, not snapshot).
-- `toggleVariants` unit: default axes resolve to `variant: default`, `size: default`; each size string contains its height class.
+- `toggleVariants` unit: default axes resolve to `variant: default`, `size: default`; each size string reads the matching `--control-h-*` variable, not a literal `h-*`.
+- Dual-density: at document `dense` and `comfortable`, computed height, min-width, inline padding, and icon-edge padding match the signed ladder for every mapped rung; font-size and line-height match on `default` and `lg`; `xs`/`sm` type is identical across densities; nested `data-density` and `ThemeScope` variant changes do not rescope metrics.
 
 ## 10 Demo requirements
 

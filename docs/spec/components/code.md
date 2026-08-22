@@ -10,8 +10,8 @@
 
 ## 2 Anatomy
 
-| Part | Renders | Notes |
-| --- | --- | --- |
+| Part   | Renders                                | Notes                                                                                 |
+| ------ | -------------------------------------- | ------------------------------------------------------------------------------------- |
 | `Code` | `<pre data-slot="code"><code /></pre>` | inner `<code>` receives `sugar-high` highlighter output via `dangerouslySetInnerHTML` |
 
 ```tsx
@@ -24,8 +24,8 @@ Single part; the inner `<code>` element is not independently addressable.
 
 `ComponentProps<"pre">` (spread onto the `<pre>`; `className` merged via `cn`) plus:
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
+| Prop   | Type     | Default  | Notes                                                           |
+| ------ | -------- | -------- | --------------------------------------------------------------- |
 | `code` | `string` | required | raw source text; passed through `highlight()` from `sugar-high` |
 
 No `children` — content comes exclusively from `code`. Base classes: `max-h-160 overflow-auto font-mono text-xs leading-relaxed`.

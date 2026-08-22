@@ -11,7 +11,7 @@ Ubiquitous language for the `@elmeragroup/ui` whitelabel component library effor
 - **Density**: a document-level control-metric axis, independent of theme. Legal values `dense` and `comfortable`, stamped as `data-density` on the document root. Variant supplies only the deployment default (`internal → dense`, `external → comfortable`).
 - **Theme**: a concrete permutation of variant × brand × segment, e.g. `internal-fkas-company`, `external-tkas-private`, `internal-elma-private`. 20 permutations exist at v1 (10 internal, 10 external).
 - **Theme slug**: the canonical string name of a theme, `<variant>-<brand>-<segment>`.
-- **Token / token contract**: a CSS custom property that components consume (e.g. a primary color role). The *contract* is the fixed set of token names; themes vary values, never names. The library ships complete defaults; a theme overrides a subset.
+- **Token / token contract**: a CSS custom property that components consume (e.g. a primary color role). The _contract_ is the fixed set of token names; themes vary values, never names. The library ships complete defaults; a theme overrides a subset.
 - **Role token**: a semantic, themable token named for its job (`--primary`, `--card`, `--error`), following the shadcn grammar of base + `-foreground` pairs.
 - **Primitive token**: a public but non-themed token holding a raw palette value — the neutral ramp (`--neutral-50..950`, 50 lightest) and the per-brand accents (`--brand-<code>`). Stable API, same values in every theme.
 - **Soft form (`-soft`)**: the tinted-background companion of a role (`--error-soft`/`--error-soft-foreground`) — the contract's rename of Material-3's `-container` concept.

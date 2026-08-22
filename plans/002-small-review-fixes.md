@@ -55,6 +55,7 @@ and:
 ```
 
 The guarded assertions:
+
 - `apps/docs/test/demo-stage-density.test.ts` — `it.skipIf(!existsSync(artifactPath))("the imported artifact exists after the ui build", ...)`
 - `packages/ui/src/theme/density-css.test.ts` — `it.skipIf(!existsSync(demoStageCssPath))("is emitted next to themes.css", ...)`
 
@@ -83,7 +84,7 @@ threw `new Error("Unhandled brand")`.
 
 Two occurrences of "six-code switch" survive from before the switch was deleted:
 
-- Layer table row: `` | BrandLogo (fallback) | `/icons` exports `BrandLogo` — exhaustive six-code switch rendering an accessible `<span>` ... ``
+- Layer table row: ``| BrandLogo (fallback) | `/icons` exports `BrandLogo` — exhaustive six-code switch rendering an accessible `<span>` ...``
 - §2.2.1 paragraph: "`BrandLogo` **already shipped** (theme track) as the icons.md §4 fallback contract: exhaustive six-code switch (`fkas`/`fkab` → Fjordkraft, ..."
 
 Find them with `grep -n "six-code switch" .scratch/poc/remaining-implementation.md`.
@@ -123,17 +124,18 @@ only if the brand does not allow the segment. That equivalence is what makes fix
 
 ## Commands you will need
 
-| Purpose | Command | Expected on success |
-| --- | --- | --- |
-| Unit tests (ui pkg) | `pnpm --filter @elmeragroup/ui test` | exit 0 |
-| Docs tests | `pnpm --filter docs test` | exit 0 |
-| Typecheck (ui pkg) | `pnpm --filter @elmeragroup/ui type-check` | exit 0 |
-| Browser tests (ui pkg) | `pnpm --filter @elmeragroup/ui test:browser` | exit 0 |
-| Lint | `pnpm lint` | exit 0 |
+| Purpose                | Command                                      | Expected on success |
+| ---------------------- | -------------------------------------------- | ------------------- |
+| Unit tests (ui pkg)    | `pnpm --filter @elmeragroup/ui test`         | exit 0              |
+| Docs tests             | `pnpm --filter docs test`                    | exit 0              |
+| Typecheck (ui pkg)     | `pnpm --filter @elmeragroup/ui type-check`   | exit 0              |
+| Browser tests (ui pkg) | `pnpm --filter @elmeragroup/ui test:browser` | exit 0              |
+| Lint                   | `pnpm lint`                                  | exit 0              |
 
 ## Scope
 
 **In scope** (the only files you should modify):
+
 - `turbo.json`
 - `packages/ui/src/icons/brand-logo.tsx`
 - `packages/ui/src/icons/brand-logo.browser.test.tsx` (add one throwing-input test)
@@ -143,6 +145,7 @@ only if the brand does not allow the segment. That equivalence is what makes fix
 - `plans/README.md` (status row only)
 
 **Out of scope** (do NOT touch):
+
 - `apps/docs/test/demo-stage-density.test.ts` and `packages/ui/src/theme/density-css.test.ts`
   — their `skipIf` guards stay; fix 1 makes them effective rather than rewriting them.
 - Any other file in `packages/ui/src/theme/**` — the coercion API surface
@@ -196,9 +199,7 @@ existing `describe("BrandLogo")`:
 
 ```tsx
 it("throws an explicit error for an unknown brand code", () => {
-  expect(() =>
-    render(<BrandLogo brand={"zz" as ThemeInput["brand"]} />)
-  ).toThrow(/Unhandled brand: zz/);
+  expect(() => render(<BrandLogo brand={"zz" as ThemeInput["brand"]} />)).toThrow(/Unhandled brand: zz/);
 });
 ```
 

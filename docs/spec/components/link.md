@@ -16,16 +16,16 @@ Single element: RAC `Link`, which renders a real `<a>` when `href` is set, other
 
 `LinkProps = ComponentPropsWithoutRef<typeof ReactAriaLink> & VariantProps<typeof linkVariants>`
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `href`, `target`, `rel`, `download`, `ping`, `referrerPolicy`, `hrefLang` | anchor attrs | — | RAC pass-through; no `href` → span link |
-| `routerOptions` | router-specific | — | forwarded to the `RouterProvider` `navigate` integration |
-| `isDisabled` | `boolean` | — | ref-style boolean (RAC) |
-| `onPress` / `onPressStart` / `onPressEnd` / `onClick` | RAC press events | — | |
-| `onHoverStart` / `onHoverEnd` / `onHoverChange`, `onFocus` / `onBlur` / `onFocusChange`, `onKeyDown` / `onKeyUp` | RAC | — | |
-| `autoFocus`, `aria-label`, `aria-current`, … | RAC | — | pass-through |
-| `variant`, `leading`, `truncate`, `align`, `weight` | see §4 | — | typography axes from `linkVariants` |
-| `className` | `string` | — | merged after recipe via `cn` (plain string here — the ref does not compose render-prop classNames) |
+| Prop                                                                                                             | Type             | Default | Notes                                                                                              |
+| ---------------------------------------------------------------------------------------------------------------- | ---------------- | ------- | -------------------------------------------------------------------------------------------------- |
+| `href`, `target`, `rel`, `download`, `ping`, `referrerPolicy`, `hrefLang`                                        | anchor attrs     | —       | RAC pass-through; no `href` → span link                                                            |
+| `routerOptions`                                                                                                  | router-specific  | —       | forwarded to the `RouterProvider` `navigate` integration                                           |
+| `isDisabled`                                                                                                     | `boolean`        | —       | ref-style boolean (RAC)                                                                            |
+| `onPress` / `onPressStart` / `onPressEnd` / `onClick`                                                            | RAC press events | —       |                                                                                                    |
+| `onHoverStart` / `onHoverEnd` / `onHoverChange`, `onFocus` / `onBlur` / `onFocusChange`, `onKeyDown` / `onKeyUp` | RAC              | —       |                                                                                                    |
+| `autoFocus`, `aria-label`, `aria-current`, …                                                                     | RAC              | —       | pass-through                                                                                       |
+| `variant`, `leading`, `truncate`, `align`, `weight`                                                              | see §4           | —       | typography axes from `linkVariants`                                                                |
+| `className`                                                                                                      | `string`         | —       | merged after recipe via `cn` (plain string here — the ref does not compose render-prop classNames) |
 
 No `usePredictedEvents`/intent props exist in the ref's surface — it is a plain RAC `Link` wrapper; nothing beyond RAC's own props is added.
 
@@ -33,13 +33,13 @@ No `usePredictedEvents`/intent props exist in the ref's surface — it is a plai
 
 `linkVariants` — module-private tv (no borrow pattern):
 
-| Axis | Values | Default |
-| --- | --- | --- |
-| `variant` | `default` (text-inherit) · `foreground` · `primary` · `secondary` · `brand` · `muted` · `inherit` · `error` (renamed, §8) | `default` |
-| `leading` | `none` · `tight` · `snug` · `relaxed` · `loose` | — |
-| `truncate` | `true` | — |
-| `align` | `left` · `center` · `right` · `justify` | — |
-| `weight` | `normal` (font-normal) · `bold` (font-medium — faithful quirk, §8) | `normal` |
+| Axis       | Values                                                                                                                    | Default   |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------- | --------- |
+| `variant`  | `default` (text-inherit) · `foreground` · `primary` · `secondary` · `brand` · `muted` · `inherit` · `error` (renamed, §8) | `default` |
+| `leading`  | `none` · `tight` · `snug` · `relaxed` · `loose`                                                                           | —         |
+| `truncate` | `true`                                                                                                                    | —         |
+| `align`    | `left` · `center` · `right` · `justify`                                                                                   | —         |
+| `weight`   | `normal` (font-normal) · `bold` (font-medium — faithful quirk, §8)                                                        | `normal`  |
 
 Base: `font-sans transition-opacity hover:opacity-80`; composes shared `focusRing({ target: "state", isFocusVisible })` from RAC render props.
 

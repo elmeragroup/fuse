@@ -10,11 +10,11 @@
 
 ## 2. Anatomy
 
-| Part | Renders | Purpose |
-| --- | --- | --- |
-| `ButtonGroup.Root` | `div role="group"` | Layout container; collapses inner radii/borders of `data-slot` children into one visual control. |
-| `ButtonGroup.Separator` | canonical `Separator` (`@base-ui/react/separator`) | Hairline divider between segments (split-buttons). |
-| `ButtonGroup.Text` | `useRender` div (default) | Static label/affix segment styled to sit flush with buttons. **Convention exemplar:** already built on base-ui `useRender` + `mergeProps` in the ref — the pattern every polymorphic part follows. |
+| Part                    | Renders                                            | Purpose                                                                                                                                                                                            |
+| ----------------------- | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ButtonGroup.Root`      | `div role="group"`                                 | Layout container; collapses inner radii/borders of `data-slot` children into one visual control.                                                                                                   |
+| `ButtonGroup.Separator` | canonical `Separator` (`@base-ui/react/separator`) | Hairline divider between segments (split-buttons).                                                                                                                                                 |
+| `ButtonGroup.Text`      | `useRender` div (default)                          | Static label/affix segment styled to sit flush with buttons. **Convention exemplar:** already built on base-ui `useRender` + `mergeProps` in the ref — the pattern every polymorphic part follows. |
 
 Children opt into the group's corner/border collapsing by emitting `data-slot` (Button, Select trigger, Separator, Text all do).
 
@@ -22,27 +22,27 @@ Children opt into the group's corner/border collapsing by emitting `data-slot` (
 
 **`ButtonGroup.Root`** — `ComponentProps<"div"> & VariantProps<typeof buttonGroupVariants>`
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
+| Prop          | Type                         | Default        | Notes                                                                                                             |
+| ------------- | ---------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------- |
 | `orientation` | `"horizontal" \| "vertical"` | `"horizontal"` | Recipe axis **and** emitted as `data-orientation`. Defaulted (divergence, §8) so the attribute is always present. |
-| `className` | `string` | — | Merged via `cn`. |
-| …rest | div props | — | `role="group"` is fixed. |
+| `className`   | `string`                     | —              | Merged via `cn`.                                                                                                  |
+| …rest         | div props                    | —              | `role="group"` is fixed.                                                                                          |
 
 **`ButtonGroup.Separator`** — `ComponentProps<typeof Separator>`
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
+| Prop          | Type                         | Default      | Notes                                                                   |
+| ------------- | ---------------------------- | ------------ | ----------------------------------------------------------------------- |
 | `orientation` | `"horizontal" \| "vertical"` | `"vertical"` | Note the flipped default: a horizontal group needs a vertical hairline. |
-| `className` | `string` | — | Merged over the group-separator overrides. |
-| …rest | Separator props | — | Forwarded to the canonical base-ui Separator. |
+| `className`   | `string`                     | —            | Merged over the group-separator overrides.                              |
+| …rest         | Separator props              | —            | Forwarded to the canonical base-ui Separator.                           |
 
 **`ButtonGroup.Text`** — `useRender.ComponentProps<"div">`
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `render` | `RenderProp` | `<div />` | base-ui polymorphism (e.g. render as `<label>`). |
-| `className` | `string` | — | Merged via `cn` inside `mergeProps`. |
-| …rest | div props | — | Passed through `mergeProps`. |
+| Prop        | Type         | Default   | Notes                                            |
+| ----------- | ------------ | --------- | ------------------------------------------------ |
+| `render`    | `RenderProp` | `<div />` | base-ui polymorphism (e.g. render as `<label>`). |
+| `className` | `string`     | —         | Merged via `cn` inside `mergeProps`.             |
+| …rest       | div props    | —         | Passed through `mergeProps`.                     |
 
 ## 4. Variants
 
@@ -50,10 +50,10 @@ Recipe: `buttonGroupVariants` (`tv`) — **public**. Default: `orientation: "hor
 
 **Base:** `group/button-group flex w-fit items-stretch`; focused child lifts above siblings (`*:focus-visible:relative *:focus-visible:z-10`); nested button-groups get `gap-2` (`has-[>[data-slot=button-group]]:gap-2`); native-select escape hatch re-rounds a trailing select trigger when an `aria-hidden` `<select>` is last (`has-[select[aria-hidden=true]:last-child]:[&>[data-slot=select-trigger]:last-of-type]:rounded-r-md`); unsized select triggers become `w-fit`; direct `input` children get `flex-1`.
 
-| `orientation` | Classes (summary) |
-| --- | --- |
-| `horizontal` | `*:data-slot:rounded-r-none`; last `data-slot` child restores `rounded-r-md!`; every `data-slot` following another gets `rounded-l-none border-l-0` |
-| `vertical` | `flex-col`; same scheme on the block axis: `rounded-b-none` / last child `rounded-b-md!` / followers `rounded-t-none border-t-0` |
+| `orientation` | Classes (summary)                                                                                                                                   |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `horizontal`  | `*:data-slot:rounded-r-none`; last `data-slot` child restores `rounded-r-md!`; every `data-slot` following another gets `rounded-l-none border-l-0` |
+| `vertical`    | `flex-col`; same scheme on the block axis: `rounded-b-none` / last child `rounded-b-md!` / followers `rounded-t-none border-t-0`                    |
 
 `ButtonGroup.Text` styling (module-private micro-recipe, plain `cn`): `flex items-center gap-2 rounded-md border bg-muted px-2.5 text-sm font-medium shadow-xs`; svg children non-interactive, default `size-4`.
 

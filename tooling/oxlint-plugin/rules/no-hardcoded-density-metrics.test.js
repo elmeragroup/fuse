@@ -105,9 +105,65 @@ export const recipe = tv({
       code: recipe('{ sm: "max-w-sm p-6", md: "max-w-[min(var(--container-md),90%)]" }'),
     },
     {
+      name: "layout item size axis without a control height is not a density rung",
+      code: recipe('{ default: "gap-3.5 px-4 py-3.5", sm: "gap-2.5 px-3 py-2.5", xs: "gap-2 px-2.5 py-2" }'),
+    },
+    {
       name: "Button recipe after density retokenization has no false positives",
       filename: "packages/ui/src/components/button/button-variants.ts",
       code: buttonVariantsSource,
+    },
+    {
+      name: "data-size reads control height variables",
+      code: `export const trigger = "flex data-[size=default]:h-(--control-h-md) data-[size=sm]:h-(--control-h-sm)";
+`,
+    },
+    {
+      name: "field-box tv without a size axis may read control variables",
+      code: `import { tv } from "tailwind-variants";
+export const recipe = tv({
+  base: "h-(--control-h-md) w-full px-(--control-px-md) [font-size:var(--control-text)]",
+});
+`,
+    },
+    {
+      name: "decorative variant axis with fixed media sizes is not a density rung",
+      code: `import { tv } from "tailwind-variants";
+export const recipe = tv({
+  base: "flex shrink-0 items-center gap-2",
+  variants: { variant: { default: "bg-transparent", image: "size-10 rounded-sm" } },
+  defaultVariants: { variant: "default" },
+});
+`,
+    },
+    {
+      name: "field-box box axis may pin the control rung on one arm",
+      code: `import { tv } from "tailwind-variants";
+export const recipe = tv({
+  base: "w-full px-(--control-px-md) [font-size:var(--control-text)]",
+  variants: { box: { control: "h-(--control-h-md)", content: "min-h-16 py-2" } },
+  defaultVariants: { box: "control" },
+});
+`,
+    },
+    {
+      name: "optical arbitrary pixel track sizes on data-size stay legal",
+      code: `export const track = "data-[size=default]:h-[18.4px] data-[size=sm]:h-[14px]";
+`,
+    },
+    {
+      name: "descendant has-data-size gap on a layout group is not a density rung",
+      code: `export const group = "flex flex-col gap-4 has-data-[size=sm]:gap-2.5 has-data-[size=xs]:gap-2";
+`,
+    },
+    {
+      name: "orientation recipe without a control height is not a field box",
+      code: `import { tv } from "tailwind-variants";
+export const recipe = tv({
+  base: "group/field flex w-full gap-3",
+  variants: { orientation: { vertical: "flex-col", horizontal: "flex-row" } },
+});
+`,
     },
   ],
   invalid: [
@@ -118,18 +174,18 @@ export const recipe = tv({
     },
     {
       name: "warns on hardcoded inline padding",
-      code: recipe('{ default: "px-2.5" }'),
-      errors: [error],
+      code: recipe('{ default: "h-9 px-2.5" }'),
+      errors: [error, error],
     },
     {
       name: "warns on hardcoded icon-edge padding",
-      code: recipe('{ default: "has-data-[icon=inline-start]:pl-2" }'),
-      errors: [error],
+      code: recipe('{ default: "h-9 has-data-[icon=inline-start]:pl-2" }'),
+      errors: [error, error],
     },
     {
       name: "warns on hardcoded control gap",
-      code: recipe('{ default: "gap-1.5" }'),
-      errors: [error],
+      code: recipe('{ default: "h-9 gap-1.5" }'),
+      errors: [error, error],
     },
     {
       name: "warns on hardcoded md control type",
@@ -149,6 +205,47 @@ export const recipe = tv({
     {
       name: "warns on hardcoded height on icon-inline",
       code: recipe('{ "icon-inline": "h-9 hit-area-1" }'),
+      errors: [error],
+    },
+    {
+      name: "Select-style data-[size=default]:h-9 literal fails",
+      code: `export const trigger = "flex w-fit items-center data-[size=default]:h-9 data-[size=sm]:h-8";
+`,
+      errors: [error, error],
+    },
+    {
+      name: "data-[size] token inside a tv size axis reports once, not twice",
+      code: recipe('{ default: "h-9 data-[size=default]:h-8" }'),
+      errors: [error, error],
+    },
+    {
+      name: "field-box tv without a size axis still flags hardcoded height",
+      code: `import { tv } from "tailwind-variants";
+export const recipe = tv({
+  base: "h-9 w-full px-2.5",
+});
+`,
+      errors: [error, error],
+    },
+    {
+      name: "field-box box axis still flags a hardcoded control height",
+      code: `import { tv } from "tailwind-variants";
+export const recipe = tv({
+  base: "w-full px-(--control-px-md)",
+  variants: { box: { control: "h-9", content: "min-h-16 py-2" } },
+  defaultVariants: { box: "control" },
+});
+`,
+      errors: [error],
+    },
+    {
+      name: "box-axis recipe base is scanned for hardcoded inline padding",
+      code: `import { tv } from "tailwind-variants";
+export const recipe = tv({
+  base: "w-full px-2.5",
+  variants: { box: { control: "h-(--control-h-md)" } },
+});
+`,
       errors: [error],
     },
   ],

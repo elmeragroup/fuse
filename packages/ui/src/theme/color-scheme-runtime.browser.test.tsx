@@ -60,7 +60,6 @@ function runtimeConfig(overrides: Partial<ColorSchemeRuntimeConfig> = {}): Color
   };
 }
 
-
 describe("color-scheme bootstrap diagnostics", () => {
   it("diagnoses missing, mismatched, matching, and duplicate bootstrap configurations", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);

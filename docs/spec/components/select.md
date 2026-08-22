@@ -10,18 +10,18 @@
 
 ## 2 Anatomy
 
-| Part | Base | Notes |
-| --- | --- | --- |
-| `Select.Root` | `SelectPrimitive.Root` | bare re-export; state owner (value, open), no DOM of its own |
-| `Select.Trigger` | `SelectPrimitive.Trigger` | input-like button chrome; `size` axis; auto-renders `SelectPrimitive.Icon` with a rotating `CaretDown` |
-| `Select.Value` | `SelectPrimitive.Value` | selected-value display inside the trigger (`flex flex-1 text-left`) |
-| `Select.Content` | `Portal > Positioner > Popup` | popup surface; auto-renders `Select.ScrollUpButton`, `SelectPrimitive.List` (wraps `children`), `Select.ScrollDownButton` |
-| `Select.Item` | `SelectPrimitive.Item` | wraps `children` in `SelectPrimitive.ItemText`; auto-renders `SelectPrimitive.ItemIndicator` (`span` render, `Check` icon, absolute right-2) |
-| `Select.Group` | `SelectPrimitive.Group` | `scroll-my-1 p-1` |
-| `Select.Label` | `SelectPrimitive.GroupLabel` | group heading, muted `text-xs` |
-| `Select.Separator` | `SelectPrimitive.Separator` | `h-px bg-border`, pointer-events-none |
-| `Select.ScrollUpButton` | `SelectPrimitive.ScrollUpArrow` | `CaretUp`; sticky top scroll affordance |
-| `Select.ScrollDownButton` | `SelectPrimitive.ScrollDownArrow` | `CaretDown`; sticky bottom scroll affordance |
+| Part                      | Base                              | Notes                                                                                                                                        |
+| ------------------------- | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Select.Root`             | `SelectPrimitive.Root`            | bare re-export; state owner (value, open), no DOM of its own                                                                                 |
+| `Select.Trigger`          | `SelectPrimitive.Trigger`         | input-like button chrome; `size` axis; auto-renders `SelectPrimitive.Icon` with a rotating `CaretDown`                                       |
+| `Select.Value`            | `SelectPrimitive.Value`           | selected-value display inside the trigger (`flex flex-1 text-left`)                                                                          |
+| `Select.Content`          | `Portal > Positioner > Popup`     | popup surface; auto-renders `Select.ScrollUpButton`, `SelectPrimitive.List` (wraps `children`), `Select.ScrollDownButton`                    |
+| `Select.Item`             | `SelectPrimitive.Item`            | wraps `children` in `SelectPrimitive.ItemText`; auto-renders `SelectPrimitive.ItemIndicator` (`span` render, `Check` icon, absolute right-2) |
+| `Select.Group`            | `SelectPrimitive.Group`           | `scroll-my-1 p-1`                                                                                                                            |
+| `Select.Label`            | `SelectPrimitive.GroupLabel`      | group heading, muted `text-xs`                                                                                                               |
+| `Select.Separator`        | `SelectPrimitive.Separator`       | `h-px bg-border`, pointer-events-none                                                                                                        |
+| `Select.ScrollUpButton`   | `SelectPrimitive.ScrollUpArrow`   | `CaretUp`; sticky top scroll affordance                                                                                                      |
+| `Select.ScrollDownButton` | `SelectPrimitive.ScrollDownArrow` | `CaretDown`; sticky bottom scroll affordance                                                                                                 |
 
 ```tsx
 <Select.Root items={items}>
@@ -45,22 +45,22 @@ All rendering parts take `className` (merged via `cn`) and forward the rest of t
 
 **Select.Trigger** — `ComponentProps<SelectPrimitive.Trigger>` plus:
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `size` | `"sm" \| "default"` | `"default"` | emitted as `data-size`; `default` → `h-9`, `sm` → `h-8` |
+| Prop   | Type                | Default     | Notes                                                           |
+| ------ | ------------------- | ----------- | --------------------------------------------------------------- |
+| `size` | `"sm" \| "default"` | `"default"` | emitted as `data-size`; `default` → `md` rung, `sm` → `sm` rung |
 
 `children` render before the built-in caret icon; the icon is not replaceable via props (override with `render` on `SelectPrimitive.Icon` is not exposed).
 
 **Select.Content** — `ComponentProps<SelectPrimitive.Popup>` plus positioner props (destructured and forwarded to `SelectPrimitive.Positioner`) plus the conventions' overlay `container`:
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `side` | Positioner `side` | `"bottom"` | |
-| `sideOffset` | `number` | `4` | |
-| `align` | Positioner `align` | `"center"` | |
-| `alignOffset` | `number` | `0` | |
-| `alignItemWithTrigger` | `boolean` | `true` | macOS-style: selected item overlays the trigger; emitted as `data-align-trigger` |
-| `container` | `HTMLElement \| RefObject<HTMLElement>` | nearest `ThemeScope` element | portal target (§8) |
+| Prop                   | Type                                    | Default                      | Notes                                                                            |
+| ---------------------- | --------------------------------------- | ---------------------------- | -------------------------------------------------------------------------------- |
+| `side`                 | Positioner `side`                       | `"bottom"`                   |                                                                                  |
+| `sideOffset`           | `number`                                | `4`                          |                                                                                  |
+| `align`                | Positioner `align`                      | `"center"`                   |                                                                                  |
+| `alignOffset`          | `number`                                | `0`                          |                                                                                  |
+| `alignItemWithTrigger` | `boolean`                               | `true`                       | macOS-style: selected item overlays the trigger; emitted as `data-align-trigger` |
+| `container`            | `HTMLElement \| RefObject<HTMLElement>` | nearest `ThemeScope` element | portal target (§8)                                                               |
 
 `children` are wrapped in `SelectPrimitive.List` between the two scroll buttons.
 
@@ -70,7 +70,14 @@ All rendering parts take `className` (merged via `cn`) and forward the rest of t
 
 ## 4 Variants
 
-No `tv` recipe — the trigger's `size` axis is a hand-rolled `data-size` attribute styled via `data-[size=default]:h-9 data-[size=sm]:h-8`; kept as-is (no recipe export, no borrow pattern). All other styling is inline per part.
+No `tv` recipe — the trigger's `size` axis is a hand-rolled `data-size` attribute styled via `data-[size=default]:h-(--control-h-md) data-[size=sm]:h-(--control-h-sm)`; kept without a recipe export (no borrow pattern). `elmera/no-hardcoded-density-metrics` covers these `data-[size=…]` class strings. All other styling is inline per part.
+
+**Density mapping.** Select Trigger `size` selects a shared density rung per [conventions](conventions.md). No `dense:` / `comfortable:` variants.
+
+| Trigger `size` | Density rung | Notes                                     |
+| -------------- | ------------ | ----------------------------------------- |
+| `sm`           | `sm`         | `data-[size=sm]:h-(--control-h-sm)`.      |
+| `default`      | `md`         | `data-[size=default]:h-(--control-h-md)`. |
 
 ## 5 Consumed tokens
 
@@ -121,6 +128,7 @@ No `tv` recipe — the trigger's `size` axis is a hand-rolled `data-size` attrib
 6. **All `dark:` and `inverted:` classes dropped** (`dark:bg-input/30 dark:hover:bg-input/50 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 inverted:bg-input/30 inverted:hover:bg-input/50` on the trigger) — dark axis lives in tokens.
 7. **Duplicated `isolate z-50` deduped**: the ref puts `isolate z-50` on both Positioner and Popup; kept on the Positioner only (minor divergence, no stacking-context behavior change — the Positioner already isolates).
 8. **Icons → Phosphor**: `CheckIcon`→`Check` (item indicator), `ChevronDownIcon`→`CaretDown` (trigger icon + scroll-down), `ChevronUpIcon`→`CaretUp` (scroll-up).
+9. **Density retokenization:** Trigger `data-[size=default]:h-9` / `data-[size=sm]:h-8` become `--control-h-md` / `--control-h-sm`. Dense computed height matches the ref; comfortable is the signed `ui.css` column.
 
 Kept faithfully: `data-size` sm|default trigger axis; `alignItemWithTrigger` default `true` and its `data-[align-trigger=true]:animate-none` consequence; auto-rendered scroll buttons inside Content; the rotating trigger caret keyed off `data-popup-open`; the Value child-selector styling from the trigger; `min-w-36` popup floor; item's `*:[span]:last:` layout selectors.
 
@@ -132,6 +140,7 @@ Role/label-based queries throughout; keyboard flows per §7:
 - Arrow navigation: ArrowDown/ArrowUp move the highlighted option; Enter selects it (`onValueChange` fires with the value, not an event); Home/End reach first/last; disabled items are skipped.
 - Typeahead: with the popup open, typing a prefix highlights the matching option; typing on the closed trigger changes the value without opening.
 - `data-size` reflects `size` for both values; `data-align-trigger` reflects `alignItemWithTrigger`.
+- Dual-density: at document `dense` and `comfortable`, Trigger height for `default`/`sm` matches the signed `--control-h-md` / `--control-h-sm` ladder; nested `data-density` and `ThemeScope` variant changes do not rescope metrics.
 - `aria-invalid` on the trigger surfaces error chrome (attribute assertion); `disabled` root disables the trigger.
 - Groups: `Select.Label` names its group in the accessibility tree (`getByRole("group", { name })`).
 - `container`: popup renders inside the provided element / nearest ThemeScope, not `document.body`.

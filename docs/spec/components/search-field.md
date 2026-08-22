@@ -28,17 +28,17 @@ All inner parts come from the tier-internal RAC field module (`Label`, `Input`, 
 
 `SearchFieldProps = { label?, description?, errorMessage?, placeholder? } & AriaSearchFieldProps`
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `label` | `string` | — | renders RAC `Label`, auto-associated |
-| `description` | `string` | — | renders `Description slot="description"` |
-| `errorMessage` | `ReactNode \| ((v: ValidationResult) => ReactNode)` | — | unified composite face; forwarded as FieldError children |
-| `clearLabel` | `string` | locale dictionary | accessible name for the clear button |
-| `placeholder` | `string` | — | forwarded to the inner `Input` |
-| `value` / `defaultValue` / `onChange` | RAC | — | `onChange(value: string)` |
-| `onSubmit` / `onClear` | RAC | — | Enter submits, clear button / Escape clears |
-| `isDisabled` / `isReadOnly` / `isRequired` / `isInvalid` | `boolean` | — | ref-style booleans (labeled composite, per conventions) |
-| `name`, `validate`, `autoFocus`, aria-* | RAC | — | pass-through |
+| Prop                                                     | Type                                                | Default           | Notes                                                    |
+| -------------------------------------------------------- | --------------------------------------------------- | ----------------- | -------------------------------------------------------- |
+| `label`                                                  | `string`                                            | —                 | renders RAC `Label`, auto-associated                     |
+| `description`                                            | `string`                                            | —                 | renders `Description slot="description"`                 |
+| `errorMessage`                                           | `ReactNode \| ((v: ValidationResult) => ReactNode)` | —                 | unified composite face; forwarded as FieldError children |
+| `clearLabel`                                             | `string`                                            | locale dictionary | accessible name for the clear button                     |
+| `placeholder`                                            | `string`                                            | —                 | forwarded to the inner `Input`                           |
+| `value` / `defaultValue` / `onChange`                    | RAC                                                 | —                 | `onChange(value: string)`                                |
+| `onSubmit` / `onClear`                                   | RAC                                                 | —                 | Enter submits, clear button / Escape clears              |
+| `isDisabled` / `isReadOnly` / `isRequired` / `isInvalid` | `boolean`                                           | —                 | ref-style booleans (labeled composite, per conventions)  |
+| `name`, `validate`, `autoFocus`, aria-*                  | RAC                                                 | —                 | pass-through                                             |
 
 `ref` forwards to the inner `<input>`.
 

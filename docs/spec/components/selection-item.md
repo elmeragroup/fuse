@@ -12,14 +12,14 @@
 
 Six parts. `Shell` renders a `Field.Item` containing a full-width `Field.Label` row (control + row children) and, when present, a sub-section band below the label. `Content`, `Description`, `Actions`, `Title`, `SubSection` are thin wrappers/re-exports of the `Item` family.
 
-| Part | Base | Notes |
-| --- | --- | --- |
-| `SelectionItem.Shell` | `Field.Item` + base-ui `Field.Label` + `ItemMedia variant="icon"` | card row; partitions children (see §7/§8) |
-| `SelectionItem.Title` | `ItemTitle` (`div`) | adds `font-normal` |
-| `SelectionItem.Description` | `ItemDescription` (`p`) | re-export, unmodified |
-| `SelectionItem.Content` | `ItemContent` (`div`) | re-export, unmodified |
-| `SelectionItem.Actions` | `ItemActions` (`div`) | adds `-translate-y-0.5 items-start` |
-| `SelectionItem.SubSection` | `ItemFooter` (`div`) | returns `null` when childless; rendered **outside** the label |
+| Part                        | Base                                                              | Notes                                                         |
+| --------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------- |
+| `SelectionItem.Shell`       | `Field.Item` + base-ui `Field.Label` + `ItemMedia variant="icon"` | card row; partitions children (see §7/§8)                     |
+| `SelectionItem.Title`       | `ItemTitle` (`div`)                                               | adds `font-normal`                                            |
+| `SelectionItem.Description` | `ItemDescription` (`p`)                                           | re-export, unmodified                                         |
+| `SelectionItem.Content`     | `ItemContent` (`div`)                                             | re-export, unmodified                                         |
+| `SelectionItem.Actions`     | `ItemActions` (`div`)                                             | adds `-translate-y-0.5 items-start`                           |
+| `SelectionItem.SubSection`  | `ItemFooter` (`div`)                                              | returns `null` when childless; rendered **outside** the label |
 
 ```tsx
 <SelectionItem.Shell dataSlot="radio-item" control={<RadioGroupItem value="a" />}>
@@ -38,18 +38,18 @@ All parts accept `className` (merged via `cn`).
 
 **SelectionItem.Shell**
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `dataSlot` | `string` | — (required) | emitted as `data-slot` on the `Field.Item` root (`"checkbox-item"`, `"radio-item"`) |
-| `control` | `ReactNode` | — (required) | the selection control rendered in the `ItemMedia variant="icon"` slot; **documented escape hatch** for custom indicators (switch, icon crossfade) that the dropped external-card axes used to provide |
-| `controlPosition` | `"start" \| "end"` | `"start"` | **new axis** (§8.2) — `"end"` places the control slot after the row children (trailing indicator) |
-| `isDisabled` | `boolean` | — | applies `cursor-not-allowed bg-muted` + shared `disabledHatch` overlay |
-| `children` | `ReactNode` | — | partitioned: `SubSection` elements are pulled out below the label; everything else renders in the label row |
+| Prop              | Type               | Default      | Notes                                                                                                                                                                                                 |
+| ----------------- | ------------------ | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dataSlot`        | `string`           | — (required) | emitted as `data-slot` on the `Field.Item` root (`"checkbox-item"`, `"radio-item"`)                                                                                                                   |
+| `control`         | `ReactNode`        | — (required) | the selection control rendered in the `ItemMedia variant="icon"` slot; **documented escape hatch** for custom indicators (switch, icon crossfade) that the dropped external-card axes used to provide |
+| `controlPosition` | `"start" \| "end"` | `"start"`    | **new axis** (§8.2) — `"end"` places the control slot after the row children (trailing indicator)                                                                                                     |
+| `isDisabled`      | `boolean`          | —            | applies `cursor-not-allowed bg-muted` + shared `disabledHatch` overlay                                                                                                                                |
+| `children`        | `ReactNode`        | —            | partitioned: `SubSection` elements are pulled out below the label; everything else renders in the label row                                                                                           |
 
 **SelectionItem.SubSection** — `ComponentProps<"div">` plus:
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
+| Prop   | Type                                 | Default     | Notes                                                                                                                                                                                                 |
+| ------ | ------------------------------------ | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `mode` | `"default" \| "visible" \| "hidden"` | `"default"` | `itemFooterVariants` axis: `default` static open; `visible` animates in (grid-rows + `starting:` styles); `hidden` collapses (`grid-rows-[minmax(0,0fr)]`, `pointer-events-none`, fade/translate out) |
 
 Renders `null` when `Children.toArray(children).length === 0`.
@@ -92,7 +92,7 @@ Renders `null` when `Children.toArray(children).length === 0`.
 2. **NEW axis `controlPosition?: "start" | "end"` (default `"start"`)** — the ref hardcodes control-first. `"end"` restores the external RadioCard's trailing-indicator pattern. Requirement: the sub-section indent spacer must **derive its width from the control slot** (same width, same side as the control) instead of the ref's hardcoded `w-4` `<span>` — otherwise wide custom `control` nodes or `controlPosition="end"` misalign the sub-section with the text column.
 3. **External card axes DROPPED** — the external ref's RadioCard/CheckboxCard family axes (pluggable switch/checkbox indicator prop, `iconPosition` grid, `shape`, Heading `level`, `wrapChildren={false}`, the `layout`/`itemSpacing`/`connectedEdges` matrix) are not carried over. Migration: pass a custom node via `control` (escape hatch) and compose Title/Description/Content/Actions for layout; stacked-group edge handling is the shell's built-in first/last rounding.
 4. **`aria-invalid:aria-checked:border-primary`-style state overrides live on the controls, not the shell** — unchanged here; noted because the shell relies on the control emitting base-ui state attributes for `has-data-checked:`.
-5. **`child.type` reflection partitioning KEPT (documented fragility)** — SubSections are detected by identity comparison `child.type === SelectionItemSubSection` on **direct** children only. Wrapping a SubSection in another component, a Fragment, or an HOC hides it from the filter and it renders *inside* the label (clicks toggle the control). This is deliberate ref behavior (wrappers would defeat the outside-the-label guarantee) and is kept as-is; the constraint must be documented in JSDoc and docs.
+5. **`child.type` reflection partitioning KEPT (documented fragility)** — SubSections are detected by identity comparison `child.type === SelectionItemSubSection` on **direct** children only. Wrapping a SubSection in another component, a Fragment, or an HOC hides it from the filter and it renders _inside_ the label (clicks toggle the control). This is deliberate ref behavior (wrappers would defeat the outside-the-label guarantee) and is kept as-is; the constraint must be documented in JSDoc and docs.
 6. **`-mt-px` border-collapse hack KEPT** — stacked items collapse borders with `not-first:border-t-0`; a checked non-first item repaints its top border in `primary` by pulling itself up one pixel (`has-data-checked:not-first:-mt-px has-data-checked:not-first:border-t`) instead of a z-index lift. Fragile against margin overrides via `className`; kept and documented.
 
 ## 9 Test requirements

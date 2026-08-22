@@ -251,6 +251,20 @@ function isControlBoxHeightClass(className) {
 }
 
 /**
+ * @param {string} utility
+ */
+function isOpticalArbitrary(utility) {
+  return /^(?:h|w|size|min-h|min-w|px|pl|pr|ps|pe|gap(?:-[xy])?)-\[\d+(?:\.\d+)?px\]$/.test(utility);
+}
+
+/**
+ * @param {string} className
+ */
+function isDataSizeToken(className) {
+  return /(?:^|:)data-\[size=/.test(className) && !className.includes("has-data-[size=");
+}
+
+/**
  * @param {string} className
  * @param {boolean} checkType
  * @returns {string | null}
@@ -260,6 +274,7 @@ function densityOwnedFamily(className, checkType) {
   const utility = stripImportant(stripVariantPrefixes(className));
   if (!utility) return null;
   if (readsDensityVariable(utility)) return null;
+  if (isOpticalArbitrary(utility)) return null;
   const box = boxFamily(utility);
   if (box) return box;
   if (!checkType) return null;
@@ -279,42 +294,111 @@ export default defineRule({
     type: "suggestion",
     docs: {
       description:
-        "Warn when a tv size axis hardcodes density-owned control metrics instead of reading --control-* variables",
+        "Warn when control-box recipes or data-[size] class strings hardcode density-owned metrics instead of reading --control-* variables",
     },
     messages: {
       hardcodedMetric:
-        "Hardcoded density-owned {{family}} `{{utility}}` in the size axis. Read the matching `--control-*` variable instead.",
+        "Hardcoded density-owned {{family}} `{{utility}}`. Read the matching `--control-*` variable instead.",
     },
     schema: [],
   },
   defaultOptions: [],
   createOnce(context) {
+    /**
+     * @param {import("estree").Node} node
+     * @param {string[]} tokens
+     * @param {boolean} checkType
+     */
+    function reportTokens(node, tokens, checkType) {
+      for (const token of tokens) {
+        const family = densityOwnedFamily(token, checkType);
+        if (!family) continue;
+        context.report({
+          node,
+          messageId: "hardcodedMetric",
+          data: { family, utility: token },
+        });
+      }
+    }
+
+    /**
+     * @param {import("estree").Node} node
+     * @param {string} value
+     */
+    function reportDataSizeLiterals(node, value) {
+      reportTokens(node, classTokens(value).filter(isDataSizeToken), false);
+    }
+
     return {
+      Literal(node) {
+        if (typeof node.value === "string") {
+          reportDataSizeLiterals(node, node.value);
+        }
+      },
+      TemplateLiteral(node) {
+        for (const quasi of node.quasis) {
+          if (typeof quasi.value.cooked === "string") {
+            reportDataSizeLiterals(quasi, quasi.value.cooked);
+          }
+        }
+      },
       CallExpression(node) {
         if (!isNamedCall(node.callee, "tv")) return;
         if (node.arguments.length === 0) return;
         const recipe = node.arguments[0];
         if (recipe.type !== "ObjectExpression") return;
         const variants = objectPropValue(recipe, "variants");
-        if (variants?.type !== "ObjectExpression") return;
-        const size = objectPropValue(variants, "size");
-        if (size?.type !== "ObjectExpression") return;
+        const size = variants?.type === "ObjectExpression" ? objectPropValue(variants, "size") : null;
 
-        for (const prop of size.properties) {
-          if (prop.type !== "Property") continue;
-          const sizeKey = propertyName(prop);
-          if (sizeKey === null) continue;
-          const tokens = extractStrings(prop.value).flatMap(classTokens);
-          const checkType = isMdLgRung(sizeKey) && tokens.some(isControlBoxHeightClass);
-          for (const token of tokens) {
-            const family = densityOwnedFamily(token, checkType);
-            if (!family) continue;
-            context.report({
-              node: prop.value,
-              messageId: "hardcodedMetric",
-              data: { family, utility: token },
+        if (size?.type === "ObjectExpression") {
+          for (const prop of size.properties) {
+            if (prop.type !== "Property") continue;
+            const sizeKey = propertyName(prop);
+            if (sizeKey === null) continue;
+            const tokens = extractStrings(prop.value)
+              .flatMap(classTokens)
+              .filter((token) => !isDataSizeToken(token));
+            const isControlBox = tokens.some(isControlBoxHeightClass);
+            // Decorative/layout size axes (no pinned control height) are not density rungs.
+            if (!isControlBox) continue;
+            const checkType = isMdLgRung(sizeKey);
+            reportTokens(prop.value, tokens, checkType);
+          }
+          return;
+        }
+
+        // No size axis: a control-box recipe may still pin its height in base or
+        // on a `box` axis (field-box's control/content height model). Decorative
+        // variant axes (e.g. media image sizes) are not density rungs, so only
+        // base and the `box` axis are scanned.
+        /** @type {Array<{ node: import("estree").Node; tokens: string[] }>} */
+        const groups = [];
+        const base = objectPropValue(recipe, "base");
+        if (base) {
+          groups.push({
+            node: base,
+            tokens: extractStrings(base)
+              .flatMap(classTokens)
+              .filter((token) => !isDataSizeToken(token)),
+          });
+        }
+        const box = variants?.type === "ObjectExpression" ? objectPropValue(variants, "box") : null;
+        if (box?.type === "ObjectExpression") {
+          for (const arm of box.properties) {
+            if (arm.type !== "Property") continue;
+            groups.push({
+              node: arm.value,
+              tokens: extractStrings(arm.value)
+                .flatMap(classTokens)
+                .filter((token) => !isDataSizeToken(token)),
             });
           }
+        }
+        if (!groups.some((group) => group.tokens.some(isControlBoxHeightClass))) {
+          return;
+        }
+        for (const group of groups) {
+          reportTokens(group.node, group.tokens, false);
         }
       },
     };

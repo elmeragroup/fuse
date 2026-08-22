@@ -18,42 +18,44 @@ All parts are plain elements styled by the `cardVariants` slot recipe. Every par
     <Card.Tag>Invoice</Card.Tag>
     <Card.Title icon={<Lightning aria-hidden />}>March usage</Card.Title>
     <Card.Description>Estimated consumption for the period.</Card.Description>
-    <Card.Action><Button size="sm">Export</Button></Card.Action>
+    <Card.Action>
+      <Button size="sm">Export</Button>
+    </Card.Action>
   </Card.Header>
   <Card.Content>…</Card.Content>
   <Card.Footer>…</Card.Footer>
 </Card.Root>
 ```
 
-| Part | Element | Slot |
-| --- | --- | --- |
-| `Card.Root` | `div` | `base` |
-| `Card.Header` | `div` (container query scope `@container/card-header`, grid) | `cardHeader` |
-| `Card.Tag` | `div` | `cardTag` |
-| `Card.Title` | `h3` (via `level`, default 3) | `cardTitle` |
-| `Card.Description` | `p` | `cardDescription` |
-| `Card.Action` | `div` (grid col 2, row-span 2) | `cardAction` |
-| `Card.Content` | `div` | `cardContent` |
-| `Card.Footer` | `div` | `cardFooter` |
+| Part               | Element                                                      | Slot              |
+| ------------------ | ------------------------------------------------------------ | ----------------- |
+| `Card.Root`        | `div`                                                        | `base`            |
+| `Card.Header`      | `div` (container query scope `@container/card-header`, grid) | `cardHeader`      |
+| `Card.Tag`         | `div`                                                        | `cardTag`         |
+| `Card.Title`       | `h3` (via `level`, default 3)                                | `cardTitle`       |
+| `Card.Description` | `p`                                                          | `cardDescription` |
+| `Card.Action`      | `div` (grid col 2, row-span 2)                               | `cardAction`      |
+| `Card.Content`     | `div`                                                        | `cardContent`     |
+| `Card.Footer`      | `div`                                                        | `cardFooter`      |
 
 ## 3 Props
 
 All parts: `React.HTMLAttributes<HTML…Element> & VariantProps<typeof cardVariants>` (`direction` + `className` + native props).
 
-| Part | Prop | Type | Default | Notes |
-| --- | --- | --- | --- | --- |
-| all | `direction` | `"vertical" \| "horizontal"` | `"vertical"` | shared tv axis; pass to each part used |
-| `Card.Title` | `level` | `1‑6` | `3` | heading element level (`h3` default) |
-| `Card.Title` | `size` | typography size | `"2xl"` | maps to `text-{size}`; kept from ref |
-| `Card.Title` | `icon` | `ReactNode` | — | rendered before children; adds `flex items-center gap-x-1.5 [&>svg]:size-5` |
-| `Card.Description` | `size` | typography size | `"sm"` | maps to `text-{size}` |
+| Part               | Prop        | Type                         | Default      | Notes                                                                       |
+| ------------------ | ----------- | ---------------------------- | ------------ | --------------------------------------------------------------------------- |
+| all                | `direction` | `"vertical" \| "horizontal"` | `"vertical"` | shared tv axis; pass to each part used                                      |
+| `Card.Title`       | `level`     | `1‑6`                        | `3`          | heading element level (`h3` default)                                        |
+| `Card.Title`       | `size`      | typography size              | `"2xl"`      | maps to `text-{size}`; kept from ref                                        |
+| `Card.Title`       | `icon`      | `ReactNode`                  | —            | rendered before children; adds `flex items-center gap-x-1.5 [&>svg]:size-5` |
+| `Card.Description` | `size`      | typography size              | `"sm"`       | maps to `text-{size}`                                                       |
 
 ## 4 Variants
 
 Recipe: **`cardVariants`** — **PUBLIC** (slot recipe). Sanctioned borrow: `text-field`'s `card` variant composes it (see text-field.md §4), so the recipe stays exported and typed via `VariantProps`.
 
-| Axis | Values | Default |
-| --- | --- | --- |
+| Axis        | Values                                                                                                                                               | Default    |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
 | `direction` | `vertical` (header/content/footer take `p-6`, content/footer `pt-0`) · `horizontal` (`flex-row items-center space-x-6 p-6` on base; title `text-xl`) | `vertical` |
 
 One axis only — this is deliberate (§8). Base slot classes: `base` = `flex flex-col rounded-lg border bg-card text-card-foreground shadow-xs`; `cardHeader` = `@container/card-header grid auto-rows-min items-start gap-1.5 has-data-[slot=card-action]:grid-cols-[1fr_auto]` (two-column grid appears only when a `Card.Action` is present); `cardAction` = `col-start-2 row-span-2 row-start-1 self-start justify-self-end`.
@@ -87,15 +89,15 @@ One axis only — this is deliberate (§8). Base slot classes: `base` = `flex fl
 3. **DE-RAC — `Card.Description`**: the ref renders react-aria `Text`; spec renders a plain `p`. `size` default `"sm"` kept.
 4. **External-card migration mapping** (OrderModuleWeb consumers moving off the rich card):
 
-| External part | New home |
-| --- | --- |
-| `CardSection` | `Frame.Panel` |
-| `CardSectionHeader` | `Frame.Header` + `Frame.Title` |
+| External part                                                      | New home                                                                                  |
+| ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
+| `CardSection`                                                      | `Frame.Panel`                                                                             |
+| `CardSectionHeader`                                                | `Frame.Header` + `Frame.Title`                                                            |
 | `CardLabelValueRow` / `CardLabel` / `CardValue` / `CardLabelValue` | `DescriptionList` parts, or `VerticalTable.Body` `data` prop for tabular label/value sets |
-| `CardSectionAnchor` | `Item.Root render={<a href=…/>}` |
-| `CardSectionButton` | `Item.Root render={<button/>}` |
-| `CardSectionSideContent` | `Item.Media` |
-| `CardText` | `Card.Description` |
+| `CardSectionAnchor`                                                | `Item.Root render={<a href=…/>}`                                                          |
+| `CardSectionButton`                                                | `Item.Root render={<button/>}`                                                            |
+| `CardSectionSideContent`                                           | `Item.Media`                                                                              |
+| `CardText`                                                         | `Card.Description`                                                                        |
 
 5. **Dead external axes**: `emphasis` (6 values), `variant` (7 surfaces: default/bright/secondary/tertiary/quaternary/transparent/outline), `padding`, `border`, `noTop`, `noBottom`, `spacing`, `withSideContent` all **die**. Surface/weight decisions move to consumer `className`; section rounding/border concerns die with `CardSection`.
 6. **External `dataTestId` prop dies** (`CardLabel`/`CardValue`/`CardLabelValue`) — `data-slot` serves targeting.

@@ -10,12 +10,12 @@
 
 ## 2 Anatomy
 
-| Part | Renders | Notes |
-| --- | --- | --- |
-| `Alert.Root` | base-ui `Item` (`variant="outline"` `size="sm"`) with `role="alert"` | owns the variant; lays out Media → Content → optional Actions |
-| `Alert.Icon` | variant-matched Phosphor icon inside `Item.Media` | auto-rendered by Root; exported for standalone use |
-| `Alert.Title` | `<h3 data-slot="item-title">` (own heading — see §8.2) | `level` prop adjusts heading rank |
-| `Alert.Description` | base-ui `ItemDescription` (`<p>`) | body copy |
+| Part                | Renders                                                              | Notes                                                         |
+| ------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------- |
+| `Alert.Root`        | base-ui `Item` (`variant="outline"` `size="sm"`) with `role="alert"` | owns the variant; lays out Media → Content → optional Actions |
+| `Alert.Icon`        | variant-matched Phosphor icon inside `Item.Media`                    | auto-rendered by Root; exported for standalone use            |
+| `Alert.Title`       | `<h3 data-slot="item-title">` (own heading — see §8.2)               | `level` prop adjusts heading rank                             |
+| `Alert.Description` | base-ui `ItemDescription` (`<p>`)                                    | body copy                                                     |
 
 Internally Root renders `ItemMedia` (icon), `ItemContent` (children), and — when `onAction` is set — `ItemActions` containing a base-ui `Button size="sm" type="button"` styled by the variant's `button` slot.
 
@@ -30,12 +30,12 @@ Internally Root renders `ItemMedia` (icon), `ItemContent` (children), and — wh
 
 **Alert.Root** — `ComponentProps<"div">` (spread onto `Item`) plus:
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `variant` | `"default" \| "destructive" \| "warning" \| "success"` | `"default"` | drives base/icon/button slot classes and the icon glyph |
-| `onAction` | `ComponentProps<typeof Button>["onClick"]` | — | when set, renders the action button in `Item.Actions` |
-| `actionLabel` | `ReactNode` | — | action button children |
-| `children` | `ReactNode` | — | flows into `Item.Content` (typically Title + Description) |
+| Prop          | Type                                                   | Default     | Notes                                                     |
+| ------------- | ------------------------------------------------------ | ----------- | --------------------------------------------------------- |
+| `variant`     | `"default" \| "destructive" \| "warning" \| "success"` | `"default"` | drives base/icon/button slot classes and the icon glyph   |
+| `onAction`    | `ComponentProps<typeof Button>["onClick"]`             | —           | when set, renders the action button in `Item.Actions`     |
+| `actionLabel` | `ReactNode`                                            | —           | action button children                                    |
+| `children`    | `ReactNode`                                            | —           | flows into `Item.Content` (typically Title + Description) |
 
 **Alert.Icon** — Phosphor icon props (`ComponentProps<typeof Info>`, per-icon named import from `@elmeragroup/ui/icons`) plus required `variant` (same union). Glyph map: `default → Info`, `warning → Warning`, `destructive → WarningOctagon`, `success → CheckCircle`.
 
@@ -47,12 +47,12 @@ Internally Root renders `ItemMedia` (icon), `ItemContent` (children), and — wh
 
 Recipe: `alertVariants` — **module-private** slot recipe (`tv` slots: `base`, `icon`, `content`, `title`, `description`, `button`). Single axis:
 
-| `variant` | base | icon | button |
-| --- | --- | --- | --- |
-| `default` | `bg-background text-foreground` | `text-foreground` | `bg-background text-foreground` |
-| `destructive` | `border-error bg-error/5 text-error` | `text-error` | `bg-error text-error-foreground hover:bg-error/90` |
-| `warning` | `border-warning bg-warning-soft text-warning-soft-foreground` | `text-warning` | `bg-warning text-warning-foreground hover:bg-warning/90` |
-| `success` | `border-success bg-success/5 text-foreground` | `text-success` | `bg-success text-success-foreground hover:bg-success/90` |
+| `variant`     | base                                                          | icon              | button                                                   |
+| ------------- | ------------------------------------------------------------- | ----------------- | -------------------------------------------------------- |
+| `default`     | `bg-background text-foreground`                               | `text-foreground` | `bg-background text-foreground`                          |
+| `destructive` | `border-error bg-error/5 text-error`                          | `text-error`      | `bg-error text-error-foreground hover:bg-error/90`       |
+| `warning`     | `border-warning bg-warning-soft text-warning-soft-foreground` | `text-warning`    | `bg-warning text-warning-foreground hover:bg-warning/90` |
+| `success`     | `border-success bg-success/5 text-foreground`                 | `text-success`    | `bg-success text-success-foreground hover:bg-success/90` |
 
 Slot bases: `base: "relative"`, `icon: "block size-5 shrink-0 text-foreground"`, `description: "text-foreground"`; `content`/`title` empty. Default variant: `default`. Underneath, `Item`'s own `variant="outline"`/`size="sm"` axes provide border + padding.
 
@@ -78,7 +78,7 @@ Slot bases: `base: "relative"`, `icon: "block size-5 shrink-0 text-foreground"`,
 
 1. **FULL RE-HOME (user-ruled)**: ref composes on `react-aria/item.tsx` (`Item`, `ItemMedia`, `ItemContent`, `ItemActions`, `ItemTitle`, `ItemDescription`) and the react-aria `Button`; ours composes on `base-ui/item.tsx` + base-ui `Button`. API deltas absorbed: (a) base-ui `Item` sets no default `role` — Root passes `role="alert"` explicitly (ref relied on overriding react-aria Item's `role="listitem"` default); (b) base-ui `Item` is `useRender`-polymorphic and emits `data-slot`/`data-variant`/`data-size` via state (ref emitted literal attributes); (c) base-ui `size="sm"` padding is `px-3 py-2.5` (ref's react-aria sm was `px-4 py-3`) — accepted; (d) **no intent-prefetch**: react-aria `ItemLink`/`onIntent`/`usePredictedEvents` has no base-ui counterpart and Alert never used it — gone without replacement.
 2. **Alert.Title renders its own `h3`**: react-aria `ItemTitle` wrapped `Heading` (`level={3}`); base-ui `ItemTitle` is a plain `div`. Ours renders an `h*` element directly (default `h3`, `level` prop) carrying `data-slot="item-title"` and base-ui's title classes, preserving the ref's heading semantics on the new base.
-3. **FIX (ruled): dead `VariantProps` removed from Title/Description** — ref types both as `… & VariantProps<typeof alertVariants>` but calls `alertVariants()` with no arguments, so a passed `variant` is silently ignored *and* leaks into the DOM as an invalid `variant="…"` attribute. Ours drops the prop entirely.
+3. **FIX (ruled): dead `VariantProps` removed from Title/Description** — ref types both as `… & VariantProps<typeof alertVariants>` but calls `alertVariants()` with no arguments, so a passed `variant` is silently ignored _and_ leaks into the DOM as an invalid `variant="…"` attribute. Ours drops the prop entirely.
 4. **FIX (ruled): dead base-slot style removed** — ref's `base: "relative bg-destructive/10"`; every variant overrides the background, so `bg-destructive/10` is unreachable. Base becomes `relative`.
 5. **Token alignment (LOCKED)**: `destructive` variant **value kept**; its classes move `destructive* → error*` (`border-error bg-error/5 text-error`, button `bg-error text-error-foreground hover:bg-error/90`) per canonical status tokens. The reference-only, undefined `warning-accent` name is not added to the token contract: warning uses the existing soft status pair for its surface and the solid warning pair for icon/action emphasis, exactly as §4 specifies.
 6. **Icons → Phosphor**: lucide `Info → Info`, `AlertTriangle → Warning`, `OctagonX → WarningOctagon`, `CheckCircle → CheckCircle`, regular weight, from `@elmeragroup/ui/icons`.

@@ -10,8 +10,8 @@
 
 ## 2 Anatomy
 
-| Part | base-ui primitive | data-slot |
-| --- | --- | --- |
+| Part        | base-ui primitive                           | data-slot   |
+| ----------- | ------------------------------------------- | ----------- |
 | `Separator` | `Separator` from `@base-ui/react/separator` | `separator` |
 
 Renders a single `<div>` (base-ui default) — a visual and semantic divider.
@@ -28,10 +28,10 @@ Renders a single `<div>` (base-ui default) — a visual and semantic divider.
 
 `ComponentProps<typeof SeparatorPrimitive>` — pass-through includes `render`.
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
+| Prop          | Type                         | Default        | Notes                                                                                                                 |
+| ------------- | ---------------------------- | -------------- | --------------------------------------------------------------------------------------------------------------------- |
 | `orientation` | `"horizontal" \| "vertical"` | `"horizontal"` | forwarded to the primitive, which emits `data-orientation`; sizing is CSS-driven off that attribute, not a JS ternary |
-| `className` | `string` | — | merged via `cn` |
+| `className`   | `string`                     | —              | merged via `cn`                                                                                                       |
 
 Base classes: `shrink-0 bg-border data-horizontal:h-px data-horizontal:w-full data-vertical:w-px data-vertical:self-stretch`.
 

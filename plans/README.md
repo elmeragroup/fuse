@@ -9,10 +9,10 @@ paths — run it before executing.
 
 ## Execution order & status
 
-| Plan | Title | Priority | Effort | Depends on | Status |
-|------|-------|----------|--------|------------|--------|
-| 001 | Split `theme-api.browser.test.tsx` into three focused browser-test files | P1 | M | — | DONE — advisor-verified 2026-08-21 against working tree at `85aa892`: all done criteria re-run green; 62 tests preserved across 510/539/220-line files |
-| 002 | Small review fixes: honest test tripwires, BrandLogo guard, doc wording, pin-check dedup | P2 | S | — | DONE — advisor-verified 2026-08-21 against working tree at `85aa892`: all done criteria re-run green; fresh browser run 63/63, none skipped |
+| Plan | Title                                                                                    | Priority | Effort | Depends on | Status                                                                                                                                                 |
+| ---- | ---------------------------------------------------------------------------------------- | -------- | ------ | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 001  | Split `theme-api.browser.test.tsx` into three focused browser-test files                 | P1       | M      | —          | DONE — advisor-verified 2026-08-21 against working tree at `85aa892`: all done criteria re-run green; 62 tests preserved across 510/539/220-line files |
+| 002  | Small review fixes: honest test tripwires, BrandLogo guard, doc wording, pin-check dedup | P2       | S      | —          | DONE — advisor-verified 2026-08-21 against working tree at `85aa892`: all done criteria re-run green; fresh browser run 63/63, none skipped            |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale — finding fixed independently or approach abandoned)
 

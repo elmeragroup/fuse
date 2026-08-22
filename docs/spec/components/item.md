@@ -17,41 +17,45 @@ import { Lightning } from "@elmeragroup/ui/icons";
 
 <Item.Group>
   <Item.Root variant="outline" render={<a href={order.href} />}>
-    <Item.Media variant="icon"><Lightning aria-hidden /></Item.Media>
+    <Item.Media variant="icon">
+      <Lightning aria-hidden />
+    </Item.Media>
     <Item.Content>
       <Item.Title>{order.name}</Item.Title>
       <Item.Description>{order.summary}</Item.Description>
     </Item.Content>
-    <Item.Actions><Badge variant="success">Active</Badge></Item.Actions>
+    <Item.Actions>
+      <Badge variant="success">Active</Badge>
+    </Item.Actions>
   </Item.Root>
   <Item.Separator />
-</Item.Group>
+</Item.Group>;
 ```
 
-| Part | Element | Notes |
-| --- | --- | --- |
-| `Item.Root` | `useRender` (default `div`) | flex-wrap row; `group/item` scope |
-| `Item.Media` | `div` | leading icon/image box; own `variant` axis |
-| `Item.Content` | `div` | `flex-1` column; second adjacent content goes `flex-none` |
-| `Item.Title` | `div` | `line-clamp-1 text-sm font-medium` — plain div, no heading |
-| `Item.Description` | `p` | `line-clamp-2 text-muted-foreground`, inline-link hooks |
-| `Item.Actions` | `div` | trailing controls row |
-| `Item.Header` | `div` | `basis-full justify-between` full-width leading row |
-| `Item.Footer` | `div` + inner `item-footer-content` div | grid-rows reveal animation via `mode` |
-| `Item.Group` | `div role="list"` | provides private group context; `gap-4`, tightens to `gap-2.5`/`gap-2` when it contains `data-size=sm|xs` items |
-| `Item.Separator` | `Separator` | horizontal, `my-2` |
+| Part               | Element                                 | Notes                                                                                                 |
+| ------------------ | --------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `Item.Root`        | `useRender` (default `div`)             | flex-wrap row; `group/item` scope                                                                     |
+| `Item.Media`       | `div`                                   | leading icon/image box; own `variant` axis                                                            |
+| `Item.Content`     | `div`                                   | `flex-1` column; second adjacent content goes `flex-none`                                             |
+| `Item.Title`       | `div`                                   | `line-clamp-1 text-sm font-medium` — plain div, no heading                                            |
+| `Item.Description` | `p`                                     | `line-clamp-2 text-muted-foreground`, inline-link hooks                                               |
+| `Item.Actions`     | `div`                                   | trailing controls row                                                                                 |
+| `Item.Header`      | `div`                                   | `basis-full justify-between` full-width leading row                                                   |
+| `Item.Footer`      | `div` + inner `item-footer-content` div | grid-rows reveal animation via `mode`                                                                 |
+| `Item.Group`       | `div role="list"`                       | provides private group context; `gap-4`, tightens to `gap-2.5`/`gap-2` when it contains `data-size=sm | xs` items |
+| `Item.Separator`   | `Separator`                             | horizontal, `my-2`                                                                                    |
 
 ## 3 Props
 
-| Part | Prop | Type | Default | Notes |
-| --- | --- | --- | --- | --- |
-| `Item.Root` | `variant` | `"default" \| "outline" \| "muted"` | `"default"` | tv axis, also emitted as state |
-| `Item.Root` | `size` | `"default" \| "sm" \| "xs"` | `"default"` | tv axis, also emitted as state |
-| `Item.Root` | `render` | `useRender` render prop | `div` | polymorphism (`<a/>`, `<button/>`); props merged via `mergeProps` |
-| `Item.Media` | `variant` | `"default" \| "icon" \| "image"` | `"default"` | emitted as `data-variant` |
-| `Item.Footer` | `mode` | `"default" \| "visible" \| "hidden"` | `"default"` | animated reveal/collapse; emitted as `data-mode` |
-| `Item.Separator` | …`Separator` props | — | — | `orientation` preset to `horizontal` |
-| all | `className` | `string` | — | merged via `cn` |
+| Part             | Prop               | Type                                 | Default     | Notes                                                             |
+| ---------------- | ------------------ | ------------------------------------ | ----------- | ----------------------------------------------------------------- |
+| `Item.Root`      | `variant`          | `"default" \| "outline" \| "muted"`  | `"default"` | tv axis, also emitted as state                                    |
+| `Item.Root`      | `size`             | `"default" \| "sm" \| "xs"`          | `"default"` | tv axis, also emitted as state                                    |
+| `Item.Root`      | `render`           | `useRender` render prop              | `div`       | polymorphism (`<a/>`, `<button/>`); props merged via `mergeProps` |
+| `Item.Media`     | `variant`          | `"default" \| "icon" \| "image"`     | `"default"` | emitted as `data-variant`                                         |
+| `Item.Footer`    | `mode`             | `"default" \| "visible" \| "hidden"` | `"default"` | animated reveal/collapse; emitted as `data-mode`                  |
+| `Item.Separator` | …`Separator` props | —                                    | —           | `orientation` preset to `horizontal`                              |
+| all              | `className`        | `string`                             | —           | merged via `cn`                                                   |
 
 All parts otherwise spread native props; `Item.Root` is `useRender.ComponentProps<"div"> & VariantProps<typeof itemVariants>`.
 
@@ -59,12 +63,14 @@ All parts otherwise spread native props; `Item.Root` is `useRender.ComponentProp
 
 Recipe: **`itemVariants`** — **PUBLIC**. The ref exports it and `selection-item` borrows it (see selection-item.md); sanctioned borrow pattern.
 
-| Recipe | Axis | Values | Default |
-| --- | --- | --- | --- |
-| `itemVariants` | `variant` | `default` (`border-transparent`) · `outline` (`border-border`) · `muted` (`border-transparent bg-muted/50`) | `default` |
-| `itemVariants` | `size` | `default` (`gap-3.5 px-4 py-3.5`) · `sm` (`gap-2.5 px-3 py-2.5`) · `xs` (`gap-2 px-2.5 py-2`, zeroed inside dropdown-menu content via `in-data-[slot=dropdown-menu-content]:p-0`) | `default` |
-| `itemMediaVariants` (private) | `variant` | `default` · `icon` (`svg size-4` guard) · `image` (`size-10 rounded-sm` box, shrinks with item size; see outline note) | `default` |
-| `itemFooterVariants` (private) | `mode` | `default` (static open) · `visible` (`starting:` entry animation) · `hidden` (collapsed `0fr`, pointer-events-none) | `default` |
+| Recipe                         | Axis      | Values                                                                                                                                                                            | Default   |
+| ------------------------------ | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| `itemVariants`                 | `variant` | `default` (`border-transparent`) · `outline` (`border-border`) · `muted` (`border-transparent bg-muted/50`)                                                                       | `default` |
+| `itemVariants`                 | `size`    | `default` (`gap-3.5 px-4 py-3.5`) · `sm` (`gap-2.5 px-3 py-2.5`) · `xs` (`gap-2 px-2.5 py-2`, zeroed inside dropdown-menu content via `in-data-[slot=dropdown-menu-content]:p-0`) | `default` |
+| `itemMediaVariants` (private)  | `variant` | `default` · `icon` (`svg size-4` guard) · `image` (`size-10 rounded-sm` box, shrinks with item size; see outline note)                                                            | `default` |
+| `itemFooterVariants` (private) | `mode`    | `default` (static open) · `visible` (`starting:` entry animation) · `hidden` (collapsed `0fr`, pointer-events-none)                                                               | `default` |
+
+Item's `size` axis is density-classified as **not a control-box rung**: it encodes row padding and gap, which sit outside the control-box remit (conventions.md density ladder; ticket 82). The lint treats a layout size axis without a pinned control height as legal.
 
 Base notes:
 

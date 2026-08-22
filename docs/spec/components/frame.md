@@ -10,14 +10,14 @@
 
 ## 2 Anatomy
 
-| Part | Renders | data-slot |
-| --- | --- | --- |
-| `Frame.Root` | `<div>` — muted ground (`rounded-xl bg-muted/72 p-1`) | `frame` |
-| `Frame.Panel` | `<div>` — white card surface with hairline overlay | `frame-panel` |
-| `Frame.Header` | `<header>` (`flex flex-col px-5 py-4`) | `frame-panel-header` |
-| `Frame.Title` | `<div>` (`text-sm font-semibold`) | `frame-panel-title` |
-| `Frame.Description` | `<div>` (`text-sm text-muted-foreground`) | `frame-panel-description` |
-| `Frame.Footer` | `<footer>` (`flex flex-col gap-1 px-5 py-4`) | `frame-panel-footer` |
+| Part                | Renders                                               | data-slot                 |
+| ------------------- | ----------------------------------------------------- | ------------------------- |
+| `Frame.Root`        | `<div>` — muted ground (`rounded-xl bg-muted/72 p-1`) | `frame`                   |
+| `Frame.Panel`       | `<div>` — white card surface with hairline overlay    | `frame-panel`             |
+| `Frame.Header`      | `<header>` (`flex flex-col px-5 py-4`)                | `frame-panel-header`      |
+| `Frame.Title`       | `<div>` (`text-sm font-semibold`)                     | `frame-panel-title`       |
+| `Frame.Description` | `<div>` (`text-sm text-muted-foreground`)             | `frame-panel-description` |
+| `Frame.Footer`      | `<footer>` (`flex flex-col gap-1 px-5 py-4`)          | `frame-panel-footer`      |
 
 ```tsx
 <Frame.Root>
@@ -38,14 +38,14 @@ Header and Footer are siblings of Panel inside Root — they sit directly on the
 
 All parts take `className` (merged via `cn`) plus native element pass-through; none hold state.
 
-| Part | Type | Notes |
-| --- | --- | --- |
-| `Frame.Root` | `ComponentProps<"div"> & { stackedPanels?: boolean }` | default `false`; switches the sibling-adjacency rules (§4) |
-| `Frame.Panel` | `ComponentProps<"div">` | `rounded-xl border bg-background bg-clip-padding p-5 shadow-xs/5` + `before:` hairline overlay (`inset-0`, `rounded-[calc(var(--radius-xl)-1px)]`, `shadow-[0_1px_--theme(--color-black/6%)]`, `pointer-events-none`) |
-| `Frame.Header` | `ComponentProps<"header">` | |
-| `Frame.Title` | `ComponentProps<"div">` | not a heading element; wrap or `render` a heading when the panel needs one in the outline |
-| `Frame.Description` | `ComponentProps<"div">` | |
-| `Frame.Footer` | `ComponentProps<"footer">` | |
+| Part                | Type                                                  | Notes                                                                                                                                                                                                                 |
+| ------------------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Frame.Root`        | `ComponentProps<"div"> & { stackedPanels?: boolean }` | default `false`; switches the sibling-adjacency rules (§4)                                                                                                                                                            |
+| `Frame.Panel`       | `ComponentProps<"div">`                               | `rounded-xl border bg-background bg-clip-padding p-5 shadow-xs/5` + `before:` hairline overlay (`inset-0`, `rounded-[calc(var(--radius-xl)-1px)]`, `shadow-[0_1px_--theme(--color-black/6%)]`, `pointer-events-none`) |
+| `Frame.Header`      | `ComponentProps<"header">`                            |                                                                                                                                                                                                                       |
+| `Frame.Title`       | `ComponentProps<"div">`                               | not a heading element; wrap or `render` a heading when the panel needs one in the outline                                                                                                                             |
+| `Frame.Description` | `ComponentProps<"div">`                               |                                                                                                                                                                                                                       |
+| `Frame.Footer`      | `ComponentProps<"footer">`                            |                                                                                                                                                                                                                       |
 
 ## 4 Variants
 

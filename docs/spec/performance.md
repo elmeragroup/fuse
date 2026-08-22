@@ -11,20 +11,20 @@ Normative chapter for `@elmeragroup/ui`. Sources: [A11y & performance guideline 
 ## 2 Bundle budgets
 
 - **Mechanism**: `size-limit` bundles a minimal consumer fixture for each public JS entry against the packed package, then measures min+gzip. Measuring raw unbundled facades is meaningless, so the fixture imports the entry's named exports and exercises its normal graph. Runs in the merge gate; breach fails the build.
-- **Calibration**: numbers below are provisional; at first real build each is set to **measured × ~1.5** and committed. From then on, the ratchet rule applies.
+- **Calibration**: numbers below are provisional; at first real build each is set to **measured × ~1.5** and committed. From then on, the ratchet rule applies for **per-component and per-icon** entries (ceilings only move down, or are consciously raised in a reviewed PR that says why). **Shared/aggregate** entries (`styles.css`, the root barrel) recalibrate to measured×1.5 in the PR that grows them; the new measurement is recorded next to the budget table in `packages/ui/scripts/size-budgets.ts`. The `/flags` JS entry follows the new-entry rule (measured×1.5). The Flag SVG aggregate raw ceiling (800 KiB) is enforced with the size-limit budgets.
 - Provisional ceilings (min+gzip, ESM, excluding react/react-dom/peers):
 
-  | Entry | Ceiling | Note |
-  | --- | --- | --- |
-  | Baseline component entry (button, badge, input, …) | 10 kB | includes shared runtime pulled by that entry |
-  | Heavy composites: select, combobox, table, sidebar, toast | 20 kB | base-ui positioning/list machinery |
-  | `phone-number-field` | 60 kB | includes the min-metadata phone engine and generated flag-URL manifest, but no SVG bytes |
-  | `chart` | 15 kB | **excluding** recharts (optional peer — never bundled) |
-  | Date cluster (`react-aria/` date entries, incl. `@internationalized/date`) | 60 kB | quarantined tier; uninstalls with the cluster |
-  | Root barrel (56 bare components + theme) | 150 kB | excludes the quarantined RAC entries; exists for DX and apps are steered to subpaths |
-  | `icons` per-icon export | 2 kB | Phosphor single icon |
-  | `themes.css` (standalone bundle) | 10 kB gzip | see §4 |
-  | Flag SVGs | 800 KiB aggregate raw ceiling | 249 two-letter country assets total 765,286 bytes at the pinned snapshot; excluded from JS budgets and never inlined. Individual SVGs legitimately exceed 5 kB; count + hashes + aggregate size are the gates. The manifest module counts within `phone-number-field`. |
+  | Entry                                                                      | Ceiling                       | Note                                                                                                                                                                                                                                                                   |
+  | -------------------------------------------------------------------------- | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | Baseline component entry (button, badge, input, …)                         | 10 kB                         | includes shared runtime pulled by that entry                                                                                                                                                                                                                           |
+  | Heavy composites: select, combobox, table, sidebar, toast                  | 20 kB                         | base-ui positioning/list machinery                                                                                                                                                                                                                                     |
+  | `phone-number-field`                                                       | 60 kB                         | includes the min-metadata phone engine and generated flag-URL manifest, but no SVG bytes                                                                                                                                                                               |
+  | `chart`                                                                    | 15 kB                         | **excluding** recharts (optional peer — never bundled)                                                                                                                                                                                                                 |
+  | Date cluster (`react-aria/` date entries, incl. `@internationalized/date`) | 60 kB                         | quarantined tier; uninstalls with the cluster                                                                                                                                                                                                                          |
+  | Root barrel (56 bare components + theme)                                   | 150 kB                        | excludes the quarantined RAC entries; exists for DX and apps are steered to subpaths                                                                                                                                                                                   |
+  | `icons` per-icon export                                                    | 2 kB                          | Phosphor single icon                                                                                                                                                                                                                                                   |
+  | `themes.css` (standalone bundle)                                           | 10 kB gzip                    | see §4                                                                                                                                                                                                                                                                 |
+  | Flag SVGs                                                                  | 800 KiB aggregate raw ceiling | 249 two-letter country assets total 765,286 bytes at the pinned snapshot; excluded from JS budgets and never inlined. Individual SVGs legitimately exceed 5 kB; count + hashes + aggregate size are the gates. The manifest module counts within `phone-number-field`. |
 
 - The docs site publishes the measured sizes per entry (generated, same source as the API tables).
 
@@ -33,88 +33,89 @@ Normative chapter for `@elmeragroup/ui`. Sources: [A11y & performance guideline 
 - **Default server-safe.** A component carries `"use client"` (at source; tsdown preserves it) only when it owns interactivity — state, effects, event handlers, browser APIs.
 - **Authoritative classification** — every component spec, applying that policy. Each spec's §1 header carries the same status; this table is the audit view, and **on conflict this table wins**:
 
-  | Component | RSC status |
-  | --- | --- |
-  | accordion | client |
-  | alert | server (static composite; the optional `onAction` button is a client base-ui `Button` child) |
-  | alert-dialog | client |
-  | avatar | client (base-ui Avatar owns image loading state) |
-  | badge | server |
-  | breadcrumb | client (`useRender` polymorphism) |
-  | button | client (pending/visually-disabled state, `usePredictedEvents` wiring) |
-  | button-group | client (`useRender` polymorphism) |
-  | calendar | client |
-  | card | server |
-  | chart | client |
-  | checkbox | client |
-  | checkbox-card | client |
-  | code | server |
-  | collapsible | client |
-  | combobox | client |
-  | confirm-button | client |
-  | date-field | client |
-  | date-picker | client |
-  | date-range-picker | client |
-  | description-list | server |
-  | dialog | client |
-  | dropdown-menu | client |
-  | emoji | server |
-  | empty | server |
-  | field | client (base-ui Field validity wiring) |
-  | file-trigger | client |
-  | focusable | client |
-  | frame | server |
-  | grid-list | client |
-  | heading | client (`useRender` polymorphism) |
-  | input | client (base-ui Field-wired control) |
-  | input-group | client |
-  | item | client (`useRender` polymorphism and group-context semantics) |
-  | link | client (RAC press handling + router context) |
-  | loader | server |
-  | meter | client (base-ui Meter primitive) |
-  | number-field | client |
-  | pagination | client (provider-only locale context supplies built-in navigation copy) |
-  | phone-number-field | client |
-  | popover | client |
-  | popover-info-button | client |
-  | radio-group | client |
-  | range-calendar | client |
-  | scroll-area | client |
-  | search-field | client |
-  | select | client |
-  | selection-item | client |
-  | separator | client (base-ui Separator primitive) |
-  | sheet | client |
-  | show | server |
-  | sidebar | client |
-  | skeleton | server |
-  | span | client (`useRender` polymorphism) |
-  | switch | client |
-  | table | client (`VerticalTable.Header` uses `useRender`; no sortable/selection API is specified) |
-  | tabs | client |
-  | text | client (`useRender` polymorphism) |
-  | text-field | client |
-  | textarea | server (plain native element, no owned state; Field wiring comes from the client `TextareaField`) |
-  | textarea-field | client |
-  | timeline-list | server (presentational list rendering) |
-  | toast | client |
-  | toggle | client |
-  | toggle-group | client |
-  | tooltip | client |
-  | ui-providers | client (`ElmeraGroupUiProvider`, `useElmeraGroupUi`, and RAC `RouterProvider` wiring all use React context) |
+  | Component           | RSC status                                                                                                  |
+  | ------------------- | ----------------------------------------------------------------------------------------------------------- |
+  | accordion           | client                                                                                                      |
+  | alert               | server (static composite; the optional `onAction` button is a client base-ui `Button` child)                |
+  | alert-dialog        | client                                                                                                      |
+  | avatar              | client (base-ui Avatar owns image loading state)                                                            |
+  | badge               | server                                                                                                      |
+  | breadcrumb          | client (`useRender` polymorphism)                                                                           |
+  | button              | client (pending/visually-disabled state, `usePredictedEvents` wiring)                                       |
+  | button-group        | client (`useRender` polymorphism)                                                                           |
+  | calendar            | client                                                                                                      |
+  | card                | server                                                                                                      |
+  | chart               | client                                                                                                      |
+  | checkbox            | client                                                                                                      |
+  | checkbox-card       | client                                                                                                      |
+  | code                | server                                                                                                      |
+  | collapsible         | client                                                                                                      |
+  | combobox            | client                                                                                                      |
+  | confirm-button      | client                                                                                                      |
+  | date-field          | client                                                                                                      |
+  | date-picker         | client                                                                                                      |
+  | date-range-picker   | client                                                                                                      |
+  | description-list    | server                                                                                                      |
+  | dialog              | client                                                                                                      |
+  | dropdown-menu       | client                                                                                                      |
+  | emoji               | server                                                                                                      |
+  | empty               | server                                                                                                      |
+  | field               | client (base-ui Field validity wiring)                                                                      |
+  | file-trigger        | client                                                                                                      |
+  | focusable           | client                                                                                                      |
+  | frame               | server                                                                                                      |
+  | grid-list           | client                                                                                                      |
+  | heading             | client (`useRender` polymorphism)                                                                           |
+  | input               | client (base-ui Field-wired control)                                                                        |
+  | input-group         | client                                                                                                      |
+  | item                | client (`useRender` polymorphism and group-context semantics)                                               |
+  | link                | client (RAC press handling + router context)                                                                |
+  | loader              | server                                                                                                      |
+  | meter               | client (base-ui Meter primitive)                                                                            |
+  | number-field        | client                                                                                                      |
+  | pagination          | client (provider-only locale context supplies built-in navigation copy)                                     |
+  | phone-number-field  | client                                                                                                      |
+  | popover             | client                                                                                                      |
+  | popover-info-button | client                                                                                                      |
+  | radio-group         | client                                                                                                      |
+  | range-calendar      | client                                                                                                      |
+  | scroll-area         | client                                                                                                      |
+  | search-field        | client                                                                                                      |
+  | select              | client                                                                                                      |
+  | selection-item      | client                                                                                                      |
+  | separator           | client (base-ui Separator primitive)                                                                        |
+  | sheet               | client                                                                                                      |
+  | show                | server                                                                                                      |
+  | sidebar             | client                                                                                                      |
+  | skeleton            | server                                                                                                      |
+  | span                | client (`useRender` polymorphism)                                                                           |
+  | switch              | client                                                                                                      |
+  | table               | client (`VerticalTable.Header` uses `useRender`; no sortable/selection API is specified)                    |
+  | tabs                | client                                                                                                      |
+  | text                | client (`useRender` polymorphism)                                                                           |
+  | text-field          | client                                                                                                      |
+  | textarea            | server (plain native element, no owned state; Field wiring comes from the client `TextareaField`)           |
+  | textarea-field      | client                                                                                                      |
+  | timeline-list       | server (presentational list rendering)                                                                      |
+  | toast               | client                                                                                                      |
+  | toggle              | client                                                                                                      |
+  | toggle-group        | client                                                                                                      |
+  | tooltip             | client                                                                                                      |
+  | ui-providers        | client (`ElmeraGroupUiProvider`, `useElmeraGroupUi`, and RAC `RouterProvider` wiring all use React context) |
 
   Bespoke SVG icons, illustrations, logos, emoji, flag assets, and curated Phosphor adapters are server-safe. The adapters import the pinned package's explicit `@phosphor-icons/react/dist/ssr/<Icon>` modules, never its client or root barrel ([icons](icons.md) §2); `/icons` is therefore a server-safe, directive-free facade.
+
 - **RSC status is part of the public contract**: an `RSC` line in every component spec's §1 Header and a matching field in the generated docs API tables.
 - **Composition rule**: a server-safe component may render a client child; a change that flips a server-safe component to client is a **breaking change to its spec** — it must be flagged in §8 Divergence/changelog, never happen silently.
 - The `"use client"` directive is **per source file, not per entry**: a single entry may expose both server modules and client modules — `/theme` does exactly this. Within one module there is still exactly one directive decision: no `-client` wrapper entries, no double exports.
 
-  | `/theme` export | RSC status | Role |
-  | --- | --- | --- |
-  | `themeAttributes`, `defaultDensityForVariant`, `densityAttributes`, `themeSlug`, `parseThemeSlug`, `coerceTheme`, `validateTheme`, `BRANDS` | server | brand and density kernel; safe in layouts, `_document`, Vite config |
-  | `ColorSchemeScript`, `colorSchemeScriptSource` | server | host-placed first-paint bootstrap. `ColorSchemeScript` stays a server-safe `<script>` renderer so `<head>` placement remains true; `colorSchemeScriptSource` returns closed IIFE text for `transformIndexHtml` / `ScriptOnce` |
-  | `ThemeProvider`, `useTheme`, `useColorScheme`, `ForceColorScheme` | client | document writer, hooks, runtime force. Not first-paint adapters |
-  | `ThemeScope` | client | subtree brand writer |
-  | `ElmeraGroupUiProvider`, `useElmeraGroupUi` | client | locale context |
+  | `/theme` export                                                                                                                             | RSC status | Role                                                                                                                                                                                                                          |
+  | ------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | `themeAttributes`, `defaultDensityForVariant`, `densityAttributes`, `themeSlug`, `parseThemeSlug`, `coerceTheme`, `validateTheme`, `BRANDS` | server     | brand and density kernel; safe in layouts, `_document`, Vite config                                                                                                                                                           |
+  | `ColorSchemeScript`, `colorSchemeScriptSource`                                                                                              | server     | host-placed first-paint bootstrap. `ColorSchemeScript` stays a server-safe `<script>` renderer so `<head>` placement remains true; `colorSchemeScriptSource` returns closed IIFE text for `transformIndexHtml` / `ScriptOnce` |
+  | `ThemeProvider`, `useTheme`, `useColorScheme`, `ForceColorScheme`                                                                           | client     | document writer, hooks, runtime force. Not first-paint adapters                                                                                                                                                               |
+  | `ThemeScope`                                                                                                                                | client     | subtree brand writer                                                                                                                                                                                                          |
+  | `ElmeraGroupUiProvider`, `useElmeraGroupUi`                                                                                                 | client     | locale context                                                                                                                                                                                                                |
 
   Hosts import the server bootstrap from a server or config module. Importing `ColorSchemeScript` through a client component and rendering it after `createRoot` is not a first-paint path.
 

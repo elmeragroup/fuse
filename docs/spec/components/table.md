@@ -10,22 +10,22 @@
 
 ## 2 Anatomy
 
-| Part | Renders | data-slot |
-| --- | --- | --- |
-| `Table.Root` | `<div>` scroll container + `<table>` | `table-container` (div), `table` (table) |
-| `Table.Header` | `<thead>` | `table-header` |
-| `Table.Body` | `<tbody>` | `table-body` |
-| `Table.Footer` | `<tfoot>` | `table-footer` |
-| `Table.Row` | `<tr>` | `table-row` |
-| `Table.Head` | `<th>` | `table-head` |
-| `Table.Cell` | `<td>` | `table-cell` |
-| `Table.Caption` | `<caption>` | `table-caption` |
-| `VerticalTable.Root` | `<div>` (spacing wrapper, carries `data-variant`) | `vertical-table-root` |
-| `VerticalTable.Header` | `<h2>` (plain semantic heading) | `vertical-table-header` |
-| `VerticalTable.Body` | `<div>` bordered wrapper + `Table.Root` (`table-fixed`) + `<tbody>` | `vertical-table` (div), `vertical-table-body` (tbody) |
-| `VerticalTable.Row` | `Table.Row` (`<tr>`), group scope `group/vertical-table-row-item` | `table-row` |
-| `VerticalTable.Key` | `Table.Cell` (`<td>`, muted key column) | `table-cell` |
-| `VerticalTable.Value` | `Table.Cell` (`<td>`) | `table-cell` |
+| Part                   | Renders                                                             | data-slot                                             |
+| ---------------------- | ------------------------------------------------------------------- | ----------------------------------------------------- |
+| `Table.Root`           | `<div>` scroll container + `<table>`                                | `table-container` (div), `table` (table)              |
+| `Table.Header`         | `<thead>`                                                           | `table-header`                                        |
+| `Table.Body`           | `<tbody>`                                                           | `table-body`                                          |
+| `Table.Footer`         | `<tfoot>`                                                           | `table-footer`                                        |
+| `Table.Row`            | `<tr>`                                                              | `table-row`                                           |
+| `Table.Head`           | `<th>`                                                              | `table-head`                                          |
+| `Table.Cell`           | `<td>`                                                              | `table-cell`                                          |
+| `Table.Caption`        | `<caption>`                                                         | `table-caption`                                       |
+| `VerticalTable.Root`   | `<div>` (spacing wrapper, carries `data-variant`)                   | `vertical-table-root`                                 |
+| `VerticalTable.Header` | `<h2>` (plain semantic heading)                                     | `vertical-table-header`                               |
+| `VerticalTable.Body`   | `<div>` bordered wrapper + `Table.Root` (`table-fixed`) + `<tbody>` | `vertical-table` (div), `vertical-table-body` (tbody) |
+| `VerticalTable.Row`    | `Table.Row` (`<tr>`), group scope `group/vertical-table-row-item`   | `table-row`                                           |
+| `VerticalTable.Key`    | `Table.Cell` (`<td>`, muted key column)                             | `table-cell`                                          |
+| `VerticalTable.Value`  | `Table.Cell` (`<td>`)                                               | `table-cell`                                          |
 
 ```tsx
 <Table.Root>
@@ -50,22 +50,22 @@
 
 All parts take `className` (merged via `cn`) plus native element pass-through.
 
-| Part | Type | Notes |
-| --- | --- | --- |
-| `Table.Root` | `ComponentProps<"table">` | props and `className` go to the `<table>`; the scroll-container div is fixed (`relative w-full overflow-x-auto`) |
-| `Table.Header` | `ComponentProps<"thead">` | |
-| `Table.Body` | `ComponentProps<"tbody">` | carries the full in-frame reshaping chain (§6) |
-| `Table.Footer` | `ComponentProps<"tfoot">` | `border-t bg-muted/72 font-medium` |
-| `Table.Row` | `ComponentProps<"tr">` | consumers set `data-state="selected"` for selection styling (§6) |
-| `Table.Head` | `ComponentProps<"th">` | `h-10 px-2`, left-aligned, `text-muted-foreground`; checkbox column auto-collapse via `has-[[role=checkbox]]:w-px has-[[role=checkbox]]:pe-0` |
-| `Table.Cell` | `ComponentProps<"td">` | `p-2`, `whitespace-nowrap`; checkbox `has-[[role=checkbox]]:pe-0` |
-| `Table.Caption` | `ComponentProps<"caption">` | `caption-bottom` (set on the table), `mt-4 text-sm text-muted-foreground` |
-| `VerticalTable.Root` | `ComponentProps<"div"> & { variant?: "default" \| "non-bordered-compact" }` | default `"default"`; emits `data-variant`, consumed by descendants |
-| `VerticalTable.Header` | `ComponentProps<"h2">` | plain `<h2>`; polymorphic via `render` (`useRender`) if another level is needed |
-| `VerticalTable.Body` | `ComponentProps<"div"> & { data?: VerticalTableItem[] }` | props and `className` go to the wrapper div **only** (§8.3); renders div > `Table.Root className="table-fixed"` > tbody |
-| `VerticalTable.Row` | `ComponentProps<"tr"> & { fontWeight?: "normal" \| "bold"; isHidden?: boolean }` | defaults `"normal"`, `false`; emits `data-font-weight`; `isHidden` adds `hidden` |
-| `VerticalTable.Key` | `ComponentProps<"td"> & { text?: "default" \| "truncate"; isLoading?: boolean }` | defaults `"truncate"`, `false`; `isLoading` swaps children for a `Skeleton` (`h-4 w-full max-w-24`) |
-| `VerticalTable.Value` | `ComponentProps<"td"> & { text?: "default" \| "truncate"; isLoading?: boolean }` | same contract as `Key` |
+| Part                   | Type                                                                             | Notes                                                                                                                                         |
+| ---------------------- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Table.Root`           | `ComponentProps<"table">`                                                        | props and `className` go to the `<table>`; the scroll-container div is fixed (`relative w-full overflow-x-auto`)                              |
+| `Table.Header`         | `ComponentProps<"thead">`                                                        |                                                                                                                                               |
+| `Table.Body`           | `ComponentProps<"tbody">`                                                        | carries the full in-frame reshaping chain (§6)                                                                                                |
+| `Table.Footer`         | `ComponentProps<"tfoot">`                                                        | `border-t bg-muted/72 font-medium`                                                                                                            |
+| `Table.Row`            | `ComponentProps<"tr">`                                                           | consumers set `data-state="selected"` for selection styling (§6)                                                                              |
+| `Table.Head`           | `ComponentProps<"th">`                                                           | `h-10 px-2`, left-aligned, `text-muted-foreground`; checkbox column auto-collapse via `has-[[role=checkbox]]:w-px has-[[role=checkbox]]:pe-0` |
+| `Table.Cell`           | `ComponentProps<"td">`                                                           | `p-2`, `whitespace-nowrap`; checkbox `has-[[role=checkbox]]:pe-0`                                                                             |
+| `Table.Caption`        | `ComponentProps<"caption">`                                                      | `caption-bottom` (set on the table), `mt-4 text-sm text-muted-foreground`                                                                     |
+| `VerticalTable.Root`   | `ComponentProps<"div"> & { variant?: "default" \| "non-bordered-compact" }`      | default `"default"`; emits `data-variant`, consumed by descendants                                                                            |
+| `VerticalTable.Header` | `ComponentProps<"h2">`                                                           | plain `<h2>`; polymorphic via `render` (`useRender`) if another level is needed                                                               |
+| `VerticalTable.Body`   | `ComponentProps<"div"> & { data?: VerticalTableItem[] }`                         | props and `className` go to the wrapper div **only** (§8.3); renders div > `Table.Root className="table-fixed"` > tbody                       |
+| `VerticalTable.Row`    | `ComponentProps<"tr"> & { fontWeight?: "normal" \| "bold"; isHidden?: boolean }` | defaults `"normal"`, `false`; emits `data-font-weight`; `isHidden` adds `hidden`                                                              |
+| `VerticalTable.Key`    | `ComponentProps<"td"> & { text?: "default" \| "truncate"; isLoading?: boolean }` | defaults `"truncate"`, `false`; `isLoading` swaps children for a `Skeleton` (`h-4 w-full max-w-24`)                                           |
+| `VerticalTable.Value`  | `ComponentProps<"td"> & { text?: "default" \| "truncate"; isLoading?: boolean }` | same contract as `Key`                                                                                                                        |
 
 Exported type:
 
@@ -74,8 +74,8 @@ type VerticalTableItem = {
   label: React.ReactNode;
   value: React.ReactNode;
   fontWeight?: "normal" | "bold"; // per-row, default "normal"
-  isLoading?: boolean;            // skeletons the value cell, default false
-  text?: "default" | "truncate";  // default "truncate"
+  isLoading?: boolean; // skeletons the value cell, default false
+  text?: "default" | "truncate"; // default "truncate"
 };
 ```
 

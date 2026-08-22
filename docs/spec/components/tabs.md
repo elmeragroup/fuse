@@ -10,12 +10,12 @@
 
 ## 2 Anatomy
 
-| Part | base-ui primitive | data-slot |
-| --- | --- | --- |
-| `Tabs.Root` | `Tabs.Root` from `@base-ui/react/tabs` | `tabs` |
-| `Tabs.List` | `Tabs.List` | `tabs-list` |
-| `Tabs.Trigger` | `Tabs.Tab` | `tabs-trigger` |
-| `Tabs.Content` | `Tabs.Panel` | `tabs-content` |
+| Part           | base-ui primitive                      | data-slot      |
+| -------------- | -------------------------------------- | -------------- |
+| `Tabs.Root`    | `Tabs.Root` from `@base-ui/react/tabs` | `tabs`         |
+| `Tabs.List`    | `Tabs.List`                            | `tabs-list`    |
+| `Tabs.Trigger` | `Tabs.Tab`                             | `tabs-trigger` |
+| `Tabs.Content` | `Tabs.Panel`                           | `tabs-content` |
 
 Root establishes the `group/tabs` Tailwind group scope; List establishes `group/tabs-list`. Triggers style themselves off both scopes (orientation from `group/tabs`, list variant from `group/tabs-list`) — this two-group coupling is kept as-is (§8).
 
@@ -36,19 +36,19 @@ Root establishes the `group/tabs` Tailwind group scope; List establishes `group/
 
 `ComponentProps<typeof TabsPrimitive.Root>` — pass-through includes `value`, `defaultValue`, `onValueChange`, `orientation`, `render`.
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
+| Prop          | Type                         | Default        | Notes                                                                                                   |
+| ------------- | ---------------------------- | -------------- | ------------------------------------------------------------------------------------------------------- |
 | `orientation` | `"horizontal" \| "vertical"` | `"horizontal"` | destructured locally so `data-orientation` renders pre-hydration (SSR); also forwarded to the primitive |
-| `className` | `string` | — | merged via `cn` onto `group/tabs flex gap-2 data-horizontal:flex-col` |
+| `className`   | `string`                     | —              | merged via `cn` onto `group/tabs flex gap-2 data-horizontal:flex-col`                                   |
 
 ### Tabs.List
 
 `ComponentProps<typeof TabsPrimitive.List> & VariantProps<typeof tabsListVariants>` — pass-through includes `loop`, `render`.
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `variant` | `"default" \| "line"` | `"default"` | emitted as `data-variant`; fed to `tabsListVariants` |
-| `className` | `string` | — | merged via `cn` |
+| Prop        | Type                  | Default     | Notes                                                |
+| ----------- | --------------------- | ----------- | ---------------------------------------------------- |
+| `variant`   | `"default" \| "line"` | `"default"` | emitted as `data-variant`; fed to `tabsListVariants` |
+| `className` | `string`              | —           | merged via `cn`                                      |
 
 ### Tabs.Trigger
 
@@ -62,7 +62,10 @@ Root establishes the `group/tabs` Tailwind group scope; List establishes `group/
 
 **Recipe: `tabsListVariants` — PUBLIC** (the ref exports it; kept exported for the borrow pattern).
 
-- Base: `group/tabs-list inline-flex w-fit items-center justify-center rounded-lg p-[3px] text-muted-foreground group-data-horizontal/tabs:h-9 group-data-vertical/tabs:h-fit group-data-vertical/tabs:flex-col data-[variant=line]:rounded-none`
+- Base: `group/tabs-list inline-flex w-fit items-center justify-center rounded-lg p-[3px] text-muted-foreground group-data-horizontal/tabs:h-(--control-h-md) group-data-vertical/tabs:h-fit group-data-vertical/tabs:flex-col data-[variant=line]:rounded-none`
+
+**Density mapping.** Horizontal Tabs.List is a single-height field box pinning the `md` rung (`group-data-horizontal/tabs:h-(--control-h-md)`). Vertical lists stay `h-fit` (content-sized, not a control box). `p-[3px]` is optical track padding, not `--control-px-*`. No `size` axis and no `dense:` / `comfortable:` variants.
+
 - Axis `variant`: `default` → `bg-muted` (filled pill list); `line` → `gap-1 bg-transparent` (underline style). Default: `default`.
 
 Trigger styling is plain classes (no recipe): active tab gets `data-active:bg-background data-active:text-foreground` plus `shadow-sm` under `variant="default"`; under `variant="line"` the background/shadow are suppressed and an `after:` pseudo-element underline (`after:bg-foreground`, `h-0.5` below in horizontal, `w-0.5` at right edge in vertical) fades in via `data-active:after:opacity-100`.
@@ -92,6 +95,7 @@ Trigger styling is plain classes (no recipe): active tab gets `data-active:bg-ba
 4. **KEPT: redundant pre-hydration `data-orientation`** — Root sets `data-orientation={orientation}` explicitly even though base-ui emits it, so SSR markup carries orientation before hydration and the `data-horizontal:flex-col` layout class applies on first paint. Documented as deliberate, not dead code.
 5. **KEPT: `tabsListVariants` stays public** — exported from the package as in the ref.
 6. **Panel focus fixed:** the ref's unconditional `outline-none` on `Tabs.Content` is removed and the shared self-focus recipe is composed. The pinned base-ui primitive sets the open panel to `tabIndex={0}`, so suppressing its outline without replacement violated the cluster focus contract.
+7. **Density retokenization:** horizontal list `h-9` pins `--control-h-md`. Vertical `h-fit` is unchanged.
 
 ## 9 Test requirements
 
@@ -102,6 +106,7 @@ Trigger styling is plain classes (no recipe): active tab gets `data-active:bg-ba
 - Disabled trigger can receive roving keyboard focus but does not activate; click likewise cannot activate it.
 - Tabbing from the active trigger reaches the open `tabpanel`; keyboard focus on that panel renders the shared focus ring.
 - `variant="line"` list emits `data-variant="line"`; active trigger has no `bg-background` (asserted via class/data-attr, not screenshots).
+- Dual-density: horizontal list height matches the signed `md` rung at `dense` and `comfortable`; vertical `h-fit` is content-sized at both stamps; nested `data-density` does not rescope.
 
 ## 10 Demo requirements
 

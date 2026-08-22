@@ -28,10 +28,10 @@ AriaCalendar                       (RAC Calendar; base slot: bordered card surfa
 
 `CalendarProps<T extends DateValue>` — spreads onto RAC `Calendar` with `visibleDuration` omitted (single-month only, kept from ref). Open RAC surface: `value`, `defaultValue`, `onChange`, `focusedValue`, `defaultFocusedValue`, `onFocusChange`, `minValue`, `maxValue`, `isDateUnavailable`, `isDisabled`, `isReadOnly`, `isInvalid`, `firstDayOfWeek`, `autoFocus`, …
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `errorMessage` | `ReactNode` | — | renders `Text slot="errorMessage"`; Calendar has no ValidationResult render face |
-| `className` | `string \| (renderProps) => string` | — | Composed onto the `base` slot |
+| Prop           | Type                                | Default | Notes                                                                            |
+| -------------- | ----------------------------------- | ------- | -------------------------------------------------------------------------------- |
+| `errorMessage` | `ReactNode`                         | —       | renders `Text slot="errorMessage"`; Calendar has no ValidationResult render face |
+| `className`    | `string \| (renderProps) => string` | —       | Composed onto the `base` slot                                                    |
 
 `CalendarHeader` takes no props (reads `useLocale()` for RTL icon flipping). `CalendarGridHeader` takes no props.
 

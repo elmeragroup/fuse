@@ -11,7 +11,7 @@ blocked-by: [001, 003]
 
 For every one of the 16 theme permutations, what are the **final token values** — and for the permutations that don't exist in the reference code, what is the policy?
 
-Decisions to make (with the extraction matrix from *Token value extraction* in hand and the contract from *Canonical token contract* fixed):
+Decisions to make (with the extraction matrix from _Token value extraction_ in hand and the contract from _Canonical token contract_ fixed):
 
 1. Fallback/aliasing policy: does `external-tkas-company` share values with `external-tkas-private` until design provides a distinct palette? Expressed how (same file, CSS aliasing, generator-level inheritance)?
 2. Pinned brands: `fkab` = company-only, `fkse` = private-only — does the system hard-error on invalid permutations (`external-fkab-private`) or silently coerce?
@@ -24,7 +24,7 @@ Decisions to make (with the extraction matrix from *Token value extraction* in h
 
 Decided 2026-08-17 via grilling. Full value output: **[004-theme-value-matrix.md](../research/004-theme-value-matrix.md)** — all 16 permutations, provenance-marked, including exact oklch conversions of the surviving legacy HSL values.
 
-1. **Fallback = absence + marked table.** Permutations without distinct palettes (external tkas/guen company) get **no CSS rule**; the value matrix lists them as *(inherits private)* so gaps stay visible and fillable without restructuring.
+1. **Fallback = absence + marked table.** Permutations without distinct palettes (external tkas/guen company) get **no CSS rule**; the value matrix lists them as _(inherits private)_ so gaps stay visible and fillable without restructuring.
 2. **Pinned brands**: illegal permutations (`*-fkab-private`, `*-fkse-company`) are TS type-errors at the provider, a throw in development, and coerce-to-pinned-segment + console warning in production. CSS stays best-effort. Detail delegated to [Theme provider API](006-theme-provider-api.md).
 3. **fkab is a permanent, deliberate alias of fkas** — "100% how it should be for the foreseeable future" (user). Not a gap, no design task, no flag. This supersedes the "flagged design-input gap" framing in [Canonical token contract](001-canonical-token-contract.md)/ADR 0001 (ADR amended).
 4. **fkse**: code stays `fkse` everywhere (slugs, attributes, types); brand metadata carries `displayName: "Telinet"` + Telinet logo, which docs and pickers render.

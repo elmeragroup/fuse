@@ -10,16 +10,16 @@
 
 ## 2 Anatomy
 
-| Part | Base | Notes |
-| --- | --- | --- |
-| `Toast.Provider` | `ToastPrimitive.Provider` | state owner; wraps the app (or a subtree); accepts `toastManager`, `limit`, `timeout` |
-| `Toast.Viewport` | `ToastPrimitive.Portal > ToastPrimitive.Viewport` | fixed bottom-right landmark region; owns the `container` prop (§3); renders the toast list itself — consumers place `<Toast.Viewport />` once and never map toasts by hand |
-| `Toast.Root` | `ToastPrimitive.Root` | per-toast surface; status chrome from the toast's `type`; swipe/stacking transforms |
-| `Toast.Content` | `ToastPrimitive.Content` | stacking-aware content wrapper (`data-behind`/`data-expanded` opacity) |
-| `Toast.Title` | `ToastPrimitive.Title` | bold first line |
-| `Toast.Description` | `ToastPrimitive.Description` | muted body text |
-| `Toast.Action` | `ToastPrimitive.Action` | action button, rendered from the toast's `actionProps` via our `Button` (`render`) |
-| `Toast.Close` | `ToastPrimitive.Close` | ghost icon button, Phosphor `X`, top-right |
+| Part                | Base                                              | Notes                                                                                                                                                                      |
+| ------------------- | ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Toast.Provider`    | `ToastPrimitive.Provider`                         | state owner; wraps the app (or a subtree); accepts `toastManager`, `limit`, `timeout`                                                                                      |
+| `Toast.Viewport`    | `ToastPrimitive.Portal > ToastPrimitive.Viewport` | fixed bottom-right landmark region; owns the `container` prop (§3); renders the toast list itself — consumers place `<Toast.Viewport />` once and never map toasts by hand |
+| `Toast.Root`        | `ToastPrimitive.Root`                             | per-toast surface; status chrome from the toast's `type`; swipe/stacking transforms                                                                                        |
+| `Toast.Content`     | `ToastPrimitive.Content`                          | stacking-aware content wrapper (`data-behind`/`data-expanded` opacity)                                                                                                     |
+| `Toast.Title`       | `ToastPrimitive.Title`                            | bold first line                                                                                                                                                            |
+| `Toast.Description` | `ToastPrimitive.Description`                      | muted body text                                                                                                                                                            |
+| `Toast.Action`      | `ToastPrimitive.Action`                           | action button, rendered from the toast's `actionProps` via our `Button` (`render`)                                                                                         |
+| `Toast.Close`       | `ToastPrimitive.Close`                            | ghost icon button, Phosphor `X`, top-right                                                                                                                                 |
 
 Base-ui's `Toast.Positioner`/`Toast.Arrow` (anchored toasts) are **not wrapped** in v1 — stacked toasts only. The imperative surface keeps base-ui's method shape but passes through one package-private option normalizer so status supplies the accessible priority default (§3):
 
@@ -43,8 +43,8 @@ toastManager.add({ type: "success", title: "Saved", description: "Changes stored
 
 **Toast.Viewport** — `ComponentProps<ToastPrimitive.Viewport>` plus:
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
+| Prop        | Type                                    | Default                      | Notes                                                         |
+| ----------- | --------------------------------------- | ---------------------------- | ------------------------------------------------------------- |
 | `container` | `HTMLElement \| RefObject<HTMLElement>` | nearest `ThemeScope` element | forwarded to `ToastPrimitive.Portal` (overlay convention, §8) |
 
 **Manager `add`/`update` options** — base-ui's `ToastManagerAddOptions` shape (`id`, `title`, `description`, `type`, `timeout`, `priority: "low" | "high"`, `actionProps`, `data`, `onClose`, `onRemove`). Our wrapper narrows `type` to the styled statuses: `"error" | "info" | "success" | "warning" | "loading"` (unset → neutral). Explicit `priority` always wins; otherwise the package-private manager adapter supplies `"high"` when the resulting type is `"error"` and `"low"` for every other type. An update that omits both `type` and `priority` preserves the existing priority; an update that changes `type` and omits `priority` derives the new default. Both `Toast.useToastManager()` and `Toast.createToastManager()` expose the adapted methods, so in-tree and module-scope calls cannot drift. `add` returns a `toastId`; re-adding an existing `id` updates in place (base-ui upsert, `updateKey` increments). `close(toastId?)` closes one or — with no id — all toasts.
@@ -57,18 +57,18 @@ toastManager.add({ type: "success", title: "Saved", description: "Changes stored
 
 `toastVariants` — `tv` recipe, **module-private** (no borrow pattern):
 
-| Axis | Values | Default | Notes |
-| --- | --- | --- | --- |
+| Axis     | Values                                                                | Default   | Notes                                                                          |
+| -------- | --------------------------------------------------------------------- | --------- | ------------------------------------------------------------------------------ |
 | `status` | `neutral` \| `error` \| `info` \| `success` \| `warning` \| `loading` | `neutral` | derived from the toast's `type`, not a consumer prop; emitted as `data-status` |
 
 `neutral` and `loading` share the plain `popover` surface; the four statuses tint via their `-soft` families. Status icons (Phosphor, regular weight per conventions; `fill` not used — kumo's `weight="fill"` is not adopted):
 
-| status | icon |
-| --- | --- |
-| `error` | `WarningOctagon` |
-| `info` | `Info` |
-| `success` | `CheckCircle` |
-| `warning` | `Warning` |
+| status    | icon                          |
+| --------- | ----------------------------- |
+| `error`   | `WarningOctagon`              |
+| `info`    | `Info`                        |
+| `success` | `CheckCircle`                 |
+| `warning` | `Warning`                     |
 | `loading` | `SpinnerGap` + `animate-spin` |
 
 `Toast.Viewport` composes shared `focusRing({ target: "self" })` for its F6 keyboard-focus entry point. Built-in Action and Close controls render through Button and inherit Button's adapter.
@@ -105,18 +105,18 @@ toastManager.add({ type: "success", title: "Saved", description: "Changes stored
 
 1. **sonner abolished (owner ruling, timed with ui-lib adoption)** — the reference `Toaster`/`toast` are not ported; the library is built on `@base-ui/react/toast`, following kumo's adoption precedent. **Known breaking change** for both consumers; migration map:
 
-   | Old (sonner) | New |
-   | --- | --- |
-   | `toast("msg")`, `toast.success/error/info/warning(msg)` | `toastManager.add({ description, type })` via `Toast.useToastManager()` |
-   | `toast(...)` from non-React code (module import) | module-scope `Toast.createToastManager()` passed to `Toast.Provider` |
-   | `toast.promise(p, {...})` | `toastManager.promise(p, { loading, success, error })` |
-   | `toast.dismiss(id?)` | `toastManager.close(id?)` |
-   | `<Toaster />` (mounted once) | `<Toast.Provider>` wrapping the app + one `<Toast.Viewport />` |
-   | `richColors` (ref default-on) | always on — status `-soft` token chrome, no toggle |
-   | `closeButton` (ref default-on) | always rendered (`Toast.Close`) |
-   | `toastOptions.classNames` / `toasterVariants` slots recipe | `className` per part; recipe is module-private |
-   | `action`/`cancel` config | `actionProps` on `add`/`update`/`promise` states |
-   | reference namespace `icons` prop | built-in named Phosphor `WarningOctagon`/`Info`/`CheckCircle`/`Warning`/`SpinnerGap` imports (regular weight) |
+   | Old (sonner)                                               | New                                                                                                           |
+   | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+   | `toast("msg")`, `toast.success/error/info/warning(msg)`    | `toastManager.add({ description, type })` via `Toast.useToastManager()`                                       |
+   | `toast(...)` from non-React code (module import)           | module-scope `Toast.createToastManager()` passed to `Toast.Provider`                                          |
+   | `toast.promise(p, {...})`                                  | `toastManager.promise(p, { loading, success, error })`                                                        |
+   | `toast.dismiss(id?)`                                       | `toastManager.close(id?)`                                                                                     |
+   | `<Toaster />` (mounted once)                               | `<Toast.Provider>` wrapping the app + one `<Toast.Viewport />`                                                |
+   | `richColors` (ref default-on)                              | always on — status `-soft` token chrome, no toggle                                                            |
+   | `closeButton` (ref default-on)                             | always rendered (`Toast.Close`)                                                                               |
+   | `toastOptions.classNames` / `toasterVariants` slots recipe | `className` per part; recipe is module-private                                                                |
+   | `action`/`cancel` config                                   | `actionProps` on `add`/`update`/`promise` states                                                              |
+   | reference namespace `icons` prop                           | built-in named Phosphor `WarningOctagon`/`Info`/`CheckCircle`/`Warning`/`SpinnerGap` imports (regular weight) |
 
 2. **`TOAST_STYLE.INVERTED` dies** — the ref's raw-oklch `CSSProperties` object (hand-tuned dark surfaces via sonner's `--normal-bg`/`--success-bg`/… vars) violates the tokens-only rule and has no v1 replacement. The reserved dark axis has no values yet, so claiming token inversion now would be false; dark toasts arrive with the dark-mode roadmap item.
 3. **Migration note (OrderModuleWeb + OrderModuleInternalWeb)**: remove the `sonner` dependency; replace the app-shell `<Toaster />` with `<Toast.Provider>` + `<Toast.Viewport />`; mechanically replace `toast.*` call sites with a shared `createToastManager()` instance or the hook; remove `TOAST_STYLE.INVERTED` usage rather than recreating raw colors.

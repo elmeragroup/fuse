@@ -10,8 +10,8 @@
 
 ## 2 Anatomy
 
-| Part | Renders | Notes |
-| --- | --- | --- |
+| Part                | Renders                                                                           | Notes                                                                                              |
+| ------------------- | --------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
 | `PopoverInfoButton` | `Popover.Root > Popover.Trigger render={<Button/>} > <Info/>` + `Popover.Content` | trigger is a ghost icon button with a Phosphor `Info` glyph; `children` become the popover content |
 
 ```tsx
@@ -27,14 +27,14 @@ Trigger uses the **render slot-merging pattern** (kept): `Popover.Trigger render
 
 `Omit<ComponentProps<typeof Button>, "children"> & VariantProps<typeof popoverInfoButtonStyles> & { … }` — Button props (`variant`, `size`, `disabled`, …) flow to the trigger button:
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `children` | `ReactNode` | required | popover content |
-| `label` | `string` | locale dictionary | trigger `aria-label`; explicit override wins |
-| `size` | Button size | `"icon-sm"` | trigger button size |
-| `variant` | Button variant | `"ghost"` | trigger button variant |
-| `contentSize` | see §4 | `"default"` | max-width of the popover content |
-| `container` | `HTMLElement \| RefObject<HTMLElement>` | nearest `ThemeScope` | overlay portal target, forwarded to `Popover.Content` per overlay conventions |
+| Prop          | Type                                    | Default              | Notes                                                                         |
+| ------------- | --------------------------------------- | -------------------- | ----------------------------------------------------------------------------- |
+| `children`    | `ReactNode`                             | required             | popover content                                                               |
+| `label`       | `string`                                | locale dictionary    | trigger `aria-label`; explicit override wins                                  |
+| `size`        | Button size                             | `"icon-sm"`          | trigger button size                                                           |
+| `variant`     | Button variant                          | `"ghost"`            | trigger button variant                                                        |
+| `contentSize` | see §4                                  | `"default"`          | max-width of the popover content                                              |
+| `container`   | `HTMLElement \| RefObject<HTMLElement>` | nearest `ThemeScope` | overlay portal target, forwarded to `Popover.Content` per overlay conventions |
 
 ## 4 Variants
 

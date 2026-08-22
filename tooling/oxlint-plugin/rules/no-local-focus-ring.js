@@ -1,6 +1,7 @@
 import { defineRule } from "@oxlint/plugins";
 
 import { extractStrings, isNamedCall } from "../extract-strings.js";
+import { normalizeFilename } from "../filename-normalizer.js";
 
 const ALLOWED_UTILS_SUFFIX = "/src/styles/utils.ts";
 
@@ -13,7 +14,7 @@ const FOCUS_RING_RE =
  * @param {string} filename
  */
 function isFocusRingUtils(filename) {
-  return filename.replaceAll("\\", "/").endsWith(ALLOWED_UTILS_SUFFIX);
+  return normalizeFilename(filename).endsWith(ALLOWED_UTILS_SUFFIX);
 }
 
 /**

@@ -10,14 +10,14 @@
 
 ## 2 Anatomy
 
-| Part | Base | Notes |
-| --- | --- | --- |
-| `Checkbox` | `@base-ui/react/checkbox` `Checkbox.Root` + `.Indicator` | 16px square, Check/Minus indicator |
-| `CheckboxGroup` | `Field` + `FieldSet`/`FieldLegend`/`FieldDescription`/`FieldError` wrapping `@base-ui/react/checkbox-group` | labeled composite |
-| `CheckboxItemGroup` | `CheckboxGroup` + `ItemGroup` (`role="list"`, `gap-0 select-none`) | stacked-card variant |
-| `CheckboxItem` | `SelectionItem.Shell` with a `Checkbox` control | single component; carries namespace aliases (§8.1) |
-| `CheckboxItem.Title/.Description/.Content/.Actions/.SubSection` | aliases of `SelectionItem.*` | **the same objects** as the SelectionItem parts |
-| `CheckboxDescription` | `div` + `small` | inline "checkbox + trailing note" row |
+| Part                                                            | Base                                                                                                        | Notes                                              |
+| --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `Checkbox`                                                      | `@base-ui/react/checkbox` `Checkbox.Root` + `.Indicator`                                                    | 16px square, Check/Minus indicator                 |
+| `CheckboxGroup`                                                 | `Field` + `FieldSet`/`FieldLegend`/`FieldDescription`/`FieldError` wrapping `@base-ui/react/checkbox-group` | labeled composite                                  |
+| `CheckboxItemGroup`                                             | `CheckboxGroup` + `ItemGroup` (`role="list"`, `gap-0 select-none`)                                          | stacked-card variant                               |
+| `CheckboxItem`                                                  | `SelectionItem.Shell` with a `Checkbox` control                                                             | single component; carries namespace aliases (§8.1) |
+| `CheckboxItem.Title/.Description/.Content/.Actions/.SubSection` | aliases of `SelectionItem.*`                                                                                | **the same objects** as the SelectionItem parts    |
+| `CheckboxDescription`                                           | `div` + `small`                                                                                             | inline "checkbox + trailing note" row              |
 
 ```tsx
 <CheckboxGroup label="Toppings" allValues={["a", "b"]} onChange={setValues}>
@@ -32,30 +32,30 @@
 
 **CheckboxGroup** (`CheckboxGroupProps`)
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `label` | `string` | — | `FieldLegend variant="label"`; row omitted when absent |
-| `description` | `string` | — | `FieldDescription` |
-| `errorMessage` | `ReactNode` | — | `FieldError` (rendered only when truthy); widened per the labeled-composite convention (§8) |
-| `orientation` | `"vertical" \| "horizontal"` | `"vertical"` | vertical: `flex-col gap-2`; horizontal: `flex-wrap gap-4` |
-| `value` / `defaultValue` | `string[]` | — | controlled/uncontrolled |
-| `onChange` | `(value: string[]) => void` | — | mapped to base-ui `onValueChange` |
-| `allValues` | `string[]` | — | enables the tri-state `parent` checkbox (base-ui derives checked/indeterminate from members) |
-| `isDisabled` / `isInvalid` | `boolean` | — | forwarded to `Field` (and `disabled` to the group primitive) |
-| `name` | `string` | — | set on **`Field`**, not the group primitive — base-ui CheckboxGroup has no `name`; Field context threads it to member hidden inputs (§8.6) |
-| `id` / `className` / `children` | — | — | `id` and `className` go on the group primitive |
+| Prop                            | Type                         | Default      | Notes                                                                                                                                      |
+| ------------------------------- | ---------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `label`                         | `string`                     | —            | `FieldLegend variant="label"`; row omitted when absent                                                                                     |
+| `description`                   | `string`                     | —            | `FieldDescription`                                                                                                                         |
+| `errorMessage`                  | `ReactNode`                  | —            | `FieldError` (rendered only when truthy); widened per the labeled-composite convention (§8)                                                |
+| `orientation`                   | `"vertical" \| "horizontal"` | `"vertical"` | vertical: `flex-col gap-2`; horizontal: `flex-wrap gap-4`                                                                                  |
+| `value` / `defaultValue`        | `string[]`                   | —            | controlled/uncontrolled                                                                                                                    |
+| `onChange`                      | `(value: string[]) => void`  | —            | mapped to base-ui `onValueChange`                                                                                                          |
+| `allValues`                     | `string[]`                   | —            | enables the tri-state `parent` checkbox (base-ui derives checked/indeterminate from members)                                               |
+| `isDisabled` / `isInvalid`      | `boolean`                    | —            | forwarded to `Field` (and `disabled` to the group primitive)                                                                               |
+| `name`                          | `string`                     | —            | set on **`Field`**, not the group primitive — base-ui CheckboxGroup has no `name`; Field context threads it to member hidden inputs (§8.6) |
+| `id` / `className` / `children` | —                            | —            | `id` and `className` go on the group primitive                                                                                             |
 
 **CheckboxItemGroup** — same `CheckboxGroupProps`; wraps `children` in `ItemGroup`.
 
 **CheckboxItem** (`CheckboxItemProps`) — discriminated union:
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `value` | `string` | — | required unless `parent` |
-| `parent` | `boolean` | — | `{ value: string; parent?: false } \| { parent: true; value?: never }`; parent derives tri-state from the group's `allValues` |
-| `isDisabled` / `isReadOnly` | `boolean` | — | forwarded to the inner `Checkbox`; `isDisabled` also styles the shell |
-| `controlPosition` | `"start" \| "end"` | `"start"` | forwarded to `SelectionItem.Shell` (new axis, see selection-item.md §8.2) |
-| `className` / `children` | — | — | children partitioned by the shell |
+| Prop                        | Type               | Default   | Notes                                                                                                                         |
+| --------------------------- | ------------------ | --------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `value`                     | `string`           | —         | required unless `parent`                                                                                                      |
+| `parent`                    | `boolean`          | —         | `{ value: string; parent?: false } \| { parent: true; value?: never }`; parent derives tri-state from the group's `allValues` |
+| `isDisabled` / `isReadOnly` | `boolean`          | —         | forwarded to the inner `Checkbox`; `isDisabled` also styles the shell                                                         |
+| `controlPosition`           | `"start" \| "end"` | `"start"` | forwarded to `SelectionItem.Shell` (new axis, see selection-item.md §8.2)                                                     |
+| `className` / `children`    | —                  | —         | children partitioned by the shell                                                                                             |
 
 **CheckboxDescription** — `{ children?: ReactNode; describedBy?: string | ReactNode }`. A string `describedBy` renders as `<small class="text-sm text-muted-foreground">`; a ReactNode renders as-is.
 

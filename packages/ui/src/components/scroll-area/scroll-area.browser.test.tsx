@@ -3,12 +3,10 @@ import type { ReactNode } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
-import { render as renderBrowser } from "../../../test/browser-render";
+import { renderThemed } from "../../../test/themed-browser-render";
 import { focusRing } from "../../styles/utils";
-import { ThemeScope } from "../../theme";
 import { ScrollArea } from "./scroll-area";
 
-const fkasPrivate = { variant: "internal", brand: "fkas", segment: "private" } as const;
 const focusSelf = focusRing({ target: "self" }).root();
 
 afterEach(() => {
@@ -25,7 +23,7 @@ function render(node: ReactNode) {
     '[data-slot="scroll-area-viewport"] { width: 100%; height: 100%; box-sizing: border-box; }',
   ].join("");
   document.head.append(styles);
-  return renderBrowser(<ThemeScope theme={fkasPrivate}>{node}</ThemeScope>);
+  return renderThemed(node);
 }
 
 function labeledText(name: string): HTMLElement {

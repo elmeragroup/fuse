@@ -12,10 +12,10 @@
 
 **Internal-wins ruling**: this is **not** shadcn's compound AlertDialog and **not** base-ui's AlertDialog primitive. It reuses `@base-ui/react/dialog`'s `Root`/`Trigger`/`Close` and our own `Dialog.Content`/`Header`/`Footer`/`Title`, passing `role="alertdialog"` through to the Popup. The confirm surface is **prop-driven** — title, body, and both buttons come from props on `AlertDialog.Content`, not from composed parts.
 
-| Part | Base | Notes |
-| --- | --- | --- |
-| `AlertDialog.Root` | `DialogPrimitive.Root` | state owner; ref stamps `data-slot="alert-dialog"` |
-| `AlertDialog.Trigger` | `DialogPrimitive.Trigger` | opens the dialog |
+| Part                  | Base                                                        | Notes                                                                                                  |
+| --------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `AlertDialog.Root`    | `DialogPrimitive.Root`                                      | state owner; ref stamps `data-slot="alert-dialog"`                                                     |
+| `AlertDialog.Trigger` | `DialogPrimitive.Trigger`                                   | opens the dialog                                                                                       |
 | `AlertDialog.Content` | `Dialog.Content role="alertdialog" showCloseButton={false}` | prop-driven confirm surface: Header (Title + icon), Description body, Footer (cancel + action buttons) |
 
 ```tsx
@@ -38,20 +38,20 @@
 
 **AlertDialog.Content** — `ComponentProps<Dialog.Content>` (so the 13-value `size` axis, `className`, `container`, and Popup props all pass through; `showCloseButton` is forced `false` and not overridable) plus:
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `title` | `string` | — (required) | rendered in `Dialog.Title` (`text-balance`) |
-| `icon` | `ReactNode` | variant fallback (§4) | rendered right of the title in the Header |
-| `variant` | `"destructive" \| "neutral"` | `"destructive"` | drives action-button variant and fallback icon |
-| `children` | `ReactNode` | — (required) | body copy, rendered in a real `Dialog.Description` part (§8) |
-| `actionLabel` | `string` | — (required) | primary button label |
-| `cancelLabel` | `string` | locale dictionary | secondary button label; explicit prop overrides `alertDialog.cancel` |
-| `onAction` | `() => void` | — | primary button click |
-| `onCancel` | `() => void` | — | cancel button click (button always closes via `Dialog.Close`) |
-| `isPerformingAction` | `boolean` | `false` | primary button `isPending` (spinner, per Button spec) |
-| `isActionDisabled` | `boolean` | `false` | primary button `disabled` |
-| `isAutomaticallyCloseOnActionEnabled` | `boolean` | `false` | opt-in: wraps the action button in `Dialog.Close` so clicking it also closes; default leaves closing to the caller (async flows close after success) |
-| `container` | `HTMLElement \| RefObject<HTMLElement>` | nearest `ThemeScope` element | inherited from `Dialog.Content` (§8) |
+| Prop                                  | Type                                    | Default                      | Notes                                                                                                                                                |
+| ------------------------------------- | --------------------------------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `title`                               | `string`                                | — (required)                 | rendered in `Dialog.Title` (`text-balance`)                                                                                                          |
+| `icon`                                | `ReactNode`                             | variant fallback (§4)        | rendered right of the title in the Header                                                                                                            |
+| `variant`                             | `"destructive" \| "neutral"`            | `"destructive"`              | drives action-button variant and fallback icon                                                                                                       |
+| `children`                            | `ReactNode`                             | — (required)                 | body copy, rendered in a real `Dialog.Description` part (§8)                                                                                         |
+| `actionLabel`                         | `string`                                | — (required)                 | primary button label                                                                                                                                 |
+| `cancelLabel`                         | `string`                                | locale dictionary            | secondary button label; explicit prop overrides `alertDialog.cancel`                                                                                 |
+| `onAction`                            | `() => void`                            | —                            | primary button click                                                                                                                                 |
+| `onCancel`                            | `() => void`                            | —                            | cancel button click (button always closes via `Dialog.Close`)                                                                                        |
+| `isPerformingAction`                  | `boolean`                               | `false`                      | primary button `isPending` (spinner, per Button spec)                                                                                                |
+| `isActionDisabled`                    | `boolean`                               | `false`                      | primary button `disabled`                                                                                                                            |
+| `isAutomaticallyCloseOnActionEnabled` | `boolean`                               | `false`                      | opt-in: wraps the action button in `Dialog.Close` so clicking it also closes; default leaves closing to the caller (async flows close after success) |
+| `container`                           | `HTMLElement \| RefObject<HTMLElement>` | nearest `ThemeScope` element | inherited from `Dialog.Content` (§8)                                                                                                                 |
 
 Composite-tier prop naming per conventions (`is*` booleans, callback props).
 

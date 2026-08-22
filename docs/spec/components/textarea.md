@@ -29,18 +29,20 @@ To get Field aria wiring, wrap it in `Field.Control` via `render` (this is exact
 
 `ComponentProps<"textarea">` — full native surface, primitive-tier naming (`disabled`, `readOnly`, `required`, `rows`, `maxLength`, event handlers).
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `className` | `string` | — | merged via `cn` after base classes |
-| …rest | `ComponentProps<"textarea">` | — | spread onto the element |
+| Prop        | Type                         | Default | Notes                              |
+| ----------- | ---------------------------- | ------- | ---------------------------------- |
+| `className` | `string`                     | —       | merged via `cn` after base classes |
+| …rest       | `ComponentProps<"textarea">` | —       | spread onto the element            |
 
 No controlled/uncontrolled opinion — native semantics. Polymorphism not applicable.
 
 ## 4 Variants
 
-None. No tv recipe; base classes are a plain string, nothing exported.
+None public. Shared chrome comes from the package-private `fieldBox` recipe (same surface as Input). Textarea adds only content-sized deltas: `flex`, `field-sizing-content`, `h-auto` (overrides the recipe's pinned md height), `min-h-16`, `py-2`. Nothing exported.
 
-Fixed metrics from the ref: `field-sizing-content min-h-16 w-full rounded-md px-2.5 py-2 text-base md:text-sm shadow-xs` — content-driven height with a 4rem floor. Radius via the `rounded-md` scale derived from `--radius`.
+No `size` axis. Inline padding and control type pin the `md` rung per [conventions](conventions.md) ruling 2 via `fieldBox`.
+
+**Density mapping / `min-h` ruling.** Textarea is content-sized (`field-sizing-content`) with a `min-h-16` floor. That floor is **not** a control-box height and does **not** retarget with density — it stays 4rem at both stamps so a multi-line field cannot collapse to a single Button row. Inline padding reads `--control-px-md`; type reads the control-type pair. `py-2` is block padding for a multi-line field (not a pinned single-height box) and stays. No `dense:` / `comfortable:` variants.
 
 ## 5 Consumed tokens
 
@@ -69,6 +71,7 @@ Fixed metrics from the ref: `field-sizing-content min-h-16 w-full rounded-md px-
 1. **`bg-transparent` → `bg-card`** — aligned with Input for parity; input-like surfaces use the `card` token. The ref relied on downstream overrides (`TextArea` re-applied `bg-white`, `InputGroupTextarea` re-applied `bg-transparent`); the new default makes the standalone control correct out of the box, and `InputGroup.Textarea` still overrides to transparent.
 2. **`dark:` variant classes dropped** (`dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40`) — dark axis lives in tokens.
 3. **`destructive` → `error`** token rename on the invalid border/ring classes.
+4. **Density retokenization:** `px-2.5` and `text-base md:text-sm` become `--control-px-md` and the control-type pair. `min-h-16` is an explicit content-floor exemption.
 
 Kept as-is (not divergences): plain `<textarea>` rather than a base-ui control; `field-sizing-content` auto-grow; no exported recipe.
 
@@ -79,6 +82,7 @@ Kept as-is (not divergences): plain `<textarea>` rather than a base-ui control; 
 - Bare inside `Field.Root` (without `Field.Control`): document current behavior — no automatic name; test asserts the `TextareaField` path instead for labeled cases.
 - `disabled` excludes it from tab order; `aria-invalid` styling attribute reaches the DOM.
 - `maxLength` enforced natively (typing past the limit truncates).
+- Dual-density: at document `dense` and `comfortable`, inline padding and control type match the signed `md` rung; `min-h-16` is identical across stamps; nested `data-density` does not rescope. Shared focus-ring helper at both stamps.
 
 ## 10 Demo requirements
 

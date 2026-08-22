@@ -39,34 +39,34 @@ Adopted architecture: **the react-aria string-dictionary model, adapted to our s
 
 The keys and copy below are implementation data, not examples. Each owner keeps only its rows in a co-located dictionary; this table is the cross-component audit source. `{item}` is a message-function argument, not an ICU string.
 
-| Owner/key | `nb-NO` | `sv-SE` | `en-US` | `fi-FI` |
-| --- | --- | --- | --- | --- |
-| `alertDialog.cancel` | Avbryt | Avbryt | Cancel | Peruuta |
-| `breadcrumb.landmark` | Brødsmuler | Brödsmulor | Breadcrumb | Murupolku |
-| `breadcrumb.more` | Mer | Mer | More | Lisää |
-| `combobox.empty` | Ingen resultater. | Inga resultat. | No results. | Ei tuloksia. |
-| `combobox.clear` | Tøm valg | Rensa val | Clear selection | Tyhjennä valinta |
-| `combobox.removeItem({item})` | Fjern {item} | Ta bort {item} | Remove {item} | Poista {item} |
-| `datePicker.presets` | Datoforvalg | Datumalternativ | Date presets | Päivämäärän pikavalinnat |
-| `dialog.close` | Lukk | Stäng | Close | Sulje |
-| `meter.warning` | Advarsel | Varning | Warning | Varoitus |
-| `meter.success` | Vellykket | Lyckades | Success | Onnistui |
-| `pagination.landmark` | Sidenavigasjon | Sidnavigering | Pagination | Sivutus |
-| `pagination.previous` | Forrige | Föregående | Previous | Edellinen |
-| `pagination.next` | Neste | Nästa | Next | Seuraava |
-| `pagination.goToPrevious` | Gå til forrige side | Gå till föregående sida | Go to previous page | Siirry edelliselle sivulle |
-| `pagination.goToNext` | Gå til neste side | Gå till nästa sida | Go to next page | Siirry seuraavalle sivulle |
-| `pagination.morePages` | Flere sider | Fler sidor | More pages | Lisää sivuja |
-| `phoneNumberField.selectCountry` | Velg land | Välj land | Select country | Valitse maa |
-| `phoneNumberField.searchCountries` | Søk etter land | Sök efter länder | Search countries | Hae maita |
-| `phoneNumberField.noCountries` | Ingen land funnet. | Inga länder hittades. | No countries found. | Maita ei löytynyt. |
-| `popoverInfoButton.moreInformation` | Mer informasjon | Mer information | More information | Lisätietoja |
-| `searchField.clear` | Tøm søket | Rensa sökningen | Clear search | Tyhjennä haku |
-| `sheet.close` | Lukk | Stäng | Close | Sulje |
-| `sidebar.toggle` | Vis eller skjul sidepanelet | Visa eller dölj sidopanelen | Toggle sidebar | Näytä tai piilota sivupalkki |
-| `sidebar.title` | Sidepanel | Sidopanel | Sidebar | Sivupalkki |
-| `sidebar.description` | Viser sidepanelet. | Visar sidopanelen. | Displays the sidebar. | Näyttää sivupalkin. |
-| `toast.close` | Lukk | Stäng | Close | Sulje |
+| Owner/key                           | `nb-NO`                     | `sv-SE`                     | `en-US`               | `fi-FI`                      |
+| ----------------------------------- | --------------------------- | --------------------------- | --------------------- | ---------------------------- |
+| `alertDialog.cancel`                | Avbryt                      | Avbryt                      | Cancel                | Peruuta                      |
+| `breadcrumb.landmark`               | Brødsmuler                  | Brödsmulor                  | Breadcrumb            | Murupolku                    |
+| `breadcrumb.more`                   | Mer                         | Mer                         | More                  | Lisää                        |
+| `combobox.empty`                    | Ingen resultater.           | Inga resultat.              | No results.           | Ei tuloksia.                 |
+| `combobox.clear`                    | Tøm valg                    | Rensa val                   | Clear selection       | Tyhjennä valinta             |
+| `combobox.removeItem({item})`       | Fjern {item}                | Ta bort {item}              | Remove {item}         | Poista {item}                |
+| `datePicker.presets`                | Datoforvalg                 | Datumalternativ             | Date presets          | Päivämäärän pikavalinnat     |
+| `dialog.close`                      | Lukk                        | Stäng                       | Close                 | Sulje                        |
+| `meter.warning`                     | Advarsel                    | Varning                     | Warning               | Varoitus                     |
+| `meter.success`                     | Vellykket                   | Lyckades                    | Success               | Onnistui                     |
+| `pagination.landmark`               | Sidenavigasjon              | Sidnavigering               | Pagination            | Sivutus                      |
+| `pagination.previous`               | Forrige                     | Föregående                  | Previous              | Edellinen                    |
+| `pagination.next`                   | Neste                       | Nästa                       | Next                  | Seuraava                     |
+| `pagination.goToPrevious`           | Gå til forrige side         | Gå till föregående sida     | Go to previous page   | Siirry edelliselle sivulle   |
+| `pagination.goToNext`               | Gå til neste side           | Gå till nästa sida          | Go to next page       | Siirry seuraavalle sivulle   |
+| `pagination.morePages`              | Flere sider                 | Fler sidor                  | More pages            | Lisää sivuja                 |
+| `phoneNumberField.selectCountry`    | Velg land                   | Välj land                   | Select country        | Valitse maa                  |
+| `phoneNumberField.searchCountries`  | Søk etter land              | Sök efter länder            | Search countries      | Hae maita                    |
+| `phoneNumberField.noCountries`      | Ingen land funnet.          | Inga länder hittades.       | No countries found.   | Maita ei löytynyt.           |
+| `popoverInfoButton.moreInformation` | Mer informasjon             | Mer information             | More information      | Lisätietoja                  |
+| `searchField.clear`                 | Tøm søket                   | Rensa sökningen             | Clear search          | Tyhjennä haku                |
+| `sheet.close`                       | Lukk                        | Stäng                       | Close                 | Sulje                        |
+| `sidebar.toggle`                    | Vis eller skjul sidepanelet | Visa eller dölj sidopanelen | Toggle sidebar        | Näytä tai piilota sivupalkki |
+| `sidebar.title`                     | Sidepanel                   | Sidopanel                   | Sidebar               | Sivupalkki                   |
+| `sidebar.description`               | Viser sidepanelet.          | Visar sidopanelen.          | Displays the sidebar. | Näyttää sivupalkin.          |
+| `toast.close`                       | Lukk                        | Stäng                       | Close                 | Sulje                        |
 
 Visible consumer content is not translated by the library. In particular, preset item labels come from the radio's visible children/value, loader labels remain consumer-supplied because their surrounding pending action provides the wording, and confirm-button confirmation copy remains consumer-owned.
 

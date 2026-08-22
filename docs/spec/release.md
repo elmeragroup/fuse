@@ -28,7 +28,7 @@ The pipeline is the kumo pattern verbatim: **changesets** + `changesets/action`.
 These facts bound what the published tarball may contain; they are settled, not open questions.
 
 - **Code license: MIT**, matching the entire dependency stack (base-ui, Phosphor, Tailwind ecosystem). The `LICENSE` file and `"license": "MIT"` field ship in the package. Approver of open distribution: **Tommy Barvåg** — recorded here; no further sign-off gate exists.
-- **The library never ships font files.** Fonts are app-supplied via the themable `--font-sans`/`--font-heading` tokens; themes reference font-family *names* only. This keeps Fjordkraft's commercially licensed Neo Sans (and any future licensed font) out of the published package permanently. Any PR adding `woff2`/`ttf`/font binaries to the package is rejected on licensing grounds. There is no `@elmeragroup/fonts` package.
+- **The library never ships font files.** Fonts are app-supplied via the themable `--font-sans`/`--font-heading` tokens; themes reference font-family _names_ only. This keeps Fjordkraft's commercially licensed Neo Sans (and any future licensed font) out of the published package permanently. Any PR adding `woff2`/`ttf`/font binaries to the package is rejected on licensing grounds. There is no `@elmeragroup/fonts` package.
 - **Logos ship publicly** in `@elmeragroup/ui/icons` (full decided roster). They are publicly visible marks already served in every brand site's bundles; npm changes discoverability, not exposure. Escalation only if brand/legal objects later.
 - **Nothing stays private.** No public/private repo split, no private registry, no CI split.
 
@@ -36,17 +36,17 @@ These facts bound what the published tarball may contain; they are settled, not 
 
 The release workflow publishes only when all gates pass. The table below is the **single exhaustive publish-gate list**; owning chapters define each check but must link here instead of maintaining competing release lists.
 
-| Gate | Asserts | Owner |
-|---|---|---|
-| **publint** | package.json/exports correctness for the published shape | [architecture](architecture.md) |
-| **arethetypeswrong (attw)** | type resolution across module modes | [architecture](architecture.md) |
-| **exports-map test** | every codegen'd subpath resolves against the **published** shape (`publishConfig.directory` swap: in-repo `src`, published `dist`) | [architecture](architecture.md) |
-| **emitted-directive parity** | all and only source modules with a leading `"use client"` retain it in the packed JavaScript graph | [architecture](architecture.md) |
-| **packed-asset contract** | flag filenames/manifest/hashes and license/provenance files match the spec; every flag-bearing phone country resolves locally | [architecture](architecture.md), [icons](icons.md) |
-| **size-limit budgets** | every JS-entry, built-CSS, and aggregate raw-flag ceiling in the budget table holds against the packed artifact | [performance](performance.md) |
-| **theme-contract test** | the 20-theme token contract holds in the built CSS | [tooling](tooling.md) |
-| **packed fixture: Next App Router** | the `pnpm pack` tarball installs and builds in a Next App Router app (Tailwind-source mode, RSC boundaries: server page + client island); flag SVG assets resolve | [tooling](tooling.md) |
-| **packed fixture: Vite** | the `pnpm pack` tarball installs and builds in a Vite app (standalone-CSS mode); flag SVG assets resolve | [tooling](tooling.md) |
+| Gate                                | Asserts                                                                                                                                                           | Owner                                              |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| **publint**                         | package.json/exports correctness for the published shape                                                                                                          | [architecture](architecture.md)                    |
+| **arethetypeswrong (attw)**         | type resolution across module modes                                                                                                                               | [architecture](architecture.md)                    |
+| **exports-map test**                | every codegen'd subpath resolves against the **published** shape (`publishConfig.directory` swap: in-repo `src`, published `dist`)                                | [architecture](architecture.md)                    |
+| **emitted-directive parity**        | all and only source modules with a leading `"use client"` retain it in the packed JavaScript graph                                                                | [architecture](architecture.md)                    |
+| **packed-asset contract**           | flag filenames/manifest/hashes and license/provenance files match the spec; every flag-bearing phone country resolves locally                                     | [architecture](architecture.md), [icons](icons.md) |
+| **size-limit budgets**              | every JS-entry, built-CSS, and aggregate raw-flag ceiling in the budget table holds against the packed artifact                                                   | [performance](performance.md)                      |
+| **theme-contract test**             | the 20-theme token contract holds in the built CSS                                                                                                                | [tooling](tooling.md)                              |
+| **packed fixture: Next App Router** | the `pnpm pack` tarball installs and builds in a Next App Router app (Tailwind-source mode, RSC boundaries: server page + client island); flag SVG assets resolve | [tooling](tooling.md)                              |
+| **packed fixture: Vite**            | the `pnpm pack` tarball installs and builds in a Vite app (standalone-CSS mode); flag SVG assets resolve                                                          | [tooling](tooling.md)                              |
 
 The full merge gate (lint, types, unit/browser tests, changeset presence) runs on every PR and is specified in [tooling](tooling.md); the publish gates above additionally run against the built artifact in the release workflow, so a package that installs broken can never reach the registry. Host first-paint proofs (`apps/docs`, `apps/static-theme`) are merge-gate adapter tests, not rows in this publish-gate table and not substitutes for the packed Next/Vite consumer fixtures.
 

@@ -31,27 +31,27 @@ The pending/success indicator crossfades via the shared `iconCrossfadeTransition
 
 `TextFieldProps` = the table below `& Omit<ComponentProps<"input">, "value" | "defaultValue" | "onChange" | "name" | "className">` — all remaining native input props (`type`, `inputMode`, `maxLength`, `autoComplete`, `aria-*`, …) spread onto the inner Input.
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `label` | `string` | — | Rendered as `Field.Label` |
-| `description` | `string` | — | Rendered as `Field.Description`, `text-pretty` |
-| `errorMessage` | `ReactNode` | — | Unified type per conventions; `Field.Error` renders only when truthy |
-| `value` | `string` | — | Controlled value |
-| `defaultValue` | `string \| null` | — | `null` is coerced to `undefined` before reaching the input |
-| `onChange` | `(value: string) => void` | — | Value, not event |
-| `name` | `string` | — | |
-| `placeholder` | `string` | — | |
-| `hidden` | `boolean` | `false` | Hides both the root (`hidden` variant axis) and the input (native `hidden`) |
-| `isReadOnly` | `boolean` | `false` | → input `readOnly` |
-| `isDisabled` | `boolean` | `false` | → `Field.Root disabled` **and** input `disabled` (see §8) |
-| `isInvalid` | `boolean` | `false` | → `Field.Root invalid` |
-| `isRequired` | `boolean` | `false` | → input `required` |
-| `isPending` | `boolean` | `false` | Shows spinner in label row (see §8) |
-| `isSuccess` | `boolean` | `false` | Shows check in label row; wins the crossfade over pending |
-| `icon` | `ReactNode` | — | Trailing inline icon; activates `isIconActive` axis |
-| `filter` | `"numeric"` | — | **New (absorbs NumericOnlyTextField, §8).** Drops any change whose value is not digits-only (empty allowed); auto-sets `inputMode="numeric"` unless the caller passes `inputMode` explicitly |
-| `variant` | `"card" \| "inline"` | — | See §4 |
-| `className` | `string` | — | Merged onto the root via `cn` |
+| Prop           | Type                      | Default | Notes                                                                                                                                                                                        |
+| -------------- | ------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `label`        | `string`                  | —       | Rendered as `Field.Label`                                                                                                                                                                    |
+| `description`  | `string`                  | —       | Rendered as `Field.Description`, `text-pretty`                                                                                                                                               |
+| `errorMessage` | `ReactNode`               | —       | Unified type per conventions; `Field.Error` renders only when truthy                                                                                                                         |
+| `value`        | `string`                  | —       | Controlled value                                                                                                                                                                             |
+| `defaultValue` | `string \| null`          | —       | `null` is coerced to `undefined` before reaching the input                                                                                                                                   |
+| `onChange`     | `(value: string) => void` | —       | Value, not event                                                                                                                                                                             |
+| `name`         | `string`                  | —       |                                                                                                                                                                                              |
+| `placeholder`  | `string`                  | —       |                                                                                                                                                                                              |
+| `hidden`       | `boolean`                 | `false` | Hides both the root (`hidden` variant axis) and the input (native `hidden`)                                                                                                                  |
+| `isReadOnly`   | `boolean`                 | `false` | → input `readOnly`                                                                                                                                                                           |
+| `isDisabled`   | `boolean`                 | `false` | → `Field.Root disabled` **and** input `disabled` (see §8)                                                                                                                                    |
+| `isInvalid`    | `boolean`                 | `false` | → `Field.Root invalid`                                                                                                                                                                       |
+| `isRequired`   | `boolean`                 | `false` | → input `required`                                                                                                                                                                           |
+| `isPending`    | `boolean`                 | `false` | Shows spinner in label row (see §8)                                                                                                                                                          |
+| `isSuccess`    | `boolean`                 | `false` | Shows check in label row; wins the crossfade over pending                                                                                                                                    |
+| `icon`         | `ReactNode`               | —       | Trailing inline icon; activates `isIconActive` axis                                                                                                                                          |
+| `filter`       | `"numeric"`               | —       | **New (absorbs NumericOnlyTextField, §8).** Drops any change whose value is not digits-only (empty allowed); auto-sets `inputMode="numeric"` unless the caller passes `inputMode` explicitly |
+| `variant`      | `"card" \| "inline"`      | —       | See §4                                                                                                                                                                                       |
+| `className`    | `string`                  | —       | Merged onto the root via `cn`                                                                                                                                                                |
 
 With `filter="numeric"`, rejected keystrokes never reach `onChange` and never update uncontrolled internal state; a dev-only `console.warn` fires when a supplied `value`/`defaultValue` is not digits-only (behavior carried over from the ref).
 
@@ -61,12 +61,12 @@ Recipe: `textFieldVariants` (tv, slots) — **public export** (borrowed by `Phon
 
 Slots: `base`, `fieldGroup`, `input`, `labelContainer`, `label`, `container`, `description`, `iconContainer`. The ref's `textArea` slot (`min-h-16`) is dead and removed (§8).
 
-| Axis | Values | Default | Effect |
-| --- | --- | --- | --- |
-| `variant` | `card` | — | `base` composes `cardVariants.slots.base` + `gap-0 px-6 py-4`; borderless full-width `fieldGroup`; `input` unstyled `text-lg`; `label`/`description` `text-muted-foreground`; `container` becomes horizontal `flex-row items-center gap-3` |
-| | `inline` | | `base` adds `group/inline-field`; the inner input retains shared `focusRing({ target: "self" })` and is transparent at rest, `border-input` + `bg-background` on hover, `border-error` + `bg-background` on `group-data-[invalid]` |
-| `hidden` | `true \| false` | `false` | `base: hidden` |
-| `isIconActive` | `true \| false` | `false` | `fieldGroup: relative`; `input: truncate overflow-hidden pr-10 whitespace-nowrap` |
+| Axis           | Values          | Default | Effect                                                                                                                                                                                                                                     |
+| -------------- | --------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `variant`      | `card`          | —       | `base` composes `cardVariants.slots.base` + `gap-0 px-6 py-4`; borderless full-width `fieldGroup`; `input` unstyled `text-lg`; `label`/`description` `text-muted-foreground`; `container` becomes horizontal `flex-row items-center gap-3` |
+|                | `inline`        |         | `base` adds `group/inline-field`; the inner input retains shared `focusRing({ target: "self" })` and is transparent at rest, `border-input` + `bg-background` on hover, `border-error` + `bg-background` on `group-data-[invalid]`         |
+| `hidden`       | `true \| false` | `false` | `base: hidden`                                                                                                                                                                                                                             |
+| `isIconActive` | `true \| false` | `false` | `fieldGroup: relative`; `input: truncate overflow-hidden pr-10 whitespace-nowrap`                                                                                                                                                          |
 
 `variant` unset renders the plain Input styling. When `variant` is set, the component applies `fieldGroup()` after `input()` on the inner input (ref comment: fieldGroup's default `w-auto` would otherwise override the input's `w-full`).
 

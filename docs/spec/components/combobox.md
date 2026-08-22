@@ -10,25 +10,25 @@
 
 ## 2 Anatomy
 
-| Part | Base | Notes |
-| --- | --- | --- |
-| `Combobox.Root` | `ComboboxPrimitive.Root` | bare re-export; state owner (value, inputValue, open, selection mode, filtering). **Must come from the `@base-ui/react` root import** (§8) |
-| `Combobox.Input` | `InputGroup > ComboboxPrimitive.Input(render=InputGroup.Input) + InputGroup.Addon(inline-end)` | the whole field chrome; addon holds the trigger and/or clear buttons; `children` render inside the InputGroup (extra addons, hidden inputs) |
-| `Combobox.Trigger` | `ComboboxPrimitive.Trigger` | appends a rotating `CaretDown` after `children`; inside `Combobox.Input` it is rendered through `InputGroup.Button` (ghost, icon-sm) |
-| `Combobox.Clear` | `ComboboxPrimitive.Clear` | `render={<InputGroup.Button variant="ghost" size="icon-sm" />}` with an `X` icon; **unexported in the ref**, exported here (§8) |
-| `Combobox.Content` | `Portal > Positioner > Popup` | popup surface; declares `group/combobox-content`; emits `data-chips` |
-| `Combobox.List` | `ComboboxPrimitive.List` | scroll container with the `--spacing()` max-height calc (§8-kept) |
-| `Combobox.Item` | `ComboboxPrimitive.Item` | `children` + auto `ItemIndicator` (`span` render, `Check`, absolute right-2) |
-| `Combobox.Group` | `ComboboxPrimitive.Group` | passthrough (no default classes) |
-| `Combobox.Label` | `ComboboxPrimitive.GroupLabel` | muted `text-xs` group heading |
-| `Combobox.Collection` | `ComboboxPrimitive.Collection` | render-prop iteration over (filtered) `items` |
-| `Combobox.Empty` | `ComboboxPrimitive.Empty` | hidden until the popup's `data-empty` flips it to `flex` |
-| `Combobox.Separator` | `ComboboxPrimitive.Separator` | `h-px bg-border` |
-| `Combobox.Chips` | `ComboboxPrimitive.Chips` | multi-select chip container with full input-like chrome (border, focus ring, invalid ring) |
-| `Combobox.Chip` | `ComboboxPrimitive.Chip` | one selected value; auto `ChipRemove` (`Button` ghost icon-sm, `X`) unless `showRemove={false}` |
-| `Combobox.ChipsInput` | `ComboboxPrimitive.Input` | bare inline input for use inside `Combobox.Chips` (no InputGroup wrapper); marks the owned within-focus receiver |
-| `Combobox.Value` | `ComboboxPrimitive.Value` | selected-value display (render-prop capable) |
-| `useComboboxAnchor()` | `useRef<HTMLDivElement \| null>(null)` | typed ref helper to anchor `Combobox.Content` to an external element (e.g. the `Combobox.Chips` container or an `InputGroup.Root`) |
+| Part                  | Base                                                                                           | Notes                                                                                                                                       |
+| --------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Combobox.Root`       | `ComboboxPrimitive.Root`                                                                       | bare re-export; state owner (value, inputValue, open, selection mode, filtering). **Must come from the `@base-ui/react` root import** (§8)  |
+| `Combobox.Input`      | `InputGroup > ComboboxPrimitive.Input(render=InputGroup.Input) + InputGroup.Addon(inline-end)` | the whole field chrome; addon holds the trigger and/or clear buttons; `children` render inside the InputGroup (extra addons, hidden inputs) |
+| `Combobox.Trigger`    | `ComboboxPrimitive.Trigger`                                                                    | appends a rotating `CaretDown` after `children`; inside `Combobox.Input` it is rendered through `InputGroup.Button` (ghost, icon-sm)        |
+| `Combobox.Clear`      | `ComboboxPrimitive.Clear`                                                                      | `render={<InputGroup.Button variant="ghost" size="icon-sm" />}` with an `X` icon; **unexported in the ref**, exported here (§8)             |
+| `Combobox.Content`    | `Portal > Positioner > Popup`                                                                  | popup surface; declares `group/combobox-content`; emits `data-chips`                                                                        |
+| `Combobox.List`       | `ComboboxPrimitive.List`                                                                       | scroll container with the `--spacing()` max-height calc (§8-kept)                                                                           |
+| `Combobox.Item`       | `ComboboxPrimitive.Item`                                                                       | `children` + auto `ItemIndicator` (`span` render, `Check`, absolute right-2)                                                                |
+| `Combobox.Group`      | `ComboboxPrimitive.Group`                                                                      | passthrough (no default classes)                                                                                                            |
+| `Combobox.Label`      | `ComboboxPrimitive.GroupLabel`                                                                 | muted `text-xs` group heading                                                                                                               |
+| `Combobox.Collection` | `ComboboxPrimitive.Collection`                                                                 | render-prop iteration over (filtered) `items`                                                                                               |
+| `Combobox.Empty`      | `ComboboxPrimitive.Empty`                                                                      | hidden until the popup's `data-empty` flips it to `flex`                                                                                    |
+| `Combobox.Separator`  | `ComboboxPrimitive.Separator`                                                                  | `h-px bg-border`                                                                                                                            |
+| `Combobox.Chips`      | `ComboboxPrimitive.Chips`                                                                      | multi-select chip container with full input-like chrome (border, focus ring, invalid ring)                                                  |
+| `Combobox.Chip`       | `ComboboxPrimitive.Chip`                                                                       | one selected value; auto `ChipRemove` (`Button` ghost icon-sm, `X`) unless `showRemove={false}`                                             |
+| `Combobox.ChipsInput` | `ComboboxPrimitive.Input`                                                                      | bare inline input for use inside `Combobox.Chips` (no InputGroup wrapper); marks the owned within-focus receiver                            |
+| `Combobox.Value`      | `ComboboxPrimitive.Value`                                                                      | selected-value display (render-prop capable)                                                                                                |
+| `useComboboxAnchor()` | `useRef<HTMLDivElement \| null>(null)`                                                         | typed ref helper to anchor `Combobox.Content` to an external element (e.g. the `Combobox.Chips` container or an `InputGroup.Root`)          |
 
 ```tsx
 <Combobox.Root items={items}>
@@ -36,7 +36,13 @@
   <Combobox.Content>
     <Combobox.Empty>No results.</Combobox.Empty>
     <Combobox.List>
-      <Combobox.Collection>{(item) => <Combobox.Item key={item} value={item}>{item}</Combobox.Item>}</Combobox.Collection>
+      <Combobox.Collection>
+        {(item) => (
+          <Combobox.Item key={item} value={item}>
+            {item}
+          </Combobox.Item>
+        )}
+      </Combobox.Collection>
     </Combobox.List>
   </Combobox.Content>
 </Combobox.Root>
@@ -50,14 +56,14 @@ All rendering parts take `className` (merged via `cn`) and forward the rest of t
 
 **Combobox.Input** — `ComponentProps<ComboboxPrimitive.Input>` plus:
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `showTrigger` | `boolean` | `true` | renders the caret trigger button in the inline-end addon |
-| `showClear` | `boolean` | `false` | renders `Combobox.Clear` in the same addon |
-| `disabled` | `boolean` | `false` | forwarded to the inner `InputGroup.Input` **and** to the trigger/clear buttons |
-| `className` | `string` | — | applied to the **outer InputGroup** (`w-auto`), not the input element |
-| `children` | `ReactNode` | — | rendered inside the InputGroup after the addon |
-| `clearLabel` | `string` | locale dictionary | forwarded to the auto-rendered Clear button when `showClear` |
+| Prop          | Type        | Default           | Notes                                                                          |
+| ------------- | ----------- | ----------------- | ------------------------------------------------------------------------------ |
+| `showTrigger` | `boolean`   | `true`            | renders the caret trigger button in the inline-end addon                       |
+| `showClear`   | `boolean`   | `false`           | renders `Combobox.Clear` in the same addon                                     |
+| `disabled`    | `boolean`   | `false`           | forwarded to the inner `InputGroup.Input` **and** to the trigger/clear buttons |
+| `className`   | `string`    | —                 | applied to the **outer InputGroup** (`w-auto`), not the input element          |
+| `children`    | `ReactNode` | —                 | rendered inside the InputGroup after the addon                                 |
+| `clearLabel`  | `string`    | locale dictionary | forwarded to the auto-rendered Clear button when `showClear`                   |
 
 Runtime note (kept, §8): `showTrigger` and `showClear` are effectively mutually exclusive — the trigger button carries `group-has-data-[slot=combobox-clear]/input-group:hidden`, so whenever a clear button exists in the group the trigger is hidden even if both flags are true.
 
@@ -67,21 +73,21 @@ Runtime note (kept, §8): `showTrigger` and `showClear` are effectively mutually
 
 **Combobox.Content** — `ComponentProps<ComboboxPrimitive.Popup>` plus positioner props (forwarded to `ComboboxPrimitive.Positioner`) plus the conventions' overlay `container`:
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `side` | Positioner `side` | `"bottom"` | |
-| `sideOffset` | `number` | `6` | (Select uses 4 — faithful to each ref) |
-| `align` | Positioner `align` | `"start"` | |
-| `alignOffset` | `number` | `0` | |
-| `anchor` | Positioner `anchor` (element/ref/virtual) | — | pass `useComboboxAnchor()`'s ref; also flips `data-chips` (§6) |
-| `container` | `HTMLElement \| RefObject<HTMLElement>` | nearest `ThemeScope` element | portal target (§8) |
+| Prop          | Type                                      | Default                      | Notes                                                          |
+| ------------- | ----------------------------------------- | ---------------------------- | -------------------------------------------------------------- |
+| `side`        | Positioner `side`                         | `"bottom"`                   |                                                                |
+| `sideOffset`  | `number`                                  | `6`                          | (Select uses 4 — faithful to each ref)                         |
+| `align`       | Positioner `align`                        | `"start"`                    |                                                                |
+| `alignOffset` | `number`                                  | `0`                          |                                                                |
+| `anchor`      | Positioner `anchor` (element/ref/virtual) | —                            | pass `useComboboxAnchor()`'s ref; also flips `data-chips` (§6) |
+| `container`   | `HTMLElement \| RefObject<HTMLElement>`   | nearest `ThemeScope` element | portal target (§8)                                             |
 
 **Combobox.Chip** — `ComponentProps<ComboboxPrimitive.Chip>` plus:
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `showRemove` | `boolean` | `true` | renders the `ChipRemove` button with `X` |
-| `removeLabel` | `string` | dictionary `removeItem` | explicit accessible-name override; default formats the Root `itemToStringLabel(value)` result (falling back to `String(value)`) |
+| Prop          | Type      | Default                 | Notes                                                                                                                           |
+| ------------- | --------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `showRemove`  | `boolean` | `true`                  | renders the `ChipRemove` button with `X`                                                                                        |
+| `removeLabel` | `string`  | dictionary `removeItem` | explicit accessible-name override; default formats the Root `itemToStringLabel(value)` result (falling back to `String(value)`) |
 
 **Combobox.Empty** — its primitive props with optional `children`; absent children render dictionary `empty`. **Combobox.Value / List / Item / Group / Label / Collection / Separator / Chips / ChipsInput** — their base-ui part's props verbatim (`Combobox.Item`: `value`, `disabled`; `Combobox.ChipsInput` is `ComboboxPrimitive.Input` props without the InputGroup extras).
 

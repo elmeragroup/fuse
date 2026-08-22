@@ -13,28 +13,30 @@
 Single `div` styled by `badgeVariants`.
 
 ```tsx
-<Badge variant="success" size="sm">Active</Badge>
+<Badge variant="success" size="sm">
+  Active
+</Badge>
 ```
 
 ## 3 Props
 
 `BadgeProps = React.HTMLAttributes<HTMLDivElement> & VariantProps<typeof badgeVariants>` — exported type, kept from ref.
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `variant` | 14 values, see §4 | `"default"` | tv axis |
-| `size` | `"sm" \| "default" \| "lg"` | `"default"` | tv axis |
-| `className` | `string` | — | merged via `cn` |
-| …rest | native `div` props | — | spread onto the element |
+| Prop        | Type                        | Default     | Notes                   |
+| ----------- | --------------------------- | ----------- | ----------------------- |
+| `variant`   | 14 values, see §4           | `"default"` | tv axis                 |
+| `size`      | `"sm" \| "default" \| "lg"` | `"default"` | tv axis                 |
+| `className` | `string`                    | —           | merged via `cn`         |
+| …rest       | native `div` props          | —           | spread onto the element |
 
 ## 4 Variants
 
 Recipe: **`badgeVariants`** — **PUBLIC**. The external ref exported it and `checkbox-card` borrows it for its tag chips (see checkbox-card.md); sanctioned borrow pattern, stays exported and typed via `VariantProps`.
 
-| Axis | Values | Default |
-| --- | --- | --- |
+| Axis      | Values                                                                                                                                                                                                        | Default   |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
 | `variant` | `default` · `secondary` · `destructive` · `success` · `warning` · `info` · `outline` · `outline-secondary` · `outline-destructive` · `outline-success` · `outline-warning` · `muted` · `accent` · `card` (14) | `default` |
-| `size` | `sm` (`px-2 py-px text-xs`) · `default` (`px-2.5 py-0.5 text-xs`) · `lg` (`px-3 py-1 text-sm`) | `default` |
+| `size`    | `sm` (`px-2 py-px text-xs`) · `default` (`px-2.5 py-0.5 text-xs`) · `lg` (`px-3 py-1 text-sm`)                                                                                                                | `default` |
 
 Variant notes:
 

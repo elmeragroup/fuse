@@ -27,6 +27,7 @@ Decide and draft: the a11y chapter (target conformance level — e.g. WCAG 2.2 A
 Decided 2026-08-18 via grilling (two rounds + one research pass into `.ref/react-spectrum`). Both chapters drafted (assets above). The decisions:
 
 **Accessibility chapter**
+
 1. **WCAG 2.2 AA as design target**, no formal conformance claim; library/app responsibility split stated explicitly (EN 301 549 / 2.1 AA legal floor noted).
 2. **Contrast**: token values stay locked; text-grade roles must meet 4.5:1 in all 16 themes; `feature-foreground` reclassified accent/decorative (text on feature panels is white); three documented accepted deviations (muted-foreground at the AA line, violet ring <3:1 on strong fills mitigated by mandatory ring-offset, feature tints); per-brand ring re-mint is a roadmap item; generated per-theme contrast matrix as a snapshot test.
 3. **Focus**: `:focus-visible` only, mandatory `focusRing` recipe `ring-2 ring-ring ring-offset-2`, base-ui keyboard patterns verbatim, no positive tabindex, skip-links/landmarks app-side.
@@ -35,10 +36,6 @@ Decided 2026-08-18 via grilling (two rounds + one research pass into `.ref/react
 6. **Item gap (from data-display)**: our Item auto-adopts `role="listitem"` inside Item.Group via context, overridable — ruled, divergence to be recorded in the item spec.
 7. **Motion**: one central `prefers-reduced-motion` block (movement removed, opacity kept) + normative 150–300 ms ease-out band as review bar.
 
-**Performance chapter**
-8. **Budgets**: size-limit in CI over published artifacts, per-subpath + root barrel + themes.css; provisional ceilings in the chapter, calibrated to measured × ~1.5 at first build, ratchet-down-only thereafter.
-9. **RSC**: default server-safe, `"use client"` only where interactivity lives; RSC status is a spec/API-table column; server→client flips are breaking; no `-client` wrapper entries.
-10. **Lazy loading**: never internal (no dynamic `import()` in library source — lintable); docs ship next/dynamic + React.lazy recipes for chart and the date cluster; recharts stays optional peer.
-11. **Runtime**: transform/opacity-only animation, memoized contexts, no per-frame CSS-var writes on ancestors; i18n eager-locale cost accepted with a documented ~10-locale revisit threshold.
+**Performance chapter** 8. **Budgets**: size-limit in CI over published artifacts, per-subpath + root barrel + themes.css; provisional ceilings in the chapter, calibrated to measured × ~1.5 at first build, ratchet-down-only thereafter. 9. **RSC**: default server-safe, `"use client"` only where interactivity lives; RSC status is a spec/API-table column; server→client flips are breaking; no `-client` wrapper entries. 10. **Lazy loading**: never internal (no dynamic `import()` in library source — lintable); docs ship next/dynamic + React.lazy recipes for chart and the date cluster; recharts stays optional peer. 11. **Runtime**: transform/opacity-only animation, memoized contexts, no per-frame CSS-var writes on ancestors; i18n eager-locale cost accepted with a documented ~10-locale revisit threshold.
 
 Follow-ups pushed into existing places: item spec divergence (§6 above) belongs to Spec assembly's cross-check; ring re-mint + locale-subsetting threshold + nn-NO go to the roadmap document.

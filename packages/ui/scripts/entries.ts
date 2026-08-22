@@ -2,7 +2,9 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { PHOSPHOR_ICON_NAMES } from "../src/icons/roster.ts";
+import { BESPOKE_ICON_NAMES, LOGO_NAMES, PHOSPHOR_ICON_NAMES } from "../src/icons/roster.ts";
+import { requireFlagsDirectory } from "./flag-assets.ts";
+import { parseFacadeValueExports } from "./parse-facade.ts";
 
 /** Appendix A — 56 bare component entries. */
 export const BARE_COMPONENT_ENTRIES = [
@@ -83,26 +85,6 @@ export const NON_COMPONENT_JS_ENTRIES = [".", "theme", "icons", "illustrations",
 
 export const CSS_ENTRY_NAMES = ["css", "demo-stage-comfortable.css", "styles.css", "themes.css"] as const;
 
-export const THEME_RUNTIME_EXPORTS = [
-  "BRANDS",
-  "ColorSchemeScript",
-  "ElmeraGroupUiProvider",
-  "ForceColorScheme",
-  "ThemeProvider",
-  "ThemeScope",
-  "coerceTheme",
-  "colorSchemeScriptSource",
-  "defaultDensityForVariant",
-  "densityAttributes",
-  "parseThemeSlug",
-  "themeAttributes",
-  "themeSlug",
-  "useColorScheme",
-  "useElmeraGroupUi",
-  "useTheme",
-  "validateTheme",
-] as const;
-
 /** architecture.md §6 packages that published JS is allowed to import. */
 export const runtimeDependencies = [
   "react",
@@ -117,7 +99,6 @@ export const runtimeDependencies = [
   "@internationalized/date",
   "@phosphor-icons/react",
   "@internationalized/string",
-  "libphonenumber-js",
   "sugar-high",
 ] as const;
 
@@ -156,8 +137,6 @@ function isBareComponent(subpath: string): boolean {
 }
 const IMPLEMENTATION_DIRECTORIES = new Set(["components", "hooks", "icons", "styles", "theme", "react-aria"]);
 
-const BUTTON_RUNTIME_EXPORTS = ["Button", "buttonVariants"] as const;
-const SCROLL_AREA_RUNTIME_EXPORTS = ["ScrollArea"] as const;
 const RELATIVE_IMPORT = /(?:import|export)(?:\s+type)?\s+(?:[^'"\n;]*?\sfrom\s+)?["'](\.[^"']+)["']/g;
 const SOURCE_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"] as const;
 
@@ -321,23 +300,49 @@ function resolveJsSource(packageRoot: string, subpath: string): string | undefin
   return resolveExistingSource(packageRoot, `src/${subpath}`);
 }
 
-function runtimeExportsFor(subpath: string): readonly string[] {
-  if (subpath === "theme") {
-    return THEME_RUNTIME_EXPORTS;
-  }
-  if (subpath === ".") {
-    return [...THEME_RUNTIME_EXPORTS, ...BUTTON_RUNTIME_EXPORTS, ...SCROLL_AREA_RUNTIME_EXPORTS];
-  }
+function iconRuntimeExports(): readonly string[] {
+  return [...PHOSPHOR_ICON_NAMES, ...BESPOKE_ICON_NAMES, ...LOGO_NAMES, "BrandLogo"];
+}
+
+function sortedNames(names: readonly string[]): string[] {
+  return [...names].toSorted((left, right) => left.localeCompare(right));
+}
+
+function facadeRuntimeExports(subpath: string, sourceFile: string, packageRoot: string): readonly string[] {
+  const parsed = parseFacadeValueExports(sourceFile, readFileSync(join(packageRoot, sourceFile), "utf8"));
   if (subpath === "icons") {
-    return [...PHOSPHOR_ICON_NAMES, "BrandLogo"];
+    const roster = iconRuntimeExports();
+    if (sortedNames(parsed).join("\0") !== sortedNames(roster).join("\0")) {
+      throw new Error(
+        `${sourceFile} facade exports do not match the icons roster (parse the facade, do not ignore it)`
+      );
+    }
+    return roster;
   }
-  if (subpath === "button") {
-    return BUTTON_RUNTIME_EXPORTS;
+  return parsed;
+}
+
+function barrelCollisionMessage(name: string, firstSubpath: string, secondSubpath: string): string {
+  return `Duplicate barrel export ${name} from ${firstSubpath} and ${secondSubpath}`;
+}
+
+export function uniqueBarrelRuntimeExports(jsEntries: readonly JsExportEntry[]): string[] {
+  const ownerByName = new Map<string, string>();
+  const names: string[] = [];
+  for (const entry of jsEntries) {
+    if (!entry.inRootBarrel || entry.subpath === ".") {
+      continue;
+    }
+    for (const name of entry.runtimeExports) {
+      const owner = ownerByName.get(name);
+      if (owner !== undefined) {
+        throw new Error(barrelCollisionMessage(name, owner, entry.subpath));
+      }
+      ownerByName.set(name, entry.subpath);
+      names.push(name);
+    }
   }
-  if (subpath === "scroll-area") {
-    return SCROLL_AREA_RUNTIME_EXPORTS;
-  }
-  return [];
+  return names.toSorted((left, right) => left.localeCompare(right));
 }
 
 function walkImportedSourceFiles(packageRoot: string, entryFiles: readonly string[]): string[] {
@@ -397,12 +402,7 @@ function cssEntries(packageRoot: string): CssExportEntry[] {
 }
 
 function flagAssetPattern(packageRoot: string): AssetPatternExport | undefined {
-  const sourceDir = join(packageRoot, "src/flags");
-  if (!existsSync(sourceDir) || !statSync(sourceDir).isDirectory()) {
-    return undefined;
-  }
-  const svgs = readdirSync(sourceDir).filter((name) => name.endsWith(".svg"));
-  if (svgs.length === 0) {
+  if (requireFlagsDirectory(join(packageRoot, "src/flags")) === "missing") {
     return undefined;
   }
   return {
@@ -427,6 +427,7 @@ export function discoverEntries(packageRoot: string): DiscoveredEntries {
     ...BARE_COMPONENT_ENTRIES,
     ...RAC_ENTRIES.map((name) => `react-aria/${name}`),
   ];
+  let rootSourceFile: string | undefined;
 
   for (const subpath of allow) {
     const sourceFile = resolveJsSource(packageRoot, subpath);
@@ -440,13 +441,27 @@ export function discoverEntries(packageRoot: string): DiscoveredEntries {
       throw new Error(`Duplicate public entry ${subpath}`);
     }
     seenSubpaths.add(subpath);
+    if (subpath === ".") {
+      rootSourceFile = sourceFile;
+      continue;
+    }
     jsEntries.push({
       subpath,
       sourceFile,
-      runtimeExports: runtimeExportsFor(subpath),
-      inRootBarrel: subpath === "." || subpath === "theme" || isBareComponent(subpath),
+      runtimeExports: facadeRuntimeExports(subpath, sourceFile, packageRoot),
+      inRootBarrel: subpath === "theme" || isBareComponent(subpath),
     });
   }
+
+  if (rootSourceFile === undefined) {
+    throw new Error("Missing required source entry for .");
+  }
+  jsEntries.unshift({
+    subpath: ".",
+    sourceFile: rootSourceFile,
+    runtimeExports: uniqueBarrelRuntimeExports(jsEntries),
+    inRootBarrel: true,
+  });
 
   const css = cssEntries(packageRoot);
   const assetPatterns = flagAssetPattern(packageRoot);
