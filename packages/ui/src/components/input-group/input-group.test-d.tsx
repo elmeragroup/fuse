@@ -24,9 +24,7 @@ test("the button takes the local compact size subset and a non-submitting type",
   expectTypeOf<InputGroupButtonProps["size"]>().toEqualTypeOf<
     "xs" | "sm" | "icon-xs" | "icon-sm" | undefined
   >();
-  expectTypeOf<InputGroupButtonProps["type"]>().toEqualTypeOf<
-    "button" | "submit" | "reset" | undefined
-  >();
+  expectTypeOf<InputGroupButtonProps["type"]>().toEqualTypeOf<"button" | "submit" | "reset" | undefined>();
 });
 
 test("the parts take the spec's props and no polymorphic as prop", () => {

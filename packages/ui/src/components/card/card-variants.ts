@@ -7,11 +7,11 @@ import { tv } from "tailwind-variants";
  */
 export const cardVariants = tv({
   slots: {
-    base: "flex flex-col rounded-lg border bg-card text-card-foreground shadow-xs",
+    base: "shadow-xs flex flex-col rounded-lg border bg-card text-card-foreground",
     cardHeader:
       "@container/card-header grid auto-rows-min items-start gap-1.5 has-data-[slot=card-action]:grid-cols-[1fr_auto]",
     cardTag: "text-sm font-semibold text-muted-foreground",
-    cardTitle: "leading-none font-semibold",
+    cardTitle: "font-semibold leading-none",
     cardDescription: "text-muted-foreground",
     cardAction: "col-start-2 row-span-2 row-start-1 self-start justify-self-end",
     cardContent: "",

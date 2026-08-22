@@ -12,8 +12,7 @@ import { Textarea } from "../textarea/textarea";
 import { inputGroupAddonVariants, inputGroupButtonVariants } from "./input-group-variants";
 
 export type InputGroupRootProps = ComponentProps<"div">;
-export type InputGroupAddonProps = ComponentProps<"div"> &
-  VariantProps<typeof inputGroupAddonVariants>;
+export type InputGroupAddonProps = ComponentProps<"div"> & VariantProps<typeof inputGroupAddonVariants>;
 export type InputGroupButtonProps = Omit<ComponentProps<typeof Button>, "size" | "type"> &
   VariantProps<typeof inputGroupButtonVariants> & {
     type?: "button" | "submit" | "reset";
@@ -41,7 +40,7 @@ function InputGroupRoot({ className, ...props }: InputGroupRootProps): ReactElem
       className={cn(
         // Single-height field box: pins the `md` control rung (conventions.md ruling 2,
         // input-group.md §4 "Density mapping"); block addons and textareas grow instead.
-        "group/input-group relative flex h-(--control-h-md) w-full min-w-0 items-center rounded-md border border-input shadow-xs transition-[color,border-color,box-shadow]",
+        "group/input-group shadow-xs relative flex h-(--control-h-md) w-full min-w-0 items-center rounded-md border border-input transition-[color,border-color,box-shadow]",
         "has-disabled:bg-input/50 has-disabled:opacity-50",
         "has-[[data-slot=input-group-control]:focus-visible]:border-ring",
         "has-[[data-slot][aria-invalid=true]]:border-error has-[[data-slot][aria-invalid=true]]:ring-3 has-[[data-slot][aria-invalid=true]]:ring-error/20",
@@ -107,7 +106,7 @@ function InputGroupText({ className, ...props }: InputGroupTextProps): ReactElem
       // ButtonGroup `[data-slot]` child-selector contract.
       data-slot="input-group-text"
       className={cn(
-        "flex items-center gap-2 text-sm text-muted-foreground [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4",
+        "text-sm flex items-center gap-2 text-muted-foreground [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4",
         className
       )}
       {...props}

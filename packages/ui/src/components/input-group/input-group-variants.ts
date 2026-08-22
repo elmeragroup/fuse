@@ -7,7 +7,7 @@ import { tv } from "tailwind-variants";
  * The kbd radius keeps the reference's `calc(var(--radius)-5px)` arithmetic.
  */
 export const inputGroupAddonVariants = tv({
-  base: "flex h-auto cursor-text items-center justify-center gap-2 py-1.5 text-sm font-medium text-muted-foreground select-none group-data-[disabled=true]/input-group:opacity-50 [&>kbd]:rounded-[calc(var(--radius)-5px)] [&>svg:not([class*='size-'])]:size-4",
+  base: "text-sm font-medium flex h-auto cursor-text items-center justify-center gap-2 py-1.5 text-muted-foreground select-none group-data-[disabled=true]/input-group:opacity-50 [&>kbd]:rounded-[calc(var(--radius)-5px)] [&>svg:not([class*='size-'])]:size-4",
   variants: {
     align: {
       "inline-start": "order-first pl-2 has-[>button]:-ml-1 has-[>kbd]:ml-[-0.15rem]",
@@ -32,7 +32,7 @@ export const inputGroupAddonVariants = tv({
  * through. The values are applied as extra classes over Button's default size.
  */
 export const inputGroupButtonVariants = tv({
-  base: "flex items-center gap-2 text-sm shadow-none",
+  base: "text-sm flex items-center gap-2 shadow-none",
   variants: {
     size: {
       // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- input-group.md §4 shell-local exemption: compact addon chrome, not a control rung

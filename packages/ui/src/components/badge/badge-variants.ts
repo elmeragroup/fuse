@@ -13,29 +13,29 @@ import { tv } from "tailwind-variants";
  *   it pins no control box, so it does not read `--control-*`.
  */
 export const badgeVariants = tv({
-  base: "inline-flex items-center rounded-lg border font-medium transition-colors",
+  base: "font-medium inline-flex items-center rounded-lg border transition-colors",
   variants: {
     variant: {
-      default: "border-transparent bg-primary text-primary-foreground shadow-xs hover:bg-primary/80",
+      default: "shadow-xs border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
       secondary: "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
-      destructive: "border-transparent bg-error text-error-foreground shadow-xs hover:bg-error/80",
-      success: "border-transparent bg-success text-success-foreground shadow-xs hover:bg-success/80",
-      warning: "border-transparent bg-warning text-warning-foreground shadow-xs hover:bg-warning/80",
-      info: "border-[color-mix(in_oklch,var(--info)_16%,transparent)] bg-[color-mix(in_oklch,var(--info)_8%,transparent)] text-info-foreground shadow-xs hover:bg-[color-mix(in_oklch,var(--info)_16%,transparent)]",
+      destructive: "shadow-xs border-transparent bg-error text-error-foreground hover:bg-error/80",
+      success: "shadow-xs border-transparent bg-success text-success-foreground hover:bg-success/80",
+      warning: "shadow-xs border-transparent bg-warning text-warning-foreground hover:bg-warning/80",
+      info: "shadow-xs border-[color-mix(in_oklch,var(--info)_16%,transparent)] bg-[color-mix(in_oklch,var(--info)_8%,transparent)] text-info-foreground hover:bg-[color-mix(in_oklch,var(--info)_16%,transparent)]",
       outline: "text-foreground",
       "outline-secondary":
         "border-secondary text-secondary hover:bg-secondary hover:text-secondary-foreground",
       "outline-destructive": "border-error text-error hover:bg-error hover:text-error-foreground",
       "outline-success": "border-success text-success hover:bg-success hover:text-success-foreground",
       "outline-warning": "border-warning text-warning hover:bg-warning hover:text-warning-foreground",
-      muted: "border-transparent bg-muted text-secondary-foreground shadow-xs hover:bg-muted/80",
-      accent: "border-transparent bg-accent text-accent-foreground shadow-xs hover:bg-accent/80",
-      card: "border-transparent bg-card text-card-foreground shadow-xs hover:bg-card/80",
+      muted: "shadow-xs border-transparent bg-muted text-secondary-foreground hover:bg-muted/80",
+      accent: "shadow-xs border-transparent bg-accent text-accent-foreground hover:bg-accent/80",
+      card: "shadow-xs border-transparent bg-card text-card-foreground hover:bg-card/80",
     },
     size: {
-      sm: "px-2 py-px text-xs [&>span]:text-xs [&>span]:font-medium",
-      default: "px-2.5 py-0.5 text-xs [&>span]:text-xs [&>span]:font-medium",
-      lg: "px-3 py-1 text-sm [&>span]:text-sm [&>span]:font-medium",
+      sm: "text-xs [&>span]:text-xs [&>span]:font-medium px-2 py-px",
+      default: "text-xs [&>span]:text-xs [&>span]:font-medium px-2.5 py-0.5",
+      lg: "text-sm [&>span]:text-sm [&>span]:font-medium px-3 py-1",
     },
   },
   defaultVariants: {

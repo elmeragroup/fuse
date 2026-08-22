@@ -25,7 +25,8 @@ const VARIANTS = [
   "card",
 ] as const;
 
-const PALETTE_RE = /\b(?:bg|text|border|ring|fill|stroke)-(?:white|black|gray|zinc|slate|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink)\b/;
+const PALETTE_RE =
+  /\b(?:bg|text|border|ring|fill|stroke)-(?:white|black|gray|zinc|slate|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink)\b/;
 
 describe("badgeVariants", () => {
   it("defaults to variant=default and size=default", () => {
@@ -104,7 +105,7 @@ describe("badgeVariants", () => {
   });
 
   it("lets a className merge win over a conflicting recipe class through cn", () => {
-    const merged = cn(badgeVariants({ variant: "success", size: "lg" }), "bg-muted text-xs").split(/\s+/);
+    const merged = cn(badgeVariants({ variant: "success", size: "lg" }), "text-xs bg-muted").split(/\s+/);
     expect(merged).toContain("bg-muted");
     expect(merged).not.toContain("bg-success");
     expect(merged).toContain("text-xs");

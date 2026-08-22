@@ -92,9 +92,7 @@ export async function assertWithinKeyboardFocusRingAtBothDensities(
     previous.focus();
     await userEvent.keyboard("{Tab}");
     expect(control.matches(":focus-visible"), "Tab must land with :focus-visible").toBe(true);
-    expect(hasFocusRing(ringHost), "focus-visible must paint the shared ring on the group").toBe(
-      true
-    );
+    expect(hasFocusRing(ringHost), "focus-visible must paint the shared ring on the group").toBe(true);
     expect(hasFocusRing(control), "the control must not paint a second ring").toBe(false);
     control.blur();
     expect(hasFocusRing(ringHost), "blur must clear the group ring").toBe(false);

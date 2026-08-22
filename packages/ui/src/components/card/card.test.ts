@@ -80,7 +80,9 @@ describe("card source contract", () => {
     ]) {
       const marker = `data-slot="${slot}"`;
       expect(source, marker).toContain(marker);
-      expect(source.indexOf(marker), marker).toBeLessThan(source.indexOf("{...props}", source.indexOf(marker)));
+      expect(source.indexOf(marker), marker).toBeLessThan(
+        source.indexOf("{...props}", source.indexOf(marker))
+      );
     }
   });
 

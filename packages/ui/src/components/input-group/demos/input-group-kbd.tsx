@@ -9,7 +9,7 @@ export function InputGroupKbd() {
       </InputGroup.Addon>
       <InputGroup.Input aria-label="Search" placeholder="Search…" />
       <InputGroup.Addon align="inline-end">
-        <kbd className="bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">⌘K</kbd>
+        <kbd className="text-xs bg-muted px-1.5 py-0.5 text-muted-foreground">⌘K</kbd>
       </InputGroup.Addon>
     </InputGroup.Root>
   );
