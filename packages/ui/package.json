@@ -106,9 +106,12 @@
   },
   "dependencies": {
     "@base-ui/react": "catalog:",
+    "@internationalized/date": "catalog:",
     "@internationalized/string": "catalog:",
     "@phosphor-icons/react": "catalog:",
     "clsx": "catalog:",
+    "react-aria": "catalog:",
+    "react-aria-components": "catalog:",
     "tailwind-merge": "catalog:",
     "tailwind-variants": "catalog:",
     "tailwindcss-react-aria-components": "catalog:",
