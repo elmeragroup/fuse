@@ -14,6 +14,7 @@ import { tv } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
 import { focusRing } from "../../styles/utils";
+import { composeTailwindRenderProps } from "./utils";
 
 /**
  * The interim tier's field chrome (date-picker.md §2). All of it is package-private:
@@ -104,13 +105,11 @@ export function Input({ className, ...props }: InputProps): ReactElement {
   return (
     <AriaInput
       data-slot="field-input"
-      className={composeRenderProps(className, (resolved: string | undefined) =>
-        cn(
-          // The FieldGroup owns the surface (bg-card, §8.9), so the inner control never
-          // paints a second one — that is what keeps the read-only `bg-muted` fill honest.
-          "min-w-0 flex-1 bg-transparent px-(--control-px-md) [font-size:var(--control-text)] [line-height:var(--control-leading)] text-foreground outline-none placeholder:text-muted-foreground disabled:text-muted-foreground",
-          resolved
-        )
+      className={composeTailwindRenderProps(
+        className,
+        // The FieldGroup owns the surface (bg-card, §8.9), so the inner control never
+        // paints a second one — that is what keeps the read-only `bg-muted` fill honest.
+        "min-w-0 flex-1 bg-transparent px-(--control-px-md) [font-size:var(--control-text)] [line-height:var(--control-leading)] text-foreground outline-none placeholder:text-muted-foreground disabled:text-muted-foreground"
       )}
       {...props}
     />
@@ -136,9 +135,7 @@ export function FieldError({ className, ...props }: FieldErrorProps): ReactEleme
   return (
     <AriaFieldError
       data-slot="field-error"
-      className={composeRenderProps(className, (resolved: string | undefined) =>
-        cn("text-sm whitespace-break-spaces text-error", resolved)
-      )}
+      className={composeTailwindRenderProps(className, "text-sm whitespace-break-spaces text-error")}
       {...props}
     />
   );

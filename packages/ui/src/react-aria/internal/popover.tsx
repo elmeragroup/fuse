@@ -11,9 +11,9 @@ import {
 import type { PopoverProps as AriaPopoverProps } from "react-aria-components";
 import { tv } from "tailwind-variants";
 
+import { overlayLayer } from "../../components/overlay/overlay-classes";
 import { cn } from "../../styles/cn";
 import { useThemeScopeContainer } from "../../theme/theme-scope-container";
-import { overlayLayer } from "./modal";
 import { OVERLAY_CONTAINER_ATTR, OVERLAY_CONTAINER_POPOVER } from "./overlay-container";
 
 const popoverVariants = tv({

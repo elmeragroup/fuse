@@ -2,11 +2,11 @@
 
 import type { ComponentProps, ReactElement } from "react";
 
-import { Button as AriaButton, composeRenderProps } from "react-aria-components";
+import { Button as AriaButton } from "react-aria-components";
 import type { VariantProps } from "tailwind-variants";
 
 import { buttonVariants } from "../../components/button/button-variants";
-import { cn } from "../../styles/cn";
+import { composeTailwindRenderProps } from "./utils";
 
 /**
  * The private RAC Button exists solely because RAC slots — the DatePicker trigger and
@@ -21,9 +21,7 @@ export function Button({ className, variant, size, ...props }: ButtonProps): Rea
   return (
     <AriaButton
       data-slot="button"
-      className={composeRenderProps(className, (resolved: string | undefined) =>
-        cn(buttonVariants({ variant, size }), resolved)
-      )}
+      className={composeTailwindRenderProps(className, buttonVariants({ variant, size }))}
       {...props}
     />
   );

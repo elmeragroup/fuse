@@ -1,5 +1,6 @@
 import { composeRenderProps } from "react-aria-components";
-import { twMerge } from "tailwind-merge";
+
+import { cn } from "../../styles/cn";
 
 /**
  * RAC's `className` accepts a string or a render-prop function. This resolves either
@@ -10,5 +11,5 @@ export function composeTailwindRenderProps<T>(
   className: string | ((renderProps: T) => string) | undefined,
   twClasses: string
 ): string | ((renderProps: T) => string) {
-  return composeRenderProps(className, (resolved: string | undefined) => twMerge(twClasses, resolved));
+  return composeRenderProps(className, (resolved: string | undefined) => cn(twClasses, resolved));
 }

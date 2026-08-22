@@ -10,12 +10,10 @@ import {
 import { tv } from "tailwind-variants";
 import type { VariantProps } from "tailwind-variants";
 
+import { overlayLayer, overlaySizeClasses } from "../../components/overlay/overlay-classes";
 import { cn } from "../../styles/cn";
 import { useThemeScopeContainer } from "../../theme/theme-scope-container";
 import { OVERLAY_CONTAINER_POPOVER_SELECTOR } from "./overlay-container";
-
-/** One overlay layer for the private RAC family, declared once (dialog.md §8.4). */
-const overlayLayer = "z-50";
 
 const modalVariants = tv({
   slots: {
@@ -36,21 +34,22 @@ const modalVariants = tv({
       top: { base: "fixed inset-x-0 top-0 h-96 w-full rounded-t-none outline-hidden" },
       bottom: { base: "fixed inset-x-0 bottom-0 h-96 w-full rounded-b-none outline-hidden" },
     },
+    // The same 13-value axis the public Dialog renders (dialog.md §4), landed on this
+    // recipe's `base` slot — the literals live in one place so the tiers cannot drift.
     size: {
-      sm: { base: "max-w-[min(var(--container-sm),90%)]" },
-      md: { base: "max-w-[min(var(--container-md),90%)]" },
-      lg: { base: "max-w-[min(var(--container-lg),90%)]" },
-      xl: { base: "max-w-[min(var(--container-xl),90%)]" },
-      "2xl": { base: "max-w-[min(var(--container-2xl),90%)]" },
-      "3xl": { base: "max-w-[min(var(--container-3xl),90%)]" },
-      "4xl": { base: "max-w-[min(var(--container-4xl),90%)]" },
-      "5xl": { base: "max-w-[min(var(--container-5xl),90%)]" },
-      "6xl": { base: "max-w-[min(var(--container-6xl),90%)]" },
-      "7xl": { base: "max-w-[min(var(--container-7xl),90%)]" },
-      // No --container-8xl+ variables exist; the pixel caps stay literal (dialog.md §4).
-      "8xl": { base: "max-w-[min(1366px,90%)]" },
-      "9xl": { base: "max-w-[min(1536px,90%)]" },
-      "10xl": { base: "max-w-[min(1920px,90%)]" },
+      sm: { base: overlaySizeClasses.sm },
+      md: { base: overlaySizeClasses.md },
+      lg: { base: overlaySizeClasses.lg },
+      xl: { base: overlaySizeClasses.xl },
+      "2xl": { base: overlaySizeClasses["2xl"] },
+      "3xl": { base: overlaySizeClasses["3xl"] },
+      "4xl": { base: overlaySizeClasses["4xl"] },
+      "5xl": { base: overlaySizeClasses["5xl"] },
+      "6xl": { base: overlaySizeClasses["6xl"] },
+      "7xl": { base: overlaySizeClasses["7xl"] },
+      "8xl": { base: overlaySizeClasses["8xl"] },
+      "9xl": { base: overlaySizeClasses["9xl"] },
+      "10xl": { base: overlaySizeClasses["10xl"] },
     },
     scroll: {
       true: { base: "overflow-y-auto" },
@@ -160,4 +159,4 @@ export function Modal({
 
 Modal.displayName = "ReactAriaInternal.Modal";
 
-export { modalVariants, overlayLayer };
+export { modalVariants };

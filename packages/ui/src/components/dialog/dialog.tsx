@@ -10,15 +10,14 @@ import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { cn } from "../../styles/cn";
 import { focusRing } from "../../styles/utils";
 import { useThemeScopeContainer } from "../../theme/theme-scope-container";
+import {
+  overlayFooterClass,
+  overlayLayer,
+  overlaySizeClasses,
+  overlayTitleClass,
+} from "../overlay/overlay-classes";
 import { overlayCornerCloseButton, overlayFooterCloseButton } from "../overlay/overlay-close-button";
 import { dialogStrings } from "./intl";
-
-/**
- * One overlay layer for the whole family (dialog.md §8.4): the ref stamps the level
- * on both Backdrop and Popup, we declare it once and share it, so DOM order — not a
- * second z-index step — stacks the Backdrop under the Popup.
- */
-const overlayLayer = "z-50";
 
 const dialogContentVariants = tv({
   base: cn(
@@ -27,22 +26,8 @@ const dialogContentVariants = tv({
     focusRing({ target: "self" }).root()
   ),
   variants: {
-    size: {
-      sm: "max-w-[min(var(--container-sm),90%)]",
-      md: "max-w-[min(var(--container-md),90%)]",
-      lg: "max-w-[min(var(--container-lg),90%)]",
-      xl: "max-w-[min(var(--container-xl),90%)]",
-      "2xl": "max-w-[min(var(--container-2xl),90%)]",
-      "3xl": "max-w-[min(var(--container-3xl),90%)]",
-      "4xl": "max-w-[min(var(--container-4xl),90%)]",
-      "5xl": "max-w-[min(var(--container-5xl),90%)]",
-      "6xl": "max-w-[min(var(--container-6xl),90%)]",
-      "7xl": "max-w-[min(var(--container-7xl),90%)]",
-      // No --container-8xl+ variables exist; the pixel caps stay literal (dialog.md §4).
-      "8xl": "max-w-[min(1366px,90%)]",
-      "9xl": "max-w-[min(1536px,90%)]",
-      "10xl": "max-w-[min(1920px,90%)]",
-    },
+    // The 13-value axis is shared with the interim RAC Modal (dialog.md §4).
+    size: overlaySizeClasses,
   },
   defaultVariants: {
     size: "md",
@@ -161,10 +146,7 @@ function DialogFooter({
   const label = closeLabel ?? strings.format("close");
 
   return (
-    <div
-      data-slot="dialog-footer"
-      className={cn("sm:flex-row sm:justify-end flex flex-col-reverse gap-2", className)}
-      {...props}>
+    <div data-slot="dialog-footer" className={cn(overlayFooterClass, className)} {...props}>
       {children}
       {showCloseButton ? <DialogPrimitive.Close render={overlayFooterCloseButton({ label })} /> : null}
     </div>
@@ -173,11 +155,7 @@ function DialogFooter({
 
 function DialogTitle({ className, ...props }: ComponentProps<typeof DialogPrimitive.Title>): ReactElement {
   return (
-    <DialogPrimitive.Title
-      data-slot="dialog-title"
-      className={cn("text-base font-medium font-heading leading-none text-balance", className)}
-      {...props}
-    />
+    <DialogPrimitive.Title data-slot="dialog-title" className={cn(overlayTitleClass, className)} {...props} />
   );
 }
 

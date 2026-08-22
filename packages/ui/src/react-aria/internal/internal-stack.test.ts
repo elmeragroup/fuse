@@ -126,6 +126,29 @@ describe("the internal RAC Button", () => {
   it("inherits Button's density ladder rather than restating metrics", () => {
     expect(buttonVariants({ size: "icon-sm" })).toContain("size-(--control-h-sm)");
   });
+
+  it("composes its render-prop className through the shared helper", () => {
+    expect(source("button.tsx")).toContain("composeTailwindRenderProps");
+  });
+});
+
+describe("the shared overlay class vocabulary", () => {
+  it("borrows the layer and size axis instead of restating them (dialog.md §4, §8.4)", () => {
+    for (const name of ["modal.tsx", "popover.tsx"]) {
+      expect(source(name), name).toContain('from "../../components/overlay/overlay-classes"');
+      // The z-50 layer is declared once, in the shared module, never here.
+      expect(source(name), name).not.toContain("z-50");
+    }
+    expect(source("modal.tsx")).toContain("overlaySizeClasses");
+    expect(source("modal.tsx")).not.toContain("--container-sm");
+  });
+
+  it("borrows the public Dialog's heading and footer literals", () => {
+    const dialog = source("dialog.tsx");
+    expect(dialog).toContain("overlayTitleClass");
+    expect(dialog).toContain("overlayFooterClass");
+    expect(dialog).not.toContain("font-heading leading-none");
+  });
 });
 
 type ExportTarget = string | { types: string; import: string };

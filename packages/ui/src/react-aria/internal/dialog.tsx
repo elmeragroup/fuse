@@ -13,6 +13,7 @@ import { tv } from "tailwind-variants";
 import type { VariantProps } from "tailwind-variants";
 
 import { dialogStrings } from "../../components/dialog/intl";
+import { overlayFooterClass, overlayTitleClass } from "../../components/overlay/overlay-classes";
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { X } from "../../icons/generated/x";
 import { cn } from "../../styles/cn";
@@ -32,9 +33,11 @@ const dialogVariants = tv({
   slots: {
     base: "relative max-h-[inherit] overflow-y-auto p-6 outline-none [[data-placement]>&]:p-4",
     header: "flex items-start justify-between gap-4",
-    heading: "text-base font-medium font-heading leading-none text-balance",
+    // Heading and footer borrow the public Dialog's literals (dialog.md §2) so the
+    // interim tier cannot drift; the footer only adds its own top margin.
+    heading: overlayTitleClass,
     content: "flex flex-col gap-4",
-    footer: "sm:flex-row sm:justify-end mt-6 flex flex-col-reverse gap-2",
+    footer: cn(overlayFooterClass, "mt-6"),
     closeButton: "hit-area-1",
     closeButtonIcon: "size-4",
   },
@@ -51,23 +54,45 @@ const dialogVariants = tv({
   defaultVariants: {},
 });
 
-export function DialogHeader({ className, ...props }: ComponentProps<"div">): ReactElement {
-  const { header } = dialogVariants();
+/**
+ * Every part takes the same `variant` the composite takes, so the composite below can be
+ * assembled from these parts instead of restating their markup and slot names.
+ */
+type DialogPartVariant = VariantProps<typeof dialogVariants>;
+
+export function DialogHeader({
+  className,
+  variant,
+  ...props
+}: ComponentProps<"div"> & DialogPartVariant): ReactElement {
+  const { header } = dialogVariants({ variant });
   return <div data-slot="dialog-header" className={cn(header(), className)} {...props} />;
 }
 
-export function DialogContent({ className, ...props }: ComponentProps<"div">): ReactElement {
-  const { content } = dialogVariants();
+export function DialogContent({
+  className,
+  variant,
+  ...props
+}: ComponentProps<"div"> & DialogPartVariant): ReactElement {
+  const { content } = dialogVariants({ variant });
   return <div data-slot="dialog-content" className={cn(content(), className)} {...props} />;
 }
 
-export function DialogFooter({ className, ...props }: ComponentProps<"div">): ReactElement {
-  const { footer } = dialogVariants();
+export function DialogFooter({
+  className,
+  variant,
+  ...props
+}: ComponentProps<"div"> & DialogPartVariant): ReactElement {
+  const { footer } = dialogVariants({ variant });
   return <div data-slot="dialog-footer" className={cn(footer(), className)} {...props} />;
 }
 
-export function DialogHeading({ className, ...props }: ComponentProps<typeof Heading>): ReactElement {
-  const { heading } = dialogVariants();
+export function DialogHeading({
+  className,
+  variant,
+  ...props
+}: ComponentProps<typeof Heading> & DialogPartVariant): ReactElement {
+  const { heading } = dialogVariants({ variant });
   return <Heading slot="title" className={cn(heading(), className)} {...props} />;
 }
 
@@ -119,23 +144,14 @@ export function Dialog({
   ...props
 }: DialogProps): ReactElement {
   const strings = useLocalizedStrings(dialogStrings);
-  const {
-    base,
-    content,
-    header,
-    heading,
-    closeButton: closeButtonClass,
-    closeButtonIcon,
-  } = dialogVariants({ variant });
+  const { base, closeButton: closeButtonClass, closeButtonIcon } = dialogVariants({ variant });
   const label = closeLabel ?? strings.format("close");
 
   return (
     <AriaDialog data-slot="dialog" {...props} className={cn(base(), className)}>
-      <div data-slot="dialog-content" className={content()}>
-        <div data-slot="dialog-header" className={header()}>
-          <Heading slot="title" className={heading()}>
-            {title}
-          </Heading>
+      <DialogContent variant={variant}>
+        <DialogHeader variant={variant}>
+          <DialogHeading variant={variant}>{title}</DialogHeading>
           {closeButton ? (
             <DialogCloseButton
               className={closeButtonClass()}
@@ -143,9 +159,9 @@ export function Dialog({
               label={label}
             />
           ) : null}
-        </div>
+        </DialogHeader>
         {children}
-      </div>
+      </DialogContent>
     </AriaDialog>
   );
 }

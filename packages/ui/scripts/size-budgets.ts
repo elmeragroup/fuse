@@ -11,8 +11,8 @@
  * - Per-component / per-icon entries keep the ratchet: ceilings only move down
  *   unless a reviewed PR says why.
  *
- * Measurements (gzip bytes, 2026-08-21 Wave 3 + this PR):
- *   .             42768
+ * Current measurements (gzip bytes, 2026-08-22). Earlier measurement rounds live in git.
+ *   .             57448  (aggregate; under the standing 64167 ceiling, so recorded, not loosened)
  *   theme          6129
  *   icons/Check     818  (per-icon export, not the full roster)
  *   button        25214
@@ -23,34 +23,13 @@
  *   item          24115
  *   input         25047
  *   textarea      21278
+ *   dialog        45229
+ *   card          15964
+ *   badge         15662
+ *   input-group   28011
  *   flags          1388
  *   themes.css     2274
- *   styles.css     7077  (recalibrated in the Wave 3 PR, measured×1.5)
- *
- * Measurements (gzip bytes, 2026-08-22 Dialog):
- *   dialog        45229  (new entry, ceiling = measured × 1.5)
- *   .             61103  (grew with the new entry; still under the standing 64167 ceiling,
- *                         so the aggregate row is recorded, not loosened)
- *   styles.css     8211  (grew with Dialog's utilities; still under the standing 10616 ceiling)
- *
- * Measurements (gzip bytes, 2026-08-22 Card):
- *   card          15964  (new entry, ceiling = measured × 1.5)
- *   .             61852  (grew with the new entry; still under the standing 64167 ceiling,
- *                         so the aggregate row is recorded, not loosened)
- *   styles.css     8714  (grew with Card's utilities; still under the standing 10616 ceiling)
- *
- * Measurements (gzip bytes, 2026-08-22 Badge):
- *   badge         15662  (new entry, ceiling = measured × 1.5)
- *   .             56607  (aggregate re-measured with the new entry; under the standing
- *                         64167 ceiling, so the row is recorded, not loosened)
- *   styles.css     9213  (grew with Badge's utilities; still under the standing 10616 ceiling)
- *
- * Measurements (gzip bytes, 2026-08-22 InputGroup):
- *   input-group   28011  (new entry, ceiling = measured × 1.5)
- *   .             57448  (aggregate re-measured with the new entry; under the standing
- *                         64167 ceiling, so the row is recorded, not loosened)
- *   styles.css     9905  (grew with InputGroup's utilities; still under the standing
- *                         10616 ceiling)
+ *   styles.css     9905  (under the standing 10616 ceiling, so recorded, not loosened)
  */
 import { FLAG_RAW_CEILING_BYTES } from "./flag-payload";
 

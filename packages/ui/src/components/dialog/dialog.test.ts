@@ -9,6 +9,7 @@ import { dialogStrings } from "./intl";
 const here = dirname(fileURLToPath(import.meta.url));
 const source = readFileSync(join(here, "dialog.tsx"), "utf8");
 const closeButtonSource = readFileSync(join(here, "../overlay/overlay-close-button.tsx"), "utf8");
+const overlayClassesSource = readFileSync(join(here, "../overlay/overlay-classes.ts"), "utf8");
 
 const CLOSE_COPY = {
   "nb-NO": "Lukk",
@@ -47,7 +48,11 @@ describe("dialog source contract", () => {
   it("declares the overlay layer once and never falls back to document.body", () => {
     // Source-grep: a single z-50 declaration (dialog.md §8.4) and the absence of a
     // body fallback (theming.md §7.4) have no consumer-behavior probe of their own.
-    expect(source.match(/z-50/gu)).toHaveLength(1);
+    // The layer now lives in the shared overlay module every overlay family borrows,
+    // so it is declared there exactly once and nowhere else.
+    expect(overlayClassesSource.match(/z-50/gu)).toHaveLength(1);
+    expect(source).not.toContain("z-50");
+    expect(source).toContain("overlayLayer");
     expect(source).not.toContain("document.body");
     expect(source).not.toContain(".ref/");
     expect(source).not.toContain("dark:");
