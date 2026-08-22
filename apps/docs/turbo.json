@@ -1,6 +1,19 @@
 {
   "extends": ["//"],
   "tasks": {
+    // The docs pipeline writes src/generated and public/components before anything
+    // reads them. It is its own task so turbo orders it ahead of build, type-check and
+    // the root lint, instead of a build script racing them for the same files.
+    "generate": {
+      "dependsOn": ["^build"],
+      "outputs": ["src/generated/**", "public/components/**"]
+    },
+    "build": {
+      "dependsOn": ["generate"]
+    },
+    "type-check": {
+      "dependsOn": ["generate"]
+    },
     "test": {
       "dependsOn": ["build"],
       "env": ["DOCS_BASE_URL"]

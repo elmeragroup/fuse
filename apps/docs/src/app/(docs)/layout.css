@@ -4,6 +4,7 @@
   --docs-line: #e8e9eb;
   --docs-soft: #f6f7f8;
   --docs-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --docs-code-bg: #fbfbfc;
   --docs-header-height: 56px;
 }
 

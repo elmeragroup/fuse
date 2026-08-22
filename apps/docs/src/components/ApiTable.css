@@ -1,0 +1,91 @@
+.ApiTable {
+  margin: 2rem 0 0;
+}
+
+.ApiTable h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 1.6rem 0 0.7rem;
+  scroll-margin-top: calc(var(--docs-header-height) + 1rem);
+}
+
+.ApiTable h3 code {
+  font: 13px var(--docs-mono);
+  background: none;
+  border: 0;
+  padding: 0;
+}
+
+.ApiTableScroll {
+  border: 1px solid var(--docs-line);
+  border-radius: 10px;
+  overflow-x: auto;
+}
+
+.ApiTable table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.82rem;
+  text-align: left;
+}
+
+.ApiTable thead th {
+  background: var(--docs-soft);
+  color: var(--docs-sub);
+  font-weight: 500;
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+  padding: 0.5rem 0.8rem;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--docs-line);
+}
+
+.ApiTable tbody th,
+.ApiTable tbody td {
+  padding: 0.6rem 0.8rem;
+  border-bottom: 1px solid var(--docs-line);
+  vertical-align: top;
+  font-weight: 400;
+}
+
+.ApiTable tbody tr:last-child th,
+.ApiTable tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.ApiTable tbody th {
+  white-space: nowrap;
+}
+
+.ApiTable code {
+  font: 11.5px var(--docs-mono);
+  background: var(--docs-soft);
+  border: 1px solid var(--docs-line);
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+}
+
+.ApiTableType {
+  display: inline-block;
+  max-width: 34ch;
+  overflow-wrap: anywhere;
+}
+
+.ApiTableRsc {
+  font: 11.5px var(--docs-mono);
+  color: var(--docs-sub);
+  white-space: nowrap;
+}
+
+.ApiTableRequired {
+  margin-left: 0.4rem;
+  font: 10px var(--docs-mono);
+  color: var(--docs-sub);
+  text-transform: uppercase;
+}
+
+.ApiTableNote {
+  margin: 0.6rem 0 0;
+  font-size: 0.78rem;
+  color: var(--docs-sub);
+}

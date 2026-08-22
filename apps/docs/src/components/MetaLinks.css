@@ -1,0 +1,19 @@
+.MetaLinks {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0.9rem 0 0;
+  font-size: 0.8rem;
+  color: var(--docs-sub);
+}
+
+.MetaLinks a {
+  color: var(--docs-sub);
+  text-decoration: none;
+  border-bottom: 1px solid var(--docs-line);
+}
+
+.MetaLinks a:hover {
+  color: var(--docs-ink);
+  border-bottom-color: currentColor;
+}

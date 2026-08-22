@@ -1,3 +1,6 @@
+import { DOCS_COMPONENTS } from "../generated/registry";
+import type { DocsComponent } from "./docs-model";
+
 export type NavItem = {
   href: string;
   label: string;
@@ -8,31 +11,45 @@ export type TocItem = {
   title: string;
 };
 
-export const COMPONENT_NAV: readonly NavItem[] = [
-  { href: "/components/button", label: "Button" },
-  { href: "/components/scroll-area", label: "ScrollArea" },
-];
+export const API_SECTION_ID = "api-reference";
+export const TOKENS_SECTION_ID = "tokens-consumed";
 
-export const BUTTON_TOC: readonly TocItem[] = [
-  { id: "variants", title: "Variants" },
-  { id: "sizes", title: "Sizes" },
-  { id: "pending", title: "Pending" },
-  { id: "visually-disabled", title: "Visually disabled" },
-  { id: "predictive-intent", title: "Predictive intent" },
-];
+/** Anchor id for one compound part's generated API table. */
+export function apiPartAnchor(partName: string): string {
+  return `api-${partName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+}
 
-export const SCROLL_AREA_TOC: readonly TocItem[] = [
-  { id: "vertical", title: "Vertical" },
-  { id: "horizontal", title: "Horizontal" },
-  { id: "always-visible", title: "Always visible" },
-];
+export function componentHref(slug: string): string {
+  return `/components/${slug}`;
+}
+
+/** Flat alphabetical list of every published component page (docs-site.md §3.3). */
+export const COMPONENT_NAV: readonly NavItem[] = DOCS_COMPONENTS.map((component) => ({
+  href: componentHref(component.slug),
+  label: component.title,
+})).sort((left, right) => left.label.localeCompare(right.label));
+
+export function componentForPath(pathname: string): DocsComponent | undefined {
+  return DOCS_COMPONENTS.find((component) => componentHref(component.slug) === pathname);
+}
+
+/** The on-page TOC of a component page: prose headings, demos, API parts, tokens. */
+export function tocForComponent(component: DocsComponent): readonly TocItem[] {
+  return [
+    ...component.headings
+      .filter((heading) => heading.depth === 2)
+      .map((heading) => ({
+        id: heading.id,
+        title: heading.title,
+      })),
+    ...component.demos.map((demo) => ({ id: demo.id, title: demo.title })),
+    { id: API_SECTION_ID, title: "API reference" },
+    ...component.parts.map((part) => ({ id: apiPartAnchor(part.name), title: part.name })),
+    ...(component.tokens.length === 0 ? [] : [{ id: TOKENS_SECTION_ID, title: "Tokens consumed" }]),
+  ];
+}
 
 export function tocForPath(pathname: string): readonly TocItem[] {
-  if (pathname === "/components/button") {
-    return BUTTON_TOC;
-  }
-  if (pathname === "/components/scroll-area") {
-    return SCROLL_AREA_TOC;
-  }
-  return [];
+  const component = componentForPath(pathname);
+  return component === undefined ? [] : tocForComponent(component);
 }

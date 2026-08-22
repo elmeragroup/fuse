@@ -3,13 +3,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "next build",
-    "dev": "next dev --port 3000",
+    "build": "pnpm run generate && next build",
+    "ci:checks": "true",
+    "dev": "pnpm run generate && next dev --port 3000",
+    "generate": "node --experimental-strip-types scripts/generate.ts",
     "start": "next start --port 3000",
     "test": "vitest run",
-    "type-check": "next typegen && tsc --noEmit"
+    "type-check": "pnpm run generate && next typegen && tsc --noEmit"
   },
   "dependencies": {
+    "@base-ui/react": "catalog:",
     "@elmeragroup/ui": "workspace:*",
     "next": "catalog:",
     "react": "catalog:",
@@ -17,11 +20,14 @@
   },
   "devDependencies": {
     "@elmeragroup/typescript-config": "workspace:*",
+    "@mdx-js/mdx": "3.1.1",
     "@tailwindcss/postcss": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "playwright": "catalog:",
+    "remark-gfm": "4.0.1",
+    "sugar-high": "2.0.1",
     "tailwindcss": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"

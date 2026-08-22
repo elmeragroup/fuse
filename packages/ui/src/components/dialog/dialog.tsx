@@ -81,8 +81,20 @@ function DialogOverlay({
 
 export type DialogContentProps = ComponentProps<typeof DialogPrimitive.Popup> &
   VariantProps<typeof dialogContentVariants> & {
+    /**
+     * Renders the built-in corner dismiss affordance — a `Dialog.Close` styled as a
+     * ghost icon button in the popup's top-right corner.
+     */
     showCloseButton?: boolean;
+    /**
+     * Portal target for the popup. Defaults to the nearest enclosing `ThemeScope`
+     * element, so an overlay never escapes the theme that opened it.
+     */
     container?: HTMLElement | RefObject<HTMLElement | null>;
+    /**
+     * Accessible name for the built-in corner close button. Defaults to the locale
+     * dictionary.
+     */
     closeLabel?: string;
   };
 
@@ -128,7 +140,12 @@ function DialogHeader({ className, ...props }: ComponentProps<"div">): ReactElem
 }
 
 export type DialogFooterProps = ComponentProps<"div"> & {
+  /**
+   * Appends a `Dialog.Close` rendered as an outline button after `children` — a footer
+   * action, distinct from `Dialog.Content`'s corner dismiss affordance.
+   */
   showCloseButton?: boolean;
+  /** Visible text for the built-in footer close action. Defaults to the locale dictionary. */
   closeLabel?: string;
 };
 

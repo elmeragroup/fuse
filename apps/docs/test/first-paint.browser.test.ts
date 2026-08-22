@@ -245,7 +245,7 @@ describe("docs picker vs document theme", () => {
       }
     });
     await page.goto(`${docsBaseUrl()}/components/button`, { waitUntil: "networkidle" });
-    await page.getByRole("heading", { name: "Button", exact: true }).waitFor();
+    await page.getByRole("heading", { name: "Button", exact: true, level: 1 }).waitFor();
 
     const initial = await page.evaluate(() => {
       const root = document.documentElement;
@@ -311,7 +311,7 @@ describe("docs picker vs document theme", () => {
   it("retargets demo-stage control metrics to the preview variant default without restamping the document", async () => {
     const page = await browser.newPage();
     await page.goto(`${docsBaseUrl()}/components/button`, { waitUntil: "networkidle" });
-    await page.getByRole("heading", { name: "Button", exact: true }).waitFor();
+    await page.getByRole("heading", { name: "Button", exact: true, level: 1 }).waitFor();
 
     const initial = await page.evaluate(() => {
       const root = document.documentElement;

@@ -10,11 +10,21 @@ import { focusRing } from "../../styles/utils";
 type ScrollAreaType = "auto" | "always" | "hover";
 
 type ScrollAreaRootProps = ComponentProps<typeof ScrollAreaPrimitive.Root> & {
+  /**
+   * Which single scrollbar `Root` renders. For two-axis scrolling, compose the base-ui
+   * primitives directly and mount two `ScrollArea.Bar`s.
+   */
   orientation?: "vertical" | "horizontal";
+  /**
+   * Scrollbar visibility, mapped onto base-ui's `keepMounted` plus opacity:
+   * `hover` reveals on hover or scroll, `always` keeps the bar mounted and visible,
+   * `auto` mounts it only while the content overflows.
+   */
   type?: ScrollAreaType;
 };
 
 type ScrollAreaBarProps = ComponentProps<typeof ScrollAreaPrimitive.Scrollbar> & {
+  /** Scrollbar visibility, as on `ScrollArea.Root`. */
   type?: ScrollAreaType;
 };
 

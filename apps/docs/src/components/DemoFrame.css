@@ -50,3 +50,40 @@
 .DemoDensity {
   color: var(--docs-ink);
 }
+
+.DemoMetaSpacer {
+  flex: 1 1 auto;
+}
+
+.DemoSourcePath {
+  color: var(--docs-sub);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 60%;
+}
+
+.DemoSource {
+  margin: 0;
+  border-top: 1px solid var(--docs-line);
+  background: var(--docs-code-bg);
+  padding: 1rem 1.1rem;
+  overflow-x: auto;
+  font: 12px / 1.65 var(--docs-mono);
+  color: var(--sh-identifier, var(--docs-ink));
+  tab-size: 2;
+}
+
+.DemoSource code {
+  display: block;
+  min-width: max-content;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+}
+
+.DemoSource .sh__line {
+  display: block;
+  min-height: 1lh;
+}

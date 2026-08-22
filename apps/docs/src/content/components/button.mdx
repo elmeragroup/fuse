@@ -1,0 +1,28 @@
+---
+title: Button
+lede: >
+  Triggers an action. Renders a native `button` through the base-ui primitive; compose
+  with links or router primitives through the `render` prop.
+export: Button
+source: packages/ui/src/components/button/button.tsx
+demos:
+  - id: variants
+    title: Variants
+    file: button-variant-matrix.tsx
+  - id: sizes
+    title: Sizes
+    file: button-sizes.tsx
+  - id: pending
+    title: Pending
+    file: button-pending.tsx
+  - id: visually-disabled
+    title: Visually disabled
+    file: button-visually-disabled.tsx
+  - id: predictive-intent
+    title: Predictive intent
+    file: button-predictive-intent.tsx
+---
+
+`isVisuallyDisabled` looks disabled but stays interactive, so the button can explain
+itself on activation; `isPending` disables the element outright and stamps
+`data-pending`. Effective disabled is `disabled || isPending`.

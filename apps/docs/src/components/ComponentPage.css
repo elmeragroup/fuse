@@ -1,0 +1,50 @@
+.ComponentImport {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 1rem 0 0;
+  flex-wrap: wrap;
+}
+
+.ComponentImport code {
+  font: 11.5px var(--docs-mono);
+  background: var(--docs-soft);
+  border: 1px solid var(--docs-line);
+  border-radius: 6px;
+  padding: 0.4em 0.6em;
+}
+
+.ComponentRsc {
+  font: 10.5px var(--docs-mono);
+  color: var(--docs-sub);
+  border: 1px solid var(--docs-line);
+  border-radius: 999px;
+  padding: 0.15em 0.55em;
+}
+
+.ComponentProse {
+  margin: 1.4rem 0 0;
+  font-size: 0.9rem;
+  line-height: 1.65;
+  color: #3f434a;
+}
+
+.ComponentProse p {
+  margin: 0 0 0.8rem;
+}
+
+.ComponentProse h2,
+.ComponentProse h3 {
+  color: var(--docs-ink);
+  scroll-margin-top: calc(var(--docs-header-height) + 1rem);
+}
+
+.ComponentSectionHeading {
+  font-size: 1.15rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  margin: 3rem 0 0.9rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--docs-line);
+  scroll-margin-top: calc(var(--docs-header-height) + 1rem);
+}

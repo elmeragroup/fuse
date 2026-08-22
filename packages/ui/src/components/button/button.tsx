@@ -18,18 +18,35 @@ type ButtonPrimitiveProps = Omit<ComponentProps<typeof ButtonPrimitive>, "classN
 
 type ButtonSharedProps = ButtonPrimitiveProps &
   Omit<VariantProps<typeof buttonVariants>, "size"> & {
+    /** Extra classes, merged last through `cn`. */
     className?: string;
+    /**
+     * Renders the disabled treatment (`opacity-70`) and suppresses focus-on-press while
+     * the button stays fully interactive — click, keyboard and focus-visible all still
+     * work. For "looks disabled but explains itself on activation" flows.
+     */
     isVisuallyDisabled?: boolean;
+    /**
+     * Disables the element and stamps `data-pending`, blocking activation entirely.
+     * Effective disabled is `disabled || isPending`.
+     */
     isPending?: boolean;
+    /** Pixels the hit rect is inflated on every side when predicting pointer intent. */
     predictionZoneSize?: number;
+    /**
+     * Predictive-prefetch callback. Fires once when the pointer's predicted trajectory
+     * lands inside the inflated hit rect; browsers without the prediction API fail soft.
+     */
     onIntent?: () => void;
   };
 
 export type ButtonProps =
   | (ButtonSharedProps & {
+      /** Recipe size axis. The `icon*` sizes are square and additionally require an `aria-label`. */
       size?: LabelButtonSize;
     })
   | (ButtonSharedProps & {
+      /** Recipe size axis. The `icon*` sizes are square and additionally require an `aria-label`. */
       size: IconButtonSize;
       "aria-label": string;
     });
