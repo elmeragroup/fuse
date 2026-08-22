@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 const componentsRoot = join(dirname(fileURLToPath(import.meta.url)), "components");
 
 const HARNESSED_SUITES = [
+  "badge",
   "button",
   "card",
   "dialog",

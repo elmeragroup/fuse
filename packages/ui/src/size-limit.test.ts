@@ -41,6 +41,7 @@ describe("size-limit harness", () => {
     expect(names).toEqual([
       ".",
       "theme",
+      "badge",
       "button",
       "card",
       "dialog",

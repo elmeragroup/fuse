@@ -38,6 +38,12 @@
  *   .             61852  (grew with the new entry; still under the standing 64167 ceiling,
  *                         so the aggregate row is recorded, not loosened)
  *   styles.css     8714  (grew with Card's utilities; still under the standing 10616 ceiling)
+ *
+ * Measurements (gzip bytes, 2026-08-22 Badge):
+ *   badge         15662  (new entry, ceiling = measured × 1.5)
+ *   .             56607  (aggregate re-measured with the new entry; under the standing
+ *                         64167 ceiling, so the row is recorded, not loosened)
+ *   styles.css     9213  (grew with Badge's utilities; still under the standing 10616 ceiling)
  */
 import { FLAG_RAW_CEILING_BYTES } from "./flag-payload";
 
@@ -68,6 +74,7 @@ export type FlagRawBudget = {
 export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = [
   { name: ".", entryFile: "index.js", ceilingGzip: 64167 },
   { name: "theme", entryFile: "theme.js", ceilingGzip: 9194 },
+  { name: "badge", entryFile: "badge.js", ceilingGzip: 23493 },
   { name: "button", entryFile: "button.js", ceilingGzip: 37821 },
   { name: "card", entryFile: "card.js", ceilingGzip: 23946 },
   { name: "dialog", entryFile: "dialog.js", ceilingGzip: 67844 },

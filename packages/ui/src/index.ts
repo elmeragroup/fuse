@@ -5,6 +5,7 @@
  * Icons, illustrations, flags, and react-aria/* stay subpath-only.
  */
 
+export * from "./badge";
 export * from "./button";
 export * from "./card";
 export * from "./dialog";

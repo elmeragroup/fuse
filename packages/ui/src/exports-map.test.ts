@@ -33,6 +33,7 @@ describe("exports map", () => {
       "icons",
       "illustrations",
       "flags",
+      "badge",
       "button",
       "card",
       "dialog",
@@ -200,6 +201,12 @@ describe("exports map", () => {
     expect(input?.runtimeExports).toEqual(["Input"]);
     expect(textarea?.inRootBarrel).toBe(true);
     expect(textarea?.runtimeExports).toEqual(["Textarea"]);
+  });
+
+  it("publishes Badge and the public badgeVariants recipe from /badge and the root barrel", () => {
+    const badge = discovered.jsEntries.find((entry) => entry.subpath === "badge");
+    expect(badge?.inRootBarrel).toBe(true);
+    expect(badge?.runtimeExports).toEqual(["Badge", "badgeVariants"]);
   });
 
   it("publishes Card and the public cardVariants recipe from /card and the root barrel", () => {
