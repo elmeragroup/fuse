@@ -51,6 +51,10 @@
       "types": "./src/input.ts",
       "import": "./src/input.ts"
     },
+    "./input-group": {
+      "types": "./src/input-group.ts",
+      "import": "./src/input-group.ts"
+    },
     "./item": {
       "types": "./src/item.ts",
       "import": "./src/item.ts"

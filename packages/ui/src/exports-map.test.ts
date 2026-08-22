@@ -39,6 +39,7 @@ describe("exports map", () => {
       "dialog",
       "field",
       "input",
+      "input-group",
       "item",
       "scroll-area",
       "separator",
@@ -213,6 +214,12 @@ describe("exports map", () => {
     const card = discovered.jsEntries.find((entry) => entry.subpath === "card");
     expect(card?.inRootBarrel).toBe(true);
     expect(card?.runtimeExports).toEqual(["Card", "cardVariants"]);
+  });
+
+  it("publishes InputGroup from /input-group and the root barrel with private recipes", () => {
+    const inputGroup = discovered.jsEntries.find((entry) => entry.subpath === "input-group");
+    expect(inputGroup?.inRootBarrel).toBe(true);
+    expect(inputGroup?.runtimeExports).toEqual(["InputGroup"]);
   });
 
   it("keeps /icons as a subpath-only entry with the curated roster", () => {

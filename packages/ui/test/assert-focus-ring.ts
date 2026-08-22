@@ -28,6 +28,15 @@ export async function assertFocusRingOnKeyboardAbsentOnMouse(
   expect(hasFocusRing(element), "mouse focus must not paint the shared ring").toBe(false);
 }
 
+/**
+ * Ring-absence probe for hosts that are not themselves the focus receiver
+ * (`focusRing({ target: "within" })` group roots). Keeps the Tailwind ring
+ * fingerprint inside this helper.
+ */
+export function expectNoFocusRing(element: HTMLElement, message: string): void {
+  expect(hasFocusRing(element), message).toBe(false);
+}
+
 const DENSITIES = ["dense", "comfortable"] as const;
 
 async function withBothDensities(run: () => Promise<void>): Promise<void> {
@@ -64,4 +73,30 @@ export async function assertFocusRingAtBothDensities(
   element: HTMLElement
 ): Promise<void> {
   await withBothDensities(() => assertFocusRingOnKeyboardAbsentOnMouse(previous, element));
+}
+
+/**
+ * `focusRing({ target: "within" })` variant: keyboard focus on `control` paints
+ * the ring on `ringHost` (the group Root) and never a second ring on the control
+ * itself; blurring clears it. Like the `self` keyboard helper, the mouse arm is
+ * asserted by the caller on a non-editable receiver — Chromium always matches
+ * `:focus-visible` on a clicked text field, so mouse-absence is probed by
+ * clicking an addon button instead (see the InputGroup suite).
+ */
+export async function assertWithinKeyboardFocusRingAtBothDensities(
+  previous: HTMLElement,
+  control: HTMLElement,
+  ringHost: HTMLElement
+): Promise<void> {
+  await withBothDensities(async () => {
+    previous.focus();
+    await userEvent.keyboard("{Tab}");
+    expect(control.matches(":focus-visible"), "Tab must land with :focus-visible").toBe(true);
+    expect(hasFocusRing(ringHost), "focus-visible must paint the shared ring on the group").toBe(
+      true
+    );
+    expect(hasFocusRing(control), "the control must not paint a second ring").toBe(false);
+    control.blur();
+    expect(hasFocusRing(ringHost), "blur must clear the group ring").toBe(false);
+  });
 }

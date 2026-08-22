@@ -15,6 +15,7 @@ const HARNESSED_SUITES = [
   "field",
   "item",
   "input",
+  "input-group",
   "textarea",
 ] as const;
 

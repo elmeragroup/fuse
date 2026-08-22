@@ -51,6 +51,7 @@ describe("size-limit harness", () => {
       "field",
       "item",
       "input",
+      "input-group",
       "textarea",
       "flags",
       "icons/Check",

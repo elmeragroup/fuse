@@ -44,6 +44,13 @@
  *   .             56607  (aggregate re-measured with the new entry; under the standing
  *                         64167 ceiling, so the row is recorded, not loosened)
  *   styles.css     9213  (grew with Badge's utilities; still under the standing 10616 ceiling)
+ *
+ * Measurements (gzip bytes, 2026-08-22 InputGroup):
+ *   input-group   28011  (new entry, ceiling = measured × 1.5)
+ *   .             57448  (aggregate re-measured with the new entry; under the standing
+ *                         64167 ceiling, so the row is recorded, not loosened)
+ *   styles.css     9905  (grew with InputGroup's utilities; still under the standing
+ *                         10616 ceiling)
  */
 import { FLAG_RAW_CEILING_BYTES } from "./flag-payload";
 
@@ -84,6 +91,7 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = [
   { name: "field", entryFile: "field.js", ceilingGzip: 45407 },
   { name: "item", entryFile: "item.js", ceilingGzip: 36177 },
   { name: "input", entryFile: "input.js", ceilingGzip: 37569 },
+  { name: "input-group", entryFile: "input-group.js", ceilingGzip: 42017 },
   { name: "textarea", entryFile: "textarea.js", ceilingGzip: 31917 },
   { name: "flags", entryFile: "flags.js", ceilingGzip: 2082 },
 ];
