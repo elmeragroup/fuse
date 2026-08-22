@@ -9,7 +9,9 @@
  *   • compiled MDX shells — the custom MDX pipeline, ahead of the bundler (§1);
  *   • the registry — API tables resolved from TS types + JSDoc with an RSC status, and
  *     the tokens each component's recipe reads (§3.4, §8);
- *   • `/components/<slug>.md` — the markdown endpoint the page links to (§9).
+ *   • `/components/<slug>.md` — the markdown endpoint the page links to (§9);
+ *   • the ⌘K search index — the page manifest plus the registry, so the palette lists
+ *     exactly the routes the site actually has (§3.2).
  *
  * Any unresolvable type or undocumented public prop fails this pass, and therefore the
  * docs build (§8).
@@ -42,6 +44,7 @@ import {
   sizeBudgetsFile,
   uiSrc,
 } from "./lib/paths.ts";
+import { renderSearchIndex } from "./lib/search.ts";
 import { readBundleSizes } from "./lib/sizes.ts";
 import type { BundleSizeReport } from "./lib/sizes.ts";
 import { collectRecipeSources } from "./lib/sources.ts";
@@ -316,6 +319,11 @@ function verifyStaticRoutes(problems: ProblemLog): void {
   }
 }
 
+/** The ⌘K palette index (§3.2). */
+function emitSearchIndex(components: readonly DocsComponent[]): void {
+  writeFile(path.join(generatedDir, "search-index.ts"), `${BANNER}${renderSearchIndex(components)}`);
+}
+
 /** The site-root AI index (§9). */
 function emitLlmsTxt(components: readonly DocsComponent[]): void {
   writeFile(llmsTxtFile, renderLlmsTxt(components));
@@ -338,6 +346,7 @@ async function main(): Promise<void> {
     emitBundleSizes(sizes);
     emitTokenReference(colors);
     emitMarkdownEndpoints(components);
+    emitSearchIndex(components);
     emitLlmsTxt(components);
     pruneStale(generatedDir);
     pruneStale(markdownOutDir);

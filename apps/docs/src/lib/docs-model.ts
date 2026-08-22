@@ -121,6 +121,28 @@ export type DocsComponent = {
   hasContent: boolean;
 };
 
+/** Which SideNav group a search hit belongs to; the palette shows it next to the title. */
+export type SearchGroup = "Overview" | "Handbook" | "Components";
+
+/**
+ * One destination in the ⌘K palette index (docs-site.md §3.2).
+ *
+ * Emitted by the docs generation pass from the two inventories the SideNav and
+ * `llms.txt` already share — the authored page manifest and the generated component
+ * registry — so the palette can never list a route that does not exist, and a new
+ * component page becomes searchable the moment its MDX shell lands.
+ */
+export type SearchEntry = {
+  /** Site-relative route the palette navigates to. */
+  href: string;
+  title: string;
+  group: SearchGroup;
+  /** The page's one-line description (static pages) or lede (component pages). */
+  description: string;
+  /** Extra match text — slug, import specifier, API part names, demo titles. */
+  keywords: readonly string[];
+};
+
 /** What kind of artifact a budgeted entry measures. */
 export type BundleEntryKind = "js" | "css";
 

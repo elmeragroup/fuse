@@ -6,6 +6,7 @@ import Link from "next/link";
 
 import "./Header.css";
 import { usePreviewTheme } from "./PreviewTheme";
+import { SearchPalette } from "./SearchPalette";
 import { ThemePicker } from "./ThemePicker";
 
 export function Header(): ReactElement {
@@ -17,6 +18,7 @@ export function Header(): ReactElement {
         elmera<span>/ui</span>
       </Link>
       <ThemePicker theme={theme} onThemeChange={setTheme} />
+      <SearchPalette />
     </header>
   );
 }

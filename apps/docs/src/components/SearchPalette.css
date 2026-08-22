@@ -1,0 +1,107 @@
+.HeaderSearch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 26px;
+  padding: 4px 8px;
+  border: 1px solid var(--docs-line);
+  border-radius: 6px;
+  background: var(--docs-soft);
+  color: var(--docs-sub);
+  font: 500 11.5px var(--docs-mono);
+  cursor: pointer;
+}
+
+.HeaderSearch:hover {
+  color: var(--docs-ink);
+}
+
+.HeaderSearch:focus-visible {
+  outline: 2px solid var(--docs-ink);
+  outline-offset: 2px;
+}
+
+.HeaderSearchKeys {
+  font: inherit;
+  color: var(--docs-sub);
+}
+
+/* The popup is the library Dialog; only the docs-local chrome inside it is styled here. */
+.SearchPalette {
+  display: block;
+  overflow: hidden;
+  font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+
+.SearchPaletteTitle {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.SearchPaletteInput {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.9rem 1rem;
+  border: 0;
+  border-bottom: 1px solid var(--docs-line);
+  background: transparent;
+  color: var(--docs-ink);
+  font-size: 0.95rem;
+}
+
+.SearchPaletteInput::placeholder {
+  color: var(--docs-sub);
+}
+
+.SearchPaletteInput:focus {
+  outline: none;
+}
+
+.SearchPaletteResults {
+  list-style: none;
+  margin: 0;
+  padding: 0.35rem;
+  max-height: 22rem;
+  overflow-y: auto;
+}
+
+.SearchPaletteOption {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.4rem 0.65rem;
+  border-radius: 6px;
+  color: var(--docs-sub);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.SearchPaletteOption[data-active] {
+  background: var(--docs-soft);
+  color: var(--docs-ink);
+}
+
+.SearchPaletteOptionTitle {
+  color: var(--docs-ink);
+  font-weight: 500;
+}
+
+.SearchPaletteOptionGroup {
+  font: 500 11px var(--docs-mono);
+  color: var(--docs-sub);
+}
+
+.SearchPaletteEmpty {
+  margin: 0;
+  padding: 1rem;
+  color: var(--docs-sub);
+  font-size: 0.85rem;
+}
