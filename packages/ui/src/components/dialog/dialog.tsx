@@ -13,17 +13,21 @@ import { useThemeScopeContainer } from "../../theme/theme-scope-container";
 import {
   overlayFooterClass,
   overlayLayer,
+  overlayScrimClass,
   overlaySizeClasses,
   overlayTitleClass,
 } from "../overlay/overlay-classes";
 import { overlayCornerCloseButton, overlayFooterCloseButton } from "../overlay/overlay-close-button";
 import { dialogStrings } from "./intl";
 
+/** Resolved once at module scope — the recipe below does the same (no per-render work). */
+const selfFocusRing = focusRing({ target: "self" }).root();
+
 const dialogContentVariants = tv({
   base: cn(
     "text-sm shadow-lg fixed top-1/2 left-1/2 grid max-h-[calc(100%-2rem)] w-full -translate-x-1/2 -translate-y-1/2 gap-6 overflow-y-auto rounded-xl bg-popover p-6 text-popover-foreground ring-1 ring-foreground/10 duration-100 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
     overlayLayer,
-    focusRing({ target: "self" }).root()
+    selfFocusRing
   ),
   variants: {
     // The 13-value axis is shared with the interim RAC Modal (dialog.md §4).
@@ -43,11 +47,7 @@ function DialogTrigger({
   ...props
 }: ComponentProps<typeof DialogPrimitive.Trigger>): ReactElement {
   return (
-    <DialogPrimitive.Trigger
-      data-slot="dialog-trigger"
-      className={cn(focusRing({ target: "self" }).root(), className)}
-      {...props}
-    />
+    <DialogPrimitive.Trigger data-slot="dialog-trigger" className={cn(selfFocusRing, className)} {...props} />
   );
 }
 
@@ -57,11 +57,7 @@ function DialogPortal(props: ComponentProps<typeof DialogPrimitive.Portal>): Rea
 
 function DialogClose({ className, ...props }: ComponentProps<typeof DialogPrimitive.Close>): ReactElement {
   return (
-    <DialogPrimitive.Close
-      data-slot="dialog-close"
-      className={cn(focusRing({ target: "self" }).root(), className)}
-      {...props}
-    />
+    <DialogPrimitive.Close data-slot="dialog-close" className={cn(selfFocusRing, className)} {...props} />
   );
 }
 
@@ -73,7 +69,8 @@ function DialogOverlay({
     <DialogPrimitive.Backdrop
       data-slot="dialog-overlay"
       className={cn(
-        "bg-black/10 supports-backdrop-filter:backdrop-blur-xs fixed inset-0 isolate duration-100 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+        overlayScrimClass,
+        "fixed inset-0 isolate duration-100 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
         overlayLayer,
         className
       )}

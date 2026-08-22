@@ -3,6 +3,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
+import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { cn } from "../../styles/cn";
 import { cardVariants } from "./card-variants";
 
@@ -46,7 +47,7 @@ describe("cardVariants", () => {
     ].join(" ");
     expect(resolved).not.toContain("dark:");
     expect(resolved).not.toContain("destructive");
-    expect(resolved).not.toMatch(/\b(?:bg|text|border)-(?:white|black|gray|zinc|slate|neutral)\b/);
+    expect(resolved).not.toMatch(RAW_PALETTE_RE);
   });
 });
 

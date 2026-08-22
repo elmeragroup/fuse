@@ -10,7 +10,12 @@ import {
 import { tv } from "tailwind-variants";
 import type { VariantProps } from "tailwind-variants";
 
-import { overlayLayer, overlaySizeClasses } from "../../components/overlay/overlay-classes";
+import type { OverlaySize } from "../../components/overlay/overlay-classes";
+import {
+  overlayLayer,
+  overlayScrimClass,
+  overlaySizeClasses,
+} from "../../components/overlay/overlay-classes";
 import { cn } from "../../styles/cn";
 import { useThemeScopeContainer } from "../../theme/theme-scope-container";
 import { OVERLAY_CONTAINER_POPOVER_SELECTOR } from "./overlay-container";
@@ -18,7 +23,8 @@ import { OVERLAY_CONTAINER_POPOVER_SELECTOR } from "./overlay-container";
 const modalVariants = tv({
   slots: {
     overlay: cn(
-      "bg-black/10 supports-backdrop-filter:backdrop-blur-xs fixed top-0 left-0 isolate flex h-(--visual-viewport-height) w-full items-center justify-center overflow-auto p-4 text-center",
+      overlayScrimClass,
+      "fixed top-0 left-0 isolate flex h-(--visual-viewport-height) w-full items-center justify-center overflow-auto p-4 text-center",
       overlayLayer
     ),
     base: cn(
@@ -50,7 +56,9 @@ const modalVariants = tv({
       "8xl": { base: overlaySizeClasses["8xl"] },
       "9xl": { base: overlaySizeClasses["9xl"] },
       "10xl": { base: overlaySizeClasses["10xl"] },
-    },
+      // `satisfies` makes the re-keying total: a 14th width added to overlaySizeClasses
+      // fails this recipe to compile rather than silently going missing on this tier.
+    } satisfies Record<OverlaySize, { base: string }>,
     scroll: {
       true: { base: "overflow-y-auto" },
       false: { base: "" },

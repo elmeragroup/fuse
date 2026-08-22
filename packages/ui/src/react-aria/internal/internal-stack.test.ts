@@ -143,6 +143,14 @@ describe("the shared overlay class vocabulary", () => {
     expect(source("modal.tsx")).not.toContain("--container-sm");
   });
 
+  it("borrows the backdrop scrim instead of restating it (dialog.md §5)", () => {
+    const modal = source("modal.tsx");
+    expect(modal).toContain("overlayScrimClass");
+    // The allowlisted `bg-black/10` literal is spelled only in the shared module.
+    expect(modal).not.toContain("bg-black/10");
+    expect(modal).not.toContain("backdrop-blur-xs");
+  });
+
   it("borrows the public Dialog's heading and footer literals", () => {
     const dialog = source("dialog.tsx");
     expect(dialog).toContain("overlayTitleClass");

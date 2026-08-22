@@ -3,6 +3,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
+import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { cn } from "../../styles/cn";
 import { badgeVariants } from "./badge-variants";
 
@@ -24,9 +25,6 @@ const VARIANTS = [
   "accent",
   "card",
 ] as const;
-
-const PALETTE_RE =
-  /\b(?:bg|text|border|ring|fill|stroke)-(?:white|black|gray|zinc|slate|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink)\b/;
 
 describe("badgeVariants", () => {
   it("defaults to variant=default and size=default", () => {
@@ -56,7 +54,7 @@ describe("badgeVariants", () => {
       const resolved = badgeVariants({ variant });
       expect(resolved, variant).not.toBe("");
       expect(resolved, variant).not.toContain("dark:");
-      expect(resolved, variant).not.toMatch(PALETTE_RE);
+      expect(resolved, variant).not.toMatch(RAW_PALETTE_RE);
     }
     expect(new Set(VARIANTS).size).toBe(14);
   });

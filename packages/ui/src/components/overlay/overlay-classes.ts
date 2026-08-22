@@ -35,6 +35,16 @@ export const overlaySizeClasses = {
   "10xl": "max-w-[min(1920px,90%)]",
 } as const;
 
+/** The keys of {@link overlaySizeClasses} — the shared overlay width axis. */
+export type OverlaySize = keyof typeof overlaySizeClasses;
+
+/**
+ * The backdrop scrim (dialog.md §5): `bg-black/10` is deliberately not tokenized and is
+ * allowlisted as a raw palette literal; a dark-mode scrim token is on the roadmap. Declared
+ * once so the public Dialog backdrop and the interim tier's overlay cannot drift apart.
+ */
+export const overlayScrimClass = "bg-black/10 supports-backdrop-filter:backdrop-blur-xs";
+
 /** Dialog title typography (dialog.md §2), shared so the interim tier cannot drift. */
 export const overlayTitleClass = "text-base font-medium font-heading leading-none text-balance";
 
