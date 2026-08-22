@@ -16,6 +16,10 @@
       "types": "./src/button.ts",
       "import": "./src/button.ts"
     },
+    "./card": {
+      "types": "./src/card.ts",
+      "import": "./src/card.ts"
+    },
     "./css": "./src/styles/ui.css",
     "./demo-stage-comfortable.css": "./dist/demo-stage-comfortable.css",
     "./dialog": {

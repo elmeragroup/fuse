@@ -34,6 +34,7 @@ describe("exports map", () => {
       "illustrations",
       "flags",
       "button",
+      "card",
       "dialog",
       "field",
       "input",
@@ -199,6 +200,12 @@ describe("exports map", () => {
     expect(input?.runtimeExports).toEqual(["Input"]);
     expect(textarea?.inRootBarrel).toBe(true);
     expect(textarea?.runtimeExports).toEqual(["Textarea"]);
+  });
+
+  it("publishes Card and the public cardVariants recipe from /card and the root barrel", () => {
+    const card = discovered.jsEntries.find((entry) => entry.subpath === "card");
+    expect(card?.inRootBarrel).toBe(true);
+    expect(card?.runtimeExports).toEqual(["Card", "cardVariants"]);
   });
 
   it("keeps /icons as a subpath-only entry with the curated roster", () => {
