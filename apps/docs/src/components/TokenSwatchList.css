@@ -1,0 +1,41 @@
+.TokenList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 0.35rem 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.TokenItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.TokenItem code {
+  font: 11.5px var(--docs-mono);
+  color: var(--docs-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.TokenSwatch {
+  flex: none;
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 3px;
+  border: 1px solid color-mix(in oklab, var(--docs-ink) 18%, transparent);
+}
+
+.TokenSwatchEmpty {
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 3px,
+    color-mix(in oklab, var(--docs-ink) 14%, transparent) 3px,
+    color-mix(in oklab, var(--docs-ink) 14%, transparent) 6px
+  );
+}

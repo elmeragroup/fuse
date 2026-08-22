@@ -15,26 +15,48 @@ import { slugifyHeading } from "../../src/lib/slug.ts";
 const HEADING = /^(#{2,4})\s+(.+?)\s*#*\s*$/;
 const FENCE = /^\s*(?:```|~~~)/;
 
-/** Headings the MDX body contributes to the on-page TOC. */
-export function readContentHeadings(body: string): readonly ContentHeading[] {
-  const headings: ContentHeading[] = [];
+/** One ATX heading found outside a code fence. */
+type Heading = {
+  title: string;
+  depth: number;
+};
+
+/**
+ * The single definition of "what counts as a heading" in an MDX body.
+ *
+ * Walks every line in order, toggling fence state, and hands each line to `visit`
+ * together with its heading — or `null` when the line is not a heading, or is inside a
+ * fenced code block where a leading `#` is source, not structure. Both the TOC reader
+ * and the anchor stamper are written on this, so they cannot drift apart.
+ */
+function visitHeadings<T>(body: string, visit: (line: string, heading: Heading | null) => T): T[] {
   let inFence = false;
-  for (const line of body.split("\n")) {
+  return body.split("\n").map((line) => {
     if (FENCE.test(line)) {
       inFence = !inFence;
-      continue;
+      return visit(line, null);
     }
     if (inFence) {
-      continue;
+      return visit(line, null);
     }
     const match = HEADING.exec(line);
     const hashes = match?.[1];
     const title = match?.[2];
     if (hashes === undefined || title === undefined) {
-      continue;
+      return visit(line, null);
     }
-    headings.push({ id: slugifyHeading(title), title, depth: hashes.length });
-  }
+    return visit(line, { title, depth: hashes.length });
+  });
+}
+
+/** Headings the MDX body contributes to the on-page TOC. */
+export function readContentHeadings(body: string): readonly ContentHeading[] {
+  const headings: ContentHeading[] = [];
+  visitHeadings(body, (_line, heading) => {
+    if (heading !== null) {
+      headings.push({ id: slugifyHeading(heading.title), title: heading.title, depth: heading.depth });
+    }
+  });
   return headings;
 }
 
@@ -45,27 +67,13 @@ export function readContentHeadings(body: string): readonly ContentHeading[] {
  * disagree, and no rehype plugin or runtime heading component has to re-derive them.
  */
 export function stampHeadingAnchors(body: string): string {
-  let inFence = false;
-  return body
-    .split("\n")
-    .map((line) => {
-      if (FENCE.test(line)) {
-        inFence = !inFence;
-        return line;
-      }
-      if (inFence) {
-        return line;
-      }
-      const match = HEADING.exec(line);
-      const hashes = match?.[1];
-      const title = match?.[2];
-      if (hashes === undefined || title === undefined) {
-        return line;
-      }
-      const tag = `h${String(hashes.length)}`;
-      return `<${tag} id="${slugifyHeading(title)}">${title}</${tag}>`;
-    })
-    .join("\n");
+  return visitHeadings(body, (line, heading) => {
+    if (heading === null) {
+      return line;
+    }
+    const tag = `h${String(heading.depth)}`;
+    return `<${tag} id="${slugifyHeading(heading.title)}">${heading.title}</${tag}>`;
+  }).join("\n");
 }
 
 /** True when the MDX body has anything to render beyond whitespace. */

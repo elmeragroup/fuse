@@ -31,7 +31,6 @@ export type SplitDocument = {
 
 const FENCE = "---";
 const SCALAR_KEYS = ["title", "lede", "entry", "export", "source"] as const;
-const DEMO_KEYS = ["id", "title", "file"] as const;
 
 /**
  * Splits a `---` fenced frontmatter block off the top of an MDX file. The block is
@@ -103,15 +102,15 @@ type MutableDemo = {
 };
 
 function setDemoField(demo: MutableDemo, key: string, value: string, file: string): void {
-  if (key === DEMO_KEYS[0]) {
+  if (key === "id") {
     demo.id = value;
     return;
   }
-  if (key === DEMO_KEYS[1]) {
+  if (key === "title") {
     demo.title = value;
     return;
   }
-  if (key === DEMO_KEYS[2]) {
+  if (key === "file") {
     demo.file = value;
     return;
   }

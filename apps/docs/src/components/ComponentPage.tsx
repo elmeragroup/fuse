@@ -34,7 +34,7 @@ export function ComponentPage({ component }: ComponentPageProps): ReactElement {
         sourcePath={component.sourcePath}
       />
       <p className="ComponentImport">
-        <code>{`import { ${component.parts[0]?.name.split(".")[0] ?? component.title} } from "${component.entry}";`}</code>
+        <code>{`import { ${component.exportName} } from "${component.entry}";`}</code>
         <span className="ComponentRsc">{component.rsc}</span>
       </p>
       {component.hasContent && Content !== undefined ? (

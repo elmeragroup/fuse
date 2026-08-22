@@ -163,6 +163,7 @@ describe("markdown endpoint rendering", () => {
     title: "Widget",
     lede: "A widget.",
     entry: "@elmeragroup/ui/widget",
+    exportName: "Widget",
     sourcePath: "packages/ui/src/components/widget/widget.tsx",
     sourceUrl: "https://example.invalid/widget.tsx",
     markdownUrl: "/components/widget.md",

@@ -106,6 +106,8 @@ export type DocsComponent = {
   lede: string;
   /** Public import specifier, e.g. `@elmeragroup/ui/button`. */
   entry: string;
+  /** The identifier the entry facade exports, e.g. `Button` or `Dialog`. */
+  exportName: string;
   /** Repo-relative path of the component implementation, for **View source**. */
   sourcePath: string;
   /** Absolute URL of the component implementation on the repo host. */

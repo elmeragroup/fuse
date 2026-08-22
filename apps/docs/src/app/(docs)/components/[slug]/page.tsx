@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 
 import { ComponentPage } from "../../../../components/ComponentPage";
 import { DOCS_COMPONENTS } from "../../../../generated/registry";
+import { componentBySlug } from "../../../../lib/nav";
 
 export const dynamicParams = false;
 
@@ -22,7 +23,7 @@ export function generateStaticParams(): RouteParams[] {
 
 export async function generateMetadata({ params }: ComponentRouteProps): Promise<Metadata> {
   const { slug } = await params;
-  const component = DOCS_COMPONENTS.find((entry) => entry.slug === slug);
+  const component = componentBySlug(slug);
   if (component === undefined) {
     return {};
   }
@@ -31,7 +32,7 @@ export async function generateMetadata({ params }: ComponentRouteProps): Promise
 
 export default async function ComponentRoute({ params }: ComponentRouteProps): Promise<ReactElement> {
   const { slug } = await params;
-  const component = DOCS_COMPONENTS.find((entry) => entry.slug === slug);
+  const component = componentBySlug(slug);
   if (component === undefined) {
     notFound();
   }

@@ -34,7 +34,7 @@ const TEMPLATES = "plop-templates/component";
 const BUDGETS = `${UI}/scripts/size-budgets.ts`;
 const BUDGET_MARKER = "// plop:js-entry-budget";
 
-/** Kebab names within one edit of the typed name, so a typo gets a pointed hint. */
+/** Kebab names sharing a three-character prefix with the typed name, so a typo gets a pointed hint. */
 function nearestEntries(name) {
   return BARE_COMPONENT_ENTRIES.filter(
     (entry) => entry.startsWith(name.slice(0, 3)) || name.startsWith(entry.slice(0, 3))

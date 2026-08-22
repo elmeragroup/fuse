@@ -7,6 +7,18 @@
 import type { ApiPart, DocsComponent } from "../../src/lib/docs-model.ts";
 import { propDescription } from "../../src/lib/docs-model.ts";
 
+/**
+ * Turns accumulated lines into a finished markdown document: collapsed blank runs, no
+ * trailing whitespace, exactly one closing newline. Every markdown artifact the docs
+ * build writes ends here, so the endpoints and `llms.txt` cannot differ in shape.
+ */
+export function finishMarkdown(lines: readonly string[]): string {
+  return `${lines
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trimEnd()}\n`;
+}
+
 function escapeCell(value: string): string {
   return value.replace(/\|/g, "\\|").replace(/\n+/g, " ");
 }
@@ -77,8 +89,5 @@ export function renderComponentMarkdown(component: DocsComponent): string {
     }
     lines.push("");
   }
-  return `${lines
-    .join("\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .trimEnd()}\n`;
+  return finishMarkdown(lines);
 }

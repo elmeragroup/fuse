@@ -33,7 +33,6 @@ import { renderComponentMarkdown } from "./lib/markdown.ts";
 import { compileMdx, hasBodyContent, readContentHeadings } from "./lib/mdx.ts";
 import {
   contentDir,
-  docsRoot,
   docsRouteGroup,
   generatedDir,
   llmsTxtFile,
@@ -214,6 +213,7 @@ async function buildComponent(
     title: frontmatter.title,
     lede: frontmatter.lede,
     entry: paths.entry,
+    exportName: paths.exportName,
     sourcePath: repoRelative(paths.sourceFile),
     sourceUrl: `${REPO_BLOB_BASE}/${repoRelative(paths.sourceFile)}`,
     markdownUrl: `/components/${slug}.md`,
@@ -368,5 +368,5 @@ try {
   process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
   process.exitCode = 1;
   // Leave no half-written registry behind for the bundler to pick up.
-  rmSync(path.join(docsRoot, "src/generated/registry.ts"), { force: true });
+  rmSync(path.join(generatedDir, "registry.ts"), { force: true });
 }

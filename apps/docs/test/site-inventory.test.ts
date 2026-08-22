@@ -3,20 +3,7 @@ import { describe, expect, it } from "vitest";
 import { DOCS_COMPONENTS } from "../src/generated/registry";
 import { COMPONENT_NAV, NAV_GROUPS } from "../src/lib/nav";
 import { HOME_PAGE, STATIC_PAGES } from "../src/lib/pages";
-import { docsBaseUrl } from "./docs-server";
-
-async function fetchOk(pathname: string): Promise<Response> {
-  const response = await fetch(new URL(pathname, docsBaseUrl()));
-  await response.arrayBuffer();
-  expect(response.ok, `${pathname} responded ${String(response.status)}`).toBe(true);
-  return response;
-}
-
-async function fetchText(pathname: string): Promise<string> {
-  const response = await fetch(new URL(pathname, docsBaseUrl()));
-  expect(response.ok, `${pathname} responded ${String(response.status)}`).toBe(true);
-  return await response.text();
-}
+import { fetchOk, fetchText } from "./docs-server";
 
 const NAV_HREFS = NAV_GROUPS.flatMap((group) => group.items.map((item) => item.href));
 

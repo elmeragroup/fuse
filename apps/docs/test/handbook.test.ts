@@ -5,13 +5,7 @@ import { themeSlug } from "@elmeragroup/ui/theme";
 import { BUNDLE_SIZES, BUNDLE_SIZES_MEASURED_ON } from "../src/generated/bundle-sizes";
 import { COLOR_TOKENS } from "../src/generated/token-reference";
 import { LEGAL_THEMES } from "../src/lib/theme";
-import { docsBaseUrl } from "./docs-server";
-
-async function fetchText(pathname: string): Promise<string> {
-  const response = await fetch(new URL(pathname, docsBaseUrl()));
-  expect(response.ok, `${pathname} responded ${String(response.status)}`).toBe(true);
-  return await response.text();
-}
+import { fetchText } from "./docs-server";
 
 /** The four permutations the pin table forbids; none may reach the DOM. */
 const ILLEGAL_SLUGS = [

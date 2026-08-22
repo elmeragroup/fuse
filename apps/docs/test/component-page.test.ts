@@ -1,12 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { docsBaseUrl } from "./docs-server";
-
-async function fetchText(pathname: string): Promise<string> {
-  const response = await fetch(new URL(pathname, docsBaseUrl()));
-  expect(response.ok, `${pathname} responded ${String(response.status)}`).toBe(true);
-  return await response.text();
-}
+import { fetchText } from "./docs-server";
 
 describe("component page anatomy (docs-site.md §3.4)", () => {
   it("renders H1, lede and the two meta links", async () => {

@@ -26,8 +26,10 @@ export function apiPartAnchor(partName: string): string {
   return `api-${partName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
 }
 
+const COMPONENTS_PREFIX = "/components/";
+
 export function componentHref(slug: string): string {
-  return `/components/${slug}`;
+  return `${COMPONENTS_PREFIX}${slug}`;
 }
 
 /** Flat alphabetical list of every published component page (docs-site.md §3.3). */
@@ -53,8 +55,16 @@ export const NAV_GROUPS: readonly NavGroup[] = [
   { label: "Components", items: COMPONENT_NAV },
 ];
 
+/** The one slug → component lookup: the route, its metadata and the TOC all read it. */
+export function componentBySlug(slug: string): DocsComponent | undefined {
+  return DOCS_COMPONENTS.find((component) => component.slug === slug);
+}
+
 export function componentForPath(pathname: string): DocsComponent | undefined {
-  return DOCS_COMPONENTS.find((component) => componentHref(component.slug) === pathname);
+  if (!pathname.startsWith(COMPONENTS_PREFIX)) {
+    return undefined;
+  }
+  return componentBySlug(pathname.slice(COMPONENTS_PREFIX.length));
 }
 
 /** The on-page TOC of a component page: prose headings, demos, API parts, tokens. */
