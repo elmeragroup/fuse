@@ -34,6 +34,7 @@ describe("exports map", () => {
       "illustrations",
       "flags",
       "button",
+      "dialog",
       "field",
       "input",
       "item",

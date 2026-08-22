@@ -25,7 +25,13 @@
  *   textarea      21278
  *   flags          1388
  *   themes.css     2274
- *   styles.css     7077  (recalibrated this PR, measured×1.5)
+ *   styles.css     7077  (recalibrated in the Wave 3 PR, measured×1.5)
+ *
+ * Measurements (gzip bytes, 2026-08-22 Dialog):
+ *   dialog        45229  (new entry, ceiling = measured × 1.5)
+ *   .             61103  (grew with the new entry; still under the standing 64167 ceiling,
+ *                         so the aggregate row is recorded, not loosened)
+ *   styles.css     8211  (grew with Dialog's utilities; still under the standing 10616 ceiling)
  */
 import { FLAG_RAW_CEILING_BYTES } from "./flag-payload";
 
@@ -57,6 +63,7 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = [
   { name: ".", entryFile: "index.js", ceilingGzip: 64167 },
   { name: "theme", entryFile: "theme.js", ceilingGzip: 9194 },
   { name: "button", entryFile: "button.js", ceilingGzip: 37821 },
+  { name: "dialog", entryFile: "dialog.js", ceilingGzip: 67844 },
   { name: "scroll-area", entryFile: "scroll-area.js", ceilingGzip: 42804 },
   { name: "illustrations", entryFile: "illustrations.js", ceilingGzip: 16590 },
   { name: "separator", entryFile: "separator.js", ceilingGzip: 15786 },

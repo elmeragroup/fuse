@@ -42,6 +42,7 @@ describe("size-limit harness", () => {
       ".",
       "theme",
       "button",
+      "dialog",
       "scroll-area",
       "illustrations",
       "separator",

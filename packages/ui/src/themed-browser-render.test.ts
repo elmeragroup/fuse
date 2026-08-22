@@ -7,6 +7,7 @@ const componentsRoot = join(dirname(fileURLToPath(import.meta.url)), "components
 
 const HARNESSED_SUITES = [
   "button",
+  "dialog",
   "scroll-area",
   "separator",
   "field",

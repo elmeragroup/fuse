@@ -43,7 +43,7 @@
 
 All rendering parts take `className` (merged via `cn`) and forward the rest of their base-ui part's props.
 
-**Dialog.Root** — `ComponentProps<DialogPrimitive.Root>` verbatim (`open`/`defaultOpen`/`onOpenChange`, `modal`, `dismissible`, …). Primitive-tier naming per conventions.
+**Dialog.Root** — `ComponentProps<DialogPrimitive.Root>` verbatim (`open`/`defaultOpen`/`onOpenChange`, `modal`, `disablePointerDismissal`, …). Primitive-tier naming per conventions.
 
 **Dialog.Trigger / Dialog.Portal / Dialog.Close** — their base-ui part's props verbatim (all support `render` per useRender polymorphism).
 
@@ -106,8 +106,8 @@ Animation strategy: **keyframe-based** (`tw-animate-css`) — `data-open:animate
 
 - Base-ui wires `role="dialog"`, `aria-modal`, `aria-labelledby` → `Dialog.Title`, `aria-describedby` → `Dialog.Description`, and trigger `aria-haspopup`/`aria-expanded`/`aria-controls`.
 - Focus is trapped inside the popup while open; on open, focus moves into the popup; on close, focus returns to the trigger.
-- Keyboard: Escape closes (unless `dismissible={false}`); Tab cycles within the trap.
-- Backdrop click dismisses when `modal`/`dismissible` allow it (base-ui defaults).
+- Keyboard: Escape closes unless the consumer cancels it (`onOpenChange(open, eventDetails)` → `eventDetails.cancel()` when `eventDetails.reason === "escape-key"`); Tab cycles within the trap.
+- Backdrop click dismisses unless `disablePointerDismissal` is set (base-ui defaults; `modal` also governs outside interaction).
 - Corner close button carries the localized `closeLabel` as sr-only text and a `hit-area-1` expanded hit target.
 - Consumers should always render `Dialog.Title` (base-ui warns otherwise); `Dialog.Description` is optional but recommended.
 
@@ -137,7 +137,7 @@ Role/label-based queries throughout; keyboard flows per §7:
 - Close affordances render and operate in all four locales; `closeLabel` overrides dictionary copy on Content and Footer.
 - `size`: `data-slot="dialog-content"` element carries the expected max-width class for a sample of values (`sm`, `md`, `10xl`).
 - `container`: popup renders inside the provided element / nearest ThemeScope, not `document.body`.
-- `dismissible={false}`: Escape and backdrop click do not close.
+- Non-dismissible dialog (`disablePointerDismissal` plus cancelling the `escape-key` reason in `onOpenChange`): Escape and backdrop click do not close.
 
 ## 10 Demo requirements
 
