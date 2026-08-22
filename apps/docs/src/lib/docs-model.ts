@@ -121,6 +121,26 @@ export type DocsComponent = {
   hasContent: boolean;
 };
 
+/** What kind of artifact a budgeted entry measures. */
+export type BundleEntryKind = "js" | "css";
+
+/**
+ * One published entry's measured min+gzip size against the ceiling `size-limit`
+ * enforces (performance.md §2). Both numbers come from the library's budget module.
+ */
+export type BundleSize = {
+  /** Budget name, e.g. `button`, `icons/Check`, `styles.css`, or `.` for the root barrel. */
+  name: string;
+  kind: BundleEntryKind;
+  measuredGzip: number;
+  ceilingGzip: number;
+};
+
+/** How much of an entry's ceiling its last measurement used, as a 0–1 fraction. */
+export function ceilingUsage(entry: BundleSize): number {
+  return entry.ceilingGzip === 0 ? 1 : entry.measuredGzip / entry.ceilingGzip;
+}
+
 /**
  * What an API table shows in the description cell. A recipe axis carries no JSDoc —
  * its printed union in the type column is the documentation — so it is labelled as such

@@ -59,6 +59,13 @@ body {
   padding: 0.1em 0.35em;
 }
 
+.DocsGroupHeading {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--docs-sub);
+  margin: 2rem 0 -0.9rem;
+}
+
 .DocsList {
   margin: 1.4rem 0 0;
   padding: 0;

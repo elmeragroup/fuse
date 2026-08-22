@@ -1,0 +1,48 @@
+/*
+ * Quiet chrome, coloured cells (docs-site.md §5). The grid itself is hairlines and mono
+ * labels; every drop of colour on the page comes from inside a cell's ThemeScope.
+ */
+.MatrixGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 1px;
+  background: var(--docs-line);
+  border: 1px solid var(--docs-line);
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 1.4rem 0 2rem;
+}
+
+.MatrixCell {
+  display: flex;
+  flex-direction: column;
+  background: var(--background);
+  min-width: 0;
+}
+
+.MatrixSlug {
+  font-family: var(--docs-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.01em;
+  color: var(--muted-foreground);
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.MatrixSurface {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0.85rem 0.75rem 1rem;
+  color: var(--foreground);
+}
+
+.MatrixRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}

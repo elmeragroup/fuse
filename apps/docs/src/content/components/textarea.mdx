@@ -1,0 +1,20 @@
+---
+title: Textarea
+lede: >
+  An unlabeled multi-line text control. A plain native `textarea` carrying the library's
+  control tokens; labeled usage composes it under `Field.Root`.
+export: Textarea
+demos:
+  - id: basic
+    title: Basic
+    file: textarea-basic.tsx
+  - id: states
+    title: States
+    file: textarea-states.tsx
+  - id: in-field
+    title: In a Field
+    file: textarea-in-field.tsx
+---
+
+Like `Input`, a bare `Textarea` has no accessible name of its own. Compose it under
+`Field.Root`, or inside `InputGroup` when it needs adornments.

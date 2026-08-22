@@ -1,0 +1,27 @@
+---
+title: Card
+lede: >
+  A layout surface. `Card.Root` sets the surface and its parts — header, tag, title,
+  description, action, content, footer — compose plain elements, so the whole compound is
+  server-safe.
+export: Card
+demos:
+  - id: basic
+    title: Basic
+    file: card-basic.tsx
+  - id: with-action
+    title: With an action
+    file: card-with-action.tsx
+  - id: tag
+    title: Tag
+    file: card-tag.tsx
+  - id: horizontal
+    title: Horizontal
+    file: card-horizontal.tsx
+  - id: item-rows
+    title: Item rows
+    file: card-item-rows.tsx
+---
+
+Card has no base-ui primitive behind it. Every part is a styled element, and the recipe
+`cardVariants` is public so an app can restyle a bespoke surface on the same axes.

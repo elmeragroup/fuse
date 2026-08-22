@@ -6,7 +6,10 @@
     // the root lint, instead of a build script racing them for the same files.
     "generate": {
       "dependsOn": ["^build"],
-      "outputs": ["src/generated/**", "public/components/**"]
+      // The Tokens page publishes the library's own recorded measurements, so a budget
+      // recalibration must invalidate this task even though nothing in apps/docs moved.
+      "inputs": ["$TURBO_DEFAULT$", "../../packages/ui/scripts/size-budgets.ts"],
+      "outputs": ["src/generated/**", "public/components/**", "public/llms.txt"]
     },
     "build": {
       "dependsOn": ["generate"]

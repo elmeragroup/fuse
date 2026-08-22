@@ -1,0 +1,112 @@
+.DocsProse {
+  font-size: 0.9rem;
+  line-height: 1.7;
+  color: #3f434a;
+}
+
+.DocsProse h2 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--docs-ink);
+  margin: 2.4rem 0 0.6rem;
+}
+
+.DocsProse h3 {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--docs-ink);
+  margin: 1.6rem 0 0.4rem;
+}
+
+.DocsProse p,
+.DocsProse ul,
+.DocsProse ol {
+  margin: 0 0 0.9rem;
+}
+
+.DocsProse ul,
+.DocsProse ol {
+  padding-left: 1.1rem;
+}
+
+.DocsProse li {
+  margin-bottom: 0.3rem;
+}
+
+.DocsProse strong {
+  color: var(--docs-ink);
+  font-weight: 600;
+}
+
+.DocsProse a {
+  color: var(--docs-ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.DocsProse code {
+  font: 11.5px var(--docs-mono);
+  background: var(--docs-soft);
+  border: 1px solid var(--docs-line);
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+}
+
+.DocsProse pre {
+  overflow-x: auto;
+  margin: 0 0 1.2rem;
+  padding: 0.9rem 1rem;
+  background: var(--docs-code-bg);
+  border: 1px solid var(--docs-line);
+  border-radius: 8px;
+}
+
+.DocsProse pre code {
+  background: none;
+  border: 0;
+  padding: 0;
+  font-size: 11.5px;
+  line-height: 1.65;
+}
+
+.DocsTableWrap {
+  overflow-x: auto;
+  margin: 0 0 1.2rem;
+}
+
+.DocsTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.DocsTable th,
+.DocsTable td {
+  text-align: left;
+  padding: 0.45rem 0.7rem 0.45rem 0;
+  border-bottom: 1px solid var(--docs-line);
+  vertical-align: top;
+}
+
+.DocsTable th {
+  font-weight: 550;
+  color: var(--docs-sub);
+  font-size: 0.72rem;
+  text-transform: none;
+}
+
+.DocsTable td.DocsNum,
+.DocsTable th.DocsNum {
+  font-family: var(--docs-mono);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  padding-right: 0;
+  white-space: nowrap;
+}
+
+.DocsMono {
+  font-family: var(--docs-mono);
+  font-size: 0.75rem;
+}

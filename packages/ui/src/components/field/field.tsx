@@ -58,7 +58,13 @@ function FieldLegend({
   className,
   variant = "legend",
   ...props
-}: ComponentProps<typeof FieldsetPrimitive.Legend> & { variant?: "legend" | "label" }): ReactElement {
+}: ComponentProps<typeof FieldsetPrimitive.Legend> & {
+  /**
+   * Emitted as `data-variant` and drives the text size: `"legend"` (default) titles the
+   * fieldset, `"label"` sizes it down to match a `Field.Label`.
+   */
+  variant?: "legend" | "label";
+}): ReactElement {
   return (
     <FieldsetPrimitive.Legend
       data-slot="field-legend"
@@ -152,7 +158,13 @@ function FieldSeparator({
   children,
   className,
   ...props
-}: ComponentProps<"div"> & { children?: ReactNode }): ReactElement {
+}: ComponentProps<"div"> & {
+  /**
+   * Optional inline content rendered over the rule — a label for the break between two
+   * groups of fields. Its presence is reflected as `data-content`.
+   */
+  children?: ReactNode;
+}): ReactElement {
   return (
     <div
       data-slot="field-separator"

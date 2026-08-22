@@ -19,24 +19,31 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, wri
 import path from "node:path";
 
 import type { DocsComponent, DocsDemo } from "../src/lib/docs-model.ts";
+import { STATIC_PAGES } from "../src/lib/pages.ts";
 import { describeComponentApi, openLibraryProject } from "./lib/api.ts";
 import type { LibraryProject } from "./lib/api.ts";
 import { extractDemo } from "./lib/demos.ts";
 import { ProblemLog } from "./lib/errors.ts";
 import { parseShellFrontmatter, splitFrontmatter } from "./lib/frontmatter.ts";
 import type { ShellFrontmatter } from "./lib/frontmatter.ts";
+import { renderLlmsTxt } from "./lib/llms.ts";
 import { renderComponentMarkdown } from "./lib/markdown.ts";
 import { compileMdx, hasBodyContent, readContentHeadings } from "./lib/mdx.ts";
 import {
   contentDir,
   docsRoot,
+  docsRouteGroup,
   generatedDir,
+  llmsTxtFile,
   markdownOutDir,
   REPO_BLOB_BASE,
   repoRelative,
   repoRoot,
+  sizeBudgetsFile,
   uiSrc,
 } from "./lib/paths.ts";
+import { readBundleSizes } from "./lib/sizes.ts";
+import type { BundleSizeReport } from "./lib/sizes.ts";
 import { collectRecipeSources } from "./lib/sources.ts";
 import { extractTokens, readColorTokenMapFromFile } from "./lib/tokens.ts";
 import type { ColorTokenMap } from "./lib/tokens.ts";
@@ -268,6 +275,52 @@ function emitMarkdownEndpoints(components: readonly DocsComponent[]): void {
   }
 }
 
+/** The measured bundle sizes the Tokens page publishes (performance.md §2). */
+function emitBundleSizes(report: BundleSizeReport): void {
+  writeFile(
+    path.join(generatedDir, "bundle-sizes.ts"),
+    `${BANNER}import type { BundleSize } from "../lib/docs-model";
+
+/** The date the library last recorded these measurements next to its budgets. */
+export const BUNDLE_SIZES_MEASURED_ON = ${JSON.stringify(report.measuredOn)};
+
+export const BUNDLE_SIZES: readonly BundleSize[] = ${JSON.stringify(report.entries, null, 2)};
+`
+  );
+}
+
+/** The theme tokens the Tokens page lists, read from the library's own `@theme` block. */
+function emitTokenReference(colors: ColorTokenMap): void {
+  const tokens = [...new Set(colors.values())].sort((left, right) => left.localeCompare(right));
+  writeFile(
+    path.join(generatedDir, "token-reference.ts"),
+    `${BANNER}/** Every colour token a Tailwind utility in the library resolves to. */
+export const COLOR_TOKENS: readonly string[] = ${JSON.stringify(tokens, null, 2)};
+`
+  );
+}
+
+/**
+ * Every authored nav destination has to be a real route.
+ *
+ * The Components group is generated from the shells that just built, so it cannot point
+ * at a missing page; the Overview and Handbook groups are authored, and this is what
+ * stops one of them from shipping a 404 in the SideNav (§3.3).
+ */
+function verifyStaticRoutes(problems: ProblemLog): void {
+  for (const page of STATIC_PAGES) {
+    const route = path.join(docsRouteGroup, page.href, "page.tsx");
+    if (!existsSync(route)) {
+      problems.add(`nav entry ${page.href} has no route at ${repoRelative(route)}`);
+    }
+  }
+}
+
+/** The site-root AI index (§9). */
+function emitLlmsTxt(components: readonly DocsComponent[]): void {
+  writeFile(llmsTxtFile, renderLlmsTxt(components));
+}
+
 async function main(): Promise<void> {
   const problems = new ProblemLog();
   const colors = readColorTokenMapFromFile(path.join(uiSrc, "styles/ui.css"));
@@ -277,10 +330,15 @@ async function main(): Promise<void> {
     for (const file of shellFiles()) {
       components.push(await buildComponent(context, file, problems, colors));
     }
+    verifyStaticRoutes(problems);
+    const sizes = readBundleSizes(sizeBudgetsFile, problems);
     problems.throwIfFailed();
     emitRegistry(components);
     emitModules(components);
+    emitBundleSizes(sizes);
+    emitTokenReference(colors);
     emitMarkdownEndpoints(components);
+    emitLlmsTxt(components);
     pruneStale(generatedDir);
     pruneStale(markdownOutDir);
     process.stdout.write(

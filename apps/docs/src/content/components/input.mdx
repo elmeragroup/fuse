@@ -1,0 +1,23 @@
+---
+title: Input
+lede: >
+  An unlabeled single-line text control over the base-ui `Input` primitive. It
+  participates in Field context, so labeled usage composes it under `Field.Root`.
+export: Input
+demos:
+  - id: basic
+    title: Basic
+    file: input-basic.tsx
+  - id: types
+    title: Types
+    file: input-types.tsx
+  - id: states
+    title: States
+    file: input-states.tsx
+  - id: in-field
+    title: In a Field
+    file: input-in-field.tsx
+---
+
+Input on its own has no accessible name. Compose it under `Field.Root` with a
+`Field.Label`, or inside `InputGroup` when it needs adornments.

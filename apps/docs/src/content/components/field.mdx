@@ -1,0 +1,30 @@
+---
+title: Field
+lede: >
+  The canonical labeling mechanism. `Field.Root` wires `id`/`htmlFor`,
+  `aria-describedby` for description and error, and error announcement, so every control
+  composed under it gets its accessible name from `Field.Label`.
+export: Field
+demos:
+  - id: basic
+    title: Basic
+    file: field-basic.tsx
+  - id: error
+    title: Error message
+    file: field-error.tsx
+  - id: orientations
+    title: Orientations
+    file: field-orientations.tsx
+  - id: set
+    title: Field set
+    file: field-set.tsx
+  - id: separator
+    title: Separator
+    file: field-separator.tsx
+  - id: choice-card
+    title: Choice card
+    file: field-choice-card.tsx
+---
+
+No control invents its own label wiring. If an input-like component needs a visible
+label, a description or an error, it is composed under `Field.Root`.

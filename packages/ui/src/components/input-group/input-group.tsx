@@ -15,6 +15,10 @@ export type InputGroupRootProps = ComponentProps<"div">;
 export type InputGroupAddonProps = ComponentProps<"div"> & VariantProps<typeof inputGroupAddonVariants>;
 export type InputGroupButtonProps = Omit<ComponentProps<typeof Button>, "size" | "type"> &
   VariantProps<typeof inputGroupButtonVariants> & {
+    /**
+     * Native button type, re-typed over `Button`'s own. Defaults to `"button"`, so an
+     * addon action never submits the surrounding form unless it asks to.
+     */
     type?: "button" | "submit" | "reset";
   };
 export type InputGroupTextProps = ComponentProps<"span">;

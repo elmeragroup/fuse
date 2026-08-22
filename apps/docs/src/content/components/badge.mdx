@@ -1,0 +1,24 @@
+---
+title: Badge
+lede: >
+  A small status marker. A plain `div` styled by the public `badgeVariants` recipe — no
+  base-ui primitive, no interactivity, server-safe.
+export: Badge
+demos:
+  - id: variants
+    title: Variants
+    file: badge-variants.tsx
+  - id: sizes
+    title: Sizes
+    file: badge-sizes.tsx
+  - id: status
+    title: Status tones
+    file: badge-status.tsx
+  - id: basic
+    title: Basic
+    file: badge-basic.tsx
+---
+
+Badge carries no semantics of its own: it renders whatever children it is given inside a
+styled box. When the badge communicates a live state, the surrounding region owns the
+announcement.

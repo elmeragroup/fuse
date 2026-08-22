@@ -176,7 +176,14 @@ function ItemFooter({
   className,
   mode = "default",
   ...props
-}: ComponentProps<"div"> & VariantProps<typeof itemFooterVariants> & { children?: ReactNode }): ReactElement {
+}: ComponentProps<"div"> &
+  VariantProps<typeof itemFooterVariants> & {
+    /**
+     * Footer content, wrapped in the inner `item-footer-content` element that `mode`
+     * reveals or collapses via the grid-row animation.
+     */
+    children?: ReactNode;
+  }): ReactElement {
   return (
     <div
       data-slot="item-footer"

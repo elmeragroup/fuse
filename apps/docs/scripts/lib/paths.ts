@@ -27,6 +27,15 @@ export const generatedDir = path.join(docsRoot, "src/generated");
 /** Static markdown endpoints, served from `/components/<slug>.md`. */
 export const markdownOutDir = path.join(docsRoot, "public/components");
 
+/** The `(docs)` route group, where every nav destination must have a `page.tsx`. */
+export const docsRouteGroup = path.join(docsRoot, "src/app/(docs)");
+
+/** The generated site-root `llms.txt` index. */
+export const llmsTxtFile = path.join(docsRoot, "public/llms.txt");
+
+/** The budget module `size-limit` enforces, and the docs publish measurements from. */
+export const sizeBudgetsFile = path.join(uiRoot, "scripts/size-budgets.ts");
+
 /** Repo host base for **View source** links. */
 export const REPO_BLOB_BASE = "https://github.com/elmeragroup/ui/blob/main";
 

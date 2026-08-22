@@ -19,7 +19,19 @@ function component(slug: string) {
 
 describe("generated registry", () => {
   it("covers every authored MDX shell", () => {
-    expect(DOCS_COMPONENTS.map((entry) => entry.slug)).toEqual(["button", "dialog", "scroll-area"]);
+    expect(DOCS_COMPONENTS.map((entry) => entry.slug)).toEqual([
+      "badge",
+      "button",
+      "card",
+      "dialog",
+      "field",
+      "input-group",
+      "input",
+      "item",
+      "scroll-area",
+      "separator",
+      "textarea",
+    ]);
   });
 
   it("keeps the demo frame and its displayed source on the same authored file", () => {
@@ -88,11 +100,24 @@ describe("generated registry", () => {
   });
 
   it("reports RSC status from the declaring module, matching performance.md §3", () => {
-    for (const entry of DOCS_COMPONENTS) {
-      expect(entry.rsc).toBe("client");
-      for (const part of entry.parts) {
-        expect(part.rsc).toBe("client");
-      }
+    // The §3 classification table is the audit source; a page's status is read off its
+    // declaring module, so this is where a stray directive would show up.
+    const expected = {
+      badge: "server",
+      button: "client",
+      card: "server",
+      dialog: "client",
+      field: "client",
+      input: "client",
+      "input-group": "client",
+      item: "client",
+      "scroll-area": "client",
+      separator: "client",
+      textarea: "server",
+    } as const;
+    expect(Object.keys(expected)).toHaveLength(DOCS_COMPONENTS.length);
+    for (const [slug, rsc] of Object.entries(expected)) {
+      expect(component(slug).rsc, slug).toBe(rsc);
     }
   });
 
