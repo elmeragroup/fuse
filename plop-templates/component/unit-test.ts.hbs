@@ -1,0 +1,26 @@
+/**
+ * SCAFFOLD — unit project (node). Recipe and pure-logic assertions live here; anything
+ * that needs a DOM belongs in `{{name}}.browser.test.tsx`, with role/label queries only.
+ *
+ * Replace the unimplemented marker with the §9 test requirements of
+ * docs/spec/components/{{name}}.md.
+ */
+import { describe, expect, it } from "vitest";
+
+import { {{camelCase name}}Variants } from "./{{name}}-variants";
+
+describe("{{camelCase name}}Variants", () => {
+  it("reads the density ladder instead of a literal control-metric ladder", () => {
+    const md = {{camelCase name}}Variants({ size: "md" });
+    expect(md).toContain("h-(--control-h-md)");
+    expect(md).toContain("px-(--control-px-md)");
+    expect(md).toContain("[font-size:var(--control-text)]");
+    expect(md).not.toMatch(/(?:^|\s)h-\d/);
+    expect(md).not.toMatch(/(?:^|\s)px-\d/);
+  });
+
+  it("covers every axis, value and default in the spec §4 table", () => {
+    // TODO({{name}}): assert the §4 axes; delete this marker once they are covered.
+    expect.unreachable("{{name}} variant coverage is not implemented yet");
+  });
+});

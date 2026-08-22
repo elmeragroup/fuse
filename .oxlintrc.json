@@ -89,6 +89,7 @@
     "**/.turbo/**",
     "**/.next/**",
     "apps/docs/src/generated/**",
+    "plop-templates/**",
     "**/.artifacts/**",
     "**/.cache/**",
     "**/node_modules/**",
@@ -138,6 +139,16 @@
         "elmera/facade-reexport-grammar": "error",
         "elmera/no-rac-outside-quarantine": "error",
         "elmera/no-hardcoded-density-metrics": "warn"
+      }
+    },
+    {
+      "files": ["plopfile.mjs"],
+      "rules": {
+        "typescript/no-unsafe-assignment": "off",
+        "typescript/no-unsafe-member-access": "off",
+        "typescript/no-unsafe-call": "off",
+        "typescript/no-unsafe-return": "off",
+        "typescript/no-unsafe-argument": "off"
       }
     },
     {

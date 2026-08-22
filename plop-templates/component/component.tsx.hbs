@@ -1,0 +1,32 @@
+/**
+ * SCAFFOLD — implement docs/spec/components/{{name}}.md (all ten sections).
+ *
+ * This file deliberately does not render: the scaffold must not guess an anatomy, a
+ * base-ui primitive, or a prop surface. `{{pascalCase name}}Props` carries only the two members
+ * every component has (`className`, `children`) plus the recipe's variant props; add the
+ * §3 props table, then delete the throw.
+ *
+ * Reminders: `"use client"` only if this module owns state/effects/handlers/context or a
+ * browser API (performance.md classification, not intuition); polymorphism is base-ui
+ * `useRender`, never an `as` prop; classes merge through `cn`; tokens only.
+ */
+import type { ReactElement, ReactNode } from "react";
+
+import type { VariantProps } from "tailwind-variants";
+
+import type { {{camelCase name}}Variants } from "./{{name}}-variants";
+
+export type {{pascalCase name}}Props = VariantProps<typeof {{camelCase name}}Variants> & {
+  /** Extra classes, merged last through `cn`. */
+  className?: string;
+  /** Content rendered inside {{pascalCase name}}. */
+  children?: ReactNode;
+};
+
+export function {{pascalCase name}}(_props: {{pascalCase name}}Props): ReactElement {
+  throw new Error(
+    "{{pascalCase name}} is scaffolded but not implemented — see docs/spec/components/{{name}}.md."
+  );
+}
+
+{{pascalCase name}}.displayName = "{{pascalCase name}}";

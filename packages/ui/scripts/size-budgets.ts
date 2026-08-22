@@ -73,6 +73,9 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = [
   { name: "input-group", entryFile: "input-group.js", ceilingGzip: 42017 },
   { name: "textarea", entryFile: "textarea.js", ceilingGzip: 31917 },
   { name: "flags", entryFile: "flags.js", ceilingGzip: 2082 },
+  // `pnpm gen component` appends a 0-ceiling row below this marker, so a brand-new packed
+  // entry cannot slip through unbudgeted. Replace the 0 with measured × 1.5.
+  // plop:js-entry-budget
 ];
 
 export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = [

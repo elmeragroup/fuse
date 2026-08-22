@@ -43,6 +43,7 @@
     ".turbo",
     "**/.next/**",
     "apps/docs/src/generated/**",
+    "plop-templates/**",
     "**/next-env.d.ts",
     ".artifacts",
     ".cache",

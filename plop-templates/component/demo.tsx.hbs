@@ -1,0 +1,8 @@
+// SCAFFOLD — one plain runnable demo per §10 scenario of docs/spec/components/{{name}}.md,
+// imported through public specifiers (`@elmeragroup/ui/…`), never `src/` relatives.
+// Rename/duplicate this file per scenario and list each one in the docs page frontmatter.
+import { {{pascalCase name}} } from "@elmeragroup/ui/{{name}}";
+
+export function {{pascalCase name}}Basic() {
+  return <{{pascalCase name}}>{{pascalCase name}}</{{pascalCase name}}>;
+}

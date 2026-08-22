@@ -1,0 +1,18 @@
+---
+title: {{pascalCase name}}
+lede: >
+  TODO({{name}}): one or two sentences from §1 of docs/spec/components/{{name}}.md — what it
+  is and when to reach for it. Demo, API and token sections are generated; do not
+  hand-write them here.
+export: {{pascalCase name}}
+source: packages/ui/src/components/{{name}}/{{name}}.tsx
+demos:
+  - id: basic
+    title: Basic
+    file: {{name}}-basic.tsx
+---
+
+## Usage
+
+TODO({{name}}): replace this section with the page prose — composition limits, the §8
+divergences a consumer can feel, and anything the generated API table cannot say.
