@@ -1,0 +1,155 @@
+import type { ModuleNode, SemanticType } from "../model.ts";
+
+/** A structural path into the final semantic module model. */
+export type SemanticPath = readonly string[];
+
+export function exportSemanticPath(name: string): SemanticPath {
+  return [name];
+}
+
+export function objectPropertySemanticPath(ownerPath: SemanticPath, name: string): SemanticPath {
+  return [...ownerPath, "properties", name];
+}
+
+export function componentPropSemanticPath(ownerPath: SemanticPath, name: string): SemanticPath {
+  return [...ownerPath, "props", name];
+}
+
+export function methodSemanticPath(ownerPath: SemanticPath, name: string): SemanticPath {
+  return [...ownerPath, "methods", name];
+}
+
+export function callSignatureSemanticPath(ownerPath: SemanticPath, index: number): SemanticPath {
+  return [...ownerPath, "callSignatures", String(index)];
+}
+
+export function parameterSemanticPath(signaturePath: SemanticPath, name: string): SemanticPath {
+  return [...signaturePath, "parameters", name];
+}
+
+export function returnValueSemanticPath(signaturePath: SemanticPath): SemanticPath {
+  return [...signaturePath, "returnValueType"];
+}
+
+export function enumMemberSemanticPath(enumPath: SemanticPath, name: string): SemanticPath {
+  return [...enumPath, "members", name];
+}
+
+/**
+ * Maps a provenance path from an authored component function/object to the
+ * component's final public prop path.
+ *
+ * Component props can be discovered either from an authored props object or
+ * from a function parameter. Both source shapes collapse into the same
+ * `props` collection in the final semantic model, so the source grammar is
+ * kept here with the rest of the path constructors.
+ */
+export function componentPropSemanticPathFromProvenancePath(
+  path: SemanticPath,
+  componentPath: SemanticPath,
+  propertyNames: ReadonlySet<string>
+): SemanticPath | undefined {
+  if (!startsWithPath(path, componentPath)) return undefined;
+  const propertyName = componentPropertyNameFromProvenancePath(path.slice(componentPath.length));
+  return propertyName !== undefined && propertyNames.has(propertyName)
+    ? componentPropSemanticPath(componentPath, propertyName)
+    : undefined;
+}
+
+export function semanticPathKey(path: SemanticPath): string {
+  return JSON.stringify(path);
+}
+
+/**
+ * Collects the paths represented by the final semantic model. Keeping this
+ * grammar beside the constructors makes provenance validation and resolver
+ * writes agree on the same tree instead of each growing its own traversal.
+ */
+export function collectSemanticPaths(module: ModuleNode): ReadonlySet<string> {
+  const paths = new Set<string>();
+  for (const entry of module.exports) {
+    const path = exportSemanticPath(entry.name);
+    addPath(paths, path);
+    collectSemanticTypePaths(entry.type, path, paths);
+  }
+  return paths;
+}
+
+function collectSemanticTypePaths(type: SemanticType, path: SemanticPath, paths: Set<string>): void {
+  if (type.kind === "object" || type.kind === "intersection") {
+    for (const property of type.properties) {
+      const propertyPath = objectPropertySemanticPath(path, property.name);
+      addPath(paths, propertyPath);
+      collectSemanticTypePaths(property.type, propertyPath, paths);
+    }
+  }
+  if (type.kind === "component") {
+    for (const property of type.props) {
+      const propertyPath = componentPropSemanticPath(path, property.name);
+      addPath(paths, propertyPath);
+      collectSemanticTypePaths(property.type, propertyPath, paths);
+    }
+  }
+  if (type.kind === "function") {
+    type.callSignatures.forEach((signature, index) => {
+      const signaturePath = callSignatureSemanticPath(path, index);
+      addPath(paths, signaturePath);
+      for (const parameter of signature.parameters) {
+        const parameterPath = parameterSemanticPath(signaturePath, parameter.name);
+        addPath(paths, parameterPath);
+        collectSemanticTypePaths(parameter.type, parameterPath, paths);
+      }
+      const returnPath = returnValueSemanticPath(signaturePath);
+      addPath(paths, returnPath);
+      collectSemanticTypePaths(signature.returnValueType, returnPath, paths);
+    });
+  }
+  if (type.kind === "enum") {
+    for (const member of type.members) addPath(paths, enumMemberSemanticPath(path, member.name));
+  }
+  if (type.kind === "class") {
+    for (const property of type.properties) {
+      const propertyPath = objectPropertySemanticPath(path, property.name);
+      addPath(paths, propertyPath);
+      collectSemanticTypePaths(property.type, propertyPath, paths);
+    }
+    for (const method of type.methods) {
+      const methodPath = methodSemanticPath(path, method.name);
+      addPath(paths, methodPath);
+      method.callSignatures.forEach((signature, index) => {
+        const signaturePath = callSignatureSemanticPath(methodPath, index);
+        addPath(paths, signaturePath);
+        for (const parameter of signature.parameters) {
+          const parameterPath = parameterSemanticPath(signaturePath, parameter.name);
+          addPath(paths, parameterPath);
+          collectSemanticTypePaths(parameter.type, parameterPath, paths);
+        }
+        const returnPath = returnValueSemanticPath(signaturePath);
+        addPath(paths, returnPath);
+        collectSemanticTypePaths(signature.returnValueType, returnPath, paths);
+      });
+    }
+  }
+  if (type.kind === "union" || type.kind === "intersection")
+    for (const member of type.types) collectSemanticTypePaths(member, path, paths);
+  if (type.kind === "array") collectSemanticTypePaths(type.elementType, path, paths);
+  if (type.kind === "tuple") for (const member of type.types) collectSemanticTypePaths(member, path, paths);
+  if (type.kind === "typeOperator") {
+    collectSemanticTypePaths(type.type, path, paths);
+    if (type.resolvedType !== undefined) collectSemanticTypePaths(type.resolvedType, path, paths);
+  }
+}
+
+function componentPropertyNameFromProvenancePath(path: SemanticPath): string | undefined {
+  if (path[0] === "properties") return path[1];
+  if (path[0] !== "callSignatures" || path[2] !== "parameters" || path[3] === undefined) return undefined;
+  return path[4] === "properties" ? path[5] : undefined;
+}
+
+function startsWithPath(path: SemanticPath, prefix: SemanticPath): boolean {
+  return path.length >= prefix.length && prefix.every((segment, index) => path[index] === segment);
+}
+
+function addPath(paths: Set<string>, path: SemanticPath): void {
+  paths.add(semanticPathKey(path));
+}

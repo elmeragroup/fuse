@@ -1,0 +1,13 @@
+{
+  "fixture": "base-ui-component",
+  "compiler": "typescript@7.0.2",
+  "sourceOracle": "output.json",
+  "comparison": "exact",
+  "divergence": {
+    "code": "TS7_REACT_EXTERNAL_GRAPH",
+    "reason": "TypeScript 7 resolves the React 19 external conditional and recursive helper graph differently from the pinned TypeScript 6 upstream oracle; deep external React payloads are therefore not treated as a stable equality contract.",
+    "upstreamPreserved": true,
+    "differenceCount": 5792,
+    "differenceDigest": "fa27ad16ffa4981efe2823556724ecef47a900f729ebe7c3d6055376aac8f31e"
+  }
+}

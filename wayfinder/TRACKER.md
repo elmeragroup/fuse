@@ -13,8 +13,10 @@ This repo has no external issue tracker; the wayfinder map and its tickets live 
   status: open | closed
   assignee: null | <who claimed it>
   blocked-by: [<ids>]
+  labels: [] | [ready-for-agent]
   ---
   ```
+- **Triage labels**: `labels` is optional on existing tickets. `ready-for-agent` is the only supported triage label; it means the ticket is fully specified and can be implemented without another discovery/interview pass. Do not add extra triage labels by inference.
 - **Claiming**: set `assignee` before doing any work. Open + unassigned = unclaimed.
 - **Blocking**: `blocked-by` lists ticket ids. A ticket is unblocked when every listed ticket has `status: closed`.
 - **Frontier query**: `grep -l 'status: open' wayfinder/tickets/*.md` then filter to `assignee: null` and all `blocked-by` closed.

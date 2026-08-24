@@ -1,0 +1,87 @@
+{
+  "issue": "02-prove-compiler-boundary",
+  "command": "fnm exec --using 24.13.0 -- node scripts/issue-02-timing.ts --check",
+  "runtime": {
+    "node": "24.13.0",
+    "compiler": "typescript@7.0.2"
+  },
+  "samples": [
+    {
+      "fixture": "alias-with-explicit-type-args",
+      "enabled": true,
+      "totals": {
+        "requestCount": 661,
+        "roundTripMs": 41.10900399999994,
+        "bytesSent": 121531,
+        "bytesReceived": 71669,
+        "serverTimeMs": 24.393000999999956,
+        "transportOverheadMs": 16.716002999999986,
+        "nodesMaterialized": 84,
+        "sourceFilesFetched": 1,
+        "nodesFetched": 97
+      }
+    },
+    {
+      "fixture": "mapped-alias-two-hop",
+      "enabled": true,
+      "totals": {
+        "requestCount": 441,
+        "roundTripMs": 32.09195899999935,
+        "bytesSent": 82798,
+        "bytesReceived": 36338,
+        "serverTimeMs": 20.73545400000001,
+        "transportOverheadMs": 11.356504999999338,
+        "nodesMaterialized": 56,
+        "sourceFilesFetched": 1,
+        "nodesFetched": 71
+      }
+    },
+    {
+      "fixture": "module-dts-declarations-and-reexports",
+      "enabled": true,
+      "totals": {
+        "requestCount": 970,
+        "roundTripMs": 43.72021000000143,
+        "bytesSent": 164585,
+        "bytesReceived": 1255612,
+        "serverTimeMs": 26.459763,
+        "transportOverheadMs": 17.26044700000143,
+        "nodesMaterialized": 136,
+        "sourceFilesFetched": 9,
+        "nodesFetched": 24073
+      }
+    },
+    {
+      "fixture": "base-ui-component",
+      "enabled": true,
+      "totals": {
+        "requestCount": 40920,
+        "roundTripMs": 558.0397380000007,
+        "bytesSent": 6915160,
+        "bytesReceived": 17000074,
+        "serverTimeMs": 141.7063989999937,
+        "transportOverheadMs": 416.3333390000071,
+        "nodesMaterialized": 2138,
+        "sourceFilesFetched": 9,
+        "nodesFetched": 191447
+      }
+    }
+  ],
+  "stopConditions": {
+    "backendLeakage": {
+      "status": "clear",
+      "evidence": "check-boundary.ts scans package source and declarations; unstable TypeScript imports are limited to src/backend/ts7/**"
+    },
+    "durableContractLeakage": {
+      "status": "clear",
+      "evidence": "package-owned backend contracts, parser, model, warnings, errors, provenance, and ProjectExtractor expose no compiler objects"
+    },
+    "unacceptableIpcGrowth": {
+      "maxAggregateRoundTripMs": 1000,
+      "measuredAggregateRoundTripMs": 674.9609110000015,
+      "status": "not-triggered",
+      "evidence": "aggregate roundTripMs is measured across all four sequential boundary fixtures and compared with the 1000ms stop threshold"
+    }
+  },
+  "decision": "go"
+}

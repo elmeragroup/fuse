@@ -1,0 +1,97 @@
+{
+  "issue": "02-prove-compiler-boundary",
+  "decision": "go",
+  "decisionRationale": "Proceed past the Issue 02 boundary gate after the timed public-seam samples and compiler-resolution regressions pass. Three fixtures match the immutable upstream oracle exactly; the React fixture matches the complete tracked TS7 oracle and exact warning oracle with explicit generic alias and mapped-alias coverage, while the type-operator policy remains configurable and the exact React divergence leaves are mechanically accounted for. The required module-resolution operation is consumed by the parser and the measured aggregate IPC round-trip remains below the checked-in stop threshold.",
+  "runtime": {
+    "node": "24.13.0",
+    "compiler": "typescript@7.0.2",
+    "upstreamOracleCommit": "e14535030957e29ce6e5d870e4ab71740175a0d4"
+  },
+  "fixtureMatrix": [
+    {
+      "fixture": "alias-with-explicit-type-args",
+      "oracle": "immutable-upstream",
+      "status": "pass"
+    },
+    {
+      "fixture": "mapped-alias-two-hop",
+      "oracle": "immutable-upstream",
+      "status": "pass"
+    },
+    {
+      "fixture": "module-dts-declarations-and-reexports",
+      "oracle": "immutable-upstream",
+      "status": "pass",
+      "notes": [
+        "type-only declaration-file re-exports are filtered",
+        "package-owned module-resolution operation is implemented",
+        "module import metadata is preserved"
+      ]
+    },
+    {
+      "fixture": "module-dts-type-star",
+      "oracle": "public-seam-regression",
+      "status": "pass",
+      "notes": [
+        "export type * from ./source.js resolves to source.d.ts",
+        "type exports are retained and runtime exports are filtered from the star"
+      ]
+    },
+    {
+      "fixture": "module-resolution-alias",
+      "oracle": "public-seam-regression",
+      "status": "pass",
+      "notes": [
+        "non-relative path mapping resolves through the compiler symbol graph",
+        "explicit runtime re-export remains visible"
+      ]
+    },
+    {
+      "fixture": "module-resolution-package",
+      "oracle": "public-seam-regression",
+      "status": "pass",
+      "notes": [
+        "package exports resolve through the compiler symbol graph",
+        "explicit runtime re-export remains visible"
+      ]
+    },
+    {
+      "fixture": "base-ui-component",
+      "oracle": "reviewed-ts7-exact",
+      "status": "pass",
+      "divergenceRecord": "test/fixtures/base-ui-component/ts7-oracle.json",
+      "warningOracle": "test/fixtures/base-ui-component/warnings.tsgo.json"
+    }
+  ],
+  "stopConditions": {
+    "backendLeakage": {
+      "status": "clear",
+        "evidence": "test/boundary.test.ts and scripts/issue-02-timing.ts scan static, dynamic, template, and type-only import forms; only src/backend/ts7/** imports typescript/unstable/*"
+    },
+    "durableContractLeakage": {
+      "status": "clear",
+      "evidence": "backend contracts, parser, model, warnings, errors, provenance, and ProjectExtractor expose only package-owned records; BackendProject.extractModule is absent and resolveModule is required"
+    },
+    "unacceptableIpcGrowth": {
+      "status": "not-triggered",
+      "threshold": "aggregate roundTripMs <= 1000",
+      "evidence": "test/fixtures/issue-02-timing.json records all four sequential public-seam samples and the checked command recomputes the decision without exact-latency equality"
+    }
+  },
+  "verification": {
+    "fixtureTypecheck": "pass",
+    "publicSeamConformance": "pass",
+    "timingEvidence": "checked",
+    "upstreamOraclePreserved": true
+  },
+  "scopeEvidence": {
+    "generic": "boundary-covered: explicit generic arguments and two-hop mapped aliases",
+    "typeOperator": "policy-preserved: resolved and syntax-only modes remain available; broader conformance is deferred",
+    "react": "boundary-covered: compound component transform with a reviewed TS7 external-graph divergence"
+  },
+  "residualRisk": [
+    "TypeScript 7 unstable APIs may change in a future compiler release; the unstable import seam limits the intended blast radius.",
+    "External React conditional and recursive graphs remain an explicit reviewed TS7 fidelity divergence and require a future compatibility decision before claiming upstream React equality.",
+    "Timing totals are environment-dependent evidence; the report checks signs, availability, fixture coverage, and a broad aggregate threshold rather than exact latency."
+  ]
+}

@@ -1,0 +1,843 @@
+[
+  {
+    "message": "Type extraction warning: Unable to handle type \"new (props: any, context: any) => Component<any, any, any>\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:1:1\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 1,
+    "column": 1,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent1",
+      "property: render"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "new (props: any, context: any) => Component<any, any, any>"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"{ [UNDEFINED_VOID_ONLY]: never; }\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:1:1\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 1,
+    "column": 1,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent1",
+      "property: render",
+      "property: ref"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "{ [UNDEFINED_VOID_ONLY]: never; }"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"{ [UNDEFINED_VOID_ONLY]: never; }\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:1:1\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 1,
+    "column": 1,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent1",
+      "property: render",
+      "parameter: props",
+      "property: ref"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "{ [UNDEFINED_VOID_ONLY]: never; }"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"new (props: any, context: any) => Component<any, any, any>\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:1:1\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 1,
+    "column": 1,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent1",
+      "property: render"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "new (props: any, context: any) => Component<any, any, any>"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"T[P]\" with flag \"IndexedAccess\" at \"node_modules/typescript/lib/lib.es5.d.ts:1605:15\". Using any instead.",
+    "filePath": "node_modules/typescript/lib/lib.es5.d.ts",
+    "line": 1605,
+    "column": 15,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent1"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "IndexedAccess"
+    ],
+    "typeText": "T[P]",
+    "sourceText": "T[P]"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"new (props: any, context: any) => Component<any, any, any>\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:1:1\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 1,
+    "column": 1,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent1",
+      "parameter: props",
+      "property: render"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "new (props: any, context: any) => Component<any, any, any>"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"{ [UNDEFINED_VOID_ONLY]: never; }\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:1:1\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 1,
+    "column": 1,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent1",
+      "parameter: props",
+      "property: render",
+      "property: ref"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "{ [UNDEFINED_VOID_ONLY]: never; }"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"{ [UNDEFINED_VOID_ONLY]: never; }\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:1:1\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 1,
+    "column": 1,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent1",
+      "parameter: props",
+      "property: render",
+      "parameter: props",
+      "property: ref"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "{ [UNDEFINED_VOID_ONLY]: never; }"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"new (props: any, context: any) => Component<any, any, any>\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:1:1\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 1,
+    "column": 1,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent1",
+      "parameter: props",
+      "property: render"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "new (props: any, context: any) => Component<any, any, any>"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"T[P]\" with flag \"IndexedAccess\" at \"node_modules/typescript/lib/lib.es5.d.ts:1605:15\". Using any instead.",
+    "filePath": "node_modules/typescript/lib/lib.es5.d.ts",
+    "line": 1605,
+    "column": 15,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent1",
+      "parameter: props"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "IndexedAccess"
+    ],
+    "typeText": "T[P]",
+    "sourceText": "T[P]"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"new (props: any, context: any) => Component<any, any, any>\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:1:1\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 1,
+    "column": 1,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent1"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "new (props: any, context: any) => Component<any, any, any>"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"new (props: any, context: any) => Component<any, any, any>\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:1:1\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 1,
+    "column": 1,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent1"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "new (props: any, context: any) => Component<any, any, any>"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"new (props: any, context: any) => Component<any, any, any>\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:1:1\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 1,
+    "column": 1,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent1",
+      "property: render"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "new (props: any, context: any) => Component<any, any, any>"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"{ [UNDEFINED_VOID_ONLY]: never; }\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:1:1\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 1,
+    "column": 1,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent1",
+      "property: render",
+      "property: ref"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "{ [UNDEFINED_VOID_ONLY]: never; }"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"{ [UNDEFINED_VOID_ONLY]: never; }\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:1:1\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 1,
+    "column": 1,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent1",
+      "property: render",
+      "parameter: props",
+      "property: ref"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "{ [UNDEFINED_VOID_ONLY]: never; }"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"new (props: any, context: any) => Component<any, any, any>\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:1:1\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 1,
+    "column": 1,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent1",
+      "property: render"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "new (props: any, context: any) => Component<any, any, any>"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"new (props: any, context: any) => Component<any, any, any>\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:1:1\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 1,
+    "column": 1,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent1",
+      "Props",
+      "property: render"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "new (props: any, context: any) => Component<any, any, any>"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"{ [UNDEFINED_VOID_ONLY]: never; }\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:1:1\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 1,
+    "column": 1,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent1",
+      "Props",
+      "property: render",
+      "property: ref"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "{ [UNDEFINED_VOID_ONLY]: never; }"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"{ [UNDEFINED_VOID_ONLY]: never; }\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:1:1\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 1,
+    "column": 1,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent1",
+      "Props",
+      "property: render",
+      "parameter: props",
+      "property: ref"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "{ [UNDEFINED_VOID_ONLY]: never; }"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"new (props: any, context: any) => Component<any, any, any>\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:1:1\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 1,
+    "column": 1,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent1",
+      "Props",
+      "property: render"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "new (props: any, context: any) => Component<any, any, any>"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"State\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:51:32\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 51,
+    "column": 32,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent2",
+      "property: className",
+      "parameter: state"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "State",
+    "sourceText": "State"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"new (props: any, context: any) => Component<any, any, any>\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:1:1\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 1,
+    "column": 1,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent2",
+      "property: render"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "new (props: any, context: any) => Component<any, any, any>"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"{ [UNDEFINED_VOID_ONLY]: never; }\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:1:1\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 1,
+    "column": 1,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent2",
+      "property: render",
+      "property: ref"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "{ [UNDEFINED_VOID_ONLY]: never; }"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"{ [UNDEFINED_VOID_ONLY]: never; }\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:1:1\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 1,
+    "column": 1,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent2",
+      "property: render",
+      "parameter: props",
+      "property: ref"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "{ [UNDEFINED_VOID_ONLY]: never; }"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"State\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:58:9\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 58,
+    "column": 9,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent2",
+      "property: render",
+      "parameter: state"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "State",
+    "sourceText": "State"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"new (props: any, context: any) => Component<any, any, any>\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:1:1\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 1,
+    "column": 1,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent2",
+      "property: render"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "new (props: any, context: any) => Component<any, any, any>"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"T[P]\" with flag \"IndexedAccess\" at \"node_modules/typescript/lib/lib.es5.d.ts:1605:15\". Using any instead.",
+    "filePath": "node_modules/typescript/lib/lib.es5.d.ts",
+    "line": 1605,
+    "column": 15,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent2"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "IndexedAccess"
+    ],
+    "typeText": "T[P]",
+    "sourceText": "T[P]"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"State\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:51:32\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 51,
+    "column": 32,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent2",
+      "parameter: props",
+      "property: className",
+      "parameter: state"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "State",
+    "sourceText": "State"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"new (props: any, context: any) => Component<any, any, any>\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:1:1\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 1,
+    "column": 1,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent2",
+      "parameter: props",
+      "property: render"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "new (props: any, context: any) => Component<any, any, any>"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"{ [UNDEFINED_VOID_ONLY]: never; }\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:1:1\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 1,
+    "column": 1,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent2",
+      "parameter: props",
+      "property: render",
+      "property: ref"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "{ [UNDEFINED_VOID_ONLY]: never; }"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"{ [UNDEFINED_VOID_ONLY]: never; }\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:1:1\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 1,
+    "column": 1,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent2",
+      "parameter: props",
+      "property: render",
+      "parameter: props",
+      "property: ref"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "{ [UNDEFINED_VOID_ONLY]: never; }"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"State\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:58:9\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 58,
+    "column": 9,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent2",
+      "parameter: props",
+      "property: render",
+      "parameter: state"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "State",
+    "sourceText": "State"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"new (props: any, context: any) => Component<any, any, any>\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:1:1\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 1,
+    "column": 1,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent2",
+      "parameter: props",
+      "property: render"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "new (props: any, context: any) => Component<any, any, any>"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"T[P]\" with flag \"IndexedAccess\" at \"node_modules/typescript/lib/lib.es5.d.ts:1605:15\". Using any instead.",
+    "filePath": "node_modules/typescript/lib/lib.es5.d.ts",
+    "line": 1605,
+    "column": 15,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent2",
+      "parameter: props"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "IndexedAccess"
+    ],
+    "typeText": "T[P]",
+    "sourceText": "T[P]"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"new (props: any, context: any) => Component<any, any, any>\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:1:1\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 1,
+    "column": 1,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent2"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "new (props: any, context: any) => Component<any, any, any>"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"new (props: any, context: any) => Component<any, any, any>\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:1:1\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 1,
+    "column": 1,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent2"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "new (props: any, context: any) => Component<any, any, any>"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"State\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:51:32\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 51,
+    "column": 32,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent2",
+      "property: className",
+      "parameter: state"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "State",
+    "sourceText": "State"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"new (props: any, context: any) => Component<any, any, any>\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:1:1\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 1,
+    "column": 1,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent2",
+      "property: render"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "new (props: any, context: any) => Component<any, any, any>"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"{ [UNDEFINED_VOID_ONLY]: never; }\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:1:1\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 1,
+    "column": 1,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent2",
+      "property: render",
+      "property: ref"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "{ [UNDEFINED_VOID_ONLY]: never; }"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"{ [UNDEFINED_VOID_ONLY]: never; }\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:1:1\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 1,
+    "column": 1,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent2",
+      "property: render",
+      "parameter: props",
+      "property: ref"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "{ [UNDEFINED_VOID_ONLY]: never; }"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"State\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:58:9\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 58,
+    "column": 9,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent2",
+      "property: render",
+      "parameter: state"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "State",
+    "sourceText": "State"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"new (props: any, context: any) => Component<any, any, any>\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:1:1\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 1,
+    "column": 1,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent2",
+      "property: render"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "new (props: any, context: any) => Component<any, any, any>"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"State\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:51:32\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 51,
+    "column": 32,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent2",
+      "Props",
+      "property: className",
+      "parameter: state"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "State",
+    "sourceText": "State"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"new (props: any, context: any) => Component<any, any, any>\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:1:1\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 1,
+    "column": 1,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent2",
+      "Props",
+      "property: render"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "new (props: any, context: any) => Component<any, any, any>"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"{ [UNDEFINED_VOID_ONLY]: never; }\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:1:1\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 1,
+    "column": 1,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent2",
+      "Props",
+      "property: render",
+      "property: ref"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "{ [UNDEFINED_VOID_ONLY]: never; }"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"{ [UNDEFINED_VOID_ONLY]: never; }\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:1:1\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 1,
+    "column": 1,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent2",
+      "Props",
+      "property: render",
+      "parameter: props",
+      "property: ref"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "{ [UNDEFINED_VOID_ONLY]: never; }"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"State\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:58:9\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 58,
+    "column": 9,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent2",
+      "Props",
+      "property: render",
+      "parameter: state"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "State",
+    "sourceText": "State"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"new (props: any, context: any) => Component<any, any, any>\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:1:1\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 1,
+    "column": 1,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "BaseUIComponent2",
+      "Props",
+      "property: render"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "new (props: any, context: any) => Component<any, any, any>"
+  },
+  {
+    "message": "Type extraction warning: Unable to handle type \"new (props: any, context: any) => Component<any, any, any>\" with flag \"Object\" at \"test/fixtures/base-ui-component/input.tsx:1:1\". Using any instead.",
+    "filePath": "test/fixtures/base-ui-component/input.tsx",
+    "line": 1,
+    "column": 1,
+    "parsedSymbolStack": [
+      "test/fixtures/base-ui-component/input.tsx",
+      "ComponentRenderFn"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "new (props: any, context: any) => Component<any, any, any>"
+  }
+]
