@@ -20,7 +20,7 @@ tooling/oxlint-anti-slop/     # @elmeragroup/oxlint-plugin-anti-slop — vendore
 
 - Everything under `tooling/*` and `apps/*` is `"private": true`; `packages/ui` is the sole publish target ([release](release.md)).
 - `pnpm-workspace.yaml` globs: `packages/*`, `apps/*`, `tooling/*`.
-- Tests, demos, and intl dictionaries for the **library** are **co-located inside `packages/ui`**. Component tests do not live in consuming apps (explicit break from the internal ref, which kept all component tests app-side). The two specified **host first-paint proofs** live in `apps/docs/test` and `apps/static-theme/test` because they must inspect production HTML before React; that exception is not permission to move library tests into apps. Those apps' `test` tasks `dependsOn: ["build"]`. They are not the release packed-consumer fixtures in §7.5.
+- Tests and intl dictionaries for the **library** are **co-located inside `packages/ui`**. Component **demos live in the docs app** — `apps/docs/src/app/(docs)/components/<slug>/demos/` per [docs-site](docs-site.md) §6: they are docs/VR/AI source material, never published package code _(amended 2026-08-24 — ticket 74b; demos previously co-located in `packages/ui`)_. Component tests do not live in consuming apps (explicit break from the internal ref, which kept all component tests app-side). The two specified **host first-paint proofs** live in `apps/docs/test` and `apps/static-theme/test` because they must inspect production HTML before React; that exception is not permission to move library tests into apps. Those apps' `test` tasks `dependsOn: ["build"]`. They are not the release packed-consumer fixtures in §7.5.
 
 ## 2 Package manager & supply chain
 
@@ -116,8 +116,8 @@ It does **not** ban `p-*` / `h-*` / `gap-*` across the package. Type-scale axes 
 
 1. `packages/ui/src/components/<name>/<name>.tsx` — component skeleton with tv recipe stub conforming to `enforce-variant-standard`.
 2. Co-located `<name>.test.ts` (unit) and `<name>.browser.test.tsx` (browser) stubs with role-based query scaffolding.
-3. A plain-`.tsx` demo file per [conventions](components/conventions.md).
-4. A docs MDX page stub in `apps/docs`.
+3. A plain-`.tsx` demo stub in the docs app (`apps/docs/src/app/(docs)/components/<name>/demos/`) per [docs-site](docs-site.md) §6 _(amended 2026-08-24 — ticket 74b)_.
+4. A hand-authored `page.mdx` stub at `apps/docs/src/app/(docs)/components/<name>/page.mdx` importing the demo and rendering the generated API reference ([docs-site](docs-site.md) §1 authoring model).
 5. A source entry file named according to the canonical manifest. The normal exports generator discovers it and rewrites both source and publish manifests; the scaffold never edits `package.json#exports` directly.
 
 The generator mechanically enforces the ten-section spec template's file conventions; hand-created components that skip it must reproduce every artifact above.
@@ -163,4 +163,4 @@ They are **not** the first-paint proofs. `apps/docs` verifies the Next App Route
 - **Merge workflow** (required on every PR, and on push to `main`) runs three ordered stages: (1) root `oxfmt --check`; (2) turbo `ci:checks`, which fans out to type-check, oxlint (all three plugins), unit tests (including theme/CSS/contrast snapshots), browser tests, type tests, build, one `pnpm pack`, package-shape checks, and `size-limit`; (3) changeset presence. The changeset stage runs only on `pull_request`, fails a PR without a changeset file unless GitHub applies the **`no-changeset`** label (matched as a whole label name, not a substring), and skips Version-Packages PRs whose head branch is `changeset-release/*` so the release PR is not blocked for consuming its own changesets. The root `pnpm ci:checks` script covers stages 1–2 for local reproduction; the label-aware stage is necessarily a workflow check.
 - The `pack` task is the single producer: `package:check` and `size-limit` consume its exact tarball rather than measuring raw source facades or repacking independently. `.artifacts/` is ignored; its tarball may be turbo-cached for the run but is never committed.
 - **Publish gate:** [release §5](release.md#5-publish-time-gates) is the single exhaustive table. The release workflow reuses the exact packed artifact described above and must not maintain a second gate list in this chapter.
-- Visual regression is **roadmap, not v1**: the plain-`.tsx` demo pipeline keeps VR-target readiness designed in; tool candidate Playwright + Argos joins the publish gate when the roadmap lands it.
+- Visual regression is **roadmap, not v1**: the plain-`.tsx` demo pipeline keeps VR-target readiness designed in — the VR suite will glob the **docs-app** demo directories (`apps/docs/src/app/(docs)/components/*/demos/`, per [docs-site](docs-site.md) §6, the base-ui precedent); tool candidate Playwright + Argos joins the publish gate when the roadmap lands it.

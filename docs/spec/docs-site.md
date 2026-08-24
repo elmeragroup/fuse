@@ -5,6 +5,7 @@ Normative chapter for the `@elmeragroup/ui` docs site, demo pipeline, playground
 ## 1 Stack
 
 - **Framework: Next + a custom MDX pipeline** — the base-ui route. This is a deliberate trade: aesthetics and total design freedom **outrank automation**, and the higher build cost versus an off-the-shelf docs framework (fumadocs et al.) is accepted knowingly. Do not substitute a docs framework "to save time" — that decision is closed.
+- **Authoring model** _(amended 2026-08-24 — ticket 74b ruling)_: component pages are **hand-authored `page.mdx` route files** compiled by `@next/mdx` (with the repo's remark/rehype choices), living at `apps/docs/src/app/(docs)/components/<slug>/page.mdx`. A page imports its demos and renders its generated sections (§6, §8) as **ordinary React components via plain ESM imports** — no pre-compiled MDX shells, no closed frontmatter demo registry, no generated module maps. Frontmatter carries only page metadata (title, lede) that the build reads for nav, search, and llms.txt.
 - The docs site is a **workspace app** in this repo (alongside the packages, per [architecture](architecture.md)), consuming the library via **workspace source exports** (`publishConfig.directory` mapping) — never the built artifacts. Demos, docs pages, and the playground all import the same source the package publishes.
 - Docs chrome is **light-only**; brand color appears **only inside demo surfaces**. The **document** theme is fixed at `internal-elma-private` on every route that emits `<html>` and does not follow the demo picker (direction B remains rejected).
 
@@ -80,13 +81,15 @@ The whitelabel pitch page, under Handbook:
 
 ## 6 Demo pipeline
 
-- Demos are **plain runnable `.tsx` files** (kumo pattern), one per component spec §10 scenario, co-located per [conventions](components/conventions.md). No MDX-embedded JSX demos, no code-in-string demos.
+- Demos are **plain runnable `.tsx` files**, one per component spec §10 scenario, and they **live in the docs app, co-located with the component's page**: `apps/docs/src/app/(docs)/components/<slug>/demos/<demo>.tsx` (base-ui authoring model). Demos are docs/VR/AI source material, never published package code, so they are scoped to the app that consumes them. No MDX-embedded JSX demos, no code-in-string demos. _(Amended 2026-08-24 — ticket 74b ruling; demos previously lived in `packages/ui/src/components/<name>/demos/`.)_
+- The component page **imports each demo as an ordinary ESM module** (`import { ButtonHero } from "./demos/hero"`) and renders it inside the §3.5 frame; the frame's displayed source is the **same file read verbatim from disk** by the docs app at build/render time and syntax-highlighted. No AST extraction step, no demo registry, no copy: one file is both the live render (via import) and the displayed source (via read).
 - **One authored demo file feeds multiple outputs**:
-  1. **Docs extraction** — AST-extracted at docs build into the demo frame's live render + displayed source.
-  2. **Visual-regression targets** — the same files are the VR suite's render entries (testing strategy chapter).
+  1. **Docs** — live render + displayed source, as above.
+  2. **Visual-regression targets** — the VR suite (roadmap) globs the docs-app demo directories as its render entries, the base-ui precedent (`test/regressions/fixtures.ts` there).
   3. **AI registry** — the same source is embedded verbatim in the per-component markdown endpoint (§9).
-- Demos import the library via **workspace source exports** only — the exact specifiers a consumer would write (`@elmeragroup/ui/...`), resolved to source in the workspace. Never relative imports into package internals.
+- Demos import the library via **workspace source exports** only — the exact specifiers a consumer would write (`@elmeragroup/ui/...`), resolved to source in the workspace. Never relative imports into package internals, never relative imports of other demos.
 - Demo code is exemplary consumer code: it obeys every consumer-facing convention (tokens-only classes, `cn`, Field composition) because it is shipped as copyable source three ways.
+- **Single variant.** A demo is one Tailwind-styled file; there is no CSS-Modules/Tailwind variant switcher (base-ui's dual-variant machinery is explicitly not adopted).
 
 ## 7 Playground
 
@@ -96,8 +99,11 @@ The whitelabel pitch page, under Handbook:
 ## 8 API reference generation
 
 - API tables are **generated from TS types at docs build**; prop descriptions come from **JSDoc on the props**. Code is the mechanical source for generated reference pages, while this spec remains the normative contract: an API change updates the implementation, its component spec, tests, JSDoc, and changeset together. Generated output never silently overrules the spec.
-- Every generated table carries an **RSC-status column** (server-safe vs `"use client"`) per [performance](performance.md) §3 — RSC status is public contract, and the docs surface it mechanically, not editorially.
+- **Committed, validated artifact** _(amended 2026-08-24 — ticket 74b ruling)_: the generator writes each component's API data to a **co-located `api.json` next to its `page.mdx`**, and that file is **committed**. API changes therefore show up as reviewable diffs in the same PR that changes the component. A CI check regenerates and fails on drift (the base-ui `types.md` + `docs:validate` model, with JSON as the format so the page renders the artifact directly — no markdown round-trip parser).
+- **Presentation** _(amended 2026-08-24)_: the reference renders base-ui-style — per compound part, a table of **Prop · Type · Default** rows where each row **expands** (native `details`/`summary`) to the full description, complete type signature, and default. The closed row shows a **collapsed short type** (single-line heuristic: handlers → `function`, long unions → `Union`, …); the full signature lives in the expanded panel. Required props carry a marker; a missing default renders as an em-dash. Columns collapse progressively on narrow viewports from one DOM tree.
+- Every part surfaces its **RSC status** (server-safe vs `"use client"`) mechanically per [performance](performance.md) §3 — as a per-part indicator on the reference (RSC status is a per-part fact, not a per-prop column). _(Amended 2026-08-24: previously worded "RSC-status column".)_
 - Generation failures (unresolvable type, missing JSDoc on a public prop) **fail the docs build** — no silent empty cells.
+- **No docs-infra dependency.** `@mui/internal-docs-infra` (and its `typescript-api-extractor`) is neither installed nor vendored — it is 0.x-breaking-by-policy and peers TypeScript 6 against our TypeScript 7 toolchain. The extraction stays our in-repo TS-checker generator; only base-ui's _presentation patterns_ are ported (ruled 2026-08-24, ticket 74b).
 
 ## 9 AI docs
 
