@@ -5,8 +5,10 @@
  * One DOM tree, three widths. `--api-cols` is the single source of the column layout: the
  * header row, each closed row and each expanded panel inherit it through
  * `grid-template-columns: subgrid`, which is what makes a panel's "Type" term sit exactly
- * under the closed row's prop name. Cells with no room at a given width are simply
- * `display: none`, so no layout is duplicated per breakpoint.
+ * under the closed row's prop name. Engines wrap everything after `summary` in
+ * `::details-content`; that box has to join the same subgrid span or it auto-places into
+ * the first track and the panel shrinks to the Prop column. Cells with no room at a given
+ * width are simply `display: none`, so no layout is duplicated per breakpoint.
  */
 
 .ApiPart {
@@ -256,6 +258,7 @@
   .ApiHeaderRow,
   .ApiRow,
   .ApiRowTrigger,
+  .ApiRow::details-content,
   .ApiPanel,
   .ApiPanelList,
   .ApiPanelItem {
