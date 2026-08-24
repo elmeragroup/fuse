@@ -5,29 +5,8 @@
  * this model is ever hand-authored (docs-site.md §3.4, §6, §8).
  */
 
-import type { ComponentProps, ComponentType } from "react";
-
 /** RSC classification of the module that declares a compound part (performance.md §3). */
 export type RscStatus = "client" | "server";
-
-/**
- * Element overrides a compiled MDX shell accepts. Heading anchors are stamped at build
- * time, so a page normally renders the shell with no overrides at all.
- */
-export type MdxComponentOverrides = {
-  a?: ComponentType<ComponentProps<"a">>;
-  code?: ComponentType<ComponentProps<"code">>;
-  h2?: ComponentType<ComponentProps<"h2">>;
-  h3?: ComponentType<ComponentProps<"h3">>;
-  pre?: ComponentType<ComponentProps<"pre">>;
-};
-
-export type MdxContentProps = {
-  components?: MdxComponentOverrides;
-};
-
-/** Default export of a compiled MDX shell. */
-export type MdxContent = ComponentType<MdxContentProps>;
 
 /**
  * Where a documented prop comes from.
@@ -75,24 +54,24 @@ export type TokenRef = {
   isColor: boolean;
 };
 
-/** One authored `.tsx` demo, extracted at docs build. */
+/**
+ * One authored `.tsx` demo, read at docs build from the page's own `demos/` directory.
+ * The page imports the very same file it renders, so nothing here identifies a module to
+ * load — only what the frame displays around it.
+ */
 export type DocsDemo = {
   /** Stable anchor id, unique inside the page. */
   id: string;
   title: string;
-  /** Exported component name found in the demo module. */
-  exportName: string;
   /** Repo-relative path of the authored demo file. */
   sourcePath: string;
   /** Verbatim demo source. */
   source: string;
   /** Syntax-highlighted HTML of `source`. */
   highlighted: string;
-  /** Import path of the generated demo module, relative to `src/generated`. */
-  modulePath: string;
 };
 
-/** A heading contributed by the MDX shell body, for the on-page TOC. */
+/** A heading contributed by the page's authored prose, for the on-page TOC. */
 export type ContentHeading = {
   id: string;
   title: string;
@@ -119,8 +98,6 @@ export type DocsComponent = {
   demos: readonly DocsDemo[];
   parts: readonly ApiPart[];
   tokens: readonly TokenRef[];
-  /** Whether the MDX shell has body prose beyond its frontmatter. */
-  hasContent: boolean;
 };
 
 /** Which SideNav group a search hit belongs to; the palette shows it next to the title. */

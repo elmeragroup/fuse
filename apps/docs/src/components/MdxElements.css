@@ -1,0 +1,25 @@
+.MdxCodeBlock {
+  margin: 1.1rem 0;
+  border: 1px solid var(--docs-line);
+  border-radius: 8px;
+  background: var(--docs-code-bg);
+  padding: 0.9rem 1rem;
+  overflow-x: auto;
+  font: 12px / 1.65 var(--docs-mono);
+  color: var(--sh-identifier, var(--docs-ink));
+  tab-size: 2;
+}
+
+.MdxCodeBlock code {
+  display: block;
+  min-width: max-content;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+}
+
+.MdxCodeBlock .sh__line {
+  display: block;
+  min-height: 1lh;
+}

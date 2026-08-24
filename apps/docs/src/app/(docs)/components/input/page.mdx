@@ -1,0 +1,44 @@
+---
+title: Input
+lede: >
+  An unlabeled single-line text control over the base-ui `Input` primitive. It
+  participates in Field context, so labeled usage composes it under `Field.Root`.
+---
+
+import { InputBasic } from "./demos/input-basic";
+import { InputTypes } from "./demos/input-types";
+import { InputStates } from "./demos/input-states";
+import { InputInField } from "./demos/input-in-field";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("input");
+
+<ComponentIntro slug="input" />
+
+<Prose>
+
+Input on its own has no accessible name. Compose it under `Field.Root` with a
+`Field.Label`, or inside `InputGroup` when it needs adornments.
+
+</Prose>
+
+<Demo slug="input" id="basic" title="Basic" file="input-basic.tsx">
+  <InputBasic />
+</Demo>
+
+<Demo slug="input" id="types" title="Types" file="input-types.tsx">
+  <InputTypes />
+</Demo>
+
+<Demo slug="input" id="states" title="States" file="input-states.tsx">
+  <InputStates />
+</Demo>
+
+<Demo slug="input" id="in-field" title="In a Field" file="input-in-field.tsx">
+  <InputInField />
+</Demo>
+
+<ApiReference slug="input" />
+
+<ComponentTokens slug="input" />

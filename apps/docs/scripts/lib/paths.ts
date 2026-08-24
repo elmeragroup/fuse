@@ -18,12 +18,6 @@ export const uiSrc = path.join(uiRoot, "src");
 /** The tsconfig the generator opens to resolve library types. */
 export const uiTsconfig = path.join(uiRoot, "tsconfig.json");
 
-/** The tsconfig that compiles the docs app, and with it the co-located demos. */
-export const docsTsconfig = path.join(docsRoot, "tsconfig.json");
-
-/** Authored MDX shells. */
-export const contentDir = path.join(docsRoot, "src/content/components");
-
 /** Everything the generator writes under `src`. */
 export const generatedDir = path.join(docsRoot, "src/generated");
 
@@ -34,8 +28,8 @@ export const markdownOutDir = path.join(docsRoot, "public/components");
 export const docsRouteGroup = path.join(docsRoot, "src/app/(docs)");
 
 /**
- * The component route directories. Each holds the component's page and its
- * co-located `demos/` (docs-site.md §6 — demos live in the docs app, next to the
+ * The component route directories. Each holds the component's authored `page.mdx` and
+ * its co-located `demos/` (docs-site.md §1, §6 — demos live in the docs app, next to the
  * page they document, not in `packages/ui`).
  */
 export const componentRoutesDir = path.join(docsRouteGroup, "components");

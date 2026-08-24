@@ -1,47 +1,43 @@
 /**
  * The docs generation pass.
  *
- * Runs before `next build`, `next dev` and `tsc`, and writes everything under
- * `src/generated` plus the static markdown endpoints under `public/components`:
+ * Runs before `next build`, `next dev` and `tsc`. Component pages themselves are
+ * hand-authored `page.mdx` route files compiled by `@next/mdx` (§1); this pass reads them
+ * as data and writes everything they render *from*, under `src/generated` plus the static
+ * markdown endpoints under `public/components`:
  *
- *   • demo modules — verbatim copies of the authored demo files co-located with each
- *     component route, so the live render and the displayed source in the frame come
- *     from one file (§3.5, §6);
- *   • compiled MDX shells — the custom MDX pipeline, ahead of the bundler (§1);
- *   • the registry — API tables resolved from TS types + JSDoc with an RSC status, and
- *     the tokens each component's recipe reads (§3.4, §8);
+ *   • the registry — the page's frontmatter and demos, API tables resolved from TS types
+ *     + JSDoc with an RSC status, and the tokens each component's recipe reads (§3.4, §8);
  *   • `/components/<slug>.md` — the markdown endpoint the page links to (§9);
  *   • the ⌘K search index — the page manifest plus the registry, so the palette lists
  *     exactly the routes the site actually has (§3.2).
  *
- * Any unresolvable type or undocumented public prop fails this pass, and therefore the
- * docs build (§8).
+ * Nothing is copied or compiled here: a demo is one file, imported by the page and read
+ * by this pass (§6). Any unresolvable type or undocumented public prop fails this pass,
+ * and therefore the docs build (§8).
  */
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { highlight } from "sugar-high";
 
 import type { DocsComponent, DocsDemo } from "../src/lib/docs-model.ts";
 import { STATIC_PAGES } from "../src/lib/pages.ts";
 import { describeComponentApi, openLibraryProject } from "./lib/api.ts";
 import type { LibraryProject } from "./lib/api.ts";
-import { extractDemo } from "./lib/demos.ts";
 import { ProblemLog } from "./lib/errors.ts";
-import { parseShellFrontmatter, splitFrontmatter } from "./lib/frontmatter.ts";
-import type { ShellFrontmatter } from "./lib/frontmatter.ts";
 import { renderLlmsTxt } from "./lib/llms.ts";
 import { renderComponentMarkdown } from "./lib/markdown.ts";
-import { compileMdx, hasBodyContent, readContentHeadings } from "./lib/mdx.ts";
+import { readComponentPage } from "./lib/page-source.ts";
+import type { PageDemo } from "./lib/page-source.ts";
 import {
   componentRoutesDir,
-  contentDir,
   docsRouteGroup,
   generatedDir,
   llmsTxtFile,
   markdownOutDir,
   REPO_BLOB_BASE,
   repoRelative,
-  repoRoot,
   sizeBudgetsFile,
   uiSrc,
 } from "./lib/paths.ts";
@@ -61,17 +57,22 @@ function pascalCase(slug: string): string {
     .join("");
 }
 
-function shellFiles(): readonly string[] {
-  if (!existsSync(contentDir)) {
+/**
+ * Every component page on the site: one directory under the components route holding a
+ * `page.mdx`. The route directory *is* the inventory — there is no shell registry a page
+ * can be missing from.
+ */
+function componentSlugs(): readonly string[] {
+  if (!existsSync(componentRoutesDir)) {
     return [];
   }
-  return readdirSync(contentDir)
-    .filter((entry) => entry.endsWith(".mdx"))
-    .sort((left, right) => left.localeCompare(right))
-    .map((entry) => path.join(contentDir, entry));
+  return readdirSync(componentRoutesDir)
+    .filter((entry) => existsSync(path.join(componentRoutesDir, entry, "page.mdx")))
+    .sort((left, right) => left.localeCompare(right));
 }
 
-type ShellPaths = {
+type ComponentPaths = {
+  pageFile: string;
   entryFile: string;
   entry: string;
   exportName: string;
@@ -80,17 +81,19 @@ type ShellPaths = {
   demosDir: string;
 };
 
-function resolveShellPaths(slug: string, frontmatter: ShellFrontmatter): ShellPaths {
+/**
+ * Where a slug's inputs live. All of it is convention — the public entry, the exported
+ * identifier, the implementation file — so a page's frontmatter never restates what the
+ * repo layout already says.
+ */
+function resolveComponentPaths(slug: string): ComponentPaths {
   const componentDir = path.join(uiSrc, "components", slug);
-  const sourceFile =
-    frontmatter.source === null
-      ? path.join(componentDir, `${slug}.tsx`)
-      : path.join(repoRoot, frontmatter.source);
   return {
+    pageFile: path.join(componentRoutesDir, slug, "page.mdx"),
     entryFile: path.join(uiSrc, `${slug}.ts`),
-    entry: frontmatter.entry ?? `@elmeragroup/ui/${slug}`,
-    exportName: frontmatter.exportName ?? pascalCase(slug),
-    sourceFile,
+    entry: `@elmeragroup/ui/${slug}`,
+    exportName: pascalCase(slug),
+    sourceFile: path.join(componentDir, `${slug}.tsx`),
     componentDir,
     demosDir: path.join(componentRoutesDir, slug, "demos"),
   };
@@ -135,36 +138,47 @@ function pruneStale(directory: string): void {
 }
 
 /**
- * The renderable copy of an authored demo: the file, verbatim.
+ * One demo, read from the file the page imports.
  *
- * The frame's displayed source and its live render come from the same bytes. The
- * `"use client"` directive is *authored in the demo file* (§6) — namespace compounds
- * (`Dialog.Root`, `ScrollArea.Bar`) are plain objects exported from client modules, and
- * a server component only ever sees an opaque client *reference* for such an export, so
- * member access on it resolves to `undefined`. A consumer writes the directive for the
- * same reason, so the demo carries it rather than having it grafted on in transit; a
- * demo missing it is a problem, not something this pass papers over.
+ * The frame's displayed source and its live render come from the same bytes because
+ * there is only one copy of them: the page's ESM import renders the file, and this read
+ * displays it (§6). The `"use client"` directive is *authored in the demo file* —
+ * namespace compounds (`Dialog.Root`, `ScrollArea.Bar`) are plain objects exported from
+ * client modules, and a server component only ever sees an opaque client *reference* for
+ * such an export, so member access on it resolves to `undefined`. A consumer writes the
+ * directive for the same reason; a demo missing it is a problem, not something this pass
+ * papers over. A missing or wrongly-named export needs no check here — the page imports
+ * it by name, so the bundler fails on it.
  */
-function demoModule(demosDir: string, file: string, problems: ProblemLog): string {
-  const absolute = path.join(demosDir, file);
-  const source = readFileSync(absolute, "utf8");
-  if (!/^\s*["']use client["']/.test(source)) {
-    problems.add(`${repoRelative(absolute)}: a demo must start with a "use client" directive`);
+function readDemo(demosDir: string, entry: PageDemo, problems: ProblemLog): DocsDemo | null {
+  const absolute = path.join(demosDir, entry.file);
+  const relative = repoRelative(absolute);
+  if (!existsSync(absolute)) {
+    problems.add(`${relative}: the page renders this demo, but the file does not exist`);
+    return null;
   }
-  return source;
+  const raw = readFileSync(absolute, "utf8");
+  if (!/^\s*["']use client["']/.test(raw)) {
+    problems.add(`${relative}: a demo must start with a "use client" directive`);
+  }
+  const source = raw.replace(/\s+$/, "");
+  return {
+    id: entry.id,
+    title: entry.title,
+    sourcePath: relative,
+    source,
+    highlighted: highlight(source),
+  };
 }
 
-async function buildComponent(
+function buildComponent(
   context: LibraryProject,
-  file: string,
+  slug: string,
   problems: ProblemLog,
   colors: ColorTokenMap
-): Promise<DocsComponent> {
-  const slug = path.basename(file, ".mdx");
-  const raw = readFileSync(file, "utf8");
-  const split = splitFrontmatter(raw);
-  const frontmatter = parseShellFrontmatter(split.frontmatter, repoRelative(file));
-  const paths = resolveShellPaths(slug, frontmatter);
+): DocsComponent {
+  const paths = resolveComponentPaths(slug);
+  const page = readComponentPage(paths.pageFile, slug, repoRelative(paths.pageFile));
 
   if (!existsSync(paths.entryFile)) {
     problems.add(`${slug}: no public entry module at ${repoRelative(paths.entryFile)}`);
@@ -176,31 +190,22 @@ async function buildComponent(
     problems.add(`${slug}: no co-located demos directory at ${repoRelative(paths.demosDir)}`);
   }
 
-  // A demo file that exists but is not declared, or a declared demo that does not
-  // exist, is a drift the build refuses to paper over.
-  const declared = new Set(frontmatter.demos.map((demo) => demo.file));
+  // A demo file nobody renders is drift the build refuses to paper over: it would ship
+  // as an unreachable page section and as a VR target with no documentation.
+  const rendered = new Set(page.demos.map((demo) => demo.file));
   if (existsSync(paths.demosDir)) {
     for (const entry of readdirSync(paths.demosDir)) {
-      if (entry.endsWith(".tsx") && !declared.has(entry)) {
-        problems.add(`${slug}: demo file ${entry} is not listed in the page frontmatter`);
+      if (entry.endsWith(".tsx") && !rendered.has(entry)) {
+        problems.add(`${slug}: demo file ${entry} is never rendered by the page`);
       }
-    }
-  }
-  for (const demo of frontmatter.demos) {
-    if (!existsSync(path.join(paths.demosDir, demo.file))) {
-      problems.add(`${slug}: frontmatter lists a missing demo file ${demo.file}`);
     }
   }
 
   const demos: DocsDemo[] = [];
-  for (const entry of frontmatter.demos) {
-    const demo = extractDemo(context, { slug, demosDir: paths.demosDir, entry }, problems);
+  for (const entry of page.demos) {
+    const demo = readDemo(paths.demosDir, entry, problems);
     if (demo !== null) {
       demos.push(demo);
-      writeFile(
-        path.join(generatedDir, "demos", slug, entry.file),
-        demoModule(paths.demosDir, entry.file, problems)
-      );
     }
   }
 
@@ -215,24 +220,20 @@ async function buildComponent(
 
   const rootPart = parts.find((part) => part.sourcePath === repoRelative(paths.sourceFile)) ?? parts[0];
 
-  const compiled = await compileMdx(split.body, file);
-  writeFile(path.join(generatedDir, "content", `${slug}.tsx`), compiled);
-
   return {
     slug,
-    title: frontmatter.title,
-    lede: frontmatter.lede,
+    title: page.title,
+    lede: page.lede,
     entry: paths.entry,
     exportName: paths.exportName,
     sourcePath: repoRelative(paths.sourceFile),
     sourceUrl: `${REPO_BLOB_BASE}/${repoRelative(paths.sourceFile)}`,
     markdownUrl: `/components/${slug}.md`,
     rsc: rootPart?.rsc ?? "client",
-    headings: readContentHeadings(split.body),
+    headings: page.headings,
     demos,
     parts,
     tokens,
-    hasContent: hasBodyContent(split.body),
   };
 }
 
@@ -242,42 +243,6 @@ function emitRegistry(components: readonly DocsComponent[]): void {
     `${BANNER}import type { DocsComponent } from "../lib/docs-model";
 
 export const DOCS_COMPONENTS: readonly DocsComponent[] = ${JSON.stringify(components, null, 2)};
-`
-  );
-}
-
-function emitModules(components: readonly DocsComponent[]): void {
-  const imports: string[] = [];
-  const demoEntries: string[] = [];
-  const contentEntries: string[] = [];
-
-  for (const component of components) {
-    const contentIdentifier = `${pascalCase(component.slug)}Content`;
-    imports.push(`import ${contentIdentifier} from "./content/${component.slug}";`);
-    contentEntries.push(`  ["${component.slug}", ${contentIdentifier}],`);
-    for (const demo of component.demos) {
-      imports.push(`import { ${demo.exportName} } from "${demo.modulePath}";`);
-      demoEntries.push(`  ["${component.slug}/${demo.id}", ${demo.exportName}],`);
-    }
-  }
-
-  writeFile(
-    path.join(generatedDir, "modules.ts"),
-    `${BANNER}import type { ComponentType } from "react";
-
-import type { MdxContent } from "../lib/docs-model";
-
-${imports.join("\n")}
-
-/** Live demo components, keyed \`<slug>/<demoId>\`. */
-export const DEMO_COMPONENTS = new Map<string, ComponentType>([
-${demoEntries.join("\n")}
-]);
-
-/** Compiled MDX shell bodies, keyed by component slug. */
-export const CONTENT_COMPONENTS = new Map<string, MdxContent>([
-${contentEntries.join("\n")}
-]);
 `
   );
 }
@@ -316,9 +281,9 @@ export const COLOR_TOKENS: readonly string[] = ${JSON.stringify(tokens, null, 2)
 /**
  * Every authored nav destination has to be a real route.
  *
- * The Components group is generated from the shells that just built, so it cannot point
- * at a missing page; the Overview and Handbook groups are authored, and this is what
- * stops one of them from shipping a 404 in the SideNav (§3.3).
+ * The Components group is generated from the route directories that just built, so it
+ * cannot point at a missing page; the Overview and Handbook groups are authored, and this
+ * is what stops one of them from shipping a 404 in the SideNav (§3.3).
  */
 function verifyStaticRoutes(problems: ProblemLog): void {
   for (const page of STATIC_PAGES) {
@@ -339,20 +304,16 @@ function emitLlmsTxt(components: readonly DocsComponent[]): void {
   writeFile(llmsTxtFile, renderLlmsTxt(components));
 }
 
-async function main(): Promise<void> {
+function main(): void {
   const problems = new ProblemLog();
   const colors = readColorTokenMapFromFile(path.join(uiSrc, "styles/ui.css"));
   const context = openLibraryProject();
   try {
-    const components: DocsComponent[] = [];
-    for (const file of shellFiles()) {
-      components.push(await buildComponent(context, file, problems, colors));
-    }
+    const components = componentSlugs().map((slug) => buildComponent(context, slug, problems, colors));
     verifyStaticRoutes(problems);
     const sizes = readBundleSizes(sizeBudgetsFile, problems);
     problems.throwIfFailed();
     emitRegistry(components);
-    emitModules(components);
     emitBundleSizes(sizes);
     emitTokenReference(colors);
     emitMarkdownEndpoints(components);
@@ -373,7 +334,7 @@ async function main(): Promise<void> {
 }
 
 try {
-  await main();
+  main();
 } catch (error) {
   process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
   process.exitCode = 1;

@@ -1,0 +1,55 @@
+---
+title: Field
+lede: >
+  The canonical labeling mechanism. `Field.Root` wires `id`/`htmlFor`,
+  `aria-describedby` for description and error, and error announcement, so every control
+  composed under it gets its accessible name from `Field.Label`.
+---
+
+import { FieldBasic } from "./demos/field-basic";
+import { FieldErrorDemo } from "./demos/field-error";
+import { FieldOrientations } from "./demos/field-orientations";
+import { FieldSetDemo } from "./demos/field-set";
+import { FieldSeparatorDemo } from "./demos/field-separator";
+import { FieldChoiceCard } from "./demos/field-choice-card";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("field");
+
+<ComponentIntro slug="field" />
+
+<Prose>
+
+No control invents its own label wiring. If an input-like component needs a visible
+label, a description or an error, it is composed under `Field.Root`.
+
+</Prose>
+
+<Demo slug="field" id="basic" title="Basic" file="field-basic.tsx">
+  <FieldBasic />
+</Demo>
+
+<Demo slug="field" id="error" title="Error message" file="field-error.tsx">
+  <FieldErrorDemo />
+</Demo>
+
+<Demo slug="field" id="orientations" title="Orientations" file="field-orientations.tsx">
+  <FieldOrientations />
+</Demo>
+
+<Demo slug="field" id="set" title="Field set" file="field-set.tsx">
+  <FieldSetDemo />
+</Demo>
+
+<Demo slug="field" id="separator" title="Separator" file="field-separator.tsx">
+  <FieldSeparatorDemo />
+</Demo>
+
+<Demo slug="field" id="choice-card" title="Choice card" file="field-choice-card.tsx">
+  <FieldChoiceCard />
+</Demo>
+
+<ApiReference slug="field" />
+
+<ComponentTokens slug="field" />

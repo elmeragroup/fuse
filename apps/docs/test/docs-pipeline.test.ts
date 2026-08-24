@@ -4,9 +4,8 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { readRscStatus } from "../scripts/lib/api.ts";
-import { parseShellFrontmatter, splitFrontmatter } from "../scripts/lib/frontmatter.ts";
 import { renderComponentMarkdown } from "../scripts/lib/markdown.ts";
-import { readContentHeadings, stampHeadingAnchors } from "../scripts/lib/mdx.ts";
+import { parseComponentPage } from "../scripts/lib/page-source.ts";
 import { collectRecipeSources } from "../scripts/lib/sources.ts";
 import { extractTokens, readColorTokenMap } from "../scripts/lib/tokens.ts";
 import type { DocsComponent } from "../src/lib/docs-model";
@@ -17,65 +16,74 @@ const repoRoot = join(here, "../../..");
 const uiCss = readFileSync(join(repoRoot, "packages/ui/src/styles/ui.css"), "utf8");
 const colors = readColorTokenMap(uiCss);
 
-describe("frontmatter", () => {
-  const source = [
-    "---",
-    "title: Button",
-    "lede: >",
-    "  First line",
-    "  second line",
-    "demos:",
-    "  - id: variants",
-    "    title: Variants",
-    "    file: button-variant-matrix.tsx",
-    "---",
-    "",
-    "## Prose heading",
-    "",
-    "Body.",
-  ].join("\n");
+describe("authored page.mdx as generation input", () => {
+  function page(...body: readonly string[]): string {
+    return ["---", "title: Button", "lede: >", "  First line", "  second line", "---", "", ...body].join(
+      "\n"
+    );
+  }
 
-  it("splits the block and keeps the body's line numbers", () => {
-    const split = splitFrontmatter(source);
-    expect(split.frontmatter).toContain("title: Button");
-    expect(split.body.split("\n").length).toBe(source.split("\n").length);
-    expect(split.body.trim()).toBe("## Prose heading\n\nBody.");
-  });
-
-  it("folds a `>` scalar and reads the demo list in order", () => {
-    const { frontmatter } = splitFrontmatter(source);
-    const parsed = parseShellFrontmatter(frontmatter, "button.mdx");
+  it("folds a `>` lede and reads the demos the page renders, in order", () => {
+    const parsed = parseComponentPage(
+      page(
+        '<Demo slug="button" id="variants" title="Variants" file="button-variant-matrix.tsx">',
+        "  <ButtonVariantMatrix />",
+        "</Demo>",
+        "",
+        '<Demo slug="button" id="sizes" title="Sizes" file="button-sizes.tsx">',
+        "  <ButtonSizes />",
+        "</Demo>"
+      ),
+      "button",
+      "button/page.mdx"
+    );
     expect(parsed.title).toBe("Button");
     expect(parsed.lede).toBe("First line second line");
-    expect(parsed.demos).toEqual([{ id: "variants", title: "Variants", file: "button-variant-matrix.tsx" }]);
+    expect(parsed.demos).toEqual([
+      { id: "variants", title: "Variants", file: "button-variant-matrix.tsx" },
+      { id: "sizes", title: "Sizes", file: "button-sizes.tsx" },
+    ]);
   });
 
-  it("rejects an unknown key rather than ignoring it", () => {
-    expect(() => parseShellFrontmatter("title: X\nlede: Y\nnope: 1", "x.mdx")).toThrow(
+  it("rejects an unknown frontmatter key rather than ignoring it", () => {
+    expect(() => parseComponentPage("---\ntitle: X\nlede: Y\nnope: 1\n---\n", "x", "x.mdx")).toThrow(
       /unknown frontmatter key/
     );
   });
 
   it("requires a title and a lede", () => {
-    expect(() => parseShellFrontmatter("title: X", "x.mdx")).toThrow(/"lede" is required/);
+    expect(() => parseComponentPage("---\ntitle: X\n---\n", "x", "x.mdx")).toThrow(/"lede" is required/);
   });
-});
 
-describe("MDX body headings", () => {
-  it("collects ATX headings and skips fenced code", () => {
-    const body = ["## Composition", "", "```tsx", "## not a heading", "```", "", "### Details"].join("\n");
-    expect(readContentHeadings(body)).toEqual([
-      { id: "composition", title: "Composition", depth: 2 },
+  it("refuses a <Demo> that is missing an attribute, or names another page's slug", () => {
+    expect(() =>
+      parseComponentPage(page('<Demo slug="button" id="a" title="A" />'), "button", "x.mdx")
+    ).toThrow(/missing its "file" attribute/);
+    expect(() =>
+      parseComponentPage(page('<Demo slug="card" id="a" title="A" file="a.tsx" />'), "button", "x.mdx")
+    ).toThrow(/names slug "card" on the "button" page/);
+  });
+
+  it("collects ATX headings for the TOC and reads fenced code as source, not structure", () => {
+    const parsed = parseComponentPage(
+      page(
+        "## Composition limits",
+        "",
+        "```tsx",
+        "## not a heading",
+        '<Demo slug="button" id="fenced" title="Fenced" file="fenced.tsx" />',
+        "```",
+        "",
+        "### Details"
+      ),
+      "button",
+      "button/page.mdx"
+    );
+    expect(parsed.headings).toEqual([
+      { id: slugifyHeading("Composition limits"), title: "Composition limits", depth: 2 },
       { id: "details", title: "Details", depth: 3 },
     ]);
-  });
-
-  it("stamps the same anchors it reports to the TOC", () => {
-    const body = ["## Composition limits", "", "text", "", "```tsx", "## fenced", "```"].join("\n");
-    const stamped = stampHeadingAnchors(body);
-    expect(stamped).toContain('<h2 id="composition-limits">Composition limits</h2>');
-    expect(stamped).toContain("## fenced");
-    expect(readContentHeadings(body)[0]?.id).toBe(slugifyHeading("Composition limits"));
+    expect(parsed.demos).toEqual([]);
   });
 });
 
@@ -169,16 +177,13 @@ describe("markdown endpoint rendering", () => {
     markdownUrl: "/components/widget.md",
     rsc: "client",
     headings: [],
-    hasContent: false,
     demos: [
       {
         id: "basic",
         title: "Basic",
-        exportName: "WidgetBasic",
         sourcePath: "apps/docs/src/app/(docs)/components/widget/demos/widget-basic.tsx",
         source: "export function WidgetBasic() {}",
         highlighted: "<span></span>",
-        modulePath: "./demos/widget/widget-basic",
       },
     ],
     parts: [

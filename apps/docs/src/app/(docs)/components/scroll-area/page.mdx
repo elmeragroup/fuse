@@ -1,0 +1,47 @@
+---
+title: ScrollArea
+lede: >
+  Styled custom scrollbars over native scrolling. `ScrollArea.Root` ships one bar for
+  its orientation; the viewport stays a real scroll container.
+---
+
+import { ScrollAreaVertical } from "./demos/scroll-area-vertical";
+import { ScrollAreaHorizontal } from "./demos/scroll-area-horizontal";
+import { ScrollAreaAlways } from "./demos/scroll-area-always";
+import { ScrollAreaComposed } from "./demos/scroll-area-composed";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("scroll-area");
+
+<ComponentIntro slug="scroll-area" />
+
+<Prose>
+
+## Composition limits
+
+`Root` renders exactly one scrollbar. For two-axis scrolling, compose the base-ui
+primitives directly and mount two `ScrollArea.Bar`s — the last demo shows that escape
+hatch.
+
+</Prose>
+
+<Demo slug="scroll-area" id="vertical" title="Vertical" file="scroll-area-vertical.tsx">
+  <ScrollAreaVertical />
+</Demo>
+
+<Demo slug="scroll-area" id="horizontal" title="Horizontal" file="scroll-area-horizontal.tsx">
+  <ScrollAreaHorizontal />
+</Demo>
+
+<Demo slug="scroll-area" id="always-visible" title="Always visible" file="scroll-area-always.tsx">
+  <ScrollAreaAlways />
+</Demo>
+
+<Demo slug="scroll-area" id="composed" title="Two-axis composition" file="scroll-area-composed.tsx">
+  <ScrollAreaComposed />
+</Demo>
+
+<ApiReference slug="scroll-area" />
+
+<ComponentTokens slug="scroll-area" />

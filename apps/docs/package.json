@@ -14,19 +14,21 @@
   "dependencies": {
     "@base-ui/react": "catalog:",
     "@elmeragroup/ui": "workspace:*",
+    "@next/mdx": "catalog:",
     "next": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:"
   },
   "devDependencies": {
     "@elmeragroup/typescript-config": "workspace:*",
-    "@mdx-js/mdx": "3.1.1",
+    "@mdx-js/loader": "catalog:",
     "@tailwindcss/postcss": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "playwright": "catalog:",
-    "remark-gfm": "4.0.1",
+    "remark-frontmatter": "catalog:",
+    "remark-gfm": "catalog:",
     "sugar-high": "2.0.1",
     "tailwindcss": "catalog:",
     "typescript": "catalog:",

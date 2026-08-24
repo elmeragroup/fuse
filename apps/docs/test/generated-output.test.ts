@@ -18,15 +18,15 @@ function component(slug: string) {
 }
 
 describe("generated registry", () => {
-  it("covers every authored MDX shell", () => {
+  it("covers every authored component page", () => {
     expect(DOCS_COMPONENTS.map((entry) => entry.slug)).toEqual([
       "badge",
       "button",
       "card",
       "dialog",
       "field",
-      "input-group",
       "input",
+      "input-group",
       "item",
       "scroll-area",
       "separator",
@@ -36,28 +36,22 @@ describe("generated registry", () => {
 
   it("keeps the demo frame and its displayed source on the same authored file", () => {
     for (const entry of DOCS_COMPONENTS) {
+      // The page imports each demo from its own route directory, and the frame's source
+      // is that very file — read once, never copied (docs-site.md §6).
+      const page = readFileSync(join(docsRoot, "src/app/(docs)/components", entry.slug, "page.mdx"), "utf8");
       for (const demo of entry.demos) {
         const authored = readFileSync(join(repoRoot, demo.sourcePath), "utf8");
-        // The registry carries the authored bytes verbatim (trailing whitespace trimmed).
         expect(authored.replace(/\s+$/, "")).toBe(demo.source);
-        // The renderable copy is the same bytes, in the client graph.
-        const copy = readFileSync(
-          join(docsRoot, "src/generated", `${demo.modulePath.replace(/^\.\//, "")}.tsx`),
-          "utf8"
-        );
-        // A demo that is not already a client module gets the directive prepended so a
-        // namespace compound survives the server/client reference boundary.
-        expect(copy.startsWith('"use client";')).toBe(true);
-        const withoutDirective = authored.startsWith('"use client";')
-          ? copy
-          : copy.slice('"use client";\n\n'.length);
-        expect(withoutDirective).toBe(authored);
-        expect(copy).toContain(`export function ${demo.exportName}`);
+        // Authored in the file, not grafted on in transit.
+        expect(authored.startsWith('"use client";')).toBe(true);
+        const file = demo.sourcePath.split("/").at(-1) ?? "";
+        expect(page, demo.sourcePath).toContain(`file="${file}"`);
+        expect(page, demo.sourcePath).toContain(`from "./demos/${file.replace(/\.tsx$/, "")}"`);
       }
     }
   });
 
-  it("orders demos by the spec §10 scenario list in the shell", () => {
+  it("orders demos by the spec §10 scenario list the page renders", () => {
     expect(component("button").demos.map((demo) => demo.id)).toEqual([
       "variants",
       "sizes",
