@@ -14,10 +14,20 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { highlight } from "sugar-high";
 
+import { normalizeDemoSource } from "./docs-model";
+
 /** `apps/docs`, the directory every docs task runs from (`next build`, `next dev`, vitest). */
 const DOCS_ROOT = process.cwd();
 
-/** Where the component routes — and therefore the co-located `demos/` — live. */
+/**
+ * Where the component routes — and therefore the co-located `demos/` — live.
+ *
+ * The generator reaches the same directories from its own root: `componentRoutesDir` in
+ * `scripts/lib/paths.ts` (built from `docsRouteGroup`) is this path made absolute. The two
+ * cannot share a constant — this one is relative to `process.cwd()` at render time, that
+ * one is resolved from the script's module URL — so a change to the route layout has to
+ * land in both.
+ */
 const COMPONENT_ROUTES = "src/app/(docs)/components";
 
 /** The docs app's own path inside the repo, for the path the frame prints. */
@@ -52,6 +62,6 @@ export async function readDemoSource(slug: string, file: string): Promise<DemoSo
       { cause }
     );
   }
-  const source = raw.replace(/\s+$/, "");
+  const source = normalizeDemoSource(raw);
   return { sourcePath, source, highlighted: highlight(source) };
 }

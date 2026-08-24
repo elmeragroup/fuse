@@ -68,9 +68,22 @@ export type DocsDemo = {
   title: string;
   /** Repo-relative path of the authored demo file. */
   sourcePath: string;
-  /** Verbatim demo source. */
+  /** Verbatim demo source, normalised by `normalizeDemoSource`. */
   source: string;
 };
+
+/**
+ * The one normalisation applied to a demo file's bytes on its way to a reader.
+ *
+ * Both readers of a demo file go through this: the generation pass, which embeds the
+ * source in the markdown endpoint and `llms.txt`, and the frame, which reads the same
+ * file at render time (`demo-source.ts`). They must agree byte-for-byte — a reader who
+ * copies from the page and a reader who fetches the `.md` are entitled to the same code —
+ * so the trim lives here rather than being spelled twice.
+ */
+export function normalizeDemoSource(raw: string): string {
+  return raw.replace(/\s+$/, "");
+}
 
 /** A heading contributed by the page's authored prose, for the on-page TOC. */
 export type ContentHeading = {

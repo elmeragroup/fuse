@@ -20,6 +20,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
+import { normalizeDemoSource } from "../src/lib/docs-model.ts";
 import type { DocsComponent, DocsDemo } from "../src/lib/docs-model.ts";
 import { STATIC_PAGES } from "../src/lib/pages.ts";
 import { describeComponentApi, openLibraryProject } from "./lib/api.ts";
@@ -167,7 +168,7 @@ function readDemo(demosDir: string, entry: PageDemo, problems: ProblemLog): Docs
     id: entry.id,
     title: entry.title,
     sourcePath: relative,
-    source: raw.replace(/\s+$/, ""),
+    source: normalizeDemoSource(raw),
   };
 }
 
