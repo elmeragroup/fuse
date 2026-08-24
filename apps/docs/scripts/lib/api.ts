@@ -181,6 +181,28 @@ function printType(checker: Checker, type: Type | undefined): string | null {
   return printed === "" ? null : printed;
 }
 
+/**
+ * The one-line type a closed reference row shows, or `null` when the printed type is
+ * short enough to show in full (docs-site.md §8; adapted from base-ui's `shortType`).
+ *
+ * A plain-string heuristic on purpose: it decides what a *collapsed* row displays, and
+ * the expanded panel always carries the real signature, so being approximate costs
+ * nothing while parsing the printed type would cost a second type model.
+ *
+ * `on`/`get` must be followed by a capital to count as the handler/accessor convention —
+ * a prop literally named `open` or `gettable` is not a function.
+ */
+export function shortTypeOf(propName: string, printedType: string): string | null {
+  if (/^(?:on|get)[A-Z]/.test(propName) || printedType.includes("=>")) {
+    return "function";
+  }
+  const unionBars = printedType.split("|").length - 1;
+  if (unionBars >= 2 || printedType.length >= 30) {
+    return "Union";
+  }
+  return null;
+}
+
 export type PartRequest = {
   /** Display name, e.g. `Dialog.Content`. */
   name: string;
@@ -260,6 +282,7 @@ function describePart(context: LibraryProject, request: PartRequest, problems: P
       name: property.name,
       origin: isRecipeAxis ? "recipe-axis" : "declared",
       type: printed,
+      shortType: shortTypeOf(property.name, printed),
       defaultValue: source.defaults.get(property.name) ?? null,
       description,
       required: !isOptional(property),

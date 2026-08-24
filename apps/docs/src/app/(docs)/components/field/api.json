@@ -1,0 +1,164 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "field",
+  "parts": [
+    {
+      "name": "Field.Root",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/field/field.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 287,
+      "props": [
+        {
+          "name": "orientation",
+          "origin": "recipe-axis",
+          "type": "\"horizontal\" | \"responsive\" | \"vertical\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"vertical\"",
+          "description": "",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Field.Label",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/field/field.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 281,
+      "props": []
+    },
+    {
+      "name": "Field.Description",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/field/field.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": []
+    },
+    {
+      "name": "Field.Error",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/field/field.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 279,
+      "props": []
+    },
+    {
+      "name": "Field.Control",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/field/field.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 310,
+      "props": []
+    },
+    {
+      "name": "Field.Item",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/field/field.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 279,
+      "props": []
+    },
+    {
+      "name": "Field.Content",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/field/field.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Field.Group",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/field/field.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Field.Set",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/field/field.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 281,
+      "props": []
+    },
+    {
+      "name": "Field.Legend",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/field/field.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": [
+        {
+          "name": "variant",
+          "origin": "declared",
+          "type": "\"label\" | \"legend\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"legend\"",
+          "description": "Emitted as `data-variant` and drives the text size: `\"legend\"` (default) titles the fieldset, `\"label\"` sizes it down to match a `Field.Label`.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Field.Separator",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/field/field.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 279,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Optional inline content rendered over the rule — a label for the break between two groups of fields. Its presence is reflected as `data-content`.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Field.Title",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/field/field.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    }
+  ]
+}

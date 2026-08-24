@@ -1,0 +1,17 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "separator",
+  "parts": [
+    {
+      "name": "Separator",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/separator/separator.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 279,
+      "props": []
+    }
+  ]
+}

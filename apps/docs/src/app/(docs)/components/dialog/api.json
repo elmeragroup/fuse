@@ -1,0 +1,169 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "dialog",
+  "parts": [
+    {
+      "name": "Dialog.Root",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/dialog/dialog.tsx",
+      "forwardedFrom": [
+        "@base-ui/react"
+      ],
+      "forwardedCount": 11,
+      "props": []
+    },
+    {
+      "name": "Dialog.Trigger",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/dialog/dialog.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 291,
+      "props": []
+    },
+    {
+      "name": "Dialog.Portal",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/dialog/dialog.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Dialog.Close",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/dialog/dialog.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 289,
+      "props": []
+    },
+    {
+      "name": "Dialog.Overlay",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/dialog/dialog.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 279,
+      "props": []
+    },
+    {
+      "name": "Dialog.Content",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/dialog/dialog.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": [
+        {
+          "name": "closeLabel",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Accessible name for the built-in corner close button. Defaults to the locale dictionary.",
+          "required": false
+        },
+        {
+          "name": "container",
+          "origin": "declared",
+          "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Portal target for the popup. Defaults to the nearest enclosing `ThemeScope` element, so an overlay never escapes the theme that opened it.",
+          "required": false
+        },
+        {
+          "name": "showCloseButton",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Renders the built-in corner dismiss affordance — a `Dialog.Close` styled as a ghost icon button in the popup's top-right corner.",
+          "required": false
+        },
+        {
+          "name": "size",
+          "origin": "recipe-axis",
+          "type": "\"10xl\" | \"2xl\" | \"3xl\" | \"4xl\" | \"5xl\" | \"6xl\" | \"7xl\" | \"8xl\" | \"9xl\" | \"lg\" | \"md\" | \"sm\" | \"xl\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Dialog.Header",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/dialog/dialog.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Dialog.Footer",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/dialog/dialog.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": [
+        {
+          "name": "closeLabel",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Visible text for the built-in footer close action. Defaults to the locale dictionary.",
+          "required": false
+        },
+        {
+          "name": "showCloseButton",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Appends a `Dialog.Close` rendered as an outline button after `children` — a footer action, distinct from `Dialog.Content`'s corner dismiss affordance.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Dialog.Title",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/dialog/dialog.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": []
+    },
+    {
+      "name": "Dialog.Description",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/dialog/dialog.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": []
+    }
+  ]
+}

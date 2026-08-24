@@ -1,0 +1,156 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "item",
+  "parts": [
+    {
+      "name": "Item.Root",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/item/item.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 281,
+      "props": [
+        {
+          "name": "size",
+          "origin": "recipe-axis",
+          "type": "\"default\" | \"sm\" | \"xs\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "recipe-axis",
+          "type": "\"default\" | \"muted\" | \"outline\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Item.Media",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/item/item.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": [
+        {
+          "name": "variant",
+          "origin": "recipe-axis",
+          "type": "\"default\" | \"icon\" | \"image\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Item.Content",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/item/item.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Item.Actions",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/item/item.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Item.Group",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/item/item.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Item.Separator",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/item/item.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 279,
+      "props": []
+    },
+    {
+      "name": "Item.Title",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/item/item.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Item.Description",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/item/item.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Item.Header",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/item/item.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Item.Footer",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/item/item.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 279,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Footer content, wrapped in the inner `item-footer-content` element that `mode` reveals or collapses via the grid-row animation.",
+          "required": false
+        },
+        {
+          "name": "mode",
+          "origin": "recipe-axis",
+          "type": "\"default\" | \"hidden\" | \"visible\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

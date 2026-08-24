@@ -23,6 +23,13 @@ export type ApiProp = {
   origin: ApiPropOrigin;
   /** Fully resolved type text, as the checker prints it. */
   type: string;
+  /**
+   * One-line stand-in a *closed* reference row shows instead of `type` — `"function"`
+   * for handlers, `"Union"` for long or many-branched unions (docs-site.md §8). `null`
+   * means the printed type is short enough to show as it is; the expanded panel always
+   * shows `type` either way.
+   */
+  shortType: string | null;
   /** Destructuring default from the part's implementation, or `null` when there is none. */
   defaultValue: string | null;
   /**

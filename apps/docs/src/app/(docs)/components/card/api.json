@@ -1,0 +1,202 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "card",
+  "parts": [
+    {
+      "name": "Card.Root",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/card/card.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": [
+        {
+          "name": "direction",
+          "origin": "recipe-axis",
+          "type": "\"horizontal\" | \"vertical\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Card.Header",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/card/card.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": [
+        {
+          "name": "direction",
+          "origin": "recipe-axis",
+          "type": "\"horizontal\" | \"vertical\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Card.Tag",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/card/card.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": [
+        {
+          "name": "direction",
+          "origin": "recipe-axis",
+          "type": "\"horizontal\" | \"vertical\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Card.Title",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/card/card.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": [
+        {
+          "name": "direction",
+          "origin": "recipe-axis",
+          "type": "\"horizontal\" | \"vertical\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        },
+        {
+          "name": "icon",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Rendered before `children` — the title becomes a flex row (`items-center gap-x-1.5`) and any `svg` is sized to `5`.",
+          "required": false
+        },
+        {
+          "name": "level",
+          "origin": "declared",
+          "type": "CardTitleLevel | undefined",
+          "shortType": null,
+          "defaultValue": "3",
+          "description": "Heading element level — `1`–`6` picks the rendered `h1`–`h6`. Defaults to `3`, so a card titles itself without assuming its place in the document outline.",
+          "required": false
+        },
+        {
+          "name": "size",
+          "origin": "declared",
+          "type": "\"2xl\" | \"3xl\" | \"4xl\" | \"5xl\" | \"6xl\" | \"default\" | \"lg\" | \"sm\" | \"xl\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"2xl\"",
+          "description": "Typography size for the title, mapped to a `text-{size}` class. Defaults to `2xl`.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Card.Description",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/card/card.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": [
+        {
+          "name": "direction",
+          "origin": "recipe-axis",
+          "type": "\"horizontal\" | \"vertical\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        },
+        {
+          "name": "size",
+          "origin": "declared",
+          "type": "\"2xl\" | \"default\" | \"lg\" | \"sm\" | \"xl\" | \"xs\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"sm\"",
+          "description": "Typography size for the description, mapped to a `text-{size}` class. Defaults to `sm`.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Card.Action",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/card/card.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": [
+        {
+          "name": "direction",
+          "origin": "recipe-axis",
+          "type": "\"horizontal\" | \"vertical\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Card.Content",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/card/card.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": [
+        {
+          "name": "direction",
+          "origin": "recipe-axis",
+          "type": "\"horizontal\" | \"vertical\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Card.Footer",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/card/card.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": [
+        {
+          "name": "direction",
+          "origin": "recipe-axis",
+          "type": "\"horizontal\" | \"vertical\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        }
+      ]
+    }
+  ]
+}
