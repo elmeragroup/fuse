@@ -30,7 +30,7 @@ Twelve parts. Base UI owns id/aria wiring; validation visibility stays external 
 ```tsx
 <Field.Root>
   <Field.Label>Email</Field.Label>
-  <Field.Control render={<Input type="email" />} />
+  <Input type="email" />
   <Field.Description>Work address preferred.</Field.Description>
   <Field.Error>{errorMessage}</Field.Error>
 </Field.Root>
