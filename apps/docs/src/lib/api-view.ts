@@ -6,38 +6,17 @@
  * default looks like, and what a screen reader hears from a single `summary`. Answering them
  * here keeps the accordion a rendering of ready strings — which is what lets the accordion be
  * the page's only client component while the highlighter, the artifact read and the em-dash
- * all stay on the server.
+ * all stay on the server. This module is server-side for that reason: it imports the
+ * highlighter, so the row's shape and the em-dash itself live in `api-row.ts`, which the
+ * client component can import without reaching `sugar-high`.
  */
 
 import { highlight } from "sugar-high";
 
+import type { ApiPropView } from "./api-row";
 import type { ApiPart, ApiProp, RscStatus } from "./docs-model";
 import { propDescription } from "./docs-model";
 import { apiPartAnchor, apiPropAnchor } from "./nav";
-
-/** What a missing default renders as (docs-site.md §8). */
-export const NO_DEFAULT = "—";
-
-/** One expandable prop row, entirely as strings. */
-export type ApiPropView = {
-  name: string;
-  /** Anchor id of the row's `summary`; a hash pointing at it opens the row. */
-  id: string;
-  required: boolean;
-  /**
-   * The one line the *closed* row shows in the Type column: the generator's `shortType`
-   * when it collapsed the printed type, otherwise the printed type itself.
-   */
-  closedType: string;
-  /** The full printed signature, highlighted for the expanded panel. */
-  signatureHtml: string;
-  /** The default as written, or `null` when there is none — the row then shows an em-dash. */
-  defaultValue: string | null;
-  /** JSDoc description, or the recipe-axis stand-in. Markdown-ish: may contain code spans. */
-  description: string;
-  /** The composed label a screen reader hears instead of the row's four cells. */
-  label: string;
-};
 
 /** One compound part's reference block. */
 export type ApiPartView = {

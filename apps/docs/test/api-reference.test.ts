@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 
+import { NO_DEFAULT } from "../src/lib/api-row";
 import { readComponentApi } from "../src/lib/api-source";
 import type { ApiPartView } from "../src/lib/api-view";
-import { NO_DEFAULT, toPartView } from "../src/lib/api-view";
+import { toPartView } from "../src/lib/api-view";
 import type { ApiPart } from "../src/lib/docs-model";
 import { API_REGEN_COMMAND } from "../src/lib/docs-model";
 

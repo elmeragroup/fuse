@@ -37,7 +37,10 @@ export async function readComponentApi(slug: string): Promise<ComponentApiArtifa
   }
 
   const parsed: unknown = JSON.parse(raw);
-  if (parsed === null || Array.isArray(parsed)) {
+  // `instanceof Object` rejects `null` *and* JSON's primitives (a bare string, number or
+  // boolean) in one test, so a file that parsed but is not an artifact fails honestly here
+  // instead of surviving to the slug comparison and reporting a mis-slug it does not have.
+  if (!(parsed instanceof Object) || Array.isArray(parsed)) {
     throw new Error(`${location.repoPath} must be a JSON object. Run \`${API_REGEN_COMMAND}\`.`);
   }
   // SAFETY: `api.json` is written by this repo's own generator through one serialiser, and the

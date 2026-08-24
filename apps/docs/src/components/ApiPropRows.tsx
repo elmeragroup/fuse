@@ -14,16 +14,16 @@
  * additional-types blocks, the hook/class/raw branches, and analytics on expansion.
  */
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useState } from "react";
 import type { CSSProperties, MouseEvent, ReactElement } from "react";
 
-import type { ApiPropView } from "../lib/api-view";
-import { NO_DEFAULT } from "../lib/api-view";
+import type { ApiPropView } from "../lib/api-row";
+import { NO_DEFAULT } from "../lib/api-row";
 import "./ApiReference.css";
 import { InlineCode } from "./InlineCode";
 
 export type ApiPropRowsProps = {
-  /** Display name of the part these props belong to; only the caption reads it. */
+  /** Display name of the part these props belong to; only the group's label reads it. */
   partName: string;
   props: readonly ApiPropView[];
 };
@@ -145,20 +145,20 @@ function ApiPropRow({ prop }: { prop: ApiPropView }): ReactElement {
 }
 
 export function ApiPropRows({ partName, props }: ApiPropRowsProps): ReactElement {
-  const captionId = useId();
-
   return (
     <div
       className="ApiRows"
-      aria-describedby={captionId}
+      // The rows are a `div` grid, not a table, and the header row is decorative — so the
+      // caption that says what the columns are is the group's name. `role="group"` with a
+      // name is announced on entry; the same sentence as a visually-hidden `aria-describedby`
+      // target on a plain `div` is not reliably announced at all.
+      role="group"
+      aria-label={`${partName} props: name, type, default. Each row expands.`}
       // Lets CSS size the offscreen placeholder from the real row count, so a long page's
       // skipped reference blocks do not collapse the scrollbar (`content-visibility: auto`).
       // SAFETY: `CSSProperties` has no index signature for custom properties, and React
       // passes an unknown `--*` key straight through to the inline style attribute.
       style={{ "--api-rows": props.length } as CSSProperties}>
-      <span className="ApiCaption" id={captionId}>
-        {partName} props: name, type, default. Each row expands.
-      </span>
       <div className="ApiHeaderRow" aria-hidden>
         <span className="ApiHeaderCell ApiNameCell">Prop</span>
         <span className="ApiHeaderCell ApiTypeCell">Type</span>
