@@ -33,15 +33,35 @@ describe("component page anatomy (docs-site.md §3.4)", () => {
     expect(html).toContain("apps/docs/src/app/(docs)/components/button/demos/button-variant-matrix.tsx");
   });
 
-  it("renders the generated API tables with an RSC column", async () => {
+  it("renders the API reference as expandable rows with a per-part RSC indicator", async () => {
     const html = await fetchText("/components/button");
     expect(html).toContain('id="api-reference"');
     expect(html).toContain('id="api-button"');
-    expect(html).toContain('<th scope="col">RSC</th>');
-    expect(html).toContain("ApiTableRsc");
-    expect(html).toContain("isVisuallyDisabled");
+    // details/summary rows, deep-linkable per prop (docs-site.md §8).
+    expect(html).toContain('class="ApiRow"');
+    expect(html).toContain('id="api-button-isVisuallyDisabled"');
+    expect(html).toContain('href="#api-button-isVisuallyDisabled"');
     expect(html).toContain("predictionZoneSize");
+    // Prop · Type · Default header, RSC as a per-part indicator rather than a column.
+    expect(html).toContain(">Prop<");
+    expect(html).toContain(">Type<");
+    expect(html).toContain(">Default<");
+    expect(html).toContain('data-rsc="client"');
+    // The indicator's own text — HTML-escaped, since the label is a quoted directive.
+    expect(html).toContain("&quot;use client&quot;");
     expect(html).toContain("forwarded props from");
+  });
+
+  it("collapses long types in closed rows, keeps the full signature in the panel", async () => {
+    const html = await fetchText("/components/button");
+    // `onIntent` prints as `(() => void) | undefined`; the closed row says `function`.
+    expect(html).toContain("<code>function</code>");
+    expect(html).toContain('aria-label="Prop: onIntent, type: function"');
+    // The expanded panel carries the real signature, highlighted by sugar-high.
+    expect(html).toContain("ApiSignature");
+    expect(html).toContain("sh__token");
+    // A prop with no default renders an em-dash, never an empty cell.
+    expect(html).toContain('class="ApiNoDefault">—<');
   });
 
   it("renders the generated tokens-consumed section with swatches", async () => {

@@ -12,25 +12,17 @@
  * not how a serialiser felt about ordering.
  */
 
-import type { ApiPart, ApiProp } from "../../src/lib/docs-model.ts";
+import type { ApiPart, ApiProp, ComponentApiArtifact } from "../../src/lib/docs-model.ts";
+import { API_REGEN_COMMAND } from "../../src/lib/docs-model.ts";
 import { describeComponentApi, openLibraryProject } from "./api.ts";
 import { componentSlugs, resolveComponentPaths } from "./components.ts";
 import { ProblemLog } from "./errors.ts";
 
-/** The command that rewrites every `api.json`. Named in the artifact and in drift failures. */
-export const API_REGEN_COMMAND = "pnpm --filter docs generate";
+export { API_REGEN_COMMAND };
 
 const GENERATED_BANNER =
   `Generated from packages/ui types and JSDoc by ${API_REGEN_COMMAND} (docs-site.md §8). ` +
   "Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.";
-
-/** One component's committed API data. */
-export type ComponentApiArtifact = {
-  /** Says the file is generated and how to regenerate it. Not data — a banner for readers. */
-  $generated: string;
-  slug: string;
-  parts: readonly ApiPart[];
-};
 
 function orderProp(prop: ApiProp): ApiProp {
   return {

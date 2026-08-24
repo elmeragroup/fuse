@@ -26,6 +26,17 @@ export function apiPartAnchor(partName: string): string {
   return `api-${partName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
 }
 
+/**
+ * Anchor id for one prop row of a part's reference, so a single prop is linkable
+ * (docs-site.md §8: deep-linkable rows).
+ *
+ * The prop's own casing survives — `#api-button-isVisuallyDisabled` reads as the prop it
+ * names, and a row that a hash points at opens itself.
+ */
+export function apiPropAnchor(partName: string, propName: string): string {
+  return `${apiPartAnchor(partName)}-${propName}`;
+}
+
 const COMPONENTS_PREFIX = "/components/";
 
 export function componentHref(slug: string): string {

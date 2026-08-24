@@ -55,6 +55,26 @@ export type ApiPart = {
   forwardedCount: number;
 };
 
+/** The command that rewrites every committed `api.json` — named by the artifact's own banner
+ * and by every failure that blames a stale or missing one (docs-site.md §8). */
+export const API_REGEN_COMMAND = "pnpm --filter docs generate";
+
+/**
+ * One component's committed API artifact: the `api.json` next to its `page.mdx`
+ * (docs-site.md §8).
+ *
+ * Generated from the library's types and JSDoc, committed so an API change is a reviewable
+ * diff, and read back verbatim by the page's reference — so the shape is shared by the
+ * writer (`scripts/lib/api-artifact.ts`), the drift check, and the render-time reader
+ * (`api-source.ts`).
+ */
+export type ComponentApiArtifact = {
+  /** Says the file is generated and how to regenerate it. Not data — a banner for readers. */
+  $generated: string;
+  slug: string;
+  parts: readonly ApiPart[];
+};
+
 /** A CSS custom property the component's recipe reads. */
 export type TokenRef = {
   name: string;

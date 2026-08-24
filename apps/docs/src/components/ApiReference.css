@@ -1,0 +1,321 @@
+/*
+ * The §8 reference presentation. Mechanics ported from Base UI's ReferenceTable/Accordion
+ * (MIT, see ApiPropRows.tsx); every value below is ours.
+ *
+ * One DOM tree, three widths. `--api-cols` is the single source of the column layout: the
+ * header row, each closed row and each expanded panel inherit it through
+ * `grid-template-columns: subgrid`, which is what makes a panel's "Type" term sit exactly
+ * under the closed row's prop name. Cells with no room at a given width are simply
+ * `display: none`, so no layout is duplicated per breakpoint.
+ */
+
+.ApiPart {
+  margin: 2rem 0 0;
+}
+
+.ApiPartHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 1.6rem 0 0.7rem;
+}
+
+.ApiPartHeader h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+  scroll-margin-top: calc(var(--docs-header-height) + 1rem);
+}
+
+.ApiPartHeader h3 code {
+  font: 13px var(--docs-mono);
+}
+
+/* Per-part RSC indicator: server-safe, or the client boundary the part drags in. */
+.ApiPartRsc {
+  font: 10.5px var(--docs-mono);
+  color: var(--docs-sub);
+  border: 1px solid var(--docs-line);
+  border-radius: 999px;
+  padding: 0.15em 0.55em;
+  white-space: nowrap;
+}
+
+.ApiPartRsc[data-rsc="server"] {
+  color: #3f6b4a;
+  border-color: #cfe3d5;
+  background: #f4faf6;
+}
+
+.ApiPartNote {
+  margin: 0.6rem 0 0;
+  font-size: 0.78rem;
+  color: var(--docs-sub);
+}
+
+/*
+ * Skip painting a reference block while it is offscreen — a component page is mostly dense
+ * monospace rows. The placeholder is the closed height: one header row plus `--api-rows`
+ * rows, each 2.5rem tall with a 1px rule between them. `auto` lets the browser replace the
+ * estimate with the real size once the block has been rendered (an expanded row is taller).
+ */
+.ApiRows {
+  --api-cols: minmax(0, 1fr);
+  display: grid;
+  grid-template-columns: var(--api-cols);
+  border: 1px solid var(--docs-line);
+  border-radius: 10px;
+  content-visibility: auto;
+  contain-intrinsic-height: auto calc((var(--api-rows, 8) + 1) * (2.5rem + 1px) - 1px);
+}
+
+.ApiCaption {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.ApiHeaderRow,
+.ApiRow {
+  grid-column: 1 / -1;
+}
+
+.ApiHeaderRow {
+  display: flex;
+  align-items: center;
+  min-height: 2.5rem;
+  background: var(--docs-soft);
+  border-bottom: 1px solid var(--docs-line);
+  border-radius: 9px 9px 0 0;
+}
+
+.ApiHeaderCell {
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--docs-sub);
+  padding: 0 0.8rem;
+  white-space: nowrap;
+}
+
+.ApiRow {
+  border-bottom: 1px solid var(--docs-line);
+}
+
+.ApiRow:last-child {
+  border-bottom: 0;
+}
+
+.ApiRowTrigger {
+  display: flex;
+  align-items: center;
+  min-height: 2.5rem;
+  cursor: pointer;
+  list-style: none;
+  scroll-margin-top: calc(var(--docs-header-height) + 1rem);
+}
+
+/* Our own chevron replaces the platform disclosure triangle. */
+.ApiRowTrigger::-webkit-details-marker {
+  display: none;
+}
+
+.ApiRowTrigger:hover {
+  background: var(--docs-code-bg);
+}
+
+.ApiRowTrigger:focus-visible {
+  outline: 2px solid var(--docs-ink);
+  outline-offset: -2px;
+}
+
+.ApiCell {
+  display: block;
+  min-width: 0;
+  padding: 0.5rem 0.8rem;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.ApiCell code {
+  font: 11.5px var(--docs-mono);
+}
+
+.ApiNameCell code {
+  color: var(--docs-ink);
+  font-weight: 500;
+}
+
+.ApiRequired {
+  top: -0.3em;
+  font-size: 0.8em;
+  color: #b3261e;
+}
+
+/* Narrowest width shows the prop name alone; Type and Default arrive with the room for them. */
+.ApiTypeCell,
+.ApiDefaultCell {
+  display: none;
+}
+
+.ApiTypeCell code,
+.ApiDefaultCell code {
+  color: var(--docs-sub);
+}
+
+.ApiNoDefault {
+  font: 11.5px var(--docs-mono);
+  color: var(--docs-sub);
+}
+
+.ApiChevronCell {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  padding: 0.5rem 0.8rem;
+  color: var(--docs-sub);
+  overflow: visible;
+}
+
+.ApiChevron {
+  transition: transform 120ms ease;
+}
+
+.ApiRow[open] .ApiChevron {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ApiChevron {
+    transition: none;
+  }
+}
+
+.ApiPanel {
+  border-top: 1px dashed var(--docs-line);
+  background: var(--docs-code-bg);
+}
+
+.ApiPanelList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0.75rem 0.8rem;
+  font-size: 0.82rem;
+}
+
+.ApiPanelItem dt {
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--docs-sub);
+}
+
+.ApiPanelItem dd {
+  margin: 0.15rem 0 0;
+  min-width: 0;
+  line-height: 1.6;
+  color: #3f434a;
+}
+
+.ApiPanelItem dd code {
+  font: 11.5px var(--docs-mono);
+  background: var(--docs-soft);
+  border: 1px solid var(--docs-line);
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+}
+
+.ApiPropLink {
+  color: inherit;
+}
+
+.ApiSignature {
+  margin: 0;
+  padding: 0.5rem 0.6rem;
+  overflow-x: auto;
+  background: var(--docs-soft);
+  border: 1px solid var(--docs-line);
+  border-radius: 6px;
+}
+
+.ApiSignature code {
+  font: 11.5px/1.6 var(--docs-mono);
+  background: none;
+  border: 0;
+  padding: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/*
+ * The Type column earns its place first, and with it the subgrid chain: every level from the
+ * row down to a panel's `dt`/`dd` is a grid item spanning all tracks, so the panel's terms
+ * align with the closed row's cells above them.
+ */
+@media (min-width: 34rem) {
+  .ApiRows {
+    --api-cols: 11rem minmax(0, 1fr) 2.5rem;
+  }
+
+  .ApiHeaderRow,
+  .ApiRow,
+  .ApiRowTrigger,
+  .ApiPanel,
+  .ApiPanelList,
+  .ApiPanelItem {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    align-items: center;
+  }
+
+  .ApiTypeCell {
+    display: block;
+  }
+
+  .ApiChevronCell {
+    margin-left: 0;
+    justify-content: center;
+  }
+
+  .ApiPanelList {
+    gap: 0;
+    padding: 0.5rem 0;
+  }
+
+  .ApiPanelItem {
+    align-items: baseline;
+    padding: 0.25rem 0;
+  }
+
+  .ApiPanelItem dt {
+    grid-column: 1;
+    padding: 0 0.8rem;
+    text-align: right;
+  }
+
+  .ApiPanelItem dd {
+    grid-column: 2 / -1;
+    margin: 0;
+    padding-right: 0.8rem;
+  }
+}
+
+/* Wide enough for Default as well — the full Prop · Type · Default contract. */
+@media (min-width: 52rem) {
+  .ApiRows {
+    --api-cols: 5fr 7fr 4fr 2.5rem;
+  }
+
+  .ApiDefaultCell {
+    display: block;
+  }
+}
