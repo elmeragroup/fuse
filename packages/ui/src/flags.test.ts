@@ -85,6 +85,7 @@ describe("flag assets", () => {
     ).toBeUndefined();
   });
 
+  // Timeout: copying + SHA-256 hashing the full flag set twice is slow under full-gate parallel load.
   it("fails the PROVENANCE SHA-256 gate when a packed SVG is mutated", () => {
     const hashes = parseProvenanceHashes(readFileSync(join(flagsDir, "PROVENANCE.md"), "utf8"));
     expect(flagHashFailure(flagsDir, files, hashes)).toBeUndefined();
@@ -101,7 +102,7 @@ describe("flag assets", () => {
     } finally {
       rmSync(scratch, { recursive: true, force: true });
     }
-  });
+  }, 30_000);
 
   it("treats a missing flags directory as never-vendored and fails an empty one", () => {
     const missing = join(tmpdir(), `elmera-ui-flags-missing-${Date.now()}`);
