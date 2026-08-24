@@ -183,7 +183,6 @@ describe("markdown endpoint rendering", () => {
         title: "Basic",
         sourcePath: "apps/docs/src/app/(docs)/components/widget/demos/widget-basic.tsx",
         source: "export function WidgetBasic() {}",
-        highlighted: "<span></span>",
       },
     ],
     parts: [

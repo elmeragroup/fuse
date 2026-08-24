@@ -1,49 +1,42 @@
-"use client";
-
 import type { ReactElement, ReactNode } from "react";
 
-import { defaultDensityForVariant, densityAttributes, ThemeScope, themeSlug } from "@elmeragroup/ui/theme";
-
+import { readDemoSource } from "../lib/demo-source";
 import "./DemoFrame.css";
-import { usePreviewTheme } from "./PreviewTheme";
+import { DemoStage } from "./DemoStage";
 
 export type DemoFrameProps = {
+  /** Slug of the component page this demo belongs to; locates the `demos/` directory. */
+  slug: string;
+  /** Anchor id, unique inside the page; the on-page TOC links to it. */
   id: string;
   title: string;
-  /** Syntax-highlighted HTML of the authored demo file, extracted at docs build. */
-  highlighted: string;
-  /** Repo-relative path of the authored demo file. */
-  sourcePath: string;
+  /** Demo file name inside the page's `demos/` directory — the file the page imports. */
+  file: string;
+  /** The rendered demo, imported by the page as an ordinary ESM module (§6). */
   children: ReactNode;
 };
 
 /**
  * The §3.5 demo frame: a theme-tinted dotted stage, the active theme coordinate and its
- * deployment-default density in mono, and the extracted source of the very file that
- * rendered the stage.
+ * deployment-default density in mono, and the source of the very file that rendered the
+ * stage.
+ *
+ * An async server component, so the source region comes from a read of the demo file
+ * during prerendering rather than from generated data threaded through the page (§6).
+ * Only the stage and meta row need the preview theme, and they are the client half
+ * (`DemoStage`); the shell and the highlighted source stay on the server.
  */
-export function DemoFrame({ id, title, highlighted, sourcePath, children }: DemoFrameProps): ReactElement {
-  const { theme } = usePreviewTheme();
-  const slug = themeSlug(theme).replaceAll("-", "·");
-  const density = defaultDensityForVariant(theme.variant);
+export async function DemoFrame({ slug, id, title, file, children }: DemoFrameProps): Promise<ReactElement> {
+  const demo = await readDemoSource(slug, file);
 
   return (
     <section className="DemoFrame" aria-labelledby={id}>
       <h2 id={id}>{title}</h2>
       <div className="DemoFrameCard">
-        <ThemeScope theme={theme} className="DemoStage" {...densityAttributes(density)}>
-          {children}
-        </ThemeScope>
-        <div className="DemoMeta">
-          theme = <span className="DemoSlug">{slug}</span>
-          <span aria-hidden="true"> · </span>
-          density = <span className="DemoDensity">{density}</span>
-          <span className="DemoMetaSpacer" />
-          <span className="DemoSourcePath">{sourcePath}</span>
-        </div>
+        <DemoStage sourcePath={demo.sourcePath}>{children}</DemoStage>
         <pre className="DemoSource">
-          {/* Highlighted at docs build from the same file the stage above renders. */}
-          <code dangerouslySetInnerHTML={{ __html: highlighted }} />
+          {/* Highlighted from the same file the stage above renders. */}
+          <code dangerouslySetInnerHTML={{ __html: demo.highlighted }} />
         </pre>
       </div>
     </section>

@@ -19,7 +19,6 @@
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { highlight } from "sugar-high";
 
 import type { DocsComponent, DocsDemo } from "../src/lib/docs-model.ts";
 import { STATIC_PAGES } from "../src/lib/pages.ts";
@@ -138,11 +137,14 @@ function pruneStale(directory: string): void {
 }
 
 /**
- * One demo, read from the file the page imports.
+ * One demo, read from the file the page imports — for the *generated* outputs only: the
+ * on-page TOC entry and the source the markdown endpoint and `llms.txt` embed (§9). The
+ * frame the page renders reads the same file itself (`src/lib/demo-source.ts`), so this
+ * pass never produces the markup a page displays.
  *
- * The frame's displayed source and its live render come from the same bytes because
- * there is only one copy of them: the page's ESM import renders the file, and this read
- * displays it (§6). The `"use client"` directive is *authored in the demo file* —
+ * The read is still here because this pass is where a page's demo *inventory* is checked:
+ * a named file that does not exist, and a demo file no page renders, both fail generation.
+ * The `"use client"` directive is *authored in the demo file* —
  * namespace compounds (`Dialog.Root`, `ScrollArea.Bar`) are plain objects exported from
  * client modules, and a server component only ever sees an opaque client *reference* for
  * such an export, so member access on it resolves to `undefined`. A consumer writes the
@@ -161,13 +163,11 @@ function readDemo(demosDir: string, entry: PageDemo, problems: ProblemLog): Docs
   if (!/^\s*["']use client["']/.test(raw)) {
     problems.add(`${relative}: a demo must start with a "use client" directive`);
   }
-  const source = raw.replace(/\s+$/, "");
   return {
     id: entry.id,
     title: entry.title,
     sourcePath: relative,
-    source,
-    highlighted: highlight(source),
+    source: raw.replace(/\s+$/, ""),
   };
 }
 

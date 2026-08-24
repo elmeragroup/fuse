@@ -55,9 +55,12 @@ export type TokenRef = {
 };
 
 /**
- * One authored `.tsx` demo, read at docs build from the page's own `demos/` directory.
- * The page imports the very same file it renders, so nothing here identifies a module to
- * load — only what the frame displays around it.
+ * One authored `.tsx` demo of a component page, as the *generated* outputs see it: the
+ * on-page TOC needs its id and title, and the markdown endpoint plus `llms.txt` embed its
+ * source verbatim (§9).
+ *
+ * The rendered page needs none of this. It imports the demo module and the frame reads the
+ * same file from disk (`demo-source.ts`), so no highlighted markup travels through here.
  */
 export type DocsDemo = {
   /** Stable anchor id, unique inside the page. */
@@ -67,8 +70,6 @@ export type DocsDemo = {
   sourcePath: string;
   /** Verbatim demo source. */
   source: string;
-  /** Syntax-highlighted HTML of `source`. */
-  highlighted: string;
 };
 
 /** A heading contributed by the page's authored prose, for the on-page TOC. */

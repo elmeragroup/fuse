@@ -1,7 +1,7 @@
 import { ApiReference } from "./src/components/ApiReference";
 import { ComponentIntro } from "./src/components/ComponentIntro";
 import { ComponentTokens } from "./src/components/ComponentTokens";
-import { Demo } from "./src/components/Demo";
+import { DemoFrame } from "./src/components/DemoFrame";
 import { MDX_HEADINGS, MdxCode, MdxPre } from "./src/components/MdxElements";
 import { Prose } from "./src/components/Prose";
 
@@ -32,7 +32,8 @@ export function useMDXComponents() {
     ApiReference,
     ComponentIntro,
     ComponentTokens,
-    Demo,
+    /** `<Demo …>` is the page-facing name of the §3.5 frame. */
+    Demo: DemoFrame,
     Prose,
   };
 }
