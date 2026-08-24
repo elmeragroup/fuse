@@ -5,8 +5,8 @@
  *
  *   1. `packages/ui/src/components/<name>/<name>.tsx` + `<name>-variants.ts`
  *   2. `<name>.test.ts` (unit) and `<name>.browser.test.tsx` (browser)
- *   3. `packages/ui/src/components/<name>/demos/<name>-basic.tsx`
- *   4. `apps/docs/src/content/components/<name>.mdx`
+ *   3. `apps/docs/src/app/(docs)/components/<name>/demos/<name>-basic.tsx`
+ *   4. `apps/docs/src/app/(docs)/components/<name>/page.mdx`
  *   5. `packages/ui/src/<name>.ts` — the source entry facade
  *
  * It never touches `package.json#exports` or `src/index.ts`: the exports/barrel
@@ -23,13 +23,20 @@
  * throws, the suites carry an explicit unimplemented marker, the browser stub's role
  * placeholder throws until it is set, and the injected budget row has a 0 ceiling.
  * Nothing here guesses at props or variants.
+ *
+ * The two docs artifacts fail the same way rather than rendering an empty page: the docs
+ * generation pass reads the authored `page.mdx` and hard-fails on an undocumented public
+ * prop or an unresolvable type (docs-site.md §8), so `pnpm --filter docs generate` is red
+ * with the offending prop named until the component is documented, and the page's
+ * `<ApiReference>` throws during prerendering while its committed `api.json` is absent.
  */
 import { execFileSync } from "node:child_process";
 
 import { BARE_COMPONENT_ENTRIES, RAC_ENTRIES } from "./packages/ui/scripts/entries.ts";
 
 const UI = "packages/ui";
-const DOCS_CONTENT = "apps/docs/src/content/components";
+/** One route directory per component page — the page, its demos and its `api.json` (§6). */
+const DOCS_ROUTE = "apps/docs/src/app/(docs)/components/{{name}}";
 const TEMPLATES = "plop-templates/component";
 const BUDGETS = `${UI}/scripts/size-budgets.ts`;
 const BUDGET_MARKER = "// plop:js-entry-budget";
@@ -84,8 +91,8 @@ export default function plopfile(plop) {
       add("component.tsx.hbs", `${UI}/src/components/{{name}}/{{name}}.tsx`),
       add("unit-test.ts.hbs", `${UI}/src/components/{{name}}/{{name}}.test.ts`),
       add("browser-test.tsx.hbs", `${UI}/src/components/{{name}}/{{name}}.browser.test.tsx`),
-      add("demo.tsx.hbs", `${UI}/src/components/{{name}}/demos/{{name}}-basic.tsx`),
-      add("page.mdx.hbs", `${DOCS_CONTENT}/{{name}}.mdx`),
+      add("demo.tsx.hbs", `${DOCS_ROUTE}/demos/{{name}}-basic.tsx`),
+      add("page.mdx.hbs", `${DOCS_ROUTE}/page.mdx`),
       add("facade.ts.hbs", `${UI}/src/{{name}}.ts`),
       {
         type: "append",
@@ -100,7 +107,15 @@ export default function plopfile(plop) {
       (answers, _config, plop) => {
         execFileSync(
           "pnpm",
-          ["exec", "oxfmt", `${UI}/src/${answers.name}.ts`, `${UI}/src/components/${answers.name}`, BUDGETS],
+          [
+            "exec",
+            "oxfmt",
+            `${UI}/src/${answers.name}.ts`,
+            `${UI}/src/components/${answers.name}`,
+            // Only the demos directory: `page.mdx` is not oxfmt's to format.
+            `${DOCS_ROUTE.replace("{{name}}", answers.name)}/demos`,
+            BUDGETS,
+          ],
           { cwd: plop.getPlopfilePath(), stdio: "ignore" }
         );
         return "formatted with oxfmt";
@@ -110,7 +125,9 @@ export default function plopfile(plop) {
           "next steps",
           `  1. Implement docs/spec/components/${answers.name}.md — every stub above fails until you do.`,
           "  2. pnpm --filter @elmeragroup/ui build   # exports + barrel generators pick the facade up",
-          "  3. pnpm turbo run ci:checks --filter=@elmeragroup/ui --force",
+          `  3. Author the page: prose, one demo + <Demo> frame per §10 scenario of docs/spec/components/${answers.name}.md.`,
+          "  4. pnpm --filter docs generate           # writes the committed api.json next to the page",
+          "  5. pnpm turbo run ci:checks --force",
         ].join("\n"),
     ],
   });

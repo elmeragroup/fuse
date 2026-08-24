@@ -2,17 +2,35 @@
 title: {{pascalCase name}}
 lede: >
   TODO({{name}}): one or two sentences from §1 of docs/spec/components/{{name}}.md — what it
-  is and when to reach for it. Demo, API and token sections are generated; do not
-  hand-write them here.
-export: {{pascalCase name}}
-source: packages/ui/src/components/{{name}}/{{name}}.tsx
-demos:
-  - id: basic
-    title: Basic
-    file: {{name}}-basic.tsx
+  is and when to reach for it. Frontmatter declares title and lede, and nothing else.
 ---
 
-## Usage
+import { {{pascalCase name}}Basic } from "./demos/{{name}}-basic";
 
-TODO({{name}}): replace this section with the page prose — composition limits, the §8
-divergences a consumer can feel, and anything the generated API table cannot say.
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("{{name}}");
+
+<ComponentIntro slug="{{name}}" />
+
+<Prose>
+
+SCAFFOLD — a hand-authored component page (docs-site.md §1), composing the §3.4 anatomy in
+the order below: intro, prose, one frame per §10 scenario, API reference, tokens. Only this
+prose and the frames are authored; the intro, the reference and the token list read
+generated data, so never hand-write them.
+
+TODO({{name}}): replace this block with the page prose — composition limits, the §8
+divergences a consumer can feel, and anything the generated API reference cannot say. Add
+one demo import and one frame per scenario below; a frame naming a file that is not in
+`demos/`, and a file in `demos/` that no frame renders, both fail generation.
+
+</Prose>
+
+<Demo slug="{{name}}" id="basic" title="Basic" file="{{name}}-basic.tsx">
+  <{{pascalCase name}}Basic />
+</Demo>
+
+<ApiReference slug="{{name}}" />
+
+<ComponentTokens slug="{{name}}" />
