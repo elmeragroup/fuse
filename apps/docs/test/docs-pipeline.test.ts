@@ -6,9 +6,11 @@ import { describe, expect, it } from "vitest";
 import { readRscStatus, shortTypeOf } from "../scripts/lib/api.ts";
 import { renderComponentMarkdown } from "../scripts/lib/markdown.ts";
 import { parseComponentPage } from "../scripts/lib/page-source.ts";
+import { missingNavRoutes, staticRouteFile } from "../scripts/lib/routes.ts";
 import { collectRecipeSources } from "../scripts/lib/sources.ts";
 import { extractTokens, readColorTokenMap } from "../scripts/lib/tokens.ts";
 import type { DocsComponent } from "../src/lib/docs-model";
+import { STATIC_PAGES } from "../src/lib/pages";
 import { slugifyHeading } from "../src/lib/slug";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -84,6 +86,20 @@ describe("authored page.mdx as generation input", () => {
       { id: "details", title: "Details", depth: 3 },
     ]);
     expect(parsed.demos).toEqual([]);
+  });
+});
+
+describe("nav destination verification (docs-site.md §3.3)", () => {
+  it("passes for the authored nav as it stands: every entry has a route module", () => {
+    expect(missingNavRoutes()).toEqual([]);
+  });
+
+  it("names the entry that would ship a 404, so generation fails instead of the SideNav", () => {
+    // The probe stands in for a deleted or renamed route file. The generation pass turns
+    // exactly this list into problems, and a non-empty problem log fails the docs build.
+    const gone = staticRouteFile("/handbook/tokens");
+    expect(missingNavRoutes(STATIC_PAGES, (file) => file !== gone)).toEqual(["/handbook/tokens"]);
+    expect(missingNavRoutes(STATIC_PAGES, () => false)).toEqual(STATIC_PAGES.map((page) => page.href));
   });
 });
 

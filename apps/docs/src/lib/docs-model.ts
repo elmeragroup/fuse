@@ -82,17 +82,24 @@ export type TokenRef = {
 };
 
 /**
- * One authored `.tsx` demo of a component page, as the *generated* outputs see it: the
- * on-page TOC needs its id and title, and the markdown endpoint plus `llms.txt` embed its
- * source verbatim (§9).
- *
- * The rendered page needs none of this. It imports the demo module and the frame reads the
- * same file from disk (`demo-source.ts`), so no highlighted markup travels through here.
+ * One demo of a component page as the *site* refers to it: the on-page TOC needs an anchor
+ * and a label, and nothing more. The frame itself is the `<Demo>` element the page authored,
+ * and the source it shows is read from the demo file at render time (`demo-source.ts`).
  */
-export type DocsDemo = {
+export type DemoRef = {
   /** Stable anchor id, unique inside the page. */
   id: string;
   title: string;
+};
+
+/**
+ * One authored `.tsx` demo as the *generated markdown* sees it: the endpoint and `llms.txt`
+ * embed its source verbatim (§9), so the generation pass reads the file the page imports.
+ *
+ * This never reaches the browser — it exists only inside the generation pass and the
+ * markdown it writes.
+ */
+export type DocsDemo = DemoRef & {
   /** Repo-relative path of the authored demo file. */
   sourcePath: string;
   /** Verbatim demo source, normalised by `normalizeDemoSource`. */
@@ -119,8 +126,19 @@ export type ContentHeading = {
   depth: number;
 };
 
-/** Everything a component page needs. */
-export type DocsComponent = {
+/**
+ * One component page in the site manifest the browser gets (docs-site.md §3.3, §3.4).
+ *
+ * Deliberately *not* the page's content: the prose, the demo frames and the API reference
+ * all come from the authored `page.mdx`, the demo files and the committed `api.json`. What
+ * is left is the metadata no single artifact owns — the page's identity (title, lede, import
+ * line, source links), its TOC skeleton, and the tokens its recipe reads — read by the nav,
+ * the intro, the QuickNav and the page's `metadata` export.
+ *
+ * `partNames` is TOC material, not API data: an anchor per part heading the reference
+ * renders. The reference itself never reads this — it reads `api.json` (§8).
+ */
+export type ComponentPageEntry = {
   slug: string;
   title: string;
   lede: string;
@@ -136,10 +154,43 @@ export type DocsComponent = {
   markdownUrl: string;
   rsc: RscStatus;
   headings: readonly ContentHeading[];
-  demos: readonly DocsDemo[];
-  parts: readonly ApiPart[];
+  demos: readonly DemoRef[];
+  /** Names of the API parts the reference renders, in order — one TOC anchor each. */
+  partNames: readonly string[];
   tokens: readonly TokenRef[];
 };
+
+/**
+ * One component as the *generation pass* holds it: the manifest entry plus the two things
+ * only the generated markdown needs — every demo's verbatim source and the full API model.
+ *
+ * Neither of those is shipped to the browser: the manifest carries the page's metadata, the
+ * page reads its demos and its `api.json` at render time. This type exists for the length of
+ * one generation run, feeding the markdown endpoints, `llms.txt` and the search index.
+ */
+export type DocsComponent = Omit<ComponentPageEntry, "demos" | "partNames"> & {
+  demos: readonly DocsDemo[];
+  parts: readonly ApiPart[];
+};
+
+/** The manifest entry of a component the generation pass just described. */
+export function toPageEntry(component: DocsComponent): ComponentPageEntry {
+  return {
+    slug: component.slug,
+    title: component.title,
+    lede: component.lede,
+    entry: component.entry,
+    exportName: component.exportName,
+    sourcePath: component.sourcePath,
+    sourceUrl: component.sourceUrl,
+    markdownUrl: component.markdownUrl,
+    rsc: component.rsc,
+    headings: component.headings,
+    demos: component.demos.map((demo) => ({ id: demo.id, title: demo.title })),
+    partNames: component.parts.map((part) => part.name),
+    tokens: component.tokens,
+  };
+}
 
 /** Which SideNav group a search hit belongs to; the palette shows it next to the title. */
 export type SearchGroup = "Overview" | "Handbook" | "Components";
@@ -147,10 +198,10 @@ export type SearchGroup = "Overview" | "Handbook" | "Components";
 /**
  * One destination in the ⌘K palette index (docs-site.md §3.2).
  *
- * Emitted by the docs generation pass from the two inventories the SideNav and
- * `llms.txt` already share — the authored page manifest and the generated component
- * registry — so the palette can never list a route that does not exist, and a new
- * component page becomes searchable the moment its MDX shell lands.
+ * Emitted by the docs generation pass from the two inventories the SideNav and `llms.txt`
+ * already share — the authored page manifest and the globbed component pages — so the
+ * palette can never list a route that does not exist, and a new component page becomes
+ * searchable the moment its `page.mdx` lands.
  */
 export type SearchEntry = {
   /** Site-relative route the palette navigates to. */

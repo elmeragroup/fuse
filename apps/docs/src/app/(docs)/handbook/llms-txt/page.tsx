@@ -21,8 +21,8 @@ export default function LlmsTxtPage(): ReactElement {
         </a>{" "}
         is a plain-text index of every page on this site with a one-line description of each. It is generated
         at docs build from the same two inventories the sidebar renders — the authored page manifest and the
-        component registry — so a new component page appears in it the moment its shell lands. Nothing in it
-        is written by hand.
+        component pages found on disk — so a new component page appears in it the moment its{" "}
+        <code>page.mdx</code> lands. Nothing in it is written by hand.
       </p>
 
       <h2 id="markdown-endpoints">Markdown endpoints</h2>

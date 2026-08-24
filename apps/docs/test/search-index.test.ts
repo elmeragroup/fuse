@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { DOCS_COMPONENTS } from "../src/generated/registry";
+import { COMPONENT_PAGES } from "../src/generated/component-pages";
 import { SEARCH_ENTRIES } from "../src/generated/search-index";
 import { NAV_GROUPS } from "../src/lib/nav";
 import { HOME_PAGE, STATIC_PAGES } from "../src/lib/pages";
@@ -10,11 +10,11 @@ import { docsBaseUrl } from "./docs-server";
 const NAV_HREFS = NAV_GROUPS.flatMap((group) => group.items.map((item) => item.href));
 
 describe("search index (docs-site.md §3.2)", () => {
-  it("is generated from the page manifest and the component registry, with nothing else in it", () => {
+  it("is generated from the two page manifests, with nothing else in it", () => {
     expect(SEARCH_ENTRIES.map((entry) => entry.href)).toEqual([
       HOME_PAGE.href,
       ...STATIC_PAGES.map((page) => page.href),
-      ...DOCS_COMPONENTS.map((component) => `/components/${component.slug}`),
+      ...COMPONENT_PAGES.map((component) => `/components/${component.slug}`),
     ]);
   });
 
@@ -35,12 +35,12 @@ describe("search index (docs-site.md §3.2)", () => {
   });
 
   it("indexes each component under its import specifier and API part names", () => {
-    for (const component of DOCS_COMPONENTS) {
+    for (const component of COMPONENT_PAGES) {
       const entry = SEARCH_ENTRIES.find((candidate) => candidate.title === component.title);
       expect(entry, component.slug).toBeDefined();
       expect(entry?.keywords).toContain(component.entry);
-      for (const part of component.parts) {
-        expect(entry?.keywords, part.name).toContain(part.name);
+      for (const name of component.partNames) {
+        expect(entry?.keywords, name).toContain(name);
       }
     }
   });

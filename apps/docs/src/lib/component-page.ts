@@ -1,22 +1,23 @@
 /**
  * The lookups a hand-authored component `page.mdx` needs (docs-site.md §1).
  *
- * A page is authored; everything it renders below its prose is generated. These
- * accessors are the seam between the two: the page names a slug, and the generated
- * registry answers with the data. A slug the generator did not produce is a build
- * failure, never a silently empty section.
+ * A page is authored; its metadata is generated. These accessors are the seam between the
+ * two: the page names a slug, and the generated manifest answers with its identity, TOC
+ * skeleton and tokens. A slug the generator did not produce is a build failure, never a
+ * silently empty section.
  *
- * Demo sources are not part of this seam — the frame reads the demo file itself
- * (`demo-source.ts`, docs-site.md §6).
+ * Neither the demos nor the API reference come through this seam — the frame reads the demo
+ * file itself (`demo-source.ts`, docs-site.md §6) and the reference reads the committed
+ * `api.json` (`api-source.ts`, §8).
  */
 
 import type { Metadata } from "next";
 
-import type { DocsComponent } from "./docs-model";
+import type { ComponentPageEntry } from "./docs-model";
 import { componentBySlug } from "./nav";
 
-/** The registry entry for one component page. Throws at build when the slug is unknown. */
-export function requireComponent(slug: string): DocsComponent {
+/** The manifest entry for one component page. Throws at build when the slug is unknown. */
+export function requireComponent(slug: string): ComponentPageEntry {
   const component = componentBySlug(slug);
   if (component === undefined) {
     throw new Error(

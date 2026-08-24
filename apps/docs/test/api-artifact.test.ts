@@ -24,6 +24,8 @@ import { API_ARTIFACTS_REWRITTEN } from "../src/generated/api-drift";
 const STALE = `Run \`${API_REGEN_COMMAND}\` and commit the updated api.json files.`;
 
 describe("committed api.json", () => {
+  // The long timeout is the regeneration itself: it opens a full TypeScript program over
+  // packages/ui and re-derives every component's API through the checker.
   it("matches a fresh regeneration from the library's types and JSDoc", { timeout: 180_000 }, () => {
     const slugs = componentSlugs();
     expect(slugs.length).toBeGreaterThan(0);

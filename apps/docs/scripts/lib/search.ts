@@ -2,11 +2,11 @@
  * The ⌘K palette index (docs-site.md §3.2).
  *
  * Built at docs build from the same two inventories the SideNav renders and `llms.txt`
- * publishes: the authored page manifest and the generated component registry. Nothing is
- * hand-listed, so the palette cannot drift from the site — a route that disappears from
- * the manifest disappears from search, and a component page is searchable (with its
- * import specifier, API part names and demo titles as match text) as soon as its MDX
- * shell lands.
+ * publishes: the authored page manifest and the component pages the generation pass globbed
+ * off the route group. Nothing is hand-listed, so the palette cannot drift from the site — a
+ * route that disappears disappears from search, and a component page is searchable (with its
+ * import specifier, API part names and demo titles as match text) as soon as its `page.mdx`
+ * lands.
  */
 
 import type { DocsComponent, SearchEntry, SearchGroup } from "../../src/lib/docs-model.ts";

@@ -1,22 +1,26 @@
 /**
  * The docs generation pass.
  *
- * Runs before `next build`, `next dev` and `tsc`. Component pages themselves are
- * hand-authored `page.mdx` route files compiled by `@next/mdx` (§1); this pass reads them
- * as data and writes everything they render *from*, under `src/generated` plus the static
- * markdown endpoints under `public/components`:
+ * Runs before `next build`, `next dev` and `tsc`. The site's component pages are
+ * hand-authored `page.mdx` route files compiled by `@next/mdx` (§1); this pass discovers
+ * them by globbing the components route group, reads each page as *data* — its frontmatter,
+ * its headings, the `<Demo>` elements it renders — and writes the artifacts that no page
+ * owns:
  *
- *   • the registry — the page's frontmatter and demos, API tables resolved from TS types
- *     + JSDoc with an RSC status, and the tokens each component's recipe reads (§3.4, §8);
  *   • each component's `api.json`, written *next to its page* and **committed**, so an API
  *     change is a reviewable diff; a drift check fails when a committed one is stale (§8);
- *   • `/components/<slug>.md` — the markdown endpoint the page links to (§9);
- *   • the ⌘K search index — the page manifest plus the registry, so the palette lists
- *     exactly the routes the site actually has (§3.2).
+ *   • the component-page manifest the nav, page intros and QuickNav import (§3.3, §3.4);
+ *   • the tokens each component's recipe reads, and the site-wide token reference (§3.4);
+ *   • the measured bundle sizes the Tokens page publishes (performance.md §2);
+ *   • `/components/<slug>.md` — the markdown endpoint each page links to (§9);
+ *   • `llms.txt`, the site-root AI index (§9);
+ *   • the ⌘K search index (§3.2);
+ *   • and it verifies that every authored nav destination is a real route (§3.3).
  *
  * Nothing is copied or compiled here: a demo is one file, imported by the page and read
- * by this pass (§6). Any unresolvable type or undocumented public prop fails this pass,
- * and therefore the docs build (§8).
+ * both by the frame at render time and by this pass for the markdown it embeds (§6). Any
+ * unresolvable type or undocumented public prop fails this pass, and therefore the docs
+ * build (§8).
  */
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
@@ -24,18 +28,17 @@ import path from "node:path";
 
 import { normalizeDemoSource } from "../src/lib/docs-model.ts";
 import type { DocsComponent, DocsDemo } from "../src/lib/docs-model.ts";
-import { STATIC_PAGES } from "../src/lib/pages.ts";
 import { API_REGEN_COMMAND, buildApiArtifact, serializeApiArtifact } from "./lib/api-artifact.ts";
 import { describeComponentApi, openLibraryProject } from "./lib/api.ts";
 import type { LibraryProject } from "./lib/api.ts";
 import { componentSlugs, resolveComponentPaths } from "./lib/components.ts";
 import { ProblemLog } from "./lib/errors.ts";
 import { renderLlmsTxt } from "./lib/llms.ts";
+import { renderComponentPages } from "./lib/manifest.ts";
 import { renderComponentMarkdown } from "./lib/markdown.ts";
 import { readComponentPage } from "./lib/page-source.ts";
 import type { PageDemo } from "./lib/page-source.ts";
 import {
-  docsRouteGroup,
   generatedDir,
   llmsTxtFile,
   markdownOutDir,
@@ -44,6 +47,7 @@ import {
   sizeBudgetsFile,
   uiSrc,
 } from "./lib/paths.ts";
+import { missingNavRoutes, staticRouteFile } from "./lib/routes.ts";
 import { renderSearchIndex } from "./lib/search.ts";
 import { readBundleSizes } from "./lib/sizes.ts";
 import type { BundleSizeReport } from "./lib/sizes.ts";
@@ -193,14 +197,9 @@ function buildComponent(
   };
 }
 
-function emitRegistry(components: readonly DocsComponent[]): void {
-  writeFile(
-    path.join(generatedDir, "registry.ts"),
-    `${BANNER}import type { DocsComponent } from "../lib/docs-model";
-
-export const DOCS_COMPONENTS: readonly DocsComponent[] = ${JSON.stringify(components, null, 2)};
-`
-  );
+/** The component-page manifest the site imports (§3.3, §3.4). */
+function emitComponentPages(components: readonly DocsComponent[]): void {
+  writeFile(path.join(generatedDir, "component-pages.ts"), `${BANNER}${renderComponentPages(components)}`);
 }
 
 /**
@@ -264,19 +263,10 @@ export const COLOR_TOKENS: readonly string[] = ${JSON.stringify(tokens, null, 2)
   );
 }
 
-/**
- * Every authored nav destination has to be a real route.
- *
- * The Components group is generated from the route directories that just built, so it
- * cannot point at a missing page; the Overview and Handbook groups are authored, and this
- * is what stops one of them from shipping a 404 in the SideNav (§3.3).
- */
+/** Every authored nav destination has to be a real route (`lib/routes.ts`, §3.3). */
 function verifyStaticRoutes(problems: ProblemLog): void {
-  for (const page of STATIC_PAGES) {
-    const route = path.join(docsRouteGroup, page.href, "page.tsx");
-    if (!existsSync(route)) {
-      problems.add(`nav entry ${page.href} has no route at ${repoRelative(route)}`);
-    }
+  for (const href of missingNavRoutes()) {
+    problems.add(`nav entry ${href} has no route at ${repoRelative(staticRouteFile(href))}`);
   }
 }
 
@@ -299,7 +289,7 @@ function main(): void {
     verifyStaticRoutes(problems);
     const sizes = readBundleSizes(sizeBudgetsFile, problems);
     problems.throwIfFailed();
-    emitRegistry(components);
+    emitComponentPages(components);
     emitApiArtifacts(components);
     emitBundleSizes(sizes);
     emitTokenReference(colors);
@@ -325,6 +315,6 @@ try {
 } catch (error) {
   process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
   process.exitCode = 1;
-  // Leave no half-written registry behind for the bundler to pick up.
-  rmSync(path.join(generatedDir, "registry.ts"), { force: true });
+  // Leave no half-written manifest behind for the bundler to pick up.
+  rmSync(path.join(generatedDir, "component-pages.ts"), { force: true });
 }

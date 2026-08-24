@@ -1,10 +1,10 @@
 /**
  * The `llms.txt` site index (docs-site.md §9).
  *
- * Generated at docs build from the same two inventories the SideNav renders: the
- * authored page manifest and the generated component registry. Nothing here is
- * hand-listed, so a new component page appears in the AI index the moment its MDX shell
- * lands, and its markdown endpoint is linked from the same row.
+ * Generated at docs build from the same two inventories the SideNav renders: the authored
+ * page manifest and the component pages the generation pass globbed off the route group.
+ * Nothing here is hand-listed, so a new component page appears in the AI index the moment
+ * its `page.mdx` lands, and its markdown endpoint is linked from the same row.
  */
 
 import type { DocsComponent } from "../../src/lib/docs-model.ts";

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { DOCS_COMPONENTS } from "../src/generated/registry";
+import { COMPONENT_PAGES } from "../src/generated/component-pages";
 import { COMPONENT_NAV, NAV_GROUPS } from "../src/lib/nav";
 import { HOME_PAGE, STATIC_PAGES } from "../src/lib/pages";
 import { fetchOk, fetchText } from "./docs-server";
@@ -30,14 +30,14 @@ describe("SideNav inventory (docs-site.md §3.3)", () => {
     ]);
   });
 
-  it("generates the Components group from the registry, flat and alphabetical", () => {
+  it("generates the Components group from the page manifest, flat and alphabetical", () => {
     expect(NAV_GROUPS[2]?.items).toBe(COMPONENT_NAV);
     expect(COMPONENT_NAV.map((item) => item.label)).toEqual(
-      [...DOCS_COMPONENTS.map((component) => component.title)].sort((left, right) =>
+      [...COMPONENT_PAGES.map((component) => component.title)].sort((left, right) =>
         left.localeCompare(right)
       )
     );
-    expect(COMPONENT_NAV.length).toBe(DOCS_COMPONENTS.length);
+    expect(COMPONENT_NAV.length).toBe(COMPONENT_PAGES.length);
   });
 
   it.each(NAV_HREFS)("resolves %s instead of 404ing", async (href) => {
@@ -63,21 +63,21 @@ describe("llms.txt (docs-site.md §9)", () => {
     for (const page of STATIC_PAGES) {
       expect(text, page.href).toContain(`[${page.label}](${page.href}): ${page.description}`);
     }
-    for (const component of DOCS_COMPONENTS) {
+    for (const component of COMPONENT_PAGES) {
       expect(text, component.slug).toContain(`[${component.title}](/components/${component.slug}):`);
     }
   });
 
   it("links each component's markdown endpoint from its index row", async () => {
     const text = await fetchText("/llms.txt");
-    for (const component of DOCS_COMPONENTS) {
+    for (const component of COMPONENT_PAGES) {
       expect(text).toContain(`Markdown: ${component.markdownUrl}`);
     }
   });
 });
 
 describe("markdown endpoints (docs-site.md §9)", () => {
-  it.each(DOCS_COMPONENTS.map((component) => component.markdownUrl))(
+  it.each(COMPONENT_PAGES.map((component) => component.markdownUrl))(
     "serves the View-as-Markdown target %s",
     async (markdownUrl) => {
       const markdown = await fetchText(markdownUrl);
@@ -87,7 +87,7 @@ describe("markdown endpoints (docs-site.md §9)", () => {
   );
 
   it("links a resolvable endpoint from every backfilled component page", async () => {
-    for (const component of DOCS_COMPONENTS) {
+    for (const component of COMPONENT_PAGES) {
       const html = await fetchText(`/components/${component.slug}`);
       expect(html, component.slug).toContain(`href="${component.markdownUrl}"`);
     }

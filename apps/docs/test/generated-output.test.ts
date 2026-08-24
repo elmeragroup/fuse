@@ -1,25 +1,63 @@
+/**
+ * What the generation pass produced, checked against its own inputs.
+ *
+ * Each assertion reads the artifact that *owns* the claim: the page manifest for a page's
+ * identity, the committed `api.json` for its API, the demo files for their source, and the
+ * markdown endpoint for what it embeds — never a second copy of any of them.
+ */
+
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-import { DOCS_COMPONENTS } from "../src/generated/registry";
+import { resolveComponentPaths } from "../scripts/lib/components.ts";
+import { parseComponentPage } from "../scripts/lib/page-source.ts";
+import type { ComponentPageSource } from "../scripts/lib/page-source.ts";
+import { repoRelative } from "../scripts/lib/paths.ts";
+import { COMPONENT_PAGES } from "../src/generated/component-pages";
+import type { ComponentApiArtifact, ComponentPageEntry } from "../src/lib/docs-model";
+import { normalizeDemoSource } from "../src/lib/docs-model";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const docsRoot = join(here, "..");
-const repoRoot = join(docsRoot, "../..");
 
-function component(slug: string) {
-  const found = DOCS_COMPONENTS.find((entry) => entry.slug === slug);
+function page(slug: string): ComponentPageEntry {
+  const found = COMPONENT_PAGES.find((entry) => entry.slug === slug);
   if (found === undefined) {
-    throw new Error(`the generated registry has no "${slug}" page`);
+    throw new Error(`the generated manifest has no "${slug}" page`);
   }
   return found;
 }
 
-describe("generated registry", () => {
+type AuthoredPage = {
+  text: string;
+  parsed: ComponentPageSource;
+};
+
+/** The component's authored `page.mdx`, read the way the generator reads it. */
+function authoredPage(slug: string): AuthoredPage {
+  const file = resolveComponentPaths(slug).pageFile;
+  const text = readFileSync(file, "utf8");
+  return { text, parsed: parseComponentPage(text, slug, file) };
+}
+
+/** The component's committed API artifact — the one source of its API data (§8). */
+function api(slug: string): ComponentApiArtifact {
+  // SAFETY: every api.json is written by one serialiser from `ComponentApiArtifact`, and the
+  // drift check (`api-artifact.test.ts`) regenerates and byte-compares each committed file, so
+  // a shape that disagrees with the type fails there before this read can see it.
+  return JSON.parse(readFileSync(resolveComponentPaths(slug).apiFile, "utf8")) as ComponentApiArtifact;
+}
+
+/** The component's generated markdown endpoint (§9). */
+function endpoint(slug: string): string {
+  return readFileSync(join(docsRoot, "public/components", `${slug}.md`), "utf8");
+}
+
+describe("component page manifest", () => {
   it("covers every authored component page", () => {
-    expect(DOCS_COMPONENTS.map((entry) => entry.slug)).toEqual([
+    expect(COMPONENT_PAGES.map((entry) => entry.slug)).toEqual([
       "badge",
       "button",
       "card",
@@ -34,25 +72,43 @@ describe("generated registry", () => {
     ]);
   });
 
+  it("carries page metadata only — no demo source, no API data", () => {
+    // The slim manifest is the point: a demo's source is read from its file at render time
+    // and the reference reads api.json, so neither may travel through here (§6, §8).
+    const serialized = JSON.stringify(COMPONENT_PAGES);
+    expect(serialized).not.toContain('"source"');
+    expect(serialized).not.toContain('"props"');
+    expect(serialized).not.toContain("use client");
+    for (const entry of COMPONENT_PAGES) {
+      // What the manifest does carry about the API is TOC material — one anchor per part —
+      // and it has to name exactly the parts the committed artifact describes.
+      expect(entry.partNames.length, entry.slug).toBeGreaterThan(0);
+      expect(entry.partNames, entry.slug).toEqual(api(entry.slug).parts.map((part) => part.name));
+    }
+  });
+
   it("keeps the demo frame and its displayed source on the same authored file", () => {
-    for (const entry of DOCS_COMPONENTS) {
-      // The page imports each demo from its own route directory, and the frame's source
-      // is that very file — read once, never copied (docs-site.md §6).
-      const page = readFileSync(join(docsRoot, "src/app/(docs)/components", entry.slug, "page.mdx"), "utf8");
-      for (const demo of entry.demos) {
-        const authored = readFileSync(join(repoRoot, demo.sourcePath), "utf8");
-        expect(authored.replace(/\s+$/, "")).toBe(demo.source);
+    for (const entry of COMPONENT_PAGES) {
+      // The page imports each demo from its own route directory, and the frame's source is
+      // that very file — read once, never copied (docs-site.md §6).
+      const authored = authoredPage(entry.slug);
+      const markdown = endpoint(entry.slug);
+      expect(authored.parsed.demos.map((demo) => demo.id)).toEqual(entry.demos.map((demo) => demo.id));
+      for (const demo of authored.parsed.demos) {
+        const file = join(resolveComponentPaths(entry.slug).demosDir, demo.file);
+        const source = readFileSync(file, "utf8");
         // Authored in the file, not grafted on in transit.
-        expect(authored.startsWith('"use client";')).toBe(true);
-        const file = demo.sourcePath.split("/").at(-1) ?? "";
-        expect(page, demo.sourcePath).toContain(`file="${file}"`);
-        expect(page, demo.sourcePath).toContain(`from "./demos/${file.replace(/\.tsx$/, "")}"`);
+        expect(source.startsWith('"use client";'), demo.file).toBe(true);
+        expect(authored.text, demo.file).toContain(`from "./demos/${demo.file.replace(/\.tsx$/, "")}"`);
+        // And the endpoint embeds the very bytes of that file, under its own path (§9).
+        expect(markdown, demo.file).toContain(normalizeDemoSource(source));
+        expect(markdown, demo.file).toContain(`Source: \`${repoRelative(file)}\``);
       }
     }
   });
 
   it("orders demos by the spec §10 scenario list the page renders", () => {
-    expect(component("button").demos.map((demo) => demo.id)).toEqual([
+    expect(page("button").demos.map((demo) => demo.id)).toEqual([
       "variants",
       "sizes",
       "pending",
@@ -61,36 +117,11 @@ describe("generated registry", () => {
     ]);
   });
 
-  it("never leaves a documented prop without a description or an unresolved type", () => {
-    for (const entry of DOCS_COMPONENTS) {
-      for (const part of entry.parts) {
-        for (const prop of part.props) {
-          expect(prop.type).not.toBe("");
-          if (prop.origin === "declared") {
-            expect(prop.description, `${part.name}.${prop.name}`).not.toBe("");
-          }
-        }
-      }
-    }
-  });
-
-  it("resolves the compound parts of a namespace component", () => {
-    expect(component("dialog").parts.map((part) => part.name)).toEqual([
-      "Dialog.Root",
-      "Dialog.Trigger",
-      "Dialog.Portal",
-      "Dialog.Close",
-      "Dialog.Overlay",
-      "Dialog.Content",
-      "Dialog.Header",
-      "Dialog.Footer",
-      "Dialog.Title",
-      "Dialog.Description",
-    ]);
-    expect(component("scroll-area").parts.map((part) => part.name)).toEqual([
-      "ScrollArea.Root",
-      "ScrollArea.Bar",
-    ]);
+  it("links View source at the implementation on the repo host", () => {
+    expect(page("button").sourceUrl).toBe(
+      "https://github.com/elmeragroup/ui/blob/main/packages/ui/src/components/button/button.tsx"
+    );
+    expect(page("button").markdownUrl).toBe("/components/button.md");
   });
 
   it("reports RSC status from the declaring module, matching performance.md §3", () => {
@@ -109,38 +140,79 @@ describe("generated registry", () => {
       separator: "client",
       textarea: "server",
     } as const;
-    expect(Object.keys(expected)).toHaveLength(DOCS_COMPONENTS.length);
+    expect(Object.keys(expected)).toHaveLength(COMPONENT_PAGES.length);
     for (const [slug, rsc] of Object.entries(expected)) {
-      expect(component(slug).rsc, slug).toBe(rsc);
+      expect(page(slug).rsc, slug).toBe(rsc);
+    }
+  });
+});
+
+describe("committed api.json", () => {
+  it("never leaves a documented prop without a description or an unresolved type", () => {
+    for (const entry of COMPONENT_PAGES) {
+      for (const part of api(entry.slug).parts) {
+        for (const prop of part.props) {
+          expect(prop.type).not.toBe("");
+          if (prop.origin === "declared") {
+            expect(prop.description, `${part.name}.${prop.name}`).not.toBe("");
+          }
+        }
+      }
     }
   });
 
+  it("resolves the compound parts of a namespace component", () => {
+    expect(api("dialog").parts.map((part) => part.name)).toEqual([
+      "Dialog.Root",
+      "Dialog.Trigger",
+      "Dialog.Portal",
+      "Dialog.Close",
+      "Dialog.Overlay",
+      "Dialog.Content",
+      "Dialog.Header",
+      "Dialog.Footer",
+      "Dialog.Title",
+      "Dialog.Description",
+    ]);
+    expect(api("scroll-area").parts.map((part) => part.name)).toEqual(["ScrollArea.Root", "ScrollArea.Bar"]);
+  });
+
   it("reads defaults out of the implementation's destructuring", () => {
-    const button = component("button").parts[0];
+    const button = api("button").parts[0];
     const isPending = button?.props.find((prop) => prop.name === "isPending");
     expect(isPending?.defaultValue).toBe("false");
     expect(isPending?.description).toContain("data-pending");
     expect(button?.props.find((prop) => prop.name === "predictionZoneSize")?.defaultValue).toBe("30");
-    const content = component("dialog").parts.find((part) => part.name === "Dialog.Content");
+    const content = api("dialog").parts.find((part) => part.name === "Dialog.Content");
     expect(content?.props.find((prop) => prop.name === "showCloseButton")?.defaultValue).toBe("true");
     expect(content?.props.find((prop) => prop.name === "size")?.origin).toBe("recipe-axis");
-  });
-
-  it("links View source at the implementation on the repo host", () => {
-    expect(component("button").sourceUrl).toBe(
-      "https://github.com/elmeragroup/ui/blob/main/packages/ui/src/components/button/button.tsx"
-    );
-    expect(component("button").markdownUrl).toBe("/components/button.md");
   });
 });
 
 describe("generated markdown endpoints", () => {
-  it("embeds the same demo source the page shows", () => {
-    const markdown = readFileSync(join(docsRoot, "public/components/button.md"), "utf8");
-    const demo = component("button").demos[0];
-    expect(demo).toBeDefined();
-    expect(markdown).toContain(demo?.source ?? "");
-    expect(markdown).toContain("| Prop | Type | Default | Required | RSC | Description |");
-    expect(markdown).toContain("## Tokens consumed");
+  it("carries every part of the committed API, and the tokens section", () => {
+    for (const entry of COMPONENT_PAGES) {
+      const markdown = endpoint(entry.slug);
+      expect(markdown, entry.slug).toContain("## API reference");
+      for (const part of api(entry.slug).parts) {
+        expect(markdown, part.name).toContain(`### ${part.name}`);
+        // Either the part's own props as a table, or the line that says it has none —
+        // a part that forwards everything is documented as such, not silently skipped.
+        expect(
+          markdown.includes("| Prop | Type | Default | Required | RSC | Description |") ||
+            markdown.includes("No own props"),
+          part.name
+        ).toBe(true);
+        for (const prop of part.props) {
+          expect(markdown, `${part.name}.${prop.name}`).toContain(`| \`${prop.name}\` |`);
+        }
+      }
+      if (entry.tokens.length > 0) {
+        expect(markdown, entry.slug).toContain("## Tokens consumed");
+        for (const token of entry.tokens) {
+          expect(markdown, token.name).toContain(`- \`${token.name}\``);
+        }
+      }
+    }
   });
 });
