@@ -175,7 +175,7 @@ describe("markdown endpoint rendering", () => {
         id: "basic",
         title: "Basic",
         exportName: "WidgetBasic",
-        sourcePath: "packages/ui/src/components/widget/demos/widget-basic.tsx",
+        sourcePath: "apps/docs/src/app/(docs)/components/widget/demos/widget-basic.tsx",
         source: "export function WidgetBasic() {}",
         highlighted: "<span></span>",
         modulePath: "./demos/widget/widget-basic",

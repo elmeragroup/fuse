@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -99,18 +99,6 @@ describe("buttonVariants", () => {
 });
 
 describe("button source contract", () => {
-  it("ships every spec §10 demo as a runnable file", () => {
-    for (const demo of [
-      "button-variant-matrix.tsx",
-      "button-sizes.tsx",
-      "button-pending.tsx",
-      "button-visually-disabled.tsx",
-      "button-predictive-intent.tsx",
-    ]) {
-      expect(existsSync(join(here, "demos", demo)), demo).toBe(true);
-    }
-  });
-
   it("does not keep destructive classes, dark variants, or the lifted local focus ring", () => {
     const source = [
       readFileSync(join(here, "button.tsx"), "utf8"),

@@ -30,7 +30,7 @@ describe("component page anatomy (docs-site.md §3.4)", () => {
     expect(html).toContain("DemoSource");
     // Extracted, highlighted source of the authored demo file.
     expect(html).toContain("sh__token--keyword");
-    expect(html).toContain("packages/ui/src/components/button/demos/button-variant-matrix.tsx");
+    expect(html).toContain("apps/docs/src/app/(docs)/components/button/demos/button-variant-matrix.tsx");
   });
 
   it("renders the generated API tables with an RSC column", async () => {

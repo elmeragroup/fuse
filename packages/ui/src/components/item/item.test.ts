@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -34,20 +34,6 @@ describe("itemVariants", () => {
 });
 
 describe("item source contract", () => {
-  it("ships every spec §10 demo as a runnable file", () => {
-    for (const demo of [
-      "item-basic.tsx",
-      "item-as-link.tsx",
-      "item-as-button.tsx",
-      "item-group.tsx",
-      "item-media-variants.tsx",
-      "item-footer-reveal.tsx",
-      "item-sizes.tsx",
-    ]) {
-      expect(existsSync(join(here, "demos", demo)), demo).toBe(true);
-    }
-  });
-
   it("keeps itemVariants public and drops RAC leftovers", () => {
     const source = [
       readFileSync(join(here, "item.tsx"), "utf8"),

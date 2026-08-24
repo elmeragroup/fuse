@@ -1,7 +1,11 @@
 @import "tailwindcss";
 @import "@elmeragroup/ui/css";
 @import "@elmeragroup/ui/themes.css";
+/* Tailwind's automatic source detection is rooted at this file's own directory, so both
+   class sources are declared explicitly: the library's recipes, and the docs app itself
+   — which is where the component demos now live (docs-site.md §6). */
 @source "../../../../packages/ui/src";
+@source "../../src";
 
 html,
 body {

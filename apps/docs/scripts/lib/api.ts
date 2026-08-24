@@ -28,28 +28,38 @@ import type {
 
 import type { ApiPart, ApiProp, RscStatus } from "../../src/lib/docs-model.ts";
 import type { ProblemLog } from "./errors.ts";
-import { isLibrarySourcePath, repoRelative, uiTsconfig } from "./paths.ts";
+import { docsTsconfig, isLibrarySourcePath, repoRelative, uiTsconfig } from "./paths.ts";
 
 export type LibraryProject = {
   project: Project;
   checker: Checker;
   program: Program;
+  /**
+   * The docs app's own project. Demos are co-located with their component route inside
+   * this app (docs-site.md §6), so they are compiled here rather than by the library.
+   */
+  docs: { checker: Checker; program: Program };
   close: () => void;
 };
 
-/** Opens `packages/ui` for type resolution. Callers must `close()` the result. */
+/**
+ * Opens `packages/ui` for type resolution, and `apps/docs` for the demo modules.
+ * Callers must `close()` the result.
+ */
 export function openLibraryProject(): LibraryProject {
   const api = new API({ cwd: process.cwd() });
-  const snapshot = api.updateSnapshot({ openProjects: [uiTsconfig] });
+  const snapshot = api.updateSnapshot({ openProjects: [uiTsconfig, docsTsconfig] });
   const project = snapshot.getProject(uiTsconfig);
-  if (project === undefined) {
+  const docsProject = snapshot.getProject(docsTsconfig);
+  if (project === undefined || docsProject === undefined) {
     api.close();
-    throw new Error(`Could not open the library project at ${uiTsconfig}`);
+    throw new Error(`Could not open the project at ${project === undefined ? uiTsconfig : docsTsconfig}`);
   }
   return {
     project,
     checker: project.checker,
     program: project.program,
+    docs: { checker: docsProject.checker, program: docsProject.program },
     close: () => {
       api.close();
     },

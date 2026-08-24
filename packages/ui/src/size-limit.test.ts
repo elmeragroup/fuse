@@ -61,8 +61,10 @@ describe("size-limit harness", () => {
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "flags")?.ceilingGzip).toBe(
       ceilingFromMeasured(1388)
     );
+    // styles.css keeps its 2026-08-21 calibration, tightened by the gzip bytes the demo
+    // relocation removed from the sheet (ticket 74b) rather than banking them as slack.
     expect(CSS_BUDGETS.find((budget) => budget.name === "styles.css")?.ceilingGzip).toBe(
-      ceilingFromMeasured(7077)
+      ceilingFromMeasured(7077) - (9905 - 9758)
     );
   });
 

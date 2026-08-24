@@ -9,17 +9,6 @@ const here = dirname(fileURLToPath(import.meta.url));
 const focusSelf = focusRing({ target: "self" }).root();
 
 describe("scroll-area source contract", () => {
-  it("ships every spec §10 demo as a runnable file", () => {
-    for (const demo of [
-      "scroll-area-vertical.tsx",
-      "scroll-area-horizontal.tsx",
-      "scroll-area-always.tsx",
-      "scroll-area-composed.tsx",
-    ]) {
-      expect(existsSync(join(here, "demos", demo)), demo).toBe(true);
-    }
-  });
-
   it("does not keep the retired tv module, dark variants, or a local focus ring", () => {
     const source = readFileSync(join(here, "scroll-area.tsx"), "utf8");
 

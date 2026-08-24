@@ -181,7 +181,7 @@ export function toPosix(path: string): string {
 
 export function isSkippedSourceFile(relativePath: string): boolean {
   const posix = toPosix(relativePath);
-  if (posix.includes("/__snapshots__/") || posix.includes("/demos/")) {
+  if (posix.includes("/__snapshots__/")) {
     return true;
   }
   return (

@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -33,18 +33,6 @@ describe("dialog dictionary", () => {
 });
 
 describe("dialog source contract", () => {
-  it("ships every spec §10 demo as a runnable file", () => {
-    for (const demo of [
-      "dialog-basic.tsx",
-      "dialog-sizes.tsx",
-      "dialog-footer-close.tsx",
-      "dialog-no-close-button.tsx",
-      "dialog-scrolling.tsx",
-    ]) {
-      expect(existsSync(join(here, "demos", demo)), demo).toBe(true);
-    }
-  });
-
   it("declares the overlay layer once and never falls back to document.body", () => {
     // Source-grep: a single z-50 declaration (dialog.md §8.4) and the absence of a
     // body fallback (theming.md §7.4) have no consumer-behavior probe of their own.

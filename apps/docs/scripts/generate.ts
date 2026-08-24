@@ -4,8 +4,9 @@
  * Runs before `next build`, `next dev` and `tsc`, and writes everything under
  * `src/generated` plus the static markdown endpoints under `public/components`:
  *
- *   • demo modules — verbatim copies of the authored `packages/ui` demo files, so the
- *     live render and the displayed source in the frame come from one file (§3.5, §6);
+ *   • demo modules — verbatim copies of the authored demo files co-located with each
+ *     component route, so the live render and the displayed source in the frame come
+ *     from one file (§3.5, §6);
  *   • compiled MDX shells — the custom MDX pipeline, ahead of the bundler (§1);
  *   • the registry — API tables resolved from TS types + JSDoc with an RSC status, and
  *     the tokens each component's recipe reads (§3.4, §8);
@@ -32,6 +33,7 @@ import { renderLlmsTxt } from "./lib/llms.ts";
 import { renderComponentMarkdown } from "./lib/markdown.ts";
 import { compileMdx, hasBodyContent, readContentHeadings } from "./lib/mdx.ts";
 import {
+  componentRoutesDir,
   contentDir,
   docsRouteGroup,
   generatedDir,
@@ -90,7 +92,7 @@ function resolveShellPaths(slug: string, frontmatter: ShellFrontmatter): ShellPa
     exportName: frontmatter.exportName ?? pascalCase(slug),
     sourceFile,
     componentDir,
-    demosDir: path.join(componentDir, "demos"),
+    demosDir: path.join(componentRoutesDir, slug, "demos"),
   };
 }
 
@@ -133,18 +135,23 @@ function pruneStale(directory: string): void {
 }
 
 /**
- * The renderable copy of an authored demo.
+ * The renderable copy of an authored demo: the file, verbatim.
  *
- * The file is copied verbatim — the frame's displayed source and its live render come
- * from the same bytes — with one addition: a `"use client"` directive. Namespace
- * compounds (`Dialog.Root`, `ScrollArea.Bar`) are plain objects exported from client
- * modules, and a server component only ever sees an opaque client *reference* for such
- * an export, so member access on it resolves to `undefined`. Pulling the demo into the
- * client graph is what a consumer would do for the same reason.
+ * The frame's displayed source and its live render come from the same bytes. The
+ * `"use client"` directive is *authored in the demo file* (§6) — namespace compounds
+ * (`Dialog.Root`, `ScrollArea.Bar`) are plain objects exported from client modules, and
+ * a server component only ever sees an opaque client *reference* for such an export, so
+ * member access on it resolves to `undefined`. A consumer writes the directive for the
+ * same reason, so the demo carries it rather than having it grafted on in transit; a
+ * demo missing it is a problem, not something this pass papers over.
  */
-function demoModule(demosDir: string, file: string): string {
-  const source = readFileSync(path.join(demosDir, file), "utf8");
-  return /^\s*["']use client["']/.test(source) ? source : `"use client";\n\n${source}`;
+function demoModule(demosDir: string, file: string, problems: ProblemLog): string {
+  const absolute = path.join(demosDir, file);
+  const source = readFileSync(absolute, "utf8");
+  if (!/^\s*["']use client["']/.test(source)) {
+    problems.add(`${repoRelative(absolute)}: a demo must start with a "use client" directive`);
+  }
+  return source;
 }
 
 async function buildComponent(
@@ -190,7 +197,10 @@ async function buildComponent(
     const demo = extractDemo(context, { slug, demosDir: paths.demosDir, entry }, problems);
     if (demo !== null) {
       demos.push(demo);
-      writeFile(path.join(generatedDir, "demos", slug, entry.file), demoModule(paths.demosDir, entry.file));
+      writeFile(
+        path.join(generatedDir, "demos", slug, entry.file),
+        demoModule(paths.demosDir, entry.file, problems)
+      );
     }
   }
 

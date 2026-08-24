@@ -1,8 +1,9 @@
 /**
  * Walks a component's recipe surface: its own implementation files plus every
  * package-relative module they pull in (shared style utilities, overlay class
- * vocabulary, …). Demos, tests and locale dictionaries are excluded — they are not
- * part of what the component renders.
+ * vocabulary, …). Tests and locale dictionaries are excluded — they are not part of
+ * what the component renders. (Demos need no exclusion: they live in the docs app,
+ * outside this walk, per docs-site.md §6.)
  */
 
 import { readdirSync, readFileSync, statSync } from "node:fs";
@@ -11,7 +12,7 @@ import path from "node:path";
 import { uiSrc } from "./paths.ts";
 
 const SOURCE_EXTENSIONS = [".ts", ".tsx"] as const;
-const EXCLUDED_DIRECTORIES = new Set(["demos", "intl", "__snapshots__"]);
+const EXCLUDED_DIRECTORIES = new Set(["intl", "__snapshots__"]);
 const RELATIVE_IMPORT = /(?:from|import)\s+"(\.[^"]+)"/g;
 
 export type RecipeSources = {

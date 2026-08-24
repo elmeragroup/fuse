@@ -1,7 +1,8 @@
 /**
  * Demo extraction (docs-site.md §3.5, §6).
  *
- * One authored `.tsx` per spec §10 scenario feeds both outputs this ticket owns: the
+ * One authored `.tsx` per spec §10 scenario — co-located with the component's docs
+ * route (§6) — feeds both outputs this ticket owns: the
  * live render and the displayed source. The exported component name is read from the
  * module's export table (an AST fact, not a filename convention), and the displayed
  * source is the file verbatim — so the frame can never drift from what it renders.
@@ -19,7 +20,7 @@ import { repoRelative } from "./paths.ts";
 
 export type DemoRequest = {
   slug: string;
-  /** Absolute path of `packages/ui/src/components/<slug>/demos`. */
+  /** Absolute path of `apps/docs/src/app/(docs)/components/<slug>/demos`. */
   demosDir: string;
   entry: ShellDemo;
 };
@@ -32,17 +33,17 @@ export function extractDemo(
 ): DocsDemo | null {
   const absolute = path.join(request.demosDir, request.entry.file);
   const relative = repoRelative(absolute);
-  const sourceFile = context.program.getSourceFile(absolute);
+  const sourceFile = context.docs.program.getSourceFile(absolute);
   if (sourceFile === undefined) {
-    problems.add(`${relative}: demo file is missing from the library program`);
+    problems.add(`${relative}: demo file is missing from the docs app program`);
     return null;
   }
-  const moduleSymbol = context.checker.getSymbolAtLocation(sourceFile);
+  const moduleSymbol = context.docs.checker.getSymbolAtLocation(sourceFile);
   if (moduleSymbol === undefined) {
     problems.add(`${relative}: demo file has no module symbol`);
     return null;
   }
-  const exports = context.checker.getExportsOfModule(moduleSymbol);
+  const exports = context.docs.checker.getExportsOfModule(moduleSymbol);
   if (exports.length !== 1) {
     problems.add(`${relative}: a demo must export exactly one component (found ${String(exports.length)})`);
     return null;

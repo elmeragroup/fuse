@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -130,18 +130,5 @@ describe("input-group source contract", () => {
     expect(facade).not.toContain("inputGroupAddonVariants");
     expect(facade).not.toContain("inputGroupButtonVariants");
     expect(facade).not.toContain("export *");
-  });
-
-  it("ships every spec §10 demo as a runnable file", () => {
-    for (const demo of [
-      "input-group-icons.tsx",
-      "input-group-buttons.tsx",
-      "input-group-block.tsx",
-      "input-group-textarea.tsx",
-      "input-group-invalid.tsx",
-      "input-group-kbd.tsx",
-    ]) {
-      expect(existsSync(join(here, "demos", demo)), demo).toBe(true);
-    }
   });
 });

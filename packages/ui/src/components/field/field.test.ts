@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -8,19 +8,6 @@ const source = readFileSync(join(here, "field.tsx"), "utf8");
 
 describe("field source contract", () => {
   // Source-grep: recipe tokens have no runtime probe beyond the Field browser suite.
-  it("ships every spec §10 demo as a runnable file", () => {
-    for (const demo of [
-      "field-basic.tsx",
-      "field-error.tsx",
-      "field-orientations.tsx",
-      "field-set.tsx",
-      "field-choice-card.tsx",
-      "field-separator.tsx",
-    ]) {
-      expect(existsSync(join(here, "demos", demo)), demo).toBe(true);
-    }
-  });
-
   it("keeps fieldVariants private and honest Title/Label slots on a shared heading hook", () => {
     expect(source).not.toContain(".ref/");
     expect(source).not.toContain("export const fieldVariants");

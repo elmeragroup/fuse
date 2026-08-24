@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -11,19 +11,6 @@ const fieldBoxTokens = fieldBox().split(/\s+/).filter(Boolean);
 
 describe("input source contract", () => {
   // Source-grep: recipe tokens have no runtime probe beyond the density/browser suites.
-  it("ships every spec §10 demo as a runnable file", () => {
-    for (const demo of ["input-basic.tsx", "input-types.tsx", "input-states.tsx", "input-in-field.tsx"]) {
-      expect(existsSync(join(here, "demos", demo)), demo).toBe(true);
-    }
-  });
-
-  it("gates input-in-field Error behind invalid, matching textarea-in-field", () => {
-    const demo = readFileSync(join(here, "demos/input-in-field.tsx"), "utf8");
-    expect(demo).toContain("<Field.Root invalid>");
-    expect(demo).toContain("<Field.Error>");
-    expect(demo).toContain("export function InputInField");
-  });
-
   it("composes the private field-box recipe and only adds Input deltas", () => {
     expect(source).not.toContain(".ref/");
     expect(source).toContain("fieldBox()");

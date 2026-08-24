@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -11,12 +11,6 @@ const fieldBoxTokens = fieldBox({ box: "content" }).split(/\s+/).filter(Boolean)
 
 describe("textarea source contract", () => {
   // Source-grep: recipe tokens have no runtime probe beyond the density/browser suites.
-  it("ships every spec §10 demo as a runnable file", () => {
-    for (const demo of ["textarea-basic.tsx", "textarea-states.tsx", "textarea-in-field.tsx"]) {
-      expect(existsSync(join(here, "demos", demo)), demo).toBe(true);
-    }
-  });
-
   it("is server-safe, composes field-box, and only adds content-sized deltas", () => {
     expect(source).not.toContain(".ref/");
     expect(source).not.toContain('"use client"');

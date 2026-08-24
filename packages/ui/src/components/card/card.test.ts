@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -52,18 +52,6 @@ describe("cardVariants", () => {
 });
 
 describe("card source contract", () => {
-  it("ships every spec §10 demo as a runnable file", () => {
-    for (const demo of [
-      "card-basic.tsx",
-      "card-with-action.tsx",
-      "card-tag.tsx",
-      "card-horizontal.tsx",
-      "card-item-rows.tsx",
-    ]) {
-      expect(existsSync(join(here, "demos", demo)), demo).toBe(true);
-    }
-  });
-
   it("stays a server surface that emits data-slot before the props spread", () => {
     const source = readFileSync(join(here, "card.tsx"), "utf8");
     expect(source).not.toContain("use client");

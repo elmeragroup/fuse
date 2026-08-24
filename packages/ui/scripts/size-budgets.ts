@@ -11,6 +11,13 @@
  * - Per-component / per-icon entries keep the ratchet: ceilings only move down
  *   unless a reviewed PR says why.
  *
+ * `styles.css` shrank on 2026-08-24 (ticket 74b): the component demos moved out of this
+ * package into `apps/docs`, so their classes stopped leaking into the standalone
+ * stylesheet through Tailwind's automatic source detection. Measured gzip 9905 → 9758
+ * (raw 64422 → 63849). The shrink is not a recalibration trigger under the policy above,
+ * so rather than leave the freed bytes as slack the ceiling is consciously tightened by
+ * exactly what the sheet lost — 10616 → 10469, keeping the standing 2026-08-21 headroom.
+ *
  * Current measurements (gzip bytes, 2026-08-22). Earlier measurement rounds live in git.
  *   .             57448  (aggregate; under the standing 64167 ceiling, so recorded, not loosened)
  *   theme          6129
@@ -29,7 +36,7 @@
  *   input-group   28011
  *   flags          1388
  *   themes.css     2274
- *   styles.css     9905  (under the standing 10616 ceiling, so recorded, not loosened)
+ *   styles.css     9758  (re-measured 2026-08-24 after the demo relocation; note above)
  */
 import { FLAG_RAW_CEILING_BYTES } from "./flag-payload";
 
@@ -84,7 +91,7 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = [
 
 export const CSS_BUDGETS: readonly CssBudget[] = [
   { name: "themes.css", file: "themes.css", ceilingGzip: 3424 },
-  { name: "styles.css", file: "styles.css", ceilingGzip: 10616 },
+  { name: "styles.css", file: "styles.css", ceilingGzip: 10469 },
 ];
 
 export const FLAG_RAW_BUDGETS: readonly FlagRawBudget[] = [
