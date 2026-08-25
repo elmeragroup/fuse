@@ -188,6 +188,7 @@ describe("Select", () => {
   });
 
   it("dims disabled items and does not select them", async () => {
+    // Primitive navigation: arrows may highlight a disabled option; Enter does not select.
     const onValueChange = vi.fn();
     renderThemed(<FruitSelect onValueChange={onValueChange} extra />);
     await openWithArrowDown();

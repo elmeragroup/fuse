@@ -41,7 +41,7 @@
 
 All rendering parts take `className` (merged via `cn`) and forward the rest of their base-ui part's props.
 
-**Select.Root** — `ComponentProps<SelectPrimitive.Root>` verbatim (`value`/`defaultValue`/`onValueChange`, `open`/`defaultOpen`/`onOpenChange`, `items`, `multiple`, `disabled`, `readOnly`, `required`, `name`, `id`, `modal`, …). Primitive-tier naming per conventions (no `isDisabled` face).
+**Select.Root** — primitive `SelectRoot.Props<Value, Multiple>` forwarded (`value`/`defaultValue`/`onValueChange` infer `Value`; `multiple` switches those to arrays; plus `open`/`defaultOpen`/`onOpenChange`, `items`, `disabled`, `readOnly`, `required`, `name`, `id`, `modal`, …). Primitive-tier naming per conventions (no `isDisabled` face).
 
 **Select.Trigger** — `ComponentProps<SelectPrimitive.Trigger>` plus:
 
@@ -114,7 +114,7 @@ No `tv` recipe — the trigger's `size` axis is a hand-rolled `data-size` attrib
 - Base-ui wires `role="combobox"` + `aria-expanded`/`aria-controls` on the trigger, `role="listbox"`/`role="option"` + `aria-selected` in the popup, and label association via base-ui Field when composed.
 - Keyboard: ArrowDown/ArrowUp (and Enter/Space) on the closed trigger opens the popup; Arrow keys move highlight; typeahead jumps to matching items while open **and** while closed (changes value directly); Enter/Space selects; Escape closes without selecting; Home/End jump to first/last item.
 - With `alignItemWithTrigger` (default) the popup opens with the selected item positioned over the trigger and highlighted.
-- `disabled` items are skipped by keyboard navigation and get `data-disabled` dimming.
+- Arrow keys may highlight a disabled option; Enter/Space/click do not select it and leave the popup open. Typeahead skips disabled items. `data-disabled` still dims the option.
 - Invalid state arrives as `aria-invalid` on the trigger (via base-ui Field or consumer) and surfaces the error ring; per conventions, boolean aria uses `x || undefined`.
 - Scroll buttons are pointer affordances only (keyboard scrolls the list natively); they render `aria-hidden` per base-ui.
 
@@ -137,7 +137,7 @@ Kept faithfully: `data-size` sm|default trigger axis; `alignItemWithTrigger` def
 Role/label-based queries throughout; keyboard flows per §7:
 
 - Open/close: `getByRole("combobox")` trigger; click and ArrowDown both open (`getByRole("listbox")` appears); Escape closes and returns focus to the trigger; selecting via click closes and updates the trigger's accessible value.
-- Arrow navigation: ArrowDown/ArrowUp move the highlighted option; Enter selects it (`onValueChange` fires with the value, not an event); Home/End reach first/last; disabled items are skipped.
+- Arrow navigation: ArrowDown/ArrowUp move the highlighted option (a disabled option may be highlighted); Enter selects a highlighted enabled option (`onValueChange` fires with the value, not an event) and does not select a highlighted disabled option (popup stays open); Home/End reach first/last. Typeahead skips disabled items.
 - Typeahead: with the popup open, typing a prefix highlights the matching option; typing on the closed trigger changes the value without opening.
 - `data-size` reflects `size` for both values; `data-align-trigger` reflects `alignItemWithTrigger`.
 - Dual-density: at document `dense` and `comfortable`, Trigger height for `default`/`sm` matches the signed `--control-h-md` / `--control-h-sm` ladder; nested `data-density` and `ThemeScope` variant changes do not rescope metrics.

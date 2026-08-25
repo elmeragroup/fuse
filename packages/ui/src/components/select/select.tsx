@@ -3,6 +3,7 @@
 import type { ComponentProps, ReactElement, RefObject } from "react";
 
 import { Select as SelectPrimitive } from "@base-ui/react/select";
+import type { SelectRoot as SelectRootType } from "@base-ui/react/select";
 
 import { CaretDown } from "../../icons/generated/caret-down";
 import { CaretUp } from "../../icons/generated/caret-up";
@@ -15,7 +16,9 @@ import { overlayLayer } from "../overlay/overlay-classes";
 /** Resolved once at module scope — the recipe below does the same (no per-render work). */
 const selfFocusRing = focusRing({ target: "self" }).root();
 
-function SelectRoot(props: ComponentProps<typeof SelectPrimitive.Root>): ReactElement {
+function SelectRoot<Value = unknown, Multiple extends boolean | undefined = false>(
+  props: SelectRootType.Props<Value, Multiple>
+): ReactElement {
   return <SelectPrimitive.Root {...props} />;
 }
 

@@ -52,3 +52,31 @@ test("Trigger takes size and Content takes positioner props, alignItemWithTrigge
   // @ts-expect-error polymorphism is never an `as` prop
   const _noAs = <Select.Trigger as="div" />;
 });
+
+test("Root forwards Value and Multiple so value callbacks stay inferred", () => {
+  type Fruit = "apple" | "banana";
+  const singleValue: Fruit = "apple";
+  const multipleValue: Fruit[] = ["apple"];
+
+  const _single = (
+    <Select.Root<Fruit>
+      value={singleValue}
+      onValueChange={(value) => {
+        expectTypeOf(value).toEqualTypeOf<Fruit | null>();
+      }}
+    />
+  );
+
+  const _multiple = (
+    <Select.Root<Fruit, true>
+      multiple
+      value={multipleValue}
+      onValueChange={(value) => {
+        expectTypeOf(value).toEqualTypeOf<Fruit[]>();
+      }}
+    />
+  );
+
+  // @ts-expect-error multiple value is array-shaped
+  const _scalarWhenMultiple = <Select.Root<Fruit, true> multiple value="apple" />;
+});
