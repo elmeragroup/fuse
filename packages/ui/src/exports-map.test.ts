@@ -56,6 +56,7 @@ describe("exports map", () => {
       "loader",
       "popover",
       "scroll-area",
+      "select",
       "separator",
       "sheet",
       "show",
@@ -347,6 +348,12 @@ describe("exports map", () => {
     const collapsible = discovered.jsEntries.find((entry) => entry.subpath === "collapsible");
     expect(collapsible?.inRootBarrel).toBe(true);
     expect(collapsible?.runtimeExports).toEqual(["Collapsible"]);
+  });
+
+  it("publishes Select from /select and the root barrel", () => {
+    const select = discovered.jsEntries.find((entry) => entry.subpath === "select");
+    expect(select?.inRootBarrel).toBe(true);
+    expect(select?.runtimeExports).toEqual(["Select"]);
   });
 
   it("publishes Sheet from /sheet and the root barrel", () => {

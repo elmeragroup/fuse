@@ -1,0 +1,180 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "select",
+  "parts": [
+    {
+      "name": "Select.Root",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/select/select.tsx",
+      "forwardedFrom": [
+        "@base-ui/react"
+      ],
+      "forwardedCount": 24,
+      "props": []
+    },
+    {
+      "name": "Select.Trigger",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/select/select.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 289,
+      "props": [
+        {
+          "name": "size",
+          "origin": "declared",
+          "type": "\"default\" | \"sm\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "Control-box height. Emitted as `data-size`. `\"default\"` maps to the `md` density rung; `\"sm\"` maps to the `sm` rung.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Select.Value",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/select/select.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 279,
+      "props": []
+    },
+    {
+      "name": "Select.Content",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/select/select.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 279,
+      "props": [
+        {
+          "name": "align",
+          "origin": "declared",
+          "type": "Align | undefined",
+          "shortType": null,
+          "defaultValue": "\"center\"",
+          "description": "How the popup aligns to the trigger on the cross axis.",
+          "required": false
+        },
+        {
+          "name": "alignItemWithTrigger",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "macOS-style: the selected item overlays the trigger. Emitted as `data-align-trigger`. Entrance animation is suppressed while this is on, so the popup appears in place.",
+          "required": false
+        },
+        {
+          "name": "alignOffset",
+          "origin": "declared",
+          "type": "number | OffsetFunction | undefined",
+          "shortType": "Union",
+          "defaultValue": "0",
+          "description": "Offset along the alignment axis, in pixels.",
+          "required": false
+        },
+        {
+          "name": "container",
+          "origin": "declared",
+          "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Portal target for the popup. Defaults to the nearest enclosing `ThemeScope` element, so an overlay never escapes the theme that opened it.",
+          "required": false
+        },
+        {
+          "name": "side",
+          "origin": "declared",
+          "type": "Side | undefined",
+          "shortType": null,
+          "defaultValue": "\"bottom\"",
+          "description": "Which side of the trigger the popup is placed on.",
+          "required": false
+        },
+        {
+          "name": "sideOffset",
+          "origin": "declared",
+          "type": "number | OffsetFunction | undefined",
+          "shortType": "Union",
+          "defaultValue": "4",
+          "description": "Distance from the trigger, in pixels.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Select.Item",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/select/select.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 281,
+      "props": []
+    },
+    {
+      "name": "Select.Group",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/select/select.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": []
+    },
+    {
+      "name": "Select.Label",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/select/select.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": []
+    },
+    {
+      "name": "Select.Separator",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/select/select.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 279,
+      "props": []
+    },
+    {
+      "name": "Select.ScrollUpButton",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/select/select.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 279,
+      "props": []
+    },
+    {
+      "name": "Select.ScrollDownButton",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/select/select.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 279,
+      "props": []
+    }
+  ]
+}

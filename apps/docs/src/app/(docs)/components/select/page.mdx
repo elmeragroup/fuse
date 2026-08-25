@@ -1,0 +1,55 @@
+---
+title: Select
+lede: >
+  A combobox over base-ui Select. The trigger carries a `data-size` sm|default axis;
+  the popup portals into the nearest ThemeScope and, by default, aligns the selected
+  item over the trigger.
+---
+
+import { SelectBasic } from "./demos/select-basic";
+import { SelectGroups } from "./demos/select-groups";
+import { SelectSizes } from "./demos/select-sizes";
+import { SelectScrolling } from "./demos/select-scrolling";
+import { SelectInvalid } from "./demos/select-invalid";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("select");
+
+<ComponentIntro slug="select" />
+
+<Prose>
+
+Positioner props (`side`, `align`, `sideOffset`, `alignOffset`, `alignItemWithTrigger`) and
+`container` surface on `Select.Content`. Alignment with the trigger is on by default and
+suppresses the entrance animation so the popup appears in place. Portal, Positioner and
+Popup stay unexported — `container` on Content is the only portal-control surface.
+
+Trigger `size` is a control-box axis: `"default"` reads `--control-h-md`, `"sm"` reads
+`--control-h-sm`. Invalid chrome uses `error` tokens; the trigger surface is `bg-card`.
+
+</Prose>
+
+<Demo slug="select" id="basic" title="Basic" file="select-basic.tsx">
+  <SelectBasic />
+</Demo>
+
+<Demo slug="select" id="groups" title="Groups" file="select-groups.tsx">
+  <SelectGroups />
+</Demo>
+
+<Demo slug="select" id="sizes" title="Sizes" file="select-sizes.tsx">
+  <SelectSizes />
+</Demo>
+
+<Demo slug="select" id="scrolling" title="Scrolling" file="select-scrolling.tsx">
+  <SelectScrolling />
+</Demo>
+
+<Demo slug="select" id="invalid" title="Invalid" file="select-invalid.tsx">
+  <SelectInvalid />
+</Demo>
+
+<ApiReference slug="select" />
+
+<ComponentTokens slug="select" />

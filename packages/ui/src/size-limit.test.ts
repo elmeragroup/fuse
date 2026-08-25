@@ -64,6 +64,7 @@ describe("size-limit harness", () => {
       "alert-dialog",
       "dropdown-menu",
       "collapsible",
+      "select",
       "show",
       "loader",
       "empty",
@@ -156,6 +157,9 @@ describe("size-limit harness", () => {
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "collapsible")?.ceilingGzip).toBe(
       ceilingFromMeasured(27254)
+    );
+    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "select")?.ceilingGzip).toBe(
+      ceilingFromMeasured(63724)
     );
     // styles.css recalibrated 2026-08-25: Heading+Text+Popover utilities exceeded 10469.
     expect(CSS_BUDGETS.find((budget) => budget.name === "styles.css")?.ceilingGzip).toBe(

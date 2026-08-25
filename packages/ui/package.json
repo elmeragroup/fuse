@@ -119,6 +119,10 @@
       "types": "./src/scroll-area.ts",
       "import": "./src/scroll-area.ts"
     },
+    "./select": {
+      "types": "./src/select.ts",
+      "import": "./src/select.ts"
+    },
     "./separator": {
       "types": "./src/separator.ts",
       "import": "./src/separator.ts"

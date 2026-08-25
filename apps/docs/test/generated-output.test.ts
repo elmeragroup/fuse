@@ -81,6 +81,7 @@ describe("component page manifest", () => {
       "loader",
       "popover",
       "scroll-area",
+      "select",
       "separator",
       "sheet",
       "show",
@@ -202,6 +203,13 @@ describe("component page manifest", () => {
       "controlled",
       "hidden-until-found",
     ]);
+    expect(page("select").demos.map((demo) => demo.id)).toEqual([
+      "basic",
+      "groups",
+      "sizes",
+      "scrolling",
+      "invalid",
+    ]);
   });
 
   it("links View source at the implementation on the repo host", () => {
@@ -238,6 +246,7 @@ describe("component page manifest", () => {
       loader: "server",
       popover: "client",
       "scroll-area": "client",
+      select: "client",
       separator: "client",
       sheet: "client",
       show: "server",
@@ -342,6 +351,18 @@ describe("committed api.json", () => {
       "DropdownMenu.SubTrigger",
       "DropdownMenu.SubContent",
     ]);
+    expect(api("select").parts.map((part) => part.name)).toEqual([
+      "Select.Root",
+      "Select.Trigger",
+      "Select.Value",
+      "Select.Content",
+      "Select.Item",
+      "Select.Group",
+      "Select.Label",
+      "Select.Separator",
+      "Select.ScrollUpButton",
+      "Select.ScrollDownButton",
+    ]);
     expect(api("scroll-area").parts.map((part) => part.name)).toEqual(["ScrollArea.Root", "ScrollArea.Bar"]);
     expect(api("avatar").parts.map((part) => part.name)).toEqual([
       "Avatar.Root",
@@ -410,6 +431,13 @@ describe("committed api.json", () => {
     expect(dropdownSubContent?.props.find((prop) => prop.name === "side")?.defaultValue).toBe('"right"');
     const dropdownItem = api("dropdown-menu").parts.find((part) => part.name === "DropdownMenu.Item");
     expect(dropdownItem?.props.find((prop) => prop.name === "variant")?.defaultValue).toBe('"default"');
+    const selectTrigger = api("select").parts.find((part) => part.name === "Select.Trigger");
+    expect(selectTrigger?.props.find((prop) => prop.name === "size")?.defaultValue).toBe('"default"');
+    const selectContent = api("select").parts.find((part) => part.name === "Select.Content");
+    expect(selectContent?.props.find((prop) => prop.name === "alignItemWithTrigger")?.defaultValue).toBe(
+      "true"
+    );
+    expect(selectContent?.props.find((prop) => prop.name === "align")?.defaultValue).toBe('"center"');
   });
 });
 
