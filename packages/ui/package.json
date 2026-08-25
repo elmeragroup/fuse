@@ -112,6 +112,10 @@
     "./toggle": {
       "types": "./src/toggle.ts",
       "import": "./src/toggle.ts"
+    },
+    "./tooltip": {
+      "types": "./src/tooltip.ts",
+      "import": "./src/tooltip.ts"
     }
   },
   "publishConfig": {

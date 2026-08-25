@@ -78,6 +78,7 @@ describe("component page manifest", () => {
       "textarea",
       "timeline-list",
       "toggle",
+      "tooltip",
     ]);
   });
 
@@ -133,6 +134,7 @@ describe("component page manifest", () => {
       "form",
       "scrolling",
     ]);
+    expect(page("tooltip").demos.map((demo) => demo.id)).toEqual(["basic", "sides", "delay", "controlled"]);
   });
 
   it("links View source at the implementation on the repo host", () => {
@@ -166,6 +168,7 @@ describe("component page manifest", () => {
       textarea: "server",
       "timeline-list": "server",
       toggle: "client",
+      tooltip: "client",
     } as const;
     expect(Object.keys(expected)).toHaveLength(COMPONENT_PAGES.length);
     for (const [slug, rsc] of Object.entries(expected)) {
@@ -222,6 +225,12 @@ describe("committed api.json", () => {
       "Sheet.Title",
       "Sheet.Description",
     ]);
+    expect(api("tooltip").parts.map((part) => part.name)).toEqual([
+      "Tooltip.Provider",
+      "Tooltip.Root",
+      "Tooltip.Trigger",
+      "Tooltip.Content",
+    ]);
     expect(api("scroll-area").parts.map((part) => part.name)).toEqual(["ScrollArea.Root", "ScrollArea.Bar"]);
   });
 
@@ -241,6 +250,12 @@ describe("committed api.json", () => {
     expect(sheetContent?.props.find((prop) => prop.name === "size")?.origin).toBe("recipe-axis");
     const sheetRoot = api("sheet").parts.find((part) => part.name === "Sheet.Root");
     expect(sheetRoot?.props.find((prop) => prop.name === "side")?.defaultValue).toBe('"right"');
+    const tooltipProvider = api("tooltip").parts.find((part) => part.name === "Tooltip.Provider");
+    expect(tooltipProvider?.props.find((prop) => prop.name === "delay")?.defaultValue).toBe("0");
+    const tooltipRoot = api("tooltip").parts.find((part) => part.name === "Tooltip.Root");
+    expect(tooltipRoot?.props.find((prop) => prop.name === "delay")?.description).toContain("skip-delay");
+    const tooltipContent = api("tooltip").parts.find((part) => part.name === "Tooltip.Content");
+    expect(tooltipContent?.props.find((prop) => prop.name === "side")?.defaultValue).toBe('"top"');
   });
 });
 

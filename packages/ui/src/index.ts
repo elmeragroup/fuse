@@ -26,3 +26,4 @@ export * from "./textarea";
 export * from "./theme";
 export * from "./timeline-list";
 export * from "./toggle";
+export * from "./tooltip";

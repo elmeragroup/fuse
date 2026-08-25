@@ -53,6 +53,7 @@ describe("exports map", () => {
       "textarea",
       "timeline-list",
       "toggle",
+      "tooltip",
     ]);
     expect(unexpectedJsEntryFiles(packageRoot)).toEqual([]);
     expect(BARE_COMPONENT_ENTRIES).toHaveLength(56);
@@ -259,6 +260,12 @@ describe("exports map", () => {
     const toggle = discovered.jsEntries.find((entry) => entry.subpath === "toggle");
     expect(toggle?.inRootBarrel).toBe(true);
     expect(toggle?.runtimeExports).toEqual(["Toggle", "toggleVariants"]);
+  });
+
+  it("publishes Tooltip from /tooltip and the root barrel", () => {
+    const tooltip = discovered.jsEntries.find((entry) => entry.subpath === "tooltip");
+    expect(tooltip?.inRootBarrel).toBe(true);
+    expect(tooltip?.runtimeExports).toEqual(["Tooltip"]);
   });
 
   it("publishes InputGroup from /input-group and the root barrel with private recipes", () => {

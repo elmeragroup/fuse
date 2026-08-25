@@ -1,0 +1,114 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "tooltip",
+  "parts": [
+    {
+      "name": "Tooltip.Provider",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/tooltip/tooltip.tsx",
+      "forwardedFrom": [
+        "@base-ui/react"
+      ],
+      "forwardedCount": 3,
+      "props": [
+        {
+          "name": "delay",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": "0",
+          "description": "Shared open delay for every tooltip in this group, in milliseconds. Instant by default — the ref overrides base-ui's 600ms. Tooltips in this group also share skip-delay hand-off: after one opens, moving to a neighbor skips the wait.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Tooltip.Root",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/tooltip/tooltip.tsx",
+      "forwardedFrom": [
+        "@base-ui/react"
+      ],
+      "forwardedCount": 12,
+      "props": [
+        {
+          "name": "delay",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "When set, wraps this Root in a nested scoped Provider with that delay. That tooltip then forms its own provider group: it no longer participates in the outer Provider's shared delay or skip-delay hand-off.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Tooltip.Trigger",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/tooltip/tooltip.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 293,
+      "props": []
+    },
+    {
+      "name": "Tooltip.Content",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/tooltip/tooltip.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": [
+        {
+          "name": "align",
+          "origin": "declared",
+          "type": "Align | undefined",
+          "shortType": null,
+          "defaultValue": "\"center\"",
+          "description": "How the popup aligns to the trigger on the cross axis.",
+          "required": false
+        },
+        {
+          "name": "alignOffset",
+          "origin": "declared",
+          "type": "number | OffsetFunction | undefined",
+          "shortType": "Union",
+          "defaultValue": "0",
+          "description": "Offset along the alignment axis, in pixels.",
+          "required": false
+        },
+        {
+          "name": "container",
+          "origin": "declared",
+          "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Portal target for the popup. Defaults to the nearest enclosing `ThemeScope` element, so an overlay never escapes the theme that opened it.",
+          "required": false
+        },
+        {
+          "name": "side",
+          "origin": "declared",
+          "type": "Side | undefined",
+          "shortType": null,
+          "defaultValue": "\"top\"",
+          "description": "Which side of the trigger the popup is placed on. Tooltips open upward by default.",
+          "required": false
+        },
+        {
+          "name": "sideOffset",
+          "origin": "declared",
+          "type": "number | OffsetFunction | undefined",
+          "shortType": "Union",
+          "defaultValue": "4",
+          "description": "Distance from the trigger, in pixels.",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

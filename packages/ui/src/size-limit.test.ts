@@ -59,6 +59,7 @@ describe("size-limit harness", () => {
       "timeline-list",
       "sheet",
       "text-field",
+      "tooltip",
       "heading",
       "text",
       "toggle",
@@ -96,6 +97,9 @@ describe("size-limit harness", () => {
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "text-field")?.ceilingGzip).toBe(
       ceilingFromMeasured(33462)
+    );
+    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "tooltip")?.ceilingGzip).toBe(
+      ceilingFromMeasured(51148)
     );
     // styles.css recalibrated 2026-08-25: Heading+Text+Popover utilities exceeded 10469.
     expect(CSS_BUDGETS.find((budget) => budget.name === "styles.css")?.ceilingGzip).toBe(
