@@ -57,6 +57,7 @@ describe("exports map", () => {
       "loader",
       "meter",
       "number-field",
+      "pagination",
       "popover",
       "scroll-area",
       "select",
@@ -444,6 +445,12 @@ describe("exports map", () => {
     const tabs = discovered.jsEntries.find((entry) => entry.subpath === "tabs");
     expect(tabs?.inRootBarrel).toBe(true);
     expect(tabs?.runtimeExports).toEqual(["Tabs", "tabsListVariants"]);
+  });
+
+  it("publishes Pagination and the public paginationVariants recipe from /pagination and the root barrel", () => {
+    const pagination = discovered.jsEntries.find((entry) => entry.subpath === "pagination");
+    expect(pagination?.inRootBarrel).toBe(true);
+    expect(pagination?.runtimeExports).toEqual(["Pagination", "paginationVariants"]);
   });
 
   it("keeps /icons as a subpath-only entry with the curated roster", () => {

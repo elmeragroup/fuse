@@ -29,6 +29,7 @@ export * from "./item";
 export * from "./loader";
 export * from "./meter";
 export * from "./number-field";
+export * from "./pagination";
 export * from "./popover";
 export * from "./scroll-area";
 export * from "./select";

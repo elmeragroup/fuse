@@ -1,0 +1,201 @@
+import type { ReactNode } from "react";
+
+import { describe, expect, it } from "vitest";
+import { page } from "vitest/browser";
+
+import "../../../dist/styles.css";
+import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
+import { renderThemed } from "../../../test/themed-browser-render";
+import { Pagination } from "./pagination";
+
+const LANDMARK_COPY = {
+  "nb-NO": "Sidenavigasjon",
+  "sv-SE": "Sidnavigering",
+  "en-US": "Pagination",
+  "fi-FI": "Sivutus",
+} as const;
+
+const PREVIOUS_COPY = {
+  "nb-NO": "Forrige",
+  "sv-SE": "Föregående",
+  "en-US": "Previous",
+  "fi-FI": "Edellinen",
+} as const;
+
+const NEXT_COPY = {
+  "nb-NO": "Neste",
+  "sv-SE": "Nästa",
+  "en-US": "Next",
+  "fi-FI": "Seuraava",
+} as const;
+
+const GO_TO_PREVIOUS_COPY = {
+  "nb-NO": "Gå til forrige side",
+  "sv-SE": "Gå till föregående sida",
+  "en-US": "Go to previous page",
+  "fi-FI": "Siirry edelliselle sivulle",
+} as const;
+
+const GO_TO_NEXT_COPY = {
+  "nb-NO": "Gå til neste side",
+  "sv-SE": "Gå till nästa sida",
+  "en-US": "Go to next page",
+  "fi-FI": "Siirry seuraavalle sivulle",
+} as const;
+
+const MORE_PAGES_COPY = {
+  "nb-NO": "Flere sider",
+  "sv-SE": "Fler sidor",
+  "en-US": "More pages",
+  "fi-FI": "Lisää sivuja",
+} as const;
+
+function renderPagination(node: ReactNode, locale: (typeof SUPPORTED_LOCALES)[number] = "en-US") {
+  return renderThemed(withLocale(locale, node));
+}
+
+function navNamed(name: string): HTMLElement {
+  const element = page.getByRole("navigation", { name, exact: true }).element();
+  if (!(element instanceof HTMLElement)) {
+    throw new Error(`expected navigation ${name}`);
+  }
+  return element;
+}
+
+function linkNamed(name: string): HTMLElement {
+  const element = page.getByRole("link", { name, exact: true }).element();
+  if (!(element instanceof HTMLElement)) {
+    throw new Error(`expected link ${name}`);
+  }
+  return element;
+}
+
+function BasicPages() {
+  return (
+    <Pagination.Root>
+      <Pagination.Content>
+        <Pagination.Item>
+          <Pagination.Previous href="#previous" />
+        </Pagination.Item>
+        <Pagination.Item>
+          <Pagination.Link href="#1" isActive>
+            1
+          </Pagination.Link>
+        </Pagination.Item>
+        <Pagination.Item>
+          <Pagination.Link href="#2">2</Pagination.Link>
+        </Pagination.Item>
+        <Pagination.Item>
+          <Pagination.Ellipsis />
+        </Pagination.Item>
+        <Pagination.Item>
+          <Pagination.Next href="#next" />
+        </Pagination.Item>
+      </Pagination.Content>
+    </Pagination.Root>
+  );
+}
+
+describe("Pagination", () => {
+  it("is a navigation landmark named Pagination in en-US, with page links by name", () => {
+    renderPagination(<BasicPages />);
+    expect(navNamed("Pagination").getAttribute("data-slot")).toBe("pagination");
+    expect(linkNamed("1").getAttribute("href")).toBe("#1");
+    expect(linkNamed("2").getAttribute("href")).toBe("#2");
+    expect(linkNamed("Go to previous page").getAttribute("data-slot")).toBe("pagination-previous");
+    expect(linkNamed("Go to next page").getAttribute("data-slot")).toBe("pagination-next");
+  });
+
+  it("exposes aria-current=page only on the active link, never false", () => {
+    renderPagination(<BasicPages />);
+    expect(linkNamed("1").getAttribute("aria-current")).toBe("page");
+    expect(linkNamed("2").hasAttribute("aria-current")).toBe(false);
+    expect(linkNamed("2").getAttribute("aria-current")).toBeNull();
+    expect(linkNamed("Go to previous page").hasAttribute("aria-current")).toBe(false);
+  });
+
+  it("lets an explicit aria-label win over the label prop and the dictionary", () => {
+    const { unmount: unmountDefault } = renderPagination(<BasicPages />);
+    expect(navNamed("Pagination")).toBeTruthy();
+    unmountDefault();
+
+    const { unmount: unmountLabel } = renderPagination(
+      <Pagination.Root label="Pages">
+        <Pagination.Content />
+      </Pagination.Root>
+    );
+    expect(navNamed("Pages")).toBeTruthy();
+    expect(page.getByRole("navigation", { name: "Pagination", exact: true }).query()).toBeNull();
+    unmountLabel();
+
+    renderPagination(
+      <Pagination.Root label="Pages" aria-label="Invoice pages">
+        <Pagination.Content />
+      </Pagination.Root>
+    );
+    expect(navNamed("Invoice pages")).toBeTruthy();
+    expect(page.getByRole("navigation", { name: "Pages", exact: true }).query()).toBeNull();
+    expect(page.getByRole("navigation", { name: "Pagination", exact: true }).query()).toBeNull();
+  });
+
+  it("resolves landmark, Previous/Next, and ellipsis copy in every locale and lets overrides win", () => {
+    for (const locale of SUPPORTED_LOCALES) {
+      const { unmount } = renderPagination(<BasicPages />, locale);
+      expect(navNamed(LANDMARK_COPY[locale]), locale).toBeTruthy();
+      const previous = linkNamed(GO_TO_PREVIOUS_COPY[locale]);
+      const next = linkNamed(GO_TO_NEXT_COPY[locale]);
+      expect(previous.textContent, locale).toContain(PREVIOUS_COPY[locale]);
+      expect(next.textContent, locale).toContain(NEXT_COPY[locale]);
+      expect(page.getByText(MORE_PAGES_COPY[locale], { exact: true }).element(), locale).toBeTruthy();
+      unmount();
+    }
+
+    renderPagination(
+      <Pagination.Root>
+        <Pagination.Content>
+          <Pagination.Item>
+            <Pagination.Previous href="#previous" text="Back" label="Earlier page" />
+          </Pagination.Item>
+          <Pagination.Item>
+            <Pagination.Next href="#next" text="Forward" aria-label="Later page" />
+          </Pagination.Item>
+          <Pagination.Item>
+            <Pagination.Ellipsis label="Hidden pages" />
+          </Pagination.Item>
+        </Pagination.Content>
+      </Pagination.Root>,
+      "nb-NO"
+    );
+    expect(linkNamed("Earlier page").textContent).toContain("Back");
+    expect(linkNamed("Later page").textContent).toContain("Forward");
+    expect(page.getByRole("link", { name: "Gå til forrige side", exact: true }).query()).toBeNull();
+    expect(page.getByRole("link", { name: "Gå til neste side", exact: true }).query()).toBeNull();
+    expect(page.getByText("Hidden pages", { exact: true }).element()).toBeTruthy();
+    expect(page.getByText("Flere sider", { exact: true }).query()).toBeNull();
+  });
+
+  it("hides only the ellipsis icon and keeps morePages in the accessibility tree", () => {
+    renderPagination(<BasicPages />);
+    const ellipsis = document.querySelector('[data-slot="pagination-ellipsis"]');
+    if (!(ellipsis instanceof HTMLElement)) {
+      throw new Error("expected pagination-ellipsis");
+    }
+    const icon = ellipsis.querySelector("svg");
+    expect(icon).not.toBeNull();
+    expect(icon?.getAttribute("aria-hidden")).toBe("true");
+    expect(ellipsis.getAttribute("aria-hidden")).toBeNull();
+    expect(page.getByText("More pages", { exact: true }).element()).toBeTruthy();
+  });
+
+  it("maps isActive onto the outline button variant and leaves others ghost", () => {
+    renderPagination(<BasicPages />);
+    const active = linkNamed("1");
+    const inactive = linkNamed("2");
+    expect(active.getAttribute("data-slot")).toBe("pagination-link");
+    expect(inactive.getAttribute("data-slot")).toBe("pagination-link");
+    expect(active.className.split(/\s+/)).toContain("border-border");
+    expect(active.className.split(/\s+/)).toContain("shadow-xs");
+    expect(inactive.className.split(/\s+/)).not.toContain("border-border");
+    expect(inactive.className.split(/\s+/)).not.toContain("shadow-xs");
+  });
+});

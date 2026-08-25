@@ -1,0 +1,44 @@
+---
+title: Pagination
+lede: >
+  Numbered page navigation. Anchors are styled through the public button recipe;
+  Previous, Next, the landmark name, and the ellipsis come from the provider
+  dictionary.
+---
+
+import { PaginationBasic } from "./demos/pagination-basic";
+import { PaginationEllipsis } from "./demos/pagination-ellipsis";
+import { PaginationControlled } from "./demos/pagination-controlled";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("pagination");
+
+<ComponentIntro slug="pagination" />
+
+<Prose>
+
+`Pagination.Root` is a localized `<nav>` landmark. Pages live in a list;
+`Pagination.Link` borrows `buttonVariants` so the current page reads as outline
+and the others as ghost. There is no `locale` prop — dictionary defaults follow
+`ElmeraGroupUiProvider`. Explicit `aria-label` wins over the `label` prop over
+the dictionary. Previous and Next wrap `Link` at `size="default"`; numbered
+links default to `size="icon"`.
+
+</Prose>
+
+<Demo slug="pagination" id="basic" title="Basic" file="pagination-basic.tsx">
+  <PaginationBasic />
+</Demo>
+
+<Demo slug="pagination" id="ellipsis" title="Ellipsis" file="pagination-ellipsis.tsx">
+  <PaginationEllipsis />
+</Demo>
+
+<Demo slug="pagination" id="controlled" title="Controlled" file="pagination-controlled.tsx">
+  <PaginationControlled />
+</Demo>
+
+<ApiReference slug="pagination" />
+
+<ComponentTokens slug="pagination" />

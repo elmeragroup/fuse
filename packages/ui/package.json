@@ -123,6 +123,10 @@
       "types": "./src/number-field.ts",
       "import": "./src/number-field.ts"
     },
+    "./pagination": {
+      "types": "./src/pagination.ts",
+      "import": "./src/pagination.ts"
+    },
     "./popover": {
       "types": "./src/popover.ts",
       "import": "./src/popover.ts"

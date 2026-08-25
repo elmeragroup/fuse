@@ -1,0 +1,189 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "pagination",
+  "parts": [
+    {
+      "name": "Pagination.Root",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/pagination/pagination.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": [
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Landmark label. Defaults to the locale dictionary; an explicit `aria-label` wins over this prop (pagination.md §3).",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Pagination.Content",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/pagination/pagination.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Pagination.Item",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/pagination/pagination.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 281,
+      "props": []
+    },
+    {
+      "name": "Pagination.Link",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/pagination/pagination.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 288,
+      "props": [
+        {
+          "name": "isActive",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Current page. Renders `aria-current=\"page\"` and the outline button variant; inactive links omit the attribute entirely (pagination.md §3/§7).",
+          "required": false
+        },
+        {
+          "name": "size",
+          "origin": "declared",
+          "type": "IconButtonSize | LabelButtonSize | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"icon\"",
+          "description": "Recipe size axis borrowed from Button. Defaults to `\"icon\"`.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Pagination.Previous",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/pagination/pagination.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 288,
+      "props": [
+        {
+          "name": "isActive",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Current page. Renders `aria-current=\"page\"` and the outline button variant; inactive links omit the attribute entirely (pagination.md §3/§7).",
+          "required": false
+        },
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Accessible name. Defaults to the locale dictionary; an explicit `aria-label` wins.",
+          "required": false
+        },
+        {
+          "name": "size",
+          "origin": "declared",
+          "type": "IconButtonSize | LabelButtonSize | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "Recipe size axis borrowed from Button. Defaults to `\"default\"`.",
+          "required": false
+        },
+        {
+          "name": "text",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Visible Previous copy. Defaults to the locale dictionary.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Pagination.Next",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/pagination/pagination.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 288,
+      "props": [
+        {
+          "name": "isActive",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Current page. Renders `aria-current=\"page\"` and the outline button variant; inactive links omit the attribute entirely (pagination.md §3/§7).",
+          "required": false
+        },
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Accessible name. Defaults to the locale dictionary; an explicit `aria-label` wins.",
+          "required": false
+        },
+        {
+          "name": "size",
+          "origin": "declared",
+          "type": "IconButtonSize | LabelButtonSize | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "Recipe size axis borrowed from Button. Defaults to `\"default\"`.",
+          "required": false
+        },
+        {
+          "name": "text",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Visible Next copy. Defaults to the locale dictionary.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Pagination.Ellipsis",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/pagination/pagination.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": [
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Screen-reader-only ellipsis copy. Defaults to the locale dictionary.",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

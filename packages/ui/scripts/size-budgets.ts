@@ -22,7 +22,7 @@
  * measured×1.5.
  *
  * Current measurements (gzip bytes, 2026-08-25). Earlier measurement rounds live in git.
- *   .             161628  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty+Frame+Code+DescriptionList+Emoji+Avatar+AlertDialog+DropdownMenu+Switch+ButtonGroup+Collapsible+Accordion+Select+NumberField+Meter+Tabs+ConfirmButton+Table+TextareaField share the barrel; under the standing 171567 ceiling from Avatar recalibration, so recorded, not loosened)
+ *   .             163093  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty+Frame+Code+DescriptionList+Emoji+Avatar+AlertDialog+DropdownMenu+Switch+ButtonGroup+Collapsible+Accordion+Select+NumberField+Meter+Tabs+ConfirmButton+Table+TextareaField+Pagination share the barrel; under the standing 171567 ceiling from Avatar recalibration, so recorded, not loosened)
  *   theme          6133
  *   icons/Check     818  (per-icon export, not the full roster)
  *   button        25214
@@ -69,8 +69,9 @@
  *   confirm-button 25625  (first calibration, ceiling 38438)
  *   table         11814  (first calibration, ceiling 17721)
  *   textarea-field 30976  (first calibration, ceiling 46464)
+ *   pagination    19190  (first calibration, ceiling 28785)
  *   themes.css     2274
- *   styles.css    16843  (Table in-frame utilities exceeded the standing 15860 ceiling from Heading+Text+Popover recalibration, so the shared/aggregate row recalibrates to measured×1.5)
+ *   styles.css    16862  (Pagination utilities; under the standing 25265 ceiling from Table recalibration, so recorded, not loosened)
  */
 import { FLAG_RAW_CEILING_BYTES } from "./flag-payload";
 
@@ -148,6 +149,7 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = [
   { name: "confirm-button", entryFile: "confirm-button.js", ceilingGzip: 38438 },
   { name: "table", entryFile: "table.js", ceilingGzip: 17721 },
   { name: "textarea-field", entryFile: "textarea-field.js", ceilingGzip: 46464 },
+  { name: "pagination", entryFile: "pagination.js", ceilingGzip: 28785 },
 ];
 
 export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = [

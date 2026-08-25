@@ -82,6 +82,7 @@ describe("component page manifest", () => {
       "loader",
       "meter",
       "number-field",
+      "pagination",
       "popover",
       "scroll-area",
       "select",
@@ -252,6 +253,7 @@ describe("component page manifest", () => {
       "error",
       "disabled",
     ]);
+    expect(page("pagination").demos.map((demo) => demo.id)).toEqual(["basic", "ellipsis", "controlled"]);
   });
 
   it("links View source at the implementation on the repo host", () => {
@@ -289,6 +291,7 @@ describe("component page manifest", () => {
       loader: "server",
       meter: "client",
       "number-field": "client",
+      pagination: "client",
       popover: "client",
       "scroll-area": "client",
       select: "client",
@@ -321,6 +324,7 @@ describe("committed api.json", () => {
     expect(resolveComponentPaths("table").apiExportNames).toEqual(["Table", "VerticalTable"]);
     expect(resolveComponentPaths("button").apiExportNames).toEqual(["Button"]);
     expect(resolveComponentPaths("meter").apiExportNames).toEqual(["Meter"]);
+    expect(resolveComponentPaths("pagination").apiExportNames).toEqual(["Pagination"]);
   });
 
   it("never leaves a documented prop without a description or an unresolved type", () => {
@@ -454,9 +458,19 @@ describe("committed api.json", () => {
     expect(api("code").parts.map((part) => part.name)).toEqual(["Code"]);
     expect(api("button").parts.map((part) => part.name)).toEqual(["Button"]);
     expect(api("meter").parts.map((part) => part.name)).toEqual(["Meter"]);
+    expect(api("pagination").parts.map((part) => part.name)).toEqual([
+      "Pagination.Root",
+      "Pagination.Content",
+      "Pagination.Item",
+      "Pagination.Link",
+      "Pagination.Previous",
+      "Pagination.Next",
+      "Pagination.Ellipsis",
+    ]);
     // Unrequested callable objects on those facades stay excluded.
     expect(api("button").parts.map((part) => part.name)).not.toContain("buttonVariants");
     expect(api("meter").parts.map((part) => part.name)).not.toContain("METER_CONSTANTS");
+    expect(api("pagination").parts.map((part) => part.name)).not.toContain("paginationVariants");
     expect(api("table").parts.map((part) => part.name)).toEqual([
       "Table.Root",
       "Table.Header",
