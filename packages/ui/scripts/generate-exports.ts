@@ -13,6 +13,7 @@ import {
 } from "./entries";
 import type { CssExportEntry, DiscoveredEntries, ExportCondition, JsExportEntry } from "./entries";
 import { ARTIFACTS_DIR } from "./tarball";
+import { copyTwemojiNotices } from "./twemoji-notices";
 
 export type { ExportCondition };
 
@@ -307,6 +308,7 @@ export function writePublishManifest(packageRoot: string): void {
 
   writePublishPackageJson(join(packageRoot, "dist/package.json"), published);
   copyFileSync(licensePath, join(packageRoot, "dist/LICENSE"));
+  copyTwemojiNotices(packageRoot, join(packageRoot, "dist"));
   if (existsSync(readmePath)) {
     copyFileSync(readmePath, join(packageRoot, "dist/README.md"));
   }

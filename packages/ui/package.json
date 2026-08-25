@@ -38,6 +38,10 @@
       "types": "./src/dialog.ts",
       "import": "./src/dialog.ts"
     },
+    "./emoji": {
+      "types": "./src/emoji.ts",
+      "import": "./src/emoji.ts"
+    },
     "./empty": {
       "types": "./src/empty.ts",
       "import": "./src/empty.ts"

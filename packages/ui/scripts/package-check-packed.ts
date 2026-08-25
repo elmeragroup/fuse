@@ -16,6 +16,7 @@ import {
 import { buildPublishExportMap, exportBindingsObject } from "./generate-exports";
 import type { ExportBinding, ExportCondition } from "./generate-exports";
 import { emittedDirectiveFailure, packedValueExportFailure, parsePackedEvalJson } from "./package-check-lib";
+import { twemojiNoticeFailure } from "./twemoji-notices";
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -317,6 +318,13 @@ export function checkPackedBootstrap(consumerRoot: string, themeNames: readonly 
   });
   if (systemResult.attributes["data-theme"] !== "light") {
     fail("Packed bootstrap did not resolve disabled system to light");
+  }
+}
+
+export function checkPackedTwemojiNotices(extracted: string): void {
+  const failure = twemojiNoticeFailure(extracted);
+  if (failure !== undefined) {
+    fail(`Packed Twemoji notices: ${failure}`);
   }
 }
 

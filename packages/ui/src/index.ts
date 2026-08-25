@@ -11,6 +11,7 @@ export * from "./card";
 export * from "./code";
 export * from "./description-list";
 export * from "./dialog";
+export * from "./emoji";
 export * from "./empty";
 export * from "./field";
 export * from "./frame";

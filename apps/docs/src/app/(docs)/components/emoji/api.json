@@ -1,0 +1,106 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "emoji",
+  "parts": [
+    {
+      "name": "Emoji.SlightlyFrowningFace",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/emoji/emoji.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 488,
+      "props": [
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Accessible name. When set, the svg is `role=\"img\"` with this `aria-label`. When omitted, the svg is decorative (`aria-hidden` + `focusable=\"false\"`).",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Emoji.SlightlySmilingFace",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/emoji/emoji.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 488,
+      "props": [
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Accessible name. When set, the svg is `role=\"img\"` with this `aria-label`. When omitted, the svg is decorative (`aria-hidden` + `focusable=\"false\"`).",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Emoji.NeutralFace",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/emoji/emoji.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 488,
+      "props": [
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Accessible name. When set, the svg is `role=\"img\"` with this `aria-label`. When omitted, the svg is decorative (`aria-hidden` + `focusable=\"false\"`).",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Emoji.LoudlyCryingFace",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/emoji/emoji.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 488,
+      "props": [
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Accessible name. When set, the svg is `role=\"img\"` with this `aria-label`. When omitted, the svg is decorative (`aria-hidden` + `focusable=\"false\"`).",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Emoji.PartyingFace",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/emoji/emoji.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 488,
+      "props": [
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Accessible name. When set, the svg is `role=\"img\"` with this `aria-label`. When omitted, the svg is decorative (`aria-hidden` + `focusable=\"false\"`).",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

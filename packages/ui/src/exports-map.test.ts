@@ -39,6 +39,7 @@ describe("exports map", () => {
       "code",
       "description-list",
       "dialog",
+      "emoji",
       "empty",
       "field",
       "frame",
@@ -260,6 +261,19 @@ describe("exports map", () => {
     const skeleton = discovered.jsEntries.find((entry) => entry.subpath === "skeleton");
     expect(skeleton?.inRootBarrel).toBe(true);
     expect(skeleton?.runtimeExports).toEqual(["Skeleton"]);
+  });
+
+  it("publishes Emoji and the five named faces from /emoji and the root barrel", () => {
+    const emoji = discovered.jsEntries.find((entry) => entry.subpath === "emoji");
+    expect(emoji?.inRootBarrel).toBe(true);
+    expect(emoji?.runtimeExports).toEqual([
+      "Emoji",
+      "LoudlyCryingFace",
+      "NeutralFace",
+      "PartyingFace",
+      "SlightlyFrowningFace",
+      "SlightlySmilingFace",
+    ]);
   });
 
   it("publishes Empty from /empty and the root barrel with private recipes", () => {

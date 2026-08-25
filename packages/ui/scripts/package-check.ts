@@ -12,6 +12,7 @@ import {
   checkPackedFlags,
   checkPackedPeers,
   checkPackedRuntimeExports,
+  checkPackedTwemojiNotices,
   checkValidateThemeEnv,
   fail,
   importPackedModules,
@@ -84,6 +85,7 @@ try {
   checkPackedRuntimeExports(exported, discovered);
   checkPackedDirectives(extracted, discovered);
   checkPackedFlags(extracted, consumerRoot, exported[importSpecifier("flags")]);
+  checkPackedTwemojiNotices(extracted);
   checkValidateThemeEnv(extracted);
   checkPackedBootstrap(consumerRoot, exported[importSpecifier("theme")]);
 } finally {

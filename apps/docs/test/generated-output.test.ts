@@ -64,6 +64,7 @@ describe("component page manifest", () => {
       "code",
       "description-list",
       "dialog",
+      "emoji",
       "empty",
       "field",
       "frame",
@@ -133,6 +134,7 @@ describe("component page manifest", () => {
     ]);
     expect(page("loader").demos.map((demo) => demo.id)).toEqual(["sizes", "inline"]);
     expect(page("show").demos.map((demo) => demo.id)).toEqual(["basic"]);
+    expect(page("emoji").demos.map((demo) => demo.id)).toEqual(["faces", "labeled", "sizing"]);
     expect(page("code").demos.map((demo) => demo.id)).toEqual(["basic", "scroll"]);
     expect(page("skeleton").demos.map((demo) => demo.id)).toEqual(["basic", "card"]);
     expect(page("empty").demos.map((demo) => demo.id)).toEqual([
@@ -171,6 +173,7 @@ describe("component page manifest", () => {
       code: "server",
       "description-list": "server",
       dialog: "client",
+      emoji: "server",
       empty: "server",
       field: "client",
       frame: "server",

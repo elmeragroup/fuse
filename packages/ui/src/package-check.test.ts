@@ -19,6 +19,20 @@ function sorted(names: readonly string[]): string[] {
   return [...names].toSorted((left, right) => left.localeCompare(right));
 }
 
+describe("Twemoji packed notices", () => {
+  it("wires the package-file copy and packed-artifact assertion", () => {
+    expect(readFileSync(join(packageRoot, "scripts/package-check.ts"), "utf8")).toContain(
+      "checkPackedTwemojiNotices"
+    );
+    expect(readFileSync(join(packageRoot, "scripts/package-check-packed.ts"), "utf8")).toContain(
+      "twemojiNoticeFailure"
+    );
+    expect(readFileSync(join(packageRoot, "scripts/generate-exports.ts"), "utf8")).toContain(
+      "copyTwemojiNotices"
+    );
+  });
+});
+
 describe("packed eval JSON", () => {
   it("returns the parsed value or the standard fail-path message", () => {
     expect(parsePackedEvalJson("not-json", "packed entries")).toEqual({

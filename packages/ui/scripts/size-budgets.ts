@@ -22,7 +22,7 @@
  * measured×1.5.
  *
  * Current measurements (gzip bytes, 2026-08-25). Earlier measurement rounds live in git.
- *   .             104565  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty+Frame+Code+DescriptionList share the barrel; under the standing 113816 ceiling from Popover-only recalibration, so recorded, not loosened)
+ *   .             107474  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty+Frame+Code+DescriptionList+Emoji share the barrel; under the standing 113816 ceiling from Popover-only recalibration, so recorded, not loosened)
  *   theme          6133
  *   icons/Check     818  (per-icon export, not the full roster)
  *   button        25214
@@ -39,6 +39,7 @@
  *   badge         15658
  *   input-group   28007
  *   flags          1388
+ *   emoji          2442  (first calibration, ceiling 3663)
  *   show            148  (first calibration, ceiling 222)
  *   frame          9059  (first calibration, ceiling 13589)
  *   code          11756  (first calibration, ceiling 17634)
@@ -55,7 +56,7 @@
  *   empty         21356  (first calibration, ceiling 32034)
  *   description-list 10713  (first calibration, ceiling 16070)
  *   themes.css     2274
- *   styles.css    13297  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty+Frame+Code+DescriptionList; under the standing 15860 ceiling from Heading+Text+Popover recalibration, so recorded, not loosened)
+ *   styles.css    13304  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty+Frame+Code+DescriptionList+Emoji; under the standing 15860 ceiling from Heading+Text+Popover recalibration, so recorded, not loosened)
  */
 import { FLAG_RAW_CEILING_BYTES } from "./flag-payload";
 
@@ -104,6 +105,7 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = [
   // entry cannot slip through unbudgeted. Replace the 0 with measured × 1.5.
   // plop:js-entry-budget
   { name: "description-list", entryFile: "description-list.js", ceilingGzip: 16070 },
+  { name: "emoji", entryFile: "emoji.js", ceilingGzip: 3663 },
   { name: "show", entryFile: "show.js", ceilingGzip: 222 },
   { name: "loader", entryFile: "loader.js", ceilingGzip: 25122 },
   { name: "empty", entryFile: "empty.js", ceilingGzip: 32034 },

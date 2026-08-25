@@ -56,6 +56,7 @@ describe("size-limit harness", () => {
       "textarea",
       "flags",
       "description-list",
+      "emoji",
       "show",
       "loader",
       "empty",
@@ -76,6 +77,9 @@ describe("size-limit harness", () => {
     expect(CSS_BUDGETS.map((budget) => budget.name)).toEqual(["themes.css", "styles.css"]);
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "flags")?.ceilingGzip).toBe(
       ceilingFromMeasured(1388)
+    );
+    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "emoji")?.ceilingGzip).toBe(
+      ceilingFromMeasured(2442)
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "show")?.ceilingGzip).toBe(
       ceilingFromMeasured(148)
