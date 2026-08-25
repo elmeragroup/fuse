@@ -64,6 +64,7 @@ describe("component page manifest", () => {
       "dialog",
       "empty",
       "field",
+      "frame",
       "heading",
       "input",
       "input-group",
@@ -138,6 +139,7 @@ describe("component page manifest", () => {
       "media-variants",
       "inline-link",
     ]);
+    expect(page("frame").demos.map((demo) => demo.id)).toEqual(["basic", "stacked-panels", "with-table"]);
     expect(page("timeline-list").demos.map((demo) => demo.id)).toEqual(["basic", "rich"]);
     expect(page("sheet").demos.map((demo) => demo.id)).toEqual([
       "basic",
@@ -166,6 +168,7 @@ describe("component page manifest", () => {
       dialog: "client",
       empty: "server",
       field: "client",
+      frame: "server",
       heading: "client",
       input: "client",
       "input-group": "client",
@@ -254,6 +257,14 @@ describe("committed api.json", () => {
       "Empty.Title",
       "Empty.Description",
       "Empty.Content",
+    ]);
+    expect(api("frame").parts.map((part) => part.name)).toEqual([
+      "Frame.Root",
+      "Frame.Panel",
+      "Frame.Header",
+      "Frame.Title",
+      "Frame.Description",
+      "Frame.Footer",
     ]);
   });
 

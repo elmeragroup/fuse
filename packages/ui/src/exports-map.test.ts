@@ -39,6 +39,7 @@ describe("exports map", () => {
       "dialog",
       "empty",
       "field",
+      "frame",
       "heading",
       "input",
       "input-group",
@@ -233,6 +234,12 @@ describe("exports map", () => {
     const loader = discovered.jsEntries.find((entry) => entry.subpath === "loader");
     expect(loader?.inRootBarrel).toBe(true);
     expect(loader?.runtimeExports).toEqual(["Loader", "loaderVariants"]);
+  });
+
+  it("publishes Frame from /frame and the root barrel", () => {
+    const frame = discovered.jsEntries.find((entry) => entry.subpath === "frame");
+    expect(frame?.inRootBarrel).toBe(true);
+    expect(frame?.runtimeExports).toEqual(["Frame"]);
   });
 
   it("publishes Skeleton from /skeleton and the root barrel", () => {

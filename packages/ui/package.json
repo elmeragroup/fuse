@@ -43,6 +43,10 @@
       "import": "./src/flags.ts"
     },
     "./flags/*.svg": "./src/flags/*.svg",
+    "./frame": {
+      "types": "./src/frame.ts",
+      "import": "./src/frame.ts"
+    },
     "./heading": {
       "types": "./src/heading.ts",
       "import": "./src/heading.ts"

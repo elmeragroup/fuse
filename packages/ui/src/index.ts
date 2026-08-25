@@ -11,6 +11,7 @@ export * from "./card";
 export * from "./dialog";
 export * from "./empty";
 export * from "./field";
+export * from "./frame";
 export * from "./heading";
 export * from "./input";
 export * from "./input-group";
