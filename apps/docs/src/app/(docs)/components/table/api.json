@@ -4,7 +4,7 @@
   "parts": [
     {
       "name": "Table.Root",
-      "rsc": "client",
+      "rsc": "server",
       "sourcePath": "packages/ui/src/components/table/table.tsx",
       "forwardedFrom": [
         "@types/react"
@@ -14,7 +14,7 @@
     },
     {
       "name": "Table.Header",
-      "rsc": "client",
+      "rsc": "server",
       "sourcePath": "packages/ui/src/components/table/table.tsx",
       "forwardedFrom": [
         "@types/react"
@@ -24,7 +24,7 @@
     },
     {
       "name": "Table.Body",
-      "rsc": "client",
+      "rsc": "server",
       "sourcePath": "packages/ui/src/components/table/table.tsx",
       "forwardedFrom": [
         "@types/react"
@@ -34,7 +34,7 @@
     },
     {
       "name": "Table.Footer",
-      "rsc": "client",
+      "rsc": "server",
       "sourcePath": "packages/ui/src/components/table/table.tsx",
       "forwardedFrom": [
         "@types/react"
@@ -44,7 +44,7 @@
     },
     {
       "name": "Table.Row",
-      "rsc": "client",
+      "rsc": "server",
       "sourcePath": "packages/ui/src/components/table/table.tsx",
       "forwardedFrom": [
         "@types/react"
@@ -54,7 +54,7 @@
     },
     {
       "name": "Table.Head",
-      "rsc": "client",
+      "rsc": "server",
       "sourcePath": "packages/ui/src/components/table/table.tsx",
       "forwardedFrom": [
         "@types/react"
@@ -64,8 +64,8 @@
     },
     {
       "name": "Table.Cell",
-      "rsc": "client",
-      "sourcePath": "packages/ui/src/components/table/table.tsx",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/table/table-cell.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -74,7 +74,7 @@
     },
     {
       "name": "Table.Caption",
-      "rsc": "client",
+      "rsc": "server",
       "sourcePath": "packages/ui/src/components/table/table.tsx",
       "forwardedFrom": [
         "@types/react"
@@ -84,7 +84,7 @@
     },
     {
       "name": "VerticalTable.Root",
-      "rsc": "client",
+      "rsc": "server",
       "sourcePath": "packages/ui/src/components/table/table.tsx",
       "forwardedFrom": [
         "@types/react"
@@ -105,7 +105,7 @@
     {
       "name": "VerticalTable.Header",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/table/table.tsx",
+      "sourcePath": "packages/ui/src/components/table/vertical-table-header.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -124,7 +124,7 @@
     },
     {
       "name": "VerticalTable.Body",
-      "rsc": "client",
+      "rsc": "server",
       "sourcePath": "packages/ui/src/components/table/table.tsx",
       "forwardedFrom": [
         "@types/react"
@@ -153,7 +153,7 @@
     },
     {
       "name": "VerticalTable.Row",
-      "rsc": "client",
+      "rsc": "server",
       "sourcePath": "packages/ui/src/components/table/table.tsx",
       "forwardedFrom": [
         "@types/react"
@@ -183,7 +183,7 @@
     {
       "name": "VerticalTable.Key",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/table/table.tsx",
+      "sourcePath": "packages/ui/src/components/table/vertical-table-key.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -220,7 +220,7 @@
     },
     {
       "name": "VerticalTable.Value",
-      "rsc": "client",
+      "rsc": "server",
       "sourcePath": "packages/ui/src/components/table/table.tsx",
       "forwardedFrom": [
         "@types/react"

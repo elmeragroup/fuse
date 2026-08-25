@@ -317,7 +317,7 @@ describe("component page manifest", () => {
       skeleton: "server",
       span: "client",
       switch: "client",
-      table: "client",
+      table: "server",
       tabs: "client",
       text: "client",
       "text-field": "client",

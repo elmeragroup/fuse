@@ -1,12 +1,11 @@
-"use client";
-
 import type { ComponentProps, ReactElement, ReactNode } from "react";
-
-import { mergeProps } from "@base-ui/react/merge-props";
-import { useRender } from "@base-ui/react/use-render";
 
 import { cn } from "../../styles/cn";
 import { Skeleton } from "../skeleton/skeleton";
+import { TableCell } from "./table-cell";
+import { verticalTableCellText } from "./vertical-table-cell-text";
+import { VerticalTableHeader } from "./vertical-table-header";
+import { VerticalTableKey } from "./vertical-table-key";
 
 export type TableRootProps = ComponentProps<"table">;
 export type TableHeaderProps = ComponentProps<"thead">;
@@ -33,13 +32,7 @@ export type VerticalTableRootProps = ComponentProps<"div"> & {
   variant?: "default" | "non-bordered-compact";
 };
 
-export type VerticalTableHeaderProps = ComponentProps<"h2"> & {
-  /**
-   * Replaces the host `<h2>` via base-ui `useRender`. Use this for other outline
-   * levels; the level-2 type classes and `data-slot` stay merged onto the replacement.
-   */
-  render?: useRender.RenderProp;
-};
+export type { VerticalTableHeaderProps } from "./vertical-table-header";
 
 export type VerticalTableBodyProps = ComponentProps<"div"> & {
   /**
@@ -66,21 +59,7 @@ export type VerticalTableRowProps = ComponentProps<"tr"> & {
   isHidden?: boolean;
 };
 
-export type VerticalTableKeyProps = ComponentProps<"td"> & {
-  /**
-   * `"truncate"` clips overflowing text; `"default"` wraps (`whitespace-normal`).
-   */
-  text?: "default" | "truncate";
-  /**
-   * Replaces children with a `Skeleton` (`h-4 w-full max-w-24`).
-   */
-  isLoading?: boolean;
-  /**
-   * Replaces the host `<td>` via base-ui `useRender`. Pass `render={<th scope="row" />}`
-   * for row-header semantics; Key classes and `data-slot` stay merged onto the host.
-   */
-  render?: useRender.RenderProp;
-};
+export type { VerticalTableKeyProps } from "./vertical-table-key";
 
 export type VerticalTableValueProps = ComponentProps<"td"> & {
   /**
@@ -94,9 +73,10 @@ export type VerticalTableValueProps = ComponentProps<"td"> & {
 };
 
 /**
- * Client semantic `<table>` composite (table.md §2/§7). Client because
- * `VerticalTable.Header` and `VerticalTable.Key` use base-ui `useRender`; there
- * is no sortable or selection API in v1 (performance.md §RSC classification).
+ * Semantic `<table>` composite (table.md §2/§7). Server compound — it owns no state,
+ * no handlers, and no browser APIs (performance.md §RSC classification). `Header` and
+ * `Key` on `VerticalTable` are client `useRender` islands so other outline levels and
+ * row-header hosts stay possible without flipping this module to a client boundary.
  */
 function TableRoot({ className, ...props }: TableRootProps): ReactElement {
   return (
@@ -179,13 +159,6 @@ function TableHead({ className, ...props }: TableHeadProps): ReactElement {
   );
 }
 
-const TABLE_CELL_CLASSES =
-  "p-2 align-middle leading-none whitespace-nowrap in-data-[slot=frame]:first:p-[calc(--spacing(2.5)-1px)] in-data-[slot=frame]:last:p-[calc(--spacing(2.5)-1px)] has-[[role=checkbox]]:pe-0";
-
-function TableCell({ className, ...props }: TableCellProps): ReactElement {
-  return <td data-slot="table-cell" className={cn(TABLE_CELL_CLASSES, className)} {...props} />;
-}
-
 function TableCaption({ className, ...props }: TableCaptionProps): ReactElement {
   return (
     <caption
@@ -211,22 +184,6 @@ function VerticalTableRoot({
       {children}
     </div>
   );
-}
-
-function VerticalTableHeader({ className, render, ...props }: VerticalTableHeaderProps): ReactElement {
-  return useRender({
-    defaultTagName: "h2",
-    props: {
-      "data-slot": "vertical-table-header",
-      ...mergeProps<"h2">(
-        {
-          className: cn("text-lg leading-snug font-medium font-heading text-inherit", className),
-        },
-        props
-      ),
-    },
-    render,
-  });
 }
 
 function VerticalTableBody({
@@ -288,44 +245,6 @@ function VerticalTableRow({
   );
 }
 
-function verticalTableCellText(text: "default" | "truncate"): string {
-  return text === "truncate" ? "truncate" : "whitespace-normal";
-}
-
-function VerticalTableKey({
-  children,
-  className,
-  text = "truncate",
-  isLoading = false,
-  render,
-  ...props
-}: VerticalTableKeyProps): ReactElement {
-  return useRender({
-    defaultTagName: "td",
-    props: {
-      "data-slot": "table-cell",
-      ...mergeProps<"td">(
-        {
-          className: cn(
-            TABLE_CELL_CLASSES,
-            "text-sm font-medium *:text-sm **:text-sm group-data-[font-weight=bold]/vertical-table-row-item:font-medium group-data-[font-weight=normal]/vertical-table-row-item:font-normal bg-muted/50 py-2",
-            "in-data-[variant=non-bordered-compact]:border-none in-data-[variant=non-bordered-compact]:bg-inherit in-data-[variant=non-bordered-compact]:px-0 in-data-[variant=non-bordered-compact]:py-1",
-            verticalTableCellText(text),
-            className
-          ),
-        },
-        props
-      ),
-      children: isLoading ? (
-        <Skeleton className="h-4 w-full max-w-24 in-data-[variant=non-bordered-compact]:h-lh" />
-      ) : (
-        children
-      ),
-    },
-    render: render ?? <TableCell />,
-  });
-}
-
 function VerticalTableValue({
   children,
   className,
@@ -357,13 +276,10 @@ TableBody.displayName = "Table.Body";
 TableFooter.displayName = "Table.Footer";
 TableRow.displayName = "Table.Row";
 TableHead.displayName = "Table.Head";
-TableCell.displayName = "Table.Cell";
 TableCaption.displayName = "Table.Caption";
 VerticalTableRoot.displayName = "VerticalTable.Root";
-VerticalTableHeader.displayName = "VerticalTable.Header";
 VerticalTableBody.displayName = "VerticalTable.Body";
 VerticalTableRow.displayName = "VerticalTable.Row";
-VerticalTableKey.displayName = "VerticalTable.Key";
 VerticalTableValue.displayName = "VerticalTable.Value";
 
 export const Table = {

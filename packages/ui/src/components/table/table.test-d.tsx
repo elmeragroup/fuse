@@ -51,7 +51,10 @@ test("public API exports the namespaces and VerticalTableItem — never RAC or f
   expectTypeOf(TableModule).not.toHaveProperty("tableVariants");
   expectTypeOf(TableModule).not.toHaveProperty("TableHeader");
   expectTypeOf(TableModule).not.toHaveProperty("TableBody");
+  expectTypeOf(TableModule).not.toHaveProperty("TableCell");
   expectTypeOf(TableModule).not.toHaveProperty("TableVerticalBodyItem");
+  expectTypeOf(TableModule).not.toHaveProperty("VerticalTableHeader");
+  expectTypeOf(TableModule).not.toHaveProperty("VerticalTableKey");
   expectTypeOf(TableModule).not.toHaveProperty("Heading");
   expectTypeOf(Table).not.toHaveProperty("as");
   expectTypeOf(VerticalTable).not.toHaveProperty("as");

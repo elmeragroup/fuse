@@ -90,7 +90,7 @@ Normative chapter for `@elmeragroup/ui`. Sources: [A11y & performance guideline 
   | skeleton            | server                                                                                                      |
   | span                | client (`useRender` polymorphism)                                                                           |
   | switch              | client                                                                                                      |
-  | table               | client (`VerticalTable.Header` uses `useRender`; no sortable/selection API is specified)                    |
+  | table               | server (`VerticalTable.Header` and `VerticalTable.Key` are client `useRender` islands)                      |
   | tabs                | client                                                                                                      |
   | text                | client (`useRender` polymorphism)                                                                           |
   | text-field          | client                                                                                                      |

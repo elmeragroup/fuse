@@ -4,7 +4,7 @@
 
 - **Canonical name**: `Table` — namespace compound: `Table.Root`, `Table.Header`, `Table.Body`, `Table.Footer`, `Table.Row`, `Table.Head`, `Table.Cell`, `Table.Caption`. Companion namespace `VerticalTable`: `VerticalTable.Root`, `VerticalTable.Header`, `VerticalTable.Body`, `VerticalTable.Row`, `VerticalTable.Key`, `VerticalTable.Value`.
 - **Export path**: `@elmeragroup/ui/table` (also re-exported from `@elmeragroup/ui`)
-- **RSC**: client — `VerticalTable.Header` and `VerticalTable.Key` use base-ui `useRender`; no sortable or selection API is part of v1
+- **RSC**: server — `VerticalTable.Header` and `VerticalTable.Key` are client `useRender` islands so the rest stay server-capable; no sortable or selection API is part of v1
 - **Tier**: plain-element composite (no base-ui state primitive; semantic `<table>` markup)
 - **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/table.tsx`
 
@@ -126,6 +126,7 @@ This chain is the family's hardest port and is documented faithfully — ported 
 4. **Skeleton override token fix (ruled)** — the ref's compact-variant skeleton override `in-data-[variant=non-bordered-compact]:bg-neutral-90` uses a raw palette class (forbidden by `no-primitive-colors`). Replaced with the muted family: `bg-muted` — which equals `Skeleton`'s own base fill, so the color override is dropped as redundant and only the compact `h-lh` sizing override remains.
 5. **`dark:` dropped (ruled)** — `Table.Body`'s single `dark:before:shadow-[0_-1px_--theme(--color-white/8%)]` is removed per conventions (`no-tailwind-dark-variant`); consequently its `not-dark:` guard on `bg-clip-padding` becomes unconditional `bg-clip-padding`.
 6. **KEPT (no-refactor zones)**: the full in-frame selector chain (§6), the `data-[state=selected]` consumer contract, the `--theme()` shadow literals, and the `calc(--spacing(2.5)-1px)` / `calc(var(--radius-xl)-1px)` arithmetic — all verbatim.
+7. **FIX (ruled): Header/Key are client `useRender` islands** — `useRender` on `VerticalTable.Header` and `VerticalTable.Key` must not flip the compound (or `Table.*`) to a client boundary. Those two parts live in `"use client"` modules; the rest of the namespace stays server-capable (performance.md §3).
 
 ## 9 Test requirements
 
