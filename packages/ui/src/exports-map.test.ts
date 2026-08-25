@@ -33,6 +33,7 @@ describe("exports map", () => {
       "icons",
       "illustrations",
       "flags",
+      "avatar",
       "badge",
       "button",
       "card",
@@ -274,6 +275,12 @@ describe("exports map", () => {
       "SlightlyFrowningFace",
       "SlightlySmilingFace",
     ]);
+  });
+
+  it("publishes Avatar from /avatar and the root barrel", () => {
+    const avatar = discovered.jsEntries.find((entry) => entry.subpath === "avatar");
+    expect(avatar?.inRootBarrel).toBe(true);
+    expect(avatar?.runtimeExports).toEqual(["Avatar"]);
   });
 
   it("publishes Empty from /empty and the root barrel with private recipes", () => {

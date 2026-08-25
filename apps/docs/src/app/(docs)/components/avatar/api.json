@@ -1,0 +1,39 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "avatar",
+  "parts": [
+    {
+      "name": "Avatar.Root",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/avatar/avatar.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": []
+    },
+    {
+      "name": "Avatar.Image",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/avatar/avatar.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 291,
+      "props": []
+    },
+    {
+      "name": "Avatar.Fallback",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/avatar/avatar.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 279,
+      "props": []
+    }
+  ]
+}

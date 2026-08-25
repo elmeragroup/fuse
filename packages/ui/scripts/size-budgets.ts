@@ -22,7 +22,7 @@
  * measured×1.5.
  *
  * Current measurements (gzip bytes, 2026-08-25). Earlier measurement rounds live in git.
- *   .             107474  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty+Frame+Code+DescriptionList+Emoji share the barrel; under the standing 113816 ceiling from Popover-only recalibration, so recorded, not loosened)
+ *   .             114378  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty+Frame+Code+DescriptionList+Emoji+Avatar share the barrel; exceeded the standing 113816 ceiling from Popover-only recalibration, so recalibrated to measured×1.5)
  *   theme          6133
  *   icons/Check     818  (per-icon export, not the full roster)
  *   button        25214
@@ -40,6 +40,7 @@
  *   input-group   28007
  *   flags          1388
  *   emoji          2442  (first calibration, ceiling 3663)
+ *   avatar        12467  (first calibration, ceiling 18701)
  *   show            148  (first calibration, ceiling 222)
  *   frame          9059  (first calibration, ceiling 13589)
  *   code          11756  (first calibration, ceiling 17634)
@@ -56,7 +57,7 @@
  *   empty         21356  (first calibration, ceiling 32034)
  *   description-list 10713  (first calibration, ceiling 16070)
  *   themes.css     2274
- *   styles.css    13304  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty+Frame+Code+DescriptionList+Emoji; under the standing 15860 ceiling from Heading+Text+Popover recalibration, so recorded, not loosened)
+ *   styles.css    13340  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty+Frame+Code+DescriptionList+Emoji+Avatar; under the standing 15860 ceiling from Heading+Text+Popover recalibration, so recorded, not loosened)
  */
 import { FLAG_RAW_CEILING_BYTES } from "./flag-payload";
 
@@ -85,7 +86,7 @@ export type FlagRawBudget = {
 };
 
 export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = [
-  { name: ".", entryFile: "index.js", ceilingGzip: 113816 },
+  { name: ".", entryFile: "index.js", ceilingGzip: 171567 },
   { name: "theme", entryFile: "theme.js", ceilingGzip: 9194 },
   { name: "badge", entryFile: "badge.js", ceilingGzip: 23493 },
   { name: "button", entryFile: "button.js", ceilingGzip: 37821 },
@@ -106,6 +107,7 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = [
   // plop:js-entry-budget
   { name: "description-list", entryFile: "description-list.js", ceilingGzip: 16070 },
   { name: "emoji", entryFile: "emoji.js", ceilingGzip: 3663 },
+  { name: "avatar", entryFile: "avatar.js", ceilingGzip: 18701 },
   { name: "show", entryFile: "show.js", ceilingGzip: 222 },
   { name: "loader", entryFile: "loader.js", ceilingGzip: 25122 },
   { name: "empty", entryFile: "empty.js", ceilingGzip: 32034 },

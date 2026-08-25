@@ -12,6 +12,10 @@
       "types": "./src/index.ts",
       "import": "./src/index.ts"
     },
+    "./avatar": {
+      "types": "./src/avatar.ts",
+      "import": "./src/avatar.ts"
+    },
     "./badge": {
       "types": "./src/badge.ts",
       "import": "./src/badge.ts"

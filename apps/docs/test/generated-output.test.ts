@@ -58,6 +58,7 @@ function endpoint(slug: string): string {
 describe("component page manifest", () => {
   it("covers every authored component page", () => {
     expect(COMPONENT_PAGES.map((entry) => entry.slug)).toEqual([
+      "avatar",
       "badge",
       "button",
       "card",
@@ -132,6 +133,7 @@ describe("component page manifest", () => {
       "visually-disabled",
       "predictive-intent",
     ]);
+    expect(page("avatar").demos.map((demo) => demo.id)).toEqual(["basic", "fallback", "sizes", "group"]);
     expect(page("loader").demos.map((demo) => demo.id)).toEqual(["sizes", "inline"]);
     expect(page("show").demos.map((demo) => demo.id)).toEqual(["basic"]);
     expect(page("emoji").demos.map((demo) => demo.id)).toEqual(["faces", "labeled", "sizing"]);
@@ -167,6 +169,7 @@ describe("component page manifest", () => {
     // The §3 classification table is the audit source; a page's status is read off its
     // declaring module, so this is where a stray directive would show up.
     const expected = {
+      avatar: "client",
       badge: "server",
       button: "client",
       card: "server",
@@ -258,6 +261,11 @@ describe("committed api.json", () => {
       "Tooltip.Content",
     ]);
     expect(api("scroll-area").parts.map((part) => part.name)).toEqual(["ScrollArea.Root", "ScrollArea.Bar"]);
+    expect(api("avatar").parts.map((part) => part.name)).toEqual([
+      "Avatar.Root",
+      "Avatar.Image",
+      "Avatar.Fallback",
+    ]);
     expect(api("empty").parts.map((part) => part.name)).toEqual([
       "Empty.Root",
       "Empty.Header",

@@ -57,6 +57,7 @@ describe("size-limit harness", () => {
       "flags",
       "description-list",
       "emoji",
+      "avatar",
       "show",
       "loader",
       "empty",
@@ -80,6 +81,9 @@ describe("size-limit harness", () => {
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "emoji")?.ceilingGzip).toBe(
       ceilingFromMeasured(2442)
+    );
+    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "avatar")?.ceilingGzip).toBe(
+      ceilingFromMeasured(12467)
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "show")?.ceilingGzip).toBe(
       ceilingFromMeasured(148)
