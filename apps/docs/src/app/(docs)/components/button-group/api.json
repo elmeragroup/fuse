@@ -1,0 +1,58 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "button-group",
+  "parts": [
+    {
+      "name": "ButtonGroup.Root",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/button-group/button-group.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": [
+        {
+          "name": "orientation",
+          "origin": "recipe-axis",
+          "type": "\"horizontal\" | \"vertical\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"horizontal\"",
+          "description": "",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "ButtonGroup.Separator",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/button-group/button-group.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": [
+        {
+          "name": "orientation",
+          "origin": "declared",
+          "type": "Orientation | undefined",
+          "shortType": null,
+          "defaultValue": "\"vertical\"",
+          "description": "Hairline axis. Flipped from the canonical Separator: a horizontal group needs a vertical hairline.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "ButtonGroup.Text",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/button-group/button-group.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 281,
+      "props": []
+    }
+  ]
+}

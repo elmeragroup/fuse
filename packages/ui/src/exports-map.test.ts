@@ -37,6 +37,7 @@ describe("exports map", () => {
       "avatar",
       "badge",
       "button",
+      "button-group",
       "card",
       "code",
       "description-list",
@@ -199,6 +200,12 @@ describe("exports map", () => {
     const button = discovered.jsEntries.find((entry) => entry.subpath === "button");
     expect(button?.inRootBarrel).toBe(true);
     expect(button?.runtimeExports).toEqual(["Button", "buttonVariants"]);
+  });
+
+  it("publishes ButtonGroup and the public buttonGroupVariants recipe from /button-group and the root barrel", () => {
+    const buttonGroup = discovered.jsEntries.find((entry) => entry.subpath === "button-group");
+    expect(buttonGroup?.inRootBarrel).toBe(true);
+    expect(buttonGroup?.runtimeExports).toEqual(["ButtonGroup", "buttonGroupVariants"]);
   });
 
   it("publishes ScrollArea from /scroll-area and the root barrel", () => {

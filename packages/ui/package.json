@@ -28,6 +28,10 @@
       "types": "./src/button.ts",
       "import": "./src/button.ts"
     },
+    "./button-group": {
+      "types": "./src/button-group.ts",
+      "import": "./src/button-group.ts"
+    },
     "./card": {
       "types": "./src/card.ts",
       "import": "./src/card.ts"

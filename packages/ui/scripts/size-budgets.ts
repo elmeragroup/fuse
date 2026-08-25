@@ -22,7 +22,7 @@
  * measured×1.5.
  *
  * Current measurements (gzip bytes, 2026-08-25). Earlier measurement rounds live in git.
- *   .             130288  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty+Frame+Code+DescriptionList+Emoji+Avatar+AlertDialog+DropdownMenu+Switch share the barrel; under the standing 171567 ceiling from Avatar recalibration, so recorded, not loosened)
+ *   .             130733  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty+Frame+Code+DescriptionList+Emoji+Avatar+AlertDialog+DropdownMenu+Switch+ButtonGroup share the barrel; under the standing 171567 ceiling from Avatar recalibration, so recorded, not loosened)
  *   theme          6133
  *   icons/Check     818  (per-icon export, not the full roster)
  *   button        25214
@@ -39,6 +39,7 @@
  *   badge         15658
  *   input-group   28007
  *   flags          1388
+ *   button-group  17587  (first calibration, ceiling 26381)
  *   emoji          2442  (first calibration, ceiling 3663)
  *   avatar        12467  (first calibration, ceiling 18701)
  *   show            148  (first calibration, ceiling 222)
@@ -60,7 +61,7 @@
  *   description-list 10713  (first calibration, ceiling 16070)
  *   alert-dialog  47578  (first calibration, ceiling 71367)
  *   themes.css     2274
- *   styles.css    14128  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty+Frame+Code+DescriptionList+Emoji+Avatar+AlertDialog+DropdownMenu+Switch; under the standing 15860 ceiling from Heading+Text+Popover recalibration, so recorded, not loosened)
+ *   styles.css    14517  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty+Frame+Code+DescriptionList+Emoji+Avatar+AlertDialog+DropdownMenu+Switch+ButtonGroup; under the standing 15860 ceiling from Heading+Text+Popover recalibration, so recorded, not loosened)
  */
 import { FLAG_RAW_CEILING_BYTES } from "./flag-payload";
 
@@ -109,6 +110,7 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = [
   // entry cannot slip through unbudgeted. Replace the 0 with measured × 1.5.
   // plop:js-entry-budget
   { name: "switch", entryFile: "switch.js", ceilingGzip: 39825 },
+  { name: "button-group", entryFile: "button-group.js", ceilingGzip: 26381 },
   { name: "description-list", entryFile: "description-list.js", ceilingGzip: 16070 },
   { name: "emoji", entryFile: "emoji.js", ceilingGzip: 3663 },
   { name: "avatar", entryFile: "avatar.js", ceilingGzip: 18701 },

@@ -62,6 +62,7 @@ describe("component page manifest", () => {
       "avatar",
       "badge",
       "button",
+      "button-group",
       "card",
       "code",
       "description-list",
@@ -136,6 +137,13 @@ describe("component page manifest", () => {
       "visually-disabled",
       "predictive-intent",
     ]);
+    expect(page("button-group").demos.map((demo) => demo.id)).toEqual([
+      "basic",
+      "vertical",
+      "split-button",
+      "text",
+      "nested",
+    ]);
     expect(page("avatar").demos.map((demo) => demo.id)).toEqual(["basic", "fallback", "sizes", "group"]);
     expect(page("loader").demos.map((demo) => demo.id)).toEqual(["sizes", "inline"]);
     expect(page("show").demos.map((demo) => demo.id)).toEqual(["basic"]);
@@ -197,6 +205,7 @@ describe("component page manifest", () => {
       avatar: "client",
       badge: "server",
       button: "client",
+      "button-group": "client",
       card: "server",
       code: "server",
       "description-list": "server",
