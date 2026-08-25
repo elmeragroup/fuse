@@ -26,6 +26,7 @@ export * from "./input";
 export * from "./input-group";
 export * from "./item";
 export * from "./loader";
+export * from "./meter";
 export * from "./number-field";
 export * from "./popover";
 export * from "./scroll-area";

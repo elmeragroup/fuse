@@ -1,0 +1,99 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "meter",
+  "parts": [
+    {
+      "name": "Meter",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/meter/meter.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 279,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes, merged onto the root via `cn`.",
+          "required": false
+        },
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Visible label, rendered as `Meter.Label`.",
+          "required": false
+        },
+        {
+          "name": "maxValue",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Upper bound, forwarded as base-ui `max`. Also drives `EXCEEDED_MAX_VALUE` when provided.",
+          "required": false
+        },
+        {
+          "name": "minValue",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Lower bound, forwarded as base-ui `min`.",
+          "required": false
+        },
+        {
+          "name": "mode",
+          "origin": "declared",
+          "type": "MeterMode | undefined",
+          "shortType": null,
+          "defaultValue": "\"default\"",
+          "description": "Color and icon semantics. `\"inverted\"` is a mode name, not a Tailwind variant.",
+          "required": false
+        },
+        {
+          "name": "successLabel",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Accessible name for the CheckCircle icon. Defaults to the locale dictionary.",
+          "required": false
+        },
+        {
+          "name": "value",
+          "origin": "declared",
+          "type": "number",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Current value.",
+          "required": true
+        },
+        {
+          "name": "valueLabel",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Replaces the auto-formatted `Meter.Value`.",
+          "required": false
+        },
+        {
+          "name": "warningLabel",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Accessible name for the Warning icon. Defaults to the locale dictionary.",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

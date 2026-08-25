@@ -54,6 +54,7 @@ describe("exports map", () => {
       "input-group",
       "item",
       "loader",
+      "meter",
       "number-field",
       "popover",
       "scroll-area",
@@ -409,6 +410,12 @@ describe("exports map", () => {
     const numberField = discovered.jsEntries.find((entry) => entry.subpath === "number-field");
     expect(numberField?.inRootBarrel).toBe(true);
     expect(numberField?.runtimeExports).toEqual(["NumberField"]);
+  });
+
+  it("publishes Meter and METER_CONSTANTS from /meter and the root barrel", () => {
+    const meter = discovered.jsEntries.find((entry) => entry.subpath === "meter");
+    expect(meter?.inRootBarrel).toBe(true);
+    expect(meter?.runtimeExports).toEqual(["Meter", "METER_CONSTANTS"]);
   });
 
   it("keeps /icons as a subpath-only entry with the curated roster", () => {

@@ -79,6 +79,7 @@ describe("component page manifest", () => {
       "input-group",
       "item",
       "loader",
+      "meter",
       "number-field",
       "popover",
       "scroll-area",
@@ -219,6 +220,13 @@ describe("component page manifest", () => {
       "states",
       "uncontrolled",
     ]);
+    expect(page("meter").demos.map((demo) => demo.id)).toEqual([
+      "basic",
+      "modes",
+      "value-label",
+      "range",
+      "neutral",
+    ]);
   });
 
   it("links View source at the implementation on the repo host", () => {
@@ -253,6 +261,7 @@ describe("component page manifest", () => {
       "input-group": "client",
       item: "client",
       loader: "server",
+      meter: "client",
       "number-field": "client",
       popover: "client",
       "scroll-area": "client",
