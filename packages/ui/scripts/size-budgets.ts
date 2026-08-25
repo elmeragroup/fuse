@@ -22,7 +22,7 @@
  * measured×1.5.
  *
  * Current measurements (gzip bytes, 2026-08-25). Earlier measurement rounds live in git.
- *   .             104280  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty+Frame+Code share the barrel; under the standing 113816 ceiling from Popover-only recalibration, so recorded, not loosened)
+ *   .             104565  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty+Frame+Code+DescriptionList share the barrel; under the standing 113816 ceiling from Popover-only recalibration, so recorded, not loosened)
  *   theme          6133
  *   icons/Check     818  (per-icon export, not the full roster)
  *   button        25214
@@ -53,8 +53,9 @@
  *   text-field    33475  (first calibration, ceiling 50193)
  *   loader        16748  (first calibration, ceiling 25122)
  *   empty         21356  (first calibration, ceiling 32034)
+ *   description-list 10713  (first calibration, ceiling 16070)
  *   themes.css     2274
- *   styles.css    13140  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty+Frame+Code; under the standing 15860 ceiling from Heading+Text+Popover recalibration, so recorded, not loosened)
+ *   styles.css    13297  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty+Frame+Code+DescriptionList; under the standing 15860 ceiling from Heading+Text+Popover recalibration, so recorded, not loosened)
  */
 import { FLAG_RAW_CEILING_BYTES } from "./flag-payload";
 
@@ -102,6 +103,7 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = [
   // `pnpm gen component` appends a 0-ceiling row below this marker, so a brand-new packed
   // entry cannot slip through unbudgeted. Replace the 0 with measured × 1.5.
   // plop:js-entry-budget
+  { name: "description-list", entryFile: "description-list.js", ceilingGzip: 16070 },
   { name: "show", entryFile: "show.js", ceilingGzip: 222 },
   { name: "loader", entryFile: "loader.js", ceilingGzip: 25122 },
   { name: "empty", entryFile: "empty.js", ceilingGzip: 32034 },

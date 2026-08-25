@@ -30,6 +30,10 @@
     },
     "./css": "./src/styles/ui.css",
     "./demo-stage-comfortable.css": "./dist/demo-stage-comfortable.css",
+    "./description-list": {
+      "types": "./src/description-list.ts",
+      "import": "./src/description-list.ts"
+    },
     "./dialog": {
       "types": "./src/dialog.ts",
       "import": "./src/dialog.ts"

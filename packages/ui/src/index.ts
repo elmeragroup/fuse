@@ -9,6 +9,7 @@ export * from "./badge";
 export * from "./button";
 export * from "./card";
 export * from "./code";
+export * from "./description-list";
 export * from "./dialog";
 export * from "./empty";
 export * from "./field";

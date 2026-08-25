@@ -55,6 +55,7 @@ describe("size-limit harness", () => {
       "input-group",
       "textarea",
       "flags",
+      "description-list",
       "show",
       "loader",
       "empty",
@@ -120,6 +121,9 @@ describe("size-limit harness", () => {
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "code")?.ceilingGzip).toBe(
       ceilingFromMeasured(11756)
+    );
+    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "description-list")?.ceilingGzip).toBe(
+      ceilingFromMeasured(10713)
     );
     // styles.css recalibrated 2026-08-25: Heading+Text+Popover utilities exceeded 10469.
     expect(CSS_BUDGETS.find((budget) => budget.name === "styles.css")?.ceilingGzip).toBe(
