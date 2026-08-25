@@ -40,8 +40,10 @@ export type FlagPayload = {
 
 export function flagPayload(flagsDir: string, files: readonly string[]): FlagPayload {
   let bytes = 0;
+  // Packed byte length is the inode size. Do not read SVG bodies here: 249 full
+  // reads contend with turbo --force pack/hash/test IO and trip the 5s timeout.
   for (const file of files) {
-    bytes += readFileSync(join(flagsDir, file)).byteLength;
+    bytes += statSync(join(flagsDir, file)).size;
   }
   return { count: files.length, bytes };
 }

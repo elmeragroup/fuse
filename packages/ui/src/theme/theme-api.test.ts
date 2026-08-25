@@ -451,6 +451,7 @@ describe("ThemeProvider color-scheme store seam", () => {
 });
 
 describe("source contract", () => {
+  // Timeout: walking and reading src/ is slow under full-gate parallel load.
   it("does not ship userAgent, UserAgentParserResult, or @elmeragroup/lib", () => {
     const files = walkSourceFiles(srcRoot).filter((file) => !file.includes(".test"));
     for (const file of files) {
@@ -459,8 +460,9 @@ describe("source contract", () => {
       expect(text, file).not.toMatch(/\bUserAgentParserResult\b/);
       expect(text, file).not.toMatch(/@elmeragroup\/lib/);
     }
-  });
+  }, 30_000);
 
+  // Timeout: walking and reading src/ is slow under full-gate parallel load.
   it("reads process.env only inside validateTheme", () => {
     const hits = walkSourceFiles(srcRoot).filter((file) => {
       if (file.includes(".test.")) {
@@ -470,5 +472,5 @@ describe("source contract", () => {
     });
     expect(hits).toHaveLength(1);
     expect(hits[0]).toMatch(/validate-theme\.ts$/);
-  });
+  }, 30_000);
 });

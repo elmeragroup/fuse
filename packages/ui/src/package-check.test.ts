@@ -62,6 +62,7 @@ describe("packed value-export gate", () => {
     ).toBeUndefined();
   });
 
+  // Timeout: discoverEntries walks the published import graph; slow under full-gate parallel load.
   it("uses the parsed theme facade and asserts icons parse equals the roster", () => {
     const themeFacade = parseFacadeValueExports(
       "src/theme.ts",
@@ -79,7 +80,7 @@ describe("packed value-export gate", () => {
     );
     const icons = discovered.jsEntries.find((entry) => entry.subpath === "icons");
     expect(sorted(icons?.runtimeExports ?? [])).toEqual(sorted(iconsFacade));
-  });
+  }, 30_000);
 });
 
 describe("emitted-directive walker", () => {
@@ -118,10 +119,11 @@ describe("emitted-directive walker", () => {
     );
   });
 
+  // Timeout: discoverEntries walks the published import graph; slow under full-gate parallel load.
   it("scopes the walker to discoverEntries().sourceFiles, not all of src", () => {
     const discovered = discoverEntries(packageRoot);
     // Test-only fixture: reachable from no entry (Dialog made the hook itself reachable).
     expect(discovered.sourceFiles).not.toContain("src/hooks/intl-fixture/index.ts");
     expect(discovered.sourceFiles).toContain("src/theme.ts");
-  });
+  }, 30_000);
 });

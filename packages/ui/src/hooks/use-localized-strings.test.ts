@@ -55,6 +55,7 @@ describe("useLocalizedStrings", () => {
     expect(source.trimStart().startsWith('"use client"')).toBe(true);
   });
 
+  // Timeout: discoverEntries walks the published import graph; slow under full-gate parallel load.
   it("does not add a public export for the hook", () => {
     // Source-grep: absence from the barrel has no consumer-behavior probe.
     const discovered = discoverEntries(packageRoot);
@@ -63,5 +64,5 @@ describe("useLocalizedStrings", () => {
     expect(discovered.jsEntries.map((entry) => entry.subpath)).not.toContain("hooks");
     const source = readFileSync(join(packageRoot, "src/index.ts"), "utf8");
     expect(source).not.toContain("use-localized-strings");
-  });
+  }, 30_000);
 });

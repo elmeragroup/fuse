@@ -39,6 +39,7 @@ describe("flag assets", () => {
     expect(flagAssets.FI).toContain("FI.svg");
   });
 
+  // Timeout: discoverEntries walks the published import graph; slow under full-gate parallel load.
   it("keeps /flags off the root barrel and uses local URL hrefs", () => {
     const discovered = discoverEntries(packageRoot);
     const flags = discovered.jsEntries.find((entry) => entry.subpath === "flags");
@@ -52,7 +53,7 @@ describe("flag assets", () => {
       'new URL("./NO.svg", import.meta.url).href'
     );
     expect(readFileSync(join(packageRoot, "src/flags/manifest.ts"), "utf8")).not.toMatch(/https?:\/\//);
-  });
+  }, 30_000);
 
   it("has a libphonenumber gap of exactly AC, BQ, EH, and TA", () => {
     const assets = new Set(Object.keys(flagAssets));
