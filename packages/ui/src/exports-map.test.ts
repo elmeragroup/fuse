@@ -46,6 +46,7 @@ describe("exports map", () => {
       "scroll-area",
       "separator",
       "sheet",
+      "show",
       "skeleton",
       "span",
       "text",
@@ -218,6 +219,12 @@ describe("exports map", () => {
     const badge = discovered.jsEntries.find((entry) => entry.subpath === "badge");
     expect(badge?.inRootBarrel).toBe(true);
     expect(badge?.runtimeExports).toEqual(["Badge", "badgeVariants"]);
+  });
+
+  it("publishes Show from /show and the root barrel", () => {
+    const show = discovered.jsEntries.find((entry) => entry.subpath === "show");
+    expect(show?.inRootBarrel).toBe(true);
+    expect(show?.runtimeExports).toEqual(["Show"]);
   });
 
   it("publishes Skeleton from /skeleton and the root barrel", () => {

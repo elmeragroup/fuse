@@ -23,6 +23,7 @@ const HARNESSED_SUITES = [
   "textarea",
   "text-field",
   "toggle",
+  "show",
   "skeleton",
   "timeline-list",
   "sheet",

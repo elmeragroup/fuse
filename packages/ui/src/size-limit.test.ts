@@ -55,6 +55,7 @@ describe("size-limit harness", () => {
       "input-group",
       "textarea",
       "flags",
+      "show",
       "span",
       "timeline-list",
       "sheet",
@@ -70,6 +71,9 @@ describe("size-limit harness", () => {
     expect(CSS_BUDGETS.map((budget) => budget.name)).toEqual(["themes.css", "styles.css"]);
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "flags")?.ceilingGzip).toBe(
       ceilingFromMeasured(1388)
+    );
+    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "show")?.ceilingGzip).toBe(
+      ceilingFromMeasured(148)
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "span")?.ceilingGzip).toBe(
       ceilingFromMeasured(17324)

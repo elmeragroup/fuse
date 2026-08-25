@@ -22,7 +22,7 @@
  * measured×1.5.
  *
  * Current measurements (gzip bytes, 2026-08-25). Earlier measurement rounds live in git.
- *   .             100140  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip share the barrel; under the standing 113816 ceiling from Popover-only recalibration, so recorded, not loosened)
+ *   .             100067  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show share the barrel; under the standing 113816 ceiling from Popover-only recalibration, so recorded, not loosened)
  *   theme          6138
  *   icons/Check     818  (per-icon export, not the full roster)
  *   button        25214
@@ -39,6 +39,7 @@
  *   badge         15658
  *   input-group   28007
  *   flags          1388
+ *   show            148  (first calibration, ceiling 222)
  *   tooltip       51148  (first calibration, ceiling 76722)
  *   heading       17329
  *   text          17315
@@ -49,7 +50,7 @@
  *   sheet         57208  (first calibration, ceiling 85812)
  *   text-field    33462  (first calibration, ceiling 50193)
  *   themes.css     2274
- *   styles.css    12633  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip; under the standing 15860 ceiling from Heading+Text+Popover recalibration, so recorded, not loosened)
+ *   styles.css    12633  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show; under the standing 15860 ceiling from Heading+Text+Popover recalibration, so recorded, not loosened)
  */
 import { FLAG_RAW_CEILING_BYTES } from "./flag-payload";
 
@@ -97,6 +98,7 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = [
   // `pnpm gen component` appends a 0-ceiling row below this marker, so a brand-new packed
   // entry cannot slip through unbudgeted. Replace the 0 with measured × 1.5.
   // plop:js-entry-budget
+  { name: "show", entryFile: "show.js", ceilingGzip: 222 },
   { name: "span", entryFile: "span.js", ceilingGzip: 25986 },
   { name: "timeline-list", entryFile: "timeline-list.js", ceilingGzip: 35333 },
   { name: "sheet", entryFile: "sheet.js", ceilingGzip: 85812 },

@@ -79,6 +79,10 @@
       "types": "./src/sheet.ts",
       "import": "./src/sheet.ts"
     },
+    "./show": {
+      "types": "./src/show.ts",
+      "import": "./src/show.ts"
+    },
     "./skeleton": {
       "types": "./src/skeleton.ts",
       "import": "./src/skeleton.ts"
