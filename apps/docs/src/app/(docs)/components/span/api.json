@@ -1,0 +1,80 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "span",
+  "parts": [
+    {
+      "name": "Span",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/span/span.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": [
+        {
+          "name": "align",
+          "origin": "recipe-axis",
+          "type": "\"center\" | \"justify\" | \"left\" | \"right\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        },
+        {
+          "name": "leading",
+          "origin": "recipe-axis",
+          "type": "\"loose\" | \"none\" | \"relaxed\" | \"snug\" | \"tight\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": "declared",
+          "type": "RenderProp<Record<string, unknown>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Replaces the host element via base-ui `useRender`. The host stays a `span` when omitted — the forced-span identity is kept.",
+          "required": false
+        },
+        {
+          "name": "size",
+          "origin": "recipe-axis",
+          "type": "\"2xl\" | \"default\" | \"lg\" | \"sm\" | \"xl\" | \"xs\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        },
+        {
+          "name": "truncate",
+          "origin": "recipe-axis",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "recipe-axis",
+          "type": "\"brand\" | \"default\" | \"destructive\" | \"foreground\" | \"inherit\" | \"muted\" | \"primary\" | \"secondary\" | \"success\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        },
+        {
+          "name": "weight",
+          "origin": "recipe-axis",
+          "type": "\"bold\" | \"medium\" | \"normal\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

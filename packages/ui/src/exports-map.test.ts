@@ -46,6 +46,7 @@ describe("exports map", () => {
       "scroll-area",
       "separator",
       "skeleton",
+      "span",
       "text",
       "textarea",
       "toggle",
@@ -255,6 +256,12 @@ describe("exports map", () => {
     const text = discovered.jsEntries.find((entry) => entry.subpath === "text");
     expect(text?.inRootBarrel).toBe(true);
     expect(text?.runtimeExports).toEqual(["Text", "textVariants"]);
+  });
+
+  it("publishes Span and the public spanVariants recipe from /span and the root barrel", () => {
+    const span = discovered.jsEntries.find((entry) => entry.subpath === "span");
+    expect(span?.inRootBarrel).toBe(true);
+    expect(span?.runtimeExports).toEqual(["Span", "spanVariants"]);
   });
 
   it("keeps /icons as a subpath-only entry with the curated roster", () => {

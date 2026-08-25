@@ -79,6 +79,10 @@
       "types": "./src/skeleton.ts",
       "import": "./src/skeleton.ts"
     },
+    "./span": {
+      "types": "./src/span.ts",
+      "import": "./src/span.ts"
+    },
     "./styles.css": "./dist/styles.css",
     "./text": {
       "types": "./src/text.ts",

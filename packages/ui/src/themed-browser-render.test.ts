@@ -16,6 +16,7 @@ const HARNESSED_SUITES = [
   "field",
   "heading",
   "text",
+  "span",
   "item",
   "input",
   "input-group",
