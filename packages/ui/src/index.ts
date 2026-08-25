@@ -43,6 +43,7 @@ export * from "./tabs";
 export * from "./text";
 export * from "./text-field";
 export * from "./textarea";
+export * from "./textarea-field";
 export * from "./theme";
 export * from "./timeline-list";
 export * from "./toggle";

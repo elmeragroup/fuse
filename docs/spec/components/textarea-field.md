@@ -50,7 +50,7 @@ Controlled/uncontrolled: supplying `value` makes it controlled; `defaultValue` (
 
 ## 4 Variants
 
-None of its own — no tv recipe at this component. Visual axes of the text-field family live in the exported `textFieldVariants` slots recipe (see the text-field spec); `TextareaField` consumes the shared look (the `textArea` slot pins `min-h-16`).
+None of its own — no tv recipe at this component. The `textArea` slot on `textFieldVariants` is dead and removed (text-field.md §4/§8.3) and is not consumed or restored here. `min-h-16` is pinned by the `Textarea` primitive (textarea.md §4). Shared `textFieldVariants` layout slots (`labelContainer`, …) may be reused when they match the lift; they are not a recipe of this component.
 
 ## 5 Consumed tokens
 

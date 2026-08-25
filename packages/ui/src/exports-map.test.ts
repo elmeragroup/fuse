@@ -71,6 +71,7 @@ describe("exports map", () => {
       "text",
       "text-field",
       "textarea",
+      "textarea-field",
       "timeline-list",
       "toggle",
       "tooltip",
@@ -425,6 +426,12 @@ describe("exports map", () => {
     const numberField = discovered.jsEntries.find((entry) => entry.subpath === "number-field");
     expect(numberField?.inRootBarrel).toBe(true);
     expect(numberField?.runtimeExports).toEqual(["NumberField"]);
+  });
+
+  it("publishes TextareaField from /textarea-field and the root barrel", () => {
+    const textareaField = discovered.jsEntries.find((entry) => entry.subpath === "textarea-field");
+    expect(textareaField?.inRootBarrel).toBe(true);
+    expect(textareaField?.runtimeExports).toEqual(["TextareaField"]);
   });
 
   it("publishes Meter and METER_CONSTANTS from /meter and the root barrel", () => {

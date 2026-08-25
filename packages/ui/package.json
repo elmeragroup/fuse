@@ -180,6 +180,10 @@
       "types": "./src/textarea.ts",
       "import": "./src/textarea.ts"
     },
+    "./textarea-field": {
+      "types": "./src/textarea-field.ts",
+      "import": "./src/textarea-field.ts"
+    },
     "./theme": {
       "types": "./src/theme.ts",
       "import": "./src/theme.ts"

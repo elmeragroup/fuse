@@ -96,6 +96,7 @@ describe("component page manifest", () => {
       "text",
       "text-field",
       "textarea",
+      "textarea-field",
       "timeline-list",
       "toggle",
       "tooltip",
@@ -244,6 +245,13 @@ describe("component page manifest", () => {
       "vertical-data",
       "vertical-compact",
     ]);
+    expect(page("textarea-field").demos.map((demo) => demo.id)).toEqual([
+      "basic",
+      "counter",
+      "uncontrolled",
+      "error",
+      "disabled",
+    ]);
   });
 
   it("links View source at the implementation on the repo host", () => {
@@ -295,6 +303,7 @@ describe("component page manifest", () => {
       text: "client",
       "text-field": "client",
       textarea: "server",
+      "textarea-field": "client",
       "timeline-list": "server",
       toggle: "client",
       tooltip: "client",
