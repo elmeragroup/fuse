@@ -1,5 +1,3 @@
-import { tv } from "tailwind-variants";
-
 /**
  * PUBLIC recipe (text.md §4). Span and other package modules borrow it from
  * `@elmeragroup/ui/text`. `size` is a type-scale axis, not a density control-box
@@ -9,18 +7,15 @@ import { tv } from "tailwind-variants";
  * `text-error` (text.md §8.5). `weight: "bold"` maps to `font-medium` — a
  * deliberate cap on body-copy weight, kept from the ref.
  */
+import { tv } from "tailwind-variants";
+
+import { typographyAlignClasses, typographyColorClasses } from "../../styles/typography-fragments";
+
 export const textVariants = tv({
   base: "font-sans",
   variants: {
     variant: {
-      default: "text-inherit",
-      foreground: "text-foreground",
-      primary: "text-primary",
-      secondary: "text-secondary",
-      brand: "text-brand",
-      muted: "text-muted-foreground",
-      inherit: "text-inherit",
-      destructive: "text-error",
+      ...typographyColorClasses,
       success: "text-success",
     },
     size: {
@@ -42,9 +37,7 @@ export const textVariants = tv({
       true: "truncate",
     },
     align: {
-      left: "text-left",
-      center: "text-center",
-      right: "text-right",
+      ...typographyAlignClasses,
       justify: "text-justify",
     },
     weight: {

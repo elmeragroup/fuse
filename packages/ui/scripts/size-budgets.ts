@@ -22,7 +22,7 @@
  * measured×1.5.
  *
  * Current measurements (gzip bytes, 2026-08-25). Earlier measurement rounds live in git.
- *   .             78191  (Heading+Text+Popover+Toggle+Skeleton share the barrel; under the standing 113816 ceiling from Popover-only recalibration, so recorded, not loosened)
+ *   .             78125  (Heading+Text+Popover+Toggle+Skeleton share the barrel; under the standing 113816 ceiling from Popover-only recalibration, so recorded, not loosened)
  *   theme          6138
  *   icons/Check     818  (per-icon export, not the full roster)
  *   button        25214
@@ -34,13 +34,13 @@
  *   input         25081
  *   textarea      21319
  *   dialog        45221
- *   popover       56865
+ *   popover       56866
  *   card          15963
  *   badge         15658
  *   input-group   28007
  *   flags          1388
- *   heading       17289
- *   text          17279
+ *   heading       17329
+ *   text          17315
  *   toggle        25507
  *   skeleton       8701  (combined packed gzip after rebase; first calibration, ceiling 13052)
  *   themes.css     2274

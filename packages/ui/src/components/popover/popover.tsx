@@ -7,6 +7,7 @@ import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 import { cn } from "../../styles/cn";
 import { focusRing } from "../../styles/utils";
 import { useThemeScopeContainer } from "../../theme/theme-scope-container";
+import { overlayLayer } from "../overlay/overlay-classes";
 
 /** Resolved once at module scope — the recipe below does the same (no per-render work). */
 const selfFocusRing = focusRing({ target: "self" }).root();
@@ -87,7 +88,7 @@ function PopoverContent({
         alignOffset={alignOffset}
         side={side}
         sideOffset={sideOffset}
-        className="isolate z-50">
+        className={cn("isolate", overlayLayer)}>
         <PopoverPrimitive.Popup
           data-slot="popover-content"
           className={cn(

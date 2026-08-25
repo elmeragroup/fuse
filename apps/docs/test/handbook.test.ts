@@ -1,7 +1,10 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import { themeSlug } from "@elmeragroup/ui/theme";
 
+import { sizeBudgetsFile } from "../scripts/lib/paths.ts";
+import { parseBudgets } from "../scripts/lib/sizes.ts";
 import { BUNDLE_SIZES, BUNDLE_SIZES_MEASURED_ON } from "../src/generated/bundle-sizes";
 import { COLOR_TOKENS } from "../src/generated/token-reference";
 import { LEGAL_THEMES } from "../src/lib/theme";
@@ -82,17 +85,10 @@ describe("tokens page (docs-site.md §3.3, performance.md §2)", () => {
   });
 
   it("covers every published JS entry the library budgets", () => {
-    for (const name of [
-      "button",
-      "dialog",
-      "scroll-area",
-      "theme",
-      "icons/Check",
-      "styles.css",
-      "skeleton",
-    ]) {
-      expect(BUNDLE_SIZES.map((entry) => entry.name)).toContain(name);
-    }
+    const liveNames = parseBudgets(readFileSync(sizeBudgetsFile, "utf8"), sizeBudgetsFile).map(
+      (budget) => budget.name
+    );
+    expect([...BUNDLE_SIZES.map((entry) => entry.name)].sort()).toEqual([...liveNames].sort());
   });
 
   it("lists the generated token reference with swatches", async () => {

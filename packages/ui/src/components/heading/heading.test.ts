@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { cn } from "../../styles/cn";
+import { typographyAlignClasses, typographyColorClasses } from "../../styles/typography-fragments";
 import { headingVariants } from "./heading-variants";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -19,17 +20,6 @@ const VARIANTS = [
   "inherit",
   "destructive",
 ] as const;
-
-const VARIANT_CLASS = {
-  default: "text-inherit",
-  foreground: "text-foreground",
-  primary: "text-primary",
-  secondary: "text-secondary",
-  brand: "text-brand",
-  muted: "text-muted-foreground",
-  inherit: "text-inherit",
-  destructive: "text-error",
-} as const;
 
 const SIZES = ["default", "sm", "lg", "xl", "2xl", "3xl", "4xl", "5xl", "6xl"] as const;
 
@@ -47,7 +37,7 @@ describe("headingVariants", () => {
   it("resolves each variant class; destructive is text-error and never a destructive class", () => {
     for (const variant of VARIANTS) {
       const resolved = headingVariants({ variant });
-      expect(resolved, variant).toContain(VARIANT_CLASS[variant]);
+      expect(resolved, variant).toContain(typographyColorClasses[variant]);
       expect(resolved, variant).not.toContain("dark:");
       expect(resolved, variant).not.toMatch(RAW_PALETTE_RE);
     }
@@ -80,9 +70,9 @@ describe("headingVariants", () => {
   it("toggles noMargin, uppercase, and align", () => {
     expect(headingVariants({ noMargin: true })).toContain("mb-0");
     expect(headingVariants({ uppercase: true })).toContain("uppercase");
-    expect(headingVariants({ align: "left" })).toContain("text-left");
-    expect(headingVariants({ align: "center" })).toContain("text-center");
-    expect(headingVariants({ align: "right" })).toContain("text-right");
+    expect(headingVariants({ align: "left" })).toContain(typographyAlignClasses.left);
+    expect(headingVariants({ align: "center" })).toContain(typographyAlignClasses.center);
+    expect(headingVariants({ align: "right" })).toContain(typographyAlignClasses.right);
   });
 
   it("lets a className merge win over a conflicting recipe class through cn", () => {
@@ -97,6 +87,7 @@ describe("heading source contract", () => {
     const source = [
       readFileSync(join(here, "heading.tsx"), "utf8"),
       readFileSync(join(here, "heading-variants.ts"), "utf8"),
+      readFileSync(join(here, "../../styles/typography-fragments.ts"), "utf8"),
     ].join("\n");
     expect(source).toContain('"use client"');
     expect(source).toContain("useRender");

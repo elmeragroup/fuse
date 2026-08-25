@@ -10,19 +10,12 @@
  */
 import { tv } from "tailwind-variants";
 
+import { typographyAlignClasses, typographyColorClasses } from "../../styles/typography-fragments";
+
 export const headingVariants = tv({
   base: "font-heading text-foreground",
   variants: {
-    variant: {
-      default: "text-inherit",
-      foreground: "text-foreground",
-      primary: "text-primary",
-      secondary: "text-secondary",
-      brand: "text-brand",
-      muted: "text-muted-foreground",
-      inherit: "text-inherit",
-      destructive: "text-error",
-    },
+    variant: typographyColorClasses,
     size: {
       default: "text-base leading-snug",
       sm: "text-sm leading-snug",
@@ -48,11 +41,7 @@ export const headingVariants = tv({
     uppercase: {
       true: "uppercase",
     },
-    align: {
-      left: "text-left",
-      center: "text-center",
-      right: "text-right",
-    },
+    align: typographyAlignClasses,
   },
   defaultVariants: {
     variant: "default",

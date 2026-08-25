@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { cn } from "../../styles/cn";
+import { typographyAlignClasses, typographyColorClasses } from "../../styles/typography-fragments";
 import { textVariants } from "./text-variants";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -22,14 +23,7 @@ const VARIANTS = [
 ] as const;
 
 const VARIANT_CLASS = {
-  default: "text-inherit",
-  foreground: "text-foreground",
-  primary: "text-primary",
-  secondary: "text-secondary",
-  brand: "text-brand",
-  muted: "text-muted-foreground",
-  inherit: "text-inherit",
-  destructive: "text-error",
+  ...typographyColorClasses,
   success: "text-success",
 } as const;
 
@@ -110,9 +104,9 @@ describe("textVariants", () => {
   });
 
   it("surfaces align as a first-class axis", () => {
-    expect(textVariants({ align: "left" }).split(/\s+/)).toContain("text-left");
-    expect(textVariants({ align: "center" }).split(/\s+/)).toContain("text-center");
-    expect(textVariants({ align: "right" }).split(/\s+/)).toContain("text-right");
+    expect(textVariants({ align: "left" }).split(/\s+/)).toContain(typographyAlignClasses.left);
+    expect(textVariants({ align: "center" }).split(/\s+/)).toContain(typographyAlignClasses.center);
+    expect(textVariants({ align: "right" }).split(/\s+/)).toContain(typographyAlignClasses.right);
     expect(textVariants({ align: "justify" }).split(/\s+/)).toContain("text-justify");
     expect(textVariants().split(/\s+/)).not.toContain("text-left");
   });
@@ -150,11 +144,13 @@ describe("text source contract", () => {
   it("carries no destructive class name in library source", () => {
     const recipe = readFileSync(join(here, "text-variants.ts"), "utf8");
     const component = readFileSync(join(here, "text.tsx"), "utf8");
-    for (const source of [recipe, component]) {
+    const fragments = readFileSync(join(here, "../../styles/typography-fragments.ts"), "utf8");
+    for (const source of [recipe, component, fragments]) {
       expect(source).not.toContain("text-destructive");
       expect(source).not.toContain("bg-destructive");
     }
-    expect(recipe).toContain("text-error");
+    expect(recipe).toContain("typographyColorClasses");
+    expect(fragments).toContain("text-error");
   });
 
   it("exports the recipe publicly from the text entry", () => {

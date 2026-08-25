@@ -5,13 +5,18 @@ import { describe, expect, it } from "vitest";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const source = readFileSync(join(here, "popover.tsx"), "utf8");
+const overlayClassesSource = readFileSync(join(here, "../overlay/overlay-classes.ts"), "utf8");
 
 describe("popover source contract", () => {
   it("declares the overlay layer once on the Positioner and never falls back to document.body", () => {
-    // Source-grep: a single z-50 (popover.md §8.4) and the absence of a body fallback
-    // (theming.md §7.4) have no consumer-behavior probe of their own.
-    expect(source.match(/z-50/gu)).toHaveLength(1);
-    expect(source).toContain('className="isolate z-50"');
+    // Source-grep: a single z-50 declaration (popover.md §8.4) and the absence of a
+    // body fallback (theming.md §7.4) have no consumer-behavior probe of their own.
+    // The layer lives in the shared overlay module; popover.tsx borrows overlayLayer
+    // and must not stamp a second z-50 on the Popup.
+    expect(overlayClassesSource.match(/z-50/gu)).toHaveLength(1);
+    expect(source).not.toContain("z-50");
+    expect(source).toContain("overlayLayer");
+    expect(source).toContain("isolate");
     expect(source).not.toContain("document.body");
     expect(source).not.toContain(".ref/");
     expect(source).not.toContain("dark:");
