@@ -45,6 +45,7 @@ describe("exports map", () => {
       "popover",
       "scroll-area",
       "separator",
+      "sheet",
       "skeleton",
       "span",
       "text",
@@ -245,6 +246,12 @@ describe("exports map", () => {
     const popover = discovered.jsEntries.find((entry) => entry.subpath === "popover");
     expect(popover?.inRootBarrel).toBe(true);
     expect(popover?.runtimeExports).toEqual(["Popover"]);
+  });
+
+  it("publishes Sheet from /sheet and the root barrel", () => {
+    const sheet = discovered.jsEntries.find((entry) => entry.subpath === "sheet");
+    expect(sheet?.inRootBarrel).toBe(true);
+    expect(sheet?.runtimeExports).toEqual(["Sheet"]);
   });
 
   it("publishes Toggle and the public toggleVariants recipe from /toggle and the root barrel", () => {

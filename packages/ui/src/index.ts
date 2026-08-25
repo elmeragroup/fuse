@@ -17,6 +17,7 @@ export * from "./item";
 export * from "./popover";
 export * from "./scroll-area";
 export * from "./separator";
+export * from "./sheet";
 export * from "./skeleton";
 export * from "./span";
 export * from "./text";

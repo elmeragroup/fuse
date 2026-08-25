@@ -26,6 +26,7 @@ export default defineConfig({
             "react-dom/client",
             "react/jsx-runtime",
             "@base-ui/react/button",
+            "@base-ui/react/drawer",
             "@base-ui/react/scroll-area",
             "@base-ui/react/merge-props",
             "@base-ui/react/use-render",

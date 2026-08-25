@@ -1,0 +1,179 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "sheet",
+  "parts": [
+    {
+      "name": "Sheet.Root",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/sheet/sheet.tsx",
+      "forwardedFrom": [
+        "@base-ui/react"
+      ],
+      "forwardedCount": 15,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Contents of the sheet. Rendered inside `VirtualKeyboardProvider` so the panel stays usable when the on-screen keyboard opens.",
+          "required": false
+        },
+        {
+          "name": "side",
+          "origin": "declared",
+          "type": "\"bottom\" | \"left\" | \"right\" | \"top\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"right\"",
+          "description": "Edge the panel anchors to. Also selects the swipe-to-dismiss direction (`top` → up, `right` → right, `bottom` → down, `left` → left).",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Sheet.Trigger",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/sheet/sheet.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 291,
+      "props": []
+    },
+    {
+      "name": "Sheet.Close",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/sheet/sheet.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 289,
+      "props": []
+    },
+    {
+      "name": "Sheet.Portal",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/sheet/sheet.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Sheet.Overlay",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/sheet/sheet.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 279,
+      "props": []
+    },
+    {
+      "name": "Sheet.Content",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/sheet/sheet.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": [
+        {
+          "name": "closeLabel",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Accessible name for the built-in corner close button. Defaults to the locale dictionary.",
+          "required": false
+        },
+        {
+          "name": "container",
+          "origin": "declared",
+          "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Portal target for the panel. Defaults to the nearest enclosing `ThemeScope` element, so an overlay never escapes the theme that opened it.",
+          "required": false
+        },
+        {
+          "name": "showCloseButton",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Renders the built-in corner dismiss affordance — the shared overlay close helper (`Button variant=\"ghost\" size=\"icon-sm\"`) as a `Sheet.Close`.",
+          "required": false
+        },
+        {
+          "name": "size",
+          "origin": "recipe-axis",
+          "type": "\"10xl\" | \"2xl\" | \"3xl\" | \"4xl\" | \"5xl\" | \"6xl\" | \"7xl\" | \"8xl\" | \"9xl\" | \"lg\" | \"md\" | \"sm\" | \"xl\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Sheet.Header",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/sheet/sheet.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Sheet.Body",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/sheet/sheet.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Sheet.Footer",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/sheet/sheet.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Sheet.Title",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/sheet/sheet.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": []
+    },
+    {
+      "name": "Sheet.Description",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/sheet/sheet.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": []
+    }
+  ]
+}

@@ -1,0 +1,266 @@
+import { useRef } from "react";
+
+import { describe, expect, it, vi } from "vitest";
+import { page, userEvent } from "vitest/browser";
+
+import "../../../dist/styles.css";
+import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
+import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
+import { renderThemed } from "../../../test/themed-browser-render";
+import { ThemeScope } from "../../theme/theme-scope";
+import { Sheet } from "./sheet";
+
+const CLOSE_COPY = {
+  "nb-NO": "Lukk",
+  "sv-SE": "Stäng",
+  "en-US": "Close",
+  "fi-FI": "Sulje",
+} as const;
+
+function BasicSheet({
+  onOpenChange,
+  side,
+  ...contentProps
+}: {
+  onOpenChange?: (open: boolean) => void;
+  side?: "top" | "right" | "bottom" | "left";
+  showCloseButton?: boolean;
+  closeLabel?: string;
+  size?: "sm" | "md" | "10xl";
+}) {
+  return (
+    <Sheet.Root side={side} onOpenChange={onOpenChange}>
+      <Sheet.Trigger>Open details</Sheet.Trigger>
+      <Sheet.Content {...contentProps}>
+        <Sheet.Header>
+          <Sheet.Title>Meter details</Sheet.Title>
+          <Sheet.Description>Readings for this address.</Sheet.Description>
+        </Sheet.Header>
+        <Sheet.Body>Usage history.</Sheet.Body>
+        <Sheet.Footer>
+          <Sheet.Close>Done</Sheet.Close>
+        </Sheet.Footer>
+      </Sheet.Content>
+    </Sheet.Root>
+  );
+}
+
+async function openSheet(): Promise<HTMLElement> {
+  await userEvent.click(page.getByRole("button", { name: "Open details", exact: true }).element());
+  const dialog = page.getByRole("dialog").element();
+  if (!(dialog instanceof HTMLElement)) {
+    throw new Error("expected the popup");
+  }
+  return dialog;
+}
+
+describe("Sheet", () => {
+  it("opens from the trigger, is named by its Title, and reports open state", async () => {
+    const onOpenChange = vi.fn();
+    renderThemed(withLocale("en-US", <BasicSheet onOpenChange={onOpenChange} />));
+
+    const dialog = await openSheet();
+    expect(onOpenChange).toHaveBeenCalledTimes(1);
+    expect(onOpenChange.mock.calls[0]?.[0]).toBe(true);
+    expect(page.getByRole("dialog", { name: "Meter details" }).element()).toBe(dialog);
+    expect(dialog.getAttribute("data-slot")).toBe("sheet-content");
+    expect(dialog.getAttribute("data-side")).toBe("right");
+
+    const description = page.getByText("Readings for this address.", { exact: true }).element();
+    expect(dialog.getAttribute("aria-describedby")).toBe(description.id);
+  });
+
+  it("maps Root side onto the popup data-side for every edge", async () => {
+    for (const side of ["top", "right", "bottom", "left"] as const) {
+      const { unmount } = renderThemed(withLocale("en-US", <BasicSheet side={side} />));
+      const dialog = await openSheet();
+      expect(dialog.getAttribute("data-side"), side).toBe(side);
+      unmount();
+    }
+  });
+
+  it("closes on Escape and returns focus to the trigger", async () => {
+    renderThemed(withLocale("en-US", <BasicSheet />));
+    const trigger = page.getByRole("button", { name: "Open details", exact: true }).element();
+    await openSheet();
+
+    await userEvent.keyboard("{Escape}");
+    await vi.waitFor(() => {
+      expect(page.getByRole("dialog").query()).toBeNull();
+    });
+    expect(document.activeElement).toBe(trigger);
+  });
+
+  it("traps focus inside the popup and wraps in both directions", async () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <>
+          <button type="button">Behind</button>
+          <BasicSheet />
+        </>
+      )
+    );
+    const behind = page.getByRole("button", { name: "Behind", exact: true }).element();
+    const dialog = await openSheet();
+    expect(dialog.contains(document.activeElement)).toBe(true);
+
+    const tabbables = [...dialog.querySelectorAll<HTMLElement>("button")];
+    expect(tabbables.length).toBeGreaterThan(1);
+    const first = tabbables[0];
+    const last = tabbables.at(-1);
+    if (first === undefined || last === undefined) {
+      throw new Error("expected tabbable controls");
+    }
+
+    last.focus();
+    await userEvent.keyboard("{Tab}");
+    expect(dialog.contains(document.activeElement)).toBe(true);
+    expect(document.activeElement).toBe(first);
+
+    await userEvent.keyboard("{Shift>}{Tab}{/Shift}");
+    expect(document.activeElement).toBe(last);
+    expect(behind.contains(document.activeElement)).toBe(false);
+  });
+
+  it("closes from the corner button and drops it when showCloseButton is false", async () => {
+    const { rerender } = renderThemed(withLocale("en-US", <BasicSheet />));
+    await openSheet();
+    const corner = page.getByRole("button", { name: "Close", exact: true }).element();
+    expect(corner.getAttribute("data-slot")).toBe("sheet-close");
+    expect(corner.querySelector("svg")).not.toBeNull();
+    expect(corner.querySelector(".sr-only")?.textContent).toBe("Close");
+    expect(corner.className).toContain("hit-area-1");
+    await userEvent.click(corner);
+    await vi.waitFor(() => {
+      expect(page.getByRole("dialog").query()).toBeNull();
+    });
+
+    rerender(withLocale("en-US", <BasicSheet showCloseButton={false} />));
+    await openSheet();
+    expect(page.getByRole("button", { name: "Close", exact: true }).query()).toBeNull();
+    expect(page.getByRole("button", { name: "Done", exact: true }).element()).toBeTruthy();
+  });
+
+  it("renders the corner close button in every locale and lets closeLabel win", async () => {
+    for (const locale of SUPPORTED_LOCALES) {
+      const { unmount } = renderThemed(withLocale(locale, <BasicSheet />));
+      await openSheet();
+      expect(
+        page.getByRole("button", { name: CLOSE_COPY[locale], exact: true }).element(),
+        locale
+      ).toBeTruthy();
+      unmount();
+    }
+
+    const { unmount } = renderThemed(withLocale("nb-NO", <BasicSheet closeLabel="Avslutt" />));
+    await openSheet();
+    expect(page.getByRole("button", { name: "Avslutt", exact: true }).element()).toBeTruthy();
+    expect(page.getByRole("button", { name: "Lukk", exact: true }).query()).toBeNull();
+    unmount();
+  });
+
+  it("closes from an explicit Sheet.Close", async () => {
+    renderThemed(withLocale("en-US", <BasicSheet showCloseButton={false} />));
+    await openSheet();
+    await userEvent.click(page.getByRole("button", { name: "Done", exact: true }).element());
+    await vi.waitFor(() => {
+      expect(page.getByRole("dialog").query()).toBeNull();
+    });
+  });
+
+  it("keeps Body as the scroll container and stamps the layout slots", async () => {
+    renderThemed(withLocale("en-US", <BasicSheet />));
+    const dialog = await openSheet();
+    const body = dialog.querySelector("[data-slot=sheet-body]");
+    expect(body).not.toBeNull();
+    expect(body?.className).toContain("overflow-y-auto");
+    expect(body?.className).toContain("min-h-0");
+    expect(body?.className).toContain("flex-1");
+    expect(document.querySelector("[data-slot=sheet-viewport]")).not.toBeNull();
+    expect(dialog.querySelector("[data-slot=sheet-content-inner]")).not.toBeNull();
+    expect(dialog.querySelector("[data-slot=sheet-header]")).not.toBeNull();
+    expect(dialog.querySelector("[data-slot=sheet-footer]")).not.toBeNull();
+    expect(dialog.querySelector("[data-slot=sheet-title]")).not.toBeNull();
+    expect(dialog.querySelector("[data-slot=sheet-description]")).not.toBeNull();
+  });
+
+  it("maps the size axis onto the side-gated max-width classes", async () => {
+    const cases = [
+      { size: undefined, expected: "data-[side=right]:sm:max-w-[min(var(--container-md),90%)]" },
+      { size: "sm", expected: "data-[side=right]:sm:max-w-[min(var(--container-sm),90%)]" },
+      { size: "10xl", expected: "data-[side=right]:sm:max-w-[min(1920px,90%)]" },
+    ] as const;
+
+    for (const { size, expected } of cases) {
+      const { unmount } = renderThemed(withLocale("en-US", <BasicSheet size={size} />));
+      const dialog = await openSheet();
+      expect(dialog.className, expected).toContain(expected);
+      unmount();
+    }
+  });
+
+  it("portals into the enclosing ThemeScope instead of the document body", async () => {
+    const { host } = renderThemed(withLocale("en-US", <BasicSheet />));
+    const scope = host.querySelector("[data-theme-brand]");
+    const dialog = await openSheet();
+    expect(scope).not.toBeNull();
+    expect(scope?.contains(dialog)).toBe(true);
+    expect([...document.body.children].includes(dialog)).toBe(false);
+  });
+
+  it("waits while the resolved container element is still null", () => {
+    function NeverAttached() {
+      const ref = useRef<HTMLElement | null>(null);
+      return (
+        <Sheet.Root open>
+          <Sheet.Content container={ref}>
+            <Sheet.Title>Pending</Sheet.Title>
+          </Sheet.Content>
+        </Sheet.Root>
+      );
+    }
+    renderThemed(withLocale("en-US", <NeverAttached />));
+
+    expect(page.getByRole("dialog").query()).toBeNull();
+    expect(document.querySelector("[data-slot=sheet-content]")).toBeNull();
+    expect(document.querySelector("[data-slot=sheet-overlay]")).toBeNull();
+  });
+
+  it("does not paint the popup outside a ThemeScope element that has not attached yet", () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <ThemeScope theme={{ variant: "external", brand: "fkas", segment: "private" }}>
+          <Sheet.Root open>
+            <Sheet.Content>
+              <Sheet.Title>Scoped</Sheet.Title>
+            </Sheet.Content>
+          </Sheet.Root>
+        </ThemeScope>
+      )
+    );
+    const dialog = page.getByRole("dialog").element();
+    const scope = dialog.closest("[data-theme-variant=external]");
+    expect(scope).not.toBeNull();
+    expect([...document.body.children].includes(dialog)).toBe(false);
+  });
+
+  it("gives the trigger the shared keyboard focus ring", async () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <>
+          <button type="button">Before</button>
+          <BasicSheet />
+        </>
+      )
+    );
+    const previous = page.getByRole("button", { name: "Before", exact: true }).element();
+    const trigger = page.getByRole("button", { name: "Open details", exact: true }).element();
+    if (!(previous instanceof HTMLElement) || !(trigger instanceof HTMLElement)) {
+      throw new Error("expected buttons");
+    }
+    await assertFocusRingOnKeyboardAbsentOnMouse(previous, trigger);
+  });
+});

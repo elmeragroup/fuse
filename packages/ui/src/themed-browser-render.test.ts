@@ -24,6 +24,7 @@ const HARNESSED_SUITES = [
   "toggle",
   "skeleton",
   "timeline-list",
+  "sheet",
 ] as const;
 
 function walk(directory: string): string[] {

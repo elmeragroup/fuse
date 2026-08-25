@@ -70,6 +70,7 @@ describe("component page manifest", () => {
       "popover",
       "scroll-area",
       "separator",
+      "sheet",
       "skeleton",
       "span",
       "text",
@@ -124,6 +125,13 @@ describe("component page manifest", () => {
     ]);
     expect(page("skeleton").demos.map((demo) => demo.id)).toEqual(["basic", "card"]);
     expect(page("timeline-list").demos.map((demo) => demo.id)).toEqual(["basic", "rich"]);
+    expect(page("sheet").demos.map((demo) => demo.id)).toEqual([
+      "basic",
+      "sides",
+      "sizes",
+      "form",
+      "scrolling",
+    ]);
   });
 
   it("links View source at the implementation on the repo host", () => {
@@ -149,6 +157,7 @@ describe("component page manifest", () => {
       popover: "client",
       "scroll-area": "client",
       separator: "client",
+      sheet: "client",
       skeleton: "server",
       span: "client",
       text: "client",
@@ -198,6 +207,19 @@ describe("committed api.json", () => {
       "Popover.Title",
       "Popover.Description",
     ]);
+    expect(api("sheet").parts.map((part) => part.name)).toEqual([
+      "Sheet.Root",
+      "Sheet.Trigger",
+      "Sheet.Close",
+      "Sheet.Portal",
+      "Sheet.Overlay",
+      "Sheet.Content",
+      "Sheet.Header",
+      "Sheet.Body",
+      "Sheet.Footer",
+      "Sheet.Title",
+      "Sheet.Description",
+    ]);
     expect(api("scroll-area").parts.map((part) => part.name)).toEqual(["ScrollArea.Root", "ScrollArea.Bar"]);
   });
 
@@ -212,6 +234,11 @@ describe("committed api.json", () => {
     expect(content?.props.find((prop) => prop.name === "size")?.origin).toBe("recipe-axis");
     const popoverContent = api("popover").parts.find((part) => part.name === "Popover.Content");
     expect(popoverContent?.props.find((prop) => prop.name === "showArrow")?.defaultValue).toBe("false");
+    const sheetContent = api("sheet").parts.find((part) => part.name === "Sheet.Content");
+    expect(sheetContent?.props.find((prop) => prop.name === "showCloseButton")?.defaultValue).toBe("true");
+    expect(sheetContent?.props.find((prop) => prop.name === "size")?.origin).toBe("recipe-axis");
+    const sheetRoot = api("sheet").parts.find((part) => part.name === "Sheet.Root");
+    expect(sheetRoot?.props.find((prop) => prop.name === "side")?.defaultValue).toBe('"right"');
   });
 });
 
