@@ -9,6 +9,7 @@ const HARNESSED_SUITES = [
   "badge",
   "button",
   "card",
+  "code",
   "dialog",
   "empty",
   "popover",

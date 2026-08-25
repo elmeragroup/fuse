@@ -22,7 +22,7 @@
  * measured×1.5.
  *
  * Current measurements (gzip bytes, 2026-08-25). Earlier measurement rounds live in git.
- *   .             101128  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty+Frame share the barrel; under the standing 113816 ceiling from Popover-only recalibration, so recorded, not loosened)
+ *   .             104280  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty+Frame+Code share the barrel; under the standing 113816 ceiling from Popover-only recalibration, so recorded, not loosened)
  *   theme          6133
  *   icons/Check     818  (per-icon export, not the full roster)
  *   button        25214
@@ -41,6 +41,7 @@
  *   flags          1388
  *   show            148  (first calibration, ceiling 222)
  *   frame          9059  (first calibration, ceiling 13589)
+ *   code          11756  (first calibration, ceiling 17634)
  *   tooltip       51148  (first calibration, ceiling 76722)
  *   heading       17329
  *   text          17315
@@ -53,7 +54,7 @@
  *   loader        16748  (first calibration, ceiling 25122)
  *   empty         21356  (first calibration, ceiling 32034)
  *   themes.css     2274
- *   styles.css    13114  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty+Frame; under the standing 15860 ceiling from Heading+Text+Popover recalibration, so recorded, not loosened)
+ *   styles.css    13140  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty+Frame+Code; under the standing 15860 ceiling from Heading+Text+Popover recalibration, so recorded, not loosened)
  */
 import { FLAG_RAW_CEILING_BYTES } from "./flag-payload";
 
@@ -105,6 +106,7 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = [
   { name: "loader", entryFile: "loader.js", ceilingGzip: 25122 },
   { name: "empty", entryFile: "empty.js", ceilingGzip: 32034 },
   { name: "frame", entryFile: "frame.js", ceilingGzip: 13589 },
+  { name: "code", entryFile: "code.js", ceilingGzip: 17634 },
   { name: "span", entryFile: "span.js", ceilingGzip: 25986 },
   { name: "timeline-list", entryFile: "timeline-list.js", ceilingGzip: 35333 },
   { name: "sheet", entryFile: "sheet.js", ceilingGzip: 85812 },

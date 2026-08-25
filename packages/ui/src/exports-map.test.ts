@@ -36,6 +36,7 @@ describe("exports map", () => {
       "badge",
       "button",
       "card",
+      "code",
       "dialog",
       "empty",
       "field",
@@ -240,6 +241,12 @@ describe("exports map", () => {
     const frame = discovered.jsEntries.find((entry) => entry.subpath === "frame");
     expect(frame?.inRootBarrel).toBe(true);
     expect(frame?.runtimeExports).toEqual(["Frame"]);
+  });
+
+  it("publishes Code from /code and the root barrel", () => {
+    const code = discovered.jsEntries.find((entry) => entry.subpath === "code");
+    expect(code?.inRootBarrel).toBe(true);
+    expect(code?.runtimeExports).toEqual(["Code"]);
   });
 
   it("publishes Skeleton from /skeleton and the root barrel", () => {

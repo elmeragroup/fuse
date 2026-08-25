@@ -24,6 +24,10 @@
       "types": "./src/card.ts",
       "import": "./src/card.ts"
     },
+    "./code": {
+      "types": "./src/code.ts",
+      "import": "./src/code.ts"
+    },
     "./css": "./src/styles/ui.css",
     "./demo-stage-comfortable.css": "./dist/demo-stage-comfortable.css",
     "./dialog": {
@@ -168,6 +172,7 @@
     "clsx": "catalog:",
     "react-aria": "catalog:",
     "react-aria-components": "catalog:",
+    "sugar-high": "catalog:",
     "tailwind-merge": "catalog:",
     "tailwind-variants": "catalog:",
     "tailwindcss-react-aria-components": "catalog:",

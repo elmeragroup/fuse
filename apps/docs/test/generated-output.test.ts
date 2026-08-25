@@ -61,6 +61,7 @@ describe("component page manifest", () => {
       "badge",
       "button",
       "card",
+      "code",
       "dialog",
       "empty",
       "field",
@@ -131,6 +132,7 @@ describe("component page manifest", () => {
     ]);
     expect(page("loader").demos.map((demo) => demo.id)).toEqual(["sizes", "inline"]);
     expect(page("show").demos.map((demo) => demo.id)).toEqual(["basic"]);
+    expect(page("code").demos.map((demo) => demo.id)).toEqual(["basic", "scroll"]);
     expect(page("skeleton").demos.map((demo) => demo.id)).toEqual(["basic", "card"]);
     expect(page("empty").demos.map((demo) => demo.id)).toEqual([
       "basic",
@@ -165,6 +167,7 @@ describe("component page manifest", () => {
       badge: "server",
       button: "client",
       card: "server",
+      code: "server",
       dialog: "client",
       empty: "server",
       field: "client",
@@ -266,6 +269,7 @@ describe("committed api.json", () => {
       "Frame.Description",
       "Frame.Footer",
     ]);
+    expect(api("code").parts.map((part) => part.name)).toEqual(["Code"]);
   });
 
   it("reads defaults out of the implementation's destructuring", () => {
