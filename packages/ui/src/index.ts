@@ -21,6 +21,7 @@ export * from "./sheet";
 export * from "./skeleton";
 export * from "./span";
 export * from "./text";
+export * from "./text-field";
 export * from "./textarea";
 export * from "./theme";
 export * from "./timeline-list";

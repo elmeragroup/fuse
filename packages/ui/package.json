@@ -92,6 +92,10 @@
       "types": "./src/text.ts",
       "import": "./src/text.ts"
     },
+    "./text-field": {
+      "types": "./src/text-field.ts",
+      "import": "./src/text-field.ts"
+    },
     "./textarea": {
       "types": "./src/textarea.ts",
       "import": "./src/textarea.ts"

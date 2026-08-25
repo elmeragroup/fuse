@@ -49,6 +49,7 @@ describe("exports map", () => {
       "skeleton",
       "span",
       "text",
+      "text-field",
       "textarea",
       "timeline-list",
       "toggle",
@@ -276,6 +277,12 @@ describe("exports map", () => {
     const span = discovered.jsEntries.find((entry) => entry.subpath === "span");
     expect(span?.inRootBarrel).toBe(true);
     expect(span?.runtimeExports).toEqual(["Span", "spanVariants"]);
+  });
+
+  it("publishes TextField and the public textFieldVariants recipe from /text-field and the root barrel", () => {
+    const textField = discovered.jsEntries.find((entry) => entry.subpath === "text-field");
+    expect(textField?.inRootBarrel).toBe(true);
+    expect(textField?.runtimeExports).toEqual(["TextField", "textFieldVariants"]);
   });
 
   it("keeps /icons as a subpath-only entry with the curated roster", () => {

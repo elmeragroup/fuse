@@ -21,6 +21,7 @@ const HARNESSED_SUITES = [
   "input",
   "input-group",
   "textarea",
+  "text-field",
   "toggle",
   "skeleton",
   "timeline-list",
