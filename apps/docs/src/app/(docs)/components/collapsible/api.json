@@ -1,0 +1,39 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "collapsible",
+  "parts": [
+    {
+      "name": "Collapsible.Root",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/collapsible/collapsible.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 282,
+      "props": []
+    },
+    {
+      "name": "Collapsible.Trigger",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/collapsible/collapsible.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 289,
+      "props": []
+    },
+    {
+      "name": "Collapsible.Content",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/collapsible/collapsible.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    }
+  ]
+}

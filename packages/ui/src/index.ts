@@ -12,6 +12,7 @@ export * from "./button";
 export * from "./button-group";
 export * from "./card";
 export * from "./code";
+export * from "./collapsible";
 export * from "./description-list";
 export * from "./dialog";
 export * from "./dropdown-menu";

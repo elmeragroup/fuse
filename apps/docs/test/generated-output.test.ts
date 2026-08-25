@@ -65,6 +65,7 @@ describe("component page manifest", () => {
       "button-group",
       "card",
       "code",
+      "collapsible",
       "description-list",
       "dialog",
       "dropdown-menu",
@@ -188,6 +189,11 @@ describe("component page manifest", () => {
       "in-field",
       "form",
     ]);
+    expect(page("collapsible").demos.map((demo) => demo.id)).toEqual([
+      "basic",
+      "controlled",
+      "hidden-until-found",
+    ]);
   });
 
   it("links View source at the implementation on the repo host", () => {
@@ -208,6 +214,7 @@ describe("component page manifest", () => {
       "button-group": "client",
       card: "server",
       code: "server",
+      collapsible: "client",
       "description-list": "server",
       dialog: "client",
       "dropdown-menu": "client",
@@ -324,6 +331,11 @@ describe("committed api.json", () => {
       "Avatar.Root",
       "Avatar.Image",
       "Avatar.Fallback",
+    ]);
+    expect(api("collapsible").parts.map((part) => part.name)).toEqual([
+      "Collapsible.Root",
+      "Collapsible.Trigger",
+      "Collapsible.Content",
     ]);
     expect(api("empty").parts.map((part) => part.name)).toEqual([
       "Empty.Root",

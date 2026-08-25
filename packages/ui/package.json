@@ -40,6 +40,10 @@
       "types": "./src/code.ts",
       "import": "./src/code.ts"
     },
+    "./collapsible": {
+      "types": "./src/collapsible.ts",
+      "import": "./src/collapsible.ts"
+    },
     "./css": "./src/styles/ui.css",
     "./demo-stage-comfortable.css": "./dist/demo-stage-comfortable.css",
     "./description-list": {

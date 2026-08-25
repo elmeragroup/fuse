@@ -40,6 +40,7 @@ describe("exports map", () => {
       "button-group",
       "card",
       "code",
+      "collapsible",
       "description-list",
       "dialog",
       "dropdown-menu",
@@ -333,6 +334,12 @@ describe("exports map", () => {
     const dropdownMenu = discovered.jsEntries.find((entry) => entry.subpath === "dropdown-menu");
     expect(dropdownMenu?.inRootBarrel).toBe(true);
     expect(dropdownMenu?.runtimeExports).toEqual(["DropdownMenu"]);
+  });
+
+  it("publishes Collapsible from /collapsible and the root barrel", () => {
+    const collapsible = discovered.jsEntries.find((entry) => entry.subpath === "collapsible");
+    expect(collapsible?.inRootBarrel).toBe(true);
+    expect(collapsible?.runtimeExports).toEqual(["Collapsible"]);
   });
 
   it("publishes Sheet from /sheet and the root barrel", () => {
