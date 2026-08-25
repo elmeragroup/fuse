@@ -46,6 +46,10 @@
       "types": "./src/dialog.ts",
       "import": "./src/dialog.ts"
     },
+    "./dropdown-menu": {
+      "types": "./src/dropdown-menu.ts",
+      "import": "./src/dropdown-menu.ts"
+    },
     "./emoji": {
       "types": "./src/emoji.ts",
       "import": "./src/emoji.ts"

@@ -1,0 +1,330 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "dropdown-menu",
+  "parts": [
+    {
+      "name": "DropdownMenu.Root",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/dropdown-menu/dropdown-menu.tsx",
+      "forwardedFrom": [
+        "@base-ui/react"
+      ],
+      "forwardedCount": 15,
+      "props": []
+    },
+    {
+      "name": "DropdownMenu.Trigger",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/dropdown-menu/dropdown-menu.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 294,
+      "props": []
+    },
+    {
+      "name": "DropdownMenu.Portal",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/dropdown-menu/dropdown-menu.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "DropdownMenu.Content",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/dropdown-menu/dropdown-menu.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 279,
+      "props": [
+        {
+          "name": "align",
+          "origin": "declared",
+          "type": "Align | undefined",
+          "shortType": null,
+          "defaultValue": "\"start\"",
+          "description": "How the popup aligns to the trigger on the cross axis. Menus lead from the trigger edge (unlike Popover/Tooltip, which default to `\"center\"`).",
+          "required": false
+        },
+        {
+          "name": "alignOffset",
+          "origin": "declared",
+          "type": "number | OffsetFunction | undefined",
+          "shortType": "Union",
+          "defaultValue": "0",
+          "description": "Offset along the alignment axis, in pixels.",
+          "required": false
+        },
+        {
+          "name": "container",
+          "origin": "declared",
+          "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Portal target for the popup. Defaults to the nearest enclosing `ThemeScope` element, so an overlay never escapes the theme that opened it.",
+          "required": false
+        },
+        {
+          "name": "side",
+          "origin": "declared",
+          "type": "Side | undefined",
+          "shortType": null,
+          "defaultValue": "\"bottom\"",
+          "description": "Which side of the trigger the popup is placed on.",
+          "required": false
+        },
+        {
+          "name": "sideOffset",
+          "origin": "declared",
+          "type": "number | OffsetFunction | undefined",
+          "shortType": "Union",
+          "defaultValue": "4",
+          "description": "Distance from the trigger, in pixels.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DropdownMenu.Group",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/dropdown-menu/dropdown-menu.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": []
+    },
+    {
+      "name": "DropdownMenu.Label",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/dropdown-menu/dropdown-menu.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": [
+        {
+          "name": "inset",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Pads the label to align with indicator-bearing items. Emitted as `data-inset`.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DropdownMenu.Item",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/dropdown-menu/dropdown-menu.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 282,
+      "props": [
+        {
+          "name": "inset",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Pads the item to align with indicator-bearing items. Emitted as `data-inset`.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "declared",
+          "type": "\"default\" | \"destructive\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "Visual tone. The value stays `\"destructive\"` for consumer compat; classes use `error` tokens (dropdown-menu.md §8).",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DropdownMenu.LinkItem",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/dropdown-menu/dropdown-menu.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 288,
+      "props": []
+    },
+    {
+      "name": "DropdownMenu.CheckboxItem",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/dropdown-menu/dropdown-menu.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 285,
+      "props": [
+        {
+          "name": "inset",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Pads the item to align with indicator-bearing items. Emitted as `data-inset`.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DropdownMenu.RadioGroup",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/dropdown-menu/dropdown-menu.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 282,
+      "props": []
+    },
+    {
+      "name": "DropdownMenu.RadioItem",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/dropdown-menu/dropdown-menu.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 283,
+      "props": [
+        {
+          "name": "inset",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Pads the item to align with indicator-bearing items. Emitted as `data-inset`.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DropdownMenu.Separator",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/dropdown-menu/dropdown-menu.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 279,
+      "props": []
+    },
+    {
+      "name": "DropdownMenu.Shortcut",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/dropdown-menu/dropdown-menu.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "DropdownMenu.Sub",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/dropdown-menu/dropdown-menu.tsx",
+      "forwardedFrom": [
+        "@base-ui/react"
+      ],
+      "forwardedCount": 11,
+      "props": []
+    },
+    {
+      "name": "DropdownMenu.SubTrigger",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/dropdown-menu/dropdown-menu.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 284,
+      "props": [
+        {
+          "name": "inset",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Pads the trigger to align with indicator-bearing items. Emitted as `data-inset`.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DropdownMenu.SubContent",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/dropdown-menu/dropdown-menu.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 279,
+      "props": [
+        {
+          "name": "align",
+          "origin": "declared",
+          "type": "Align | undefined",
+          "shortType": null,
+          "defaultValue": "\"start\"",
+          "description": "How the popup aligns to its SubTrigger on the cross axis.",
+          "required": false
+        },
+        {
+          "name": "alignOffset",
+          "origin": "declared",
+          "type": "number | OffsetFunction | undefined",
+          "shortType": "Union",
+          "defaultValue": "-3",
+          "description": "Offset along the alignment axis, in pixels. Negative tucks the submenu's first item level with its trigger.",
+          "required": false
+        },
+        {
+          "name": "container",
+          "origin": "declared",
+          "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Portal target for the submenu. Defaults to the nearest enclosing `ThemeScope` element, so an overlay never escapes the theme that opened it.",
+          "required": false
+        },
+        {
+          "name": "side",
+          "origin": "declared",
+          "type": "Side | undefined",
+          "shortType": null,
+          "defaultValue": "\"right\"",
+          "description": "Which side of the SubTrigger the popup is placed on.",
+          "required": false
+        },
+        {
+          "name": "sideOffset",
+          "origin": "declared",
+          "type": "number | OffsetFunction | undefined",
+          "shortType": "Union",
+          "defaultValue": "0",
+          "description": "Distance from the SubTrigger, in pixels. Flush against the parent menu by default.",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

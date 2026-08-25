@@ -22,7 +22,7 @@
  * measured×1.5.
  *
  * Current measurements (gzip bytes, 2026-08-25). Earlier measurement rounds live in git.
- *   .             116102  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty+Frame+Code+DescriptionList+Emoji+Avatar+AlertDialog share the barrel; under the standing 171567 ceiling from Avatar recalibration, so recorded, not loosened)
+ *   .             128810  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty+Frame+Code+DescriptionList+Emoji+Avatar+AlertDialog+DropdownMenu share the barrel; under the standing 171567 ceiling from Avatar recalibration, so recorded, not loosened)
  *   theme          6133
  *   icons/Check     818  (per-icon export, not the full roster)
  *   button        25214
@@ -45,6 +45,7 @@
  *   frame          9059  (first calibration, ceiling 13589)
  *   code          11756  (first calibration, ceiling 17634)
  *   tooltip       51148  (first calibration, ceiling 76722)
+ *   dropdown-menu 68195  (first calibration, ceiling 102293)
  *   heading       17329
  *   text          17315
  *   span          17324  (first calibration, ceiling 25986)
@@ -58,7 +59,7 @@
  *   description-list 10713  (first calibration, ceiling 16070)
  *   alert-dialog  47578  (first calibration, ceiling 71367)
  *   themes.css     2274
- *   styles.css    13340  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty+Frame+Code+DescriptionList+Emoji+Avatar+AlertDialog; under the standing 15860 ceiling from Heading+Text+Popover recalibration, so recorded, not loosened)
+ *   styles.css    13764  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty+Frame+Code+DescriptionList+Emoji+Avatar+AlertDialog+DropdownMenu; under the standing 15860 ceiling from Heading+Text+Popover recalibration, so recorded, not loosened)
  */
 import { FLAG_RAW_CEILING_BYTES } from "./flag-payload";
 
@@ -110,6 +111,7 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = [
   { name: "emoji", entryFile: "emoji.js", ceilingGzip: 3663 },
   { name: "avatar", entryFile: "avatar.js", ceilingGzip: 18701 },
   { name: "alert-dialog", entryFile: "alert-dialog.js", ceilingGzip: 71367 },
+  { name: "dropdown-menu", entryFile: "dropdown-menu.js", ceilingGzip: 102293 },
   { name: "show", entryFile: "show.js", ceilingGzip: 222 },
   { name: "loader", entryFile: "loader.js", ceilingGzip: 25122 },
   { name: "empty", entryFile: "empty.js", ceilingGzip: 32034 },

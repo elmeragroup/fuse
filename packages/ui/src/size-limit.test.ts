@@ -59,6 +59,7 @@ describe("size-limit harness", () => {
       "emoji",
       "avatar",
       "alert-dialog",
+      "dropdown-menu",
       "show",
       "loader",
       "empty",
@@ -136,6 +137,9 @@ describe("size-limit harness", () => {
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "description-list")?.ceilingGzip).toBe(
       ceilingFromMeasured(10713)
+    );
+    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "dropdown-menu")?.ceilingGzip).toBe(
+      ceilingFromMeasured(68195)
     );
     // styles.css recalibrated 2026-08-25: Heading+Text+Popover utilities exceeded 10469.
     expect(CSS_BUDGETS.find((budget) => budget.name === "styles.css")?.ceilingGzip).toBe(

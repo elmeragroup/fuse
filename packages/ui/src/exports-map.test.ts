@@ -41,6 +41,7 @@ describe("exports map", () => {
       "code",
       "description-list",
       "dialog",
+      "dropdown-menu",
       "emoji",
       "empty",
       "field",
@@ -318,6 +319,12 @@ describe("exports map", () => {
     const alertDialog = discovered.jsEntries.find((entry) => entry.subpath === "alert-dialog");
     expect(alertDialog?.inRootBarrel).toBe(true);
     expect(alertDialog?.runtimeExports).toEqual(["AlertDialog"]);
+  });
+
+  it("publishes DropdownMenu from /dropdown-menu and the root barrel", () => {
+    const dropdownMenu = discovered.jsEntries.find((entry) => entry.subpath === "dropdown-menu");
+    expect(dropdownMenu?.inRootBarrel).toBe(true);
+    expect(dropdownMenu?.runtimeExports).toEqual(["DropdownMenu"]);
   });
 
   it("publishes Sheet from /sheet and the root barrel", () => {

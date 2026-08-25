@@ -66,6 +66,7 @@ describe("component page manifest", () => {
       "code",
       "description-list",
       "dialog",
+      "dropdown-menu",
       "emoji",
       "empty",
       "field",
@@ -163,6 +164,14 @@ describe("component page manifest", () => {
       "pending",
       "custom-icon",
     ]);
+    expect(page("dropdown-menu").demos.map((demo) => demo.id)).toEqual([
+      "basic",
+      "checkboxes",
+      "radio-group",
+      "submenu",
+      "links",
+      "destructive",
+    ]);
   });
 
   it("links View source at the implementation on the repo host", () => {
@@ -184,6 +193,7 @@ describe("component page manifest", () => {
       code: "server",
       "description-list": "server",
       dialog: "client",
+      "dropdown-menu": "client",
       emoji: "server",
       empty: "server",
       field: "client",
@@ -273,6 +283,24 @@ describe("committed api.json", () => {
       "Tooltip.Trigger",
       "Tooltip.Content",
     ]);
+    expect(api("dropdown-menu").parts.map((part) => part.name)).toEqual([
+      "DropdownMenu.Root",
+      "DropdownMenu.Trigger",
+      "DropdownMenu.Portal",
+      "DropdownMenu.Content",
+      "DropdownMenu.Group",
+      "DropdownMenu.Label",
+      "DropdownMenu.Item",
+      "DropdownMenu.LinkItem",
+      "DropdownMenu.CheckboxItem",
+      "DropdownMenu.RadioGroup",
+      "DropdownMenu.RadioItem",
+      "DropdownMenu.Separator",
+      "DropdownMenu.Shortcut",
+      "DropdownMenu.Sub",
+      "DropdownMenu.SubTrigger",
+      "DropdownMenu.SubContent",
+    ]);
     expect(api("scroll-area").parts.map((part) => part.name)).toEqual(["ScrollArea.Root", "ScrollArea.Bar"]);
     expect(api("avatar").parts.map((part) => part.name)).toEqual([
       "Avatar.Root",
@@ -326,6 +354,16 @@ describe("committed api.json", () => {
     expect(alertContent?.props.find((prop) => prop.name === "isPerformingAction")?.defaultValue).toBe(
       "false"
     );
+    const dropdownContent = api("dropdown-menu").parts.find((part) => part.name === "DropdownMenu.Content");
+    expect(dropdownContent?.props.find((prop) => prop.name === "align")?.defaultValue).toBe('"start"');
+    expect(dropdownContent?.props.find((prop) => prop.name === "side")?.defaultValue).toBe('"bottom"');
+    const dropdownSubContent = api("dropdown-menu").parts.find(
+      (part) => part.name === "DropdownMenu.SubContent"
+    );
+    expect(dropdownSubContent?.props.find((prop) => prop.name === "alignOffset")?.defaultValue).toBe("-3");
+    expect(dropdownSubContent?.props.find((prop) => prop.name === "side")?.defaultValue).toBe('"right"');
+    const dropdownItem = api("dropdown-menu").parts.find((part) => part.name === "DropdownMenu.Item");
+    expect(dropdownItem?.props.find((prop) => prop.name === "variant")?.defaultValue).toBe('"default"');
   });
 });
 
