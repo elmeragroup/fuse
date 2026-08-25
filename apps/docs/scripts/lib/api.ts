@@ -304,33 +304,13 @@ function describePart(context: LibraryProject, request: PartRequest, problems: P
 export type ComponentApiRequest = {
   /** Absolute path of the public entry module, e.g. `packages/ui/src/button.ts`. */
   entryFile: string;
-  /** Name the entry exports, e.g. `Button` or `Dialog`. */
-  exportName: string;
+  /**
+   * Facade value exports to walk, in display order. Callers pass this explicitly
+   * (`resolveComponentPaths(...).apiExportNames`) — the generator does not sweep
+   * the entry for namespace-shaped companions.
+   */
+  exportNames: readonly string[];
 };
-
-/**
- * A value export is a component (or a constant), not a type-only re-export. Facades
- * also publish `*Props` and item types; those are not parts.
- */
-function isValueExport(checker: Checker, symbol: TsSymbol): boolean {
-  const resolved = (symbol.flags & SymbolFlags.Alias) !== 0 ? checker.getAliasedSymbol(symbol) : symbol;
-  return !checker.isUnknownSymbol(resolved) && (resolved.flags & SymbolFlags.Value) !== 0;
-}
-
-/**
- * A compound namespace: no root call signature, but at least one member is callable.
- * That is `VerticalTable` / `Dialog`, and not `buttonVariants` (callable itself) or
- * `METER_CONSTANTS` (no callable members).
- */
-function isNamespaceType(checker: Checker, type: Type): boolean {
-  if (callSignature(checker, type) !== null) {
-    return false;
-  }
-  return checker.getPropertiesOfType(type).some((member) => {
-    const memberType = checker.getTypeOfSymbol(member);
-    return memberType !== undefined && callSignature(checker, memberType) !== null;
-  });
-}
 
 function describeNamespaceParts(
   context: LibraryProject,
@@ -358,10 +338,10 @@ function describeNamespaceParts(
 }
 
 /**
- * Resolves one component's public surface: a single part for a plain component, or one
- * part per member for a namespace compound (`Dialog.Root`, `Dialog.Content`, …).
- * Companion namespace value exports on the same facade (`VerticalTable` next to `Table`)
- * follow, in export order; callable helpers and constants do not.
+ * Resolves one component's public surface from an explicit list of export names:
+ * a single part for a callable, or one part per member for a namespace compound
+ * (`Dialog.Root`, `Dialog.Content`, …). Companions (`VerticalTable` next to `Table`)
+ * are included only when the caller names them.
  */
 export function describeComponentApi(
   context: LibraryProject,
@@ -380,39 +360,33 @@ export function describeComponentApi(
     return [];
   }
   const exports = checker.getExportsOfModule(moduleSymbol);
-  const rootSymbol = exports.find((exported) => exported.name === request.exportName);
-  if (rootSymbol === undefined) {
-    problems.add(`${request.entryFile}: does not export "${request.exportName}"`);
-    return [];
-  }
-  const rootType = checker.getTypeOfSymbol(rootSymbol);
-  if (rootType === undefined || rootType.isErrorType()) {
-    problems.add(`${request.exportName}: exported value has an unresolvable type`);
-    return [];
-  }
-
   const parts: ApiPart[] = [];
-  if (callSignature(checker, rootType) !== null) {
-    const part = describePart(context, { name: request.exportName, type: rootType }, problems);
-    if (part !== null) {
-      parts.push(part);
-    }
-  } else {
-    parts.push(...describeNamespaceParts(context, request.exportName, rootType, problems));
-    if (parts.length === 0) {
-      problems.add(`${request.exportName}: no renderable parts were found on the exported namespace`);
-    }
-  }
 
-  for (const exported of exports) {
-    if (exported.name === request.exportName || !isValueExport(checker, exported)) {
+  for (const exportName of request.exportNames) {
+    const rootSymbol = exports.find((exported) => exported.name === exportName);
+    if (rootSymbol === undefined) {
+      problems.add(`${request.entryFile}: does not export "${exportName}"`);
       continue;
     }
-    const exportedType = checker.getTypeOfSymbol(exported);
-    if (exportedType === undefined || exportedType.isErrorType() || !isNamespaceType(checker, exportedType)) {
+    const rootType = checker.getTypeOfSymbol(rootSymbol);
+    if (rootType === undefined || rootType.isErrorType()) {
+      problems.add(`${exportName}: exported value has an unresolvable type`);
       continue;
     }
-    parts.push(...describeNamespaceParts(context, exported.name, exportedType, problems));
+
+    if (callSignature(checker, rootType) !== null) {
+      const part = describePart(context, { name: exportName, type: rootType }, problems);
+      if (part !== null) {
+        parts.push(part);
+      }
+      continue;
+    }
+
+    const namespaceParts = describeNamespaceParts(context, exportName, rootType, problems);
+    parts.push(...namespaceParts);
+    if (namespaceParts.length === 0) {
+      problems.add(`${exportName}: no renderable parts were found on the exported namespace`);
+    }
   }
   return parts;
 }

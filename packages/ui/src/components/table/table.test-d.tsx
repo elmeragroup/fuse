@@ -8,6 +8,7 @@ import type {
   VerticalTableBodyProps,
   VerticalTableHeaderProps,
   VerticalTableItem,
+  VerticalTableKeyProps,
   VerticalTableRootProps,
 } from "@elmeragroup/ui/table";
 import * as TableModule from "@elmeragroup/ui/table";
@@ -38,7 +39,9 @@ test("public API exports the namespaces and VerticalTableItem — never RAC or f
     "default" | "non-bordered-compact" | undefined
   >();
   expectTypeOf<VerticalTableHeaderProps>().toHaveProperty("render");
+  expectTypeOf<VerticalTableKeyProps>().toHaveProperty("render");
   expectTypeOf<VerticalTableBodyProps["data"]>().toEqualTypeOf<VerticalTableItem[] | undefined>();
+  expectTypeOf<VerticalTableBodyProps["tableProps"]>().toEqualTypeOf<TableRootProps | undefined>();
   expectTypeOf<VerticalTableItem>().toHaveProperty("label");
   expectTypeOf<VerticalTableItem>().toHaveProperty("value");
   expectTypeOf<VerticalTableItem["fontWeight"]>().toEqualTypeOf<"normal" | "bold" | undefined>();
@@ -91,6 +94,12 @@ test("parts take native attributes, Header render, and no polymorphic as prop", 
             Hidden
           </VerticalTable.Key>
           <VerticalTable.Value text="truncate">Secret</VerticalTable.Value>
+        </VerticalTable.Row>
+      </VerticalTable.Body>
+      <VerticalTable.Body tableProps={{ "aria-labelledby": "customer" }}>
+        <VerticalTable.Row>
+          <VerticalTable.Key render={<th scope="row" />}>Name</VerticalTable.Key>
+          <VerticalTable.Value>Kari Nordmann</VerticalTable.Value>
         </VerticalTable.Row>
       </VerticalTable.Body>
     </VerticalTable.Root>

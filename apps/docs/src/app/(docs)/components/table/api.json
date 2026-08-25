@@ -139,6 +139,15 @@
           "defaultValue": null,
           "description": "Key/value rows rendered before `children`. Each item becomes a `VerticalTable.Row` with `Key` then `Value`.",
           "required": false
+        },
+        {
+          "name": "tableProps",
+          "origin": "declared",
+          "type": "DetailedHTMLProps<TableHTMLAttributes<HTMLTableElement>, HTMLTableElement> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Inner `<table>` (`Table.Root`) props. Association attributes such as `aria-labelledby` belong here — Body's own props, including `aria-*`, stay on the wrapper only (table.md §8.3). `className` merges with `table-fixed`.",
+          "required": false
         }
       ]
     },
@@ -187,6 +196,15 @@
           "shortType": null,
           "defaultValue": "false",
           "description": "Replaces children with a `Skeleton` (`h-4 w-full max-w-24`).",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": "declared",
+          "type": "RenderProp<Record<string, unknown>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Replaces the host `<td>` via base-ui `useRender`. Pass `render={<th scope=\"row\" />}` for row-header semantics; Key classes and `data-slot` stay merged onto the host.",
           "required": false
         },
         {

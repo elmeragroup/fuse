@@ -245,4 +245,32 @@ describe("VerticalTable", () => {
     expect(table.className.split(/\s+/)).toContain("table-fixed");
     expect(table.className.split(/\s+/)).not.toContain("max-w-md");
   });
+
+  it("names the table from Header via tableProps and exposes a Key row header", () => {
+    renderThemed(
+      <VerticalTable.Root>
+        <VerticalTable.Header id="customer">Customer</VerticalTable.Header>
+        <VerticalTable.Body
+          id="facts"
+          aria-labelledby="wrapper-only"
+          tableProps={{ "aria-labelledby": "customer", id: "facts-table" }}>
+          <VerticalTable.Row>
+            <VerticalTable.Key render={<th scope="row" />}>Name</VerticalTable.Key>
+            <VerticalTable.Value>Kari Nordmann</VerticalTable.Value>
+          </VerticalTable.Row>
+        </VerticalTable.Body>
+      </VerticalTable.Root>
+    );
+
+    expect(htmlTable("Customer")).toBeTruthy();
+    expect(document.querySelectorAll("#facts")).toHaveLength(1);
+    expect(document.querySelectorAll("#facts-table")).toHaveLength(1);
+    expect(document.getElementById("facts")?.getAttribute("aria-labelledby")).toBe("wrapper-only");
+    expect(htmlTable("Customer").id).toBe("facts-table");
+
+    const header = page.getByRole("rowheader", { name: "Name", exact: true }).element();
+    expect(header.tagName).toBe("TH");
+    expect(header.getAttribute("scope")).toBe("row");
+    expect(page.getByRole("cell", { name: "Kari Nordmann", exact: true }).element().tagName).toBe("TD");
+  });
 });

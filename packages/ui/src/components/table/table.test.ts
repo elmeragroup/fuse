@@ -107,14 +107,17 @@ describe("table source contract", () => {
     );
   });
 
-  it("keeps Header as a useRender island and does not double-spread Body props onto the inner table", () => {
+  it("keeps Header and Key as useRender islands and does not double-spread Body props onto the inner table", () => {
     expect(source).toContain("useRender");
     expect(source).toContain("mergeProps");
     expect(source).toContain('"data-slot": "vertical-table-header"');
     expect(source).toContain("text-lg leading-snug font-medium font-heading text-inherit");
+    expect(source).toContain("render ?? <TableCell />");
     const body = verticalBodySource();
     expect(body).toContain("Table.Root");
-    expect(body).toContain('className="table-fixed"');
+    expect(body).toContain('cn("table-fixed"');
+    expect(body).toContain("tableProps");
+    expect(body).toContain("innerTableProps");
     expect(body).toContain('data-slot="vertical-table-body"');
     expect(body.match(/\{\.\.\.props\}/g)).toHaveLength(1);
     expect(body).not.toMatch(/<Table\.Root[\s\S]*\{\.\.\.props\}/);
@@ -214,20 +217,86 @@ describe("VerticalTable structure", () => {
         id: "facts",
         className: "max-w-md",
         title: "profile",
+        "aria-labelledby": "wrapper-only",
+        tableProps: { id: "facts-table", className: "w-full", title: "grid" },
       })
     );
     expect(html.match(/id="facts"/g)).toEqual(['id="facts"']);
+    expect(html.match(/id="facts-table"/g)).toEqual(['id="facts-table"']);
     expect(html.match(/title="profile"/g)).toEqual(['title="profile"']);
+    expect(html.match(/title="grid"/g)).toEqual(['title="grid"']);
     const wrapperEnd = html.indexOf(">", html.indexOf('data-slot="vertical-table"'));
     const wrapper = html.slice(0, wrapperEnd);
     expect(wrapper).toContain('id="facts"');
     expect(wrapper).toContain("max-w-md");
+    expect(wrapper).toContain('aria-labelledby="wrapper-only"');
+    expect(wrapper).not.toContain("facts-table");
     const tableStart = html.indexOf('data-slot="table"');
     const table = html.slice(tableStart, html.indexOf(">", tableStart));
     expect(table).not.toContain('id="facts"');
     expect(table).not.toContain("max-w-md");
-    expect(table).not.toContain("title=");
+    expect(table).not.toContain("wrapper-only");
+    expect(table).toContain('id="facts-table"');
     expect(table).toContain("table-fixed");
+    expect(table).toContain("w-full");
+    expect(table).toContain('title="grid"');
+  });
+
+  it("names the inner table through tableProps, not Body aria attributes", () => {
+    const html = renderToStaticMarkup(
+      createElement(
+        VerticalTable.Root,
+        null,
+        createElement(VerticalTable.Header, { id: "customer" }, "Customer"),
+        createElement(VerticalTable.Body, {
+          tableProps: { "aria-labelledby": "customer" },
+        })
+      )
+    );
+    const wrapperEnd = html.indexOf(">", html.indexOf('data-slot="vertical-table"'));
+    const wrapper = html.slice(0, wrapperEnd);
+    const tableStart = html.indexOf('data-slot="table"');
+    const table = html.slice(tableStart, html.indexOf(">", tableStart));
+    expect(wrapper).not.toContain("aria-labelledby");
+    expect(table).toContain('aria-labelledby="customer"');
+    expect(html).toContain('id="customer"');
+  });
+
+  it("keeps Table.Cell layout classes on the default Key td", () => {
+    const html = renderToStaticMarkup(
+      createElement(
+        VerticalTable.Row,
+        null,
+        createElement(VerticalTable.Key, null, "Name"),
+        createElement(VerticalTable.Value, null, "Kari Nordmann")
+      )
+    );
+    const host = html.slice(html.indexOf("<td"), html.indexOf(">", html.indexOf("<td")) + 1);
+    expect(host).toContain("<td");
+    expect(host).toContain("bg-muted/50");
+    expect(host).toContain("p-2");
+    expect(host).toContain("align-middle");
+    expect(host).toContain("in-data-[slot=frame]:first:p-[calc(--spacing(2.5)-1px)]");
+  });
+
+  it("lets Key render a row header without dropping Key classes", () => {
+    const html = renderToStaticMarkup(
+      createElement(
+        VerticalTable.Row,
+        null,
+        createElement(VerticalTable.Key, { render: createElement("th", { scope: "row" }) }, "Name"),
+        createElement(VerticalTable.Value, null, "Kari Nordmann")
+      )
+    );
+    const host = html.slice(html.indexOf("<th"), html.indexOf(">", html.indexOf("<th")) + 1);
+    expect(host).toContain("<th");
+    expect(host).toContain('scope="row"');
+    expect(html).toContain("Name");
+    expect(host).toContain("bg-muted/50");
+    expect(host).toContain("p-2");
+    expect(host).toContain("align-middle");
+    expect(host).toContain("in-data-[slot=frame]:first:p-[calc(--spacing(2.5)-1px)]");
+    expect(html).not.toMatch(/<td[^>]*>Name/);
   });
 
   it("swaps Key/Value children for a skeleton when isLoading", () => {

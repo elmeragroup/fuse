@@ -171,7 +171,7 @@ function buildComponent(
 
   const parts = describeComponentApi(
     context,
-    { entryFile: paths.entryFile, exportName: paths.exportName },
+    { entryFile: paths.entryFile, exportNames: paths.apiExportNames },
     problems
   );
 

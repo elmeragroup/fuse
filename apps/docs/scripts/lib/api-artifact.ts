@@ -79,7 +79,7 @@ export function regenerateApiArtifacts(): RegeneratedApi {
       const paths = resolveComponentPaths(slug);
       const parts = describeComponentApi(
         context,
-        { entryFile: paths.entryFile, exportName: paths.exportName },
+        { entryFile: paths.entryFile, exportNames: paths.apiExportNames },
         problems
       );
       texts.set(slug, serializeApiArtifact(buildApiArtifact(slug, parts)));

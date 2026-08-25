@@ -40,21 +40,35 @@ export type ComponentPaths = {
   entryFile: string;
   entry: string;
   exportName: string;
+  /**
+   * Facade value exports the API generator walks (docs-site.md §8). Explicit names —
+   * never a sweep of every namespace-shaped export on the entry.
+   */
+  apiExportNames: readonly string[];
   sourceFile: string;
   componentDir: string;
   demosDir: string;
 };
 
+function apiExportNamesFor(slug: string, exportName: string): readonly string[] {
+  if (slug === "table") {
+    return ["Table", "VerticalTable"];
+  }
+  return [exportName];
+}
+
 /** Where a slug's inputs and its co-located generated artifact live. */
 export function resolveComponentPaths(slug: string): ComponentPaths {
   const componentDir = path.join(uiSrc, "components", slug);
   const routeDir = path.join(componentRoutesDir, slug);
+  const exportName = pascalCase(slug);
   return {
     pageFile: path.join(routeDir, "page.mdx"),
     apiFile: path.join(routeDir, "api.json"),
     entryFile: path.join(uiSrc, `${slug}.ts`),
     entry: `@elmeragroup/ui/${slug}`,
-    exportName: pascalCase(slug),
+    exportName,
+    apiExportNames: apiExportNamesFor(slug, exportName),
     sourceFile: path.join(componentDir, `${slug}.tsx`),
     componentDir,
     demosDir: path.join(routeDir, "demos"),

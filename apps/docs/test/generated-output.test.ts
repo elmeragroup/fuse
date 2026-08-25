@@ -307,6 +307,13 @@ describe("component page manifest", () => {
 });
 
 describe("committed api.json", () => {
+  it("walks only the export names resolveComponentPaths lists", () => {
+    expect(resolveComponentPaths("table").exportName).toBe("Table");
+    expect(resolveComponentPaths("table").apiExportNames).toEqual(["Table", "VerticalTable"]);
+    expect(resolveComponentPaths("button").apiExportNames).toEqual(["Button"]);
+    expect(resolveComponentPaths("meter").apiExportNames).toEqual(["Meter"]);
+  });
+
   it("never leaves a documented prop without a description or an unresolved type", () => {
     for (const entry of COMPONENT_PAGES) {
       for (const part of api(entry.slug).parts) {
@@ -438,6 +445,9 @@ describe("committed api.json", () => {
     expect(api("code").parts.map((part) => part.name)).toEqual(["Code"]);
     expect(api("button").parts.map((part) => part.name)).toEqual(["Button"]);
     expect(api("meter").parts.map((part) => part.name)).toEqual(["Meter"]);
+    // Unrequested callable objects on those facades stay excluded.
+    expect(api("button").parts.map((part) => part.name)).not.toContain("buttonVariants");
+    expect(api("meter").parts.map((part) => part.name)).not.toContain("METER_CONSTANTS");
     expect(api("table").parts.map((part) => part.name)).toEqual([
       "Table.Root",
       "Table.Header",

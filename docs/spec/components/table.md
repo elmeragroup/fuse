@@ -4,28 +4,28 @@
 
 - **Canonical name**: `Table` — namespace compound: `Table.Root`, `Table.Header`, `Table.Body`, `Table.Footer`, `Table.Row`, `Table.Head`, `Table.Cell`, `Table.Caption`. Companion namespace `VerticalTable`: `VerticalTable.Root`, `VerticalTable.Header`, `VerticalTable.Body`, `VerticalTable.Row`, `VerticalTable.Key`, `VerticalTable.Value`.
 - **Export path**: `@elmeragroup/ui/table` (also re-exported from `@elmeragroup/ui`)
-- **RSC**: client — `VerticalTable.Header` uses base-ui `useRender`; no sortable or selection API is part of v1
+- **RSC**: client — `VerticalTable.Header` and `VerticalTable.Key` use base-ui `useRender`; no sortable or selection API is part of v1
 - **Tier**: plain-element composite (no base-ui state primitive; semantic `<table>` markup)
 - **Source of truth**: `.ref/OrderModuleInternalWeb/packages/ui/src/table.tsx`
 
 ## 2 Anatomy
 
-| Part                   | Renders                                                             | data-slot                                             |
-| ---------------------- | ------------------------------------------------------------------- | ----------------------------------------------------- |
-| `Table.Root`           | `<div>` scroll container + `<table>`                                | `table-container` (div), `table` (table)              |
-| `Table.Header`         | `<thead>`                                                           | `table-header`                                        |
-| `Table.Body`           | `<tbody>`                                                           | `table-body`                                          |
-| `Table.Footer`         | `<tfoot>`                                                           | `table-footer`                                        |
-| `Table.Row`            | `<tr>`                                                              | `table-row`                                           |
-| `Table.Head`           | `<th>`                                                              | `table-head`                                          |
-| `Table.Cell`           | `<td>`                                                              | `table-cell`                                          |
-| `Table.Caption`        | `<caption>`                                                         | `table-caption`                                       |
-| `VerticalTable.Root`   | `<div>` (spacing wrapper, carries `data-variant`)                   | `vertical-table-root`                                 |
-| `VerticalTable.Header` | `<h2>` (plain semantic heading)                                     | `vertical-table-header`                               |
-| `VerticalTable.Body`   | `<div>` bordered wrapper + `Table.Root` (`table-fixed`) + `<tbody>` | `vertical-table` (div), `vertical-table-body` (tbody) |
-| `VerticalTable.Row`    | `Table.Row` (`<tr>`), group scope `group/vertical-table-row-item`   | `table-row`                                           |
-| `VerticalTable.Key`    | `Table.Cell` (`<td>`, muted key column)                             | `table-cell`                                          |
-| `VerticalTable.Value`  | `Table.Cell` (`<td>`)                                               | `table-cell`                                          |
+| Part                   | Renders                                                                                | data-slot                                             |
+| ---------------------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| `Table.Root`           | `<div>` scroll container + `<table>`                                                   | `table-container` (div), `table` (table)              |
+| `Table.Header`         | `<thead>`                                                                              | `table-header`                                        |
+| `Table.Body`           | `<tbody>`                                                                              | `table-body`                                          |
+| `Table.Footer`         | `<tfoot>`                                                                              | `table-footer`                                        |
+| `Table.Row`            | `<tr>`                                                                                 | `table-row`                                           |
+| `Table.Head`           | `<th>`                                                                                 | `table-head`                                          |
+| `Table.Cell`           | `<td>`                                                                                 | `table-cell`                                          |
+| `Table.Caption`        | `<caption>`                                                                            | `table-caption`                                       |
+| `VerticalTable.Root`   | `<div>` (spacing wrapper, carries `data-variant`)                                      | `vertical-table-root`                                 |
+| `VerticalTable.Header` | `<h2>` (plain semantic heading)                                                        | `vertical-table-header`                               |
+| `VerticalTable.Body`   | `<div>` bordered wrapper + `Table.Root` (`table-fixed`, plus `tableProps`) + `<tbody>` | `vertical-table` (div), `vertical-table-body` (tbody) |
+| `VerticalTable.Row`    | `Table.Row` (`<tr>`), group scope `group/vertical-table-row-item`                      | `table-row`                                           |
+| `VerticalTable.Key`    | `Table.Cell` (`<td>`, muted key column); `render` may replace the host                 | `table-cell`                                          |
+| `VerticalTable.Value`  | `Table.Cell` (`<td>`)                                                                  | `table-cell`                                          |
 
 ```tsx
 <Table.Root>
@@ -50,22 +50,22 @@
 
 All parts take `className` (merged via `cn`) plus native element pass-through.
 
-| Part                   | Type                                                                             | Notes                                                                                                                                         |
-| ---------------------- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Table.Root`           | `ComponentProps<"table">`                                                        | props and `className` go to the `<table>`; the scroll-container div is fixed (`relative w-full overflow-x-auto`)                              |
-| `Table.Header`         | `ComponentProps<"thead">`                                                        |                                                                                                                                               |
-| `Table.Body`           | `ComponentProps<"tbody">`                                                        | carries the full in-frame reshaping chain (§6)                                                                                                |
-| `Table.Footer`         | `ComponentProps<"tfoot">`                                                        | `border-t bg-muted/72 font-medium`                                                                                                            |
-| `Table.Row`            | `ComponentProps<"tr">`                                                           | consumers set `data-state="selected"` for selection styling (§6)                                                                              |
-| `Table.Head`           | `ComponentProps<"th">`                                                           | `h-10 px-2`, left-aligned, `text-muted-foreground`; checkbox column auto-collapse via `has-[[role=checkbox]]:w-px has-[[role=checkbox]]:pe-0` |
-| `Table.Cell`           | `ComponentProps<"td">`                                                           | `p-2`, `whitespace-nowrap`; checkbox `has-[[role=checkbox]]:pe-0`                                                                             |
-| `Table.Caption`        | `ComponentProps<"caption">`                                                      | `caption-bottom` (set on the table), `mt-4 text-sm text-muted-foreground`                                                                     |
-| `VerticalTable.Root`   | `ComponentProps<"div"> & { variant?: "default" \| "non-bordered-compact" }`      | default `"default"`; emits `data-variant`, consumed by descendants                                                                            |
-| `VerticalTable.Header` | `ComponentProps<"h2">`                                                           | plain `<h2>`; polymorphic via `render` (`useRender`) if another level is needed                                                               |
-| `VerticalTable.Body`   | `ComponentProps<"div"> & { data?: VerticalTableItem[] }`                         | props and `className` go to the wrapper div **only** (§8.3); renders div > `Table.Root className="table-fixed"` > tbody                       |
-| `VerticalTable.Row`    | `ComponentProps<"tr"> & { fontWeight?: "normal" \| "bold"; isHidden?: boolean }` | defaults `"normal"`, `false`; emits `data-font-weight`; `isHidden` adds `hidden`                                                              |
-| `VerticalTable.Key`    | `ComponentProps<"td"> & { text?: "default" \| "truncate"; isLoading?: boolean }` | defaults `"truncate"`, `false`; `isLoading` swaps children for a `Skeleton` (`h-4 w-full max-w-24`)                                           |
-| `VerticalTable.Value`  | `ComponentProps<"td"> & { text?: "default" \| "truncate"; isLoading?: boolean }` | same contract as `Key`                                                                                                                        |
+| Part                   | Type                                                                                                            | Notes                                                                                                                                                                                                             |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Table.Root`           | `ComponentProps<"table">`                                                                                       | props and `className` go to the `<table>`; the scroll-container div is fixed (`relative w-full overflow-x-auto`)                                                                                                  |
+| `Table.Header`         | `ComponentProps<"thead">`                                                                                       |                                                                                                                                                                                                                   |
+| `Table.Body`           | `ComponentProps<"tbody">`                                                                                       | carries the full in-frame reshaping chain (§6)                                                                                                                                                                    |
+| `Table.Footer`         | `ComponentProps<"tfoot">`                                                                                       | `border-t bg-muted/72 font-medium`                                                                                                                                                                                |
+| `Table.Row`            | `ComponentProps<"tr">`                                                                                          | consumers set `data-state="selected"` for selection styling (§6)                                                                                                                                                  |
+| `Table.Head`           | `ComponentProps<"th">`                                                                                          | `h-10 px-2`, left-aligned, `text-muted-foreground`; checkbox column auto-collapse via `has-[[role=checkbox]]:w-px has-[[role=checkbox]]:pe-0`                                                                     |
+| `Table.Cell`           | `ComponentProps<"td">`                                                                                          | `p-2`, `whitespace-nowrap`; checkbox `has-[[role=checkbox]]:pe-0`                                                                                                                                                 |
+| `Table.Caption`        | `ComponentProps<"caption">`                                                                                     | `caption-bottom` (set on the table), `mt-4 text-sm text-muted-foreground`                                                                                                                                         |
+| `VerticalTable.Root`   | `ComponentProps<"div"> & { variant?: "default" \| "non-bordered-compact" }`                                     | default `"default"`; emits `data-variant`, consumed by descendants                                                                                                                                                |
+| `VerticalTable.Header` | `ComponentProps<"h2">`                                                                                          | plain `<h2>`; polymorphic via `render` (`useRender`) if another level is needed                                                                                                                                   |
+| `VerticalTable.Body`   | `ComponentProps<"div"> & { data?: VerticalTableItem[]; tableProps?: TableRootProps }`                           | props and `className` go to the wrapper div **only** (§8.3); `tableProps` is the inner-table seam (`Table.Root` / `<table>`), with `className` merged onto `table-fixed` — not a second spread of Body props      |
+| `VerticalTable.Row`    | `ComponentProps<"tr"> & { fontWeight?: "normal" \| "bold"; isHidden?: boolean }`                                | defaults `"normal"`, `false`; emits `data-font-weight`; `isHidden` adds `hidden`                                                                                                                                  |
+| `VerticalTable.Key`    | `ComponentProps<"td"> & { text?: "default" \| "truncate"; isLoading?: boolean; render?: useRender.RenderProp }` | defaults `"truncate"`, `false`; `isLoading` swaps children for a `Skeleton` (`h-4 w-full max-w-24`); `render` via `useRender` (same pattern as `Header`) — `render={<th scope="row" />}` is the row-header escape |
+| `VerticalTable.Value`  | `ComponentProps<"td"> & { text?: "default" \| "truncate"; isLoading?: boolean }`                                | same contract as `Key`                                                                                                                                                                                            |
 
 Exported type:
 
@@ -113,8 +113,8 @@ This chain is the family's hardest port and is documented faithfully — ported 
 - Native table semantics throughout: `table`/`rowgroup`/`row`/`columnheader`/`cell` roles come from the elements; nothing is re-rolled with ARIA.
 - `Table.Root`'s scroll container is a plain div; for keyboard-scrollable wide tables consumers add `tabIndex={0}` + an accessible name themselves (out of scope here).
 - `Table.Caption` is a real `<caption>` — preferred accessible name for the table.
-- `VerticalTable.Header` is a plain `<h2>` in the document outline (§8.2); it is not programmatically associated with the table — consumers who need the association use `aria-labelledby` on `VerticalTable.Body`.
-- `VerticalTable.Key`/`Value` are both `<td>`; keys are visually distinguished only. Consumers needing row-header semantics can pass `render`/element overrides — the default trades `<th scope="row">` for the ref's proven layout, kept as-is.
+- `VerticalTable.Header` is a plain `<h2>` in the document outline (§8.2); it is not associated with the table by default. Consumers who need the association pass `aria-labelledby` (pointing at the Header `id`) through `VerticalTable.Body` `tableProps` — Body's own props, including `aria-*`, stay on the wrapper only (§8.3) and do not name the `<table>`.
+- `VerticalTable.Key`/`Value` default to `<td>`; keys are visually distinguished only. Key owns `render` via `useRender` (same pattern as `Header`): `render={<th scope="row" />}` exposes a row header. The default `<td>` keeps the ref's proven layout and in-frame classes.
 - Skeleton loading cells: purely visual (see skeleton.md); pair with `aria-busy` on the region when announcing load state matters.
 - No keyboard behavior of its own.
 
@@ -122,18 +122,19 @@ This chain is the family's hardest port and is documented faithfully — ported 
 
 1. **Rename: flat → namespace** — `Table → Table.Root`, `TableHeader → .Header`, `TableBody → .Body`, `TableFooter → .Footer`, `TableRow → .Row`, `TableHead → .Head`, `TableCell → .Cell`, `TableCaption → .Caption`; `VerticalTableRoot → VerticalTable.Root`, `VerticalTableHeader → .Header`, `VerticalTableBody → .Body`, `VerticalTableRow → .Row`, `VerticalTableKey → .Key`, `VerticalTableValue → .Value`. The ref's seventh flat export `VerticalTable` (bordered wrapper div + inner `Table`) is folded into `VerticalTable.Body`, which now renders wrapper > table > tbody as one part. Type rename: `TableVerticalBodyItem → VerticalTableItem` (`TableVerticalBodyProps` is subsumed by the part's props).
 2. **DE-RAC (ruled)** — the ref's `VerticalTableHeader` wraps react-aria `Heading` (default `level={2}`); replaced by a plain semantic `<h2>` carrying the identical classes the ref's Heading emitted at level 2 (`font-heading text-inherit text-lg leading-snug font-medium`). react-aria leaves this family entirely.
-3. **Ref bug fixed (ruled): double `{...props}` spread** — the ref's `VerticalTable` spreads `{...props}` onto **both** the wrapper div and the inner `Table` (duplicating ids, aria attributes and event handlers in the DOM), while `className` went only to the inner table. Fixed: all props including `className` go to the part's root (the wrapper div) only.
+3. **Ref bug fixed (ruled): double `{...props}` spread** — the ref's `VerticalTable` spreads `{...props}` onto **both** the wrapper div and the inner `Table` (duplicating ids, aria attributes and event handlers in the DOM), while `className` went only to the inner table. Fixed: all Body props including `className` and `aria-*` go to the part's root (the wrapper div) **only**. The inner `<table>` is reached through the explicit `tableProps` seam (`TableRootProps` / `Table.Root` props): `className` merges with the fixed `table-fixed`, and association attributes such as `aria-labelledby` go here. This is not a second spread of Body props onto the table.
 4. **Skeleton override token fix (ruled)** — the ref's compact-variant skeleton override `in-data-[variant=non-bordered-compact]:bg-neutral-90` uses a raw palette class (forbidden by `no-primitive-colors`). Replaced with the muted family: `bg-muted` — which equals `Skeleton`'s own base fill, so the color override is dropped as redundant and only the compact `h-lh` sizing override remains.
 5. **`dark:` dropped (ruled)** — `Table.Body`'s single `dark:before:shadow-[0_-1px_--theme(--color-white/8%)]` is removed per conventions (`no-tailwind-dark-variant`); consequently its `not-dark:` guard on `bg-clip-padding` becomes unconditional `bg-clip-padding`.
 6. **KEPT (no-refactor zones)**: the full in-frame selector chain (§6), the `data-[state=selected]` consumer contract, the `--theme()` shadow literals, and the `calc(--spacing(2.5)-1px)` / `calc(var(--radius-xl)-1px)` arithmetic — all verbatim.
 
 ## 9 Test requirements
 
-- Role queries only: `getByRole("table")`, `getAllByRole("row")`, `getByRole("columnheader", { name })`, `getByRole("cell", { name })`; caption names the table (`getByRole("table", { name })`).
+- Role queries only: `getByRole("table")`, `getAllByRole("row")`, `getByRole("columnheader", { name })`, `getByRole("cell", { name })`; caption names the table (`getByRole("table", { name })`). `VerticalTable.Body` `tableProps={{ "aria-labelledby": headerId }}` names the table from `VerticalTable.Header` (`getByRole("table", { name })`); Body's own `aria-labelledby` must not.
 - Row-group structure: header/body/footer render `rowgroup` roles; rows land in the right group.
 - Selection contract: a `Table.Row` given `data-state="selected"` carries the attribute through to the DOM (styling asserted only in browser tests).
 - `VerticalTable.Body` `data` prop: N items render N rows, each with exactly two cells (key then value); `isHidden` rows are `hidden`; `data` rows precede `children` rows.
-- `isLoading` on `Key`/`Value` renders a skeleton instead of children (query: cell has no text content, contains the skeleton node); no duplicated ids/handlers on wrapper vs table (regression test for §8.3).
+- `isLoading` on `Key`/`Value` renders a skeleton instead of children (query: cell has no text content, contains the skeleton node); no duplicated ids/handlers on wrapper vs table (regression test for §8.3) — Body props stay on the wrapper, `tableProps` stay on the table.
+- `VerticalTable.Key` `render={<th scope="row" />}` exposes `rowheader` (or the native `th` role); default Key stays a `cell`.
 - `VerticalTable.Header` is `getByRole("heading", { level: 2 })`.
 - **Browser test (in-frame visual contract)**: a table inside `Frame.Root` gets `border-separate` on the table, rounded corner cells, `bg-background` cells, and a hidden-outside-frame `before` hairline — asserted via computed styles in the browser project, not jsdom.
 
