@@ -28,6 +28,10 @@
       "types": "./src/badge.ts",
       "import": "./src/badge.ts"
     },
+    "./breadcrumb": {
+      "types": "./src/breadcrumb.ts",
+      "import": "./src/breadcrumb.ts"
+    },
     "./button": {
       "types": "./src/button.ts",
       "import": "./src/button.ts"

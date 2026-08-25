@@ -1,0 +1,97 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "breadcrumb",
+  "parts": [
+    {
+      "name": "Breadcrumb.Root",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/breadcrumb/breadcrumb.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": [
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Landmark label. Defaults to the locale dictionary; an explicit `aria-label` wins over this prop (breadcrumb.md §3).",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Breadcrumb.List",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/breadcrumb/breadcrumb.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 283,
+      "props": []
+    },
+    {
+      "name": "Breadcrumb.Item",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/breadcrumb/breadcrumb.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 281,
+      "props": []
+    },
+    {
+      "name": "Breadcrumb.Link",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/breadcrumb/breadcrumb.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 289,
+      "props": []
+    },
+    {
+      "name": "Breadcrumb.Page",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/breadcrumb/breadcrumb.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Breadcrumb.Separator",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/breadcrumb/breadcrumb.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 281,
+      "props": []
+    },
+    {
+      "name": "Breadcrumb.Ellipsis",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/breadcrumb/breadcrumb.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": [
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Screen-reader-only copy for omitted items. Defaults to the locale dictionary (breadcrumb.md §3).",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

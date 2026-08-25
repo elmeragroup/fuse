@@ -62,6 +62,7 @@ describe("component page manifest", () => {
       "alert-dialog",
       "avatar",
       "badge",
+      "breadcrumb",
       "button",
       "button-group",
       "card",
@@ -254,6 +255,12 @@ describe("component page manifest", () => {
       "disabled",
     ]);
     expect(page("pagination").demos.map((demo) => demo.id)).toEqual(["basic", "ellipsis", "controlled"]);
+    expect(page("breadcrumb").demos.map((demo) => demo.id)).toEqual([
+      "basic",
+      "custom-separator",
+      "ellipsis",
+      "render-link",
+    ]);
   });
 
   it("links View source at the implementation on the repo host", () => {
@@ -271,6 +278,7 @@ describe("component page manifest", () => {
       "alert-dialog": "client",
       avatar: "client",
       badge: "server",
+      breadcrumb: "client",
       button: "client",
       "button-group": "client",
       card: "server",
@@ -325,6 +333,7 @@ describe("committed api.json", () => {
     expect(resolveComponentPaths("button").apiExportNames).toEqual(["Button"]);
     expect(resolveComponentPaths("meter").apiExportNames).toEqual(["Meter"]);
     expect(resolveComponentPaths("pagination").apiExportNames).toEqual(["Pagination"]);
+    expect(resolveComponentPaths("breadcrumb").apiExportNames).toEqual(["Breadcrumb"]);
   });
 
   it("never leaves a documented prop without a description or an unresolved type", () => {
@@ -471,6 +480,15 @@ describe("committed api.json", () => {
     expect(api("button").parts.map((part) => part.name)).not.toContain("buttonVariants");
     expect(api("meter").parts.map((part) => part.name)).not.toContain("METER_CONSTANTS");
     expect(api("pagination").parts.map((part) => part.name)).not.toContain("paginationVariants");
+    expect(api("breadcrumb").parts.map((part) => part.name)).toEqual([
+      "Breadcrumb.Root",
+      "Breadcrumb.List",
+      "Breadcrumb.Item",
+      "Breadcrumb.Link",
+      "Breadcrumb.Page",
+      "Breadcrumb.Separator",
+      "Breadcrumb.Ellipsis",
+    ]);
     expect(api("table").parts.map((part) => part.name)).toEqual([
       "Table.Root",
       "Table.Header",

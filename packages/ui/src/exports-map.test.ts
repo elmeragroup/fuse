@@ -37,6 +37,7 @@ describe("exports map", () => {
       "alert-dialog",
       "avatar",
       "badge",
+      "breadcrumb",
       "button",
       "button-group",
       "card",
@@ -451,6 +452,12 @@ describe("exports map", () => {
     const pagination = discovered.jsEntries.find((entry) => entry.subpath === "pagination");
     expect(pagination?.inRootBarrel).toBe(true);
     expect(pagination?.runtimeExports).toEqual(["Pagination", "paginationVariants"]);
+  });
+
+  it("publishes Breadcrumb from /breadcrumb and the root barrel", () => {
+    const breadcrumb = discovered.jsEntries.find((entry) => entry.subpath === "breadcrumb");
+    expect(breadcrumb?.inRootBarrel).toBe(true);
+    expect(breadcrumb?.runtimeExports).toEqual(["Breadcrumb"]);
   });
 
   it("keeps /icons as a subpath-only entry with the curated roster", () => {
