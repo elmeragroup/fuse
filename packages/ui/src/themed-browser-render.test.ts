@@ -5,35 +5,6 @@ import { describe, expect, it } from "vitest";
 
 const componentsRoot = join(dirname(fileURLToPath(import.meta.url)), "components");
 
-const HARNESSED_SUITES = [
-  "badge",
-  "button",
-  "card",
-  "code",
-  "dialog",
-  "empty",
-  "popover",
-  "scroll-area",
-  "separator",
-  "field",
-  "heading",
-  "text",
-  "span",
-  "item",
-  "loader",
-  "input",
-  "input-group",
-  "textarea",
-  "text-field",
-  "toggle",
-  "show",
-  "skeleton",
-  "timeline-list",
-  "sheet",
-  "tooltip",
-  "frame",
-] as const;
-
 function walk(directory: string): string[] {
   const files: string[] = [];
   for (const entry of readdirSync(directory)) {
@@ -51,7 +22,7 @@ function walk(directory: string): string[] {
 
 describe("themed browser-test harness", () => {
   it("is the only ThemeScope / density / CONTROL_MD surface the component suites use", () => {
-    const files = HARNESSED_SUITES.flatMap((name) => walk(join(componentsRoot, name)));
+    const files = walk(componentsRoot);
     expect(files.length).toBeGreaterThan(0);
 
     for (const file of files) {
