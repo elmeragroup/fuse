@@ -54,12 +54,16 @@ describe("size-limit harness", () => {
       "input-group",
       "textarea",
       "flags",
+      "text",
       "icons/Check",
     ]);
     expect(FLAG_RAW_BUDGETS).toEqual([{ name: "flags/*.svg", ceilingBytes: FLAG_RAW_CEILING_BYTES }]);
     expect(CSS_BUDGETS.map((budget) => budget.name)).toEqual(["themes.css", "styles.css"]);
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "flags")?.ceilingGzip).toBe(
       ceilingFromMeasured(1388)
+    );
+    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "text")?.ceilingGzip).toBe(
+      ceilingFromMeasured(17279)
     );
     // styles.css keeps its 2026-08-21 calibration, tightened by the gzip bytes the demo
     // relocation removed from the sheet (ticket 74b) rather than banking them as slack.

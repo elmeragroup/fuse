@@ -15,5 +15,6 @@ export * from "./input-group";
 export * from "./item";
 export * from "./scroll-area";
 export * from "./separator";
+export * from "./text";
 export * from "./textarea";
 export * from "./theme";

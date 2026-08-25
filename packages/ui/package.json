@@ -68,6 +68,10 @@
       "import": "./src/separator.ts"
     },
     "./styles.css": "./dist/styles.css",
+    "./text": {
+      "types": "./src/text.ts",
+      "import": "./src/text.ts"
+    },
     "./textarea": {
       "types": "./src/textarea.ts",
       "import": "./src/textarea.ts"

@@ -18,8 +18,8 @@
  * so rather than leave the freed bytes as slack the ceiling is consciously tightened by
  * exactly what the sheet lost — 10616 → 10469, keeping the standing 2026-08-21 headroom.
  *
- * Current measurements (gzip bytes, 2026-08-22). Earlier measurement rounds live in git.
- *   .             57448  (aggregate; under the standing 64167 ceiling, so recorded, not loosened)
+ * Current measurements (gzip bytes, 2026-08-25). Earlier measurement rounds live in git.
+ *   .             57850  (aggregate; under the standing 64167 ceiling, so recorded, not loosened)
  *   theme          6129
  *   icons/Check     818  (per-icon export, not the full roster)
  *   button        25214
@@ -35,8 +35,9 @@
  *   badge         15662
  *   input-group   28011
  *   flags          1388
+ *   text          17279
  *   themes.css     2274
- *   styles.css     9758  (re-measured 2026-08-24 after the demo relocation; note above)
+ *   styles.css    10013  (grew with Text type-scale utilities; under the standing 10469 ceiling, so recorded, not loosened)
  */
 import { FLAG_RAW_CEILING_BYTES } from "./flag-payload";
 
@@ -83,6 +84,7 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = [
   // `pnpm gen component` appends a 0-ceiling row below this marker, so a brand-new packed
   // entry cannot slip through unbudgeted. Replace the 0 with measured × 1.5.
   // plop:js-entry-budget
+  { name: "text", entryFile: "text.js", ceilingGzip: 25919 },
 ];
 
 export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = [

@@ -68,6 +68,7 @@ describe("component page manifest", () => {
       "item",
       "scroll-area",
       "separator",
+      "text",
       "textarea",
     ]);
   });
@@ -138,6 +139,7 @@ describe("component page manifest", () => {
       item: "client",
       "scroll-area": "client",
       separator: "client",
+      text: "client",
       textarea: "server",
     } as const;
     expect(Object.keys(expected)).toHaveLength(COMPONENT_PAGES.length);

@@ -43,6 +43,7 @@ describe("exports map", () => {
       "item",
       "scroll-area",
       "separator",
+      "text",
       "textarea",
     ]);
     expect(unexpectedJsEntryFiles(packageRoot)).toEqual([]);
@@ -220,6 +221,12 @@ describe("exports map", () => {
     const inputGroup = discovered.jsEntries.find((entry) => entry.subpath === "input-group");
     expect(inputGroup?.inRootBarrel).toBe(true);
     expect(inputGroup?.runtimeExports).toEqual(["InputGroup"]);
+  });
+
+  it("publishes Text and the public textVariants recipe from /text and the root barrel", () => {
+    const text = discovered.jsEntries.find((entry) => entry.subpath === "text");
+    expect(text?.inRootBarrel).toBe(true);
+    expect(text?.runtimeExports).toEqual(["Text", "textVariants"]);
   });
 
   it("keeps /icons as a subpath-only entry with the curated roster", () => {
