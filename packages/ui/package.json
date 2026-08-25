@@ -156,6 +156,10 @@
       "types": "./src/switch.ts",
       "import": "./src/switch.ts"
     },
+    "./tabs": {
+      "types": "./src/tabs.ts",
+      "import": "./src/tabs.ts"
+    },
     "./text": {
       "types": "./src/text.ts",
       "import": "./src/text.ts"

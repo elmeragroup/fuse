@@ -1,0 +1,60 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "tabs",
+  "parts": [
+    {
+      "name": "Tabs.Root",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/tabs/tabs.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 282,
+      "props": []
+    },
+    {
+      "name": "Tabs.List",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/tabs/tabs.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": [
+        {
+          "name": "variant",
+          "origin": "recipe-axis",
+          "type": "\"default\" | \"line\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Tabs.Trigger",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/tabs/tabs.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 289,
+      "props": []
+    },
+    {
+      "name": "Tabs.Content",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/tabs/tabs.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    }
+  ]
+}

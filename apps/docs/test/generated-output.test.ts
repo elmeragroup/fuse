@@ -90,6 +90,7 @@ describe("component page manifest", () => {
       "skeleton",
       "span",
       "switch",
+      "tabs",
       "text",
       "text-field",
       "textarea",
@@ -227,6 +228,13 @@ describe("component page manifest", () => {
       "range",
       "neutral",
     ]);
+    expect(page("tabs").demos.map((demo) => demo.id)).toEqual([
+      "basic",
+      "line",
+      "vertical",
+      "with-icons",
+      "disabled",
+    ]);
   });
 
   it("links View source at the implementation on the repo host", () => {
@@ -272,6 +280,7 @@ describe("component page manifest", () => {
       skeleton: "server",
       span: "client",
       switch: "client",
+      tabs: "client",
       text: "client",
       "text-field": "client",
       textarea: "server",
@@ -392,6 +401,12 @@ describe("committed api.json", () => {
       "Collapsible.Root",
       "Collapsible.Trigger",
       "Collapsible.Content",
+    ]);
+    expect(api("tabs").parts.map((part) => part.name)).toEqual([
+      "Tabs.Root",
+      "Tabs.List",
+      "Tabs.Trigger",
+      "Tabs.Content",
     ]);
     expect(api("empty").parts.map((part) => part.name)).toEqual([
       "Empty.Root",

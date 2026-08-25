@@ -65,6 +65,7 @@ describe("exports map", () => {
       "skeleton",
       "span",
       "switch",
+      "tabs",
       "text",
       "text-field",
       "textarea",
@@ -416,6 +417,12 @@ describe("exports map", () => {
     const meter = discovered.jsEntries.find((entry) => entry.subpath === "meter");
     expect(meter?.inRootBarrel).toBe(true);
     expect(meter?.runtimeExports).toEqual(["Meter", "METER_CONSTANTS"]);
+  });
+
+  it("publishes Tabs and the public tabsListVariants recipe from /tabs and the root barrel", () => {
+    const tabs = discovered.jsEntries.find((entry) => entry.subpath === "tabs");
+    expect(tabs?.inRootBarrel).toBe(true);
+    expect(tabs?.runtimeExports).toEqual(["Tabs", "tabsListVariants"]);
   });
 
   it("keeps /icons as a subpath-only entry with the curated roster", () => {
