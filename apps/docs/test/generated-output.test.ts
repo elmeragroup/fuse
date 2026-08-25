@@ -59,6 +59,7 @@ describe("component page manifest", () => {
   it("covers every authored component page", () => {
     expect(COMPONENT_PAGES.map((entry) => entry.slug)).toEqual([
       "accordion",
+      "alert",
       "alert-dialog",
       "avatar",
       "badge",
@@ -261,6 +262,12 @@ describe("component page manifest", () => {
       "ellipsis",
       "render-link",
     ]);
+    expect(page("alert").demos.map((demo) => demo.id)).toEqual([
+      "variants",
+      "action",
+      "title-only",
+      "heading-level",
+    ]);
   });
 
   it("links View source at the implementation on the repo host", () => {
@@ -275,6 +282,7 @@ describe("component page manifest", () => {
     // declaring module, so this is where a stray directive would show up.
     const expected = {
       accordion: "client",
+      alert: "server",
       "alert-dialog": "client",
       avatar: "client",
       badge: "server",
@@ -334,6 +342,7 @@ describe("committed api.json", () => {
     expect(resolveComponentPaths("meter").apiExportNames).toEqual(["Meter"]);
     expect(resolveComponentPaths("pagination").apiExportNames).toEqual(["Pagination"]);
     expect(resolveComponentPaths("breadcrumb").apiExportNames).toEqual(["Breadcrumb"]);
+    expect(resolveComponentPaths("alert").apiExportNames).toEqual(["Alert"]);
   });
 
   it("never leaves a documented prop without a description or an unresolved type", () => {
@@ -489,6 +498,13 @@ describe("committed api.json", () => {
       "Breadcrumb.Separator",
       "Breadcrumb.Ellipsis",
     ]);
+    expect(api("alert").parts.map((part) => part.name)).toEqual([
+      "Alert.Root",
+      "Alert.Icon",
+      "Alert.Title",
+      "Alert.Description",
+    ]);
+    expect(api("alert").parts.map((part) => part.name)).not.toContain("alertVariants");
     expect(api("table").parts.map((part) => part.name)).toEqual([
       "Table.Root",
       "Table.Header",

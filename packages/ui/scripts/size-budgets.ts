@@ -22,7 +22,7 @@
  * measured×1.5.
  *
  * Current measurements (gzip bytes, 2026-08-25). Earlier measurement rounds live in git.
- *   .             163618  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty+Frame+Code+DescriptionList+Emoji+Avatar+AlertDialog+DropdownMenu+Switch+ButtonGroup+Collapsible+Accordion+Select+NumberField+Meter+Tabs+ConfirmButton+Table+TextareaField+Pagination+Breadcrumb share the barrel; under the standing 171567 ceiling from Avatar recalibration, so recorded, not loosened)
+ *   .             163639  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty+Frame+Code+DescriptionList+Emoji+Avatar+AlertDialog+DropdownMenu+Switch+ButtonGroup+Collapsible+Accordion+Select+NumberField+Meter+Tabs+ConfirmButton+Table+TextareaField+Pagination+Breadcrumb+Alert share the barrel; under the standing 171567 ceiling from Avatar recalibration, so recorded, not loosened)
  *   theme          6133
  *   icons/Check     818  (per-icon export, not the full roster)
  *   button        25214
@@ -71,8 +71,9 @@
  *   textarea-field 30976  (first calibration, ceiling 46464)
  *   pagination    19190  (first calibration, ceiling 28785)
  *   breadcrumb    25246  (first calibration, ceiling 37869)
+ *   alert         30590  (first calibration, ceiling 45885)
  *   themes.css     2274
- *   styles.css    16896  (Breadcrumb utilities; under the standing 25265 ceiling from Table recalibration, so recorded, not loosened)
+ *   styles.css    17038  (Alert utilities; under the standing 25265 ceiling from Table recalibration, so recorded, not loosened)
  */
 import { FLAG_RAW_CEILING_BYTES } from "./flag-payload";
 
@@ -152,6 +153,7 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = [
   { name: "textarea-field", entryFile: "textarea-field.js", ceilingGzip: 46464 },
   { name: "pagination", entryFile: "pagination.js", ceilingGzip: 28785 },
   { name: "breadcrumb", entryFile: "breadcrumb.js", ceilingGzip: 37869 },
+  { name: "alert", entryFile: "alert.js", ceilingGzip: 45885 },
 ];
 
 export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = [

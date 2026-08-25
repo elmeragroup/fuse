@@ -34,6 +34,7 @@ describe("exports map", () => {
       "illustrations",
       "flags",
       "accordion",
+      "alert",
       "alert-dialog",
       "avatar",
       "badge",
@@ -458,6 +459,12 @@ describe("exports map", () => {
     const breadcrumb = discovered.jsEntries.find((entry) => entry.subpath === "breadcrumb");
     expect(breadcrumb?.inRootBarrel).toBe(true);
     expect(breadcrumb?.runtimeExports).toEqual(["Breadcrumb"]);
+  });
+
+  it("publishes Alert from /alert and the root barrel", () => {
+    const alert = discovered.jsEntries.find((entry) => entry.subpath === "alert");
+    expect(alert?.inRootBarrel).toBe(true);
+    expect(alert?.runtimeExports).toEqual(["Alert"]);
   });
 
   it("keeps /icons as a subpath-only entry with the curated roster", () => {

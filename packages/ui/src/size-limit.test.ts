@@ -87,6 +87,7 @@ describe("size-limit harness", () => {
       "textarea-field",
       "pagination",
       "breadcrumb",
+      "alert",
       "icons/Check",
     ]);
     expect(FLAG_RAW_BUDGETS).toEqual([{ name: "flags/*.svg", ceilingBytes: FLAG_RAW_CEILING_BYTES }]);
@@ -192,6 +193,9 @@ describe("size-limit harness", () => {
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "breadcrumb")?.ceilingGzip).toBe(
       ceilingFromMeasured(25246)
+    );
+    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "alert")?.ceilingGzip).toBe(
+      ceilingFromMeasured(30590)
     );
     // styles.css recalibrated 2026-08-25: Table in-frame utilities exceeded 15860.
     expect(CSS_BUDGETS.find((budget) => budget.name === "styles.css")?.ceilingGzip).toBe(
