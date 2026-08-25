@@ -83,6 +83,7 @@ describe("size-limit harness", () => {
       "meter",
       "tabs",
       "confirm-button",
+      "table",
       "icons/Check",
     ]);
     expect(FLAG_RAW_BUDGETS).toEqual([{ name: "flags/*.svg", ceilingBytes: FLAG_RAW_CEILING_BYTES }]);
@@ -177,9 +178,12 @@ describe("size-limit harness", () => {
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "confirm-button")?.ceilingGzip).toBe(
       ceilingFromMeasured(25625)
     );
-    // styles.css recalibrated 2026-08-25: Heading+Text+Popover utilities exceeded 10469.
+    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "table")?.ceilingGzip).toBe(
+      ceilingFromMeasured(11814)
+    );
+    // styles.css recalibrated 2026-08-25: Table in-frame utilities exceeded 15860.
     expect(CSS_BUDGETS.find((budget) => budget.name === "styles.css")?.ceilingGzip).toBe(
-      ceilingFromMeasured(10573)
+      ceilingFromMeasured(16843)
     );
   });
 

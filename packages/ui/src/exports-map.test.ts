@@ -66,6 +66,7 @@ describe("exports map", () => {
       "skeleton",
       "span",
       "switch",
+      "table",
       "tabs",
       "text",
       "text-field",
@@ -358,6 +359,12 @@ describe("exports map", () => {
     const confirmButton = discovered.jsEntries.find((entry) => entry.subpath === "confirm-button");
     expect(confirmButton?.inRootBarrel).toBe(true);
     expect(confirmButton?.runtimeExports).toEqual(["ConfirmButton"]);
+  });
+
+  it("publishes Table and VerticalTable from /table and the root barrel", () => {
+    const table = discovered.jsEntries.find((entry) => entry.subpath === "table");
+    expect(table?.inRootBarrel).toBe(true);
+    expect(table?.runtimeExports).toEqual(["Table", "VerticalTable"]);
   });
 
   it("publishes Select from /select and the root barrel", () => {

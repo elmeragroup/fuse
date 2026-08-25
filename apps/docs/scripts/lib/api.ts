@@ -309,8 +309,59 @@ export type ComponentApiRequest = {
 };
 
 /**
+ * A value export is a component (or a constant), not a type-only re-export. Facades
+ * also publish `*Props` and item types; those are not parts.
+ */
+function isValueExport(checker: Checker, symbol: TsSymbol): boolean {
+  const resolved = (symbol.flags & SymbolFlags.Alias) !== 0 ? checker.getAliasedSymbol(symbol) : symbol;
+  return !checker.isUnknownSymbol(resolved) && (resolved.flags & SymbolFlags.Value) !== 0;
+}
+
+/**
+ * A compound namespace: no root call signature, but at least one member is callable.
+ * That is `VerticalTable` / `Dialog`, and not `buttonVariants` (callable itself) or
+ * `METER_CONSTANTS` (no callable members).
+ */
+function isNamespaceType(checker: Checker, type: Type): boolean {
+  if (callSignature(checker, type) !== null) {
+    return false;
+  }
+  return checker.getPropertiesOfType(type).some((member) => {
+    const memberType = checker.getTypeOfSymbol(member);
+    return memberType !== undefined && callSignature(checker, memberType) !== null;
+  });
+}
+
+function describeNamespaceParts(
+  context: LibraryProject,
+  namespaceName: string,
+  namespaceType: Type,
+  problems: ProblemLog
+): ApiPart[] {
+  const { checker } = context;
+  const parts: ApiPart[] = [];
+  for (const member of checker.getPropertiesOfType(namespaceType)) {
+    const memberType = checker.getTypeOfSymbol(member);
+    if (memberType === undefined || callSignature(checker, memberType) === null) {
+      continue;
+    }
+    const part = describePart(
+      context,
+      { name: `${namespaceName}.${member.name}`, type: memberType },
+      problems
+    );
+    if (part !== null) {
+      parts.push(part);
+    }
+  }
+  return parts;
+}
+
+/**
  * Resolves one component's public surface: a single part for a plain component, or one
  * part per member for a namespace compound (`Dialog.Root`, `Dialog.Content`, …).
+ * Companion namespace value exports on the same facade (`VerticalTable` next to `Table`)
+ * follow, in export order; callable helpers and constants do not.
  */
 export function describeComponentApi(
   context: LibraryProject,
@@ -328,9 +379,8 @@ export function describeComponentApi(
     problems.add(`${request.entryFile}: entry module has no module symbol`);
     return [];
   }
-  const rootSymbol = checker
-    .getExportsOfModule(moduleSymbol)
-    .find((exported) => exported.name === request.exportName);
+  const exports = checker.getExportsOfModule(moduleSymbol);
+  const rootSymbol = exports.find((exported) => exported.name === request.exportName);
   if (rootSymbol === undefined) {
     problems.add(`${request.entryFile}: does not export "${request.exportName}"`);
     return [];
@@ -341,28 +391,28 @@ export function describeComponentApi(
     return [];
   }
 
+  const parts: ApiPart[] = [];
   if (callSignature(checker, rootType) !== null) {
     const part = describePart(context, { name: request.exportName, type: rootType }, problems);
-    return part === null ? [] : [part];
-  }
-
-  const parts: ApiPart[] = [];
-  for (const member of checker.getPropertiesOfType(rootType)) {
-    const memberType = checker.getTypeOfSymbol(member);
-    if (memberType === undefined || callSignature(checker, memberType) === null) {
-      continue;
-    }
-    const part = describePart(
-      context,
-      { name: `${request.exportName}.${member.name}`, type: memberType },
-      problems
-    );
     if (part !== null) {
       parts.push(part);
     }
+  } else {
+    parts.push(...describeNamespaceParts(context, request.exportName, rootType, problems));
+    if (parts.length === 0) {
+      problems.add(`${request.exportName}: no renderable parts were found on the exported namespace`);
+    }
   }
-  if (parts.length === 0) {
-    problems.add(`${request.exportName}: no renderable parts were found on the exported namespace`);
+
+  for (const exported of exports) {
+    if (exported.name === request.exportName || !isValueExport(checker, exported)) {
+      continue;
+    }
+    const exportedType = checker.getTypeOfSymbol(exported);
+    if (exportedType === undefined || exportedType.isErrorType() || !isNamespaceType(checker, exportedType)) {
+      continue;
+    }
+    parts.push(...describeNamespaceParts(context, exported.name, exportedType, problems));
   }
   return parts;
 }

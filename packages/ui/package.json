@@ -160,6 +160,10 @@
       "types": "./src/switch.ts",
       "import": "./src/switch.ts"
     },
+    "./table": {
+      "types": "./src/table.ts",
+      "import": "./src/table.ts"
+    },
     "./tabs": {
       "types": "./src/tabs.ts",
       "import": "./src/tabs.ts"

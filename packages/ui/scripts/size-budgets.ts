@@ -22,7 +22,7 @@
  * measured×1.5.
  *
  * Current measurements (gzip bytes, 2026-08-25). Earlier measurement rounds live in git.
- *   .             160038  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty+Frame+Code+DescriptionList+Emoji+Avatar+AlertDialog+DropdownMenu+Switch+ButtonGroup+Collapsible+Accordion+Select+NumberField+Meter+Tabs+ConfirmButton share the barrel; under the standing 171567 ceiling from Avatar recalibration, so recorded, not loosened)
+ *   .             161344  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty+Frame+Code+DescriptionList+Emoji+Avatar+AlertDialog+DropdownMenu+Switch+ButtonGroup+Collapsible+Accordion+Select+NumberField+Meter+Tabs+ConfirmButton+Table share the barrel; under the standing 171567 ceiling from Avatar recalibration, so recorded, not loosened)
  *   theme          6133
  *   icons/Check     818  (per-icon export, not the full roster)
  *   button        25214
@@ -67,8 +67,9 @@
  *   meter         27365  (first calibration, ceiling 41048)
  *   tabs          25776  (first calibration, ceiling 38664)
  *   confirm-button 25625  (first calibration, ceiling 38438)
+ *   table         11814  (first calibration, ceiling 17721)
  *   themes.css     2274
- *   styles.css    15761  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty+Frame+Code+DescriptionList+Emoji+Avatar+AlertDialog+DropdownMenu+Switch+ButtonGroup+Collapsible+Accordion+Select+NumberField+Meter+Tabs+ConfirmButton; under the standing 15860 ceiling from Heading+Text+Popover recalibration, so recorded, not loosened)
+ *   styles.css    16843  (Table in-frame utilities exceeded the standing 15860 ceiling from Heading+Text+Popover recalibration, so the shared/aggregate row recalibrates to measured×1.5)
  */
 import { FLAG_RAW_CEILING_BYTES } from "./flag-payload";
 
@@ -144,6 +145,7 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = [
   { name: "meter", entryFile: "meter.js", ceilingGzip: 41048 },
   { name: "tabs", entryFile: "tabs.js", ceilingGzip: 38664 },
   { name: "confirm-button", entryFile: "confirm-button.js", ceilingGzip: 38438 },
+  { name: "table", entryFile: "table.js", ceilingGzip: 17721 },
 ];
 
 export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = [
@@ -152,7 +154,7 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = [
 
 export const CSS_BUDGETS: readonly CssBudget[] = [
   { name: "themes.css", file: "themes.css", ceilingGzip: 3424 },
-  { name: "styles.css", file: "styles.css", ceilingGzip: 15860 },
+  { name: "styles.css", file: "styles.css", ceilingGzip: 25265 },
 ];
 
 export const FLAG_RAW_BUDGETS: readonly FlagRawBudget[] = [

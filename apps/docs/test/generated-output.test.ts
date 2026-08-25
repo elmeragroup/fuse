@@ -91,6 +91,7 @@ describe("component page manifest", () => {
       "skeleton",
       "span",
       "switch",
+      "table",
       "tabs",
       "text",
       "text-field",
@@ -237,6 +238,12 @@ describe("component page manifest", () => {
       "disabled",
     ]);
     expect(page("confirm-button").demos.map((demo) => demo.id)).toEqual(["destructive", "success", "icon"]);
+    expect(page("table").demos.map((demo) => demo.id)).toEqual([
+      "basic",
+      "in-frame",
+      "vertical-data",
+      "vertical-compact",
+    ]);
   });
 
   it("links View source at the implementation on the repo host", () => {
@@ -283,6 +290,7 @@ describe("component page manifest", () => {
       skeleton: "server",
       span: "client",
       switch: "client",
+      table: "client",
       tabs: "client",
       text: "client",
       "text-field": "client",
@@ -428,6 +436,24 @@ describe("committed api.json", () => {
       "Frame.Footer",
     ]);
     expect(api("code").parts.map((part) => part.name)).toEqual(["Code"]);
+    expect(api("button").parts.map((part) => part.name)).toEqual(["Button"]);
+    expect(api("meter").parts.map((part) => part.name)).toEqual(["Meter"]);
+    expect(api("table").parts.map((part) => part.name)).toEqual([
+      "Table.Root",
+      "Table.Header",
+      "Table.Body",
+      "Table.Footer",
+      "Table.Row",
+      "Table.Head",
+      "Table.Cell",
+      "Table.Caption",
+      "VerticalTable.Root",
+      "VerticalTable.Header",
+      "VerticalTable.Body",
+      "VerticalTable.Row",
+      "VerticalTable.Key",
+      "VerticalTable.Value",
+    ]);
   });
 
   it("reads defaults out of the implementation's destructuring", () => {

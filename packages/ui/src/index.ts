@@ -38,6 +38,7 @@ export * from "./show";
 export * from "./skeleton";
 export * from "./span";
 export * from "./switch";
+export * from "./table";
 export * from "./tabs";
 export * from "./text";
 export * from "./text-field";
