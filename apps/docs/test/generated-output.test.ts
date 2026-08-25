@@ -74,6 +74,7 @@ describe("component page manifest", () => {
       "span",
       "text",
       "textarea",
+      "timeline-list",
       "toggle",
     ]);
   });
@@ -122,6 +123,7 @@ describe("component page manifest", () => {
       "predictive-intent",
     ]);
     expect(page("skeleton").demos.map((demo) => demo.id)).toEqual(["basic", "card"]);
+    expect(page("timeline-list").demos.map((demo) => demo.id)).toEqual(["basic", "rich"]);
   });
 
   it("links View source at the implementation on the repo host", () => {
@@ -151,6 +153,7 @@ describe("component page manifest", () => {
       span: "client",
       text: "client",
       textarea: "server",
+      "timeline-list": "server",
       toggle: "client",
     } as const;
     expect(Object.keys(expected)).toHaveLength(COMPONENT_PAGES.length);

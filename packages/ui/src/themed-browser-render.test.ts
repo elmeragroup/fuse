@@ -23,6 +23,7 @@ const HARNESSED_SUITES = [
   "textarea",
   "toggle",
   "skeleton",
+  "timeline-list",
 ] as const;
 
 function walk(directory: string): string[] {

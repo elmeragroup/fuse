@@ -22,4 +22,5 @@ export * from "./span";
 export * from "./text";
 export * from "./textarea";
 export * from "./theme";
+export * from "./timeline-list";
 export * from "./toggle";

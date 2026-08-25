@@ -97,6 +97,10 @@
       "import": "./src/theme.ts"
     },
     "./themes.css": "./dist/themes.css",
+    "./timeline-list": {
+      "types": "./src/timeline-list.ts",
+      "import": "./src/timeline-list.ts"
+    },
     "./toggle": {
       "types": "./src/toggle.ts",
       "import": "./src/toggle.ts"

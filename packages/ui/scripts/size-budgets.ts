@@ -22,7 +22,7 @@
  * measured×1.5.
  *
  * Current measurements (gzip bytes, 2026-08-25). Earlier measurement rounds live in git.
- *   .             78215  (Heading+Text+Span+Popover+Toggle+Skeleton share the barrel; under the standing 113816 ceiling from Popover-only recalibration, so recorded, not loosened)
+ *   .             78680  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList share the barrel; under the standing 113816 ceiling from Popover-only recalibration, so recorded, not loosened)
  *   theme          6138
  *   icons/Check     818  (per-icon export, not the full roster)
  *   button        25214
@@ -44,8 +44,9 @@
  *   span          17324  (first calibration, ceiling 25986)
  *   toggle        25507
  *   skeleton       8701  (combined packed gzip after rebase; first calibration, ceiling 13052)
+ *   timeline-list 23555  (first calibration, ceiling 35333)
  *   themes.css     2274
- *   styles.css    10748  (Heading+Text+Span+Popover+Toggle+Skeleton; under the standing 15860 ceiling from Heading+Text+Popover recalibration, so recorded, not loosened)
+ *   styles.css    11099  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList; under the standing 15860 ceiling from Heading+Text+Popover recalibration, so recorded, not loosened)
  */
 import { FLAG_RAW_CEILING_BYTES } from "./flag-payload";
 
@@ -94,6 +95,7 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = [
   // entry cannot slip through unbudgeted. Replace the 0 with measured × 1.5.
   // plop:js-entry-budget
   { name: "span", entryFile: "span.js", ceilingGzip: 25986 },
+  { name: "timeline-list", entryFile: "timeline-list.js", ceilingGzip: 35333 },
   { name: "heading", entryFile: "heading.js", ceilingGzip: 25934 },
   { name: "text", entryFile: "text.js", ceilingGzip: 25919 },
   { name: "toggle", entryFile: "toggle.js", ceilingGzip: 38223 },

@@ -56,6 +56,7 @@ describe("size-limit harness", () => {
       "textarea",
       "flags",
       "span",
+      "timeline-list",
       "heading",
       "text",
       "toggle",
@@ -84,6 +85,9 @@ describe("size-limit harness", () => {
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "skeleton")?.ceilingGzip).toBe(
       ceilingFromMeasured(8701)
+    );
+    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "timeline-list")?.ceilingGzip).toBe(
+      ceilingFromMeasured(23555)
     );
     // styles.css recalibrated 2026-08-25: Heading+Text+Popover utilities exceeded 10469.
     expect(CSS_BUDGETS.find((budget) => budget.name === "styles.css")?.ceilingGzip).toBe(

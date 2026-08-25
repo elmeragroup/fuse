@@ -49,6 +49,7 @@ describe("exports map", () => {
       "span",
       "text",
       "textarea",
+      "timeline-list",
       "toggle",
     ]);
     expect(unexpectedJsEntryFiles(packageRoot)).toEqual([]);
@@ -220,6 +221,12 @@ describe("exports map", () => {
     const skeleton = discovered.jsEntries.find((entry) => entry.subpath === "skeleton");
     expect(skeleton?.inRootBarrel).toBe(true);
     expect(skeleton?.runtimeExports).toEqual(["Skeleton"]);
+  });
+
+  it("publishes TimelineList from /timeline-list and the root barrel with a private recipe", () => {
+    const timelineList = discovered.jsEntries.find((entry) => entry.subpath === "timeline-list");
+    expect(timelineList?.inRootBarrel).toBe(true);
+    expect(timelineList?.runtimeExports).toEqual(["TimelineList"]);
   });
 
   it("publishes Card and the public cardVariants recipe from /card and the root barrel", () => {
