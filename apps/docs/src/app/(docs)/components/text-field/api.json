@@ -9,7 +9,7 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 303,
+      "forwardedCount": 300,
       "props": [
         {
           "name": "className",

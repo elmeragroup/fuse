@@ -70,7 +70,10 @@ export type TextFieldProps = {
   variant?: "card" | "inline";
   /** Extra classes, merged onto the root via `cn`. */
   className?: string;
-} & Omit<ComponentProps<"input">, "value" | "defaultValue" | "onChange" | "name" | "className">;
+} & Omit<
+  ComponentProps<"input">,
+  "value" | "defaultValue" | "onChange" | "name" | "className" | "disabled" | "readOnly" | "required"
+>;
 
 /**
  * Labeled single-line field composite over Field + Input (text-field.md §2/§7).

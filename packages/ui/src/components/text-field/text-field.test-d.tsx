@@ -65,4 +65,10 @@ test("the element takes the spec's props and no polymorphic as prop", () => {
   const _badVariant = <TextField variant="outline" />;
   // @ts-expect-error polymorphism is never an `as` prop
   const _noAs = <TextField as="div" />;
+  // @ts-expect-error native disabled is not on the composite face; use isDisabled
+  const _noDisabled = <TextField disabled />;
+  // @ts-expect-error native readOnly is not on the composite face; use isReadOnly
+  const _noReadOnly = <TextField readOnly />;
+  // @ts-expect-error native required is not on the composite face; use isRequired
+  const _noRequired = <TextField required />;
 });
