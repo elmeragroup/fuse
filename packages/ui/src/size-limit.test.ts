@@ -45,6 +45,7 @@ describe("size-limit harness", () => {
       "button",
       "card",
       "dialog",
+      "popover",
       "scroll-area",
       "illustrations",
       "separator",
@@ -69,10 +70,12 @@ describe("size-limit harness", () => {
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "text")?.ceilingGzip).toBe(
       ceilingFromMeasured(17279)
     );
-    // styles.css keeps its 2026-08-21 calibration, tightened by the gzip bytes the demo
-    // relocation removed from the sheet (ticket 74b) rather than banking them as slack.
+    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "popover")?.ceilingGzip).toBe(
+      ceilingFromMeasured(56865)
+    );
+    // styles.css recalibrated 2026-08-25: Heading+Text+Popover utilities exceeded 10469.
     expect(CSS_BUDGETS.find((budget) => budget.name === "styles.css")?.ceilingGzip).toBe(
-      ceilingFromMeasured(7077) - (9905 - 9758)
+      ceilingFromMeasured(10573)
     );
   });
 

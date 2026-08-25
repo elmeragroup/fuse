@@ -67,6 +67,7 @@ describe("component page manifest", () => {
       "input",
       "input-group",
       "item",
+      "popover",
       "scroll-area",
       "separator",
       "text",
@@ -139,6 +140,7 @@ describe("component page manifest", () => {
       input: "client",
       "input-group": "client",
       item: "client",
+      popover: "client",
       "scroll-area": "client",
       separator: "client",
       text: "client",
@@ -178,6 +180,14 @@ describe("committed api.json", () => {
       "Dialog.Title",
       "Dialog.Description",
     ]);
+    expect(api("popover").parts.map((part) => part.name)).toEqual([
+      "Popover.Root",
+      "Popover.Trigger",
+      "Popover.Content",
+      "Popover.Header",
+      "Popover.Title",
+      "Popover.Description",
+    ]);
     expect(api("scroll-area").parts.map((part) => part.name)).toEqual(["ScrollArea.Root", "ScrollArea.Bar"]);
   });
 
@@ -190,6 +200,8 @@ describe("committed api.json", () => {
     const content = api("dialog").parts.find((part) => part.name === "Dialog.Content");
     expect(content?.props.find((prop) => prop.name === "showCloseButton")?.defaultValue).toBe("true");
     expect(content?.props.find((prop) => prop.name === "size")?.origin).toBe("recipe-axis");
+    const popoverContent = api("popover").parts.find((part) => part.name === "Popover.Content");
+    expect(popoverContent?.props.find((prop) => prop.name === "showArrow")?.defaultValue).toBe("false");
   });
 });
 

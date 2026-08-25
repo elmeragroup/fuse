@@ -42,6 +42,7 @@ describe("exports map", () => {
       "input",
       "input-group",
       "item",
+      "popover",
       "scroll-area",
       "separator",
       "text",
@@ -222,6 +223,12 @@ describe("exports map", () => {
     const heading = discovered.jsEntries.find((entry) => entry.subpath === "heading");
     expect(heading?.inRootBarrel).toBe(true);
     expect(heading?.runtimeExports).toEqual(["Heading", "headingVariants"]);
+  });
+
+  it("publishes Popover from /popover and the root barrel", () => {
+    const popover = discovered.jsEntries.find((entry) => entry.subpath === "popover");
+    expect(popover?.inRootBarrel).toBe(true);
+    expect(popover?.runtimeExports).toEqual(["Popover"]);
   });
 
   it("publishes InputGroup from /input-group and the root barrel with private recipes", () => {
