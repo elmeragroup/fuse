@@ -72,6 +72,7 @@ describe("component page manifest", () => {
       "separator",
       "text",
       "textarea",
+      "toggle",
     ]);
   });
 
@@ -145,6 +146,7 @@ describe("component page manifest", () => {
       separator: "client",
       text: "client",
       textarea: "server",
+      toggle: "client",
     } as const;
     expect(Object.keys(expected)).toHaveLength(COMPONENT_PAGES.length);
     for (const [slug, rsc] of Object.entries(expected)) {

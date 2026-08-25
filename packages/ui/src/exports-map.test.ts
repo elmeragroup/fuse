@@ -47,6 +47,7 @@ describe("exports map", () => {
       "separator",
       "text",
       "textarea",
+      "toggle",
     ]);
     expect(unexpectedJsEntryFiles(packageRoot)).toEqual([]);
     expect(BARE_COMPONENT_ENTRIES).toHaveLength(56);
@@ -229,6 +230,12 @@ describe("exports map", () => {
     const popover = discovered.jsEntries.find((entry) => entry.subpath === "popover");
     expect(popover?.inRootBarrel).toBe(true);
     expect(popover?.runtimeExports).toEqual(["Popover"]);
+  });
+
+  it("publishes Toggle and the public toggleVariants recipe from /toggle and the root barrel", () => {
+    const toggle = discovered.jsEntries.find((entry) => entry.subpath === "toggle");
+    expect(toggle?.inRootBarrel).toBe(true);
+    expect(toggle?.runtimeExports).toEqual(["Toggle", "toggleVariants"]);
   });
 
   it("publishes InputGroup from /input-group and the root barrel with private recipes", () => {

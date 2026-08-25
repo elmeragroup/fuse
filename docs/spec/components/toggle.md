@@ -47,12 +47,12 @@ Base notes:
 
 **Density mapping.** Toggle `size` selects a shared density rung per [conventions](conventions.md). Recipes read `--control-*` implementation variables; do not add `dense:` / `comfortable:` variants. Keep the xs radius clamp.
 
-| Toggle `size` | Density rung | Notes                                                                                                                                                  |
-| ------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `xs`          | `xs`         | `h-(--control-h-xs) min-w-(--control-h-xs) px-(--control-px-xs)`; type stays `text-xs`; radius `rounded-[min(var(--radius-md),10px)]`; icons `size-3`. |
-| `sm`          | `sm`         | `h-(--control-h-sm) min-w-(--control-h-sm) px-(--control-px-sm)`; type is size-owned (`text-sm`).                                                      |
-| `default`     | `md`         | Pins `h-(--control-h-md) min-w-(--control-h-md) px-(--control-px-md)` plus the control-type pair.                                                      |
-| `lg`          | `lg`         | `h-(--control-h-lg) min-w-(--control-h-lg) px-(--control-px-lg)` plus the control-type pair.                                                           |
+| Toggle `size` | Density rung | Notes                                                                                                                                                                         |
+| ------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `xs`          | `xs`         | `h-(--control-h-xs) min-w-(--control-h-xs) gap-(--control-gap-xs) px-(--control-px-xs)`; type stays `text-xs`; radius `rounded-[min(var(--radius-md),10px)]`; icons `size-3`. |
+| `sm`          | `sm`         | `h-(--control-h-sm) min-w-(--control-h-sm) gap-(--control-gap-sm) px-(--control-px-sm)`; type is size-owned (`text-sm`).                                                      |
+| `default`     | `md`         | Pins `h-(--control-h-md) min-w-(--control-h-md) gap-(--control-gap-md) px-(--control-px-md)` plus the control-type pair.                                                      |
+| `lg`          | `lg`         | `h-(--control-h-lg) min-w-(--control-h-lg) gap-(--control-gap-lg) px-(--control-px-lg)` plus the control-type pair.                                                           |
 
 ## 5 Consumed tokens
 
@@ -80,7 +80,7 @@ Base notes:
 2. **`dark:` variant class dropped** (`dark:aria-invalid:ring-destructive/40`) per `no-tailwind-dark-variant`.
 3. **`destructive` → `error`** token rename on `aria-invalid:` classes.
 4. Kept as-is, documented (not divergences): the doubled `aria-pressed:` + `data-pressed:` selectors, the `has-data-[icon=…]` padding hooks, and the xs `rounded-[min(var(--radius-md),10px)]` radius clamp.
-5. **Density retokenization:** size-axis height, min-width, inline padding, icon-edge padding, and `md`/`lg` type read `--control-*` instead of the ref's literal `h-6`/`h-8`/`h-9`/`h-10` ladder. Dense computed metrics match the ref; comfortable is the signed `ui.css` column.
+5. **Density retokenization:** size-axis height, min-width, inline padding, icon-edge padding, gap, and `md`/`lg` type read `--control-*` instead of the ref's literal `h-6`/`h-8`/`h-9`/`h-10` ladder. Dense computed metrics match the ref; comfortable is the signed `ui.css` column.
 
 No API divergence — prop surface and the public `toggleVariants` export are identical to the ref.
 
@@ -92,7 +92,7 @@ No API divergence — prop surface and the public `toggleVariants` export are id
 - `data-pressed` and `aria-pressed` both reach the DOM when on.
 - Variant/size render without leaking invalid classes; `data-icon="inline-start"` child triggers the tightened padding class (assert via class state, not snapshot).
 - `toggleVariants` unit: default axes resolve to `variant: default`, `size: default`; each size string reads the matching `--control-h-*` variable, not a literal `h-*`.
-- Dual-density: at document `dense` and `comfortable`, computed height, min-width, inline padding, and icon-edge padding match the signed ladder for every mapped rung; font-size and line-height match on `default` and `lg`; `xs`/`sm` type is identical across densities; nested `data-density` and `ThemeScope` variant changes do not rescope metrics.
+- Dual-density: at document `dense` and `comfortable`, computed height, min-width, inline padding, icon-edge padding, and gap match the signed ladder for every mapped rung; font-size and line-height match on `default` and `lg`; `xs`/`sm` type is identical across densities; nested `data-density` and `ThemeScope` variant changes do not rescope metrics.
 
 ## 10 Demo requirements
 

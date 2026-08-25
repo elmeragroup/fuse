@@ -88,7 +88,11 @@
       "types": "./src/theme.ts",
       "import": "./src/theme.ts"
     },
-    "./themes.css": "./dist/themes.css"
+    "./themes.css": "./dist/themes.css",
+    "./toggle": {
+      "types": "./src/toggle.ts",
+      "import": "./src/toggle.ts"
+    }
   },
   "publishConfig": {
     "directory": "dist",

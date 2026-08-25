@@ -18,6 +18,7 @@ const HARNESSED_SUITES = [
   "input",
   "input-group",
   "textarea",
+  "toggle",
 ] as const;
 
 function walk(directory: string): string[] {

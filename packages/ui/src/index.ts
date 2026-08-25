@@ -20,3 +20,4 @@ export * from "./separator";
 export * from "./text";
 export * from "./textarea";
 export * from "./theme";
+export * from "./toggle";

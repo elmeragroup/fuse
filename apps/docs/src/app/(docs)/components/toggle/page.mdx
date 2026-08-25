@@ -1,0 +1,50 @@
+---
+title: Toggle
+lede: >
+  A two-state pressed button over the base-ui primitive. Grouped usage belongs on
+  `ToggleGroup.Item`, which borrows the public `toggleVariants` recipe.
+---
+
+import { ToggleBasic } from "./demos/toggle-basic";
+import { ToggleVariants } from "./demos/toggle-variants";
+import { ToggleSizes } from "./demos/toggle-sizes";
+import { ToggleIconOnly } from "./demos/toggle-icon-only";
+import { ToggleControlled } from "./demos/toggle-controlled";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("toggle");
+
+<ComponentIntro slug="toggle" />
+
+<Prose>
+
+`pressed`, `defaultPressed`, and `onPressedChange` pass through to the primitive. Icon-only
+usage needs a consumer-supplied `aria-label`; tag icon children with
+`data-icon="inline-start"` or `data-icon="inline-end"` to tighten padding on that side.
+
+</Prose>
+
+<Demo slug="toggle" id="basic" title="Basic" file="toggle-basic.tsx">
+  <ToggleBasic />
+</Demo>
+
+<Demo slug="toggle" id="variants" title="Variants" file="toggle-variants.tsx">
+  <ToggleVariants />
+</Demo>
+
+<Demo slug="toggle" id="sizes" title="Sizes" file="toggle-sizes.tsx">
+  <ToggleSizes />
+</Demo>
+
+<Demo slug="toggle" id="icon-only" title="Icon only" file="toggle-icon-only.tsx">
+  <ToggleIconOnly />
+</Demo>
+
+<Demo slug="toggle" id="controlled" title="Controlled" file="toggle-controlled.tsx">
+  <ToggleControlled />
+</Demo>
+
+<ApiReference slug="toggle" />
+
+<ComponentTokens slug="toggle" />
