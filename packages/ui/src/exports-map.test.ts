@@ -42,6 +42,7 @@ describe("exports map", () => {
       "card",
       "code",
       "collapsible",
+      "confirm-button",
       "description-list",
       "dialog",
       "dropdown-menu",
@@ -351,6 +352,12 @@ describe("exports map", () => {
     const collapsible = discovered.jsEntries.find((entry) => entry.subpath === "collapsible");
     expect(collapsible?.inRootBarrel).toBe(true);
     expect(collapsible?.runtimeExports).toEqual(["Collapsible"]);
+  });
+
+  it("publishes ConfirmButton from /confirm-button and the root barrel", () => {
+    const confirmButton = discovered.jsEntries.find((entry) => entry.subpath === "confirm-button");
+    expect(confirmButton?.inRootBarrel).toBe(true);
+    expect(confirmButton?.runtimeExports).toEqual(["ConfirmButton"]);
   });
 
   it("publishes Select from /select and the root barrel", () => {

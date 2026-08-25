@@ -48,6 +48,10 @@
       "types": "./src/collapsible.ts",
       "import": "./src/collapsible.ts"
     },
+    "./confirm-button": {
+      "types": "./src/confirm-button.ts",
+      "import": "./src/confirm-button.ts"
+    },
     "./css": "./src/styles/ui.css",
     "./demo-stage-comfortable.css": "./dist/demo-stage-comfortable.css",
     "./description-list": {

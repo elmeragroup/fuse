@@ -67,6 +67,7 @@ describe("component page manifest", () => {
       "card",
       "code",
       "collapsible",
+      "confirm-button",
       "description-list",
       "dialog",
       "dropdown-menu",
@@ -235,6 +236,7 @@ describe("component page manifest", () => {
       "with-icons",
       "disabled",
     ]);
+    expect(page("confirm-button").demos.map((demo) => demo.id)).toEqual(["destructive", "success", "icon"]);
   });
 
   it("links View source at the implementation on the repo host", () => {
@@ -257,6 +259,7 @@ describe("component page manifest", () => {
       card: "server",
       code: "server",
       collapsible: "client",
+      "confirm-button": "client",
       "description-list": "server",
       dialog: "client",
       "dropdown-menu": "client",

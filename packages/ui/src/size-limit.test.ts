@@ -82,6 +82,7 @@ describe("size-limit harness", () => {
       "number-field",
       "meter",
       "tabs",
+      "confirm-button",
       "icons/Check",
     ]);
     expect(FLAG_RAW_BUDGETS).toEqual([{ name: "flags/*.svg", ceilingBytes: FLAG_RAW_CEILING_BYTES }]);
@@ -172,6 +173,9 @@ describe("size-limit harness", () => {
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "tabs")?.ceilingGzip).toBe(
       ceilingFromMeasured(25776)
+    );
+    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "confirm-button")?.ceilingGzip).toBe(
+      ceilingFromMeasured(25625)
     );
     // styles.css recalibrated 2026-08-25: Heading+Text+Popover utilities exceeded 10469.
     expect(CSS_BUDGETS.find((budget) => budget.name === "styles.css")?.ceilingGzip).toBe(
