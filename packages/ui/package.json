@@ -12,6 +12,10 @@
       "types": "./src/index.ts",
       "import": "./src/index.ts"
     },
+    "./alert-dialog": {
+      "types": "./src/alert-dialog.ts",
+      "import": "./src/alert-dialog.ts"
+    },
     "./avatar": {
       "types": "./src/avatar.ts",
       "import": "./src/avatar.ts"

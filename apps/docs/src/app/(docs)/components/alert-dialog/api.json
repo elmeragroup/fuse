@@ -1,0 +1,165 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "alert-dialog",
+  "parts": [
+    {
+      "name": "AlertDialog.Root",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/alert-dialog/alert-dialog.tsx",
+      "forwardedFrom": [
+        "@base-ui/react"
+      ],
+      "forwardedCount": 11,
+      "props": []
+    },
+    {
+      "name": "AlertDialog.Trigger",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/alert-dialog/alert-dialog.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 291,
+      "props": []
+    },
+    {
+      "name": "AlertDialog.Content",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/alert-dialog/alert-dialog.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": [
+        {
+          "name": "actionLabel",
+          "origin": "declared",
+          "type": "string",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Visible label for the primary action button.",
+          "required": true
+        },
+        {
+          "name": "cancelLabel",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Visible label for the cancel button. Defaults to the locale dictionary (`alertDialog.cancel`).",
+          "required": false
+        },
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Consequence copy, rendered in a real `Dialog.Description` so `aria-describedby` is wired to the popup.",
+          "required": true
+        },
+        {
+          "name": "closeLabel",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Accessible name for the built-in corner close button. Defaults to the locale dictionary.",
+          "required": false
+        },
+        {
+          "name": "container",
+          "origin": "declared",
+          "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Portal target for the popup. Defaults to the nearest enclosing `ThemeScope` element, so an overlay never escapes the theme that opened it.",
+          "required": false
+        },
+        {
+          "name": "icon",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Icon rendered to the right of the title. Defaults to `WarningOctagon` (destructive) or `Info` (neutral).",
+          "required": false
+        },
+        {
+          "name": "isActionDisabled",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Disables the primary action button. Cancel stays enabled.",
+          "required": false
+        },
+        {
+          "name": "isAutomaticallyCloseOnActionEnabled",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "When true, wraps the action button in `Dialog.Close` so clicking it also dismisses. Default leaves closing to the caller (async flows close after success).",
+          "required": false
+        },
+        {
+          "name": "isPerformingAction",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Surfaces the primary button's pending state (`isPending` — `data-pending` and disabled interaction, per Button).",
+          "required": false
+        },
+        {
+          "name": "onAction",
+          "origin": "declared",
+          "type": "(() => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Primary button click. Closing is the caller's job unless `isAutomaticallyCloseOnActionEnabled` is set.",
+          "required": false
+        },
+        {
+          "name": "onCancel",
+          "origin": "declared",
+          "type": "(() => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Cancel button click. The cancel button always closes via `Dialog.Close`.",
+          "required": false
+        },
+        {
+          "name": "size",
+          "origin": "recipe-axis",
+          "type": "\"10xl\" | \"2xl\" | \"3xl\" | \"4xl\" | \"5xl\" | \"6xl\" | \"7xl\" | \"8xl\" | \"9xl\" | \"lg\" | \"md\" | \"sm\" | \"xl\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        },
+        {
+          "name": "title",
+          "origin": "declared",
+          "type": "string",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Confirm heading, rendered in `Dialog.Title`.",
+          "required": true
+        },
+        {
+          "name": "variant",
+          "origin": "declared",
+          "type": "\"destructive\" | \"neutral\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"destructive\"",
+          "description": "Drives the action-button variant and the fallback icon.",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

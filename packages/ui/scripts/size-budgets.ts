@@ -22,7 +22,7 @@
  * measured×1.5.
  *
  * Current measurements (gzip bytes, 2026-08-25). Earlier measurement rounds live in git.
- *   .             114378  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty+Frame+Code+DescriptionList+Emoji+Avatar share the barrel; exceeded the standing 113816 ceiling from Popover-only recalibration, so recalibrated to measured×1.5)
+ *   .             116102  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty+Frame+Code+DescriptionList+Emoji+Avatar+AlertDialog share the barrel; under the standing 171567 ceiling from Avatar recalibration, so recorded, not loosened)
  *   theme          6133
  *   icons/Check     818  (per-icon export, not the full roster)
  *   button        25214
@@ -33,7 +33,7 @@
  *   item          24115
  *   input         25081
  *   textarea      21319
- *   dialog        45221
+ *   dialog        45274
  *   popover       56866
  *   card          15963
  *   badge         15658
@@ -56,8 +56,9 @@
  *   loader        16748  (first calibration, ceiling 25122)
  *   empty         21356  (first calibration, ceiling 32034)
  *   description-list 10713  (first calibration, ceiling 16070)
+ *   alert-dialog  47578  (first calibration, ceiling 71367)
  *   themes.css     2274
- *   styles.css    13340  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty+Frame+Code+DescriptionList+Emoji+Avatar; under the standing 15860 ceiling from Heading+Text+Popover recalibration, so recorded, not loosened)
+ *   styles.css    13340  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty+Frame+Code+DescriptionList+Emoji+Avatar+AlertDialog; under the standing 15860 ceiling from Heading+Text+Popover recalibration, so recorded, not loosened)
  */
 import { FLAG_RAW_CEILING_BYTES } from "./flag-payload";
 
@@ -108,6 +109,7 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = [
   { name: "description-list", entryFile: "description-list.js", ceilingGzip: 16070 },
   { name: "emoji", entryFile: "emoji.js", ceilingGzip: 3663 },
   { name: "avatar", entryFile: "avatar.js", ceilingGzip: 18701 },
+  { name: "alert-dialog", entryFile: "alert-dialog.js", ceilingGzip: 71367 },
   { name: "show", entryFile: "show.js", ceilingGzip: 222 },
   { name: "loader", entryFile: "loader.js", ceilingGzip: 25122 },
   { name: "empty", entryFile: "empty.js", ceilingGzip: 32034 },

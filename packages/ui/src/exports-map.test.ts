@@ -33,6 +33,7 @@ describe("exports map", () => {
       "icons",
       "illustrations",
       "flags",
+      "alert-dialog",
       "avatar",
       "badge",
       "button",
@@ -311,6 +312,12 @@ describe("exports map", () => {
     const popover = discovered.jsEntries.find((entry) => entry.subpath === "popover");
     expect(popover?.inRootBarrel).toBe(true);
     expect(popover?.runtimeExports).toEqual(["Popover"]);
+  });
+
+  it("publishes AlertDialog from /alert-dialog and the root barrel", () => {
+    const alertDialog = discovered.jsEntries.find((entry) => entry.subpath === "alert-dialog");
+    expect(alertDialog?.inRootBarrel).toBe(true);
+    expect(alertDialog?.runtimeExports).toEqual(["AlertDialog"]);
   });
 
   it("publishes Sheet from /sheet and the root barrel", () => {

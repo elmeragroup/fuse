@@ -58,6 +58,7 @@ describe("size-limit harness", () => {
       "description-list",
       "emoji",
       "avatar",
+      "alert-dialog",
       "show",
       "loader",
       "empty",
@@ -84,6 +85,9 @@ describe("size-limit harness", () => {
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "avatar")?.ceilingGzip).toBe(
       ceilingFromMeasured(12467)
+    );
+    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "alert-dialog")?.ceilingGzip).toBe(
+      ceilingFromMeasured(47578)
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "show")?.ceilingGzip).toBe(
       ceilingFromMeasured(148)

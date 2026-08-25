@@ -58,6 +58,7 @@ function endpoint(slug: string): string {
 describe("component page manifest", () => {
   it("covers every authored component page", () => {
     expect(COMPONENT_PAGES.map((entry) => entry.slug)).toEqual([
+      "alert-dialog",
       "avatar",
       "badge",
       "button",
@@ -156,6 +157,12 @@ describe("component page manifest", () => {
       "scrolling",
     ]);
     expect(page("tooltip").demos.map((demo) => demo.id)).toEqual(["basic", "sides", "delay", "controlled"]);
+    expect(page("alert-dialog").demos.map((demo) => demo.id)).toEqual([
+      "destructive",
+      "neutral",
+      "pending",
+      "custom-icon",
+    ]);
   });
 
   it("links View source at the implementation on the repo host", () => {
@@ -169,6 +176,7 @@ describe("component page manifest", () => {
     // The §3 classification table is the audit source; a page's status is read off its
     // declaring module, so this is where a stray directive would show up.
     const expected = {
+      "alert-dialog": "client",
       avatar: "client",
       badge: "server",
       button: "client",
@@ -221,6 +229,11 @@ describe("committed api.json", () => {
   });
 
   it("resolves the compound parts of a namespace component", () => {
+    expect(api("alert-dialog").parts.map((part) => part.name)).toEqual([
+      "AlertDialog.Root",
+      "AlertDialog.Trigger",
+      "AlertDialog.Content",
+    ]);
     expect(api("dialog").parts.map((part) => part.name)).toEqual([
       "Dialog.Root",
       "Dialog.Trigger",
@@ -307,6 +320,12 @@ describe("committed api.json", () => {
     expect(tooltipRoot?.props.find((prop) => prop.name === "delay")?.description).toContain("skip-delay");
     const tooltipContent = api("tooltip").parts.find((part) => part.name === "Tooltip.Content");
     expect(tooltipContent?.props.find((prop) => prop.name === "side")?.defaultValue).toBe('"top"');
+    const alertContent = api("alert-dialog").parts.find((part) => part.name === "AlertDialog.Content");
+    expect(alertContent?.props.find((prop) => prop.name === "variant")?.defaultValue).toBe('"destructive"');
+    expect(alertContent?.props.find((prop) => prop.name === "showCloseButton")).toBeUndefined();
+    expect(alertContent?.props.find((prop) => prop.name === "isPerformingAction")?.defaultValue).toBe(
+      "false"
+    );
   });
 });
 

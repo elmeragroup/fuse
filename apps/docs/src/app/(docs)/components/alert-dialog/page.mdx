@@ -1,0 +1,57 @@
+---
+title: AlertDialog
+lede: >
+  A prop-driven confirm surface. `AlertDialog.Root` owns the open state, `AlertDialog.Content`
+  supplies the title, body and both buttons, and the popup is a real `alertdialog` portaled
+  into the nearest `ThemeScope`.
+---
+
+import { AlertDialogDestructive } from "./demos/alert-dialog-destructive";
+import { AlertDialogNeutral } from "./demos/alert-dialog-neutral";
+import { AlertDialogPending } from "./demos/alert-dialog-pending";
+import { AlertDialogCustomIcon } from "./demos/alert-dialog-custom-icon";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("alert-dialog");
+
+<ComponentIntro slug="alert-dialog" />
+
+<Prose>
+
+`AlertDialog` is not shadcn's compound AlertDialog and not base-ui's AlertDialog primitive.
+It reuses Dialog's popup, header, footer and title, stamps `role="alertdialog"`, and keeps
+the confirm copy on `AlertDialog.Content` — title, body, action and cancel. The body is a
+real `Dialog.Description`, so screen readers hear the consequence text through
+`aria-describedby`.
+
+There is no corner close button: an alert dialog must be answered. Cancel always closes;
+the action button closes only when `isAutomaticallyCloseOnActionEnabled` is set, so async
+flows can wait for success. Cancel copy comes from `alertDialog.cancel` unless `cancelLabel`
+overrides it.
+
+</Prose>
+
+<Demo slug="alert-dialog" id="destructive" title="Destructive" file="alert-dialog-destructive.tsx">
+  <AlertDialogDestructive />
+</Demo>
+
+<Demo slug="alert-dialog" id="neutral" title="Neutral" file="alert-dialog-neutral.tsx">
+  <AlertDialogNeutral />
+</Demo>
+
+<Demo slug="alert-dialog" id="pending" title="Pending and disabled" file="alert-dialog-pending.tsx">
+  <AlertDialogPending />
+</Demo>
+
+<Demo
+  slug="alert-dialog"
+  id="custom-icon"
+  title="Custom icon and cancel label"
+  file="alert-dialog-custom-icon.tsx">
+  <AlertDialogCustomIcon />
+</Demo>
+
+<ApiReference slug="alert-dialog" />
+
+<ComponentTokens slug="alert-dialog" />
