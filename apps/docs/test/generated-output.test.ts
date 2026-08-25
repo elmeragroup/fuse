@@ -83,6 +83,7 @@ describe("component page manifest", () => {
       "show",
       "skeleton",
       "span",
+      "switch",
       "text",
       "text-field",
       "textarea",
@@ -172,6 +173,13 @@ describe("component page manifest", () => {
       "links",
       "destructive",
     ]);
+    expect(page("switch").demos.map((demo) => demo.id)).toEqual([
+      "basic",
+      "sizes",
+      "states",
+      "in-field",
+      "form",
+    ]);
   });
 
   it("links View source at the implementation on the repo host", () => {
@@ -210,6 +218,7 @@ describe("component page manifest", () => {
       show: "server",
       skeleton: "server",
       span: "client",
+      switch: "client",
       text: "client",
       "text-field": "client",
       textarea: "server",

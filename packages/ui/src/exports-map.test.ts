@@ -58,6 +58,7 @@ describe("exports map", () => {
       "show",
       "skeleton",
       "span",
+      "switch",
       "text",
       "text-field",
       "textarea",
@@ -331,6 +332,12 @@ describe("exports map", () => {
     const sheet = discovered.jsEntries.find((entry) => entry.subpath === "sheet");
     expect(sheet?.inRootBarrel).toBe(true);
     expect(sheet?.runtimeExports).toEqual(["Sheet"]);
+  });
+
+  it("publishes Switch from /switch and the root barrel", () => {
+    const switchEntry = discovered.jsEntries.find((entry) => entry.subpath === "switch");
+    expect(switchEntry?.inRootBarrel).toBe(true);
+    expect(switchEntry?.runtimeExports).toEqual(["Switch"]);
   });
 
   it("publishes Toggle and the public toggleVariants recipe from /toggle and the root barrel", () => {

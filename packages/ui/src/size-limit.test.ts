@@ -55,6 +55,7 @@ describe("size-limit harness", () => {
       "input-group",
       "textarea",
       "flags",
+      "switch",
       "description-list",
       "emoji",
       "avatar",
@@ -140,6 +141,9 @@ describe("size-limit harness", () => {
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "dropdown-menu")?.ceilingGzip).toBe(
       ceilingFromMeasured(68195)
+    );
+    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "switch")?.ceilingGzip).toBe(
+      ceilingFromMeasured(26550)
     );
     // styles.css recalibrated 2026-08-25: Heading+Text+Popover utilities exceeded 10469.
     expect(CSS_BUDGETS.find((budget) => budget.name === "styles.css")?.ceilingGzip).toBe(

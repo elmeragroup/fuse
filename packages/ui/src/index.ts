@@ -30,6 +30,7 @@ export * from "./sheet";
 export * from "./show";
 export * from "./skeleton";
 export * from "./span";
+export * from "./switch";
 export * from "./text";
 export * from "./text-field";
 export * from "./textarea";

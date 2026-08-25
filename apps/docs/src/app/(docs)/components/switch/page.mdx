@@ -1,0 +1,50 @@
+---
+title: Switch
+lede: >
+  An unlabeled two-state control over the base-ui switch primitive. Labeled
+  usage composes `Field.Root` + `Field.Label`.
+---
+
+import { SwitchBasic } from "./demos/switch-basic";
+import { SwitchSizes } from "./demos/switch-sizes";
+import { SwitchStates } from "./demos/switch-states";
+import { SwitchInField } from "./demos/switch-in-field";
+import { SwitchForm } from "./demos/switch-form";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("switch");
+
+<ComponentIntro slug="switch" />
+
+<Prose>
+
+`checked`, `defaultChecked`, and `onCheckedChange` pass through to the primitive.
+There is no label prop — compose `Field` for a visible name, description, or
+error. `size` is an optical track (`sm` / `default`), not a density rung.
+
+</Prose>
+
+<Demo slug="switch" id="basic" title="Basic" file="switch-basic.tsx">
+  <SwitchBasic />
+</Demo>
+
+<Demo slug="switch" id="sizes" title="Sizes" file="switch-sizes.tsx">
+  <SwitchSizes />
+</Demo>
+
+<Demo slug="switch" id="states" title="States" file="switch-states.tsx">
+  <SwitchStates />
+</Demo>
+
+<Demo slug="switch" id="in-field" title="In a field" file="switch-in-field.tsx">
+  <SwitchInField />
+</Demo>
+
+<Demo slug="switch" id="form" title="Form" file="switch-form.tsx">
+  <SwitchForm />
+</Demo>
+
+<ApiReference slug="switch" />
+
+<ComponentTokens slug="switch" />

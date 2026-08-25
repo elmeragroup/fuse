@@ -22,7 +22,7 @@
  * measured×1.5.
  *
  * Current measurements (gzip bytes, 2026-08-25). Earlier measurement rounds live in git.
- *   .             128810  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty+Frame+Code+DescriptionList+Emoji+Avatar+AlertDialog+DropdownMenu share the barrel; under the standing 171567 ceiling from Avatar recalibration, so recorded, not loosened)
+ *   .             130288  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty+Frame+Code+DescriptionList+Emoji+Avatar+AlertDialog+DropdownMenu+Switch share the barrel; under the standing 171567 ceiling from Avatar recalibration, so recorded, not loosened)
  *   theme          6133
  *   icons/Check     818  (per-icon export, not the full roster)
  *   button        25214
@@ -46,6 +46,7 @@
  *   code          11756  (first calibration, ceiling 17634)
  *   tooltip       51148  (first calibration, ceiling 76722)
  *   dropdown-menu 68195  (first calibration, ceiling 102293)
+ *   switch        26550  (first calibration, ceiling 39825)
  *   heading       17329
  *   text          17315
  *   span          17324  (first calibration, ceiling 25986)
@@ -59,7 +60,7 @@
  *   description-list 10713  (first calibration, ceiling 16070)
  *   alert-dialog  47578  (first calibration, ceiling 71367)
  *   themes.css     2274
- *   styles.css    13764  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty+Frame+Code+DescriptionList+Emoji+Avatar+AlertDialog+DropdownMenu; under the standing 15860 ceiling from Heading+Text+Popover recalibration, so recorded, not loosened)
+ *   styles.css    14128  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty+Frame+Code+DescriptionList+Emoji+Avatar+AlertDialog+DropdownMenu+Switch; under the standing 15860 ceiling from Heading+Text+Popover recalibration, so recorded, not loosened)
  */
 import { FLAG_RAW_CEILING_BYTES } from "./flag-payload";
 
@@ -107,6 +108,7 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = [
   // `pnpm gen component` appends a 0-ceiling row below this marker, so a brand-new packed
   // entry cannot slip through unbudgeted. Replace the 0 with measured × 1.5.
   // plop:js-entry-budget
+  { name: "switch", entryFile: "switch.js", ceilingGzip: 39825 },
   { name: "description-list", entryFile: "description-list.js", ceilingGzip: 16070 },
   { name: "emoji", entryFile: "emoji.js", ceilingGzip: 3663 },
   { name: "avatar", entryFile: "avatar.js", ceilingGzip: 18701 },

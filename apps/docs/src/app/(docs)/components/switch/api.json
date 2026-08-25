@@ -1,0 +1,36 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "switch",
+  "parts": [
+    {
+      "name": "Switch",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/switch/switch.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 288,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes, merged via `cn` after the base classes.",
+          "required": false
+        },
+        {
+          "name": "size",
+          "origin": "declared",
+          "type": "\"default\" | \"sm\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "Optical track size, emitted as `data-size`. Pixel-fixed at both density stamps — not a control-box density rung (switch.md §4).",
+          "required": false
+        }
+      ]
+    }
+  ]
+}
