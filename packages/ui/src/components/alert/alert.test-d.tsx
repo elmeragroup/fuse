@@ -56,4 +56,8 @@ test("parts take the spec surface: required icon variant, heading level, no vari
   const _badLevel = <Alert.Title level={7}>Title</Alert.Title>;
   // @ts-expect-error polymorphism is never an as prop
   const _noAs = <Alert.Root as="section" />;
+  // @ts-expect-error onAction requires actionLabel
+  const _actionNoLabel = <Alert.Root onAction={() => undefined} />;
+  // @ts-expect-error actionLabel requires onAction
+  const _labelNoAction = <Alert.Root actionLabel="Retry" />;
 });

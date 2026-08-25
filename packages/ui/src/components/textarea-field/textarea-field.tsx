@@ -20,7 +20,7 @@ export type TextareaFieldProps = {
   defaultValue?: string;
   /** Called with the string value, not the native event. */
   onChange?: (value: string) => void;
-  /** Native `maxLength`, also drives the `current/max` character counter. */
+  /** Native `maxLength`, also drives the `current/max` character counter. `0` is set. */
   maxLength?: number;
   /** Forwards `required` to the inner textarea. */
   isRequired?: boolean;
@@ -68,10 +68,10 @@ export function TextareaField({
 
   return (
     <Field.Root invalid={isInvalid} disabled={isDisabled}>
-      {label || maxLength ? (
+      {label || maxLength !== undefined ? (
         <div className="flex items-center justify-between gap-2">
           {label ? <Field.Label>{label}</Field.Label> : null}
-          {maxLength ? (
+          {maxLength !== undefined ? (
             <span className="text-xs text-muted-foreground">
               {currentLength}/{maxLength}
             </span>

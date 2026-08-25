@@ -39,10 +39,17 @@ describe("item source contract", () => {
       readFileSync(join(here, "item.tsx"), "utf8"),
       readFileSync(join(here, "item-variants.ts"), "utf8"),
     ].join("\n");
+    const titleClasses = readFileSync(join(here, "item-title-classes.ts"), "utf8");
+    const facade = readFileSync(join(here, "..", "..", "item.ts"), "utf8");
     expect(source).not.toContain(".ref/");
     expect(source).not.toContain("dark:");
     expect(source).toContain("itemVariants");
     expect(source).toContain('slot: "item"');
     expect(source).toContain('hostProps.role = "listitem"');
+    expect(source).toContain('from "./item-title-classes"');
+    expect(titleClasses.trimStart().startsWith('"use client"')).toBe(false);
+    expect(titleClasses).toContain("ITEM_TITLE_CLASSES");
+    expect(facade).not.toContain("item-title-classes");
+    expect(facade).not.toContain("ITEM_TITLE_CLASSES");
   });
 });

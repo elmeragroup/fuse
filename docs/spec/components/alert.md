@@ -17,7 +17,7 @@
 | `Alert.Title`       | `<h3 data-slot="item-title">` (own heading — see §8.2)               | `level` prop adjusts heading rank                             |
 | `Alert.Description` | base-ui `ItemDescription` (`<p>`)                                    | body copy                                                     |
 
-Internally Root renders `ItemMedia` (icon), `ItemContent` (children), and — when `onAction` is set — `ItemActions` containing a base-ui `Button size="sm" type="button"` styled by the variant's `button` slot.
+Internally Root renders `ItemMedia` (icon), `ItemContent` (children), and — when both `onAction` and a non-empty `actionLabel` are set — `ItemActions` containing a base-ui `Button size="sm" type="button"` styled by the variant's `button` slot. The action pair is atomic: both present or neither.
 
 ```tsx
 <Alert.Root variant="warning" onAction={retry} actionLabel="Retry">
@@ -30,12 +30,12 @@ Internally Root renders `ItemMedia` (icon), `ItemContent` (children), and — wh
 
 **Alert.Root** — `ComponentProps<"div">` (spread onto `Item`) plus:
 
-| Prop          | Type                                                   | Default     | Notes                                                     |
-| ------------- | ------------------------------------------------------ | ----------- | --------------------------------------------------------- |
-| `variant`     | `"default" \| "destructive" \| "warning" \| "success"` | `"default"` | drives base/icon/button slot classes and the icon glyph   |
-| `onAction`    | `ComponentProps<typeof Button>["onClick"]`             | —           | when set, renders the action button in `Item.Actions`     |
-| `actionLabel` | `ReactNode`                                            | —           | action button children                                    |
-| `children`    | `ReactNode`                                            | —           | flows into `Item.Content` (typically Title + Description) |
+| Prop          | Type                                                   | Default     | Notes                                                                                           |
+| ------------- | ------------------------------------------------------ | ----------- | ----------------------------------------------------------------------------------------------- |
+| `variant`     | `"default" \| "destructive" \| "warning" \| "success"` | `"default"` | drives base/icon/button slot classes and the icon glyph                                         |
+| `onAction`    | `ComponentProps<typeof Button>["onClick"]`             | —           | required together with `actionLabel`; the pair renders the action button in `Item.Actions`      |
+| `actionLabel` | `ReactNode`                                            | —           | accessible name and button children; required together with `onAction`; must be self-describing |
+| `children`    | `ReactNode`                                            | —           | flows into `Item.Content` (typically Title + Description)                                       |
 
 **Alert.Icon** — Phosphor icon props (`ComponentProps<typeof Info>`, per-icon named import from `@elmeragroup/ui/icons`) plus required `variant` (same union). Glyph map: `default → Info`, `warning → Warning`, `destructive → WarningOctagon`, `success → CheckCircle`.
 
@@ -45,7 +45,7 @@ Internally Root renders `ItemMedia` (icon), `ItemContent` (children), and — wh
 
 ## 4 Variants
 
-Recipe: `alertVariants` — **module-private** slot recipe (`tv` slots: `base`, `icon`, `content`, `title`, `description`, `button`). Single axis:
+Recipe: `alertVariants` — **module-private** slot recipe (`tv` slots: `base`, `icon`, `description`, `button`). Single axis:
 
 | `variant`     | base                                                          | icon              | button                                                   |
 | ------------- | ------------------------------------------------------------- | ----------------- | -------------------------------------------------------- |
@@ -54,7 +54,7 @@ Recipe: `alertVariants` — **module-private** slot recipe (`tv` slots: `base`, 
 | `warning`     | `border-warning bg-warning-soft text-warning-soft-foreground` | `text-warning`    | `bg-warning text-warning-foreground hover:bg-warning/90` |
 | `success`     | `border-success bg-success/5 text-foreground`                 | `text-success`    | `bg-success text-success-foreground hover:bg-success/90` |
 
-Slot bases: `base: "relative"`, `icon: "block size-5 shrink-0 text-foreground"`, `description: "text-foreground"`; `content`/`title` empty. Default variant: `default`. Underneath, `Item`'s own `variant="outline"`/`size="sm"` axes provide border + padding.
+Slot bases: `base: "relative"`, `icon: "block size-5 shrink-0 text-foreground"`, `description: "text-foreground"`. Title typography comes from the package-private Item title seam, not a recipe slot (see §8.8). Default variant: `default`. Underneath, `Item`'s own `variant="outline"`/`size="sm"` axes provide border + padding.
 
 ## 5 Consumed tokens
 
@@ -71,7 +71,7 @@ Slot bases: `base: "relative"`, `icon: "block size-5 shrink-0 text-foreground"`,
 - `role="alert"` on Root — an assertive live region; content present at mount is announced when the element enters the DOM. For alerts that toggle visibility, mount/unmount the whole Root (don't hide with CSS).
 - The icon is decorative: `Alert.Icon` renders with `aria-hidden="true"` (Phosphor default when unlabeled); meaning is carried by Title/Description text.
 - `Alert.Title` is a real heading (`h3` default, `level`-adjustable) so alerts slot into the page outline.
-- The action button is a standard focusable `Button` (`type="button"`); it lives inside the live region, so keep `actionLabel` self-describing.
+- The action button is a standard focusable `Button` (`type="button"`); it lives inside the live region. `onAction` and `actionLabel` are required together; `actionLabel` is the accessible name and must be self-describing.
 - No keyboard behavior beyond the button's.
 
 ## 8 Divergence from reference
@@ -83,13 +83,14 @@ Slot bases: `base: "relative"`, `icon: "block size-5 shrink-0 text-foreground"`,
 5. **Token alignment (LOCKED)**: `destructive` variant **value kept**; its classes move `destructive* → error*` (`border-error bg-error/5 text-error`, button `bg-error text-error-foreground hover:bg-error/90`) per canonical status tokens. The reference-only, undefined `warning-accent` name is not added to the token contract: warning uses the existing soft status pair for its surface and the solid warning pair for icon/action emphasis, exactly as §4 specifies.
 6. **Icons → Phosphor**: lucide `Info → Info`, `AlertTriangle → Warning`, `OctagonX → WarningOctagon`, `CheckCircle → CheckCircle`, regular weight, from `@elmeragroup/ui/icons`.
 7. **Rename: flat → namespace** — `Alert`/`AlertIcon`/`AlertTitle`/`AlertDescription` → `Alert.Root/.Icon/.Title/.Description`. `alertVariants` stays private (ref also does not export it).
+8. **FIX (ruled): dead empty `content`/`title` slots removed** — the recipe's `content: ""` and `title: ""` were invoked for nothing. `Item.Content` takes children only; Title classes come from the package-private Item title seam (`item-title-classes.ts`) shared with `Item.Title`, so `Alert.Title` stays an `h*` (§8.2) without copying the string.
 
 ## 9 Test requirements
 
 - `getByRole("alert")` finds Root for every variant; children render inside it.
 - **Variant icons**: each variant renders its mapped Phosphor glyph (assert via icon `data-slot`/test hook, hidden from AT — `aria-hidden` verified).
 - `getByRole("heading", { level: 3, name })` finds Title; `level={2}` renders an `h2`.
-- Action: with `onAction`/`actionLabel`, `getByRole("button", { name })` exists and fires the handler; without `onAction` no button renders.
+- Action: with both `onAction` and `actionLabel`, `getByRole("button", { name })` exists and fires the handler; with neither, no button renders. The pair is required together.
 - Regression for §8.3: passing `variant` to Title/Description is a type error and no `variant` attribute appears in the DOM.
 - No `bg-destructive`, `warning-accent`, or raw palette class appears in rendered class lists (token-contract guard).
 

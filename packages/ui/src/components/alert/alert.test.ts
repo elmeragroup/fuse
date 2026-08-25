@@ -50,8 +50,8 @@ describe("alertVariants", () => {
     expect(slots.icon()).toContain("size-5");
     expect(slots.icon()).toContain("shrink-0");
     expect(slots.description()).toContain("text-foreground");
-    expect(slots.content()).toBeFalsy();
-    expect(slots.title()).toBeFalsy();
+    expect(slots).not.toHaveProperty("content");
+    expect(slots).not.toHaveProperty("title");
   });
 
   it("resolves every status variant onto the locked token classes", () => {
@@ -72,14 +72,7 @@ describe("alertVariants", () => {
   it("carries no destructive token classes, warning-accent, raw palette, or dark classes", () => {
     const resolved = VARIANTS.flatMap((variant) => {
       const slots = alertVariants({ variant });
-      return [
-        slots.base(),
-        slots.icon(),
-        slots.content(),
-        slots.title(),
-        slots.description(),
-        slots.button(),
-      ];
+      return [slots.base(), slots.icon(), slots.description(), slots.button()];
     }).join(" ");
     expect(resolved).not.toContain("dark:");
     expect(resolved).not.toContain("bg-destructive");
@@ -110,6 +103,7 @@ describe("alert source contract", () => {
     expect(source).not.toContain("AlertTriangle");
     expect(source).not.toContain("OctagonX");
     expect(source).toContain('from "../item/item"');
+    expect(source).toContain('from "../item/item-title-classes"');
     expect(source).toContain('from "../button/button"');
     expect(source).toContain("Item.Root");
     expect(source).toContain("Item.Media");
@@ -137,6 +131,8 @@ describe("alert source contract", () => {
     expect(facade).not.toContain("AlertTitle");
     expect(facade).not.toContain("AlertDescription");
     expect(variantsSource).toContain('variant: "default"');
+    expect(variantsSource).not.toContain("content:");
+    expect(variantsSource).not.toContain("title:");
     expect(variantsSource).not.toContain("dark:");
     expect(variantsSource).not.toContain("warning-accent");
     expect(variantsSource).not.toContain("bg-destructive");
@@ -172,5 +168,24 @@ describe("Alert server boundary", () => {
     expect(html).not.toContain("bg-destructive");
     expect(html).not.toContain("warning-accent");
     expect(html).not.toMatch(RAW_PALETTE_RE);
+  });
+
+  it("renders the action button only when onAction and actionLabel are both set", () => {
+    const withAction = renderToStaticMarkup(
+      createElement(
+        Alert.Root,
+        { onAction: () => undefined, actionLabel: "Retry" },
+        createElement(Alert.Title, null, "Sync delayed")
+      )
+    );
+    expect(withAction).toContain("Retry");
+    expect(withAction).toContain('data-slot="item-actions"');
+    expect(withAction).toContain('type="button"');
+
+    const withoutAction = renderToStaticMarkup(
+      createElement(Alert.Root, null, createElement(Alert.Title, null, "Saved"))
+    );
+    expect(withoutAction).not.toContain('data-slot="item-actions"');
+    expect(withoutAction).not.toContain("<button");
   });
 });

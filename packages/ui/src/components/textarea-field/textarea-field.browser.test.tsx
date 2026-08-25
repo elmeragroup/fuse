@@ -128,4 +128,11 @@ describe("TextareaField", () => {
     expect(root.querySelector("[data-slot=field-label]")).toBeNull();
     expect(root.textContent).not.toMatch(/\d+\/\d+/);
   });
+
+  it("renders the 0/0 counter when maxLength is 0", () => {
+    renderThemed(<TextareaField label="Notes" maxLength={0} />);
+    expect(page.getByText("0/0", { exact: true }).query()).toBeTruthy();
+    const area = textboxNamed("Notes");
+    expect(area).toHaveProperty("maxLength", 0);
+  });
 });

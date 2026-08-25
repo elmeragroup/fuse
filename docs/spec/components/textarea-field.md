@@ -25,26 +25,26 @@ A pre-wired Field composition around the `Textarea` primitive. Internal structur
 </Field.Root>
 ```
 
-Label row renders only when `label` or `maxLength` is set; Description/Error render only when provided (Field.Error additionally self-suppresses on empty children).
+Label row renders when `label` is set or `maxLength` is set, including `maxLength={0}`; Description/Error render only when provided (Field.Error additionally self-suppresses on empty children).
 
 ## 3 Props
 
 `Omit<ComponentProps<typeof Textarea>, "value" | "defaultValue" | "onChange">` re-typed plus the composite face:
 
-| Prop           | Type                       | Default | Notes                                                              |
-| -------------- | -------------------------- | ------- | ------------------------------------------------------------------ |
-| `label`        | `string`                   | —       | rendered in `Field.Label`; omit for externally-labeled usage       |
-| `description`  | `string`                   | —       | `Field.Description`, auto `aria-describedby`                       |
-| `errorMessage` | `ReactNode`                | —       | `Field.Error` content; widened from ref's `string` (§8)            |
-| `value`        | `string`                   | —       | controlled value                                                   |
-| `defaultValue` | `string`                   | —       | uncontrolled initial value (restored, §8)                          |
-| `onChange`     | `(value: string) => void`  | —       | value, not event — composite convention                            |
-| `maxLength`    | `number`                   | —       | forwarded natively **and** drives the `current/max` counter        |
-| `isRequired`   | `boolean`                  | —       | forwarded as native `required`                                     |
-| `isInvalid`    | `boolean`                  | —       | sets `Field.Root` `invalid`; base-ui emits `aria-invalid`          |
-| `isDisabled`   | `boolean`                  | —       | added (§8); sets `Field.Root` `disabled`, cascading to the control |
-| `className`    | `string`                   | —       | merged onto the inner `Textarea`                                   |
-| …rest          | remaining `Textarea` props | —       | spread onto the inner `Textarea`                                   |
+| Prop           | Type                       | Default | Notes                                                                   |
+| -------------- | -------------------------- | ------- | ----------------------------------------------------------------------- |
+| `label`        | `string`                   | —       | rendered in `Field.Label`; omit for externally-labeled usage            |
+| `description`  | `string`                   | —       | `Field.Description`, auto `aria-describedby`                            |
+| `errorMessage` | `ReactNode`                | —       | `Field.Error` content; widened from ref's `string` (§8)                 |
+| `value`        | `string`                   | —       | controlled value                                                        |
+| `defaultValue` | `string`                   | —       | uncontrolled initial value (restored, §8)                               |
+| `onChange`     | `(value: string) => void`  | —       | value, not event — composite convention                                 |
+| `maxLength`    | `number`                   | —       | forwarded natively **and** drives the `current/max` counter; `0` is set |
+| `isRequired`   | `boolean`                  | —       | forwarded as native `required`                                          |
+| `isInvalid`    | `boolean`                  | —       | sets `Field.Root` `invalid`; base-ui emits `aria-invalid`               |
+| `isDisabled`   | `boolean`                  | —       | added (§8); sets `Field.Root` `disabled`, cascading to the control      |
+| `className`    | `string`                   | —       | merged onto the inner `Textarea`                                        |
+| …rest          | remaining `Textarea` props | —       | spread onto the inner `Textarea`                                        |
 
 Controlled/uncontrolled: supplying `value` makes it controlled; `defaultValue` (or neither) is uncontrolled. The character counter reflects the current value in both modes (uncontrolled mode tracks length internally from the change event).
 
@@ -87,7 +87,7 @@ Directly: `muted-foreground` (character counter text). Everything else via compo
 - Uncontrolled: with `defaultValue` (and with neither prop) typing updates the displayed value without `onChange`.
 - Counter: renders `0/120` initially, updates as the user types (keyboard), caps at `maxLength` (native truncation).
 - `isInvalid` → `aria-invalid` on the textbox; `isDisabled` → disabled control, skipped by Tab; `isRequired` → `required`.
-- Label row absent when neither `label` nor `maxLength` is given.
+- Label row absent when neither `label` nor `maxLength` is given. `maxLength={0}` is set: the row and `0/0` counter render, and native `maxLength` is 0.
 
 ## 10 Demo requirements
 

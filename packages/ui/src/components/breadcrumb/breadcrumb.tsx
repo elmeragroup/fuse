@@ -28,7 +28,7 @@ export type BreadcrumbLinkProps = useRender.ComponentProps<"a">;
 export type BreadcrumbPageProps = ComponentProps<"span">;
 export type BreadcrumbSeparatorProps = ComponentProps<"li">;
 
-export type BreadcrumbEllipsisProps = ComponentProps<"span"> & {
+export type BreadcrumbEllipsisProps = Omit<ComponentProps<"span">, "children"> & {
   /**
    * Screen-reader-only copy for omitted items. Defaults to the locale dictionary
    * (breadcrumb.md §3).
@@ -124,7 +124,11 @@ function BreadcrumbSeparator({ children, className, ...props }: BreadcrumbSepara
   );
 }
 
-function BreadcrumbEllipsis({ className, label, ...props }: BreadcrumbEllipsisProps): ReactElement {
+function BreadcrumbEllipsis({ className, label, ...rest }: BreadcrumbEllipsisProps): ReactElement {
+  // SAFETY: Ellipsis omits children from the public type; leftover runtime keys must
+  // not replace the owned glyph and sr-only copy (breadcrumb.md §3).
+  const { children: _children, ...props } = rest as typeof rest & { children?: unknown };
+  void _children;
   const strings = useLocalizedStrings(breadcrumbStrings);
 
   return (

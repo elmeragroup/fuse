@@ -11,8 +11,6 @@ export const alertVariants = tv({
   slots: {
     base: "relative",
     icon: "block size-5 shrink-0 text-foreground",
-    content: "",
-    title: "",
     description: "text-foreground",
     button: "",
   },

@@ -9,10 +9,31 @@ import { WarningOctagon } from "../../icons/generated/warning-octagon";
 import { cn } from "../../styles/cn";
 import { Button } from "../button/button";
 import { Item } from "../item/item";
+import { ITEM_TITLE_CLASSES } from "../item/item-title-classes";
 import { alertVariants } from "./alert-variants";
 
 type AlertVariant = NonNullable<VariantProps<typeof alertVariants>["variant"]>;
 type AlertTitleLevel = 1 | 2 | 3 | 4 | 5 | 6;
+type AlertActionHandler = ComponentProps<typeof Button>["onClick"];
+
+type AlertActionProps =
+  | {
+      /**
+       * When both `onAction` and `actionLabel` are set, renders a `Button` in
+       * `Item.Actions`. Forwarded as the button's `onClick` — the client
+       * boundary is the consumer's (alert.md §1/§3).
+       */
+      onAction: AlertActionHandler;
+      /**
+       * Accessible name and visible children of the action button. Required
+       * together with `onAction`; must be self-describing (alert.md §3/§7).
+       */
+      actionLabel: ReactNode;
+    }
+  | {
+      onAction?: never;
+      actionLabel?: never;
+    };
 
 const ALERT_ICONS = {
   default: Info,
@@ -21,22 +42,7 @@ const ALERT_ICONS = {
   success: CheckCircle,
 } as const;
 
-/** Item.Title classes, kept on our own heading so the outline stays an `h*` (alert.md §8.2). */
-const ITEM_TITLE_CLASSES =
-  "text-sm leading-snug font-medium line-clamp-1 flex w-fit items-center gap-2 underline-offset-4";
-
-export type AlertRootProps = ComponentProps<"div"> &
-  VariantProps<typeof alertVariants> & {
-    /**
-     * When set, renders a `Button` in `Item.Actions`. Forwarded as the button's
-     * `onClick` — the client boundary is the consumer's (alert.md §1/§3).
-     */
-    onAction?: ComponentProps<typeof Button>["onClick"];
-    /**
-     * Action button children. Rendered only when `onAction` is set (alert.md §3).
-     */
-    actionLabel?: ReactNode;
-  };
+export type AlertRootProps = ComponentProps<"div"> & VariantProps<typeof alertVariants> & AlertActionProps;
 
 export type AlertIconProps = Omit<ComponentProps<typeof Info>, "weight"> & {
   /**
@@ -74,15 +80,15 @@ function AlertRoot({
   actionLabel,
   ...props
 }: AlertRootProps): ReactElement {
-  const { base, content, button } = alertVariants({ variant });
+  const { base, button } = alertVariants({ variant });
 
   return (
     <Item.Root {...props} role="alert" variant="outline" size="sm" className={cn(base(), className)}>
       <Item.Media>
         <AlertIcon variant={variant} />
       </Item.Media>
-      <Item.Content className={content()}>{children}</Item.Content>
-      {onAction ? (
+      <Item.Content>{children}</Item.Content>
+      {hasAction(onAction, actionLabel) ? (
         <Item.Actions>
           <Button className={button()} size="sm" type="button" onClick={onAction}>
             {actionLabel}
@@ -101,11 +107,10 @@ function AlertIcon({ variant, className, ...props }: AlertIconProps): ReactEleme
 }
 
 function AlertTitle({ children, className, level = 3, ...props }: AlertTitleProps): ReactElement {
-  const { title } = alertVariants();
   const TitleTag = `h${level}` as const;
 
   return (
-    <TitleTag data-slot="item-title" className={cn(ITEM_TITLE_CLASSES, title(), className)} {...props}>
+    <TitleTag data-slot="item-title" className={cn(ITEM_TITLE_CLASSES, className)} {...props}>
       {children}
     </TitleTag>
   );
@@ -115,6 +120,13 @@ function AlertDescription({ className, ...props }: AlertDescriptionProps): React
   const { description } = alertVariants();
 
   return <Item.Description className={cn(description(), className)} {...props} />;
+}
+
+function hasAction(
+  onAction: AlertActionHandler | undefined,
+  actionLabel: ReactNode
+): onAction is AlertActionHandler {
+  return onAction != null && actionLabel != null && actionLabel !== false && actionLabel !== "";
 }
 
 AlertRoot.displayName = "Alert.Root";

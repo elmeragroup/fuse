@@ -89,7 +89,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Native `maxLength`, also drives the `current/max` character counter.",
+          "description": "Native `maxLength`, also drives the `current/max` character counter. `0` is set.",
           "required": false
         },
         {

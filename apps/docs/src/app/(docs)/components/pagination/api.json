@@ -78,17 +78,8 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 288,
+      "forwardedCount": 287,
       "props": [
-        {
-          "name": "isActive",
-          "origin": "declared",
-          "type": "boolean | undefined",
-          "shortType": null,
-          "defaultValue": null,
-          "description": "Current page. Renders `aria-current=\"page\"` and the outline button variant; inactive links omit the attribute entirely (pagination.md §3/§7).",
-          "required": false
-        },
         {
           "name": "label",
           "origin": "declared",
@@ -125,17 +116,8 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 288,
+      "forwardedCount": 287,
       "props": [
-        {
-          "name": "isActive",
-          "origin": "declared",
-          "type": "boolean | undefined",
-          "shortType": null,
-          "defaultValue": null,
-          "description": "Current page. Renders `aria-current=\"page\"` and the outline button variant; inactive links omit the attribute entirely (pagination.md §3/§7).",
-          "required": false
-        },
         {
           "name": "label",
           "origin": "declared",
@@ -172,7 +154,7 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 280,
+      "forwardedCount": 279,
       "props": [
         {
           "name": "label",

@@ -66,8 +66,13 @@ test("parts take the spec surface: no locale, no as prop", () => {
     </Breadcrumb.Root>
   );
 
+  expectTypeOf<Parameters<typeof Breadcrumb.Ellipsis>[0]>().not.toHaveProperty("children");
+  expectTypeOf<Parameters<typeof Breadcrumb.Separator>[0]>().toHaveProperty("children");
+
   // @ts-expect-error locale is provider-only
   const _noLocale = <Breadcrumb.Root locale="nb-NO" />;
   // @ts-expect-error polymorphism is never an as prop
   const _noAs = <Breadcrumb.Link as="button" />;
+  // @ts-expect-error Ellipsis owns its children
+  const _ellipsisChildren = <Breadcrumb.Ellipsis>nope</Breadcrumb.Ellipsis>;
 });

@@ -17,7 +17,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Action button children. Rendered only when `onAction` is set (alert.md §3).",
+          "description": "Accessible name and visible children of the action button. Required together with `onAction`; must be self-describing (alert.md §3/§7).",
           "required": false
         },
         {
@@ -26,7 +26,7 @@
           "type": "((event: BaseUIEvent<MouseEvent<HTMLButtonElement, MouseEvent>>) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "When set, renders a `Button` in `Item.Actions`. Forwarded as the button's `onClick` — the client boundary is the consumer's (alert.md §1/§3).",
+          "description": "When both `onAction` and `actionLabel` are set, renders a `Button` in `Item.Actions`. Forwarded as the button's `onClick` — the client boundary is the consumer's (alert.md §1/§3).",
           "required": false
         },
         {

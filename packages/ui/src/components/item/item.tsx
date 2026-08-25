@@ -10,6 +10,7 @@ import type { VariantProps } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
 import { Separator } from "../separator/separator";
+import { ITEM_TITLE_CLASSES } from "./item-title-classes";
 import { itemVariants } from "./item-variants";
 
 const ItemGroupContext = createContext(false);
@@ -111,16 +112,7 @@ function ItemContent({ className, ...props }: ComponentProps<"div">): ReactEleme
 }
 
 function ItemTitle({ className, ...props }: ComponentProps<"div">): ReactElement {
-  return (
-    <div
-      data-slot="item-title"
-      className={cn(
-        "text-sm leading-snug font-medium line-clamp-1 flex w-fit items-center gap-2 underline-offset-4",
-        className
-      )}
-      {...props}
-    />
-  );
+  return <div data-slot="item-title" className={cn(ITEM_TITLE_CLASSES, className)} {...props} />;
 }
 
 function ItemDescription({ className, ...props }: ComponentProps<"p">): ReactElement {

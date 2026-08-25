@@ -35,7 +35,7 @@ export type PaginationLinkProps = {
   size?: ButtonProps["size"];
 } & ComponentProps<"a">;
 
-export type PaginationPreviousProps = Omit<PaginationLinkProps, "size"> & {
+export type PaginationPreviousProps = Omit<PaginationLinkProps, "size" | "isActive" | "children"> & {
   /**
    * Recipe size axis borrowed from Button. Defaults to `"default"`.
    */
@@ -50,7 +50,7 @@ export type PaginationPreviousProps = Omit<PaginationLinkProps, "size"> & {
   label?: string;
 };
 
-export type PaginationNextProps = Omit<PaginationLinkProps, "size"> & {
+export type PaginationNextProps = Omit<PaginationLinkProps, "size" | "isActive" | "children"> & {
   /**
    * Recipe size axis borrowed from Button. Defaults to `"default"`.
    */
@@ -65,7 +65,7 @@ export type PaginationNextProps = Omit<PaginationLinkProps, "size"> & {
   label?: string;
 };
 
-export type PaginationEllipsisProps = ComponentProps<"span"> & {
+export type PaginationEllipsisProps = Omit<ComponentProps<"span">, "children"> & {
   /**
    * Screen-reader-only ellipsis copy. Defaults to the locale dictionary.
    */
@@ -126,8 +126,20 @@ function PaginationPrevious({
   label,
   size = "default",
   "aria-label": ariaLabel,
-  ...props
+  ...rest
 }: PaginationPreviousProps): ReactElement {
+  // SAFETY: Previous omits children and isActive from the public type; leftover
+  // runtime keys must not reach Pagination.Link (pagination.md §3).
+  const {
+    children: _children,
+    isActive: _isActive,
+    ...props
+  } = rest as typeof rest & {
+    children?: unknown;
+    isActive?: unknown;
+  };
+  void _children;
+  void _isActive;
   const strings = useLocalizedStrings(paginationStrings);
   const { link, linkIcon } = paginationVariants({ direction: "previous" });
 
@@ -150,8 +162,20 @@ function PaginationNext({
   label,
   size = "default",
   "aria-label": ariaLabel,
-  ...props
+  ...rest
 }: PaginationNextProps): ReactElement {
+  // SAFETY: Next omits children and isActive from the public type; leftover
+  // runtime keys must not reach Pagination.Link (pagination.md §3).
+  const {
+    children: _children,
+    isActive: _isActive,
+    ...props
+  } = rest as typeof rest & {
+    children?: unknown;
+    isActive?: unknown;
+  };
+  void _children;
+  void _isActive;
   const strings = useLocalizedStrings(paginationStrings);
   const { link, linkIcon } = paginationVariants({ direction: "next" });
 
@@ -168,7 +192,11 @@ function PaginationNext({
   );
 }
 
-function PaginationEllipsis({ className, label, ...props }: PaginationEllipsisProps): ReactElement {
+function PaginationEllipsis({ className, label, ...rest }: PaginationEllipsisProps): ReactElement {
+  // SAFETY: Ellipsis omits children from the public type; leftover runtime keys must
+  // not replace the owned glyph and sr-only copy (pagination.md §3).
+  const { children: _children, ...props } = rest as typeof rest & { children?: unknown };
+  void _children;
   const strings = useLocalizedStrings(paginationStrings);
   const { ellipsis, ellipsisIcon } = paginationVariants();
 
