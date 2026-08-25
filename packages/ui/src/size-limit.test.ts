@@ -56,6 +56,7 @@ describe("size-limit harness", () => {
       "textarea",
       "flags",
       "show",
+      "loader",
       "span",
       "timeline-list",
       "sheet",
@@ -89,6 +90,9 @@ describe("size-limit harness", () => {
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "toggle")?.ceilingGzip).toBe(
       ceilingFromMeasured(25482)
+    );
+    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "loader")?.ceilingGzip).toBe(
+      ceilingFromMeasured(16748)
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "skeleton")?.ceilingGzip).toBe(
       ceilingFromMeasured(8701)

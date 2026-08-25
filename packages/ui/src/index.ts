@@ -14,6 +14,7 @@ export * from "./heading";
 export * from "./input";
 export * from "./input-group";
 export * from "./item";
+export * from "./loader";
 export * from "./popover";
 export * from "./scroll-area";
 export * from "./separator";

@@ -67,6 +67,7 @@ describe("component page manifest", () => {
       "input",
       "input-group",
       "item",
+      "loader",
       "popover",
       "scroll-area",
       "separator",
@@ -126,6 +127,7 @@ describe("component page manifest", () => {
       "visually-disabled",
       "predictive-intent",
     ]);
+    expect(page("loader").demos.map((demo) => demo.id)).toEqual(["sizes", "inline"]);
     expect(page("show").demos.map((demo) => demo.id)).toEqual(["basic"]);
     expect(page("skeleton").demos.map((demo) => demo.id)).toEqual(["basic", "card"]);
     expect(page("timeline-list").demos.map((demo) => demo.id)).toEqual(["basic", "rich"]);
@@ -159,6 +161,7 @@ describe("component page manifest", () => {
       input: "client",
       "input-group": "client",
       item: "client",
+      loader: "server",
       popover: "client",
       "scroll-area": "client",
       separator: "client",

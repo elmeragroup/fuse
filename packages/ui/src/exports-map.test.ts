@@ -42,6 +42,7 @@ describe("exports map", () => {
       "input",
       "input-group",
       "item",
+      "loader",
       "popover",
       "scroll-area",
       "separator",
@@ -225,6 +226,12 @@ describe("exports map", () => {
     const show = discovered.jsEntries.find((entry) => entry.subpath === "show");
     expect(show?.inRootBarrel).toBe(true);
     expect(show?.runtimeExports).toEqual(["Show"]);
+  });
+
+  it("publishes Loader and the public loaderVariants recipe from /loader and the root barrel", () => {
+    const loader = discovered.jsEntries.find((entry) => entry.subpath === "loader");
+    expect(loader?.inRootBarrel).toBe(true);
+    expect(loader?.runtimeExports).toEqual(["Loader", "loaderVariants"]);
   });
 
   it("publishes Skeleton from /skeleton and the root barrel", () => {

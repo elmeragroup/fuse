@@ -18,6 +18,7 @@ const HARNESSED_SUITES = [
   "text",
   "span",
   "item",
+  "loader",
   "input",
   "input-group",
   "textarea",
