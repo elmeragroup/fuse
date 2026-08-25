@@ -70,6 +70,7 @@ describe("component page manifest", () => {
       "popover",
       "scroll-area",
       "separator",
+      "skeleton",
       "text",
       "textarea",
       "toggle",
@@ -119,6 +120,7 @@ describe("component page manifest", () => {
       "visually-disabled",
       "predictive-intent",
     ]);
+    expect(page("skeleton").demos.map((demo) => demo.id)).toEqual(["basic", "card"]);
   });
 
   it("links View source at the implementation on the repo host", () => {
@@ -144,6 +146,7 @@ describe("component page manifest", () => {
       popover: "client",
       "scroll-area": "client",
       separator: "client",
+      skeleton: "server",
       text: "client",
       textarea: "server",
       toggle: "client",

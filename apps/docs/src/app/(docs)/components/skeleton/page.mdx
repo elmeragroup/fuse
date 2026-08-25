@@ -1,0 +1,34 @@
+---
+title: Skeleton
+lede: >
+  A shape-only loading placeholder. A single server `div` with no intrinsic size —
+  consumers size it with `className` to match the content it stands in for.
+---
+
+import { SkeletonBasic } from "./demos/skeleton-basic";
+import { SkeletonCard } from "./demos/skeleton-card";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("skeleton");
+
+<ComponentIntro slug="skeleton" />
+
+<Prose>
+
+It is decorative: no role, no text, no keyboard behavior. The component emits
+`aria-hidden="true"`; set `aria-busy` on the region being loaded.
+
+</Prose>
+
+<Demo slug="skeleton" id="basic" title="Basic" file="skeleton-basic.tsx">
+  <SkeletonBasic />
+</Demo>
+
+<Demo slug="skeleton" id="card" title="Card" file="skeleton-card.tsx">
+  <SkeletonCard />
+</Demo>
+
+<ApiReference slug="skeleton" />
+
+<ComponentTokens slug="skeleton" />

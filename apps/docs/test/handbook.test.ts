@@ -82,7 +82,15 @@ describe("tokens page (docs-site.md §3.3, performance.md §2)", () => {
   });
 
   it("covers every published JS entry the library budgets", () => {
-    for (const name of ["button", "dialog", "scroll-area", "theme", "icons/Check", "styles.css"]) {
+    for (const name of [
+      "button",
+      "dialog",
+      "scroll-area",
+      "theme",
+      "icons/Check",
+      "styles.css",
+      "skeleton",
+    ]) {
       expect(BUNDLE_SIZES.map((entry) => entry.name)).toContain(name);
     }
   });

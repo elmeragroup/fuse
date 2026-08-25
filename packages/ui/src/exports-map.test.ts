@@ -45,6 +45,7 @@ describe("exports map", () => {
       "popover",
       "scroll-area",
       "separator",
+      "skeleton",
       "text",
       "textarea",
       "toggle",
@@ -212,6 +213,12 @@ describe("exports map", () => {
     const badge = discovered.jsEntries.find((entry) => entry.subpath === "badge");
     expect(badge?.inRootBarrel).toBe(true);
     expect(badge?.runtimeExports).toEqual(["Badge", "badgeVariants"]);
+  });
+
+  it("publishes Skeleton from /skeleton and the root barrel", () => {
+    const skeleton = discovered.jsEntries.find((entry) => entry.subpath === "skeleton");
+    expect(skeleton?.inRootBarrel).toBe(true);
+    expect(skeleton?.runtimeExports).toEqual(["Skeleton"]);
   });
 
   it("publishes Card and the public cardVariants recipe from /card and the root barrel", () => {

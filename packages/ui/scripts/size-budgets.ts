@@ -22,7 +22,7 @@
  * measured×1.5.
  *
  * Current measurements (gzip bytes, 2026-08-25). Earlier measurement rounds live in git.
- *   .             78136  (Heading+Text+Popover+Toggle share the barrel; under the standing 113816 ceiling from Popover-only recalibration, so recorded, not loosened)
+ *   .             78191  (Heading+Text+Popover+Toggle+Skeleton share the barrel; under the standing 113816 ceiling from Popover-only recalibration, so recorded, not loosened)
  *   theme          6138
  *   icons/Check     818  (per-icon export, not the full roster)
  *   button        25214
@@ -42,8 +42,9 @@
  *   heading       17289
  *   text          17279
  *   toggle        25507
+ *   skeleton       8701  (combined packed gzip after rebase; first calibration, ceiling 13052)
  *   themes.css     2274
- *   styles.css    10674  (Heading+Text+Popover+Toggle; under the standing 15860 ceiling from Heading+Text+Popover recalibration, so recorded, not loosened)
+ *   styles.css    10748  (Heading+Text+Popover+Toggle+Skeleton; under the standing 15860 ceiling from Heading+Text+Popover recalibration, so recorded, not loosened)
  */
 import { FLAG_RAW_CEILING_BYTES } from "./flag-payload";
 
@@ -94,6 +95,7 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = [
   { name: "heading", entryFile: "heading.js", ceilingGzip: 25934 },
   { name: "text", entryFile: "text.js", ceilingGzip: 25919 },
   { name: "toggle", entryFile: "toggle.js", ceilingGzip: 38223 },
+  { name: "skeleton", entryFile: "skeleton.js", ceilingGzip: 13052 },
 ];
 
 export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = [

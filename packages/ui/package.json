@@ -75,6 +75,10 @@
       "types": "./src/separator.ts",
       "import": "./src/separator.ts"
     },
+    "./skeleton": {
+      "types": "./src/skeleton.ts",
+      "import": "./src/skeleton.ts"
+    },
     "./styles.css": "./dist/styles.css",
     "./text": {
       "types": "./src/text.ts",
