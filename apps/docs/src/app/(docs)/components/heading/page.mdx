@@ -1,0 +1,46 @@
+---
+title: Heading
+lede: >
+  A typography primitive. Renders a plain `h1`–`h6`; `level` owns the document outline,
+  `size` owns the type scale, and `render` swaps the element through base-ui `useRender`.
+---
+
+import { HeadingBasic } from "./demos/heading-basic";
+import { HeadingSizes } from "./demos/heading-sizes";
+import { HeadingVariants } from "./demos/heading-variants";
+import { HeadingModifiers } from "./demos/heading-modifiers";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("heading");
+
+<ComponentIntro slug="heading" />
+
+<Prose>
+
+`level` defaults to `2` and maps to an auto size (`1` → `2xl`, `2` → `lg`, else `default`)
+unless `size` is set explicitly. `headingVariants` is public from the same entry so other
+surfaces can borrow the type scale without wrapping this component. Card titles stay on
+card.md's `text-{size}` mapping — they do not consume this recipe.
+
+</Prose>
+
+<Demo slug="heading" id="basic" title="Levels" file="heading-basic.tsx">
+  <HeadingBasic />
+</Demo>
+
+<Demo slug="heading" id="sizes" title="Sizes" file="heading-sizes.tsx">
+  <HeadingSizes />
+</Demo>
+
+<Demo slug="heading" id="variants" title="Variants" file="heading-variants.tsx">
+  <HeadingVariants />
+</Demo>
+
+<Demo slug="heading" id="modifiers" title="Modifiers" file="heading-modifiers.tsx">
+  <HeadingModifiers />
+</Demo>
+
+<ApiReference slug="heading" />
+
+<ComponentTokens slug="heading" />

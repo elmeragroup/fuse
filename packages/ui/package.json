@@ -39,6 +39,10 @@
       "import": "./src/flags.ts"
     },
     "./flags/*.svg": "./src/flags/*.svg",
+    "./heading": {
+      "types": "./src/heading.ts",
+      "import": "./src/heading.ts"
+    },
     "./icons": {
       "types": "./src/icons.ts",
       "import": "./src/icons.ts"

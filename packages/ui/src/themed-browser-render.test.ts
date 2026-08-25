@@ -13,6 +13,7 @@ const HARNESSED_SUITES = [
   "scroll-area",
   "separator",
   "field",
+  "heading",
   "item",
   "input",
   "input-group",

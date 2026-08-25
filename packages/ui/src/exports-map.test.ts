@@ -38,6 +38,7 @@ describe("exports map", () => {
       "card",
       "dialog",
       "field",
+      "heading",
       "input",
       "input-group",
       "item",
@@ -215,6 +216,12 @@ describe("exports map", () => {
     const card = discovered.jsEntries.find((entry) => entry.subpath === "card");
     expect(card?.inRootBarrel).toBe(true);
     expect(card?.runtimeExports).toEqual(["Card", "cardVariants"]);
+  });
+
+  it("publishes Heading and the public headingVariants recipe from /heading and the root barrel", () => {
+    const heading = discovered.jsEntries.find((entry) => entry.subpath === "heading");
+    expect(heading?.inRootBarrel).toBe(true);
+    expect(heading?.runtimeExports).toEqual(["Heading", "headingVariants"]);
   });
 
   it("publishes InputGroup from /input-group and the root barrel with private recipes", () => {

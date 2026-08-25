@@ -17,7 +17,7 @@ Single heading element. **RE-HOMED**: the ref wraps react-aria `Heading`; this s
 <Heading level={3} size="sm" variant="muted">Details</Heading>
 ```
 
-Internal composers in the ref (`card`, `table`, `description-list`, `timeline-list`, `base-ui/disclosure`) render this component or its classes; the de-RAC'd card/table specs already render these exact heading classes on plain elements (see card.md §8 "DE-RAC — Card.Title") — this spec is the canonical home of that recipe.
+Internal composers in the ref (`card`, `table`, `description-list`, `timeline-list`, `base-ui/disclosure`) render this component or its classes. This spec is the canonical home of the `headingVariants` recipe. `Card.Title` and `Card.Description` are owned by [card.md](card.md) §3, which maps `size` to plain `text-{size}` — they do not consume `headingVariants`.
 
 ## 3 Props
 
