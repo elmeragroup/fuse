@@ -58,6 +58,7 @@ function endpoint(slug: string): string {
 describe("component page manifest", () => {
   it("covers every authored component page", () => {
     expect(COMPONENT_PAGES.map((entry) => entry.slug)).toEqual([
+      "accordion",
       "alert-dialog",
       "avatar",
       "badge",
@@ -194,6 +195,13 @@ describe("component page manifest", () => {
       "controlled",
       "hidden-until-found",
     ]);
+    expect(page("accordion").demos.map((demo) => demo.id)).toEqual([
+      "basic",
+      "multiple",
+      "variants",
+      "controlled",
+      "hidden-until-found",
+    ]);
   });
 
   it("links View source at the implementation on the repo host", () => {
@@ -207,6 +215,7 @@ describe("component page manifest", () => {
     // The §3 classification table is the audit source; a page's status is read off its
     // declaring module, so this is where a stray directive would show up.
     const expected = {
+      accordion: "client",
       "alert-dialog": "client",
       avatar: "client",
       badge: "server",
@@ -264,6 +273,13 @@ describe("committed api.json", () => {
   });
 
   it("resolves the compound parts of a namespace component", () => {
+    expect(api("accordion").parts.map((part) => part.name)).toEqual([
+      "Accordion.Root",
+      "Accordion.Item",
+      "Accordion.Header",
+      "Accordion.Trigger",
+      "Accordion.Content",
+    ]);
     expect(api("alert-dialog").parts.map((part) => part.name)).toEqual([
       "AlertDialog.Root",
       "AlertDialog.Trigger",

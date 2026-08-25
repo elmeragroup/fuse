@@ -22,7 +22,7 @@
  * measured×1.5.
  *
  * Current measurements (gzip bytes, 2026-08-25). Earlier measurement rounds live in git.
- *   .             132709  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty+Frame+Code+DescriptionList+Emoji+Avatar+AlertDialog+DropdownMenu+Switch+ButtonGroup+Collapsible share the barrel; under the standing 171567 ceiling from Avatar recalibration, so recorded, not loosened)
+ *   .             135178  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty+Frame+Code+DescriptionList+Emoji+Avatar+AlertDialog+DropdownMenu+Switch+ButtonGroup+Collapsible+Accordion share the barrel; under the standing 171567 ceiling from Avatar recalibration, so recorded, not loosened)
  *   theme          6133
  *   icons/Check     818  (per-icon export, not the full roster)
  *   button        25214
@@ -40,6 +40,7 @@
  *   input-group   28007
  *   flags          1388
  *   button-group  17587  (first calibration, ceiling 26381)
+ *   accordion     30184  (first calibration, ceiling 45276)
  *   emoji          2442  (first calibration, ceiling 3663)
  *   avatar        12467  (first calibration, ceiling 18701)
  *   show            148  (first calibration, ceiling 222)
@@ -62,7 +63,7 @@
  *   description-list 10713  (first calibration, ceiling 16070)
  *   alert-dialog  47578  (first calibration, ceiling 71367)
  *   themes.css     2274
- *   styles.css    14517  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty+Frame+Code+DescriptionList+Emoji+Avatar+AlertDialog+DropdownMenu+Switch+ButtonGroup+Collapsible; under the standing 15860 ceiling from Heading+Text+Popover recalibration, so recorded, not loosened)
+ *   styles.css    14727  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty+Frame+Code+DescriptionList+Emoji+Avatar+AlertDialog+DropdownMenu+Switch+ButtonGroup+Collapsible+Accordion; under the standing 15860 ceiling from Heading+Text+Popover recalibration, so recorded, not loosened)
  */
 import { FLAG_RAW_CEILING_BYTES } from "./flag-payload";
 
@@ -112,6 +113,7 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = [
   // plop:js-entry-budget
   { name: "switch", entryFile: "switch.js", ceilingGzip: 39825 },
   { name: "button-group", entryFile: "button-group.js", ceilingGzip: 26381 },
+  { name: "accordion", entryFile: "accordion.js", ceilingGzip: 45276 },
   { name: "description-list", entryFile: "description-list.js", ceilingGzip: 16070 },
   { name: "emoji", entryFile: "emoji.js", ceilingGzip: 3663 },
   { name: "avatar", entryFile: "avatar.js", ceilingGzip: 18701 },

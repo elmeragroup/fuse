@@ -33,6 +33,7 @@ describe("exports map", () => {
       "icons",
       "illustrations",
       "flags",
+      "accordion",
       "alert-dialog",
       "avatar",
       "badge",
@@ -322,6 +323,12 @@ describe("exports map", () => {
     const popover = discovered.jsEntries.find((entry) => entry.subpath === "popover");
     expect(popover?.inRootBarrel).toBe(true);
     expect(popover?.runtimeExports).toEqual(["Popover"]);
+  });
+
+  it("publishes Accordion and the public accordionVariants recipe from /accordion and the root barrel", () => {
+    const accordion = discovered.jsEntries.find((entry) => entry.subpath === "accordion");
+    expect(accordion?.inRootBarrel).toBe(true);
+    expect(accordion?.runtimeExports).toEqual(["Accordion", "accordionVariants"]);
   });
 
   it("publishes AlertDialog from /alert-dialog and the root barrel", () => {

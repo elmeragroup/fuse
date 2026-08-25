@@ -12,6 +12,10 @@
       "types": "./src/index.ts",
       "import": "./src/index.ts"
     },
+    "./accordion": {
+      "types": "./src/accordion.ts",
+      "import": "./src/accordion.ts"
+    },
     "./alert-dialog": {
       "types": "./src/alert-dialog.ts",
       "import": "./src/alert-dialog.ts"

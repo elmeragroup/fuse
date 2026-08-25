@@ -57,6 +57,7 @@ describe("size-limit harness", () => {
       "flags",
       "switch",
       "button-group",
+      "accordion",
       "description-list",
       "emoji",
       "avatar",
@@ -83,6 +84,9 @@ describe("size-limit harness", () => {
     expect(CSS_BUDGETS.map((budget) => budget.name)).toEqual(["themes.css", "styles.css"]);
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "flags")?.ceilingGzip).toBe(
       ceilingFromMeasured(1388)
+    );
+    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "accordion")?.ceilingGzip).toBe(
+      ceilingFromMeasured(30184)
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "emoji")?.ceilingGzip).toBe(
       ceilingFromMeasured(2442)

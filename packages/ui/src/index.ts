@@ -5,6 +5,7 @@
  * Icons, illustrations, flags, and react-aria/* stay subpath-only.
  */
 
+export * from "./accordion";
 export * from "./alert-dialog";
 export * from "./avatar";
 export * from "./badge";
