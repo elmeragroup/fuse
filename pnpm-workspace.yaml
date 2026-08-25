@@ -31,6 +31,7 @@ catalog:
   plop: 4.0.5
   publint: 0.3.23
   rolldown: 1.2.4
+  "sugar-high": 1.2.1
   react: 19.2.8
   react-aria: 3.50.0
   react-aria-components: 1.19.0

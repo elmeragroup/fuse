@@ -105,6 +105,9 @@ catalogs:
     rolldown:
       specifier: 1.2.4
       version: 1.2.4
+    sugar-high:
+      specifier: 1.2.1
+      version: 1.2.1
     tailwind-merge:
       specifier: 3.6.0
       version: 3.6.0
@@ -229,8 +232,8 @@ importers:
         specifier: 'catalog:'
         version: 4.0.1(supports-color@7.2.0)
       sugar-high:
-        specifier: 2.0.1
-        version: 2.0.1
+        specifier: 'catalog:'
+        version: 1.2.1
       tailwindcss:
         specifier: 'catalog:'
         version: 4.3.3
@@ -3505,8 +3508,8 @@ packages:
       babel-plugin-macros:
         optional: true
 
-  sugar-high@2.0.1:
-    resolution: {integrity: sha512-scKbPz1/VAta3pTimoyhUB9CLYiQPvwsfE01tEcUoPuE3TfWnum8fl+0muGfUOXiBCjjmclMbEq8LBXu2smkYg==}
+  sugar-high@1.2.1:
+    resolution: {integrity: sha512-C2E0iSC0Gwv+7t32ATFxgiH6fxskoSfd/nF5z11pQSrgJHYjY8/U11K+X0izV9ZyPNPwaomtn6uF7y11MxVNQA==}
 
   supports-color@7.2.0:
     resolution: {integrity: sha512-qpCAvRl9stuOHveKsn7HncJRvv501qIacKzQlO/+Lwxc9+0q2wLyv4Dfvt80/DPn2pqOBsJdDiogXGR9+OvwRw==}
@@ -7025,7 +7028,7 @@ snapshots:
       client-only: 0.0.1
       react: 19.2.8
 
-  sugar-high@2.0.1: {}
+  sugar-high@1.2.1: {}
 
   supports-color@7.2.0:
     dependencies:

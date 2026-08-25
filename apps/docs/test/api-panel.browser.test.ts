@@ -28,7 +28,10 @@ describe("API panel layout (docs-site.md §8)", () => {
     const page = await browser.newPage();
     await openScrollAreaApi(page);
 
-    const trigger = page.getByRole("button", { name: /Prop: type, type: ScrollAreaType/ }).first();
+    // Native <summary> is not exposed as role=button here, and content-visibility:auto
+    // keeps offscreen rows out of the a11y tree until they are near the viewport.
+    await page.getByRole("heading", { name: "API reference" }).scrollIntoViewIfNeeded();
+    const trigger = page.locator("summary[aria-label*='Prop: type, type: ScrollAreaType']").first();
     await trigger.click();
 
     const widths = await trigger.evaluate((el) => {

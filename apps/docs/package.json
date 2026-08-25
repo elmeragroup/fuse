@@ -29,7 +29,7 @@
     "playwright": "catalog:",
     "remark-frontmatter": "catalog:",
     "remark-gfm": "catalog:",
-    "sugar-high": "2.0.1",
+    "sugar-high": "catalog:",
     "tailwindcss": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
