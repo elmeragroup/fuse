@@ -111,6 +111,10 @@
       "types": "./src/loader.ts",
       "import": "./src/loader.ts"
     },
+    "./number-field": {
+      "types": "./src/number-field.ts",
+      "import": "./src/number-field.ts"
+    },
     "./popover": {
       "types": "./src/popover.ts",
       "import": "./src/popover.ts"

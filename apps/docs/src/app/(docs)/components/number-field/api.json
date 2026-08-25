@@ -1,0 +1,213 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "number-field",
+  "parts": [
+    {
+      "name": "NumberField",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/number-field/number-field.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "aria-label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Accessible name forwarded to the input for label-less usage.",
+          "required": false
+        },
+        {
+          "name": "autoFocus",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Native `autoFocus` forwarded to the input.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes, merged onto the root via `cn`.",
+          "required": false
+        },
+        {
+          "name": "defaultValue",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Uncontrolled initial value.",
+          "required": false
+        },
+        {
+          "name": "denomination",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Unit suffix rendered between the input and the steppers (visual only).",
+          "required": false
+        },
+        {
+          "name": "description",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Supporting copy, rendered as `Field.Description`.",
+          "required": false
+        },
+        {
+          "name": "errorMessage",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`.",
+          "required": false
+        },
+        {
+          "name": "formatOptions",
+          "origin": "declared",
+          "type": "NumberFormatOptions | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Formatting options, forwarded as base-ui `format`. Locale comes from the provider.",
+          "required": false
+        },
+        {
+          "name": "id",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Forwarded to `NumberField.Root`.",
+          "required": false
+        },
+        {
+          "name": "isDisabled",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Forwards `disabled` to `Field.Root` and `NumberField.Root`; the group uses `bg-muted`.",
+          "required": false
+        },
+        {
+          "name": "isInvalid",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Forwards `invalid` to `Field.Root` and `aria-invalid` to the group.",
+          "required": false
+        },
+        {
+          "name": "isPending",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Shows a spinner in the label row. Forces that row to exist even without `label`.",
+          "required": false
+        },
+        {
+          "name": "isReadOnly",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Forwards `readOnly` to `NumberField.Root`; the group uses `bg-muted`.",
+          "required": false
+        },
+        {
+          "name": "isRequired",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Forwards `required` to `NumberField.Root`.",
+          "required": false
+        },
+        {
+          "name": "isSuccess",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Shows a check in the label row. Both pending and success may render side by side.",
+          "required": false
+        },
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Visible label, rendered as `Field.Label`.",
+          "required": false
+        },
+        {
+          "name": "maxValue",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Upper bound, forwarded as base-ui `max`.",
+          "required": false
+        },
+        {
+          "name": "minValue",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Lower bound, forwarded as base-ui `min`.",
+          "required": false
+        },
+        {
+          "name": "name",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Native `name` forwarded to the primitive (hidden input for form submission).",
+          "required": false
+        },
+        {
+          "name": "onChange",
+          "origin": "declared",
+          "type": "((value: number) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Called with the numeric value, not the event. A cleared input reports `NaN` (`onChange?.(next ?? NaN)`).",
+          "required": false
+        },
+        {
+          "name": "step",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Step amount for arrows and steppers.",
+          "required": false
+        },
+        {
+          "name": "value",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Controlled value. Without `defaultValue`, `null`/`NaN` is passed to the primitive as `null` (empty). With `defaultValue`, `value` is passed through untouched.",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

@@ -54,6 +54,7 @@ describe("exports map", () => {
       "input-group",
       "item",
       "loader",
+      "number-field",
       "popover",
       "scroll-area",
       "select",
@@ -402,6 +403,12 @@ describe("exports map", () => {
     const textField = discovered.jsEntries.find((entry) => entry.subpath === "text-field");
     expect(textField?.inRootBarrel).toBe(true);
     expect(textField?.runtimeExports).toEqual(["TextField", "textFieldVariants"]);
+  });
+
+  it("publishes NumberField from /number-field and the root barrel", () => {
+    const numberField = discovered.jsEntries.find((entry) => entry.subpath === "number-field");
+    expect(numberField?.inRootBarrel).toBe(true);
+    expect(numberField?.runtimeExports).toEqual(["NumberField"]);
   });
 
   it("keeps /icons as a subpath-only entry with the curated roster", () => {

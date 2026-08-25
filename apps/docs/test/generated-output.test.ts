@@ -79,6 +79,7 @@ describe("component page manifest", () => {
       "input-group",
       "item",
       "loader",
+      "number-field",
       "popover",
       "scroll-area",
       "select",
@@ -210,6 +211,14 @@ describe("component page manifest", () => {
       "scrolling",
       "invalid",
     ]);
+    expect(page("number-field").demos.map((demo) => demo.id)).toEqual([
+      "basic",
+      "denomination",
+      "format",
+      "error",
+      "states",
+      "uncontrolled",
+    ]);
   });
 
   it("links View source at the implementation on the repo host", () => {
@@ -244,6 +253,7 @@ describe("component page manifest", () => {
       "input-group": "client",
       item: "client",
       loader: "server",
+      "number-field": "client",
       popover: "client",
       "scroll-area": "client",
       select: "client",

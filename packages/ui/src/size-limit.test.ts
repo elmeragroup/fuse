@@ -79,6 +79,7 @@ describe("size-limit harness", () => {
       "text",
       "toggle",
       "skeleton",
+      "number-field",
       "icons/Check",
     ]);
     expect(FLAG_RAW_BUDGETS).toEqual([{ name: "flags/*.svg", ceilingBytes: FLAG_RAW_CEILING_BYTES }]);
@@ -160,6 +161,9 @@ describe("size-limit harness", () => {
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "select")?.ceilingGzip).toBe(
       ceilingFromMeasured(63724)
+    );
+    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "number-field")?.ceilingGzip).toBe(
+      ceilingFromMeasured(40655)
     );
     // styles.css recalibrated 2026-08-25: Heading+Text+Popover utilities exceeded 10469.
     expect(CSS_BUDGETS.find((budget) => budget.name === "styles.css")?.ceilingGzip).toBe(
