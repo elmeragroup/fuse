@@ -62,6 +62,7 @@ describe("component page manifest", () => {
       "button",
       "card",
       "dialog",
+      "empty",
       "field",
       "heading",
       "input",
@@ -130,6 +131,13 @@ describe("component page manifest", () => {
     expect(page("loader").demos.map((demo) => demo.id)).toEqual(["sizes", "inline"]);
     expect(page("show").demos.map((demo) => demo.id)).toEqual(["basic"]);
     expect(page("skeleton").demos.map((demo) => demo.id)).toEqual(["basic", "card"]);
+    expect(page("empty").demos.map((demo) => demo.id)).toEqual([
+      "basic",
+      "outline",
+      "with-actions",
+      "media-variants",
+      "inline-link",
+    ]);
     expect(page("timeline-list").demos.map((demo) => demo.id)).toEqual(["basic", "rich"]);
     expect(page("sheet").demos.map((demo) => demo.id)).toEqual([
       "basic",
@@ -156,6 +164,7 @@ describe("component page manifest", () => {
       button: "client",
       card: "server",
       dialog: "client",
+      empty: "server",
       field: "client",
       heading: "client",
       input: "client",
@@ -238,6 +247,14 @@ describe("committed api.json", () => {
       "Tooltip.Content",
     ]);
     expect(api("scroll-area").parts.map((part) => part.name)).toEqual(["ScrollArea.Root", "ScrollArea.Bar"]);
+    expect(api("empty").parts.map((part) => part.name)).toEqual([
+      "Empty.Root",
+      "Empty.Header",
+      "Empty.Media",
+      "Empty.Title",
+      "Empty.Description",
+      "Empty.Content",
+    ]);
   });
 
   it("reads defaults out of the implementation's destructuring", () => {

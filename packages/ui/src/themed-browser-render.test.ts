@@ -10,6 +10,7 @@ const HARNESSED_SUITES = [
   "button",
   "card",
   "dialog",
+  "empty",
   "popover",
   "scroll-area",
   "separator",

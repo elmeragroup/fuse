@@ -37,6 +37,7 @@ describe("exports map", () => {
       "button",
       "card",
       "dialog",
+      "empty",
       "field",
       "heading",
       "input",
@@ -238,6 +239,12 @@ describe("exports map", () => {
     const skeleton = discovered.jsEntries.find((entry) => entry.subpath === "skeleton");
     expect(skeleton?.inRootBarrel).toBe(true);
     expect(skeleton?.runtimeExports).toEqual(["Skeleton"]);
+  });
+
+  it("publishes Empty from /empty and the root barrel with private recipes", () => {
+    const empty = discovered.jsEntries.find((entry) => entry.subpath === "empty");
+    expect(empty?.inRootBarrel).toBe(true);
+    expect(empty?.runtimeExports).toEqual(["Empty"]);
   });
 
   it("publishes TimelineList from /timeline-list and the root barrel with a private recipe", () => {

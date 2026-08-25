@@ -22,7 +22,7 @@
  * measured×1.5.
  *
  * Current measurements (gzip bytes, 2026-08-25). Earlier measurement rounds live in git.
- *   .             100473  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader share the barrel; under the standing 113816 ceiling from Popover-only recalibration, so recorded, not loosened)
+ *   .             100784  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty share the barrel; under the standing 113816 ceiling from Popover-only recalibration, so recorded, not loosened)
  *   theme          6133
  *   icons/Check     818  (per-icon export, not the full roster)
  *   button        25214
@@ -50,8 +50,9 @@
  *   sheet         57208  (first calibration, ceiling 85812)
  *   text-field    33475  (first calibration, ceiling 50193)
  *   loader        16748  (first calibration, ceiling 25122)
+ *   empty         21356  (first calibration, ceiling 32034)
  *   themes.css     2274
- *   styles.css    12642  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader; under the standing 15860 ceiling from Heading+Text+Popover recalibration, so recorded, not loosened)
+ *   styles.css    12760  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty; under the standing 15860 ceiling from Heading+Text+Popover recalibration, so recorded, not loosened)
  */
 import { FLAG_RAW_CEILING_BYTES } from "./flag-payload";
 
@@ -101,6 +102,7 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = [
   // plop:js-entry-budget
   { name: "show", entryFile: "show.js", ceilingGzip: 222 },
   { name: "loader", entryFile: "loader.js", ceilingGzip: 25122 },
+  { name: "empty", entryFile: "empty.js", ceilingGzip: 32034 },
   { name: "span", entryFile: "span.js", ceilingGzip: 25986 },
   { name: "timeline-list", entryFile: "timeline-list.js", ceilingGzip: 35333 },
   { name: "sheet", entryFile: "sheet.js", ceilingGzip: 85812 },

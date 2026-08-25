@@ -1,0 +1,55 @@
+---
+title: Empty
+lede: >
+  A centered empty-state layout. `Empty.Root` frames the block; media, title, description,
+  and content compose plain elements, so the whole compound is server-safe.
+---
+
+import { EmptyBasic } from "./demos/empty-basic";
+import { EmptyOutline } from "./demos/empty-outline";
+import { EmptyWithActions } from "./demos/empty-with-actions";
+import { EmptyMediaVariants } from "./demos/empty-media-variants";
+import { EmptyInlineLink } from "./demos/empty-inline-link";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("empty");
+
+<ComponentIntro slug="empty" />
+
+<Prose>
+
+Empty has no base-ui primitive behind it. `Title` is a `div`, not a heading — empty states
+are transient placeholders and must not perturb the page outline. `Description` is a real
+`p` so inline links remain ordinary tab stops. The frame and media recipes stay
+module-private.
+
+Actions belong in `Empty.Content`; the compound adds no focus management, roles, or live
+region. If the empty state replaces async results, the consumer owns the `aria-live`
+announcement.
+
+</Prose>
+
+<Demo slug="empty" id="basic" title="Basic" file="empty-basic.tsx">
+  <EmptyBasic />
+</Demo>
+
+<Demo slug="empty" id="outline" title="Outline" file="empty-outline.tsx">
+  <EmptyOutline />
+</Demo>
+
+<Demo slug="empty" id="with-actions" title="With actions" file="empty-with-actions.tsx">
+  <EmptyWithActions />
+</Demo>
+
+<Demo slug="empty" id="media-variants" title="Media variants" file="empty-media-variants.tsx">
+  <EmptyMediaVariants />
+</Demo>
+
+<Demo slug="empty" id="inline-link" title="Inline link" file="empty-inline-link.tsx">
+  <EmptyInlineLink />
+</Demo>
+
+<ApiReference slug="empty" />
+
+<ComponentTokens slug="empty" />

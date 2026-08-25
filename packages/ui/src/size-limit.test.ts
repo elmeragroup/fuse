@@ -57,6 +57,7 @@ describe("size-limit harness", () => {
       "flags",
       "show",
       "loader",
+      "empty",
       "span",
       "timeline-list",
       "sheet",
@@ -108,6 +109,9 @@ describe("size-limit harness", () => {
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "tooltip")?.ceilingGzip).toBe(
       ceilingFromMeasured(51148)
+    );
+    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "empty")?.ceilingGzip).toBe(
+      ceilingFromMeasured(21356)
     );
     // styles.css recalibrated 2026-08-25: Heading+Text+Popover utilities exceeded 10469.
     expect(CSS_BUDGETS.find((budget) => budget.name === "styles.css")?.ceilingGzip).toBe(
