@@ -44,7 +44,7 @@ Rules:
 
 ## 3 Exports map: codegen + test
 
-- The `package.json` `exports` field is **code-generated** from the entry file layout (one generator script in the package, run as part of the build). Hand-editing `exports` is forbidden; adding a component = adding its source entry file, then regenerating.
+- The `package.json` `exports` field is **code-generated** from the entry file layout (one generator script in the package). `pnpm --filter @elmeragroup/ui generate:exports` explicitly rewrites the tracked source `exports` map and root barrel; the package build discovers those entries to produce `dist` but never mutates tracked source files. Hand-editing `exports` is forbidden; adding a component = adding its source entry file, then running that command and committing the generated files.
 - Generated per entry: `types` + `import` conditions (ESM-only, §4), with two concrete layouts from the same manifest: the repository `package.json` maps them directly to `src/**/*.ts(x)`, while `dist/package.json` maps them to emitted `.d.ts`/`.js` files (§7). No custom `source` or `development` export condition is used. CSS entries map to plain file paths in the corresponding source or distribution layout.
 - **Export-path test** (CI, merge gate): for every generated subpath, resolve and import it **against the published shape** (post-`publishConfig.directory`, from the `dist`-rooted layout) and assert (a) Node ESM resolution succeeds, (b) TypeScript resolves the `types` condition (verified in bulk by `arethetypeswrong`, §4), (c) the module's expected top-level export names exist. A subpath present on disk but missing from `exports` — or vice versa — fails the build.
 

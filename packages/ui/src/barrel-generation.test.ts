@@ -1,6 +1,7 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { discoverEntries } from "../scripts/entries";
@@ -71,5 +72,24 @@ describe("barrel generation", () => {
     });
 
     expect(() => discoverEntries(packageRoot)).toThrow(/export \*/);
+  });
+});
+
+describe("source-export generation ownership", () => {
+  const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
+  const buildSource = readFileSync(join(packageRoot, "scripts/build.ts"), "utf8");
+  const writeSourceExportsEntry = readFileSync(join(packageRoot, "scripts/write-source-exports.ts"), "utf8");
+  const parsed: unknown = JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8"));
+  if (parsed === null || Array.isArray(parsed)) {
+    throw new Error("packages/ui/package.json is not an object");
+  }
+  // SAFETY: this test only reads the generate:exports script string.
+  const scripts = (parsed as { scripts: { "generate:exports": string } }).scripts;
+
+  it("keeps tracked source exports out of the package build", () => {
+    expect(buildSource).not.toContain("writeSourceExports");
+    expect(buildSource).toContain("writePublishManifest");
+    expect(writeSourceExportsEntry).toContain("writeSourceExports(");
+    expect(scripts["generate:exports"]).toContain("scripts/write-source-exports.ts");
   });
 });

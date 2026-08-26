@@ -14,9 +14,37 @@ import { STATIC_PAGES } from "../src/lib/pages";
 import { slugifyHeading } from "../src/lib/slug";
 
 const here = dirname(fileURLToPath(import.meta.url));
+const docsRoot = join(here, "..");
 const repoRoot = join(here, "../../..");
 const uiCss = readFileSync(join(repoRoot, "packages/ui/src/styles/ui.css"), "utf8");
 const colors = readColorTokenMap(uiCss);
+
+describe("docs generation ownership", () => {
+  const parsed: unknown = JSON.parse(readFileSync(join(docsRoot, "package.json"), "utf8"));
+  if (parsed === null || Array.isArray(parsed)) {
+    throw new Error("apps/docs/package.json is not an object");
+  }
+  // SAFETY: this test only reads the three script strings that define generate ownership.
+  const scripts = (parsed as { scripts: { build: string; "type-check": string; dev: string } }).scripts;
+  const turbo = readFileSync(join(docsRoot, "turbo.json"), "utf8");
+
+  it("does not nest generate inside package build or type-check", () => {
+    expect(scripts.build).toBe("next build");
+    expect(scripts["type-check"]).toBe("next typegen && tsc --noEmit");
+    expect(scripts.build).not.toContain("pnpm run generate");
+    expect(scripts["type-check"]).not.toContain("pnpm run generate");
+    expect(scripts.dev).toContain("pnpm run generate");
+  });
+
+  it("lets Turbo own generate before build and type-check", () => {
+    const build = /"build":\s*\{([^{}]*)\}/s.exec(turbo)?.[1];
+    const typeCheck = /"type-check":\s*\{([^{}]*)\}/s.exec(turbo)?.[1];
+    expect(build, "turbo.json is missing a build task block").toBeDefined();
+    expect(typeCheck, "turbo.json is missing a type-check task block").toBeDefined();
+    expect(build).toMatch(/"dependsOn"\s*:\s*\[[^\]]*"generate"/);
+    expect(typeCheck).toMatch(/"dependsOn"\s*:\s*\[[^\]]*"generate"/);
+  });
+});
 
 describe("authored page.mdx as generation input", () => {
   function page(...body: readonly string[]): string {

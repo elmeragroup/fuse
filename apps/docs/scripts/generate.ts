@@ -214,8 +214,10 @@ function emitComponentPages(components: readonly DocsComponent[]): void {
  * reviewable diff. That makes staleness possible, so this also records which artifacts
  * this run had to rewrite — a rewrite means the committed file did *not* match the
  * library, and the drift check turns that into a red test naming the regen command.
- * Recording it is the only way the check survives running after this pass, which is
- * exactly what the `test` task does (it depends on `build`, which regenerates).
+ * Recording it is the only way the check survives running after this pass: Turbo
+ * `test` depends on `build`, and Turbo `build` / `type-check` depend on the
+ * `generate` task — that task is the single regeneration. The package `build`
+ * script is `next build` and does not regenerate.
  */
 function emitApiArtifacts(components: readonly DocsComponent[]): void {
   const stale: string[] = [];

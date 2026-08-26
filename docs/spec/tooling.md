@@ -93,6 +93,7 @@ Exactly these existing rules carry over from the internal plugin and run as `err
 `dmmulroy/anti-slop` — 15 AST-only oxlint rules rejecting low-evidence TS patterns (type-assertion laundering, `unknown` escape hatches, module mocking, reflection), vendored from commit `446268e5d15baa968eaec669ff65358d36ae6259`.
 
 - **Vendored, never installed**: the upstream repo is `private: true` and unpublished by design; `oxlint-plugin-anti-slop@0.0.0` on npm is a **third-party name-squat — never install it**. The upstream is days-old, single-author, releaseless: immature as a dependency, acceptable as owned code. We copy `src/` into `tooling/oxlint-anti-slop` as `@elmeragroup/oxlint-plugin-anti-slop` (`private`, `"exports": { ".": "./index.ts" }`, one dependency: `@oxlint/plugins` at the pinned oxlint minor) and record the vendored upstream commit SHA in that package's README. Upstream refresh = manual diff, opt-in.
+- **Tests**: the 12 vendored RuleTester modules run under Node 24's test runner (`node --experimental-strip-types --test rules/*.test.ts`) and are part of the root Turbo `test` graph through the package `test` script. An upstream refresh must keep that script green and update the documented test count if files are added or removed.
 - **Rule tiers**: `error` — `no-chained-type-assertions`, `no-widen-then-assert`, `no-known-value-widening`, `no-conditional-empty-object-spread`, `no-reflect-apply`, `no-reflect-get`, `no-object-parameters`, `no-unknown-type-aliases`, `no-unsafe-dictionary-type`, `no-unknown-returns`, `no-unknown-parameters`. `warn` (promote after audit) — `require-safety-comment-for-type-assertion`, `no-runtime-typeof`, `no-shape-in-symbol-names`.
 - **`no-module-mocking` stays `error` repo-wide**: the testing strategy (§7) is browser-mode behavior tests against real components — `vi.mock` has no place in this library. No test-dir override.
 
@@ -118,7 +119,7 @@ It does **not** ban `p-*` / `h-*` / `gap-*` across the package. Type-scale axes 
 2. Co-located `<name>.test.ts` (unit) and `<name>.browser.test.tsx` (browser) stubs with role-based query scaffolding.
 3. A plain-`.tsx` demo stub in the docs app (`apps/docs/src/app/(docs)/components/<name>/demos/`) per [docs-site](docs-site.md) §6 _(amended 2026-08-24 — ticket 74b)_.
 4. A hand-authored `page.mdx` stub at `apps/docs/src/app/(docs)/components/<name>/page.mdx` importing the demo and rendering the generated API reference ([docs-site](docs-site.md) §1 authoring model).
-5. A source entry file named according to the canonical manifest. The normal exports generator discovers it and rewrites both source and publish manifests; the scaffold never edits `package.json#exports` directly.
+5. A source entry file named according to the canonical manifest. After adding it, run `pnpm --filter @elmeragroup/ui generate:exports` and commit the generated `package.json#exports` and root barrel. The package build still rewrites the publish manifest under `dist`; the scaffold never edits `package.json#exports` directly.
 
 The generator mechanically enforces the ten-section spec template's file conventions; hand-created components that skip it must reproduce every artifact above.
 

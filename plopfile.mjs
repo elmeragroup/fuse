@@ -9,8 +9,10 @@
  *   4. `apps/docs/src/app/(docs)/components/<name>/page.mdx`
  *   5. `packages/ui/src/<name>.ts` — the source entry facade
  *
- * It never touches `package.json#exports` or `src/index.ts`: the exports/barrel
- * generators (`pnpm --filter @elmeragroup/ui build`) discover the facade on their own.
+ * It never touches `package.json#exports` or `src/index.ts`: `pnpm --filter
+ * @elmeragroup/ui generate:exports` rewrites those tracked files once the facade
+ * exists. The package build still produces `dist` from the discovered entries but
+ * never mutates the source exports map.
  * The one injection is the size-limit budget row, which `size-limit` would otherwise
  * skip silently for a brand-new packed entry.
  *
@@ -124,10 +126,11 @@ export default function plopfile(plop) {
         [
           "next steps",
           `  1. Implement docs/spec/components/${answers.name}.md — every stub above fails until you do.`,
-          "  2. pnpm --filter @elmeragroup/ui build   # exports + barrel generators pick the facade up",
-          `  3. Author the page: prose, one demo + <Demo> frame per §10 scenario of docs/spec/components/${answers.name}.md.`,
-          "  4. pnpm --filter docs generate           # writes the committed api.json next to the page",
-          "  5. pnpm turbo run ci:checks --force",
+          "  2. pnpm --filter @elmeragroup/ui generate:exports  # rewrites tracked package.json#exports and src/index.ts",
+          "  3. pnpm --filter @elmeragroup/ui build             # dist + publish manifest; does not rewrite source exports",
+          `  4. Author the page: prose, one demo + <Demo> frame per §10 scenario of docs/spec/components/${answers.name}.md.`,
+          "  5. pnpm --filter docs generate                    # writes the committed api.json next to the page",
+          "  6. pnpm turbo run ci:checks --force",
         ].join("\n"),
     ],
   });

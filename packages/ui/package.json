@@ -222,6 +222,7 @@
   "scripts": {
     "build": "node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/build.ts",
     "ci:checks": "true",
+    "generate:exports": "node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/write-source-exports.ts",
     "pack": "node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/pack.ts",
     "package:check": "node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/package-check.ts",
     "size-limit": "node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/size-limit.ts",

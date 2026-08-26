@@ -4,11 +4,9 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { buildCss } from "./build-css";
-import { writePublishManifest, writeSourceExports } from "./generate-exports";
+import { writePublishManifest } from "./generate-exports";
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
-
-writeSourceExports(packageRoot);
 
 const tsdown = spawnSync("pnpm", ["exec", "tsdown"], {
   cwd: packageRoot,
