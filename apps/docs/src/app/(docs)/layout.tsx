@@ -4,9 +4,9 @@ import type { Metadata } from "next";
 
 import { ColorSchemeScript, ThemeProvider } from "@elmeragroup/ui/theme";
 
-import { DocsShell } from "../../components/DocsShell";
-import { DocumentRoot } from "../../components/DocumentRoot";
-import { SkipNav } from "../../components/SkipNav";
+import { DocsShell } from "../../components/docs-shell";
+import { DocumentRoot } from "../../components/document-root";
+import { SkipNav } from "../../components/skip-nav";
 import { DOCUMENT_COLOR_SCHEME, DOCUMENT_THEME } from "../../lib/theme";
 import "../../styles/globals.css";
 import "./layout.css";

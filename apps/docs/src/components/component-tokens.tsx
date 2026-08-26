@@ -2,7 +2,7 @@ import type { ReactElement } from "react";
 
 import { requireComponent } from "../lib/component-page";
 import { TOKENS_SECTION_ID } from "../lib/nav";
-import { TokensConsumed } from "./TokensConsumed";
+import { TokensConsumed } from "./tokens-consumed";
 
 export type ComponentTokensProps = {
   slug: string;

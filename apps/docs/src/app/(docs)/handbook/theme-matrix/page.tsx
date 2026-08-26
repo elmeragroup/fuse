@@ -2,8 +2,8 @@ import type { ReactElement } from "react";
 
 import Link from "next/link";
 
-import { DocsPage, pageMetadata } from "../../../../components/DocsPage";
-import { ThemeMatrix } from "../../../../components/ThemeMatrix";
+import { DocsPage, pageMetadata } from "../../../../components/docs-page";
+import { ThemeMatrix } from "../../../../components/theme-matrix";
 
 const HREF = "/handbook/theme-matrix";
 

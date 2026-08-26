@@ -2,7 +2,7 @@ import type { ReactElement } from "react";
 
 import { BUNDLE_SIZES, BUNDLE_SIZES_MEASURED_ON } from "../generated/bundle-sizes";
 import { ceilingUsage } from "../lib/docs-model";
-import "./BundleSizes.css";
+import "./bundle-sizes.css";
 
 const KIB = 1024;
 

@@ -1,8 +1,8 @@
 import type { ReactElement, ReactNode } from "react";
 
 import { readDemoSource } from "../lib/demo-source";
-import "./DemoFrame.css";
-import { DemoStage } from "./DemoStage";
+import "./demo-frame.css";
+import { DemoStage } from "./demo-stage";
 
 export type DemoFrameProps = {
   /** Slug of the component page this demo belongs to; locates the `demos/` directory. */

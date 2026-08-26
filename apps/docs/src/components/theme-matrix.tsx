@@ -10,7 +10,7 @@ import { ThemeScope, themeSlug } from "@elmeragroup/ui/theme";
 import type { ThemeInput } from "@elmeragroup/ui/theme";
 
 import { LEGAL_THEMES } from "../lib/theme";
-import "./ThemeMatrix.css";
+import "./theme-matrix.css";
 
 /**
  * The whitelabel pitch grid (docs-site.md §5).

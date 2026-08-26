@@ -4,7 +4,7 @@ import type { ComponentProps, ReactElement, ReactNode } from "react";
 import { highlight } from "sugar-high";
 
 import { slugifyHeading } from "../lib/slug";
-import "./MdxElements.css";
+import "./mdx-elements.css";
 
 /**
  * The element overrides `@next/mdx` applies to every authored `page.mdx`

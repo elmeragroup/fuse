@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 
-import "./SkipNav.css";
+import "./skip-nav.css";
 
 export const MAIN_CONTENT_ID = "main-content";
 

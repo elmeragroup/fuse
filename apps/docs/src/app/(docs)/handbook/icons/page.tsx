@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 
-import { DocsPage, pageMetadata } from "../../../../components/DocsPage";
+import { DocsPage, pageMetadata } from "../../../../components/docs-page";
 
 const HREF = "/handbook/icons";
 

@@ -3,8 +3,8 @@
 import type { ReactElement } from "react";
 
 import type { TokenRef } from "../lib/docs-model";
-import "./TokensConsumed.css";
-import { TokenSwatchList } from "./TokenSwatchList";
+import "./tokens-consumed.css";
+import { TokenSwatchList } from "./token-swatch-list";
 
 export type TokensConsumedProps = {
   id: string;

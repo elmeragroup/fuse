@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["typescript", "oxc", "import"],
+  "plugins": ["typescript", "oxc", "import", "unicorn"],
   "jsPlugins": [
     "eslint-plugin-turbo",
     { "name": "elmera", "specifier": "@elmeragroup/oxlint-plugin" },
@@ -59,6 +59,26 @@
     "typescript/no-redundant-type-constituents": "error",
     "import/consistent-type-specifier-style": ["warn", "prefer-top-level"],
     "import/no-cycle": "error",
+    "unicorn/filename-case": [
+      "error",
+      {
+        "case": "kebabCase",
+        "ignore": ["^[a-z]{2}-[A-Z]{2}\\."]
+      }
+    ],
+    "unicorn/no-await-in-promise-methods": "off",
+    "unicorn/no-empty-file": "off",
+    "unicorn/no-invalid-fetch-options": "off",
+    "unicorn/no-invalid-remove-event-listener": "off",
+    "unicorn/no-new-array": "off",
+    "unicorn/no-single-promise-in-promise-methods": "off",
+    "unicorn/no-thenable": "off",
+    "unicorn/no-unnecessary-await": "off",
+    "unicorn/no-useless-fallback-in-spread": "off",
+    "unicorn/no-useless-length-check": "off",
+    "unicorn/no-useless-spread": "off",
+    "unicorn/prefer-set-size": "off",
+    "unicorn/prefer-string-starts-ends-with": "off",
     "anti-slop/no-chained-type-assertions": "error",
     "anti-slop/no-widen-then-assert": "error",
     "anti-slop/no-known-value-widening": "error",
@@ -117,7 +137,7 @@
       "globals": {
         "React": "writable"
       },
-      "plugins": ["typescript", "oxc", "react"],
+      "plugins": ["typescript", "oxc", "react", "unicorn"],
       "rules": {
         "react/react-in-jsx-scope": "off",
         "react/no-children-prop": "off",

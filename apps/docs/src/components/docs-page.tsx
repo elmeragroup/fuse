@@ -3,7 +3,7 @@ import type { ReactElement, ReactNode } from "react";
 import type { Metadata } from "next";
 
 import { staticPageFor } from "../lib/pages";
-import "./DocsPage.css";
+import "./docs-page.css";
 
 /**
  * Page metadata for an authored Overview/Handbook route.

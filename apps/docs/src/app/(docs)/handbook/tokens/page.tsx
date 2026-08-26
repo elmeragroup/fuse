@@ -2,9 +2,9 @@ import type { ReactElement } from "react";
 
 import Link from "next/link";
 
-import { BundleSizes } from "../../../../components/BundleSizes";
-import { DocsPage, pageMetadata } from "../../../../components/DocsPage";
-import { TokenReference } from "../../../../components/TokenReference";
+import { BundleSizes } from "../../../../components/bundle-sizes";
+import { DocsPage, pageMetadata } from "../../../../components/docs-page";
+import { TokenReference } from "../../../../components/token-reference";
 
 const HREF = "/handbook/tokens";
 

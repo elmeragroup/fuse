@@ -4,7 +4,7 @@ import Link from "next/link";
 
 import { BRANDS, themeSlug } from "@elmeragroup/ui/theme";
 
-import { DocsPage, pageMetadata } from "../../../../components/DocsPage";
+import { DocsPage, pageMetadata } from "../../../../components/docs-page";
 import { LEGAL_THEMES, THEME_BRANDS } from "../../../../lib/theme";
 
 const HREF = "/handbook/brands-and-segments";

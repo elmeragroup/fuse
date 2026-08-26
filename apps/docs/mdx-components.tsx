@@ -1,9 +1,9 @@
-import { ApiReference } from "./src/components/ApiReference";
-import { ComponentIntro } from "./src/components/ComponentIntro";
-import { ComponentTokens } from "./src/components/ComponentTokens";
-import { DemoFrame } from "./src/components/DemoFrame";
-import { MDX_HEADINGS, MdxCode, MdxPre } from "./src/components/MdxElements";
-import { Prose } from "./src/components/Prose";
+import { ApiReference } from "./src/components/api-reference";
+import { ComponentIntro } from "./src/components/component-intro";
+import { ComponentTokens } from "./src/components/component-tokens";
+import { DemoFrame } from "./src/components/demo-frame";
+import { MDX_HEADINGS, MdxCode, MdxPre } from "./src/components/mdx-elements";
+import { Prose } from "./src/components/prose";
 
 /**
  * The MDX component scope, resolved by `@next/mdx` for every authored `page.mdx`

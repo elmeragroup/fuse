@@ -2,7 +2,7 @@ import type { ReactElement } from "react";
 
 import Link from "next/link";
 
-import { DocsPage, pageMetadata } from "../../../components/DocsPage";
+import { DocsPage, pageMetadata } from "../../../components/docs-page";
 
 const HREF = "/about";
 

@@ -4,7 +4,7 @@ import type { ReactElement, ReactNode } from "react";
 
 import { defaultDensityForVariant, densityAttributes, ThemeScope, themeSlug } from "@elmeragroup/ui/theme";
 
-import { usePreviewTheme } from "./PreviewTheme";
+import { usePreviewTheme } from "./preview-theme";
 
 export type DemoStageProps = {
   /** Repo-relative path of the demo file, printed at the end of the meta row. */
@@ -20,7 +20,7 @@ export type DemoStageProps = {
  * preview context (§4), so driving the header picker re-renders the stage and its label
  * while the frame shell and the source region stay server-rendered. Density is the
  * *deployment default* for the previewed variant, stamped on the stage so the
- * comfortable re-scope in `DemoFrame.css` can take effect inside the sandbox.
+ * comfortable re-scope in `demo-frame.css` can take effect inside the sandbox.
  */
 export function DemoStage({ sourcePath, children }: DemoStageProps): ReactElement {
   const { theme } = usePreviewTheme();

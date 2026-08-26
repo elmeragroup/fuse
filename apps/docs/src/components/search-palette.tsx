@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { Dialog } from "@elmeragroup/ui/dialog";
 
 import { matchSearchEntries } from "../lib/search";
-import "./SearchPalette.css";
+import "./search-palette.css";
 
 /**
  * The complete-site header search (docs-site.md §3.2).

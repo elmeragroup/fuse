@@ -3,9 +3,9 @@ import type { ReactElement } from "react";
 import { readComponentApi } from "../lib/api-source";
 import { toPartView } from "../lib/api-view";
 import { API_SECTION_ID } from "../lib/nav";
-import { ApiPropRows } from "./ApiPropRows";
-import "./ApiReference.css";
-import "./ComponentSections.css";
+import { ApiPropRows } from "./api-prop-rows";
+import "./api-reference.css";
+import "./component-sections.css";
 
 export type ApiReferenceProps = {
   slug: string;

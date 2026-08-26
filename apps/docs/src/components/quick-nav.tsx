@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation";
 import { ScrollArea } from "@elmeragroup/ui/scroll-area";
 
 import { tocForPath } from "../lib/nav";
-import "./QuickNav.css";
+import "./quick-nav.css";
 
 export function QuickNav(): ReactElement {
   const pathname = usePathname();

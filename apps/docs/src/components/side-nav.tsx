@@ -8,7 +8,7 @@ import { usePathname } from "next/navigation";
 import { ScrollArea } from "@elmeragroup/ui/scroll-area";
 
 import { NAV_GROUPS } from "../lib/nav";
-import "./SideNav.css";
+import "./side-nav.css";
 
 export function SideNav(): ReactElement {
   const pathname = usePathname();

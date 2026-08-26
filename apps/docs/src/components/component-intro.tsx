@@ -1,9 +1,9 @@
 import type { ReactElement } from "react";
 
 import { requireComponent } from "../lib/component-page";
-import "./ComponentSections.css";
-import { InlineCode } from "./InlineCode";
-import { MetaLinks } from "./MetaLinks";
+import "./component-sections.css";
+import { InlineCode } from "./inline-code";
+import { MetaLinks } from "./meta-links";
 
 export type ComponentIntroProps = {
   slug: string;

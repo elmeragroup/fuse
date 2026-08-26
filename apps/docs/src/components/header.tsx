@@ -4,10 +4,10 @@ import type { ReactElement } from "react";
 
 import Link from "next/link";
 
-import "./Header.css";
-import { usePreviewTheme } from "./PreviewTheme";
-import { SearchPalette } from "./SearchPalette";
-import { ThemePicker } from "./ThemePicker";
+import "./header.css";
+import { usePreviewTheme } from "./preview-theme";
+import { SearchPalette } from "./search-palette";
+import { ThemePicker } from "./theme-picker";
 
 export function Header(): ReactElement {
   const { theme, setTheme } = usePreviewTheme();

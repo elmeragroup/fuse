@@ -22,9 +22,19 @@ describe("workspace lint script", () => {
     if (parsed === null || Array.isArray(parsed)) {
       throw new Error(".oxlintrc.json is not an object");
     }
+    expect(parsed.plugins).toEqual(["typescript", "oxc", "import", "unicorn"]);
+    expect(parsed.rules["unicorn/filename-case"]).toEqual([
+      "error",
+      { case: "kebabCase", ignore: ["^[a-z]{2}-[A-Z]{2}\\."] },
+    ]);
     expect(parsed.rules["import/consistent-type-specifier-style"]).toEqual(["warn", "prefer-top-level"]);
     expect(parsed.rules["anti-slop/require-safety-comment-for-type-assertion"]).toBe("warn");
     expect(parsed.rules["anti-slop/no-runtime-typeof"]).toBe("warn");
+
+    const appsUiOverride = parsed.overrides.find((entry) =>
+      entry.files.includes("apps/**/*.{ts,tsx}")
+    );
+    expect(appsUiOverride?.plugins).toEqual(["typescript", "oxc", "react", "unicorn"]);
 
     const antiSlopOverride = parsed.overrides.find((entry) =>
       entry.files.includes("tooling/oxlint-anti-slop/**")

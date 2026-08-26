@@ -1,7 +1,7 @@
 import type { ReactElement } from "react";
 
 import { COLOR_TOKENS } from "../generated/token-reference";
-import { TokenSwatchList } from "./TokenSwatchList";
+import { TokenSwatchList } from "./token-swatch-list";
 
 /**
  * Every colour token the library's utilities resolve to, read at docs build from the

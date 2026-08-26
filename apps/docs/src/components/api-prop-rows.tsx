@@ -19,8 +19,8 @@ import type { CSSProperties, MouseEvent, ReactElement } from "react";
 
 import type { ApiPropView } from "../lib/api-row";
 import { NO_DEFAULT } from "../lib/api-row";
-import "./ApiReference.css";
-import { InlineCode } from "./InlineCode";
+import "./api-reference.css";
+import { InlineCode } from "./inline-code";
 
 export type ApiPropRowsProps = {
   /** Display name of the part these props belong to; only the group's label reads it. */

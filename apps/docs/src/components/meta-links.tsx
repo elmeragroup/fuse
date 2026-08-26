@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 
-import "./MetaLinks.css";
+import "./meta-links.css";
 
 export type MetaLinksProps = {
   /** The per-component markdown endpoint (docs-site.md §9). */

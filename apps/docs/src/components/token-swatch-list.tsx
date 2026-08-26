@@ -5,8 +5,8 @@ import type { ReactElement } from "react";
 import { ThemeScope } from "@elmeragroup/ui/theme";
 
 import type { TokenRef } from "../lib/docs-model";
-import { usePreviewTheme } from "./PreviewTheme";
-import "./TokenSwatchList.css";
+import { usePreviewTheme } from "./preview-theme";
+import "./token-swatch-list.css";
 
 export type TokenSwatchListProps = {
   tokens: readonly TokenRef[];

@@ -1,6 +1,6 @@
 import type { ReactElement, ReactNode } from "react";
 
-import "./ComponentSections.css";
+import "./component-sections.css";
 
 export type ProseProps = {
   children: ReactNode;

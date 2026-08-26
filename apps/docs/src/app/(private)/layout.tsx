@@ -2,7 +2,7 @@ import type { ReactElement, ReactNode } from "react";
 
 import type { Metadata } from "next";
 
-import { DocumentRoot } from "../../components/DocumentRoot";
+import { DocumentRoot } from "../../components/document-root";
 import "../../styles/globals.css";
 
 export const metadata: Metadata = {

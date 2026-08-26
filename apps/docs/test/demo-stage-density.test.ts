@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const docsRoot = join(here, "..");
-const demoFrameCss = readFileSync(join(docsRoot, "src/components/DemoFrame.css"), "utf8");
+const demoFrameCss = readFileSync(join(docsRoot, "src/components/demo-frame.css"), "utf8");
 const artifactPath = join(docsRoot, "../../packages/ui/dist/demo-stage-comfortable.css");
 
 describe("DemoStage comfortable density", () => {
