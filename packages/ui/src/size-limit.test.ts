@@ -55,6 +55,7 @@ describe("size-limit harness", () => {
       "input-group",
       "textarea",
       "flags",
+      "checkbox",
       "selection-item",
       "switch",
       "button-group",
@@ -200,6 +201,9 @@ describe("size-limit harness", () => {
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "selection-item")?.ceilingGzip).toBe(
       ceilingFromMeasured(31907)
+    );
+    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "checkbox")?.ceilingGzip).toBe(
+      ceilingFromMeasured(36932)
     );
     // styles.css recalibrated 2026-08-25: Table in-frame utilities exceeded 15860.
     expect(CSS_BUDGETS.find((budget) => budget.name === "styles.css")?.ceilingGzip).toBe(

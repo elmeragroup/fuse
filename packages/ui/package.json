@@ -48,6 +48,10 @@
       "types": "./src/card.ts",
       "import": "./src/card.ts"
     },
+    "./checkbox": {
+      "types": "./src/checkbox.ts",
+      "import": "./src/checkbox.ts"
+    },
     "./code": {
       "types": "./src/code.ts",
       "import": "./src/code.ts"

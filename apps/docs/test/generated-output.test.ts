@@ -67,6 +67,7 @@ describe("component page manifest", () => {
       "button",
       "button-group",
       "card",
+      "checkbox",
       "code",
       "collapsible",
       "confirm-button",
@@ -227,6 +228,13 @@ describe("component page manifest", () => {
       "stacked",
       "disabled",
     ]);
+    expect(page("checkbox").demos.map((demo) => demo.id)).toEqual([
+      "basic",
+      "group",
+      "tristate",
+      "item-group",
+      "description",
+    ]);
     expect(page("number-field").demos.map((demo) => demo.id)).toEqual([
       "basic",
       "denomination",
@@ -298,6 +306,7 @@ describe("component page manifest", () => {
       button: "client",
       "button-group": "client",
       card: "server",
+      checkbox: "client",
       code: "server",
       collapsible: "client",
       "confirm-button": "client",
@@ -347,6 +356,14 @@ describe("committed api.json", () => {
   it("walks only the export names resolveComponentPaths lists", () => {
     expect(resolveComponentPaths("table").exportName).toBe("Table");
     expect(resolveComponentPaths("table").apiExportNames).toEqual(["Table", "VerticalTable"]);
+    expect(resolveComponentPaths("checkbox").exportName).toBe("Checkbox");
+    expect(resolveComponentPaths("checkbox").apiExportNames).toEqual([
+      "Checkbox",
+      "CheckboxGroup",
+      "CheckboxItem",
+      "CheckboxItemGroup",
+      "CheckboxDescription",
+    ]);
     expect(resolveComponentPaths("button").apiExportNames).toEqual(["Button"]);
     expect(resolveComponentPaths("meter").apiExportNames).toEqual(["Meter"]);
     expect(resolveComponentPaths("pagination").apiExportNames).toEqual(["Pagination"]);
@@ -577,6 +594,10 @@ describe("committed api.json", () => {
       "true"
     );
     expect(selectContent?.props.find((prop) => prop.name === "align")?.defaultValue).toBe('"center"');
+    const checkboxItemGroup = api("checkbox").parts.find((part) => part.name === "CheckboxItemGroup");
+    expect(checkboxItemGroup?.props.find((prop) => prop.name === "orientation")?.defaultValue).toBe(
+      '"vertical"'
+    );
   });
 });
 

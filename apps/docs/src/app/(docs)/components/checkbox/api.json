@@ -1,0 +1,386 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "checkbox",
+  "parts": [
+    {
+      "name": "Checkbox",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/checkbox/checkbox.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 291,
+      "props": []
+    },
+    {
+      "name": "CheckboxGroup",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/checkbox/checkbox.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "allValues",
+          "origin": "declared",
+          "type": "string[] | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Enables the tri-state `parent` checkbox. Base-ui derives checked/indeterminate from whether the group's value is a subset of these members.",
+          "required": false
+        },
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Group members — typically `Checkbox` or `CheckboxItem`.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes, merged onto the group primitive via `cn`.",
+          "required": false
+        },
+        {
+          "name": "defaultValue",
+          "origin": "declared",
+          "type": "string[] | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Uncontrolled initial selected values.",
+          "required": false
+        },
+        {
+          "name": "description",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Supporting copy, rendered as `Field.Description`.",
+          "required": false
+        },
+        {
+          "name": "errorMessage",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`.",
+          "required": false
+        },
+        {
+          "name": "id",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Forwarded to the group primitive.",
+          "required": false
+        },
+        {
+          "name": "isDisabled",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Forwards `disabled` to `Field.Root` and the group primitive.",
+          "required": false
+        },
+        {
+          "name": "isInvalid",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Forwards `invalid` to `Field.Root`.",
+          "required": false
+        },
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Fieldset legend, rendered as `Field.Legend variant=\"label\"`. The legend row is omitted when absent.",
+          "required": false
+        },
+        {
+          "name": "name",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Set on `Field.Root`, not the group primitive. Base-ui's CheckboxGroup has no `name`; Field context threads it to member hidden inputs. RadioGroup puts `name` on its primitive — the face is the same `name?: string` either way.",
+          "required": false
+        },
+        {
+          "name": "onChange",
+          "origin": "declared",
+          "type": "((value: string[]) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Called with the selected `string[]`, not the event. Mapped to base-ui `onValueChange`.",
+          "required": false
+        },
+        {
+          "name": "orientation",
+          "origin": "declared",
+          "type": "\"horizontal\" | \"vertical\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"vertical\"",
+          "description": "Layout of the group primitive. Vertical is `flex-col gap-2`; horizontal is `flex-wrap gap-4`. Not a recipe axis.",
+          "required": false
+        },
+        {
+          "name": "value",
+          "origin": "declared",
+          "type": "string[] | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Controlled selected values.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "CheckboxItem",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/checkbox/checkbox.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Row children, partitioned by the shell. Direct `CheckboxItem.SubSection` (the same object as `SelectionItem.SubSection`) children render outside the label.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes, merged onto the shell via `cn`.",
+          "required": false
+        },
+        {
+          "name": "controlPosition",
+          "origin": "declared",
+          "type": "\"end\" | \"start\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"start\"",
+          "description": "Where the control sits in the labelled row. Forwarded to `SelectionItem.Shell`. Default `\"start\"`.",
+          "required": false
+        },
+        {
+          "name": "isDisabled",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Forwards `disabled` to the inner Checkbox and applies disabled hatch styling on the shell.",
+          "required": false
+        },
+        {
+          "name": "isReadOnly",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Forwards `readOnly` to the inner Checkbox.",
+          "required": false
+        },
+        {
+          "name": "parent",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "When true, this row is the tri-state parent. Incompatible with `value`. Tri-state parent — checked/indeterminate/unchecked from the group's `allValues`.",
+          "required": false
+        },
+        {
+          "name": "value",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Member value in the group. Required unless `parent`. Parent rows must not set `value`.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "CheckboxItemGroup",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/checkbox/checkbox.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "allValues",
+          "origin": "declared",
+          "type": "string[] | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Enables the tri-state `parent` checkbox. Base-ui derives checked/indeterminate from whether the group's value is a subset of these members.",
+          "required": false
+        },
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Group members — typically `Checkbox` or `CheckboxItem`.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes, merged onto the group primitive via `cn`.",
+          "required": false
+        },
+        {
+          "name": "defaultValue",
+          "origin": "declared",
+          "type": "string[] | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Uncontrolled initial selected values.",
+          "required": false
+        },
+        {
+          "name": "description",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Supporting copy, rendered as `Field.Description`.",
+          "required": false
+        },
+        {
+          "name": "errorMessage",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`.",
+          "required": false
+        },
+        {
+          "name": "id",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Forwarded to the group primitive.",
+          "required": false
+        },
+        {
+          "name": "isDisabled",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Forwards `disabled` to `Field.Root` and the group primitive.",
+          "required": false
+        },
+        {
+          "name": "isInvalid",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Forwards `invalid` to `Field.Root`.",
+          "required": false
+        },
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Fieldset legend, rendered as `Field.Legend variant=\"label\"`. The legend row is omitted when absent.",
+          "required": false
+        },
+        {
+          "name": "name",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Set on `Field.Root`, not the group primitive. Base-ui's CheckboxGroup has no `name`; Field context threads it to member hidden inputs. RadioGroup puts `name` on its primitive — the face is the same `name?: string` either way.",
+          "required": false
+        },
+        {
+          "name": "onChange",
+          "origin": "declared",
+          "type": "((value: string[]) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Called with the selected `string[]`, not the event. Mapped to base-ui `onValueChange`.",
+          "required": false
+        },
+        {
+          "name": "orientation",
+          "origin": "declared",
+          "type": "\"horizontal\" | \"vertical\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"vertical\"",
+          "description": "Layout of the group primitive. Vertical is `flex-col gap-2`; horizontal is `flex-wrap gap-4`. Not a recipe axis.",
+          "required": false
+        },
+        {
+          "name": "value",
+          "origin": "declared",
+          "type": "string[] | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Controlled selected values.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "CheckboxDescription",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/checkbox/checkbox.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Typically a `Checkbox`.",
+          "required": false
+        },
+        {
+          "name": "describedBy",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Trailing note. A string renders as a muted `<small>`; a `ReactNode` renders intact. Visual-only — not wired to `aria-describedby`. Use Field description wiring when programmatic association is required.",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

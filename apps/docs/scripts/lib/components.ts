@@ -54,6 +54,9 @@ function apiExportNamesFor(slug: string, exportName: string): readonly string[] 
   if (slug === "table") {
     return ["Table", "VerticalTable"];
   }
+  if (slug === "checkbox") {
+    return ["Checkbox", "CheckboxGroup", "CheckboxItem", "CheckboxItemGroup", "CheckboxDescription"];
+  }
   return [exportName];
 }
 

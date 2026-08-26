@@ -42,6 +42,7 @@ describe("exports map", () => {
       "button",
       "button-group",
       "card",
+      "checkbox",
       "code",
       "collapsible",
       "confirm-button",
@@ -472,6 +473,18 @@ describe("exports map", () => {
     const selectionItem = discovered.jsEntries.find((entry) => entry.subpath === "selection-item");
     expect(selectionItem?.inRootBarrel).toBe(true);
     expect(selectionItem?.runtimeExports).toEqual(["SelectionItem"]);
+  });
+
+  it("publishes the checkbox surface from /checkbox and the root barrel", () => {
+    const checkbox = discovered.jsEntries.find((entry) => entry.subpath === "checkbox");
+    expect(checkbox?.inRootBarrel).toBe(true);
+    expect(checkbox?.runtimeExports).toEqual([
+      "Checkbox",
+      "CheckboxDescription",
+      "CheckboxGroup",
+      "CheckboxItem",
+      "CheckboxItemGroup",
+    ]);
   });
 
   it("keeps /icons as a subpath-only entry with the curated roster", () => {
