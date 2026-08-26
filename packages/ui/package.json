@@ -143,6 +143,10 @@
       "types": "./src/popover.ts",
       "import": "./src/popover.ts"
     },
+    "./radio-group": {
+      "types": "./src/radio-group.ts",
+      "import": "./src/radio-group.ts"
+    },
     "./scroll-area": {
       "types": "./src/scroll-area.ts",
       "import": "./src/scroll-area.ts"

@@ -41,7 +41,7 @@
 | `errorMessage`                  | `ReactNode`                  | —            | `FieldError` (rendered only when truthy); widened per the labeled-composite convention (§8)       |
 | `isPending`                     | `boolean`                    | —            | spinner (`SpinnerGap`, `size-3 animate-spin`) at the header row's end; header renders when `label |     | isPending` is truthy (§8.2) |
 | `orientation`                   | `"vertical" \| "horizontal"` | `"vertical"` | vertical: `flex-col gap-2`; horizontal: `flex-wrap gap-4`                                         |
-| `value`                         | `string \| null`             | —            | `null` coerced to `undefined` before the primitive                                                |
+| `value`                         | `string \| null`             | —            | `null` is passed through to keep the primitive controlled with no selection                       |
 | `defaultValue`                  | `string`                     | —            | uncontrolled initial value                                                                        |
 | `onChange`                      | `(value: string) => void`    | —            | wraps `onValueChange`; coerces with `String(next)`                                                |
 | `isDisabled` / `isInvalid`      | `boolean`                    | —            | on `Field` (and `disabled` on the primitive)                                                      |
@@ -51,7 +51,7 @@
 
 **RadioItemGroup** — same `RadioGroupProps`; wraps `children` in `ItemGroup`.
 
-**RadioGroupItem** — `ComponentProps<RadioPrimitive.Root>` pass-through plus `className`; primitive naming (`value`, `disabled`, `required`, …).
+**RadioGroupItem** — `ComponentProps<RadioPrimitive.Root>` pass-through, including Base UI's stateful `className` callback; primitive naming (`value`, `disabled`, `required`, …). Library classes compose with a string `className` or the callback result for each state.
 
 **Radio** (`RadioProps`) — `value: string` (required), `isDisabled?`, `className?`, `children?` (label content).
 
@@ -64,7 +64,7 @@
 | `controlPosition`        | `"start" \| "end"` | `"start"`    | forwarded to `SelectionItem.Shell` (new axis, selection-item.md §8.2) |
 | `className` / `children` | —                  | —            | children partitioned by the shell                                     |
 
-**RadioIconButton** (`RadioIconButtonProps`) — `value: string` (required), `isDisabled?`, `className?`, `children?` (the icon), and:
+**RadioIconButton** (`RadioIconButtonProps`) — `value: string` (required), `"aria-label": string` (required; mechanically icon-only, accessibility.md §3), `isDisabled?`, `className?`, `children?` (the icon), and:
 
 | Prop   | Type                                                          | Default  | Notes                                                                                                                                                                                   |
 | ------ | ------------------------------------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -99,7 +99,7 @@
 - Hit target on `RadioGroupItem`: `after:-inset-x-3 after:-inset-y-2` expands the clickable area — **kept**; adjacent controls need clearance.
 - Invalid + checked override: `aria-invalid:aria-checked:border-primary` lets the checked border win over the error border — **kept**.
 - Pending spinner is a decorative icon; if pending must be announced, the consumer owns the live region (the component only shows the spinner).
-- `RadioIconButton`: icon-only — consumers must give it an accessible name (`aria-label` or visually hidden text in `children`).
+- `RadioIconButton` is mechanically icon-only: `aria-label` is a required non-optional string (accessibility.md §3).
 
 ## 8 Divergence from reference
 
@@ -111,7 +111,7 @@
 6. **Icon → Phosphor**: `LoaderCircle` (lucide) → `SpinnerGap` with `animate-spin`, from `@elmeragroup/ui/icons`.
 7. **`name` placement asymmetry KEPT and documented**: `RadioGroup` sets `name` directly on the base-ui radio-group primitive (which supports it); `CheckboxGroup` must thread `name` via Field context because base-ui's checkbox-group has no `name` (checkbox.md §8.6). Same external face, different plumbing — upstream-driven.
 8. **`RadioItem` gains `controlPosition` pass-through** — consequence of the new shell axis (selection-item.md §8.2).
-9. **`onChange` `String(next)` coercion and `value ?? undefined` null-mapping KEPT** — the `string | null` controlled face tolerates cleared form state without switching the primitive to uncontrolled-with-warning.
+9. **`onChange` `String(next)` coercion KEPT; null-mapping BUGFIXED** — the ref's `value ?? undefined` mapping switches Base UI from controlled to uncontrolled when a controlled string value is cleared. Pass `null` through so the `string | null` controlled face tolerates cleared form state without a warning.
 10. **`errorMessage` widened `string` → `ReactNode`** — the group follows the library-wide labeled-composite contract; `FieldError` already accepts node children.
 
 ## 9 Test requirements

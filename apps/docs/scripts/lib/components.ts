@@ -57,6 +57,9 @@ function apiExportNamesFor(slug: string, exportName: string): readonly string[] 
   if (slug === "checkbox") {
     return ["Checkbox", "CheckboxGroup", "CheckboxItem", "CheckboxItemGroup", "CheckboxDescription"];
   }
+  if (slug === "radio-group") {
+    return ["RadioGroup", "RadioGroupItem", "Radio", "RadioItem", "RadioItemGroup", "RadioIconButton"];
+  }
   return [exportName];
 }
 

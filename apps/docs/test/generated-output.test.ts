@@ -87,6 +87,7 @@ describe("component page manifest", () => {
       "number-field",
       "pagination",
       "popover",
+      "radio-group",
       "scroll-area",
       "select",
       "selection-item",
@@ -235,6 +236,13 @@ describe("component page manifest", () => {
       "item-group",
       "description",
     ]);
+    expect(page("radio-group").demos.map((demo) => demo.id)).toEqual([
+      "basic",
+      "pending",
+      "item-group",
+      "icon-button",
+      "controlled-null",
+    ]);
     expect(page("number-field").demos.map((demo) => demo.id)).toEqual([
       "basic",
       "denomination",
@@ -326,6 +334,7 @@ describe("component page manifest", () => {
       "number-field": "client",
       pagination: "client",
       popover: "client",
+      "radio-group": "client",
       "scroll-area": "client",
       select: "client",
       "selection-item": "client",
@@ -363,6 +372,15 @@ describe("committed api.json", () => {
       "CheckboxItem",
       "CheckboxItemGroup",
       "CheckboxDescription",
+    ]);
+    expect(resolveComponentPaths("radio-group").exportName).toBe("RadioGroup");
+    expect(resolveComponentPaths("radio-group").apiExportNames).toEqual([
+      "RadioGroup",
+      "RadioGroupItem",
+      "Radio",
+      "RadioItem",
+      "RadioItemGroup",
+      "RadioIconButton",
     ]);
     expect(resolveComponentPaths("button").apiExportNames).toEqual(["Button"]);
     expect(resolveComponentPaths("meter").apiExportNames).toEqual(["Meter"]);
@@ -598,6 +616,24 @@ describe("committed api.json", () => {
     expect(checkboxItemGroup?.props.find((prop) => prop.name === "orientation")?.defaultValue).toBe(
       '"vertical"'
     );
+    const radioGroup = api("radio-group").parts.find((part) => part.name === "RadioGroup");
+    expect(radioGroup?.props.find((prop) => prop.name === "orientation")?.defaultValue).toBe('"vertical"');
+    expect(radioGroup?.props.find((prop) => prop.name === "value")?.description).toContain("passed through");
+    expect(radioGroup?.props.find((prop) => prop.name === "value")?.description).not.toContain(
+      "value ?? undefined"
+    );
+    const radioItemGroup = api("radio-group").parts.find((part) => part.name === "RadioItemGroup");
+    expect(radioItemGroup?.props.find((prop) => prop.name === "orientation")?.defaultValue).toBe(
+      '"vertical"'
+    );
+    expect(radioItemGroup?.props.find((prop) => prop.name === "value")?.description).toContain(
+      "passed through"
+    );
+    const radioIconButton = api("radio-group").parts.find((part) => part.name === "RadioIconButton");
+    expect(radioIconButton?.props.find((prop) => prop.name === "size")?.defaultValue).toBe('"icon"');
+    expect(radioIconButton?.props.find((prop) => prop.name === "aria-label")?.required).toBe(true);
+    const radioItem = api("radio-group").parts.find((part) => part.name === "RadioItem");
+    expect(radioItem?.props.find((prop) => prop.name === "controlPosition")?.defaultValue).toBe('"start"');
   });
 });
 

@@ -62,6 +62,7 @@ describe("exports map", () => {
       "number-field",
       "pagination",
       "popover",
+      "radio-group",
       "scroll-area",
       "select",
       "selection-item",
@@ -484,6 +485,19 @@ describe("exports map", () => {
       "CheckboxGroup",
       "CheckboxItem",
       "CheckboxItemGroup",
+    ]);
+  });
+
+  it("publishes the radio-group surface from /radio-group and the root barrel", () => {
+    const radioGroup = discovered.jsEntries.find((entry) => entry.subpath === "radio-group");
+    expect(radioGroup?.inRootBarrel).toBe(true);
+    expect(radioGroup?.runtimeExports).toEqual([
+      "Radio",
+      "RadioGroup",
+      "RadioGroupItem",
+      "RadioIconButton",
+      "RadioItem",
+      "RadioItemGroup",
     ]);
   });
 
