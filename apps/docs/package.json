@@ -6,7 +6,7 @@
     "build": "pnpm run generate && next build",
     "ci:checks": "true",
     "dev": "pnpm run generate && next dev --port 3000",
-    "generate": "node --experimental-strip-types scripts/generate.ts",
+    "generate": "node --experimental-strip-types --experimental-transform-types --import ../../packages/ui/scripts/ts-resolve.mjs scripts/generate.ts",
     "start": "next start --port 3000",
     "test": "vitest run",
     "type-check": "pnpm run generate && next typegen && tsc --noEmit"

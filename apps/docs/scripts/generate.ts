@@ -11,6 +11,7 @@
  *     change is a reviewable diff; a drift check fails when a committed one is stale (§8);
  *   • the component-page manifest the nav, page intros and QuickNav import (§3.3, §3.4);
  *   • the tokens each component's recipe reads, and the site-wide token reference (§3.4);
+ *   • the `/api/themes` catalog of the 20 legal permutations, plus Figma DTCG files (§9);
  *   • the measured bundle sizes the Tokens page publishes (performance.md §2);
  *   • `/components/<slug>.md` — the markdown endpoint each page links to (§9);
  *   • `llms.txt`, the site-root AI index (§9);
@@ -27,7 +28,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, wri
 import path from "node:path";
 
 import { normalizeDemoSource } from "../src/lib/docs-model.ts";
-import type { DocsComponent, DocsDemo } from "../src/lib/docs-model.ts";
+import type { DocsComponent, DocsDemo, ThemeCatalog } from "../src/lib/docs-model.ts";
 import { API_REGEN_COMMAND, buildApiArtifact, serializeApiArtifact } from "./lib/api-artifact.ts";
 import { describeComponentApi, openLibraryProject } from "./lib/api.ts";
 import type { LibraryProject } from "./lib/api.ts";
@@ -53,6 +54,8 @@ import { renderSearchIndex } from "./lib/search.ts";
 import { readBundleSizes } from "./lib/sizes.ts";
 import type { BundleSizeReport } from "./lib/sizes.ts";
 import { collectRecipeSources } from "./lib/sources.ts";
+import { figmaThemeArtifacts } from "./lib/theme-catalog-figma.ts";
+import { buildThemeCatalog, renderThemeCatalog } from "./lib/theme-catalog.ts";
 import { extractTokens, readColorTokenMapFromFile } from "./lib/tokens.ts";
 import type { ColorTokenMap } from "./lib/tokens.ts";
 import { assertDocsUiCssExports } from "./lib/workspace-css.ts";
@@ -265,6 +268,20 @@ export const COLOR_TOKENS: readonly string[] = ${JSON.stringify(tokens, null, 2)
   );
 }
 
+/** The static `GET /api/themes` catalog (docs-site.md §9.1). */
+function emitThemeCatalog(catalog: ThemeCatalog): void {
+  writeFile(path.join(generatedDir, "theme-catalog.ts"), `${BANNER}${renderThemeCatalog(catalog)}`);
+}
+
+/** Per-mode DTCG files for native Figma import (docs-site.md §9.2). */
+function emitFigmaThemeCatalog(catalog: ThemeCatalog): void {
+  const artifacts = figmaThemeArtifacts(catalog);
+  writeFile(path.join(generatedDir, "theme-catalog-figma.ts"), `${BANNER}${artifacts.indexModule}`);
+  for (const document of artifacts.documents) {
+    writeFile(path.join(generatedDir, "figma", `${document.slug}.json`), document.json);
+  }
+}
+
 /** Every authored nav destination has to be a real route (`lib/routes.ts`, §3.3). */
 function verifyStaticRoutes(problems: ProblemLog): void {
   for (const href of missingNavRoutes()) {
@@ -296,6 +313,9 @@ function main(): void {
     emitApiArtifacts(components);
     emitBundleSizes(sizes);
     emitTokenReference(colors);
+    const catalog = buildThemeCatalog();
+    emitThemeCatalog(catalog);
+    emitFigmaThemeCatalog(catalog);
     emitMarkdownEndpoints(components);
     emitSearchIndex(components);
     emitLlmsTxt(components);

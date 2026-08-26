@@ -109,7 +109,26 @@ The whitelabel pitch page, under Handbook:
 
 - **`llms.txt`** at the site root: index of every docs page with one-line descriptions, generated at docs build. It has a Handbook page explaining the surface.
 - **A markdown endpoint per component** (`/components/<name>.md` or equivalent): the component's API reference + demo source, generated from the **same spec/demo sources** at docs build — one pipeline, three consumers (HTML docs, VR, AI). The component page's **View as Markdown** link points here.
+- **`GET /api/themes`**: a JSON catalog of the 20 legal themes for AI and tooling. It is a **docs generate-pipeline artifact**, not a published `@elmeragroup/ui/theme` API — `composeTheme`, `TOKEN_NAMES`, and `PRIMITIVES` stay package-private.
 - **No shadcn-style registry in v1.** The library is a packaged dependency, not copy-paste source; a registry is a roadmap note only if demand appears.
+
+### 9.1 Theme catalog endpoint
+
+`GET /api/themes` is emitted at docs build into `src/generated/theme-catalog.ts` and served as JSON. The envelope:
+
+- **20 legal themes**, `legalThemeCount === 20`. Illegal slugs (`*-fkab-private`, `*-fkse-company`) are absent.
+- Density is **locked to variant**: `internal` → `dense`, `external` → `comfortable`. The row's `attributes` stamp the three theme axes plus that density (`data-theme-variant`, `data-theme-brand`, `data-theme-segment`, `data-density`).
+- Token keys are CSS custom-property names (`--primary`, …). Each theme's `tokens` map has the **77** themable role tokens ([theming](theming.md) §2.2).
+- Values are CSS-honest `composeTheme` output, including `var(...)` aliases — never pre-resolved. `--brand` is `var(--brand-fkas)` on an `fkas` theme; `--destructive` is `var(--error)`; `--sidebar-brand` is `var(--brand)`.
+- Brand primitives appear **once at the payload root** (`primitives["--brand-fkas"]`, `"--brand-fkab": "var(--brand-fkas)"`), not copied onto every theme.
+
+### 9.2 Figma import files
+
+Native Figma variable import takes **DTCG 2025.10 JSON, one file per mode** ([Modes for variables](https://help.figma.com/hc/en-us/articles/15343816063383-Modes-for-variables)). Color space is sRGB (not OKLCH); dimensions are `px`; aliases are `{group.name}`.
+
+- `GET /api/themes/figma` — index of the 20 legal slugs and their file URLs.
+- `GET /api/themes/figma/<slug>` — one DTCG document for that theme (`application/design-tokens+json`). Illegal slugs 404.
+- Drag the 20 slug files onto a **new** variable collection. Tokens present in every file become variables; each file is a mode. Density is omitted (not a theme axis). Primitives are inlined in every file so first-import aliases resolve without cross-collection IDs.
 
 ## 10 Hosting
 

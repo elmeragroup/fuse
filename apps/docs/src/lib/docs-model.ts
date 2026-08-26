@@ -5,6 +5,14 @@
  * this model is ever hand-authored (docs-site.md §3.4, §6, §8).
  */
 
+import type {
+  Density,
+  DensityAttributes,
+  ThemeAttributes,
+  ThemeInput,
+  ThemeSlug,
+} from "@elmeragroup/ui/theme";
+
 /** RSC classification of the module that declares a compound part (performance.md §3). */
 export type RscStatus = "client" | "server";
 
@@ -212,6 +220,77 @@ export type SearchEntry = {
   description: string;
   /** Extra match text — slug, import specifier, API part names, demo titles. */
   keywords: readonly string[];
+};
+
+/** CSS custom-property map: `--${token}` keys, composeTheme strings as values. */
+export type ThemeCatalogTokenMap = {
+  [Name in string as `--${Name}`]: string;
+};
+
+export type ThemeCatalogEntry = {
+  slug: ThemeSlug;
+  variant: ThemeInput["variant"];
+  brand: ThemeInput["brand"];
+  segment: ThemeInput["segment"];
+  density: Density;
+  attributes: ThemeAttributes & DensityAttributes;
+  tokens: ThemeCatalogTokenMap;
+};
+
+/** Static `GET /api/themes` payload (docs-site.md §9). */
+export type ThemeCatalog = {
+  legalThemeCount: number;
+  themes: readonly ThemeCatalogEntry[];
+  primitives: ThemeCatalogTokenMap;
+};
+
+/** sRGB color object Figma's native DTCG importer accepts. */
+export type FigmaSrgbColor = {
+  colorSpace: "srgb";
+  components: readonly [number, number, number];
+  alpha: number;
+  hex: string;
+};
+
+export type FigmaColorToken = {
+  $type: "color";
+  $value: FigmaSrgbColor | `{${string}}`;
+};
+
+export type FigmaDimensionToken = {
+  $type: "dimension";
+  $value: { value: number; unit: "px" };
+};
+
+export type FigmaFontToken = {
+  $type: "fontFamily";
+  $value: string;
+};
+
+/** One DTCG file = one Figma variable mode (docs-site.md §9.2). */
+export type FigmaThemeDocument = {
+  color: {
+    $type: "color";
+    [name: string]: "color" | FigmaColorToken;
+  };
+  size: {
+    $type: "dimension";
+    [name: string]: "dimension" | FigmaDimensionToken;
+  };
+  font: {
+    $type: "fontFamily";
+    [name: string]: "fontFamily" | FigmaFontToken;
+  };
+};
+
+export type FigmaThemeIndexFile = {
+  slug: string;
+  href: string;
+};
+
+export type FigmaThemeIndex = {
+  format: "figma";
+  files: readonly FigmaThemeIndexFile[];
 };
 
 /** What kind of artifact a budgeted entry measures. */
