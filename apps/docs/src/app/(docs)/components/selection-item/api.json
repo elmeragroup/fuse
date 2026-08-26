@@ -1,0 +1,141 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "selection-item",
+  "parts": [
+    {
+      "name": "SelectionItem.Shell",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/selection-item/selection-item.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 277,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Direct children are partitioned: `SelectionItem.SubSection` nodes render outside the label so interactive content does not toggle the control. Everything else renders in the label row. Wrapping a SubSection in a Fragment, another component, or an HOC hides it from `child.type === SelectionItem.SubSection` and it stays inside the label.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes, merged last through `cn`.",
+          "required": false
+        },
+        {
+          "name": "control",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The selection control rendered in the `Item.Media variant=\"icon\"` slot. Documented escape hatch for custom indicators (switch, icon crossfade) that the dropped external-card axes used to provide.",
+          "required": true
+        },
+        {
+          "name": "controlPosition",
+          "origin": "declared",
+          "type": "\"end\" | \"start\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"start\"",
+          "description": "Where the control sits in the labelled row. `\"end\"` places it after the row children (trailing indicator). Default `\"start\"`.",
+          "required": false
+        },
+        {
+          "name": "dataSlot",
+          "origin": "declared",
+          "type": "string",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Emitted as `data-slot` on the `Field.Item` root. Typical values are `\"checkbox-item\"` and `\"radio-item\"`.",
+          "required": true
+        },
+        {
+          "name": "isDisabled",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Applies `cursor-not-allowed bg-muted` plus the shared `disabledHatch` overlay. Does not disable the control — the control or group owns that.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "SelectionItem.Title",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/selection-item/selection-item.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "SelectionItem.Description",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/item/item.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "SelectionItem.Content",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/item/item.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "SelectionItem.Actions",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/selection-item/selection-item.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "SelectionItem.SubSection",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/selection-item/selection-item.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 279,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Footer content, wrapped in the inner `item-footer-content` element that `mode` reveals or collapses via the grid-row animation.",
+          "required": false
+        },
+        {
+          "name": "mode",
+          "origin": "recipe-axis",
+          "type": "\"default\" | \"hidden\" | \"visible\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

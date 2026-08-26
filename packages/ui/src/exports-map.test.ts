@@ -63,6 +63,7 @@ describe("exports map", () => {
       "popover",
       "scroll-area",
       "select",
+      "selection-item",
       "separator",
       "sheet",
       "show",
@@ -465,6 +466,12 @@ describe("exports map", () => {
     const alert = discovered.jsEntries.find((entry) => entry.subpath === "alert");
     expect(alert?.inRootBarrel).toBe(true);
     expect(alert?.runtimeExports).toEqual(["Alert"]);
+  });
+
+  it("publishes SelectionItem from /selection-item and the root barrel", () => {
+    const selectionItem = discovered.jsEntries.find((entry) => entry.subpath === "selection-item");
+    expect(selectionItem?.inRootBarrel).toBe(true);
+    expect(selectionItem?.runtimeExports).toEqual(["SelectionItem"]);
   });
 
   it("keeps /icons as a subpath-only entry with the curated roster", () => {

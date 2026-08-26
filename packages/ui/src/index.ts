@@ -35,6 +35,7 @@ export * from "./pagination";
 export * from "./popover";
 export * from "./scroll-area";
 export * from "./select";
+export * from "./selection-item";
 export * from "./separator";
 export * from "./sheet";
 export * from "./show";

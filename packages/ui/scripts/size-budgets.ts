@@ -22,7 +22,7 @@
  * measured×1.5.
  *
  * Current measurements (gzip bytes, 2026-08-25). Earlier measurement rounds live in git.
- *   .             163639  (Heading+Text+Span+Popover+Toggle+Skeleton+TimelineList+Sheet+TextField+Tooltip+Show+Loader+Empty+Frame+Code+DescriptionList+Emoji+Avatar+AlertDialog+DropdownMenu+Switch+ButtonGroup+Collapsible+Accordion+Select+NumberField+Meter+Tabs+ConfirmButton+Table+TextareaField+Pagination+Breadcrumb+Alert share the barrel; under the standing 171567 ceiling from Avatar recalibration, so recorded, not loosened)
+ *   .             164393  (SelectionItem joins the barrel; under the standing 171567 ceiling from Avatar recalibration, so recorded, not loosened)
  *   theme          6133
  *   icons/Check     818  (per-icon export, not the full roster)
  *   button        25214
@@ -72,6 +72,7 @@
  *   pagination    19190  (first calibration, ceiling 28785)
  *   breadcrumb    25246  (first calibration, ceiling 37869)
  *   alert         30590  (first calibration, ceiling 45885)
+ *   selection-item 31907  (first calibration, ceiling 47861)
  *   themes.css     2274
  *   styles.css    17038  (Alert utilities; under the standing 25265 ceiling from Table recalibration, so recorded, not loosened)
  */
@@ -121,6 +122,7 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = [
   // `pnpm gen component` appends a 0-ceiling row below this marker, so a brand-new packed
   // entry cannot slip through unbudgeted. Replace the 0 with measured × 1.5.
   // plop:js-entry-budget
+  { name: "selection-item", entryFile: "selection-item.js", ceilingGzip: 47861 },
   { name: "switch", entryFile: "switch.js", ceilingGzip: 39825 },
   { name: "button-group", entryFile: "button-group.js", ceilingGzip: 26381 },
   { name: "accordion", entryFile: "accordion.js", ceilingGzip: 45276 },

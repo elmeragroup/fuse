@@ -88,6 +88,7 @@ describe("component page manifest", () => {
       "popover",
       "scroll-area",
       "select",
+      "selection-item",
       "separator",
       "sheet",
       "show",
@@ -219,6 +220,13 @@ describe("component page manifest", () => {
       "scrolling",
       "invalid",
     ]);
+    expect(page("selection-item").demos.map((demo) => demo.id)).toEqual([
+      "basic",
+      "subsection",
+      "control-end",
+      "stacked",
+      "disabled",
+    ]);
     expect(page("number-field").demos.map((demo) => demo.id)).toEqual([
       "basic",
       "denomination",
@@ -311,6 +319,7 @@ describe("component page manifest", () => {
       popover: "client",
       "scroll-area": "client",
       select: "client",
+      "selection-item": "client",
       separator: "client",
       sheet: "client",
       show: "server",

@@ -147,6 +147,10 @@
       "types": "./src/select.ts",
       "import": "./src/select.ts"
     },
+    "./selection-item": {
+      "types": "./src/selection-item.ts",
+      "import": "./src/selection-item.ts"
+    },
     "./separator": {
       "types": "./src/separator.ts",
       "import": "./src/separator.ts"
