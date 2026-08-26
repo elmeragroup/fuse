@@ -52,6 +52,10 @@
       "types": "./src/checkbox.ts",
       "import": "./src/checkbox.ts"
     },
+    "./checkbox-card": {
+      "types": "./src/checkbox-card.ts",
+      "import": "./src/checkbox-card.ts"
+    },
     "./code": {
       "types": "./src/code.ts",
       "import": "./src/code.ts"

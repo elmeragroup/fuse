@@ -68,6 +68,7 @@ describe("component page manifest", () => {
       "button-group",
       "card",
       "checkbox",
+      "checkbox-card",
       "code",
       "collapsible",
       "confirm-button",
@@ -236,6 +237,13 @@ describe("component page manifest", () => {
       "item-group",
       "description",
     ]);
+    expect(page("checkbox-card").demos.map((demo) => demo.id)).toEqual([
+      "basic",
+      "tags",
+      "right-content",
+      "variants",
+      "group",
+    ]);
     expect(page("radio-group").demos.map((demo) => demo.id)).toEqual([
       "basic",
       "pending",
@@ -315,6 +323,7 @@ describe("component page manifest", () => {
       "button-group": "client",
       card: "server",
       checkbox: "client",
+      "checkbox-card": "client",
       code: "server",
       collapsible: "client",
       "confirm-button": "client",
@@ -365,6 +374,8 @@ describe("committed api.json", () => {
   it("walks only the export names resolveComponentPaths lists", () => {
     expect(resolveComponentPaths("table").exportName).toBe("Table");
     expect(resolveComponentPaths("table").apiExportNames).toEqual(["Table", "VerticalTable"]);
+    expect(resolveComponentPaths("checkbox-card").exportName).toBe("CheckboxCard");
+    expect(resolveComponentPaths("checkbox-card").apiExportNames).toEqual(["CheckboxCard"]);
     expect(resolveComponentPaths("checkbox").exportName).toBe("Checkbox");
     expect(resolveComponentPaths("checkbox").apiExportNames).toEqual([
       "Checkbox",
@@ -520,6 +531,8 @@ describe("committed api.json", () => {
     expect(api("code").parts.map((part) => part.name)).toEqual(["Code"]);
     expect(api("button").parts.map((part) => part.name)).toEqual(["Button"]);
     expect(api("meter").parts.map((part) => part.name)).toEqual(["Meter"]);
+    expect(api("checkbox-card").parts.map((part) => part.name)).toEqual(["CheckboxCard"]);
+    expect(api("checkbox-card").parts.map((part) => part.name)).not.toContain("checkboxCardStyles");
     expect(api("pagination").parts.map((part) => part.name)).toEqual([
       "Pagination.Root",
       "Pagination.Content",
@@ -634,6 +647,14 @@ describe("committed api.json", () => {
     expect(radioIconButton?.props.find((prop) => prop.name === "aria-label")?.required).toBe(true);
     const radioItem = api("radio-group").parts.find((part) => part.name === "RadioItem");
     expect(radioItem?.props.find((prop) => prop.name === "controlPosition")?.defaultValue).toBe('"start"');
+    const checkboxCard = api("checkbox-card").parts.find((part) => part.name === "CheckboxCard");
+    expect(checkboxCard?.props.find((prop) => prop.name === "variant")?.defaultValue).toBe('"default"');
+    expect(checkboxCard?.props.find((prop) => prop.name === "title")?.required).toBe(true);
+    expect(checkboxCard?.props.find((prop) => prop.name === "description")?.required).toBe(true);
+    expect(checkboxCard?.props.find((prop) => prop.name === "render")).toBeUndefined();
+    expect(checkboxCard?.props.find((prop) => prop.name === "disabled")).toBeUndefined();
+    expect(checkboxCard?.props.find((prop) => prop.name === "className")).toBeUndefined();
+    expect(checkboxCard?.forwardedCount).toBe(285);
   });
 });
 

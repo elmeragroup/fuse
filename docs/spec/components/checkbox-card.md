@@ -31,7 +31,7 @@ Single component, fixed internal structure:
 
 ## 3 Props
 
-`Omit<ComponentProps<CheckboxPrimitive.Root>, "render" | "disabled" | "title">` + `VariantProps<typeof checkboxCardStyles>` plus:
+`Omit<ComponentProps<CheckboxPrimitive.Root>, "render" | "disabled" | "title" | "className">` + `VariantProps<typeof checkboxCardStyles>` plus:
 
 | Prop           | Type                     | Default      | Notes                                                                                                                           |
 | -------------- | ------------------------ | ------------ | ------------------------------------------------------------------------------------------------------------------------------- |
@@ -45,7 +45,7 @@ Single component, fixed internal structure:
 | `children`     | `ReactNode`              | —            | extra content below the description, inside the label                                                                           |
 | `...other`     | checkbox primitive props | —            | spread onto `Checkbox.Root` **after** the internal `render` prop — see §8.4                                                     |
 
-No `className` prop in the ref surface (styling axes are `variant`/`isDisabled` only).
+The public `CheckboxCard` surface has no `className` prop; styling axes are `variant`/`isDisabled` only (see §8.7).
 
 ## 4 Variants
 
@@ -84,6 +84,7 @@ No `className` prop in the ref surface (styling axes are `variant`/`isDisabled` 
 4. **Spread-after-render constraint KEPT and documented**: `{...other}` is spread onto `Checkbox.Root` _after_ the internal `render` prop, so a consumer-supplied `render` would override the icon indicator — which is why `render` is Omit-ted from the prop type. Net effect: **consumers cannot override the icon rendering**; the crossfade indicator is fixed. Any future custom-indicator need routes through `SelectionItem.Shell`'s `control` escape hatch instead.
 5. **No renames** — `CheckboxCard` was already a single flat export; it stays a single component (no namespace).
 6. **No `dark:`/`destructive` classes existed in this file** — nothing to strip; `bg-card` already canonical.
+7. **Inherited reference `className` omitted (BUGFIX)**: the pinned reference type is `Omit<ComponentProps<CheckboxPrimitive.Root>, "render" | "disabled" | "title">`, so Base UI's stateful `className` (`BaseUIComponentProps`) is inherited. Because `{...other}` is spread after the internal `className`/`render`, a consumer `className` would replace required focus/layout classes. Intentionally omitted from the public surface so the only styling axes are `variant`/`isDisabled` and those classes are not replaced for typed consumers.
 
 ## 9 Test requirements
 

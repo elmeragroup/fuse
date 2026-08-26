@@ -43,6 +43,7 @@ describe("exports map", () => {
       "button-group",
       "card",
       "checkbox",
+      "checkbox-card",
       "code",
       "collapsible",
       "confirm-button",
@@ -486,6 +487,12 @@ describe("exports map", () => {
       "CheckboxItem",
       "CheckboxItemGroup",
     ]);
+  });
+
+  it("publishes CheckboxCard from /checkbox-card and the root barrel", () => {
+    const checkboxCard = discovered.jsEntries.find((entry) => entry.subpath === "checkbox-card");
+    expect(checkboxCard?.inRootBarrel).toBe(true);
+    expect(checkboxCard?.runtimeExports).toEqual(["CheckboxCard"]);
   });
 
   it("publishes the radio-group surface from /radio-group and the root barrel", () => {

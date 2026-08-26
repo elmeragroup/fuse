@@ -22,7 +22,7 @@
  * measured×1.5.
  *
  * Current measurements (gzip bytes, 2026-08-26). Earlier measurement rounds live in git.
- *   .             170350  (RadioGroup joins the barrel; under the standing 171567 ceiling from Avatar recalibration, so recorded, not loosened)
+ *   .             171066  (CheckboxCard joins the barrel; under the standing 171567 ceiling from Avatar recalibration, so recorded, not loosened)
  *   theme          6133
  *   icons/Check     818  (per-icon export, not the full roster)
  *   button        25214
@@ -75,8 +75,9 @@
  *   selection-item 31907  (first calibration, ceiling 47861)
  *   checkbox      36932  (first calibration, ceiling 55398)
  *   radio-group   40096  (first calibration, ceiling 60144)
+ *   checkbox-card 30194  (first calibration, ceiling 45291)
  *   themes.css     2274
- *   styles.css    17507  (RadioGroup utilities; under the standing 25265 ceiling from Table recalibration, so recorded, not loosened)
+ *   styles.css    17532  (CheckboxCard utilities; under the standing 25265 ceiling from Table recalibration, so recorded, not loosened)
  */
 import { FLAG_RAW_CEILING_BYTES } from "./flag-payload";
 
@@ -124,6 +125,7 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = [
   // `pnpm gen component` appends a 0-ceiling row below this marker, so a brand-new packed
   // entry cannot slip through unbudgeted. Replace the 0 with measured × 1.5.
   // plop:js-entry-budget
+  { name: "checkbox-card", entryFile: "checkbox-card.js", ceilingGzip: 45291 },
   { name: "radio-group", entryFile: "radio-group.js", ceilingGzip: 60144 },
   { name: "checkbox", entryFile: "checkbox.js", ceilingGzip: 55398 },
   { name: "selection-item", entryFile: "selection-item.js", ceilingGzip: 47861 },

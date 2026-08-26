@@ -15,6 +15,7 @@ export * from "./button";
 export * from "./button-group";
 export * from "./card";
 export * from "./checkbox";
+export * from "./checkbox-card";
 export * from "./code";
 export * from "./collapsible";
 export * from "./confirm-button";

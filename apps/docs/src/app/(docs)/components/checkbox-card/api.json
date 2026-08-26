@@ -1,0 +1,90 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "checkbox-card",
+  "parts": [
+    {
+      "name": "CheckboxCard",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/checkbox-card/checkbox-card.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 285,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra content below the description, inside the label.",
+          "required": false
+        },
+        {
+          "name": "description",
+          "origin": "declared",
+          "type": "string",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Supporting line under the title (`text-sm text-pretty`).",
+          "required": true
+        },
+        {
+          "name": "isDisabled",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Applies `opacity-75` on the card and `disabled` on the checkbox primitive. Primitive `disabled` is omitted from the pass-through.",
+          "required": false
+        },
+        {
+          "name": "rightContent",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Trailing slot outside the label — clicks there do not toggle the checkbox.",
+          "required": false
+        },
+        {
+          "name": "tags",
+          "origin": "declared",
+          "type": "string[] | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Badge chips above the title. The row is omitted when `tags` is empty or absent.",
+          "required": false
+        },
+        {
+          "name": "title",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Visible title. The native string `title` attribute is omitted so this `ReactNode` is not narrowed to `string`.",
+          "required": true
+        },
+        {
+          "name": "value",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The value of the selected checkbox. Checkbox group membership value.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "recipe-axis",
+          "type": "\"default\" | \"muted\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "",
+          "required": false
+        }
+      ]
+    }
+  ]
+}
