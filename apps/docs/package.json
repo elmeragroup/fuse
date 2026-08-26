@@ -17,12 +17,14 @@
     "@next/mdx": "catalog:",
     "next": "catalog:",
     "react": "catalog:",
-    "react-dom": "catalog:"
+    "react-dom": "catalog:",
+    "tailwind-variants": "catalog:"
   },
   "devDependencies": {
     "@elmeragroup/typescript-config": "workspace:*",
     "@mdx-js/loader": "catalog:",
     "@tailwindcss/postcss": "catalog:",
+    "@tailwindcss/typography": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",

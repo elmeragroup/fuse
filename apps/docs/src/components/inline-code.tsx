@@ -1,6 +1,8 @@
 import { Fragment } from "react";
 import type { ReactElement } from "react";
 
+import { DocsInlineCode } from "./docs-inline-code";
+
 export type InlineCodeProps = {
   text: string;
 };
@@ -17,7 +19,7 @@ export function InlineCode({ text }: InlineCodeProps): ReactElement {
       {segments.map((segment, index) => (
         // Segments are positional, so the index is the identity.
         <Fragment key={`${String(index)}:${segment}`}>
-          {index % 2 === 1 ? <code>{segment}</code> : segment}
+          {index % 2 === 1 ? <DocsInlineCode>{segment}</DocsInlineCode> : segment}
         </Fragment>
       ))}
     </>

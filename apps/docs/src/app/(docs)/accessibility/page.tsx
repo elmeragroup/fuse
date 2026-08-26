@@ -3,6 +3,7 @@ import type { ReactElement } from "react";
 import Link from "next/link";
 
 import { DocsPage, pageMetadata } from "../../../components/docs-page";
+import { DocsTable } from "../../../components/docs-table";
 
 const HREF = "/accessibility";
 
@@ -22,39 +23,41 @@ export default function AccessibilityPage(): ReactElement {
 
       <h2 id="responsibility-split">Responsibility split</h2>
       <p>The line between what the library owns and what your app owns is fixed:</p>
-      <div className="DocsTableWrap">
-        <table className="DocsTable">
+      <DocsTable.Wrap>
+        <DocsTable.Root>
           <thead>
             <tr>
-              <th scope="col">The library owns</th>
-              <th scope="col">Your app owns</th>
+              <DocsTable.HeaderCell scope="col">The library owns</DocsTable.HeaderCell>
+              <DocsTable.HeaderCell scope="col">Your app owns</DocsTable.HeaderCell>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td>Widget semantics and roles</td>
-              <td>
+              <DocsTable.BodyCell>Widget semantics and roles</DocsTable.BodyCell>
+              <DocsTable.BodyCell>
                 Page structure: landmarks, heading order, skip links (see{" "}
                 <Link href="/quick-start">Quick start</Link>)
-              </td>
+              </DocsTable.BodyCell>
             </tr>
             <tr>
-              <td>Keyboard behaviour and roving focus</td>
-              <td>
+              <DocsTable.BodyCell>Keyboard behaviour and roving focus</DocsTable.BodyCell>
+              <DocsTable.BodyCell>
                 <code>lang</code> attributes
-              </td>
+              </DocsTable.BodyCell>
             </tr>
             <tr>
-              <td>Focus visibility</td>
-              <td>Focus management across route changes</td>
+              <DocsTable.BodyCell>Focus visibility</DocsTable.BodyCell>
+              <DocsTable.BodyCell>Focus management across route changes</DocsTable.BodyCell>
             </tr>
             <tr>
-              <td>Correct-language built-in strings</td>
-              <td>Final contrast when composing tokens in non-default pairings</td>
+              <DocsTable.BodyCell>Correct-language built-in strings</DocsTable.BodyCell>
+              <DocsTable.BodyCell>
+                Final contrast when composing tokens in non-default pairings
+              </DocsTable.BodyCell>
             </tr>
           </tbody>
-        </table>
-      </div>
+        </DocsTable.Root>
+      </DocsTable.Wrap>
 
       <h2 id="keyboard-and-focus">Keyboard &amp; focus</h2>
       <ul>

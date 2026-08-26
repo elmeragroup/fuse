@@ -14,8 +14,20 @@ afterAll(async () => {
   await browser.close();
 });
 
-/** Wide enough for Prop · Type · Default (ApiReference.css 52rem breakpoint). */
+/** Wide enough for Prop · Type · Default (52rem = 832px). */
 const DESKTOP = { width: 1280, height: 720 } as const;
+
+/** Below 34rem (544px): Prop only. */
+const NARROW = { width: 500, height: 720 } as const;
+
+/** 34rem through 51.999rem: Prop + Type. */
+const MID = { width: 600, height: 720 } as const;
+
+type HeaderVisibility = {
+  prop: boolean;
+  type: boolean;
+  defaultCell: boolean;
+};
 
 async function openScrollAreaApi(page: Page): Promise<void> {
   await page.setViewportSize(DESKTOP);
@@ -23,7 +35,61 @@ async function openScrollAreaApi(page: Page): Promise<void> {
   await page.locator("h1").first().waitFor();
 }
 
+async function headerCellVisibility(page: Page): Promise<HeaderVisibility> {
+  await page.getByRole("heading", { name: "API reference" }).scrollIntoViewIfNeeded();
+  return page.evaluate(() => {
+    const section = document.getElementById("api-reference")?.closest("section");
+    const group = [...(section?.querySelectorAll('[role="group"]') ?? [])].find((el) =>
+      (el.getAttribute("aria-label") ?? "").includes("props: name, type, default")
+    );
+    const header = group?.querySelector(":scope > [aria-hidden]");
+    if (!(header instanceof HTMLElement)) {
+      throw new Error("expected API header row");
+    }
+    const isShown = (label: string): boolean => {
+      const el = [...header.querySelectorAll(":scope > span")].find((span) => span.textContent === label);
+      if (el === undefined) {
+        throw new Error(`missing ${label} header cell`);
+      }
+      return getComputedStyle(el).display !== "none";
+    };
+    return {
+      prop: isShown("Prop"),
+      type: isShown("Type"),
+      defaultCell: isShown("Default"),
+    };
+  });
+}
+
 describe("API panel layout (docs-site.md §8)", () => {
+  it("shows Prop, Type, and Default header cells according to viewport width", async () => {
+    const page = await browser.newPage();
+    await openScrollAreaApi(page);
+
+    await page.setViewportSize(NARROW);
+    expect(await headerCellVisibility(page)).toEqual({
+      prop: true,
+      type: false,
+      defaultCell: false,
+    });
+
+    await page.setViewportSize(MID);
+    expect(await headerCellVisibility(page)).toEqual({
+      prop: true,
+      type: true,
+      defaultCell: false,
+    });
+
+    await page.setViewportSize(DESKTOP);
+    expect(await headerCellVisibility(page)).toEqual({
+      prop: true,
+      type: true,
+      defaultCell: true,
+    });
+
+    await page.close();
+  });
+
   it("lets an expanded panel span the table instead of shrinking to the Prop column", async () => {
     const page = await browser.newPage();
     await openScrollAreaApi(page);

@@ -5,9 +5,14 @@ import Link from "next/link";
 import { BRANDS, themeSlug } from "@elmeragroup/ui/theme";
 
 import { DocsPage, pageMetadata } from "../../../../components/docs-page";
+import { DocsTable } from "../../../../components/docs-table";
 import { LEGAL_THEMES, THEME_BRANDS } from "../../../../lib/theme";
 
 const HREF = "/handbook/brands-and-segments";
+
+const classNames = {
+  mono: "font-docs-mono text-[0.75rem]",
+} as const;
 
 export const metadata = pageMetadata(HREF);
 
@@ -28,28 +33,30 @@ export default function BrandsAndSegmentsPage(): ReactElement {
         every line of code; the display name is what a customer sees. The two differ deliberately for{" "}
         <code>fkse</code>, which renders under the trade name Telinet while keeping its code everywhere.
       </p>
-      <div className="DocsTableWrap">
-        <table className="DocsTable">
+      <DocsTable.Wrap>
+        <DocsTable.Root>
           <thead>
             <tr>
-              <th scope="col">Code</th>
-              <th scope="col">Display name</th>
-              <th scope="col">Segments</th>
+              <DocsTable.HeaderCell scope="col">Code</DocsTable.HeaderCell>
+              <DocsTable.HeaderCell scope="col">Display name</DocsTable.HeaderCell>
+              <DocsTable.HeaderCell scope="col">Segments</DocsTable.HeaderCell>
             </tr>
           </thead>
           <tbody>
             {THEME_BRANDS.map((code) => (
               <tr key={code}>
-                <td>
+                <DocsTable.BodyCell>
                   <code>{code}</code>
-                </td>
-                <td>{BRANDS[code].displayName}</td>
-                <td className="DocsMono">{BRANDS[code].segments.join(", ")}</td>
+                </DocsTable.BodyCell>
+                <DocsTable.BodyCell>{BRANDS[code].displayName}</DocsTable.BodyCell>
+                <DocsTable.BodyCell className={classNames.mono}>
+                  {BRANDS[code].segments.join(", ")}
+                </DocsTable.BodyCell>
               </tr>
             ))}
           </tbody>
-        </table>
-      </div>
+        </DocsTable.Root>
+      </DocsTable.Wrap>
       <p>
         Steddi, NGE and Trumf are outside this theme set. <code>elma</code> is corporate Elmera and is not
         pinned.
@@ -104,7 +111,7 @@ export default function BrandsAndSegmentsPage(): ReactElement {
         Each theme has a canonical slug, <code>variant-brand-segment</code>. The{" "}
         <Link href="/handbook/theme-matrix">Theme matrix</Link> renders all of them side by side.
       </p>
-      <ul className="DocsMono">
+      <ul className={classNames.mono}>
         {LEGAL_THEMES.map((theme) => (
           <li key={themeSlug(theme)}>{themeSlug(theme)}</li>
         ))}

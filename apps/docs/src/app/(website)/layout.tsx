@@ -10,7 +10,7 @@ export type WebsiteLayoutProps = {
 export default function WebsiteLayout({ children }: WebsiteLayoutProps): ReactElement {
   return (
     <DocumentRoot>
-      <body>{children}</body>
+      <body className="m-0 bg-background text-foreground">{children}</body>
     </DocumentRoot>
   );
 }

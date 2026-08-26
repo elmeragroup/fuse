@@ -24,10 +24,14 @@ describe("assertDocsUiCssExports", () => {
 
   it("returns the resolved files when they exist", () => {
     const root = fixtureRoot(true);
-    expect(assertDocsUiCssExports(root)).toEqual(DOCS_UI_DIST_CSS.map(({ relative }) => join(root, relative)));
+    expect(assertDocsUiCssExports(root)).toEqual(
+      DOCS_UI_DIST_CSS.map(({ relative }) => join(root, relative))
+    );
   });
 
   it("accepts the workspace UI package after it has been built", () => {
-    expect(assertDocsUiCssExports(uiRoot)).toEqual(DOCS_UI_DIST_CSS.map(({ relative }) => join(uiRoot, relative)));
+    expect(assertDocsUiCssExports(uiRoot)).toEqual(
+      DOCS_UI_DIST_CSS.map(({ relative }) => join(uiRoot, relative))
+    );
   });
 });

@@ -3,7 +3,7 @@
 import type { ReactElement } from "react";
 
 import type { TokenRef } from "../lib/docs-model";
-import "./tokens-consumed.css";
+import { DocsSectionHeading } from "./docs-section-heading";
 import { TokenSwatchList } from "./token-swatch-list";
 
 export type TokensConsumedProps = {
@@ -23,8 +23,8 @@ export function TokensConsumed({ id, tokens }: TokensConsumedProps): ReactElemen
   }
 
   return (
-    <section className="TokensConsumed" aria-labelledby={id}>
-      <h2 id={id}>Tokens consumed</h2>
+    <section className="mt-8" aria-labelledby={id}>
+      <DocsSectionHeading id={id}>Tokens consumed</DocsSectionHeading>
       <TokenSwatchList tokens={tokens} />
     </section>
   );

@@ -261,7 +261,7 @@ describe("docs picker vs document theme", () => {
         stageDensity: stage?.getAttribute("data-density") ?? null,
         documentToken: getComputedStyle(root).getPropertyValue("--brand").trim(),
         stageToken: stage === null ? "" : getComputedStyle(stage).getPropertyValue("--brand").trim(),
-        slug: document.querySelector(".DemoSlug")?.textContent ?? "",
+        slug: document.querySelector("[data-demo-slug]")?.textContent ?? "",
       };
     });
 
@@ -290,7 +290,7 @@ describe("docs picker vs document theme", () => {
         stageDensity: stage?.getAttribute("data-density") ?? null,
         stageToken: stage === null ? "" : getComputedStyle(stage).getPropertyValue("--brand").trim(),
         documentToken: getComputedStyle(root).getPropertyValue("--brand").trim(),
-        slug: document.querySelector(".DemoSlug")?.textContent ?? "",
+        slug: document.querySelector("[data-demo-slug]")?.textContent ?? "",
       };
     });
 
@@ -325,7 +325,7 @@ describe("docs picker vs document theme", () => {
         stageControlH:
           stage === null ? "" : getComputedStyle(stage).getPropertyValue("--control-h-md").trim(),
         buttonHeight: button ? getComputedStyle(button).height : "",
-        densityLabel: document.querySelector(".DemoDensity")?.textContent ?? "",
+        densityLabel: document.querySelector("[data-demo-density]")?.textContent ?? "",
       };
     });
 
@@ -352,7 +352,7 @@ describe("docs picker vs document theme", () => {
         stageControlH:
           stage === null ? "" : getComputedStyle(stage).getPropertyValue("--control-h-md").trim(),
         buttonHeight: button ? getComputedStyle(button).height : "",
-        densityLabel: document.querySelector(".DemoDensity")?.textContent ?? "",
+        densityLabel: document.querySelector("[data-demo-density]")?.textContent ?? "",
       };
     });
 

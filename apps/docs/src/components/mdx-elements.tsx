@@ -4,7 +4,8 @@ import type { ComponentProps, ReactElement, ReactNode } from "react";
 import { highlight } from "sugar-high";
 
 import { slugifyHeading } from "../lib/slug";
-import "./mdx-elements.css";
+import { DocsCodeBlock } from "./docs-code-block";
+import { DocsInlineCode } from "./docs-inline-code";
 
 /**
  * The element overrides `@next/mdx` applies to every authored `page.mdx`
@@ -64,9 +65,9 @@ const LANGUAGE_CLASS = "language-";
 export function MdxCode({ className, children, ...rest }: ComponentProps<"code">): ReactElement {
   if (!(className ?? "").includes(LANGUAGE_CLASS)) {
     return (
-      <code className={className} {...rest}>
+      <DocsInlineCode className={className} {...rest}>
         {children}
-      </code>
+      </DocsInlineCode>
     );
   }
   return (
@@ -79,5 +80,5 @@ export function MdxCode({ className, children, ...rest }: ComponentProps<"code">
 }
 
 export function MdxPre({ className, ...rest }: ComponentProps<"pre">): ReactElement {
-  return <pre className={className === undefined ? "MdxCodeBlock" : `MdxCodeBlock ${className}`} {...rest} />;
+  return <DocsCodeBlock variant="standalone" className={className} {...rest} />;
 }

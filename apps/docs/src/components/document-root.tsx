@@ -18,6 +18,7 @@ export function DocumentRoot({
   return (
     <html
       lang={lang}
+      className="bg-background text-foreground"
       {...themeAttributes(DOCUMENT_THEME)}
       {...densityAttributes(defaultDensityForVariant(DOCUMENT_THEME.variant))}
       suppressHydrationWarning={suppressHydrationWarning}>

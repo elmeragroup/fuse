@@ -9,7 +9,6 @@ import { DocumentRoot } from "../../components/document-root";
 import { SkipNav } from "../../components/skip-nav";
 import { DOCUMENT_COLOR_SCHEME, DOCUMENT_THEME } from "../../lib/theme";
 import "../../styles/globals.css";
-import "./layout.css";
 
 export const metadata: Metadata = {
   title: {
@@ -32,7 +31,7 @@ export default function DocsLayout({ children }: DocsLayoutProps): ReactElement 
           enableSystem={DOCUMENT_COLOR_SCHEME.enableSystem}
         />
       </head>
-      <body>
+      <body className="font-docs-sans text-docs-ink m-0 min-w-80 bg-background antialiased">
         <ThemeProvider
           theme={DOCUMENT_THEME}
           storageKey={DOCUMENT_COLOR_SCHEME.storageKey}

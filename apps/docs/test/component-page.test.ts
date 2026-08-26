@@ -5,7 +5,7 @@ import { fetchText } from "./docs-server";
 describe("component page anatomy (docs-site.md §3.4)", () => {
   it("renders H1, lede and the two meta links", async () => {
     const html = await fetchText("/components/button");
-    expect(html).toContain("<h1>Button</h1>");
+    expect(html).toMatch(/<h1[^>]*>Button<\/h1>/);
     expect(html).toContain("Triggers an action.");
     expect(html).toContain('href="/components/button.md"');
     expect(html).toContain("View as Markdown");
@@ -17,17 +17,17 @@ describe("component page anatomy (docs-site.md §3.4)", () => {
 
   it("renders the MDX shell's own prose", async () => {
     const html = await fetchText("/components/button");
-    expect(html).toContain("ComponentProse");
-    expect(html).toContain("looks disabled but stays interactive");
+    expect(html).toContain("isVisuallyDisabled</code> looks disabled but stays interactive");
+    expect(html).toContain("itself on activation");
   });
 
   it("renders one demo frame per scenario, with stage, meta row and extracted source", async () => {
     const html = await fetchText("/components/button");
-    expect([...html.matchAll(/class="DemoFrame"/g)]).toHaveLength(5);
+    expect([...html.matchAll(/<section[^>]*data-demo-frame/g)]).toHaveLength(5);
     expect(html).toContain("DemoStage");
-    expect(html).toContain("DemoSlug");
-    expect(html).toContain("DemoDensity");
-    expect(html).toContain("DemoSource");
+    expect(html).toContain("data-demo-slug");
+    expect(html).toContain("data-demo-density");
+    expect(html).toContain("data-demo-source");
     // Extracted, highlighted source of the authored demo file.
     expect(html).toContain("sh__token--keyword");
     expect(html).toContain("apps/docs/src/app/(docs)/components/button/demos/button-variant-matrix.tsx");
@@ -38,7 +38,7 @@ describe("component page anatomy (docs-site.md §3.4)", () => {
     expect(html).toContain('id="api-reference"');
     expect(html).toContain('id="api-button"');
     // details/summary rows, deep-linkable per prop (docs-site.md §8).
-    expect(html).toContain('class="ApiRow"');
+    expect(html).toMatch(/<details[\s\S]*?<summary[^>]*id="api-button-isVisuallyDisabled"/);
     expect(html).toContain('id="api-button-isVisuallyDisabled"');
     expect(html).toContain('href="#api-button-isVisuallyDisabled"');
     expect(html).toContain("predictionZoneSize");
@@ -57,17 +57,18 @@ describe("component page anatomy (docs-site.md §3.4)", () => {
     // `onIntent` prints as `(() => void) | undefined`; the closed row says `function`.
     expect(html).toContain("<code>function</code>");
     expect(html).toContain('aria-label="Prop: onIntent, type: function"');
+    const api = html.slice(html.indexOf('id="api-reference"'));
     // The expanded panel carries the real signature, highlighted by sugar-high.
-    expect(html).toContain("ApiSignature");
-    expect(html).toContain("sh__token");
+    expect(api).toContain("<pre");
+    expect(api).toContain("sh__token");
     // A prop with no default renders an em-dash, never an empty cell.
-    expect(html).toContain('class="ApiNoDefault">—<');
+    expect(api).toMatch(/<dt[^>]*>Default<\/dt>[\s\S]*?<span[^>]*>—<\/span>/);
   });
 
   it("renders the generated tokens-consumed section with swatches", async () => {
     const html = await fetchText("/components/button");
     expect(html).toContain('id="tokens-consumed"');
-    expect(html).toContain("TokenSwatch");
+    expect(html).toContain("data-token-swatch");
     expect(html).toContain("--primary");
     expect(html).toContain("--control-h-md");
   });

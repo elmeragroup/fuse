@@ -19,7 +19,7 @@ import type { CSSProperties, MouseEvent, ReactElement } from "react";
 
 import type { ApiPropView } from "../lib/api-row";
 import { NO_DEFAULT } from "../lib/api-row";
-import "./api-reference.css";
+import { ApiRows } from "./api-rows";
 import { InlineCode } from "./inline-code";
 
 export type ApiPropRowsProps = {
@@ -53,15 +53,13 @@ function ApiPropRow({ prop }: { prop: ApiPropView }): ReactElement {
   }, [prop.id]);
 
   return (
-    <details
-      className="ApiRow"
+    <ApiRows.Row
       open={open || undefined}
       onToggle={(event) => {
         setOpen(event.currentTarget.open);
       }}>
-      <summary
+      <ApiRows.Summary
         id={prop.id}
-        className="ApiRowTrigger"
         aria-label={prop.label}
         onClick={(event: MouseEvent<HTMLElement>) => {
           // Selecting a type across a row ends in a click on the summary; toggling then
@@ -76,78 +74,71 @@ function ApiPropRow({ prop }: { prop: ApiPropView }): ReactElement {
             event.preventDefault();
           }
         }}>
-        <span className="ApiCell ApiNameCell">
+        <ApiRows.Cell column="name">
           <code>{prop.name}</code>
-          {prop.required ? (
-            <sup className="ApiRequired" title="Required">
-              *
-            </sup>
-          ) : null}
-        </span>
-        <span className="ApiCell ApiTypeCell">
+          {prop.required ? <ApiRows.Required title="Required">*</ApiRows.Required> : null}
+        </ApiRows.Cell>
+        <ApiRows.Cell column="type">
           <code>{prop.closedType}</code>
-        </span>
-        <span className="ApiCell ApiDefaultCell">
+        </ApiRows.Cell>
+        <ApiRows.Cell column="default">
           {prop.defaultValue === null ? (
-            <span className="ApiNoDefault">{NO_DEFAULT}</span>
+            <ApiRows.NoDefault>{NO_DEFAULT}</ApiRows.NoDefault>
           ) : (
             <code>{prop.defaultValue}</code>
           )}
-        </span>
-        <span className="ApiCell ApiChevronCell" aria-hidden>
-          <svg className="ApiChevron" width="10" height="10" viewBox="0 0 10 10" fill="none">
-            <path d="M1 3.5L5 7.5L9 3.5" stroke="currentColor" strokeWidth="1.25" />
-          </svg>
-        </span>
-      </summary>
-      <div className="ApiPanel">
-        <dl className="ApiPanelList">
-          <div className="ApiPanelItem">
-            <dt>Name</dt>
-            <dd>
-              <a className="ApiPropLink" href={`#${prop.id}`}>
+        </ApiRows.Cell>
+        <ApiRows.ChevronCell aria-hidden>
+          <ApiRows.Chevron />
+        </ApiRows.ChevronCell>
+      </ApiRows.Summary>
+      <ApiRows.Panel>
+        <ApiRows.PanelList>
+          <ApiRows.PanelItem>
+            <ApiRows.Term>Name</ApiRows.Term>
+            <ApiRows.Definition>
+              <ApiRows.PropLink href={`#${prop.id}`}>
                 <code>{prop.name}</code>
-              </a>
+              </ApiRows.PropLink>
               {prop.required ? " · required" : null}
-            </dd>
-          </div>
+            </ApiRows.Definition>
+          </ApiRows.PanelItem>
           {prop.description === "" ? null : (
-            <div className="ApiPanelItem">
-              <dt>Description</dt>
-              <dd>
+            <ApiRows.PanelItem>
+              <ApiRows.Term>Description</ApiRows.Term>
+              <ApiRows.Definition>
                 <InlineCode text={prop.description} />
-              </dd>
-            </div>
+              </ApiRows.Definition>
+            </ApiRows.PanelItem>
           )}
-          <div className="ApiPanelItem">
-            <dt>Type</dt>
-            <dd>
-              <pre className="ApiSignature">
+          <ApiRows.PanelItem>
+            <ApiRows.Term>Type</ApiRows.Term>
+            <ApiRows.Definition>
+              <ApiRows.Signature>
                 {/* The full printed signature the closed row may have collapsed to one word. */}
                 <code dangerouslySetInnerHTML={{ __html: prop.signatureHtml }} />
-              </pre>
-            </dd>
-          </div>
-          <div className="ApiPanelItem">
-            <dt>Default</dt>
-            <dd>
+              </ApiRows.Signature>
+            </ApiRows.Definition>
+          </ApiRows.PanelItem>
+          <ApiRows.PanelItem>
+            <ApiRows.Term>Default</ApiRows.Term>
+            <ApiRows.Definition>
               {prop.defaultValue === null ? (
-                <span className="ApiNoDefault">{NO_DEFAULT}</span>
+                <ApiRows.NoDefault>{NO_DEFAULT}</ApiRows.NoDefault>
               ) : (
                 <code>{prop.defaultValue}</code>
               )}
-            </dd>
-          </div>
-        </dl>
-      </div>
-    </details>
+            </ApiRows.Definition>
+          </ApiRows.PanelItem>
+        </ApiRows.PanelList>
+      </ApiRows.Panel>
+    </ApiRows.Row>
   );
 }
 
 export function ApiPropRows({ partName, props }: ApiPropRowsProps): ReactElement {
   return (
-    <div
-      className="ApiRows"
+    <ApiRows.Root
       // The rows are a `div` grid, not a table, and the header row is decorative — so the
       // caption that says what the columns are is the group's name. `role="group"` with a
       // name is announced on entry; the same sentence as a visually-hidden `aria-describedby`
@@ -159,15 +150,15 @@ export function ApiPropRows({ partName, props }: ApiPropRowsProps): ReactElement
       // SAFETY: `CSSProperties` has no index signature for custom properties, and React
       // passes an unknown `--*` key straight through to the inline style attribute.
       style={{ "--api-rows": props.length } as CSSProperties}>
-      <div className="ApiHeaderRow" aria-hidden>
-        <span className="ApiHeaderCell ApiNameCell">Prop</span>
-        <span className="ApiHeaderCell ApiTypeCell">Type</span>
-        <span className="ApiHeaderCell ApiDefaultCell">Default</span>
-        <span className="ApiHeaderCell ApiChevronCell" />
-      </div>
+      <ApiRows.Header aria-hidden>
+        <ApiRows.HeaderCell column="prop">Prop</ApiRows.HeaderCell>
+        <ApiRows.HeaderCell column="type">Type</ApiRows.HeaderCell>
+        <ApiRows.HeaderCell column="default">Default</ApiRows.HeaderCell>
+        <ApiRows.ChevronCell />
+      </ApiRows.Header>
       {props.map((prop) => (
         <ApiPropRow key={prop.name} prop={prop} />
       ))}
-    </div>
+    </ApiRows.Root>
   );
 }

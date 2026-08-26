@@ -14,6 +14,10 @@ import {
   THEME_VARIANTS,
 } from "../lib/theme";
 
+const classNames = {
+  root: "ml-auto flex items-center [&_select]:appearance-none [&_select]:cursor-pointer [&_select]:border [&_select]:border-docs-line [&_select]:bg-docs-soft [&_select]:px-[9px] [&_select]:py-[5px] [&_select]:font-docs-mono [&_select]:text-[11.5px] [&_select]:font-[500] [&_select]:text-docs-ink [&_select:first-child]:rounded-[6px_0_0_6px] [&_select+select]:border-l-0 [&_select:last-child]:rounded-[0_6px_6px_0] [&_select:focus-visible]:relative [&_select:focus-visible]:z-[1] [&_select:focus-visible]:outline-2 [&_select:focus-visible]:outline-docs-ink [&_select:focus-visible]:outline-offset-[-1px]",
+} as const;
+
 export type ThemePickerProps = {
   theme: ThemeInput;
   onThemeChange: (theme: ThemeInput) => void;
@@ -47,7 +51,7 @@ export function ThemePicker({ theme, onThemeChange }: ThemePickerProps): ReactEl
   };
 
   return (
-    <div className="ThemePicker">
+    <div className={classNames.root}>
       <select aria-label="Variant" value={theme.variant} onChange={handleVariantChange}>
         {THEME_VARIANTS.map((variant) => (
           <option key={variant} value={variant}>

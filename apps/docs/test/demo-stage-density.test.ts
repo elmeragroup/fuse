@@ -5,13 +5,13 @@ import { describe, expect, it } from "vitest";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const docsRoot = join(here, "..");
-const demoFrameCss = readFileSync(join(docsRoot, "src/components/demo-frame.css"), "utf8");
+const globalsCss = readFileSync(join(docsRoot, "src/styles/globals.css"), "utf8");
 const artifactPath = join(docsRoot, "../../packages/ui/dist/demo-stage-comfortable.css");
 
 describe("DemoStage comfortable density", () => {
   it("imports the generated library artifact and carries no hand-copied metrics", () => {
-    expect(demoFrameCss).toMatch(/@import\s+"@elmeragroup\/ui\/demo-stage-comfortable\.css"/);
-    expect(demoFrameCss).not.toMatch(/--control-/);
+    expect(globalsCss).toMatch(/@import\s+"@elmeragroup\/ui\/demo-stage-comfortable\.css"/);
+    expect(globalsCss).not.toMatch(/--control-/);
     expect(existsSync(join(docsRoot, "src/components/DemoFrame.comfortable.css"))).toBe(false);
     expect(existsSync(join(docsRoot, "scripts/elmera-demo-stage-density.ts"))).toBe(false);
   });

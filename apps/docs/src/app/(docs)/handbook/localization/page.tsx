@@ -3,6 +3,7 @@ import type { ReactElement } from "react";
 import Link from "next/link";
 
 import { DocsPage, pageMetadata } from "../../../../components/docs-page";
+import { DocsTable } from "../../../../components/docs-table";
 
 const HREF = "/handbook/localization";
 
@@ -74,42 +75,42 @@ export default function LocalizationPage(): ReactElement {
       <p>
         The <code>SupportedLocale</code> union is exactly four members, and all four ship eagerly:
       </p>
-      <div className="DocsTableWrap">
-        <table className="DocsTable">
+      <DocsTable.Wrap>
+        <DocsTable.Root>
           <thead>
             <tr>
-              <th scope="col">Locale</th>
-              <th scope="col">Language</th>
+              <DocsTable.HeaderCell scope="col">Locale</DocsTable.HeaderCell>
+              <DocsTable.HeaderCell scope="col">Language</DocsTable.HeaderCell>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td>
+              <DocsTable.BodyCell>
                 <code>nb-NO</code>
-              </td>
-              <td>Norwegian Bokmål</td>
+              </DocsTable.BodyCell>
+              <DocsTable.BodyCell>Norwegian Bokmål</DocsTable.BodyCell>
             </tr>
             <tr>
-              <td>
+              <DocsTable.BodyCell>
                 <code>sv-SE</code>
-              </td>
-              <td>Swedish</td>
+              </DocsTable.BodyCell>
+              <DocsTable.BodyCell>Swedish</DocsTable.BodyCell>
             </tr>
             <tr>
-              <td>
+              <DocsTable.BodyCell>
                 <code>en-US</code>
-              </td>
-              <td>English</td>
+              </DocsTable.BodyCell>
+              <DocsTable.BodyCell>English</DocsTable.BodyCell>
             </tr>
             <tr>
-              <td>
+              <DocsTable.BodyCell>
                 <code>fi-FI</code>
-              </td>
-              <td>Finnish</td>
+              </DocsTable.BodyCell>
+              <DocsTable.BodyCell>Finnish</DocsTable.BodyCell>
             </tr>
           </tbody>
-        </table>
-      </div>
+        </DocsTable.Root>
+      </DocsTable.Wrap>
       <p>
         The runtime&apos;s <code>en-US</code> fallback is defensive behaviour for invalid untyped JavaScript
         input — not a fifth public locale, and not a promise about regional variants. If the set ever

@@ -21,7 +21,7 @@ const ILLEGAL_SLUGS = [
 /** The grid itself, without the prose around it. */
 async function matrixGrid(): Promise<string> {
   const html = await fetchText("/handbook/theme-matrix");
-  const start = html.indexOf('class="MatrixGrid"');
+  const start = html.indexOf("data-theme-matrix");
   const end = html.indexOf('id="overlays"');
   expect(start).toBeGreaterThan(-1);
   expect(end).toBeGreaterThan(start);
@@ -39,10 +39,9 @@ describe("theme matrix (docs-site.md §5)", () => {
 
   it("renders one slug-labelled cell per legal permutation", async () => {
     const html = await fetchText("/handbook/theme-matrix");
-    expect([...html.matchAll(/class="MatrixCell"/g)]).toHaveLength(20);
-    for (const theme of LEGAL_THEMES) {
-      expect(html, themeSlug(theme)).toContain(`class="MatrixSlug">${themeSlug(theme)}<`);
-    }
+    expect([...html.matchAll(/data-theme-matrix-cell/g)]).toHaveLength(20);
+    const slugHooks = [...html.matchAll(/data-theme-slug="([^"]*)"/g)].map((match) => match[1]);
+    expect(slugHooks).toEqual(LEGAL_THEMES.map(themeSlug));
   });
 
   it("scopes each cell rather than stamping the document", async () => {
@@ -94,7 +93,7 @@ describe("tokens page (docs-site.md §3.3, performance.md §2)", () => {
   it("lists the generated token reference with swatches", async () => {
     const html = await fetchText("/handbook/tokens");
     expect(COLOR_TOKENS).toContain("--primary");
-    expect(html).toContain("TokenSwatch");
+    expect(html).toContain("data-token-swatch");
     expect(html).toContain("--primary");
   });
 });

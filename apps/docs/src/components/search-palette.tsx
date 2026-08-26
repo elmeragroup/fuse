@@ -8,7 +8,22 @@ import { useRouter } from "next/navigation";
 import { Dialog } from "@elmeragroup/ui/dialog";
 
 import { matchSearchEntries } from "../lib/search";
-import "./search-palette.css";
+
+const classNames = {
+  trigger:
+    "inline-flex min-h-[26px] cursor-pointer items-center gap-2 rounded-[6px] border border-docs-line bg-docs-soft p-[4px_8px] font-docs-mono text-[11.5px] font-medium text-docs-sub hover:text-docs-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-docs-ink",
+  keys: "[font:inherit] text-docs-sub",
+  palette:
+    "top-[10vh] block w-[min(34rem,calc(100vw_-_2rem))] translate-y-0 gap-0 overflow-hidden p-0 font-docs-sans",
+  input:
+    "block w-full border-0 border-b border-docs-line bg-transparent p-[0.9rem_1rem] text-[0.95rem] text-docs-ink placeholder:text-docs-sub focus:outline-none",
+  results: "m-0 max-h-[22rem] list-none overflow-y-auto p-[0.35rem]",
+  option:
+    "flex cursor-pointer items-baseline justify-between gap-4 rounded-[6px] p-[0.4rem_0.65rem] text-[0.85rem] text-docs-sub data-active:bg-docs-soft data-active:text-docs-ink",
+  optionTitle: "font-medium text-docs-ink",
+  optionGroup: "font-docs-mono text-[11px] font-medium text-docs-sub",
+  empty: "m-0 p-4 text-[0.85rem] text-docs-sub",
+} as const;
 
 /**
  * The complete-site header search (docs-site.md §3.2).
@@ -120,11 +135,11 @@ export function SearchPalette(): ReactElement {
       <button
         ref={triggerRef}
         type="button"
-        className="HeaderSearch"
+        className={classNames.trigger}
         aria-keyshortcuts="Meta+K Control+K"
         onClick={openPalette}>
         <span>Search</span>
-        <kbd className="HeaderSearchKeys">⌘K</kbd>
+        <kbd className={classNames.keys}>⌘K</kbd>
       </button>
       <Dialog.Root
         open={open}
@@ -132,14 +147,14 @@ export function SearchPalette(): ReactElement {
           setOpen(nextOpen);
         }}>
         <Dialog.Content
-          className="SearchPalette top-[10vh] w-[min(34rem,calc(100vw-2rem))] translate-y-0 gap-0 p-0"
+          className={classNames.palette}
           showCloseButton={false}
           initialFocus={inputRef}
           finalFocus={invokerRef}>
-          <Dialog.Title className="SearchPaletteTitle">Search the documentation</Dialog.Title>
+          <Dialog.Title className="sr-only">Search the documentation</Dialog.Title>
           <input
             ref={inputRef}
-            className="SearchPaletteInput"
+            className={classNames.input}
             type="text"
             role="combobox"
             aria-label="Search the documentation"
@@ -153,7 +168,7 @@ export function SearchPalette(): ReactElement {
             onChange={handleQueryChange}
             onKeyDown={handleKeyDown}
           />
-          <ul id={listboxId} role="listbox" aria-label="Search results" className="SearchPaletteResults">
+          <ul id={listboxId} role="listbox" aria-label="Search results" className={classNames.results}>
             {results.map((entry, index) => (
               <li
                 key={entry.href}
@@ -161,20 +176,20 @@ export function SearchPalette(): ReactElement {
                 role="option"
                 aria-selected={index === activeIndex}
                 data-active={index === activeIndex || undefined}
-                className="SearchPaletteOption"
+                className={classNames.option}
                 onMouseMove={() => {
                   setActiveIndex(index);
                 }}
                 onClick={() => {
                   navigate(entry.href);
                 }}>
-                <span className="SearchPaletteOptionTitle">{entry.title}</span>
-                <span className="SearchPaletteOptionGroup">{entry.group}</span>
+                <span className={classNames.optionTitle}>{entry.title}</span>
+                <span className={classNames.optionGroup}>{entry.group}</span>
               </li>
             ))}
           </ul>
           {results.length === 0 ? (
-            <p className="SearchPaletteEmpty" role="status">
+            <p className={classNames.empty} role="status">
               No pages match “{query}”.
             </p>
           ) : null}

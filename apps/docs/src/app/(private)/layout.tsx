@@ -19,7 +19,7 @@ export type PrivateLayoutProps = {
 export default function PrivateLayout({ children }: PrivateLayoutProps): ReactElement {
   return (
     <DocumentRoot>
-      <body>{children}</body>
+      <body className="m-0 bg-background text-foreground">{children}</body>
     </DocumentRoot>
   );
 }

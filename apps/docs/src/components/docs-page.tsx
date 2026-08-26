@@ -3,7 +3,9 @@ import type { ReactElement, ReactNode } from "react";
 import type { Metadata } from "next";
 
 import { staticPageFor } from "../lib/pages";
-import "./docs-page.css";
+import { DocsLede } from "./docs-lede";
+import { DocsPageTitle } from "./docs-page-title";
+import { DocsProse } from "./docs-prose";
 
 /**
  * Page metadata for an authored Overview/Handbook route.
@@ -33,9 +35,9 @@ export function DocsPage({ href, children }: DocsPageProps): ReactElement {
   }
   return (
     <>
-      <h1>{page.label}</h1>
-      <p className="DocsLede">{page.description}</p>
-      <div className="DocsProse">{children}</div>
+      <DocsPageTitle>{page.label}</DocsPageTitle>
+      <DocsLede>{page.description}</DocsLede>
+      <DocsProse>{children}</DocsProse>
     </>
   );
 }

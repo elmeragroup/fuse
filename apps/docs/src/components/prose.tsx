@@ -1,6 +1,6 @@
 import type { ReactElement, ReactNode } from "react";
 
-import "./component-sections.css";
+import { DocsProse } from "./docs-prose";
 
 export type ProseProps = {
   children: ReactNode;
@@ -12,5 +12,5 @@ export type ProseProps = {
  * generated API and token sections below are not restyled by it.
  */
 export function Prose({ children }: ProseProps): ReactElement {
-  return <div className="ComponentProse">{children}</div>;
+  return <DocsProse context="component">{children}</DocsProse>;
 }

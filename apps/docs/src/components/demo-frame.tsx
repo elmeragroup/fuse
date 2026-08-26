@@ -1,8 +1,9 @@
 import type { ReactElement, ReactNode } from "react";
 
 import { readDemoSource } from "../lib/demo-source";
-import "./demo-frame.css";
 import { DemoStage } from "./demo-stage";
+import { DocsCodeBlock } from "./docs-code-block";
+import { DocsSectionHeading } from "./docs-section-heading";
 
 export type DemoFrameProps = {
   /** Slug of the component page this demo belongs to; locates the `demos/` directory. */
@@ -15,6 +16,11 @@ export type DemoFrameProps = {
   /** The rendered demo, imported by the page as an ordinary ESM module (§6). */
   children: ReactNode;
 };
+
+const classNames = {
+  root: "mt-8",
+  card: "overflow-hidden rounded-[10px] border border-docs-line",
+} as const;
 
 /**
  * The §3.5 demo frame: a theme-tinted dotted stage, the active theme coordinate and its
@@ -30,14 +36,14 @@ export async function DemoFrame({ slug, id, title, file, children }: DemoFramePr
   const demo = await readDemoSource(slug, file);
 
   return (
-    <section className="DemoFrame" aria-labelledby={id}>
-      <h2 id={id}>{title}</h2>
-      <div className="DemoFrameCard">
+    <section className={classNames.root} data-demo-frame aria-labelledby={id}>
+      <DocsSectionHeading id={id}>{title}</DocsSectionHeading>
+      <div className={classNames.card}>
         <DemoStage sourcePath={demo.sourcePath}>{children}</DemoStage>
-        <pre className="DemoSource">
+        <DocsCodeBlock variant="embedded" data-demo-source>
           {/* Highlighted from the same file the stage above renders. */}
           <code dangerouslySetInnerHTML={{ __html: demo.highlighted }} />
-        </pre>
+        </DocsCodeBlock>
       </div>
     </section>
   );

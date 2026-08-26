@@ -2,7 +2,7 @@ import type { ReactElement } from "react";
 
 import { BUNDLE_SIZES, BUNDLE_SIZES_MEASURED_ON } from "../generated/bundle-sizes";
 import { ceilingUsage } from "../lib/docs-model";
-import "./bundle-sizes.css";
+import { DocsTable } from "./docs-table";
 
 const KIB = 1024;
 
@@ -14,6 +14,10 @@ function percent(fraction: number): string {
   return `${String(Math.round(fraction * 100))}%`;
 }
 
+const classNames = {
+  note: "text-[0.78rem] text-docs-sub m-[-0.4rem_0_1.4rem]",
+} as const;
+
 /**
  * The measured size of every published entry against the ceiling `size-limit` enforces
  * (performance.md §2). Both columns are generated from the library's budget module, so
@@ -22,40 +26,40 @@ function percent(fraction: number): string {
 export function BundleSizes(): ReactElement {
   return (
     <>
-      <div className="DocsTableWrap">
-        <table className="DocsTable">
-          <caption className="BundleCaption">
+      <DocsTable.Wrap>
+        <DocsTable.Root>
+          <DocsTable.Caption>
             min+gzip, ESM, peers excluded. Measured {BUNDLE_SIZES_MEASURED_ON}.
-          </caption>
+          </DocsTable.Caption>
           <thead>
             <tr>
-              <th scope="col">Entry</th>
-              <th scope="col" className="DocsNum">
+              <DocsTable.HeaderCell scope="col">Entry</DocsTable.HeaderCell>
+              <DocsTable.HeaderCell scope="col" numeric>
                 Measured
-              </th>
-              <th scope="col" className="DocsNum">
+              </DocsTable.HeaderCell>
+              <DocsTable.HeaderCell scope="col" numeric>
                 Ceiling
-              </th>
-              <th scope="col" className="DocsNum">
+              </DocsTable.HeaderCell>
+              <DocsTable.HeaderCell scope="col" numeric>
                 Used
-              </th>
+              </DocsTable.HeaderCell>
             </tr>
           </thead>
           <tbody>
             {BUNDLE_SIZES.map((entry) => (
               <tr key={entry.name}>
-                <td>
+                <DocsTable.BodyCell>
                   <code>{entry.name === "." ? "@elmeragroup/ui" : `@elmeragroup/ui/${entry.name}`}</code>
-                </td>
-                <td className="DocsNum">{kib(entry.measuredGzip)}</td>
-                <td className="DocsNum">{kib(entry.ceilingGzip)}</td>
-                <td className="DocsNum">{percent(ceilingUsage(entry))}</td>
+                </DocsTable.BodyCell>
+                <DocsTable.BodyCell numeric>{kib(entry.measuredGzip)}</DocsTable.BodyCell>
+                <DocsTable.BodyCell numeric>{kib(entry.ceilingGzip)}</DocsTable.BodyCell>
+                <DocsTable.BodyCell numeric>{percent(ceilingUsage(entry))}</DocsTable.BodyCell>
               </tr>
             ))}
           </tbody>
-        </table>
-      </div>
-      <p className="BundleNote">
+        </DocsTable.Root>
+      </DocsTable.Wrap>
+      <p className={classNames.note}>
         The flag SVG payload is gated separately, as a raw-byte aggregate ceiling rather than a measured
         JavaScript payload, and is never inlined.
       </p>
