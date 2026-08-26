@@ -56,6 +56,8 @@ test("the entry exports only the spec names", () => {
   expectTypeOf(RadioGroupModule).not.toHaveProperty("RadioItemSubSection");
   expectTypeOf(RadioGroupModule).not.toHaveProperty("radioGroupVariants");
   expectTypeOf(RadioGroupModule).not.toHaveProperty("iconButtonSizes");
+  expectTypeOf(RadioGroupModule).not.toHaveProperty("SelectionItemGroup");
+  expectTypeOf(RadioGroupModule).not.toHaveProperty("RadioItemGroupContext");
 });
 
 test("RadioItem aliases are the SelectionItem part types", () => {

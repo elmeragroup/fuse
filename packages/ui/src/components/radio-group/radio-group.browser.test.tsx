@@ -216,6 +216,26 @@ describe("RadioGroup", () => {
     expect(page.getByRole("status").query()).toBeNull();
   });
 
+  it("sets aria-busy on the named radiogroup while pending and omits it otherwise", () => {
+    renderThemed(
+      <>
+        <RadioGroup label="Idle">
+          <Radio value="a">Idle option</Radio>
+        </RadioGroup>
+        <RadioGroup label="Idle false" isPending={false}>
+          <Radio value="a">Idle false option</Radio>
+        </RadioGroup>
+        <RadioGroup label="Busy" isPending>
+          <Radio value="a">Busy option</Radio>
+        </RadioGroup>
+      </>
+    );
+
+    expect(radiogroupNamed("Idle").hasAttribute("aria-busy")).toBe(false);
+    expect(radiogroupNamed("Idle false").hasAttribute("aria-busy")).toBe(false);
+    expect(radiogroupNamed("Busy").getAttribute("aria-busy")).toBe("true");
+  });
+
   it("renders a ReactNode error as role=alert and stamps invalid on items", () => {
     renderThemed(
       <>

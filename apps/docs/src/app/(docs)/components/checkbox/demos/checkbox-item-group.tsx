@@ -6,6 +6,7 @@ import { CheckboxItem, CheckboxItemGroup } from "@elmeragroup/ui/checkbox";
 
 export function CheckboxItemGroupDemo() {
   const [value, setValue] = useState<string[]>(["fixed"]);
+  const fixedSelected = value.includes("fixed");
 
   return (
     <CheckboxItemGroup label="Price plans" value={value} onChange={setValue}>
@@ -15,7 +16,9 @@ export function CheckboxItemGroupDemo() {
           <CheckboxItem.Description>Locked for 12 months.</CheckboxItem.Description>
         </CheckboxItem.Content>
         <CheckboxItem.Actions>Recommended</CheckboxItem.Actions>
-        <CheckboxItem.SubSection mode={value.includes("fixed") ? "visible" : "hidden"}>
+        <CheckboxItem.SubSection
+          mode={fixedSelected ? "visible" : "hidden"}
+          inert={fixedSelected ? undefined : true}>
           Includes a price-freeze guarantee.
         </CheckboxItem.SubSection>
       </CheckboxItem>

@@ -5,6 +5,7 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { disabledHatch } from "../../styles/utils";
+import { Checkbox as UiCheckbox } from "../checkbox/checkbox";
 import { Field } from "../field/field";
 import { SelectionItem } from "./selection-item";
 
@@ -41,9 +42,9 @@ function shellFrom(name: string): HTMLElement {
 }
 
 function controlSlot(shell: HTMLElement): HTMLElement {
-  const media = shell.querySelector("[data-slot=item-media]");
+  const media = shell.querySelector("[data-slot=selection-item-control]");
   if (!(media instanceof HTMLElement)) {
-    throw new Error("expected item-media control slot");
+    throw new Error("expected selection-item-control slot");
   }
   return media;
 }
@@ -106,6 +107,7 @@ describe("SelectionItem", () => {
       </Field.Root>
     );
     expect(shellFrom("Fixed price").getAttribute("data-slot")).toBe("checkbox-item");
+    expect(controlSlot(shellFrom("Fixed price")).getAttribute("data-slot")).toBe("selection-item-control");
     expect(checkboxNamed("Fixed price").getAttribute("aria-checked")).toBe("false");
   });
 
@@ -371,6 +373,40 @@ describe("SelectionItem", () => {
     expect(getComputedStyle(second).marginTop).toBe("-1px");
     expect(getComputedStyle(second).borderTopColor).toBe(tokenBorderColor(second, "border-primary"));
     expect(getComputedStyle(first).marginTop).not.toBe("-1px");
+  });
+
+  it("does not paint checked shell state from a nested checked control in SubSection", async () => {
+    renderThemed(
+      <Field.Root className="gap-0">
+        <SelectionItem.Shell dataSlot="checkbox-item" control={<Checkbox.Root />}>
+          <RowTitle>First</RowTitle>
+        </SelectionItem.Shell>
+        <SelectionItem.Shell dataSlot="checkbox-item" control={<Checkbox.Root />}>
+          <RowTitle>Shell row</RowTitle>
+          <SelectionItem.SubSection>
+            <Field.Root>
+              <Field.Label>Nested extra</Field.Label>
+              <UiCheckbox defaultChecked />
+            </Field.Root>
+          </SelectionItem.SubSection>
+        </SelectionItem.Shell>
+      </Field.Root>
+    );
+
+    const first = shellFrom("First");
+    const shell = shellFrom("Shell row");
+    expect(checkboxNamed("Shell row", false).getAttribute("aria-checked")).toBe("false");
+    expect(checkboxNamed("Nested extra", true).getAttribute("aria-checked")).toBe("true");
+    expect(getComputedStyle(shell).marginTop).toBe(getComputedStyle(first).marginTop);
+    expect(getComputedStyle(shell).borderTopWidth).toBe("0px");
+    expect(getComputedStyle(shell).marginTop).not.toBe("-1px");
+
+    await userEvent.click(titled("Shell row"));
+    expect(checkboxNamed("Shell row", true).getAttribute("aria-checked")).toBe("true");
+    expect(getComputedStyle(shell).backgroundColor).toBe(tokenBackgroundColor(shell, "bg-muted"));
+    expect(getComputedStyle(shell).borderTopColor).toBe(tokenBorderColor(shell, "border-primary"));
+    expect(getComputedStyle(shell).borderTopWidth).not.toBe("0px");
+    expect(getComputedStyle(shell).marginTop).toBe("-1px");
   });
 
   it("toggles from the keyboard on the plugged-in control", async () => {

@@ -1,6 +1,5 @@
 "use client";
 
-import { createContext, useContext } from "react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 import { Checkbox as CheckboxPrimitive } from "@base-ui/react/checkbox";
@@ -11,11 +10,9 @@ import { Minus } from "../../icons/generated/minus";
 import { cn } from "../../styles/cn";
 import { focusRing } from "../../styles/utils";
 import { Field } from "../field/field";
-import { Item } from "../item/item";
-import { SelectionItem } from "../selection-item/selection-item";
+import { SelectionItem, SelectionItemGroup } from "../selection-item/selection-item";
 
 const selfFocusRing = focusRing({ target: "self" }).root();
-const CheckboxItemGroupContext = createContext(false);
 
 /**
  * Unlabeled 16px checkbox over the base-ui primitive (checkbox.md §2/§7). Client —
@@ -145,9 +142,7 @@ export function CheckboxItemGroup({
 }: CheckboxGroupProps): ReactElement {
   return (
     <CheckboxGroup orientation={orientation} {...props}>
-      <CheckboxItemGroupContext.Provider value={true}>
-        <Item.Group className="gap-0 select-none">{children}</Item.Group>
-      </CheckboxItemGroupContext.Provider>
+      <SelectionItemGroup>{children}</SelectionItemGroup>
     </CheckboxGroup>
   );
 }
@@ -244,14 +239,12 @@ export function CheckboxItem({
   className,
   children,
 }: CheckboxItemProps): ReactElement {
-  const inItemGroup = useContext(CheckboxItemGroupContext);
   return (
     <SelectionItem.Shell
       dataSlot="checkbox-item"
       isDisabled={isDisabled}
       controlPosition={controlPosition}
       className={className}
-      {...(inItemGroup ? { role: "listitem" as const } : null)}
       control={
         parent === true ? (
           <Checkbox parent disabled={isDisabled} readOnly={isReadOnly} />

@@ -202,13 +202,13 @@ describe("size-limit harness", () => {
       ceilingFromMeasured(30590)
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "selection-item")?.ceilingGzip).toBe(
-      ceilingFromMeasured(31907)
+      ceilingFromMeasured(31953)
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "checkbox")?.ceilingGzip).toBe(
-      ceilingFromMeasured(36932)
+      ceilingFromMeasured(36984)
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "radio-group")?.ceilingGzip).toBe(
-      ceilingFromMeasured(40096)
+      ceilingFromMeasured(40166)
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "checkbox-card")?.ceilingGzip).toBe(
       ceilingFromMeasured(30194)

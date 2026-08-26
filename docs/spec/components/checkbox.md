@@ -77,7 +77,7 @@ No tv recipes in this file; all styling is inline class strings. `CheckboxGroup`
 
 **Emitted**: `data-slot="checkbox"` (root), `data-slot="checkbox-indicator"`, `data-slot="checkbox-group"` (group primitive), `data-slot="checkbox-item"` (shell root via `dataSlot`). Base-ui emits state attrs on the root: `data-checked` / `data-unchecked`, `data-indeterminate`, `data-disabled`, `data-readonly`, `data-required`, `data-valid`/`data-invalid` (inside Field).
 
-**Consumed**: own base-ui attrs for styling (`data-checked:`, `data-indeterminate:`, `disabled:`, `aria-invalid:`); the shell consumes the checkbox's `data-checked` via `has-data-checked:`. `data-slot="checkbox-group"` is consumed by Field.Set gap tightening (field.md §6).
+**Consumed**: own base-ui attrs for styling (`data-checked:`, `data-indeterminate:`, `disabled:`, `aria-invalid:`); the shell consumes the checkbox's `data-checked` via the control-slot-scoped `has-[[data-slot=selection-item-control]_[data-checked]]:` selectors (selection-item.md §6). `data-slot="checkbox-group"` is consumed by Field.Set gap tightening (field.md §6).
 
 ## 7 Accessibility
 
@@ -86,6 +86,7 @@ No tv recipes in this file; all styling is inline class strings. `CheckboxGroup`
 - Hit target: `after:absolute after:-inset-x-3 after:-inset-y-2` expands the 16px box's clickable area beyond its painted bounds — **kept**; document that adjacent interactive elements need clearance.
 - Invalid + checked override: `aria-invalid:aria-checked:border-primary` deliberately lets the checked border win over the error border so a checked box in an invalid group still reads as selected — **kept**.
 - `CheckboxGroup` provides fieldset/legend semantics via `FieldSet`/`FieldLegend`; `errorMessage` announces via `FieldError` (`role="alert"`).
+- `CheckboxItemGroup` renders `Item.Group` (`role="list"`, `gap-0 select-none`). `CheckboxItem` shells adopt `role="listitem"` only inside that group; they stay direct DOM siblings of the list.
 - `CheckboxDescription`'s note is visual-only (not wired to `aria-describedby`); use Field description wiring when programmatic association is required.
 
 ## 8 Divergence from reference
@@ -115,4 +116,4 @@ Role/label-based queries only.
 
 ## 10 Demo requirements
 
-Plain runnable `.tsx` demos: `checkbox-basic.tsx` (bare checkbox + label via Field), `checkbox-group.tsx` (labeled group, both orientations, error message toggle), `checkbox-tristate.tsx` (parent + `allValues` select-all), `checkbox-item-group.tsx` (`CheckboxItemGroup` stacked cards with Title/Description/Actions and a SubSection), `checkbox-description.tsx` (`CheckboxDescription` with string and ReactNode `describedBy`).
+Plain runnable `.tsx` demos: `checkbox-basic.tsx` (bare checkbox + label via Field), `checkbox-group.tsx` (labeled group, both orientations, error message toggle), `checkbox-tristate.tsx` (parent + `allValues` select-all), `checkbox-item-group.tsx` (`CheckboxItemGroup` stacked cards with Title/Description/Actions and a SubSection; subsections hidden via `mode="hidden"` are also `inert`), `checkbox-description.tsx` (`CheckboxDescription` with string and ReactNode `describedBy`).

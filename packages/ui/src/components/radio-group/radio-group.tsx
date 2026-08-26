@@ -1,6 +1,5 @@
 "use client";
 
-import { createContext, useContext } from "react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 import { Field as FieldPrimitive } from "@base-ui/react/field";
@@ -11,11 +10,9 @@ import { SpinnerGap } from "../../icons/generated/spinner-gap";
 import { cn } from "../../styles/cn";
 import { focusRing } from "../../styles/utils";
 import { Field } from "../field/field";
-import { Item } from "../item/item";
-import { SelectionItem } from "../selection-item/selection-item";
+import { SelectionItem, SelectionItemGroup } from "../selection-item/selection-item";
 
 const selfFocusRing = focusRing({ target: "self" }).root();
-const RadioItemGroupContext = createContext(false);
 
 /**
  * Unlabeled 16px radio over the base-ui primitive (radio-group.md §2/§7). Client —
@@ -55,9 +52,10 @@ export type RadioGroupProps = {
   /** Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`. */
   errorMessage?: ReactNode;
   /**
-   * Decorative `SpinnerGap` at the header row's end. The header row renders when
-   * `label || isPending` is truthy — `isPending={false}` with no label does not
-   * emit an empty legend.
+   * Decorative `SpinnerGap` at the header row's end. Sets `aria-busy` on the
+   * radiogroup while true; omitted when pending is false or absent. The header
+   * row renders when `label` or `isPending` is truthy — `isPending={false}` with
+   * no label does not emit an empty legend.
    */
   isPending?: boolean;
   /**
@@ -143,6 +141,7 @@ export function RadioGroup({
           readOnly={isReadOnly}
           required={isRequired}
           name={name}
+          aria-busy={isPending ? true : undefined}
           className={cn(
             orientation === "horizontal" ? "flex flex-wrap gap-4" : "flex flex-col gap-2",
             className
@@ -166,9 +165,7 @@ export function RadioItemGroup({
 }: RadioGroupProps): ReactElement {
   return (
     <RadioGroup orientation={orientation} {...props}>
-      <RadioItemGroupContext.Provider value={true}>
-        <Item.Group className="gap-0 select-none">{children}</Item.Group>
-      </RadioItemGroupContext.Provider>
+      <SelectionItemGroup>{children}</SelectionItemGroup>
     </RadioGroup>
   );
 }
@@ -232,14 +229,12 @@ export function RadioItem({
   className,
   children,
 }: RadioItemProps): ReactElement {
-  const inItemGroup = useContext(RadioItemGroupContext);
   return (
     <SelectionItem.Shell
       dataSlot="radio-item"
       isDisabled={isDisabled}
       controlPosition={controlPosition}
       className={className}
-      {...(inItemGroup ? { role: "listitem" as const } : null)}
       control={<RadioGroupItem value={value} disabled={isDisabled} />}>
       {children}
     </SelectionItem.Shell>

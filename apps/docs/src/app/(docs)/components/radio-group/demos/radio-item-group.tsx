@@ -6,6 +6,7 @@ import { RadioItem, RadioItemGroup } from "@elmeragroup/ui/radio-group";
 
 export function RadioItemGroupDemo() {
   const [value, setValue] = useState("fixed");
+  const fixedSelected = value === "fixed";
 
   return (
     <RadioItemGroup label="Price plans" value={value} onChange={setValue}>
@@ -15,7 +16,9 @@ export function RadioItemGroupDemo() {
           <RadioItem.Description>Locked for 12 months.</RadioItem.Description>
         </RadioItem.Content>
         <RadioItem.Actions>Recommended</RadioItem.Actions>
-        <RadioItem.SubSection mode={value === "fixed" ? "visible" : "hidden"}>
+        <RadioItem.SubSection
+          mode={fixedSelected ? "visible" : "hidden"}
+          inert={fixedSelected ? undefined : true}>
           Includes a price-freeze guarantee.
         </RadioItem.SubSection>
       </RadioItem>

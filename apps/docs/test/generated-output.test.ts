@@ -145,6 +145,19 @@ describe("component page manifest", () => {
     }
   });
 
+  it("makes hidden Selection-family subsection demos inert", () => {
+    const checkbox = readFileSync(
+      join(resolveComponentPaths("checkbox").demosDir, "checkbox-item-group.tsx"),
+      "utf8"
+    );
+    const radio = readFileSync(
+      join(resolveComponentPaths("radio-group").demosDir, "radio-item-group.tsx"),
+      "utf8"
+    );
+    expect(checkbox).toContain("inert=");
+    expect(radio).toContain("inert=");
+  });
+
   it("orders demos by the spec §10 scenario list the page renders", () => {
     expect(page("button").demos.map((demo) => demo.id)).toEqual([
       "variants",
@@ -635,6 +648,7 @@ describe("committed api.json", () => {
     expect(radioGroup?.props.find((prop) => prop.name === "value")?.description).not.toContain(
       "value ?? undefined"
     );
+    expect(radioGroup?.props.find((prop) => prop.name === "isPending")?.description).toContain("aria-busy");
     const radioItemGroup = api("radio-group").parts.find((part) => part.name === "RadioItemGroup");
     expect(radioItemGroup?.props.find((prop) => prop.name === "orientation")?.defaultValue).toBe(
       '"vertical"'

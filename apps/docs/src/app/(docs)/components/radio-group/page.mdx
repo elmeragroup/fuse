@@ -28,8 +28,9 @@ controlled with nothing selected.
 
 The header row renders when `label || isPending` is truthy. `isPending={false}`
 with no label does not emit an empty legend. The pending indicator is Phosphor
-regular `SpinnerGap` (`size-3 animate-spin`) and is decorative — announce
-pending in a consumer live region if it must be spoken.
+regular `SpinnerGap` (`size-3 animate-spin`) and is decorative. `isPending`
+sets `aria-busy` on the radiogroup; announce pending in a consumer live region
+if it must be spoken.
 
 Base-ui's radio-group primitive accepts `name`, so `RadioGroup` sets `name`
 directly on that primitive. `CheckboxGroup` threads `name` through Field

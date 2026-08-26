@@ -22,6 +22,7 @@ test("public API exports only the namespace — aliases and recipes stay out of 
   expectTypeOf(SelectionItemModule).not.toHaveProperty("selectionItemVariants");
   expectTypeOf(SelectionItemModule).not.toHaveProperty("SelectionItemShell");
   expectTypeOf(SelectionItemModule).not.toHaveProperty("SelectionItemTitle");
+  expectTypeOf(SelectionItemModule).not.toHaveProperty("SelectionItemGroup");
 });
 
 test("Description and Content are the Item parts so later aliasing keeps object identity", () => {

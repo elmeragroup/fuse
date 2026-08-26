@@ -1,6 +1,6 @@
 "use client";
 
-import { Children, isValidElement } from "react";
+import { Children, createContext, isValidElement, useContext } from "react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 import { Field as FieldPrimitive } from "@base-ui/react/field";
@@ -10,6 +10,25 @@ import { disabledHatch } from "../../styles/utils";
 import { Field } from "../field/field";
 import { Item } from "../item/item";
 import { itemVariants } from "../item/item-variants";
+
+const SelectionItemGroupContext = createContext(false);
+
+type SelectionItemGroupProps = {
+  children?: ReactNode;
+};
+
+/**
+ * Private stacked-card list wrapper. `Item.Group` still emits `role="list"`;
+ * `SelectionItem.Shell` reads this context and defaults to `role="listitem"`.
+ * Not part of the public `SelectionItem` namespace or entry.
+ */
+export function SelectionItemGroup({ children }: SelectionItemGroupProps): ReactElement {
+  return (
+    <SelectionItemGroupContext.Provider value={true}>
+      <Item.Group className="gap-0 select-none">{children}</Item.Group>
+    </SelectionItemGroupContext.Provider>
+  );
+}
 
 function SelectionItemTitle({ className, ...props }: ComponentProps<typeof Item.Title>): ReactElement {
   return <Item.Title className={cn("font-normal", className)} {...props} />;
@@ -83,8 +102,10 @@ type SelectionItemShellProps = Omit<ComponentProps<typeof Field.Item>, "classNam
  *
  * Stacked shells collapse borders with `not-first:border-t-0`. A checked non-first
  * shell repaints its top border in `primary` by pulling itself up one pixel
- * (`has-data-checked:not-first:-mt-px`) instead of a z-index lift; `className`
- * margin overrides can break that.
+ * (`has-[[data-slot=selection-item-control]_[data-checked]]:not-first:-mt-px`)
+ * instead of a z-index lift; `className` margin overrides can break that. Checked
+ * selectors are scoped to the private control slot so a checked descendant in
+ * SubSection cannot repaint the shell.
  */
 function SelectionItemShell({
   dataSlot,
@@ -95,6 +116,7 @@ function SelectionItemShell({
   children,
   ...props
 }: SelectionItemShellProps): ReactElement {
+  const inItemGroup = useContext(SelectionItemGroupContext);
   const childArray = Children.toArray(children);
   const subSections = childArray.filter(
     (child) => isValidElement(child) && child.type === SelectionItemSubSection
@@ -105,21 +127,26 @@ function SelectionItemShell({
   const hasSubSection = subSections.length > 0;
   const controlAtEnd = controlPosition === "end";
 
-  const controlSlot = <Item.Media variant="icon">{control}</Item.Media>;
+  const controlSlot = (
+    <Item.Media variant="icon" data-slot="selection-item-control">
+      {control}
+    </Item.Media>
+  );
   const rowCluster = <div className="flex min-w-0 items-start gap-2.5">{rowChildren}</div>;
   const spacer = <span aria-hidden />;
   const subCluster = <div className="min-w-0">{subSections}</div>;
 
   return (
     <Field.Item
+      {...(inItemGroup ? { role: "listitem" as const } : null)}
       {...props}
       data-slot={dataSlot}
       className={cn(
         itemVariants({ variant: "outline" }),
-        "grid items-stretch gap-0 gap-x-2.5 bg-background px-4 py-0 transition-colors has-data-checked:border-primary has-data-checked:bg-muted",
+        "grid items-stretch gap-0 gap-x-2.5 bg-background px-4 py-0 transition-colors has-[[data-slot=selection-item-control]_[data-checked]]:border-primary has-[[data-slot=selection-item-control]_[data-checked]]:bg-muted",
         controlAtEnd ? "grid-cols-[minmax(0,1fr)_auto]" : "grid-cols-[auto_minmax(0,1fr)]",
         "rounded-none not-first:border-t-0 first:rounded-t-lg last:rounded-b-lg",
-        "has-data-checked:not-first:-mt-px has-data-checked:not-first:border-t",
+        "has-[[data-slot=selection-item-control]_[data-checked]]:not-first:-mt-px has-[[data-slot=selection-item-control]_[data-checked]]:not-first:border-t",
         isDisabled ? cn("cursor-not-allowed bg-muted", disabledHatch) : null,
         className
       )}>

@@ -34,20 +34,20 @@
 
 **RadioGroup** (`RadioGroupProps`)
 
-| Prop                            | Type                         | Default      | Notes                                                                                             |
-| ------------------------------- | ---------------------------- | ------------ | ------------------------------------------------------------------------------------------------- |
-| `label`                         | `string`                     | —            | `FieldLegend variant="label"` in the header row                                                   |
-| `description`                   | `string`                     | —            | `FieldDescription`                                                                                |
-| `errorMessage`                  | `ReactNode`                  | —            | `FieldError` (rendered only when truthy); widened per the labeled-composite convention (§8)       |
-| `isPending`                     | `boolean`                    | —            | spinner (`SpinnerGap`, `size-3 animate-spin`) at the header row's end; header renders when `label |     | isPending` is truthy (§8.2) |
-| `orientation`                   | `"vertical" \| "horizontal"` | `"vertical"` | vertical: `flex-col gap-2`; horizontal: `flex-wrap gap-4`                                         |
-| `value`                         | `string \| null`             | —            | `null` is passed through to keep the primitive controlled with no selection                       |
-| `defaultValue`                  | `string`                     | —            | uncontrolled initial value                                                                        |
-| `onChange`                      | `(value: string) => void`    | —            | wraps `onValueChange`; coerces with `String(next)`                                                |
-| `isDisabled` / `isInvalid`      | `boolean`                    | —            | on `Field` (and `disabled` on the primitive)                                                      |
-| `isReadOnly` / `isRequired`     | `boolean`                    | —            | `readOnly` / `required` on the primitive                                                          |
-| `name`                          | `string`                     | —            | set **directly on the radio-group primitive** (unlike CheckboxGroup — §8.7)                       |
-| `id` / `className` / `children` | —                            | —            | on the primitive                                                                                  |
+| Prop                            | Type                         | Default      | Notes                                                                                                                                                                             |
+| ------------------------------- | ---------------------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `label`                         | `string`                     | —            | `FieldLegend variant="label"` in the header row                                                                                                                                   |
+| `description`                   | `string`                     | —            | `FieldDescription`                                                                                                                                                                |
+| `errorMessage`                  | `ReactNode`                  | —            | `FieldError` (rendered only when truthy); widened per the labeled-composite convention (§8)                                                                                       |
+| `isPending`                     | `boolean`                    | —            | spinner (`SpinnerGap`, `size-3 animate-spin`) at the header row's end; sets `aria-busy` on the radiogroup while true; header renders when `label` or `isPending` is truthy (§8.2) |
+| `orientation`                   | `"vertical" \| "horizontal"` | `"vertical"` | vertical: `flex-col gap-2`; horizontal: `flex-wrap gap-4`                                                                                                                         |
+| `value`                         | `string \| null`             | —            | `null` is passed through to keep the primitive controlled with no selection                                                                                                       |
+| `defaultValue`                  | `string`                     | —            | uncontrolled initial value                                                                                                                                                        |
+| `onChange`                      | `(value: string) => void`    | —            | wraps `onValueChange`; coerces with `String(next)`                                                                                                                                |
+| `isDisabled` / `isInvalid`      | `boolean`                    | —            | on `Field` (and `disabled` on the primitive)                                                                                                                                      |
+| `isReadOnly` / `isRequired`     | `boolean`                    | —            | `readOnly` / `required` on the primitive                                                                                                                                          |
+| `name`                          | `string`                     | —            | set **directly on the radio-group primitive** (unlike CheckboxGroup — §8.7)                                                                                                       |
+| `id` / `className` / `children` | —                            | —            | on the primitive                                                                                                                                                                  |
 
 **RadioItemGroup** — same `RadioGroupProps`; wraps `children` in `ItemGroup`.
 
@@ -89,16 +89,17 @@
 
 **Emitted**: `data-slot="radio-group"` (primitive), `data-slot="radio-group-item"`, `data-slot="radio-group-indicator"`, `data-slot="radio-icon-button"`, `data-slot="radio-item"` (shell root via `dataSlot`). Base-ui emits `data-checked`/`data-unchecked`, `data-disabled`, `data-readonly`, `data-required`, `data-valid`/`data-invalid` on radio roots; `RadioGroupItem` also sets the group class `group/radio-group-item`.
 
-**Consumed**: own state attrs for styling (`data-checked:`, `data-invalid:`, `disabled:`, `aria-invalid:`); `RadioItem`'s shell consumes the radio's `data-checked` via `has-data-checked:`.
+**Consumed**: own state attrs for styling (`data-checked:`, `data-invalid:`, `disabled:`, `aria-invalid:`); `RadioItem`'s shell consumes the radio's `data-checked` via the control-slot-scoped `has-[[data-slot=selection-item-control]_[data-checked]]:` selectors (selection-item.md §6).
 
 ## 7 Accessibility
 
 - Base-ui renders `role="radiogroup"` with `role="radio"` items. Arrow keys move selection between enabled items (Left/Up previous, Right/Down next, wrapping); Tab enters the group on the checked (or first) item and leaves it on the next Tab; Space selects a focused unchecked item.
 - `RadioGroup` provides fieldset/legend semantics (`FieldSet`/`FieldLegend`); `errorMessage` announces via `FieldError` (`role="alert"`); `isInvalid` wires `aria-invalid` through Field.
 - `Radio` and `RadioItem` wrap the control in a base-ui `Field.Label` — the whole row is a click target; `RadioItem` sub-sections stay outside the label (selection-item.md §7).
+- `RadioItemGroup` renders `Item.Group` (`role="list"`, `gap-0 select-none`). `RadioItem` shells adopt `role="listitem"` only inside that group; they stay direct DOM siblings of the list.
 - Hit target on `RadioGroupItem`: `after:-inset-x-3 after:-inset-y-2` expands the clickable area — **kept**; adjacent controls need clearance.
 - Invalid + checked override: `aria-invalid:aria-checked:border-primary` lets the checked border win over the error border — **kept**.
-- Pending spinner is a decorative icon; if pending must be announced, the consumer owns the live region (the component only shows the spinner).
+- Pending spinner is a decorative icon. `isPending` sets `aria-busy` on the radiogroup region (accessibility.md §2); the attribute is omitted when pending is false or absent. If pending must be announced as a live message, the consumer owns that live region.
 - `RadioIconButton` is mechanically icon-only: `aria-label` is a required non-optional string (accessibility.md §3).
 
 ## 8 Divergence from reference
@@ -121,7 +122,7 @@ Role/label-based queries only.
 - `getByRole("radiogroup")` named by the legend; items via `getByRole("radio", { name })`.
 - Arrow-key navigation: focus checked item, ArrowDown moves selection to next item, wraps at the end, skips disabled items; Tab exits the group.
 - `onChange` receives the string value (not an event); controlled `value` including `null` (nothing checked) works without React uncontrolled warnings.
-- Header-row gate pinned: `isPending={false}` with no `label` renders **no** legend row (bugfix assertion); `isPending` true shows the spinner alongside the label.
+- Header-row gate pinned: `isPending={false}` with no `label` renders **no** legend row (bugfix assertion); `isPending` true shows the spinner alongside the label and sets `aria-busy` on the named radiogroup; `isPending` false or absent omits `aria-busy`.
 - A non-string `errorMessage` renders intact with `role="alert"`; `isInvalid` sets invalid state on items; checked+invalid item keeps primary border (pinned override).
 - `isReadOnly` / `isRequired` / `name` forwarded (hidden input carries `name`).
 - `Radio`: label click selects; disabled row is skipped by arrow navigation.
@@ -130,4 +131,4 @@ Role/label-based queries only.
 
 ## 10 Demo requirements
 
-Plain runnable `.tsx` demos: `radio-group-basic.tsx` (labeled group of `Radio` rows, both orientations), `radio-group-pending.tsx` (label + `isPending` spinner during async load, error message toggle), `radio-item-group.tsx` (`RadioItemGroup` stacked cards with Title/Description/Actions and a `mode`-animated SubSection on the selected item), `radio-icon-button.tsx` (icon-button segmented picker across all five sizes), `radio-controlled-null.tsx` (controlled `value` including cleared `null` state).
+Plain runnable `.tsx` demos: `radio-group-basic.tsx` (labeled group of `Radio` rows, both orientations), `radio-group-pending.tsx` (label + `isPending` spinner during async load, error message toggle), `radio-item-group.tsx` (`RadioItemGroup` stacked cards with Title/Description/Actions and a `mode`-animated SubSection on the selected item; subsections hidden via `mode="hidden"` are also `inert`), `radio-icon-button.tsx` (icon-button segmented picker across all five sizes), `radio-controlled-null.tsx` (controlled `value` including cleared `null` state).

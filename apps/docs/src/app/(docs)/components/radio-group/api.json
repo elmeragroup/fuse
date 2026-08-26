@@ -87,7 +87,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Decorative `SpinnerGap` at the header row's end. The header row renders when `label || isPending` is truthy — `isPending={false}` with no label does not emit an empty legend.",
+          "description": "Decorative `SpinnerGap` at the header row's end. Sets `aria-busy` on the radiogroup while true; omitted when pending is false or absent. The header row renders when `label` or `isPending` is truthy — `isPending={false}` with no label does not emit an empty legend.",
           "required": false
         },
         {
@@ -350,7 +350,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Decorative `SpinnerGap` at the header row's end. The header row renders when `label || isPending` is truthy — `isPending={false}` with no label does not emit an empty legend.",
+          "description": "Decorative `SpinnerGap` at the header row's end. Sets `aria-busy` on the radiogroup while true; omitted when pending is false or absent. The header row renders when `label` or `isPending` is truthy — `isPending={false}` with no label does not emit an empty legend.",
           "required": false
         },
         {

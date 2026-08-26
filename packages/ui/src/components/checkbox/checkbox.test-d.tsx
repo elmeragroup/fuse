@@ -50,6 +50,8 @@ test("the entry exports only the spec names", () => {
   expectTypeOf(CheckboxModule).not.toHaveProperty("CheckboxItemSubSection");
   expectTypeOf(CheckboxModule).not.toHaveProperty("checkboxVariants");
   expectTypeOf(CheckboxModule).not.toHaveProperty("CheckboxProps");
+  expectTypeOf(CheckboxModule).not.toHaveProperty("SelectionItemGroup");
+  expectTypeOf(CheckboxModule).not.toHaveProperty("CheckboxItemGroupContext");
 });
 
 test("CheckboxItem aliases are the SelectionItem part types", () => {
