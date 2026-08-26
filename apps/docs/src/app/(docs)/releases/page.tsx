@@ -11,15 +11,16 @@ export const metadata = pageMetadata(HREF);
 export default function ReleasesPage(): ReactElement {
   return (
     <DocsPage href={HREF}>
-      <h2 id="one-package-one-version">One package, one version</h2>
+      <h2 id="current-readiness">Current readiness</h2>
       <p>
-        <code>@elmeragroup/ui</code> is a single public package on npm. <code>/theme</code>,{" "}
-        <code>/icons</code>, <code>/illustrations</code>, the per-component subpaths and the CSS entries are
-        all exports of it, so there is no cross-package version skew to reason about. Versioning follows
-        semver.
+        Automated npm publishing and per-PR preview infrastructure are <strong>not active yet</strong>.
+        Changesets currently maintain the Version Packages PR; merging it does not yet publish automatically.
+        Automated publishing is planned after the pending org and repository setup — npm package and scope
+        ownership, OIDC Trusted Publishing, and required org 2FA. Per-PR installable package previews and docs
+        previews are planned, not available for every PR today; they wait on Vercel and pkg-pr-new.
       </p>
 
-      <h2 id="how-a-release-happens">How a release happens</h2>
+      <h2 id="designed-flow">Designed flow</h2>
       <ol>
         <li>
           <strong>A changeset per user-facing PR.</strong> Any change to published behaviour — API, styles,
@@ -31,9 +32,11 @@ export default function ReleasesPage(): ReactElement {
           version and writes the changelog from those summaries. The changelog is never hand-edited.
         </li>
         <li>
-          <strong>Merging that PR publishes.</strong> The release workflow builds, runs the publish gates and
-          pushes to npm. Publishing happens only from that workflow — no npm token exists on a developer
-          machine, so a local publish is unauthorised by construction.
+          <strong>Publish on merge (target).</strong> After that setup lands, merging the Version Packages PR
+          is designed to run a release workflow that builds, runs the publish gates and pushes to npm.
+          Publishing is intended to happen only from that workflow. The designed flow uses OIDC so no
+          long-lived npm token should exist on a developer machine, and a local publish is intended to remain
+          unauthorised.
         </li>
       </ol>
 
@@ -41,25 +44,26 @@ export default function ReleasesPage(): ReactElement {
       <ul>
         <li>
           <strong>
-            <code>latest</code>
+            <code>latest</code> (designed)
           </strong>{" "}
-          — stable releases from <code>main</code>.
+          — target dist-tag for stable releases from <code>main</code>. Not a live npm channel today.
         </li>
         <li>
           <strong>
-            <code>beta</code>
+            <code>beta</code> (designed)
           </strong>{" "}
-          — a prerelease channel via changesets pre-mode, for migration windows. Pre-mode versions never move
-          the <code>latest</code> tag.
+          — target prerelease channel via changesets pre-mode, for migration windows. Pre-mode versions never
+          move the <code>latest</code> tag. Not a live npm channel today.
         </li>
         <li>
-          <strong>Per-PR previews</strong> — every PR gets an installable build so a consuming app can trial a
-          change before merge. Previews carry no dist-tag and are not releases.
+          <strong>Per-PR previews (planned)</strong> — an installable build of each PR so a consuming app can
+          trial a change before merge. Previews carry no dist-tag and are not releases. They are not available
+          for every PR today.
         </li>
       </ul>
 
       <h2 id="publish-gates">Publish gates</h2>
-      <p>The release workflow publishes only when all of these hold against the packed artifact:</p>
+      <p>The designed release workflow publishes only when all of these hold against the packed artifact:</p>
       <ul>
         <li>
           <strong>publint</strong> and <strong>arethetypeswrong</strong> — the published package shape and its
@@ -82,16 +86,18 @@ export default function ReleasesPage(): ReactElement {
         </li>
         <li>
           <strong>Packed consumer fixtures</strong> — the tarball installs and builds in both a Next App
-          Router app and a Vite app, with flag assets resolving.
+          Router app and a Vite app, with flag assets resolving. These checks are intended publish gates, not
+          an active release workflow today.
         </li>
       </ul>
 
       <h2 id="supply-chain">Provenance</h2>
       <p>
-        The package is bound to its release workflow as an npm Trusted Publisher and authenticates per run via
-        OIDC; there is no long-lived token to leak. Every published version carries a signed provenance
-        attestation naming the source repo, commit and workflow, verifiable with{" "}
-        <code>npm audit signatures</code>. Two-factor authentication is required for every org member.
+        Trusted Publishing via OIDC, signed provenance, and required two-factor authentication for every org
+        member are pending target controls, not already configured. The designed flow authenticates each
+        publish run via OIDC, with no long-lived token to leak. Every published version is intended to carry a
+        signed provenance attestation naming the source repo, commit and workflow, verifiable with{" "}
+        <code>npm audit signatures</code>.
       </p>
 
       <h2 id="licensing">Licensing</h2>

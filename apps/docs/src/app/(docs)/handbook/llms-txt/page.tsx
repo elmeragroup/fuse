@@ -44,8 +44,8 @@ export default function LlmsTxtPage(): ReactElement {
       <p>
         These are not a second rendering of the docs. The API tables, the RSC status, the tokens-consumed list
         and the demo source in a markdown endpoint come out of the same build pass that renders the HTML page
-        — one pipeline with three consumers: the HTML docs you are reading, the visual-regression suite, and
-        anything reading markdown.
+        — one pipeline with two live consumers today: the HTML docs you are reading, and anything reading
+        markdown. The same demo corpus is ready to become input to the planned visual-regression suite.
       </p>
 
       <h2 id="why-not-a-registry">Why not a registry</h2>
