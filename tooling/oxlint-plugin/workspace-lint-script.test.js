@@ -27,13 +27,12 @@ describe("workspace lint script", () => {
       "error",
       { case: "kebabCase", ignore: ["^[a-z]{2}-[A-Z]{2}\\."] },
     ]);
+    expect(parsed.rules["unicorn/no-useless-spread"]).toBe("off");
     expect(parsed.rules["import/consistent-type-specifier-style"]).toEqual(["warn", "prefer-top-level"]);
     expect(parsed.rules["anti-slop/require-safety-comment-for-type-assertion"]).toBe("warn");
     expect(parsed.rules["anti-slop/no-runtime-typeof"]).toBe("warn");
 
-    const appsUiOverride = parsed.overrides.find((entry) =>
-      entry.files.includes("apps/**/*.{ts,tsx}")
-    );
+    const appsUiOverride = parsed.overrides.find((entry) => entry.files.includes("apps/**/*.{ts,tsx}"));
     expect(appsUiOverride?.plugins).toEqual(["typescript", "oxc", "react", "unicorn"]);
 
     const antiSlopOverride = parsed.overrides.find((entry) =>
