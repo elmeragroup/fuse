@@ -195,7 +195,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Feeds validation and sets `aria-required` on the visible input.",
+          "description": "Sets `aria-required` on the visible input.",
           "required": false
         },
         {
