@@ -55,6 +55,7 @@ describe("size-limit harness", () => {
       "input-group",
       "textarea",
       "flags",
+      "popover-info-button",
       "combobox",
       "toggle-group",
       "checkbox-card",
@@ -147,6 +148,9 @@ describe("size-limit harness", () => {
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "combobox")?.ceilingGzip).toBe(
       ceilingFromMeasured(73135)
+    );
+    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "popover-info-button")?.ceilingGzip).toBe(
+      ceilingFromMeasured(60528)
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === ".")?.ceilingGzip).toBe(
       ceilingFromMeasured(171895)

@@ -1,0 +1,47 @@
+---
+title: PopoverInfoButton
+lede: >
+  A ghost icon-sm info button that opens a Popover. Use it next to a field label
+  when a short explainer belongs in an overlay instead of inline copy.
+---
+
+import { PopoverInfoButtonBasic } from "./demos/popover-info-button-basic";
+import { PopoverInfoButtonSizes } from "./demos/popover-info-button-sizes";
+import { PopoverInfoButtonI18n } from "./demos/popover-info-button-i18n";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("popover-info-button");
+
+<ComponentIntro slug="popover-info-button" />
+
+<Prose>
+
+The trigger is a public `Button` (`ghost` / `icon-sm` by default) merged onto
+`Popover.Trigger` through the render slot — there is no nested button. `children`
+become the popover body; placement is fixed at `side="right"` with `sideOffset={8}`
+and `showArrow`. `contentSize` only changes the content max-width (`default` is
+`max-w-md`).
+
+The icon-only trigger is named by `label`, which defaults to the four-locale
+`popoverInfoButton.moreInformation` dictionary. Locale comes from
+`ElmeraGroupUiProvider` only. `container` forwards to `Popover.Content` and follows
+the overlay portal contract (nearest `ThemeScope`, never `document.body`).
+
+</Prose>
+
+<Demo slug="popover-info-button" id="basic" title="Basic" file="popover-info-button-basic.tsx">
+  <PopoverInfoButtonBasic />
+</Demo>
+
+<Demo slug="popover-info-button" id="sizes" title="Content sizes" file="popover-info-button-sizes.tsx">
+  <PopoverInfoButtonSizes />
+</Demo>
+
+<Demo slug="popover-info-button" id="i18n" title="Translated label" file="popover-info-button-i18n.tsx">
+  <PopoverInfoButtonI18n />
+</Demo>
+
+<ApiReference slug="popover-info-button" />
+
+<ComponentTokens slug="popover-info-button" />

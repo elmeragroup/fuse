@@ -22,7 +22,7 @@
  * measured×1.5.
  *
  * Current measurements (gzip bytes, 2026-08-27). Earlier measurement rounds live in git.
- *   .             182953  (Combobox joined the root barrel; under the standing 257843 ceiling from ToggleGroup recalibration, so recorded, not loosened)
+ *   .             183241  (PopoverInfoButton joined the root barrel; under the standing 257843 ceiling from ToggleGroup recalibration, so recorded, not loosened)
  *   theme          6133
  *   icons/Check     818  (per-icon export, not the full roster)
  *   button        25214
@@ -89,6 +89,7 @@
  *   react-aria/file-trigger 36483  (first calibration, ceiling 54725 — RAC FileTrigger, internal Button, three Phosphor icons)
  *   toggle-group  28942  (first calibration, ceiling 43413)
  *   combobox      73135  (first calibration, ceiling 109703)
+ *   popover-info-button 60528  (first calibration, ceiling 90792)
  *   themes.css     2274
  *   styles.css    19354  (grid-list first calibration grew the sheet; under the standing 25265
  *                  ceiling from Table recalibration, so recorded, not loosened. Do not spell flagged
@@ -140,6 +141,7 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = [
   // `pnpm gen component` appends a 0-ceiling row below this marker, so a brand-new packed
   // entry cannot slip through unbudgeted. Replace the 0 with measured × 1.5.
   // plop:js-entry-budget
+  { name: "popover-info-button", entryFile: "popover-info-button.js", ceilingGzip: 90792 },
   { name: "combobox", entryFile: "combobox.js", ceilingGzip: 109703 },
   { name: "toggle-group", entryFile: "toggle-group.js", ceilingGzip: 43413 },
   { name: "checkbox-card", entryFile: "checkbox-card.js", ceilingGzip: 45291 },

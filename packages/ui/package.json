@@ -151,6 +151,10 @@
       "types": "./src/popover.ts",
       "import": "./src/popover.ts"
     },
+    "./popover-info-button": {
+      "types": "./src/popover-info-button.ts",
+      "import": "./src/popover-info-button.ts"
+    },
     "./radio-group": {
       "types": "./src/radio-group.ts",
       "import": "./src/radio-group.ts"

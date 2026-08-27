@@ -36,6 +36,7 @@ export * from "./meter";
 export * from "./number-field";
 export * from "./pagination";
 export * from "./popover";
+export * from "./popover-info-button";
 export * from "./radio-group";
 export * from "./scroll-area";
 export * from "./select";

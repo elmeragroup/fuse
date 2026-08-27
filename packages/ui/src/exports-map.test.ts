@@ -64,6 +64,7 @@ describe("exports map", () => {
       "number-field",
       "pagination",
       "popover",
+      "popover-info-button",
       "radio-group",
       "scroll-area",
       "select",
@@ -538,6 +539,12 @@ describe("exports map", () => {
     const popover = discovered.jsEntries.find((entry) => entry.subpath === "popover");
     expect(popover?.inRootBarrel).toBe(true);
     expect(popover?.runtimeExports).toEqual(["Popover"]);
+  });
+
+  it("publishes PopoverInfoButton from /popover-info-button and the root barrel", () => {
+    const popoverInfoButton = discovered.jsEntries.find((entry) => entry.subpath === "popover-info-button");
+    expect(popoverInfoButton?.inRootBarrel).toBe(true);
+    expect(popoverInfoButton?.runtimeExports).toEqual(["PopoverInfoButton"]);
   });
 
   it("publishes Accordion and the public accordionVariants recipe from /accordion and the root barrel", () => {

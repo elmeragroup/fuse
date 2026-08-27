@@ -97,6 +97,7 @@ describe("component page manifest", () => {
       "number-field",
       "pagination",
       "popover",
+      "popover-info-button",
       "radio-group",
       "range-calendar",
       "scroll-area",
@@ -287,6 +288,7 @@ describe("component page manifest", () => {
       "disabled",
     ]);
     expect(page("confirm-button").demos.map((demo) => demo.id)).toEqual(["destructive", "success", "icon"]);
+    expect(page("popover-info-button").demos.map((demo) => demo.id)).toEqual(["basic", "sizes", "i18n"]);
     expect(page("table").demos.map((demo) => demo.id)).toEqual([
       "basic",
       "in-frame",
@@ -419,6 +421,7 @@ describe("component page manifest", () => {
       "number-field": "client",
       pagination: "client",
       popover: "client",
+      "popover-info-button": "client",
       "radio-group": "client",
       "range-calendar": "client",
       "scroll-area": "client",
