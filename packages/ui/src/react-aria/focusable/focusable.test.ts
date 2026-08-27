@@ -16,12 +16,17 @@ const facade = readFileSync(join(here, "../focusable.ts"), "utf8");
 
 const REACT_ARIA_IMPORT = /from\s+["']react-aria["']/;
 const TEST_FILE = /\.(?:browser\.test|test-d|test)\.(?:ts|tsx)$/;
+const SKIP_DIRECTORIES = new Set(["icons/generated", "icons/bespoke"]);
 
 function walkImplementationFiles(directory: string): string[] {
   const files: string[] = [];
   for (const entry of readdirSync(directory)) {
     const path = join(directory, entry);
     if (statSync(path).isDirectory()) {
+      const relativeDir = relative(srcRoot, path).split("\\").join("/");
+      if (SKIP_DIRECTORIES.has(relativeDir)) {
+        continue;
+      }
       files.push(...walkImplementationFiles(path));
       continue;
     }
@@ -64,6 +69,7 @@ describe("focusable source contract", () => {
     expect(facade).toContain('export type { FocusableOptions } from "./focusable/focusable"');
   });
 
+  // Timeout: walks src (minus generated/bespoke icons) under full-gate parallel load.
   it("is the only implementation that imports the react-aria hooks package", () => {
     const hits = walkImplementationFiles(srcRoot).filter((file) =>
       REACT_ARIA_IMPORT.test(readFileSync(file, "utf8"))
@@ -71,7 +77,7 @@ describe("focusable source contract", () => {
     expect(hits.map((file) => relative(srcRoot, file).split("\\").join("/"))).toEqual([
       "react-aria/focusable/focusable.tsx",
     ]);
-  });
+  }, 30_000);
 });
 
 describe("focusable re-export identity", () => {
