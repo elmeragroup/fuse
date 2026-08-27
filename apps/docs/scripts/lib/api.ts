@@ -319,6 +319,46 @@ export function componentPartSources(
   return sources;
 }
 
+/** Checker-owned facts for one public prop, including props omitted as forwarded. */
+export type CurrentPartPropFact = {
+  readonly type: string | null;
+  readonly required: boolean;
+};
+
+/** Every public prop accepted by each checker-backed part, including forwarded props. */
+export function componentPartPropFacts(
+  context: LibraryProject,
+  request: ComponentApiRequest
+): ReadonlyMap<string, ReadonlyMap<string, CurrentPartPropFact>> {
+  const factsByPart = new Map<string, ReadonlyMap<string, CurrentPartPropFact>>();
+  for (const part of componentPartRequests(context, request)) {
+    const signature = callSignature(context.checker, part.type);
+    const parameter = signature?.getParameters()[0];
+    if (parameter === undefined) {
+      factsByPart.set(part.name, new Map());
+      continue;
+    }
+    const propsType = context.checker.getTypeOfSymbol(parameter);
+    if (propsType === undefined || propsType.isErrorType()) {
+      factsByPart.set(part.name, new Map());
+      continue;
+    }
+    factsByPart.set(
+      part.name,
+      new Map(
+        context.checker.getPropertiesOfType(propsType).map((property) => [
+          property.name,
+          {
+            type: printType(context.checker, context.checker.getTypeOfSymbol(property)),
+            required: !isOptional(property),
+          },
+        ])
+      )
+    );
+  }
+  return factsByPart;
+}
+
 /** Extracts current checker evidence for only the props the docs table publishes. */
 export function inspectCurrentPartEvidence(
   context: LibraryProject,

@@ -54,6 +54,10 @@ describe("component page anatomy (docs-site.md §3.4)", () => {
     expect(html).toContain('id="api-button-focusableWhenDisabled"');
     expect(html).toContain("Whether the button should be focusable when disabled.");
     expect(html).not.toContain('id="api-button-onClick"');
+    expect(html).toContain(
+      'aria-label="Button Base UI primitive props: name, type, default. Each row expands."'
+    );
+    expect(html).not.toContain("Base UI primitive props props:");
   });
 
   it("collapses long types in closed rows, keeps the full signature in the panel", async () => {

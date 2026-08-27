@@ -28,7 +28,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((state: CheckboxRootState) => string | string | undefined | undefined)",
+          "type": "string | ((state: CheckboxRootState) => string | undefined) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
@@ -94,7 +94,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "React.Ref<HTMLInputElement> | undefined",
+          "type": "Ref<HTMLInputElement> | undefined",
           "shortType": "Union",
           "defaultValue": null,
           "description": "A ref to access the hidden `<input>` element.",
@@ -127,7 +127,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((checked: boolean, eventDetails: CheckboxRootChangeEventDetails) => void) | undefined",
+          "type": "((checked: boolean, eventDetails: { reason: \"none\"; event: Event; cancel: () => void; allowPropagation: () => void; isCanceled: boolean; isPropagationAllowed: boolean; trigger: Element | undefined; }) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "Event handler called when the checkbox is ticked or unticked.",
@@ -138,8 +138,8 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "boolean | false | true | undefined",
-          "shortType": "Union",
+          "type": "boolean | undefined",
+          "shortType": null,
           "defaultValue": "false",
           "description": "Whether the checkbox controls a group of child checkboxes. Must be used in a [Checkbox Group](https://base-ui.com/react/components/checkbox-group).",
           "required": false
@@ -160,8 +160,8 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((props: React.HTMLAttributes<any> & { ref?: React.RefCallback | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | React.RefObject<any> | bigint | boolean | null | number | string | undefined | undefined) | undefined; }, state: CheckboxRootState) => React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | {  }> | {  }>)",
-          "shortType": "function",
+          "type": "ComponentRenderFn<HTMLProps, CheckboxRootState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
           "defaultValue": null,
           "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
           "required": false
@@ -182,7 +182,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((state: CheckboxRootState) => React.CSSProperties | React.CSSProperties | undefined | undefined)",
+          "type": "CSSProperties | ((state: CheckboxRootState) => CSSProperties | undefined) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
@@ -204,8 +204,8 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "string | string[] | undefined",
-          "shortType": "Union",
+          "type": "string | undefined",
+          "shortType": null,
           "defaultValue": null,
           "description": "The value of the selected checkbox.",
           "required": false

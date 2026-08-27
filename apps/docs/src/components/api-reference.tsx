@@ -58,7 +58,7 @@ export async function ApiReference({ slug }: ApiReferenceProps): Promise<ReactEl
               <Fragment key={group.key}>
                 {group.label === null ? null : <h4 className={classNames.propGroupHeading}>{group.label}</h4>}
                 <ApiPropRows
-                  partName={group.label === null ? part.name : `${part.name} ${group.label}`}
+                  partName={group.label === null ? `${part.name} props` : `${part.name} ${group.label}`}
                   props={group.props}
                 />
               </Fragment>

@@ -94,7 +94,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((state: MenuPopupState) => string | string | undefined | undefined)",
+          "type": "string | ((state: MenuPopupState) => string | undefined) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
@@ -105,7 +105,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((closeType: InteractionType) => HTMLElement | React.RefObject<HTMLElement | boolean | null | null> | undefined | void)",
+          "type": "boolean | RefObject<HTMLElement | null> | ((closeType: InteractionType) => void | boolean | HTMLElement | null) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "Determines the element to focus when the menu is closed. - `false`: Do not move focus. - `true`: Move focus based on the default behavior (trigger or previously focused element). - `RefObject`: Move focus to the ref element. - `function`: Called with the interaction type (`mouse`, `touch`, `pen`, or `keyboard`). Return an element to focus, `true` to use the default behavior, or `false`/`undefined` to do nothing.",
@@ -116,8 +116,8 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((props: React.HTMLAttributes<any> & { ref?: React.RefCallback | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | React.RefObject<any> | bigint | boolean | null | number | string | undefined | undefined) | undefined; }, state: MenuPopupState) => React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | {  }> | {  }>)",
-          "shortType": "function",
+          "type": "ComponentRenderFn<HTMLProps, MenuPopupState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
           "defaultValue": null,
           "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
           "required": false
@@ -127,7 +127,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((state: MenuPopupState) => React.CSSProperties | React.CSSProperties | undefined | undefined)",
+          "type": "CSSProperties | ((state: MenuPopupState) => CSSProperties | undefined) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
@@ -170,7 +170,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((state: MenuGroupLabelState) => string | string | undefined | undefined)",
+          "type": "string | ((state: MenuGroupLabelState) => string | undefined) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
@@ -181,8 +181,8 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((props: React.HTMLAttributes<any> & { ref?: React.RefCallback | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | React.RefObject<any> | bigint | boolean | null | number | string | undefined | undefined) | undefined; }, state: MenuGroupLabelState) => React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | {  }> | {  }>)",
-          "shortType": "function",
+          "type": "ComponentRenderFn<HTMLProps, MenuGroupLabelState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
           "defaultValue": null,
           "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
           "required": false
@@ -192,7 +192,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((state: MenuGroupLabelState) => React.CSSProperties | React.CSSProperties | undefined | undefined)",
+          "type": "CSSProperties | ((state: MenuGroupLabelState) => CSSProperties | undefined) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
@@ -233,7 +233,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((state: MenuItemState) => string | string | undefined | undefined)",
+          "type": "string | ((state: MenuItemState) => string | undefined) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
@@ -288,7 +288,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "undefined",
+          "type": "((event: BaseUIEvent<MouseEvent<HTMLDivElement, MouseEvent>>) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "The click handler for the menu item.",
@@ -299,8 +299,8 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((props: React.HTMLAttributes<any> & { ref?: React.RefCallback | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | React.RefObject<any> | bigint | boolean | null | number | string | undefined | undefined) | undefined; }, state: MenuItemState) => React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | {  }> | {  }>)",
-          "shortType": "function",
+          "type": "ComponentRenderFn<HTMLProps, MenuItemState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
           "defaultValue": null,
           "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
           "required": false
@@ -310,7 +310,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((state: MenuItemState) => React.CSSProperties | React.CSSProperties | undefined | undefined)",
+          "type": "CSSProperties | ((state: MenuItemState) => CSSProperties | undefined) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
@@ -364,7 +364,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((state: MenuCheckboxItemState) => string | string | undefined | undefined)",
+          "type": "string | ((state: MenuCheckboxItemState) => string | undefined) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
@@ -441,7 +441,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "undefined",
+          "type": "((event: BaseUIEvent<MouseEvent<HTMLDivElement, MouseEvent>>) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "The click handler for the menu item.",
@@ -452,8 +452,8 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((props: React.HTMLAttributes<any> & { ref?: React.RefCallback | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | React.RefObject<any> | bigint | boolean | null | number | string | undefined | undefined) | undefined; }, state: MenuCheckboxItemState) => React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | {  }> | {  }>)",
-          "shortType": "function",
+          "type": "ComponentRenderFn<HTMLProps, MenuCheckboxItemState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
           "defaultValue": null,
           "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
           "required": false
@@ -463,7 +463,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((state: MenuCheckboxItemState) => React.CSSProperties | React.CSSProperties | undefined | undefined)",
+          "type": "CSSProperties | ((state: MenuCheckboxItemState) => CSSProperties | undefined) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
@@ -506,7 +506,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((state: MenuRadioItemState) => string | string | undefined | undefined)",
+          "type": "string | ((state: MenuRadioItemState) => string | undefined) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
@@ -561,7 +561,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "undefined",
+          "type": "((event: BaseUIEvent<MouseEvent<HTMLDivElement, MouseEvent>>) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "The click handler for the menu item.",
@@ -572,8 +572,8 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((props: React.HTMLAttributes<any> & { ref?: React.RefCallback | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | React.RefObject<any> | bigint | boolean | null | number | string | undefined | undefined) | undefined; }, state: MenuRadioItemState) => React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | {  }> | {  }>)",
-          "shortType": "function",
+          "type": "ComponentRenderFn<HTMLProps, MenuRadioItemState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
           "defaultValue": null,
           "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
           "required": false
@@ -583,7 +583,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((state: MenuRadioItemState) => React.CSSProperties | React.CSSProperties | undefined | undefined)",
+          "type": "CSSProperties | ((state: MenuRadioItemState) => CSSProperties | undefined) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
@@ -657,7 +657,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((state: MenuSubmenuTriggerState) => string | string | undefined | undefined)",
+          "type": "string | ((state: MenuSubmenuTriggerState) => string | undefined) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
@@ -734,8 +734,8 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((props: React.HTMLAttributes<any> & { ref?: React.RefCallback | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | React.RefObject<any> | bigint | boolean | null | number | string | undefined | undefined) | undefined; }, state: MenuSubmenuTriggerState) => React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | {  }> | {  }>)",
-          "shortType": "function",
+          "type": "ComponentRenderFn<HTMLProps, MenuSubmenuTriggerState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
           "defaultValue": null,
           "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
           "required": false
@@ -745,7 +745,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((state: MenuSubmenuTriggerState) => React.CSSProperties | React.CSSProperties | undefined | undefined)",
+          "type": "CSSProperties | ((state: MenuSubmenuTriggerState) => CSSProperties | undefined) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
@@ -813,7 +813,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((state: MenuPopupState) => string | string | undefined | undefined)",
+          "type": "string | ((state: MenuPopupState) => string | undefined) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
@@ -824,7 +824,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((closeType: InteractionType) => HTMLElement | React.RefObject<HTMLElement | boolean | null | null> | undefined | void)",
+          "type": "boolean | RefObject<HTMLElement | null> | ((closeType: InteractionType) => void | boolean | HTMLElement | null) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "Determines the element to focus when the menu is closed. - `false`: Do not move focus. - `true`: Move focus based on the default behavior (trigger or previously focused element). - `RefObject`: Move focus to the ref element. - `function`: Called with the interaction type (`mouse`, `touch`, `pen`, or `keyboard`). Return an element to focus, `true` to use the default behavior, or `false`/`undefined` to do nothing.",
@@ -835,8 +835,8 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((props: React.HTMLAttributes<any> & { ref?: React.RefCallback | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | React.RefObject<any> | bigint | boolean | null | number | string | undefined | undefined) | undefined; }, state: MenuPopupState) => React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | {  }> | {  }>)",
-          "shortType": "function",
+          "type": "ComponentRenderFn<HTMLProps, MenuPopupState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
           "defaultValue": null,
           "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
           "required": false
@@ -846,7 +846,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((state: MenuPopupState) => React.CSSProperties | React.CSSProperties | undefined | undefined)",
+          "type": "CSSProperties | ((state: MenuPopupState) => CSSProperties | undefined) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "Style applied to the element, or a function that returns a style object based on the component's state.",

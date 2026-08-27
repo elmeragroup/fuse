@@ -111,8 +111,8 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((props: React.HTMLAttributes<any> & { ref?: React.RefCallback | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | React.RefObject<any> | bigint | boolean | null | number | string | undefined | undefined) | undefined; }, state: ButtonState) => React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | {  }> | {  }>)",
-          "shortType": "function",
+          "type": "ComponentRenderFn<HTMLProps, ButtonState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
           "defaultValue": null,
           "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
           "required": false
@@ -122,7 +122,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((state: ButtonState) => React.CSSProperties | React.CSSProperties | undefined | undefined)",
+          "type": "CSSProperties | ((state: ButtonState) => CSSProperties | undefined) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "Style applied to the element, or a function that returns a style object based on the component's state.",

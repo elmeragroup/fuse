@@ -19,6 +19,7 @@ import type { ApiPart, ApiProp } from "../../src/lib/docs-model.ts";
 import { dependencyPackageName } from "../../src/lib/docs-model.ts";
 import { normalizePath, normalizeMessage, repoRelativePath } from "./api-shadow-paths.ts";
 import type {
+  DocsApiComponent,
   DocsShadowComponent,
   ShadowInputCapture,
   ShadowPartEvidence,
@@ -323,7 +324,7 @@ function partEvidence(
 }
 
 function implementationSource(
-  inventory: DocsShadowComponent,
+  inventory: DocsApiComponent,
   result: ExtractionResult,
   partName: string,
   aliases: readonly string[],
@@ -361,7 +362,7 @@ export function effectOrigin(provenance: ProvenanceEntry | undefined): ApiProp["
 }
 
 function toApiPart(
-  inventory: DocsShadowComponent,
+  inventory: DocsApiComponent,
   result: ExtractionResult,
   rootName: string,
   partName: string,
@@ -443,7 +444,7 @@ function partNameForAlias(rootName: string, alias: string): string | null {
 }
 
 function partsFromRoot(
-  inventory: DocsShadowComponent,
+  inventory: DocsApiComponent,
   result: ExtractionResult,
   rootName: string,
   canonical: CanonicalComponentFacts,
@@ -520,7 +521,7 @@ function partsFromRoot(
 }
 
 function partsFromExtraction(
-  inventory: DocsShadowComponent,
+  inventory: DocsApiComponent,
   result: ExtractionResult,
   canonical: CanonicalComponentFacts,
   problems: ShadowProblem[]
@@ -539,7 +540,7 @@ function sha256File(file: string): string {
   return createHash("sha256").update(readFileSync(file)).digest("hex");
 }
 
-function captureInputs(inventory: readonly DocsShadowComponent[]): readonly ShadowInputCapture[] {
+function captureInputs(inventory: readonly DocsApiComponent[]): readonly ShadowInputCapture[] {
   return inventory.map((entry) => ({
     entryFile: entry.entryFile,
     entrySha256: sha256File(entry.entryFile),
@@ -621,7 +622,7 @@ export function currentSide(inventory: readonly DocsShadowComponent[]): SideRun 
 export type EffectSideOptions = Pick<ExtractorOptions, "includeExternalTypes">;
 
 export async function effectSide(
-  inventory: readonly DocsShadowComponent[],
+  inventory: readonly DocsApiComponent[],
   options: EffectSideOptions = {}
 ): Promise<SideRun> {
   const inputs = captureInputs(inventory);

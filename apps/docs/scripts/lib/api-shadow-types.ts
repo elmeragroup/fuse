@@ -63,14 +63,19 @@ export const DOCS_SHADOW_SLUGS = [
 
 export type DocsShadowSlug = (typeof DOCS_SHADOW_SLUGS)[number];
 
-export type DocsShadowComponent = {
-  readonly slug: DocsShadowSlug;
+/** Component input shared by production extraction and the closed shadow inventory. */
+export type DocsApiComponent = {
+  readonly slug: string;
   readonly entryFile: string;
   /** Primary page export, used for the page's source and display identity. */
   readonly exportName: string;
   /** Exact public exports consumed by the production API generator. */
   readonly exportNames: readonly string[];
   readonly sourceFile: string;
+};
+
+export type DocsShadowComponent = Omit<DocsApiComponent, "slug"> & {
+  readonly slug: DocsShadowSlug;
 };
 
 /** One diagnostic from either extractor or from the docs-owned adapter. */

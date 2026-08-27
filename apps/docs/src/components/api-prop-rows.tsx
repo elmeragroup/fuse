@@ -23,7 +23,7 @@ import { ApiRows } from "./api-rows";
 import { InlineCode } from "./inline-code";
 
 export type ApiPropRowsProps = {
-  /** Display name of the part these props belong to; only the group's label reads it. */
+  /** Complete accessible name for this source group; only the group's label reads it. */
   partName: string;
   props: readonly ApiPropView[];
 };
@@ -144,7 +144,7 @@ export function ApiPropRows({ partName, props }: ApiPropRowsProps): ReactElement
       // name is announced on entry; the same sentence as a visually-hidden `aria-describedby`
       // target on a plain `div` is not reliably announced at all.
       role="group"
-      aria-label={`${partName} props: name, type, default. Each row expands.`}
+      aria-label={`${partName}: name, type, default. Each row expands.`}
       // Lets CSS size the offscreen placeholder from the real row count, so a long page's
       // skipped reference blocks do not collapse the scrollbar (`content-visibility: auto`).
       // SAFETY: `CSSProperties` has no index signature for custom properties, and React

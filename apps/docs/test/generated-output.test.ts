@@ -11,6 +11,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
+import { componentPartPropFacts, openLibraryProject } from "../scripts/lib/api.ts";
 import { resolveComponentPaths } from "../scripts/lib/components.ts";
 import { parseComponentPage } from "../scripts/lib/page-source.ts";
 import type { ComponentPageSource } from "../scripts/lib/page-source.ts";
@@ -580,6 +581,33 @@ describe("committed api.json", () => {
           }
         }
       }
+    }
+  });
+
+  it("publishes dependency props only on checker-backed parts that accept them", () => {
+    const context = openLibraryProject();
+    try {
+      for (const entry of COMPONENT_PAGES) {
+        const paths = resolveComponentPaths(entry.slug);
+        const acceptedByPart = componentPartPropFacts(context, {
+          entryFile: paths.entryFile,
+          exportNames: paths.apiExportNames,
+        });
+        for (const part of api(entry.slug).parts) {
+          const accepted = acceptedByPart.get(part.name);
+          for (const prop of part.props) {
+            if (dependencyPackageName(prop.origin) !== null) {
+              expect(accepted, part.name).toBeDefined();
+              const fact = accepted?.get(prop.name);
+              expect(fact, `${part.name}.${prop.name}`).toBeDefined();
+              expect(prop.type, `${part.name}.${prop.name}`).toBe(fact?.type);
+              expect(prop.required, `${part.name}.${prop.name}`).toBe(fact?.required);
+            }
+          }
+        }
+      }
+    } finally {
+      context.close();
     }
   });
 

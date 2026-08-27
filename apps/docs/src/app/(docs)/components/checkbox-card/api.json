@@ -144,7 +144,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "React.Ref<HTMLInputElement> | undefined",
+          "type": "Ref<HTMLInputElement> | undefined",
           "shortType": "Union",
           "defaultValue": null,
           "description": "A ref to access the hidden `<input>` element.",
@@ -177,7 +177,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((checked: boolean, eventDetails: CheckboxRootChangeEventDetails) => void) | undefined",
+          "type": "((checked: boolean, eventDetails: { reason: \"none\"; event: Event; cancel: () => void; allowPropagation: () => void; isCanceled: boolean; isPropagationAllowed: boolean; trigger: Element | undefined; }) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "Event handler called when the checkbox is ticked or unticked.",
@@ -221,7 +221,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((state: CheckboxRootState) => React.CSSProperties | React.CSSProperties | undefined | undefined)",
+          "type": "CSSProperties | ((state: CheckboxRootState) => CSSProperties | undefined) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "Style applied to the element, or a function that returns a style object based on the component's state.",

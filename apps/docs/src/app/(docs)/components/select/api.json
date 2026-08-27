@@ -36,7 +36,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((state: SelectTriggerState) => string | string | undefined | undefined)",
+          "type": "string | ((state: SelectTriggerState) => string | undefined) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
@@ -69,8 +69,8 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((props: React.HTMLAttributes<any> & { ref?: React.RefCallback | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | React.RefObject<any> | bigint | boolean | null | number | string | undefined | undefined) | undefined; }, state: SelectTriggerState) => React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | {  }> | {  }>)",
-          "shortType": "function",
+          "type": "ComponentRenderFn<HTMLProps, SelectTriggerState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
           "defaultValue": null,
           "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
           "required": false
@@ -80,7 +80,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((state: SelectTriggerState) => React.CSSProperties | React.CSSProperties | undefined | undefined)",
+          "type": "CSSProperties | ((state: SelectTriggerState) => CSSProperties | undefined) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
@@ -168,7 +168,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((state: SelectPopupState) => string | string | undefined | undefined)",
+          "type": "string | ((state: SelectPopupState) => string | undefined) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
@@ -179,7 +179,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((closeType: InteractionType) => HTMLElement | React.RefObject<HTMLElement | boolean | null | null> | undefined | void)",
+          "type": "boolean | RefObject<HTMLElement | null> | ((closeType: InteractionType) => void | boolean | HTMLElement | null) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "Determines the element to focus when the select popup is closed. - `false`: Do not move focus. - `true`: Move focus based on the default behavior (trigger or previously focused element). - `RefObject`: Move focus to the ref element. - `function`: Called with the interaction type (`mouse`, `touch`, `pen`, or `keyboard`). Return an element to focus, `true` to use the default behavior, or `false`/`undefined` to do nothing.",
@@ -190,8 +190,8 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((props: React.HTMLAttributes<any> & { ref?: React.RefCallback | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | React.RefObject<any> | bigint | boolean | null | number | string | undefined | undefined) | undefined; }, state: SelectPopupState) => React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | {  }> | {  }>)",
-          "shortType": "function",
+          "type": "ComponentRenderFn<HTMLProps, SelectPopupState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
           "defaultValue": null,
           "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
           "required": false
@@ -201,7 +201,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((state: SelectPopupState) => React.CSSProperties | React.CSSProperties | undefined | undefined)",
+          "type": "CSSProperties | ((state: SelectPopupState) => CSSProperties | undefined) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "Style applied to the element, or a function that returns a style object based on the component's state.",

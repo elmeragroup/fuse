@@ -98,7 +98,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "undefined",
+          "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
           "description": "A string value that provides a user-friendly name for `aria-valuenow`, the current value of the meter.",
@@ -109,7 +109,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "Intl.NumberFormatOptions | undefined",
+          "type": "NumberFormatOptions | undefined",
           "shortType": "Union",
           "defaultValue": null,
           "description": "Options to format the value.",
@@ -131,8 +131,8 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((props: React.HTMLAttributes<any> & { ref?: React.RefCallback | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | React.RefObject<any> | bigint | boolean | null | number | string | undefined | undefined) | undefined; }, state: MeterRootState) => React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | {  }> | {  }>)",
-          "shortType": "function",
+          "type": "ComponentRenderFn<HTMLProps, MeterRootState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
           "defaultValue": null,
           "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
           "required": false
@@ -142,7 +142,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((state: MeterRootState) => React.CSSProperties | React.CSSProperties | undefined | undefined)",
+          "type": "CSSProperties | ((state: MeterRootState) => CSSProperties | undefined) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "Style applied to the element, or a function that returns a style object based on the component's state.",

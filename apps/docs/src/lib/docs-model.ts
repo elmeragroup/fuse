@@ -44,7 +44,7 @@ export type ApiProp = {
    * shows `type` either way.
    */
   shortType: string | null;
-  /** Destructuring default from the part's implementation, or `null` when there is none. */
+  /** Wrapper destructuring default, then dependency JSDoc default, or `null` when neither exists. */
   defaultValue: string | null;
   /**
    * JSDoc description. Generation fails when a `declared` prop leaves this empty

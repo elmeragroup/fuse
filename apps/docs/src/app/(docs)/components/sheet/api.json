@@ -34,7 +34,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "React.RefObject<DrawerRoot.Actions | null> | undefined",
+          "type": "RefObject<DrawerRootActions | null> | undefined",
           "shortType": "Union",
           "defaultValue": null,
           "description": "A ref to imperative actions. - `unmount`: Manually unmounts the drawer. Call this after any externally controlled closing animation finishes. - `close`: Closes the drawer imperatively when called.",
@@ -67,7 +67,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "null | string | undefined",
+          "type": "string | null | undefined",
           "shortType": "Union",
           "defaultValue": null,
           "description": "ID of the trigger that the drawer is associated with. This is useful in conjunction with the `defaultOpen` prop to create an initially open drawer.",
@@ -188,7 +188,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "null | string | undefined",
+          "type": "string | null | undefined",
           "shortType": "Union",
           "defaultValue": null,
           "description": "ID of the trigger that the drawer is associated with. This is useful in conjunction with the `open` prop to create a controlled drawer. There's no need to specify this prop when the drawer is uncontrolled (that is, when the `open` prop is not set).",
@@ -291,7 +291,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((state: DrawerPopupState) => string | string | undefined | undefined)",
+          "type": "string | ((state: DrawerPopupState) => string | undefined) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
@@ -302,7 +302,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((closeType: InteractionType) => HTMLElement | React.RefObject<HTMLElement | boolean | null | null> | undefined | void)",
+          "type": "boolean | RefObject<HTMLElement | null> | ((closeType: InteractionType) => void | boolean | HTMLElement | null) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "Determines the element to focus when the drawer is closed. - `false`: Do not move focus. - `true`: Move focus based on the default behavior (trigger or previously focused element). - `RefObject`: Move focus to the ref element. - `function`: Called with the interaction type (`mouse`, `touch`, `pen`, or `keyboard`). Return an element to focus, `true` to use the default behavior, or `false`/`undefined` to do nothing.",
@@ -313,7 +313,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((openType: InteractionType) => HTMLElement | React.RefObject<HTMLElement | boolean | null | null> | undefined | void)",
+          "type": "boolean | RefObject<HTMLElement | null> | ((openType: InteractionType) => void | boolean | HTMLElement | null) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "Determines the element to focus when the drawer is opened. - `false`: Do not move focus. - `true`: Move focus based on the default behavior (first tabbable element or popup). - `RefObject`: Move focus to the ref element. - `function`: Called with the interaction type (`mouse`, `touch`, `pen`, or `keyboard`). Return an element to focus, `true` to use the default behavior, or `false`/`undefined` to do nothing.",
@@ -324,8 +324,8 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((props: React.HTMLAttributes<any> & { ref?: React.RefCallback | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | React.RefObject<any> | bigint | boolean | null | number | string | undefined | undefined) | undefined; }, state: DrawerPopupState) => React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | {  }> | {  }>)",
-          "shortType": "function",
+          "type": "ComponentRenderFn<HTMLProps, DrawerPopupState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
           "defaultValue": null,
           "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
           "required": false
@@ -335,7 +335,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((state: DrawerPopupState) => React.CSSProperties | React.CSSProperties | undefined | undefined)",
+          "type": "CSSProperties | ((state: DrawerPopupState) => CSSProperties | undefined) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "Style applied to the element, or a function that returns a style object based on the component's state.",

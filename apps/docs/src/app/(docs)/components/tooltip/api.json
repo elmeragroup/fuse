@@ -67,7 +67,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "React.RefObject<TooltipRoot.Actions | null> | undefined",
+          "type": "RefObject<TooltipRootActions | null> | undefined",
           "shortType": "Union",
           "defaultValue": null,
           "description": "A ref to imperative actions. - `unmount`: Unmounts the tooltip popup. - `close`: Closes the tooltip imperatively when called.",
@@ -78,8 +78,8 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((arg: { payload: Payload | React.ReactNode | undefined; }) => React.ReactNode) | undefined",
-          "shortType": "function",
+          "type": "PayloadChildRenderFunction<unknown> | ReactNode",
+          "shortType": "Union",
           "defaultValue": null,
           "description": "The content of the tooltip. This can be a regular React node or a render function that receives the `payload` of the active trigger.",
           "required": false
@@ -100,7 +100,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "null | string | undefined",
+          "type": "string | null | undefined",
           "shortType": "Union",
           "defaultValue": null,
           "description": "ID of the trigger that the tooltip is associated with. This is useful in conjunction with the `defaultOpen` prop to create an initially open tooltip.",
@@ -188,7 +188,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "null | string | undefined",
+          "type": "string | null | undefined",
           "shortType": "Union",
           "defaultValue": null,
           "description": "ID of the trigger that the tooltip is associated with. This is useful in conjunction with the `open` prop to create a controlled tooltip. There's no need to specify this prop when the tooltip is uncontrolled (that is, when the `open` prop is not set).",
@@ -267,7 +267,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((state: TooltipPopupState) => string | string | undefined | undefined)",
+          "type": "string | ((state: TooltipPopupState) => string | undefined) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
@@ -278,8 +278,8 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((props: React.HTMLAttributes<any> & { ref?: React.RefCallback | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | React.RefObject<any> | bigint | boolean | null | number | string | undefined | undefined) | undefined; }, state: TooltipPopupState) => React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | {  }> | {  }>)",
-          "shortType": "function",
+          "type": "ComponentRenderFn<HTMLProps, TooltipPopupState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
           "defaultValue": null,
           "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
           "required": false
@@ -289,7 +289,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((state: TooltipPopupState) => React.CSSProperties | React.CSSProperties | undefined | undefined)",
+          "type": "CSSProperties | ((state: TooltipPopupState) => CSSProperties | undefined) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
