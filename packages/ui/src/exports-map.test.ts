@@ -85,6 +85,7 @@ describe("exports map", () => {
       "react-aria/calendar",
       "react-aria/date-field",
       "react-aria/date-picker",
+      "react-aria/date-range-picker",
       "react-aria/range-calendar",
       "react-aria/ui-providers",
     ]);
@@ -142,6 +143,10 @@ describe("exports map", () => {
     expect(exportBindingTarget(sourceExports, "./react-aria/date-picker")).toEqual({
       types: "./src/react-aria/date-picker.ts",
       import: "./src/react-aria/date-picker.ts",
+    });
+    expect(exportBindingTarget(sourceExports, "./react-aria/date-range-picker")).toEqual({
+      types: "./src/react-aria/date-range-picker.ts",
+      import: "./src/react-aria/date-range-picker.ts",
     });
     expect(exportBindingTarget(sourceExports, "./react-aria/range-calendar")).toEqual({
       types: "./src/react-aria/range-calendar.ts",
@@ -219,6 +224,20 @@ describe("exports map", () => {
     expect(exportBindingTarget(publishExports, "./react-aria/date-picker")).toEqual({
       types: "./react-aria/date-picker.d.ts",
       import: "./react-aria/date-picker.js",
+    });
+  });
+
+  it("publishes DateRangePicker from the quarantined react-aria/date-range-picker entry only", () => {
+    const dateRangePicker = discovered.jsEntries.find(
+      (entry) => entry.subpath === "react-aria/date-range-picker"
+    );
+    const root = discovered.jsEntries.find((entry) => entry.subpath === ".");
+    expect(dateRangePicker?.inRootBarrel).toBe(false);
+    expect(dateRangePicker?.runtimeExports).toEqual(["DateRangePicker"]);
+    expect(root?.runtimeExports).not.toContain("DateRangePicker");
+    expect(exportBindingTarget(publishExports, "./react-aria/date-range-picker")).toEqual({
+      types: "./react-aria/date-range-picker.d.ts",
+      import: "./react-aria/date-range-picker.js",
     });
   });
 

@@ -75,6 +75,7 @@ describe("component page manifest", () => {
       "confirm-button",
       "date-field",
       "date-picker",
+      "date-range-picker",
       "description-list",
       "dialog",
       "dropdown-menu",
@@ -335,6 +336,13 @@ describe("component page manifest", () => {
       "states",
       "in-modal",
     ]);
+    expect(page("date-range-picker").demos.map((demo) => demo.id)).toEqual([
+      "basic",
+      "controlled",
+      "validation",
+      "states",
+      "in-modal",
+    ]);
   });
 
   it("links View source at the implementation on the repo host", () => {
@@ -365,6 +373,7 @@ describe("component page manifest", () => {
       "confirm-button": "client",
       "date-field": "client",
       "date-picker": "client",
+      "date-range-picker": "client",
       "description-list": "server",
       dialog: "client",
       "dropdown-menu": "client",
@@ -461,6 +470,11 @@ describe("committed api.json", () => {
       "DatePickerPresetGroup",
       "DatePickerPresetItem",
     ]);
+    expect(resolveComponentPaths("date-range-picker").entry).toBe(
+      "@elmeragroup/ui/react-aria/date-range-picker"
+    );
+    expect(resolveComponentPaths("date-range-picker").exportName).toBe("DateRangePicker");
+    expect(resolveComponentPaths("date-range-picker").apiExportNames).toEqual(["DateRangePicker"]);
   });
 
   it("documents DateInput's own props and the forwarded RAC remainder", () => {

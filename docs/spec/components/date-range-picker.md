@@ -19,7 +19,7 @@ AriaDateRangePicker                    (RAC DateRangePicker; base slot)
 │  ├─ DateInput slot="end" (flex-1)
 │  └─ Button variant="ghost" size="icon-sm" > CalendarBlank (named icon import, aria-hidden)
 ├─ Description / FieldError            — as DatePicker
-└─ Popover                             (private RAC popover internal; stamps OVERLAY_CONTAINER_ATTR)
+└─ Popover placement="bottom right"    (private RAC popover internal; stamps OVERLAY_CONTAINER_ATTR)
    └─ Dialog closeButton={false}       (private STYLED dialog — ruled alignment; ref used raw RAC Dialog)
       └─ RangeCalendar (calendar slot) — public, from react-aria/range-calendar
 ```
@@ -44,7 +44,7 @@ No `presetGroup` (DatePicker-only; DatePickerStateContext has no range counterpa
 
 ## 4 Variants
 
-**Ruled addition:** `dateRangePickerVariants` in `styles/date-range-picker.ts`, **module-private**, mirroring `datePickerVariants`' shape exactly — slots `base` (`group flex flex-col gap-1`), `group` (`w-auto min-w-[208px]`), `input` (`px-2 py-1.5 text-sm`; end input adds `flex-1`), `separator` (the en-dash span, absorbing the ref's inline classes), `icon` (`size-4 transition-colors`), `dialog` (`p-0`), `calendar` — with the `isReadOnly` axis (`bg-muted` on `group`/`icon`). The ref styles everything inline with zero recipe; the recipe is the alignment ruling made concrete.
+**Ruled addition:** `dateRangePickerVariants` in `styles/date-range-picker.ts`, **module-private**, mirroring `datePickerVariants`' shape exactly — slots `base` (`group flex flex-col gap-1`), `group` (`w-auto min-w-[208px]`), `input` (`px-2 py-1.5 text-sm`; end input adds `flex-1`), `separator` (the en-dash span, absorbing the ref's inline classes), `icon` (`size-4 transition-colors`), `dialog` (`p-0`), `calendar` (`p-2` — pays the inset Calendar's own root carries; RangeCalendar's root is bare and the dialog slot is `p-0`) — with the `isReadOnly` axis (`bg-muted` on `group`/`icon`). The ref styles everything inline with zero recipe; the recipe is the alignment ruling made concrete.
 
 ## 5 Consumed tokens
 
@@ -57,7 +57,7 @@ Own slots: `foreground` (separator — ref `text-gray-800`), `muted-foreground` 
 
 ## 7 Accessibility
 
-- RAC DateRangePicker semantics: one labeled group containing two segment groups (start/end), each of whose segments are `spinbutton`s; the en-dash separator is `aria-hidden` (RAC announces "start date"/"end date" itself).
+- RAC DateRangePicker semantics: one labelled `group` (the field) whose two `DateInput` rows render `role="presentation"` — RAC deliberately omits per-row groups because the picker's single group already carries the label and description. Each row's segments are `spinbutton`s named `<part>, Start Date` / `<part>, End Date`; the en-dash separator is `aria-hidden` because those names already distinguish the rows.
 - Trigger button: RAC-provided name, `aria-expanded`; popover contains a `dialog` wrapping the range `grid`.
 - Keyboard: segment editing per DateField in both inputs; trigger opens the dialog with focus on the grid; range selection per RangeCalendar §7 (anchor → extend → commit, Escape cancels); committing the range closes the popover and returns focus.
 - Invalid ranges (`end < start`, unavailable spans) drive `FieldError`, including the `(v: ValidationResult) => string` face.
@@ -78,7 +78,7 @@ Own slots: `foreground` (separator — ref `text-gray-800`), `muted-foreground` 
 
 ## 9 Test requirements
 
-- Role/label queries: group by label; two segment groups' `spinbutton`s (start/end); trigger `button`; popover `dialog`; days by `gridcell`.
+- Role/label queries: group by label; the two `role="presentation"` rows' `spinbutton`s located by their `<part>, Start Date` / `<part>, End Date` names; trigger `button`; popover `dialog`; days by `gridcell`.
 - Segment editing in both inputs fires `onChange` with `{ start, end }` once both are complete; leading zeros render by default.
 - Open/select flow: trigger opens dialog; select start then end in the grid → `onChange` fires with the range and the popover closes; Escape mid-selection cancels and returns focus to the trigger.
 - Invalid range (end before start) sets `data-invalid` and renders `errorMessage` (string and function forms).

@@ -1,0 +1,64 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "date-range-picker",
+  "parts": [
+    {
+      "name": "DateRangePicker",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/react-aria/date-range-picker/date-range-picker.tsx",
+      "forwardedFrom": [
+        "@react-types/shared",
+        "react-aria-components",
+        "react-stately"
+      ],
+      "forwardedCount": 111,
+      "props": [
+        {
+          "name": "container",
+          "origin": "declared",
+          "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Portal target for the popover. Defaults to the nearest `ThemeScope`, so the overlay inherits the theme it was opened from (theming.md §7.4); an explicit element or ref wins.",
+          "required": false
+        },
+        {
+          "name": "description",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Supporting copy, rendered as the private RAC `Description`.",
+          "required": false
+        },
+        {
+          "name": "errorMessage",
+          "origin": "declared",
+          "type": "((validation: ValidationResult) => ReactNode) | ReactNode",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Error copy, rendered as `FieldError` when the range is invalid — an end before its start, or an endpoint outside the allowed dates. Accepts a node or a validation render function (§8.8 widens the reference's string-only face).",
+          "required": false
+        },
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Visible label, rendered as the private RAC `Label`.",
+          "required": false
+        },
+        {
+          "name": "shouldForceLeadingZeros",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Pads day and month segments with a leading zero in both rows. The reference omits this here while DatePicker and DateField default it on; §8.3 aligns it.",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

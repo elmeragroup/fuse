@@ -99,8 +99,19 @@ function isRenderableNode(node: ReactNode): boolean {
  * heading, and with no `title` that heading is empty — which would silently become the
  * dialog's accessible name. Forwarding the context value as an explicit prop restores the
  * §7 name without touching the internal (whose heading gating is ticket 17's business).
+ *
+ * Package-private but not module-private: DateRangePicker composes the same popover and
+ * needs the same name, so it imports this rather than keeping a second copy in sync
+ * (date-range-picker.md §8.2). It is deliberately absent from the `date-picker.ts`
+ * facade — the entry publishes exactly the three documented names.
  */
-function PickerDialog({ children, className }: { children: ReactNode; className: string }): ReactElement {
+export function PickerDialog({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className: string;
+}): ReactElement {
   const context = use(DialogContext);
   const labelledBy =
     context !== null && context !== undefined && "aria-labelledby" in context
