@@ -1,0 +1,138 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "date-picker",
+  "parts": [
+    {
+      "name": "DatePicker",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/react-aria/date-picker/date-picker.tsx",
+      "forwardedFrom": [
+        "@react-types/shared",
+        "react-aria",
+        "react-aria-components",
+        "react-stately"
+      ],
+      "forwardedCount": 109,
+      "props": [
+        {
+          "name": "container",
+          "origin": "declared",
+          "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Portal target for the popover. Defaults to the nearest `ThemeScope`, so the overlay inherits the theme it was opened from (theming.md §7.4); an explicit element or ref wins.",
+          "required": false
+        },
+        {
+          "name": "defaultValue",
+          "origin": "declared",
+          "type": "T | null | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The default value (uncontrolled). Widened to allow an explicit `null` so a form can reset the picker to empty without dropping the prop (§8.5).",
+          "required": false
+        },
+        {
+          "name": "description",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Supporting copy, rendered as the private RAC `Description`.",
+          "required": false
+        },
+        {
+          "name": "errorMessage",
+          "origin": "declared",
+          "type": "((validation: ValidationResult) => ReactNode) | ReactNode",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Error copy, rendered as `FieldError` when the picker is invalid. Accepts a node or a validation render function (§8.4 widens the reference's string-only face).",
+          "required": false
+        },
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Visible label, rendered as the private RAC `Label`.",
+          "required": false
+        },
+        {
+          "name": "presetGroup",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Quick-choice pane rendered beside the calendar — normally a `DatePickerPresetGroup`. A renderable node is what turns the dialog into two panes; a falsy one (`false` from a `&&` guard, `null`, `\"\"`) keeps the single pane.",
+          "required": false
+        },
+        {
+          "name": "shouldForceLeadingZeros",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Pads day and month segments with a leading zero. The reference flips RAC's locale-dependent default; this port keeps that flip.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DatePickerPresetGroup",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/react-aria/date-picker/date-picker.tsx",
+      "forwardedFrom": [
+        "@react-types/shared",
+        "@types/react",
+        "react-aria-components",
+        "react-stately"
+      ],
+      "forwardedCount": 97,
+      "props": [
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Accessible name for the preset pane. Defaults to the `datePicker.presets` row of the locale dictionary (accessibility.md §4.1); an explicit string wins.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DatePickerPresetItem",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/react-aria/date-picker/date-picker.tsx",
+      "forwardedFrom": [
+        "@react-types/shared",
+        "@types/react",
+        "react-aria",
+        "react-aria-components"
+      ],
+      "forwardedCount": 98,
+      "props": [
+        {
+          "name": "description",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Supporting copy carried alongside the preset, kept from the reference face (§3). RAC `Radio` renders only its children, so this never joins the accessible name.",
+          "required": false
+        },
+        {
+          "name": "isCloseDialogOnDoubleClick",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Closes the picker dialog on double-click, after the caller's own `onDoubleClick`. A pointer-only affordance: single click (and Space from the keyboard) selects without closing, so nothing is reachable by pointer alone.",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

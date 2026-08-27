@@ -74,6 +74,7 @@ describe("component page manifest", () => {
       "collapsible",
       "confirm-button",
       "date-field",
+      "date-picker",
       "description-list",
       "dialog",
       "dropdown-menu",
@@ -326,6 +327,14 @@ describe("component page manifest", () => {
       "error",
       "bounds",
     ]);
+    expect(page("date-picker").demos.map((demo) => demo.id)).toEqual([
+      "basic",
+      "controlled",
+      "presets",
+      "validation",
+      "states",
+      "in-modal",
+    ]);
   });
 
   it("links View source at the implementation on the repo host", () => {
@@ -355,6 +364,7 @@ describe("component page manifest", () => {
       collapsible: "client",
       "confirm-button": "client",
       "date-field": "client",
+      "date-picker": "client",
       "description-list": "server",
       dialog: "client",
       "dropdown-menu": "client",
@@ -444,6 +454,13 @@ describe("committed api.json", () => {
     expect(resolveComponentPaths("range-calendar").entry).toBe("@elmeragroup/ui/react-aria/range-calendar");
     expect(resolveComponentPaths("range-calendar").exportName).toBe("RangeCalendar");
     expect(resolveComponentPaths("range-calendar").apiExportNames).toEqual(["RangeCalendar"]);
+    expect(resolveComponentPaths("date-picker").entry).toBe("@elmeragroup/ui/react-aria/date-picker");
+    expect(resolveComponentPaths("date-picker").exportName).toBe("DatePicker");
+    expect(resolveComponentPaths("date-picker").apiExportNames).toEqual([
+      "DatePicker",
+      "DatePickerPresetGroup",
+      "DatePickerPresetItem",
+    ]);
   });
 
   it("documents DateInput's own props and the forwarded RAC remainder", () => {

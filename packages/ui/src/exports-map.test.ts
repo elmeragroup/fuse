@@ -84,6 +84,7 @@ describe("exports map", () => {
       "tooltip",
       "react-aria/calendar",
       "react-aria/date-field",
+      "react-aria/date-picker",
       "react-aria/range-calendar",
       "react-aria/ui-providers",
     ]);
@@ -137,6 +138,10 @@ describe("exports map", () => {
     expect(exportBindingTarget(sourceExports, "./react-aria/date-field")).toEqual({
       types: "./src/react-aria/date-field.ts",
       import: "./src/react-aria/date-field.ts",
+    });
+    expect(exportBindingTarget(sourceExports, "./react-aria/date-picker")).toEqual({
+      types: "./src/react-aria/date-picker.ts",
+      import: "./src/react-aria/date-picker.ts",
     });
     expect(exportBindingTarget(sourceExports, "./react-aria/range-calendar")).toEqual({
       types: "./src/react-aria/range-calendar.ts",
@@ -196,6 +201,24 @@ describe("exports map", () => {
     expect(exportBindingTarget(publishExports, "./react-aria/range-calendar")).toEqual({
       types: "./react-aria/range-calendar.d.ts",
       import: "./react-aria/range-calendar.js",
+    });
+  });
+
+  it("publishes the DatePicker family from the quarantined react-aria/date-picker entry only", () => {
+    const datePicker = discovered.jsEntries.find((entry) => entry.subpath === "react-aria/date-picker");
+    const root = discovered.jsEntries.find((entry) => entry.subpath === ".");
+    expect(datePicker?.inRootBarrel).toBe(false);
+    expect(datePicker?.runtimeExports).toEqual([
+      "DatePicker",
+      "DatePickerPresetGroup",
+      "DatePickerPresetItem",
+    ]);
+    for (const name of ["DatePicker", "DatePickerPresetGroup", "DatePickerPresetItem"]) {
+      expect(root?.runtimeExports).not.toContain(name);
+    }
+    expect(exportBindingTarget(publishExports, "./react-aria/date-picker")).toEqual({
+      types: "./react-aria/date-picker.d.ts",
+      import: "./react-aria/date-picker.js",
     });
   });
 

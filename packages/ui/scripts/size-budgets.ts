@@ -80,8 +80,9 @@
  *   react-aria/date-field 70071  (first calibration, ceiling 105107)
  *   react-aria/calendar 61023  (first calibration, ceiling 91535)
  *   react-aria/range-calendar 62330  (first calibration, ceiling 93495)
+ *   react-aria/date-picker 105344  (first calibration, ceiling 158016 — the widest interim entry: it packs the field, calendar and overlay stacks together)
  *   themes.css     2274
- *   styles.css    18253  (RangeCalendar two-layer cell utilities; under the standing 25265 ceiling from Table recalibration, so recorded, not loosened)
+ *   styles.css    18999  (DatePicker two-pane/divider utilities; under the standing 25265 ceiling from Table recalibration, so recorded, not loosened)
  */
 import { FLAG_RAW_CEILING_BYTES } from "./flag-payload";
 
@@ -170,6 +171,7 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = [
   { name: "react-aria/date-field", entryFile: "react-aria/date-field.js", ceilingGzip: 105107 },
   { name: "react-aria/calendar", entryFile: "react-aria/calendar.js", ceilingGzip: 91535 },
   { name: "react-aria/range-calendar", entryFile: "react-aria/range-calendar.js", ceilingGzip: 93495 },
+  { name: "react-aria/date-picker", entryFile: "react-aria/date-picker.js", ceilingGzip: 158016 },
 ];
 
 export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = [

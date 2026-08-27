@@ -21,16 +21,17 @@ AriaDatePicker                        (RAC DatePicker; base slot)
 ├─ FieldError                         — errorMessage (renders only when invalid)
 └─ Popover placement="bottom right"   (private RAC popover internal)
    └─ Dialog closeButton={false}      (private styled dialog internal; dialog slot p-0)
-      └─ div (flex gap-x-3 divide-x pr-3 pb-3 — only when presetGroup)
+      └─ div (flex gap-x-3 divide-x pr-3 pb-3 — only when presetGroup is renderable)
          ├─ {presetGroup}             — consumer-provided DatePickerPresetGroup
-         └─ Calendar (calendar slot: border-none)  — public, focusedValue-synced
+         └─ Calendar (calendar slot: border-none)  — public, month-synced by a
+                                        module-private wrapper (see below)
 ```
 
 **Private internals this composes (all stay private, die with the tier):** the styled `Dialog` (RAC Dialog + heading/close chrome), `Modal`, the RAC `Button` (exists solely because RAC slots — here the picker trigger, in Calendar `previous`/`next` — can't be filled by the base-ui Button), and the RAC `Popover` (dropped from public exports; zero consumers).
 
 **Normative private RAC support stack:** `internal/button.tsx` wraps RAC Button while borrowing `buttonVariants` by a relative package-private import; `internal/field.tsx` owns Label/Input/Description/FieldError/FieldGroup and private `fieldGroupVariants`; `internal/checkbox.ts` owns private `checkboxVariants` used by GridList; `internal/dialog.tsx`, `modal.tsx`, and `popover.tsx` own overlay chrome and containment. `fieldGroupVariants` is a single-height field box pinning the `md` rung (`h-(--control-h-md)`, not literal `h-9`) per [conventions](conventions.md) ruling 2, and composes shared `focusRing({ target: "state", isFocusVisible })`, never its own outline/ring. Popover resolves portal target explicit `container` → nearest ThemeScope → RAC default, then forwards RAC's portal-container prop. Modal and Popover share the package-private `OVERLAY_CONTAINER_ATTR` constant solely for nested outside-interaction detection. None of these modules or recipes appears in `package.json#exports`.
 
-**Focused-month sync (kept faithfully):** local `focusedValue` state initialized from `props.value` via `toCalendarDate` (falling back to `today(getLocalTimeZone())` when null/undefined) and re-synced by `useEffect` on every `props.value` change; passed to `Calendar` as `focusedValue`/`onFocusChange`. Effect: reopening the popover always lands on the selected (or current) month, even after the user paged away. The three helpers `toCalendarDate`, `today`, and `getLocalTimeZone` are imported only by this module at v1. The `@internationalized/date` dependency itself remains available to the whole private date cluster and uninstalls with that cluster, as [architecture](../architecture.md) §6 requires.
+**Focused-month sync (kept; mechanism corrected — §8.11):** the popover's `Calendar` is wrapped by a module-private inner component rendered inside the RAC `DatePicker`, which reads the picker's own state from `DatePickerStateContext`. Its local `focusedValue` state is initialized from that state's committed `value` via `toCalendarDate` (falling back to `today(getLocalTimeZone())` when null/undefined) and re-synced by `useEffect` on every value change; it is passed to `Calendar` as `focusedValue`/`onFocusChange`. Reading the picker state rather than `props.value` is what makes the sync hold for **both** modes — `state.value` is the committed value whether the caller controls it or only seeded a `defaultValue`. Because the popover unmounts its content on close, the inner component mounts once per open, so its state initializer _is_ the per-open resync; the effect covers a value that changes while the dialog stays open (a preset pane lives inside the popover). Effect: reopening the popover always lands on the selected (or current) month, even after the user paged away. The three helpers `toCalendarDate`, `today`, and `getLocalTimeZone` are imported only by this module at v1. The `@internationalized/date` dependency itself remains available to the whole private date cluster and uninstalls with that cluster, as [architecture](../architecture.md) §6 requires.
 
 ## 3 Props
 
@@ -38,17 +39,17 @@ AriaDatePicker                        (RAC DatePicker; base slot)
 
 `DatePickerProps<T extends DateValue>` — spreads onto RAC `DatePicker` (open surface: `value`, `defaultValue`, `onChange`, `minValue`, `maxValue`, `granularity`, `placeholderValue`, `isDisabled`, `isReadOnly`, `isRequired`, `isInvalid`, `isDateUnavailable`, `validate`, `name`, `isOpen`/`onOpenChange`, …).
 
-| Prop                      | Type                                                | Default              | Notes                                                                     |
-| ------------------------- | --------------------------------------------------- | -------------------- | ------------------------------------------------------------------------- |
-| `label`                   | `string`                                            | —                    |                                                                           |
-| `description`             | `string`                                            | —                    |                                                                           |
-| `errorMessage`            | `ReactNode \| ((v: ValidationResult) => ReactNode)` | —                    | unified composite face; forwarded as FieldError children                  |
-| `defaultValue`            | `T \| null`                                         | —                    | Widened to allow explicit `null` (kept from ref)                          |
-| `presetGroup`             | `ReactNode`                                         | —                    | Rendered beside the calendar; triggers the `divide-x` two-pane layout     |
-| `isReadOnly`              | `boolean`                                           | `false`              | Destructured to drive the `isReadOnly` tv variant (`bg-muted` group/icon) |
-| `shouldForceLeadingZeros` | `boolean`                                           | **`true`**           |                                                                           |
-| `className`               | RAC className                                       | —                    | Composed onto `base` slot                                                 |
-| `container`               | `HTMLElement \| RefObject<HTMLElement>`             | nearest `ThemeScope` | forwarded to private Popover; explicit value wins                         |
+| Prop                      | Type                                                | Default              | Notes                                                                                                             |
+| ------------------------- | --------------------------------------------------- | -------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `label`                   | `string`                                            | —                    |                                                                                                                   |
+| `description`             | `string`                                            | —                    |                                                                                                                   |
+| `errorMessage`            | `ReactNode \| ((v: ValidationResult) => ReactNode)` | —                    | unified composite face; forwarded as FieldError children                                                          |
+| `defaultValue`            | `T \| null`                                         | —                    | Widened to allow explicit `null` (kept from ref)                                                                  |
+| `presetGroup`             | `ReactNode`                                         | —                    | Rendered beside the calendar; a renderable node (not `false`/`null`/`""`) triggers the `divide-x` two-pane layout |
+| `isReadOnly`              | `boolean`                                           | `false`              | Destructured to drive the `isReadOnly` tv variant (`bg-muted` group/icon)                                         |
+| `shouldForceLeadingZeros` | `boolean`                                           | **`true`**           |                                                                                                                   |
+| `className`               | RAC className                                       | —                    | Composed onto `base` slot                                                                                         |
+| `container`               | `HTMLElement \| RefObject<HTMLElement>`             | nearest `ThemeScope` | forwarded to private Popover; explicit value wins                                                                 |
 
 ### DatePickerPresetGroup
 
@@ -56,7 +57,7 @@ AriaDatePicker                        (RAC DatePicker; base slot)
 
 ### DatePickerPresetItem
 
-`ComponentProps<Radio> & { description?: string; isCloseDialogOnDoubleClick?: boolean }` — a RAC `Radio` styled as a ghost `sm` button (`buttonVariants`; radio indicator hidden, `data-selected:bg-accent`), `data-slot="date-picker-preset-item"`. Its visible children are its accessible name; the component does not synthesize English from `value`. **Reads `DatePickerStateContext`:** on double-click it calls the consumer's `onDoubleClick`, then — when `isCloseDialogOnDoubleClick` and `context?.open` — `context.close()`.
+`ComponentProps<Radio> & { description?: string; isCloseDialogOnDoubleClick?: boolean }` — a RAC `Radio` styled as a ghost `sm` button (`buttonVariants`; radio indicator hidden, `data-selected:bg-accent`), `data-slot="date-picker-preset-item"`. Its visible children are its accessible name; the component does not synthesize English from `value`. **Reads `DatePickerStateContext`:** on double-click it calls the consumer's `onDoubleClick`, then — when `isCloseDialogOnDoubleClick` and the picker is open (`state.isOpen`; `open` on the overlay state is a method, not a flag) — `state.close()`.
 
 ## 4 Variants
 
@@ -84,18 +85,19 @@ Via composed parts: `card` (FieldGroup, popover, and calendar surfaces) + `card-
 2. **Icon swap:** the reference's lucide calendar mapping becomes the named **Phosphor `CalendarBlank`** import from `@elmeragroup/ui/icons` — picked over Phosphor `Calendar` because the blank glyph reads as an affordance rather than a specific date; stated here as the canonical choice for the whole cluster.
 3. **`data-overlay-container` string → shared `OVERLAY_CONTAINER_ATTR` constant** (locked ruling, §6).
 4. **`errorMessage` widened** to the library-wide `ReactNode | render function` face.
-5. **Kept:** focused-month sync incl. today-fallback; `shouldForceLeadingZeros = true`; `defaultValue: T | null` widening; preset group/item incl. `isCloseDialogOnDoubleClick`; `Dialog closeButton={false}`; `Popover placement="bottom right"` (arrow shown — popover internal defaults `showArrow = true`).
+5. **Kept:** focused-month sync incl. today-fallback (with the mechanism corrected — see 11); `shouldForceLeadingZeros = true`; `defaultValue: T | null` widening; preset group/item incl. `isCloseDialogOnDoubleClick`; `Dialog closeButton={false}`; `Popover placement="bottom right"` (arrow shown — popover internal defaults `showArrow = true`).
 6. **Private internals stay private:** Dialog, Modal, RAC Button, RAC Popover (dropped from public surface entirely).
 7. **Interim-only regular dependencies:** `tailwindcss-react-aria-components` modifiers and `@internationalized/date` uninstall with the cluster.
 8. Adds `container` and nearest-ThemeScope default; preset group copy uses the locale dictionary and preset items use visible names.
 9. Inherited RAC `fieldGroupVariants` uses `bg-card` instead of `bg-background`, aligning the date field box with the input-surface convention.
 10. **Density retokenization:** `fieldGroupVariants` pins `--control-h-md` instead of literal `h-9` (gates the RAC private stack).
+11. **Focused-month sync reads the picker state, not `props.value`:** the month is derived from the committed value on RAC's `DatePickerStateContext` (see §2), initialized on each open and re-synced on every value change, keeping the today-fallback — so an uncontrolled `defaultValue` picker also opens on the selected month. The reference's `props.value`-only sync left uncontrolled pickers on today's month with the selection off-screen.
 
 ## 9 Test requirements
 
 - Role/label queries: group by label, segments by `spinbutton`, trigger by `getByRole("button")`, popover content by `getByRole("dialog")`, days by `gridcell`.
 - Open/select flow: click trigger → dialog + grid visible → Enter on a day fires `onChange` and closes; Escape closes without change and restores trigger focus.
-- Focused-month sync: set `value` to a past month, page forward twice, close, reopen → the value's month is shown again; with no value the current month shows.
+- Focused-month sync: for a controlled `value` **and** for an uncontrolled `defaultValue`, set a past month, page forward twice, close, reopen → the value's month is shown again; committing a day in an uncontrolled picker then reopening shows the new value's month; a value that changes while the dialog stays open (a preset) moves the grid with it; with no value the current month shows.
 - Presets: radios queried by `radio` role and their `aria-label`s; single click selects (dialog stays open); double-click with `isCloseDialogOnDoubleClick` closes the dialog.
 - Overlay seam: DatePicker inside a Modal — clicking a calendar day must not dismiss the Modal (regression test for `OVERLAY_CONTAINER_ATTR`).
 - `shouldForceLeadingZeros` default; `errorMessage` function form renders per `ValidationResult`; `isReadOnly` applies `bg-muted` state and keeps the popover closed.

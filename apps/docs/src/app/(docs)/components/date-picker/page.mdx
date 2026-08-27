@@ -1,0 +1,94 @@
+---
+title: DatePicker
+lede: >
+  An interim labeled date picker over React Aria Components. The segmented field
+  and the month grid are the public DateField and Calendar entries, joined by a
+  popover that stays contained inside whatever overlay opened it.
+---
+
+import { DatePickerBasic } from "./demos/date-picker-basic";
+import { DatePickerControlled } from "./demos/date-picker-controlled";
+import { DatePickerPresets } from "./demos/date-picker-presets";
+import { DatePickerValidation } from "./demos/date-picker-validation";
+import { DatePickerStates } from "./demos/date-picker-states";
+import { DatePickerInModal } from "./demos/date-picker-in-modal";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("date-picker");
+
+<ComponentIntro slug="date-picker" />
+
+<Prose>
+
+`DatePicker` lives at `@elmeragroup/ui/react-aria/date-picker`. The `react-aria/`
+prefix is the quarantine marker: this module is replaced when base-ui ships a
+popover-backed date picker, and the bare path is reserved for that successor. The
+composite face is optional `label` / `description`, `errorMessage` as a
+`ReactNode` or `(ValidationResult) => ReactNode`, `presetGroup`, and
+`shouldForceLeadingZeros` defaulting to `true`. `defaultValue` accepts an explicit
+`null`, and the remaining RAC DatePicker props (`value`, `minValue` / `maxValue`,
+`granularity`, `isDateUnavailable`, `isOpen` / `onOpenChange`, …) pass through.
+
+The field is the same `DateInput` segment row `DateField` renders, and the popover
+holds the same `Calendar` grid — so segment editing, keyboard grid navigation and
+RTL behaviour all match those entries. The month the popover opens on follows the
+picker's `value`: paging away and closing without choosing anything is forgotten,
+and the next open lands on the selected date's month again (or the current month
+when there is no value). Wrap locale-dependent usage in `UiProviders` from
+`@elmeragroup/ui/react-aria/ui-providers`.
+
+Escape closes the popover without a change and returns focus to the trigger;
+choosing a day commits it and closes. A read-only picker keeps its popover shut
+and fills the field with the muted surface.
+
+</Prose>
+
+<Demo slug="date-picker" id="basic" title="Basic" file="date-picker-basic.tsx">
+  <DatePickerBasic />
+</Demo>
+
+<Demo slug="date-picker" id="controlled" title="Controlled" file="date-picker-controlled.tsx">
+  <DatePickerControlled />
+</Demo>
+
+<Prose>
+
+`DatePickerPresetGroup` and `DatePickerPresetItem` add a shortcut pane beside the
+calendar. They are a radio group, so exactly one shortcut is in effect at a time;
+the group's accessible name comes from the locale dictionary unless you pass
+`label`, and each item is named by its own visible copy — the library never
+invents wording from `value`. `isCloseDialogOnDoubleClick` adds a pointer
+shortcut: a double-click selects and dismisses, while a single click (or Space)
+selects and leaves the dialog open.
+
+</Prose>
+
+<Demo slug="date-picker" id="presets" title="Presets" file="date-picker-presets.tsx">
+  <DatePickerPresets />
+</Demo>
+
+<Demo slug="date-picker" id="validation" title="Validation" file="date-picker-validation.tsx">
+  <DatePickerValidation />
+</Demo>
+
+<Demo slug="date-picker" id="states" title="States" file="date-picker-states.tsx">
+  <DatePickerStates />
+</Demo>
+
+<Prose>
+
+The popover portals into the nearest `ThemeScope`, so it inherits the theme of
+the surface that opened it, and `container` overrides that target when you need
+a specific one. Interacting with the popover never dismisses the overlay hosting
+the picker: picking a date inside a dialog leaves the dialog open.
+
+</Prose>
+
+<Demo slug="date-picker" id="in-modal" title="Inside a dialog" file="date-picker-in-modal.tsx">
+  <DatePickerInModal />
+</Demo>
+
+<ApiReference slug="date-picker" />
+
+<ComponentTokens slug="date-picker" />

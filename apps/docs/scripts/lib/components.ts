@@ -66,6 +66,9 @@ function apiExportNamesFor(slug: string, exportName: string): readonly string[] 
   if (slug === "calendar") {
     return ["Calendar", "CalendarHeader", "CalendarGridHeader"];
   }
+  if (slug === "date-picker") {
+    return ["DatePicker", "DatePickerPresetGroup", "DatePickerPresetItem"];
+  }
   return [exportName];
 }
 
