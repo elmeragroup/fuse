@@ -83,6 +83,7 @@ describe("component page manifest", () => {
       "empty",
       "field",
       "frame",
+      "grid-list",
       "heading",
       "input",
       "input-group",
@@ -346,6 +347,7 @@ describe("component page manifest", () => {
       "states",
       "in-modal",
     ]);
+    expect(page("grid-list").demos.map((demo) => demo.id)).toEqual(["selection", "empty"]);
   });
 
   it("links View source at the implementation on the repo host", () => {
@@ -384,6 +386,7 @@ describe("component page manifest", () => {
       empty: "server",
       field: "client",
       frame: "server",
+      "grid-list": "client",
       heading: "client",
       input: "client",
       "input-group": "client",
@@ -461,6 +464,9 @@ describe("committed api.json", () => {
     expect(resolveComponentPaths("search-field").entry).toBe("@elmeragroup/ui/react-aria/search-field");
     expect(resolveComponentPaths("search-field").exportName).toBe("SearchField");
     expect(resolveComponentPaths("search-field").apiExportNames).toEqual(["SearchField"]);
+    expect(resolveComponentPaths("grid-list").entry).toBe("@elmeragroup/ui/react-aria/grid-list");
+    expect(resolveComponentPaths("grid-list").exportName).toBe("GridList");
+    expect(resolveComponentPaths("grid-list").apiExportNames).toEqual(["GridList", "GridListItem"]);
     expect(resolveComponentPaths("date-field").entry).toBe("@elmeragroup/ui/react-aria/date-field");
     expect(resolveComponentPaths("date-field").exportName).toBe("DateField");
     expect(resolveComponentPaths("date-field").apiExportNames).toEqual(["DateField", "DateInput"]);

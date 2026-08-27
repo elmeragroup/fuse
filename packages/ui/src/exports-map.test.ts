@@ -86,6 +86,7 @@ describe("exports map", () => {
       "react-aria/date-field",
       "react-aria/date-picker",
       "react-aria/date-range-picker",
+      "react-aria/grid-list",
       "react-aria/link",
       "react-aria/range-calendar",
       "react-aria/search-field",
@@ -149,6 +150,10 @@ describe("exports map", () => {
     expect(exportBindingTarget(sourceExports, "./react-aria/date-range-picker")).toEqual({
       types: "./src/react-aria/date-range-picker.ts",
       import: "./src/react-aria/date-range-picker.ts",
+    });
+    expect(exportBindingTarget(sourceExports, "./react-aria/grid-list")).toEqual({
+      types: "./src/react-aria/grid-list.ts",
+      import: "./src/react-aria/grid-list.ts",
     });
     expect(exportBindingTarget(sourceExports, "./react-aria/link")).toEqual({
       types: "./src/react-aria/link.ts",
@@ -216,6 +221,19 @@ describe("exports map", () => {
     expect(exportBindingTarget(publishExports, "./react-aria/range-calendar")).toEqual({
       types: "./react-aria/range-calendar.d.ts",
       import: "./react-aria/range-calendar.js",
+    });
+  });
+
+  it("publishes GridList and GridListItem from the quarantined react-aria/grid-list entry only", () => {
+    const gridList = discovered.jsEntries.find((entry) => entry.subpath === "react-aria/grid-list");
+    const root = discovered.jsEntries.find((entry) => entry.subpath === ".");
+    expect(gridList?.inRootBarrel).toBe(false);
+    expect(gridList?.runtimeExports).toEqual(["GridList", "GridListItem"]);
+    expect(root?.runtimeExports).not.toContain("GridList");
+    expect(root?.runtimeExports).not.toContain("GridListItem");
+    expect(exportBindingTarget(publishExports, "./react-aria/grid-list")).toEqual({
+      types: "./react-aria/grid-list.d.ts",
+      import: "./react-aria/grid-list.js",
     });
   });
 

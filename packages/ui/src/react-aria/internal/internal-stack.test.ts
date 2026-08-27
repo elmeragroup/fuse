@@ -176,6 +176,7 @@ describe("Wave 4 gate: zero public surface", () => {
       "./react-aria/date-field",
       "./react-aria/date-picker",
       "./react-aria/date-range-picker",
+      "./react-aria/grid-list",
       "./react-aria/link",
       "./react-aria/range-calendar",
       "./react-aria/search-field",

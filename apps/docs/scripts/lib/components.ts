@@ -67,6 +67,7 @@ const EXTRA_API_EXPORT_NAMES = new Map<string, readonly string[]>([
     ["RadioGroup", "RadioGroupItem", "Radio", "RadioItem", "RadioItemGroup", "RadioIconButton"],
   ],
   ["date-field", ["DateField", "DateInput"]],
+  ["grid-list", ["GridList", "GridListItem"]],
   ["calendar", ["Calendar", "CalendarHeader", "CalendarGridHeader"]],
   ["date-picker", ["DatePicker", "DatePickerPresetGroup", "DatePickerPresetItem"]],
 ]);

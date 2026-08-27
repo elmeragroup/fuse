@@ -84,8 +84,9 @@
  *   react-aria/date-range-picker 104800  (composes the styled Dialog directly now that PickerDialog is gone; ratchet tightened, ceiling 157200 — the same three stacks as DatePicker, minus its preset pane and dictionary)
  *   react-aria/link 31234  (first calibration, ceiling 46851 — the RAC link runtime, no field/overlay stack)
  *   react-aria/search-field 41598  (first calibration, ceiling 62397 — RAC search field, field chrome, clear button, dictionary)
+ *   react-aria/grid-list 67309  (first calibration, ceiling 100964 — RAC grid list and selection checkbox)
  *   themes.css     2274
- *   styles.css    19153  (search-field first calibration grew the sheet; under the standing 25265
+ *   styles.css    19354  (grid-list first calibration grew the sheet; under the standing 25265
  *                  ceiling from Table recalibration, so recorded, not loosened. Do not spell flagged
  *                  utilities in this file: Tailwind's source detection scans it and would emit them again.)
  */
@@ -184,6 +185,7 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = [
   },
   { name: "react-aria/link", entryFile: "react-aria/link.js", ceilingGzip: 46851 },
   { name: "react-aria/search-field", entryFile: "react-aria/search-field.js", ceilingGzip: 62397 },
+  { name: "react-aria/grid-list", entryFile: "react-aria/grid-list.js", ceilingGzip: 100964 },
 ];
 
 export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = [
