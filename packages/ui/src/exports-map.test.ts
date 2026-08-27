@@ -82,6 +82,7 @@ describe("exports map", () => {
       "timeline-list",
       "toggle",
       "tooltip",
+      "react-aria/calendar",
       "react-aria/date-field",
       "react-aria/ui-providers",
     ]);
@@ -128,7 +129,10 @@ describe("exports map", () => {
   });
 
   it("does not invent component entries before their source files exist", () => {
-    expect(exportBindingTarget(sourceExports, "./react-aria/calendar")).toBeUndefined();
+    expect(exportBindingTarget(sourceExports, "./react-aria/calendar")).toEqual({
+      types: "./src/react-aria/calendar.ts",
+      import: "./src/react-aria/calendar.ts",
+    });
     expect(exportBindingTarget(sourceExports, "./react-aria/date-field")).toEqual({
       types: "./src/react-aria/date-field.ts",
       import: "./src/react-aria/date-field.ts",
@@ -161,6 +165,20 @@ describe("exports map", () => {
     expect(exportBindingTarget(publishExports, "./react-aria/ui-providers")).toEqual({
       types: "./react-aria/ui-providers.d.ts",
       import: "./react-aria/ui-providers.js",
+    });
+  });
+
+  it("publishes Calendar, CalendarHeader, and CalendarGridHeader from the quarantined react-aria/calendar entry only", () => {
+    const calendar = discovered.jsEntries.find((entry) => entry.subpath === "react-aria/calendar");
+    const root = discovered.jsEntries.find((entry) => entry.subpath === ".");
+    expect(calendar?.inRootBarrel).toBe(false);
+    expect(calendar?.runtimeExports).toEqual(["Calendar", "CalendarHeader", "CalendarGridHeader"]);
+    expect(root?.runtimeExports).not.toContain("Calendar");
+    expect(root?.runtimeExports).not.toContain("CalendarHeader");
+    expect(root?.runtimeExports).not.toContain("CalendarGridHeader");
+    expect(exportBindingTarget(publishExports, "./react-aria/calendar")).toEqual({
+      types: "./react-aria/calendar.d.ts",
+      import: "./react-aria/calendar.js",
     });
   });
 

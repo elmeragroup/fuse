@@ -1,0 +1,44 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "calendar",
+  "parts": [
+    {
+      "name": "Calendar",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/react-aria/calendar/calendar.tsx",
+      "forwardedFrom": [
+        "@react-types/shared",
+        "react-aria-components",
+        "react-stately"
+      ],
+      "forwardedCount": 97,
+      "props": [
+        {
+          "name": "errorMessage",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Error copy, rendered through the public Text onto RAC `Text slot=\"errorMessage\"` when present. Calendar has no ValidationResult render face.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "CalendarHeader",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/react-aria/calendar/calendar.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": []
+    },
+    {
+      "name": "CalendarGridHeader",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/react-aria/calendar/calendar.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": []
+    }
+  ]
+}

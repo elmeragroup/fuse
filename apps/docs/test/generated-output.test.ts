@@ -66,6 +66,7 @@ describe("component page manifest", () => {
       "breadcrumb",
       "button",
       "button-group",
+      "calendar",
       "card",
       "checkbox",
       "checkbox-card",
@@ -310,6 +311,13 @@ describe("component page manifest", () => {
       "states",
       "date-input",
     ]);
+    expect(page("calendar").demos.map((demo) => demo.id)).toEqual([
+      "basic",
+      "controlled",
+      "bounds",
+      "error",
+      "rtl",
+    ]);
   });
 
   it("links View source at the implementation on the repo host", () => {
@@ -331,6 +339,7 @@ describe("component page manifest", () => {
       breadcrumb: "client",
       button: "client",
       "button-group": "client",
+      calendar: "client",
       card: "server",
       checkbox: "client",
       "checkbox-card": "client",
@@ -416,6 +425,13 @@ describe("committed api.json", () => {
     expect(resolveComponentPaths("date-field").entry).toBe("@elmeragroup/ui/react-aria/date-field");
     expect(resolveComponentPaths("date-field").exportName).toBe("DateField");
     expect(resolveComponentPaths("date-field").apiExportNames).toEqual(["DateField", "DateInput"]);
+    expect(resolveComponentPaths("calendar").entry).toBe("@elmeragroup/ui/react-aria/calendar");
+    expect(resolveComponentPaths("calendar").exportName).toBe("Calendar");
+    expect(resolveComponentPaths("calendar").apiExportNames).toEqual([
+      "Calendar",
+      "CalendarHeader",
+      "CalendarGridHeader",
+    ]);
   });
 
   it("documents DateInput's own props and the forwarded RAC remainder", () => {

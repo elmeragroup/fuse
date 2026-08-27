@@ -1,0 +1,59 @@
+---
+title: Calendar
+lede: >
+  An interim single-month calendar over React Aria Components. Header parts are
+  public so RangeCalendar can reuse them; previous and next use the private RAC
+  Button so slot navigation stays intact.
+---
+
+import { CalendarBasic } from "./demos/calendar-basic";
+import { CalendarControlled } from "./demos/calendar-controlled";
+import { CalendarBounds } from "./demos/calendar-bounds";
+import { CalendarError } from "./demos/calendar-error";
+import { CalendarRtl } from "./demos/calendar-rtl";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("calendar");
+
+<ComponentIntro slug="calendar" />
+
+<Prose>
+
+`Calendar` lives at `@elmeragroup/ui/react-aria/calendar`. The `react-aria/`
+prefix is the quarantine marker: this module is replaced when a base-ui calendar
+ships, and the bare path is reserved for that successor. The composite is a
+single month — `visibleDuration` is omitted — with optional `errorMessage` as a
+`ReactNode`. Remaining RAC Calendar props (`value`, `defaultValue`, `onChange`,
+`focusedValue`, `minValue` / `maxValue`, `isDateUnavailable`, …) pass through.
+
+`CalendarHeader` and `CalendarGridHeader` are public reuse seams for
+RangeCalendar and custom bodies. Navigation icons flip in RTL through
+`useLocale()`. Wrap locale-dependent usage in `UiProviders` from
+`@elmeragroup/ui/react-aria/ui-providers`.
+
+</Prose>
+
+<Demo slug="calendar" id="basic" title="Basic" file="calendar-basic.tsx">
+  <CalendarBasic />
+</Demo>
+
+<Demo slug="calendar" id="controlled" title="Controlled" file="calendar-controlled.tsx">
+  <CalendarControlled />
+</Demo>
+
+<Demo slug="calendar" id="bounds" title="Bounds" file="calendar-bounds.tsx">
+  <CalendarBounds />
+</Demo>
+
+<Demo slug="calendar" id="error" title="Error" file="calendar-error.tsx">
+  <CalendarError />
+</Demo>
+
+<Demo slug="calendar" id="rtl" title="RTL" file="calendar-rtl.tsx">
+  <CalendarRtl />
+</Demo>
+
+<ApiReference slug="calendar" />
+
+<ComponentTokens slug="calendar" />

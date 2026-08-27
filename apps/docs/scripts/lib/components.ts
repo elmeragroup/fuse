@@ -63,6 +63,9 @@ function apiExportNamesFor(slug: string, exportName: string): readonly string[] 
   if (slug === "date-field") {
     return ["DateField", "DateInput"];
   }
+  if (slug === "calendar") {
+    return ["Calendar", "CalendarHeader", "CalendarGridHeader"];
+  }
   return [exportName];
 }
 

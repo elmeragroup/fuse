@@ -151,6 +151,10 @@
       "types": "./src/radio-group.ts",
       "import": "./src/radio-group.ts"
     },
+    "./react-aria/calendar": {
+      "types": "./src/react-aria/calendar.ts",
+      "import": "./src/react-aria/calendar.ts"
+    },
     "./react-aria/date-field": {
       "types": "./src/react-aria/date-field.ts",
       "import": "./src/react-aria/date-field.ts"
