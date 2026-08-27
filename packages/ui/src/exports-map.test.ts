@@ -86,6 +86,7 @@ describe("exports map", () => {
       "react-aria/date-field",
       "react-aria/date-picker",
       "react-aria/date-range-picker",
+      "react-aria/file-trigger",
       "react-aria/focusable",
       "react-aria/grid-list",
       "react-aria/link",
@@ -151,6 +152,10 @@ describe("exports map", () => {
     expect(exportBindingTarget(sourceExports, "./react-aria/date-range-picker")).toEqual({
       types: "./src/react-aria/date-range-picker.ts",
       import: "./src/react-aria/date-range-picker.ts",
+    });
+    expect(exportBindingTarget(sourceExports, "./react-aria/file-trigger")).toEqual({
+      types: "./src/react-aria/file-trigger.ts",
+      import: "./src/react-aria/file-trigger.ts",
     });
     expect(exportBindingTarget(sourceExports, "./react-aria/focusable")).toEqual({
       types: "./src/react-aria/focusable.ts",
@@ -226,6 +231,18 @@ describe("exports map", () => {
     expect(exportBindingTarget(publishExports, "./react-aria/range-calendar")).toEqual({
       types: "./react-aria/range-calendar.d.ts",
       import: "./react-aria/range-calendar.js",
+    });
+  });
+
+  it("publishes FileTrigger from the quarantined react-aria/file-trigger entry only", () => {
+    const fileTrigger = discovered.jsEntries.find((entry) => entry.subpath === "react-aria/file-trigger");
+    const root = discovered.jsEntries.find((entry) => entry.subpath === ".");
+    expect(fileTrigger?.inRootBarrel).toBe(false);
+    expect(fileTrigger?.runtimeExports).toEqual(["FileTrigger"]);
+    expect(root?.runtimeExports).not.toContain("FileTrigger");
+    expect(exportBindingTarget(publishExports, "./react-aria/file-trigger")).toEqual({
+      types: "./react-aria/file-trigger.d.ts",
+      import: "./react-aria/file-trigger.js",
     });
   });
 

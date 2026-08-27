@@ -86,6 +86,7 @@
  *   react-aria/search-field 41598  (first calibration, ceiling 62397 — RAC search field, field chrome, clear button, dictionary)
  *   react-aria/grid-list 67309  (first calibration, ceiling 100964 — RAC grid list and selection checkbox)
  *   react-aria/focusable 3642  (first calibration, ceiling 5463 — RAC Focusable and useFocusable re-export)
+ *   react-aria/file-trigger 36483  (first calibration, ceiling 54725 — RAC FileTrigger, internal Button, three Phosphor icons)
  *   themes.css     2274
  *   styles.css    19354  (grid-list first calibration grew the sheet; under the standing 25265
  *                  ceiling from Table recalibration, so recorded, not loosened. Do not spell flagged
@@ -188,6 +189,7 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = [
   { name: "react-aria/search-field", entryFile: "react-aria/search-field.js", ceilingGzip: 62397 },
   { name: "react-aria/grid-list", entryFile: "react-aria/grid-list.js", ceilingGzip: 100964 },
   { name: "react-aria/focusable", entryFile: "react-aria/focusable.js", ceilingGzip: 5463 },
+  { name: "react-aria/file-trigger", entryFile: "react-aria/file-trigger.js", ceilingGzip: 54725 },
 ];
 
 export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = [

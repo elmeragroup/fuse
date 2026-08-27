@@ -82,6 +82,7 @@ describe("component page manifest", () => {
       "emoji",
       "empty",
       "field",
+      "file-trigger",
       "focusable",
       "frame",
       "grid-list",
@@ -350,6 +351,7 @@ describe("component page manifest", () => {
     ]);
     expect(page("grid-list").demos.map((demo) => demo.id)).toEqual(["selection", "empty"]);
     expect(page("focusable").demos.map((demo) => demo.id)).toEqual(["tooltip-trigger"]);
+    expect(page("file-trigger").demos.map((demo) => demo.id)).toEqual(["basic", "modes"]);
   });
 
   it("links View source at the implementation on the repo host", () => {
@@ -387,6 +389,7 @@ describe("component page manifest", () => {
       emoji: "server",
       empty: "server",
       field: "client",
+      "file-trigger": "client",
       focusable: "server",
       frame: "server",
       "grid-list": "client",
@@ -467,6 +470,9 @@ describe("committed api.json", () => {
     expect(resolveComponentPaths("search-field").entry).toBe("@elmeragroup/ui/react-aria/search-field");
     expect(resolveComponentPaths("search-field").exportName).toBe("SearchField");
     expect(resolveComponentPaths("search-field").apiExportNames).toEqual(["SearchField"]);
+    expect(resolveComponentPaths("file-trigger").entry).toBe("@elmeragroup/ui/react-aria/file-trigger");
+    expect(resolveComponentPaths("file-trigger").exportName).toBe("FileTrigger");
+    expect(resolveComponentPaths("file-trigger").apiExportNames).toEqual(["FileTrigger"]);
     expect(resolveComponentPaths("focusable").entry).toBe("@elmeragroup/ui/react-aria/focusable");
     expect(resolveComponentPaths("focusable").exportName).toBe("Focusable");
     expect(resolveComponentPaths("focusable").apiExportNames).toEqual(["Focusable", "useFocusable"]);
