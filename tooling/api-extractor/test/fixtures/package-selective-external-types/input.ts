@@ -2,9 +2,14 @@ import type { PrimitiveProps, SelectedKeySource } from "@fixture/selected/button
 import type { ExtraProps } from "@fixture/selected-extra";
 import type { ForeignKeySource, ForeignMapped } from "fixture-unselected";
 import type * as React from "react";
+import type { UnknownOwner } from "unknown-owner";
 
 export interface WrapperProps extends PrimitiveProps, ExtraProps {
   localLabel: string;
+}
+
+export interface UnknownOwnerWrapper {
+  unknownOwner: UnknownOwner;
 }
 
 export declare function PrimitiveComponent(props: WrapperProps): React.ReactElement;

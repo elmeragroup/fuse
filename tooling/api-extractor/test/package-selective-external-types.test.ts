@@ -8,6 +8,8 @@ import type { ComponentNode, ExtractionResult, ExtractorOptions } from "../src/i
 const fixtureRoot = resolve(import.meta.dirname, "fixtures/package-selective-external-types");
 const inputPath = resolve(fixtureRoot, "input.ts");
 const tsconfigPath = resolve(fixtureRoot, "tsconfig.json");
+const unknownOwnerPackagePath = resolve(fixtureRoot, "node_modules/unknown-owner/index.d.ts");
+const unknownOwnerDeclarationPath = resolve(fixtureRoot, "external-types/unknown-owner/index.d.ts");
 
 function runExtraction(
   options?: ExtractorOptions & { readonly typeOperatorOutput?: "resolved" }
@@ -17,7 +19,17 @@ function runExtraction(
       Effect.gen(function* () {
         const extractor = yield* ProjectExtractor;
         return yield* extractor.extractModule(inputPath, options);
-      }).pipe(Effect.provide(ProjectExtractor.live({ tsconfigPath })))
+      }).pipe(
+        Effect.provide(
+          ProjectExtractor.live({
+            tsconfigPath,
+            fileSystem: {
+              realpath: (path) =>
+                path === unknownOwnerPackagePath ? unknownOwnerDeclarationPath : undefined,
+            },
+          })
+        )
+      )
     )
   );
 }
@@ -158,24 +170,45 @@ describe("package-selective external-type expansion", () => {
         return true;
       },
     });
-    const [firstOrder, secondOrder, caseMismatch, subpathEntry, samePrefix, typescript, copied] =
-      await Promise.all([
-        runExtraction({
-          includeExternalTypes: ["@fixture/selected", "@fixture/selected-extra", "@fixture/selected"],
-        }),
-        runExtraction({ includeExternalTypes: ["@fixture/selected-extra", "@fixture/selected"] }),
-        runExtraction({ includeExternalTypes: ["@fixture/Selected"] }),
-        runExtraction({ includeExternalTypes: ["@fixture/selected/button"] }),
-        runExtraction({ includeExternalTypes: ["@fixture/selected-extra"] }),
-        runExtraction({ includeExternalTypes: ["typescript"] }),
-        selectedWhileMutating,
-      ]);
+    const [
+      firstOrder,
+      secondOrder,
+      caseMismatch,
+      subpathEntry,
+      samePrefix,
+      typescript,
+      unknownOwnerSentinel,
+      copied,
+    ] = await Promise.all([
+      runExtraction({
+        includeExternalTypes: ["@fixture/selected", "@fixture/selected-extra", "@fixture/selected"],
+      }),
+      runExtraction({ includeExternalTypes: ["@fixture/selected-extra", "@fixture/selected"] }),
+      runExtraction({ includeExternalTypes: ["@fixture/Selected"] }),
+      runExtraction({ includeExternalTypes: ["@fixture/selected/button"] }),
+      runExtraction({ includeExternalTypes: ["@fixture/selected-extra"] }),
+      runExtraction({ includeExternalTypes: ["typescript"] }),
+      runExtraction({ includeExternalTypes: ["<external>"] }),
+      selectedWhileMutating,
+    ]);
     const disabled = await runExtraction({ includeExternalTypes: false });
 
     expect(stableResult(firstOrder)).toBe(stableResult(secondOrder));
     expect(stableResult(caseMismatch)).toBe(stableResult(disabled));
     expect(stableResult(subpathEntry)).toBe(stableResult(disabled));
     expect(stableResult(typescript)).toBe(stableResult(disabled));
+    expect(stableResult(unknownOwnerSentinel)).toBe(stableResult(disabled));
+    expect(
+      unknownOwnerSentinel.module.exports.find((entry) => entry.name === "UnknownOwnerWrapper")?.type
+    ).toMatchObject({
+      kind: "object",
+      properties: [
+        {
+          name: "unknownOwner",
+          type: { kind: "external", typeName: { name: "UnknownOwner" } },
+        },
+      ],
+    });
     expect(primitiveComponent(samePrefix).props.map((property) => property.name)).toEqual([
       "prefixedPackageProp",
       "localLabel",
