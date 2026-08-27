@@ -244,7 +244,9 @@ describe("Combobox", () => {
     expect(onValueChange.mock.calls.at(-1)?.[0]).toBeNull();
     expect(comboboxNamed("Fruit").value).toBe("");
     expect(document.activeElement).toBe(comboboxNamed("Fruit"));
-    expect(page.getByRole("button", { name: /clear/i }).query()).toBeNull();
+    await vi.waitFor(() => {
+      expect(page.getByRole("button", { name: /clear/i }).query()).toBeNull();
+    });
     expect(page.getByRole("button").query()).not.toBeNull();
   });
 
