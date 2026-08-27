@@ -9,8 +9,9 @@
 
 import type { ApiPart } from "../../src/lib/docs-model.ts";
 import { BASE_UI_PACKAGE_NAME, dependencyPackageName } from "../../src/lib/docs-model.ts";
+import { assertExpectedBaseUiDiagnostics } from "./api-external-diagnostics.ts";
 import { effectSide } from "./api-shadow-adapter.ts";
-import type { DocsApiComponent, ShadowProblem } from "./api-shadow-types.ts";
+import type { DocsApiComponent } from "./api-shadow-types.ts";
 import { componentPartPropFacts, openLibraryProject, shortTypeOf } from "./api.ts";
 import type { CurrentPartPropFact } from "./api.ts";
 import { resolveComponentPaths } from "./components.ts";
@@ -21,30 +22,6 @@ export type ComponentApiParts = {
 };
 
 type CurrentPropFacts = ReadonlyMap<string, ReadonlyMap<string, ReadonlyMap<string, CurrentPartPropFact>>>;
-
-const ACCEPTED_HYBRID_PROBLEMS = new Set([
-  "docs-adapter:missing-description",
-  "docs-adapter:partial-compound-export",
-  "docs-adapter:unsupported-component-shape",
-  "effect-extractor:unsupported-type-fallback",
-]);
-
-function problemKey(problem: ShadowProblem): string {
-  return `${problem.source}:${problem.code}`;
-}
-
-function assertExpectedHybridProblems(results: Awaited<ReturnType<typeof effectSide>>["results"]): void {
-  const unexpected = results
-    .flatMap((result) => result.problems)
-    .filter((problem) => !ACCEPTED_HYBRID_PROBLEMS.has(problemKey(problem)));
-  if (unexpected.length > 0) {
-    throw new Error(
-      `Base UI API enrichment produced unexpected diagnostics:\n${unexpected
-        .map((problem) => `${problem.component} ${problemKey(problem)}: ${problem.message}`)
-        .join("\n")}`
-    );
-  }
-}
 
 function productionInventory(components: readonly ComponentApiParts[]): readonly DocsApiComponent[] {
   return components.map((component) => {
@@ -128,7 +105,7 @@ export async function includeBaseUiPrimitiveProps(
 
   const factsBySlug = currentPropFacts(inventory);
   const extracted = await effectSide(inventory, { includeExternalTypes: [BASE_UI_PACKAGE_NAME] });
-  assertExpectedHybridProblems(extracted.results);
+  assertExpectedBaseUiDiagnostics(extracted.results.flatMap((result) => result.problems));
   return new Map(
     inventory.map((component, index) => {
       const current = currentBySlug.get(component.slug);
