@@ -277,6 +277,10 @@
       "types": "./src/timeline-list.ts",
       "import": "./src/timeline-list.ts"
     },
+    "./toast": {
+      "types": "./src/toast.ts",
+      "import": "./src/toast.ts"
+    },
     "./toggle": {
       "types": "./src/toggle.ts",
       "import": "./src/toggle.ts"

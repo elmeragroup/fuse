@@ -56,6 +56,7 @@ export * from "./textarea";
 export * from "./textarea-field";
 export * from "./theme";
 export * from "./timeline-list";
+export * from "./toast";
 export * from "./toggle";
 export * from "./toggle-group";
 export * from "./tooltip";

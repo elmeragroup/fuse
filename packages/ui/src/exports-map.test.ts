@@ -83,6 +83,7 @@ describe("exports map", () => {
       "textarea",
       "textarea-field",
       "timeline-list",
+      "toast",
       "toggle",
       "toggle-group",
       "tooltip",
@@ -594,6 +595,12 @@ describe("exports map", () => {
     const combobox = discovered.jsEntries.find((entry) => entry.subpath === "combobox");
     expect(combobox?.inRootBarrel).toBe(true);
     expect(combobox?.runtimeExports).toEqual(["Combobox", "useComboboxAnchor"]);
+  });
+
+  it("publishes Toast from /toast and the root barrel", () => {
+    const toast = discovered.jsEntries.find((entry) => entry.subpath === "toast");
+    expect(toast?.inRootBarrel).toBe(true);
+    expect(toast?.runtimeExports).toEqual(["Toast"]);
   });
 
   it("publishes PhoneNumberField from /phone-number-field and the root barrel", () => {

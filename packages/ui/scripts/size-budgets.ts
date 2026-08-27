@@ -22,7 +22,7 @@
  * measured×1.5.
  *
  * Current measurements (gzip bytes, 2026-08-27). Earlier measurement rounds live in git.
- *   .             225802  (PhoneNumberField joined the root barrel; under the standing 257843 ceiling from ToggleGroup recalibration, so recorded, not loosened)
+ *   .             229787  (Toast joined the root barrel; under the standing 257843 ceiling from ToggleGroup recalibration, so recorded, not loosened)
  *   theme          6133
  *   icons/Check     818  (per-icon export, not the full roster)
  *   button        25214
@@ -91,10 +91,11 @@
  *   combobox      73135  (first calibration, ceiling 109703)
  *   popover-info-button 60528  (first calibration, ceiling 90792)
  *   phone-number-field 116379  (first calibration, ceiling 174516)
+ *   toast         42293  (first calibration, ceiling 63440)
  *   themes.css     2274
- *   styles.css    19354  (grid-list first calibration grew the sheet; under the standing 25265
- *                  ceiling from Table recalibration, so recorded, not loosened. Do not spell flagged
- *                  utilities in this file: Tailwind's source detection scans it and would emit them again.)
+ *   styles.css    21466  (Toast stacking/status utilities joined the sheet; under the standing 25265 ceiling from Table
+ *                  recalibration, so recorded, not loosened. Do not spell a flagged class in this
+ *                  file: Tailwind's source detection scans it and would emit the utility again.)
  */
 import { FLAG_RAW_CEILING_BYTES } from "./flag-payload";
 
@@ -142,6 +143,7 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = [
   // `pnpm gen component` appends a 0-ceiling row below this marker, so a brand-new packed
   // entry cannot slip through unbudgeted. Replace the 0 with measured × 1.5.
   // plop:js-entry-budget
+  { name: "toast", entryFile: "toast.js", ceilingGzip: 63440 },
   { name: "phone-number-field", entryFile: "phone-number-field.js", ceilingGzip: 174516 },
   { name: "popover-info-button", entryFile: "popover-info-button.js", ceilingGzip: 90792 },
   { name: "combobox", entryFile: "combobox.js", ceilingGzip: 109703 },

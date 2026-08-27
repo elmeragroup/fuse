@@ -33,6 +33,7 @@ export default defineConfig({
             "@base-ui/react/toggle",
             "@base-ui/react/toggle-group",
             "@base-ui/react",
+            "@base-ui/react/toast",
             "clsx",
             "tailwind-merge",
             "tailwind-variants",
