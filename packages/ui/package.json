@@ -167,6 +167,10 @@
       "types": "./src/react-aria/date-range-picker.ts",
       "import": "./src/react-aria/date-range-picker.ts"
     },
+    "./react-aria/focusable": {
+      "types": "./src/react-aria/focusable.ts",
+      "import": "./src/react-aria/focusable.ts"
+    },
     "./react-aria/grid-list": {
       "types": "./src/react-aria/grid-list.ts",
       "import": "./src/react-aria/grid-list.ts"

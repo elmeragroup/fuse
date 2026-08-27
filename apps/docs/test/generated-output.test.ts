@@ -82,6 +82,7 @@ describe("component page manifest", () => {
       "emoji",
       "empty",
       "field",
+      "focusable",
       "frame",
       "grid-list",
       "heading",
@@ -348,6 +349,7 @@ describe("component page manifest", () => {
       "in-modal",
     ]);
     expect(page("grid-list").demos.map((demo) => demo.id)).toEqual(["selection", "empty"]);
+    expect(page("focusable").demos.map((demo) => demo.id)).toEqual(["tooltip-trigger"]);
   });
 
   it("links View source at the implementation on the repo host", () => {
@@ -385,6 +387,7 @@ describe("component page manifest", () => {
       emoji: "server",
       empty: "server",
       field: "client",
+      focusable: "server",
       frame: "server",
       "grid-list": "client",
       heading: "client",
@@ -464,6 +467,9 @@ describe("committed api.json", () => {
     expect(resolveComponentPaths("search-field").entry).toBe("@elmeragroup/ui/react-aria/search-field");
     expect(resolveComponentPaths("search-field").exportName).toBe("SearchField");
     expect(resolveComponentPaths("search-field").apiExportNames).toEqual(["SearchField"]);
+    expect(resolveComponentPaths("focusable").entry).toBe("@elmeragroup/ui/react-aria/focusable");
+    expect(resolveComponentPaths("focusable").exportName).toBe("Focusable");
+    expect(resolveComponentPaths("focusable").apiExportNames).toEqual(["Focusable", "useFocusable"]);
     expect(resolveComponentPaths("grid-list").entry).toBe("@elmeragroup/ui/react-aria/grid-list");
     expect(resolveComponentPaths("grid-list").exportName).toBe("GridList");
     expect(resolveComponentPaths("grid-list").apiExportNames).toEqual(["GridList", "GridListItem"]);

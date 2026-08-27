@@ -1,0 +1,36 @@
+---
+title: Focusable
+lede: >
+  An interim RAC re-export that clones focus and hover onto a single child so a
+  non-interactive element can be a keyboard tooltip trigger. Migration debt that
+  dies with the react-aria tier.
+---
+
+import { FocusableTooltipTrigger } from "./demos/focusable-tooltip-trigger";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("focusable");
+
+<ComponentIntro slug="focusable" />
+
+<Prose>
+
+`Focusable` and `useFocusable` live at `@elmeragroup/ui/react-aria/focusable`.
+The `react-aria/` prefix is the quarantine marker: this is the tier's only
+consumer of the `react-aria` hooks package, and the bare path is reserved for a
+successor that will not need a focus-cloning wrapper. `Focusable` clones focus
+and hover onto its single child. `useFocusable` returns `focusableProps` to
+spread onto a custom element. `FocusableOptions` is the re-exported options
+type. Treat the export as migration debt — it dies with the react-aria tier,
+because base-ui overlay triggers accept arbitrary render targets.
+
+</Prose>
+
+<Demo slug="focusable" id="tooltip-trigger" title="Tooltip trigger" file="focusable-tooltip-trigger.tsx">
+  <FocusableTooltipTrigger />
+</Demo>
+
+<ApiReference slug="focusable" />
+
+<ComponentTokens slug="focusable" />
