@@ -189,7 +189,6 @@ export function PhoneNumberField({
 
   const phone = usePhoneNumberFieldState({
     ...stateOptions,
-    isRequired,
     locale,
   });
 
@@ -222,7 +221,7 @@ export function PhoneNumberField({
             items={phone.countries}
             value={phone.selectedCountry}
             onValueChange={(next) => {
-              phone.handleCountrySelect(next?.code);
+              phone.selectCountry(next?.code);
               requestAnimationFrame(() => numberInputRef.current?.focus());
             }}
             itemToStringLabel={(country) => phone.getCountryName(country.code)}

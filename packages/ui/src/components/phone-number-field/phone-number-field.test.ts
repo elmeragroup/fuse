@@ -14,7 +14,9 @@ import {
   PRODUCT_EXCLUDED_COUNTRY_CODES,
   UNRESOLVED_LIBPHONENUMBER_FLAG_GAP,
   cleanPhoneInput,
+  defaultMetadata,
   getCountries,
+  processInputWithDetection,
   requirePickerCountries,
   resolveSelectedCountry,
 } from "./phone-engine";
@@ -126,6 +128,45 @@ describe("phone-number-field picker set", () => {
     const withoutNorway = countries.filter((country) => country.code !== "NO");
     expect(resolveSelectedCountry(withoutNorway, "AC").code).toBe(withoutNorway[0]?.code);
   });
+
+  it("auto-detects picker countries and never commits AC, BQ, EH, or TA", () => {
+    const countries = getCountries();
+    const norway = countries.find((country) => country.code === "NO");
+    expect(norway).toBeDefined();
+    if (!norway) {
+      return;
+    }
+
+    const sweden = processInputWithDetection("+46701234567", norway, countries, true, false, defaultMetadata);
+    expect(sweden.country.code).toBe("SE");
+    expect(sweden.digits).toBe("701234567");
+
+    const ituPrefix = processInputWithDetection(
+      "0046701234567",
+      norway,
+      countries,
+      true,
+      false,
+      defaultMetadata
+    );
+    expect(ituPrefix.country.code).toBe("SE");
+
+    const unchanged = processInputWithDetection(
+      "+46701234567",
+      norway,
+      countries,
+      false,
+      false,
+      defaultMetadata
+    );
+    expect(unchanged.country.code).toBe("NO");
+    expect(unchanged.digits).toBe("+46701234567");
+
+    const ac = processInputWithDetection("+24712345", norway, countries, true, false, defaultMetadata);
+    expect(ac.country.code).toBe("NO");
+    expect(ac.digits).toBe("+24712345");
+    expect(UNRESOLVED_LIBPHONENUMBER_FLAG_GAP).not.toContain(ac.country.code);
+  });
 });
 
 describe("phone-number-field source contract", () => {
@@ -179,7 +220,10 @@ describe("phone-number-field source contract", () => {
     expect(flagAssets.SE).not.toMatch(/^(https?:|data:|blob:)/);
     expect(flagAssets.FI).not.toMatch(/^(https?:|data:|blob:)/);
     expect(engineSource).not.toContain("flagcdn.com");
-    expect(hookSource).toContain("isPhoneCountryCode");
+    expect(engineSource).toContain("isPhoneCountryCode");
+    expect(engineSource).toContain("processInputWithDetection");
+    expect(hookSource).toContain("decodeURIComponent");
+    expect(hookSource).toContain("selectCountry");
   });
 
   it("is a client composite that borrows textFieldVariants and Phosphor icons", () => {

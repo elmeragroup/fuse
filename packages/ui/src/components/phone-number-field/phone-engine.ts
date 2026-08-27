@@ -227,13 +227,62 @@ export function normalizeInternationalPrefix(input: string): string {
   return input;
 }
 
+/** Country from an already-normalized `+` international number. */
 export function detectCountryFromInput(input: string, metadata: MetadataJson): CountryCode | undefined {
-  if (!hasInternationalPrefix(input)) {
+  if (!input.startsWith(INTERNATIONAL_PREFIX)) {
     return undefined;
   }
+  return parsePhoneNumber(input, undefined, metadata)?.country;
+}
+
+export function processInputWithDetection(
+  input: string,
+  currentCountry: PhoneNumberCountry,
+  countries: readonly PhoneNumberCountry[],
+  autoDetectCountry: boolean,
+  international: boolean,
+  metadata: MetadataJson
+): { digits: string; country: PhoneNumberCountry } {
+  if (!autoDetectCountry || !hasInternationalPrefix(input)) {
+    return { digits: input, country: currentCountry };
+  }
+
   const normalized = normalizeInternationalPrefix(input);
-  const phoneNumber = parsePhoneNumber(normalized, undefined, metadata);
-  return phoneNumber?.country;
+  const detected = detectCountryFromInput(normalized, metadata);
+  const nextCountry = detected ? countries.find((row) => row.code === detected) : undefined;
+
+  if (!nextCountry || nextCountry.code === currentCountry.code) {
+    return { digits: input, country: currentCountry };
+  }
+
+  if (!international) {
+    const phoneNumber = parsePhoneNumber(normalized, nextCountry.code, metadata);
+    return {
+      digits: phoneNumber?.nationalNumber ?? normalized,
+      country: nextCountry,
+    };
+  }
+
+  return { digits: normalized, country: nextCountry };
+}
+
+export function resolvePhoneFieldValues(
+  digits: string,
+  country: CountryCode | undefined,
+  metadata: MetadataJson,
+  outputFormat: PhoneNumberFormat,
+  international: boolean,
+  formatOnType: boolean
+): { displayValue: string; outputValue: string } {
+  if (!digits) {
+    return { displayValue: "", outputValue: "" };
+  }
+  const fullNumber = buildFullNumber(digits, country, metadata);
+  const phoneNumber = parsePhoneNumber(fullNumber, country, metadata);
+  return {
+    displayValue: getDisplayValue(phoneNumber, digits, international, formatOnType, country),
+    outputValue: formatOutputValue(phoneNumber, digits, outputFormat),
+  };
 }
 
 export function getInitialPhoneDigits(

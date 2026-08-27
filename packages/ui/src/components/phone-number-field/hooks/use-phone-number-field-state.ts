@@ -4,31 +4,18 @@ import { useCallback, useEffect, useEffectEvent, useMemo, useState } from "react
 import type { ClipboardEvent } from "react";
 
 import type { CountryCode, MetadataJson } from "libphonenumber-js/core";
-import { getCountryCallingCode } from "libphonenumber-js/core";
 
 import {
-  buildFullNumber,
   cleanPhoneInput,
   defaultMetadata,
-  detectCountryFromInput,
-  formatOutputValue,
   getCountries,
-  getDisplayValue,
   getInitialPhoneDigits,
-  getPhoneNumberValidation,
-  hasInternationalPrefix,
-  isPhoneCountryCode,
-  normalizeInternationalPrefix,
-  parsePhoneNumber,
+  processInputWithDetection,
   requirePickerCountries,
+  resolvePhoneFieldValues,
   resolveSelectedCountry,
 } from "../phone-engine";
-import type {
-  PhoneCountryCode,
-  PhoneNumberCountry,
-  PhoneNumberFormat,
-  PhoneNumberValidation,
-} from "../phone-engine";
+import type { PhoneCountryCode, PhoneNumberCountry, PhoneNumberFormat } from "../phone-engine";
 
 export type UsePhoneNumberFieldStateOptions = {
   value?: string;
@@ -40,27 +27,28 @@ export type UsePhoneNumberFieldStateOptions = {
   preserveOnCountryChange?: boolean;
   outputFormat?: PhoneNumberFormat;
   formatOnType?: boolean;
-  isRequired?: boolean;
   onCountryChange?: (country: PhoneNumberCountry) => void;
   locale: string;
 };
 
 export type UsePhoneNumberFieldStateReturn = {
   displayValue: string;
-  rawValue: string;
   outputValue: string;
   handleInputChange: (value: string) => void;
-  handleCountrySelect: (code: CountryCode | undefined) => void;
+  selectCountry: (code: CountryCode | undefined) => void;
   handlePaste: (e: ClipboardEvent<HTMLInputElement>) => void;
-  setCountry: (country: CountryCode | undefined) => void;
-  country: PhoneCountryCode;
   selectedCountry: PhoneNumberCountry;
-  callingCode: string | undefined;
-  validation: PhoneNumberValidation;
-  nationalNumber: string | undefined;
   countries: PhoneNumberCountry[];
   getCountryName: (countryCode: CountryCode) => string;
 };
+
+function decodeFieldValue(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
 
 export function usePhoneNumberFieldState({
   value = "",
@@ -72,7 +60,6 @@ export function usePhoneNumberFieldState({
   preserveOnCountryChange = false,
   outputFormat = "e164",
   formatOnType = false,
-  isRequired = false,
   onCountryChange,
   locale,
 }: UsePhoneNumberFieldStateOptions): UsePhoneNumberFieldStateReturn {
@@ -82,135 +69,96 @@ export function usePhoneNumberFieldState({
     [countries, defaultCountryCode]
   );
 
-  const [phoneDigits, setPhoneDigits] = useState("");
-  const [country, setCountryState] = useState<PhoneCountryCode>(initialCountry.code);
-  const [selectedCountry, setSelectedCountry] = useState<PhoneNumberCountry>(initialCountry);
+  const [phoneState, setPhoneState] = useState<{ digits: string; country: PhoneNumberCountry }>({
+    digits: "",
+    country: initialCountry,
+  });
+  const { digits, country: selectedCountry } = phoneState;
 
-  const updateCountry = useCallback(
-    (newCountryCode: CountryCode | undefined) => {
-      if (!newCountryCode || country === newCountryCode) {
-        return false;
-      }
-      if (!isPhoneCountryCode(newCountryCode)) {
-        return false;
-      }
-      const countryData = countries.find((entry) => entry.code === newCountryCode);
-      if (!countryData) {
-        return false;
-      }
-      setCountryState(countryData.code);
-      setSelectedCountry(countryData);
-      onCountryChange?.(countryData);
-      return true;
-    },
-    [country, countries, onCountryChange]
+  const outputFrom = useCallback(
+    (nextDigits: string, countryCode: CountryCode) =>
+      resolvePhoneFieldValues(nextDigits, countryCode, metadata, outputFormat, international, formatOnType)
+        .outputValue,
+    [metadata, outputFormat, international, formatOnType]
   );
 
-  const processInputWithDetection = useCallback(
-    (input: string) => {
-      if (!autoDetectCountry || !hasInternationalPrefix(input)) {
-        return { digits: input, country };
+  const commit = useCallback(
+    (next: { digits: string; country: PhoneNumberCountry }) => {
+      if (next.country.code !== selectedCountry.code) {
+        onCountryChange?.(next.country);
       }
-
-      const normalized = normalizeInternationalPrefix(input);
-      const detectedCountry = detectCountryFromInput(normalized, metadata);
-
-      if (detectedCountry && isPhoneCountryCode(detectedCountry) && updateCountry(detectedCountry)) {
-        if (!international) {
-          const phoneNumber = parsePhoneNumber(normalized, detectedCountry, metadata);
-          return {
-            digits: phoneNumber?.nationalNumber ?? normalized,
-            country: detectedCountry,
-          };
-        }
-        return { digits: normalized, country: detectedCountry };
-      }
-
-      return { digits: input, country };
+      setPhoneState(next);
+      onChange?.(outputFrom(next.digits, next.country.code));
     },
-    [autoDetectCountry, country, international, metadata, updateCountry]
+    [selectedCountry.code, onCountryChange, onChange, outputFrom]
   );
 
-  const setPhoneDigitsEvent = useEffectEvent(
+  const syncValue = useEffectEvent(
     (nextValue: string, nextInternational: boolean, nextMetadata: MetadataJson) => {
       if (!nextValue) {
-        setPhoneDigits("");
+        setPhoneState((prev) => ({ ...prev, digits: "" }));
         return;
       }
 
-      const decodedValue = decodeURIComponent(nextValue);
-      const { digits, country: detectedCountry } = processInputWithDetection(decodedValue);
+      const decodedValue = decodeFieldValue(nextValue);
+      const detected = processInputWithDetection(
+        decodedValue,
+        selectedCountry,
+        countries,
+        autoDetectCountry,
+        nextInternational,
+        nextMetadata
+      );
 
-      if (detectedCountry === country) {
-        const initialDigits = getInitialPhoneDigits(decodedValue, country, nextInternational, nextMetadata);
-        setPhoneDigits(initialDigits);
-      } else {
-        setPhoneDigits(digits);
+      if (detected.country.code === selectedCountry.code) {
+        setPhoneState({
+          digits: getInitialPhoneDigits(decodedValue, selectedCountry.code, nextInternational, nextMetadata),
+          country: selectedCountry,
+        });
+        return;
       }
+
+      onCountryChange?.(detected.country);
+      setPhoneState(detected);
     }
   );
 
   useEffect(() => {
-    setPhoneDigitsEvent(value, international, metadata);
+    syncValue(value, international, metadata);
   }, [value, international, metadata]);
-
-  const getOutputValue = useCallback(
-    (digits: string, currentCountry: CountryCode | undefined) => {
-      if (!digits) {
-        return "";
-      }
-      const fullNumber = buildFullNumber(digits, currentCountry, metadata);
-      const phoneNumber = parsePhoneNumber(fullNumber, currentCountry, metadata);
-      return formatOutputValue(phoneNumber, digits, outputFormat);
-    },
-    [metadata, outputFormat]
-  );
-
-  const displayValue = useMemo(() => {
-    if (!phoneDigits) {
-      return "";
-    }
-    const fullNumber = buildFullNumber(phoneDigits, country, metadata);
-    const phoneNumber = parsePhoneNumber(fullNumber, country, metadata);
-    return getDisplayValue(phoneNumber, phoneDigits, international, formatOnType, country);
-  }, [phoneDigits, country, international, formatOnType, metadata]);
 
   const handleInputChange = useCallback(
     (newValue: string) => {
-      const cleaned = cleanPhoneInput(newValue);
-      const { digits, country: detectedCountry } = processInputWithDetection(cleaned);
-      setPhoneDigits(digits);
-      onChange?.(getOutputValue(digits, detectedCountry));
+      commit(
+        processInputWithDetection(
+          cleanPhoneInput(newValue),
+          selectedCountry,
+          countries,
+          autoDetectCountry,
+          international,
+          metadata
+        )
+      );
     },
-    [getOutputValue, processInputWithDetection, onChange]
+    [commit, selectedCountry, countries, autoDetectCountry, international, metadata]
   );
 
-  const setCountry = useCallback(
-    (newCountry: CountryCode | undefined) => {
-      if (!updateCountry(newCountry)) {
+  const selectCountry = useCallback(
+    (code: CountryCode | undefined) => {
+      if (!code || code === selectedCountry.code) {
+        return;
+      }
+      const nextCountry = countries.find((row) => row.code === code);
+      if (!nextCountry) {
         return;
       }
       if (!preserveOnCountryChange) {
-        setPhoneDigits("");
-        onChange?.("");
-      } else {
-        onChange?.(getOutputValue(phoneDigits, newCountry));
-      }
-    },
-    [phoneDigits, preserveOnCountryChange, getOutputValue, updateCountry, onChange]
-  );
-
-  const handleCountrySelect = useCallback(
-    (code: CountryCode | undefined) => {
-      if (!code) {
+        commit({ digits: "", country: nextCountry });
         return;
       }
-      const countryData = countries.find((entry) => entry.code === code);
-      if (countryData) {
-        setCountry(countryData.code);
-      }
+      commit({ digits, country: nextCountry });
     },
-    [countries, setCountry]
+    [selectedCountry.code, countries, preserveOnCountryChange, commit, digits]
   );
 
   const handlePaste = useCallback(
@@ -234,49 +182,26 @@ export function usePhoneNumberFieldState({
     [formatterCountryName]
   );
 
-  const computedValues = useMemo(() => {
-    let callingCode: string | undefined;
-    try {
-      callingCode = `+${getCountryCallingCode(country, metadata)}`;
-    } catch {
-      callingCode = undefined;
-    }
-
-    if (!phoneDigits) {
-      return {
-        callingCode,
-        validation: getPhoneNumberValidation("", country, isRequired, metadata),
-        outputValue: undefined,
-        nationalNumber: undefined,
-      };
-    }
-
-    const fullNumber = buildFullNumber(phoneDigits, country, metadata);
-    const phoneNumber = parsePhoneNumber(fullNumber, country, metadata);
-    const outputValue = formatOutputValue(phoneNumber, phoneDigits, outputFormat);
-    const validation = getPhoneNumberValidation(outputValue, country, isRequired, metadata);
-
-    return {
-      callingCode,
-      validation,
-      outputValue,
-      nationalNumber: phoneNumber?.nationalNumber,
-    };
-  }, [phoneDigits, country, isRequired, metadata, outputFormat]);
+  const { displayValue, outputValue } = useMemo(
+    () =>
+      resolvePhoneFieldValues(
+        digits,
+        selectedCountry.code,
+        metadata,
+        outputFormat,
+        international,
+        formatOnType
+      ),
+    [digits, selectedCountry.code, metadata, outputFormat, international, formatOnType]
+  );
 
   return {
     displayValue,
-    rawValue: phoneDigits,
-    outputValue: computedValues.outputValue ?? "",
+    outputValue,
     handleInputChange,
-    handleCountrySelect,
+    selectCountry,
     handlePaste,
-    setCountry,
-    country,
     selectedCountry,
-    callingCode: computedValues.callingCode,
-    validation: computedValues.validation,
-    nationalNumber: computedValues.nationalNumber,
     countries,
     getCountryName,
   };
