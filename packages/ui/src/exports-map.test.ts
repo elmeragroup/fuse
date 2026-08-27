@@ -82,6 +82,7 @@ describe("exports map", () => {
       "timeline-list",
       "toggle",
       "tooltip",
+      "react-aria/date-field",
       "react-aria/ui-providers",
     ]);
     expect(unexpectedJsEntryFiles(packageRoot)).toEqual([]);
@@ -128,9 +129,26 @@ describe("exports map", () => {
 
   it("does not invent component entries before their source files exist", () => {
     expect(exportBindingTarget(sourceExports, "./react-aria/calendar")).toBeUndefined();
+    expect(exportBindingTarget(sourceExports, "./react-aria/date-field")).toEqual({
+      types: "./src/react-aria/date-field.ts",
+      import: "./src/react-aria/date-field.ts",
+    });
     expect(exportBindingTarget(sourceExports, "./react-aria/ui-providers")).toEqual({
       types: "./src/react-aria/ui-providers.ts",
       import: "./src/react-aria/ui-providers.ts",
+    });
+  });
+
+  it("publishes DateField and DateInput from the quarantined react-aria/date-field entry only", () => {
+    const dateField = discovered.jsEntries.find((entry) => entry.subpath === "react-aria/date-field");
+    const root = discovered.jsEntries.find((entry) => entry.subpath === ".");
+    expect(dateField?.inRootBarrel).toBe(false);
+    expect(dateField?.runtimeExports).toEqual(["DateField", "DateInput"]);
+    expect(root?.runtimeExports).not.toContain("DateField");
+    expect(root?.runtimeExports).not.toContain("DateInput");
+    expect(exportBindingTarget(publishExports, "./react-aria/date-field")).toEqual({
+      types: "./react-aria/date-field.d.ts",
+      import: "./react-aria/date-field.js",
     });
   });
 

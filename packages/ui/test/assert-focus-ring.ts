@@ -98,3 +98,32 @@ export async function assertWithinKeyboardFocusRingAtBothDensities(
     expect(hasFocusRing(ringHost), "blur must clear the group ring").toBe(false);
   });
 }
+
+/**
+ * `focusRing({ target: "state", isFocusVisible })` variant: keyboard focus on
+ * `control` paints the ring on `ringHost` and never a second ring on the
+ * control; leaving the field clears it; mouse focus on the control does not
+ * paint the host ring. Date segments and other non-text receivers can take the
+ * mouse click directly — unlike `within`, Chromium does not force
+ * `:focus-visible` on them. RAC's `isFocusVisible` is React state, so the blur
+ * arm clicks `previous` rather than calling `control.blur()`.
+ */
+export async function assertStateFocusRingAtBothDensities(
+  previous: HTMLElement,
+  control: HTMLElement,
+  ringHost: HTMLElement
+): Promise<void> {
+  await withBothDensities(async () => {
+    previous.focus();
+    await userEvent.keyboard("{Tab}");
+    expect(control.matches(":focus-visible"), "Tab must land with :focus-visible").toBe(true);
+    expect(hasFocusRing(ringHost), "focus-visible must paint the shared ring on the group").toBe(true);
+    expect(hasFocusRing(control), "the control must not paint a second ring").toBe(false);
+
+    await userEvent.click(previous);
+    expect(hasFocusRing(ringHost), "blur must clear the group ring").toBe(false);
+
+    await userEvent.click(control);
+    expect(hasFocusRing(ringHost), "mouse focus on the control must not paint the group ring").toBe(false);
+  });
+}

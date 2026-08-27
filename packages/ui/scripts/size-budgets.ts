@@ -21,7 +21,7 @@
  * gzip on 2026-08-25, exceeding 10469, so the shared/aggregate row recalibrates to
  * measured×1.5.
  *
- * Current measurements (gzip bytes, 2026-08-26). Earlier measurement rounds live in git.
+ * Current measurements (gzip bytes, 2026-08-27). Earlier measurement rounds live in git.
  *   .             171099  (Selection-family item-group orientation; under the standing 171567 ceiling from Avatar recalibration, so recorded, not loosened)
  *   theme          6133
  *   icons/Check     818  (per-icon export, not the full roster)
@@ -77,8 +77,9 @@
  *   radio-group   40198  (first calibration, ceiling 60297)
  *   checkbox-card 30194  (first calibration, ceiling 45291)
  *   react-aria/ui-providers 1987  (first calibration, ceiling 2981)
+ *   react-aria/date-field 70071  (first calibration, ceiling 105107)
  *   themes.css     2274
- *   styles.css    17536  (Selection-family control-slot utilities; under the standing 25265 ceiling from Table recalibration, so recorded, not loosened)
+ *   styles.css    17709  (DateField/RAC field utilities; under the standing 25265 ceiling from Table recalibration, so recorded, not loosened)
  */
 import { FLAG_RAW_CEILING_BYTES } from "./flag-payload";
 
@@ -164,6 +165,7 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = [
   { name: "breadcrumb", entryFile: "breadcrumb.js", ceilingGzip: 37869 },
   { name: "alert", entryFile: "alert.js", ceilingGzip: 45885 },
   { name: "react-aria/ui-providers", entryFile: "react-aria/ui-providers.js", ceilingGzip: 2981 },
+  { name: "react-aria/date-field", entryFile: "react-aria/date-field.js", ceilingGzip: 105107 },
 ];
 
 export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = [

@@ -171,7 +171,7 @@ describe("Wave 4 gate: zero public surface", () => {
 
   it("publishes only the shipped react-aria/* entries and never internals", () => {
     const racKeys = Object.keys(manifest.exports).filter((key) => key.startsWith("./react-aria"));
-    expect(racKeys).toEqual(["./react-aria/ui-providers"]);
+    expect(racKeys).toEqual(["./react-aria/date-field", "./react-aria/ui-providers"]);
   });
 
   it("never exposes an internal module through a subpath", () => {

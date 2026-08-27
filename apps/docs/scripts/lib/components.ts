@@ -60,6 +60,9 @@ function apiExportNamesFor(slug: string, exportName: string): readonly string[] 
   if (slug === "radio-group") {
     return ["RadioGroup", "RadioGroupItem", "Radio", "RadioItem", "RadioItemGroup", "RadioIconButton"];
   }
+  if (slug === "date-field") {
+    return ["DateField", "DateInput"];
+  }
   return [exportName];
 }
 

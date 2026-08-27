@@ -72,6 +72,7 @@ describe("component page manifest", () => {
       "code",
       "collapsible",
       "confirm-button",
+      "date-field",
       "description-list",
       "dialog",
       "dropdown-menu",
@@ -302,6 +303,13 @@ describe("component page manifest", () => {
       "heading-level",
     ]);
     expect(page("ui-providers").demos.map((demo) => demo.id)).toEqual(["basic", "locale-switch"]);
+    expect(page("date-field").demos.map((demo) => demo.id)).toEqual([
+      "basic",
+      "validation",
+      "granularity",
+      "states",
+      "date-input",
+    ]);
   });
 
   it("links View source at the implementation on the repo host", () => {
@@ -329,6 +337,7 @@ describe("component page manifest", () => {
       code: "server",
       collapsible: "client",
       "confirm-button": "client",
+      "date-field": "client",
       "description-list": "server",
       dialog: "client",
       "dropdown-menu": "client",
@@ -404,6 +413,18 @@ describe("committed api.json", () => {
     expect(resolveComponentPaths("ui-providers").entry).toBe("@elmeragroup/ui/react-aria/ui-providers");
     expect(resolveComponentPaths("ui-providers").exportName).toBe("UiProviders");
     expect(resolveComponentPaths("ui-providers").apiExportNames).toEqual(["UiProviders"]);
+    expect(resolveComponentPaths("date-field").entry).toBe("@elmeragroup/ui/react-aria/date-field");
+    expect(resolveComponentPaths("date-field").exportName).toBe("DateField");
+    expect(resolveComponentPaths("date-field").apiExportNames).toEqual(["DateField", "DateInput"]);
+  });
+
+  it("documents DateInput's own props and the forwarded RAC remainder", () => {
+    const dateInput = api("date-field").parts.find((part) => part.name === "DateInput");
+    expect(dateInput?.props.length).toBeGreaterThan(0);
+    expect(dateInput?.props.map((prop) => prop.name)).toEqual(expect.arrayContaining(["slot", "className"]));
+    expect(dateInput?.props.map((prop) => prop.name)).not.toContain("children");
+    expect(dateInput?.forwardedCount).toBeGreaterThan(0);
+    expect(dateInput?.forwardedFrom).toEqual(expect.arrayContaining(["react-aria-components"]));
   });
 
   it("never leaves a documented prop without a description or an unresolved type", () => {

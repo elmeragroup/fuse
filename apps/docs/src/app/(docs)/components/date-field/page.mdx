@@ -1,0 +1,59 @@
+---
+title: DateField
+lede: >
+  An interim labeled date field over React Aria Components. Segments are
+  individually editable; DateInput is the reusable segment row for custom
+  compositions and future pickers.
+---
+
+import { DateFieldBasic } from "./demos/date-field-basic";
+import { DateFieldValidation } from "./demos/date-field-validation";
+import { DateFieldGranularity } from "./demos/date-field-granularity";
+import { DateFieldStates } from "./demos/date-field-states";
+import { DateFieldDateInput } from "./demos/date-field-date-input";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("date-field");
+
+<ComponentIntro slug="date-field" />
+
+<Prose>
+
+`DateField` lives at `@elmeragroup/ui/react-aria/date-field`. The `react-aria/`
+prefix is the quarantine marker: this module is replaced when base-ui ships a
+date field, and the bare path is reserved for that successor. The composite face
+is optional `label` / `description`, `errorMessage` as a `ReactNode` or
+`(ValidationResult) => ReactNode`, and `shouldForceLeadingZeros` defaulting to
+`true`. Remaining RAC DateField props (`value`, `granularity`, `hourCycle`,
+`minValue` / `maxValue`, `isDisabled`, `isReadOnly`, …) pass through.
+
+`DateInput` is public and reusable. It always renders RAC date segments — it
+does not accept `children` — and keeps `slot` for start/end range pickers. Wrap
+locale-dependent usage in `UiProviders` from `@elmeragroup/ui/react-aria/ui-providers`.
+
+</Prose>
+
+<Demo slug="date-field" id="basic" title="Basic" file="date-field-basic.tsx">
+  <DateFieldBasic />
+</Demo>
+
+<Demo slug="date-field" id="validation" title="Validation" file="date-field-validation.tsx">
+  <DateFieldValidation />
+</Demo>
+
+<Demo slug="date-field" id="granularity" title="Granularity" file="date-field-granularity.tsx">
+  <DateFieldGranularity />
+</Demo>
+
+<Demo slug="date-field" id="states" title="States" file="date-field-states.tsx">
+  <DateFieldStates />
+</Demo>
+
+<Demo slug="date-field" id="date-input" title="DateInput" file="date-field-date-input.tsx">
+  <DateFieldDateInput />
+</Demo>
+
+<ApiReference slug="date-field" />
+
+<ComponentTokens slug="date-field" />

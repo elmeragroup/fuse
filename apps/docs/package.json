@@ -17,6 +17,7 @@
     "@next/mdx": "catalog:",
     "next": "catalog:",
     "react": "catalog:",
+    "@internationalized/date": "catalog:",
     "react-aria-components": "catalog:",
     "react-dom": "catalog:",
     "tailwind-variants": "catalog:"
