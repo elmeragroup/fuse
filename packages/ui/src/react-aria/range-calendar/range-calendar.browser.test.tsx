@@ -165,6 +165,46 @@ function committedRange(onChange: RangeChangeSpy): CommittedRange {
   return committed;
 }
 
+/**
+ * Settle on RAC's focused day before the next keystroke is sent.
+ *
+ * `useCalendarCell` moves DOM focus from an effect that runs after the focused-date state
+ * has committed, and the anchoring Enter reaches RAC through `usePress`' document-level
+ * `keyup` listener — outside React's event system, so that commit is batched instead of
+ * flushed with the key. A key sent before the move lands is still handled by the grid
+ * handler of the previous render, whose `focusNextDay` counts from the stale day, and the
+ * range ends up a day short.
+ */
+async function focusLandsOnDay(day: number): Promise<void> {
+  await vi.waitFor(() => {
+    expect(document.activeElement).toBe(dayNumbered(day));
+  });
+}
+
+/**
+ * Anchor the highlighted range on the focused `anchor` day and extend it with `arrows`
+ * ArrowRight presses, waiting out RAC's asynchronous focus moves on both ends. `landsOn`
+ * is the day the focus ends on: normally `anchor + 1 + arrows`, but fewer when RAC
+ * disables the days past an unavailable one. Committing the highlight with a second Enter
+ * is left to the caller.
+ */
+async function anchorAndExtend({
+  anchor,
+  arrows,
+  landsOn,
+}: {
+  anchor: number;
+  arrows: number;
+  landsOn: number;
+}): Promise<void> {
+  await userEvent.keyboard("{Enter}");
+  // RAC auto-advances the focused day once the anchor is set, so the arrows extend the
+  // highlight from the day after the anchor.
+  await focusLandsOnDay(anchor + 1);
+  await userEvent.keyboard("{ArrowRight}".repeat(arrows));
+  await focusLandsOnDay(landsOn);
+}
+
 describe("RangeCalendar", () => {
   it("exposes an application root with a grid, weekday columnheaders, day cells, nav buttons and RAC's two heading faces", async () => {
     renderRangeCalendar(<RangeCalendar defaultValue={{ start: july14, end: july17 }} />);
@@ -228,14 +268,14 @@ describe("RangeCalendar", () => {
 
     dayNumbered(14).focus();
     await userEvent.keyboard("{Enter}");
-    expect(onChange).not.toHaveBeenCalled();
-    expect(dayNumbered(14)).toHaveAttribute("data-selection-start");
     // RAC auto-advances the focused day once the anchor is set, so arrow keys extend
     // the highlight from the day after the anchor.
-    expect(document.activeElement).toBe(dayNumbered(15));
+    await focusLandsOnDay(15);
+    expect(onChange).not.toHaveBeenCalled();
+    expect(dayNumbered(14)).toHaveAttribute("data-selection-start");
 
     await userEvent.keyboard("{ArrowRight}{ArrowRight}{ArrowRight}");
-    expect(document.activeElement).toBe(dayNumbered(18));
+    await focusLandsOnDay(18);
     expect(cellNumbered(16)).toHaveAttribute("aria-selected", "true");
 
     await userEvent.keyboard("{Enter}");
@@ -258,7 +298,7 @@ describe("RangeCalendar", () => {
     expect(selectedDayNumbers()).toEqual(["20", "21", "22"]);
 
     dayNumbered(14).focus();
-    await userEvent.keyboard("{Enter}{ArrowRight}{ArrowRight}{ArrowRight}");
+    await anchorAndExtend({ anchor: 14, arrows: 3, landsOn: 18 });
     expect(selectedDayNumbers()).toEqual(["14", "15", "16", "17", "18"]);
 
     await userEvent.keyboard("{Escape}");
@@ -320,7 +360,10 @@ describe("RangeCalendar", () => {
     expect(dayNumbered(16)).toHaveAttribute("data-unavailable");
 
     dayNumbered(14).focus();
-    await userEvent.keyboard("{Enter}{ArrowRight}{ArrowRight}{ArrowRight}{Enter}");
+    // While anchored, the default rule disables every day past the unavailable one, so
+    // the arrows cannot carry the focus beyond July 15.
+    await anchorAndExtend({ anchor: 14, arrows: 3, landsOn: 15 });
+    await userEvent.keyboard("{Enter}");
     expect(onChange).toHaveBeenCalledTimes(1);
     // The default non-contiguous rule clamps the highlight before the unavailable day.
     const committed = committedRange(onChange);
@@ -341,7 +384,8 @@ describe("RangeCalendar", () => {
     await expect.element(page.getByRole("grid")).toBeVisible();
 
     dayNumbered(14).focus();
-    await userEvent.keyboard("{Enter}{ArrowRight}{ArrowRight}{ArrowRight}{Enter}");
+    await anchorAndExtend({ anchor: 14, arrows: 3, landsOn: 18 });
+    await userEvent.keyboard("{Enter}");
     expect(onChange).toHaveBeenCalledTimes(1);
     const committed = committedRange(onChange);
     expect(isSameDay(committed.start, july14)).toBe(true);

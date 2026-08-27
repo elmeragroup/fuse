@@ -226,6 +226,46 @@ const july20 = new CalendarDate(2026, 7, 20);
 const july24 = new CalendarDate(2026, 7, 24);
 const julyWeek = { start: july14, end: july17 };
 
+/**
+ * Settle on RAC's focused day before the next keystroke is sent.
+ *
+ * `useCalendarCell` moves DOM focus from an effect that runs after the focused-date state
+ * has committed, and the anchoring Enter reaches RAC through `usePress`' document-level
+ * `keyup` listener — outside React's event system, so that commit is batched instead of
+ * flushed with the key. A key sent before the move lands is still handled by the grid
+ * handler of the previous render, whose `focusNextDay` counts from the stale day, and the
+ * range ends up a day short.
+ */
+async function focusLandsOnDay(day: number): Promise<void> {
+  await vi.waitFor(() => {
+    expect(document.activeElement).toBe(dayNumbered(day));
+  });
+}
+
+/**
+ * Anchor the highlighted range on the focused `anchor` day and extend it with `arrows`
+ * ArrowRight presses, waiting out RAC's asynchronous focus moves on both ends. `landsOn`
+ * is the day the focus ends on: normally `anchor + 1 + arrows`, but fewer when RAC
+ * disables the days past an unavailable one. Committing the highlight with a second Enter
+ * is left to the caller.
+ */
+async function anchorAndExtend({
+  anchor,
+  arrows,
+  landsOn,
+}: {
+  anchor: number;
+  arrows: number;
+  landsOn: number;
+}): Promise<void> {
+  await userEvent.keyboard("{Enter}");
+  // RAC auto-advances the focused day once the anchor is set, so the arrows extend the
+  // highlight from the day after the anchor.
+  await focusLandsOnDay(anchor + 1);
+  await userEvent.keyboard("{ArrowRight}".repeat(arrows));
+  await focusLandsOnDay(landsOn);
+}
+
 describe("DateRangePicker", () => {
   it("names the field group from the label, exposes both rows' spinbuttons and a named collapsed trigger", async () => {
     renderPicker(
@@ -347,7 +387,8 @@ describe("DateRangePicker", () => {
     expect(document.activeElement).toBe(dayNumbered(14));
 
     // Anchoring auto-advances the focused day, so the arrows extend from the day after.
-    await userEvent.keyboard("{Enter}{ArrowRight}{ArrowRight}{ArrowRight}{Enter}");
+    await anchorAndExtend({ anchor: 14, arrows: 3, landsOn: 18 });
+    await userEvent.keyboard("{Enter}");
     expect(onChange).toHaveBeenCalledTimes(1);
     const committed = committedRange(onChange);
     expect(isSameDay(committed.start, july14)).toBe(true);

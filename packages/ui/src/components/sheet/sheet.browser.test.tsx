@@ -85,9 +85,7 @@ describe("Sheet", () => {
     await openSheet();
 
     await userEvent.keyboard("{Escape}");
-    await vi.waitFor(() => {
-      expect(page.getByRole("dialog").query()).toBeNull();
-    });
+    await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
     expect(document.activeElement).toBe(trigger);
   });
 
@@ -132,9 +130,7 @@ describe("Sheet", () => {
     expect(corner.querySelector(".sr-only")?.textContent).toBe("Close");
     expect(corner.className).toContain("hit-area-1");
     await userEvent.click(corner);
-    await vi.waitFor(() => {
-      expect(page.getByRole("dialog").query()).toBeNull();
-    });
+    await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
 
     rerender(withLocale("en-US", <BasicSheet showCloseButton={false} />));
     await openSheet();
@@ -164,9 +160,7 @@ describe("Sheet", () => {
     renderThemed(withLocale("en-US", <BasicSheet showCloseButton={false} />));
     await openSheet();
     await userEvent.click(page.getByRole("button", { name: "Done", exact: true }).element());
-    await vi.waitFor(() => {
-      expect(page.getByRole("dialog").query()).toBeNull();
-    });
+    await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("keeps Body as the scroll container and stamps the layout slots", async () => {
