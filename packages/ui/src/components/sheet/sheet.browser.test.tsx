@@ -45,12 +45,54 @@ function BasicSheet({
   );
 }
 
+/** One animation frame, so the settled-open wait can compare geometry across frames. */
+function nextFrame(): Promise<void> {
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => {
+      resolve();
+    });
+  });
+}
+
+function boxOf(element: HTMLElement): string {
+  const { x, y, width, height } = element.getBoundingClientRect();
+  return `${x}:${y}:${width}:${height}`;
+}
+
+/**
+ * Wait until the panel has stopped sliding in.
+ *
+ * Base UI drops `data-starting-style` one frame after the popup mounts, but the panel is
+ * still parked at that starting translate when the trigger click resolves — the 200 ms
+ * `transition-transform` in sheet.tsx has only just begun (measured: `translateX(415px)`,
+ * a whole panel width off-screen, for the default right-hand sheet). A click on a control
+ * inside a panel that is still travelling is aimed at a box the panel has already left:
+ * under load such a click was seen to resolve without a single pointer event reaching the
+ * control, so nothing closed and the popup kept `data-open` until the close assertion ran
+ * out of patience. Two frames with an unchanged box mean the transform has landed.
+ */
+async function settleOpen(dialog: HTMLElement): Promise<void> {
+  await vi.waitFor(
+    async () => {
+      expect(dialog.hasAttribute("data-starting-style")).toBe(false);
+      const before = boxOf(dialog);
+      await nextFrame();
+      expect(boxOf(dialog)).toBe(before);
+    },
+    // Ten times the 200 ms enter transition in sheet.tsx, so a CPU-loaded run that drops
+    // frames still settles well inside the wait.
+    { timeout: 2000 }
+  );
+}
+
 async function openSheet(): Promise<HTMLElement> {
   await userEvent.click(page.getByRole("button", { name: "Open details", exact: true }).element());
+  await expect.element(page.getByRole("dialog")).toBeVisible();
   const dialog = page.getByRole("dialog").element();
   if (!(dialog instanceof HTMLElement)) {
     throw new Error("expected the popup");
   }
+  await settleOpen(dialog);
   return dialog;
 }
 

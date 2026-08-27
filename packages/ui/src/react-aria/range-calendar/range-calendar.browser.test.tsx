@@ -182,6 +182,21 @@ async function focusLandsOnDay(day: number): Promise<void> {
 }
 
 /**
+ * Park the virtual pointer off the day grid before a keyboard anchor.
+ *
+ * The pointer keeps the screen position the last click left it at, and every test mounts a
+ * fresh host underneath it, so a day cell can sit under a stationary cursor. Chromium
+ * re-delivers a boundary event to whatever is under that cursor when the DOM below it
+ * changes, `useCalendarCell`'s `onPointerEnter` answers one with `state.highlightDate(date)`,
+ * and `useRangeCalendarState.highlightDate` calls `setFocusedDate` whenever a range is
+ * anchored — so a hovered cell steals the focus the arrow keys count from. Hovering a
+ * non-cell element leaves no cell under the pointer for that to happen to.
+ */
+async function parkPointerOffGrid(): Promise<void> {
+  await userEvent.hover(visiblePublicHeading());
+}
+
+/**
  * Anchor the highlighted range on the focused `anchor` day and extend it with `arrows`
  * ArrowRight presses, waiting out RAC's asynchronous focus moves on both ends. `landsOn`
  * is the day the focus ends on: normally `anchor + 1 + arrows`, but fewer when RAC
@@ -197,6 +212,7 @@ async function anchorAndExtend({
   arrows: number;
   landsOn: number;
 }): Promise<void> {
+  await parkPointerOffGrid();
   await userEvent.keyboard("{Enter}");
   // RAC auto-advances the focused day once the anchor is set, so the arrows extend the
   // highlight from the day after the anchor.
@@ -266,6 +282,7 @@ describe("RangeCalendar", () => {
     renderRangeCalendar(<RangeCalendar defaultFocusedValue={july14} onChange={onChange} />);
     await expect.element(page.getByRole("grid")).toBeVisible();
 
+    await parkPointerOffGrid();
     dayNumbered(14).focus();
     await userEvent.keyboard("{Enter}");
     // RAC auto-advances the focused day once the anchor is set, so arrow keys extend

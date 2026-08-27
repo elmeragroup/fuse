@@ -243,6 +243,42 @@ async function focusLandsOnDay(day: number): Promise<void> {
 }
 
 /**
+ * The calendar's visible month title inside the popover. RAC renders two heading faces and
+ * marks the visible one `aria-hidden`, because the grid's own label already names the month.
+ */
+function visibleMonthTitle(): HTMLElement {
+  const root = page.getByRole("application").element();
+  const match = page
+    .getByRole("heading", { includeHidden: true })
+    .elements()
+    .find(
+      (element): element is HTMLElement =>
+        element instanceof HTMLElement &&
+        root.contains(element) &&
+        element.getAttribute("aria-hidden") === "true"
+    );
+  if (match === undefined) {
+    throw new Error("expected the calendar's visible month title");
+  }
+  return match;
+}
+
+/**
+ * Park the virtual pointer off the day grid before a keyboard anchor.
+ *
+ * The pointer keeps the screen position the last click left it at, and the popover's grid
+ * mounts underneath it, so a day cell can sit under a stationary cursor. Chromium
+ * re-delivers a boundary event to whatever is under that cursor when the DOM below it
+ * changes, `useCalendarCell`'s `onPointerEnter` answers one with `state.highlightDate(date)`,
+ * and `useRangeCalendarState.highlightDate` calls `setFocusedDate` whenever a range is
+ * anchored — so a hovered cell steals the focus the arrow keys count from. Hovering a
+ * non-cell element leaves no cell under the pointer for that to happen to.
+ */
+async function parkPointerOffGrid(): Promise<void> {
+  await userEvent.hover(visibleMonthTitle());
+}
+
+/**
  * Anchor the highlighted range on the focused `anchor` day and extend it with `arrows`
  * ArrowRight presses, waiting out RAC's asynchronous focus moves on both ends. `landsOn`
  * is the day the focus ends on: normally `anchor + 1 + arrows`, but fewer when RAC
@@ -258,6 +294,7 @@ async function anchorAndExtend({
   arrows: number;
   landsOn: number;
 }): Promise<void> {
+  await parkPointerOffGrid();
   await userEvent.keyboard("{Enter}");
   // RAC auto-advances the focused day once the anchor is set, so the arrows extend the
   // highlight from the day after the anchor.
