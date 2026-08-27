@@ -248,4 +248,48 @@ describe("the internal styled Dialog", () => {
 
     expect(page.getByRole("button", { name: "Close" }).query()).toBeNull();
   });
+
+  it("renders no header row without a title, so RAC's context name reaches the dialog", async () => {
+    const titled = renderThemed(
+      withLocale(
+        "en-US",
+        <DialogTrigger defaultOpen>
+          <Button>Open</Button>
+          <Popover>
+            <Dialog closeButton={false} title="Calendar" />
+          </Popover>
+        </DialogTrigger>
+      )
+    );
+    const withTitle = page.getByRole("dialog").element();
+
+    expect(withTitle.querySelector("[data-slot=dialog-header]")).not.toBeNull();
+    await expect.element(page.getByRole("dialog", { name: "Calendar" })).toBeVisible();
+    titled.unmount();
+
+    renderThemed(
+      withLocale(
+        "en-US",
+        <DialogTrigger defaultOpen>
+          <Button>Open</Button>
+          <Popover>
+            <Dialog closeButton={false}>
+              <button type="button">Inside the dialog</button>
+            </Dialog>
+          </Popover>
+        </DialogTrigger>
+      )
+    );
+    const untitled = page.getByRole("dialog").element();
+
+    // No header element at all — not an empty one. An empty `<Heading slot="title">`
+    // would resolve RAC's title slot and become the dialog's accessible name; with the
+    // slot unclaimed, the name `DialogTrigger` publishes on `DialogContext` (the
+    // trigger's own copy) reaches the overlay instead.
+    expect(untitled.querySelector("[data-slot=dialog-header]")).toBeNull();
+    expect(untitled.querySelector("[data-slot=dialog-content]")?.firstElementChild).toBe(
+      page.getByRole("button", { name: "Inside the dialog" }).element()
+    );
+    await expect.element(page.getByRole("dialog", { name: "Open" })).toBeVisible();
+  });
 });

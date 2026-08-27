@@ -134,6 +134,22 @@ export type DialogProps = Omit<ComponentProps<typeof AriaDialog>, "children"> &
     closeLabel?: string;
   };
 
+/**
+ * The styled dialog. The header row and the heading inside it are both conditional, and
+ * that gating is what keeps an untitled dialog nameable.
+ *
+ * RAC's `Dialog` (`Dialog.mjs:84-97`) hands `useDialog` only the `aria-labelledby` that
+ * arrived as a *prop*, and falls back to the `DialogContext` value — the name a
+ * `DialogTrigger`, `useDatePicker` or `useDateRangePicker` publishes — only when nothing
+ * resolves a `<Heading slot="title">`. `useDialog` resolves that slot through
+ * `useSlotId`, which drops the id when no element claims it. So an always-rendered
+ * heading, empty because there is no `title`, wins the name race and leaves the dialog
+ * announced as nothing at all; rendering no heading lets the context name through.
+ *
+ * Skipping the whole header when there is neither a `title` nor a close button also
+ * removes a 16 px phantom gap: `content` is `flex flex-col gap-4`, and an empty header as
+ * its first child spends one gap on nothing. Both picker popovers are that case.
+ */
 export function Dialog({
   children,
   className,
@@ -150,16 +166,18 @@ export function Dialog({
   return (
     <AriaDialog data-slot="dialog" {...props} className={cn(base(), className)}>
       <DialogContent variant={variant}>
-        <DialogHeader variant={variant}>
-          <DialogHeading variant={variant}>{title}</DialogHeading>
-          {closeButton ? (
-            <DialogCloseButton
-              className={closeButtonClass()}
-              iconClassName={closeButtonIcon()}
-              label={label}
-            />
-          ) : null}
-        </DialogHeader>
+        {title !== undefined || closeButton ? (
+          <DialogHeader variant={variant}>
+            {title !== undefined ? <DialogHeading variant={variant}>{title}</DialogHeading> : null}
+            {closeButton ? (
+              <DialogCloseButton
+                className={closeButtonClass()}
+                iconClassName={closeButtonIcon()}
+                label={label}
+              />
+            ) : null}
+          </DialogHeader>
+        ) : null}
         {children}
       </DialogContent>
     </AriaDialog>

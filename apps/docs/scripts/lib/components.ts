@@ -50,26 +50,29 @@ export type ComponentPaths = {
   demosDir: string;
 };
 
+/**
+ * The pages whose entry publishes more than the one name `pascalCase(slug)` produces.
+ * A page absent from this table walks exactly its `exportName` — the common case, and
+ * the reason this is a lookup rather than a branch per page.
+ *
+ * A `Map` rather than a `Record`: an open `Record<string, …>` annotation on a literal is
+ * the widening the anti-slop plugin rejects, and `Map#get` gives the `undefined` arm the
+ * `??` below needs without an assertion.
+ */
+const EXTRA_API_EXPORT_NAMES = new Map<string, readonly string[]>([
+  ["table", ["Table", "VerticalTable"]],
+  ["checkbox", ["Checkbox", "CheckboxGroup", "CheckboxItem", "CheckboxItemGroup", "CheckboxDescription"]],
+  [
+    "radio-group",
+    ["RadioGroup", "RadioGroupItem", "Radio", "RadioItem", "RadioItemGroup", "RadioIconButton"],
+  ],
+  ["date-field", ["DateField", "DateInput"]],
+  ["calendar", ["Calendar", "CalendarHeader", "CalendarGridHeader"]],
+  ["date-picker", ["DatePicker", "DatePickerPresetGroup", "DatePickerPresetItem"]],
+]);
+
 function apiExportNamesFor(slug: string, exportName: string): readonly string[] {
-  if (slug === "table") {
-    return ["Table", "VerticalTable"];
-  }
-  if (slug === "checkbox") {
-    return ["Checkbox", "CheckboxGroup", "CheckboxItem", "CheckboxItemGroup", "CheckboxDescription"];
-  }
-  if (slug === "radio-group") {
-    return ["RadioGroup", "RadioGroupItem", "Radio", "RadioItem", "RadioItemGroup", "RadioIconButton"];
-  }
-  if (slug === "date-field") {
-    return ["DateField", "DateInput"];
-  }
-  if (slug === "calendar") {
-    return ["Calendar", "CalendarHeader", "CalendarGridHeader"];
-  }
-  if (slug === "date-picker") {
-    return ["DatePicker", "DatePickerPresetGroup", "DatePickerPresetItem"];
-  }
-  return [exportName];
+  return EXTRA_API_EXPORT_NAMES.get(slug) ?? [exportName];
 }
 
 /** Where a slug's inputs and its co-located generated artifact live. */

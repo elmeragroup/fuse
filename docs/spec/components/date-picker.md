@@ -20,8 +20,9 @@ AriaDatePicker                        (RAC DatePicker; base slot)
 ├─ Description                        — when `description`
 ├─ FieldError                         — errorMessage (renders only when invalid)
 └─ Popover placement="bottom right"   (private RAC popover internal)
-   └─ Dialog closeButton={false}      (private styled dialog internal; dialog slot p-0)
-      └─ div (flex gap-x-3 divide-x pr-3 pb-3 — only when presetGroup is renderable)
+   └─ Dialog closeButton={false}      (private styled dialog internal; dialog slot p-0; no
+                                        `title`, so no heading row — RAC's context name wins, §7)
+      └─ div (pane slot; hasPresets=true only when presetGroup is renderable)
          ├─ {presetGroup}             — consumer-provided DatePickerPresetGroup
          └─ Calendar (calendar slot: border-none)  — public, month-synced by a
                                         module-private wrapper (see below)
@@ -61,7 +62,7 @@ AriaDatePicker                        (RAC DatePicker; base slot)
 
 ## 4 Variants
 
-`datePickerVariants` — slotted tv recipe in `styles/date-picker.ts`, **module-private**. Slots: `base`, `group`, `input`, `icon`, `dialog` (`p-0`, overriding the styled Dialog's padding), `calendar` (`border-none` — strips Calendar's card border inside the popover, which already provides chrome). Single axis: `isReadOnly` → `bg-muted` on `group` + `icon`. Preset items borrow the shared public `buttonVariants` (ghost/sm).
+`datePickerVariants` — slotted tv recipe in `styles/date-picker.ts`, **module-private**. Slots: `base`, `group`, `input`, `icon`, `dialog` (`p-0`, overriding the styled Dialog's padding), `calendar` (`border-none` — strips Calendar's card border inside the popover, which already provides chrome), `pane` (the row inside the dialog holding the preset pane and the calendar; empty unless there are presets). Two axes: `isReadOnly` → `bg-muted` on `group` + `icon`; `hasPresets` → the divided two-pane row on `pane` (`flex gap-x-3 divide-x pr-3 pb-3`), empty when false. Preset items borrow the shared public `buttonVariants` (ghost/sm).
 
 ## 5 Consumed tokens
 

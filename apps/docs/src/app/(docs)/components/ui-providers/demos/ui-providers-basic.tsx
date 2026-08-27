@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 
-import { Link } from "react-aria-components";
-
+import { Link } from "@elmeragroup/ui/react-aria/link";
 import { UiProviders } from "@elmeragroup/ui/react-aria/ui-providers";
 
 export function UiProvidersBasic() {

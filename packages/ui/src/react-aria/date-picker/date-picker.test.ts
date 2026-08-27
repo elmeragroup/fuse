@@ -16,13 +16,23 @@ const source = readFileSync(join(here, "date-picker.tsx"), "utf8");
 const recipe = readFileSync(join(packageRoot, "src/styles/date-picker.ts"), "utf8");
 const facade = readFileSync(join(here, "../date-picker.ts"), "utf8");
 
-/** Every class the recipe can emit, across both faces of its single axis. */
+/** Every class the recipe can emit, across both faces of both axes. */
 function everyEmittedClass(): string {
   return [false, true]
-    .flatMap((isReadOnly) => {
-      const slots = datePickerVariants({ isReadOnly });
-      return [slots.base(), slots.group(), slots.input(), slots.icon(), slots.dialog(), slots.calendar()];
-    })
+    .flatMap((isReadOnly) =>
+      [false, true].flatMap((hasPresets) => {
+        const slots = datePickerVariants({ isReadOnly, hasPresets });
+        return [
+          slots.base(),
+          slots.group(),
+          slots.input(),
+          slots.icon(),
+          slots.dialog(),
+          slots.calendar(),
+          slots.pane(),
+        ];
+      })
+    )
     .join(" ");
 }
 
@@ -62,6 +72,12 @@ describe("date-picker source contract", () => {
     expect(source).toContain('from "../internal/dialog"');
     expect(source).toContain('from "../internal/field"');
     expect(source).toContain('from "../internal/button"');
+    // The styled Dialog is composed directly and deliberately untitled: an untitled
+    // styled Dialog renders no heading, which is what leaves RAC's §7 name on the
+    // overlay. No local wrapper forwards `aria-labelledby` any more.
+    expect(source).toContain("<Dialog className={dialog()} closeButton={false}>");
+    expect(source).not.toContain("PickerDialog");
+    expect(source).not.toContain("aria-labelledby");
   });
 
   it("takes the trigger glyph from the Phosphor CalendarBlank roster entry (§8.2)", () => {
@@ -108,7 +124,7 @@ describe("date-picker source contract", () => {
       expect(text).not.toContain("dense:");
       expect(text).not.toContain("comfortable:");
     }
-    expect(datePickerVariants.variantKeys).toEqual(["isReadOnly"]);
+    expect(datePickerVariants.variantKeys).toEqual(["isReadOnly", "hasPresets"]);
     // The field box's rung is `fieldGroupVariants`' business, so nothing here reads one.
     expect(everyEmittedClass()).not.toContain("--control-");
   });
@@ -157,6 +173,27 @@ describe("datePickerVariants", () => {
 
   it("strips Calendar's card border because the popover already provides chrome (§4)", () => {
     expect(datePickerVariants().calendar()).toBe("border-none");
+  });
+
+  it("gives the dialog its two-pane row only when the caller has presets (§2/§4)", () => {
+    // The two-pane layout is the divider plus the column gap and the trailing inset; a
+    // lone calendar takes none of it, and the slot must be empty rather than absent so
+    // the call site can hand the class through unconditionally.
+    expect(datePickerVariants({ hasPresets: true }).pane().split(/\s+/)).toEqual(
+      expect.arrayContaining(["flex", "gap-x-3", "divide-x", "pr-3", "pb-3"])
+    );
+    // tailwind-variants collapses an empty slot face to `undefined`, which is what the
+    // call site wants: React then omits the attribute rather than emitting `class=""`.
+    expect(datePickerVariants({ hasPresets: false }).pane()).toBeUndefined();
+    expect(datePickerVariants().pane()).toBeUndefined();
+  });
+
+  it("sizes the trigger glyph without an important flag — buttonVariants defers to it", () => {
+    // `buttonVariants` only sizes `svg:not([class*='size-'])`, so a plain `size-4` on the
+    // glyph already wins and the important flag it used to carry was noise. Asserted as an
+    // exact match rather than by grepping for the flagged class: spelling that class
+    // anywhere Tailwind scans would put the utility back into `styles.css`.
+    expect(datePickerVariants().icon()).toBe("size-4 transition-colors");
   });
 
   it("fills the field box and the trigger glyph with muted only while read-only (§4)", () => {

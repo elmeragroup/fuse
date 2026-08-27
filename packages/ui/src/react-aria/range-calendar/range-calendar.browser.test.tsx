@@ -8,6 +8,19 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { assertStateFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
+import {
+  accessibleRangeHeading,
+  anchorAndExtend,
+  calendarGrid,
+  calendarRoot,
+  cellNumbered,
+  dayBands,
+  dayNumbered,
+  focusLandsOnDay,
+  navButtonNamed,
+  parkPointerOffGrid,
+  visibleMonthTitle,
+} from "../../../test/rac-calendar-testing";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { UiProviders } from "../ui-providers/ui-providers";
 import { RangeCalendar } from "./range-calendar";
@@ -20,102 +33,12 @@ function renderRangeCalendar(node: ReactNode) {
   );
 }
 
-function grid(): HTMLElement {
-  const element = page.getByRole("grid").element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error("expected range calendar grid");
-  }
-  return element;
-}
-
-function calendarRoot(): HTMLElement {
-  const element = page.getByRole("application").element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error("expected RAC range calendar root");
-  }
-  return element;
-}
-
-function headingCandidates(): HTMLElement[] {
-  const root = calendarRoot();
-  return page
-    .getByRole("heading", { includeHidden: true })
-    .elements()
-    .filter((element): element is HTMLElement => element instanceof HTMLElement && root.contains(element));
-}
-
-function visiblePublicHeading(): HTMLElement {
-  const match = headingCandidates().find((element) => element.getAttribute("aria-hidden") === "true");
-  if (match === undefined) {
-    throw new Error("expected visible public RangeCalendar heading");
-  }
-  return match;
-}
-
-function accessibleRangeHeading(): HTMLElement {
-  const match = headingCandidates().find((element) => element.getAttribute("aria-hidden") !== "true");
-  if (match === undefined) {
-    throw new Error("expected accessible RangeCalendar range heading");
-  }
-  return match;
-}
-
-function navButtonNamed(name: RegExp): HTMLElement {
-  const root = calendarRoot();
-  const gridEl = grid();
-  const match = page
-    .getByRole("button", { name })
-    .elements()
-    .find((element) => element instanceof HTMLElement && root.contains(element) && !gridEl.contains(element));
-  if (!(match instanceof HTMLElement)) {
-    throw new Error(`expected navigation button ${String(name)}`);
-  }
-  return match;
-}
-
 function buttonNamed(name: string): HTMLElement {
   const element = page.getByRole("button", { name, exact: true }).element();
   if (!(element instanceof HTMLElement)) {
     throw new Error(`expected button ${name}`);
   }
   return element;
-}
-
-/** Every day band in the grid — RAC gives each one `role="button"`. */
-function dayBands(): HTMLElement[] {
-  const gridEl = grid();
-  return page
-    .getByRole("button")
-    .elements()
-    .filter((element): element is HTMLElement => element instanceof HTMLElement && gridEl.contains(element));
-}
-
-/**
- * The focusable band for a day of the visible month.
- *
- * Days are addressed by the date they render rather than by accessible name: RAC folds
- * the whole selected-range description into every day's `aria-label`, so a name query for
- * one endpoint also matches the other. The band is still reached through its `button`
- * role, and its label is asserted where the label itself is the subject.
- */
-function dayNumbered(day: number): HTMLElement {
-  const matches = dayBands().filter(
-    (element) => !element.hasAttribute("data-outside-month") && element.textContent.trim() === String(day)
-  );
-  const [match] = matches;
-  if (matches.length !== 1 || match === undefined) {
-    throw new Error(`expected exactly one day ${day} in the visible month, found ${matches.length}`);
-  }
-  return match;
-}
-
-/** The `td` RAC gives `role="gridcell"` and `aria-selected`, for a day of the visible month. */
-function cellNumbered(day: number): HTMLElement {
-  const cell = dayNumbered(day).closest("td");
-  if (!(cell instanceof HTMLElement) || cell.getAttribute("role") !== "gridcell") {
-    throw new Error(`expected a gridcell around day ${day}`);
-  }
-  return cell;
 }
 
 /** The pill inside a day band — the layer that carries the selection fill. */
@@ -165,81 +88,25 @@ function committedRange(onChange: RangeChangeSpy): CommittedRange {
   return committed;
 }
 
-/**
- * Settle on RAC's focused day before the next keystroke is sent.
- *
- * `useCalendarCell` moves DOM focus from an effect that runs after the focused-date state
- * has committed, and the anchoring Enter reaches RAC through `usePress`' document-level
- * `keyup` listener — outside React's event system, so that commit is batched instead of
- * flushed with the key. A key sent before the move lands is still handled by the grid
- * handler of the previous render, whose `focusNextDay` counts from the stale day, and the
- * range ends up a day short.
- */
-async function focusLandsOnDay(day: number): Promise<void> {
-  await vi.waitFor(() => {
-    expect(document.activeElement).toBe(dayNumbered(day));
-  });
-}
-
-/**
- * Park the virtual pointer off the day grid before a keyboard anchor.
- *
- * The pointer keeps the screen position the last click left it at, and every test mounts a
- * fresh host underneath it, so a day cell can sit under a stationary cursor. Chromium
- * re-delivers a boundary event to whatever is under that cursor when the DOM below it
- * changes, `useCalendarCell`'s `onPointerEnter` answers one with `state.highlightDate(date)`,
- * and `useRangeCalendarState.highlightDate` calls `setFocusedDate` whenever a range is
- * anchored — so a hovered cell steals the focus the arrow keys count from. Hovering a
- * non-cell element leaves no cell under the pointer for that to happen to.
- */
-async function parkPointerOffGrid(): Promise<void> {
-  await userEvent.hover(visiblePublicHeading());
-}
-
-/**
- * Anchor the highlighted range on the focused `anchor` day and extend it with `arrows`
- * ArrowRight presses, waiting out RAC's asynchronous focus moves on both ends. `landsOn`
- * is the day the focus ends on: normally `anchor + 1 + arrows`, but fewer when RAC
- * disables the days past an unavailable one. Committing the highlight with a second Enter
- * is left to the caller.
- */
-async function anchorAndExtend({
-  anchor,
-  arrows,
-  landsOn,
-}: {
-  anchor: number;
-  arrows: number;
-  landsOn: number;
-}): Promise<void> {
-  await parkPointerOffGrid();
-  await userEvent.keyboard("{Enter}");
-  // RAC auto-advances the focused day once the anchor is set, so the arrows extend the
-  // highlight from the day after the anchor.
-  await focusLandsOnDay(anchor + 1);
-  await userEvent.keyboard("{ArrowRight}".repeat(arrows));
-  await focusLandsOnDay(landsOn);
-}
-
 describe("RangeCalendar", () => {
   it("exposes an application root with a grid, weekday columnheaders, day cells, nav buttons and RAC's two heading faces", async () => {
     renderRangeCalendar(<RangeCalendar defaultValue={{ start: july14, end: july17 }} />);
     await expect.element(page.getByRole("application")).toBeVisible();
     await expect.element(page.getByRole("grid")).toBeVisible();
-    expect(calendarRoot().contains(grid())).toBe(true);
+    expect(calendarRoot().contains(calendarGrid())).toBe(true);
     expect(cells().length).toBeGreaterThan(27);
     // The shared CalendarGridHeader row has no queryable role: RAC marks it aria-hidden
     // because every day's own label already names its weekday. Its seven cells are the
     // only observable proof the shared part rendered.
-    expect(grid().querySelectorAll("thead th")).toHaveLength(7);
-    expect([...grid().querySelectorAll("thead th")].map((cell) => cell.textContent.trim()).join("")).toBe(
-      "SMTWTFS"
-    );
+    expect(calendarGrid().querySelectorAll("thead th")).toHaveLength(7);
+    expect(
+      [...calendarGrid().querySelectorAll("thead th")].map((cell) => cell.textContent.trim()).join("")
+    ).toBe("SMTWTFS");
     await expect.element(navButtonNamed(/previous/i)).toBeVisible();
     await expect.element(navButtonNamed(/next/i)).toBeVisible();
     expect(dayNumbered(14).getAttribute("aria-label")).toMatch(/Tuesday, July 14, 2026/i);
 
-    const visibleTitle = visiblePublicHeading();
+    const visibleTitle = visibleMonthTitle();
     await expect.element(visibleTitle).toBeVisible();
     expect(visibleTitle).toHaveAttribute("aria-hidden", "true");
     expect(visibleTitle.getAttribute("data-slot")).toBe("heading");
@@ -248,7 +115,7 @@ describe("RangeCalendar", () => {
     const accessibleRange = accessibleRangeHeading();
     expect(accessibleRange).not.toBe(visibleTitle);
     expect(accessibleRange.textContent).toMatch(/July\s+2026/i);
-    expect(grid().getAttribute("aria-label")).toMatch(/July\s+2026/i);
+    expect(calendarGrid().getAttribute("aria-label")).toMatch(/July\s+2026/i);
   });
 
   it("renders borderless standalone — the picker dialog supplies the chrome (§8.5)", async () => {
@@ -469,9 +336,9 @@ describe("RangeCalendar", () => {
     expect(previous.hasAttribute("disabled") || previous.getAttribute("aria-disabled")).toBeTruthy();
     expect(next.hasAttribute("disabled") || next.getAttribute("aria-disabled")).toBeTruthy();
 
-    const before = visiblePublicHeading().textContent;
+    const before = visibleMonthTitle().textContent;
     await userEvent.click(previous, { force: true });
-    expect(visiblePublicHeading().textContent).toBe(before);
+    expect(visibleMonthTitle().textContent).toBe(before);
   });
 
   it("greys a fully disabled calendar's pills with the muted-foreground token", async () => {

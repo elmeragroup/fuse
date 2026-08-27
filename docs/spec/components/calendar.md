@@ -19,7 +19,7 @@ AriaCalendar                       (RAC Calendar; role="application" root; base 
 │  └─ Button slot="next"           > CaretRight                  (named import; icons swap in RTL)
 ├─ CalendarGrid  (body slot)       weekdayStyle="short"; role="grid"; own accessible name is the visible-range
 │  ├─ CalendarGridHeader > CalendarHeaderCell (×7, headerCell slot)
-│  └─ CalendarGridBody > CalendarCell (render prop per date, cell slot)
+│  └─ CalendarGridBody > CalendarCell (render prop per date, `cellVariants`)
 └─ Text                            — public Text render={RAC Text slot="errorMessage"} when `errorMessage` (error slot)
 ```
 
@@ -40,7 +40,7 @@ Month title and error copy use the public base-ui `Heading` and `Text` wrappers 
 
 ## 4 Variants
 
-`calendarVariants` — slotted tv recipe in `styles/calendar.ts`, **module-private**. Slots: `base`, `header`, `heading`, `headerCell`, `body`, `cell` (extends shared `focusRing({ target: "state", isFocusVisible })` via a flattened `cellVariants`), `error`. Variant axes on `cell`, driven by RAC cell render props: `isSelected` (false → hover/pressed fills; true → primary fill), `isDisabled`, `isUnavailable`. No public recipe export. Private previous/next Buttons borrow `buttonVariants`, including its self-focus adapter.
+`calendarVariants` — slotted tv recipe in `styles/calendar.ts`, **module-private**. Slots: `base`, `header`, `heading`, `headerCell`, `body`, `error` — all invariant, resolved once per render. The day cell is `cellVariants` in the same module: a flattened standalone recipe rather than a slot, because it is the only part with axes of its own and the component resolves it per date. It extends shared `focusRing({ target: "state", isFocusVisible })`. Variant axes on `cellVariants`, driven by RAC cell render props: `isSelected` (false → hover/pressed fills; true → primary fill), `isDisabled`, `isUnavailable`. No public recipe export. Private previous/next Buttons borrow `buttonVariants`, including its self-focus adapter.
 
 ## 5 Consumed tokens
 
@@ -56,7 +56,7 @@ Month title and error copy use the public base-ui `Heading` and `Text` wrappers 
 - Kept RAC 1.19.0 semantics: the Calendar root is `role="application"` and contains a `role="grid"` body, `role="rowheader"`-less weekday `columnheader`s, and `role="gridcell"` days. This is RAC's intentional calendar widget role, not a library-invented divergence; the port does not strip it or replace RAC Calendar. RAC passes `aria-hidden` plus the month/year `title` to the visible context Heading (our public Heading composed onto RAC `Heading`). Separately, RAC emits a visually-hidden accessible `h2` at the Calendar root whose text is the calendar's accessible visible-range name. The grid receives that visible-range label as its own accessible name. The visible Heading is not an `aria-live` region and does not label the grid via `aria-labelledby`.
 - Keyboard per RAC: Arrow keys move day focus in the grid; PageUp/PageDown previous/next month (Shift for year); Home/End start/end of week; Enter/Space selects.
 - Previous/next are real buttons with RAC-provided accessible names; caret icons `aria-hidden`. Icons flip in RTL (`useLocale().direction`).
-- `errorMessage` is wired via `Text slot="errorMessage"` → `aria-describedby` when invalid.
+- `errorMessage` is wired via `Text slot="errorMessage"` → the **invalid selected day's** `aria-describedby`: RAC's `useCalendarBase` hands the error id to `useCalendarCell`, which is where an AT reading the day hears why it cannot be used. The Calendar root is deliberately not described; a caller's own `aria-describedby` passes through to that root untouched.
 
 ## 8 Divergence from reference
 
@@ -74,7 +74,7 @@ Month title and error copy use the public base-ui `Heading` and `Text` wrappers 
 - Grid keyboard per §7: ArrowRight/Down move focus a day/week; PageDown advances the month and both the accessible range heading/label and the visible public title update; Enter selects and fires `onChange` with a `DateValue`.
 - Selection state: selected cell exposes `aria-selected="true"`; `isDateUnavailable` cells are `aria-disabled` and unselectable; nav button disables at `minValue`/`maxValue` bounds.
 - RTL: with `direction: "rtl"` locale, previous button renders CaretRight (icon flip).
-- `errorMessage` renders and is referenced by `aria-describedby` when `isInvalid`.
+- `errorMessage` renders and is referenced by the invalid selected day's `aria-describedby` when `isInvalid`; a caller's own `aria-describedby` still reaches the RAC root.
 
 ## 10 Demo requirements
 

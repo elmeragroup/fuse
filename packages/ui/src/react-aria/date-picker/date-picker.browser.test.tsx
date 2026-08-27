@@ -9,6 +9,14 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
 import {
+  calendarGrid,
+  calendarRoot,
+  cellNamed,
+  dayNamed,
+  describedTextsFor,
+  navButtonNamed,
+} from "../../../test/rac-calendar-testing";
+import {
   CONTROL_MD,
   fkasExternal,
   px,
@@ -65,30 +73,6 @@ function pickerDialog(): HTMLElement {
   return element;
 }
 
-function grid(): HTMLElement {
-  const element = page.getByRole("grid").element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error("expected the calendar grid");
-  }
-  return element;
-}
-
-function dayNamed(name: RegExp): HTMLElement {
-  const element = page.getByRole("button", { name }).element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error(`expected day ${String(name)}`);
-  }
-  return element;
-}
-
-function cellNamed(name: RegExp): HTMLElement {
-  const element = page.getByRole("gridcell", { name }).element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error(`expected gridcell ${String(name)}`);
-  }
-  return element;
-}
-
 function buttonNamed(name: string): HTMLElement {
   const element = page.getByRole("button", { name, exact: true }).element();
   if (!(element instanceof HTMLElement)) {
@@ -110,29 +94,9 @@ function presetTargetNamed(name: string): HTMLElement {
   return label;
 }
 
-/**
- * A month-navigation button inside the popover's calendar. RAC renders a second,
- * screen-reader-only pair with the same names, so the visible one is picked by being the
- * button inside the calendar root that wraps a glyph.
- */
-function navButtonNamed(name: RegExp): HTMLElement {
-  const root = page.getByRole("application").element();
-  const match = page
-    .getByRole("button", { name })
-    .elements()
-    .find(
-      (element): element is HTMLElement =>
-        element instanceof HTMLElement && root.contains(element) && element.childElementCount > 0
-    );
-  if (match === undefined) {
-    throw new Error(`expected navigation button ${String(name)}`);
-  }
-  return match;
-}
-
 /** The pane wrapper the composite puts around the preset group and the calendar (§2). */
 function paneAroundCalendar(): HTMLElement {
-  const pane = page.getByRole("application").element().parentElement;
+  const pane = calendarRoot().parentElement;
   if (!(pane instanceof HTMLElement)) {
     throw new Error("expected the dialog's pane wrapper");
   }
@@ -143,13 +107,6 @@ async function openPicker(): Promise<HTMLElement> {
   await userEvent.click(trigger());
   await expect.element(page.getByRole("dialog")).toBeVisible();
   return pickerDialog();
-}
-
-function describedTextsFor(element: HTMLElement): string[] {
-  const ids = (element.getAttribute("aria-describedby") ?? "").split(/\s+/).filter(Boolean);
-  return [
-    ...new Set(ids.map((id) => document.getElementById(id)?.textContent ?? "").filter((text) => text !== "")),
-  ];
 }
 
 const march10 = new CalendarDate(2026, 3, 10);
@@ -203,7 +160,7 @@ describe("DatePicker", () => {
 
     expect(trigger()).toHaveAttribute("aria-expanded", "true");
     await expect.element(page.getByRole("grid")).toBeVisible();
-    expect(dialog.contains(grid())).toBe(true);
+    expect(dialog.contains(calendarGrid())).toBe(true);
     // The dialog keeps RAC's own name; an unnamed overlay would be an AT dead end (§7).
     await expect.element(page.getByRole("dialog", { name: /calendar/i })).toBeVisible();
     expect(cellNamed(/Tuesday, March 10, 2026/i)).toHaveAttribute("aria-selected", "true");
@@ -231,15 +188,15 @@ describe("DatePicker", () => {
   it("reopens on the value's month after the user paged away and closed", async () => {
     renderPicker(<DatePicker label="Invoice date" value={march10} />);
     await openPicker();
-    expect(grid().getAttribute("aria-label")).toMatch(/March\s+2026/i);
+    expect(calendarGrid().getAttribute("aria-label")).toMatch(/March\s+2026/i);
 
     await userEvent.keyboard("{PageDown}{PageDown}");
-    expect(grid().getAttribute("aria-label")).toMatch(/May\s+2026/i);
+    expect(calendarGrid().getAttribute("aria-label")).toMatch(/May\s+2026/i);
 
     await userEvent.keyboard("{Escape}");
     await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
     await openPicker();
-    expect(grid().getAttribute("aria-label")).toMatch(/March\s+2026/i);
+    expect(calendarGrid().getAttribute("aria-label")).toMatch(/March\s+2026/i);
   });
 
   it("reopens an uncontrolled picker on its defaultValue's month after paging away", async () => {
@@ -247,15 +204,15 @@ describe("DatePicker", () => {
     // no `value` prop in sight — still lands the reopen on July (§8.11).
     renderPicker(<DatePicker label="Invoice date" defaultValue={july14} />);
     await openPicker();
-    expect(grid().getAttribute("aria-label")).toMatch(/July\s+2026/i);
+    expect(calendarGrid().getAttribute("aria-label")).toMatch(/July\s+2026/i);
 
     await userEvent.keyboard("{PageDown}{PageDown}");
-    expect(grid().getAttribute("aria-label")).toMatch(/September\s+2026/i);
+    expect(calendarGrid().getAttribute("aria-label")).toMatch(/September\s+2026/i);
 
     await userEvent.keyboard("{Escape}");
     await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
     await openPicker();
-    expect(grid().getAttribute("aria-label")).toMatch(/July\s+2026/i);
+    expect(calendarGrid().getAttribute("aria-label")).toMatch(/July\s+2026/i);
   });
 
   it("opens an uncontrolled picker on the month of the day the user last chose", async () => {
@@ -269,7 +226,7 @@ describe("DatePicker", () => {
     expect(spinbuttonNamed("month").textContent).toBe("09");
 
     await openPicker();
-    expect(grid().getAttribute("aria-label")).toMatch(/September\s+2026/i);
+    expect(calendarGrid().getAttribute("aria-label")).toMatch(/September\s+2026/i);
   });
 
   it("opens on the current month when there is no value", async () => {
@@ -279,7 +236,7 @@ describe("DatePicker", () => {
     renderPicker(<DatePicker label="Invoice date" />);
     await openPicker();
 
-    expect(grid().getAttribute("aria-label")).toBe(currentMonth);
+    expect(calendarGrid().getAttribute("aria-label")).toBe(currentMonth);
   });
 
   it("follows a value change to its month while the dialog stays open", async () => {
@@ -301,13 +258,13 @@ describe("DatePicker", () => {
     }
     renderPicker(<PresetDriven />);
     await openPicker();
-    expect(grid().getAttribute("aria-label")).toMatch(/July\s+2026/i);
+    expect(calendarGrid().getAttribute("aria-label")).toMatch(/July\s+2026/i);
 
     // A preset lives inside the popover, so the value can change while it stays open —
     // which is the case the value effect (rather than the per-open mount) exists for (§2).
     await userEvent.click(presetTargetNamed("Early November"));
     await expect.element(page.getByRole("dialog")).toBeVisible();
-    expect(grid().getAttribute("aria-label")).toMatch(/November\s+2026/i);
+    expect(calendarGrid().getAttribute("aria-label")).toMatch(/November\s+2026/i);
     expect(spinbuttonNamed("month").textContent).toBe("11");
   });
 
@@ -406,7 +363,7 @@ describe("DatePicker presets", () => {
     expect(page.getByRole("radio", { name: /preset option/i }).query()).toBeNull();
     expect(presetTargetNamed("Today").getAttribute("data-slot")).toBe("date-picker-preset-item");
     expect(pickerDialog().contains(radiogroup)).toBe(true);
-    expect(pickerDialog().contains(grid())).toBe(true);
+    expect(pickerDialog().contains(calendarGrid())).toBe(true);
   });
 
   it("selects on a single click and leaves the dialog open", async () => {
@@ -556,7 +513,7 @@ describe("DatePicker overlay containment", () => {
 
     // Paging is an interaction that keeps the popover open: the host must survive it.
     await userEvent.click(navButtonNamed(/next/i));
-    expect(grid().getAttribute("aria-label")).toMatch(/August\s+2026/i);
+    expect(calendarGrid().getAttribute("aria-label")).toMatch(/August\s+2026/i);
     expect(onOpenChange).not.toHaveBeenCalled();
 
     // Selecting a day dismisses the picker's own popover — and nothing else.
@@ -612,14 +569,17 @@ describe("DatePicker composition surface", () => {
   it("strips the calendar's card border and the dialog's padding inside the popover", async () => {
     renderPicker(<DatePicker label="Invoice date" value={march10} />);
     const dialog = await openPicker();
-    const calendarRoot = page.getByRole("application").element();
-    if (!(calendarRoot instanceof HTMLElement)) {
-      throw new Error("expected the calendar root");
-    }
+    const root = calendarRoot();
 
     expect(getComputedStyle(dialog).paddingTop).toBe("0px");
-    expect(getComputedStyle(calendarRoot).borderTopWidth).toBe("0px");
-    expect(getComputedStyle(calendarRoot).borderLeftWidth).toBe("0px");
+    expect(getComputedStyle(root).borderTopWidth).toBe("0px");
+    expect(getComputedStyle(root).borderLeftWidth).toBe("0px");
+    // No `title` ⇒ no header row at all: an empty heading would take the dialog's
+    // accessible name from RAC and spend one 16 px `gap-4` on nothing
+    // (react-aria/internal/dialog.tsx).
+    expect(dialog.querySelector("[data-slot=dialog-header]")).toBeNull();
+    const content = dialog.querySelector("[data-slot=dialog-content]");
+    expect(content?.firstElementChild).toBe(paneAroundCalendar());
   });
 
   it("lays the dialog out in two divided panes only when a renderable preset group is given", async () => {

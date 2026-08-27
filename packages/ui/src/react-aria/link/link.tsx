@@ -7,8 +7,8 @@ import type { LinkRenderProps } from "react-aria-components";
 import type { VariantProps } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
+import { linkVariants } from "../../styles/link";
 import { focusRing } from "../../styles/utils";
-import { linkVariants } from "./link-variants";
 
 /**
  * The RAC `Link` surface as-is plus the typography axes (link.md §3). RAC renders a real

@@ -1,11 +1,12 @@
 /**
- * Module-private recipe (link.md §4). Nothing re-exports it: the interim tier has no
- * public recipe surface, and this atom retires with its entry.
+ * Link's recipe (link.md §4). Package-private: nothing re-exports it, the interim tier
+ * has no public recipe surface, and this atom retires with its entry.
  *
- * Colocated instead of living in `src/styles/` because Link is a bare typography atom
- * with a single consumer — the same `<name>-variants.ts` shape Text and Span use — so
- * the whole quarantined module deletes as one directory. The slotted recipes that do
- * sit in `src/styles/` (range-calendar, date-picker) are shared across entries.
+ * It lives in `src/styles/` because that is where every RAC entry's recipe lives —
+ * range-calendar.md §8.2's locked ruling, applied uniformly across the cluster rather
+ * than per-entry. Sharing is not the reason: every recipe in this directory has exactly
+ * one consumer today. The ruling buys one predictable location, so the whole quarantined
+ * tier retires as `react-aria/**` plus its `styles/<slug>.ts` siblings.
  *
  * Two faithful quirks are kept, not fixed (§8.3): `variant="default"` and
  * `variant="inherit"` are duplicates (both `text-inherit`), and `weight="bold"` renders

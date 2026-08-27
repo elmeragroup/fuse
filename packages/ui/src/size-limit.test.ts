@@ -224,7 +224,7 @@ describe("size-limit harness", () => {
       ceilingFromMeasured(1987)
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "react-aria/date-field")?.ceilingGzip).toBe(
-      ceilingFromMeasured(70071)
+      ceilingFromMeasured(70066)
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "react-aria/calendar")?.ceilingGzip).toBe(
       ceilingFromMeasured(61023)
@@ -233,11 +233,11 @@ describe("size-limit harness", () => {
       ceilingFromMeasured(62330)
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "react-aria/date-picker")?.ceilingGzip).toBe(
-      ceilingFromMeasured(105344)
+      ceilingFromMeasured(105312)
     );
     expect(
       JS_ENTRY_BUDGETS.find((budget) => budget.name === "react-aria/date-range-picker")?.ceilingGzip
-    ).toBe(ceilingFromMeasured(105024));
+    ).toBe(ceilingFromMeasured(104800));
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "react-aria/link")?.ceilingGzip).toBe(
       ceilingFromMeasured(31234)
     );

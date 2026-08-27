@@ -9,14 +9,20 @@ import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 const here = dirname(fileURLToPath(import.meta.url));
 const packageRoot = join(here, "../../..");
 const source = readFileSync(join(here, "date-field.tsx"), "utf8");
+const recipe = readFileSync(join(packageRoot, "src/styles/date-field.ts"), "utf8");
 const facade = readFileSync(join(here, "../date-field.ts"), "utf8");
 
 describe("date-field source contract", () => {
   it("is a client module that does not fork a local field or styles recipe", () => {
     expect(source.startsWith('"use client";')).toBe(true);
-    expect(source).not.toContain(".ref/");
     expect(source).not.toContain('from "./field"');
-    expect(source).not.toContain('from "../styles"');
+    for (const text of [source, recipe]) {
+      expect(text).not.toContain(".ref/");
+    }
+    // The recipe lives in `src/styles/`, the one location every RAC entry uses
+    // (range-calendar.md §8.2); the component declares no `tv()` of its own.
+    expect(source).not.toContain("tailwind-variants");
+    expect(source).toContain('from "../../styles/date-field"');
   });
 
   it("keeps the facade a named re-export and hides the private recipe", () => {
@@ -26,25 +32,29 @@ describe("date-field source contract", () => {
   });
 
   it("never emits its own data-slot, size axis, or hardcoded field-box height", () => {
-    expect(source).not.toContain("data-slot");
-    expect(source).not.toContain("h-9");
-    expect(source).not.toContain("size:");
-    expect(source).not.toContain("data-density");
-    expect(source).not.toContain("dense:");
-    expect(source).not.toContain("comfortable:");
+    for (const text of [source, recipe]) {
+      expect(text).not.toContain("data-slot");
+      expect(text).not.toContain("h-9");
+      expect(text).not.toContain("size:");
+      expect(text).not.toContain("data-density");
+      expect(text).not.toContain("dense:");
+      expect(text).not.toContain("comfortable:");
+    }
   });
 
   it("never uses primitive gray/white or destructive vocabulary", () => {
-    expect(source).not.toContain("text-gray-");
-    // oxlint-disable-next-line elmera/no-primitive-colors -- source-grep of the forbidden class, not a recipe
-    expect(source).not.toContain("text-white");
-    expect(source).not.toContain("bg-background");
-    expect(source).not.toMatch(/bg-destructive|text-destructive|border-destructive|ring-destructive/);
-    expect(source).not.toContain("destructive");
-    // oxlint-disable-next-line elmera/no-primitive-colors -- source-grep of the forbidden class, not a recipe
-    expect(source).not.toContain("bg-white");
-    expect(source).not.toMatch(RAW_PALETTE_RE);
-    expect(source).not.toContain("dark:");
+    for (const text of [source, recipe]) {
+      expect(text).not.toContain("text-gray-");
+      // oxlint-disable-next-line elmera/no-primitive-colors -- source-grep of the forbidden class, not a recipe
+      expect(text).not.toContain("text-white");
+      expect(text).not.toContain("bg-background");
+      expect(text).not.toMatch(/bg-destructive|text-destructive|border-destructive|ring-destructive/);
+      expect(text).not.toContain("destructive");
+      // oxlint-disable-next-line elmera/no-primitive-colors -- source-grep of the forbidden class, not a recipe
+      expect(text).not.toContain("bg-white");
+      expect(text).not.toMatch(RAW_PALETTE_RE);
+      expect(text).not.toContain("dark:");
+    }
   });
 });
 

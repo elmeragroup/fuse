@@ -24,7 +24,6 @@ test("no private overlay part, recipe, or RAC type leaks through the entry", () 
   expectTypeOf<typeof DateRangePickerApi>().not.toHaveProperty("dateRangePickerVariants");
   expectTypeOf<typeof DateRangePickerApi>().not.toHaveProperty("Popover");
   expectTypeOf<typeof DateRangePickerApi>().not.toHaveProperty("Dialog");
-  expectTypeOf<typeof DateRangePickerApi>().not.toHaveProperty("PickerDialog");
   expectTypeOf<typeof DateRangePickerApi>().not.toHaveProperty("Modal");
   expectTypeOf<typeof DateRangePickerApi>().not.toHaveProperty("Button");
   expectTypeOf<typeof DateRangePickerApi>().not.toHaveProperty("FieldGroup");

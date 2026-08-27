@@ -10,6 +10,15 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import {
+  anchorAndExtend,
+  calendarGrid,
+  calendarRoot,
+  cellNumbered,
+  dayNumbered,
+  describedTextsFor,
+  navButtonNamed,
+} from "../../../test/rac-calendar-testing";
+import {
   CONTROL_MD,
   fkasExternal,
   px,
@@ -94,75 +103,6 @@ function pickerDialog(): HTMLElement {
   return element;
 }
 
-function grid(): HTMLElement {
-  const element = page.getByRole("grid").element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error("expected the range calendar grid");
-  }
-  return element;
-}
-
-/** Every day band in the grid — RAC gives each one `role="button"`. */
-function dayBands(): HTMLElement[] {
-  const gridElement = grid();
-  return page
-    .getByRole("button")
-    .elements()
-    .filter(
-      (element): element is HTMLElement => element instanceof HTMLElement && gridElement.contains(element)
-    );
-}
-
-/**
- * The focusable band for a day of the visible month. Days are addressed by the date they
- * render rather than by accessible name: RAC folds the whole selected-range description
- * into every day's `aria-label`, so a name query for one endpoint also matches the other.
- * The band is still reached through its `button` role.
- */
-function dayNumbered(day: number): HTMLElement {
-  const matches = dayBands().filter(
-    (element) => !element.hasAttribute("data-outside-month") && element.textContent.trim() === String(day)
-  );
-  const [match] = matches;
-  if (matches.length !== 1 || match === undefined) {
-    throw new Error(`expected exactly one day ${day} in the visible month, found ${matches.length}`);
-  }
-  return match;
-}
-
-/** The `td` RAC gives `role="gridcell"` and `aria-selected`, for a day of the visible month. */
-function cellNumbered(day: number): HTMLElement {
-  const cell = dayNumbered(day).closest("td");
-  if (!(cell instanceof HTMLElement) || cell.getAttribute("role") !== "gridcell") {
-    throw new Error(`expected a gridcell around day ${day}`);
-  }
-  return cell;
-}
-
-/**
- * A month-navigation button inside the popover's calendar. RAC renders a second,
- * screen-reader-only pair with the same names, so the visible one is picked by being the
- * button inside the calendar root that wraps a glyph.
- */
-function navButtonNamed(name: RegExp): HTMLElement {
-  const root = page.getByRole("application").element();
-  const gridElement = grid();
-  const match = page
-    .getByRole("button", { name })
-    .elements()
-    .find(
-      (element): element is HTMLElement =>
-        element instanceof HTMLElement &&
-        root.contains(element) &&
-        !gridElement.contains(element) &&
-        element.childElementCount > 0
-    );
-  if (match === undefined) {
-    throw new Error(`expected navigation button ${String(name)}`);
-  }
-  return match;
-}
-
 function buttonNamed(name: string): HTMLElement {
   const element = page.getByRole("button", { name, exact: true }).element();
   if (!(element instanceof HTMLElement)) {
@@ -175,13 +115,6 @@ async function openPicker(): Promise<HTMLElement> {
   await userEvent.click(trigger());
   await expect.element(page.getByRole("dialog")).toBeVisible();
   return pickerDialog();
-}
-
-function describedTextsFor(element: HTMLElement): string[] {
-  const ids = (element.getAttribute("aria-describedby") ?? "").split(/\s+/).filter(Boolean);
-  return [
-    ...new Set(ids.map((id) => document.getElementById(id)?.textContent ?? "").filter((text) => text !== "")),
-  ];
 }
 
 /** One `name`/value pair a form submit carried, read back off its FormData. */
@@ -225,83 +158,6 @@ const july18 = new CalendarDate(2026, 7, 18);
 const july20 = new CalendarDate(2026, 7, 20);
 const july24 = new CalendarDate(2026, 7, 24);
 const julyWeek = { start: july14, end: july17 };
-
-/**
- * Settle on RAC's focused day before the next keystroke is sent.
- *
- * `useCalendarCell` moves DOM focus from an effect that runs after the focused-date state
- * has committed, and the anchoring Enter reaches RAC through `usePress`' document-level
- * `keyup` listener — outside React's event system, so that commit is batched instead of
- * flushed with the key. A key sent before the move lands is still handled by the grid
- * handler of the previous render, whose `focusNextDay` counts from the stale day, and the
- * range ends up a day short.
- */
-async function focusLandsOnDay(day: number): Promise<void> {
-  await vi.waitFor(() => {
-    expect(document.activeElement).toBe(dayNumbered(day));
-  });
-}
-
-/**
- * The calendar's visible month title inside the popover. RAC renders two heading faces and
- * marks the visible one `aria-hidden`, because the grid's own label already names the month.
- */
-function visibleMonthTitle(): HTMLElement {
-  const root = page.getByRole("application").element();
-  const match = page
-    .getByRole("heading", { includeHidden: true })
-    .elements()
-    .find(
-      (element): element is HTMLElement =>
-        element instanceof HTMLElement &&
-        root.contains(element) &&
-        element.getAttribute("aria-hidden") === "true"
-    );
-  if (match === undefined) {
-    throw new Error("expected the calendar's visible month title");
-  }
-  return match;
-}
-
-/**
- * Park the virtual pointer off the day grid before a keyboard anchor.
- *
- * The pointer keeps the screen position the last click left it at, and the popover's grid
- * mounts underneath it, so a day cell can sit under a stationary cursor. Chromium
- * re-delivers a boundary event to whatever is under that cursor when the DOM below it
- * changes, `useCalendarCell`'s `onPointerEnter` answers one with `state.highlightDate(date)`,
- * and `useRangeCalendarState.highlightDate` calls `setFocusedDate` whenever a range is
- * anchored — so a hovered cell steals the focus the arrow keys count from. Hovering a
- * non-cell element leaves no cell under the pointer for that to happen to.
- */
-async function parkPointerOffGrid(): Promise<void> {
-  await userEvent.hover(visibleMonthTitle());
-}
-
-/**
- * Anchor the highlighted range on the focused `anchor` day and extend it with `arrows`
- * ArrowRight presses, waiting out RAC's asynchronous focus moves on both ends. `landsOn`
- * is the day the focus ends on: normally `anchor + 1 + arrows`, but fewer when RAC
- * disables the days past an unavailable one. Committing the highlight with a second Enter
- * is left to the caller.
- */
-async function anchorAndExtend({
-  anchor,
-  arrows,
-  landsOn,
-}: {
-  anchor: number;
-  arrows: number;
-  landsOn: number;
-}): Promise<void> {
-  await parkPointerOffGrid();
-  await userEvent.keyboard("{Enter}");
-  // RAC auto-advances the focused day once the anchor is set, so the arrows extend the
-  // highlight from the day after the anchor.
-  await focusLandsOnDay(anchor + 1);
-  await userEvent.keyboard("{ArrowRight}".repeat(arrows));
-  await focusLandsOnDay(landsOn);
-}
 
 describe("DateRangePicker", () => {
   it("names the field group from the label, exposes both rows' spinbuttons and a named collapsed trigger", async () => {
@@ -394,10 +250,10 @@ describe("DateRangePicker", () => {
 
     expect(trigger()).toHaveAttribute("aria-expanded", "true");
     await expect.element(page.getByRole("grid")).toBeVisible();
-    expect(dialog.contains(grid())).toBe(true);
+    expect(dialog.contains(calendarGrid())).toBe(true);
     // The dialog keeps RAC's own name; an unnamed overlay would be an AT dead end (§7).
     await expect.element(page.getByRole("dialog", { name: /calendar/i })).toBeVisible();
-    expect(grid().getAttribute("aria-label")).toMatch(/July\s+2026/i);
+    expect(calendarGrid().getAttribute("aria-label")).toMatch(/July\s+2026/i);
     expect(cellNumbered(14)).toHaveAttribute("aria-selected", "true");
     expect(cellNumbered(17)).toHaveAttribute("aria-selected", "true");
 
@@ -617,7 +473,7 @@ describe("DateRangePicker overlay containment", () => {
 
     // Paging is an interaction that keeps the popover open: the host must survive it.
     await userEvent.click(navButtonNamed(/next/i));
-    expect(grid().getAttribute("aria-label")).toMatch(/August\s+2026/i);
+    expect(calendarGrid().getAttribute("aria-label")).toMatch(/August\s+2026/i);
     expect(onOpenChange).not.toHaveBeenCalled();
 
     // The anchoring click is the seam's real test: it lands in a portalled popover and
@@ -695,21 +551,23 @@ describe("DateRangePicker composition surface", () => {
   it("wears the styled dialog chrome without its close button, and pads the calendar itself", async () => {
     renderPicker(<DateRangePicker label="Delivery window" defaultValue={julyWeek} />);
     const dialog = await openPicker();
-    const calendarRoot = page.getByRole("application").element();
-    if (!(calendarRoot instanceof HTMLElement)) {
-      throw new Error("expected the range calendar root");
-    }
+    const root = calendarRoot();
 
     expect(dialog.getAttribute("data-slot")).toBe("dialog");
-    expect(dialog.querySelector("[data-slot=dialog-header]")).not.toBeNull();
+    // No `title` ⇒ no header row at all: an empty heading would take the dialog's
+    // accessible name from RAC and spend one 16 px `gap-4` on nothing
+    // (react-aria/internal/dialog.tsx).
+    expect(dialog.querySelector("[data-slot=dialog-header]")).toBeNull();
+    const content = dialog.querySelector("[data-slot=dialog-content]");
+    expect(content?.firstElementChild).toBe(root);
     // `closeButton={false}`: the popover is dismissed by Escape or an outside click, so
     // the dialog chrome renders no dismiss affordance of its own (§8.2).
     expect(page.getByRole("button", { name: /close/i }).query()).toBeNull();
     expect(getComputedStyle(dialog).paddingTop).toBe("0px");
     expect(getComputedStyle(dialog).paddingLeft).toBe("0px");
     // RangeCalendar's root is bare by design, so the inset is the recipe's own (§4).
-    expect(getComputedStyle(calendarRoot).paddingTop).toBe("8px");
-    expect(getComputedStyle(calendarRoot).borderTopWidth).toBe("0px");
+    expect(getComputedStyle(root).paddingTop).toBe("8px");
+    expect(getComputedStyle(root).borderTopWidth).toBe("0px");
   });
 
   it("sizes the trigger glyph from the recipe rather than the Button's fallback", async () => {

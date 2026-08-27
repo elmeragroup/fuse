@@ -12,8 +12,8 @@ import type {
 import { CalendarBlank } from "../../icons/generated/calendar-blank";
 import { dateRangePickerVariants } from "../../styles/date-range-picker";
 import { DateInput } from "../date-field/date-field";
-import { PickerDialog } from "../date-picker/date-picker";
 import { Button } from "../internal/button";
+import { Dialog } from "../internal/dialog";
 import { Description, FieldError, FieldGroup, Label } from "../internal/field";
 import { Popover } from "../internal/popover";
 import { composeTailwindRenderProps } from "../internal/utils";
@@ -25,10 +25,13 @@ import { RangeCalendar } from "../range-calendar/range-calendar";
  * package-private popover/dialog/button chrome. Client — the interim react-aria cluster
  * owns segment state and overlay state.
  *
- * The dialog is the styled private one, named through DatePicker's `PickerDialog`
- * (§8.2): the reference reached for the raw RAC `Dialog` and so skipped the cluster's
- * dialog chrome entirely. Unlike DatePicker there is no focused-month sync — RAC's
- * range state drives the grid's month on its own, and the spec asks for no override.
+ * The dialog is the package-private styled `Dialog` with `closeButton={false}` (§8.2):
+ * the reference reached for the raw RAC `Dialog` and so skipped the cluster's dialog
+ * chrome entirely. It needs no `aria-labelledby` of its own — with no `title` the styled
+ * Dialog renders no heading, so RAC's own `DialogContext` name ("Calendar" plus the field
+ * label, published by `useDateRangePicker`) reaches the overlay unopposed. Unlike
+ * DatePicker there is no focused-month sync — RAC's range state drives the grid's month
+ * on its own, and the spec asks for no override.
  */
 export type DateRangePickerProps<T extends DateValue> = {
   /** Visible label, rendered as the private RAC `Label`. */
@@ -92,9 +95,9 @@ export function DateRangePicker<T extends DateValue>({
       {description ? <Description>{description}</Description> : null}
       <FieldError>{errorMessage}</FieldError>
       <Popover container={container} placement="bottom right">
-        <PickerDialog className={dialog()}>
+        <Dialog className={dialog()} closeButton={false}>
           <RangeCalendar className={calendar()} />
-        </PickerDialog>
+        </Dialog>
       </Popover>
     </AriaDateRangePicker>
   );

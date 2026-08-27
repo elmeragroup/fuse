@@ -5,12 +5,12 @@ import { describe, expect, it } from "vitest";
 
 import { discoverEntries } from "../../../scripts/entries";
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
-import { linkVariants } from "./link-variants";
+import { linkVariants } from "../../styles/link";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const packageRoot = join(here, "../../..");
 const source = readFileSync(join(here, "link.tsx"), "utf8");
-const recipe = readFileSync(join(here, "link-variants.ts"), "utf8");
+const recipe = readFileSync(join(packageRoot, "src/styles/link.ts"), "utf8");
 const facade = readFileSync(join(here, "../link.ts"), "utf8");
 
 function classes(rendered: string): string[] {
@@ -23,6 +23,10 @@ describe("link source contract", () => {
     expect(source).not.toContain(".ref/");
     expect(source).not.toContain("@elmeragroup/ui/");
     expect(recipe).not.toContain(".ref/");
+    // The recipe lives in `src/styles/`, the one location every RAC entry uses
+    // (range-calendar.md §8.2); the component declares no `tv()` of its own.
+    expect(source).not.toContain("tv(");
+    expect(source).toContain('from "../../styles/link"');
   });
 
   it("keeps the facade a directive-free named re-export that hides the private recipe", () => {

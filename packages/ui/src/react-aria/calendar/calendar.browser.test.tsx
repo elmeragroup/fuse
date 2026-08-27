@@ -7,6 +7,17 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { assertFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
+import {
+  accessibleRangeHeading,
+  calendarGrid,
+  calendarHeadings,
+  calendarRoot,
+  cellNamed,
+  dayNamed,
+  navButtonNamed,
+  navButtons,
+  visibleMonthTitle,
+} from "../../../test/rac-calendar-testing";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { CaretLeft } from "../../icons/generated/caret-left";
 import { CaretRight } from "../../icons/generated/caret-right";
@@ -21,118 +32,14 @@ function renderCalendar(node: ReactNode) {
   );
 }
 
-function grid(): HTMLElement {
-  const element = page.getByRole("grid").element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error("expected calendar grid");
-  }
-  return element;
-}
-
-function calendarRoot(): HTMLElement {
-  const element = page.getByRole("application").element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error("expected RAC calendar root");
-  }
-  return element;
-}
-
-function headingCandidates(): HTMLElement[] {
-  const root = calendarRoot();
-  return page
-    .getByRole("heading", { includeHidden: true })
-    .elements()
-    .filter((element): element is HTMLElement => element instanceof HTMLElement && root.contains(element));
-}
-
-function visiblePublicHeading(): HTMLElement {
-  const match = headingCandidates().find((element) => element.getAttribute("aria-hidden") === "true");
-  if (match === undefined) {
-    throw new Error("expected visible public Calendar heading");
-  }
-  return match;
-}
-
-function accessibleRangeHeading(): HTMLElement {
-  const match = headingCandidates().find((element) => element.getAttribute("aria-hidden") !== "true");
-  if (match === undefined) {
-    throw new Error("expected accessible Calendar range heading");
-  }
-  return match;
-}
-
 function gridVisibleRangeLabel(): string {
-  return grid().getAttribute("aria-label") ?? "";
-}
-
-function isCalendarNavButton(
-  element: Element,
-  root: HTMLElement,
-  gridEl: HTMLElement
-): element is HTMLElement {
-  return (
-    element instanceof HTMLElement &&
-    root.contains(element) &&
-    !gridEl.contains(element) &&
-    element.childElementCount > 0
-  );
-}
-
-function navButtons(): HTMLElement[] {
-  const root = calendarRoot();
-  const gridEl = grid();
-  return page
-    .getByRole("button")
-    .elements()
-    .filter((element) => isCalendarNavButton(element, root, gridEl));
-}
-
-function previousButton(): HTMLElement {
-  const root = calendarRoot();
-  const gridEl = grid();
-  const match = page
-    .getByRole("button", { name: /previous/i })
-    .elements()
-    .find((element) => isCalendarNavButton(element, root, gridEl));
-  if (match === undefined) {
-    throw new Error("expected previous button");
-  }
-  return match;
-}
-
-function nextButton(): HTMLElement {
-  const root = calendarRoot();
-  const gridEl = grid();
-  const match = page
-    .getByRole("button", { name: /next/i })
-    .elements()
-    .find((element) => isCalendarNavButton(element, root, gridEl));
-  if (match === undefined) {
-    throw new Error("expected next button");
-  }
-  return match;
+  return calendarGrid().getAttribute("aria-label") ?? "";
 }
 
 function buttonNamed(name: string | RegExp): HTMLElement {
   const element = page.getByRole("button", { name }).element();
   if (!(element instanceof HTMLElement)) {
     throw new Error(`expected button ${String(name)}`);
-  }
-  return element;
-}
-
-function cellNamed(name: string | RegExp): HTMLElement {
-  const element = page.getByRole("gridcell", { name }).element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error(`expected gridcell ${String(name)}`);
-  }
-  return element;
-}
-
-function dayNamed(name: string | RegExp): HTMLElement {
-  const element = page.getByRole("button", { name }).element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error(`expected day ${String(name)}`);
   }
   return element;
 }
@@ -161,23 +68,23 @@ describe("Calendar", () => {
     renderCalendar(<Calendar defaultValue={july14} />);
     await expect.element(page.getByRole("application")).toBeVisible();
     await expect.element(page.getByRole("grid")).toBeVisible();
-    expect(calendarRoot().contains(grid())).toBe(true);
+    expect(calendarRoot().contains(calendarGrid())).toBe(true);
     expect(cells().length).toBeGreaterThan(27);
-    expect(grid().textContent).toContain("Sun");
-    expect(grid().textContent).not.toContain("Sunday");
-    await expect.element(previousButton()).toBeVisible();
-    await expect.element(nextButton()).toBeVisible();
+    expect(calendarGrid().textContent).toContain("Sun");
+    expect(calendarGrid().textContent).not.toContain("Sunday");
+    await expect.element(navButtonNamed(/previous/i)).toBeVisible();
+    await expect.element(navButtonNamed(/next/i)).toBeVisible();
 
-    const hiddenHeadings = headingCandidates().filter(
+    const hiddenHeadings = calendarHeadings().filter(
       (element) => element.getAttribute("aria-hidden") === "true"
     );
-    const accessibleHeadings = headingCandidates().filter(
+    const accessibleHeadings = calendarHeadings().filter(
       (element) => element.getAttribute("aria-hidden") !== "true"
     );
     expect(hiddenHeadings).toHaveLength(1);
     expect(accessibleHeadings).toHaveLength(1);
 
-    const visibleTitle = visiblePublicHeading();
+    const visibleTitle = visibleMonthTitle();
     await expect.element(visibleTitle).toBeVisible();
     expect(visibleTitle).toHaveAttribute("aria-hidden", "true");
     expect(visibleTitle.getAttribute("aria-live")).toBeNull();
@@ -193,7 +100,7 @@ describe("Calendar", () => {
     const visibleRangeLabel = gridVisibleRangeLabel();
     expect(visibleRangeLabel).not.toBe("");
     expect(visibleRangeLabel).toMatch(/July\s+2026/i);
-    expect(grid().getAttribute("aria-labelledby")).toBeNull();
+    expect(calendarGrid().getAttribute("aria-labelledby")).toBeNull();
   });
 
   it("moves day focus with ArrowRight and week focus with ArrowDown", async () => {
@@ -215,12 +122,12 @@ describe("Calendar", () => {
   it("advances the month with PageDown and updates both heading faces", async () => {
     renderCalendar(<Calendar defaultValue={july14} defaultFocusedValue={july14} />);
     await expect.element(page.getByRole("application")).toBeVisible();
-    expect(visiblePublicHeading().textContent).toMatch(/July\s+2026/i);
+    expect(visibleMonthTitle().textContent).toMatch(/July\s+2026/i);
     expect(accessibleRangeHeading().textContent).toMatch(/July\s+2026/i);
     expect(gridVisibleRangeLabel()).toMatch(/July\s+2026/i);
     dayNamed(/Tuesday, July 14, 2026/i).focus();
     await userEvent.keyboard("{PageDown}");
-    expect(visiblePublicHeading().textContent).toMatch(/August\s+2026/i);
+    expect(visibleMonthTitle().textContent).toMatch(/August\s+2026/i);
     expect(accessibleRangeHeading().textContent).toMatch(/August\s+2026/i);
     expect(gridVisibleRangeLabel()).toMatch(/August\s+2026/i);
     await expect.element(page.getByRole("gridcell", { name: /August 14, 2026/i })).toBeVisible();
@@ -275,13 +182,17 @@ describe("Calendar", () => {
     renderCalendar(
       <Calendar defaultValue={july14} defaultFocusedValue={july14} minValue={july1} maxValue={july31} />
     );
-    await expect.element(previousButton()).toBeVisible();
-    expect(previousButton()).toHaveAttribute("data-disabled");
-    expect(nextButton()).toHaveAttribute("data-disabled");
+    await expect.element(navButtonNamed(/previous/i)).toBeVisible();
+    expect(navButtonNamed(/previous/i)).toHaveAttribute("data-disabled");
+    expect(navButtonNamed(/next/i)).toHaveAttribute("data-disabled");
     expect(
-      previousButton().hasAttribute("disabled") || previousButton().getAttribute("aria-disabled")
+      navButtonNamed(/previous/i).hasAttribute("disabled") ||
+        navButtonNamed(/previous/i).getAttribute("aria-disabled")
     ).toBeTruthy();
-    expect(nextButton().hasAttribute("disabled") || nextButton().getAttribute("aria-disabled")).toBeTruthy();
+    expect(
+      navButtonNamed(/next/i).hasAttribute("disabled") ||
+        navButtonNamed(/next/i).getAttribute("aria-disabled")
+    ).toBeTruthy();
   });
 
   it("renders CaretRight inside the previous button under an RTL locale", async () => {
@@ -327,26 +238,34 @@ describe("Calendar", () => {
     if (!(errorNode instanceof HTMLElement)) {
       throw new Error("expected error node");
     }
-    const root = calendarRoot();
-    const describedBy = root.getAttribute("aria-describedby");
-    expect(describedBy, "Calendar root must reference errorMessage when invalid").toBeTruthy();
-    if (describedBy === null) {
-      throw new Error("expected Calendar root aria-describedby");
+
+    const textHost = errorNode.parentElement;
+    if (!(textHost instanceof HTMLElement)) {
+      throw new Error("expected the RAC Text host");
     }
-    const described = describedBy
-      .split(/\s+/)
-      .filter(Boolean)
-      .map((id) => root.ownerDocument.getElementById(id))
-      .filter((node): node is HTMLElement => node instanceof HTMLElement);
-    const textHost = described.find((target) => target.contains(errorNode));
-    expect(textHost, "errorMessage must be associated via aria-describedby when invalid").toBeTruthy();
-    if (textHost === undefined) {
-      throw new Error("expected described RAC Text host");
-    }
-    expect(textHost.contains(errorNode)).toBe(true);
     expect(textHost.getAttribute("data-slot")).toBe("text");
+    expect(textHost.getAttribute("slot")).toBe("errorMessage");
     expect(textHost.textContent).toBe("That day is closed.");
     expect(textHost.className.split(/\s+/)).toEqual(expect.arrayContaining(["text-error", "font-sans"]));
+
+    // RAC wires the errorMessage slot to the invalid selected day, not to the root:
+    // `useCalendarBase` hands the id to `useCalendarCell`, which is where an AT reading
+    // the day hears why it cannot be used.
+    const describedBy = dayNamed(/Tuesday, July 14, 2026/i).getAttribute("aria-describedby");
+    expect(describedBy, "the invalid day must reference the errorMessage").toBeTruthy();
+    expect(describedBy?.split(/\s+/)).toContain(textHost.id);
+  });
+
+  it("passes a caller's aria-describedby through to the RAC root", async () => {
+    renderCalendar(
+      <>
+        <p id="calendar-hint">Weekdays only.</p>
+        <Calendar aria-describedby="calendar-hint" defaultValue={july14} />
+      </>
+    );
+    await expect.element(page.getByRole("grid")).toBeVisible();
+
+    expect(calendarRoot().getAttribute("aria-describedby")).toBe("calendar-hint");
   });
 
   it("paints the shared self ring on previous navigation at both densities", async () => {
@@ -356,8 +275,8 @@ describe("Calendar", () => {
         <Calendar defaultValue={july14} defaultFocusedValue={july14} />
       </>
     );
-    await expect.element(previousButton()).toBeVisible();
-    await assertFocusRingAtBothDensities(buttonNamed("Before"), previousButton());
+    await expect.element(navButtonNamed(/previous/i)).toBeVisible();
+    await assertFocusRingAtBothDensities(buttonNamed("Before"), navButtonNamed(/previous/i));
   });
 
   it("paints the shared state ring on the focused day at both densities", async () => {

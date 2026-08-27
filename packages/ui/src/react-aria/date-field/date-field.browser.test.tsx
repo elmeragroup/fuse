@@ -8,6 +8,7 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { assertStateFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
+import { describedTextsFor } from "../../../test/rac-calendar-testing";
 import {
   CONTROL_MD,
   fkasExternal,
@@ -69,13 +70,20 @@ function buttonNamed(name: string): HTMLElement {
   return element;
 }
 
-function describedTargetsFor(name: string): HTMLElement[] {
+/**
+ * Both hosts RAC can hang `aria-describedby` on for one field: the field-box group and
+ * the DateField root above it.
+ */
+function describedHostsFor(name: string): HTMLElement[] {
   const group = groupNamed(name);
   const root = group.parentElement;
-  const ids = [
-    ...(group.getAttribute("aria-describedby") ?? "").split(/\s+/),
-    ...(root?.getAttribute("aria-describedby") ?? "").split(/\s+/),
-  ].filter(Boolean);
+  return root instanceof HTMLElement ? [group, root] : [group];
+}
+
+function describedTargetsFor(name: string): HTMLElement[] {
+  const ids = describedHostsFor(name).flatMap((host) =>
+    (host.getAttribute("aria-describedby") ?? "").split(/\s+/).filter(Boolean)
+  );
   return [
     ...new Set(
       ids
@@ -85,14 +93,8 @@ function describedTargetsFor(name: string): HTMLElement[] {
   ];
 }
 
-function describedTextsFor(name: string): string[] {
-  return [
-    ...new Set(
-      describedTargetsFor(name)
-        .map((node) => node.textContent)
-        .filter(Boolean)
-    ),
-  ];
+function describedTextsForField(name: string): string[] {
+  return [...new Set(describedHostsFor(name).flatMap((host) => describedTextsFor(host)))];
 }
 
 const july14 = new CalendarDate(2026, 7, 14);
@@ -105,7 +107,7 @@ describe("DateField", () => {
     await expect.element(page.getByRole("spinbutton", { name: "day" })).toBeVisible();
     await expect.element(page.getByRole("spinbutton", { name: "year" })).toBeVisible();
     expect(spinbuttonsIn("Invoice date")).toHaveLength(3);
-    expect(describedTextsFor("Invoice date")).toContain("Billing date.");
+    expect(describedTextsForField("Invoice date")).toContain("Billing date.");
   });
 
   it("traverses segments with arrows, increments, and backspaces to a placeholder", async () => {
@@ -200,7 +202,7 @@ describe("DateField", () => {
     expect(fieldRootFrom("String error")).toHaveAttribute("data-invalid");
     expect(fieldRootFrom("Function error")).toHaveAttribute("data-invalid");
     expect(functionValidation?.isInvalid).toBe(true);
-    expect(describedTextsFor("String error")).toContain("Date is out of range");
+    expect(describedTextsForField("String error")).toContain("Date is out of range");
     const functionError = page.getByRole("status", { name: "Function error details" });
     await expect.element(functionError).toBeVisible();
     const functionErrorNode = functionError.element();
@@ -214,7 +216,7 @@ describe("DateField", () => {
       ),
       "function error must be associated via aria-describedby"
     ).toBe(true);
-    expect(describedTextsFor("Function error")).toContain("Out of range");
+    expect(describedTextsForField("Function error")).toContain("Out of range");
   });
 
   it("skips disabled segments and keeps read-only segments focusable but inert", async () => {

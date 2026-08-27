@@ -16,9 +16,9 @@ import type {
   DateValue,
   ValidationResult,
 } from "react-aria-components";
-import { tv } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
+import { dateFieldVariants } from "../../styles/date-field";
 import { Description, FieldError, Label, fieldGroupVariants } from "../internal/field";
 import { composeTailwindRenderProps } from "../internal/utils";
 
@@ -43,33 +43,6 @@ export type DateFieldProps<T extends DateValue> = {
    */
   shouldForceLeadingZeros?: boolean;
 } & Omit<AriaDateFieldProps<T>, "shouldForceLeadingZeros">;
-
-const dateFieldVariants = tv({
-  slots: {
-    base: "flex flex-col gap-1",
-    input: "text-sm block min-w-[150px] px-2 py-1.5",
-    segment:
-      "inline rounded-xs p-0.5 text-foreground caret-transparent outline outline-0 forced-color-adjust-none forced-colors:text-[ButtonText] type-literal:px-0",
-  },
-  variants: {
-    isPlaceholder: {
-      true: {
-        segment: "text-muted-foreground italic",
-      },
-    },
-    isDisabled: {
-      true: {
-        segment: "text-muted-foreground forced-colors:text-[GrayText]",
-      },
-    },
-    isFocused: {
-      true: {
-        segment:
-          "bg-primary text-primary-foreground forced-colors:bg-[Highlight] forced-colors:text-[HighlightText]",
-      },
-    },
-  },
-});
 
 export function DateField<T extends DateValue>({
   label,

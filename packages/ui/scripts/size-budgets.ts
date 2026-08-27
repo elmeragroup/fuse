@@ -77,14 +77,17 @@
  *   radio-group   40198  (first calibration, ceiling 60297)
  *   checkbox-card 30194  (first calibration, ceiling 45291)
  *   react-aria/ui-providers 1987  (first calibration, ceiling 2981)
- *   react-aria/date-field 70071  (first calibration, ceiling 105107)
- *   react-aria/calendar 61023  (first calibration, ceiling 91535)
- *   react-aria/range-calendar 62330  (first calibration, ceiling 93495)
- *   react-aria/date-picker 105344  (first calibration, ceiling 158016 — the widest interim entry: it packs the field, calendar and overlay stacks together)
- *   react-aria/date-range-picker 105024  (first calibration, ceiling 157536 — the same three stacks as DatePicker, minus its preset pane and dictionary)
+ *   react-aria/date-field 70066  (recipe relocated to styles/date-field.ts; ratchet tightened by the 5 bytes it lost, ceiling 105099)
+ *   react-aria/calendar 61232  (recipes relocated to styles/calendar.ts and the useId error-id override dropped; the module boundary costs 209 bytes, still far under the standing 91535 ceiling, so recorded, not loosened)
+ *   react-aria/range-calendar 62417  (follows Calendar's relocated shared header parts; up 87, under the standing 93495 ceiling, so recorded, not loosened)
+ *   react-aria/date-picker 105312  (PickerDialog deleted and the two-pane row folded into the recipe; ratchet tightened, ceiling 157968 — still the widest interim entry: it packs the field, calendar and overlay stacks together)
+ *   react-aria/date-range-picker 104800  (composes the styled Dialog directly now that PickerDialog is gone; ratchet tightened, ceiling 157200 — the same three stacks as DatePicker, minus its preset pane and dictionary)
  *   react-aria/link 31234  (first calibration, ceiling 46851 — the RAC link runtime, no field/overlay stack)
  *   themes.css     2274
- *   styles.css    19066  (Link opacity transition and text-inherit utilities; under the standing 25265 ceiling from Table recalibration, so recorded, not loosened)
+ *   styles.css    19052  (the picker glyph stopped flagging its size utility `!important`, so that one
+ *                  escaped class left the sheet; under the standing 25265 ceiling from Table
+ *                  recalibration, so recorded, not loosened. Do not spell the flagged class in this
+ *                  file: Tailwind's source detection scans it and would emit the utility again.)
  */
 import { FLAG_RAW_CEILING_BYTES } from "./flag-payload";
 
@@ -170,14 +173,14 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = [
   { name: "breadcrumb", entryFile: "breadcrumb.js", ceilingGzip: 37869 },
   { name: "alert", entryFile: "alert.js", ceilingGzip: 45885 },
   { name: "react-aria/ui-providers", entryFile: "react-aria/ui-providers.js", ceilingGzip: 2981 },
-  { name: "react-aria/date-field", entryFile: "react-aria/date-field.js", ceilingGzip: 105107 },
+  { name: "react-aria/date-field", entryFile: "react-aria/date-field.js", ceilingGzip: 105099 },
   { name: "react-aria/calendar", entryFile: "react-aria/calendar.js", ceilingGzip: 91535 },
   { name: "react-aria/range-calendar", entryFile: "react-aria/range-calendar.js", ceilingGzip: 93495 },
-  { name: "react-aria/date-picker", entryFile: "react-aria/date-picker.js", ceilingGzip: 158016 },
+  { name: "react-aria/date-picker", entryFile: "react-aria/date-picker.js", ceilingGzip: 157968 },
   {
     name: "react-aria/date-range-picker",
     entryFile: "react-aria/date-range-picker.js",
-    ceilingGzip: 157536,
+    ceilingGzip: 157200,
   },
   { name: "react-aria/link", entryFile: "react-aria/link.js", ceilingGzip: 46851 },
 ];

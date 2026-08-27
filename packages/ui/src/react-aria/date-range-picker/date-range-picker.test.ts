@@ -45,18 +45,22 @@ describe("date-range-picker source contract", () => {
     expect(source).not.toContain("DateSegment");
     // The field and overlay chrome is the package-private RAC stack (§2).
     expect(source).toContain('from "../internal/popover"');
+    expect(source).toContain('from "../internal/dialog"');
     expect(source).toContain('from "../internal/field"');
     expect(source).toContain('from "../internal/button"');
   });
 
-  it("takes the popover's dialog from DatePicker's named private one, never raw RAC (§8.2)", () => {
+  it("takes the popover's dialog from the package-private styled one, never raw RAC (§8.2)", () => {
     // The issue's Do-not: the reference imported `Dialog` from react-aria-components and
-    // so skipped the cluster's dialog chrome. The styled Dialog reaches this module
-    // through DatePicker's PickerDialog, which is what supplies the §7 accessible name.
-    expect(source).toContain('import { PickerDialog } from "../date-picker/date-picker"');
-    expect(source).toContain("<PickerDialog");
+    // so skipped the cluster's dialog chrome. The styled Dialog is composed directly, and
+    // deliberately without a `title`: an untitled styled Dialog renders no heading, which
+    // is what leaves RAC's own §7 accessible name on the overlay.
+    expect(source).toContain('import { Dialog } from "../internal/dialog"');
+    expect(source).toContain("<Dialog className={dialog()} closeButton={false}>");
+    expect(source).not.toContain("title=");
+    expect(source).not.toContain("PickerDialog");
+    expect(source).not.toContain('from "../date-picker/date-picker"');
     expect(source).not.toMatch(/^import \{[^}]*\bDialog\b[^}]*\} from "react-aria-components";$/m);
-    expect(source).not.toContain('from "../internal/dialog"');
   });
 
   it("takes the trigger glyph from the Phosphor CalendarBlank roster entry (§8.7)", () => {

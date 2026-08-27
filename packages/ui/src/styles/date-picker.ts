@@ -10,8 +10,9 @@ import { tv } from "tailwind-variants";
  * composition needs — `dialog` strips the styled Dialog's padding, `calendar` strips
  * Calendar's card border because the popover already provides the chrome (§4/§5).
  *
- * The single axis is `isReadOnly` (§4): `bg-muted` on the field box and the trigger
- * icon. There is deliberately no `size` axis — `fieldGroupVariants` already pins the
+ * Two axes (§4): `isReadOnly` puts `bg-muted` on the field box and the trigger icon, and
+ * `hasPresets` turns the dialog's single pane into the divided two-pane row. There is
+ * deliberately no `size` axis — `fieldGroupVariants` already pins the
  * `md` control rung for the whole field family (conventions.md ruling 2), so this recipe
  * reads no `--control-*` variable and restates no box metric.
  */
@@ -23,8 +24,12 @@ export const datePickerVariants = tv({
     group: "w-auto min-w-[180px]",
     /** The public DateInput inside the field box. */
     input: "text-sm flex min-w-[150px] flex-1 px-2 py-1.5",
-    /** The CalendarBlank glyph in the trigger button. */
-    icon: "size-4! transition-colors",
+    /**
+     * The CalendarBlank glyph in the trigger button. A plain `size-4`: `buttonVariants`
+     * only sizes `svg:not([class*='size-'])`, so this class already wins on its own and
+     * an `!` would just be noise.
+     */
+    icon: "size-4 transition-colors",
     /**
      * The styled Dialog inside the popover. Both padding utilities are needed: the
      * dialog recipe sets `p-6` on its base and `p-4` under `[data-placement]`, which is
@@ -33,6 +38,12 @@ export const datePickerVariants = tv({
     dialog: "p-0 [[data-placement]>&]:p-0",
     /** The public Calendar inside the dialog — the popover owns the card chrome. */
     calendar: "border-none",
+    /**
+     * The row inside the dialog holding the optional preset pane and the calendar. Empty
+     * unless there are presets: a lone calendar is a single pane, so it must not inherit
+     * the divider, the column gap or the trailing inset the two-pane layout needs (§2).
+     */
+    pane: "",
   },
   variants: {
     isReadOnly: {
@@ -45,8 +56,22 @@ export const datePickerVariants = tv({
         icon: "",
       },
     },
+    /**
+     * Whether the caller handed over a preset pane that would actually paint. The call
+     * site decides that (`presetGroup={showPresets && <Group />}` collapses to `false`,
+     * not `undefined`), so this axis takes the answer, never the node.
+     */
+    hasPresets: {
+      true: {
+        pane: "flex gap-x-3 divide-x pr-3 pb-3",
+      },
+      false: {
+        pane: "",
+      },
+    },
   },
   defaultVariants: {
     isReadOnly: false,
+    hasPresets: false,
   },
 });

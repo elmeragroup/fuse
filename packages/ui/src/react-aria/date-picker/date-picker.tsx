@@ -10,7 +10,6 @@ import {
   Radio as AriaRadio,
   RadioGroup as AriaRadioGroup,
   DatePickerStateContext,
-  DialogContext,
 } from "react-aria-components";
 import type {
   DatePickerProps as AriaDatePickerProps,
@@ -36,6 +35,12 @@ import { datePickerStrings } from "./intl";
  * `DateInput` and `Calendar` joined by the package-private popover/dialog/button chrome.
  * Client — the interim react-aria cluster owns segment state, overlay state and the
  * focused-month sync below.
+ *
+ * The popover's dialog is the styled private `Dialog` with `closeButton={false}` and no
+ * `title`, which is what gives §7's accessible name: an untitled styled Dialog renders no
+ * heading, so the name `useDatePicker` publishes on RAC's `DialogContext` ("Calendar"
+ * plus the field label) reaches the overlay unopposed. See `internal/dialog.tsx` for why
+ * a rendered-but-empty heading would take that name instead.
  */
 export type DatePickerProps<T extends DateValue> = {
   /** Visible label, rendered as the private RAC `Label`. */
@@ -91,41 +96,6 @@ function isRenderableNode(node: ReactNode): boolean {
 }
 
 /**
- * The popover's dialog, named the way RAC intends.
- *
- * `useDatePicker` publishes `aria-labelledby` ("Calendar" plus the field label) on
- * `DialogContext`, but RAC's Dialog honours a context label only as a fallback for a
- * dialog without a `<Heading slot="title">`. The private styled Dialog always renders its
- * heading, and with no `title` that heading is empty — which would silently become the
- * dialog's accessible name. Forwarding the context value as an explicit prop restores the
- * §7 name without touching the internal (whose heading gating is ticket 17's business).
- *
- * Package-private but not module-private: DateRangePicker composes the same popover and
- * needs the same name, so it imports this rather than keeping a second copy in sync
- * (date-range-picker.md §8.2). It is deliberately absent from the `date-picker.ts`
- * facade — the entry publishes exactly the three documented names.
- */
-export function PickerDialog({
-  children,
-  className,
-}: {
-  children: ReactNode;
-  className: string;
-}): ReactElement {
-  const context = use(DialogContext);
-  const labelledBy =
-    context !== null && context !== undefined && "aria-labelledby" in context
-      ? context["aria-labelledby"]
-      : undefined;
-
-  return (
-    <Dialog aria-labelledby={labelledBy} className={className} closeButton={false}>
-      {children}
-    </Dialog>
-  );
-}
-
-/**
  * The popover's calendar, month-synced to the picker's own committed value.
  *
  * The month the grid shows is local state so paging never rewrites the value, and it is
@@ -162,7 +132,10 @@ export function DatePicker<T extends DateValue>({
   shouldForceLeadingZeros = true,
   ...props
 }: DatePickerProps<T>): ReactElement {
-  const { base, calendar, dialog, group, icon, input } = datePickerVariants({ isReadOnly });
+  const { base, calendar, dialog, group, icon, input, pane } = datePickerVariants({
+    isReadOnly,
+    hasPresets: isRenderableNode(presetGroup),
+  });
 
   return (
     <AriaDatePicker
@@ -181,12 +154,12 @@ export function DatePicker<T extends DateValue>({
       {description ? <Description>{description}</Description> : null}
       <FieldError>{errorMessage}</FieldError>
       <Popover container={container} placement="bottom right">
-        <PickerDialog className={dialog()}>
-          <div className={isRenderableNode(presetGroup) ? "flex gap-x-3 divide-x pr-3 pb-3" : undefined}>
+        <Dialog className={dialog()} closeButton={false}>
+          <div className={pane()}>
             {presetGroup}
             <PickerCalendar className={calendar()} />
           </div>
-        </PickerDialog>
+        </Dialog>
       </Popover>
     </AriaDatePicker>
   );

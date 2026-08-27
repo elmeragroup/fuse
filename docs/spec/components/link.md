@@ -31,7 +31,7 @@ No `usePredictedEvents`/intent props exist in the ref's surface — it is a plai
 
 ## 4 Variants
 
-`linkVariants` — module-private tv (no borrow pattern):
+`linkVariants` — module-private tv in `styles/link.ts` (no borrow pattern):
 
 | Axis       | Values                                                                                                                    | Default   |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------- | --------- |
@@ -65,6 +65,7 @@ Emitted by RAC: `data-hovered`, `data-pressed`, `data-focused`, `data-focus-visi
 4. No icons in this module.
 5. The RAC `Link` surface is captured as-is; router integration relies on `UiProviders`' `RouterProvider` (which also dies with the tier — base-ui replaces this with render props on the consuming component).
 6. **Focus unified:** the ref relied on an outline inherited from its shared RAC styles/browser handling; this entry explicitly composes the library-wide `focusRing` state adapter.
+7. **All five axes are applied:** the ref typed the full `VariantProps<typeof linkVariants>` surface but passed only `variant` into the recipe (`cn(linkVariants({ variant }), className)`), so `leading`, `truncate`, `align` and `weight` were accepted and silently dropped. This port applies all five.
 
 ## 9 Test requirements
 

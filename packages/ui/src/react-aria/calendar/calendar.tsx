@@ -1,6 +1,5 @@
 "use client";
 
-import { useId } from "react";
 import type { ReactElement, ReactNode } from "react";
 
 import {
@@ -15,14 +14,12 @@ import {
   useLocale,
 } from "react-aria-components";
 import type { CalendarProps as AriaCalendarProps, DateValue } from "react-aria-components";
-import { tv } from "tailwind-variants";
 
 import { Heading } from "../../components/heading/heading";
 import { Text } from "../../components/text/text";
 import { CaretLeft } from "../../icons/generated/caret-left";
 import { CaretRight } from "../../icons/generated/caret-right";
-import { cn } from "../../styles/cn";
-import { focusRing } from "../../styles/utils";
+import { calendarVariants, cellVariants } from "../../styles/calendar";
 import { Button } from "../internal/button";
 import { composeTailwindRenderProps } from "../internal/utils";
 
@@ -38,59 +35,15 @@ export type CalendarProps<T extends DateValue> = {
   errorMessage?: ReactNode;
 } & Omit<AriaCalendarProps<T>, "children" | "visibleDuration">;
 
-const cellVariants = tv({
-  // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- calendar.md §4/§5 decorative day-cell circle, not a control-box rung
-  base: cn(
-    "text-sm flex size-9 cursor-default items-center justify-center rounded-full forced-color-adjust-none",
-    focusRing({ target: "state" }).root()
-  ),
-  variants: {
-    isFocusVisible: {
-      true: focusRing({ target: "state", isFocusVisible: true }).root(),
-      false: "",
-    },
-    isSelected: {
-      false: "text-foreground hover:bg-muted aria-pressed:bg-accent",
-      true: "bg-primary text-primary-foreground invalid:bg-error forced-colors:bg-[Highlight] forced-colors:text-[HighlightText] forced-colors:invalid:bg-[Mark]",
-    },
-    isDisabled: {
-      true: "text-muted-foreground hover:bg-transparent forced-colors:text-[GrayText]",
-    },
-    isUnavailable: {
-      true: "text-muted-foreground hover:bg-transparent forced-colors:text-[GrayText]",
-    },
-  },
-});
-
-const calendarVariants = tv({
-  slots: {
-    base: "max-w-sm rounded text-sm shadow-md min-h-80 min-w-32 border border-border bg-card bg-clip-padding p-2 text-card-foreground will-change-transform",
-    header: "flex w-full items-center gap-1 px-1 pb-4",
-    heading: "mx-2 flex-1 text-center",
-    headerCell: "text-sm font-medium text-muted-foreground",
-    body: "mx-auto my-0 min-h-[246px]",
-    cell: cellVariants(),
-    error: "text-sm text-error",
-  },
-});
-
 export function Calendar<T extends DateValue>({
   errorMessage,
   className,
   ...props
 }: CalendarProps<T>): ReactElement {
   const { base, body, error } = calendarVariants();
-  const errorMessageId = useId();
-  const describedBy =
-    [props["aria-describedby"], errorMessage && props.isInvalid ? errorMessageId : undefined]
-      .filter(Boolean)
-      .join(" ") || undefined;
 
   return (
-    <AriaCalendar
-      {...props}
-      aria-describedby={describedBy}
-      className={composeTailwindRenderProps(className, base())}>
+    <AriaCalendar {...props} className={composeTailwindRenderProps(className, base())}>
       <CalendarHeader />
       <CalendarGrid className={body()} weekdayStyle="short">
         <CalendarGridHeader />
@@ -99,7 +52,7 @@ export function Calendar<T extends DateValue>({
         </CalendarGridBody>
       </CalendarGrid>
       {errorMessage ? (
-        <Text id={errorMessageId} className={error()} render={<AriaText slot="errorMessage" />}>
+        <Text className={error()} render={<AriaText slot="errorMessage" />}>
           {errorMessage}
         </Text>
       ) : null}
