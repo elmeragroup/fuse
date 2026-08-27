@@ -172,6 +172,18 @@ describe("ToggleGroup", () => {
     );
   });
 
+  it("keeps --gap when the consumer passes style", () => {
+    renderThemed(
+      <ToggleGroup.Root aria-label="Full width" spacing={3} style={{ width: "100%" }}>
+        <ToggleGroup.Item value="one">One</ToggleGroup.Item>
+      </ToggleGroup.Root>
+    );
+
+    const root = groupNamed("Full width");
+    expect(root.style.width).toBe("100%");
+    expect(root.style.getPropertyValue("--gap")).toBe("3");
+  });
+
   it("uses recipe defaults on a standalone Item", () => {
     renderThemed(<ToggleGroup.Item value="alone">Standalone</ToggleGroup.Item>);
 

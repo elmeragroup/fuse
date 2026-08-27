@@ -24,24 +24,20 @@ export const toastVariants = tv({
         icon: "animate-spin",
       },
       error: {
-        root: "bg-error-soft text-error-soft-foreground ring-1 ring-error/20 [&_[data-slot=toast-title]]:text-error [&_[data-toast-icon]]:text-error",
+        root: "bg-error-soft text-error-soft-foreground ring-1 ring-error/20 [&_[data-slot=toast-title]]:text-error",
         icon: "text-error",
-        title: "text-error",
       },
       info: {
-        root: "bg-info-soft text-info-soft-foreground ring-1 ring-info/20 [&_[data-slot=toast-title]]:text-info [&_[data-toast-icon]]:text-info",
+        root: "bg-info-soft text-info-soft-foreground ring-1 ring-info/20 [&_[data-slot=toast-title]]:text-info",
         icon: "text-info",
-        title: "text-info",
       },
       success: {
-        root: "bg-success-soft text-success-soft-foreground ring-1 ring-success/20 [&_[data-slot=toast-title]]:text-success [&_[data-toast-icon]]:text-success",
+        root: "bg-success-soft text-success-soft-foreground ring-1 ring-success/20 [&_[data-slot=toast-title]]:text-success",
         icon: "text-success",
-        title: "text-success",
       },
       warning: {
-        root: "bg-warning-soft text-warning-soft-foreground ring-1 ring-warning/20 [&_[data-slot=toast-title]]:text-warning [&_[data-toast-icon]]:text-warning",
+        root: "bg-warning-soft text-warning-soft-foreground ring-1 ring-warning/20 [&_[data-slot=toast-title]]:text-warning",
         icon: "text-warning",
-        title: "text-warning",
       },
     },
   },

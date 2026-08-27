@@ -21,6 +21,7 @@ import { X } from "../../icons/generated/x";
 import { cn } from "../../styles/cn";
 import { focusRing } from "../../styles/utils";
 import { useThemeScopeContainer } from "../../theme/theme-scope-container";
+import type { ButtonProps } from "../button/button";
 import { Button } from "../button/button";
 import { overlayLayer } from "../overlay/overlay-classes";
 import { toastStrings } from "./intl";
@@ -165,13 +166,7 @@ function adaptPromiseOption<Value, Data extends object>(
   stateType: "loading" | "success" | "error"
 ): PrimitiveUpdateOptions<Data> | ((result: Value) => PrimitiveUpdateOptions<Data>) {
   if (isPromiseStateFactory<Value, Data>(option)) {
-    return (result: Value) => {
-      const resolved = option(result);
-      if (isShorthandDescription(resolved)) {
-        return adaptResolvedPromiseState(resolved, stateType);
-      }
-      return adaptResolvedPromiseState(resolved, stateType);
-    };
+    return (result: Value) => adaptResolvedPromiseState(option(result), stateType);
   }
   return adaptResolvedPromiseState(option, stateType);
 }
@@ -377,15 +372,21 @@ function ToastClose({ className, label, children, ...props }: ToastCloseProps): 
   const resolvedLabel = label ?? strings.format("close");
   const visible = hasVisibleChildren(children);
   const closeButton = visible ? (
-    <Button variant="ghost" size="sm" aria-label={resolvedLabel} />
+    <Button variant="ghost" size="sm" />
   ) : (
-    <Button variant="ghost" size="icon-sm" aria-label={resolvedLabel} />
+    // SAFETY: icon-sm requires aria-label at the type level; Close's sr-only child is
+    // the accessible name after the primitive merges onto Button (toast.md §3).
+    <Button
+      {...({
+        variant: "ghost",
+        size: "icon-sm",
+      } as ButtonProps)}
+    />
   );
 
   return (
     <ToastPrimitive.Close
       data-slot="toast-close"
-      aria-label={resolvedLabel}
       className={cn("absolute top-2 right-2 text-muted-foreground", className)}
       render={closeButton}
       {...props}>

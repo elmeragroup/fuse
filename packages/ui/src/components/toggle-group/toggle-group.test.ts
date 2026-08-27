@@ -57,7 +57,7 @@ describe("toggle-group source contract", () => {
   });
 
   it("keeps the spacing CSS-var, segmented-control, and orientation classes from the lift", () => {
-    expect(source).toContain('"--gap": spacing');
+    expect(source).toContain('"--gap": spacing, ...(style as CSSProperties | undefined)');
     expect(source).toContain("gap-[--spacing(var(--gap))]");
     expect(source).toContain("data-spacing={spacing}");
     expect(source).toContain("group/toggle-group");

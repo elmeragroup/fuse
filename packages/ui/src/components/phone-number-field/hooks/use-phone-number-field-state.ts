@@ -9,7 +9,6 @@ import {
   cleanPhoneInput,
   defaultMetadata,
   getCountries,
-  getInitialPhoneDigits,
   processInputWithDetection,
   requirePickerCountries,
   resolvePhoneFieldValues,
@@ -110,15 +109,9 @@ export function usePhoneNumberFieldState({
         nextMetadata
       );
 
-      if (detected.country.code === selectedCountry.code) {
-        setPhoneState({
-          digits: getInitialPhoneDigits(decodedValue, selectedCountry.code, nextInternational, nextMetadata),
-          country: selectedCountry,
-        });
-        return;
+      if (detected.country.code !== selectedCountry.code) {
+        onCountryChange?.(detected.country);
       }
-
-      onCountryChange?.(detected.country);
       setPhoneState(detected);
     }
   );

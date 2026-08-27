@@ -150,6 +150,18 @@ describe("phone-number-field picker set", () => {
       defaultMetadata
     );
     expect(ituPrefix.country.code).toBe("SE");
+    expect(ituPrefix.digits).toBe("701234567");
+
+    const sameCountryItu = processInputWithDetection(
+      "004741234567",
+      norway,
+      countries,
+      true,
+      false,
+      defaultMetadata
+    );
+    expect(sameCountryItu.country.code).toBe("NO");
+    expect(sameCountryItu.digits).toBe("41234567");
 
     const unchanged = processInputWithDetection(
       "+46701234567",
@@ -164,7 +176,7 @@ describe("phone-number-field picker set", () => {
 
     const ac = processInputWithDetection("+24712345", norway, countries, true, false, defaultMetadata);
     expect(ac.country.code).toBe("NO");
-    expect(ac.digits).toBe("+24712345");
+    expect(ac.digits).toBe("12345");
     expect(UNRESOLVED_LIBPHONENUMBER_FLAG_GAP).not.toContain(ac.country.code);
   });
 });

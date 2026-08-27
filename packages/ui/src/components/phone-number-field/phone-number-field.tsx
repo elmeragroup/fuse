@@ -93,7 +93,7 @@ export type PhoneNumberFieldProps = {
    * @default false
    */
   isReadOnly?: boolean;
-  /** Feeds validation and sets `aria-required` on the visible input. */
+  /** Sets `aria-required` on the visible input. */
   isRequired?: boolean;
   /**
    * Hidden input gets `name`; the visible input gets `${name}-display-value`

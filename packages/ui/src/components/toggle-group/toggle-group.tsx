@@ -47,6 +47,7 @@ function ToggleGroupRoot({
   spacing = 2,
   orientation = "horizontal",
   children,
+  style,
   ...props
 }: ToggleGroupRootProps): ReactElement {
   const contextValue = useMemo(
@@ -62,7 +63,7 @@ function ToggleGroupRoot({
       data-spacing={spacing}
       data-orientation={orientation}
       // SAFETY: React's CSSProperties does not model custom properties; `--gap` is a plain number.
-      style={{ "--gap": spacing } as CSSProperties}
+      style={{ "--gap": spacing, ...(style as CSSProperties | undefined) } as CSSProperties}
       className={cn(
         "group/toggle-group data-[spacing=0]:data-[variant=outline]:shadow-xs flex w-fit flex-row items-center gap-[--spacing(var(--gap))] rounded-md data-vertical:flex-col data-vertical:items-stretch",
         className

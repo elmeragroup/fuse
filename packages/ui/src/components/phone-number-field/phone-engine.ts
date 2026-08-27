@@ -3,8 +3,6 @@ import {
   AsYouType,
   getCountries as getMetadataCountries,
   getCountryCallingCode,
-  isPossiblePhoneNumber,
-  isValidPhoneNumber,
 } from "libphonenumber-js/core";
 import defaultMetadata from "libphonenumber-js/metadata.min.json";
 
@@ -65,13 +63,6 @@ export type PhoneNumberCountry = {
 };
 
 export type PhoneNumberFormat = "e164" | "international" | "national" | "raw";
-
-export type PhoneNumberValidation = {
-  isValid: boolean;
-  isPossible: boolean;
-  isEmpty: boolean;
-  error?: string;
-};
 
 // SAFETY: the pinned min metadata JSON is the MetadataJson document libphonenumber-js ships.
 const metadataJson: MetadataJson = defaultMetadata;
@@ -255,20 +246,17 @@ export function processInputWithDetection(
   const normalized = normalizeInternationalPrefix(input);
   const detected = detectCountryFromInput(normalized, metadata);
   const nextCountry = detected ? countries.find((row) => row.code === detected) : undefined;
-
-  if (!nextCountry || nextCountry.code === currentCountry.code) {
-    return { digits: input, country: currentCountry };
-  }
+  const country = nextCountry && nextCountry.code !== currentCountry.code ? nextCountry : currentCountry;
 
   if (!international) {
-    const phoneNumber = parsePhoneNumber(normalized, nextCountry.code, metadata);
+    const phoneNumber = parsePhoneNumber(normalized, country.code, metadata);
     return {
       digits: phoneNumber?.nationalNumber ?? normalized,
-      country: nextCountry,
+      country,
     };
   }
 
-  return { digits: normalized, country: nextCountry };
+  return { digits: normalized, country };
 }
 
 export type PhoneFieldValues = {
@@ -292,58 +280,6 @@ export function resolvePhoneFieldValues(
   return {
     displayValue: getDisplayValue(phoneNumber, digits, international, formatOnType, country),
     outputValue: formatOutputValue(phoneNumber, digits, outputFormat),
-  };
-}
-
-export function getInitialPhoneDigits(
-  value: string,
-  country: CountryCode | undefined,
-  international: boolean,
-  metadata: MetadataJson
-): string {
-  if (!value) {
-    return "";
-  }
-  const phoneNumber = parsePhoneNumber(value, country, metadata);
-  if (phoneNumber) {
-    if (!international && country) {
-      return phoneNumber.nationalNumber || "";
-    }
-    return phoneNumber.number || value;
-  }
-  return value;
-}
-
-export function getPhoneNumberValidation(
-  value: string,
-  country: CountryCode | undefined,
-  required: boolean,
-  metadata: MetadataJson = metadataJson
-): PhoneNumberValidation {
-  const isEmpty = !value.trim();
-  if (isEmpty) {
-    return {
-      isEmpty,
-      isValid: !required,
-      isPossible: !required,
-      error: required ? "Phone number is required" : undefined,
-    };
-  }
-  const isValid = country
-    ? isValidPhoneNumber(value, country, metadata)
-    : isValidPhoneNumber(value, metadata);
-  const isPossible = country
-    ? isPossiblePhoneNumber(value, country, metadata)
-    : isPossiblePhoneNumber(value, metadata);
-  return {
-    isEmpty,
-    isValid,
-    isPossible,
-    error: !isValid
-      ? !isPossible
-        ? "Invalid phone number format"
-        : "Phone number appears incomplete"
-      : undefined,
   };
 }
 
