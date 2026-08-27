@@ -58,7 +58,7 @@ Locked palette mapping (ref raw grays/blues → contract tokens, `no-primitive-c
 
 - RAC range-grid semantics: `role="grid"`/`gridcell`; heading labels the visible month; selected cells expose `aria-selected`.
 - Keyboard per RAC: Arrows move day focus; Enter/Space anchors the range start, second Enter/Space commits the end; while anchored, arrow movement extends the highlighted range; Escape cancels an in-progress selection; PageUp/PageDown month nav; Home/End week bounds.
-- Invalid ranges (spanning unavailable dates without `allowsNonContiguousRanges`) mark the calendar invalid; `errorMessage` text is associated via the `errorMessage` slot.
+- Default non-contiguous rule: while a range is being selected, RAC clamps the highlight at the nearest unavailable dates around the anchor, so an interactive range never crosses an unavailable date; `allowsNonContiguousRanges` lifts the clamp. The calendar is invalid when a range endpoint is unavailable or outside `minValue`/`maxValue` (e.g. a provided value starting on an unavailable date); `errorMessage` text is associated via the `errorMessage` slot.
 - Nav buttons and RTL behavior inherited from the shared `CalendarHeader` (see calendar spec §7).
 
 ## 8 Divergence from reference
@@ -75,7 +75,7 @@ Locked palette mapping (ref raw grays/blues → contract tokens, `no-primitive-c
 - Role queries: `getByRole("grid")`, `getAllByRole("gridcell")`, nav buttons by accessible name, heading by role.
 - Range keyboard per §7: Enter anchors start → ArrowRight ×3 → Enter commits; `onChange` fires once with `{ start, end }`; Escape mid-selection restores the previous value.
 - Pointer: click start, click end; cells between expose `aria-selected="true"`; start/end cells carry `data-selection-start`/`data-selection-end`.
-- `isDateUnavailable` + default non-contiguous rule: a range spanning an unavailable date is invalid and `errorMessage` renders.
+- `isDateUnavailable` + default non-contiguous rule: keyboard selection clamps before the unavailable date; with `allowsNonContiguousRanges` the same keystrokes span it; a value whose endpoint is unavailable marks the calendar invalid and `errorMessage` renders and is referenced by `aria-describedby`.
 - `minValue`/`maxValue` disable out-of-range cells and clamp month navigation.
 
 ## 10 Demo requirements

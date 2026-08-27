@@ -91,6 +91,7 @@ describe("component page manifest", () => {
       "pagination",
       "popover",
       "radio-group",
+      "range-calendar",
       "scroll-area",
       "select",
       "selection-item",
@@ -318,6 +319,13 @@ describe("component page manifest", () => {
       "error",
       "rtl",
     ]);
+    expect(page("range-calendar").demos.map((demo) => demo.id)).toEqual([
+      "basic",
+      "controlled",
+      "unavailable",
+      "error",
+      "bounds",
+    ]);
   });
 
   it("links View source at the implementation on the repo host", () => {
@@ -364,6 +372,7 @@ describe("component page manifest", () => {
       pagination: "client",
       popover: "client",
       "radio-group": "client",
+      "range-calendar": "client",
       "scroll-area": "client",
       select: "client",
       "selection-item": "client",
@@ -432,6 +441,9 @@ describe("committed api.json", () => {
       "CalendarHeader",
       "CalendarGridHeader",
     ]);
+    expect(resolveComponentPaths("range-calendar").entry).toBe("@elmeragroup/ui/react-aria/range-calendar");
+    expect(resolveComponentPaths("range-calendar").exportName).toBe("RangeCalendar");
+    expect(resolveComponentPaths("range-calendar").apiExportNames).toEqual(["RangeCalendar"]);
   });
 
   it("documents DateInput's own props and the forwarded RAC remainder", () => {

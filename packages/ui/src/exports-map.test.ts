@@ -84,6 +84,7 @@ describe("exports map", () => {
       "tooltip",
       "react-aria/calendar",
       "react-aria/date-field",
+      "react-aria/range-calendar",
       "react-aria/ui-providers",
     ]);
     expect(unexpectedJsEntryFiles(packageRoot)).toEqual([]);
@@ -137,6 +138,10 @@ describe("exports map", () => {
       types: "./src/react-aria/date-field.ts",
       import: "./src/react-aria/date-field.ts",
     });
+    expect(exportBindingTarget(sourceExports, "./react-aria/range-calendar")).toEqual({
+      types: "./src/react-aria/range-calendar.ts",
+      import: "./src/react-aria/range-calendar.ts",
+    });
     expect(exportBindingTarget(sourceExports, "./react-aria/ui-providers")).toEqual({
       types: "./src/react-aria/ui-providers.ts",
       import: "./src/react-aria/ui-providers.ts",
@@ -179,6 +184,18 @@ describe("exports map", () => {
     expect(exportBindingTarget(publishExports, "./react-aria/calendar")).toEqual({
       types: "./react-aria/calendar.d.ts",
       import: "./react-aria/calendar.js",
+    });
+  });
+
+  it("publishes RangeCalendar from the quarantined react-aria/range-calendar entry only", () => {
+    const rangeCalendar = discovered.jsEntries.find((entry) => entry.subpath === "react-aria/range-calendar");
+    const root = discovered.jsEntries.find((entry) => entry.subpath === ".");
+    expect(rangeCalendar?.inRootBarrel).toBe(false);
+    expect(rangeCalendar?.runtimeExports).toEqual(["RangeCalendar"]);
+    expect(root?.runtimeExports).not.toContain("RangeCalendar");
+    expect(exportBindingTarget(publishExports, "./react-aria/range-calendar")).toEqual({
+      types: "./react-aria/range-calendar.d.ts",
+      import: "./react-aria/range-calendar.js",
     });
   });
 

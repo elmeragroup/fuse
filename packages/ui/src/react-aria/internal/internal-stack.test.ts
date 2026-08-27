@@ -174,6 +174,7 @@ describe("Wave 4 gate: zero public surface", () => {
     expect(racKeys).toEqual([
       "./react-aria/calendar",
       "./react-aria/date-field",
+      "./react-aria/range-calendar",
       "./react-aria/ui-providers",
     ]);
   });
