@@ -81,6 +81,7 @@ describe("exports map", () => {
       "textarea-field",
       "timeline-list",
       "toggle",
+      "toggle-group",
       "tooltip",
       "react-aria/calendar",
       "react-aria/date-field",
@@ -596,6 +597,12 @@ describe("exports map", () => {
     const toggle = discovered.jsEntries.find((entry) => entry.subpath === "toggle");
     expect(toggle?.inRootBarrel).toBe(true);
     expect(toggle?.runtimeExports).toEqual(["Toggle", "toggleVariants"]);
+  });
+
+  it("publishes ToggleGroup from /toggle-group and the root barrel without the toggle recipe", () => {
+    const toggleGroup = discovered.jsEntries.find((entry) => entry.subpath === "toggle-group");
+    expect(toggleGroup?.inRootBarrel).toBe(true);
+    expect(toggleGroup?.runtimeExports).toEqual(["ToggleGroup"]);
   });
 
   it("publishes Tooltip from /tooltip and the root barrel", () => {

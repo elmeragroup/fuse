@@ -54,4 +54,5 @@ export * from "./textarea-field";
 export * from "./theme";
 export * from "./timeline-list";
 export * from "./toggle";
+export * from "./toggle-group";
 export * from "./tooltip";

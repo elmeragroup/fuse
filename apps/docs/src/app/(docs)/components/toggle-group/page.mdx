@@ -1,0 +1,63 @@
+---
+title: ToggleGroup
+lede: >
+  A set of toggles with single or multiple selection. Item borrows the public
+  `toggleVariants` recipe; an item-level `variant` or `size` overrides the group.
+---
+
+import { ToggleGroupSingle } from "./demos/toggle-group-single";
+import { ToggleGroupMultiple } from "./demos/toggle-group-multiple";
+import { ToggleGroupOutlineSegmented } from "./demos/toggle-group-outline-segmented";
+import { ToggleGroupVertical } from "./demos/toggle-group-vertical";
+import { ToggleGroupSizes } from "./demos/toggle-group-sizes";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("toggle-group");
+
+<ComponentIntro slug="toggle-group" />
+
+<Prose>
+
+`ToggleGroup.Root` is a `role="group"` over the base-ui primitive. `multiple` defaults
+to `false` — zero-or-one pressed, and clicking the pressed item clears the selection.
+Set `multiple` for independent multi-press. `onValueChange` always receives an array of
+pressed values.
+
+Item-level `variant` and `size` win over the group's. Leave them unset on an item to
+inherit; a standalone `ToggleGroup.Item` falls through to the `toggleVariants` defaults.
+`spacing={0}` collapses items into one segmented control, with first/last caps restored
+on the orientation axis. Icon-only items need `aria-label`.
+
+The public `toggleVariants` recipe lives on `@elmeragroup/ui/toggle` — this entry does
+not re-export it.
+
+</Prose>
+
+<Demo slug="toggle-group" id="single" title="Single" file="toggle-group-single.tsx">
+  <ToggleGroupSingle />
+</Demo>
+
+<Demo slug="toggle-group" id="multiple" title="Multiple" file="toggle-group-multiple.tsx">
+  <ToggleGroupMultiple />
+</Demo>
+
+<Demo
+  slug="toggle-group"
+  id="outline-segmented"
+  title="Outline segmented"
+  file="toggle-group-outline-segmented.tsx">
+  <ToggleGroupOutlineSegmented />
+</Demo>
+
+<Demo slug="toggle-group" id="vertical" title="Vertical" file="toggle-group-vertical.tsx">
+  <ToggleGroupVertical />
+</Demo>
+
+<Demo slug="toggle-group" id="sizes" title="Sizes" file="toggle-group-sizes.tsx">
+  <ToggleGroupSizes />
+</Demo>
+
+<ApiReference slug="toggle-group" />
+
+<ComponentTokens slug="toggle-group" />

@@ -116,6 +116,7 @@ describe("component page manifest", () => {
       "textarea-field",
       "timeline-list",
       "toggle",
+      "toggle-group",
       "tooltip",
       "ui-providers",
     ]);
@@ -311,6 +312,13 @@ describe("component page manifest", () => {
       "title-only",
       "heading-level",
     ]);
+    expect(page("toggle-group").demos.map((demo) => demo.id)).toEqual([
+      "single",
+      "multiple",
+      "outline-segmented",
+      "vertical",
+      "sizes",
+    ]);
     expect(page("ui-providers").demos.map((demo) => demo.id)).toEqual(["basic", "locale-switch"]);
     expect(page("link").demos.map((demo) => demo.id)).toEqual(["variants", "router"]);
     expect(page("date-field").demos.map((demo) => demo.id)).toEqual([
@@ -423,6 +431,7 @@ describe("component page manifest", () => {
       "textarea-field": "client",
       "timeline-list": "server",
       toggle: "client",
+      "toggle-group": "client",
       tooltip: "client",
       "ui-providers": "client",
     } as const;

@@ -269,6 +269,10 @@
       "types": "./src/toggle.ts",
       "import": "./src/toggle.ts"
     },
+    "./toggle-group": {
+      "types": "./src/toggle-group.ts",
+      "import": "./src/toggle-group.ts"
+    },
     "./tooltip": {
       "types": "./src/tooltip.ts",
       "import": "./src/tooltip.ts"

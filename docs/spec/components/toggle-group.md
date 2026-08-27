@@ -18,7 +18,7 @@
 Root provides a React context (`variant`, `size`, `spacing`, `orientation`) that items consume; items borrow the public `toggleVariants` recipe from `toggle.tsx` (the sanctioned borrow pattern) and layer group-specific overrides on top.
 
 ```tsx
-<ToggleGroup.Root value={align} onValueChange={setAlign} toggleMultiple={false}>
+<ToggleGroup.Root value={align} onValueChange={setAlign}>
   <ToggleGroup.Item value="left" aria-label="Align left">
     <TextAlignLeft aria-hidden />
   </ToggleGroup.Item>
@@ -35,7 +35,7 @@ Root provides a React context (`variant`, `size`, `spacing`, `orientation`) that
 
 ### ToggleGroup.Root
 
-`ComponentProps<typeof ToggleGroupPrimitive> & VariantProps<typeof toggleVariants> & { spacing?: number; orientation?: "horizontal" | "vertical" }` — primitive pass-through includes `value`, `defaultValue`, `onValueChange`, `toggleMultiple`, `disabled`, `loop`, `render`.
+`ComponentProps<typeof ToggleGroupPrimitive> & VariantProps<typeof toggleVariants> & { spacing?: number; orientation?: "horizontal" | "vertical" }` — primitive pass-through includes `value`, `defaultValue`, `onValueChange`, `multiple`, `disabled`, `loopFocus`, `render`.
 
 | Prop          | Type                                | Default           | Notes                                                                       |
 | ------------- | ----------------------------------- | ----------------- | --------------------------------------------------------------------------- |
@@ -78,8 +78,8 @@ No recipe of its own — `ToggleGroup.Item` **borrows the public `toggleVariants
 ## 7 Accessibility
 
 - base-ui renders `role="group"`; items are toggle buttons with `aria-pressed`.
-- Selection: `toggleMultiple={false}` (default) = zero-or-one pressed; `toggleMultiple` = independent multi-press. `onValueChange` always receives an array of pressed values.
-- Keyboard: one tab stop; Arrow keys move focus between items (axis follows `orientation`, wraps with `loop`); Space/Enter toggle the focused item.
+- Selection: `multiple={false}` (default) = zero-or-one pressed; `multiple` = independent multi-press. `onValueChange` always receives an array of pressed values.
+- Keyboard: one tab stop; Arrow keys move focus between items (axis follows `orientation`, wraps with `loopFocus`); Space/Enter toggle the focused item.
 - Icon-only items need `aria-label`. Focus ring stays visible in segmented mode via `focus-visible:z-10`.
 
 ## 8 Divergence from reference
@@ -88,11 +88,12 @@ No recipe of its own — `ToggleGroup.Item` **borrows the public `toggleVariants
 2. **BUGFIX (ruled): item-level `variant`/`size` become effective** — the ref resolves `context.variant ?? variant` (context wins). Combined with a createContext default of non-undefined values (`size: "default"`, `variant: "default"`), item props are inert whenever the Root sets the axis, and _always_ inert outside a Root (the default context supplies a value); they only take effect inside a Root that leaves the axis unset (provider value `undefined`). Ours resolves **`itemProp ?? contextValue`** everywhere (item prop wins, group is the fallback), with an all-`undefined` context default so standalone items fall through to `toggleVariants` defaults.
 3. **BUGFIX (ruled): dead Radix selector removed** — the ref item carries `data-[state=on]:bg-muted`, a Radix-era leftover; base-ui emits `data-pressed`, never `data-state="on"`, so the selector can never match. Removed (pressed styling already comes from `toggleVariants`).
 4. `dark:`/`destructive` cleanups arrive via the borrowed `toggleVariants` (see toggle spec §8); no group-local token divergences.
+5. **Catalog pin `@base-ui/react@1.6.0`**: the ref-era primitive props `toggleMultiple` / `loop` were renamed to `multiple` / `loopFocus`. We pass the pinned names through; no alias.
 
 ## 9 Test requirements
 
-- **Single selection** (`toggleMultiple={false}`): clicking an item presses it and unpresses the sibling; `onValueChange` receives `[value]`; clicking the pressed item empties the selection.
-- **Multiple selection** (`toggleMultiple`): items toggle independently; `onValueChange` accumulates values.
+- **Single selection** (`multiple={false}`): clicking an item presses it and unpresses the sibling; `onValueChange` receives `[value]`; clicking the pressed item empties the selection.
+- **Multiple selection** (`multiple`): items toggle independently; `onValueChange` accumulates values.
 - Role queries: `getByRole("group")`; items via `getByRole("button", { pressed })`.
 - Keyboard: Arrow navigation between items (horizontal ←/→, vertical ↑/↓ with `orientation="vertical"`), Space/Enter toggles, single tab stop.
 - Prop resolution: Root `size="sm"` + unset item → item renders sm; Root `size="sm"` + item `size="lg"` → item renders lg (the §8.2 bugfix, asserted via `data-size`).

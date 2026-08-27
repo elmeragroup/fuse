@@ -55,6 +55,7 @@ describe("size-limit harness", () => {
       "input-group",
       "textarea",
       "flags",
+      "toggle-group",
       "checkbox-card",
       "radio-group",
       "checkbox",
@@ -139,6 +140,12 @@ describe("size-limit harness", () => {
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "toggle")?.ceilingGzip).toBe(
       ceilingFromMeasured(25482)
+    );
+    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "toggle-group")?.ceilingGzip).toBe(
+      ceilingFromMeasured(28942)
+    );
+    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === ".")?.ceilingGzip).toBe(
+      ceilingFromMeasured(171895)
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "loader")?.ceilingGzip).toBe(
       ceilingFromMeasured(16748)

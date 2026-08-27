@@ -1,0 +1,93 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "toggle-group",
+  "parts": [
+    {
+      "name": "ToggleGroup.Root",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/toggle-group/toggle-group.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 284,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes, merged last through `cn`.",
+          "required": false
+        },
+        {
+          "name": "size",
+          "origin": "recipe-axis",
+          "type": "\"default\" | \"lg\" | \"sm\" | \"xs\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        },
+        {
+          "name": "spacing",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": "2",
+          "description": "Tailwind spacing units between items. `0` is segmented-control mode (toggle-group.md §3/§4).",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "recipe-axis",
+          "type": "\"default\" | \"outline\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "ToggleGroup.Item",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/toggle-group/toggle-group.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 291,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes, merged after group overrides + `toggleVariants`.",
+          "required": false
+        },
+        {
+          "name": "size",
+          "origin": "recipe-axis",
+          "type": "\"default\" | \"lg\" | \"sm\" | \"xs\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "recipe-axis",
+          "type": "\"default\" | \"outline\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

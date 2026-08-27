@@ -22,7 +22,7 @@
  * measured×1.5.
  *
  * Current measurements (gzip bytes, 2026-08-27). Earlier measurement rounds live in git.
- *   .             171099  (Selection-family item-group orientation; under the standing 171567 ceiling from Avatar recalibration, so recorded, not loosened)
+ *   .             171895  (ToggleGroup joined the root barrel; exceeded 171567, recalibrated to measured×1.5)
  *   theme          6133
  *   icons/Check     818  (per-icon export, not the full roster)
  *   button        25214
@@ -87,6 +87,7 @@
  *   react-aria/grid-list 67309  (first calibration, ceiling 100964 — RAC grid list and selection checkbox)
  *   react-aria/focusable 3642  (first calibration, ceiling 5463 — RAC Focusable and useFocusable re-export)
  *   react-aria/file-trigger 36483  (first calibration, ceiling 54725 — RAC FileTrigger, internal Button, three Phosphor icons)
+ *   toggle-group  28942  (first calibration, ceiling 43413)
  *   themes.css     2274
  *   styles.css    19354  (grid-list first calibration grew the sheet; under the standing 25265
  *                  ceiling from Table recalibration, so recorded, not loosened. Do not spell flagged
@@ -119,7 +120,7 @@ export type FlagRawBudget = {
 };
 
 export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = [
-  { name: ".", entryFile: "index.js", ceilingGzip: 171567 },
+  { name: ".", entryFile: "index.js", ceilingGzip: 257843 },
   { name: "theme", entryFile: "theme.js", ceilingGzip: 9194 },
   { name: "badge", entryFile: "badge.js", ceilingGzip: 23493 },
   { name: "button", entryFile: "button.js", ceilingGzip: 37821 },
@@ -138,6 +139,7 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = [
   // `pnpm gen component` appends a 0-ceiling row below this marker, so a brand-new packed
   // entry cannot slip through unbudgeted. Replace the 0 with measured × 1.5.
   // plop:js-entry-budget
+  { name: "toggle-group", entryFile: "toggle-group.js", ceilingGzip: 43413 },
   { name: "checkbox-card", entryFile: "checkbox-card.js", ceilingGzip: 45291 },
   { name: "radio-group", entryFile: "radio-group.js", ceilingGzip: 60297 },
   { name: "checkbox", entryFile: "checkbox.js", ceilingGzip: 55520 },

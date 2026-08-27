@@ -30,6 +30,8 @@ export default defineConfig({
             "@base-ui/react/scroll-area",
             "@base-ui/react/merge-props",
             "@base-ui/react/use-render",
+            "@base-ui/react/toggle",
+            "@base-ui/react/toggle-group",
             "clsx",
             "tailwind-merge",
             "tailwind-variants",
