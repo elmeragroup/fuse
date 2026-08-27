@@ -88,6 +88,7 @@ describe("exports map", () => {
       "react-aria/date-range-picker",
       "react-aria/link",
       "react-aria/range-calendar",
+      "react-aria/search-field",
       "react-aria/ui-providers",
     ]);
     expect(unexpectedJsEntryFiles(packageRoot)).toEqual([]);
@@ -152,6 +153,10 @@ describe("exports map", () => {
     expect(exportBindingTarget(sourceExports, "./react-aria/link")).toEqual({
       types: "./src/react-aria/link.ts",
       import: "./src/react-aria/link.ts",
+    });
+    expect(exportBindingTarget(sourceExports, "./react-aria/search-field")).toEqual({
+      types: "./src/react-aria/search-field.ts",
+      import: "./src/react-aria/search-field.ts",
     });
     expect(exportBindingTarget(sourceExports, "./react-aria/range-calendar")).toEqual({
       types: "./src/react-aria/range-calendar.ts",
@@ -223,6 +228,18 @@ describe("exports map", () => {
     expect(exportBindingTarget(publishExports, "./react-aria/link")).toEqual({
       types: "./react-aria/link.d.ts",
       import: "./react-aria/link.js",
+    });
+  });
+
+  it("publishes SearchField from the quarantined react-aria/search-field entry only", () => {
+    const searchField = discovered.jsEntries.find((entry) => entry.subpath === "react-aria/search-field");
+    const root = discovered.jsEntries.find((entry) => entry.subpath === ".");
+    expect(searchField?.inRootBarrel).toBe(false);
+    expect(searchField?.runtimeExports).toEqual(["SearchField"]);
+    expect(root?.runtimeExports).not.toContain("SearchField");
+    expect(exportBindingTarget(publishExports, "./react-aria/search-field")).toEqual({
+      types: "./react-aria/search-field.d.ts",
+      import: "./react-aria/search-field.js",
     });
   });
 

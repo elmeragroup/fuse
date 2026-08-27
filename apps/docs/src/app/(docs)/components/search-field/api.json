@@ -1,0 +1,66 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "search-field",
+  "parts": [
+    {
+      "name": "SearchField",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/react-aria/search-field/search-field.tsx",
+      "forwardedFrom": [
+        "@react-types/shared",
+        "@types/react",
+        "react-aria",
+        "react-aria-components",
+        "react-stately"
+      ],
+      "forwardedCount": 124,
+      "props": [
+        {
+          "name": "clearLabel",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Accessible name for the clear button. Defaults to the `searchField.clear` row of the locale dictionary (accessibility.md §4.1); an explicit string wins.",
+          "required": false
+        },
+        {
+          "name": "description",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Supporting copy, rendered as the private RAC `Description`.",
+          "required": false
+        },
+        {
+          "name": "errorMessage",
+          "origin": "declared",
+          "type": "((validation: ValidationResult) => ReactNode) | ReactNode",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Error copy, rendered as `FieldError` when the field is invalid. Accepts a node or a validation render function.",
+          "required": false
+        },
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Visible label, rendered as the private RAC `Label`.",
+          "required": false
+        },
+        {
+          "name": "placeholder",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Placeholder forwarded to the inner `Input`.",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

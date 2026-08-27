@@ -1,0 +1,45 @@
+---
+title: SearchField
+lede: >
+  An interim labeled search field over React Aria Components. Enter submits the
+  query; Escape and the clear button empty it. A facet-filter remnant until the
+  listbox rewrite.
+---
+
+import { SearchFieldBasic } from "./demos/search-field-basic";
+import { SearchFieldValidation } from "./demos/search-field-validation";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("search-field");
+
+<ComponentIntro slug="search-field" />
+
+<Prose>
+
+`SearchField` lives at `@elmeragroup/ui/react-aria/search-field`. The `react-aria/`
+prefix is the quarantine marker: this module is replaced when the listbox/filter
+rewrite lands, and the bare path is reserved for that successor. The composite
+face is optional `label` / `description` / `placeholder`, `errorMessage` as a
+`ReactNode` or `(ValidationResult) => ReactNode`, and `clearLabel` defaulting to
+the locale dictionary. Remaining RAC SearchField props (`value`, `defaultValue`,
+`onChange`, `onSubmit`, `onClear`, `isDisabled`, `isReadOnly`, `isRequired`,
+`isInvalid`, …) pass through. `ref` forwards to the inner `<input>`.
+
+RAC wires `type="search"` / `role="searchbox"` on that input. The clear button is
+named by localized `clearLabel` and is invisible while the field is empty. Wrap
+locale-dependent usage in `UiProviders` from `@elmeragroup/ui/react-aria/ui-providers`.
+
+</Prose>
+
+<Demo slug="search-field" id="basic" title="Basic" file="search-field-basic.tsx">
+  <SearchFieldBasic />
+</Demo>
+
+<Demo slug="search-field" id="validation" title="Validation" file="search-field-validation.tsx">
+  <SearchFieldValidation />
+</Demo>
+
+<ApiReference slug="search-field" />
+
+<ComponentTokens slug="search-field" />

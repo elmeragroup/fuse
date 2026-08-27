@@ -175,6 +175,10 @@
       "types": "./src/react-aria/range-calendar.ts",
       "import": "./src/react-aria/range-calendar.ts"
     },
+    "./react-aria/search-field": {
+      "types": "./src/react-aria/search-field.ts",
+      "import": "./src/react-aria/search-field.ts"
+    },
     "./react-aria/ui-providers": {
       "types": "./src/react-aria/ui-providers.ts",
       "import": "./src/react-aria/ui-providers.ts"

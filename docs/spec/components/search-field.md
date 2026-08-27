@@ -26,7 +26,7 @@ All inner parts come from the tier-internal RAC field module (`Label`, `Input`, 
 
 ## 3 Props
 
-`SearchFieldProps = { label?, description?, errorMessage?, placeholder? } & AriaSearchFieldProps`
+`SearchFieldProps = { label?, description?, errorMessage?, placeholder?, clearLabel? } & AriaSearchFieldProps`
 
 | Prop                                                     | Type                                                | Default           | Notes                                                    |
 | -------------------------------------------------------- | --------------------------------------------------- | ----------------- | -------------------------------------------------------- |

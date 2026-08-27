@@ -178,6 +178,7 @@ describe("Wave 4 gate: zero public surface", () => {
       "./react-aria/date-range-picker",
       "./react-aria/link",
       "./react-aria/range-calendar",
+      "./react-aria/search-field",
       "./react-aria/ui-providers",
     ]);
   });

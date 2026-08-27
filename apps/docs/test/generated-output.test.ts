@@ -96,6 +96,7 @@ describe("component page manifest", () => {
       "radio-group",
       "range-calendar",
       "scroll-area",
+      "search-field",
       "select",
       "selection-item",
       "separator",
@@ -396,6 +397,7 @@ describe("component page manifest", () => {
       "radio-group": "client",
       "range-calendar": "client",
       "scroll-area": "client",
+      "search-field": "client",
       select: "client",
       "selection-item": "client",
       separator: "client",
@@ -456,6 +458,9 @@ describe("committed api.json", () => {
     expect(resolveComponentPaths("link").entry).toBe("@elmeragroup/ui/react-aria/link");
     expect(resolveComponentPaths("link").exportName).toBe("Link");
     expect(resolveComponentPaths("link").apiExportNames).toEqual(["Link"]);
+    expect(resolveComponentPaths("search-field").entry).toBe("@elmeragroup/ui/react-aria/search-field");
+    expect(resolveComponentPaths("search-field").exportName).toBe("SearchField");
+    expect(resolveComponentPaths("search-field").apiExportNames).toEqual(["SearchField"]);
     expect(resolveComponentPaths("date-field").entry).toBe("@elmeragroup/ui/react-aria/date-field");
     expect(resolveComponentPaths("date-field").exportName).toBe("DateField");
     expect(resolveComponentPaths("date-field").apiExportNames).toEqual(["DateField", "DateInput"]);
