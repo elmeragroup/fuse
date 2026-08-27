@@ -82,6 +82,7 @@ describe("exports map", () => {
       "timeline-list",
       "toggle",
       "tooltip",
+      "react-aria/ui-providers",
     ]);
     expect(unexpectedJsEntryFiles(packageRoot)).toEqual([]);
     expect(BARE_COMPONENT_ENTRIES).toHaveLength(56);
@@ -127,6 +128,22 @@ describe("exports map", () => {
 
   it("does not invent component entries before their source files exist", () => {
     expect(exportBindingTarget(sourceExports, "./react-aria/calendar")).toBeUndefined();
+    expect(exportBindingTarget(sourceExports, "./react-aria/ui-providers")).toEqual({
+      types: "./src/react-aria/ui-providers.ts",
+      import: "./src/react-aria/ui-providers.ts",
+    });
+  });
+
+  it("publishes UiProviders from the quarantined react-aria/ui-providers entry only", () => {
+    const uiProviders = discovered.jsEntries.find((entry) => entry.subpath === "react-aria/ui-providers");
+    const root = discovered.jsEntries.find((entry) => entry.subpath === ".");
+    expect(uiProviders?.inRootBarrel).toBe(false);
+    expect(uiProviders?.runtimeExports).toEqual(["UiProviders"]);
+    expect(root?.runtimeExports).not.toContain("UiProviders");
+    expect(exportBindingTarget(publishExports, "./react-aria/ui-providers")).toEqual({
+      types: "./react-aria/ui-providers.d.ts",
+      import: "./react-aria/ui-providers.js",
+    });
   });
 
   it("does not use a custom source or development export condition", () => {

@@ -15,7 +15,12 @@ import {
 } from "./flag-assets";
 import { buildPublishExportMap, exportBindingsObject } from "./generate-exports";
 import type { ExportBinding, ExportCondition } from "./generate-exports";
-import { emittedDirectiveFailure, packedValueExportFailure, parsePackedEvalJson } from "./package-check-lib";
+import {
+  emittedDirectiveFailure,
+  packedBareEntryRacDeclarationFailure,
+  packedValueExportFailure,
+  parsePackedEvalJson,
+} from "./package-check-lib";
 import { twemojiNoticeFailure } from "./twemoji-notices";
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -332,6 +337,13 @@ export function checkPackedDirectives(extracted: string, discovered: DiscoveredE
   const mismatch = emittedDirectiveFailure(extracted, discovered.sourceFiles, packageRoot);
   if (mismatch !== undefined) {
     fail(mismatch);
+  }
+}
+
+export function checkPackedBareEntryRacDeclarations(extracted: string, discovered: DiscoveredEntries): void {
+  const leak = packedBareEntryRacDeclarationFailure(extracted, discovered.jsEntries);
+  if (leak !== undefined) {
+    fail(leak);
   }
 }
 

@@ -76,6 +76,7 @@
  *   checkbox      37013  (first calibration, ceiling 55520)
  *   radio-group   40198  (first calibration, ceiling 60297)
  *   checkbox-card 30194  (first calibration, ceiling 45291)
+ *   react-aria/ui-providers 1987  (first calibration, ceiling 2981)
  *   themes.css     2274
  *   styles.css    17536  (Selection-family control-slot utilities; under the standing 25265 ceiling from Table recalibration, so recorded, not loosened)
  */
@@ -162,6 +163,7 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = [
   { name: "pagination", entryFile: "pagination.js", ceilingGzip: 28785 },
   { name: "breadcrumb", entryFile: "breadcrumb.js", ceilingGzip: 37869 },
   { name: "alert", entryFile: "alert.js", ceilingGzip: 45885 },
+  { name: "react-aria/ui-providers", entryFile: "react-aria/ui-providers.js", ceilingGzip: 2981 },
 ];
 
 export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = [

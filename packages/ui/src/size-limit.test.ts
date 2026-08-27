@@ -92,6 +92,7 @@ describe("size-limit harness", () => {
       "pagination",
       "breadcrumb",
       "alert",
+      "react-aria/ui-providers",
       "icons/Check",
     ]);
     expect(FLAG_RAW_BUDGETS).toEqual([{ name: "flags/*.svg", ceilingBytes: FLAG_RAW_CEILING_BYTES }]);
@@ -212,6 +213,9 @@ describe("size-limit harness", () => {
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "checkbox-card")?.ceilingGzip).toBe(
       ceilingFromMeasured(30194)
+    );
+    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "react-aria/ui-providers")?.ceilingGzip).toBe(
+      ceilingFromMeasured(1987)
     );
     // styles.css recalibrated 2026-08-25: Table in-frame utilities exceeded 15860.
     expect(CSS_BUDGETS.find((budget) => budget.name === "styles.css")?.ceilingGzip).toBe(

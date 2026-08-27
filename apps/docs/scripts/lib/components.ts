@@ -65,14 +65,16 @@ function apiExportNamesFor(slug: string, exportName: string): readonly string[] 
 
 /** Where a slug's inputs and its co-located generated artifact live. */
 export function resolveComponentPaths(slug: string): ComponentPaths {
-  const componentDir = path.join(uiSrc, "components", slug);
   const routeDir = path.join(componentRoutesDir, slug);
   const exportName = pascalCase(slug);
+  const racFacade = path.join(uiSrc, "react-aria", `${slug}.ts`);
+  const isRac = existsSync(racFacade);
+  const componentDir = isRac ? path.join(uiSrc, "react-aria", slug) : path.join(uiSrc, "components", slug);
   return {
     pageFile: path.join(routeDir, "page.mdx"),
     apiFile: path.join(routeDir, "api.json"),
-    entryFile: path.join(uiSrc, `${slug}.ts`),
-    entry: `@elmeragroup/ui/${slug}`,
+    entryFile: isRac ? racFacade : path.join(uiSrc, `${slug}.ts`),
+    entry: isRac ? `@elmeragroup/ui/react-aria/${slug}` : `@elmeragroup/ui/${slug}`,
     exportName,
     apiExportNames: apiExportNamesFor(slug, exportName),
     sourceFile: path.join(componentDir, `${slug}.tsx`),

@@ -107,6 +107,7 @@ describe("component page manifest", () => {
       "timeline-list",
       "toggle",
       "tooltip",
+      "ui-providers",
     ]);
   });
 
@@ -300,6 +301,7 @@ describe("component page manifest", () => {
       "title-only",
       "heading-level",
     ]);
+    expect(page("ui-providers").demos.map((demo) => demo.id)).toEqual(["basic", "locale-switch"]);
   });
 
   it("links View source at the implementation on the repo host", () => {
@@ -362,6 +364,7 @@ describe("component page manifest", () => {
       "timeline-list": "server",
       toggle: "client",
       tooltip: "client",
+      "ui-providers": "client",
     } as const;
     expect(Object.keys(expected)).toHaveLength(COMPONENT_PAGES.length);
     for (const [slug, rsc] of Object.entries(expected)) {
@@ -398,6 +401,9 @@ describe("committed api.json", () => {
     expect(resolveComponentPaths("pagination").apiExportNames).toEqual(["Pagination"]);
     expect(resolveComponentPaths("breadcrumb").apiExportNames).toEqual(["Breadcrumb"]);
     expect(resolveComponentPaths("alert").apiExportNames).toEqual(["Alert"]);
+    expect(resolveComponentPaths("ui-providers").entry).toBe("@elmeragroup/ui/react-aria/ui-providers");
+    expect(resolveComponentPaths("ui-providers").exportName).toBe("UiProviders");
+    expect(resolveComponentPaths("ui-providers").apiExportNames).toEqual(["UiProviders"]);
   });
 
   it("never leaves a documented prop without a description or an unresolved type", () => {

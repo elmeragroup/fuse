@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 
 import { discoverEntries } from "./entries";
 import {
+  checkPackedBareEntryRacDeclarations,
   checkPackedBootstrap,
   checkPackedDirectives,
   checkPackedExports,
@@ -84,6 +85,7 @@ try {
   checkPackedPeers(extracted);
   checkPackedRuntimeExports(exported, discovered);
   checkPackedDirectives(extracted, discovered);
+  checkPackedBareEntryRacDeclarations(extracted, discovered);
   checkPackedFlags(extracted, consumerRoot, exported[importSpecifier("flags")]);
   checkPackedTwemojiNotices(extracted);
   checkValidateThemeEnv(extracted);
