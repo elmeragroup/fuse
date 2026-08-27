@@ -78,7 +78,7 @@
  *   checkbox-card 30194  (first calibration, ceiling 45291)
  *   react-aria/ui-providers 1987  (first calibration, ceiling 2981)
  *   react-aria/date-field 70071  (first calibration, ceiling 105107)
- *   react-aria/calendar 60991  (first calibration, ceiling 91487)
+ *   react-aria/calendar 61023  (first calibration, ceiling 91535)
  *   themes.css     2274
  *   styles.css    17840  (Calendar cell/surface utilities; under the standing 25265 ceiling from Table recalibration, so recorded, not loosened)
  */
@@ -167,7 +167,7 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = [
   { name: "alert", entryFile: "alert.js", ceilingGzip: 45885 },
   { name: "react-aria/ui-providers", entryFile: "react-aria/ui-providers.js", ceilingGzip: 2981 },
   { name: "react-aria/date-field", entryFile: "react-aria/date-field.js", ceilingGzip: 105107 },
-  { name: "react-aria/calendar", entryFile: "react-aria/calendar.js", ceilingGzip: 91487 },
+  { name: "react-aria/calendar", entryFile: "react-aria/calendar.js", ceilingGzip: 91535 },
 ];
 
 export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = [

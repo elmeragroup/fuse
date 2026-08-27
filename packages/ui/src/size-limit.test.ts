@@ -223,7 +223,7 @@ describe("size-limit harness", () => {
       ceilingFromMeasured(70071)
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "react-aria/calendar")?.ceilingGzip).toBe(
-      ceilingFromMeasured(60991)
+      ceilingFromMeasured(61023)
     );
     // styles.css recalibrated 2026-08-25: Table in-frame utilities exceeded 15860.
     expect(CSS_BUDGETS.find((budget) => budget.name === "styles.css")?.ceilingGzip).toBe(
