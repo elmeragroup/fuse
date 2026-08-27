@@ -100,6 +100,7 @@ export const runtimeDependencies = [
   "@phosphor-icons/react",
   "@internationalized/string",
   "sugar-high",
+  "libphonenumber-js",
 ] as const;
 
 export const PUBLISHED_PEER_RANGES = {

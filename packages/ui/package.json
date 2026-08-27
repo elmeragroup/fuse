@@ -147,6 +147,10 @@
       "types": "./src/pagination.ts",
       "import": "./src/pagination.ts"
     },
+    "./phone-number-field": {
+      "types": "./src/phone-number-field.ts",
+      "import": "./src/phone-number-field.ts"
+    },
     "./popover": {
       "types": "./src/popover.ts",
       "import": "./src/popover.ts"
@@ -319,6 +323,7 @@
     "@internationalized/string": "catalog:",
     "@phosphor-icons/react": "catalog:",
     "clsx": "catalog:",
+    "libphonenumber-js": "catalog:",
     "react-aria": "catalog:",
     "react-aria-components": "catalog:",
     "sugar-high": "catalog:",
@@ -336,7 +341,6 @@
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@vitest/browser-playwright": "catalog:",
-    "libphonenumber-js": "catalog:",
     "playwright": "catalog:",
     "publint": "catalog:",
     "rolldown": "catalog:",

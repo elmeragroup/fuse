@@ -313,6 +313,9 @@ importers:
       clsx:
         specifier: 'catalog:'
         version: 2.1.1
+      libphonenumber-js:
+        specifier: 'catalog:'
+        version: 1.13.9
       react-aria:
         specifier: 'catalog:'
         version: 3.50.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -359,9 +362,6 @@ importers:
       '@vitest/browser-playwright':
         specifier: 'catalog:'
         version: 4.1.10(playwright@1.62.1)(vite@8.2.1(@types/node@25.9.5)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.10)
-      libphonenumber-js:
-        specifier: 'catalog:'
-        version: 1.13.9
       playwright:
         specifier: 'catalog:'
         version: 1.62.1

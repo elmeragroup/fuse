@@ -55,6 +55,7 @@ describe("size-limit harness", () => {
       "input-group",
       "textarea",
       "flags",
+      "phone-number-field",
       "popover-info-button",
       "combobox",
       "toggle-group",
@@ -151,6 +152,9 @@ describe("size-limit harness", () => {
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "popover-info-button")?.ceilingGzip).toBe(
       ceilingFromMeasured(60528)
+    );
+    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "phone-number-field")?.ceilingGzip).toBe(
+      ceilingFromMeasured(116344)
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === ".")?.ceilingGzip).toBe(
       ceilingFromMeasured(171895)

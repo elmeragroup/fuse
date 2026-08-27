@@ -63,6 +63,7 @@ describe("exports map", () => {
       "meter",
       "number-field",
       "pagination",
+      "phone-number-field",
       "popover",
       "popover-info-button",
       "radio-group",
@@ -593,6 +594,12 @@ describe("exports map", () => {
     const combobox = discovered.jsEntries.find((entry) => entry.subpath === "combobox");
     expect(combobox?.inRootBarrel).toBe(true);
     expect(combobox?.runtimeExports).toEqual(["Combobox", "useComboboxAnchor"]);
+  });
+
+  it("publishes PhoneNumberField from /phone-number-field and the root barrel", () => {
+    const phoneNumberField = discovered.jsEntries.find((entry) => entry.subpath === "phone-number-field");
+    expect(phoneNumberField?.inRootBarrel).toBe(true);
+    expect(phoneNumberField?.runtimeExports).toEqual(["PhoneNumberField"]);
   });
 
   it("publishes Sheet from /sheet and the root barrel", () => {

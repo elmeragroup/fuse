@@ -61,7 +61,7 @@ describe("flag assets", () => {
     expect(missing.toSorted((left, right) => left.localeCompare(right))).toEqual(["AC", "BQ", "EH", "TA"]);
   });
 
-  it("does not publish libphonenumber-js as a runtime dependency", () => {
+  it("publishes libphonenumber-js as a runtime dependency when the workspace declares it", () => {
     const parsed: unknown = JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8"));
     if (parsed === null || Array.isArray(parsed)) {
       throw new Error("package.json is not an object");
@@ -71,19 +71,20 @@ describe("flag assets", () => {
       dependencies: Record<string, string>;
       devDependencies: Record<string, string>;
     };
-    expect(pkg.dependencies["libphonenumber-js"]).toBeUndefined();
-    expect(pkg.devDependencies["libphonenumber-js"]).toBe("catalog:");
-    expect(runtimeDependencies).not.toContain("libphonenumber-js");
+    expect(pkg.dependencies["libphonenumber-js"]).toBe("catalog:");
+    expect(pkg.devDependencies["libphonenumber-js"]).toBeUndefined();
+    expect(runtimeDependencies).toContain("libphonenumber-js");
     expect(
       publishedDependencies({
         "@base-ui/react": "catalog:",
         clsx: "catalog:",
+        "libphonenumber-js": "catalog:",
         "tailwind-merge": "catalog:",
         "tailwind-variants": "catalog:",
         "tailwindcss-react-aria-components": "catalog:",
         "tw-animate-css": "catalog:",
       })["libphonenumber-js"]
-    ).toBeUndefined();
+    ).toBe("^1.13.9");
   });
 
   // Timeout: copying + SHA-256 hashing the full flag set twice is slow under full-gate parallel load.

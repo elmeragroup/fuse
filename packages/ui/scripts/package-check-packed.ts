@@ -148,9 +148,6 @@ export function checkPackedPeers(extracted: string): void {
   if (packedText.includes("catalog:")) {
     fail("Packed package.json leaked catalog: pins");
   }
-  if (packed.dependencies?.["libphonenumber-js"] !== undefined) {
-    fail("Packed package.json must not publish libphonenumber-js as a runtime dependency");
-  }
 }
 
 export function checkPackedRuntimeExports(

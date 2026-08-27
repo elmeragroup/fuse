@@ -1,0 +1,321 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "phone-number-field",
+  "parts": [
+    {
+      "name": "PhoneNumberField",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/phone-number-field/phone-number-field.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "aria-describedby",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Description reference forwarded to the visible input when defined.",
+          "required": false
+        },
+        {
+          "name": "aria-label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Accessible name forwarded to the visible input when defined.",
+          "required": false
+        },
+        {
+          "name": "aria-labelledby",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Accessible name reference forwarded to the visible input when defined.",
+          "required": false
+        },
+        {
+          "name": "autoComplete",
+          "origin": "declared",
+          "type": "HTMLInputAutoCompleteAttribute | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Native `autoComplete`, also forwarded to Combobox.Root.",
+          "required": false
+        },
+        {
+          "name": "autoDetectCountry",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Detect country from a `+`/`00` prefix while typing or pasting.",
+          "required": false
+        },
+        {
+          "name": "autoFocus",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Native `autoFocus` forwarded to the visible input.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes, merged onto the root via `cn`.",
+          "required": false
+        },
+        {
+          "name": "container",
+          "origin": "declared",
+          "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Portal target for the country picker. Defaults to the nearest enclosing `ThemeScope` element.",
+          "required": false
+        },
+        {
+          "name": "defaultCountryCode",
+          "origin": "declared",
+          "type": "\"AD\" | \"AE\" | \"AF\" | \"AG\" | \"AI\" | \"AL\" | \"AM\" | \"AO\" | \"AR\" | \"AS\" | \"AT\" | \"AU\" | \"AW\" | \"AX\" | \"AZ\" | \"BA\" | \"BB\" | \"BD\" | \"BE\" | \"BF\" | \"BG\" | \"BH\" | \"BI\" | \"BJ\" | \"BL\" | \"BM\" | \"BN\" | ... 214 more ... | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Initial country. Must be a libphonenumber country with a packaged flag asset. Untyped unresolved values fall back to `NO`, then the first picker country.",
+          "required": false
+        },
+        {
+          "name": "description",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Supporting copy, rendered as `Field.Description`.",
+          "required": false
+        },
+        {
+          "name": "endContent",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Trailing content inside the InputGroup.",
+          "required": false
+        },
+        {
+          "name": "enterKeyHint",
+          "origin": "declared",
+          "type": "\"done\" | \"enter\" | \"go\" | \"next\" | \"previous\" | \"search\" | \"send\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Native `enterKeyHint` forwarded to the visible input.",
+          "required": false
+        },
+        {
+          "name": "errorMessage",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`.",
+          "required": false
+        },
+        {
+          "name": "formatOnType",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "As-you-type display formatting.",
+          "required": false
+        },
+        {
+          "name": "id",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Native `id` forwarded to the visible input when defined.",
+          "required": false
+        },
+        {
+          "name": "inputMode",
+          "origin": "declared",
+          "type": "\"decimal\" | \"email\" | \"none\" | \"numeric\" | \"search\" | \"tel\" | \"text\" | \"url\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"tel\"",
+          "description": "Native `inputMode` forwarded to the visible input.",
+          "required": false
+        },
+        {
+          "name": "international",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Store and display the full number with prefix instead of national digits.",
+          "required": false
+        },
+        {
+          "name": "isDisabled",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Forwards `disabled` to Field and the country Combobox.",
+          "required": false
+        },
+        {
+          "name": "isInvalid",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Forwards `invalid` to `Field.Root`. InputGroup gets `aria-invalid || undefined`.",
+          "required": false
+        },
+        {
+          "name": "isReadOnly",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Forwards `readOnly` to the country Combobox and the visible input.",
+          "required": false
+        },
+        {
+          "name": "isRequired",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Feeds validation and sets `aria-required` on the visible input.",
+          "required": false
+        },
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Visible label, rendered as `Field.Label`.",
+          "required": false
+        },
+        {
+          "name": "metadata",
+          "origin": "declared",
+          "type": "MetadataJson | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Custom/trimmed libphonenumber metadata. Country rows are intersected with `flagAssets`.",
+          "required": false
+        },
+        {
+          "name": "name",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Hidden input gets `name`; the visible input gets `${name}-display-value` (default `\"phone-number-display-value\"`).",
+          "required": false
+        },
+        {
+          "name": "noCountriesFoundText",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Explicit override for the built-in `noCountries` dictionary key.",
+          "required": false
+        },
+        {
+          "name": "onBlur",
+          "origin": "declared",
+          "type": "FocusEventHandler<HTMLInputElement> | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Native `onBlur` forwarded to the visible input.",
+          "required": false
+        },
+        {
+          "name": "onChange",
+          "origin": "declared",
+          "type": "((value: string) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Receives the formatted output value (per `outputFormat`), not raw digits.",
+          "required": false
+        },
+        {
+          "name": "onCountryChange",
+          "origin": "declared",
+          "type": "((country: { code: \"AD\" | \"AE\" | \"AF\" | \"AG\" | \"AI\" | \"AL\" | \"AM\" | \"AO\" | \"AR\" | \"AS\" | \"AT\" | \"AU\" | \"AW\" | \"AX\" | \"AZ\" | \"BA\" | \"BB\" | \"BD\" | \"BE\" | \"BF\" | \"BG\" | \"BH\" | \"BI\" | \"BJ\" | \"BL\" | \"BM\" | ... 214 more ... | \"ZW\"; dialCode: string; }) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Called when the selected picker country changes.",
+          "required": false
+        },
+        {
+          "name": "outputFormat",
+          "origin": "declared",
+          "type": "\"e164\" | \"international\" | \"national\" | \"raw\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Format of `onChange` and the hidden submit input.",
+          "required": false
+        },
+        {
+          "name": "placeholder",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Placeholder for the visible number input.",
+          "required": false
+        },
+        {
+          "name": "preserveOnCountryChange",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Keep digits when switching country. Default clears and emits `\"\"`.",
+          "required": false
+        },
+        {
+          "name": "searchCountriesLabel",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Explicit override for the built-in `searchCountries` dictionary key.",
+          "required": false
+        },
+        {
+          "name": "selectCountryLabel",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Explicit override for the built-in `selectCountry` dictionary key.",
+          "required": false
+        },
+        {
+          "name": "value",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Controlled outer value; URI-decoded on sync (may arrive from URL params).",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

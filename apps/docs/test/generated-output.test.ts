@@ -96,6 +96,7 @@ describe("component page manifest", () => {
       "meter",
       "number-field",
       "pagination",
+      "phone-number-field",
       "popover",
       "popover-info-button",
       "radio-group",
@@ -328,6 +329,14 @@ describe("component page manifest", () => {
       "multi-chips",
       "input-group-anchor",
     ]);
+    expect(page("phone-number-field").demos.map((demo) => demo.id)).toEqual([
+      "basic",
+      "international",
+      "detect",
+      "form",
+      "i18n",
+      "states",
+    ]);
     expect(page("ui-providers").demos.map((demo) => demo.id)).toEqual(["basic", "locale-switch"]);
     expect(page("link").demos.map((demo) => demo.id)).toEqual(["variants", "router"]);
     expect(page("date-field").demos.map((demo) => demo.id)).toEqual([
@@ -420,6 +429,7 @@ describe("component page manifest", () => {
       meter: "client",
       "number-field": "client",
       pagination: "client",
+      "phone-number-field": "client",
       popover: "client",
       "popover-info-button": "client",
       "radio-group": "client",
