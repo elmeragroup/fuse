@@ -52,7 +52,16 @@ describe("package-selective external-type expansion", () => {
       types: [
         {
           kind: "external",
-          typeName: { name: "MouseEventHandler", namespaces: ["React"] },
+          typeName: {
+            name: "MouseEventHandler",
+            namespaces: ["React"],
+            typeArguments: [
+              {
+                type: { kind: "external", typeName: { name: "HTMLButtonElement" } },
+                equalToDefault: false,
+              },
+            ],
+          },
         },
         { kind: "intrinsic", intrinsic: "undefined" },
       ],
@@ -89,6 +98,31 @@ describe("package-selective external-type expansion", () => {
     expect(exports.get("SelectedOwner")).toMatchObject({
       kind: "object",
       properties: [{ name: "selectedMember" }],
+    });
+    expect(exports.get("UnselectedMappedUse")).toMatchObject({
+      kind: "external",
+      typeName: { name: "ForeignMapped" },
+    });
+    expect(exports.get("UnselectedKeysUse")).toEqual({
+      kind: "union",
+      types: [
+        { kind: "literal", value: '"foreignAlpha"' },
+        { kind: "literal", value: '"foreignBeta"' },
+      ],
+    });
+
+    const wrapped = exports.get("WrappedComponent");
+    expect(wrapped?.kind).toBe("component");
+    if (wrapped?.kind !== "component") throw new Error("React.FC wrapper recognition regressed");
+    expect(wrapped.props.map((property) => property.name)).toEqual([
+      "focusableWhenDisabled",
+      "foreignDetail",
+      "onAction",
+      "localLabel",
+    ]);
+    expect(exports.get("SelectedUtilityUse")).toMatchObject({
+      kind: "object",
+      properties: [{ name: "focusableWhenDisabled" }, { name: "localLabel" }],
     });
   });
 

@@ -382,9 +382,10 @@ backend, and the `facts.ts` size ceiling remains in force.
 
 Ownership is a normalized backend fact rather than resolver-side path
 matching. `src/backend/ts7/file-ownership.ts` classifies each declaration's
-source file — project-authored, TypeScript's standard library, or packaged
-dependency, plus the wider toolchain-directory form the built-in gates ask for —
-and `src/parse/ownership.ts` consumes that classification through one mandatory
+source file — project-authored, TypeScript's standard library, a packaged
+dependency, or an external file whose package owner is unknown, plus the wider
+toolchain-directory form the built-in gates ask for — and
+`src/parse/ownership.ts` consumes that classification through one mandatory
 compiler operation (`declarationOwnership`), replacing every `node_modules` and
 lib-directory probe that used to live in resolver code. Replacement backends
 must explicitly report project ownership when appropriate; quantifiers stay
@@ -428,8 +429,9 @@ while configuring `@base-ui/react/button` does not act as a prefix and selects
 nothing by itself. Selection is reapplied at each declaration boundary, so a
 Base UI prop can be expanded while a nested React, DOM, TypeScript, or other
 dependency type remains an opaque named reference. Project declarations remain
-eligible, and `true` remains available for callers that intentionally need the
-whole external graph.
+eligible, unknown external owners cannot be selected by a sentinel string, and
+`true` remains available for callers that intentionally need the whole external
+graph.
 
 ```ts
 const result =

@@ -1,9 +1,9 @@
 import type {
   BackendCompilerOperations,
   BackendDeclarationOwnership,
-  BackendNodeHandle,
   BackendSymbolHandle,
 } from "../backend/contracts.ts";
+import { symbolDeclarations } from "./ownership.ts";
 
 /** Normalized request policy for declarations outside the extracted project. */
 export type ExternalTypeSelection =
@@ -40,7 +40,7 @@ export function externalTypeSelectionAllowsSymbol(
       (declaration) => operations.declarationOwnership(declaration).kind !== "project"
     );
   }
-  const declarations = declarationsOf(facts.declarations, facts.valueDeclaration);
+  const declarations = symbolDeclarations(facts);
   return (
     declarations.length > 0 &&
     declarations.every((declaration) =>
@@ -60,12 +60,4 @@ export function externalTypeSelectionAllowsOwnership(
     ownership.kind === "dependency" &&
     selection.packageNames.has(ownership.packageName)
   );
-}
-
-function declarationsOf(
-  declarations: readonly BackendNodeHandle[],
-  valueDeclaration: BackendNodeHandle | undefined
-): readonly BackendNodeHandle[] {
-  if (valueDeclaration === undefined || declarations.includes(valueDeclaration)) return declarations;
-  return [...declarations, valueDeclaration];
 }

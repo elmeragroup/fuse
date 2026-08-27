@@ -143,6 +143,12 @@ describe("Issue 13 backend ownership classification", () => {
       { kind: "typescript", library: "toolchain" },
       { externalLibrary: true, defaultLibrary: false },
     ],
+    [
+      "external declaration with no identifiable package owner",
+      "/vendor/declarations/index.d.ts",
+      { kind: "external" },
+      { externalLibrary: true, defaultLibrary: false },
+    ],
   ] as const)("combines compiler metadata for $0", (_label, filePath, expected, metadata) => {
     expect(classifySourceFile(filePath, metadata)).toEqual(expected);
   });

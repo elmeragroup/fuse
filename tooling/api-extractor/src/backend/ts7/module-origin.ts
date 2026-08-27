@@ -494,6 +494,9 @@ function declarationOrigin(session: TsgoFactsSession, declaration: Node): Backen
       external: true,
     };
   }
+  if (ownership.kind === "external") {
+    return { moduleSpecifier: "<external>", external: true };
+  }
   const packageName = ownership.packageName;
   const publicName = packageName.startsWith("@types/") ? packageName.slice("@types/".length) : packageName;
   return {

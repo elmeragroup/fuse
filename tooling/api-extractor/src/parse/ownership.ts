@@ -2,6 +2,7 @@ import type {
   BackendDeclarationOwnership,
   BackendNodeHandle,
   BackendNodeReference,
+  BackendSymbolFacts,
   BackendSymbolHandle,
 } from "../backend/contracts.ts";
 import type { ResolverContext } from "./contracts.ts";
@@ -33,6 +34,16 @@ export function declarationOwnership(
 /** Dependency and TypeScript declarations are both outside the project. */
 export function isExternalOwnership(ownership: BackendDeclarationOwnership): boolean {
   return ownership.kind !== "project";
+}
+
+/** Every distinct declaration that can establish a symbol's ownership. */
+export function symbolDeclarations(
+  info: Pick<BackendSymbolFacts, "declarations" | "valueDeclaration">
+): readonly BackendNodeHandle[] {
+  return [
+    ...info.declarations,
+    ...(info.valueDeclaration === undefined ? [] : [info.valueDeclaration]),
+  ].filter((declaration, index, declarations) => declarations.indexOf(declaration) === index);
 }
 
 /**

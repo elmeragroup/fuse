@@ -92,7 +92,10 @@ export function classifySourceFile(
     pathTypescriptLibDirectory && (metadata === undefined || external || standardLibrary);
   if (standardLibrary) return { kind: "typescript", library: "standard-library" };
   if (typescriptLibDirectory) return { kind: "typescript", library: "toolchain" };
-  if (external) return { kind: "dependency", packageName: packageNameFromPath(pathSegments) };
+  if (external) {
+    const packageName = packageNameFromPath(pathSegments);
+    return packageName === undefined ? { kind: "external" } : { kind: "dependency", packageName };
+  }
   return { kind: "project" };
 }
 
@@ -101,17 +104,17 @@ export function isExternalOwnership(ownership: BackendDeclarationOwnership): boo
   return ownership.kind !== "project";
 }
 
-function packageNameFromPath(pathSegments: readonly string[]): string {
+function packageNameFromPath(pathSegments: readonly string[]): string | undefined {
   // Use the innermost node_modules segment: pnpm and Yarn may place several
   // package stores in one path, while the last segment names the dependency
   // actually declaring the source file.
   const nodeModulesIndex = pathSegments.lastIndexOf("node_modules");
-  if (nodeModulesIndex === -1) return "<external>";
+  if (nodeModulesIndex === -1) return undefined;
   const packageSegment = pathSegments[nodeModulesIndex + 1];
-  if (packageSegment === undefined) return "<external>";
+  if (packageSegment === undefined) return undefined;
   if (packageSegment.startsWith("@")) {
     const scopePackage = pathSegments[nodeModulesIndex + 2];
-    return scopePackage === undefined ? packageSegment : `${packageSegment}/${scopePackage}`;
+    return scopePackage === undefined ? undefined : `${packageSegment}/${scopePackage}`;
   }
   return packageSegment;
 }

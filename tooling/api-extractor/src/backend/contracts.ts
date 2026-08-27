@@ -131,13 +131,16 @@ export type BackendSymbolFacts = {
  *
  * The discriminator is intentional: a replacement backend must choose an
  * owner instead of silently omitting one of several correlated booleans. A
- * dependency carries only its normalized package identity; TypeScript's
- * compiler-owned files distinguish the strict default library from another
- * toolchain declaration because the two gates have different semantics.
+ * dependency carries only its normalized package identity; an external file
+ * whose package owner cannot be established has its own conservative variant.
+ * TypeScript's compiler-owned files distinguish the strict default library
+ * from another toolchain declaration because the two gates have different
+ * semantics.
  */
 export type BackendDeclarationOwnership =
   | { readonly kind: "project" }
   | { readonly kind: "dependency"; readonly packageName: string }
+  | { readonly kind: "external" }
   | { readonly kind: "typescript"; readonly library: "standard-library" | "toolchain" };
 
 export type BackendTypeNameFacts = {

@@ -23,7 +23,7 @@ import type { OmittedIndexSignatureReason } from "../warnings.ts";
 import type { ResolveSemanticType, ResolverContext } from "./contracts.ts";
 import { isInternalSymbolName } from "./contracts.ts";
 import { externalTypeSelectionAllowsSymbol } from "./external-type-selection.ts";
-import { isExternalSymbol } from "./ownership.ts";
+import { isExternalSymbol, symbolDeclarations } from "./ownership.ts";
 import { ResolverFailure } from "./resolver-error.ts";
 import {
   callSignatureSemanticPath,
@@ -180,7 +180,7 @@ export function resolveObjectNode(
     properties.length > 0 &&
     properties.every((property) => {
       const info = context.operations.symbolFacts(property);
-      const declarations = declarationsOf(info);
+      const declarations = symbolDeclarations(info);
       return (
         declarations.length > 0 &&
         declarations.every(
@@ -274,7 +274,7 @@ export function resolveObjectNode(
     const propertyType =
       context.operations.propertyType(property) ?? context.operations.typeOfSymbol(property, false);
     const docs = context.operations.documentationOfSymbol?.(property);
-    const declarationFacts = declarationsOf(info);
+    const declarationFacts = symbolDeclarations(info);
     const readonly = declarationFacts.some((declaration) =>
       context.operations.nodeFacts(declaration).declarationFlags?.includes("readonly")
     );
@@ -401,16 +401,6 @@ function comparePaths(left: readonly string[], right: readonly string[]): number
   return left.length - right.length;
 }
 
-function declarationsOf(info: {
-  readonly declarations: readonly BackendNodeHandle[];
-  readonly valueDeclaration?: BackendNodeHandle;
-}): readonly BackendNodeHandle[] {
-  return [
-    ...info.declarations,
-    ...(info.valueDeclaration === undefined ? [] : [info.valueDeclaration]),
-  ].filter((declaration, index, all) => all.indexOf(declaration) === index);
-}
-
 function defaultObjectResolution(data: {
   readonly name: string;
   readonly propertyCount: number;
@@ -459,7 +449,7 @@ function propertyEligible(
 ): boolean {
   const info = context.operations.symbolFacts(property);
   if (info.name.startsWith("#")) return false;
-  const declarations = declarationsOf(info);
+  const declarations = symbolDeclarations(info);
   if (declarations.length === 0) {
     // A mapped type synthesizes one member per constraint key and other
     // compiler views can contribute members with no declaration either; they
