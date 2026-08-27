@@ -25,7 +25,11 @@ export type ShouldResolveObjectData = {
 export type ExtractorOptions = {
   readonly shouldInclude?: (data: ShouldIncludeData) => boolean | undefined;
   readonly shouldResolveObject?: (data: ShouldResolveObjectData) => boolean | undefined;
-  readonly includeExternalTypes?: boolean;
+  /**
+   * Expands no external types by default, every external type when `true`, or
+   * only dependency declarations owned by an exact package name in the list.
+   */
+  readonly includeExternalTypes?: boolean | readonly string[];
   readonly typeOperatorOutput?: TypeOperatorOutputMode;
 };
 

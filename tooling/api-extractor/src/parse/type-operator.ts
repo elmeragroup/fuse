@@ -11,6 +11,7 @@ import type { SemanticType, TypeName, TypeOperatorResolutionKind } from "../mode
 import type { TypeFlagName } from "../warnings.ts";
 import { maxKeyofAliasHops, unwrapAuthoredNode } from "./authored-node.ts";
 import type { ResolveSemanticType, ResolverContext } from "./contracts.ts";
+import { externalTypeSelectionAllowsSymbol } from "./external-type-selection.ts";
 import { unsupported } from "./fallback.ts";
 import { isExternalSymbol, isTypeScriptToolchainDeclaration } from "./ownership.ts";
 
@@ -42,7 +43,7 @@ export function authoredKeyofNode(
   if (operandNode === undefined) return undefined;
   const operandCheckerType = context.operations.typeAtNode(operandNode);
   if (operandCheckerType === undefined) return undefined;
-  if (!context.options.includeExternalTypes && operandNamesExternalType(operandNode, context)) {
+  if (operandNamesUnselectedExternalType(operandNode, operandCheckerType, context)) {
     return undefined;
   }
   const operand = resolveTypeOperatorOperand(operandCheckerType, operandNode, context, resolve);
@@ -95,12 +96,25 @@ function wrapKeyofWithUndefined(
   return unionType(undefined, [operatorNode, { kind: "intrinsic", intrinsic: "undefined" }]);
 }
 
-/** Whether an authored operand names a symbol declared outside the project. */
-function operandNamesExternalType(operandNode: BackendNodeReference, context: Context): boolean {
+/** Whether an authored operand reaches an external symbol excluded by this request. */
+function operandNamesUnselectedExternalType(
+  operandNode: BackendNodeReference,
+  operandType: BackendTypeHandle,
+  context: Context
+): boolean {
   const reference = unwrapAuthoredNode(operandNode, context) ?? operandNode;
-  const facts = context.operations.nodeFacts(reference);
-  const symbol = facts.kind === "typeReference" ? facts.typeName?.authoredSymbol : undefined;
-  return symbol !== undefined && isExternalSymbol(symbol, context);
+  const nodeFacts = context.operations.nodeFacts(reference);
+  const authoredSymbol = nodeFacts.kind === "typeReference" ? nodeFacts.typeName?.authoredSymbol : undefined;
+  const typeFacts = context.operations.typeFacts(operandType);
+  const semanticSymbol = typeFacts.aliasSymbol ?? typeFacts.symbol;
+  const symbols = [authoredSymbol, semanticSymbol].filter(
+    (symbol): symbol is BackendSymbolHandle => symbol !== undefined
+  );
+  return symbols.some(
+    (symbol) =>
+      (isExternalSymbol(symbol, context) || context.externalTypes.kind === "packages") &&
+      !externalTypeSelectionAllowsSymbol(symbol, context.operations, context.externalTypes)
+  );
 }
 
 /**

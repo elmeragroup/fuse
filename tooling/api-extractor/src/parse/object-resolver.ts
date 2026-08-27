@@ -22,6 +22,7 @@ import type { ProvenanceEntry } from "../provenance.ts";
 import type { OmittedIndexSignatureReason } from "../warnings.ts";
 import type { ResolveSemanticType, ResolverContext } from "./contracts.ts";
 import { isInternalSymbolName } from "./contracts.ts";
+import { externalTypeSelectionAllowsSymbol } from "./external-type-selection.ts";
 import { isExternalSymbol } from "./ownership.ts";
 import { ResolverFailure } from "./resolver-error.ts";
 import {
@@ -465,7 +466,10 @@ function propertyEligible(
     // belong to their owner's local shape rather than being filtered here.
     const ownerFacts = context.operations.typeFacts(ownerType);
     const ownerSymbol = ownerFacts.aliasSymbol ?? ownerFacts.symbol;
-    return ownerSymbol === undefined || !isExternalSymbol(ownerSymbol, context);
+    return (
+      ownerSymbol === undefined ||
+      externalTypeSelectionAllowsSymbol(ownerSymbol, context.operations, context.externalTypes)
+    );
   }
   // A class instance reached as an object must not contribute its methods:
   // they belong to the class model, not to an object's property list. Upstream
@@ -492,7 +496,7 @@ function propertyEligible(
     )
   )
     return false;
-  return !isExternalSymbol(property, context) || context.options.includeExternalTypes;
+  return externalTypeSelectionAllowsSymbol(property, context.operations, context.externalTypes);
 }
 
 /** Declaration kinds an object-typed shape may report its members from. */

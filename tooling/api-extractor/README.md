@@ -414,10 +414,36 @@ The summarization:
   anonymous empty objects (without a public type name). The
   `test/fixtures/issue-13-review` vendored-package fixture pins both root
   shapes in `test/issue-13-upstream.test.ts`;
-- runs only when `includeExternalTypes` is false. Enabled mode expands under
-  the same limits upstream defaults to (`shouldResolveObject`: property depth
-  zero or at most fifty properties, never past ten intermediate types), so
-  dependency graphs stay bounded in both modes.
+- runs when the declaration owner is not eligible under `includeExternalTypes`.
+  Omitted, `false`, and an empty package list summarize external declarations;
+  `true` retains broad expansion. A non-empty package list expands only exact,
+  case-sensitive dependency package owners. Every expanded declaration remains
+  subject to the same default `shouldResolveObject` limits: property depth zero
+  or at most fifty properties, never past ten intermediate types.
+
+Package-list matching uses the backend's normalized declaration ownership, not
+an import spelling or a filesystem path. Selecting `@base-ui/react` therefore
+includes declarations reached through exports such as `@base-ui/react/button`,
+while configuring `@base-ui/react/button` does not act as a prefix and selects
+nothing by itself. Selection is reapplied at each declaration boundary, so a
+Base UI prop can be expanded while a nested React, DOM, TypeScript, or other
+dependency type remains an opaque named reference. Project declarations remain
+eligible, and `true` remains available for callers that intentionally need the
+whole external graph.
+
+```ts
+const result =
+  yield *
+  extractor.extractModule(filePath, {
+    includeExternalTypes: ["@base-ui/react"],
+  });
+```
+
+The package list is copied and deduplicated when extraction begins. Order and
+duplicate entries do not affect output, and later caller mutation cannot widen
+an in-progress extraction. Ordinary object properties, synthesized mapped
+members, authored `keyof`, and mixed declaration owners all consult the same
+normalized selection policy.
 
 Upstream's external resolver emits no diagnostics of its own: unresolved
 shapes degrade through its `unsupported-type-fallback` path (mirrored here

@@ -30,6 +30,7 @@ import type { ResolverContext } from "./contracts.ts";
 import { isInternalSymbolName } from "./contracts.ts";
 import { externalPolicy } from "./external-policy.ts";
 import type { ExternalPolicyDecision } from "./external-policy.ts";
+import { normalizeExternalTypeSelection } from "./external-type-selection.ts";
 import { unsupported, warningMessage } from "./fallback.ts";
 import { mappedObjectNode } from "./mapped.ts";
 import {
@@ -70,7 +71,7 @@ export function resolveModule(
   filePath: string,
   options?: ExtractorOptions
 ): ResolvedModule {
-  const resolvedOptions = { ...defaultExtractorOptions, ...options };
+  const { includeExternalTypes, ...resolvedOptions } = { ...defaultExtractorOptions, ...options };
   const warnings: BackendWarningFact[] = [];
   const context: Context = {
     operations: session.compiler,
@@ -81,6 +82,7 @@ export function resolveModule(
     provenancePropertyContainer: "object",
     symbolStack: [],
     options: resolvedOptions,
+    externalTypes: normalizeExternalTypeSelection(includeExternalTypes),
     substitutions: new Map(),
     active: new Set(),
     propertyDepth: 0,

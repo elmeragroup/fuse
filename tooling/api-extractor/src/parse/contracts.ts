@@ -8,6 +8,7 @@ import type {
 import type { SemanticType } from "../model.ts";
 import type { ExtractorOptions } from "../options.ts";
 import type { ProvenanceEntry } from "../provenance.ts";
+import type { ExternalTypeSelection } from "./external-type-selection.ts";
 
 /** Resolver state shared by the synchronous semantic resolver modules. */
 export type ResolverContext = {
@@ -20,8 +21,9 @@ export type ResolverContext = {
   /** Selects the final collection shape for properties at the current node. */
   readonly provenancePropertyContainer: "object" | "componentProps";
   readonly symbolStack: readonly string[];
-  readonly options: Required<Pick<ExtractorOptions, "includeExternalTypes" | "typeOperatorOutput">> &
+  readonly options: Required<Pick<ExtractorOptions, "typeOperatorOutput">> &
     Pick<ExtractorOptions, "shouldInclude" | "shouldResolveObject">;
+  readonly externalTypes: ExternalTypeSelection;
   readonly substitutions: ReadonlyMap<BackendSymbolHandle, BackendTypeHandle>;
   readonly active: ReadonlySet<BackendTypeHandle>;
   readonly propertyDepth: number;

@@ -9,6 +9,7 @@ import type {
 import type { TypeName } from "../model.ts";
 import type { ResolverContext } from "./contracts.ts";
 import { isInternalSymbolName } from "./contracts.ts";
+import { externalTypeSelectionAllowsSymbol } from "./external-type-selection.ts";
 import { isExternalSymbol, isTypeScriptToolchainDeclaration } from "./ownership.ts";
 import { isReactWrapperType } from "./react-policy.ts";
 
@@ -60,9 +61,19 @@ export function externalPolicy(input: ExternalPolicyInput): ExternalPolicyDecisi
   if (isBuiltInContainer(input, facts)) return { kind: "expand" };
 
   const semanticSymbol = facts.aliasSymbol ?? facts.symbol;
-  if (semanticSymbol === undefined || !isExternalSymbol(semanticSymbol, context)) {
+  if (semanticSymbol === undefined) {
     return { kind: "expand" };
   }
+  const selectionAllowsSymbol = externalTypeSelectionAllowsSymbol(
+    semanticSymbol,
+    context.operations,
+    context.externalTypes
+  );
+  if (
+    !isExternalSymbol(semanticSymbol, context) &&
+    (context.externalTypes.kind !== "packages" || selectionAllowsSymbol)
+  )
+    return { kind: "expand" };
   if (isAllowedBuiltInExternal(type, context)) return { kind: "expand" };
 
   const value = input.typeName ?? input.resolveTypeName(type, undefined, context);
@@ -77,7 +88,7 @@ export function externalPolicy(input: ExternalPolicyInput): ExternalPolicyDecisi
     }
     return { kind: "expand" };
   }
-  if (context.options.includeExternalTypes && input.fallback !== true && input.cycle !== true) {
+  if (selectionAllowsSymbol && input.fallback !== true && input.cycle !== true) {
     return { kind: "expand" };
   }
 
