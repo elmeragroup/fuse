@@ -71,6 +71,7 @@ const EXTRA_API_EXPORT_NAMES = new Map<string, readonly string[]>([
   ["grid-list", ["GridList", "GridListItem"]],
   ["calendar", ["Calendar", "CalendarHeader", "CalendarGridHeader"]],
   ["date-picker", ["DatePicker", "DatePickerPresetGroup", "DatePickerPresetItem"]],
+  ["combobox", ["Combobox", "useComboboxAnchor"]],
 ]);
 
 function apiExportNamesFor(slug: string, exportName: string): readonly string[] {

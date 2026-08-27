@@ -1,0 +1,326 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "combobox",
+  "parts": [
+    {
+      "name": "Combobox.Root",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/combobox/combobox.tsx",
+      "forwardedFrom": [
+        "@base-ui/react"
+      ],
+      "forwardedCount": 37,
+      "props": []
+    },
+    {
+      "name": "Combobox.Input",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/combobox/combobox.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 305,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Rendered inside the InputGroup after the addon (extra addons, hidden inputs).",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | (((state: ComboboxInputState) => string | undefined) & string) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state. Extra classes, applied to the outer InputGroup (`w-auto`), not the input element.",
+          "required": false
+        },
+        {
+          "name": "clearLabel",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Accessible name for the auto-rendered Clear button when `showClear`. Defaults to the locale dictionary.",
+          "required": false
+        },
+        {
+          "name": "disabled",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the component should ignore user interaction. Forwarded to the inner `InputGroup.Input` and to the trigger/clear buttons.",
+          "required": false
+        },
+        {
+          "name": "showClear",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Renders `Combobox.Clear` in the inline-end addon.",
+          "required": false
+        },
+        {
+          "name": "showTrigger",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Renders the caret trigger button in the inline-end addon. Hidden at runtime whenever a clear button is present in the group.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Combobox.Trigger",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/combobox/combobox.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 289,
+      "props": []
+    },
+    {
+      "name": "Combobox.Clear",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/combobox/combobox.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 290,
+      "props": [
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Accessible name for the icon-only clear button. Defaults to the locale dictionary.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Combobox.Content",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/combobox/combobox.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": [
+        {
+          "name": "align",
+          "origin": "declared",
+          "type": "Align | undefined",
+          "shortType": null,
+          "defaultValue": "\"start\"",
+          "description": "How the popup aligns to the trigger on the cross axis.",
+          "required": false
+        },
+        {
+          "name": "alignOffset",
+          "origin": "declared",
+          "type": "number | OffsetFunction | undefined",
+          "shortType": "Union",
+          "defaultValue": "0",
+          "description": "Offset along the alignment axis, in pixels.",
+          "required": false
+        },
+        {
+          "name": "anchor",
+          "origin": "declared",
+          "type": "Element | RefObject<Element | null> | VirtualElement | (() => Element | VirtualElement | null) | null | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Element, ref, or virtual element to position against. Pass `useComboboxAnchor()`'s ref; also flips `data-chips` on the popup.",
+          "required": false
+        },
+        {
+          "name": "container",
+          "origin": "declared",
+          "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Portal target for the popup. Defaults to the nearest enclosing `ThemeScope` element, so an overlay never escapes the theme that opened it.",
+          "required": false
+        },
+        {
+          "name": "side",
+          "origin": "declared",
+          "type": "Side | undefined",
+          "shortType": null,
+          "defaultValue": "\"bottom\"",
+          "description": "Which side of the trigger the popup is placed on.",
+          "required": false
+        },
+        {
+          "name": "sideOffset",
+          "origin": "declared",
+          "type": "number | OffsetFunction | undefined",
+          "shortType": "Union",
+          "defaultValue": "6",
+          "description": "Distance from the trigger, in pixels.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Combobox.List",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/combobox/combobox.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": []
+    },
+    {
+      "name": "Combobox.Item",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/combobox/combobox.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 281,
+      "props": []
+    },
+    {
+      "name": "Combobox.Group",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/combobox/combobox.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 279,
+      "props": []
+    },
+    {
+      "name": "Combobox.Label",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/combobox/combobox.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": []
+    },
+    {
+      "name": "Combobox.Collection",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/combobox/combobox.tsx",
+      "forwardedFrom": [
+        "@base-ui/react"
+      ],
+      "forwardedCount": 1,
+      "props": []
+    },
+    {
+      "name": "Combobox.Empty",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/combobox/combobox.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": []
+    },
+    {
+      "name": "Combobox.Separator",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/combobox/combobox.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 279,
+      "props": []
+    },
+    {
+      "name": "Combobox.Chips",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/combobox/combobox.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": []
+    },
+    {
+      "name": "Combobox.Chip",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/combobox/combobox.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": [
+        {
+          "name": "removeLabel",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Accessible name for the remove button. Defaults to the locale dictionary `removeItem` formatted with the chip's string children (the displayed value).",
+          "required": false
+        },
+        {
+          "name": "showRemove",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Renders the chip-remove button with an `X`.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Combobox.ChipsInput",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/combobox/combobox.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 308,
+      "props": []
+    },
+    {
+      "name": "Combobox.Value",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/combobox/combobox.tsx",
+      "forwardedFrom": [
+        "@base-ui/react"
+      ],
+      "forwardedCount": 2,
+      "props": []
+    },
+    {
+      "name": "useComboboxAnchor",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/combobox/combobox.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": []
+    }
+  ]
+}

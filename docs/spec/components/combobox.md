@@ -84,10 +84,10 @@ Runtime note (kept, §8): `showTrigger` and `showClear` are effectively mutually
 
 **Combobox.Chip** — `ComponentProps<ComboboxPrimitive.Chip>` plus:
 
-| Prop          | Type      | Default                 | Notes                                                                                                                           |
-| ------------- | --------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `showRemove`  | `boolean` | `true`                  | renders the `ChipRemove` button with `X`                                                                                        |
-| `removeLabel` | `string`  | dictionary `removeItem` | explicit accessible-name override; default formats the Root `itemToStringLabel(value)` result (falling back to `String(value)`) |
+| Prop          | Type      | Default                                                           | Notes                                                                                                                                                                                                        |
+| ------------- | --------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `showRemove`  | `boolean` | `true`                                                            | renders the `ChipRemove` button with `X`                                                                                                                                                                     |
+| `removeLabel` | `string`  | dictionary `removeItem` formatted with the Chip's string children | explicit accessible-name override (always wins); default formats `removeItem` with `String(children)` when children are text/number; object-item labels that are not string children must pass `removeLabel` |
 
 **Combobox.Empty** — its primitive props with optional `children`; absent children render dictionary `empty`. **Combobox.Value / List / Item / Group / Label / Collection / Separator / Chips / ChipsInput** — their base-ui part's props verbatim (`Combobox.Item`: `value`, `disabled`; `Combobox.ChipsInput` is `ComboboxPrimitive.Input` props without the InputGroup extras).
 
@@ -149,6 +149,7 @@ No `tv` recipes and no axes — all styling is inline per part; nothing exported
 7. **Duplicated stacking classes deduped**: the Positioner keeps `isolate z-50`; the Popup drops its duplicate (ref repeats them on Select's popup; combobox's popup has no `z-50` but the ruling is applied family-wide — Positioner owns stacking).
 8. **Icons → Phosphor**: `CheckIcon`→`Check` (item indicator), `ChevronDownIcon`→`CaretDown` (trigger caret), `XIcon`→`X` (clear + chip remove).
 9. **Provider-owned locale and strings:** removes Root's public `locale`; Clear, Chip remove, and Empty use the co-located four-locale dictionary with optional copy overrides.
+10. **Chip `removeLabel` default uses children, not `itemToStringLabel`:** `@base-ui/react` Chip exposes no `value`. Reading the combobox store would require the banned `@base-ui/react/combobox` subpath (same root-import ruling). Default accessible name formats dictionary `removeItem` with the Chip's string children; object-item labels that are not string children must pass `removeLabel`.
 
 Kept faithfully:
 

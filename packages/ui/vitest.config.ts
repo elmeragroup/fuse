@@ -32,6 +32,7 @@ export default defineConfig({
             "@base-ui/react/use-render",
             "@base-ui/react/toggle",
             "@base-ui/react/toggle-group",
+            "@base-ui/react",
             "clsx",
             "tailwind-merge",
             "tailwind-variants",

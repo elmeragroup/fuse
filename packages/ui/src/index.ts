@@ -18,6 +18,7 @@ export * from "./checkbox";
 export * from "./checkbox-card";
 export * from "./code";
 export * from "./collapsible";
+export * from "./combobox";
 export * from "./confirm-button";
 export * from "./description-list";
 export * from "./dialog";

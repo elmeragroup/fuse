@@ -64,6 +64,10 @@
       "types": "./src/collapsible.ts",
       "import": "./src/collapsible.ts"
     },
+    "./combobox": {
+      "types": "./src/combobox.ts",
+      "import": "./src/combobox.ts"
+    },
     "./confirm-button": {
       "types": "./src/confirm-button.ts",
       "import": "./src/confirm-button.ts"

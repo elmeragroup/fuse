@@ -46,6 +46,7 @@ describe("exports map", () => {
       "checkbox-card",
       "code",
       "collapsible",
+      "combobox",
       "confirm-button",
       "description-list",
       "dialog",
@@ -579,6 +580,12 @@ describe("exports map", () => {
     const select = discovered.jsEntries.find((entry) => entry.subpath === "select");
     expect(select?.inRootBarrel).toBe(true);
     expect(select?.runtimeExports).toEqual(["Select"]);
+  });
+
+  it("publishes Combobox and useComboboxAnchor from /combobox and the root barrel", () => {
+    const combobox = discovered.jsEntries.find((entry) => entry.subpath === "combobox");
+    expect(combobox?.inRootBarrel).toBe(true);
+    expect(combobox?.runtimeExports).toEqual(["Combobox", "useComboboxAnchor"]);
   });
 
   it("publishes Sheet from /sheet and the root barrel", () => {

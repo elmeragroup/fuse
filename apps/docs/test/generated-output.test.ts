@@ -72,6 +72,7 @@ describe("component page manifest", () => {
       "checkbox-card",
       "code",
       "collapsible",
+      "combobox",
       "confirm-button",
       "date-field",
       "date-picker",
@@ -319,6 +320,12 @@ describe("component page manifest", () => {
       "vertical",
       "sizes",
     ]);
+    expect(page("combobox").demos.map((demo) => demo.id)).toEqual([
+      "basic",
+      "groups",
+      "multi-chips",
+      "input-group-anchor",
+    ]);
     expect(page("ui-providers").demos.map((demo) => demo.id)).toEqual(["basic", "locale-switch"]);
     expect(page("link").demos.map((demo) => demo.id)).toEqual(["variants", "router"]);
     expect(page("date-field").demos.map((demo) => demo.id)).toEqual([
@@ -387,6 +394,7 @@ describe("component page manifest", () => {
       "checkbox-card": "client",
       code: "server",
       collapsible: "client",
+      combobox: "client",
       "confirm-button": "client",
       "date-field": "client",
       "date-picker": "client",
@@ -465,6 +473,7 @@ describe("committed api.json", () => {
       "RadioItemGroup",
       "RadioIconButton",
     ]);
+    expect(resolveComponentPaths("combobox").apiExportNames).toEqual(["Combobox", "useComboboxAnchor"]);
     expect(resolveComponentPaths("button").apiExportNames).toEqual(["Button"]);
     expect(resolveComponentPaths("meter").apiExportNames).toEqual(["Meter"]);
     expect(resolveComponentPaths("pagination").apiExportNames).toEqual(["Pagination"]);
