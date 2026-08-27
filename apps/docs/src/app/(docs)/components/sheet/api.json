@@ -9,7 +9,7 @@
       "forwardedFrom": [
         "@base-ui/react"
       ],
-      "forwardedCount": 15,
+      "forwardedCount": 0,
       "props": [
         {
           "name": "children",
@@ -27,6 +27,171 @@
           "shortType": "Union",
           "defaultValue": "\"right\"",
           "description": "Edge the panel anchors to. Also selects the swipe-to-dismiss direction (`top` → up, `right` → right, `bottom` → down, `left` → left).",
+          "required": false
+        },
+        {
+          "name": "actionsRef",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "React.RefObject<DrawerRoot.Actions | null> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "A ref to imperative actions. - `unmount`: Manually unmounts the drawer. Call this after any externally controlled closing animation finishes. - `close`: Closes the drawer imperatively when called.",
+          "required": false
+        },
+        {
+          "name": "defaultOpen",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the drawer is initially open. To render a controlled drawer, use the `open` prop instead.",
+          "required": false
+        },
+        {
+          "name": "defaultSnapPoint",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "DrawerSnapPoint | null | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The initial snap point value when uncontrolled.",
+          "required": false
+        },
+        {
+          "name": "defaultTriggerId",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "null | string | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "ID of the trigger that the drawer is associated with. This is useful in conjunction with the `defaultOpen` prop to create an initially open drawer.",
+          "required": false
+        },
+        {
+          "name": "disablePointerDismissal",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether to prevent the drawer from closing on outside presses. For non-modal drawers, this also prevents the drawer from closing when focus moves outside of it.",
+          "required": false
+        },
+        {
+          "name": "handle",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "DialogHandle<unknown> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "A handle to associate the drawer with a trigger. If specified, allows detached triggers to control the drawer's open state. Can be created with the Drawer.createHandle() method.",
+          "required": false
+        },
+        {
+          "name": "modal",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "\"trap-focus\" | boolean | undefined",
+          "shortType": "Union",
+          "defaultValue": "true",
+          "description": "Determines if the drawer enters a modal state when open. - `true`: user interaction is limited to just the drawer: focus is trapped, document page scroll is locked, and pointer interactions on outside elements are disabled. - `false`: user interaction with the rest of the document is allowed. - `'trap-focus'`: focus is trapped inside the drawer, but document page scroll is not locked and pointer interactions outside of it remain enabled.",
+          "required": false
+        },
+        {
+          "name": "onOpenChange",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((open: boolean, eventDetails: DrawerRootChangeEventDetails) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Event handler called when the drawer is opened or closed.",
+          "required": false
+        },
+        {
+          "name": "onOpenChangeComplete",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((open: boolean) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Event handler called after any animations complete when the drawer is opened or closed.",
+          "required": false
+        },
+        {
+          "name": "onSnapPointChange",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((snapPoint: DrawerSnapPoint | null, eventDetails: DrawerRootSnapPointChangeEventDetails) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Callback fired when the snap point changes.",
+          "required": false
+        },
+        {
+          "name": "open",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Whether the drawer is currently open.",
+          "required": false
+        },
+        {
+          "name": "snapPoint",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "DrawerSnapPoint | null | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The currently active snap point. Use with `onSnapPointChange` to control the snap point.",
+          "required": false
+        },
+        {
+          "name": "snapPoints",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "DrawerSnapPoint[] | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Snap points used to position the drawer. Use numbers between 0 and 1 to represent fractions of the viewport height, numbers greater than 1 as pixel values, or strings in `px`/`rem` units (for example, `'148px'` or `'30rem'`).",
+          "required": false
+        },
+        {
+          "name": "snapToSequentialPoints",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Disables velocity-based snap skipping so drag distance determines the next snap point.",
+          "required": false
+        },
+        {
+          "name": "triggerId",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "null | string | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "ID of the trigger that the drawer is associated with. This is useful in conjunction with the `open` prop to create a controlled drawer. There's no need to specify this prop when the drawer is uncontrolled (that is, when the `open` prop is not set).",
           "required": false
         }
       ]
@@ -83,7 +248,7 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 280,
+      "forwardedCount": 275,
       "props": [
         {
           "name": "closeLabel",
@@ -119,6 +284,61 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((state: DrawerPopupState) => string | string | undefined | undefined)",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "finalFocus",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((closeType: InteractionType) => HTMLElement | React.RefObject<HTMLElement | boolean | null | null> | undefined | void)",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Determines the element to focus when the drawer is closed. - `false`: Do not move focus. - `true`: Move focus based on the default behavior (trigger or previously focused element). - `RefObject`: Move focus to the ref element. - `function`: Called with the interaction type (`mouse`, `touch`, `pen`, or `keyboard`). Return an element to focus, `true` to use the default behavior, or `false`/`undefined` to do nothing.",
+          "required": false
+        },
+        {
+          "name": "initialFocus",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((openType: InteractionType) => HTMLElement | React.RefObject<HTMLElement | boolean | null | null> | undefined | void)",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Determines the element to focus when the drawer is opened. - `false`: Do not move focus. - `true`: Move focus based on the default behavior (first tabbable element or popup). - `RefObject`: Move focus to the ref element. - `function`: Called with the interaction type (`mouse`, `touch`, `pen`, or `keyboard`). Return an element to focus, `true` to use the default behavior, or `false`/`undefined` to do nothing.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((props: React.HTMLAttributes<any> & { ref?: React.RefCallback | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | React.RefObject<any> | bigint | boolean | null | number | string | undefined | undefined) | undefined; }, state: DrawerPopupState) => React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | {  }> | {  }>)",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((state: DrawerPopupState) => React.CSSProperties | React.CSSProperties | undefined | undefined)",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
           "required": false
         }
       ]

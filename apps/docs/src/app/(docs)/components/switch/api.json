@@ -10,7 +10,7 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 288,
+      "forwardedCount": 273,
       "props": [
         {
           "name": "className",
@@ -28,6 +28,171 @@
           "shortType": "Union",
           "defaultValue": "\"default\"",
           "description": "Optical track size, emitted as `data-size`. Pixel-fixed at both density stamps — not a control-box density rung (switch.md §4).",
+          "required": false
+        },
+        {
+          "name": "checked",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Whether the switch is currently active. To render an uncontrolled switch, use the `defaultChecked` prop instead.",
+          "required": false
+        },
+        {
+          "name": "defaultChecked",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the switch is initially active. To render a controlled switch, use the `checked` prop instead.",
+          "required": false
+        },
+        {
+          "name": "disabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the component should ignore user interaction.",
+          "required": false
+        },
+        {
+          "name": "form",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Identifies the form that owns the hidden input. Useful when the switch is rendered outside the form.",
+          "required": false
+        },
+        {
+          "name": "id",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The id of the hidden input element. When `nativeButton` is `true`, the id is applied to the root element.",
+          "required": false
+        },
+        {
+          "name": "inputRef",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "React.Ref<HTMLInputElement> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "A ref to access the hidden `<input>` element.",
+          "required": false
+        },
+        {
+          "name": "name",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Identifies the field when a form is submitted.",
+          "required": false
+        },
+        {
+          "name": "nativeButton",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the component renders a native `<button>` element when replacing it via the `render` prop. Set to `true` if the rendered element is a native button.",
+          "required": false
+        },
+        {
+          "name": "onCheckedChange",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((checked: boolean, eventDetails: SwitchRoot.ChangeEventDetails) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Event handler called when the switch is activated or deactivated.",
+          "required": false
+        },
+        {
+          "name": "readOnly",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the user should be unable to activate or deactivate the switch.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((props: React.HTMLAttributes<any> & { ref?: React.RefCallback | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | React.RefObject<any> | bigint | boolean | null | number | string | undefined | undefined) | undefined; }, state: SwitchRootState) => React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | {  }> | {  }>)",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "required",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the user must activate the switch before submitting a form.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((state: SwitchRootState) => React.CSSProperties | React.CSSProperties | undefined | undefined)",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "uncheckedValue",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The value submitted with the form when the switch is off. By default, unchecked switches do not submit any value, matching native checkbox behavior.",
+          "required": false
+        },
+        {
+          "name": "value",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The value submitted with the form when the switch is on. By default, switch submits the \"on\" value, matching native checkbox behavior.",
           "required": false
         }
       ]

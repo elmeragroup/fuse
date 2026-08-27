@@ -10,8 +10,207 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 291,
-      "props": []
+      "forwardedCount": 273,
+      "props": [
+        {
+          "name": "checked",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "undefined",
+          "description": "Whether the checkbox is currently ticked. To render an uncontrolled checkbox, use the `defaultChecked` prop instead.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((state: CheckboxRootState) => string | string | undefined | undefined)",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "defaultChecked",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the checkbox is initially ticked. To render a controlled checkbox, use the `checked` prop instead.",
+          "required": false
+        },
+        {
+          "name": "disabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the component should ignore user interaction.",
+          "required": false
+        },
+        {
+          "name": "form",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Identifies the form that owns the hidden input. Useful when the checkbox is rendered outside the form.",
+          "required": false
+        },
+        {
+          "name": "id",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The id of the input element.",
+          "required": false
+        },
+        {
+          "name": "indeterminate",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the checkbox is in a mixed state: neither ticked, nor unticked.",
+          "required": false
+        },
+        {
+          "name": "inputRef",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "React.Ref<HTMLInputElement> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "A ref to access the hidden `<input>` element.",
+          "required": false
+        },
+        {
+          "name": "name",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": "undefined",
+          "description": "Identifies the field when a form is submitted.",
+          "required": false
+        },
+        {
+          "name": "nativeButton",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the component renders a native `<button>` element when replacing it via the `render` prop. Set to `true` if the rendered element is a native button.",
+          "required": false
+        },
+        {
+          "name": "onCheckedChange",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((checked: boolean, eventDetails: CheckboxRootChangeEventDetails) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Event handler called when the checkbox is ticked or unticked.",
+          "required": false
+        },
+        {
+          "name": "parent",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | false | true | undefined",
+          "shortType": "Union",
+          "defaultValue": "false",
+          "description": "Whether the checkbox controls a group of child checkboxes. Must be used in a [Checkbox Group](https://base-ui.com/react/components/checkbox-group).",
+          "required": false
+        },
+        {
+          "name": "readOnly",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the user should be unable to tick or untick the checkbox.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((props: React.HTMLAttributes<any> & { ref?: React.RefCallback | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | React.RefObject<any> | bigint | boolean | null | number | string | undefined | undefined) | undefined; }, state: CheckboxRootState) => React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | {  }> | {  }>)",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "required",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the user must tick the checkbox before submitting a form.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((state: CheckboxRootState) => React.CSSProperties | React.CSSProperties | undefined | undefined)",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "uncheckedValue",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The value submitted with the form when the checkbox is unchecked. By default, unchecked checkboxes do not submit any value, matching native checkbox behavior.",
+          "required": false
+        },
+        {
+          "name": "value",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | string[] | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The value of the selected checkbox.",
+          "required": false
+        }
+      ]
     },
     {
       "name": "CheckboxGroup",

@@ -6,6 +6,7 @@ import { ProjectExtractor } from "@elmeragroup/api-extractor";
 import type {
   ExtractionResult,
   ExtractWarning,
+  ExtractorOptions,
   IntersectionNode,
   PropertyNode,
   ProvenanceEntry,
@@ -15,6 +16,7 @@ import type {
 } from "@elmeragroup/api-extractor";
 
 import type { ApiPart, ApiProp } from "../../src/lib/docs-model.ts";
+import { dependencyPackageName } from "../../src/lib/docs-model.ts";
 import { normalizePath, normalizeMessage, repoRelativePath } from "./api-shadow-paths.ts";
 import type {
   DocsShadowComponent,
@@ -349,7 +351,13 @@ function canonicalDefault(source: PartSource | undefined, propName: string): str
  * parity into a tautology and hide a current-side policy drift.
  */
 export function effectOrigin(provenance: ProvenanceEntry | undefined): ApiProp["origin"] {
-  return propOrigin(provenance?.declarationPaths ?? [], provenance?.synthesized === true);
+  const declarationPaths = provenance?.declarationPaths ?? [];
+  const localOrigin = propOrigin(declarationPaths, provenance?.synthesized === true);
+  if (localOrigin === "recipe-axis" || declarationPaths.some(isLibraryDeclaration)) {
+    return localOrigin;
+  }
+  const packages = declarationPackages(declarationPaths);
+  return packages.length === 1 && packages[0] !== undefined ? { packageName: packages[0] } : localOrigin;
 }
 
 function toApiPart(
@@ -393,7 +401,9 @@ function toApiPart(
       origin,
       type,
       shortType: shortTypeOf(property.name, type),
-      defaultValue: canonicalDefault(source, property.name),
+      defaultValue:
+        canonicalDefault(source, property.name) ??
+        (dependencyPackageName(origin) === null ? null : (property.documentation?.defaultValue ?? null)),
       description,
       required: !property.optional,
     });
@@ -608,7 +618,12 @@ export function currentSide(inventory: readonly DocsShadowComponent[]): SideRun 
   }
 }
 
-export async function effectSide(inventory: readonly DocsShadowComponent[]): Promise<SideRun> {
+export type EffectSideOptions = Pick<ExtractorOptions, "includeExternalTypes">;
+
+export async function effectSide(
+  inventory: readonly DocsShadowComponent[],
+  options: EffectSideOptions = {}
+): Promise<SideRun> {
   const inputs = captureInputs(inventory);
   const extraction = await Effect.runPromise(
     Effect.scoped(
@@ -616,7 +631,12 @@ export async function effectSide(inventory: readonly DocsShadowComponent[]): Pro
         const extractor = yield* ProjectExtractor;
         const results: ExtractionResult[] = [];
         for (const entry of inventory) {
-          results.push(yield* extractor.extractModule(entry.entryFile, { typeOperatorOutput: "resolved" }));
+          results.push(
+            yield* extractor.extractModule(entry.entryFile, {
+              typeOperatorOutput: "resolved",
+              ...options,
+            })
+          );
         }
         return results;
       }).pipe(Effect.provide(ProjectExtractor.live({ tsconfigPath: uiTsconfig, cwd: repoRoot })))

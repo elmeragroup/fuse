@@ -5,7 +5,7 @@
  */
 
 import type { ApiPart, DocsComponent } from "../../src/lib/docs-model.ts";
-import { propDescription } from "../../src/lib/docs-model.ts";
+import { groupApiProps, propDescription } from "../../src/lib/docs-model.ts";
 
 /**
  * Turns accumulated lines into a finished markdown document: collapsed blank runs, no
@@ -28,18 +28,21 @@ function renderPart(part: ApiPart): string {
   if (part.props.length === 0) {
     lines.push("No own props — every prop is forwarded.", "");
   } else {
-    lines.push(
-      "| Prop | Type | Default | Required | RSC | Description |",
-      "| --- | --- | --- | --- | --- | --- |"
-    );
-    for (const prop of part.props) {
+    for (const group of groupApiProps(part.props)) {
+      if (group.label !== null) lines.push(`#### ${group.label}`, "");
       lines.push(
-        `| \`${prop.name}\` | \`${escapeCell(prop.type)}\` | ${
-          prop.defaultValue === null ? "—" : `\`${escapeCell(prop.defaultValue)}\``
-        } | ${prop.required ? "yes" : "no"} | ${part.rsc} | ${escapeCell(propDescription(prop))} |`
+        "| Prop | Type | Default | Required | RSC | Description |",
+        "| --- | --- | --- | --- | --- | --- |"
       );
+      for (const prop of group.props) {
+        lines.push(
+          `| \`${prop.name}\` | \`${escapeCell(prop.type)}\` | ${
+            prop.defaultValue === null ? "—" : `\`${escapeCell(prop.defaultValue)}\``
+          } | ${prop.required ? "yes" : "no"} | ${part.rsc} | ${escapeCell(propDescription(prop))} |`
+        );
+      }
+      lines.push("");
     }
-    lines.push("");
   }
   if (part.forwardedCount > 0) {
     lines.push(

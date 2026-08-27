@@ -50,6 +50,10 @@ describe("component page anatomy (docs-site.md §3.4)", () => {
     // The indicator's own text — HTML-escaped, since the label is a quoted directive.
     expect(html).toContain("&quot;use client&quot;");
     expect(html).toContain("forwarded props from");
+    expect(html).toContain("Base UI primitive props");
+    expect(html).toContain('id="api-button-focusableWhenDisabled"');
+    expect(html).toContain("Whether the button should be focusable when disabled.");
+    expect(html).not.toContain('id="api-button-onClick"');
   });
 
   it("collapses long types in closed rows, keeps the full signature in the panel", async () => {

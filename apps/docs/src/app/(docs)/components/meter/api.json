@@ -10,7 +10,7 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 279,
+      "forwardedCount": 274,
       "props": [
         {
           "name": "className",
@@ -91,6 +91,61 @@
           "shortType": null,
           "defaultValue": null,
           "description": "Accessible name for the Warning icon. Defaults to the locale dictionary.",
+          "required": false
+        },
+        {
+          "name": "aria-valuetext",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "A string value that provides a user-friendly name for `aria-valuenow`, the current value of the meter.",
+          "required": false
+        },
+        {
+          "name": "format",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "Intl.NumberFormatOptions | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Options to format the value.",
+          "required": false
+        },
+        {
+          "name": "getAriaValueText",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((formattedValue: string, value: number) => string) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "A function that returns a string value that provides a human-readable text alternative for `aria-valuenow`, the current value of the meter.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((props: React.HTMLAttributes<any> & { ref?: React.RefCallback | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | React.RefObject<any> | bigint | boolean | null | number | string | undefined | undefined) | undefined; }, state: MeterRootState) => React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | {  }> | {  }>)",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((state: MeterRootState) => React.CSSProperties | React.CSSProperties | undefined | undefined)",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
           "required": false
         }
       ]
