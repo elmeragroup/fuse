@@ -1,0 +1,18 @@
+[
+  {
+    "message": "Type extraction warning: Unable to handle type \"{ top?: number | undefined; right?: number | undefined; bottom?: number | undefined; left?: number | undefined; }\" with flag \"Object\" at \"test/fixtures/external-union-type-name-preservation/input.ts:1:1\". Using any instead.",
+    "filePath": "test/fixtures/external-union-type-name-preservation/input.ts",
+    "line": 1,
+    "column": 1,
+    "parsedSymbolStack": [
+      "test/fixtures/external-union-type-name-preservation/input.ts",
+      "PositioningProps",
+      "property: collisionPadding"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "{ top?: number | undefined; right?: number | undefined; bottom?: number | undefined; left?: number | undefined; }"
+  }
+]

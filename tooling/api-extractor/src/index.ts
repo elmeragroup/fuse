@@ -1,4 +1,9 @@
-export { ProjectExtractor, type ExtractionResult, type ProjectExtractorService } from "./extractor.ts";
+export {
+  ProjectExtractor,
+  type ExtractionResult,
+  type ProjectExtractorService,
+  type SyntaxOnlyExtractionResult,
+} from "./extractor.ts";
 export {
   BackendError,
   ConfigError,
@@ -33,6 +38,10 @@ export {
   type ParameterNode,
   type PropertyNode,
   type SemanticType,
+  type SyntaxOnlyOutput,
+  type SyntaxOnlyModuleNode,
+  type ResolvedOutput,
+  type ResolvedModuleNode,
   type TupleNode,
   type TypeArgument,
   type TypeOperatorNode,

@@ -1,0 +1,679 @@
+/* oxlint-disable anti-slop/no-conditional-empty-object-spread -- report fields are normalized. */
+
+import { Cause, Effect, Exit, Schema } from "effect";
+import { createHash } from "node:crypto";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { createRequire } from "node:module";
+import { join, relative, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+import { ProjectExtractor } from "../src/index.ts";
+import type { ExtractWarning } from "../src/index.ts";
+import {
+  assertTs7DivergenceEvidence,
+  canonicalDifferencePaths,
+  differenceDigest,
+  issue14FixtureManifest,
+  issue14TypeScript7Compiler,
+  normalizeWarnings,
+} from "./fixture-evidence.ts";
+import type { Issue14Fixture } from "./fixture-evidence.ts";
+import { createFixtureFileSystem } from "./fixture-filesystem.ts";
+import { assertSafeGeneratedArtifactDestinations, writeGeneratedJsonFiles } from "./generated-artifacts.ts";
+import {
+  assertConformanceDecoded,
+  assertReferenceEvidence,
+  assertStoredReport,
+  assertStoredReportDecoded,
+  summarizeFixtureRun,
+} from "./issue-14-conformance-invariants.ts";
+import type { ConformanceInvariantOptions } from "./issue-14-conformance-invariants.ts";
+import { issue14ConformanceCommand, issue14SelectedOracleFile } from "./issue-14-contract.ts";
+import { typecheckFixture } from "./issue-14-typecheck.ts";
+import type { TypecheckResult } from "./issue-14-typecheck.ts";
+import { auditPinnedReference, pinnedFixturePathUniverse, pinnedUpstream } from "./reference.ts";
+
+const packageDirectory = resolve(import.meta.dirname, "..");
+const fixtureDirectory = join(packageDirectory, "test/fixtures");
+const configPath = join(fixtureDirectory, "issue-14-tsconfig.json");
+const reportPath = join(fixtureDirectory, "issue-14-conformance.json");
+const upstreamCommit = pinnedUpstream.commit;
+const expectedFixtureCount = 116;
+
+export { issue14ConformanceCommand } from "./issue-14-contract.ts";
+export { assertStoredReport } from "./issue-14-conformance-invariants.ts";
+export { summarizeFixtureRun } from "./issue-14-conformance-invariants.ts";
+
+type AdditionalTs7Evidence = {
+  readonly code: string;
+  readonly genus: string;
+  readonly reason: string;
+  readonly differencePaths: readonly string[];
+  readonly differenceDigest: string;
+};
+
+const additionalTs7Evidence = new Map<string, AdditionalTs7Evidence>(
+  Object.entries({
+    "generic-callback-typeparam-vs-typename-collision": {
+      code: "TS7_CONSTRAINT_TYPEPARAM_RENDERING",
+      genus: "constraint-rendering",
+      reason:
+        "TypeScript 7 renders the self-referential `{ self: T }` constraint through the type-parameter node, while the pinned TypeScript 6 oracle observes the intermediate concrete interface object named `T`. The eight changed leaves are limited to the Colliding callback's parameter and return constraints; the AlphaEquiv callback and the rest of the generic structure are unchanged. This is a checker rendering difference under substitution, not a canonicalization or ownership policy decision.",
+      differencePaths: [
+        "/exports/0/type/types/0/callSignatures/0/parameters/0/type/constraint/properties/0/type/kind",
+        "/exports/0/type/types/0/callSignatures/0/parameters/0/type/constraint/properties/0/type/name",
+        "/exports/0/type/types/0/callSignatures/0/parameters/0/type/constraint/properties/0/type/properties/@length",
+        "/exports/0/type/types/0/callSignatures/0/parameters/0/type/constraint/properties/0/type/typeName/name",
+        "/exports/0/type/types/0/callSignatures/0/returnValueType/constraint/properties/0/type/kind",
+        "/exports/0/type/types/0/callSignatures/0/returnValueType/constraint/properties/0/type/name",
+        "/exports/0/type/types/0/callSignatures/0/returnValueType/constraint/properties/0/type/properties/@length",
+        "/exports/0/type/types/0/callSignatures/0/returnValueType/constraint/properties/0/type/typeName/name",
+      ],
+      differenceDigest: "2a1f6afcbe382547bf4157002fc0dbed0555b74ce9e0b4d5d976e1838c9a27a0",
+    },
+    "interface-extends-basic-resolution": {
+      code: "TS7_INTERFACE_MEMBER_ENUMERATION_AND_FALLBACK",
+      genus: "checker-member-order-and-unsupported-any-fallback",
+      reason:
+        "TypeScript 7 enumerates inherited interface members in declaration order where the pinned TypeScript 6 checker reports the instantiated order, and its native symbol graph exposes the exported namespace value `Dialog` as an unresolved `any`. The nine changed leaves are limited to the three inherited property orders, the `Dialog` fallback, and the corresponding `Dialog.Props` surface. Heritage names and resolved names remain intact, so this is compiler-view evidence rather than a resolver policy change.",
+      differencePaths: [
+        "/exports/0/type/properties/0/name",
+        "/exports/0/type/properties/1/name",
+        "/exports/1/type/properties/0/name",
+        "/exports/1/type/properties/1/name",
+        "/exports/1/type/properties/1/type/intrinsic",
+        "/exports/1/type/properties/2/name",
+        "/exports/1/type/properties/2/type/intrinsic",
+        "/exports/2/type/properties/0/name",
+        "/exports/2/type/properties/1/name",
+      ],
+      differenceDigest: "51622464ef9317fc11c2b8f3f0e74dd4c0be3348adbfe9950abd8ba468cce775",
+    },
+    "symbol-double-underscore-name-preservation": {
+      code: "TS7_DOUBLE_UNDERSCORE_SYMBOL_RESOLUTION",
+      genus: "reserved-symbol-name-resolution",
+      reason:
+        "TypeScript 7's native checker does not materialize the exported object symbol whose name begins with `__` in the same way as the pinned TypeScript 6 checker. Function parameter and return types therefore retain an anonymous object shape, while the direct `__Named` export falls through the structured unsupported-type warning to `any`. The nine changed leaves and one warning are confined to that compiler symbol-resolution behavior; the authored input and upstream oracle remain unchanged.",
+      differencePaths: [
+        "/exports/0/type/callSignatures/0/parameters/0/type/typeName/name",
+        "/exports/0/type/callSignatures/0/returnValueType/typeName/name",
+        "/exports/1/type/intrinsic",
+        "/exports/1/type/kind",
+        "/exports/1/type/properties/0/name",
+        "/exports/1/type/properties/0/optional",
+        "/exports/1/type/properties/0/type/intrinsic",
+        "/exports/1/type/properties/0/type/kind",
+        "/exports/1/type/typeName/name",
+      ],
+      differenceDigest: "3a23a9015a8c1f270c80389b949813b3873474a0a645016f91004ab98e1b4303",
+    },
+  } satisfies Record<string, AdditionalTs7Evidence>)
+);
+
+const EvidenceTextSchema = Schema.String.check(Schema.isPattern(/\S/u));
+const Sha256Schema = Schema.String.check(Schema.isPattern(/^[0-9a-f]{64}$/u));
+const DispositionSchema = Schema.Literals(["unchanged", "reviewed-ts7"] as const);
+const FixtureTypecheckSchema = Schema.Struct({
+  status: Schema.Literals(["pass", "failed"] as const),
+  strategy: Schema.Literals(["direct-input", "virtual-upstream-dependency"] as const),
+  command: EvidenceTextSchema,
+  diagnosticCount: Schema.Natural,
+  diagnostics: Schema.Array(Schema.String),
+});
+const FixtureExtractionSchema = Schema.Struct({
+  status: Schema.Literals(["match", "failed"] as const),
+  oracleFile: Schema.Literals(["output.json", "output.tsgo.json"] as const),
+  selectedOracleSha256: Sha256Schema,
+  differenceCount: Schema.Natural,
+  differenceDigest: EvidenceTextSchema,
+  /** Difference evidence is always measured against immutable output.json. */
+  upstreamDifferenceCount: Schema.Natural,
+  upstreamDifferenceDigest: EvidenceTextSchema,
+  warningCount: Schema.Natural,
+  warningDetails: Schema.Array(Schema.Json),
+  warningDigest: EvidenceTextSchema,
+  warningOracle: Schema.optionalKey(Schema.String),
+  divergenceRecord: Schema.optionalKey(Schema.String),
+  error: Schema.optionalKey(Schema.String),
+});
+const FixtureReportSchema = Schema.Struct({
+  fixture: EvidenceTextSchema,
+  input: EvidenceTextSchema,
+  disposition: DispositionSchema,
+  inputSha256: Schema.String,
+  upstreamOracleSha256: Schema.String,
+  typecheck: FixtureTypecheckSchema,
+  extraction: FixtureExtractionSchema,
+});
+const FixtureListSchema = Schema.Array(FixtureReportSchema).check(
+  Schema.makeFilter(
+    (fixtures) => fixtures.length === expectedFixtureCount || "exactly 116 fixture records are required"
+  )
+);
+
+const ReferenceCheckSchema = Schema.Struct({
+  mode: Schema.Literals(["optional", "required"] as const),
+  status: Schema.Literals(["verified", "skipped"] as const),
+  repository: EvidenceTextSchema,
+  commit: Schema.Literal(upstreamCommit),
+  fixtureCount: Schema.Natural,
+  comparedFiles: Schema.Natural,
+  pathUniverse: Schema.Struct({
+    count: Schema.Natural,
+    sha256: EvidenceTextSchema,
+    command: Schema.Literal(pinnedFixturePathUniverse.command),
+  }),
+  command: EvidenceTextSchema,
+});
+
+export const Issue14ConformanceReportSchema = Schema.Struct({
+  issue: Schema.Literal("14-full-conformance"),
+  command: Schema.Literal(issue14ConformanceCommand),
+  upstream: Schema.Struct({
+    repository: Schema.Literal(pinnedUpstream.repository),
+    commit: Schema.Literal(upstreamCommit),
+    fixtureCount: Schema.Literal(expectedFixtureCount),
+    originalOracle: Schema.Literal("output.json"),
+  }),
+  manifestSha256: EvidenceTextSchema,
+  totals: Schema.Struct({
+    fixtures: Schema.Literal(expectedFixtureCount),
+    unchanged: Schema.Natural,
+    reviewedDivergences: Schema.Natural,
+    failures: Schema.Natural,
+    failedFixtureIndices: Schema.Array(Schema.Natural),
+    unclassified: Schema.Natural,
+    typecheckPassed: Schema.Natural,
+    typecheckFailed: Schema.Natural,
+  }),
+  fixtures: FixtureListSchema,
+  referenceCheck: ReferenceCheckSchema,
+  status: Schema.Literals(["pass", "failed"] as const),
+});
+
+export type Issue14ConformanceReport = Schema.Schema.Type<typeof Issue14ConformanceReportSchema>;
+
+type ExtractionResult = {
+  readonly status: "match" | "failed";
+  readonly oracleFile: "output.json" | "output.tsgo.json";
+  readonly selectedOracleSha256: string;
+  readonly differenceCount: number;
+  readonly differenceDigest: string;
+  readonly upstreamDifferenceCount: number;
+  readonly upstreamDifferenceDigest: string;
+  readonly warningCount: number;
+  readonly warningDetails: readonly Schema.Json[];
+  readonly warningDigest: string;
+  readonly warningOracle?: string;
+  readonly divergenceRecord?: string;
+  readonly error?: string;
+};
+
+/** The small value returned by the public `extractModule` seam. */
+export type FixtureExtractionValue = {
+  readonly module: unknown;
+  readonly warnings: readonly ExtractWarning[];
+};
+
+/**
+ * Testable adapter for the public extraction seam.  Keeping this callback
+ * narrow lets the conformance loop inject one typed failure without replacing
+ * the real ProjectExtractor service or its project lifecycle.
+ */
+export type FixtureExtraction = (inputPath: string) => Effect.Effect<FixtureExtractionValue, unknown>;
+
+function packageVersion(packageName: string): string {
+  const require = createRequire(import.meta.url);
+  // SAFETY: package.json is a required dependency metadata file and its only consumed field is version.
+  const metadata = require(packageName + "/package.json") as { readonly version: string };
+  return metadata.version;
+}
+
+function assertCompilerIdentity(): void {
+  const actual = "typescript@" + packageVersion("typescript");
+  if (actual !== issue14TypeScript7Compiler) {
+    throw new Error(`Issue 14 conformance requires ${issue14TypeScript7Compiler}; found ${actual}.`);
+  }
+}
+
+function sha256(path: string): string {
+  return createHash("sha256").update(readFileSync(path)).digest("hex");
+}
+
+function relativeFixturePath(path: string): string {
+  return relative(fixtureDirectory, path).replaceAll("\\", "/");
+}
+
+function manifestSha256(): string {
+  return createHash("sha256").update(JSON.stringify(issue14FixtureManifest), "utf8").digest("hex");
+}
+
+function decodeJson(path: string): Schema.Json {
+  return Schema.decodeUnknownSync(Schema.Json)(JSON.parse(readFileSync(path, "utf8")));
+}
+
+function warningOraclePath(fixture: string): string | undefined {
+  const path = join(fixtureDirectory, fixture, "warnings.tsgo.json");
+  return existsSync(path) ? path : undefined;
+}
+
+type WarningEvidence = {
+  readonly warningCount: number;
+  readonly warningDetails: readonly Schema.Json[];
+  readonly warningDigest: string;
+};
+
+function warningEvidence(warnings: readonly ExtractWarning[]): WarningEvidence {
+  const warningDetails = Schema.decodeUnknownSync(Schema.Array(Schema.Json))(
+    JSON.parse(JSON.stringify(normalizeWarnings(warnings)))
+  );
+  const warningDigest = createHash("sha256").update(JSON.stringify(warningDetails), "utf8").digest("hex");
+  return { warningCount: warningDetails.length, warningDetails, warningDigest } satisfies WarningEvidence;
+}
+
+function failedExtraction(definition: Issue14Fixture, error: string): ExtractionResult {
+  const oracleFile = issue14SelectedOracleFile(definition);
+  const selectedOraclePath = join(fixtureDirectory, definition.fixture, oracleFile);
+  return {
+    status: "failed",
+    oracleFile,
+    selectedOracleSha256: sha256(selectedOraclePath),
+    differenceCount: 0,
+    differenceDigest: differenceDigest([]),
+    upstreamDifferenceCount: 0,
+    upstreamDifferenceDigest: differenceDigest([]),
+    ...warningEvidence([]),
+    ...(definition.disposition === "reviewed-ts7"
+      ? {
+          divergenceRecord: relativeFixturePath(
+            join(fixtureDirectory, definition.fixture, "ts7-oracle.json")
+          ),
+        }
+      : {}),
+    error,
+  };
+}
+
+function compareFixtureExtraction(
+  definition: Issue14Fixture,
+  result: FixtureExtractionValue
+): ExtractionResult {
+  const oracleFile = issue14SelectedOracleFile(definition);
+  const selectedOraclePath = join(fixtureDirectory, definition.fixture, oracleFile);
+  try {
+    const actual = Schema.decodeUnknownSync(Schema.Json)(JSON.parse(JSON.stringify(result.module)));
+    const upstream = decodeJson(join(fixtureDirectory, definition.fixture, "output.json"));
+    const upstreamDifferences = canonicalDifferencePaths(upstream, actual);
+    const expected = decodeJson(join(fixtureDirectory, definition.fixture, oracleFile));
+    const differences = canonicalDifferencePaths(actual, expected);
+    const warningPath = warningOraclePath(definition.fixture);
+    const expectedWarnings = Schema.decodeUnknownSync(Schema.Array(Schema.Json))(
+      warningPath === undefined ? [] : decodeJson(warningPath)
+    );
+    const actualWarnings = Schema.decodeUnknownSync(Schema.Array(Schema.Json))(
+      JSON.parse(JSON.stringify(normalizeWarnings(result.warnings)))
+    );
+    if (JSON.stringify(actualWarnings) !== JSON.stringify(expectedWarnings)) {
+      return {
+        status: "failed",
+        oracleFile,
+        selectedOracleSha256: sha256(selectedOraclePath),
+        differenceCount: differences.length,
+        differenceDigest: differenceDigest(differences),
+        upstreamDifferenceCount: upstreamDifferences.length,
+        upstreamDifferenceDigest: differenceDigest(upstreamDifferences),
+        ...warningEvidence(result.warnings),
+        ...(warningPath === undefined ? {} : { warningOracle: relativeFixturePath(warningPath) }),
+        ...(definition.disposition === "reviewed-ts7"
+          ? {
+              divergenceRecord: relativeFixturePath(
+                join(fixtureDirectory, definition.fixture, "ts7-oracle.json")
+              ),
+            }
+          : {}),
+        error: warningPath === undefined ? "unexpected warning without oracle" : "warning oracle mismatch",
+      };
+    }
+    if (definition.disposition === "reviewed-ts7") assertTs7DivergenceEvidence(definition.fixture);
+    return {
+      status: differences.length === 0 ? "match" : "failed",
+      oracleFile,
+      selectedOracleSha256: sha256(selectedOraclePath),
+      differenceCount: differences.length,
+      differenceDigest: differenceDigest(differences),
+      upstreamDifferenceCount: upstreamDifferences.length,
+      upstreamDifferenceDigest: differenceDigest(upstreamDifferences),
+      ...warningEvidence(result.warnings),
+      ...(warningPath === undefined ? {} : { warningOracle: relativeFixturePath(warningPath) }),
+      ...(definition.disposition === "reviewed-ts7"
+        ? {
+            divergenceRecord: relativeFixturePath(
+              join(fixtureDirectory, definition.fixture, "ts7-oracle.json")
+            ),
+          }
+        : {}),
+      ...(differences.length === 0 ? {} : { error: "extraction output does not match selected oracle" }),
+    };
+  } catch (error) {
+    return failedExtraction(definition, error instanceof Error ? error.message : String(error));
+  }
+}
+
+/**
+ * Run the complete per-fixture loop while turning both typed Effect failures
+ * and defects/throws into records.  `Effect.exit` is deliberate here: a
+ * JavaScript try/catch around `yield*` cannot observe a typed Effect failure,
+ * and one bad fixture must not prevent later fixtures from running.
+ */
+export function extractFixtureResults(
+  definitions: readonly Issue14Fixture[],
+  extract: FixtureExtraction
+): Effect.Effect<readonly ExtractionResult[], never> {
+  return Effect.gen(function* () {
+    const results: ExtractionResult[] = [];
+    for (const definition of definitions) {
+      const inputPath = join(fixtureDirectory, definition.fixture, definition.file);
+      const exit = yield* Effect.exit(Effect.sync(() => extract(inputPath)).pipe(Effect.flatten));
+      if (Exit.isFailure(exit)) {
+        results.push(failedExtraction(definition, Cause.pretty(exit.cause) || "fixture extraction failed"));
+        continue;
+      }
+      results.push(compareFixtureExtraction(definition, exit.value));
+    }
+    return results;
+  });
+}
+
+function extractAll(): Promise<readonly ExtractionResult[]> {
+  // Keep the actual conformance path on the public seam: the fixture FS is
+  // where module-imports-only receives its upstream dependency in memory.
+  const effect = Effect.gen(function* () {
+    const extractor = yield* ProjectExtractor;
+    const extract: FixtureExtraction = (inputPath) => extractor.extractModule(inputPath);
+    return yield* extractFixtureResults(issue14FixtureManifest, extract);
+  }).pipe(
+    Effect.provide(
+      ProjectExtractor.live({
+        tsconfigPath: configPath,
+        fileSystem: createFixtureFileSystem(),
+      })
+    )
+  );
+  return Effect.runPromise(Effect.scoped(effect));
+}
+
+function assertManifest(requireTs7Evidence = true): void {
+  const names = issue14FixtureManifest.map((entry) => entry.fixture);
+  if (names.length !== expectedFixtureCount) {
+    throw new Error(`Issue 14 manifest must contain exactly ${expectedFixtureCount} fixtures.`);
+  }
+  const sortedNames = [...names].sort();
+  if (new Set(names).size !== names.length || names.some((name, index) => name !== sortedNames[index])) {
+    throw new Error("Issue 14 manifest names must be sorted and unique.");
+  }
+  const discoveredNames = readdirSync(fixtureDirectory, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && existsSync(join(fixtureDirectory, entry.name, "output.json")))
+    .map((entry) => entry.name)
+    .sort();
+  if (JSON.stringify(discoveredNames) !== JSON.stringify(sortedNames)) {
+    throw new Error(
+      `Issue 14 fixture discovery must yield exactly the manifest set (${expectedFixtureCount}); ` +
+        `discovered ${discoveredNames.length}.`
+    );
+  }
+  for (const definition of issue14FixtureManifest) {
+    const directory = join(fixtureDirectory, definition.fixture);
+    if (!existsSync(join(directory, definition.file)) || !existsSync(join(directory, "output.json"))) {
+      throw new Error(`Incomplete pinned fixture: ${definition.fixture}`);
+    }
+    if (definition.disposition === "reviewed-ts7" && requireTs7Evidence) {
+      if (
+        !existsSync(join(directory, "output.tsgo.json")) ||
+        !existsSync(join(directory, "ts7-oracle.json"))
+      ) {
+        throw new Error(`Reviewed fixture is missing TS7 evidence: ${definition.fixture}`);
+      }
+    }
+  }
+}
+
+export function assertTs7WriteReference(
+  referenceRoot = pinnedUpstream.root
+): ReturnType<typeof auditPinnedReference> {
+  const audit = auditPinnedReference("required", { referenceRoot });
+  if (audit.status !== "verified") {
+    throw new Error("--write-ts7 requires a verified pinned upstream reference before extraction.");
+  }
+  return audit;
+}
+
+export async function writeAdditionalTs7Evidence(
+  names: readonly string[],
+  options: { readonly referenceRoot?: string } = {}
+): Promise<void> {
+  assertTs7WriteReference(options.referenceRoot);
+  if (names.length === 0) throw new Error("--write-ts7 requires one or more explicit fixture names.");
+  assertManifest(false);
+  const definitions = names.map((name) => {
+    const definition = issue14FixtureManifest.find((entry) => entry.fixture === name);
+    if (definition?.disposition !== "reviewed-ts7") {
+      throw new Error(`--write-ts7 accepts only reviewed Issue 14 fixtures: ${name}`);
+    }
+    const evidence = additionalTs7Evidence.get(name);
+    if (evidence === undefined) {
+      throw new Error(`No reviewed TS7 reason is available for ${name}; refusing implicit regeneration.`);
+    }
+    return { definition, evidence };
+  });
+  const generatedPaths = definitions.flatMap(({ definition }) => [
+    join(fixtureDirectory, definition.fixture, "output.tsgo.json"),
+    join(fixtureDirectory, definition.fixture, "warnings.tsgo.json"),
+    join(fixtureDirectory, definition.fixture, "ts7-oracle.json"),
+  ]);
+  // Validate the entire batch before compiler startup; no earlier generated
+  // file may be written if a later destination aliases an immutable oracle.
+  assertSafeGeneratedArtifactDestinations(generatedPaths);
+  const effect = Effect.gen(function* () {
+    const extractor = yield* ProjectExtractor;
+    const results = new Map<
+      string,
+      { readonly module: unknown; readonly warnings: readonly ExtractWarning[] }
+    >();
+    for (const { definition } of definitions) {
+      const inputPath = join(fixtureDirectory, definition.fixture, definition.file);
+      const result = yield* extractor.extractModule(inputPath);
+      results.set(definition.fixture, { module: result.module, warnings: result.warnings });
+    }
+    return results;
+  }).pipe(
+    Effect.provide(
+      ProjectExtractor.live({
+        tsconfigPath: configPath,
+        fileSystem: createFixtureFileSystem(),
+      })
+    )
+  );
+  const results = await Effect.runPromise(Effect.scoped(effect));
+  const generatedFiles: Array<{ readonly path: string; readonly value: Schema.Json }> = [];
+  for (const { definition, evidence } of definitions) {
+    const result = results.get(definition.fixture);
+    if (result === undefined) throw new Error(`No extraction result for ${definition.fixture}`);
+    const upstreamPath = join(fixtureDirectory, definition.fixture, "output.json");
+    const module = Schema.decodeUnknownSync(Schema.Json)(JSON.parse(JSON.stringify(result.module)));
+    const differences = canonicalDifferencePaths(decodeJson(upstreamPath), module);
+    if (
+      JSON.stringify(differences) !== JSON.stringify(evidence.differencePaths) ||
+      differenceDigest(differences) !== evidence.differenceDigest
+    ) {
+      throw new Error(`The reviewed difference evidence is stale for ${definition.fixture}.`);
+    }
+    generatedFiles.push(
+      { path: join(fixtureDirectory, definition.fixture, "output.tsgo.json"), value: module },
+      {
+        path: join(fixtureDirectory, definition.fixture, "warnings.tsgo.json"),
+        value: Schema.decodeUnknownSync(Schema.Json)(
+          JSON.parse(JSON.stringify(normalizeWarnings(result.warnings)))
+        ),
+      },
+      {
+        path: join(fixtureDirectory, definition.fixture, "ts7-oracle.json"),
+        value: Schema.decodeUnknownSync(Schema.Json)({
+          fixture: definition.fixture,
+          compiler: "typescript@" + packageVersion("typescript"),
+          sourceOracle: "output.json",
+          comparison: "exact",
+          divergence: {
+            code: evidence.code,
+            genus: evidence.genus,
+            reason: evidence.reason,
+            upstreamPreserved: true,
+            differenceCount: differences.length,
+            differenceDigest: differenceDigest(differences),
+            differencePaths: differences,
+          },
+        }),
+      }
+    );
+  }
+  writeGeneratedJsonFiles(generatedFiles);
+}
+
+function reportFrom(
+  typechecks: readonly TypecheckResult[],
+  extractions: readonly ExtractionResult[],
+  referenceCheck: ReturnType<typeof auditPinnedReference>
+): Issue14ConformanceReport {
+  const fixtures = issue14FixtureManifest.map((definition, index) => {
+    const inputPath = join(fixtureDirectory, definition.fixture, definition.file);
+    const typecheck = typechecks[index];
+    const extraction = extractions[index];
+    if (typecheck === undefined || extraction === undefined) {
+      throw new Error(`Issue 14 evidence is missing at fixture index ${index}.`);
+    }
+    return {
+      fixture: definition.fixture,
+      input: definition.file,
+      disposition: definition.disposition,
+      inputSha256: sha256(inputPath),
+      upstreamOracleSha256: sha256(join(fixtureDirectory, definition.fixture, "output.json")),
+      typecheck,
+      extraction,
+    };
+  });
+  const summary = summarizeFixtureRun(issue14FixtureManifest, typechecks, extractions);
+  return {
+    issue: "14-full-conformance",
+    command: issue14ConformanceCommand,
+    upstream: {
+      repository: "michaldudak/typescript-api-extractor",
+      commit: upstreamCommit,
+      fixtureCount: expectedFixtureCount,
+      originalOracle: "output.json",
+    },
+    manifestSha256: manifestSha256(),
+    totals: {
+      // assertManifest() established the exact manifest cardinality before
+      // this report is built; keep the schema's literal 116 guard intact.
+      // SAFETY: assertManifest() and the fixture construction above enforce the 116-record contract.
+      fixtures: fixtures.length as typeof expectedFixtureCount,
+      unchanged: summary.unchanged,
+      reviewedDivergences: summary.reviewedDivergences,
+      failures: summary.failures,
+      failedFixtureIndices: summary.failedFixtureIndices,
+      unclassified: summary.unclassified,
+      typecheckPassed: summary.typecheckPassed,
+      typecheckFailed: summary.typecheckFailed,
+    },
+    fixtures,
+    referenceCheck,
+    status: summary.status,
+  };
+}
+
+/** Return the union of indices with an independent typecheck or extraction failure. */
+export function failedFixtureIndices(
+  typechecks: readonly { readonly status: string }[],
+  extractions: readonly { readonly status: string }[]
+): readonly number[] {
+  const failed = new Set<number>();
+  for (let index = 0; index < Math.max(typechecks.length, extractions.length); index += 1) {
+    if (typechecks[index]?.status !== "pass" || extractions[index]?.status !== "match") {
+      failed.add(index);
+    }
+  }
+  return [...failed].sort((left, right) => left - right);
+}
+
+export function decodeIssue14ConformanceReport(value: Schema.Json): Issue14ConformanceReport {
+  return Schema.decodeUnknownSync(Issue14ConformanceReportSchema)(value);
+}
+
+export function readIssue14ConformanceReport(path = reportPath): Issue14ConformanceReport {
+  return decodeIssue14ConformanceReport(decodeJson(path));
+}
+
+export function assertConformanceReportInvariants(
+  value: Schema.Json,
+  options: ConformanceInvariantOptions = {}
+): void {
+  assertConformanceDecoded(decodeIssue14ConformanceReport(value), options);
+}
+
+export function assertStoredReportInvariants(
+  value: Schema.Json,
+  options: ConformanceInvariantOptions = {}
+): void {
+  assertStoredReportDecoded(decodeIssue14ConformanceReport(value), options);
+}
+
+async function main(): Promise<void> {
+  assertCompilerIdentity();
+  const writeTs7Index = process.argv.indexOf("--write-ts7");
+  if (writeTs7Index >= 0) {
+    const names = process.argv.slice(writeTs7Index + 1).filter((argument) => !argument.startsWith("--"));
+    await writeAdditionalTs7Evidence(names);
+    return;
+  }
+  if (process.argv.some((argument) => argument.endsWith("output.json"))) {
+    throw new Error("Issue 14 regeneration refuses to target the immutable output.json oracle.");
+  }
+  assertManifest();
+  const writeReport = process.argv.includes("--write");
+  if (writeReport) {
+    // Reject an unsafe report destination before typechecks or extraction so
+    // a failed late write cannot leave a partial evidence run behind.
+    assertSafeGeneratedArtifactDestinations([reportPath]);
+  }
+  const referenceMode = process.argv.includes("--reference-required") ? "required" : "optional";
+  const referenceCheck = auditPinnedReference(referenceMode);
+  if (process.argv.includes("--audit-reference")) {
+    console.log(JSON.stringify(referenceCheck, null, 2));
+    return;
+  }
+  const typechecks = issue14FixtureManifest.map(typecheckFixture);
+  const extractions = await extractAll();
+  const measured = reportFrom(typechecks, extractions, referenceCheck);
+  if (writeReport) {
+    assertReferenceEvidence(measured.referenceCheck, true);
+    writeGeneratedJsonFiles([{ path: reportPath, value: measured }]);
+    return;
+  }
+  const stored = readIssue14ConformanceReport();
+  assertStoredReport(stored, measured);
+  console.log(
+    JSON.stringify(
+      {
+        issue: measured.issue,
+        totals: measured.totals,
+        referenceCheck: measured.referenceCheck,
+        status: measured.status,
+      },
+      null,
+      2
+    )
+  );
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  await main();
+}

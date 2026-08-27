@@ -1,0 +1,15 @@
+[
+  {
+    "message": "Type extraction warning: Could not confirm that \"OptionalToolbar\" is a React component at \"test/fixtures/react-component-union-variants/input.tsx:49:14\". Some arms of its union type do not return React node types, so the export kept its resolved type instead of becoming a component.",
+    "filePath": "test/fixtures/react-component-union-variants/input.tsx",
+    "line": 49,
+    "column": 14,
+    "parsedSymbolStack": [
+      "test/fixtures/react-component-union-variants/input.tsx",
+      "OptionalToolbar"
+    ],
+    "code": "uncertain-component-recognition",
+    "reason": "mixed-component-union",
+    "name": "OptionalToolbar"
+  }
+]

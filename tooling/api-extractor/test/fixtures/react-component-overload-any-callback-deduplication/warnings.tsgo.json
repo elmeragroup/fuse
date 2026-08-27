@@ -1,0 +1,17 @@
+[
+  {
+    "message": "Type extraction warning: Unable to handle type \"{ items: readonly any[]; }\" with flag \"Object\" at \"test/fixtures/react-component-overload-any-callback-deduplication/input.tsx:1:1\". Using any instead.",
+    "filePath": "test/fixtures/react-component-overload-any-callback-deduplication/input.tsx",
+    "line": 1,
+    "column": 1,
+    "parsedSymbolStack": [
+      "test/fixtures/react-component-overload-any-callback-deduplication/input.tsx",
+      "GenericComponent"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "{ items: readonly any[]; }"
+  }
+]

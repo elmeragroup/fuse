@@ -1,0 +1,17 @@
+[
+  {
+    "message": "Type extraction warning: Unable to handle type \"any\" with flag \"Any\" at \"test/fixtures/interface-extends-basic-resolution/input.ts:23:1\". Using any instead.",
+    "filePath": "test/fixtures/interface-extends-basic-resolution/input.ts",
+    "line": 23,
+    "column": 1,
+    "parsedSymbolStack": [
+      "test/fixtures/interface-extends-basic-resolution/input.ts",
+      "Dialog"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Any"
+    ],
+    "typeText": "any"
+  }
+]

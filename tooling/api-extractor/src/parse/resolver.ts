@@ -12,7 +12,7 @@ import type {
   BackendSymbolHandle,
   BackendTypeHandle,
   BackendWarningFact,
-  BackendNodeFacts,
+  BackendTypeFacts,
 } from "../backend/contracts.ts";
 import type { BackendModuleDraft } from "../backend/contracts.ts";
 import type { ExportNode, ModuleNode, SemanticType, TypeArgument, TypeName } from "../model.ts";
@@ -20,39 +20,42 @@ import { defaultExtractorOptions } from "../options.ts";
 import type { ExtractorOptions } from "../options.ts";
 import type { ProvenanceEntry } from "../provenance.ts";
 import type { ExtractWarning } from "../warnings.ts";
+import { authoredContainsPreservableKeyof } from "./authored-node.ts";
+import { resolveClassNode } from "./class-resolver.ts";
+import { recoverAuthoredComponent } from "./component-authorship.ts";
 import { componentNode } from "./component.ts";
-import { addUndefined } from "./component.ts";
+import { authoredUndefinedUnionSyntax, intersectionNode, unionNode } from "./compound.ts";
+import { arrayNode, tupleNode } from "./container.ts";
 import type { ResolverContext } from "./contracts.ts";
+import { isInternalSymbolName } from "./contracts.ts";
+import { externalPolicy } from "./external-policy.ts";
+import type { ExternalPolicyDecision } from "./external-policy.ts";
 import { unsupported, warningMessage } from "./fallback.ts";
+import { mappedObjectNode } from "./mapped.ts";
 import {
   declarationPathsFor,
-  propertyTypeNode,
+  recordOmittedCallableMembers,
+  recordUnrepresentedConstructSignatures,
   resolveEnumNode,
   resolveObjectNode,
   resolveSignatureNode,
   canonicalizeProvenance,
   recordProvenance,
 } from "./object-resolver.ts";
+import { isStandardLibraryDeclaration } from "./ownership.ts";
 import {
   collectSemanticPaths,
   componentPropSemanticPathFromProvenancePath,
   exportSemanticPath,
 } from "./semantic-paths.ts";
+import {
+  authoredExtractOverIndexLike,
+  authoredKeyofNode,
+  conditionalBranches,
+  typeOperatorNode,
+} from "./type-operator.ts";
+import { isTypeParameterSymbol, isUnauthoredAny, occurrenceTypeParameter } from "./type-parameter.ts";
 export { ResolverFailure } from "./resolver-error.ts";
-export type { ResolverContext as Context } from "./contracts.ts";
-
-const builtInTypeScriptUtilityNames = new Set([
-  "Pick",
-  "Omit",
-  "ReturnType",
-  "Parameters",
-  "InstanceType",
-  "Partial",
-  "Required",
-  "Readonly",
-  "Exclude",
-  "Extract",
-]);
 
 export type ResolvedModule = {
   readonly module: ModuleNode;
@@ -85,6 +88,9 @@ export function resolveModule(
     authoredIntersectionMember: false,
   };
   context.operations.setErrorContext?.([]);
+  // Module-walk warnings (unresolved re-exports, barrel cycles, ambiguous
+  // stars) are discovered before resolution and lead the result's warnings.
+  for (const warning of draft.warnings ?? []) context.warnings.push(warning);
   const exports = draft.exports.map((entry) => resolveExport(entry, context));
   const module: ModuleNode = {
     name: draft.name,
@@ -106,11 +112,12 @@ function resolveExport(entry: BackendExportDraft, base: Context): ExportNode {
   const semanticPath = exportSemanticPath(entry.name);
   base.operations.setErrorContext?.(symbolStack);
   const symbolFacts = base.operations.symbolFacts(entry.symbol);
-  recordProvenance(base, {
+  const rootProvenance: ProvenanceEntry = {
     path: semanticPath,
     declarationPaths: declarationPathsFor(symbolFacts),
     synthesized: symbolFacts.declarations.length === 0,
-  });
+    ...(entry.reexportChain === undefined ? {} : { reexportChain: entry.reexportChain }),
+  };
   const declaration = symbolFacts.valueDeclaration ?? symbolFacts.declarations[0];
   const declarationFacts = declaration === undefined ? undefined : base.operations.nodeFacts(declaration);
   const sourceNode =
@@ -139,22 +146,44 @@ function resolveExport(entry: BackendExportDraft, base: Context): ExportNode {
     ...base,
     symbolStack: entry.symbolStack ?? [entry.name],
   };
-  const authoredProps = authoredComponentProps(entry.symbol, componentContext);
-  const bindingDefaults = authoredComponentBindingDefaults(entry.symbol, componentContext);
+  const authored = recoverAuthoredComponent(entry.symbol, componentContext);
   const authoredProvenance: ProvenanceEntry[] = [];
-  const authoredPropsType =
-    authoredProps === undefined
-      ? undefined
-      : typeNode(base.operations.typeAtNode(authoredProps), authoredProps, undefined, {
-          ...base,
-          provenance: authoredProvenance,
-          provenancePath: semanticPath,
-          provenancePropertyContainer: "componentProps",
-          propertyDepth: 0,
-          symbolStack,
-          ...(bindingDefaults === undefined ? {} : { bindingDefaults }),
+  const authoredPropsTypes = authored.propNodes.map((authoredProps) =>
+    typeNode(base.operations.typeAtNode(authoredProps), authoredProps, undefined, {
+      ...base,
+      provenance: authoredProvenance,
+      provenancePath: semanticPath,
+      provenancePropertyContainer: "componentProps",
+      propertyDepth: 0,
+      symbolStack,
+      ...(authored.bindingDefaults === undefined ? {} : { bindingDefaults: authored.bindingDefaults }),
+    })
+  );
+  // The authored export context is applied BEFORE the component transform,
+  // matching upstream's ordering: repair the resolved root's public name, then
+  // let the transform reshape functions into components.
+  const namedOutputType = publicExportName(resolvedType, entry);
+  const transformedComponent = componentNode(namedOutputType, entry.name, authoredPropsTypes);
+  const resolvedOutputType = transformedComponent.type;
+  if (transformedComponent.recognition.outcome === "uncertain")
+    recordUncertainComponentRecognition(base, entry, symbolFacts, transformedComponent.recognition);
+  // A dependency-owned bare interface/value at the export root is deliberately
+  // represented as an anonymous empty object in this workspace. It has no
+  // durable semantic anchor, so do not publish a declaration provenance entry
+  // for a shape that exposes neither a name nor any members. Named external
+  // aliases and all non-empty roots retain their usual root provenance.
+  const rootDecision =
+    declaredType === undefined
+      ? ({ kind: "expand" } satisfies ExternalPolicyDecision)
+      : externalPolicy({
+          type: declaredType,
+          sourceNode,
+          typeName: undefined,
+          symbol: entry.symbol,
+          context: base,
+          resolveTypeName: typeNameFor,
         });
-  const resolvedOutputType = componentNode(resolvedType, entry.name, authoredPropsType);
+  if (rootDecision.kind !== "anonymous-root") recordProvenance(base, rootProvenance);
   const selectedProvenance =
     resolvedOutputType.kind === "component"
       ? authoredProvenance.length > 0
@@ -166,60 +195,68 @@ function resolveExport(entry: BackendExportDraft, base: Context): ExportNode {
     name: entry.name,
     type: resolvedOutputType,
     ...(entry.documentation === undefined ? {} : { documentation: entry.documentation }),
+    ...(entry.reexportedFrom === undefined ? {} : { reexportedFrom: entry.reexportedFrom }),
     ...(entry.extendsTypes === undefined ? {} : { extendsTypes: entry.extendsTypes }),
   };
   return output;
 }
 
 /**
- * Discover authored component props from normalized declaration/call/argument
- * relations. The backend only reports syntax relationships; React wrapper and
- * render-function policy lives here in the compiler-free resolver.
+ * Applies the authored export context to a resolved root type, mirroring
+ * upstream's `applyExportTypeNameContext`.
+ *
+ * A re-exported alias can otherwise lose its authored export name and surface
+ * as an internal `__type` name, and a namespace member defines a new public
+ * reference path, so its type is renamed to the exported name under the
+ * namespace path even when the underlying declaration came from another
+ * module or carries an anonymous name.
  */
-function authoredComponentProps(
-  symbol: BackendSymbolHandle,
-  context: Context
-): BackendTypeNodeHandle | undefined {
-  const firstParameter = authoredComponentParameter(symbol, context);
-  return firstParameter === undefined ? undefined : context.operations.nodeFacts(firstParameter).type;
+function publicExportName(type: SemanticType, entry: BackendExportDraft): SemanticType {
+  if (!("typeName" in type)) return type;
+  const parentNamespaces = (entry.symbolStack ?? [entry.name]).slice(0, -1);
+  const ownName = entry.name.slice(entry.name.lastIndexOf(".") + 1);
+  const typeName = (type as { typeName?: TypeName | undefined }).typeName;
+  if (parentNamespaces.length === 0) {
+    // Top-level exports keep the resolved name unless it is internal.
+    if (typeName === undefined || !isInternalSymbolName(typeName.name)) return type;
+    return { ...type, typeName: { ...typeName, name: ownName } };
+  }
+  return {
+    ...type,
+    typeName: {
+      name: ownName,
+      namespaces: [...parentNamespaces],
+      ...(typeName?.typeArguments === undefined ? {} : { typeArguments: typeName.typeArguments }),
+    },
+  };
 }
 
-function authoredComponentBindingDefaults(
-  symbol: BackendSymbolHandle,
-  context: Context
-): ReadonlyMap<string, string> | undefined {
-  const firstParameter = authoredComponentParameter(symbol, context);
-  const defaults =
-    firstParameter === undefined ? undefined : context.operations.nodeFacts(firstParameter).bindingDefaults;
-  if (defaults === undefined || defaults.length === 0) return undefined;
-  return new Map(defaults.map((entry) => [entry.name, entry.initializerText]));
-}
-
-function authoredComponentParameter(
-  symbol: BackendSymbolHandle,
-  context: Context
-): BackendNodeHandle | undefined {
-  const exportName = context.symbolStack.at(-1);
-  if (exportName !== "default" && (exportName === undefined || !/^[A-Z]/u.test(exportName))) return undefined;
-  context.operations.setErrorContext?.(context.symbolStack);
-  const facts = context.operations.symbolFacts(symbol);
-  const declaration = facts.valueDeclaration ?? facts.declarations[0];
-  if (declaration === undefined) return undefined;
-  const declarationFacts = context.operations.nodeFacts(declaration);
-  if (declarationFacts.kind === "function" || declarationFacts.kind === "functionLike")
-    return declarationFacts.parameters?.[0];
-  if (declarationFacts.kind !== "variable" || declarationFacts.initializer === undefined) return undefined;
-  const initializerFacts = context.operations.nodeFacts(declarationFacts.initializer);
-  if (initializerFacts.kind === "function" || initializerFacts.kind === "functionLike")
-    return initializerFacts.parameters?.[0];
-  if (initializerFacts.kind !== "callExpression") return undefined;
-  const renderFunction = (initializerFacts.arguments ?? []).find((argument) => {
-    const kind = context.operations.nodeFacts(argument).kind;
-    return kind === "functionLike" || kind === "function";
+/**
+ * Records structured uncertainty about component recognition. The export's
+ * semantic kind is deliberately left as resolved — a union with non-component
+ * arms stays a union — and this warning makes the heuristic's hesitation
+ * inspectable rather than silently changing the kind.
+ */
+function recordUncertainComponentRecognition(
+  base: Context,
+  entry: BackendExportDraft,
+  symbolFacts: {
+    readonly valueDeclaration?: BackendNodeHandle | undefined;
+    readonly declarations: readonly BackendNodeHandle[];
+  },
+  recognition: { readonly reason: "mixed-component-union" }
+): void {
+  const declaration = symbolFacts.valueDeclaration ?? symbolFacts.declarations[0];
+  const location = declaration === undefined ? undefined : base.operations.nodeFacts(declaration);
+  base.warnings.push({
+    code: "uncertain-component-recognition",
+    filePath: location?.filePath ?? base.filePath,
+    line: location?.line ?? 1,
+    column: location?.column ?? 1,
+    parsedSymbolStack: [base.filePath, ...(entry.symbolStack ?? [entry.name])],
+    reason: recognition.reason,
+    name: entry.name,
   });
-  return renderFunction === undefined
-    ? undefined
-    : context.operations.nodeFacts(renderFunction).parameters?.[0];
 }
 
 function componentProvenance(
@@ -266,8 +303,50 @@ function typeNodeUnsafe(
   context: Context
 ): SemanticType {
   const facts = context.operations.typeFacts(type);
+  // A checker-internal substitution has no model form of its own. Upstream's
+  // `resolveSubstitutionFallback` probes its base type and then its constraint
+  // and rejects a candidate that degrades to an unauthored `any`, so one
+  // warning with the best source location survives instead of several.
+  if (facts.flags.includes("Substitution")) {
+    const substituted = substitutionFallback(facts, sourceNode, context);
+    if (substituted !== undefined) return substituted;
+  }
   const typeNameValue = typeNameFor(type, sourceNode, context);
   if (facts.isTypeParameter === true) return typeParameterNode(type, typeNameValue, context);
+  // Authored `keyof` syntax is reconstructed before broad shape resolvers can
+  // report only the checker's reduced result — upstream runs its operator
+  // resolver first for exactly this reason.
+  if (sourceNode !== undefined) {
+    const reconstructed = authoredKeyofNode(type, sourceNode, typeNameValue, context, typeNode);
+    if (reconstructed !== undefined) return reconstructed;
+  }
+  // An authored union whose alias member absorbs into `any` or `unknown`
+  // collapses on the checker side to that single intrinsic (`AliasedAny |
+  // undefined` is just `any`). Walking the written members keeps the aliased
+  // member's public name alongside `undefined`, exactly as upstream does when
+  // it resolves the authored union instead of the collapsed intrinsic.
+  if (
+    facts.intrinsic !== undefined &&
+    sourceNode !== undefined &&
+    authoredUndefinedUnionSyntax(sourceNode, context)
+  ) {
+    return unionNode(type, sourceNode, typeNameValue, context, typeNode);
+  }
+  // Dependency policy runs before structural dispatch. The parser receives a
+  // single explicit decision, so roots, nested members, and cycles cannot
+  // drift into subtly different ad-hoc ownership checks.
+  const externalDecision = externalPolicy({
+    type,
+    sourceNode,
+    typeName: typeNameValue,
+    symbol,
+    context,
+    resolveTypeName: typeNameFor,
+  });
+  if (externalDecision.kind === "external-reference") {
+    return { kind: "external", typeName: externalDecision.typeName };
+  }
+  if (externalDecision.kind === "anonymous-root") return { kind: "object", properties: [] };
   if (facts.isEnum === true) {
     const enumValue = context.operations.enumFacts?.(type);
     if (enumValue !== undefined) return resolveEnumNode(enumValue, context);
@@ -287,46 +366,78 @@ function typeNodeUnsafe(
       ...(typeNameValue === undefined ? {} : { typeName: typeNameValue }),
     };
   }
+  // TypeScript's `object` intrinsic has no slot in the intrinsic-name union;
+  // upstream renders it as the empty object it describes
+  // (`resolveTypeParameterType` reaches it through a base constraint). A
+  // NonPrimitive flag with no symbol and no members is exactly that type.
+  if (
+    facts.flags.includes("NonPrimitive") &&
+    facts.symbol === undefined &&
+    facts.aliasSymbol === undefined &&
+    (facts.unionOrIntersectionTypes ?? []).length === 0
+  ) {
+    return {
+      kind: "object",
+      properties: [],
+      ...(typeNameValue === undefined ? {} : { typeName: typeNameValue }),
+    };
+  }
   if (facts.literal !== undefined) {
     return {
       kind: "literal",
-      value: literalValue(facts.literal, sourceNode, context),
+      value: literalValue(facts.literal),
       ...(typeNameValue === undefined ? {} : { typeName: typeNameValue }),
     };
   }
-  if (facts.isUnion === true) return unionNode(type, sourceNode, typeNameValue, context);
-  if (facts.isIntersection === true) return intersectionNode(type, sourceNode, typeNameValue, context);
+  // Deferred conditionals follow upstream's dispatch order: a built-in
+  // `Extract` over an index-like check type resolves through the checker's
+  // base constraint (`Extract<keyof T, string>` is `string`); any other
+  // deferred conditional reports its resolved branches as a union; and the
+  // base-constraint read remains as the final representable answer.
+  if (facts.flags.includes("Conditional")) {
+    if (authoredExtractOverIndexLike(facts, context)) {
+      const extracted = context.operations.baseConstraintOfType(type);
+      if (extracted !== undefined && extracted !== type) {
+        return typeNode(extracted, undefined, undefined, context);
+      }
+    }
+    const branchUnion = conditionalBranches(facts, context, typeNode);
+    if (branchUnion !== undefined) return branchUnion;
+    const base = context.operations.baseConstraintOfType(type);
+    if (base !== undefined && base !== type) {
+      return typeNode(base, undefined, undefined, context);
+    }
+  }
+  if (facts.isUnion === true) return unionNode(type, sourceNode, typeNameValue, context, typeNode);
+  if (facts.isIntersection === true)
+    return intersectionNode(type, sourceNode, typeNameValue, context, typeNode);
   if (facts.isIndex === true && sourceNode !== undefined) {
-    return typeOperatorNode(type, sourceNode, typeNameValue, context);
+    return typeOperatorNode(type, sourceNode, typeNameValue, context, typeNode);
   }
-  if (facts.isTuple === true) {
-    const elementTypes = context.operations.propertiesOfType(type).map((property) => {
-      const propertyType = context.operations.propertyType(property);
-      return typeNode(propertyType, propertyTypeNode(property, context), property, {
-        ...context,
-        propertyDepth: context.propertyDepth + 1,
-      });
-    });
-    return {
-      kind: "tuple",
-      types: elementTypes,
-      ...(context.operations.isReadonlyType(type) ? { isReadonly: true as const } : {}),
-      ...(typeNameValue === undefined ? {} : { typeName: typeNameValue }),
-    };
+  // An Index type reached WITHOUT its authored `keyof` syntax — an inferred
+  // return, or an alias position the checker reduced — still describes a key
+  // set. A checker-internal indexed access (`T[K]` under unresolved
+  // parameters) has no shape of its own. Both degrade identically through
+  // upstream's `resolveIndexLikeType` — base constraint when one exists,
+  // otherwise `any` carrying the authored alias name, silently: an expected
+  // limit rather than a parser bug.
+  if (facts.isIndex === true || facts.flags.includes("IndexedAccess")) {
+    return baseConstraintOrAny(type, typeNameValue, context);
   }
-  if (facts.isArray === true || context.operations.isArrayType(type)) {
-    const args = facts.typeArguments ?? [];
-    const authoredReference =
-      sourceNode !== undefined && context.operations.nodeFacts(sourceNode).kind === "typeReference";
-    return {
-      kind: "array",
-      elementType: typeNode(args[0], undefined, undefined, context),
-      ...(context.operations.isReadonlyType(type) ? { isReadonly: true as const } : {}),
-      ...(typeNameValue === undefined || !authoredReference ? {} : { typeName: typeNameValue }),
-    };
-  }
+  if (facts.isArray === true || context.operations.isArrayType(type))
+    return arrayNode(type, sourceNode, typeNameValue, context, typeNode);
+  if (facts.isTuple === true) return tupleNode(type, sourceNode, typeNameValue, context, typeNode);
   const signatures = context.operations.signaturesOfType(type);
   if (signatures.length > 0) {
+    recordOmittedCallableMembers(type, signatures, context);
+    // A callable-first shape may also declare construct signatures, which the
+    // function node returned below cannot carry. Only a class would have been
+    // resolved through them, so any other shape's construct side is reported
+    // here rather than vanishing silently.
+    const constructs = context.operations.constructSignaturesOfType?.(type) ?? [];
+    if (constructs.length > 0 && !isClassType(type, context)) {
+      recordUnrepresentedConstructSignatures(type, context);
+    }
     return {
       kind: "function",
       callSignatures: signatures.map((signature, index) =>
@@ -335,29 +446,91 @@ function typeNodeUnsafe(
       ...(typeNameValue === undefined ? {} : { typeName: typeNameValue }),
     };
   }
+  // A class is recognized after plain callables and before objects, matching
+  // upstream's resolver order: only the static side of a class carries
+  // construct signatures, so a shape that merely declares `new (…)` still falls
+  // through to object resolution here.
+  const constructs = context.operations.constructSignaturesOfType?.(type) ?? [];
+  if (constructs.length > 0 && isClassType(type, context))
+    return resolveClassNode(type, constructs, typeNameValue, context, typeNode);
   if (facts.isObject === true) {
-    const external = externalTypeName(type, typeNameValue, context);
-    if (external !== undefined && !context.options.includeExternalTypes) {
-      if (context.propertyDepth === 0 && symbol !== undefined && isExternalSymbol(symbol, context)) {
-        return { kind: "object", properties: [] };
-      }
-      return { kind: "external", typeName: external };
-    }
-    const mapped = mappedAliasNode(type, sourceNode, typeNameValue, context);
+    const mapped = mappedObjectNode(type, sourceNode, typeNameValue, context, typeNode);
     if (mapped !== undefined) return mapped;
     const object = resolveObjectNode(type, typeNameValue, sourceNode, context, typeNode);
     if (object !== undefined) return object;
-    // An exported dependency value may have an anonymous object type whose
-    // members are intentionally hidden by the external-type policy. Preserve
-    // the value as an object at the module boundary instead of manufacturing
-    // an unsupported-type warning; nested React/dependency payloads still use
-    // the normal external fallback above.
-    if (context.propertyDepth === 0 && symbol !== undefined && isExternalSymbol(symbol, context)) {
+    // A compiler-internal aggregate arm — an anonymous, symbol-less shape with
+    // no members and no authored syntax of its own, such as the construct-only
+    // arm of a library union like `JSXElementConstructor` — has no API surface
+    // to lose. Upstream reports such shapes as bare objects, so the model does
+    // the same instead of manufacturing an unsupported-type warning.
+    if (
+      symbol === undefined &&
+      sourceNode === undefined &&
+      facts.aliasSymbol === undefined &&
+      context.operations.propertiesOfType(type).length === 0 &&
+      context.operations.indexSignaturesOfType(type).length === 0
+    ) {
       return { kind: "object", properties: [] };
     }
-    if (external !== undefined) return { kind: "external", typeName: external };
+    const fallbackDecision = externalPolicy({
+      type,
+      sourceNode,
+      typeName: typeNameValue,
+      symbol,
+      context,
+      resolveTypeName: typeNameFor,
+      fallback: true,
+    });
+    if (fallbackDecision.kind === "external-reference") {
+      return { kind: "external", typeName: fallbackDecision.typeName };
+    }
+    if (fallbackDecision.kind === "anonymous-root") return { kind: "object", properties: [] };
   }
   return unsupported(context, type, symbol, sourceNode);
+}
+/**
+ * Upstream's `resolveIndexLikeType` for an index-like shape reached without
+ * authored operator syntax: expand through the checker's base constraint when
+ * one exists (and is not this type itself, or already being resolved higher up
+ * the stack), otherwise report bare `any` — silently.
+ *
+ * Shared by the merged Index/IndexedAccess arm above. The deferred-conditional
+ * arm deliberately does NOT use this helper: it must fall through to the
+ * compound resolvers when no base constraint exists instead of reporting `any`.
+ */
+function baseConstraintOrAny(
+  type: BackendTypeHandle,
+  typeNameValue: TypeName | undefined,
+  context: Context
+): SemanticType {
+  const baseConstraint = context.operations.baseConstraintOfType(type);
+  if (baseConstraint !== undefined && baseConstraint !== type && !context.active.has(baseConstraint)) {
+    return typeNode(baseConstraint, undefined, undefined, context);
+  }
+  return {
+    kind: "intrinsic",
+    intrinsic: "any",
+    ...(typeNameValue === undefined ? {} : { typeName: typeNameValue }),
+  };
+}
+
+/**
+ * Whether a type with construct signatures was authored as a class.
+ *
+ * Upstream accepts the class symbol flag or, for class expressions that can
+ * miss it, any declaration written as a class. An interface with a construct
+ * signature fails both checks and stays an object.
+ */
+function isClassType(type: BackendTypeHandle, context: Context): boolean {
+  const facts = context.operations.typeFacts(type);
+  const symbol = facts.symbol;
+  if (symbol === undefined) return false;
+  const info = context.operations.symbolFacts(symbol);
+  if (info.flags.includes("class")) return true;
+  return info.declarations.some((declaration) => {
+    const kind = context.operations.nodeFacts(declaration).kind;
+    return kind === "class" || kind === "classExpression";
+  });
 }
 
 function recordMissingEnumWarning(
@@ -382,13 +555,29 @@ function recordMissingEnumWarning(
   });
 }
 
+/**
+ * Resolves a type that is already being resolved further up the stack.
+ *
+ * The cut keeps the type's discriminant and public name but drops its members,
+ * so a recursive container still reports what kind of container it is. Choosing
+ * a different kind — collapsing every cycle to an object — would make the model
+ * depend on where the cycle happened to be broken.
+ */
 function shallowType(
   type: BackendTypeHandle,
   sourceNode: BackendNodeReference | undefined,
   context: Context
 ): SemanticType {
   const facts = context.operations.typeFacts(type);
-  const name = typeNameFor(type, sourceNode, context, false);
+  // A type parameter re-entered while its own constraint is still being
+  // resolved keeps its identity; the constraint/default subtree is what the
+  // cut drops, since replaying it would recurse forever.
+  if (facts.isTypeParameter === true) {
+    const symbol = facts.symbol;
+    const info = symbol === undefined ? undefined : context.operations.symbolFacts(symbol);
+    return { kind: "typeParameter", name: info?.name ?? "T" };
+  }
+  const name = typeNameFor(type, sourceNode, context);
   if (facts.intrinsic !== undefined)
     return {
       kind: "intrinsic",
@@ -398,70 +587,167 @@ function shallowType(
   if (facts.literal !== undefined) {
     return {
       kind: "literal",
-      value: literalValue(facts.literal, sourceNode, context),
+      value: literalValue(facts.literal),
       ...(name === undefined ? {} : { typeName: name }),
     };
   }
-  const external = externalTypeName(type, name, context);
-  if (external !== undefined) return { kind: "external", typeName: external };
+  const externalDecision = externalPolicy({
+    type,
+    sourceNode,
+    typeName: name,
+    symbol: facts.aliasSymbol ?? facts.symbol,
+    context,
+    resolveTypeName: typeNameFor,
+    cycle: true,
+  });
+  if (externalDecision.kind === "external-reference") {
+    return { kind: "external", typeName: externalDecision.typeName };
+  }
+  if (externalDecision.kind === "anonymous-root") return { kind: "object", properties: [] };
+  if (facts.isUnion === true)
+    return { kind: "union", types: [], ...(name === undefined ? {} : { typeName: name }) };
+  if (facts.isIntersection === true)
+    return {
+      kind: "intersection",
+      types: [],
+      properties: [],
+      ...(name === undefined ? {} : { typeName: name }),
+    };
+  // An array keeps an element type in the model, so the cut supplies the
+  // wildcard `any` rather than omitting the field.
+  if (facts.isArray === true || context.operations.isArrayType(type))
+    return {
+      kind: "array",
+      elementType: { kind: "intrinsic", intrinsic: "any" },
+      ...(context.operations.isReadonlyType(type) ? { isReadonly: true as const } : {}),
+      ...(name === undefined ? {} : { typeName: name }),
+    };
+  if (facts.isTuple === true)
+    return {
+      kind: "tuple",
+      types: [],
+      ...(context.operations.isReadonlyType(type) ? { isReadonly: true as const } : {}),
+      ...(name === undefined ? {} : { typeName: name }),
+    };
   return { kind: "object", properties: [], ...(name === undefined ? {} : { typeName: name }) };
 }
 
-function literalValue(
-  value: string | number | boolean,
-  sourceNode: BackendNodeReference | undefined,
-  context: Context
-): string | number | boolean {
+/**
+ * Encodes a literal type's value the way upstream does.
+ *
+ * A boolean literal is *not* one of TypeScript's `isLiteral()` types, so
+ * upstream renders it through `typeToString` and stores the rendered text
+ * (`"true"` / `"false"`). That text form is also what union canonicalization
+ * recognizes when it collapses a `true`/`false` pair back into `boolean`, so a
+ * raw boolean here would leave the pair expanded wherever the union was reached
+ * without authored syntax.
+ */
+function literalValue(value: string | number | boolean): string | number | boolean {
   if (typeof value === "string") return JSON.stringify(value);
-  if (typeof value === "boolean") {
-    const authoredSource =
-      sourceNode === undefined
-        ? false
-        : !context.operations.nodeFacts(sourceNode).filePath.includes("/node_modules/");
-    return authoredSource ? String(value) : value;
-  }
+  if (typeof value === "boolean") return String(value);
   return value;
+}
+
+/**
+ * Whether an authored reference names a TypeScript library *type alias* that the
+ * checker did not keep.
+ *
+ * `Pick<T, K>` and `Parameters<F>` are both written as references to a lib
+ * declaration, but only the first survives resolution as an alias: TypeScript
+ * retains an alias symbol for a mapped-type alias and discards it for a
+ * conditional one. Reporting the authored spelling in the second case would
+ * name a type the model no longer describes — upstream shows the resolved tuple
+ * or return type with no public name at all.
+ *
+ * Only a library *alias* declaration is treated this way. A library interface —
+ * `Promise`, `Map`, every DOM type — has no alias symbol either, and dissolving
+ * those would strip the authored name from every library reference the
+ * `includeExternalTypes` option asks to describe. A project alias likewise keeps
+ * its authored name whether or not the checker retained it.
+ */
+function dissolvedLibraryAlias(
+  authoredSymbol: BackendSymbolHandle,
+  aliasSymbol: BackendSymbolHandle | undefined,
+  context: Context
+): boolean {
+  if (aliasSymbol !== undefined) return false;
+  const info = context.operations.symbolFacts(authoredSymbol);
+  return (
+    info.declarations.length > 0 &&
+    info.declarations.every((declaration) => {
+      const facts = context.operations.nodeFacts(declaration);
+      return facts.kind === "typeAlias" && isStandardLibraryDeclaration(declaration, context);
+    })
+  );
 }
 
 function typeNameFor(
   type: BackendTypeHandle,
   sourceNode: BackendNodeReference | undefined,
-  context: Context,
-  includeArguments = true
+  context: Context
 ): TypeName | undefined {
   const facts = context.operations.typeFacts(type);
-  const nameFacts = context.operations.typeNameFacts(type, sourceNode, includeArguments);
-  if (nameFacts === undefined || nameFacts.name.startsWith("__")) return undefined;
-  const authoredSymbol = nameFacts.authoredSymbol;
-  if (
-    authoredSymbol !== undefined &&
-    context.operations.symbolFacts(authoredSymbol).flags.includes("typeParameter")
-  )
+  const nameFacts = context.operations.typeNameFacts(type, sourceNode);
+  if (nameFacts === undefined || isInternalSymbolName(nameFacts.name)) return undefined;
+  // An authored node that names a TYPE PARAMETER describes the declaring
+  // generic's own parameter, not the instantiation the checker resolved. The
+  // candidate is therefore dropped and naming falls through to the checker's
+  // alias/symbol — upstream refuses such candidates for the same reason
+  // (`getFullName`, common.ts) while still reporting e.g. the substituted
+  // union's own alias name.
+  const rawAuthoredSymbol = nameFacts.authoredSymbol;
+  const semanticCandidate = facts.aliasSymbol ?? facts.symbol;
+  // The refusal covers both spellings of the same mistake: an authored node
+  // that names a parameter, and a checker symbol that still is one (a
+  // substitution view carries its parameter's symbol). Either way the public
+  // name would describe the DECLARING generic, not this instantiation.
+  const semanticSymbol =
+    semanticCandidate !== undefined && isTypeParameterSymbol(semanticCandidate, context)
+      ? undefined
+      : semanticCandidate;
+  const authoredSymbol =
+    rawAuthoredSymbol !== undefined && isTypeParameterSymbol(rawAuthoredSymbol, context)
+      ? undefined
+      : rawAuthoredSymbol;
+  if (authoredSymbol !== undefined && dissolvedLibraryAlias(authoredSymbol, semanticSymbol, context))
     return undefined;
-  const semanticSymbol = facts.aliasSymbol ?? facts.symbol;
   const symbol = authoredSymbol ?? semanticSymbol;
   const symbolInfo = symbol === undefined ? undefined : context.operations.symbolFacts(symbol);
-  const name = nameFacts.name || symbolInfo?.name;
-  if (name === undefined || name.startsWith("__")) return undefined;
-  const namespaces = nameFacts.namespaces.length > 0 ? nameFacts.namespaces : [];
-  let args: readonly BackendTypeHandle[] = [];
-  if (includeArguments) {
-    const authoredArguments = nameFacts.authoredArguments;
-    const authoredUsesDifferentSymbol =
-      authoredSymbol !== undefined && facts.aliasSymbol !== undefined && authoredSymbol !== facts.aliasSymbol;
-    const authoredWithoutArguments =
-      authoredArguments === undefined &&
-      sourceNode !== undefined &&
-      context.operations.nodeFacts(sourceNode).kind === "typeReference";
-    args =
-      authoredUsesDifferentSymbol || authoredWithoutArguments
-        ? (authoredArguments ?? [])
-            .map((argument) => context.operations.typeAtNode(argument))
-            .filter((value): value is BackendTypeHandle => value !== undefined)
-        : facts.isTypeReference === true
-          ? (facts.typeArguments ?? [])
-          : (facts.aliasTypeArguments ?? []);
-  }
+  const authoredName = authoredSymbol === undefined ? undefined : nameFacts.name;
+  const name = authoredName !== undefined && authoredName !== "" ? authoredName : symbolInfo?.name;
+  if (name === undefined || isInternalSymbolName(name)) return undefined;
+  // A refused authored candidate leaves the checker's own symbol speaking.
+  // Its namespaces come from where the SYMBOL declares, not from the refused
+  // node's spelling (a bare `State` inside a library signature carries none,
+  // while the instantiated project interface it resolves to lives in a
+  // namespace). Re-asking without the node reads the semantic branch.
+  const semanticNameFacts =
+    rawAuthoredSymbol !== undefined && authoredSymbol === undefined
+      ? context.operations.typeNameFacts(type, undefined)
+      : undefined;
+  const namespaces =
+    semanticNameFacts !== undefined && semanticNameFacts.namespaces.length > 0
+      ? semanticNameFacts.namespaces
+      : nameFacts.namespaces;
+  const authoredArguments = authoredSymbol === undefined ? undefined : nameFacts.authoredArguments;
+  const authoredUsesDifferentSymbol =
+    authoredSymbol !== undefined && facts.aliasSymbol !== undefined && authoredSymbol !== facts.aliasSymbol;
+  // A parameterless alias of a container has no type arguments at all. Its
+  // checker type is still a type *reference* — to the tuple or array target —
+  // whose type arguments are its ELEMENTS, so reading them here would publish
+  // `Pair<string, number>` for `type Pair = [string, number]`. Upstream guards
+  // the same way (`getTypeArguments`, common.ts: `if (type.aliasSymbol &&
+  // !type.aliasTypeArguments) typeArguments = []`).
+  const aliasWithoutArguments = facts.aliasSymbol !== undefined && facts.aliasTypeArguments === undefined;
+  const args = authoredUsesDifferentSymbol
+    ? (authoredArguments ?? [])
+        .map((argument) => context.operations.typeAtNode(argument))
+        .filter((value): value is BackendTypeHandle => value !== undefined)
+    : aliasWithoutArguments
+      ? []
+      : facts.isTypeReference === true
+        ? (facts.typeArguments ?? [])
+        : (facts.aliasTypeArguments ?? []);
   const typeArguments = args.map(
     (argument, index) =>
       ({
@@ -499,374 +785,39 @@ function argumentMatchesDefault(
 
 function typeParameterNode(
   type: BackendTypeHandle,
-  typeNameValue: TypeName | undefined,
+  _typeNameValue: TypeName | undefined,
   context: Context
 ): SemanticType {
-  const facts = context.operations.typeFacts(type);
-  const symbol = facts.symbol;
-  const info = symbol === undefined ? undefined : context.operations.symbolFacts(symbol);
-  const declaration = info?.declarations[0];
-  const node = declaration === undefined ? undefined : context.operations.nodeFacts(declaration);
-  return {
-    kind: "typeParameter",
-    name: typeNameValue?.name ?? info?.name ?? "T",
-    ...(node?.constraint === undefined
-      ? {}
-      : {
-          constraint: typeNode(
-            context.operations.typeAtNode(node.constraint),
-            node.constraint,
-            undefined,
-            context
-          ),
-        }),
-    ...(node?.defaultType === undefined
-      ? {}
-      : {
-          defaultValue: typeNode(
-            context.operations.typeAtNode(node.defaultType),
-            node.defaultType,
-            undefined,
-            context
-          ),
-        }),
-  };
+  return occurrenceTypeParameter(type, context, typeNode);
 }
 
-function unionNode(
-  type: BackendTypeHandle,
+/**
+ * Probes a substitution's base type and then its constraint, the way upstream's
+ * `resolveSubstitutionFallback` does.
+ *
+ * A candidate that itself degrades to an unauthored `any`, or that pushed new
+ * warnings while being probed, is rejected so the ORIGINAL location reports a
+ * single fallback warning instead of several misleading ones.
+ */
+function substitutionFallback(
+  facts: BackendTypeFacts,
   sourceNode: BackendNodeReference | undefined,
-  typeNameValue: TypeName | undefined,
-  context: Context
-): SemanticType {
-  const facts = context.operations.typeFacts(type);
-  const members = facts.unionOrIntersectionTypes ?? [];
-  const sourceFacts = sourceNode === undefined ? undefined : context.operations.nodeFacts(sourceNode);
-  const effectiveName = typeNameValue;
-  const authoredType = sourceNode === undefined ? undefined : context.operations.typeAtNode(sourceNode);
-  const authoredIntrinsic =
-    authoredType === undefined ? undefined : context.operations.typeFacts(authoredType).intrinsic;
-  const booleanLiterals = members.filter((member) => {
-    const literal = context.operations.typeFacts(member).literal;
-    return literal === true || literal === false;
-  });
-  if (authoredIntrinsic === "boolean" && booleanLiterals.length === 2) {
-    const nonBoolean = members.filter((member) => !booleanLiterals.includes(member));
-    return {
-      kind: "union",
-      types: [
-        { kind: "intrinsic", intrinsic: "boolean" },
-        ...nonBoolean.map((member) => typeNode(member, undefined, undefined, context)),
-      ],
-      ...(effectiveName === undefined ? {} : { typeName: effectiveName }),
-    };
-  }
-  const authored = sourceFacts?.kind === "union" ? (sourceFacts.children ?? []) : [];
-  const result: SemanticType[] = [];
-  const used = new Set<BackendTypeHandle>();
-  for (const node of authored) {
-    const nodeType = context.operations.typeAtNode(node);
-    if (nodeType === undefined) continue;
-    const authoredBooleanLiteral = authoredBooleanValue(node, context);
-    const index = members.find(
-      (candidate) =>
-        !used.has(candidate) &&
-        (candidate === nodeType ||
-          context.operations.typeToString(candidate) === context.operations.typeToString(nodeType) ||
-          (authoredBooleanLiteral !== undefined &&
-            context.operations.typeFacts(candidate).literal === authoredBooleanLiteral))
-    );
-    if (index !== undefined) {
-      used.add(index);
-      result.push(typeNode(index, node, undefined, context));
-    }
-  }
-  for (const member of members) {
-    if (used.has(member)) continue;
-    const memberFacts = context.operations.typeFacts(member);
-    const authoredMemberNode =
-      sourceFacts?.kind === "union" || memberFacts.intrinsic === "undefined" ? undefined : sourceNode;
-    result.push(typeNode(member, authoredMemberNode, undefined, context));
-  }
-  if (
-    authored.length === 0 &&
-    members.length < 8 &&
-    typeNameValue?.name !== "ReactNode" &&
-    typeNameValue?.name !== "AwaitedReactNode"
-  ) {
-    result.sort(
-      (left, right) =>
-        Number(left.kind === "intrinsic" && left.intrinsic === "undefined") -
-        Number(right.kind === "intrinsic" && right.intrinsic === "undefined")
-    );
-  }
-  return result.length === 1 && result[0] !== undefined
-    ? result[0]
-    : { kind: "union", types: result, ...(effectiveName === undefined ? {} : { typeName: effectiveName }) };
-}
-
-function authoredBooleanValue(node: BackendNodeReference, context: Context): boolean | undefined {
-  const text = context.operations.nodeFacts(node).text;
-  return text === "true" ? true : text === "false" ? false : undefined;
-}
-
-function intersectionNode(
-  type: BackendTypeHandle,
-  sourceNode: BackendNodeReference | undefined,
-  typeNameValue: TypeName | undefined,
-  context: Context
-): SemanticType {
-  const members = context.operations.typeFacts(type).unionOrIntersectionTypes ?? [];
-  const memberNodes =
-    sourceNode === undefined ? [] : (context.operations.nodeFacts(sourceNode).children ?? []);
-  const resolved = members.map((member, index) =>
-    typeNode(member, memberNodes[index], undefined, {
-      ...context,
-      authoredIntersectionMember: true,
-    })
-  );
-  // Only an authored intersection literal owns a stable aggregate property
-  // list. Compiler-synthesized intersections (notably React utility types)
-  // still expose their members above, but their merged properties are an
-  // implementation detail and are not part of the semantic shape.
-  const authoredIntersection =
-    sourceNode !== undefined && context.operations.nodeFacts(sourceNode).kind === "intersection";
-  const object = authoredIntersection
-    ? resolveObjectNode(type, undefined, sourceNode, context, typeNode)
-    : undefined;
-  return {
-    kind: "intersection",
-    types: resolved,
-    properties: authoredIntersection && object?.kind === "object" ? object.properties : [],
-    ...(typeNameValue === undefined ? {} : { typeName: typeNameValue }),
-  };
-}
-
-function typeOperatorNode(
-  type: BackendTypeHandle,
-  sourceNode: BackendNodeReference,
-  typeNameValue: TypeName | undefined,
-  context: Context
-): SemanticType {
-  const node = unwrapNode(sourceNode, context);
-  if (node.operator !== "keyof" || node.children?.[0] === undefined)
-    return typeNode(type, undefined, undefined, context);
-  const operandNode = node.children[0];
-  const operandType = context.operations.typeAtNode(operandNode);
-  const result: SemanticType = {
-    kind: "typeOperator",
-    operator: "keyof",
-    type: typeNode(operandType, operandNode, undefined, context),
-    ...(typeNameValue === undefined ? {} : { typeName: typeNameValue }),
-  };
-  if (context.options.typeOperatorOutput === "resolved")
-    return {
-      ...result,
-      resolvedType: typeNode(
-        context.operations.typeFacts(type).indexTarget ?? type,
-        undefined,
-        undefined,
-        context
-      ),
-      resolutionKind: "exact",
-    };
-  return result;
-}
-
-function mappedAliasNode(
-  type: BackendTypeHandle,
-  sourceNode: BackendNodeReference | undefined,
-  typeNameValue: TypeName | undefined,
   context: Context
 ): SemanticType | undefined {
-  const facts = context.operations.typeFacts(type);
-  const alias = facts.aliasSymbol;
-  if (alias === undefined) return undefined;
-  const declaration = context.operations.symbolFacts(alias).declarations[0];
-  if (declaration === undefined || context.operations.nodeFacts(declaration).kind !== "typeAlias")
-    return undefined;
-  const substitutions = aliasSubstitutions(declaration, type, context);
-  const mapped = findMappedType(declaration, substitutions, context, new Set<BackendNodeHandle>());
-  if (mapped === undefined) return undefined;
-  const value = typeNode(mapped.valueType, mapped.valueNode, undefined, {
-    ...context,
-    substitutions,
-    propertyDepth: context.propertyDepth + 1,
-  });
-  return {
-    kind: "object",
-    properties: [],
-    indexSignature: {
-      keyType: mapped.keyType,
-      valueType: mapped.optional ? addUndefined(value) : value,
-      ...(mapped.keyName === undefined ||
-      (!mapped.keyNameAuthored &&
-        (typeNameValue === undefined || !builtInTypeScriptUtilityNames.has(typeNameValue.name)))
-        ? {}
-        : { keyName: mapped.keyName }),
-    },
-    ...(typeNameValue === undefined ? {} : { typeName: typeNameValue }),
-  };
-}
-
-function aliasSubstitutions(
-  declaration: BackendNodeHandle,
-  type: BackendTypeHandle,
-  context: Context
-): Map<BackendSymbolHandle, BackendTypeHandle> {
-  const result = new Map(context.substitutions);
-  const node = context.operations.nodeFacts(declaration);
-  const parameters = node.typeParameters ?? [];
-  const args = context.operations.typeFacts(type).aliasTypeArguments ?? [];
-  parameters.forEach((parameter, index) => {
-    const info = context.operations.nodeFacts(parameter);
-    const symbol = info.typeName?.authoredSymbol;
-    const authoredArgument = args[index];
-    const argument =
-      authoredArgument ??
-      (info.defaultType === undefined ? undefined : context.operations.typeAtNode(info.defaultType));
-    if (symbol !== undefined && argument !== undefined) result.set(symbol, argument);
-  });
-  return result;
-}
-
-function findMappedType(
-  declaration: BackendNodeHandle,
-  substitutions: ReadonlyMap<BackendSymbolHandle, BackendTypeHandle>,
-  context: Context,
-  seen: Set<BackendNodeHandle>
-):
-  | {
-      keyName?: string;
-      keyNameAuthored: boolean;
-      keyType: "string" | "number";
-      valueType: BackendTypeHandle;
-      valueNode?: BackendNodeReference;
-      optional: boolean;
+  for (const candidate of [facts.substitutionBaseType, facts.substitutionConstraint]) {
+    if (candidate === undefined) continue;
+    const warningCount = context.warnings.length;
+    const resolved = typeNode(candidate, undefined, undefined, { ...context });
+    if (context.warnings.length > warningCount) continue;
+    if (isUnauthoredAny(resolved)) continue;
+    if (sourceNode !== undefined && authoredContainsPreservableKeyof(sourceNode, context)) {
+      // The authored syntax still describes something the probe dropped; keep
+      // the operator reconstruction in charge rather than the semantic view.
+      continue;
     }
-  | undefined {
-  if (seen.has(declaration)) return undefined;
-  seen.add(declaration);
-  const info = context.operations.nodeFacts(declaration);
-  const body = info.type;
-  if (body === undefined) return undefined;
-  const bodyInfo = context.operations.nodeFacts(body);
-  if (bodyInfo.kind === "mapped") {
-    const constraintType =
-      bodyInfo.constraint === undefined ? undefined : context.operations.typeAtNode(bodyInfo.constraint);
-    const constraintSymbol =
-      constraintType === undefined ? undefined : context.operations.typeFacts(constraintType).symbol;
-    const substitutedConstraint =
-      constraintType === undefined
-        ? undefined
-        : constraintSymbol === undefined
-          ? constraintType
-          : (substitutions.get(constraintSymbol) ?? constraintType);
-    const base =
-      substitutedConstraint === undefined
-        ? undefined
-        : (context.operations.baseConstraintOfType(substitutedConstraint) ?? substitutedConstraint);
-    const mappedType =
-      bodyInfo.mappedValueType === undefined
-        ? undefined
-        : context.operations.typeAtNode(bodyInfo.mappedValueType);
-    const mappedSymbol =
-      mappedType === undefined ? undefined : context.operations.typeFacts(mappedType).symbol;
-    const valueType =
-      mappedType === undefined
-        ? undefined
-        : mappedSymbol === undefined
-          ? mappedType
-          : (substitutions.get(mappedSymbol) ?? mappedType);
-    if (valueType === undefined) return undefined;
-    return {
-      keyName: bodyInfo.keyName ?? "P",
-      keyNameAuthored: !bodyInfo.filePath.includes("/node_modules/"),
-      keyType:
-        base !== undefined && context.operations.typeFacts(base).intrinsic === "number" ? "number" : "string",
-      valueType,
-      valueNode: bodyInfo.mappedValueType,
-      optional: bodyInfo.mappedOptional === true,
-    };
+    return resolved;
   }
-  if (bodyInfo.kind !== "typeReference" || bodyInfo.typeName?.authoredSymbol === undefined) return undefined;
-  const target = context.operations.symbolFacts(bodyInfo.typeName.authoredSymbol).declarations[0];
-  if (target === undefined) return undefined;
-  const targetInfo = context.operations.nodeFacts(target);
-  const next = new Map(substitutions);
-  for (const [index, parameter] of (targetInfo.typeParameters ?? []).entries()) {
-    const parameterInfo = context.operations.nodeFacts(parameter);
-    const symbol = parameterInfo.typeName?.authoredSymbol;
-    const argumentNode = bodyInfo.typeName.authoredArguments?.[index];
-    const authoredArgument =
-      argumentNode === undefined ? undefined : context.operations.typeAtNode(argumentNode);
-    const argument =
-      authoredArgument === undefined
-        ? parameterInfo.defaultType === undefined
-          ? undefined
-          : context.operations.typeAtNode(parameterInfo.defaultType)
-        : (() => {
-            const argumentFacts = context.operations.typeFacts(authoredArgument);
-            return argumentFacts.symbol === undefined
-              ? authoredArgument
-              : (substitutions.get(argumentFacts.symbol) ?? authoredArgument);
-          })();
-    if (symbol !== undefined && argument !== undefined) next.set(symbol, argument);
-  }
-  return findMappedType(target, next, context, seen);
-}
-
-function externalTypeName(
-  type: BackendTypeHandle,
-  value: TypeName | undefined,
-  context: Context
-): TypeName | undefined {
-  const facts = context.operations.typeFacts(type);
-  const symbol = facts.aliasSymbol ?? facts.symbol;
-  if (symbol === undefined) return undefined;
-  const info = context.operations.symbolFacts(symbol);
-  const hasExternalDeclaration = info.declarations.some((declaration) => {
-    const filePath = context.operations.nodeFacts(declaration).filePath;
-    return filePath.includes("/node_modules/");
-  });
-  if (!hasExternalDeclaration) return undefined;
-  // The React global declaration merges HTMLDivElement with TypeScript's DOM
-  // library. The reviewed TS7 graph exposes this forwarded-ref target as a
-  // shallow object while the surrounding React graph remains external.
-  if (
-    info.name === "HTMLDivElement" &&
-    info.declarations.some((declaration) =>
-      isTypeScriptLibraryPath(context.operations.nodeFacts(declaration).filePath)
-    )
-  )
-    return undefined;
-  if (info.name === "RefAttributes") return undefined;
-  if (
-    builtInTypeScriptUtilityNames.has(info.name) &&
-    info.declarations.some((declaration) =>
-      (() => {
-        const filePath = context.operations.nodeFacts(declaration).filePath;
-        return filePath.includes("typescript") && filePath.includes("/lib/");
-      })()
-    )
-  )
-    return undefined;
-  return value ?? typeNameFor(type, undefined, context);
-}
-
-function isTypeScriptLibraryPath(filePath: string): boolean {
-  return (
-    filePath.includes("/typescript/lib/") ||
-    (filePath.includes("/@typescript/") && filePath.includes("/lib/"))
-  );
-}
-
-function isExternalSymbol(symbol: BackendSymbolHandle, context: Context): boolean {
-  return context.operations
-    .symbolFacts(symbol)
-    .declarations.some((declaration) =>
-      context.operations.nodeFacts(declaration).filePath.includes("/node_modules/")
-    );
+  return undefined;
 }
 
 function typeNodeFromDeclaration(
@@ -875,13 +826,4 @@ function typeNodeFromDeclaration(
 ): BackendTypeNodeHandle | undefined {
   const info = operations.nodeFacts(declaration);
   return info.type;
-}
-
-function unwrapNode(node: BackendNodeReference, context: Context): BackendNodeFacts {
-  let current = node;
-  while (true) {
-    const info = context.operations.nodeFacts(current);
-    if (info.kind !== "parenthesized" || info.children?.[0] === undefined) return info;
-    current = info.children[0];
-  }
 }

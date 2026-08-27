@@ -10,107 +10,16 @@ import { ModuleNodeSchema } from "../src/model.ts";
 import type { ModuleNode } from "../src/model.ts";
 import { ExtractWarningSchema } from "../src/warnings.ts";
 import type { ExtractWarning } from "../src/warnings.ts";
+import { issue14TypeScript7Compiler } from "./fixture-manifest.ts";
 
 export const fixtureDirectory = resolve(import.meta.dirname, "../test/fixtures");
 const packageDirectory = resolve(import.meta.dirname, "..");
 
-export const issue02TimingFixtures = [
-  {
-    fixture: "alias-with-explicit-type-args",
-    file: "input.ts",
-    oracleFile: "output.json",
-    warningOracle: "warnings.tsgo.json",
-  },
-  {
-    fixture: "mapped-alias-two-hop",
-    file: "input.ts",
-    oracleFile: "output.json",
-    warningOracle: "warnings.tsgo.json",
-  },
-  {
-    fixture: "module-dts-declarations-and-reexports",
-    file: "input.d.ts",
-    oracleFile: "output.json",
-    warningOracle: "warnings.tsgo.json",
-  },
-  {
-    fixture: "base-ui-component",
-    file: "input.tsx",
-    oracleFile: "output.tsgo.json",
-    warningOracle: "warnings.tsgo.json",
-  },
-] as const;
+export * from "./fixture-registry.ts";
+export * from "./fixture-manifest.ts";
 
-export const issue02SupplementalFixtures = [
-  {
-    fixture: "module-dts-type-star",
-    file: "input.d.ts",
-    expectedExports: ["Value", "OtherValue", "RuntimeValue"],
-  },
-  {
-    fixture: "module-resolution-alias",
-    file: "input.d.ts",
-    expectedExports: ["AliasValue", "RuntimeValue"],
-  },
-  {
-    fixture: "module-resolution-package",
-    file: "input.d.ts",
-    expectedExports: ["PackageValue", "RuntimeValue"],
-  },
-] as const;
-
-export const issue02GoNoGoFixtures = [
-  { fixture: "alias-with-explicit-type-args", oracle: "immutable-upstream", status: "pass" },
-  { fixture: "mapped-alias-two-hop", oracle: "immutable-upstream", status: "pass" },
-  {
-    fixture: "module-dts-declarations-and-reexports",
-    oracle: "immutable-upstream",
-    status: "pass",
-    notes: [
-      "type-only declaration-file re-exports are filtered",
-      "package-owned module-resolution operation is implemented",
-      "module import metadata is preserved",
-    ],
-  },
-  {
-    fixture: "module-dts-type-star",
-    oracle: "public-seam-regression",
-    status: "pass",
-    notes: [
-      "export type * from ./source.js resolves to source.d.ts",
-      "type exports are retained and runtime exports are filtered from the star",
-    ],
-  },
-  {
-    fixture: "module-resolution-alias",
-    oracle: "public-seam-regression",
-    status: "pass",
-    notes: [
-      "non-relative path mapping resolves through the compiler symbol graph",
-      "explicit runtime re-export remains visible",
-    ],
-  },
-  {
-    fixture: "module-resolution-package",
-    oracle: "public-seam-regression",
-    status: "pass",
-    notes: [
-      "package exports resolve through the compiler symbol graph",
-      "explicit runtime re-export remains visible",
-    ],
-  },
-  {
-    fixture: "base-ui-component",
-    oracle: "reviewed-ts7-exact",
-    status: "pass",
-    divergenceRecord: "test/fixtures/base-ui-component/ts7-oracle.json",
-    warningOracle: "test/fixtures/base-ui-component/warnings.tsgo.json",
-  },
-] as const;
-
-export type Issue02TimingFixture = (typeof issue02TimingFixtures)[number];
-export type Issue02SupplementalFixture = (typeof issue02SupplementalFixtures)[number];
-export type Issue02GoNoGoFixture = (typeof issue02GoNoGoFixtures)[number];
+import { issue02GoNoGoFixtures } from "./fixture-registry.ts";
+import type { Issue02SupplementalFixture, Issue02TimingFixture } from "./fixture-registry.ts";
 
 const TimingTotalsSchema = Schema.Struct({
   requestCount: Schema.Number,
@@ -256,34 +165,56 @@ export type GoNoGoArtifact = Schema.Schema.Type<typeof GoNoGoArtifactSchema>;
 
 type ReactDivergenceArtifact = {
   readonly fixture: "base-ui-component";
-  readonly compiler: string;
+  readonly compiler: typeof issue14TypeScript7Compiler;
   readonly sourceOracle: "output.json";
   readonly comparison: "exact";
   readonly divergence: {
     readonly code: string;
     readonly reason: string;
+    readonly genus: string;
     readonly upstreamPreserved: boolean;
     readonly differenceCount: number;
     readonly differenceDigest: string;
+    readonly differencePaths?: readonly string[];
   };
 };
 
 const ReactDivergenceArtifactSchema = Schema.Struct({
   fixture: Schema.Literal("base-ui-component"),
-  compiler: Schema.String,
+  compiler: Schema.Literal(issue14TypeScript7Compiler),
   sourceOracle: Schema.Literal("output.json"),
   comparison: Schema.Literal("exact"),
   divergence: Schema.Struct({
     code: EvidenceTextSchema,
     reason: EvidenceTextSchema,
+    genus: EvidenceTextSchema,
     upstreamPreserved: Schema.Boolean,
     differenceCount: Schema.Natural,
     differenceDigest: EvidenceTextSchema,
+    /** Legacy reviewed records carry count+digest; newer records may add paths. */
+    differencePaths: Schema.optionalKey(Schema.Array(EvidenceTextSchema)),
   }),
 });
 
-function fixtureFile(fixture: string, file: string): string {
-  return resolve(fixtureDirectory, fixture, file);
+const Ts7DivergenceArtifactSchema = Schema.Struct({
+  fixture: Schema.String,
+  compiler: Schema.Literal(issue14TypeScript7Compiler),
+  sourceOracle: Schema.Literal("output.json"),
+  comparison: Schema.Literal("exact"),
+  divergence: Schema.Struct({
+    code: EvidenceTextSchema,
+    reason: EvidenceTextSchema,
+    /** A stable machine-readable genus for grouping, not a vague TS7 label. */
+    genus: EvidenceTextSchema,
+    upstreamPreserved: Schema.Boolean,
+    differenceCount: Schema.Natural,
+    differenceDigest: EvidenceTextSchema,
+    /** Exact paths are optional for the legacy records; count+digest remain required. */
+    differencePaths: Schema.optionalKey(Schema.Array(EvidenceTextSchema)),
+  }),
+});
+function fixtureFile(fixture: string, file: string, fixtureRoot = fixtureDirectory): string {
+  return resolve(fixtureRoot, fixture, file);
 }
 
 function isJsonObject(value: Schema.Json): value is Schema.JsonObject {
@@ -407,26 +338,78 @@ export function differenceDigest(paths: readonly string[]): string {
     .digest("hex");
 }
 
-function readReactDivergenceArtifact(): ReactDivergenceArtifact {
+function readReactDivergenceArtifact(fixtureRoot = fixtureDirectory): ReactDivergenceArtifact {
   return Schema.decodeUnknownSync(ReactDivergenceArtifactSchema)(
-    decodedJson(fixtureFile("base-ui-component", "ts7-oracle.json"))
+    decodedJson(fixtureFile("base-ui-component", "ts7-oracle.json", fixtureRoot))
   );
 }
 
-export function assertReactDivergenceEvidence(): void {
-  const artifact = readReactDivergenceArtifact();
-  const upstream = decodedJson(fixtureFile("base-ui-component", "output.json"));
-  const ts7 = decodedJson(fixtureFile("base-ui-component", "output.tsgo.json"));
+export function assertReactDivergenceEvidence(fixtureRoot = fixtureDirectory): void {
+  const artifact = readReactDivergenceArtifact(fixtureRoot);
+  const upstream = decodedJson(fixtureFile("base-ui-component", "output.json", fixtureRoot));
+  const ts7 = decodedJson(fixtureFile("base-ui-component", "output.tsgo.json", fixtureRoot));
   const paths = canonicalDifferencePaths(upstream, ts7);
+  if (paths.length === 0 || artifact.divergence.differenceCount === 0) {
+    throw new Error("The React TS7 divergence must retain a nonzero upstream difference.");
+  }
+  if (
+    artifact.divergence.differenceCount !== paths.length ||
+    artifact.divergence.differenceDigest !== differenceDigest(paths) ||
+    (artifact.divergence.differencePaths !== undefined &&
+      JSON.stringify(artifact.divergence.differencePaths) !== JSON.stringify(paths))
+  ) {
+    throw new Error("The React TS7 divergence evidence is stale or incomplete.");
+  }
+  if (
+    artifact.divergence.genus.length === 0 ||
+    !artifact.divergence.upstreamPreserved ||
+    artifact.divergence.reason.length === 0
+  ) {
+    throw new Error("The React TS7 divergence evidence must preserve and explain the upstream oracle.");
+  }
+}
+
+/**
+ * Validates a reviewed TypeScript 7 divergence record against the two oracles
+ * it describes. The upstream oracle is never rewritten, so a stale record or a
+ * silently regenerated TS7 oracle fails instead of hiding compiler drift.
+ */
+export function assertTs7DivergenceEvidence(fixture: string, fixtureRoot = fixtureDirectory): void {
+  const artifact = Schema.decodeUnknownSync(Ts7DivergenceArtifactSchema)(
+    decodedJson(fixtureFile(fixture, "ts7-oracle.json", fixtureRoot))
+  );
+  if (artifact.fixture !== fixture) {
+    throw new Error(`The TS7 divergence record names a different fixture: ${fixture}`);
+  }
+  const paths = canonicalDifferencePaths(
+    decodedJson(fixtureFile(fixture, "output.json", fixtureRoot)),
+    decodedJson(fixtureFile(fixture, "output.tsgo.json", fixtureRoot))
+  );
   if (
     artifact.divergence.differenceCount !== paths.length ||
     artifact.divergence.differenceDigest !== differenceDigest(paths)
   ) {
-    throw new Error("The React TS7 divergence evidence is stale or incomplete.");
+    throw new Error(`The TS7 divergence evidence is stale or incomplete: ${fixture}`);
+  }
+  if (
+    artifact.divergence.differencePaths !== undefined &&
+    JSON.stringify(artifact.divergence.differencePaths) !== JSON.stringify(paths)
+  ) {
+    throw new Error(`The TS7 divergence paths are stale or incomplete: ${fixture}`);
+  }
+  if (artifact.divergence.genus.trim().length === 0) {
+    throw new Error(`The TS7 divergence genus must be non-empty: ${fixture}`);
+  }
+  if (paths.length === 0 || artifact.divergence.differenceCount === 0) {
+    throw new Error(`The TS7 divergence must retain a nonzero upstream difference: ${fixture}`);
   }
   if (!artifact.divergence.upstreamPreserved || artifact.divergence.reason.length === 0) {
-    throw new Error("The React TS7 divergence evidence must preserve and explain the upstream oracle.");
+    throw new Error(`The TS7 divergence evidence must preserve and explain the upstream oracle: ${fixture}`);
   }
+}
+
+export function readFixtureOracle(fixture: string, oracleFile: string): ModuleNode {
+  return Schema.decodeUnknownSync(ModuleNodeSchema)(decodedJson(fixtureFile(fixture, oracleFile)));
 }
 
 export function assertStableWarningOracle(definition: Issue02TimingFixture): void {

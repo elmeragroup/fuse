@@ -1,4 +1,9 @@
-import type { TypeFlagName } from "../warnings.ts";
+import type {
+  OmittedIndexSignatureReason,
+  TypeFlagName,
+  UncertainComponentRecognitionReason,
+  UnresolvedReExportReason,
+} from "../warnings.ts";
 
 declare const backendHandleBrand: unique symbol;
 
@@ -20,7 +25,33 @@ export type BackendTypeNodeHandle = BackendHandle<"type-node">;
 export type BackendSignatureHandle = BackendHandle<"signature">;
 export type BackendNodeReference = BackendNodeHandle | BackendTypeNodeHandle;
 
-export type BackendSymbolFlag = "alias" | "typeParameter" | "optional";
+export type BackendSymbolFlag = "alias" | "class" | "typeParameter" | "optional";
+
+/** Stable checker identity for a symbol, with aliases resolved by the backend. */
+export type BackendSymbolIdentity = {
+  readonly name: string;
+  readonly namespaces: readonly string[];
+};
+
+/**
+ * The normalized module that introduced a symbol through an import or
+ * re-export.  `moduleSpecifier` is authored module identity, not a source
+ * path; `external` is compiler ownership of the resolved module declaration.
+ * Keeping the two facts separate lets parser policy distinguish a public
+ * package from a project-local path-mapped module without inspecting paths.
+ */
+export type BackendModuleOrigin = {
+  readonly moduleSpecifier: string;
+  readonly packageName?: string;
+  readonly external: boolean;
+};
+
+/** One parser-facing identity/origin observation for an invoked symbol. */
+export type BackendCalleeFacts = {
+  readonly symbol: BackendSymbolHandle;
+  readonly identity?: BackendSymbolIdentity;
+  readonly moduleOrigin?: BackendModuleOrigin;
+};
 
 /** A normalized compiler observation. It has no semantic model values. */
 export type BackendTypeFacts = {
@@ -42,6 +73,24 @@ export type BackendTypeFacts = {
   readonly aliasSymbol?: BackendSymbolHandle;
   readonly unionOrIntersectionTypes?: readonly BackendTypeHandle[];
   readonly indexTarget?: BackendTypeHandle;
+  /**
+   * The three operand types of a deferred conditional (`T extends U ? X : Y`).
+   * The check type drives upstream's built-in-`Extract` gate; the resolved
+   * branch types drive its conditional branch recovery. Absent for every
+   * other type.
+   */
+  readonly conditionalCheckType?: BackendTypeHandle;
+  readonly conditionalTrueType?: BackendTypeHandle;
+  readonly conditionalFalseType?: BackendTypeHandle;
+  /**
+   * A checker-internal substitution's base and constraint. Substitutions have
+   * no model form of their own; the resolver probes these the way upstream's
+   * `resolveSubstitutionFallback` does.
+   */
+  readonly substitutionBaseType?: BackendTypeHandle;
+  readonly substitutionConstraint?: BackendTypeHandle;
+  /** The uninstantiated generic a type reference instantiates, if it is one. */
+  readonly referenceTarget?: BackendTypeHandle;
   readonly typeArguments?: readonly BackendTypeHandle[];
   readonly aliasTypeArguments?: readonly BackendTypeHandle[];
 };
@@ -65,6 +114,10 @@ export type BackendEnumFacts = {
 
 export type BackendSymbolFacts = {
   readonly name: string;
+  /** Alias-resolved identity; parser policy may compare this to a known API. */
+  readonly identity?: BackendSymbolIdentity;
+  /** Authored import/re-export origin, when the symbol has one. */
+  readonly moduleOrigin?: BackendModuleOrigin;
   readonly flags: readonly BackendSymbolFlag[];
   readonly declarationPaths: readonly string[];
   /** Repository-relative declaration paths for durable provenance output. */
@@ -73,11 +126,35 @@ export type BackendSymbolFacts = {
   readonly valueDeclaration?: BackendNodeHandle;
 };
 
+/**
+ * Neutral ownership of one declaration's source file.
+ *
+ * The discriminator is intentional: a replacement backend must choose an
+ * owner instead of silently omitting one of several correlated booleans. A
+ * dependency carries only its normalized package identity; TypeScript's
+ * compiler-owned files distinguish the strict default library from another
+ * toolchain declaration because the two gates have different semantics.
+ */
+export type BackendDeclarationOwnership =
+  | { readonly kind: "project" }
+  | { readonly kind: "dependency"; readonly packageName: string }
+  | { readonly kind: "typescript"; readonly library: "standard-library" | "toolchain" };
+
 export type BackendTypeNameFacts = {
   readonly name: string;
   readonly namespaces: readonly string[];
   readonly authoredArguments?: readonly BackendTypeNodeHandle[];
   readonly authoredSymbol?: BackendSymbolHandle;
+  /**
+   * Which of TypeScript's own array interfaces an authored reference names, or
+   * absent when it names anything else. The name text alone cannot answer this:
+   * a project may declare its own `Array`, and any other generic's first type
+   * argument is not its element type. The backend answers it from the checker —
+   * the referenced symbol resolved through aliases, carrying the interface flag,
+   * and declared in a TypeScript library file — so a consumer can recover array
+   * element syntax without trusting the spelling.
+   */
+  readonly builtInArray?: "Array" | "ReadonlyArray";
 };
 
 export type BackendNodeFacts = {
@@ -87,16 +164,22 @@ export type BackendNodeFacts = {
     | "typeAlias"
     | "interface"
     | "class"
+    | "classExpression"
     | "enum"
     | "enumMember"
     | "function"
     | "parameter"
     | "property"
+    | "method"
+    | "methodSignature"
+    | "getAccessor"
+    | "setAccessor"
     | "variable"
     | "callExpression"
     | "exportSpecifier"
     | "exportDeclaration"
     | "typeReference"
+    | "typeQuery"
     | "union"
     | "intersection"
     | "typeOperator"
@@ -111,17 +194,34 @@ export type BackendNodeFacts = {
   readonly filePath: string;
   readonly line: number;
   readonly column: number;
-  /** A declaration's authored type node, if it has one. */
-  /** A declaration's authored type node. This is deliberately not a generic node handle. */
+  /** A declaration's authored type node, if it has one. This is deliberately not a generic node handle. */
   readonly type?: BackendTypeNodeHandle;
   readonly children?: readonly BackendNodeReference[];
+  /**
+   * Which authored tuple positions are rest elements, parallel to `children`.
+   * A rest position expands into a different number of semantic elements than
+   * the single node it was written as, so the resolver needs to know which
+   * positions those are before it can align authored syntax with the checker's
+   * element list.
+   */
+  readonly restElements?: readonly boolean[];
   readonly typeName?: BackendTypeNameFacts;
-  readonly operator?: "keyof";
+  readonly operator?: "keyof" | "readonly";
   readonly optional?: boolean;
   readonly name?: string;
+  /**
+   * The authored expression of a `typeof` type query — the value name, or the
+   * `import(…)` expression for `typeof import(…)`. The model stores it verbatim
+   * (`TypeQueryNode.expressionName`).
+   */
+  readonly expressionName?: string;
   readonly initializerText?: string;
   readonly initializer?: BackendNodeHandle;
   readonly arguments?: readonly BackendNodeHandle[];
+  /** The invoked expression and its checker symbol, when one is available. */
+  readonly callee?: BackendNodeHandle;
+  /** One coherent identity/origin result for the invoked symbol. */
+  readonly calleeFacts?: BackendCalleeFacts;
   readonly constraint?: BackendTypeNodeHandle;
   readonly defaultType?: BackendTypeNodeHandle;
   readonly typeParameters?: readonly BackendNodeHandle[];
@@ -132,6 +232,8 @@ export type BackendNodeFacts = {
   readonly keyType?: "string" | "number";
   readonly mappedOptional?: boolean;
   readonly mappedValueType?: BackendTypeNodeHandle;
+  /** A mapped type's `as` clause, which renames keys away from the constraint. */
+  readonly mappedNameType?: BackendTypeNodeHandle;
   readonly heritageTypes?: readonly BackendNodeReference[];
   readonly declarationFlags?: readonly ("readonly" | "private" | "protected" | "static")[];
   /** Defaults authored on object-binding elements, normalized at the backend seam. */
@@ -152,8 +254,14 @@ export type BackendSignatureFacts = {
 
 export type BackendIndexSignatureFacts = {
   readonly keyName?: string;
-  readonly keyType: "string" | "number";
+  /**
+   * The index key domain. `symbol` and `other` (a template-literal or pattern
+   * key) exist so the resolver can report a signature the semantic model cannot
+   * represent instead of dropping it silently.
+   */
+  readonly keyType: "string" | "number" | "symbol" | "other";
   readonly valueType: BackendTypeHandle;
+  readonly isReadonly?: boolean;
   readonly declaration?: BackendNodeHandle;
 };
 
@@ -165,6 +273,14 @@ export type BackendExportDraft = {
   readonly declarationSourcePath?: string;
   readonly pureType?: boolean;
   readonly explicitValueReExport?: boolean;
+  /** The original authored name of a renamed module re-export (`export { A as B }`). */
+  readonly reexportedFrom?: string;
+  /**
+   * Repository-relative files of each intermediate re-export declaration on
+   * the way to the original declaration site, outermost first. The origin is
+   * carried by the symbol facts' declaration paths, not repeated here.
+   */
+  readonly reexportChain?: readonly string[];
   readonly extendsTypes?: readonly { readonly name: string; readonly resolvedName?: string }[];
 };
 
@@ -181,14 +297,36 @@ export type BackendCompilerOperations = {
   readonly nodeFacts: (node: BackendNodeReference) => BackendNodeFacts;
   readonly typeNameFacts: (
     type: BackendTypeHandle,
-    sourceNode: BackendNodeReference | undefined,
-    includeArguments: boolean
+    sourceNode: BackendNodeReference | undefined
   ) => BackendTypeNameFacts | undefined;
   readonly signaturesOfType: (type: BackendTypeHandle) => readonly BackendSignatureHandle[];
+  /**
+   * Construct (`new`) signatures of a type. Optional because only class
+   * extraction consumes them; a replacement graph that never reports classes
+   * can omit it.
+   */
+  readonly constructSignaturesOfType?: (type: BackendTypeHandle) => readonly BackendSignatureHandle[];
   readonly signatureFacts: (signature: BackendSignatureHandle) => BackendSignatureFacts;
+  /**
+   * Documentation authored directly on a declaration node, which is where
+   * TypeScript keeps constructor JSDoc — no checker symbol carries it.
+   */
+  readonly documentationOfNode?: (node: BackendNodeReference) => BackendDocumentation | undefined;
+  /**
+   * Documentation authored for one signature parameter, read from the owning
+   * declaration's own `@param` entry so overloaded owners cannot leak another
+   * overload's summary into this one. Falls back to nothing rather than to an
+   * aggregate; callers may layer their own fallback.
+   */
+  readonly documentationOfParameter?: (
+    parameter: BackendSymbolHandle,
+    ownerDeclaration?: BackendNodeHandle
+  ) => BackendDocumentation | undefined;
+  /** Normalized source-file ownership of one declaration. */
+  readonly declarationOwnership: (node: BackendNodeReference) => BackendDeclarationOwnership;
   readonly propertiesOfType: (type: BackendTypeHandle) => readonly BackendSymbolHandle[];
   readonly propertyType: (property: BackendSymbolHandle) => BackendTypeHandle | undefined;
-  readonly indexSignatureOfType: (type: BackendTypeHandle) => BackendIndexSignatureFacts | undefined;
+  readonly indexSignaturesOfType: (type: BackendTypeHandle) => readonly BackendIndexSignatureFacts[];
   readonly baseConstraintOfType: (type: BackendTypeHandle) => BackendTypeHandle | undefined;
   readonly isArrayType: (type: BackendTypeHandle) => boolean;
   readonly isReadonlyType: (type: BackendTypeHandle) => boolean;
@@ -214,6 +352,80 @@ export type BackendWarningFact =
       readonly parsedSymbolStack: readonly string[];
       readonly enumName: string;
       readonly memberName?: string;
+    }
+  | {
+      readonly code: "omitted-index-signature";
+      readonly filePath: string;
+      readonly line: number;
+      readonly column: number;
+      readonly parsedSymbolStack: readonly string[];
+      readonly reason: OmittedIndexSignatureReason;
+      readonly keyTypes: readonly string[];
+    }
+  | {
+      /** A non-class shape's construct signatures, which the model cannot carry. */
+      readonly code: "unrepresented-construct-signatures";
+      readonly filePath: string;
+      readonly line: number;
+      readonly column: number;
+      readonly parsedSymbolStack: readonly string[];
+      /** Structural path of the construct-signature slot that was omitted. */
+      readonly structuralPath: readonly string[];
+      readonly signatureCount: number;
+    }
+  | {
+      /** Named members dropped because a callable shape is reported as a function. */
+      readonly code: "omitted-callable-members";
+      readonly filePath: string;
+      readonly line: number;
+      readonly column: number;
+      readonly parsedSymbolStack: readonly string[];
+      /** Structural path of the callable whose members were omitted. */
+      readonly structuralPath: readonly string[];
+      readonly memberNames: readonly string[];
+    }
+  | {
+      /**
+       * An `export default` expression the checker could not resolve to a
+       * symbol, so the export is skipped. Upstream emits the same condition
+       * (`missing-default-export-symbol`).
+       */
+      readonly code: "missing-default-export-symbol";
+      readonly filePath: string;
+      readonly line: number;
+      readonly column: number;
+      readonly parsedSymbolStack: readonly string[];
+      readonly sourceText: string;
+    }
+  | {
+      /**
+       * A re-export whose target could not be followed. `missing-target` is an
+       * alias with no resolvable destination; `cycle` is an alias or barrel
+       * chain that returned to its starting namespace. Upstream silently drops
+       * such exports; the warning keeps the omission inspectable.
+       */
+      readonly code: "unresolved-re-export";
+      readonly reason: UnresolvedReExportReason;
+      readonly filePath: string;
+      readonly line: number;
+      readonly column: number;
+      readonly parsedSymbolStack: readonly string[];
+      readonly name: string;
+    }
+  | {
+      /**
+       * A capitalized export whose union holds some component-like arms and at
+       * least one that is not. Raised by the compiler-free component
+       * transform: the export keeps its resolved kind, and the warning records
+       * why the heuristic did not confirm a component.
+       */
+      readonly code: "uncertain-component-recognition";
+      readonly reason: UncertainComponentRecognitionReason;
+      readonly filePath: string;
+      readonly line: number;
+      readonly column: number;
+      readonly parsedSymbolStack: readonly string[];
+      readonly name: string;
     };
 
 export type BackendIntrinsicName =
@@ -241,6 +453,8 @@ export type BackendModuleDraft = {
   readonly exports: readonly BackendExportDraft[];
   readonly imports?: readonly string[];
   readonly typeOnlyStarExports?: readonly string[];
+  /** Structured module-walk warnings (re-export resolution failures). */
+  readonly warnings?: readonly BackendWarningFact[];
 };
 
 export type BackendExtractionSession = {

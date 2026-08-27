@@ -1,0 +1,130 @@
+[
+	{
+		"message": "Type extraction warning: Unable to represent more than one index signature at \"test/fixtures/react-mui-overridable-component/input.d.ts:1:1\". The index signature with key type \"number\" was omitted.",
+		"filePath": "test/fixtures/react-mui-overridable-component/input.d.ts",
+		"line": 1,
+		"column": 1,
+		"parsedSymbolStack": [
+			"test/fixtures/react-mui-overridable-component/input.d.ts",
+			"default",
+			"parameter: props"
+		],
+		"code": "omitted-index-signature",
+		"reason": "additional-signature",
+		"keyTypes": [
+			"number"
+		]
+	},
+	{
+		"message": "Type extraction warning: Unable to represent index signature key type \"symbol\" at \"test/fixtures/react-mui-overridable-component/input.d.ts:1:1\". The index signature was omitted.",
+		"filePath": "test/fixtures/react-mui-overridable-component/input.d.ts",
+		"line": 1,
+		"column": 1,
+		"parsedSymbolStack": [
+			"test/fixtures/react-mui-overridable-component/input.d.ts",
+			"default",
+			"parameter: props"
+		],
+		"code": "omitted-index-signature",
+		"reason": "unrepresentable-key",
+		"keyTypes": [
+			"symbol"
+		]
+	},
+	{
+		"message": "Type extraction warning: Unable to represent more than one index signature at \"test/fixtures/react-mui-overridable-component/input.d.ts:1:1\". The index signature with key type \"number\" was omitted.",
+		"filePath": "test/fixtures/react-mui-overridable-component/input.d.ts",
+		"line": 1,
+		"column": 1,
+		"parsedSymbolStack": [
+			"test/fixtures/react-mui-overridable-component/input.d.ts",
+			"default",
+			"parameter: props"
+		],
+		"code": "omitted-index-signature",
+		"reason": "additional-signature",
+		"keyTypes": [
+			"number"
+		]
+	},
+	{
+		"message": "Type extraction warning: Unable to represent index signature key type \"symbol\" at \"test/fixtures/react-mui-overridable-component/input.d.ts:1:1\". The index signature was omitted.",
+		"filePath": "test/fixtures/react-mui-overridable-component/input.d.ts",
+		"line": 1,
+		"column": 1,
+		"parsedSymbolStack": [
+			"test/fixtures/react-mui-overridable-component/input.d.ts",
+			"default",
+			"parameter: props"
+		],
+		"code": "omitted-index-signature",
+		"reason": "unrepresentable-key",
+		"keyTypes": [
+			"symbol"
+		]
+	},
+	{
+		"message": "Type extraction warning: Unable to represent more than one index signature at \"test/fixtures/react-mui-overridable-component/input.d.ts:1:1\". The index signature with key type \"number\" was omitted.",
+		"filePath": "test/fixtures/react-mui-overridable-component/input.d.ts",
+		"line": 1,
+		"column": 1,
+		"parsedSymbolStack": [
+			"test/fixtures/react-mui-overridable-component/input.d.ts",
+			"default",
+			"parameter: props"
+		],
+		"code": "omitted-index-signature",
+		"reason": "additional-signature",
+		"keyTypes": [
+			"number"
+		]
+	},
+	{
+		"message": "Type extraction warning: Unable to represent index signature key type \"symbol\" at \"test/fixtures/react-mui-overridable-component/input.d.ts:1:1\". The index signature was omitted.",
+		"filePath": "test/fixtures/react-mui-overridable-component/input.d.ts",
+		"line": 1,
+		"column": 1,
+		"parsedSymbolStack": [
+			"test/fixtures/react-mui-overridable-component/input.d.ts",
+			"default",
+			"parameter: props"
+		],
+		"code": "omitted-index-signature",
+		"reason": "unrepresentable-key",
+		"keyTypes": [
+			"symbol"
+		]
+	},
+	{
+		"message": "Type extraction warning: Unable to represent more than one index signature at \"test/fixtures/react-mui-overridable-component/input.d.ts:1:1\". The index signature with key type \"number\" was omitted.",
+		"filePath": "test/fixtures/react-mui-overridable-component/input.d.ts",
+		"line": 1,
+		"column": 1,
+		"parsedSymbolStack": [
+			"test/fixtures/react-mui-overridable-component/input.d.ts",
+			"default",
+			"parameter: props"
+		],
+		"code": "omitted-index-signature",
+		"reason": "additional-signature",
+		"keyTypes": [
+			"number"
+		]
+	},
+	{
+		"message": "Type extraction warning: Unable to represent index signature key type \"symbol\" at \"test/fixtures/react-mui-overridable-component/input.d.ts:1:1\". The index signature was omitted.",
+		"filePath": "test/fixtures/react-mui-overridable-component/input.d.ts",
+		"line": 1,
+		"column": 1,
+		"parsedSymbolStack": [
+			"test/fixtures/react-mui-overridable-component/input.d.ts",
+			"default",
+			"parameter: props"
+		],
+		"code": "omitted-index-signature",
+		"reason": "unrepresentable-key",
+		"keyTypes": [
+			"symbol"
+		]
+	}
+]

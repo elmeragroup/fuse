@@ -17,7 +17,7 @@ import type {
   InternalTimingFactory,
 } from "./internal/project-options.ts";
 import { ExtractionResultSchema, ModuleNodeSchema } from "./model.ts";
-import type { ModuleNode } from "./model.ts";
+import type { ModuleNode, ResolvedModuleNode, SyntaxOnlyModuleNode } from "./model.ts";
 import type { ExtractorOptions, OpenProjectOptions } from "./options.ts";
 import { ResolverFailure } from "./parse/resolver.ts";
 import { readModuleDraft, resolveModuleDraft } from "./parser.ts";
@@ -26,17 +26,47 @@ import { ProvenanceEntrySchema } from "./provenance.ts";
 import type { ExtractWarning } from "./warnings.ts";
 import { ExtractWarningSchema } from "./warnings.ts";
 
+/** A resolved-mode extraction: every preserved operator carries its key set. */
 export type ExtractionResult = {
-  readonly module: ModuleNode;
+  readonly module: ResolvedModuleNode;
   readonly warnings: readonly ExtractWarning[];
   readonly provenance: readonly ProvenanceEntry[];
 };
 
+/** Correlated extraction result returned by a literal `"syntaxOnly"` call. */
+export type SyntaxOnlyExtractionResult = {
+  readonly module: SyntaxOnlyModuleNode;
+  readonly warnings: readonly ExtractWarning[];
+  readonly provenance: readonly ProvenanceEntry[];
+};
+
+type ExtractionErrors = BackendError | FileNotInProgramError | ExtractError;
+
+/**
+ * The extraction service, with the output mode correlated into the result the
+ * way upstream correlates its parser entry points: a literal `"syntaxOnly"`
+ * option returns operators without resolved payloads, default and literal
+ * `"resolved"` calls return the full model whose operators all require their
+ * payloads — so a syntax-only result cannot be assigned to `ExtractionResult`,
+ * matching upstream's own assignment error between its parser entry points —
+ * and a dynamically-typed option returns their union so consumers must narrow
+ * before reading a payload.
+ */
 export type ProjectExtractorService = {
-  readonly extractModule: (
-    filePath: string,
-    options?: ExtractorOptions
-  ) => Effect.Effect<ExtractionResult, BackendError | FileNotInProgramError | ExtractError>;
+  extractModule: {
+    (
+      filePath: string,
+      options: ExtractorOptions & { readonly typeOperatorOutput: "syntaxOnly" }
+    ): Effect.Effect<SyntaxOnlyExtractionResult, ExtractionErrors>;
+    (
+      filePath: string,
+      options?: ExtractorOptions & { readonly typeOperatorOutput?: "resolved" }
+    ): Effect.Effect<ExtractionResult, ExtractionErrors>;
+    (
+      filePath: string,
+      options?: ExtractorOptions
+    ): Effect.Effect<ExtractionResult | SyntaxOnlyExtractionResult, ExtractionErrors>;
+  };
 };
 
 export class ProjectExtractor extends Context.Service<ProjectExtractor, ProjectExtractorService>()(
@@ -65,7 +95,13 @@ export function projectExtractorLayerInternal(
 ): Layer.Layer<ProjectExtractor, ConfigError | BackendError, CompilerBackend> {
   const project = openProject(options);
   const createService = (opened: BackendProject): ProjectExtractorService => ({
-    extractModule: (filePath, extractorOptions) => extractFromProject(opened, filePath, extractorOptions),
+    // SAFETY: one runtime path serves both correlated views — the mode only
+    // decides which payload fields the resolver attaches, so the runtime result
+    // always satisfies whichever view the called overload promises: payloads
+    // present on every preserved operator for "resolved", absent from all of
+    // them for "syntaxOnly".
+    extractModule: ((filePath: string, extractorOptions?: ExtractorOptions) =>
+      extractFromProject(opened, filePath, extractorOptions)) as ProjectExtractorService["extractModule"],
   });
   return Layer.effect(ProjectExtractor, Effect.map(project, createService));
 }
@@ -83,7 +119,13 @@ export function projectExtractorLayerWithTiming(
   return Layer.effectContext(
     Effect.map(project, (opened) => {
       const service: ProjectExtractorService = {
-        extractModule: (filePath, extractorOptions) => extractFromProject(opened, filePath, extractorOptions),
+        // SAFETY: same single runtime path as `createService` above — the mode
+        // only decides which payload fields the resolver attaches, so the
+        // runtime result always satisfies the overload the caller resolved to:
+        // payloads present on every preserved operator for "resolved", absent
+        // from all of them for "syntaxOnly".
+        extractModule: ((filePath: string, extractorOptions?: ExtractorOptions) =>
+          extractFromProject(opened, filePath, extractorOptions)) as ProjectExtractorService["extractModule"],
       };
       const timedMethod = (filePath: string, extractorOptions?: ExtractorOptions) =>
         extractFromProjectWithTiming(opened, filePath, extractorOptions);
@@ -180,11 +222,19 @@ function decodeResult(
   warnings: readonly unknown[],
   provenance: readonly ProvenanceEntry[]
 ): ExtractionResult {
-  return Schema.decodeUnknownSync(ExtractionResultSchema)({
+  const decoded = Schema.decodeUnknownSync(ExtractionResultSchema)({
     module: Schema.decodeUnknownSync(ModuleNodeSchema)(module),
     warnings: warnings.map((warning) => Schema.decodeUnknownSync(ExtractWarningSchema)(warning)),
     provenance: provenance.map((entry) => Schema.decodeUnknownSync(ProvenanceEntrySchema)(entry)),
   });
+  // SAFETY: the schemas decode the mode-neutral model graph, whose operator
+  // payload slots are optional; the resolver attaches a resolvedType and
+  // resolutionKind to every preserved operator it emits whenever the output
+  // mode is "resolved" (`keyofNode` is the single construction site), so the
+  // value satisfies the correlated view this function declares. The
+  // syntax-only overload narrows the same runtime path to its payload-free
+  // view at the service boundary instead.
+  return decoded as ExtractionResult;
 }
 
 function toBackendError(
@@ -283,6 +333,10 @@ function guardedExtractionSession(
     };
 
   const compiler = session.compiler;
+  const constructSignaturesOfType = compiler.constructSignaturesOfType;
+  const declarationOwnership = compiler.declarationOwnership;
+  const documentationOfNode = compiler.documentationOfNode;
+  const documentationOfParameter = compiler.documentationOfParameter;
   const guardedCompiler: BackendCompilerOperations = {
     setErrorContext: (next) => {
       symbolStack = [...next];
@@ -307,14 +361,22 @@ function guardedExtractionSession(
           enumFacts: guard("enumFacts", (type) => compiler.enumFacts?.(type)),
         }),
     nodeFacts: guard("nodeFacts", (node) => compiler.nodeFacts(node)),
-    typeNameFacts: guard("typeNameFacts", (type, sourceNode, includeArguments) =>
-      compiler.typeNameFacts(type, sourceNode, includeArguments)
-    ),
+    typeNameFacts: guard("typeNameFacts", (type, sourceNode) => compiler.typeNameFacts(type, sourceNode)),
     signaturesOfType: guard("signaturesOfType", (type) => compiler.signaturesOfType(type)),
+    ...(constructSignaturesOfType === undefined
+      ? {}
+      : { constructSignaturesOfType: guard("constructSignaturesOfType", constructSignaturesOfType) }),
+    declarationOwnership: guard("declarationOwnership", declarationOwnership),
     signatureFacts: guard("signatureFacts", (signature) => compiler.signatureFacts(signature)),
+    ...(documentationOfNode === undefined
+      ? {}
+      : { documentationOfNode: guard("documentationOfNode", documentationOfNode) }),
+    ...(documentationOfParameter === undefined
+      ? {}
+      : { documentationOfParameter: guard("documentationOfParameter", documentationOfParameter) }),
     propertiesOfType: guard("propertiesOfType", (type) => compiler.propertiesOfType(type)),
     propertyType: guard("propertyType", (property) => compiler.propertyType(property)),
-    indexSignatureOfType: guard("indexSignatureOfType", (type) => compiler.indexSignatureOfType(type)),
+    indexSignaturesOfType: guard("indexSignaturesOfType", (type) => compiler.indexSignaturesOfType(type)),
     baseConstraintOfType: guard("baseConstraintOfType", (type) => compiler.baseConstraintOfType(type)),
     isArrayType: guard("isArrayType", (type) => compiler.isArrayType(type)),
     isReadonlyType: guard("isReadonlyType", (type) => compiler.isReadonlyType(type)),

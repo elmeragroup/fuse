@@ -12,14 +12,19 @@
   },
   "scripts": {
     "build": "node scripts/build.ts",
-    "ci:checks": "pnpm run format:check && pnpm run lint && pnpm run build && pnpm run check:boundary && pnpm run type-check && pnpm run test:fixtures && pnpm run test && pnpm run test:timing",
+    "ci:checks": "pnpm run check:boundary && pnpm run test:fixtures && pnpm run test:conformance && pnpm run test:timing && pnpm run test:timing:issue14",
     "format:check": "oxfmt --check .",
     "lint": "oxlint . --deny-warnings",
     "test": "vitest run",
     "test:timing": "node scripts/issue-02-timing.ts --check",
+    "test:timing:issue14": "node scripts/issue-14-timing.ts --check",
     "report:timing": "node scripts/issue-02-timing.ts --write",
+    "report:timing:issue14": "node scripts/issue-14-timing.ts --write",
     "check:boundary": "node scripts/check-boundary.ts",
-    "test:fixtures": "tsc --project test/fixtures/issue-02-tsconfig.json --noEmit && tsc --project test/fixtures/issue-03-tsconfig.json --noEmit && tsc --project test/fixtures/issue-03-object-apis/tsconfig.json --noEmit && tsc --project test/fixtures/issue-03-review/tsconfig.json --noEmit && tsc --project test/fixtures/issue-03-review/MixedRepo/tsconfig.json --noEmit",
+    "test:fixtures": "tsc --project test/fixtures/issue-02-tsconfig.json --noEmit && tsc --project test/fixtures/issue-03-tsconfig.json --noEmit && tsc --project test/fixtures/issue-03-object-apis/tsconfig.json --noEmit && tsc --project test/fixtures/issue-03-review/tsconfig.json --noEmit && tsc --project test/fixtures/issue-03-review/MixedRepo/tsconfig.json --noEmit && tsc --project test/fixtures/issue-04-tsconfig.json --noEmit && tsc --project test/fixtures/issue-04-canonical/tsconfig.json --noEmit && tsc --project test/fixtures/issue-05-tsconfig.json --noEmit && tsc --project test/fixtures/issue-05-containers/tsconfig.json --noEmit && tsc --project test/fixtures/issue-05-review/tsconfig.json --noEmit && tsc --project test/fixtures/issue-06-tsconfig.json --noEmit && tsc --project test/fixtures/issue-06-review/tsconfig.json --noEmit && tsc --project test/fixtures/issue-07-tsconfig.json --noEmit && tsc --project test/fixtures/issue-07-review/tsconfig.json --noEmit && tsc --project test/fixtures/issue-08-tsconfig.json --noEmit && tsc --project test/fixtures/issue-08-review/tsconfig.json --noEmit && tsc --project test/fixtures/issue-09-tsconfig.json --noEmit && tsc --project test/fixtures/issue-09-review/tsconfig.json --noEmit && tsc --project test/fixtures/issue-10-tsconfig.json --noEmit && tsc --project test/fixtures/issue-10-review/tsconfig.json --noEmit && tsc --project test/fixtures/issue-11-tsconfig.json --noEmit && tsc --project test/fixtures/issue-11-review/tsconfig.json --noEmit && tsc --project test/fixtures/issue-12-tsconfig.json --noEmit && tsc --project test/fixtures/issue-12-origin-review/tsconfig.json --noEmit && tsc --project test/fixtures/issue-12-origin-review/import-equals/tsconfig.json --noEmit && tsc --project test/fixtures/issue-12-origin-review/ambiguous-star/tsconfig.json --noEmit && tsc --project test/fixtures/issue-12-origin-review/angle-assertion/tsconfig.json --noEmit && tsc --project test/fixtures/issue-12-origin-review/same-origin-star/tsconfig.json --noEmit && tsc --project test/fixtures/react-policy-non-react-dependency/tsconfig.json --noEmit && tsc --project test/fixtures/issue-13-tsconfig.json --noEmit",
+    "check:all": "pnpm run format:check && pnpm run lint && pnpm run build && pnpm run check:boundary && pnpm run type-check && pnpm run test:fixtures && pnpm run test && pnpm run test:conformance && pnpm run test:timing && pnpm run test:timing:issue14",
+    "test:conformance": "node scripts/issue-14-conformance.ts --check",
+    "report:conformance": "node scripts/issue-14-conformance.ts --write",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {

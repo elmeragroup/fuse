@@ -7,6 +7,12 @@ export type ProvenanceEntry = {
   /** Readonly declaration state kept out of the upstream semantic JSON model. */
   readonly readonly?: boolean;
   readonly defaultInitializer?: string;
+  /**
+   * Repository-relative files of each intermediate re-export declaration that
+   * forwarded this export, outermost first. The original declaration site is
+   * carried by `declarationPaths`; a directly declared export has no chain.
+   */
+  readonly reexportChain?: readonly string[];
 };
 
 export const ProvenanceEntrySchema = Schema.Struct({
@@ -15,6 +21,7 @@ export const ProvenanceEntrySchema = Schema.Struct({
   synthesized: Schema.Boolean,
   readonly: Schema.optionalKey(Schema.Boolean),
   defaultInitializer: Schema.optionalKey(Schema.String),
+  reexportChain: Schema.optionalKey(Schema.Array(Schema.String)),
 });
 
 export const ProvenanceSchema = Schema.Array(ProvenanceEntrySchema);

@@ -23,7 +23,8 @@ import type {
 import { HandleRegistry } from "../handles.ts";
 import { createCompilerOperations } from "./facts.ts";
 import type { TsgoFactsSession } from "./facts.ts";
-import { readModule, resolveModule } from "./module.ts";
+import { resolveModule } from "./module-resolution.ts";
+import { readModule } from "./module.ts";
 import type { TsgoModuleSession } from "./module.ts";
 
 /**
@@ -93,7 +94,9 @@ export class TsgoExtractionSession implements BackendExtractionSession {
   private factsContext(): TsgoFactsSession {
     return {
       checker: this.checker,
+      program: this.project.program,
       rootDirectory: this.provenanceRoot,
+      ensureOpen: (operation) => this.ensureOpen(operation),
       symbol: (handle, operation) => this.symbol(handle, operation),
       type: (handle, operation) => this.type(handle, operation),
       signature: (handle, operation) => this.signature(handle, operation),

@@ -1,0 +1,17 @@
+[
+  {
+    "message": "Type extraction warning: Unable to handle type \"__Named\" with flag \"Object\" at \"test/fixtures/symbol-double-underscore-name-preservation/input.ts:1:1\". Using any instead.",
+    "filePath": "test/fixtures/symbol-double-underscore-name-preservation/input.ts",
+    "line": 1,
+    "column": 1,
+    "parsedSymbolStack": [
+      "test/fixtures/symbol-double-underscore-name-preservation/input.ts",
+      "__Named"
+    ],
+    "code": "unsupported-type-fallback",
+    "typeFlags": [
+      "Object"
+    ],
+    "typeText": "__Named"
+  }
+]

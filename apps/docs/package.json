@@ -4,17 +4,20 @@
   "type": "module",
   "scripts": {
     "build": "next build",
-    "ci:checks": "true",
+    "ci:checks": "pnpm run test:shadow",
     "dev": "pnpm run generate && next dev --port 3000",
     "generate": "node --experimental-strip-types --experimental-transform-types --import ../../packages/ui/scripts/ts-resolve.mjs scripts/generate.ts",
     "start": "next start --port 3000",
     "test": "vitest run",
+    "test:shadow": "vitest run --config vitest.shadow.config.ts test/api-shadow.test.ts",
     "type-check": "next typegen && tsc --noEmit"
   },
   "dependencies": {
     "@base-ui/react": "catalog:",
+    "@elmeragroup/api-extractor": "workspace:*",
     "@elmeragroup/ui": "workspace:*",
     "@next/mdx": "catalog:",
+    "effect": "catalog:",
     "next": "catalog:",
     "react": "catalog:",
     "@internationalized/date": "catalog:",

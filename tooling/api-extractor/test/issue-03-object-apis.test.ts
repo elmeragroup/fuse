@@ -16,6 +16,9 @@ const baseUiTsconfigPath = resolve(import.meta.dirname, "fixtures/issue-02-tscon
 const baseUiInputPath = resolve(baseUiFixtureDirectory, "input.tsx");
 
 function runExtraction(options?: ExtractorOptions): Promise<ExtractionResult> {
+  // SAFETY: no caller overrides `typeOperatorOutput`, so every extraction here
+  // runs in the default resolved mode whose preserved operators all carry
+  // their resolved payloads.
   return Effect.runPromise(
     Effect.scoped(
       Effect.gen(function* () {
@@ -23,10 +26,13 @@ function runExtraction(options?: ExtractorOptions): Promise<ExtractionResult> {
         return yield* extractor.extractModule(inputPath, options);
       }).pipe(Effect.provide(ProjectExtractor.live({ tsconfigPath })))
     )
-  );
+  ) as Promise<ExtractionResult>;
 }
 
 function runReviewExtraction(options?: ExtractorOptions): Promise<ExtractionResult> {
+  // SAFETY: no caller overrides `typeOperatorOutput`, so every extraction here
+  // runs in the default resolved mode whose preserved operators all carry
+  // their resolved payloads.
   return Effect.runPromise(
     Effect.scoped(
       Effect.gen(function* () {
@@ -34,7 +40,7 @@ function runReviewExtraction(options?: ExtractorOptions): Promise<ExtractionResu
         return yield* extractor.extractModule(reviewInputPath, options);
       }).pipe(Effect.provide(ProjectExtractor.live({ tsconfigPath: reviewTsconfigPath })))
     )
-  );
+  ) as Promise<ExtractionResult>;
 }
 
 function runBaseUiExtraction(): Promise<ExtractionResult> {

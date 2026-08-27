@@ -59,7 +59,10 @@ function runExtraction(
       return yield* extractor.extractModule(filePath, extractorOptions);
     }).pipe(Effect.provide(ProjectExtractor.live(options)))
   );
-  return Effect.runPromise(program);
+  // SAFETY: no caller in this suite overrides `typeOperatorOutput`, so every
+  // extraction runs in the default resolved mode whose preserved operators
+  // all carry their resolved payloads.
+  return Effect.runPromise(program) as Promise<ExtractionResult>;
 }
 
 function runWithBackend(
@@ -90,7 +93,10 @@ function runWithBackend(
       return yield* extractor.extractModule(filePath, extractorOptions);
     }).pipe(Effect.provide(extractorLayer))
   );
-  return Effect.runPromise(program);
+  // SAFETY: no caller in this suite overrides `typeOperatorOutput`, so every
+  // extraction runs in the default resolved mode whose preserved operators
+  // all carry their resolved payloads.
+  return Effect.runPromise(program) as Promise<ExtractionResult>;
 }
 
 const fakeSymbol = {} as BackendSymbolHandle;
@@ -117,9 +123,10 @@ const testCompiler: BackendCompilerOperations = {
   typeNameFacts: () => undefined,
   signaturesOfType: () => [] as readonly BackendSignatureHandle[],
   signatureFacts: () => ({ parameters: [], returnType: fakeType, typeParameters: [] }),
+  declarationOwnership: () => ({ kind: "project" }),
   propertiesOfType: () => [],
   propertyType: () => undefined,
-  indexSignatureOfType: () => undefined,
+  indexSignaturesOfType: () => [],
   baseConstraintOfType: () => undefined,
   isArrayType: () => false,
   isReadonlyType: () => false,

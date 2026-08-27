@@ -23,6 +23,10 @@ export function callSignatureSemanticPath(ownerPath: SemanticPath, index: number
   return [...ownerPath, "callSignatures", String(index)];
 }
 
+export function constructSignatureSemanticPath(ownerPath: SemanticPath, index: number): SemanticPath {
+  return [...ownerPath, "constructSignatures", String(index)];
+}
+
 export function parameterSemanticPath(signaturePath: SemanticPath, name: string): SemanticPath {
   return [...signaturePath, "parameters", name];
 }
@@ -33,6 +37,18 @@ export function returnValueSemanticPath(signaturePath: SemanticPath): SemanticPa
 
 export function enumMemberSemanticPath(enumPath: SemanticPath, name: string): SemanticPath {
   return [...enumPath, "members", name];
+}
+
+/**
+ * The path of an index signature's key.
+ *
+ * A key is the one part of a container that has no property name to hang
+ * provenance on, and a mapped type's key is synthesized outright. Giving it an
+ * explicit path is what lets the sidecar say where a key came from — and
+ * whether anyone declared it — without leaking a compiler handle.
+ */
+export function indexSignatureKeySemanticPath(ownerPath: SemanticPath): SemanticPath {
+  return [...ownerPath, "indexSignature", "key"];
 }
 
 /**
@@ -108,6 +124,15 @@ function collectSemanticTypePaths(type: SemanticType, path: SemanticPath, paths:
     for (const member of type.members) addPath(paths, enumMemberSemanticPath(path, member.name));
   }
   if (type.kind === "class") {
+    type.constructSignatures.forEach((signature, index) => {
+      const signaturePath = constructSignatureSemanticPath(path, index);
+      addPath(paths, signaturePath);
+      for (const parameter of signature.parameters) {
+        const parameterPath = parameterSemanticPath(signaturePath, parameter.name);
+        addPath(paths, parameterPath);
+        collectSemanticTypePaths(parameter.type, parameterPath, paths);
+      }
+    });
     for (const property of type.properties) {
       const propertyPath = objectPropertySemanticPath(path, property.name);
       addPath(paths, propertyPath);
@@ -132,6 +157,13 @@ function collectSemanticTypePaths(type: SemanticType, path: SemanticPath, paths:
   }
   if (type.kind === "union" || type.kind === "intersection")
     for (const member of type.types) collectSemanticTypePaths(member, path, paths);
+  // A container is transparent in the path grammar: its members carry the
+  // container's own path, so a nested property is addressed the same way
+  // whether or not an array, tuple, or index signature sits in between.
+  if (type.kind === "object" && type.indexSignature !== undefined) {
+    addPath(paths, indexSignatureKeySemanticPath(path));
+    collectSemanticTypePaths(type.indexSignature.valueType, path, paths);
+  }
   if (type.kind === "array") collectSemanticTypePaths(type.elementType, path, paths);
   if (type.kind === "tuple") for (const member of type.types) collectSemanticTypePaths(member, path, paths);
   if (type.kind === "typeOperator") {

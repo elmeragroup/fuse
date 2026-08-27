@@ -119,11 +119,27 @@ export type PartSource = {
   defaults: ReadonlyMap<string, string>;
 };
 
+function isRecipeAxisDeclaration(declarationPath: string): boolean {
+  const normalized = declarationPath.replaceAll("\\", "/");
+  const file = normalized.slice(normalized.lastIndexOf("/") + 1);
+  return file.endsWith("-variants.ts") || file.endsWith("-variants.tsx");
+}
+
+/**
+ * Classifies a prop from facts supplied by either checker.  Recipe axes are
+ * checker-synthesized in the current model and are declared in `*-variants`
+ * sources by the Effect model; neither case needs the consumer-facing JSDoc
+ * policy applied to ordinary declared props.
+ */
+export function propOrigin(declarationPaths: readonly string[], synthesized: boolean): ApiProp["origin"] {
+  return synthesized || declarationPaths.some(isRecipeAxisDeclaration) ? "recipe-axis" : "declared";
+}
+
 /**
  * Reads the implementation-side facts of a part: which file declares it (hence its RSC
  * status) and the defaults its props destructuring assigns.
  */
-function readPartSource(context: LibraryProject, signature: Signature): PartSource | null {
+export function readPartSource(context: LibraryProject, signature: Signature): PartSource | null {
   const handle = signature.declaration;
   if (handle === undefined) {
     return null;
@@ -209,9 +225,131 @@ export type PartRequest = {
   type: Type;
 };
 
+/** Evidence the current checker model exposes for one part and its visible props. */
+export type CurrentPropEvidence = {
+  readonly name: string;
+  readonly declarationPaths: readonly string[];
+  readonly synthesized: boolean;
+};
+
+export type CurrentPartEvidence = {
+  readonly name: string;
+  readonly declarationPaths: readonly string[];
+  readonly synthesized: boolean;
+  readonly propOrder: readonly string[];
+  readonly props: readonly CurrentPropEvidence[];
+};
+
 function callSignature(checker: Checker, type: Type): Signature | null {
   const signatures = checker.getSignaturesOfType(type, SignatureKind.Call);
   return signatures[0] ?? null;
+}
+
+function addProblem(problems: ProblemLog | undefined, message: string): void {
+  problems?.add(message);
+}
+
+/**
+ * Resolves the checker-backed part requests for one public component.  Both the
+ * production API tables and the shadow evidence reader use this one traversal,
+ * so member ordering and unsupported namespace handling cannot drift.
+ */
+export function componentPartRequests(
+  context: LibraryProject,
+  request: ComponentApiRequest,
+  problems?: ProblemLog
+): readonly PartRequest[] {
+  const { checker, program } = context;
+  const sourceFile = program.getSourceFile(request.entryFile);
+  if (sourceFile === undefined) {
+    addProblem(problems, `${request.entryFile}: entry module is not part of the library program`);
+    return [];
+  }
+  const moduleSymbol = checker.getSymbolAtLocation(sourceFile);
+  if (moduleSymbol === undefined) {
+    addProblem(problems, `${request.entryFile}: entry module has no module symbol`);
+    return [];
+  }
+  const moduleExports = checker.getExportsOfModule(moduleSymbol);
+  const parts: PartRequest[] = [];
+  for (const exportName of request.exportNames) {
+    const rootSymbol = moduleExports.find((exported) => exported.name === exportName);
+    if (rootSymbol === undefined) {
+      addProblem(problems, `${request.entryFile}: does not export "${exportName}"`);
+      continue;
+    }
+    const rootType = checker.getTypeOfSymbol(rootSymbol);
+    if (rootType === undefined || rootType.isErrorType()) {
+      addProblem(problems, `${exportName}: exported value has an unresolvable type`);
+      continue;
+    }
+    if (callSignature(checker, rootType) !== null) {
+      parts.push({ name: exportName, type: rootType });
+      continue;
+    }
+    const start = parts.length;
+    for (const member of checker.getPropertiesOfType(rootType)) {
+      const memberType = checker.getTypeOfSymbol(member);
+      if (memberType === undefined || callSignature(checker, memberType) === null) continue;
+      parts.push({ name: `${exportName}.${member.name}`, type: memberType });
+    }
+    if (parts.length === start) {
+      addProblem(problems, `${exportName}: no renderable parts were found on the exported namespace`);
+    }
+  }
+  return parts;
+}
+
+/**
+ * Returns source facts for every checker-backed part, including AST-derived
+ * destructuring defaults.  This is intentionally writer-free and is also used
+ * when the Effect result is adapted for the docs shadow comparison.
+ */
+export function componentPartSources(
+  context: LibraryProject,
+  request: ComponentApiRequest
+): ReadonlyMap<string, PartSource> {
+  const sources = new Map<string, PartSource>();
+  for (const part of componentPartRequests(context, request)) {
+    const signature = callSignature(context.checker, part.type);
+    if (signature === null) continue;
+    const source = readPartSource(context, signature);
+    if (source !== null) sources.set(part.name, source);
+  }
+  return sources;
+}
+
+/** Extracts current checker evidence for only the props the docs table publishes. */
+export function inspectCurrentPartEvidence(
+  context: LibraryProject,
+  part: PartRequest,
+  visiblePropNames: ReadonlySet<string>
+): CurrentPartEvidence {
+  const signature = callSignature(context.checker, part.type);
+  const declarationPaths = signature?.declaration === undefined ? [] : [signature.declaration.path];
+  const parameter = signature?.getParameters()[0];
+  if (parameter === undefined) {
+    return { name: part.name, declarationPaths, synthesized: false, propOrder: [], props: [] };
+  }
+  const propsType = context.checker.getTypeOfSymbol(parameter);
+  if (propsType === undefined || propsType.isErrorType()) {
+    return { name: part.name, declarationPaths, synthesized: false, propOrder: [], props: [] };
+  }
+  const props = context.checker
+    .getPropertiesOfType(propsType)
+    .filter((property) => visiblePropNames.has(property.name))
+    .map((property) => ({
+      name: property.name,
+      declarationPaths: property.declarations.map((declaration) => declaration.path),
+      synthesized: property.declarations.length === 0,
+    }));
+  return {
+    name: part.name,
+    declarationPaths,
+    synthesized: false,
+    propOrder: props.map((property) => property.name),
+    props: [...props].sort((left, right) => left.name.localeCompare(right.name)),
+  };
 }
 
 function describePart(context: LibraryProject, request: PartRequest, problems: ProblemLog): ApiPart | null {
@@ -253,7 +391,8 @@ function describePart(context: LibraryProject, request: PartRequest, problems: P
     // A prop with no declaration at all is synthesised by `VariantProps` over a library
     // `tv` recipe: there is no declaration site to hang JSDoc on, so its printed union
     // is the documentation and the JSDoc gate does not apply.
-    const isRecipeAxis = property.declarations.length === 0;
+    const declarationPaths = property.declarations.map((declaration) => declaration.path);
+    const isRecipeAxis = propOrigin(declarationPaths, property.declarations.length === 0) === "recipe-axis";
     if (!isRecipeAxis && !isOwnProp(property)) {
       forwardedCount += 1;
       for (const declaration of property.declarations) {
@@ -312,31 +451,6 @@ export type ComponentApiRequest = {
   exportNames: readonly string[];
 };
 
-function describeNamespaceParts(
-  context: LibraryProject,
-  namespaceName: string,
-  namespaceType: Type,
-  problems: ProblemLog
-): ApiPart[] {
-  const { checker } = context;
-  const parts: ApiPart[] = [];
-  for (const member of checker.getPropertiesOfType(namespaceType)) {
-    const memberType = checker.getTypeOfSymbol(member);
-    if (memberType === undefined || callSignature(checker, memberType) === null) {
-      continue;
-    }
-    const part = describePart(
-      context,
-      { name: `${namespaceName}.${member.name}`, type: memberType },
-      problems
-    );
-    if (part !== null) {
-      parts.push(part);
-    }
-  }
-  return parts;
-}
-
 /**
  * Resolves one component's public surface from an explicit list of export names:
  * a single part for a callable, or one part per member for a namespace compound
@@ -348,44 +462,12 @@ export function describeComponentApi(
   request: ComponentApiRequest,
   problems: ProblemLog
 ): readonly ApiPart[] {
-  const { checker, program } = context;
-  const sourceFile = program.getSourceFile(request.entryFile);
-  if (sourceFile === undefined) {
-    problems.add(`${request.entryFile}: entry module is not part of the library program`);
-    return [];
-  }
-  const moduleSymbol = checker.getSymbolAtLocation(sourceFile);
-  if (moduleSymbol === undefined) {
-    problems.add(`${request.entryFile}: entry module has no module symbol`);
-    return [];
-  }
-  const exports = checker.getExportsOfModule(moduleSymbol);
+  const requests = componentPartRequests(context, request, problems);
   const parts: ApiPart[] = [];
-
-  for (const exportName of request.exportNames) {
-    const rootSymbol = exports.find((exported) => exported.name === exportName);
-    if (rootSymbol === undefined) {
-      problems.add(`${request.entryFile}: does not export "${exportName}"`);
-      continue;
-    }
-    const rootType = checker.getTypeOfSymbol(rootSymbol);
-    if (rootType === undefined || rootType.isErrorType()) {
-      problems.add(`${exportName}: exported value has an unresolvable type`);
-      continue;
-    }
-
-    if (callSignature(checker, rootType) !== null) {
-      const part = describePart(context, { name: exportName, type: rootType }, problems);
-      if (part !== null) {
-        parts.push(part);
-      }
-      continue;
-    }
-
-    const namespaceParts = describeNamespaceParts(context, exportName, rootType, problems);
-    parts.push(...namespaceParts);
-    if (namespaceParts.length === 0) {
-      problems.add(`${exportName}: no renderable parts were found on the exported namespace`);
+  for (const partRequest of requests) {
+    const part = describePart(context, partRequest, problems);
+    if (part !== null) {
+      parts.push(part);
     }
   }
   return parts;

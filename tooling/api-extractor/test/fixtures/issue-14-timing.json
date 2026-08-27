@@ -1,0 +1,232 @@
+{
+  "issue": "14-full-conformance",
+  "command": "fnm exec --using 24.13.0 -- node scripts/issue-14-timing.ts --check",
+  "runtime": {
+    "node": "24.13.0",
+    "compiler": "typescript@7.0.2"
+  },
+  "baseline": {
+    "report": "test/fixtures/issue-02-timing.json",
+    "aggregate": {
+      "requestCount": 42992,
+      "roundTripMs": 674.9609110000015,
+      "bytesSent": 7284074,
+      "bytesReceived": 18363693,
+      "serverTimeMs": 213.29461699999365,
+      "transportOverheadMs": 461.66629400000784,
+      "nodesMaterialized": 2414,
+      "sourceFilesFetched": 20,
+      "nodesFetched": 215688
+    }
+  },
+  "measurement": {
+    "stableContract": "deterministic-counters-exact",
+    "wallClockContract": "observational",
+    "rationale": "wall-clock IPC fields vary with scheduler and process load; they are recorded and checked for finite non-negative values, while deterministic counters remain exact and live/stored aggregates stay below 1000ms"
+  },
+  "samples": [
+    {
+      "fixture": "alias-with-explicit-type-args",
+      "enabled": true,
+      "baseline": {
+        "requestCount": 661,
+        "roundTripMs": 41.10900399999994,
+        "bytesSent": 121531,
+        "bytesReceived": 71669,
+        "serverTimeMs": 24.393000999999956,
+        "transportOverheadMs": 16.716002999999986,
+        "nodesMaterialized": 84,
+        "sourceFilesFetched": 1,
+        "nodesFetched": 97
+      },
+      "measured": {
+        "requestCount": 222,
+        "roundTripMs": 303.9268740000002,
+        "bytesSent": 46281,
+        "bytesReceived": 79637,
+        "serverTimeMs": 231.75012399999991,
+        "transportOverheadMs": 72.17675000000031,
+        "nodesMaterialized": 86,
+        "sourceFilesFetched": 1,
+        "nodesFetched": 97
+      },
+      "delta": {
+        "requestCount": -439,
+        "roundTripMs": 262.8178700000003,
+        "bytesSent": -75250,
+        "bytesReceived": 7968,
+        "serverTimeMs": 207.35712299999994,
+        "transportOverheadMs": 55.460747000000325,
+        "nodesMaterialized": 2,
+        "sourceFilesFetched": 0,
+        "nodesFetched": 0
+      }
+    },
+    {
+      "fixture": "mapped-alias-two-hop",
+      "enabled": true,
+      "baseline": {
+        "requestCount": 441,
+        "roundTripMs": 32.09195899999935,
+        "bytesSent": 82798,
+        "bytesReceived": 36338,
+        "serverTimeMs": 20.73545400000001,
+        "transportOverheadMs": 11.356504999999338,
+        "nodesMaterialized": 56,
+        "sourceFilesFetched": 1,
+        "nodesFetched": 71
+      },
+      "measured": {
+        "requestCount": 124,
+        "roundTripMs": 54.87254700000017,
+        "bytesSent": 25801,
+        "bytesReceived": 56857,
+        "serverTimeMs": 46.40528999999996,
+        "transportOverheadMs": 8.46725700000021,
+        "nodesMaterialized": 64,
+        "sourceFilesFetched": 1,
+        "nodesFetched": 71
+      },
+      "delta": {
+        "requestCount": -317,
+        "roundTripMs": 22.78058800000082,
+        "bytesSent": -56997,
+        "bytesReceived": 20519,
+        "serverTimeMs": 25.669835999999947,
+        "transportOverheadMs": -2.889247999999128,
+        "nodesMaterialized": 8,
+        "sourceFilesFetched": 0,
+        "nodesFetched": 0
+      }
+    },
+    {
+      "fixture": "module-dts-declarations-and-reexports",
+      "enabled": true,
+      "baseline": {
+        "requestCount": 970,
+        "roundTripMs": 43.72021000000143,
+        "bytesSent": 164585,
+        "bytesReceived": 1255612,
+        "serverTimeMs": 26.459763,
+        "transportOverheadMs": 17.26044700000143,
+        "nodesMaterialized": 136,
+        "sourceFilesFetched": 9,
+        "nodesFetched": 24073
+      },
+      "measured": {
+        "requestCount": 309,
+        "roundTripMs": 60.74205300000153,
+        "bytesSent": 61287,
+        "bytesReceived": 1277609,
+        "serverTimeMs": 50.01709400000001,
+        "transportOverheadMs": 10.724959000001526,
+        "nodesMaterialized": 167,
+        "sourceFilesFetched": 9,
+        "nodesFetched": 24073
+      },
+      "delta": {
+        "requestCount": -661,
+        "roundTripMs": 17.021843000000104,
+        "bytesSent": -103298,
+        "bytesReceived": 21997,
+        "serverTimeMs": 23.55733100000001,
+        "transportOverheadMs": -6.535487999999905,
+        "nodesMaterialized": 31,
+        "sourceFilesFetched": 0,
+        "nodesFetched": 0
+      }
+    },
+    {
+      "fixture": "base-ui-component",
+      "enabled": true,
+      "baseline": {
+        "requestCount": 40920,
+        "roundTripMs": 558.0397380000007,
+        "bytesSent": 6915160,
+        "bytesReceived": 17000074,
+        "serverTimeMs": 141.7063989999937,
+        "transportOverheadMs": 416.3333390000071,
+        "nodesMaterialized": 2138,
+        "sourceFilesFetched": 9,
+        "nodesFetched": 191447
+      },
+      "measured": {
+        "requestCount": 1160,
+        "roundTripMs": 107.89007599999877,
+        "bytesSent": 248330,
+        "bytesReceived": 11502507,
+        "serverTimeMs": 84.7723759999997,
+        "transportOverheadMs": 23.117699999999076,
+        "nodesMaterialized": 1181,
+        "sourceFilesFetched": 9,
+        "nodesFetched": 191447
+      },
+      "delta": {
+        "requestCount": -39760,
+        "roundTripMs": -450.14966200000197,
+        "bytesSent": -6666830,
+        "bytesReceived": -5497567,
+        "serverTimeMs": -56.934022999994,
+        "transportOverheadMs": -393.21563900000797,
+        "nodesMaterialized": -957,
+        "sourceFilesFetched": 0,
+        "nodesFetched": 0
+      }
+    }
+  ],
+  "aggregate": {
+    "baseline": {
+      "requestCount": 42992,
+      "roundTripMs": 674.9609110000015,
+      "bytesSent": 7284074,
+      "bytesReceived": 18363693,
+      "serverTimeMs": 213.29461699999365,
+      "transportOverheadMs": 461.66629400000784,
+      "nodesMaterialized": 2414,
+      "sourceFilesFetched": 20,
+      "nodesFetched": 215688
+    },
+    "measured": {
+      "requestCount": 1815,
+      "roundTripMs": 527.4315500000007,
+      "bytesSent": 381699,
+      "bytesReceived": 12916610,
+      "serverTimeMs": 412.94488399999955,
+      "transportOverheadMs": 114.48666600000112,
+      "nodesMaterialized": 1498,
+      "sourceFilesFetched": 20,
+      "nodesFetched": 215688
+    },
+    "delta": {
+      "requestCount": -41177,
+      "roundTripMs": -147.5293610000008,
+      "bytesSent": -6902375,
+      "bytesReceived": -5447083,
+      "serverTimeMs": 199.6502670000059,
+      "transportOverheadMs": -347.1796280000067,
+      "nodesMaterialized": -916,
+      "sourceFilesFetched": 0,
+      "nodesFetched": 0
+    }
+  },
+  "stopConditions": {
+    "backendLeakage": {
+      "status": "clear",
+      "evidence": "check-boundary.ts verifies unstable TypeScript imports remain inside src/backend/ts7/**"
+    },
+    "durableContractLeakage": {
+      "status": "clear",
+      "evidence": "package-owned model, warnings, provenance, and ProjectExtractor expose no compiler objects"
+    },
+    "unacceptableIpcGrowth": {
+      "status": "not-triggered",
+      "threshold": "aggregate roundTripMs <= 1000",
+      "baselineAggregateRoundTripMs": 674.9609110000015,
+      "measuredAggregateRoundTripMs": 527.4315500000007,
+      "deltaAggregateRoundTripMs": -147.5293610000008,
+      "maxAggregateRoundTripMs": 1000,
+      "evidence": "each fixture runs in a fresh public-seam timing session like the Issue 02 baseline; deterministic counters are exact, wall-clock fields are observational, and both live and stored aggregates are checked against 1000ms"
+    }
+  },
+  "decision": "go"
+}

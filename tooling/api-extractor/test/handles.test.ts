@@ -74,6 +74,26 @@ describe("HandleRegistry", () => {
     );
   });
 
+  it("rejects a memoized fact reader for a previously read handle after close", () => {
+    const project = openTsgoProject({ tsconfigPath });
+    try {
+      const session = project.openExtraction();
+      const symbol = session.readModule(inputPath).exports[0]?.symbol;
+      expect(symbol).toBeDefined();
+      if (symbol === undefined) return;
+      // Read once so the memoized reader holds the facts, then close: a cached
+      // answer must not survive the session that produced it.
+      expect(session.compiler.symbolFacts(symbol).name.length).toBeGreaterThan(0);
+      session.close();
+
+      expect(() => session.compiler.symbolFacts(symbol)).toThrow(
+        /Cannot use the TypeScript extraction session after it closed \(symbolFacts\)/u
+      );
+    } finally {
+      project.close();
+    }
+  });
+
   it("allocates an isolated registry for every repeated project extraction", () => {
     const project = openTsgoProject({ tsconfigPath });
     const first = project.openExtraction();
@@ -82,9 +102,21 @@ describe("HandleRegistry", () => {
     first.close();
 
     const second = project.openExtraction();
-    expect(second.readModule(inputPath).exports.length).toBeGreaterThan(0);
+    const secondSymbol = second.readModule(inputPath).exports[0]?.symbol;
+    expect(secondSymbol).toBeDefined();
+    if (secondSymbol !== undefined) {
+      // Warm the memoized reader so the stale handle from the first extraction
+      // meets a populated cache: ids restart at 1 in every registry, so an
+      // id-keyed cache would answer with this extraction's facts instead of
+      // rejecting the foreign handle.
+      expect(second.compiler.symbolFacts(secondSymbol).name.length).toBeGreaterThan(0);
+    }
     if (firstSymbol !== undefined) {
+      expect(firstSymbol.id).toBe(secondSymbol?.id);
       expect(() => second.compiler.symbolFacts(firstSymbol)).toThrow(/Invalid symbol compiler handle/u);
+      expect(() => second.compiler.symbolFacts(firstSymbol)).toThrow(
+        expect.objectContaining({ cause: "The handle belongs to another extraction session." })
+      );
     }
     second.close();
     project.close();

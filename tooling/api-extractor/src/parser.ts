@@ -29,7 +29,12 @@ export function readModuleDraft(session: BackendExtractionSession, filePath: str
   return session.readModule(filePath);
 }
 
-/** Apply module re-export policy and then invoke the compiler-free resolver. */
+/**
+ * Apply module re-export policy and then invoke the compiler-free resolver.
+ *
+ * Type-only star re-exports keep only their pure types; structured module-walk
+ * warnings flow into the extraction result beside resolver warnings.
+ */
 export function resolveModuleDraft(
   session: BackendExtractionSession,
   draft: BackendModuleDraft,
@@ -39,7 +44,19 @@ export function resolveModuleDraft(
   return resolveModule(session, filterModuleDraft(session, draft, filePath), filePath, options);
 }
 
-/** Compiler-owned module resolution used by declaration re-export policy. */
+/**
+ * Compiler-owned module resolution used by declaration re-export policy.
+ *
+ * KEPT despite duplicating the backend walk's group-aware
+ * `applyTypeOnlyStarFilter`: this is the BACKEND-NEUTRAL half of that policy —
+ * it runs on any adapter's drafts through the public seam, and its behavior is
+ * pinned (`extractor.test.ts` "keeps the public extraction seam
+ * backend-neutral" and "classifies raw module-resolution failures as
+ * contextual BackendError"; `boundary.test.ts` "runs parser policy against a
+ * replacement backend with no compiler dependency"). The TS7 walk applies the
+ * stronger group-aware filter BEFORE descriptor expansion; this flatter pass
+ * remains the contract every replacement backend sees.
+ */
 export function filterModuleDraft(
   session: BackendExtractionSession,
   draft: BackendModuleDraft,
