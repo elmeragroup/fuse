@@ -235,6 +235,11 @@ export function detectCountryFromInput(input: string, metadata: MetadataJson): C
   return parsePhoneNumber(input, undefined, metadata)?.country;
 }
 
+export type ProcessedPhoneInput = {
+  digits: string;
+  country: PhoneNumberCountry;
+};
+
 export function processInputWithDetection(
   input: string,
   currentCountry: PhoneNumberCountry,
@@ -242,7 +247,7 @@ export function processInputWithDetection(
   autoDetectCountry: boolean,
   international: boolean,
   metadata: MetadataJson
-): { digits: string; country: PhoneNumberCountry } {
+): ProcessedPhoneInput {
   if (!autoDetectCountry || !hasInternationalPrefix(input)) {
     return { digits: input, country: currentCountry };
   }
@@ -266,6 +271,11 @@ export function processInputWithDetection(
   return { digits: normalized, country: nextCountry };
 }
 
+export type PhoneFieldValues = {
+  displayValue: string;
+  outputValue: string;
+};
+
 export function resolvePhoneFieldValues(
   digits: string,
   country: CountryCode | undefined,
@@ -273,7 +283,7 @@ export function resolvePhoneFieldValues(
   outputFormat: PhoneNumberFormat,
   international: boolean,
   formatOnType: boolean
-): { displayValue: string; outputValue: string } {
+): PhoneFieldValues {
   if (!digits) {
     return { displayValue: "", outputValue: "" };
   }
