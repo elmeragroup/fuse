@@ -1,0 +1,52 @@
+---
+title: Link
+lede: >
+  An interim text link over React Aria Components. It renders a real anchor when
+  it has an href, keeps link semantics when it does not, and routes through the
+  app router that UiProviders installs.
+---
+
+import { LinkVariants } from "./demos/link-variants";
+import { LinkRouter } from "./demos/link-router";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("link");
+
+<ComponentIntro slug="link" />
+
+<Prose>
+
+`Link` lives at `@elmeragroup/ui/react-aria/link`. The `react-aria/` prefix is the
+quarantine marker: this atom is replaced by a base-ui or native anchor when the
+interim tier retires, and the bare path is reserved for that successor. With an
+`href` it renders a real `<a href>`; without one it stays a `role="link"` element
+with a tab stop and Enter activation, so a link that only runs `onPress` is still
+announced as a link. `isDisabled` takes it out of the tab order, marks it
+`aria-disabled`, and suppresses the press.
+
+The typography axes are `variant`, `leading`, `truncate`, `align` and `weight`.
+`default` and `inherit` are the same colour — both inherit from the surrounding
+text — and `weight="bold"` renders the medium weight, both carried over from the
+internal reference this atom ports. `className` merges after the recipe, so a
+caller's utility wins a conflict.
+
+Client-side navigation is not a prop on this component. Wrap the app in
+`UiProviders` from `@elmeragroup/ui/react-aria/ui-providers` and pass the router's
+`navigate`: a same-origin `href` then calls `navigate` and keeps the real anchor,
+while `target="_blank"`, cross-origin and download links stay full navigations.
+Keyboard focus paints the library-wide focus ring; a pointer click does not.
+
+</Prose>
+
+<Demo slug="link" id="variants" title="Variants" file="link-variants.tsx">
+  <LinkVariants />
+</Demo>
+
+<Demo slug="link" id="router" title="Router" file="link-router.tsx">
+  <LinkRouter />
+</Demo>
+
+<ApiReference slug="link" />
+
+<ComponentTokens slug="link" />

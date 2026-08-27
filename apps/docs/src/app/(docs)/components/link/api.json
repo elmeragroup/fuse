@@ -1,0 +1,65 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "link",
+  "parts": [
+    {
+      "name": "Link",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/react-aria/link/link.tsx",
+      "forwardedFrom": [
+        "@react-types/shared",
+        "@types/react",
+        "react-aria",
+        "react-aria-components"
+      ],
+      "forwardedCount": 104,
+      "props": [
+        {
+          "name": "align",
+          "origin": "recipe-axis",
+          "type": "\"center\" | \"justify\" | \"left\" | \"right\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        },
+        {
+          "name": "leading",
+          "origin": "recipe-axis",
+          "type": "\"loose\" | \"none\" | \"relaxed\" | \"snug\" | \"tight\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        },
+        {
+          "name": "truncate",
+          "origin": "recipe-axis",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "recipe-axis",
+          "type": "\"brand\" | \"default\" | \"error\" | \"foreground\" | \"inherit\" | \"muted\" | \"primary\" | \"secondary\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        },
+        {
+          "name": "weight",
+          "origin": "recipe-axis",
+          "type": "\"bold\" | \"normal\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

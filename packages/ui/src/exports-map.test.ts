@@ -86,6 +86,7 @@ describe("exports map", () => {
       "react-aria/date-field",
       "react-aria/date-picker",
       "react-aria/date-range-picker",
+      "react-aria/link",
       "react-aria/range-calendar",
       "react-aria/ui-providers",
     ]);
@@ -148,6 +149,10 @@ describe("exports map", () => {
       types: "./src/react-aria/date-range-picker.ts",
       import: "./src/react-aria/date-range-picker.ts",
     });
+    expect(exportBindingTarget(sourceExports, "./react-aria/link")).toEqual({
+      types: "./src/react-aria/link.ts",
+      import: "./src/react-aria/link.ts",
+    });
     expect(exportBindingTarget(sourceExports, "./react-aria/range-calendar")).toEqual({
       types: "./src/react-aria/range-calendar.ts",
       import: "./src/react-aria/range-calendar.ts",
@@ -206,6 +211,18 @@ describe("exports map", () => {
     expect(exportBindingTarget(publishExports, "./react-aria/range-calendar")).toEqual({
       types: "./react-aria/range-calendar.d.ts",
       import: "./react-aria/range-calendar.js",
+    });
+  });
+
+  it("publishes Link from the quarantined react-aria/link entry only", () => {
+    const link = discovered.jsEntries.find((entry) => entry.subpath === "react-aria/link");
+    const root = discovered.jsEntries.find((entry) => entry.subpath === ".");
+    expect(link?.inRootBarrel).toBe(false);
+    expect(link?.runtimeExports).toEqual(["Link"]);
+    expect(root?.runtimeExports).not.toContain("Link");
+    expect(exportBindingTarget(publishExports, "./react-aria/link")).toEqual({
+      types: "./react-aria/link.d.ts",
+      import: "./react-aria/link.js",
     });
   });
 

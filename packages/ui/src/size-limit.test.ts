@@ -98,6 +98,7 @@ describe("size-limit harness", () => {
       "react-aria/range-calendar",
       "react-aria/date-picker",
       "react-aria/date-range-picker",
+      "react-aria/link",
       "icons/Check",
     ]);
     expect(FLAG_RAW_BUDGETS).toEqual([{ name: "flags/*.svg", ceilingBytes: FLAG_RAW_CEILING_BYTES }]);
@@ -237,6 +238,9 @@ describe("size-limit harness", () => {
     expect(
       JS_ENTRY_BUDGETS.find((budget) => budget.name === "react-aria/date-range-picker")?.ceilingGzip
     ).toBe(ceilingFromMeasured(105024));
+    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "react-aria/link")?.ceilingGzip).toBe(
+      ceilingFromMeasured(31234)
+    );
     // styles.css recalibrated 2026-08-25: Table in-frame utilities exceeded 15860.
     expect(CSS_BUDGETS.find((budget) => budget.name === "styles.css")?.ceilingGzip).toBe(
       ceilingFromMeasured(16843)

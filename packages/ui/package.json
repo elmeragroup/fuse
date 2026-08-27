@@ -167,6 +167,10 @@
       "types": "./src/react-aria/date-range-picker.ts",
       "import": "./src/react-aria/date-range-picker.ts"
     },
+    "./react-aria/link": {
+      "types": "./src/react-aria/link.ts",
+      "import": "./src/react-aria/link.ts"
+    },
     "./react-aria/range-calendar": {
       "types": "./src/react-aria/range-calendar.ts",
       "import": "./src/react-aria/range-calendar.ts"

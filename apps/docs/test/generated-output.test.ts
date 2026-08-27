@@ -87,6 +87,7 @@ describe("component page manifest", () => {
       "input",
       "input-group",
       "item",
+      "link",
       "loader",
       "meter",
       "number-field",
@@ -307,6 +308,7 @@ describe("component page manifest", () => {
       "heading-level",
     ]);
     expect(page("ui-providers").demos.map((demo) => demo.id)).toEqual(["basic", "locale-switch"]);
+    expect(page("link").demos.map((demo) => demo.id)).toEqual(["variants", "router"]);
     expect(page("date-field").demos.map((demo) => demo.id)).toEqual([
       "basic",
       "validation",
@@ -385,6 +387,7 @@ describe("component page manifest", () => {
       input: "client",
       "input-group": "client",
       item: "client",
+      link: "client",
       loader: "server",
       meter: "client",
       "number-field": "client",
@@ -450,6 +453,9 @@ describe("committed api.json", () => {
     expect(resolveComponentPaths("ui-providers").entry).toBe("@elmeragroup/ui/react-aria/ui-providers");
     expect(resolveComponentPaths("ui-providers").exportName).toBe("UiProviders");
     expect(resolveComponentPaths("ui-providers").apiExportNames).toEqual(["UiProviders"]);
+    expect(resolveComponentPaths("link").entry).toBe("@elmeragroup/ui/react-aria/link");
+    expect(resolveComponentPaths("link").exportName).toBe("Link");
+    expect(resolveComponentPaths("link").apiExportNames).toEqual(["Link"]);
     expect(resolveComponentPaths("date-field").entry).toBe("@elmeragroup/ui/react-aria/date-field");
     expect(resolveComponentPaths("date-field").exportName).toBe("DateField");
     expect(resolveComponentPaths("date-field").apiExportNames).toEqual(["DateField", "DateInput"]);

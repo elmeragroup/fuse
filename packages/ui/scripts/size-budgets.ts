@@ -82,8 +82,9 @@
  *   react-aria/range-calendar 62330  (first calibration, ceiling 93495)
  *   react-aria/date-picker 105344  (first calibration, ceiling 158016 — the widest interim entry: it packs the field, calendar and overlay stacks together)
  *   react-aria/date-range-picker 105024  (first calibration, ceiling 157536 — the same three stacks as DatePicker, minus its preset pane and dictionary)
+ *   react-aria/link 31234  (first calibration, ceiling 46851 — the RAC link runtime, no field/overlay stack)
  *   themes.css     2274
- *   styles.css    19052  (DateRangePicker separator/forced-colors utilities; under the standing 25265 ceiling from Table recalibration, so recorded, not loosened)
+ *   styles.css    19066  (Link opacity transition and text-inherit utilities; under the standing 25265 ceiling from Table recalibration, so recorded, not loosened)
  */
 import { FLAG_RAW_CEILING_BYTES } from "./flag-payload";
 
@@ -178,6 +179,7 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = [
     entryFile: "react-aria/date-range-picker.js",
     ceilingGzip: 157536,
   },
+  { name: "react-aria/link", entryFile: "react-aria/link.js", ceilingGzip: 46851 },
 ];
 
 export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = [
