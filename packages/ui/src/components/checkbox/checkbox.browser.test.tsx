@@ -3,6 +3,13 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { assertFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
+import {
+  assertConnectedVerticalList,
+  assertDirectSiblingList,
+  assertHorizontalItemList,
+  listitemHosts,
+  radiusToken,
+} from "../../../test/assert-selection-item-group-layout";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { Field } from "../field/field";
 import { Checkbox, CheckboxDescription, CheckboxGroup, CheckboxItem, CheckboxItemGroup } from "./checkbox";
@@ -345,32 +352,52 @@ describe("CheckboxDescription", () => {
 describe("CheckboxItemGroup", () => {
   it("exposes stacked CheckboxItems as listitems that stay direct siblings", () => {
     renderThemed(
-      <CheckboxItemGroup label="Plans" defaultValue={["hourly"]}>
-        <CheckboxItem value="fixed">
-          <CheckboxItem.Title role="heading" aria-level={3}>
-            Fixed price
-          </CheckboxItem.Title>
-        </CheckboxItem>
-        <CheckboxItem value="hourly">
-          <CheckboxItem.Title role="heading" aria-level={3}>
-            Hourly
-          </CheckboxItem.Title>
-        </CheckboxItem>
-      </CheckboxItemGroup>
+      <div style={radiusToken}>
+        <CheckboxItemGroup label="Plans" defaultValue={["hourly"]}>
+          <CheckboxItem value="fixed">
+            <CheckboxItem.Title role="heading" aria-level={3}>
+              Fixed price
+            </CheckboxItem.Title>
+          </CheckboxItem>
+          <CheckboxItem value="hourly">
+            <CheckboxItem.Title role="heading" aria-level={3}>
+              Hourly
+            </CheckboxItem.Title>
+          </CheckboxItem>
+        </CheckboxItemGroup>
+      </div>
     );
 
-    const list = page.getByRole("list").element();
-    const items = page.getByRole("listitem").elements();
-    expect(items).toHaveLength(2);
-    const [first, second] = items;
-    if (!(first instanceof HTMLElement) || !(second instanceof HTMLElement)) {
-      throw new Error("expected two listitem hosts");
-    }
-    expect(first.parentElement).toBe(list);
-    expect(second.parentElement).toBe(list);
+    const [first, second] = listitemHosts();
+    const list = assertDirectSiblingList(first, second);
     expect(first.contains(checkboxNamed("Fixed price", false))).toBe(true);
     expect(second.contains(checkboxNamed("Hourly", true))).toBe(true);
-    expect(getComputedStyle(second).marginTop).toBe("-1px");
-    expect(getComputedStyle(first).marginTop).not.toBe("-1px");
+    assertConnectedVerticalList(list, first, second);
+  });
+
+  it("lays out a horizontal item list with wrapping gap and independent card shells", () => {
+    renderThemed(
+      <div style={radiusToken}>
+        <CheckboxItemGroup label="Horizontal plans" orientation="horizontal" defaultValue={["hourly"]}>
+          <CheckboxItem value="fixed">
+            <CheckboxItem.Title role="heading" aria-level={3}>
+              Fixed price
+            </CheckboxItem.Title>
+          </CheckboxItem>
+          <CheckboxItem value="hourly">
+            <CheckboxItem.Title role="heading" aria-level={3}>
+              Hourly
+            </CheckboxItem.Title>
+          </CheckboxItem>
+        </CheckboxItemGroup>
+      </div>
+    );
+
+    expect(groupNamed("Horizontal plans")).toBeTruthy();
+    const [first, second] = listitemHosts();
+    const list = assertDirectSiblingList(first, second);
+    expect(first.contains(checkboxNamed("Fixed price", false))).toBe(true);
+    expect(second.contains(checkboxNamed("Hourly", true))).toBe(true);
+    assertHorizontalItemList(list, [first, second]);
   });
 });

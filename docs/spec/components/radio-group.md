@@ -10,15 +10,15 @@
 
 ## 2 Anatomy
 
-| Part                                                         | Base                                                                                                     | Notes                                           |
-| ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| `RadioGroup`                                                 | `Field` + `FieldSet`/`FieldLegend`/`FieldDescription`/`FieldError` wrapping `@base-ui/react/radio-group` | header row hosts legend + pending spinner       |
-| `RadioGroupItem`                                             | `@base-ui/react/radio` `Radio.Root` + `.Indicator`                                                       | 16px circle, 8px dot indicator                  |
-| `Radio`                                                      | `Field.Item` + base-ui `Field.Label` + `RadioGroupItem`                                                  | compact inline label row                        |
-| `RadioItem`                                                  | `SelectionItem.Shell` with a `RadioGroupItem` control                                                    | card row; carries namespace aliases (§8.1)      |
-| `RadioItem.Title/.Description/.Content/.Actions/.SubSection` | aliases of `SelectionItem.*`                                                                             | **the same objects** as the SelectionItem parts |
-| `RadioItemGroup`                                             | `RadioGroup` + `ItemGroup` (`role="list"`, `gap-0 select-none`)                                          | stacked-card variant                            |
-| `RadioIconButton`                                            | base-ui `Radio.Root` styled as an icon button                                                            | segmented icon picker                           |
+| Part                                                         | Base                                                                                                     | Notes                                                  |
+| ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| `RadioGroup`                                                 | `Field` + `FieldSet`/`FieldLegend`/`FieldDescription`/`FieldError` wrapping `@base-ui/react/radio-group` | header row hosts legend + pending spinner              |
+| `RadioGroupItem`                                             | `@base-ui/react/radio` `Radio.Root` + `.Indicator`                                                       | 16px circle, 8px dot indicator                         |
+| `Radio`                                                      | `Field.Item` + base-ui `Field.Label` + `RadioGroupItem`                                                  | compact inline label row                               |
+| `RadioItem`                                                  | `SelectionItem.Shell` with a `RadioGroupItem` control                                                    | card row; carries namespace aliases (§8.1)             |
+| `RadioItem.Title/.Description/.Content/.Actions/.SubSection` | aliases of `SelectionItem.*`                                                                             | **the same objects** as the SelectionItem parts        |
+| `RadioItemGroup`                                             | `RadioGroup` + private SelectionItem list (`role="list"`)                                                | stacked-card variant; `orientation` lays out that list |
+| `RadioIconButton`                                            | base-ui `Radio.Root` styled as an icon button                                                            | segmented icon picker                                  |
 
 ```tsx
 <RadioGroup label="Contract" value={value} onChange={setValue} isPending={isLoading}>
@@ -40,7 +40,7 @@
 | `description`                   | `string`                     | —            | `FieldDescription`                                                                                                                                                                |
 | `errorMessage`                  | `ReactNode`                  | —            | `FieldError` (rendered only when truthy); widened per the labeled-composite convention (§8)                                                                                       |
 | `isPending`                     | `boolean`                    | —            | spinner (`SpinnerGap`, `size-3 animate-spin`) at the header row's end; sets `aria-busy` on the radiogroup while true; header renders when `label` or `isPending` is truthy (§8.2) |
-| `orientation`                   | `"vertical" \| "horizontal"` | `"vertical"` | vertical: `flex-col gap-2`; horizontal: `flex-wrap gap-4`                                                                                                                         |
+| `orientation`                   | `"vertical" \| "horizontal"` | `"vertical"` | vertical: primitive `flex-col gap-2`; horizontal: primitive `flex-wrap gap-4`. On `RadioItemGroup` the same axis also lays out the stacked-card list (§2)                         |
 | `value`                         | `string \| null`             | —            | `null` is passed through to keep the primitive controlled with no selection                                                                                                       |
 | `defaultValue`                  | `string`                     | —            | uncontrolled initial value                                                                                                                                                        |
 | `onChange`                      | `(value: string) => void`    | —            | wraps `onValueChange`; coerces with `String(next)`                                                                                                                                |
@@ -49,7 +49,7 @@
 | `name`                          | `string`                     | —            | set **directly on the radio-group primitive** (unlike CheckboxGroup — §8.7)                                                                                                       |
 | `id` / `className` / `children` | —                            | —            | on the primitive                                                                                                                                                                  |
 
-**RadioItemGroup** — same `RadioGroupProps`; wraps `children` in `ItemGroup`.
+**RadioItemGroup** — same `RadioGroupProps`; wraps `children` in the private SelectionItem list (`role="list"`). `orientation` is forwarded to the labeled outer group **and** to that list: vertical remains connected `flex-col gap-0`; horizontal is the actual item list `flex-row flex-wrap gap-4` with individually rounded full-border cards. The private list is not a public export.
 
 **RadioGroupItem** — `ComponentProps<RadioPrimitive.Root>` pass-through, including Base UI's stateful `className` callback; primitive naming (`value`, `disabled`, `required`, …). Library classes compose with a string `className` or the callback result for each state.
 
@@ -72,7 +72,7 @@
 
 ## 4 Variants
 
-- No tv recipes in this file: `orientation` is a plain conditional; `RadioIconButton` sizes live in a plain `Record` map (`iconButtonSizes`), module-private. `RadioItem` inherits `itemVariants` (outline) through the shell.
+- No tv recipes in this file: `orientation` is a plain conditional; `RadioItemGroup` applies that same axis to the stacked-card list (not merely the outer primitive around one child). `RadioIconButton` sizes live in a plain `Record` map (`iconButtonSizes`), module-private. `RadioItem` inherits `itemVariants` (outline) through the shell.
 
 ## 5 Consumed tokens
 
@@ -96,7 +96,7 @@
 - Base-ui renders `role="radiogroup"` with `role="radio"` items. Arrow keys move selection between enabled items (Left/Up previous, Right/Down next, wrapping); Tab enters the group on the checked (or first) item and leaves it on the next Tab; Space selects a focused unchecked item.
 - `RadioGroup` provides fieldset/legend semantics (`FieldSet`/`FieldLegend`); `errorMessage` announces via `FieldError` (`role="alert"`); `isInvalid` wires `aria-invalid` through Field.
 - `Radio` and `RadioItem` wrap the control in a base-ui `Field.Label` — the whole row is a click target; `RadioItem` sub-sections stay outside the label (selection-item.md §7).
-- `RadioItemGroup` renders `Item.Group` (`role="list"`, `gap-0 select-none`). `RadioItem` shells adopt `role="listitem"` only inside that group; they stay direct DOM siblings of the list.
+- `RadioItemGroup` renders the private SelectionItem list (`role="list"`). Vertical (default) is connected `flex-col gap-0`; horizontal is `flex-row flex-wrap gap-4`. `RadioItem` shells adopt `role="listitem"` only inside that group; they stay direct DOM siblings of the list. Vertical/default shells keep connected first/last rounding, `not-first:border-t-0`, and checked `-mt-px`; horizontal item groups render individually rounded full-border cards with neither vertical border collapse nor checked negative margin.
 - Hit target on `RadioGroupItem`: `after:-inset-x-3 after:-inset-y-2` expands the clickable area — **kept**; adjacent controls need clearance.
 - Invalid + checked override: `aria-invalid:aria-checked:border-primary` lets the checked border win over the error border — **kept**.
 - Pending spinner is a decorative icon. `isPending` sets `aria-busy` on the radiogroup region (accessibility.md §2); the attribute is omitted when pending is false or absent. If pending must be announced as a live message, the consumer owns that live region.
@@ -114,6 +114,7 @@
 8. **`RadioItem` gains `controlPosition` pass-through** — consequence of the new shell axis (selection-item.md §8.2).
 9. **`onChange` `String(next)` coercion KEPT; null-mapping BUGFIXED** — the ref's `value ?? undefined` mapping switches Base UI from controlled to uncontrolled when a controlled string value is cleared. Pass `null` through so the `string | null` controlled face tolerates cleared form state without a warning.
 10. **`errorMessage` widened `string` → `ReactNode`** — the group follows the library-wide labeled-composite contract; `FieldError` already accepts node children.
+11. **Item-group `orientation` is effective on the stacked list** — the inherited axis is forwarded to the private SelectionItem list so vertical stays a connected `flex-col gap-0` stack and horizontal is the actual item list `flex-row flex-wrap gap-4` with individually rounded cards, not merely the outer primitive around one child.
 
 ## 9 Test requirements
 
@@ -127,8 +128,9 @@ Role/label-based queries only.
 - `isReadOnly` / `isRequired` / `name` forwarded (hidden input carries `name`).
 - `Radio`: label click selects; disabled row is skipped by arrow navigation.
 - `RadioItem`: row click selects; SubSection click does not change selection (isolation smoke test); `controlPosition="end"` renders trailing control.
+- `RadioItemGroup`: `orientation` switches the actual item list via computed direction, not class names (`flex-col gap-0` connected stack vs `flex-row flex-wrap gap-4`). Horizontal item-group shells are individually rounded with full borders and no checked negative margin; vertical item groups keep direct-sibling `list`/`listitem` semantics.
 - `RadioIconButton`: selectable via click and keyboard within a group; each `size` renders (browser layout assertion); accessible name required in test fixtures.
 
 ## 10 Demo requirements
 
-Plain runnable `.tsx` demos: `radio-group-basic.tsx` (labeled group of `Radio` rows, both orientations), `radio-group-pending.tsx` (label + `isPending` spinner during async load, error message toggle), `radio-item-group.tsx` (`RadioItemGroup` stacked cards with Title/Description/Actions and a `mode`-animated SubSection on the selected item; subsections hidden via `mode="hidden"` are also `inert`), `radio-icon-button.tsx` (icon-button segmented picker across all five sizes), `radio-controlled-null.tsx` (controlled `value` including cleared `null` state).
+Plain runnable `.tsx` demos: `radio-group-basic.tsx` (labeled group of `Radio` rows, both orientations), `radio-group-pending.tsx` (label + `isPending` spinner during async load, error message toggle), `radio-item-group.tsx` (`RadioItemGroup` stacked cards with Title/Description/Actions and a `mode`-animated SubSection named as a region (`Fixed price details`) on the selected item; subsections hidden via `mode="hidden"` are also `inert`), `radio-icon-button.tsx` (icon-button segmented picker across all five sizes), `radio-controlled-null.tsx` (controlled `value` including cleared `null` state).

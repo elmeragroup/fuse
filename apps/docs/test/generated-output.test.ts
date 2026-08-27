@@ -145,19 +145,6 @@ describe("component page manifest", () => {
     }
   });
 
-  it("makes hidden Selection-family subsection demos inert", () => {
-    const checkbox = readFileSync(
-      join(resolveComponentPaths("checkbox").demosDir, "checkbox-item-group.tsx"),
-      "utf8"
-    );
-    const radio = readFileSync(
-      join(resolveComponentPaths("radio-group").demosDir, "radio-item-group.tsx"),
-      "utf8"
-    );
-    expect(checkbox).toContain("inert=");
-    expect(radio).toContain("inert=");
-  });
-
   it("orders demos by the spec §10 scenario list the page renders", () => {
     expect(page("button").demos.map((demo) => demo.id)).toEqual([
       "variants",

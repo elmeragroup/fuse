@@ -11,21 +11,37 @@ import { Field } from "../field/field";
 import { Item } from "../item/item";
 import { itemVariants } from "../item/item-variants";
 
-const SelectionItemGroupContext = createContext(false);
+type SelectionItemGroupOrientation = "vertical" | "horizontal";
+type SelectionItemGroupContextValue = false | SelectionItemGroupOrientation;
+
+const SelectionItemGroupContext = createContext<SelectionItemGroupContextValue>(false);
 
 type SelectionItemGroupProps = {
   children?: ReactNode;
+  /**
+   * Layout of the actual item list. Vertical (default) is connected
+   * `flex-col gap-0`. Horizontal is `flex-row flex-wrap gap-4`.
+   */
+  orientation?: SelectionItemGroupOrientation;
 };
 
 /**
  * Private stacked-card list wrapper. `Item.Group` still emits `role="list"`;
  * `SelectionItem.Shell` reads this context and defaults to `role="listitem"`.
+ * Vertical remains a connected `flex-col gap-0` stack; horizontal is the actual
+ * item list `flex-row flex-wrap gap-4` with individually rounded shells.
  * Not part of the public `SelectionItem` namespace or entry.
  */
-export function SelectionItemGroup({ children }: SelectionItemGroupProps): ReactElement {
+export function SelectionItemGroup({
+  children,
+  orientation = "vertical",
+}: SelectionItemGroupProps): ReactElement {
   return (
-    <SelectionItemGroupContext.Provider value={true}>
-      <Item.Group className="gap-0 select-none">{children}</Item.Group>
+    <SelectionItemGroupContext.Provider value={orientation}>
+      <Item.Group
+        className={cn("select-none", orientation === "horizontal" ? "flex-row flex-wrap gap-4" : "gap-0")}>
+        {children}
+      </Item.Group>
     </SelectionItemGroupContext.Provider>
   );
 }
@@ -100,12 +116,14 @@ type SelectionItemShellProps = Omit<ComponentProps<typeof Field.Item>, "classNam
  * classification). Control and sub-section columns share one parent grid so the
  * spacer tracks the control slot without measuring it.
  *
- * Stacked shells collapse borders with `not-first:border-t-0`. A checked non-first
- * shell repaints its top border in `primary` by pulling itself up one pixel
+ * Vertical, default, and shells outside the private group collapse borders with
+ * `not-first:border-t-0`. A checked non-first shell then repaints its top border in
+ * `primary` by pulling itself up one pixel
  * (`has-[[data-slot=selection-item-control]_[data-checked]]:not-first:-mt-px`)
- * instead of a z-index lift; `className` margin overrides can break that. Checked
- * selectors are scoped to the private control slot so a checked descendant in
- * SubSection cannot repaint the shell.
+ * instead of a z-index lift; `className` margin overrides can break that. Horizontal
+ * item groups render individually rounded full-border cards with no vertical border
+ * collapse and no checked negative margin. Checked selectors are scoped to the
+ * private control slot so a checked descendant in SubSection cannot repaint the shell.
  */
 function SelectionItemShell({
   dataSlot,
@@ -116,7 +134,9 @@ function SelectionItemShell({
   children,
   ...props
 }: SelectionItemShellProps): ReactElement {
-  const inItemGroup = useContext(SelectionItemGroupContext);
+  const groupLayout = useContext(SelectionItemGroupContext);
+  const inItemGroup = groupLayout !== false;
+  const connectedStack = groupLayout !== "horizontal";
   const childArray = Children.toArray(children);
   const subSections = childArray.filter(
     (child) => isValidElement(child) && child.type === SelectionItemSubSection
@@ -145,8 +165,9 @@ function SelectionItemShell({
         itemVariants({ variant: "outline" }),
         "grid items-stretch gap-0 gap-x-2.5 bg-background px-4 py-0 transition-colors has-[[data-slot=selection-item-control]_[data-checked]]:border-primary has-[[data-slot=selection-item-control]_[data-checked]]:bg-muted",
         controlAtEnd ? "grid-cols-[minmax(0,1fr)_auto]" : "grid-cols-[auto_minmax(0,1fr)]",
-        "rounded-none not-first:border-t-0 first:rounded-t-lg last:rounded-b-lg",
-        "has-[[data-slot=selection-item-control]_[data-checked]]:not-first:-mt-px has-[[data-slot=selection-item-control]_[data-checked]]:not-first:border-t",
+        connectedStack
+          ? "rounded-none not-first:border-t-0 first:rounded-t-lg last:rounded-b-lg has-[[data-slot=selection-item-control]_[data-checked]]:not-first:-mt-px has-[[data-slot=selection-item-control]_[data-checked]]:not-first:border-t"
+          : "rounded-lg",
         isDisabled ? cn("cursor-not-allowed bg-muted", disabledHatch) : null,
         className
       )}>

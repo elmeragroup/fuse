@@ -5,6 +5,13 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { assertFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
+import {
+  assertConnectedVerticalList,
+  assertDirectSiblingList,
+  assertHorizontalItemList,
+  listitemHosts,
+  radiusToken,
+} from "../../../test/assert-selection-item-group-layout";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { Radio, RadioGroup, RadioGroupItem, RadioIconButton, RadioItem, RadioItemGroup } from "./radio-group";
 
@@ -433,33 +440,53 @@ describe("RadioItem", () => {
 describe("RadioItemGroup", () => {
   it("exposes stacked RadioItems as listitems that stay direct siblings", () => {
     renderThemed(
-      <RadioItemGroup label="Plans" defaultValue="hourly">
-        <RadioItem value="fixed">
-          <RadioItem.Title role="heading" aria-level={3}>
-            Fixed price
-          </RadioItem.Title>
-        </RadioItem>
-        <RadioItem value="hourly">
-          <RadioItem.Title role="heading" aria-level={3}>
-            Hourly
-          </RadioItem.Title>
-        </RadioItem>
-      </RadioItemGroup>
+      <div style={radiusToken}>
+        <RadioItemGroup label="Plans" defaultValue="hourly">
+          <RadioItem value="fixed">
+            <RadioItem.Title role="heading" aria-level={3}>
+              Fixed price
+            </RadioItem.Title>
+          </RadioItem>
+          <RadioItem value="hourly">
+            <RadioItem.Title role="heading" aria-level={3}>
+              Hourly
+            </RadioItem.Title>
+          </RadioItem>
+        </RadioItemGroup>
+      </div>
     );
 
-    const list = page.getByRole("list").element();
-    const items = page.getByRole("listitem").elements();
-    expect(items).toHaveLength(2);
-    const [first, second] = items;
-    if (!(first instanceof HTMLElement) || !(second instanceof HTMLElement)) {
-      throw new Error("expected two listitem hosts");
-    }
-    expect(first.parentElement).toBe(list);
-    expect(second.parentElement).toBe(list);
+    const [first, second] = listitemHosts();
+    const list = assertDirectSiblingList(first, second);
     expect(first.contains(radioNamed("Fixed price", false))).toBe(true);
     expect(second.contains(radioNamed("Hourly", true))).toBe(true);
-    expect(getComputedStyle(second).marginTop).toBe("-1px");
-    expect(getComputedStyle(first).marginTop).not.toBe("-1px");
+    assertConnectedVerticalList(list, first, second);
+  });
+
+  it("lays out a horizontal item list with wrapping gap and independent card shells", () => {
+    renderThemed(
+      <div style={radiusToken}>
+        <RadioItemGroup label="Horizontal plans" orientation="horizontal" defaultValue="hourly">
+          <RadioItem value="fixed">
+            <RadioItem.Title role="heading" aria-level={3}>
+              Fixed price
+            </RadioItem.Title>
+          </RadioItem>
+          <RadioItem value="hourly">
+            <RadioItem.Title role="heading" aria-level={3}>
+              Hourly
+            </RadioItem.Title>
+          </RadioItem>
+        </RadioItemGroup>
+      </div>
+    );
+
+    expect(radiogroupNamed("Horizontal plans")).toBeTruthy();
+    const [first, second] = listitemHosts();
+    const list = assertDirectSiblingList(first, second);
+    expect(first.contains(radioNamed("Fixed price", false))).toBe(true);
+    expect(second.contains(radioNamed("Hourly", true))).toBe(true);
+    assertHorizontalItemList(list, [first, second]);
   });
 });
 

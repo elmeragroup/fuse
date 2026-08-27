@@ -17,6 +17,8 @@ export function CheckboxItemGroupDemo() {
         </CheckboxItem.Content>
         <CheckboxItem.Actions>Recommended</CheckboxItem.Actions>
         <CheckboxItem.SubSection
+          role="region"
+          aria-label="Fixed price details"
           mode={fixedSelected ? "visible" : "hidden"}
           inert={fixedSelected ? undefined : true}>
           Includes a price-freeze guarantee.

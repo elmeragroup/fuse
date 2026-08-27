@@ -59,8 +59,10 @@ export type RadioGroupProps = {
    */
   isPending?: boolean;
   /**
-   * Layout of the group primitive. Vertical is `flex-col gap-2`; horizontal is
-   * `flex-wrap gap-4`. Not a recipe axis. Default `"vertical"`.
+   * Layout of the group primitive, and of RadioItemGroup's stacked-card list.
+   * Vertical: primitive `flex-col gap-2`; item list connected `flex-col gap-0`.
+   * Horizontal: primitive `flex-wrap gap-4`; item list `flex-row flex-wrap gap-4`
+   * with individually rounded cards. Not a recipe axis. Default `"vertical"`.
    */
   orientation?: "vertical" | "horizontal";
   /**
@@ -155,8 +157,10 @@ export function RadioGroup({
 }
 
 /**
- * Stacked-card group: `RadioGroup` wrapping children in `Item.Group`
- * (`role="list"`, `gap-0 select-none`).
+ * Stacked-card group: `RadioGroup` wrapping children in the private
+ * SelectionItem list (`role="list"`). `orientation` is forwarded to the labeled
+ * outer group and to that list: vertical remains connected `flex-col gap-0`;
+ * horizontal is `flex-row flex-wrap gap-4` with individually rounded cards.
  */
 export function RadioItemGroup({
   children,
@@ -165,7 +169,7 @@ export function RadioItemGroup({
 }: RadioGroupProps): ReactElement {
   return (
     <RadioGroup orientation={orientation} {...props}>
-      <SelectionItemGroup>{children}</SelectionItemGroup>
+      <SelectionItemGroup orientation={orientation}>{children}</SelectionItemGroup>
     </RadioGroup>
   );
 }

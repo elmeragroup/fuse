@@ -134,7 +134,7 @@
           "type": "\"horizontal\" | \"vertical\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"vertical\"",
-          "description": "Layout of the group primitive. Vertical is `flex-col gap-2`; horizontal is `flex-wrap gap-4`. Not a recipe axis.",
+          "description": "Layout of the group primitive, and of CheckboxItemGroup's stacked-card list. Vertical: primitive `flex-col gap-2`; item list connected `flex-col gap-0`. Horizontal: primitive `flex-wrap gap-4`; item list `flex-row flex-wrap gap-4` with individually rounded cards. Not a recipe axis.",
           "required": false
         },
         {
@@ -341,7 +341,7 @@
           "type": "\"horizontal\" | \"vertical\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"vertical\"",
-          "description": "Layout of the group primitive. Vertical is `flex-col gap-2`; horizontal is `flex-wrap gap-4`. Not a recipe axis.",
+          "description": "Layout of the group primitive, and of CheckboxItemGroup's stacked-card list. Vertical: primitive `flex-col gap-2`; item list connected `flex-col gap-0`. Horizontal: primitive `flex-wrap gap-4`; item list `flex-row flex-wrap gap-4` with individually rounded cards. Not a recipe axis.",
           "required": false
         },
         {

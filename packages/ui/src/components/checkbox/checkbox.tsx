@@ -52,8 +52,10 @@ export type CheckboxGroupProps = {
   /** Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`. */
   errorMessage?: ReactNode;
   /**
-   * Layout of the group primitive. Vertical is `flex-col gap-2`; horizontal is
-   * `flex-wrap gap-4`. Not a recipe axis.
+   * Layout of the group primitive, and of CheckboxItemGroup's stacked-card list.
+   * Vertical: primitive `flex-col gap-2`; item list connected `flex-col gap-0`.
+   * Horizontal: primitive `flex-wrap gap-4`; item list `flex-row flex-wrap gap-4`
+   * with individually rounded cards. Not a recipe axis.
    */
   orientation?: "vertical" | "horizontal";
   /** Controlled selected values. */
@@ -132,8 +134,10 @@ export function CheckboxGroup({
 }
 
 /**
- * Stacked-card group: `CheckboxGroup` wrapping children in `Item.Group`
- * (`role="list"`, `gap-0 select-none`).
+ * Stacked-card group: `CheckboxGroup` wrapping children in the private
+ * SelectionItem list (`role="list"`). `orientation` is forwarded to the labeled
+ * outer group and to that list: vertical remains connected `flex-col gap-0`;
+ * horizontal is `flex-row flex-wrap gap-4` with individually rounded cards.
  */
 export function CheckboxItemGroup({
   children,
@@ -142,7 +146,7 @@ export function CheckboxItemGroup({
 }: CheckboxGroupProps): ReactElement {
   return (
     <CheckboxGroup orientation={orientation} {...props}>
-      <SelectionItemGroup>{children}</SelectionItemGroup>
+      <SelectionItemGroup orientation={orientation}>{children}</SelectionItemGroup>
     </CheckboxGroup>
   );
 }

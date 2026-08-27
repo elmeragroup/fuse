@@ -22,7 +22,7 @@
  * measured×1.5.
  *
  * Current measurements (gzip bytes, 2026-08-26). Earlier measurement rounds live in git.
- *   .             171072  (Selection-family pending/group/control-slot; under the standing 171567 ceiling from Avatar recalibration, so recorded, not loosened)
+ *   .             171099  (Selection-family item-group orientation; under the standing 171567 ceiling from Avatar recalibration, so recorded, not loosened)
  *   theme          6133
  *   icons/Check     818  (per-icon export, not the full roster)
  *   button        25214
@@ -72,9 +72,9 @@
  *   pagination    19190  (first calibration, ceiling 28785)
  *   breadcrumb    25246  (first calibration, ceiling 37869)
  *   alert         30590  (first calibration, ceiling 45885)
- *   selection-item 31953  (first calibration, ceiling 47930)
- *   checkbox      36984  (first calibration, ceiling 55476)
- *   radio-group   40166  (first calibration, ceiling 60249)
+ *   selection-item 31969  (first calibration, ceiling 47954)
+ *   checkbox      37013  (first calibration, ceiling 55520)
+ *   radio-group   40198  (first calibration, ceiling 60297)
  *   checkbox-card 30194  (first calibration, ceiling 45291)
  *   themes.css     2274
  *   styles.css    17536  (Selection-family control-slot utilities; under the standing 25265 ceiling from Table recalibration, so recorded, not loosened)
@@ -126,9 +126,9 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = [
   // entry cannot slip through unbudgeted. Replace the 0 with measured × 1.5.
   // plop:js-entry-budget
   { name: "checkbox-card", entryFile: "checkbox-card.js", ceilingGzip: 45291 },
-  { name: "radio-group", entryFile: "radio-group.js", ceilingGzip: 60249 },
-  { name: "checkbox", entryFile: "checkbox.js", ceilingGzip: 55476 },
-  { name: "selection-item", entryFile: "selection-item.js", ceilingGzip: 47930 },
+  { name: "radio-group", entryFile: "radio-group.js", ceilingGzip: 60297 },
+  { name: "checkbox", entryFile: "checkbox.js", ceilingGzip: 55520 },
+  { name: "selection-item", entryFile: "selection-item.js", ceilingGzip: 47954 },
   { name: "switch", entryFile: "switch.js", ceilingGzip: 39825 },
   { name: "button-group", entryFile: "button-group.js", ceilingGzip: 26381 },
   { name: "accordion", entryFile: "accordion.js", ceilingGzip: 45276 },
