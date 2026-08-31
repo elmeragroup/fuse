@@ -10,6 +10,7 @@ import {
   timedProjectExtractorLayer,
 } from "../src/internal/timing.ts";
 import type { TimedExtraction } from "../src/internal/timing.ts";
+import { writeArtifactBatch } from "./artifact-batch-writer.ts";
 import { checkBoundary } from "./check-boundary.ts";
 import {
   assertFixtureOracle,
@@ -19,7 +20,6 @@ import {
   readTimingReport,
 } from "./fixture-evidence.ts";
 import type { TimingReport } from "./fixture-evidence.ts";
-import { assertSafeGeneratedArtifactDestinations, writeGeneratedJsonFiles } from "./generated-artifacts.ts";
 import {
   issue14BackendLeakageEvidence,
   issue14CompilerVersion,
@@ -584,10 +584,23 @@ async function main(): Promise<void> {
     throw new Error("Issue 14 timing regeneration refuses to target the immutable output.json oracle.");
   }
   const writeReport = process.argv.includes("--write");
-  if (writeReport) assertSafeGeneratedArtifactDestinations([reportPath]);
   const measured = await measure();
   if (writeReport) {
-    writeGeneratedJsonFiles([{ path: reportPath, value: measured }]);
+    const result = await writeArtifactBatch({
+      outputRoot: fixtureDirectory,
+      artifacts: [
+        {
+          destination: "issue-14-timing.json",
+          content: `${JSON.stringify(measured, null, 2)}\n`,
+          evidence: "generated",
+        },
+      ],
+    });
+    if (result.status === "failure") {
+      throw new Error(
+        `Issue 14 timing artifact write failed (${result.error.category}): ${result.error.message}`
+      );
+    }
     return;
   }
   const stored = decodeReport(
