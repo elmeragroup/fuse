@@ -5,8 +5,8 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { issue14FixtureManifest } from "./fixture-manifest.ts";
-import type { Issue14Fixture } from "./fixture-manifest.ts";
+import { issue14FixtureManifest } from "./fixture-catalog.ts";
+import type { Issue14Fixture } from "./fixture-catalog.ts";
 
 const packageDirectory = resolve(import.meta.dirname, "..");
 const fixtureDirectory = join(packageDirectory, "test/fixtures");

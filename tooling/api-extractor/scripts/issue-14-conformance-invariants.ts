@@ -6,14 +6,14 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { issue14FixtureManifest } from "./fixture-catalog.ts";
+import type { Issue14Fixture } from "./fixture-catalog.ts";
 import {
   assertTs7DivergenceEvidence,
   canonicalDifferencePaths,
   differenceDigest,
   fixtureDirectory,
 } from "./fixture-evidence.ts";
-import type { Issue14Fixture } from "./fixture-manifest.ts";
-import { issue14FixtureManifest } from "./fixture-manifest.ts";
 import type { Issue14ConformanceReport } from "./issue-14-conformance.ts";
 import {
   issue14ConformanceCommand,

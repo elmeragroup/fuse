@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { issue14FixtureManifest } from "./fixture-manifest.ts";
+import { issue14FixtureManifest } from "./fixture-catalog.ts";
 import {
   appendError,
   asError,
