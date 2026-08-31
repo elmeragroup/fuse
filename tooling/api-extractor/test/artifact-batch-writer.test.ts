@@ -119,6 +119,10 @@ describe("artifact batch writer", () => {
           category: "write-failed",
           message: "synthetic artifact write failure",
           destination: "second.json",
+          recovery: {
+            originalState: "restored",
+            temporaryState: "removed",
+          },
         },
       });
       expect(readFileSync(join(root, "first.json"), "utf8")).toBe("first original\n");
@@ -176,6 +180,16 @@ describe("artifact batch writer", () => {
         outputRoot: root,
         artifacts: [
           {
+            destination: "fixture/generated.json",
+            content: "ordinary generated output\n",
+            evidence: "generated",
+          },
+          {
+            destination: "fixture/warnings.json",
+            content: "reviewed warning evidence\n",
+            evidence: "reviewed",
+          },
+          {
             destination: "fixture/output.json",
             content: "replacement\n",
             evidence: "immutable-upstream",
@@ -195,11 +209,153 @@ describe("artifact batch writer", () => {
       }
 
       expect(readFileSync(join(root, "fixture/output.json"), "utf8")).toBe("upstream oracle\n");
+      expect(existsSync(join(root, "fixture/generated.json"))).toBe(false);
+      expect(existsSync(join(root, "fixture/warnings.json"))).toBe(false);
       expect(existsSync(join(outside, "escaped.json"))).toBe(false);
       expect(transactionEntries(root)).toEqual([]);
     } finally {
       rmSync(root, { recursive: true, force: true });
       rmSync(outside, { recursive: true, force: true });
+    }
+  });
+
+  it("restores mixed evidence after a recoverable rollback fault and cleanup retry", async () => {
+    const root = mkdtempSync(join(tmpdir(), "api-extractor-artifact-recovery-"));
+    try {
+      writeFileSync(join(root, "generated.json"), "generated original\n");
+      writeFileSync(join(root, "warnings.json"), "warnings original\n");
+      let rollbackAttempts = 0;
+      let transactionCleanupAttempts = 0;
+      const writeWithRecovery = makeArtifactBatchWriterForTest({
+        beforeArtifactWrite: ({ index }) => {
+          if (index === 1) throw new Error("synthetic reviewed evidence failure");
+        },
+        beforeRollbackRestore: ({ destination }) => {
+          if (destination === "warnings.json" && rollbackAttempts++ === 0) {
+            throw new Error("synthetic recoverable rollback failure");
+          }
+        },
+        beforeTemporaryCleanup: ({ kind }) => {
+          if (kind === "transaction" && transactionCleanupAttempts++ === 0) {
+            throw new Error("synthetic recoverable cleanup failure");
+          }
+        },
+      });
+
+      const result = await writeWithRecovery({
+        outputRoot: root,
+        artifacts: [
+          { destination: "generated.json", content: "generated replacement\n", evidence: "generated" },
+          { destination: "warnings.json", content: "warnings replacement\n", evidence: "reviewed" },
+        ],
+      });
+
+      expect(result).toEqual({
+        status: "failure",
+        error: {
+          category: "write-failed",
+          message: "synthetic reviewed evidence failure",
+          destination: "warnings.json",
+          recovery: {
+            originalState: "restored-after-retry",
+            temporaryState: "removed-after-retry",
+          },
+        },
+      });
+      expect(readFileSync(join(root, "generated.json"), "utf8")).toBe("generated original\n");
+      expect(readFileSync(join(root, "warnings.json"), "utf8")).toBe("warnings original\n");
+      expect(transactionEntries(root)).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("rejects an overlapping writer without allowing a mixed artifact set", async () => {
+    const root = mkdtempSync(join(tmpdir(), "api-extractor-artifact-concurrent-"));
+    try {
+      writeFileSync(join(root, "first.json"), "original first\n");
+      writeFileSync(join(root, "second.json"), "original second\n");
+      let releaseFirst!: () => void;
+      const firstPaused = new Promise<void>((resolve) => {
+        releaseFirst = resolve;
+      });
+      let announcePause!: () => void;
+      const paused = new Promise<void>((resolve) => {
+        announcePause = resolve;
+      });
+      const firstWriter = makeArtifactBatchWriterForTest({
+        beforeArtifactWrite: async ({ index }) => {
+          if (index !== 0) return;
+          announcePause();
+          await firstPaused;
+        },
+      });
+
+      const first = firstWriter({
+        outputRoot: root,
+        artifacts: [
+          { destination: "first.json", content: "winner first\n", evidence: "generated" },
+          { destination: "second.json", content: "winner second\n", evidence: "reviewed" },
+        ],
+      });
+      await paused;
+      const second = await writeArtifactBatch({
+        outputRoot: root,
+        artifacts: [
+          { destination: "first.json", content: "loser first\n", evidence: "generated" },
+          { destination: "second.json", content: "loser second\n", evidence: "reviewed" },
+        ],
+      });
+      releaseFirst();
+
+      expect(second).toEqual({
+        status: "failure",
+        error: {
+          category: "concurrent-write",
+          message: "Another artifact batch is already writing to this output root.",
+        },
+      });
+      await expect(first).resolves.toMatchObject({ status: "success" });
+      expect(readFileSync(join(root, "first.json"), "utf8")).toBe("winner first\n");
+      expect(readFileSync(join(root, "second.json"), "utf8")).toBe("winner second\n");
+      expect(transactionEntries(root)).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("returns an interrupted failure within a bounded time and restores the destination", async () => {
+    const root = mkdtempSync(join(tmpdir(), "api-extractor-artifact-timeout-"));
+    try {
+      writeFileSync(join(root, "report.json"), "original report\n");
+      const writeThatStalls = makeArtifactBatchWriterForTest({
+        maximumDurationMs: 50,
+        beforeArtifactWrite: () => new Promise<void>(() => undefined),
+      });
+      const startedAt = Date.now();
+
+      const result = await writeThatStalls({
+        outputRoot: root,
+        artifacts: [{ destination: "report.json", content: "replacement\n", evidence: "reviewed" }],
+      });
+
+      expect(Date.now() - startedAt).toBeLessThan(1_000);
+      expect(result).toEqual({
+        status: "failure",
+        error: {
+          category: "interrupted",
+          message: "The artifact batch did not complete within its allowed time.",
+          destination: "report.json",
+          recovery: {
+            originalState: "restored",
+            temporaryState: "removed",
+          },
+        },
+      });
+      expect(readFileSync(join(root, "report.json"), "utf8")).toBe("original report\n");
+      expect(transactionEntries(root)).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
     }
   });
 });

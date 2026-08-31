@@ -9,6 +9,8 @@ import { fileURLToPath } from "node:url";
 
 import { ProjectExtractor } from "../src/index.ts";
 import type { ExtractWarning } from "../src/index.ts";
+import { writeArtifactBatch } from "./artifact-batch-writer.ts";
+import type { ArtifactBatchItem } from "./artifact-batch-writer.ts";
 import {
   assertTs7DivergenceEvidence,
   canonicalDifferencePaths,
@@ -19,7 +21,6 @@ import {
 } from "./fixture-evidence.ts";
 import type { Issue14Fixture } from "./fixture-evidence.ts";
 import { createFixtureFileSystem } from "./fixture-filesystem.ts";
-import { assertSafeGeneratedArtifactDestinations, writeGeneratedJsonFiles } from "./generated-artifacts.ts";
 import {
   assertConformanceDecoded,
   assertReferenceEvidence,
@@ -39,6 +40,16 @@ const configPath = join(fixtureDirectory, "issue-14-tsconfig.json");
 const reportPath = join(fixtureDirectory, "issue-14-conformance.json");
 const upstreamCommit = pinnedUpstream.commit;
 const expectedFixtureCount = 116;
+
+async function writeEvidenceBatch(artifacts: readonly ArtifactBatchItem[]): Promise<void> {
+  const result = await writeArtifactBatch({ outputRoot: fixtureDirectory, artifacts });
+  if (result.status === "failure") {
+    const destination = result.error.destination === undefined ? "" : ` for ${result.error.destination}`;
+    throw new Error(
+      `Issue 14 evidence write failed${destination} (${result.error.category}): ${result.error.message}`
+    );
+  }
+}
 
 export { issue14ConformanceCommand } from "./issue-14-contract.ts";
 export { assertStoredReport } from "./issue-14-conformance-invariants.ts";
@@ -465,14 +476,6 @@ export async function writeAdditionalTs7Evidence(
     }
     return { definition, evidence };
   });
-  const generatedPaths = definitions.flatMap(({ definition }) => [
-    join(fixtureDirectory, definition.fixture, "output.tsgo.json"),
-    join(fixtureDirectory, definition.fixture, "warnings.tsgo.json"),
-    join(fixtureDirectory, definition.fixture, "ts7-oracle.json"),
-  ]);
-  // Validate the entire batch before compiler startup; no earlier generated
-  // file may be written if a later destination aliases an immutable oracle.
-  assertSafeGeneratedArtifactDestinations(generatedPaths);
   const effect = Effect.gen(function* () {
     const extractor = yield* ProjectExtractor;
     const results = new Map<
@@ -494,7 +497,7 @@ export async function writeAdditionalTs7Evidence(
     )
   );
   const results = await Effect.runPromise(Effect.scoped(effect));
-  const generatedFiles: Array<{ readonly path: string; readonly value: Schema.Json }> = [];
+  const generatedFiles: ArtifactBatchItem[] = [];
   for (const { definition, evidence } of definitions) {
     const result = results.get(definition.fixture);
     if (result === undefined) throw new Error(`No extraction result for ${definition.fixture}`);
@@ -508,34 +511,42 @@ export async function writeAdditionalTs7Evidence(
       throw new Error(`The reviewed difference evidence is stale for ${definition.fixture}.`);
     }
     generatedFiles.push(
-      { path: join(fixtureDirectory, definition.fixture, "output.tsgo.json"), value: module },
       {
-        path: join(fixtureDirectory, definition.fixture, "warnings.tsgo.json"),
-        value: Schema.decodeUnknownSync(Schema.Json)(
-          JSON.parse(JSON.stringify(normalizeWarnings(result.warnings)))
-        ),
+        destination: join(definition.fixture, "output.tsgo.json"),
+        content: `${JSON.stringify(module, null, 2)}\n`,
+        evidence: "reviewed",
       },
       {
-        path: join(fixtureDirectory, definition.fixture, "ts7-oracle.json"),
-        value: Schema.decodeUnknownSync(Schema.Json)({
-          fixture: definition.fixture,
-          compiler: "typescript@" + packageVersion("typescript"),
-          sourceOracle: "output.json",
-          comparison: "exact",
-          divergence: {
-            code: evidence.code,
-            genus: evidence.genus,
-            reason: evidence.reason,
-            upstreamPreserved: true,
-            differenceCount: differences.length,
-            differenceDigest: differenceDigest(differences),
-            differencePaths: differences,
+        destination: join(definition.fixture, "warnings.tsgo.json"),
+        content: `${JSON.stringify(normalizeWarnings(result.warnings), null, 2)}\n`,
+        evidence: "reviewed",
+      },
+      {
+        destination: join(definition.fixture, "ts7-oracle.json"),
+        content: `${JSON.stringify(
+          {
+            fixture: definition.fixture,
+            compiler: "typescript@" + packageVersion("typescript"),
+            sourceOracle: "output.json",
+            comparison: "exact",
+            divergence: {
+              code: evidence.code,
+              genus: evidence.genus,
+              reason: evidence.reason,
+              upstreamPreserved: true,
+              differenceCount: differences.length,
+              differenceDigest: differenceDigest(differences),
+              differencePaths: differences,
+            },
           },
-        }),
+          null,
+          2
+        )}\n`,
+        evidence: "reviewed",
       }
     );
   }
-  writeGeneratedJsonFiles(generatedFiles);
+  await writeEvidenceBatch(generatedFiles);
 }
 
 function reportFrom(
@@ -639,11 +650,6 @@ async function main(): Promise<void> {
   }
   assertManifest();
   const writeReport = process.argv.includes("--write");
-  if (writeReport) {
-    // Reject an unsafe report destination before typechecks or extraction so
-    // a failed late write cannot leave a partial evidence run behind.
-    assertSafeGeneratedArtifactDestinations([reportPath]);
-  }
   const referenceMode = process.argv.includes("--reference-required") ? "required" : "optional";
   const referenceCheck = auditPinnedReference(referenceMode);
   if (process.argv.includes("--audit-reference")) {
@@ -655,7 +661,13 @@ async function main(): Promise<void> {
   const measured = reportFrom(typechecks, extractions, referenceCheck);
   if (writeReport) {
     assertReferenceEvidence(measured.referenceCheck, true);
-    writeGeneratedJsonFiles([{ path: reportPath, value: measured }]);
+    await writeEvidenceBatch([
+      {
+        destination: "issue-14-conformance.json",
+        content: `${JSON.stringify(measured, null, 2)}\n`,
+        evidence: "generated",
+      },
+    ]);
     return;
   }
   const stored = readIssue14ConformanceReport();

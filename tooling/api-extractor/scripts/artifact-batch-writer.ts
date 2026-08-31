@@ -34,6 +34,7 @@ export type ArtifactBatchFailureCategory =
   | "immutable-oracle"
   | "symlink-escape"
   | "concurrent-write"
+  | "interrupted"
   | "filesystem-unavailable"
   | "write-failed"
   | "original-state-not-restored"
@@ -53,6 +54,10 @@ export type ArtifactBatchResult =
         readonly category: ArtifactBatchFailureCategory;
         readonly message: string;
         readonly destination?: string;
+        readonly recovery?: {
+          readonly originalState: "restored" | "restored-after-retry" | "not-restored";
+          readonly temporaryState: "removed" | "removed-after-retry" | "not-removed";
+        };
       };
     };
 
@@ -78,9 +83,14 @@ type Backup = {
 };
 
 export type ArtifactBatchWriterTestControls = {
+  readonly maximumDurationMs?: number;
   readonly beforeArtifactWrite?: (artifact: {
     readonly index: number;
     readonly destination: string;
+  }) => void | Promise<void>;
+  readonly beforeRollbackRestore?: (artifact: { readonly destination: string }) => void | Promise<void>;
+  readonly beforeTemporaryCleanup?: (state: {
+    readonly kind: "transaction" | "lock";
   }) => void | Promise<void>;
 };
 
@@ -103,10 +113,15 @@ function isAlreadyPresent(error: Error): error is FileSystemError {
   return "code" in error && error.code === "EEXIST";
 }
 
-function failure(error: ArtifactBatchError): ArtifactBatchResult {
+type ArtifactBatchRecovery = NonNullable<
+  Extract<ArtifactBatchResult, { readonly status: "failure" }>["error"]["recovery"]
+>;
+
+function failure(error: ArtifactBatchError, recovery?: ArtifactBatchRecovery): ArtifactBatchResult {
   const detail = { category: error.category, message: error.message };
-  if (error.destination === undefined) return { status: "failure", error: detail };
-  return { status: "failure", error: { ...detail, destination: error.destination } };
+  const context = error.destination === undefined ? detail : { ...detail, destination: error.destination };
+  if (recovery === undefined) return { status: "failure", error: context };
+  return { status: "failure", error: { ...context, recovery } };
 }
 
 function asBatchError(error: unknown, category: ArtifactBatchFailureCategory): ArtifactBatchError {
@@ -404,21 +419,107 @@ async function ensureParentDirectories(
 async function rollbackBatch(
   committed: readonly PreparedArtifact[],
   backups: readonly Backup[],
-  createdDirectories: readonly string[]
-): Promise<void> {
+  createdDirectories: readonly string[],
+  controls: ArtifactBatchWriterTestControls,
+  deadline: number
+): Promise<"restored" | "restored-after-retry"> {
+  const retryRemovals: PreparedArtifact[] = [];
+  const retryRestores: Backup[] = [];
+  const retryDirectories: string[] = [];
+
   for (const artifact of [...committed].reverse()) {
-    await rm(artifact.absolutePath, { force: true });
+    try {
+      await rm(artifact.absolutePath, { force: true });
+    } catch {
+      retryRemovals.push(artifact);
+    }
   }
   for (const backup of [...backups].reverse()) {
-    await rm(backup.destinationPath, { force: true });
-    await rename(backup.backupPath, backup.destinationPath);
+    if (retryRemovals.some((artifact) => artifact.absolutePath === backup.destinationPath)) {
+      retryRestores.push(backup);
+      continue;
+    }
+    try {
+      await runControl(
+        controls.beforeRollbackRestore?.({ destination: backup.destination }),
+        deadline,
+        backup.destination
+      );
+      await rm(backup.destinationPath, { force: true });
+      await rename(backup.backupPath, backup.destinationPath);
+    } catch {
+      retryRestores.push(backup);
+    }
   }
   for (const directory of [...createdDirectories].reverse()) {
     try {
       await rmdir(directory);
     } catch (error) {
-      if (!(error instanceof Error && isMissing(error))) throw error;
+      if (!(error instanceof Error && isMissing(error))) retryDirectories.push(directory);
     }
+  }
+
+  const retried = retryRemovals.length + retryRestores.length + retryDirectories.length > 0;
+  try {
+    for (const artifact of retryRemovals) await rm(artifact.absolutePath, { force: true });
+    for (const backup of retryRestores) {
+      await rm(backup.destinationPath, { force: true });
+      await rename(backup.backupPath, backup.destinationPath);
+    }
+    for (const directory of retryDirectories) {
+      try {
+        await rmdir(directory);
+      } catch (error) {
+        if (!(error instanceof Error && isMissing(error))) throw error;
+      }
+    }
+  } catch {
+    const destination = retryRestores.at(-1)?.destination ?? retryRemovals.at(-1)?.destination;
+    throw new ArtifactBatchError(
+      "original-state-not-restored",
+      "The artifact batch failed and the original destination could not be fully restored.",
+      destination
+    );
+  }
+  return retried ? "restored-after-retry" : "restored";
+}
+
+const defaultMaximumDurationMs = 30_000;
+
+async function runControl(
+  operation: void | Promise<void> | undefined,
+  deadline: number,
+  destination?: string
+): Promise<void> {
+  if (operation === undefined) return;
+  const remaining = deadline - Date.now();
+  if (remaining <= 0) {
+    throw new ArtifactBatchError(
+      "interrupted",
+      "The artifact batch did not complete within its allowed time.",
+      destination
+    );
+  }
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    await Promise.race([
+      operation,
+      new Promise<never>((_resolve, reject) => {
+        timer = setTimeout(
+          () =>
+            reject(
+              new ArtifactBatchError(
+                "interrupted",
+                "The artifact batch did not complete within its allowed time.",
+                destination
+              )
+            ),
+          remaining
+        );
+      }),
+    ]);
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
   }
 }
 
@@ -426,6 +527,7 @@ async function writeBatch(
   request: ArtifactBatchRequest,
   controls: ArtifactBatchWriterTestControls
 ): Promise<ArtifactBatchResult> {
+  const deadline = Date.now() + (controls.maximumDurationMs ?? defaultMaximumDurationMs);
   let prepared;
   try {
     prepared = await prepareBatch(request);
@@ -469,8 +571,13 @@ async function writeBatch(
     for (const [index, artifact] of prepared.artifacts.entries()) {
       await ensureParentDirectories(prepared.root, artifact.absolutePath, createdDirectories);
       try {
-        await controls.beforeArtifactWrite?.({ index, destination: artifact.destination });
+        await runControl(
+          controls.beforeArtifactWrite?.({ index, destination: artifact.destination }),
+          deadline,
+          artifact.destination
+        );
       } catch (error) {
+        if (error instanceof ArtifactBatchError) throw error;
         throw new ArtifactBatchError(
           "write-failed",
           error instanceof Error ? error.message : "The artifact could not be written.",
@@ -481,6 +588,12 @@ async function writeBatch(
       committed.push(artifact);
     }
 
+    try {
+      await runControl(controls.beforeTemporaryCleanup?.({ kind: "transaction" }), deadline);
+    } catch {
+      // A recoverable first cleanup failure is retried through the real
+      // filesystem operation below while the writer still owns the lock.
+    }
     await rm(transactionPath, { recursive: true, force: true });
     transactionPath = undefined;
     result = {
@@ -490,29 +603,42 @@ async function writeBatch(
   } catch (error) {
     const primary = asBatchError(error, "write-failed");
     try {
-      await rollbackBatch(committed, backups, createdDirectories);
-      result = failure(primary);
-    } catch {
-      const failedDestination = backups.at(-1)?.destination;
-      result = failure(
-        new ArtifactBatchError(
-          "original-state-not-restored",
-          "The artifact batch failed and the original destination could not be fully restored.",
-          failedDestination
-        )
-      );
+      const originalState = await rollbackBatch(committed, backups, createdDirectories, controls, deadline);
+      result = failure(primary, { originalState, temporaryState: "removed" });
+    } catch (rollbackError) {
+      result = failure(asBatchError(rollbackError, "original-state-not-restored"), {
+        originalState: "not-restored",
+        temporaryState: "not-removed",
+      });
     }
   }
 
   let cleanupFailed = false;
+  let cleanupRetried = false;
   if (transactionPath !== undefined) {
-    try {
-      await rm(transactionPath, { recursive: true, force: true });
-    } catch {
+    if (result.status === "failure" && result.error.recovery?.originalState === "not-restored") {
+      // Backups are the last recoverable copy when restoration failed. Keep
+      // them in the controlled root and report that temporary state remains.
       cleanupFailed = true;
+    } else {
+      try {
+        try {
+          await runControl(controls.beforeTemporaryCleanup?.({ kind: "transaction" }), deadline);
+        } catch {
+          cleanupRetried = true;
+        }
+        await rm(transactionPath, { recursive: true, force: true });
+      } catch {
+        cleanupFailed = true;
+      }
     }
   }
   try {
+    try {
+      await runControl(controls.beforeTemporaryCleanup?.({ kind: "lock" }), deadline);
+    } catch {
+      cleanupRetried = true;
+    }
     await rm(lockPath, { recursive: true, force: true });
   } catch {
     cleanupFailed = true;
@@ -524,6 +650,18 @@ async function writeBatch(
         "The artifact batch was written but temporary state remains."
       )
     );
+  }
+  if (result.status === "failure" && result.error.recovery !== undefined) {
+    return {
+      status: "failure",
+      error: {
+        ...result.error,
+        recovery: {
+          ...result.error.recovery,
+          temporaryState: cleanupFailed ? "not-removed" : cleanupRetried ? "removed-after-retry" : "removed",
+        },
+      },
+    };
   }
   return result;
 }

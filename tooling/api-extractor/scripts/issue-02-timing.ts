@@ -1,5 +1,4 @@
 import { Effect } from "effect";
-import { writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { join } from "node:path";
 
@@ -9,6 +8,7 @@ import {
   timedProjectExtractorLayer,
 } from "../src/internal/timing.ts";
 import type { TimedExtraction } from "../src/internal/timing.ts";
+import { writeArtifactBatch } from "./artifact-batch-writer.ts";
 import { checkBoundary } from "./check-boundary.ts";
 import {
   assertFixtureOracle,
@@ -272,7 +272,21 @@ if (process.versions.node !== "24.13.0") {
 }
 const measured = reportFrom(await collectSamples());
 if (process.argv.includes("--write")) {
-  writeFileSync(reportPath, JSON.stringify(measured, null, 2) + "\n");
+  const result = await writeArtifactBatch({
+    outputRoot: fixtureDirectory,
+    artifacts: [
+      {
+        destination: "issue-02-timing.json",
+        content: `${JSON.stringify(measured, null, 2)}\n`,
+        evidence: "generated",
+      },
+    ],
+  });
+  if (result.status === "failure") {
+    throw new Error(
+      `Issue 02 timing artifact write failed (${result.error.category}): ${result.error.message}`
+    );
+  }
 } else {
   const stored = readTimingReport(reportPath);
   const goNoGo = readGoNoGoArtifact(goNoGoPath);
