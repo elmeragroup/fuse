@@ -20,9 +20,9 @@
     }
   },
   "measurement": {
-    "stableContract": "deterministic-counters-exact",
+    "stableContract": "semantic-counters-exact",
     "wallClockContract": "observational",
-    "rationale": "wall-clock IPC fields vary with scheduler and process load; they are recorded and checked for finite non-negative values, while deterministic counters remain exact and live/stored aggregates stay below 1000ms"
+    "rationale": "wall-clock IPC fields vary with scheduler and process load; transport byte counts vary with checkout paths; both remain observations, while semantic counters stay exact and live/stored aggregates stay below 1000ms"
   },
   "samples": [
     {
@@ -225,7 +225,7 @@
       "measuredAggregateRoundTripMs": 527.4315500000007,
       "deltaAggregateRoundTripMs": -147.5293610000008,
       "maxAggregateRoundTripMs": 1000,
-      "evidence": "each fixture runs in a fresh public-seam timing session like the Issue 02 baseline; deterministic counters are exact, wall-clock fields are observational, and both live and stored aggregates are checked against 1000ms"
+      "evidence": "each fixture runs in a fresh public-seam timing session like the Issue 02 baseline; semantic counters are exact, wall-clock and transport byte fields are observational, and both live and stored aggregates are checked against 1000ms"
     }
   },
   "decision": "go"

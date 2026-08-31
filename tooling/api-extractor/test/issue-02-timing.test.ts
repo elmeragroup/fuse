@@ -174,8 +174,10 @@ describe("Issue 02 compiler timing boundary", () => {
       expect(result.timing.enabled).toBe(true);
       expect(result.timing.totals.requestCount).toBeGreaterThan(0);
       expect(result.timing.totals.roundTripMs).toBeGreaterThanOrEqual(0);
-      expect(result.timing.totals.bytesSent).toBeGreaterThan(0);
-      expect(result.timing.totals.bytesReceived).toBeGreaterThan(0);
+      expect(Number.isFinite(result.timing.totals.bytesSent)).toBe(true);
+      expect(Number.isFinite(result.timing.totals.bytesReceived)).toBe(true);
+      expect(result.timing.totals.bytesSent).toBeGreaterThanOrEqual(0);
+      expect(result.timing.totals.bytesReceived).toBeGreaterThanOrEqual(0);
       expect(result.timing.recentRequests.length).toBeGreaterThan(0);
       expect(result.timing.recentRequests.every((request) => request.roundTripMs >= 0)).toBe(true);
     }

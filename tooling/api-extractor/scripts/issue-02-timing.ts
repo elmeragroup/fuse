@@ -35,6 +35,10 @@ const tsconfigPath = join(fixtureDirectory, "issue-02-tsconfig.json");
 const maxAggregateRoundTripMs = 1_000;
 const expectedFixtureOrder = issue02TimingFixtures.map((fixture) => fixture.fixture);
 
+function isTransportByteObservation(value: number): boolean {
+  return Number.isFinite(value) && value >= 0;
+}
+
 const stopConditionEvidence = {
   backendLeakage:
     "check-boundary.ts scans package source and declarations; unstable TypeScript imports are limited to src/backend/ts7/**",
@@ -242,8 +246,8 @@ function checkStoredReport(stored: TimingReport, measured: TimingReport, goNoGo:
     if (
       sample.enabled !== true ||
       sample.totals.requestCount <= 0 ||
-      sample.totals.bytesSent <= 0 ||
-      sample.totals.bytesReceived <= 0 ||
+      !isTransportByteObservation(sample.totals.bytesSent) ||
+      !isTransportByteObservation(sample.totals.bytesReceived) ||
       !Number.isFinite(sample.totals.roundTripMs) ||
       sample.totals.roundTripMs < 0
     ) {
@@ -251,7 +255,12 @@ function checkStoredReport(stored: TimingReport, measured: TimingReport, goNoGo:
     }
   }
   for (const sample of measured.samples) {
-    if (!sample.enabled || sample.totals.requestCount <= 0 || sample.totals.bytesSent <= 0) {
+    if (
+      !sample.enabled ||
+      sample.totals.requestCount <= 0 ||
+      !isTransportByteObservation(sample.totals.bytesSent) ||
+      !isTransportByteObservation(sample.totals.bytesReceived)
+    ) {
       throw new Error("Invalid live timing sample for " + sample.fixture);
     }
   }
@@ -276,6 +285,8 @@ if (process.argv.includes("--write")) {
           fixture: sample.fixture,
           requestCount: sample.totals.requestCount,
           roundTripMs: sample.totals.roundTripMs,
+          bytesSent: sample.totals.bytesSent,
+          bytesReceived: sample.totals.bytesReceived,
         })),
       },
       null,

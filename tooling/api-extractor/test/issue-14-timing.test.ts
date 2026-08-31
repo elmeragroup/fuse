@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
+  assertSemanticTotalsEqual,
   assertTimingReportInvariants,
   Issue14TimingReportSchema,
   subtractTotals,
@@ -30,7 +31,7 @@ describe("Issue 14 second IPC timing artifact", () => {
     expect(report.aggregate.delta.roundTripMs).toBe(
       report.aggregate.measured.roundTripMs - report.aggregate.baseline.roundTripMs
     );
-    expect(report.measurement.stableContract).toBe("deterministic-counters-exact");
+    expect(report.measurement.stableContract).toBe("semantic-counters-exact");
     expect(report.measurement.wallClockContract).toBe("observational");
     assertTimingReportInvariants(report);
     for (const sample of report.samples) {
@@ -42,7 +43,7 @@ describe("Issue 14 second IPC timing artifact", () => {
     }
   });
 
-  it("keeps deterministic counters and arithmetic mutation-sensitive", () => {
+  it("keeps semantic counters and arithmetic mutation-sensitive", () => {
     const report = Schema.decodeUnknownSync(Issue14TimingReportSchema)(
       JSON.parse(readFileSync(reportPath, "utf8"))
     );
@@ -55,6 +56,35 @@ describe("Issue 14 second IPC timing artifact", () => {
       ),
     };
     expect(() => assertTimingReportInvariants(mutated)).toThrow(/arithmetic|aggregate|counter/u);
+  });
+
+  it("treats transport byte counts as validated observations", () => {
+    const report = Schema.decodeUnknownSync(Issue14TimingReportSchema)(
+      JSON.parse(readFileSync(reportPath, "utf8"))
+    );
+    const left = report.samples[0]?.measured;
+    if (left === undefined) throw new Error("Missing representative timing sample.");
+    const differentCheckoutObservation = {
+      ...left,
+      bytesSent: left.bytesSent + 17,
+      bytesReceived: left.bytesReceived + 29,
+    };
+
+    expect(() =>
+      assertSemanticTotalsEqual("stored", left, "different checkout", differentCheckoutObservation)
+    ).not.toThrow();
+    expect(() =>
+      assertSemanticTotalsEqual("stored", left, "semantic regression", {
+        ...differentCheckoutObservation,
+        nodesFetched: left.nodesFetched + 1,
+      })
+    ).toThrow(/nodesFetched/u);
+
+    const invalidObservation = structuredClone(report);
+    const invalidSample = invalidObservation.samples[0];
+    if (invalidSample === undefined) throw new Error("Missing representative timing sample.");
+    Reflect.set(invalidSample.measured, "bytesReceived", -1);
+    expect(() => assertTimingReportInvariants(invalidObservation)).toThrow(/bytesReceived/u);
   });
 
   it("pins the standalone timing identity and stop-condition evidence", () => {

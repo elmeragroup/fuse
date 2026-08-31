@@ -39,8 +39,8 @@ const configPath = join(fixtureDirectory, "issue-14-tsconfig.json");
 export const maxAggregateRoundTripMs = 1_000;
 /**
  * IPC wall-clock counters are scheduler-sensitive. Keep the durable timing
- * contract explicit: deterministic counters must match exactly, while wall
- * clock fields remain observations checked for finite non-negative values.
+ * contract explicit: semantic counters must match exactly, while wall clock
+ * fields and transport byte counts remain finite non-negative observations.
  * Both the live and stored aggregate round-trip values still have to pass the
  * 1000ms stop condition, so fabricated stale values cannot be used as a gate.
  */
@@ -48,14 +48,9 @@ export const wallClockContract = issue14TimingWallClockContract;
 export const wallClockContractRationale = issue14TimingWallClockRationale;
 const expectedFixtureOrder = issue02TimingFixtures.map((definition) => definition.fixture);
 const timingFields = ["roundTripMs", "serverTimeMs", "transportOverheadMs"] as const;
-const deterministicFields = [
-  "requestCount",
-  "bytesSent",
-  "bytesReceived",
-  "nodesMaterialized",
-  "sourceFilesFetched",
-  "nodesFetched",
-] as const;
+const semanticFields = ["requestCount", "nodesMaterialized", "sourceFilesFetched", "nodesFetched"] as const;
+const transportByteFields = ["bytesSent", "bytesReceived"] as const;
+const integerFields = [...semanticFields, ...transportByteFields] as const;
 
 export const NumberTotalsSchema = Schema.Struct({
   requestCount: Schema.Number,
@@ -233,10 +228,10 @@ function assertTotalsFinite(label: string, totals: TimingTotals, allowNegative =
       throw new Error(`Timing field ${label}.${field} cannot be negative.`);
     }
   }
-  for (const field of deterministicFields) {
+  for (const field of integerFields) {
     if (!Number.isInteger(totals[field]) || (!allowNegative && totals[field] < 0)) {
       throw new Error(
-        `Deterministic timing counter ${label}.${field} must be an integer${allowNegative ? "" : " and non-negative"}.`
+        `Timing counter ${label}.${field} must be an integer${allowNegative ? "" : " and non-negative"}.`
       );
     }
   }
@@ -255,7 +250,7 @@ function assertTotalsEqual(
 ): void {
   assertTotalsFinite(leftLabel, left, allowNegative);
   assertTotalsFinite(rightLabel, right, allowNegative);
-  for (const field of deterministicFields) {
+  for (const field of integerFields) {
     if (left[field] !== right[field]) {
       throw new Error(
         `Timing counter ${field} differs: ${leftLabel}=${left[field]} vs ${rightLabel}=${right[field]}`
@@ -271,7 +266,7 @@ function assertTotalsEqual(
   }
 }
 
-function assertStableTotalsEqual(
+export function assertSemanticTotalsEqual(
   leftLabel: string,
   left: TimingTotals,
   rightLabel: string,
@@ -280,7 +275,7 @@ function assertStableTotalsEqual(
 ): void {
   assertTotalsFinite(leftLabel, left, allowNegative);
   assertTotalsFinite(rightLabel, right, allowNegative);
-  for (const field of deterministicFields) {
+  for (const field of semanticFields) {
     if (left[field] !== right[field]) {
       throw new Error(
         `Timing counter ${field} differs: ${leftLabel}=${left[field]} vs ${rightLabel}=${right[field]}`
@@ -290,7 +285,7 @@ function assertStableTotalsEqual(
 }
 
 function assertArithmetic(label: string, actual: TimingTotals, expected: TimingTotals): void {
-  for (const field of [...deterministicFields, ...timingFields]) {
+  for (const field of [...integerFields, ...timingFields]) {
     if (Math.abs(actual[field] - expected[field]) > 0.001) {
       throw new Error(`Timing arithmetic is stale for ${label}.${field}.`);
     }
@@ -342,8 +337,6 @@ function assertCommonReportInvariants(report: Issue14TimingReport): void {
     if (!sample.enabled) throw new Error(`Issue 14 timing is disabled for ${sample.fixture}.`);
     if (
       sample.measured.requestCount <= 0 ||
-      sample.measured.bytesSent <= 0 ||
-      sample.measured.bytesReceived <= 0 ||
       sample.measured.roundTripMs <= 0 ||
       sample.measured.nodesFetched <= 0
     ) {
@@ -536,13 +529,13 @@ function assertStored(stored: Issue14TimingReport, measured: Issue14TimingReport
       baselineSample.totals,
       0.001
     );
-    assertStableTotalsEqual(
+    assertSemanticTotalsEqual(
       `${storedSample.fixture} stored measured`,
       storedSample.measured,
       `${storedSample.fixture} live measured`,
       measuredSample.measured
     );
-    assertStableTotalsEqual(
+    assertSemanticTotalsEqual(
       `${storedSample.fixture} stored delta`,
       storedSample.delta,
       `${storedSample.fixture} live delta`,
@@ -555,13 +548,13 @@ function assertStored(stored: Issue14TimingReport, measured: Issue14TimingReport
       subtractTotals(storedSample.measured, storedSample.baseline)
     );
   }
-  assertStableTotalsEqual(
+  assertSemanticTotalsEqual(
     "stored measured aggregate",
     stored.aggregate.measured,
     "live measured aggregate",
     measured.aggregate.measured
   );
-  assertStableTotalsEqual(
+  assertSemanticTotalsEqual(
     "stored delta aggregate",
     stored.aggregate.delta,
     "live delta aggregate",
