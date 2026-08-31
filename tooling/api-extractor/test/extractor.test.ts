@@ -474,7 +474,10 @@ describe("ProjectExtractor", () => {
   });
 
   it("returns structured warnings without logging automatically", async () => {
-    const warning = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const consoleMethods = ["debug", "error", "info", "log", "warn"] as const;
+    const consoleSpies = consoleMethods.map((method) =>
+      vi.spyOn(console, method).mockImplementation(() => undefined)
+    );
     try {
       const result = await runExtraction(unsupportedPath);
       expect(result.warnings).toHaveLength(1);
@@ -494,9 +497,9 @@ describe("ProjectExtractor", () => {
         type: { kind: "intrinsic", intrinsic: "any" },
       });
       expect(result.warnings[0]?.message).toContain("Using any instead.");
-      expect(warning).not.toHaveBeenCalled();
+      for (const consoleSpy of consoleSpies) expect(consoleSpy).not.toHaveBeenCalled();
     } finally {
-      warning.mockRestore();
+      for (const consoleSpy of consoleSpies) consoleSpy.mockRestore();
     }
   });
 

@@ -118,10 +118,6 @@ export function checkBoundary(): BoundaryCheckResult {
   }
   assertFreshDeclarationOutput({ tsconfigPath, cwd: packageDirectory, declarationDirectory });
   const sourceFilePaths = packageSourceFiles(packageDirectory);
-  const contracts = readFileSync(join(sourceDirectory, "backend", "contracts.ts"), "utf8");
-  if (contracts.includes("extractModule") || /\bresolveModule\s*\?/u.test(contracts)) {
-    throw new Error("The backend contract exposes an optional or resolved-module extraction seam.");
-  }
   const ts7AdapterDirectory = join(sourceDirectory, "backend", "ts7") + "/";
   const sourceViolations = sourceFilePaths.flatMap((path) =>
     path.startsWith(ts7AdapterDirectory) ? [] : sourceBoundaryViolations(path, readFileSync(path, "utf8"))

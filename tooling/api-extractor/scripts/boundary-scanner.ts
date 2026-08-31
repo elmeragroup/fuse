@@ -175,10 +175,24 @@ export function packageSourceFiles(packageDirectory: string): readonly string[] 
 }
 
 export function sourceBoundaryViolations(path: string, source: string): readonly BoundaryViolation[] {
-  return scanCompilerImports(source).map((specifier) => ({
+  const compilerImports = scanCompilerImports(source).map((specifier) => ({
     path,
     reason: `compiler import ${specifier}`,
   }));
+  const sourceIdentity = resolve(path).replace(/\.[cm]?[jt]sx?$/u, "");
+  const parseDirectory = dirname(sourceIdentity);
+  const leafIdentity = sourceIdentity.slice(parseDirectory.length + 1);
+  const importsTopLevelResolver =
+    parseDirectory.replaceAll("\\", "/").endsWith("/src/parse") &&
+    (leafIdentity === "object-resolver" || leafIdentity === "fallback") &&
+    scanModuleSpecifiers(source).some((specifier) => {
+      if (!specifier.startsWith(".")) return false;
+      const targetIdentity = resolve(dirname(path), specifier).replace(/\.[cm]?[jt]sx?$/u, "");
+      return targetIdentity === join(parseDirectory, "resolver");
+    });
+  return importsTopLevelResolver
+    ? [...compilerImports, { path, reason: "parse leaf imports top-level resolver" }]
+    : compilerImports;
 }
 
 function declarationCandidates(filePath: string, specifier: string): readonly string[] {

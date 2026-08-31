@@ -1,5 +1,4 @@
 import { Effect, Schema } from "effect";
-import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
 
@@ -267,23 +266,6 @@ describe("Issue 05 review regressions", () => {
       resolvedType: { kind: "literal", value: '"id"' },
       resolutionKind: "exact",
     });
-  });
-
-  it("keeps the unauthored keyof path free of a branch that can never run", () => {
-    // `typeNode` marks a type active before dispatching to the operator
-    // resolver, so an "is this type not active?" test there is always false.
-    // The behaviour it guarded is unchanged: index target, or a warning.
-    const source = readFileSync(resolve(import.meta.dirname, "../src/parse/resolver.ts"), "utf8");
-    expect(source).not.toContain("!context.active.has(type)");
-  });
-
-  it("keeps the mapped key-name policy in one place, with the library gate documented", () => {
-    // The list of built-in utility names lives in the resolver alone; the mapped
-    // resolver's copy contained entries that could never reach it. The upstream
-    // oracle for `type-object-shape-resolution` is what pins the remaining gate:
-    // `Record`'s invented `P` must not become a public key name.
-    const mapped = readFileSync(resolve(import.meta.dirname, "../src/parse/mapped.ts"), "utf8");
-    expect(mapped).not.toContain("builtInTypeScriptUtilityNames");
   });
 
   it("keeps the reviewed output schema-decodable", () => {

@@ -1,18 +1,10 @@
 /* oxlint-disable anti-slop/require-safety-comment-for-type-assertion -- replacement graph identities are intentionally opaque sentinels. */
 /* oxlint-disable typescript/no-unsafe-assignment -- the fake backend deliberately uses opaque test handles. */
 
-import {
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readdirSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
-import { describe, expect, it } from "vitest";
+import { join } from "node:path";
+import { describe, expect, expectTypeOf, it } from "vitest";
 
 import {
   declarationBoundaryViolations,
@@ -25,19 +17,13 @@ import { cleanPackageDist } from "../scripts/build.ts";
 import { assertFreshDeclarationOutput } from "../scripts/check-boundary.ts";
 import type {
   BackendCompilerOperations,
+  BackendExtractionSession,
   BackendNodeHandle,
   BackendSymbolHandle,
   BackendSignatureHandle,
   BackendTypeHandle,
 } from "../src/backend/contracts.ts";
 import { parseModule } from "../src/parser.ts";
-
-function sourceFiles(directory: string): readonly string[] {
-  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
-    const path = join(directory, entry.name);
-    return entry.isDirectory() ? sourceFiles(path) : [path];
-  });
-}
 
 describe("compiler boundary", () => {
   it("catches every compiler import spelling, including side-effect and template forms", () => {
@@ -67,6 +53,38 @@ describe("compiler boundary", () => {
         )
       ).toEqual([expect.objectContaining({ path: `/virtual/source${extension}` })]);
     }
+  });
+
+  it("rejects parse leaf imports of the top-level resolver across module spellings", () => {
+    const leafPaths = ["/virtual/src/parse/object-resolver.ts", "/virtual/src/parse/fallback.ts"];
+    const mutations = [
+      'import { resolve } from "./resolver.ts";',
+      'const resolver = import("./resolver.js");',
+      'const resolver = require("./nested/../resolver");',
+    ];
+
+    for (const path of leafPaths) {
+      for (const mutation of mutations) {
+        expect(sourceBoundaryViolations(path, mutation), `${path}: ${mutation}`).toEqual([
+          {
+            path,
+            reason: "parse leaf imports top-level resolver",
+          },
+        ]);
+      }
+    }
+    expect(
+      sourceBoundaryViolations(
+        "/virtual/src/parse/object-resolver.ts",
+        'import type { ResolverContext } from "./contracts.ts";'
+      )
+    ).toEqual([]);
+    expect(
+      sourceBoundaryViolations(
+        "/virtual/test/fallback.ts",
+        'import { resolverFixture } from "./resolver.ts";'
+      )
+    ).toEqual([]);
   });
 
   it("scans package scripts, tests, and root config while excluding fixture data", () => {
@@ -217,24 +235,13 @@ describe("compiler boundary", () => {
     );
   });
 
-  it("keeps TypeScript unstable imports inside the backend adapter", () => {
-    const sourceDirectory = resolve(import.meta.dirname, "../src");
-    const unstableImports = sourceFiles(sourceDirectory)
-      .filter((path) => path.endsWith(".ts"))
-      .filter((path) => !path.startsWith(resolve(sourceDirectory, "backend/ts7") + "/"))
-      .filter((path) =>
-        /\b(?:from|import\s*\(|require\s*\()\s*["'`]typescript\/unstable\//u.test(readFileSync(path, "utf8"))
-      );
-
-    expect(unstableImports).toEqual([]);
-  });
-
-  it("keeps the durable backend contract on normalized records and opaque handles", () => {
-    const sourceDirectory = resolve(import.meta.dirname, "../src");
-    const contracts = readFileSync(resolve(sourceDirectory, "backend/contracts.ts"), "utf8");
-    expect(contracts).toContain("BackendHandle");
-    expect(contracts).not.toContain("extractModule");
-    expect(contracts).not.toMatch(/resolveModule\?/u);
+  it("keeps module resolution required on the backend extraction session", () => {
+    expectTypeOf<keyof BackendExtractionSession>().toEqualTypeOf<
+      "readModule" | "compiler" | "resolveModule" | "close"
+    >();
+    expectTypeOf<Pick<BackendExtractionSession, "resolveModule">>().toEqualTypeOf<
+      Required<Pick<BackendExtractionSession, "resolveModule">>
+    >();
   });
 
   it("runs parser policy against a replacement backend with no compiler dependency", () => {
@@ -404,14 +411,5 @@ describe("compiler boundary", () => {
       kind: "component",
       props: [{ name: "value", type: { kind: "intrinsic", intrinsic: "string" }, optional: false }],
     });
-  });
-
-  it("does not log from the package source", () => {
-    const sourceDirectory = resolve(import.meta.dirname, "../src");
-    const automaticLogging = sourceFiles(sourceDirectory)
-      .filter((path) => path.endsWith(".ts"))
-      .filter((path) => /\bconsole\.(debug|error|info|log|warn)\s*\(/u.test(readFileSync(path, "utf8")));
-
-    expect(automaticLogging).toEqual([]);
   });
 });

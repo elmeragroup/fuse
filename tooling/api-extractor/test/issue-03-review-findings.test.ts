@@ -1,7 +1,6 @@
 /* oxlint-disable anti-slop/require-safety-comment-for-type-assertion -- fake backend identities are opaque seam sentinels. */
 
 import { Effect, Layer, Schema } from "effect";
-import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -145,18 +144,5 @@ describe("Issue 03 review regressions", () => {
       }),
     ]);
     expect(Schema.decodeUnknownSync(ExtractionResultSchema)(result)).toEqual(result);
-  });
-
-  it("keeps resolver policy contracts acyclic through a neutral module", () => {
-    const objectResolver = readFileSync(
-      resolve(import.meta.dirname, "../src/parse/object-resolver.ts"),
-      "utf8"
-    );
-    const fallback = readFileSync(resolve(import.meta.dirname, "../src/parse/fallback.ts"), "utf8");
-    expect(objectResolver).not.toContain('from "./resolver.ts"');
-    expect(fallback).not.toContain('from "./resolver.ts"');
-    expect(readFileSync(resolve(import.meta.dirname, "../src/parse/contracts.ts"), "utf8")).toContain(
-      "export type ResolverContext"
-    );
   });
 });
