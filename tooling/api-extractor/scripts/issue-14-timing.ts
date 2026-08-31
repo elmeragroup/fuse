@@ -16,7 +16,7 @@ import {
   assertFixtureOracle,
   fixtureDirectory,
   fixtureInputPath,
-  issue02TimingFixtures,
+  issue14TimingFixtures,
   readTimingReport,
 } from "./fixture-evidence.ts";
 import type { TimingReport } from "./fixture-evidence.ts";
@@ -46,7 +46,7 @@ export const maxAggregateRoundTripMs = 1_000;
  */
 export const wallClockContract = issue14TimingWallClockContract;
 export const wallClockContractRationale = issue14TimingWallClockRationale;
-const expectedFixtureOrder = issue02TimingFixtures.map((definition) => definition.fixture);
+const expectedFixtureOrder = issue14TimingFixtures.map((definition) => definition.fixture);
 const timingFields = ["roundTripMs", "serverTimeMs", "transportOverheadMs"] as const;
 const semanticFields = ["requestCount", "nodesMaterialized", "sourceFilesFetched", "nodesFetched"] as const;
 const transportByteFields = ["bytesSent", "bytesReceived"] as const;
@@ -454,7 +454,7 @@ async function measure(): Promise<Issue14TimingReport> {
   assertBaselineIdentity(baseline);
   const baselineSamples = new Map(baseline.samples.map((sample) => [sample.fixture, sample]));
   const samples: Array<Issue14TimingReport["samples"][number]> = [];
-  for (const definition of issue02TimingFixtures) {
+  for (const definition of issue14TimingFixtures) {
     const baselineSample = baselineSamples.get(definition.fixture);
     if (baselineSample === undefined) {
       throw new Error(`Missing Issue 02 baseline sample: ${definition.fixture}`);

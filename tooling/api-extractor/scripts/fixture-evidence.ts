@@ -15,13 +15,10 @@ import { issue14TypeScript7Compiler } from "./fixture-catalog.ts";
 export const fixtureDirectory = resolve(import.meta.dirname, "../test/fixtures");
 const packageDirectory = resolve(import.meta.dirname, "..");
 
-export * from "./fixture-registry.ts";
 export * from "./fixture-catalog.ts";
-export { issue13ExpectedWarnings, issue13ExternalFixtures } from "./fixture-manifest.ts";
-export type { Issue13Fixture } from "./fixture-manifest.ts";
 
-import { issue02GoNoGoFixtures } from "./fixture-registry.ts";
-import type { Issue02SupplementalFixture, Issue02TimingFixture } from "./fixture-registry.ts";
+import { issue02GoNoGoFixtures } from "./fixture-catalog.ts";
+import type { Issue02SupplementalFixture, Issue02TimingFixture } from "./fixture-catalog.ts";
 
 const TimingTotalsSchema = Schema.Struct({
   requestCount: Schema.Number,

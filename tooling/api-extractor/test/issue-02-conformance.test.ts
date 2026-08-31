@@ -36,6 +36,7 @@ describe("Issue 02 ProjectExtractor conformance", () => {
 
   it("matches the complete reviewed TS7 component oracle and warning oracle", async () => {
     const definition = issue02TimingFixtures[3];
+    if (definition === undefined) throw new Error("Missing reviewed Issue 02 timing fixture.");
     const result = await runExtraction(fixtureInputPath(definition));
     assertFixtureOracle(definition, result);
   });

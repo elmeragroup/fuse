@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { issue14FixtureManifest } from "./fixture-catalog.ts";
+import { issue14FixtureManifest, issue14TypecheckPlan } from "./fixture-catalog.ts";
 import type { Issue14Fixture } from "./fixture-catalog.ts";
 
 const packageDirectory = resolve(import.meta.dirname, "..");
@@ -41,7 +41,9 @@ export type TypecheckResult = {
 export function issue14TypecheckStrategy(
   definition: Issue14Fixture
 ): "direct-input" | "virtual-upstream-dependency" {
-  return definition.fixture === "module-imports-only" ? "virtual-upstream-dependency" : "direct-input";
+  const entry = issue14TypecheckPlan.find((candidate) => candidate.fixture === definition.fixture);
+  if (entry === undefined) throw new Error(`Missing type-check plan for ${definition.fixture}.`);
+  return entry.strategy;
 }
 
 /** The exact package-relative command that the persisted evidence records. */
@@ -94,7 +96,7 @@ function typecheckWithVirtualDependency(definition: Issue14Fixture, inputPath: s
 
 export function typecheckFixture(definition: Issue14Fixture): TypecheckResult {
   const inputPath = join(fixtureDirectory, definition.fixture, definition.file);
-  return definition.fixture === "module-imports-only"
+  return issue14TypecheckStrategy(definition) === "virtual-upstream-dependency"
     ? typecheckWithVirtualDependency(definition, inputPath)
     : runTsc(definition, inputPath, packageDirectory);
 }

@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import {
   assertTs7DivergenceEvidence,
   canonicalDifferencePaths,
+  expectedWarningCodes,
   issue13ExpectedWarnings,
   issue13ExternalFixtures,
   readFixtureOracle,
@@ -209,7 +210,7 @@ describe("Issue 13 ported external-type policy fixtures", () => {
   it("emits exactly the warnings each reviewed record declares", async () => {
     for (const definition of issue13ExternalFixtures) {
       const result = await runExtraction(definition.fixture, definition.file);
-      const expectedCodes = [...issue13ExpectedWarnings[definition.fixture]].sort();
+      const expectedCodes = [...expectedWarningCodes(issue13ExpectedWarnings, definition.fixture)].sort();
       const actualCodes = result.warnings.map((warning) => warning.code).sort();
       expect(actualCodes).toEqual(expectedCodes);
     }

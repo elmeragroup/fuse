@@ -7,6 +7,7 @@ import {
   assertReactDivergenceEvidence,
   assertTs7DivergenceEvidence,
   canonicalDifferencePaths,
+  expectedWarningCodes,
   issue12ExpectedWarnings,
   issue12ReactFixtureAudit,
   issue12ReactFixtures,
@@ -111,7 +112,7 @@ describe("Issue 12 ported wrapped React fixtures", () => {
       );
       expect(normalizeWarnings(result.warnings)).toEqual(expected);
       expect(result.warnings.map((warning) => warning.code)).toEqual(
-        issue12ExpectedWarnings[definition.fixture]
+        expectedWarningCodes(issue12ExpectedWarnings, definition.fixture)
       );
       for (const provenance of result.provenance) {
         expect(() => Schema.decodeUnknownSync(ProvenanceEntrySchema)(provenance)).not.toThrow();
