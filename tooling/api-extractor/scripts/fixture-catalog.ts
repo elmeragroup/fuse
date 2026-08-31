@@ -204,6 +204,7 @@ export const fixtureEvidenceCatalog = [
   }),
   fixture("enum-members-values-and-docs", "input.ts", ["03", "14"], "immutable-upstream", {
     metadata: {
+      issueViews: { "03": { order: 1 } },
       packageTypechecks: [
         { order: 1, project: "test/fixtures/issue-03-tsconfig.json" },
         { order: 2, project: "test/fixtures/issue-03-object-apis/tsconfig.json" },
@@ -246,7 +247,9 @@ export const fixtureEvidenceCatalog = [
   fixture("function-declaration-expression-arrow", "input.ts", ["06", "14"], "immutable-upstream", {
     metadata: { issueViews: { "06": { order: 5, group: "callable" } } },
   }),
-  fixture("function-parameters-optional-and-defaults", "input.ts", ["03", "14"], "immutable-upstream"),
+  fixture("function-parameters-optional-and-defaults", "input.ts", ["03", "14"], "immutable-upstream", {
+    metadata: { issueViews: { "03": { order: 4 } } },
+  }),
   fixture("generic-argument-alias-resolution", "input.ts", ["07", "14"], "immutable-upstream", {
     metadata: {
       issueViews: { "07": { order: 0, group: "alias" } },
@@ -328,7 +331,9 @@ export const fixtureEvidenceCatalog = [
   fixture("jsdoc-comments-and-overloads", "input.tsx", ["06", "14"], "immutable-upstream", {
     metadata: { issueViews: { "06": { order: 6, group: "overload" } } },
   }),
-  fixture("jsdoc-extra-tags-preservation", "input.ts", ["03", "14"], "immutable-upstream"),
+  fixture("jsdoc-extra-tags-preservation", "input.ts", ["03", "14"], "immutable-upstream", {
+    metadata: { issueViews: { "03": { order: 2 } } },
+  }),
   fixture("large-nested-union-any-order", "input.ts", ["04", "14"], "immutable-upstream", {
     metadata: { issueViews: { "04": { order: 2 } } },
   }),
@@ -459,7 +464,9 @@ export const fixtureEvidenceCatalog = [
   fixture("nested-function-union-any-deduplication", "input.ts", ["04", "14"], "immutable-upstream", {
     metadata: { issueViews: { "04": { order: 3 } } },
   }),
-  fixture("object-property-count-limit-scope", "input.tsx", ["03", "14"], "immutable-upstream"),
+  fixture("object-property-count-limit-scope", "input.tsx", ["03", "14"], "immutable-upstream", {
+    metadata: { issueViews: { "03": { order: 3 } } },
+  }),
   fixture("react-component-function-declaration", "input.tsx", ["11", "12", "14"], "immutable-upstream", {
     metadata: {
       issueViews: { "11": { order: 0, group: "declaration" } },
@@ -728,7 +735,9 @@ export const fixtureEvidenceCatalog = [
   fixture("type-never-resolution", "input.ts", ["04", "14"], "immutable-upstream", {
     metadata: { issueViews: { "04": { order: 7 } } },
   }),
-  fixture("type-object-shape-resolution", "input.ts", ["03", "14"], "immutable-upstream"),
+  fixture("type-object-shape-resolution", "input.ts", ["03", "14"], "immutable-upstream", {
+    metadata: { issueViews: { "03": { order: 0 } } },
+  }),
   fixture("type-record-resolution", "input.ts", ["05", "14"], "immutable-upstream", {
     metadata: { issueViews: { "05": { order: 3, group: "record" } } },
   }),
@@ -937,6 +946,11 @@ function requiredGroup(record: IssueViewRecord, issue: FixtureIssue): string {
   if (record.group === undefined) throw new Error(`Issue ${issue} fixture ${record.fixture} needs a group.`);
   return record.group;
 }
+
+export const issue03UpstreamFixtures = deriveOrderedIssueView(fixtureEvidenceCatalog, "03").map(
+  ({ fixture, file }) => ({ fixture, file })
+);
+export type Issue03UpstreamFixture = (typeof issue03UpstreamFixtures)[number];
 
 export const issue04CanonicalizationFixtures = deriveOrderedIssueView(fixtureEvidenceCatalog, "04").map(
   ({ fixture, file, oracle }) => ({ fixture, file, oracle })

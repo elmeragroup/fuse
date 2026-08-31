@@ -7,6 +7,7 @@ import {
   assertReactDivergenceEvidence,
   canonicalDifferencePaths,
   differenceDigest,
+  issue03UpstreamFixtures,
 } from "../scripts/fixture-evidence.ts";
 import { referenceAvailable, upstreamFixtureRoot } from "../scripts/reference.ts";
 import { ModuleNodeSchema, ProjectExtractor } from "../src/index.ts";
@@ -14,13 +15,7 @@ import type { ModuleNode } from "../src/index.ts";
 
 const fixtureRoot = resolve(import.meta.dirname, "fixtures");
 const tsconfigPath = resolve(fixtureRoot, "issue-03-tsconfig.json");
-const fixtures = [
-  ["type-object-shape-resolution", "input.ts"],
-  ["enum-members-values-and-docs", "input.ts"],
-  ["jsdoc-extra-tags-preservation", "input.ts"],
-  ["object-property-count-limit-scope", "input.tsx"],
-  ["function-parameters-optional-and-defaults", "input.ts"],
-] as const;
+const fixtures = issue03UpstreamFixtures.map(({ fixture, file }) => [fixture, file] as const);
 
 function runExtraction(filePath: string) {
   return Effect.runPromise(

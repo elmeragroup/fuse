@@ -10,7 +10,7 @@ import {
   timedProjectExtractorLayer,
 } from "../src/internal/timing.ts";
 import type { TimedExtraction } from "../src/internal/timing.ts";
-import { writeArtifactBatch } from "./artifact-batch-writer.ts";
+import { writeArtifactBatchOrThrow } from "./artifact-batch-command.ts";
 import { checkBoundary } from "./check-boundary.ts";
 import {
   assertFixtureOracle,
@@ -579,21 +579,19 @@ async function main(): Promise<void> {
   const writeReport = process.argv.includes("--write");
   const measured = await measure();
   if (writeReport) {
-    const result = await writeArtifactBatch({
-      outputRoot: fixtureDirectory,
-      artifacts: [
-        {
-          destination: "issue-14-timing.json",
-          content: `${JSON.stringify(measured, null, 2)}\n`,
-          evidence: "generated",
-        },
-      ],
-    });
-    if (result.status === "failure") {
-      throw new Error(
-        `Issue 14 timing artifact write failed (${result.error.category}): ${result.error.message}`
-      );
-    }
+    await writeArtifactBatchOrThrow(
+      {
+        outputRoot: fixtureDirectory,
+        artifacts: [
+          {
+            destination: "issue-14-timing.json",
+            content: `${JSON.stringify(measured, null, 2)}\n`,
+            evidence: "generated",
+          },
+        ],
+      },
+      "Issue 14 timing artifact write"
+    );
     return;
   }
   const stored = decodeReport(

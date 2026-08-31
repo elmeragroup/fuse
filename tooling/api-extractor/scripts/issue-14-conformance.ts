@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 
 import { ExtractWarningSchema, ProjectExtractor } from "../src/index.ts";
 import type { ExtractWarning } from "../src/index.ts";
-import { writeArtifactBatch } from "./artifact-batch-writer.ts";
+import { writeArtifactBatchOrThrow } from "./artifact-batch-command.ts";
 import type { ArtifactBatchItem } from "./artifact-batch-writer.ts";
 import { deriveWarningEvidencePlan, fixtureEvidenceCatalog } from "./fixture-catalog.ts";
 import {
@@ -43,13 +43,7 @@ const upstreamCommit = pinnedUpstream.commit;
 const expectedFixtureCount = 116;
 
 async function writeEvidenceBatch(artifacts: readonly ArtifactBatchItem[]): Promise<void> {
-  const result = await writeArtifactBatch({ outputRoot: fixtureDirectory, artifacts });
-  if (result.status === "failure") {
-    const destination = result.error.destination === undefined ? "" : ` for ${result.error.destination}`;
-    throw new Error(
-      `Issue 14 evidence write failed${destination} (${result.error.category}): ${result.error.message}`
-    );
-  }
+  await writeArtifactBatchOrThrow({ outputRoot: fixtureDirectory, artifacts }, "Issue 14 evidence write");
 }
 
 export { issue14ConformanceCommand } from "./issue-14-contract.ts";

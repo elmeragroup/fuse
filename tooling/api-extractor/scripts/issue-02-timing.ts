@@ -8,7 +8,7 @@ import {
   timedProjectExtractorLayer,
 } from "../src/internal/timing.ts";
 import type { TimedExtraction } from "../src/internal/timing.ts";
-import { writeArtifactBatch } from "./artifact-batch-writer.ts";
+import { writeArtifactBatchOrThrow } from "./artifact-batch-command.ts";
 import { checkBoundary } from "./check-boundary.ts";
 import {
   assertFixtureOracle,
@@ -272,21 +272,19 @@ if (process.versions.node !== "24.13.0") {
 }
 const measured = reportFrom(await collectSamples());
 if (process.argv.includes("--write")) {
-  const result = await writeArtifactBatch({
-    outputRoot: fixtureDirectory,
-    artifacts: [
-      {
-        destination: "issue-02-timing.json",
-        content: `${JSON.stringify(measured, null, 2)}\n`,
-        evidence: "generated",
-      },
-    ],
-  });
-  if (result.status === "failure") {
-    throw new Error(
-      `Issue 02 timing artifact write failed (${result.error.category}): ${result.error.message}`
-    );
-  }
+  await writeArtifactBatchOrThrow(
+    {
+      outputRoot: fixtureDirectory,
+      artifacts: [
+        {
+          destination: "issue-02-timing.json",
+          content: `${JSON.stringify(measured, null, 2)}\n`,
+          evidence: "generated",
+        },
+      ],
+    },
+    "Issue 02 timing artifact write"
+  );
 } else {
   const stored = readTimingReport(reportPath);
   const goNoGo = readGoNoGoArtifact(goNoGoPath);

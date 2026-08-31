@@ -12,6 +12,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
+import { writeArtifactBatchOrThrow } from "../scripts/artifact-batch-command.ts";
 import { makeArtifactBatchWriterForTest, writeArtifactBatch } from "../scripts/artifact-batch-writer.ts";
 
 function transactionEntries(root: string): readonly string[] {
@@ -50,6 +51,77 @@ describe("artifact batch writer", () => {
       expect(readFileSync(join(root, "existing.json"), "utf8")).toBe("new contents\n");
       expect(readFileSync(join(root, "nested/new.json"), "utf8")).toBe('{"status":"pass"}\n');
       expect(transactionEntries(root)).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("reports committed output as successful when final lock cleanup fails", async () => {
+    const root = mkdtempSync(join(tmpdir(), "api-extractor-artifact-lock-cleanup-"));
+    try {
+      writeFileSync(join(root, "report.json"), "original report\n");
+      const writeWithLockCleanupFailure = makeArtifactBatchWriterForTest({
+        runFileSystemOperation: ({ kind, path, run }) => {
+          if (kind === "remove" && path.endsWith(".artifact-batch-lock")) {
+            throw new Error("synthetic lock cleanup failure");
+          }
+          return run();
+        },
+      });
+
+      const result = await writeWithLockCleanupFailure({
+        outputRoot: root,
+        artifacts: [{ destination: "report.json", content: "replacement report\n", evidence: "generated" }],
+      });
+
+      expect(result).toEqual({
+        status: "success",
+        artifacts: [{ destination: "report.json", evidence: "generated" }],
+        cleanup: {
+          temporaryState: "not-removed",
+          message: "The artifact batch was committed, but its lock could not be removed.",
+        },
+      });
+      expect(readFileSync(join(root, "report.json"), "utf8")).toBe("replacement report\n");
+      expect(transactionEntries(root)).toEqual([".artifact-batch-lock"]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("reports uncertain lock cleanup when acquisition times out after mkdir starts", async () => {
+    const root = mkdtempSync(join(tmpdir(), "api-extractor-artifact-lock-timeout-"));
+    try {
+      let lockStalled = false;
+      const writeWithUncertainLock = makeArtifactBatchWriterForTest({
+        maximumDurationMs: 50,
+        runFileSystemOperation: ({ kind, path, run }) => {
+          if (!lockStalled && kind === "make-directory" && path.endsWith(".artifact-batch-lock")) {
+            lockStalled = true;
+            return run().then(() => new Promise<never>(() => undefined));
+          }
+          return run();
+        },
+      });
+
+      const result = await writeWithUncertainLock({
+        outputRoot: root,
+        artifacts: [{ destination: "report.json", content: "report\n", evidence: "generated" }],
+      });
+
+      expect(result).toEqual({
+        status: "failure",
+        error: {
+          category: "interrupted",
+          message: "The artifact batch did not complete within its allowed time.",
+          recovery: {
+            originalState: "restored",
+            temporaryState: "not-removed",
+          },
+        },
+      });
+      expect(existsSync(join(root, "report.json"))).toBe(false);
+      expect(transactionEntries(root)).toEqual([".artifact-batch-lock"]);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
@@ -219,6 +291,35 @@ describe("artifact batch writer", () => {
     }
   });
 
+  it("preserves writer failure details when a command requires throwing", async () => {
+    const root = mkdtempSync(join(tmpdir(), "api-extractor-artifact-command-error-"));
+    try {
+      await expect(
+        writeArtifactBatchOrThrow(
+          {
+            outputRoot: root,
+            artifacts: [
+              {
+                destination: "fixture/output.json",
+                content: "replacement\n",
+                evidence: "immutable-upstream",
+              },
+            ],
+          },
+          "Test evidence write"
+        )
+      ).rejects.toMatchObject({
+        name: "ArtifactBatchCommandError",
+        category: "immutable-oracle",
+        destination: "fixture/output.json",
+        message:
+          "Test evidence write failed for fixture/output.json (immutable-oracle): Immutable upstream evidence cannot be written by the artifact batch writer.",
+      });
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   it("restores mixed evidence after a recoverable rollback fault and cleanup retry", async () => {
     const root = mkdtempSync(join(tmpdir(), "api-extractor-artifact-recovery-"));
     try {
@@ -354,6 +455,136 @@ describe("artifact batch writer", () => {
       });
       expect(readFileSync(join(root, "report.json"), "utf8")).toBe("original report\n");
       expect(transactionEntries(root)).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("bounds a stalled filesystem operation and restores the destination", async () => {
+    const root = mkdtempSync(join(tmpdir(), "api-extractor-artifact-filesystem-timeout-"));
+    try {
+      writeFileSync(join(root, "report.json"), "original report\n");
+      let renameStalled = false;
+      const writeWithStalledRename = makeArtifactBatchWriterForTest({
+        maximumDurationMs: 50,
+        runFileSystemOperation: ({ kind, path, run }) => {
+          if (!renameStalled && kind === "rename" && path.endsWith("report.json")) {
+            renameStalled = true;
+            return new Promise<never>(() => undefined);
+          }
+          return run();
+        },
+      });
+      const startedAt = Date.now();
+
+      const result = await writeWithStalledRename({
+        outputRoot: root,
+        artifacts: [{ destination: "report.json", content: "replacement\n", evidence: "reviewed" }],
+      });
+
+      expect(Date.now() - startedAt).toBeLessThan(1_000);
+      expect(result).toEqual({
+        status: "failure",
+        error: {
+          category: "interrupted",
+          message: "The artifact batch did not complete within its allowed time.",
+          destination: "report.json",
+          recovery: {
+            originalState: "restored",
+            temporaryState: "removed",
+          },
+        },
+      });
+      expect(readFileSync(join(root, "report.json"), "utf8")).toBe("original report\n");
+      expect(transactionEntries(root)).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("does not claim restoration when a timed-out mutation may still complete", async () => {
+    const root = mkdtempSync(join(tmpdir(), "api-extractor-artifact-uncertain-timeout-"));
+    try {
+      writeFileSync(join(root, "report.json"), "original report\n");
+      let renameStalled = false;
+      const writeWithUncertainRename = makeArtifactBatchWriterForTest({
+        maximumDurationMs: 50,
+        runFileSystemOperation: ({ kind, path, run }) => {
+          if (!renameStalled && kind === "rename" && path.endsWith("report.json")) {
+            renameStalled = true;
+            void run();
+            return new Promise<never>(() => undefined);
+          }
+          return run();
+        },
+      });
+
+      const result = await writeWithUncertainRename({
+        outputRoot: root,
+        artifacts: [{ destination: "report.json", content: "replacement\n", evidence: "reviewed" }],
+      });
+
+      expect(result).toEqual({
+        status: "failure",
+        error: {
+          category: "interrupted",
+          message: "The artifact batch did not complete within its allowed time.",
+          destination: "report.json",
+          recovery: {
+            originalState: "not-restored",
+            temporaryState: "not-removed",
+          },
+        },
+      });
+      expect(transactionEntries(root)).toHaveLength(2);
+      expect(transactionEntries(root)).toContain(".artifact-batch-lock");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("does not retry a timed-out rollback mutation or release its recovery lock", async () => {
+    const root = mkdtempSync(join(tmpdir(), "api-extractor-artifact-rollback-timeout-"));
+    try {
+      writeFileSync(join(root, "first.json"), "first original\n");
+      writeFileSync(join(root, "second.json"), "second original\n");
+      let rollbackRemoveStalled = false;
+      const writeWithUncertainRollback = makeArtifactBatchWriterForTest({
+        maximumDurationMs: 50,
+        beforeArtifactWrite: ({ index }) => {
+          if (index === 1) throw new Error("synthetic second write failure");
+        },
+        runFileSystemOperation: ({ kind, path, run }) => {
+          if (!rollbackRemoveStalled && kind === "remove" && path.endsWith("first.json")) {
+            rollbackRemoveStalled = true;
+            return run().then(() => new Promise<never>(() => undefined));
+          }
+          return run();
+        },
+      });
+
+      const result = await writeWithUncertainRollback({
+        outputRoot: root,
+        artifacts: [
+          { destination: "first.json", content: "first replacement\n", evidence: "generated" },
+          { destination: "second.json", content: "second replacement\n", evidence: "reviewed" },
+        ],
+      });
+
+      expect(result).toEqual({
+        status: "failure",
+        error: {
+          category: "interrupted",
+          message: "The artifact batch did not complete within its allowed time.",
+          destination: "first.json",
+          recovery: {
+            originalState: "not-restored",
+            temporaryState: "not-removed",
+          },
+        },
+      });
+      expect(transactionEntries(root)).toHaveLength(2);
+      expect(transactionEntries(root)).toContain(".artifact-batch-lock");
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
