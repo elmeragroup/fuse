@@ -21,6 +21,7 @@
     "test:timing:external-selection": "node scripts/package-selective-external-types-timing.ts --check",
     "report:timing": "node scripts/issue-02-timing.ts --write",
     "report:timing:issue14": "node scripts/issue-14-timing.ts --write",
+    "report:warnings": "node scripts/issue-14-conformance.ts --write-warnings",
     "check:catalog": "node scripts/check-fixture-catalog.ts",
     "check:boundary": "node scripts/check-boundary.ts",
     "test:fixtures": "node scripts/typecheck-fixtures.ts",

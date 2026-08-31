@@ -45,8 +45,8 @@ describe("Issue 11 review findings: component recognition boundaries", () => {
     });
     expect(() => Schema.decodeUnknownSync(ExtractWarningSchema)(uncertain)).not.toThrow();
     const rendered = warningMessage(uncertain);
-    expect(rendered.message).toContain('Could not confirm that "MaybeBadge" is a React component');
-    expect(rendered.message).toContain("kept its resolved type instead of becoming a component");
+    expect(rendered.message).toContain('Could not classify "MaybeBadge" as a React component');
+    expect(rendered.message).toContain("Review the export if it should be a component");
     expect(result.warnings).toHaveLength(1);
   });
 

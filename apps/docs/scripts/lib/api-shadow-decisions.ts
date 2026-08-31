@@ -34,22 +34,22 @@ export const parityDecisions: readonly ParityDecision[] = [
     component: "accordion",
     paths: [
       'docs-adapter|accordion|unsupported-component-shape|Accordion: semantic export kind "intrinsic" has no renderable component parts#1',
-      'effect-extractor|accordion|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ base: string; item: string; header: string; trigger: string; icon: string; content: string; contentInner: string; }" with flag "Object" at "<repo>/packages/ui/src/accordion.ts:1:1". Using any instead. [packages/ui/src/accordion.ts:1:1]#1',
-      'effect-extractor|accordion|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ base: string; item: string; header: string; trigger: string; icon: string; content: string; contentInner: string; }" with flag "Object" at "<repo>/packages/ui/src/accordion.ts:1:1". Using any instead. [packages/ui/src/accordion.ts:1:1]#2',
-      'effect-extractor|accordion|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ base: string; item: string; header: string; trigger: string; icon: string; content: string; contentInner: string; }" with flag "Object" at "<repo>/packages/ui/src/accordion.ts:1:1". Using any instead. [packages/ui/src/accordion.ts:1:1]#3',
-      'effect-extractor|accordion|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ Root: { <Value = unknown>({ className, variant, radius, ...props }: Omit<Props<Value>, "className"> & { className?: string | undefined; } & AccordionVariantProps): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; Item: { ...; }; Header: { ...; }; Trigger: { ...; }; Content: { ......" with flag "Object" at "<repo>/packages/ui/src/components/accordion/accordion.tsx:110:14". Using any instead. [packages/ui/src/components/accordion/accordion.tsx:110:14]#1',
-      'effect-extractor|accordion|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ variant: { default: { item: string; trigger: string; }; card: { base: string; item: string; content: string; icon: string; }; infodropdown: { base: string; trigger: string; icon: string; content: string; }; }; radius: { ...; }; }" with flag "Object" at "<repo>/packages/ui/src/accordion.ts:1:1". Using any instead. [packages/ui/src/accordion.ts:1:1]#1',
-      'effect-extractor|accordion|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ variant: { default: { item: string; trigger: string; }; card: { base: string; item: string; content: string; icon: string; }; infodropdown: { base: string; trigger: string; icon: string; content: string; }; }; radius: { ...; }; }" with flag "Object" at "<repo>/packages/ui/src/accordion.ts:1:1". Using any instead. [packages/ui/src/accordion.ts:1:1]#2',
-      'effect-extractor|accordion|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ variant: { default: { item: string; trigger: string; }; card: { base: string; item: string; content: string; icon: string; }; infodropdown: { base: string; trigger: string; icon: string; content: string; }; }; radius: { ...; }; }" with flag "Object" at "<repo>/packages/ui/src/accordion.ts:1:1". Using any instead. [packages/ui/src/accordion.ts:1:1]#3',
-      'effect-extractor|accordion|unsupported-type-fallback|Type extraction warning: Unable to handle type "{}" with flag "Object" at "<repo>/packages/ui/src/components/accordion/accordion-variants.ts:48:7". Using any instead. [packages/ui/src/components/accordion/accordion-variants.ts:48:7]#1',
-      'effect-extractor|accordion|unsupported-type-fallback|Type extraction warning: Unable to handle type "{}" with flag "Object" at "<repo>/packages/ui/src/components/accordion/accordion-variants.ts:48:7". Using any instead. [packages/ui/src/components/accordion/accordion-variants.ts:48:7]#2',
-      'effect-extractor|accordion|unsupported-type-fallback|Type extraction warning: Unable to handle type "{}" with flag "Object" at "<repo>/packages/ui/src/components/accordion/accordion-variants.ts:48:7". Using any instead. [packages/ui/src/components/accordion/accordion-variants.ts:48:7]#3',
+      'effect-extractor|accordion|unsupported-type-fallback|Could not extract type "{ base: string; item: string; header: string; trigger: string; icon: string; content: string; contentInner: string; }" at "<repo>/packages/ui/src/accordion.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/accordion.ts:1:1]#1',
+      'effect-extractor|accordion|unsupported-type-fallback|Could not extract type "{ base: string; item: string; header: string; trigger: string; icon: string; content: string; contentInner: string; }" at "<repo>/packages/ui/src/accordion.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/accordion.ts:1:1]#2',
+      'effect-extractor|accordion|unsupported-type-fallback|Could not extract type "{ base: string; item: string; header: string; trigger: string; icon: string; content: string; contentInner: string; }" at "<repo>/packages/ui/src/accordion.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/accordion.ts:1:1]#3',
+      'effect-extractor|accordion|unsupported-type-fallback|Could not extract type "{ Root: { <Value = unknown>({ className, variant, radius, ...props }: Omit<Props<Value>, "className"> & { className?: string | undefined; } & AccordionVariantProps): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; Item: { ...; }; Header: { ...; }; Trigger: { ...; }; Content: { ......" at "<repo>/packages/ui/src/components/accordion/accordion.tsx:110:14". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/accordion/accordion.tsx:110:14]#1',
+      'effect-extractor|accordion|unsupported-type-fallback|Could not extract type "{ variant: { default: { item: string; trigger: string; }; card: { base: string; item: string; content: string; icon: string; }; infodropdown: { base: string; trigger: string; icon: string; content: string; }; }; radius: { ...; }; }" at "<repo>/packages/ui/src/accordion.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/accordion.ts:1:1]#1',
+      'effect-extractor|accordion|unsupported-type-fallback|Could not extract type "{ variant: { default: { item: string; trigger: string; }; card: { base: string; item: string; content: string; icon: string; }; infodropdown: { base: string; trigger: string; icon: string; content: string; }; }; radius: { ...; }; }" at "<repo>/packages/ui/src/accordion.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/accordion.ts:1:1]#2',
+      'effect-extractor|accordion|unsupported-type-fallback|Could not extract type "{ variant: { default: { item: string; trigger: string; }; card: { base: string; item: string; content: string; icon: string; }; infodropdown: { base: string; trigger: string; icon: string; content: string; }; }; radius: { ...; }; }" at "<repo>/packages/ui/src/accordion.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/accordion.ts:1:1]#3',
+      'effect-extractor|accordion|unsupported-type-fallback|Could not extract type "{}" at "<repo>/packages/ui/src/components/accordion/accordion-variants.ts:48:7". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/accordion/accordion-variants.ts:48:7]#1',
+      'effect-extractor|accordion|unsupported-type-fallback|Could not extract type "{}" at "<repo>/packages/ui/src/components/accordion/accordion-variants.ts:48:7". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/accordion/accordion-variants.ts:48:7]#2',
+      'effect-extractor|accordion|unsupported-type-fallback|Could not extract type "{}" at "<repo>/packages/ui/src/components/accordion/accordion-variants.ts:48:7". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/accordion/accordion-variants.ts:48:7]#3',
     ],
-    differenceSha256: "ee6703750313ee864a3b389d832d57e4a74bcf5ea975cb721c558a23844da705",
+    differenceSha256: "6742b0b4b271a289c29cbad076af729c6c788534079f08fe6cb4b9d7364c2c7e",
     rationale:
       "The production docs checker reports 0 problems and the Effect/adapter side reports 11 for accordion. The exact diagnostic multiset below is accepted for shadow-only validation and fingerprinted against message drift.",
     evidence:
-      "entry=packages/ui/src/accordion.ts; currentProblems=0; effectProblems=11; exactDifferenceCount=11; differenceSha256=ee6703750313ee864a3b389d832d57e4a74bcf5ea975cb721c558a23844da705.",
+      "entry=packages/ui/src/accordion.ts; currentProblems=0; effectProblems=11; exactDifferenceCount=11; differenceSha256=6742b0b4b271a289c29cbad076af729c6c788534079f08fe6cb4b9d7364c2c7e.",
   },
   {
     id: "issue15-api-alert",
@@ -77,13 +77,13 @@ export const parityDecisions: readonly ParityDecision[] = [
     component: "alert",
     paths: [
       'docs-adapter|alert|unsupported-component-shape|Alert: semantic export kind "intrinsic" has no renderable component parts#1',
-      'effect-extractor|alert|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ Root: { ({ children, className, variant, onAction, actionLabel, ...props }: AlertRootProps): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; Icon: { ({ variant, className, ...props }: AlertIconProps): ReactElement<...>; displayName: string; }; Title: { ...; }; Description: { ......" with flag "Object" at "<repo>/packages/ui/src/components/alert/alert.tsx:137:14". Using any instead. [packages/ui/src/components/alert/alert.tsx:137:14]#1',
+      'effect-extractor|alert|unsupported-type-fallback|Could not extract type "{ Root: { ({ children, className, variant, onAction, actionLabel, ...props }: AlertRootProps): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; Icon: { ({ variant, className, ...props }: AlertIconProps): ReactElement<...>; displayName: string; }; Title: { ...; }; Description: { ......" at "<repo>/packages/ui/src/components/alert/alert.tsx:137:14". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/alert/alert.tsx:137:14]#1',
     ],
-    differenceSha256: "8a4aa578068877ba96bf636f62f1646620ec1b342c66c8c11a05aa9a610cf030",
+    differenceSha256: "3a2b5a8798253ba86e175373f48f8fa4caae8fda48a3029d7e5d59bcff95ae51",
     rationale:
       "The production docs checker reports 0 problems and the Effect/adapter side reports 2 for alert. The exact diagnostic multiset below is accepted for shadow-only validation and fingerprinted against message drift.",
     evidence:
-      "entry=packages/ui/src/alert.ts; currentProblems=0; effectProblems=2; exactDifferenceCount=2; differenceSha256=8a4aa578068877ba96bf636f62f1646620ec1b342c66c8c11a05aa9a610cf030.",
+      "entry=packages/ui/src/alert.ts; currentProblems=0; effectProblems=2; exactDifferenceCount=2; differenceSha256=3a2b5a8798253ba86e175373f48f8fa4caae8fda48a3029d7e5d59bcff95ae51.",
   },
   {
     id: "issue15-api-alert-dialog",
@@ -130,13 +130,13 @@ export const parityDecisions: readonly ParityDecision[] = [
     paths: [
       "docs-adapter|alert-dialog|missing-description|AlertDialog.Content.size: public prop has no JSDoc description (packages/ui/src/components/alert-dialog/alert-dialog.tsx)#1",
       'docs-adapter|alert-dialog|partial-compound-export|AlertDialog: semantic export kind "intrinsic" yielded 1 aliased part(s); unaliased members are not represented#1',
-      'effect-extractor|alert-dialog|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ Root: { (props: Props<unknown>): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; Trigger: { ({ className, ...props }: DialogTriggerProps<unknown> & RefAttributes<...>): ReactElement<...>; displayName: string; }; Content: { ...; }; }" with flag "Object" at "<repo>/packages/ui/src/components/alert-dialog/alert-dialog.tsx:147:14". Using any instead. [packages/ui/src/components/alert-dialog/alert-dialog.tsx:147:14]#1',
+      'effect-extractor|alert-dialog|unsupported-type-fallback|Could not extract type "{ Root: { (props: Props<unknown>): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; Trigger: { ({ className, ...props }: DialogTriggerProps<unknown> & RefAttributes<...>): ReactElement<...>; displayName: string; }; Content: { ...; }; }" at "<repo>/packages/ui/src/components/alert-dialog/alert-dialog.tsx:147:14". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/alert-dialog/alert-dialog.tsx:147:14]#1',
     ],
-    differenceSha256: "3b1355a7f7e13f34449cedab0add6fa6cf1a21364604a2acac02129786c9b359",
+    differenceSha256: "2f10053d8daddb7026b1e887f580722ff5faf4236af29a78f8f68905d93b2bbd",
     rationale:
       "The production docs checker reports 0 problems and the Effect/adapter side reports 3 for alert-dialog. The exact diagnostic multiset below is accepted for shadow-only validation and fingerprinted against message drift.",
     evidence:
-      "entry=packages/ui/src/alert-dialog.ts; currentProblems=0; effectProblems=3; exactDifferenceCount=3; differenceSha256=3b1355a7f7e13f34449cedab0add6fa6cf1a21364604a2acac02129786c9b359.",
+      "entry=packages/ui/src/alert-dialog.ts; currentProblems=0; effectProblems=3; exactDifferenceCount=3; differenceSha256=2f10053d8daddb7026b1e887f580722ff5faf4236af29a78f8f68905d93b2bbd.",
   },
   {
     id: "issue15-api-avatar",
@@ -162,13 +162,13 @@ export const parityDecisions: readonly ParityDecision[] = [
     component: "avatar",
     paths: [
       'docs-adapter|avatar|unsupported-component-shape|Avatar: semantic export kind "intrinsic" has no renderable component parts#1',
-      'effect-extractor|avatar|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ Root: { ({ className, ...props }: Omit<AvatarRootProps, "ref"> & RefAttributes<HTMLSpanElement>): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; Image: { ...; }; Fallback: { ...; }; }" with flag "Object" at "<repo>/packages/ui/src/components/avatar/avatar.tsx:47:14". Using any instead. [packages/ui/src/components/avatar/avatar.tsx:47:14]#1',
+      'effect-extractor|avatar|unsupported-type-fallback|Could not extract type "{ Root: { ({ className, ...props }: Omit<AvatarRootProps, "ref"> & RefAttributes<HTMLSpanElement>): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; Image: { ...; }; Fallback: { ...; }; }" at "<repo>/packages/ui/src/components/avatar/avatar.tsx:47:14". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/avatar/avatar.tsx:47:14]#1',
     ],
-    differenceSha256: "fa0579c4a6ebee443919a1037106711f216fc3617767b5dad23667c8e344441f",
+    differenceSha256: "4d3d0b89a25aff052bf37def9dbcf7768be32ab5eb815a4b9194ed0b3fb0587d",
     rationale:
       "The production docs checker reports 0 problems and the Effect/adapter side reports 2 for avatar. The exact diagnostic multiset below is accepted for shadow-only validation and fingerprinted against message drift.",
     evidence:
-      "entry=packages/ui/src/avatar.ts; currentProblems=0; effectProblems=2; exactDifferenceCount=2; differenceSha256=fa0579c4a6ebee443919a1037106711f216fc3617767b5dad23667c8e344441f.",
+      "entry=packages/ui/src/avatar.ts; currentProblems=0; effectProblems=2; exactDifferenceCount=2; differenceSha256=4d3d0b89a25aff052bf37def9dbcf7768be32ab5eb815a4b9194ed0b3fb0587d.",
   },
   {
     id: "issue15-api-badge",
@@ -195,15 +195,15 @@ export const parityDecisions: readonly ParityDecision[] = [
     kind: "problem",
     component: "badge",
     paths: [
-      'effect-extractor|badge|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ variant: { default: "shadow-xs border-transparent bg-primary text-primary-foreground hover:bg-primary/80"; secondary: "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80"; ... 11 more ...; card: "shadow-xs border-transparent bg-card text-card-foreground hover:bg-card/80"; }; size: { ....." with flag "Object" at "<repo>/packages/ui/src/badge.ts:1:1". Using any instead. [packages/ui/src/badge.ts:1:1]#1',
-      'effect-extractor|badge|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ variant: { default: "shadow-xs border-transparent bg-primary text-primary-foreground hover:bg-primary/80"; secondary: "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80"; ... 11 more ...; card: "shadow-xs border-transparent bg-card text-card-foreground hover:bg-card/80"; }; size: { ....." with flag "Object" at "<repo>/packages/ui/src/badge.ts:1:1". Using any instead. [packages/ui/src/badge.ts:1:1]#2',
-      'effect-extractor|badge|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ variant: { default: "shadow-xs border-transparent bg-primary text-primary-foreground hover:bg-primary/80"; secondary: "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80"; ... 11 more ...; card: "shadow-xs border-transparent bg-card text-card-foreground hover:bg-card/80"; }; size: { ....." with flag "Object" at "<repo>/packages/ui/src/badge.ts:1:1". Using any instead. [packages/ui/src/badge.ts:1:1]#3',
+      'effect-extractor|badge|unsupported-type-fallback|Could not extract type "{ variant: { default: "shadow-xs border-transparent bg-primary text-primary-foreground hover:bg-primary/80"; secondary: "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80"; ... 11 more ...; card: "shadow-xs border-transparent bg-card text-card-foreground hover:bg-card/80"; }; size: { ....." at "<repo>/packages/ui/src/badge.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/badge.ts:1:1]#1',
+      'effect-extractor|badge|unsupported-type-fallback|Could not extract type "{ variant: { default: "shadow-xs border-transparent bg-primary text-primary-foreground hover:bg-primary/80"; secondary: "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80"; ... 11 more ...; card: "shadow-xs border-transparent bg-card text-card-foreground hover:bg-card/80"; }; size: { ....." at "<repo>/packages/ui/src/badge.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/badge.ts:1:1]#2',
+      'effect-extractor|badge|unsupported-type-fallback|Could not extract type "{ variant: { default: "shadow-xs border-transparent bg-primary text-primary-foreground hover:bg-primary/80"; secondary: "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80"; ... 11 more ...; card: "shadow-xs border-transparent bg-card text-card-foreground hover:bg-card/80"; }; size: { ....." at "<repo>/packages/ui/src/badge.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/badge.ts:1:1]#3',
     ],
-    differenceSha256: "e517b1c3e132b25a77c51c7e85dc62de4c8990c882382bab4e0a14cc75af720e",
+    differenceSha256: "439edbbe1102f46fc2ee95ceb5c61132128c164977cec30a80c060f4f0b30446",
     rationale:
       "The production docs checker reports 0 problems and the Effect/adapter side reports 3 for badge. The exact diagnostic multiset below is accepted for shadow-only validation and fingerprinted against message drift.",
     evidence:
-      "entry=packages/ui/src/badge.ts; currentProblems=0; effectProblems=3; exactDifferenceCount=3; differenceSha256=e517b1c3e132b25a77c51c7e85dc62de4c8990c882382bab4e0a14cc75af720e.",
+      "entry=packages/ui/src/badge.ts; currentProblems=0; effectProblems=3; exactDifferenceCount=3; differenceSha256=439edbbe1102f46fc2ee95ceb5c61132128c164977cec30a80c060f4f0b30446.",
   },
   {
     id: "issue15-api-breadcrumb",
@@ -237,13 +237,13 @@ export const parityDecisions: readonly ParityDecision[] = [
     component: "breadcrumb",
     paths: [
       'docs-adapter|breadcrumb|unsupported-component-shape|Breadcrumb: semantic export kind "intrinsic" has no renderable component parts#1',
-      'effect-extractor|breadcrumb|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ Root: { ({ className, label, "aria-label": ariaLabel, ...props }: BreadcrumbRootProps): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; ... 5 more ...; Ellipsis: { ...; }; }" with flag "Object" at "<repo>/packages/ui/src/components/breadcrumb/breadcrumb.tsx:153:14". Using any instead. [packages/ui/src/components/breadcrumb/breadcrumb.tsx:153:14]#1',
+      'effect-extractor|breadcrumb|unsupported-type-fallback|Could not extract type "{ Root: { ({ className, label, "aria-label": ariaLabel, ...props }: BreadcrumbRootProps): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; ... 5 more ...; Ellipsis: { ...; }; }" at "<repo>/packages/ui/src/components/breadcrumb/breadcrumb.tsx:153:14". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/breadcrumb/breadcrumb.tsx:153:14]#1',
     ],
-    differenceSha256: "51605e524cb255c1ea72e22d96452009254ef108a458fde575ea5661f22195a9",
+    differenceSha256: "7b92fc789ec98f28c186b9ed5f8487c484540ceaf7275089d22091dd302d3a75",
     rationale:
       "The production docs checker reports 0 problems and the Effect/adapter side reports 2 for breadcrumb. The exact diagnostic multiset below is accepted for shadow-only validation and fingerprinted against message drift.",
     evidence:
-      "entry=packages/ui/src/breadcrumb.ts; currentProblems=0; effectProblems=2; exactDifferenceCount=2; differenceSha256=51605e524cb255c1ea72e22d96452009254ef108a458fde575ea5661f22195a9.",
+      "entry=packages/ui/src/breadcrumb.ts; currentProblems=0; effectProblems=2; exactDifferenceCount=2; differenceSha256=7b92fc789ec98f28c186b9ed5f8487c484540ceaf7275089d22091dd302d3a75.",
   },
   {
     id: "issue15-api-button",
@@ -280,15 +280,15 @@ export const parityDecisions: readonly ParityDecision[] = [
     component: "button",
     paths: [
       "docs-adapter|button|missing-description|Button.aria-label: public prop has no JSDoc description (packages/ui/src/components/button/button.tsx)#1",
-      'effect-extractor|button|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ variant: { default: "bg-primary text-primary-foreground hover:bg-primary/80"; outline: "shadow-xs border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground"; ... 4 more ...; link: "text-primary underline-offset-4 hover:underline"; }; size: { ...; }; }" with flag "Object" at "<repo>/packages/ui/src/button.ts:1:1". Using any instead. [packages/ui/src/button.ts:1:1]#1',
-      'effect-extractor|button|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ variant: { default: "bg-primary text-primary-foreground hover:bg-primary/80"; outline: "shadow-xs border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground"; ... 4 more ...; link: "text-primary underline-offset-4 hover:underline"; }; size: { ...; }; }" with flag "Object" at "<repo>/packages/ui/src/button.ts:1:1". Using any instead. [packages/ui/src/button.ts:1:1]#2',
-      'effect-extractor|button|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ variant: { default: "bg-primary text-primary-foreground hover:bg-primary/80"; outline: "shadow-xs border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground"; ... 4 more ...; link: "text-primary underline-offset-4 hover:underline"; }; size: { ...; }; }" with flag "Object" at "<repo>/packages/ui/src/button.ts:1:1". Using any instead. [packages/ui/src/button.ts:1:1]#3',
+      'effect-extractor|button|unsupported-type-fallback|Could not extract type "{ variant: { default: "bg-primary text-primary-foreground hover:bg-primary/80"; outline: "shadow-xs border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground"; ... 4 more ...; link: "text-primary underline-offset-4 hover:underline"; }; size: { ...; }; }" at "<repo>/packages/ui/src/button.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/button.ts:1:1]#1',
+      'effect-extractor|button|unsupported-type-fallback|Could not extract type "{ variant: { default: "bg-primary text-primary-foreground hover:bg-primary/80"; outline: "shadow-xs border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground"; ... 4 more ...; link: "text-primary underline-offset-4 hover:underline"; }; size: { ...; }; }" at "<repo>/packages/ui/src/button.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/button.ts:1:1]#2',
+      'effect-extractor|button|unsupported-type-fallback|Could not extract type "{ variant: { default: "bg-primary text-primary-foreground hover:bg-primary/80"; outline: "shadow-xs border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground"; ... 4 more ...; link: "text-primary underline-offset-4 hover:underline"; }; size: { ...; }; }" at "<repo>/packages/ui/src/button.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/button.ts:1:1]#3',
     ],
-    differenceSha256: "349674e967a36949d91b0b3f1ad444736016cf47d0e89d2ff6f46f496e19f44c",
+    differenceSha256: "9274f0c9cea4f006e462d1e777480b71144ccd300f3f87f1e6e96a5b88758d8d",
     rationale:
       "The production docs checker reports 0 problems and the Effect/adapter side reports 4 for button. The exact diagnostic multiset below is accepted for shadow-only validation and fingerprinted against message drift.",
     evidence:
-      "entry=packages/ui/src/button.ts; currentProblems=0; effectProblems=4; exactDifferenceCount=4; differenceSha256=349674e967a36949d91b0b3f1ad444736016cf47d0e89d2ff6f46f496e19f44c.",
+      "entry=packages/ui/src/button.ts; currentProblems=0; effectProblems=4; exactDifferenceCount=4; differenceSha256=9274f0c9cea4f006e462d1e777480b71144ccd300f3f87f1e6e96a5b88758d8d.",
   },
   {
     id: "issue15-api-button-group",
@@ -320,17 +320,17 @@ export const parityDecisions: readonly ParityDecision[] = [
     component: "button-group",
     paths: [
       'docs-adapter|button-group|partial-compound-export|ButtonGroup: semantic export kind "intrinsic" yielded 3 aliased part(s); unaliased members are not represented#1',
-      'effect-extractor|button-group|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ orientation: { horizontal: "*:data-slot:rounded-r-none [&>[data-slot]:not(:has(~[data-slot]))]:rounded-r-md! [&>[data-slot]~[data-slot]]:rounded-l-none [&>[data-slot]~[data-slot]]:border-l-0"; vertical: "flex-col *:data-slot:rounded-b-none [&>[data-slot]:not(:has(~[data-slot]))]:rounded-b-md! [&>[data-slot]~[data-..." with flag "Object" at "<repo>/packages/ui/src/button-group.ts:1:1". Using any instead. [packages/ui/src/button-group.ts:1:1]#1',
-      'effect-extractor|button-group|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ orientation: { horizontal: "*:data-slot:rounded-r-none [&>[data-slot]:not(:has(~[data-slot]))]:rounded-r-md! [&>[data-slot]~[data-slot]]:rounded-l-none [&>[data-slot]~[data-slot]]:border-l-0"; vertical: "flex-col *:data-slot:rounded-b-none [&>[data-slot]:not(:has(~[data-slot]))]:rounded-b-md! [&>[data-slot]~[data-..." with flag "Object" at "<repo>/packages/ui/src/button-group.ts:1:1". Using any instead. [packages/ui/src/button-group.ts:1:1]#2',
-      'effect-extractor|button-group|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ orientation: { horizontal: "*:data-slot:rounded-r-none [&>[data-slot]:not(:has(~[data-slot]))]:rounded-r-md! [&>[data-slot]~[data-slot]]:rounded-l-none [&>[data-slot]~[data-slot]]:border-l-0"; vertical: "flex-col *:data-slot:rounded-b-none [&>[data-slot]:not(:has(~[data-slot]))]:rounded-b-md! [&>[data-slot]~[data-..." with flag "Object" at "<repo>/packages/ui/src/button-group.ts:1:1". Using any instead. [packages/ui/src/button-group.ts:1:1]#3',
-      'effect-extractor|button-group|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ render?: ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined; }" with flag "Object" at "<repo>/packages/ui/src/button-group.ts:1:1". Using any instead. [packages/ui/src/button-group.ts:1:1]#1',
-      'effect-extractor|button-group|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ Root: { ({ className, orientation, ...props }: ButtonGroupRootProps): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; Separator: { ...; }; Text: { ...; }; }" with flag "Object" at "<repo>/packages/ui/src/components/button-group/button-group.tsx:98:14". Using any instead. [packages/ui/src/components/button-group/button-group.tsx:98:14]#1',
+      'effect-extractor|button-group|unsupported-type-fallback|Could not extract type "{ orientation: { horizontal: "*:data-slot:rounded-r-none [&>[data-slot]:not(:has(~[data-slot]))]:rounded-r-md! [&>[data-slot]~[data-slot]]:rounded-l-none [&>[data-slot]~[data-slot]]:border-l-0"; vertical: "flex-col *:data-slot:rounded-b-none [&>[data-slot]:not(:has(~[data-slot]))]:rounded-b-md! [&>[data-slot]~[data-..." at "<repo>/packages/ui/src/button-group.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/button-group.ts:1:1]#1',
+      'effect-extractor|button-group|unsupported-type-fallback|Could not extract type "{ orientation: { horizontal: "*:data-slot:rounded-r-none [&>[data-slot]:not(:has(~[data-slot]))]:rounded-r-md! [&>[data-slot]~[data-slot]]:rounded-l-none [&>[data-slot]~[data-slot]]:border-l-0"; vertical: "flex-col *:data-slot:rounded-b-none [&>[data-slot]:not(:has(~[data-slot]))]:rounded-b-md! [&>[data-slot]~[data-..." at "<repo>/packages/ui/src/button-group.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/button-group.ts:1:1]#2',
+      'effect-extractor|button-group|unsupported-type-fallback|Could not extract type "{ orientation: { horizontal: "*:data-slot:rounded-r-none [&>[data-slot]:not(:has(~[data-slot]))]:rounded-r-md! [&>[data-slot]~[data-slot]]:rounded-l-none [&>[data-slot]~[data-slot]]:border-l-0"; vertical: "flex-col *:data-slot:rounded-b-none [&>[data-slot]:not(:has(~[data-slot]))]:rounded-b-md! [&>[data-slot]~[data-..." at "<repo>/packages/ui/src/button-group.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/button-group.ts:1:1]#3',
+      'effect-extractor|button-group|unsupported-type-fallback|Could not extract type "{ render?: ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined; }" at "<repo>/packages/ui/src/button-group.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/button-group.ts:1:1]#1',
+      'effect-extractor|button-group|unsupported-type-fallback|Could not extract type "{ Root: { ({ className, orientation, ...props }: ButtonGroupRootProps): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; Separator: { ...; }; Text: { ...; }; }" at "<repo>/packages/ui/src/components/button-group/button-group.tsx:98:14". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/button-group/button-group.tsx:98:14]#1',
     ],
-    differenceSha256: "0f58c6219254a1f5b442cc7906f5174a8c4d49a392827c2e5267a7ceb05b8770",
+    differenceSha256: "b084d8aba6fa861b81e8e06f502e4e76564b5ce6201d5b5c994c035c8f1601d4",
     rationale:
       "The production docs checker reports 0 problems and the Effect/adapter side reports 6 for button-group. The exact diagnostic multiset below is accepted for shadow-only validation and fingerprinted against message drift.",
     evidence:
-      "entry=packages/ui/src/button-group.ts; currentProblems=0; effectProblems=6; exactDifferenceCount=6; differenceSha256=0f58c6219254a1f5b442cc7906f5174a8c4d49a392827c2e5267a7ceb05b8770.",
+      "entry=packages/ui/src/button-group.ts; currentProblems=0; effectProblems=6; exactDifferenceCount=6; differenceSha256=b084d8aba6fa861b81e8e06f502e4e76564b5ce6201d5b5c994c035c8f1601d4.",
   },
   {
     id: "issue15-api-calendar",
@@ -383,19 +383,19 @@ export const parityDecisions: readonly ParityDecision[] = [
     component: "card",
     paths: [
       'docs-adapter|card|unsupported-component-shape|Card: semantic export kind "intrinsic" has no renderable component parts#1',
-      'effect-extractor|card|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ base: string; cardHeader: string; cardTag: string; cardTitle: string; cardDescription: string; cardAction: string; cardContent: string; cardFooter: string; }" with flag "Object" at "<repo>/packages/ui/src/card.ts:1:1". Using any instead. [packages/ui/src/card.ts:1:1]#1',
-      'effect-extractor|card|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ base: string; cardHeader: string; cardTag: string; cardTitle: string; cardDescription: string; cardAction: string; cardContent: string; cardFooter: string; }" with flag "Object" at "<repo>/packages/ui/src/card.ts:1:1". Using any instead. [packages/ui/src/card.ts:1:1]#2',
-      'effect-extractor|card|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ base: string; cardHeader: string; cardTag: string; cardTitle: string; cardDescription: string; cardAction: string; cardContent: string; cardFooter: string; }" with flag "Object" at "<repo>/packages/ui/src/card.ts:1:1". Using any instead. [packages/ui/src/card.ts:1:1]#3',
-      'effect-extractor|card|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ direction: { vertical: { base: string; cardHeader: string; cardTitle: string; cardDescription: string; cardContent: string; cardFooter: string; }; horizontal: { base: string; cardHeader: string; cardTitle: string; cardDescription: string; cardContent: string; cardFooter: string; }; }; }" with flag "Object" at "<repo>/packages/ui/src/card.ts:1:1". Using any instead. [packages/ui/src/card.ts:1:1]#1',
-      'effect-extractor|card|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ direction: { vertical: { base: string; cardHeader: string; cardTitle: string; cardDescription: string; cardContent: string; cardFooter: string; }; horizontal: { base: string; cardHeader: string; cardTitle: string; cardDescription: string; cardContent: string; cardFooter: string; }; }; }" with flag "Object" at "<repo>/packages/ui/src/card.ts:1:1". Using any instead. [packages/ui/src/card.ts:1:1]#2',
-      'effect-extractor|card|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ direction: { vertical: { base: string; cardHeader: string; cardTitle: string; cardDescription: string; cardContent: string; cardFooter: string; }; horizontal: { base: string; cardHeader: string; cardTitle: string; cardDescription: string; cardContent: string; cardFooter: string; }; }; }" with flag "Object" at "<repo>/packages/ui/src/card.ts:1:1". Using any instead. [packages/ui/src/card.ts:1:1]#3',
-      'effect-extractor|card|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ Root: { ({ className, direction, ...props }: CardDivProps): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; Header: { ({ className, direction, ...props }: CardDivProps): ReactElement<...>; displayName: string; }; ... 5 more ...; Footer: { ...; }; }" with flag "Object" at "<repo>/packages/ui/src/components/card/card.tsx:153:14". Using any instead. [packages/ui/src/components/card/card.tsx:153:14]#1',
+      'effect-extractor|card|unsupported-type-fallback|Could not extract type "{ base: string; cardHeader: string; cardTag: string; cardTitle: string; cardDescription: string; cardAction: string; cardContent: string; cardFooter: string; }" at "<repo>/packages/ui/src/card.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/card.ts:1:1]#1',
+      'effect-extractor|card|unsupported-type-fallback|Could not extract type "{ base: string; cardHeader: string; cardTag: string; cardTitle: string; cardDescription: string; cardAction: string; cardContent: string; cardFooter: string; }" at "<repo>/packages/ui/src/card.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/card.ts:1:1]#2',
+      'effect-extractor|card|unsupported-type-fallback|Could not extract type "{ base: string; cardHeader: string; cardTag: string; cardTitle: string; cardDescription: string; cardAction: string; cardContent: string; cardFooter: string; }" at "<repo>/packages/ui/src/card.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/card.ts:1:1]#3',
+      'effect-extractor|card|unsupported-type-fallback|Could not extract type "{ direction: { vertical: { base: string; cardHeader: string; cardTitle: string; cardDescription: string; cardContent: string; cardFooter: string; }; horizontal: { base: string; cardHeader: string; cardTitle: string; cardDescription: string; cardContent: string; cardFooter: string; }; }; }" at "<repo>/packages/ui/src/card.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/card.ts:1:1]#1',
+      'effect-extractor|card|unsupported-type-fallback|Could not extract type "{ direction: { vertical: { base: string; cardHeader: string; cardTitle: string; cardDescription: string; cardContent: string; cardFooter: string; }; horizontal: { base: string; cardHeader: string; cardTitle: string; cardDescription: string; cardContent: string; cardFooter: string; }; }; }" at "<repo>/packages/ui/src/card.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/card.ts:1:1]#2',
+      'effect-extractor|card|unsupported-type-fallback|Could not extract type "{ direction: { vertical: { base: string; cardHeader: string; cardTitle: string; cardDescription: string; cardContent: string; cardFooter: string; }; horizontal: { base: string; cardHeader: string; cardTitle: string; cardDescription: string; cardContent: string; cardFooter: string; }; }; }" at "<repo>/packages/ui/src/card.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/card.ts:1:1]#3',
+      'effect-extractor|card|unsupported-type-fallback|Could not extract type "{ Root: { ({ className, direction, ...props }: CardDivProps): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; Header: { ({ className, direction, ...props }: CardDivProps): ReactElement<...>; displayName: string; }; ... 5 more ...; Footer: { ...; }; }" at "<repo>/packages/ui/src/components/card/card.tsx:153:14". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/card/card.tsx:153:14]#1',
     ],
-    differenceSha256: "14e4c3bcef024e496c8e81f8384c84891ac3819f85deb6369c6bd7fd946be376",
+    differenceSha256: "7e1efe6f0c49c0bbb5dc9d8cb1836a74e75f8cb33393485f79e322534b557c89",
     rationale:
       "The production docs checker reports 0 problems and the Effect/adapter side reports 8 for card. The exact diagnostic multiset below is accepted for shadow-only validation and fingerprinted against message drift.",
     evidence:
-      "entry=packages/ui/src/card.ts; currentProblems=0; effectProblems=8; exactDifferenceCount=8; differenceSha256=14e4c3bcef024e496c8e81f8384c84891ac3819f85deb6369c6bd7fd946be376.",
+      "entry=packages/ui/src/card.ts; currentProblems=0; effectProblems=8; exactDifferenceCount=8; differenceSha256=7e1efe6f0c49c0bbb5dc9d8cb1836a74e75f8cb33393485f79e322534b557c89.",
   },
   {
     id: "issue15-api-checkbox",
@@ -597,13 +597,13 @@ export const parityDecisions: readonly ParityDecision[] = [
     component: "collapsible",
     paths: [
       'docs-adapter|collapsible|unsupported-component-shape|Collapsible: semantic export kind "intrinsic" has no renderable component parts#1',
-      'effect-extractor|collapsible|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ Root: { (props: Omit<CollapsibleRootProps, "ref"> & RefAttributes<HTMLDivElement>): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; Trigger: { ...; }; Content: { ...; }; }" with flag "Object" at "<repo>/packages/ui/src/components/collapsible/collapsible.tsx:42:14". Using any instead. [packages/ui/src/components/collapsible/collapsible.tsx:42:14]#1',
+      'effect-extractor|collapsible|unsupported-type-fallback|Could not extract type "{ Root: { (props: Omit<CollapsibleRootProps, "ref"> & RefAttributes<HTMLDivElement>): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; Trigger: { ...; }; Content: { ...; }; }" at "<repo>/packages/ui/src/components/collapsible/collapsible.tsx:42:14". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/collapsible/collapsible.tsx:42:14]#1',
     ],
-    differenceSha256: "351e6db99cbcc9327bff9785c8d3d9578f88faf8dfb4bfd578d1d7fe29511e42",
+    differenceSha256: "a0eb0dad689da7d2ff6b2449fc6ad3ba653a79c0d56d6a487ac104a8991e266d",
     rationale:
       "The production docs checker reports 0 problems and the Effect/adapter side reports 2 for collapsible. The exact diagnostic multiset below is accepted for shadow-only validation and fingerprinted against message drift.",
     evidence:
-      "entry=packages/ui/src/collapsible.ts; currentProblems=0; effectProblems=2; exactDifferenceCount=2; differenceSha256=351e6db99cbcc9327bff9785c8d3d9578f88faf8dfb4bfd578d1d7fe29511e42.",
+      "entry=packages/ui/src/collapsible.ts; currentProblems=0; effectProblems=2; exactDifferenceCount=2; differenceSha256=a0eb0dad689da7d2ff6b2449fc6ad3ba653a79c0d56d6a487ac104a8991e266d.",
   },
   {
     id: "issue15-api-confirm-button",
@@ -675,18 +675,18 @@ export const parityDecisions: readonly ParityDecision[] = [
     kind: "problem",
     component: "date-field",
     paths: [
-      'effect-extractor|date-field|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ defaultClassName: string | undefined; }" with flag "Object" at "<repo>/packages/ui/src/react-aria/date-field.ts:1:1". Using any instead. [packages/ui/src/react-aria/date-field.ts:1:1]#1',
-      'effect-extractor|date-field|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ defaultClassName: string | undefined; }" with flag "Object" at "<repo>/packages/ui/src/react-aria/date-field.ts:1:1". Using any instead. [packages/ui/src/react-aria/date-field.ts:1:1]#2',
-      'effect-extractor|date-field|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ defaultClassName: string | undefined; }" with flag "Object" at "<repo>/packages/ui/src/react-aria/date-field.ts:1:1". Using any instead. [packages/ui/src/react-aria/date-field.ts:1:1]#3',
-      'effect-extractor|date-field|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ defaultClassName: string | undefined; }" with flag "Object" at "<repo>/packages/ui/src/react-aria/date-field.ts:1:1". Using any instead. [packages/ui/src/react-aria/date-field.ts:1:1]#4',
-      'effect-extractor|date-field|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ defaultClassName: string | undefined; }" with flag "Object" at "<repo>/packages/ui/src/react-aria/date-field.ts:1:1". Using any instead. [packages/ui/src/react-aria/date-field.ts:1:1]#5',
-      'effect-extractor|date-field|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ defaultClassName: string | undefined; }" with flag "Object" at "<repo>/packages/ui/src/react-aria/date-field.ts:1:1". Using any instead. [packages/ui/src/react-aria/date-field.ts:1:1]#6',
+      'effect-extractor|date-field|unsupported-type-fallback|Could not extract type "{ defaultClassName: string | undefined; }" at "<repo>/packages/ui/src/react-aria/date-field.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/react-aria/date-field.ts:1:1]#1',
+      'effect-extractor|date-field|unsupported-type-fallback|Could not extract type "{ defaultClassName: string | undefined; }" at "<repo>/packages/ui/src/react-aria/date-field.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/react-aria/date-field.ts:1:1]#2',
+      'effect-extractor|date-field|unsupported-type-fallback|Could not extract type "{ defaultClassName: string | undefined; }" at "<repo>/packages/ui/src/react-aria/date-field.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/react-aria/date-field.ts:1:1]#3',
+      'effect-extractor|date-field|unsupported-type-fallback|Could not extract type "{ defaultClassName: string | undefined; }" at "<repo>/packages/ui/src/react-aria/date-field.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/react-aria/date-field.ts:1:1]#4',
+      'effect-extractor|date-field|unsupported-type-fallback|Could not extract type "{ defaultClassName: string | undefined; }" at "<repo>/packages/ui/src/react-aria/date-field.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/react-aria/date-field.ts:1:1]#5',
+      'effect-extractor|date-field|unsupported-type-fallback|Could not extract type "{ defaultClassName: string | undefined; }" at "<repo>/packages/ui/src/react-aria/date-field.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/react-aria/date-field.ts:1:1]#6',
     ],
-    differenceSha256: "994cfa73cda7e3fc9d3faa99ec2ab8e72b3511757963db7c4e40c4de87bdc57e",
+    differenceSha256: "c05c10c1d709db9a6b00ec690be57e39f73a4fd2fe8d8f959459026f96e6c395",
     rationale:
       "The production docs checker reports 0 problems and the Effect/adapter side reports 6 for date-field. The exact diagnostic multiset below is accepted for shadow-only validation and fingerprinted against message drift.",
     evidence:
-      "entry=packages/ui/src/react-aria/date-field.ts; currentProblems=0; effectProblems=6; exactDifferenceCount=6; differenceSha256=994cfa73cda7e3fc9d3faa99ec2ab8e72b3511757963db7c4e40c4de87bdc57e.",
+      "entry=packages/ui/src/react-aria/date-field.ts; currentProblems=0; effectProblems=6; exactDifferenceCount=6; differenceSha256=c05c10c1d709db9a6b00ec690be57e39f73a4fd2fe8d8f959459026f96e6c395.",
   },
   {
     id: "issue15-api-date-picker",
@@ -776,13 +776,13 @@ export const parityDecisions: readonly ParityDecision[] = [
     component: "description-list",
     paths: [
       'docs-adapter|description-list|partial-compound-export|DescriptionList: semantic export kind "intrinsic" yielded 1 aliased part(s); unaliased members are not represented#1',
-      'effect-extractor|description-list|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ Root: { (props: DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>): ReactElement<unknown, string | JSXElementConstructor<...>>; displayName: string; }; Heading: { ...; }; Content: { ...; }; Term: { ...; }; Details: { ...; }; }" with flag "Object" at "<repo>/packages/ui/src/components/description-list/description-list.tsx:63:14". Using any instead. [packages/ui/src/components/description-list/description-list.tsx:63:14]#1',
+      'effect-extractor|description-list|unsupported-type-fallback|Could not extract type "{ Root: { (props: DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>): ReactElement<unknown, string | JSXElementConstructor<...>>; displayName: string; }; Heading: { ...; }; Content: { ...; }; Term: { ...; }; Details: { ...; }; }" at "<repo>/packages/ui/src/components/description-list/description-list.tsx:63:14". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/description-list/description-list.tsx:63:14]#1',
     ],
-    differenceSha256: "7b41a254365d64d66cc521ee5cc1f0cf17ab9afd23605e8582e970d324c7cee1",
+    differenceSha256: "4887507683bdf8081f086bc72dcb3039f838b22661c1faf3fe03c869de15eb18",
     rationale:
       "The production docs checker reports 0 problems and the Effect/adapter side reports 2 for description-list. The exact diagnostic multiset below is accepted for shadow-only validation and fingerprinted against message drift.",
     evidence:
-      "entry=packages/ui/src/description-list.ts; currentProblems=0; effectProblems=2; exactDifferenceCount=2; differenceSha256=7b41a254365d64d66cc521ee5cc1f0cf17ab9afd23605e8582e970d324c7cee1.",
+      "entry=packages/ui/src/description-list.ts; currentProblems=0; effectProblems=2; exactDifferenceCount=2; differenceSha256=4887507683bdf8081f086bc72dcb3039f838b22661c1faf3fe03c869de15eb18.",
   },
   {
     id: "issue15-api-dialog",
@@ -834,13 +834,13 @@ export const parityDecisions: readonly ParityDecision[] = [
     paths: [
       "docs-adapter|dialog|missing-description|Dialog.Content.size: public prop has no JSDoc description (packages/ui/src/components/dialog/dialog.tsx)#1",
       'docs-adapter|dialog|partial-compound-export|Dialog: semantic export kind "intrinsic" yielded 2 aliased part(s); unaliased members are not represented#1',
-      'effect-extractor|dialog|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ Root: { (props: Props<unknown>): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; Trigger: { ({ className, ...props }: DialogTriggerProps<unknown> & RefAttributes<...>): ReactElement<...>; displayName: string; }; ... 7 more ...; Description: { ...; }; }" with flag "Object" at "<repo>/packages/ui/src/components/dialog/dialog.tsx:203:14". Using any instead. [packages/ui/src/components/dialog/dialog.tsx:203:14]#1',
+      'effect-extractor|dialog|unsupported-type-fallback|Could not extract type "{ Root: { (props: Props<unknown>): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; Trigger: { ({ className, ...props }: DialogTriggerProps<unknown> & RefAttributes<...>): ReactElement<...>; displayName: string; }; ... 7 more ...; Description: { ...; }; }" at "<repo>/packages/ui/src/components/dialog/dialog.tsx:203:14". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/dialog/dialog.tsx:203:14]#1',
     ],
-    differenceSha256: "bb57cb3fe486fe197c4bc7f217efecf0287152f9945de2899755daed8658ed3e",
+    differenceSha256: "b516730033f3e515c2eb58a1e2475bca9db3f047c6e1863ad396569e601407bb",
     rationale:
       "The production docs checker reports 0 problems and the Effect/adapter side reports 3 for dialog. The exact diagnostic multiset below is accepted for shadow-only validation and fingerprinted against message drift.",
     evidence:
-      "entry=packages/ui/src/dialog.ts; currentProblems=0; effectProblems=3; exactDifferenceCount=3; differenceSha256=bb57cb3fe486fe197c4bc7f217efecf0287152f9945de2899755daed8658ed3e.",
+      "entry=packages/ui/src/dialog.ts; currentProblems=0; effectProblems=3; exactDifferenceCount=3; differenceSha256=b516730033f3e515c2eb58a1e2475bca9db3f047c6e1863ad396569e601407bb.",
   },
   {
     id: "issue15-api-dropdown-menu",
@@ -923,13 +923,13 @@ export const parityDecisions: readonly ParityDecision[] = [
     component: "dropdown-menu",
     paths: [
       'docs-adapter|dropdown-menu|partial-compound-export|DropdownMenu: semantic export kind "intrinsic" yielded 7 aliased part(s); unaliased members are not represented#1',
-      'effect-extractor|dropdown-menu|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ Root: { (props: Props<unknown>): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; Trigger: { ({ className, ...props }: MenuTriggerProps<unknown> & RefAttributes<...>): ReactElement<...>; displayName: string; }; ... 13 more ...; SubContent: { ...; }; }" with flag "Object" at "<repo>/packages/ui/src/components/dropdown-menu/dropdown-menu.tsx:398:14". Using any instead. [packages/ui/src/components/dropdown-menu/dropdown-menu.tsx:398:14]#1',
+      'effect-extractor|dropdown-menu|unsupported-type-fallback|Could not extract type "{ Root: { (props: Props<unknown>): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; Trigger: { ({ className, ...props }: MenuTriggerProps<unknown> & RefAttributes<...>): ReactElement<...>; displayName: string; }; ... 13 more ...; SubContent: { ...; }; }" at "<repo>/packages/ui/src/components/dropdown-menu/dropdown-menu.tsx:398:14". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/dropdown-menu/dropdown-menu.tsx:398:14]#1',
     ],
-    differenceSha256: "d58e1defacf4564bb11f51c991e126ae0d7d44a75b75004f83e6c35efa435c00",
+    differenceSha256: "aa877a87646d3570823ad2d35b103723b9a6196b7c4e3f0f4ae9b2a529de5260",
     rationale:
       "The production docs checker reports 0 problems and the Effect/adapter side reports 2 for dropdown-menu. The exact diagnostic multiset below is accepted for shadow-only validation and fingerprinted against message drift.",
     evidence:
-      "entry=packages/ui/src/dropdown-menu.ts; currentProblems=0; effectProblems=2; exactDifferenceCount=2; differenceSha256=d58e1defacf4564bb11f51c991e126ae0d7d44a75b75004f83e6c35efa435c00.",
+      "entry=packages/ui/src/dropdown-menu.ts; currentProblems=0; effectProblems=2; exactDifferenceCount=2; differenceSha256=aa877a87646d3570823ad2d35b103723b9a6196b7c4e3f0f4ae9b2a529de5260.",
   },
   {
     id: "issue15-api-emoji",
@@ -961,13 +961,13 @@ export const parityDecisions: readonly ParityDecision[] = [
     component: "emoji",
     paths: [
       'docs-adapter|emoji|partial-compound-export|Emoji: semantic export kind "intrinsic" yielded 1 aliased part(s); unaliased members are not represented#1',
-      'effect-extractor|emoji|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ SlightlyFrowningFace: { (props: EmojiProps): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; SlightlySmilingFace: { ...; }; NeutralFace: { ...; }; LoudlyCryingFace: { ...; }; PartyingFace: { ...; }; }" with flag "Object" at "<repo>/packages/ui/src/components/emoji/emoji.tsx:158:7". Using any instead. [packages/ui/src/components/emoji/emoji.tsx:158:7]#1',
+      'effect-extractor|emoji|unsupported-type-fallback|Could not extract type "{ SlightlyFrowningFace: { (props: EmojiProps): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; SlightlySmilingFace: { ...; }; NeutralFace: { ...; }; LoudlyCryingFace: { ...; }; PartyingFace: { ...; }; }" at "<repo>/packages/ui/src/components/emoji/emoji.tsx:158:7". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/emoji/emoji.tsx:158:7]#1',
     ],
-    differenceSha256: "b4678efde14fd5f39c62cd9c7f9157839336fccbcb7092cd1ded241d76e4709a",
+    differenceSha256: "d122de8d7bd450f9360c958950f19e386c77b8c8b67f0a1bf1ce50dd3baf8240",
     rationale:
       "The production docs checker reports 0 problems and the Effect/adapter side reports 2 for emoji. The exact diagnostic multiset below is accepted for shadow-only validation and fingerprinted against message drift.",
     evidence:
-      "entry=packages/ui/src/emoji.ts; currentProblems=0; effectProblems=2; exactDifferenceCount=2; differenceSha256=b4678efde14fd5f39c62cd9c7f9157839336fccbcb7092cd1ded241d76e4709a.",
+      "entry=packages/ui/src/emoji.ts; currentProblems=0; effectProblems=2; exactDifferenceCount=2; differenceSha256=d122de8d7bd450f9360c958950f19e386c77b8c8b67f0a1bf1ce50dd3baf8240.",
   },
   {
     id: "issue15-api-empty",
@@ -999,13 +999,13 @@ export const parityDecisions: readonly ParityDecision[] = [
     component: "empty",
     paths: [
       'docs-adapter|empty|unsupported-component-shape|Empty: semantic export kind "intrinsic" has no renderable component parts#1',
-      'effect-extractor|empty|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ Root: { ({ className, variant, ...props }: EmptyRootProps): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; Header: { ({ className, ...props }: DetailedHTMLProps<...>): ReactElement<...>; displayName: string; }; Media: { ...; }; Title: { ...; }; Description: { ...; }; Content: {..." with flag "Object" at "<repo>/packages/ui/src/components/empty/empty.tsx:79:14". Using any instead. [packages/ui/src/components/empty/empty.tsx:79:14]#1',
+      'effect-extractor|empty|unsupported-type-fallback|Could not extract type "{ Root: { ({ className, variant, ...props }: EmptyRootProps): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; Header: { ({ className, ...props }: DetailedHTMLProps<...>): ReactElement<...>; displayName: string; }; Media: { ...; }; Title: { ...; }; Description: { ...; }; Content: {..." at "<repo>/packages/ui/src/components/empty/empty.tsx:79:14". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/empty/empty.tsx:79:14]#1',
     ],
-    differenceSha256: "f0e9bcae97e13df34dc349f7fb91daecfc63542399e00cc7eae4b5eca815dea5",
+    differenceSha256: "cb2b46a6d1f854e9d5fd873653dd238a57d5969631f45696fb19985a00aa9550",
     rationale:
       "The production docs checker reports 0 problems and the Effect/adapter side reports 2 for empty. The exact diagnostic multiset below is accepted for shadow-only validation and fingerprinted against message drift.",
     evidence:
-      "entry=packages/ui/src/empty.ts; currentProblems=0; effectProblems=2; exactDifferenceCount=2; differenceSha256=f0e9bcae97e13df34dc349f7fb91daecfc63542399e00cc7eae4b5eca815dea5.",
+      "entry=packages/ui/src/empty.ts; currentProblems=0; effectProblems=2; exactDifferenceCount=2; differenceSha256=cb2b46a6d1f854e9d5fd873653dd238a57d5969631f45696fb19985a00aa9550.",
   },
   {
     id: "issue15-api-field",
@@ -1049,13 +1049,13 @@ export const parityDecisions: readonly ParityDecision[] = [
     component: "field",
     paths: [
       'docs-adapter|field|unsupported-component-shape|Field: semantic export kind "intrinsic" has no renderable component parts#1',
-      'effect-extractor|field|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ Root: { ({ className, orientation, ...props }: Omit<FieldRootProps, "ref"> & RefAttributes<HTMLDivElement> & VariantProps<TVReturnType<{ orientation: { vertical: "flex-col *:w-full [&>.sr-only]:w-auto"; horizontal: "flex-row items-center has-[>[data-slot=field-content]]:items-start *:data-field-heading:flex-auto h..." with flag "Object" at "<repo>/packages/ui/src/components/field/field.tsx:219:14". Using any instead. [packages/ui/src/components/field/field.tsx:219:14]#1',
+      'effect-extractor|field|unsupported-type-fallback|Could not extract type "{ Root: { ({ className, orientation, ...props }: Omit<FieldRootProps, "ref"> & RefAttributes<HTMLDivElement> & VariantProps<TVReturnType<{ orientation: { vertical: "flex-col *:w-full [&>.sr-only]:w-auto"; horizontal: "flex-row items-center has-[>[data-slot=field-content]]:items-start *:data-field-heading:flex-auto h..." at "<repo>/packages/ui/src/components/field/field.tsx:219:14". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/field/field.tsx:219:14]#1',
     ],
-    differenceSha256: "5c6518d69a9469d16768d304b03350a199287165ed41e1cafa4e1d32bef55313",
+    differenceSha256: "347ae6bd8ef0414f744d332c80e2247f9f617fab86c3cfbef98cea3965fea8de",
     rationale:
       "The production docs checker reports 0 problems and the Effect/adapter side reports 2 for field. The exact diagnostic multiset below is accepted for shadow-only validation and fingerprinted against message drift.",
     evidence:
-      "entry=packages/ui/src/field.ts; currentProblems=0; effectProblems=2; exactDifferenceCount=2; differenceSha256=5c6518d69a9469d16768d304b03350a199287165ed41e1cafa4e1d32bef55313.",
+      "entry=packages/ui/src/field.ts; currentProblems=0; effectProblems=2; exactDifferenceCount=2; differenceSha256=347ae6bd8ef0414f744d332c80e2247f9f617fab86c3cfbef98cea3965fea8de.",
   },
   {
     id: "issue15-api-frame",
@@ -1087,13 +1087,13 @@ export const parityDecisions: readonly ParityDecision[] = [
     component: "frame",
     paths: [
       'docs-adapter|frame|partial-compound-export|Frame: semantic export kind "intrinsic" yielded 1 aliased part(s); unaliased members are not represented#1',
-      'effect-extractor|frame|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ Root: { ({ className, stackedPanels, ...props }: FrameRootProps): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; Panel: { ({ className, ...props }: DetailedHTMLProps<...>): ReactElement<...>; displayName: string; }; Header: { ...; }; Title: { ...; }; Description: { ...; }; Foot..." with flag "Object" at "<repo>/packages/ui/src/components/frame/frame.tsx:84:14". Using any instead. [packages/ui/src/components/frame/frame.tsx:84:14]#1',
+      'effect-extractor|frame|unsupported-type-fallback|Could not extract type "{ Root: { ({ className, stackedPanels, ...props }: FrameRootProps): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; Panel: { ({ className, ...props }: DetailedHTMLProps<...>): ReactElement<...>; displayName: string; }; Header: { ...; }; Title: { ...; }; Description: { ...; }; Foot..." at "<repo>/packages/ui/src/components/frame/frame.tsx:84:14". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/frame/frame.tsx:84:14]#1',
     ],
-    differenceSha256: "c8982dcdf10d8929e5bab162b318384d5e6b3d5f5addc11d8941f62bf383b12a",
+    differenceSha256: "d33dccb29bcddfea40f7f7237d4cba93a14f20f78af221d66b757e0a3dc28c13",
     rationale:
       "The production docs checker reports 0 problems and the Effect/adapter side reports 2 for frame. The exact diagnostic multiset below is accepted for shadow-only validation and fingerprinted against message drift.",
     evidence:
-      "entry=packages/ui/src/frame.ts; currentProblems=0; effectProblems=2; exactDifferenceCount=2; differenceSha256=c8982dcdf10d8929e5bab162b318384d5e6b3d5f5addc11d8941f62bf383b12a.",
+      "entry=packages/ui/src/frame.ts; currentProblems=0; effectProblems=2; exactDifferenceCount=2; differenceSha256=d33dccb29bcddfea40f7f7237d4cba93a14f20f78af221d66b757e0a3dc28c13.",
   },
   {
     id: "issue15-api-heading",
@@ -1142,18 +1142,18 @@ export const parityDecisions: readonly ParityDecision[] = [
     kind: "problem",
     component: "heading",
     paths: [
-      'effect-extractor|heading|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ render?: ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined; }" with flag "Object" at "<repo>/packages/ui/src/heading.ts:1:1". Using any instead. [packages/ui/src/heading.ts:1:1]#1',
-      'effect-extractor|heading|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ render?: ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined; }" with flag "Object" at "<repo>/packages/ui/src/heading.ts:1:1". Using any instead. [packages/ui/src/heading.ts:1:1]#2',
-      'effect-extractor|heading|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ render?: ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined; }" with flag "Object" at "<repo>/packages/ui/src/heading.ts:1:1". Using any instead. [packages/ui/src/heading.ts:1:1]#3',
-      'effect-extractor|heading|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ variant: { readonly default: "text-inherit"; readonly foreground: "text-foreground"; readonly primary: "text-primary"; readonly secondary: "text-secondary"; readonly brand: "text-brand"; readonly muted: "text-muted-foreground"; readonly inherit: "text-inherit"; readonly destructive: "text-error"; }; ... 5 more ......" with flag "Object" at "<repo>/packages/ui/src/heading.ts:1:1". Using any instead. [packages/ui/src/heading.ts:1:1]#1',
-      'effect-extractor|heading|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ variant: { readonly default: "text-inherit"; readonly foreground: "text-foreground"; readonly primary: "text-primary"; readonly secondary: "text-secondary"; readonly brand: "text-brand"; readonly muted: "text-muted-foreground"; readonly inherit: "text-inherit"; readonly destructive: "text-error"; }; ... 5 more ......" with flag "Object" at "<repo>/packages/ui/src/heading.ts:1:1". Using any instead. [packages/ui/src/heading.ts:1:1]#2',
-      'effect-extractor|heading|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ variant: { readonly default: "text-inherit"; readonly foreground: "text-foreground"; readonly primary: "text-primary"; readonly secondary: "text-secondary"; readonly brand: "text-brand"; readonly muted: "text-muted-foreground"; readonly inherit: "text-inherit"; readonly destructive: "text-error"; }; ... 5 more ......" with flag "Object" at "<repo>/packages/ui/src/heading.ts:1:1". Using any instead. [packages/ui/src/heading.ts:1:1]#3',
+      'effect-extractor|heading|unsupported-type-fallback|Could not extract type "{ render?: ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined; }" at "<repo>/packages/ui/src/heading.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/heading.ts:1:1]#1',
+      'effect-extractor|heading|unsupported-type-fallback|Could not extract type "{ render?: ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined; }" at "<repo>/packages/ui/src/heading.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/heading.ts:1:1]#2',
+      'effect-extractor|heading|unsupported-type-fallback|Could not extract type "{ render?: ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined; }" at "<repo>/packages/ui/src/heading.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/heading.ts:1:1]#3',
+      'effect-extractor|heading|unsupported-type-fallback|Could not extract type "{ variant: { readonly default: "text-inherit"; readonly foreground: "text-foreground"; readonly primary: "text-primary"; readonly secondary: "text-secondary"; readonly brand: "text-brand"; readonly muted: "text-muted-foreground"; readonly inherit: "text-inherit"; readonly destructive: "text-error"; }; ... 5 more ......" at "<repo>/packages/ui/src/heading.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/heading.ts:1:1]#1',
+      'effect-extractor|heading|unsupported-type-fallback|Could not extract type "{ variant: { readonly default: "text-inherit"; readonly foreground: "text-foreground"; readonly primary: "text-primary"; readonly secondary: "text-secondary"; readonly brand: "text-brand"; readonly muted: "text-muted-foreground"; readonly inherit: "text-inherit"; readonly destructive: "text-error"; }; ... 5 more ......" at "<repo>/packages/ui/src/heading.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/heading.ts:1:1]#2',
+      'effect-extractor|heading|unsupported-type-fallback|Could not extract type "{ variant: { readonly default: "text-inherit"; readonly foreground: "text-foreground"; readonly primary: "text-primary"; readonly secondary: "text-secondary"; readonly brand: "text-brand"; readonly muted: "text-muted-foreground"; readonly inherit: "text-inherit"; readonly destructive: "text-error"; }; ... 5 more ......" at "<repo>/packages/ui/src/heading.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/heading.ts:1:1]#3',
     ],
-    differenceSha256: "b67eb657d1eb845ddf14407ca0c37f71b11585a808a209a3fa001d92a47a119c",
+    differenceSha256: "af53e00c8b0ffe32d1c19d7b78e70e2c5e6b2436e3be1bd06287fbd3c3d1a68e",
     rationale:
       "The production docs checker reports 0 problems and the Effect/adapter side reports 6 for heading. The exact diagnostic multiset below is accepted for shadow-only validation and fingerprinted against message drift.",
     evidence:
-      "entry=packages/ui/src/heading.ts; currentProblems=0; effectProblems=6; exactDifferenceCount=6; differenceSha256=b67eb657d1eb845ddf14407ca0c37f71b11585a808a209a3fa001d92a47a119c.",
+      "entry=packages/ui/src/heading.ts; currentProblems=0; effectProblems=6; exactDifferenceCount=6; differenceSha256=af53e00c8b0ffe32d1c19d7b78e70e2c5e6b2436e3be1bd06287fbd3c3d1a68e.",
   },
   {
     id: "issue15-api-input",
@@ -1217,13 +1217,13 @@ export const parityDecisions: readonly ParityDecision[] = [
     component: "input-group",
     paths: [
       'docs-adapter|input-group|partial-compound-export|InputGroup: semantic export kind "intrinsic" yielded 2 aliased part(s); unaliased members are not represented#1',
-      'effect-extractor|input-group|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ Root: { ({ className, ...props }: DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; ... 4 more ...; Textarea: { ...; }; }" with flag "Object" at "<repo>/packages/ui/src/components/input-group/input-group.tsx:150:14". Using any instead. [packages/ui/src/components/input-group/input-group.tsx:150:14]#1',
+      'effect-extractor|input-group|unsupported-type-fallback|Could not extract type "{ Root: { ({ className, ...props }: DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; ... 4 more ...; Textarea: { ...; }; }" at "<repo>/packages/ui/src/components/input-group/input-group.tsx:150:14". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/input-group/input-group.tsx:150:14]#1',
     ],
-    differenceSha256: "cc6e42abcc009fd2198ba261812a4c4d3976181d1bcd22d540c5a3621df8de65",
+    differenceSha256: "b601a2e0d9f30d7caec57e893c22b660842c4be2d2ac16f910c40649503bb3c6",
     rationale:
       "The production docs checker reports 0 problems and the Effect/adapter side reports 2 for input-group. The exact diagnostic multiset below is accepted for shadow-only validation and fingerprinted against message drift.",
     evidence:
-      "entry=packages/ui/src/input-group.ts; currentProblems=0; effectProblems=2; exactDifferenceCount=2; differenceSha256=cc6e42abcc009fd2198ba261812a4c4d3976181d1bcd22d540c5a3621df8de65.",
+      "entry=packages/ui/src/input-group.ts; currentProblems=0; effectProblems=2; exactDifferenceCount=2; differenceSha256=b601a2e0d9f30d7caec57e893c22b660842c4be2d2ac16f910c40649503bb3c6.",
   },
   {
     id: "issue15-api-item",
@@ -1263,16 +1263,16 @@ export const parityDecisions: readonly ParityDecision[] = [
     component: "item",
     paths: [
       'docs-adapter|item|unsupported-component-shape|Item: semantic export kind "intrinsic" has no renderable component parts#1',
-      'effect-extractor|item|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ Root: { ({ className, variant, size, render, ...props }: ClassAttributes<HTMLDivElement> & HTMLAttributes<HTMLDivElement> & { render?: ComponentRenderFn<HTMLProps, {}> | ReactElement<...> | undefined; } & VariantProps<...>): ReactElement<...>; displayName: string; }; ... 8 more ...; Footer: { ...; }; }" with flag "Object" at "<repo>/packages/ui/src/components/item/item.tsx:203:14". Using any instead. [packages/ui/src/components/item/item.tsx:203:14]#1',
-      'effect-extractor|item|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ variant: { default: "border-transparent"; outline: "border-border"; muted: "border-transparent bg-muted/50"; }; size: { default: "gap-3.5 px-4 py-3.5"; sm: "gap-2.5 px-3 py-2.5"; xs: "gap-2 px-2.5 py-2 in-data-[slot=dropdown-menu-content]:p-0"; }; }" with flag "Object" at "<repo>/packages/ui/src/item.ts:1:1". Using any instead. [packages/ui/src/item.ts:1:1]#1',
-      'effect-extractor|item|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ variant: { default: "border-transparent"; outline: "border-border"; muted: "border-transparent bg-muted/50"; }; size: { default: "gap-3.5 px-4 py-3.5"; sm: "gap-2.5 px-3 py-2.5"; xs: "gap-2 px-2.5 py-2 in-data-[slot=dropdown-menu-content]:p-0"; }; }" with flag "Object" at "<repo>/packages/ui/src/item.ts:1:1". Using any instead. [packages/ui/src/item.ts:1:1]#2',
-      'effect-extractor|item|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ variant: { default: "border-transparent"; outline: "border-border"; muted: "border-transparent bg-muted/50"; }; size: { default: "gap-3.5 px-4 py-3.5"; sm: "gap-2.5 px-3 py-2.5"; xs: "gap-2 px-2.5 py-2 in-data-[slot=dropdown-menu-content]:p-0"; }; }" with flag "Object" at "<repo>/packages/ui/src/item.ts:1:1". Using any instead. [packages/ui/src/item.ts:1:1]#3',
+      'effect-extractor|item|unsupported-type-fallback|Could not extract type "{ Root: { ({ className, variant, size, render, ...props }: ClassAttributes<HTMLDivElement> & HTMLAttributes<HTMLDivElement> & { render?: ComponentRenderFn<HTMLProps, {}> | ReactElement<...> | undefined; } & VariantProps<...>): ReactElement<...>; displayName: string; }; ... 8 more ...; Footer: { ...; }; }" at "<repo>/packages/ui/src/components/item/item.tsx:203:14". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/item/item.tsx:203:14]#1',
+      'effect-extractor|item|unsupported-type-fallback|Could not extract type "{ variant: { default: "border-transparent"; outline: "border-border"; muted: "border-transparent bg-muted/50"; }; size: { default: "gap-3.5 px-4 py-3.5"; sm: "gap-2.5 px-3 py-2.5"; xs: "gap-2 px-2.5 py-2 in-data-[slot=dropdown-menu-content]:p-0"; }; }" at "<repo>/packages/ui/src/item.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/item.ts:1:1]#1',
+      'effect-extractor|item|unsupported-type-fallback|Could not extract type "{ variant: { default: "border-transparent"; outline: "border-border"; muted: "border-transparent bg-muted/50"; }; size: { default: "gap-3.5 px-4 py-3.5"; sm: "gap-2.5 px-3 py-2.5"; xs: "gap-2 px-2.5 py-2 in-data-[slot=dropdown-menu-content]:p-0"; }; }" at "<repo>/packages/ui/src/item.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/item.ts:1:1]#2',
+      'effect-extractor|item|unsupported-type-fallback|Could not extract type "{ variant: { default: "border-transparent"; outline: "border-border"; muted: "border-transparent bg-muted/50"; }; size: { default: "gap-3.5 px-4 py-3.5"; sm: "gap-2.5 px-3 py-2.5"; xs: "gap-2 px-2.5 py-2 in-data-[slot=dropdown-menu-content]:p-0"; }; }" at "<repo>/packages/ui/src/item.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/item.ts:1:1]#3',
     ],
-    differenceSha256: "e038ad40cb150bc2d7f470594ad2fda3b3f6f4e3b9936be70371375d1d094211",
+    differenceSha256: "fd0b5f70edddde0a4f68182d91a8fedb930f92e4e457bd5aaea8c32164e582d2",
     rationale:
       "The production docs checker reports 0 problems and the Effect/adapter side reports 5 for item. The exact diagnostic multiset below is accepted for shadow-only validation and fingerprinted against message drift.",
     evidence:
-      "entry=packages/ui/src/item.ts; currentProblems=0; effectProblems=5; exactDifferenceCount=5; differenceSha256=e038ad40cb150bc2d7f470594ad2fda3b3f6f4e3b9936be70371375d1d094211.",
+      "entry=packages/ui/src/item.ts; currentProblems=0; effectProblems=5; exactDifferenceCount=5; differenceSha256=fd0b5f70edddde0a4f68182d91a8fedb930f92e4e457bd5aaea8c32164e582d2.",
   },
   {
     id: "issue15-api-link",
@@ -1353,18 +1353,18 @@ export const parityDecisions: readonly ParityDecision[] = [
     kind: "problem",
     component: "loader",
     paths: [
-      'effect-extractor|loader|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ base: string; icon: string; }" with flag "Object" at "<repo>/packages/ui/src/loader.ts:1:1". Using any instead. [packages/ui/src/loader.ts:1:1]#1',
-      'effect-extractor|loader|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ base: string; icon: string; }" with flag "Object" at "<repo>/packages/ui/src/loader.ts:1:1". Using any instead. [packages/ui/src/loader.ts:1:1]#2',
-      'effect-extractor|loader|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ base: string; icon: string; }" with flag "Object" at "<repo>/packages/ui/src/loader.ts:1:1". Using any instead. [packages/ui/src/loader.ts:1:1]#3',
-      'effect-extractor|loader|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ variant: { default: { base: string; }; }; size: { default: { icon: string; }; small: { icon: string; }; medium: { icon: string; }; large: { icon: string; }; xl: { icon: string; }; }; }" with flag "Object" at "<repo>/packages/ui/src/loader.ts:1:1". Using any instead. [packages/ui/src/loader.ts:1:1]#1',
-      'effect-extractor|loader|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ variant: { default: { base: string; }; }; size: { default: { icon: string; }; small: { icon: string; }; medium: { icon: string; }; large: { icon: string; }; xl: { icon: string; }; }; }" with flag "Object" at "<repo>/packages/ui/src/loader.ts:1:1". Using any instead. [packages/ui/src/loader.ts:1:1]#2',
-      'effect-extractor|loader|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ variant: { default: { base: string; }; }; size: { default: { icon: string; }; small: { icon: string; }; medium: { icon: string; }; large: { icon: string; }; xl: { icon: string; }; }; }" with flag "Object" at "<repo>/packages/ui/src/loader.ts:1:1". Using any instead. [packages/ui/src/loader.ts:1:1]#3',
+      'effect-extractor|loader|unsupported-type-fallback|Could not extract type "{ base: string; icon: string; }" at "<repo>/packages/ui/src/loader.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/loader.ts:1:1]#1',
+      'effect-extractor|loader|unsupported-type-fallback|Could not extract type "{ base: string; icon: string; }" at "<repo>/packages/ui/src/loader.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/loader.ts:1:1]#2',
+      'effect-extractor|loader|unsupported-type-fallback|Could not extract type "{ base: string; icon: string; }" at "<repo>/packages/ui/src/loader.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/loader.ts:1:1]#3',
+      'effect-extractor|loader|unsupported-type-fallback|Could not extract type "{ variant: { default: { base: string; }; }; size: { default: { icon: string; }; small: { icon: string; }; medium: { icon: string; }; large: { icon: string; }; xl: { icon: string; }; }; }" at "<repo>/packages/ui/src/loader.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/loader.ts:1:1]#1',
+      'effect-extractor|loader|unsupported-type-fallback|Could not extract type "{ variant: { default: { base: string; }; }; size: { default: { icon: string; }; small: { icon: string; }; medium: { icon: string; }; large: { icon: string; }; xl: { icon: string; }; }; }" at "<repo>/packages/ui/src/loader.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/loader.ts:1:1]#2',
+      'effect-extractor|loader|unsupported-type-fallback|Could not extract type "{ variant: { default: { base: string; }; }; size: { default: { icon: string; }; small: { icon: string; }; medium: { icon: string; }; large: { icon: string; }; xl: { icon: string; }; }; }" at "<repo>/packages/ui/src/loader.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/loader.ts:1:1]#3',
     ],
-    differenceSha256: "d66a12f628c1c9972b4da257b631bbaf140145b6ce0659a19485e9af7cd2b6fe",
+    differenceSha256: "a09d6516809ea33476cb7497ed599d2f94189668c836fe50ef45e2f39f865f6e",
     rationale:
       "The production docs checker reports 0 problems and the Effect/adapter side reports 6 for loader. The exact diagnostic multiset below is accepted for shadow-only validation and fingerprinted against message drift.",
     evidence:
-      "entry=packages/ui/src/loader.ts; currentProblems=0; effectProblems=6; exactDifferenceCount=6; differenceSha256=d66a12f628c1c9972b4da257b631bbaf140145b6ce0659a19485e9af7cd2b6fe.",
+      "entry=packages/ui/src/loader.ts; currentProblems=0; effectProblems=6; exactDifferenceCount=6; differenceSha256=a09d6516809ea33476cb7497ed599d2f94189668c836fe50ef45e2f39f865f6e.",
   },
   {
     id: "issue15-api-meter",
@@ -1397,13 +1397,13 @@ export const parityDecisions: readonly ParityDecision[] = [
     kind: "problem",
     component: "meter",
     paths: [
-      'effect-extractor|meter|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ readonly MODES: { readonly DEFAULT: "default"; readonly INVERTED: "inverted"; readonly SUCCESS_ONLY_WHEN_FULL: "success-only-when-full"; readonly NEUTRAL: "neutral"; }; readonly LEVELS: { readonly LOW: "LOW"; readonly MEDIUM: "MEDIUM"; readonly FULL: "FULL"; readonly EXCEEDED_MAX_VALUE: "EXCEEDED_MAX_VALUE"; }; }" with flag "Object" at "<repo>/packages/ui/src/components/meter/meter-constants.ts:1:7". Using any instead. [packages/ui/src/components/meter/meter-constants.ts:1:7]#1',
+      'effect-extractor|meter|unsupported-type-fallback|Could not extract type "{ readonly MODES: { readonly DEFAULT: "default"; readonly INVERTED: "inverted"; readonly SUCCESS_ONLY_WHEN_FULL: "success-only-when-full"; readonly NEUTRAL: "neutral"; }; readonly LEVELS: { readonly LOW: "LOW"; readonly MEDIUM: "MEDIUM"; readonly FULL: "FULL"; readonly EXCEEDED_MAX_VALUE: "EXCEEDED_MAX_VALUE"; }; }" at "<repo>/packages/ui/src/components/meter/meter-constants.ts:1:7". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/meter/meter-constants.ts:1:7]#1',
     ],
-    differenceSha256: "539f1d6ef4a9f56312980cc534207f684614d4a3e66723cd4ffbbf4b881e643c",
+    differenceSha256: "a70fe993af326f6666db2bb6ff3833b6f517e1db8c6799132d847d5905c9560f",
     rationale:
       "The production docs checker reports 0 problems and the Effect/adapter side reports 1 for meter. The exact diagnostic multiset below is accepted for shadow-only validation and fingerprinted against message drift.",
     evidence:
-      "entry=packages/ui/src/meter.ts; currentProblems=0; effectProblems=1; exactDifferenceCount=1; differenceSha256=539f1d6ef4a9f56312980cc534207f684614d4a3e66723cd4ffbbf4b881e643c.",
+      "entry=packages/ui/src/meter.ts; currentProblems=0; effectProblems=1; exactDifferenceCount=1; differenceSha256=a70fe993af326f6666db2bb6ff3833b6f517e1db8c6799132d847d5905c9560f.",
   },
   {
     id: "issue15-api-number-field",
@@ -1473,19 +1473,19 @@ export const parityDecisions: readonly ParityDecision[] = [
     component: "pagination",
     paths: [
       'docs-adapter|pagination|unsupported-component-shape|Pagination: semantic export kind "intrinsic" has no renderable component parts#1',
-      'effect-extractor|pagination|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ base: string; content: string; link: string; linkIcon: string; ellipsis: string; ellipsisIcon: string; }" with flag "Object" at "<repo>/packages/ui/src/pagination.ts:1:1". Using any instead. [packages/ui/src/pagination.ts:1:1]#1',
-      'effect-extractor|pagination|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ base: string; content: string; link: string; linkIcon: string; ellipsis: string; ellipsisIcon: string; }" with flag "Object" at "<repo>/packages/ui/src/pagination.ts:1:1". Using any instead. [packages/ui/src/pagination.ts:1:1]#2',
-      'effect-extractor|pagination|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ base: string; content: string; link: string; linkIcon: string; ellipsis: string; ellipsisIcon: string; }" with flag "Object" at "<repo>/packages/ui/src/pagination.ts:1:1". Using any instead. [packages/ui/src/pagination.ts:1:1]#3',
-      'effect-extractor|pagination|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ direction: { previous: { link: string; }; next: { link: string; }; }; }" with flag "Object" at "<repo>/packages/ui/src/pagination.ts:1:1". Using any instead. [packages/ui/src/pagination.ts:1:1]#1',
-      'effect-extractor|pagination|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ direction: { previous: { link: string; }; next: { link: string; }; }; }" with flag "Object" at "<repo>/packages/ui/src/pagination.ts:1:1". Using any instead. [packages/ui/src/pagination.ts:1:1]#2',
-      'effect-extractor|pagination|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ direction: { previous: { link: string; }; next: { link: string; }; }; }" with flag "Object" at "<repo>/packages/ui/src/pagination.ts:1:1". Using any instead. [packages/ui/src/pagination.ts:1:1]#3',
-      'effect-extractor|pagination|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ Root: { ({ className, label, "aria-label": ariaLabel, ...props }: PaginationRootProps): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; ... 5 more ...; Ellipsis: { ...; }; }" with flag "Object" at "<repo>/packages/ui/src/components/pagination/pagination.tsx:219:14". Using any instead. [packages/ui/src/components/pagination/pagination.tsx:219:14]#1',
+      'effect-extractor|pagination|unsupported-type-fallback|Could not extract type "{ base: string; content: string; link: string; linkIcon: string; ellipsis: string; ellipsisIcon: string; }" at "<repo>/packages/ui/src/pagination.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/pagination.ts:1:1]#1',
+      'effect-extractor|pagination|unsupported-type-fallback|Could not extract type "{ base: string; content: string; link: string; linkIcon: string; ellipsis: string; ellipsisIcon: string; }" at "<repo>/packages/ui/src/pagination.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/pagination.ts:1:1]#2',
+      'effect-extractor|pagination|unsupported-type-fallback|Could not extract type "{ base: string; content: string; link: string; linkIcon: string; ellipsis: string; ellipsisIcon: string; }" at "<repo>/packages/ui/src/pagination.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/pagination.ts:1:1]#3',
+      'effect-extractor|pagination|unsupported-type-fallback|Could not extract type "{ direction: { previous: { link: string; }; next: { link: string; }; }; }" at "<repo>/packages/ui/src/pagination.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/pagination.ts:1:1]#1',
+      'effect-extractor|pagination|unsupported-type-fallback|Could not extract type "{ direction: { previous: { link: string; }; next: { link: string; }; }; }" at "<repo>/packages/ui/src/pagination.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/pagination.ts:1:1]#2',
+      'effect-extractor|pagination|unsupported-type-fallback|Could not extract type "{ direction: { previous: { link: string; }; next: { link: string; }; }; }" at "<repo>/packages/ui/src/pagination.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/pagination.ts:1:1]#3',
+      'effect-extractor|pagination|unsupported-type-fallback|Could not extract type "{ Root: { ({ className, label, "aria-label": ariaLabel, ...props }: PaginationRootProps): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; ... 5 more ...; Ellipsis: { ...; }; }" at "<repo>/packages/ui/src/components/pagination/pagination.tsx:219:14". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/pagination/pagination.tsx:219:14]#1',
     ],
-    differenceSha256: "9f5b6c6253c696550011c645400cfe688111449fc4d871a594542aa04b713f2a",
+    differenceSha256: "25737bff323c1d2076c2763dd1bc1cdde76f0e8ec242457ec991e737e8965394",
     rationale:
       "The production docs checker reports 0 problems and the Effect/adapter side reports 8 for pagination. The exact diagnostic multiset below is accepted for shadow-only validation and fingerprinted against message drift.",
     evidence:
-      "entry=packages/ui/src/pagination.ts; currentProblems=0; effectProblems=8; exactDifferenceCount=8; differenceSha256=9f5b6c6253c696550011c645400cfe688111449fc4d871a594542aa04b713f2a.",
+      "entry=packages/ui/src/pagination.ts; currentProblems=0; effectProblems=8; exactDifferenceCount=8; differenceSha256=25737bff323c1d2076c2763dd1bc1cdde76f0e8ec242457ec991e737e8965394.",
   },
   {
     id: "issue15-api-popover",
@@ -1526,13 +1526,13 @@ export const parityDecisions: readonly ParityDecision[] = [
     component: "popover",
     paths: [
       'docs-adapter|popover|partial-compound-export|Popover: semantic export kind "intrinsic" yielded 1 aliased part(s); unaliased members are not represented#1',
-      'effect-extractor|popover|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ Root: { (props: Props<unknown>): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; Trigger: { ({ className, ...props }: NativeButtonProps & Omit<...> & { ...; } & { ...; } & RefAttributes<...>): ReactElement<...>; displayName: string; }; Content: { ...; }; Header: { ...; }; Title:..." with flag "Object" at "<repo>/packages/ui/src/components/popover/popover.tsx:145:14". Using any instead. [packages/ui/src/components/popover/popover.tsx:145:14]#1',
+      'effect-extractor|popover|unsupported-type-fallback|Could not extract type "{ Root: { (props: Props<unknown>): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; Trigger: { ({ className, ...props }: NativeButtonProps & Omit<...> & { ...; } & { ...; } & RefAttributes<...>): ReactElement<...>; displayName: string; }; Content: { ...; }; Header: { ...; }; Title:..." at "<repo>/packages/ui/src/components/popover/popover.tsx:145:14". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/popover/popover.tsx:145:14]#1',
     ],
-    differenceSha256: "603e7c4aee899d481d92636f99fdf573b55dcf856606091d428468a3ec16e246",
+    differenceSha256: "858986c2c3383bbcd1801c004f42cdb8d890ee6fd9c12f1dab392583abf758bd",
     rationale:
       "The production docs checker reports 0 problems and the Effect/adapter side reports 2 for popover. The exact diagnostic multiset below is accepted for shadow-only validation and fingerprinted against message drift.",
     evidence:
-      "entry=packages/ui/src/popover.ts; currentProblems=0; effectProblems=2; exactDifferenceCount=2; differenceSha256=603e7c4aee899d481d92636f99fdf573b55dcf856606091d428468a3ec16e246.",
+      "entry=packages/ui/src/popover.ts; currentProblems=0; effectProblems=2; exactDifferenceCount=2; differenceSha256=858986c2c3383bbcd1801c004f42cdb8d890ee6fd9c12f1dab392583abf758bd.",
   },
   {
     id: "issue15-api-radio-group",
@@ -1695,13 +1695,13 @@ export const parityDecisions: readonly ParityDecision[] = [
     component: "scroll-area",
     paths: [
       'docs-adapter|scroll-area|unsupported-component-shape|ScrollArea: semantic export kind "intrinsic" has no renderable component parts#1',
-      'effect-extractor|scroll-area|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ Root: { ({ className, children, orientation, type, ...props }: ScrollAreaRootProps): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; Bar: { ...; }; }" with flag "Object" at "<repo>/packages/ui/src/components/scroll-area/scroll-area.tsx:99:14". Using any instead. [packages/ui/src/components/scroll-area/scroll-area.tsx:99:14]#1',
+      'effect-extractor|scroll-area|unsupported-type-fallback|Could not extract type "{ Root: { ({ className, children, orientation, type, ...props }: ScrollAreaRootProps): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; Bar: { ...; }; }" at "<repo>/packages/ui/src/components/scroll-area/scroll-area.tsx:99:14". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/scroll-area/scroll-area.tsx:99:14]#1',
     ],
-    differenceSha256: "412a2096e3e30d78a100ad16d245e0deaef86b5d304495fcec21a143f3a85ea1",
+    differenceSha256: "583c4a0be8a324281ac0773e9c0e3d0bef83d2d22c2e27b696845099e19fdf40",
     rationale:
       "The production docs checker reports 0 problems and the Effect/adapter side reports 2 for scroll-area. The exact diagnostic multiset below is accepted for shadow-only validation and fingerprinted against message drift.",
     evidence:
-      "entry=packages/ui/src/scroll-area.ts; currentProblems=0; effectProblems=2; exactDifferenceCount=2; differenceSha256=412a2096e3e30d78a100ad16d245e0deaef86b5d304495fcec21a143f3a85ea1.",
+      "entry=packages/ui/src/scroll-area.ts; currentProblems=0; effectProblems=2; exactDifferenceCount=2; differenceSha256=583c4a0be8a324281ac0773e9c0e3d0bef83d2d22c2e27b696845099e19fdf40.",
   },
   {
     id: "issue15-api-search-field",
@@ -1778,13 +1778,13 @@ export const parityDecisions: readonly ParityDecision[] = [
     component: "select",
     paths: [
       'docs-adapter|select|partial-compound-export|Select: semantic export kind "intrinsic" yielded 2 aliased part(s); unaliased members are not represented#1',
-      'effect-extractor|select|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ Root: { <Value = unknown, Multiple extends boolean | undefined = false>(props: Props<Value, Multiple>): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; ... 8 more ...; ScrollDownButton: { ...; }; }" with flag "Object" at "<repo>/packages/ui/src/components/select/select.tsx:253:14". Using any instead. [packages/ui/src/components/select/select.tsx:253:14]#1',
+      'effect-extractor|select|unsupported-type-fallback|Could not extract type "{ Root: { <Value = unknown, Multiple extends boolean | undefined = false>(props: Props<Value, Multiple>): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; ... 8 more ...; ScrollDownButton: { ...; }; }" at "<repo>/packages/ui/src/components/select/select.tsx:253:14". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/select/select.tsx:253:14]#1',
     ],
-    differenceSha256: "ca9fe2a406a5804dd3cdd881130235e2266f9804c0f0bfa6bdcad01b90c825d2",
+    differenceSha256: "e350870c2937b555122d5d1eec88e3e80ac2587e99531352582a7ae3ca910890",
     rationale:
       "The production docs checker reports 0 problems and the Effect/adapter side reports 2 for select. The exact diagnostic multiset below is accepted for shadow-only validation and fingerprinted against message drift.",
     evidence:
-      "entry=packages/ui/src/select.ts; currentProblems=0; effectProblems=2; exactDifferenceCount=2; differenceSha256=ca9fe2a406a5804dd3cdd881130235e2266f9804c0f0bfa6bdcad01b90c825d2.",
+      "entry=packages/ui/src/select.ts; currentProblems=0; effectProblems=2; exactDifferenceCount=2; differenceSha256=e350870c2937b555122d5d1eec88e3e80ac2587e99531352582a7ae3ca910890.",
   },
   {
     id: "issue15-api-selection-item",
@@ -1816,13 +1816,13 @@ export const parityDecisions: readonly ParityDecision[] = [
     component: "selection-item",
     paths: [
       'docs-adapter|selection-item|unsupported-component-shape|SelectionItem: semantic export kind "intrinsic" has no renderable component parts#1',
-      'effect-extractor|selection-item|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ Shell: { ({ dataSlot, control, controlPosition, isDisabled, className, children, ...props }: SelectionItemShellProps): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; ... 4 more ...; SubSection: { ...; }; }" with flag "Object" at "<repo>/packages/ui/src/components/selection-item/selection-item.tsx:219:14". Using any instead. [packages/ui/src/components/selection-item/selection-item.tsx:219:14]#1',
+      'effect-extractor|selection-item|unsupported-type-fallback|Could not extract type "{ Shell: { ({ dataSlot, control, controlPosition, isDisabled, className, children, ...props }: SelectionItemShellProps): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; ... 4 more ...; SubSection: { ...; }; }" at "<repo>/packages/ui/src/components/selection-item/selection-item.tsx:219:14". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/selection-item/selection-item.tsx:219:14]#1',
     ],
-    differenceSha256: "0aa2b6bbcb0f27c553b6804f7d01600ae105e90b725fef019a5195a9f3735857",
+    differenceSha256: "4195a1470e65ab58f66d8d476a74cc4ba02a331c0a5476def9769f05be875be9",
     rationale:
       "The production docs checker reports 0 problems and the Effect/adapter side reports 2 for selection-item. The exact diagnostic multiset below is accepted for shadow-only validation and fingerprinted against message drift.",
     evidence:
-      "entry=packages/ui/src/selection-item.ts; currentProblems=0; effectProblems=2; exactDifferenceCount=2; differenceSha256=0aa2b6bbcb0f27c553b6804f7d01600ae105e90b725fef019a5195a9f3735857.",
+      "entry=packages/ui/src/selection-item.ts; currentProblems=0; effectProblems=2; exactDifferenceCount=2; differenceSha256=4195a1470e65ab58f66d8d476a74cc4ba02a331c0a5476def9769f05be875be9.",
   },
   {
     id: "issue15-api-separator",
@@ -1897,13 +1897,13 @@ export const parityDecisions: readonly ParityDecision[] = [
     paths: [
       "docs-adapter|sheet|missing-description|Sheet.Content.size: public prop has no JSDoc description (packages/ui/src/components/sheet/sheet.tsx)#1",
       'docs-adapter|sheet|partial-compound-export|Sheet: semantic export kind "intrinsic" yielded 2 aliased part(s); unaliased members are not represented#1',
-      'effect-extractor|sheet|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ Root: { ({ side, children, ...props }: SheetRootProps): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; Trigger: { ...; }; ... 8 more ...; Description: { ...; }; }" with flag "Object" at "<repo>/packages/ui/src/components/sheet/sheet.tsx:251:14". Using any instead. [packages/ui/src/components/sheet/sheet.tsx:251:14]#1',
+      'effect-extractor|sheet|unsupported-type-fallback|Could not extract type "{ Root: { ({ side, children, ...props }: SheetRootProps): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; Trigger: { ...; }; ... 8 more ...; Description: { ...; }; }" at "<repo>/packages/ui/src/components/sheet/sheet.tsx:251:14". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/sheet/sheet.tsx:251:14]#1',
     ],
-    differenceSha256: "e1b0717451904bec65bf325fbfc429967862871760808504d0a3c624cf2db122",
+    differenceSha256: "bf75b2a68ce83418e7b754aadb5891fe903cae5926f6afdc413e5a00368cb9d5",
     rationale:
       "The production docs checker reports 0 problems and the Effect/adapter side reports 3 for sheet. The exact diagnostic multiset below is accepted for shadow-only validation and fingerprinted against message drift.",
     evidence:
-      "entry=packages/ui/src/sheet.ts; currentProblems=0; effectProblems=3; exactDifferenceCount=3; differenceSha256=e1b0717451904bec65bf325fbfc429967862871760808504d0a3c624cf2db122.",
+      "entry=packages/ui/src/sheet.ts; currentProblems=0; effectProblems=3; exactDifferenceCount=3; differenceSha256=bf75b2a68ce83418e7b754aadb5891fe903cae5926f6afdc413e5a00368cb9d5.",
   },
   {
     id: "issue15-api-show",
@@ -1970,16 +1970,16 @@ export const parityDecisions: readonly ParityDecision[] = [
     kind: "problem",
     component: "span",
     paths: [
-      'effect-extractor|span|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ variant: { default: "text-inherit"; foreground: "text-foreground"; primary: "text-primary"; secondary: "text-secondary"; brand: "text-brand"; muted: "text-muted-foreground"; inherit: "text-inherit"; destructive: "text-error"; success: "text-success"; }; ... 4 more ...; weight: { ...; }; }" with flag "Object" at "<repo>/packages/ui/src/span.ts:1:1". Using any instead. [packages/ui/src/span.ts:1:1]#1',
-      'effect-extractor|span|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ variant: { default: "text-inherit"; foreground: "text-foreground"; primary: "text-primary"; secondary: "text-secondary"; brand: "text-brand"; muted: "text-muted-foreground"; inherit: "text-inherit"; destructive: "text-error"; success: "text-success"; }; ... 4 more ...; weight: { ...; }; }" with flag "Object" at "<repo>/packages/ui/src/span.ts:1:1". Using any instead. [packages/ui/src/span.ts:1:1]#2',
-      'effect-extractor|span|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ variant: { default: "text-inherit"; foreground: "text-foreground"; primary: "text-primary"; secondary: "text-secondary"; brand: "text-brand"; muted: "text-muted-foreground"; inherit: "text-inherit"; destructive: "text-error"; success: "text-success"; }; ... 4 more ...; weight: { ...; }; }" with flag "Object" at "<repo>/packages/ui/src/span.ts:1:1". Using any instead. [packages/ui/src/span.ts:1:1]#3',
-      'effect-extractor|span|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ variant: { default: "text-inherit"; foreground: "text-foreground"; primary: "text-primary"; secondary: "text-secondary"; brand: "text-brand"; muted: "text-muted-foreground"; inherit: "text-inherit"; destructive: "text-error"; success: "text-success"; }; ... 4 more ...; weight: { ...; }; }" with flag "Object" at "<repo>/packages/ui/src/span.ts:1:1". Using any instead. [packages/ui/src/span.ts:1:1]#4',
+      'effect-extractor|span|unsupported-type-fallback|Could not extract type "{ variant: { default: "text-inherit"; foreground: "text-foreground"; primary: "text-primary"; secondary: "text-secondary"; brand: "text-brand"; muted: "text-muted-foreground"; inherit: "text-inherit"; destructive: "text-error"; success: "text-success"; }; ... 4 more ...; weight: { ...; }; }" at "<repo>/packages/ui/src/span.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/span.ts:1:1]#1',
+      'effect-extractor|span|unsupported-type-fallback|Could not extract type "{ variant: { default: "text-inherit"; foreground: "text-foreground"; primary: "text-primary"; secondary: "text-secondary"; brand: "text-brand"; muted: "text-muted-foreground"; inherit: "text-inherit"; destructive: "text-error"; success: "text-success"; }; ... 4 more ...; weight: { ...; }; }" at "<repo>/packages/ui/src/span.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/span.ts:1:1]#2',
+      'effect-extractor|span|unsupported-type-fallback|Could not extract type "{ variant: { default: "text-inherit"; foreground: "text-foreground"; primary: "text-primary"; secondary: "text-secondary"; brand: "text-brand"; muted: "text-muted-foreground"; inherit: "text-inherit"; destructive: "text-error"; success: "text-success"; }; ... 4 more ...; weight: { ...; }; }" at "<repo>/packages/ui/src/span.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/span.ts:1:1]#3',
+      'effect-extractor|span|unsupported-type-fallback|Could not extract type "{ variant: { default: "text-inherit"; foreground: "text-foreground"; primary: "text-primary"; secondary: "text-secondary"; brand: "text-brand"; muted: "text-muted-foreground"; inherit: "text-inherit"; destructive: "text-error"; success: "text-success"; }; ... 4 more ...; weight: { ...; }; }" at "<repo>/packages/ui/src/span.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/span.ts:1:1]#4',
     ],
-    differenceSha256: "cad12ec21341de44190e86290ca085e422a7045998d1cf3d46259eb96f0daa8a",
+    differenceSha256: "7888f6e851051cad334b3df0f252aea8294712af80c60e369101a56eefb59571",
     rationale:
       "The production docs checker reports 0 problems and the Effect/adapter side reports 4 for span. The exact diagnostic multiset below is accepted for shadow-only validation and fingerprinted against message drift.",
     evidence:
-      "entry=packages/ui/src/span.ts; currentProblems=0; effectProblems=4; exactDifferenceCount=4; differenceSha256=cad12ec21341de44190e86290ca085e422a7045998d1cf3d46259eb96f0daa8a.",
+      "entry=packages/ui/src/span.ts; currentProblems=0; effectProblems=4; exactDifferenceCount=4; differenceSha256=7888f6e851051cad334b3df0f252aea8294712af80c60e369101a56eefb59571.",
   },
   {
     id: "issue15-api-switch",
@@ -2055,14 +2055,14 @@ export const parityDecisions: readonly ParityDecision[] = [
     paths: [
       'docs-adapter|table|partial-compound-export|VerticalTable: semantic export kind "intrinsic" yielded 6 aliased part(s); unaliased members are not represented#1',
       'docs-adapter|table|unsupported-component-shape|Table: semantic export kind "intrinsic" has no renderable component parts#1',
-      'effect-extractor|table|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ Root: { ({ children, className, variant, ...props }: VerticalTableRootProps): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; ... 4 more ...; Value: { ...; }; }" with flag "Object" at "<repo>/packages/ui/src/components/table/table.tsx:296:14". Using any instead. [packages/ui/src/components/table/table.tsx:296:14]#1',
-      'effect-extractor|table|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ Root: { ({ className, ...props }: DetailedHTMLProps<TableHTMLAttributes<HTMLTableElement>, HTMLTableElement>): ReactElement<...>; displayName: string; }; ... 6 more ...; Caption: { ...; }; }" with flag "Object" at "<repo>/packages/ui/src/components/table/table.tsx:285:14". Using any instead. [packages/ui/src/components/table/table.tsx:285:14]#1',
+      'effect-extractor|table|unsupported-type-fallback|Could not extract type "{ Root: { ({ children, className, variant, ...props }: VerticalTableRootProps): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; ... 4 more ...; Value: { ...; }; }" at "<repo>/packages/ui/src/components/table/table.tsx:296:14". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/table/table.tsx:296:14]#1',
+      'effect-extractor|table|unsupported-type-fallback|Could not extract type "{ Root: { ({ className, ...props }: DetailedHTMLProps<TableHTMLAttributes<HTMLTableElement>, HTMLTableElement>): ReactElement<...>; displayName: string; }; ... 6 more ...; Caption: { ...; }; }" at "<repo>/packages/ui/src/components/table/table.tsx:285:14". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/table/table.tsx:285:14]#1',
     ],
-    differenceSha256: "ef260f0b55904cbf3bdac83766cc58945af2b1c7ab7ccdb008d54aadd18f54d3",
+    differenceSha256: "1e2ec5ab681cadd6e1cdb0ba100693ec5c36befc6331a7993858a86bdf85626f",
     rationale:
       "The production docs checker reports 0 problems and the Effect/adapter side reports 4 for table. The exact diagnostic multiset below is accepted for shadow-only validation and fingerprinted against message drift.",
     evidence:
-      "entry=packages/ui/src/table.ts; currentProblems=0; effectProblems=4; exactDifferenceCount=4; differenceSha256=ef260f0b55904cbf3bdac83766cc58945af2b1c7ab7ccdb008d54aadd18f54d3.",
+      "entry=packages/ui/src/table.ts; currentProblems=0; effectProblems=4; exactDifferenceCount=4; differenceSha256=1e2ec5ab681cadd6e1cdb0ba100693ec5c36befc6331a7993858a86bdf85626f.",
   },
   {
     id: "issue15-api-tabs",
@@ -2090,16 +2090,16 @@ export const parityDecisions: readonly ParityDecision[] = [
     component: "tabs",
     paths: [
       'docs-adapter|tabs|unsupported-component-shape|Tabs: semantic export kind "intrinsic" has no renderable component parts#1',
-      'effect-extractor|tabs|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ Root: { ({ className, orientation, ...props }: Omit<TabsRootProps, "ref"> & RefAttributes<HTMLDivElement>): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; List: { ...; }; Trigger: { ...; }; Content: { ...; }; }" with flag "Object" at "<repo>/packages/ui/src/components/tabs/tabs.tsx:84:14". Using any instead. [packages/ui/src/components/tabs/tabs.tsx:84:14]#1',
-      'effect-extractor|tabs|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ variant: { default: "bg-muted"; line: "gap-1 bg-transparent"; }; }" with flag "Object" at "<repo>/packages/ui/src/tabs.ts:1:1". Using any instead. [packages/ui/src/tabs.ts:1:1]#1',
-      'effect-extractor|tabs|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ variant: { default: "bg-muted"; line: "gap-1 bg-transparent"; }; }" with flag "Object" at "<repo>/packages/ui/src/tabs.ts:1:1". Using any instead. [packages/ui/src/tabs.ts:1:1]#2',
-      'effect-extractor|tabs|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ variant: { default: "bg-muted"; line: "gap-1 bg-transparent"; }; }" with flag "Object" at "<repo>/packages/ui/src/tabs.ts:1:1". Using any instead. [packages/ui/src/tabs.ts:1:1]#3',
+      'effect-extractor|tabs|unsupported-type-fallback|Could not extract type "{ Root: { ({ className, orientation, ...props }: Omit<TabsRootProps, "ref"> & RefAttributes<HTMLDivElement>): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; List: { ...; }; Trigger: { ...; }; Content: { ...; }; }" at "<repo>/packages/ui/src/components/tabs/tabs.tsx:84:14". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/tabs/tabs.tsx:84:14]#1',
+      'effect-extractor|tabs|unsupported-type-fallback|Could not extract type "{ variant: { default: "bg-muted"; line: "gap-1 bg-transparent"; }; }" at "<repo>/packages/ui/src/tabs.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/tabs.ts:1:1]#1',
+      'effect-extractor|tabs|unsupported-type-fallback|Could not extract type "{ variant: { default: "bg-muted"; line: "gap-1 bg-transparent"; }; }" at "<repo>/packages/ui/src/tabs.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/tabs.ts:1:1]#2',
+      'effect-extractor|tabs|unsupported-type-fallback|Could not extract type "{ variant: { default: "bg-muted"; line: "gap-1 bg-transparent"; }; }" at "<repo>/packages/ui/src/tabs.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/tabs.ts:1:1]#3',
     ],
-    differenceSha256: "f1b6f0763db1105db95a4046f569fcace02af57fbc4a7755bb0df7c92b8c21a2",
+    differenceSha256: "93e3b74141e290e4a78472fad9e36852cc3f3e0fed56e63bd8328d83601a6c1b",
     rationale:
       "The production docs checker reports 0 problems and the Effect/adapter side reports 5 for tabs. The exact diagnostic multiset below is accepted for shadow-only validation and fingerprinted against message drift.",
     evidence:
-      "entry=packages/ui/src/tabs.ts; currentProblems=0; effectProblems=5; exactDifferenceCount=5; differenceSha256=f1b6f0763db1105db95a4046f569fcace02af57fbc4a7755bb0df7c92b8c21a2.",
+      "entry=packages/ui/src/tabs.ts; currentProblems=0; effectProblems=5; exactDifferenceCount=5; differenceSha256=93e3b74141e290e4a78472fad9e36852cc3f3e0fed56e63bd8328d83601a6c1b.",
   },
   {
     id: "issue15-api-text",
@@ -2147,15 +2147,15 @@ export const parityDecisions: readonly ParityDecision[] = [
     kind: "problem",
     component: "text",
     paths: [
-      'effect-extractor|text|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ variant: { default: "text-inherit"; foreground: "text-foreground"; primary: "text-primary"; secondary: "text-secondary"; brand: "text-brand"; muted: "text-muted-foreground"; inherit: "text-inherit"; destructive: "text-error"; success: "text-success"; }; ... 4 more ...; weight: { ...; }; }" with flag "Object" at "<repo>/packages/ui/src/text.ts:1:1". Using any instead. [packages/ui/src/text.ts:1:1]#1',
-      'effect-extractor|text|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ variant: { default: "text-inherit"; foreground: "text-foreground"; primary: "text-primary"; secondary: "text-secondary"; brand: "text-brand"; muted: "text-muted-foreground"; inherit: "text-inherit"; destructive: "text-error"; success: "text-success"; }; ... 4 more ...; weight: { ...; }; }" with flag "Object" at "<repo>/packages/ui/src/text.ts:1:1". Using any instead. [packages/ui/src/text.ts:1:1]#2',
-      'effect-extractor|text|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ variant: { default: "text-inherit"; foreground: "text-foreground"; primary: "text-primary"; secondary: "text-secondary"; brand: "text-brand"; muted: "text-muted-foreground"; inherit: "text-inherit"; destructive: "text-error"; success: "text-success"; }; ... 4 more ...; weight: { ...; }; }" with flag "Object" at "<repo>/packages/ui/src/text.ts:1:1". Using any instead. [packages/ui/src/text.ts:1:1]#3',
+      'effect-extractor|text|unsupported-type-fallback|Could not extract type "{ variant: { default: "text-inherit"; foreground: "text-foreground"; primary: "text-primary"; secondary: "text-secondary"; brand: "text-brand"; muted: "text-muted-foreground"; inherit: "text-inherit"; destructive: "text-error"; success: "text-success"; }; ... 4 more ...; weight: { ...; }; }" at "<repo>/packages/ui/src/text.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/text.ts:1:1]#1',
+      'effect-extractor|text|unsupported-type-fallback|Could not extract type "{ variant: { default: "text-inherit"; foreground: "text-foreground"; primary: "text-primary"; secondary: "text-secondary"; brand: "text-brand"; muted: "text-muted-foreground"; inherit: "text-inherit"; destructive: "text-error"; success: "text-success"; }; ... 4 more ...; weight: { ...; }; }" at "<repo>/packages/ui/src/text.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/text.ts:1:1]#2',
+      'effect-extractor|text|unsupported-type-fallback|Could not extract type "{ variant: { default: "text-inherit"; foreground: "text-foreground"; primary: "text-primary"; secondary: "text-secondary"; brand: "text-brand"; muted: "text-muted-foreground"; inherit: "text-inherit"; destructive: "text-error"; success: "text-success"; }; ... 4 more ...; weight: { ...; }; }" at "<repo>/packages/ui/src/text.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/text.ts:1:1]#3',
     ],
-    differenceSha256: "0e689a4b5af8738251753443425522ea377947d943335c98899db8d84e9ca3c5",
+    differenceSha256: "adf144aebd5e87d76f5008f0475e5c9e028f7ca821f14581dd066eb56b7dff76",
     rationale:
       "The production docs checker reports 0 problems and the Effect/adapter side reports 3 for text. The exact diagnostic multiset below is accepted for shadow-only validation and fingerprinted against message drift.",
     evidence:
-      "entry=packages/ui/src/text.ts; currentProblems=0; effectProblems=3; exactDifferenceCount=3; differenceSha256=0e689a4b5af8738251753443425522ea377947d943335c98899db8d84e9ca3c5.",
+      "entry=packages/ui/src/text.ts; currentProblems=0; effectProblems=3; exactDifferenceCount=3; differenceSha256=adf144aebd5e87d76f5008f0475e5c9e028f7ca821f14581dd066eb56b7dff76.",
   },
   {
     id: "issue15-api-text-field",
@@ -2200,18 +2200,18 @@ export const parityDecisions: readonly ParityDecision[] = [
     kind: "problem",
     component: "text-field",
     paths: [
-      'effect-extractor|text-field|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ base: string; fieldGroup: string; input: string; labelContainer: string; label: string; container: string; description: string; iconContainer: string; }" with flag "Object" at "<repo>/packages/ui/src/text-field.ts:1:1". Using any instead. [packages/ui/src/text-field.ts:1:1]#1',
-      'effect-extractor|text-field|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ base: string; fieldGroup: string; input: string; labelContainer: string; label: string; container: string; description: string; iconContainer: string; }" with flag "Object" at "<repo>/packages/ui/src/text-field.ts:1:1". Using any instead. [packages/ui/src/text-field.ts:1:1]#2',
-      'effect-extractor|text-field|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ base: string; fieldGroup: string; input: string; labelContainer: string; label: string; container: string; description: string; iconContainer: string; }" with flag "Object" at "<repo>/packages/ui/src/text-field.ts:1:1". Using any instead. [packages/ui/src/text-field.ts:1:1]#3',
-      'effect-extractor|text-field|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ variant: { card: { base: string; fieldGroup: string; input: string; label: string; container: string; description: string; }; inline: { base: string; fieldGroup: string; }; }; hidden: { true: { base: string; }; }; isIconActive: { ...; }; }" with flag "Object" at "<repo>/packages/ui/src/text-field.ts:1:1". Using any instead. [packages/ui/src/text-field.ts:1:1]#1',
-      'effect-extractor|text-field|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ variant: { card: { base: string; fieldGroup: string; input: string; label: string; container: string; description: string; }; inline: { base: string; fieldGroup: string; }; }; hidden: { true: { base: string; }; }; isIconActive: { ...; }; }" with flag "Object" at "<repo>/packages/ui/src/text-field.ts:1:1". Using any instead. [packages/ui/src/text-field.ts:1:1]#2',
-      'effect-extractor|text-field|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ variant: { card: { base: string; fieldGroup: string; input: string; label: string; container: string; description: string; }; inline: { base: string; fieldGroup: string; }; }; hidden: { true: { base: string; }; }; isIconActive: { ...; }; }" with flag "Object" at "<repo>/packages/ui/src/text-field.ts:1:1". Using any instead. [packages/ui/src/text-field.ts:1:1]#3',
+      'effect-extractor|text-field|unsupported-type-fallback|Could not extract type "{ base: string; fieldGroup: string; input: string; labelContainer: string; label: string; container: string; description: string; iconContainer: string; }" at "<repo>/packages/ui/src/text-field.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/text-field.ts:1:1]#1',
+      'effect-extractor|text-field|unsupported-type-fallback|Could not extract type "{ base: string; fieldGroup: string; input: string; labelContainer: string; label: string; container: string; description: string; iconContainer: string; }" at "<repo>/packages/ui/src/text-field.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/text-field.ts:1:1]#2',
+      'effect-extractor|text-field|unsupported-type-fallback|Could not extract type "{ base: string; fieldGroup: string; input: string; labelContainer: string; label: string; container: string; description: string; iconContainer: string; }" at "<repo>/packages/ui/src/text-field.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/text-field.ts:1:1]#3',
+      'effect-extractor|text-field|unsupported-type-fallback|Could not extract type "{ variant: { card: { base: string; fieldGroup: string; input: string; label: string; container: string; description: string; }; inline: { base: string; fieldGroup: string; }; }; hidden: { true: { base: string; }; }; isIconActive: { ...; }; }" at "<repo>/packages/ui/src/text-field.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/text-field.ts:1:1]#1',
+      'effect-extractor|text-field|unsupported-type-fallback|Could not extract type "{ variant: { card: { base: string; fieldGroup: string; input: string; label: string; container: string; description: string; }; inline: { base: string; fieldGroup: string; }; }; hidden: { true: { base: string; }; }; isIconActive: { ...; }; }" at "<repo>/packages/ui/src/text-field.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/text-field.ts:1:1]#2',
+      'effect-extractor|text-field|unsupported-type-fallback|Could not extract type "{ variant: { card: { base: string; fieldGroup: string; input: string; label: string; container: string; description: string; }; inline: { base: string; fieldGroup: string; }; }; hidden: { true: { base: string; }; }; isIconActive: { ...; }; }" at "<repo>/packages/ui/src/text-field.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/text-field.ts:1:1]#3',
     ],
-    differenceSha256: "bd42bb4ff0e73e85ca3dbdd1de2b58bb63d90d620558c34444098081abdcfb02",
+    differenceSha256: "4a8cf1a527fea55edc7c24d3ae5a2a01ca951cc67d39112220b0acf2503ae43b",
     rationale:
       "The production docs checker reports 0 problems and the Effect/adapter side reports 6 for text-field. The exact diagnostic multiset below is accepted for shadow-only validation and fingerprinted against message drift.",
     evidence:
-      "entry=packages/ui/src/text-field.ts; currentProblems=0; effectProblems=6; exactDifferenceCount=6; differenceSha256=bd42bb4ff0e73e85ca3dbdd1de2b58bb63d90d620558c34444098081abdcfb02.",
+      "entry=packages/ui/src/text-field.ts; currentProblems=0; effectProblems=6; exactDifferenceCount=6; differenceSha256=4a8cf1a527fea55edc7c24d3ae5a2a01ca951cc67d39112220b0acf2503ae43b.",
   },
   {
     id: "issue15-api-textarea",
@@ -2288,14 +2288,14 @@ export const parityDecisions: readonly ParityDecision[] = [
     component: "timeline-list",
     paths: [
       'docs-adapter|timeline-list|partial-compound-export|TimelineList: semantic export kind "intrinsic" yielded 2 aliased part(s); unaliased members are not represented#1',
-      'effect-extractor|timeline-list|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ render?: ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined; }" with flag "Object" at "<repo>/packages/ui/src/timeline-list.ts:1:1". Using any instead. [packages/ui/src/timeline-list.ts:1:1]#1',
-      'effect-extractor|timeline-list|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ Root: { ({ className, ...props }: DetailedHTMLProps<OlHTMLAttributes<HTMLOListElement>, HTMLOListElement>): ReactElement<unknown, string | JSXElementConstructor<...>>; displayName: string; }; Item: { ...; }; Title: { ...; }; Time: { ...; }; Description: { ...; }; }" with flag "Object" at "<repo>/packages/ui/src/components/timeline-list/timeline-list.tsx:80:14". Using any instead. [packages/ui/src/components/timeline-list/timeline-list.tsx:80:14]#1',
+      'effect-extractor|timeline-list|unsupported-type-fallback|Could not extract type "{ render?: ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined; }" at "<repo>/packages/ui/src/timeline-list.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/timeline-list.ts:1:1]#1',
+      'effect-extractor|timeline-list|unsupported-type-fallback|Could not extract type "{ Root: { ({ className, ...props }: DetailedHTMLProps<OlHTMLAttributes<HTMLOListElement>, HTMLOListElement>): ReactElement<unknown, string | JSXElementConstructor<...>>; displayName: string; }; Item: { ...; }; Title: { ...; }; Time: { ...; }; Description: { ...; }; }" at "<repo>/packages/ui/src/components/timeline-list/timeline-list.tsx:80:14". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/timeline-list/timeline-list.tsx:80:14]#1',
     ],
-    differenceSha256: "c904b7fbfd9624f29b6ad72e62de3af0c9e4c202d8c295798fbf35b3ec7ede68",
+    differenceSha256: "c1495fe30c9838091d6dc92673f31ddd2438574bb2d6ba70fc2d73e693041759",
     rationale:
       "The production docs checker reports 0 problems and the Effect/adapter side reports 3 for timeline-list. The exact diagnostic multiset below is accepted for shadow-only validation and fingerprinted against message drift.",
     evidence:
-      "entry=packages/ui/src/timeline-list.ts; currentProblems=0; effectProblems=3; exactDifferenceCount=3; differenceSha256=c904b7fbfd9624f29b6ad72e62de3af0c9e4c202d8c295798fbf35b3ec7ede68.",
+      "entry=packages/ui/src/timeline-list.ts; currentProblems=0; effectProblems=3; exactDifferenceCount=3; differenceSha256=c1495fe30c9838091d6dc92673f31ddd2438574bb2d6ba70fc2d73e693041759.",
   },
   {
     id: "issue15-api-toggle",
@@ -2323,15 +2323,15 @@ export const parityDecisions: readonly ParityDecision[] = [
     kind: "problem",
     component: "toggle",
     paths: [
-      'effect-extractor|toggle|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ variant: { default: "bg-transparent"; outline: "shadow-xs border border-input bg-transparent hover:bg-muted"; }; size: { xs: "text-xs h-(--control-h-xs) min-w-(--control-h-xs) gap-(--control-gap-xs) rounded-[min(var(--radius-md),10px)] px-(--control-px-xs) has-data-[icon=inline-end]:pr-(--control-px-icon-xs) has-d..." with flag "Object" at "<repo>/packages/ui/src/toggle.ts:1:1". Using any instead. [packages/ui/src/toggle.ts:1:1]#1',
-      'effect-extractor|toggle|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ variant: { default: "bg-transparent"; outline: "shadow-xs border border-input bg-transparent hover:bg-muted"; }; size: { xs: "text-xs h-(--control-h-xs) min-w-(--control-h-xs) gap-(--control-gap-xs) rounded-[min(var(--radius-md),10px)] px-(--control-px-xs) has-data-[icon=inline-end]:pr-(--control-px-icon-xs) has-d..." with flag "Object" at "<repo>/packages/ui/src/toggle.ts:1:1". Using any instead. [packages/ui/src/toggle.ts:1:1]#2',
-      'effect-extractor|toggle|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ variant: { default: "bg-transparent"; outline: "shadow-xs border border-input bg-transparent hover:bg-muted"; }; size: { xs: "text-xs h-(--control-h-xs) min-w-(--control-h-xs) gap-(--control-gap-xs) rounded-[min(var(--radius-md),10px)] px-(--control-px-xs) has-data-[icon=inline-end]:pr-(--control-px-icon-xs) has-d..." with flag "Object" at "<repo>/packages/ui/src/toggle.ts:1:1". Using any instead. [packages/ui/src/toggle.ts:1:1]#3',
+      'effect-extractor|toggle|unsupported-type-fallback|Could not extract type "{ variant: { default: "bg-transparent"; outline: "shadow-xs border border-input bg-transparent hover:bg-muted"; }; size: { xs: "text-xs h-(--control-h-xs) min-w-(--control-h-xs) gap-(--control-gap-xs) rounded-[min(var(--radius-md),10px)] px-(--control-px-xs) has-data-[icon=inline-end]:pr-(--control-px-icon-xs) has-d..." at "<repo>/packages/ui/src/toggle.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/toggle.ts:1:1]#1',
+      'effect-extractor|toggle|unsupported-type-fallback|Could not extract type "{ variant: { default: "bg-transparent"; outline: "shadow-xs border border-input bg-transparent hover:bg-muted"; }; size: { xs: "text-xs h-(--control-h-xs) min-w-(--control-h-xs) gap-(--control-gap-xs) rounded-[min(var(--radius-md),10px)] px-(--control-px-xs) has-data-[icon=inline-end]:pr-(--control-px-icon-xs) has-d..." at "<repo>/packages/ui/src/toggle.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/toggle.ts:1:1]#2',
+      'effect-extractor|toggle|unsupported-type-fallback|Could not extract type "{ variant: { default: "bg-transparent"; outline: "shadow-xs border border-input bg-transparent hover:bg-muted"; }; size: { xs: "text-xs h-(--control-h-xs) min-w-(--control-h-xs) gap-(--control-gap-xs) rounded-[min(var(--radius-md),10px)] px-(--control-px-xs) has-data-[icon=inline-end]:pr-(--control-px-icon-xs) has-d..." at "<repo>/packages/ui/src/toggle.ts:1:1". The extractor used any. Review this API or add support for this type. [packages/ui/src/toggle.ts:1:1]#3',
     ],
-    differenceSha256: "3cbd8c16547b44619fa297a419a780276b4b214208a30eaf4db72248d4f10431",
+    differenceSha256: "0a4752688457b0c123704e3d962e54606b1258eb01f01c2f4bc337cc834ae299",
     rationale:
       "The production docs checker reports 0 problems and the Effect/adapter side reports 3 for toggle. The exact diagnostic multiset below is accepted for shadow-only validation and fingerprinted against message drift.",
     evidence:
-      "entry=packages/ui/src/toggle.ts; currentProblems=0; effectProblems=3; exactDifferenceCount=3; differenceSha256=3cbd8c16547b44619fa297a419a780276b4b214208a30eaf4db72248d4f10431.",
+      "entry=packages/ui/src/toggle.ts; currentProblems=0; effectProblems=3; exactDifferenceCount=3; differenceSha256=0a4752688457b0c123704e3d962e54606b1258eb01f01c2f4bc337cc834ae299.",
   },
   {
     id: "issue15-api-tooltip",
@@ -2373,13 +2373,13 @@ export const parityDecisions: readonly ParityDecision[] = [
     component: "tooltip",
     paths: [
       'docs-adapter|tooltip|partial-compound-export|Tooltip: semantic export kind "intrinsic" yielded 3 aliased part(s); unaliased members are not represented#1',
-      'effect-extractor|tooltip|unsupported-type-fallback|Type extraction warning: Unable to handle type "{ Provider: { ({ delay, ...props }: TooltipProviderProps): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; Root: { ...; }; Trigger: { ...; }; Content: { ...; }; }" with flag "Object" at "<repo>/packages/ui/src/components/tooltip/tooltip.tsx:151:14". Using any instead. [packages/ui/src/components/tooltip/tooltip.tsx:151:14]#1',
+      'effect-extractor|tooltip|unsupported-type-fallback|Could not extract type "{ Provider: { ({ delay, ...props }: TooltipProviderProps): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; Root: { ...; }; Trigger: { ...; }; Content: { ...; }; }" at "<repo>/packages/ui/src/components/tooltip/tooltip.tsx:151:14". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/tooltip/tooltip.tsx:151:14]#1',
     ],
-    differenceSha256: "de6a01ca1f3de0f6e731518e392c9acb5df3ae80ac2bc61cc286ed9c28d034e7",
+    differenceSha256: "bb33141437bd7c350f13f7884adb1b752453b82652a1812909ce679ee9033317",
     rationale:
       "The production docs checker reports 0 problems and the Effect/adapter side reports 2 for tooltip. The exact diagnostic multiset below is accepted for shadow-only validation and fingerprinted against message drift.",
     evidence:
-      "entry=packages/ui/src/tooltip.ts; currentProblems=0; effectProblems=2; exactDifferenceCount=2; differenceSha256=de6a01ca1f3de0f6e731518e392c9acb5df3ae80ac2bc61cc286ed9c28d034e7.",
+      "entry=packages/ui/src/tooltip.ts; currentProblems=0; effectProblems=2; exactDifferenceCount=2; differenceSha256=bb33141437bd7c350f13f7884adb1b752453b82652a1812909ce679ee9033317.",
   },
   {
     id: "issue15-api-ui-providers",

@@ -412,6 +412,7 @@ describe("Issue 13 summarized references keep durable identity", () => {
     const result = await runExtraction("external-union-type-name-preservation", "input.ts");
     const fallbacks = result.warnings.filter((warning) => warning.code === "unsupported-type-fallback");
     expect(fallbacks).toHaveLength(1);
-    expect(fallbacks[0]?.message).toContain("Using any instead");
+    expect(fallbacks[0]?.message).toContain("The extractor used any");
+    expect(fallbacks[0]?.message).toContain("Review this API or add support for this type");
   });
 });

@@ -49,7 +49,8 @@ describe("Issue 10 review findings", () => {
       throw new Error(`expected missing-default-export-symbol, got ${warning?.code ?? "nothing"}`);
     }
     expect(warning.sourceText).toBe("() => ({ ok: true })");
-    expect(warning.message).toContain('Could not find the symbol of default export "() => ({ ok: true })"');
+    expect(warning.message).toContain('Could not resolve default export "() => ({ ok: true })"');
+    expect(warning.message).toContain("Name the declaration before exporting it");
   });
 
   it("records every intermediate forwarding file of a multi-hop re-export chain", async () => {

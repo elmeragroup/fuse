@@ -98,7 +98,7 @@
         "warningCount": 2,
         "warningDetails": [
           {
-            "message": "Type extraction warning: Unable to represent 1 construct signature at \"test/fixtures/class-members-visibility-and-signatures/input.ts:285:2\". The construct signatures at Constructable/constructSignatures were omitted because the shape is not a class.",
+            "message": "The non-class shape at \"test/fixtures/class-members-visibility-and-signatures/input.ts:285:2\" has 1 construct signature at Constructable/constructSignatures, which the output model cannot represent. The extractor omitted it. Use a class declaration or review the generated API.",
             "filePath": "test/fixtures/class-members-visibility-and-signatures/input.ts",
             "line": 285,
             "column": 2,
@@ -114,7 +114,7 @@
             "signatureCount": 1
           },
           {
-            "message": "Type extraction warning: Unable to represent 1 construct signature at \"test/fixtures/class-members-visibility-and-signatures/input.ts:292:2\". The construct signatures at ConstructableType/constructSignatures were omitted because the shape is not a class.",
+            "message": "The non-class shape at \"test/fixtures/class-members-visibility-and-signatures/input.ts:292:2\" has 1 construct signature at ConstructableType/constructSignatures, which the output model cannot represent. The extractor omitted it. Use a class declaration or review the generated API.",
             "filePath": "test/fixtures/class-members-visibility-and-signatures/input.ts",
             "line": 292,
             "column": 2,
@@ -130,7 +130,7 @@
             "signatureCount": 1
           }
         ],
-        "warningDigest": "d98f0d0cd18dde7dfa5a42ce8198a8ec880e16184a204d426c103827fa42cce6",
+        "warningDigest": "60a1e0326fa8a3df697b5c58252e21821dda3881cf0fa9890f7e905ac3f65143",
         "warningOracle": "class-members-visibility-and-signatures/warnings.tsgo.json"
       }
     },
@@ -340,7 +340,7 @@
         "warningCount": 1,
         "warningDetails": [
           {
-            "message": "Type extraction warning: Unable to handle type \"{ top?: number | undefined; right?: number | undefined; bottom?: number | undefined; left?: number | undefined; }\" with flag \"Object\" at \"test/fixtures/external-union-type-name-preservation/input.ts:1:1\". Using any instead.",
+            "message": "Could not extract type \"{ top?: number | undefined; right?: number | undefined; bottom?: number | undefined; left?: number | undefined; }\" at \"test/fixtures/external-union-type-name-preservation/input.ts:1:1\". The extractor used any. Review this API or add support for this type.",
             "filePath": "test/fixtures/external-union-type-name-preservation/input.ts",
             "line": 1,
             "column": 1,
@@ -356,7 +356,7 @@
             "typeText": "{ top?: number | undefined; right?: number | undefined; bottom?: number | undefined; left?: number | undefined; }"
           }
         ],
-        "warningDigest": "00905979215043b3242cec52d4343501e634857f27363129475a864ebea0069e",
+        "warningDigest": "8acc1f839faec8a0734ae88faefa2e1e60db4d2d3bc677701de4dfa70a045ce5",
         "warningOracle": "external-union-type-name-preservation/warnings.tsgo.json",
         "divergenceRecord": "external-union-type-name-preservation/ts7-oracle.json"
       }
@@ -804,7 +804,7 @@
         "warningCount": 1,
         "warningDetails": [
           {
-            "message": "Type extraction warning: Unable to handle type \"any\" with flag \"Any\" at \"test/fixtures/interface-extends-basic-resolution/input.ts:23:1\". Using any instead.",
+            "message": "Could not extract type \"any\" at \"test/fixtures/interface-extends-basic-resolution/input.ts:23:1\". The extractor used any. Review this API or add support for this type.",
             "filePath": "test/fixtures/interface-extends-basic-resolution/input.ts",
             "line": 23,
             "column": 1,
@@ -819,7 +819,7 @@
             "typeText": "any"
           }
         ],
-        "warningDigest": "4aa5b5e3f134cdf91c00d65eb649ecdb1968afff65723f97177d26d2d453ae64",
+        "warningDigest": "f7e76a0fde6e2b165d79d2b9bea8b8f4869b6e63f96e88924f172a3a98846451",
         "warningOracle": "interface-extends-basic-resolution/warnings.tsgo.json",
         "divergenceRecord": "interface-extends-basic-resolution/ts7-oracle.json"
       }
@@ -1687,7 +1687,7 @@
         "warningCount": 1,
         "warningDetails": [
           {
-            "message": "Type extraction warning: Unable to handle type \"{ items: readonly any[]; }\" with flag \"Object\" at \"test/fixtures/react-component-overload-any-callback-deduplication/input.tsx:1:1\". Using any instead.",
+            "message": "Could not extract type \"{ items: readonly any[]; }\" at \"test/fixtures/react-component-overload-any-callback-deduplication/input.tsx:1:1\". The extractor used any. Review this API or add support for this type.",
             "filePath": "test/fixtures/react-component-overload-any-callback-deduplication/input.tsx",
             "line": 1,
             "column": 1,
@@ -1702,7 +1702,7 @@
             "typeText": "{ items: readonly any[]; }"
           }
         ],
-        "warningDigest": "cf9cb0a74691ef4b2a18f062820761a68eeebf411dc782e4521ab95d8a2183a7",
+        "warningDigest": "7ffedc894e138fee5c2dd2736e910e27dd29374264635ef54b41e3c17c9834a4",
         "warningOracle": "react-component-overload-any-callback-deduplication/warnings.tsgo.json",
         "divergenceRecord": "react-component-overload-any-callback-deduplication/ts7-oracle.json"
       }
@@ -1784,7 +1784,7 @@
         "warningCount": 1,
         "warningDetails": [
           {
-            "message": "Type extraction warning: Could not confirm that \"OptionalToolbar\" is a React component at \"test/fixtures/react-component-union-variants/input.tsx:49:14\". Some arms of its union type do not return React node types, so the export kept its resolved type instead of becoming a component.",
+            "message": "Could not classify \"OptionalToolbar\" as a React component at \"test/fixtures/react-component-union-variants/input.tsx:49:14\" because part of its union returns a non-React value. The extractor kept the original union type. Review the export if it should be a component.",
             "filePath": "test/fixtures/react-component-union-variants/input.tsx",
             "line": 49,
             "column": 14,
@@ -1797,7 +1797,7 @@
             "name": "OptionalToolbar"
           }
         ],
-        "warningDigest": "890d21d56d110e517054a5e7727d15ad4dcedc54bdbf92a3b23467c92310e187",
+        "warningDigest": "9b0a67d864f3f6470b3576a51da7d83d249cb96eb25f385f058fcd65bd90cfb4",
         "warningOracle": "react-component-union-variants/warnings.tsgo.json",
         "divergenceRecord": "react-component-union-variants/ts7-oracle.json"
       }
@@ -2064,7 +2064,7 @@
         "warningCount": 8,
         "warningDetails": [
           {
-            "message": "Type extraction warning: Unable to represent more than one index signature at \"test/fixtures/react-mui-overridable-component/input.d.ts:1:1\". The index signature with key type \"number\" was omitted.",
+            "message": "The type at \"test/fixtures/react-mui-overridable-component/input.d.ts:1:1\" has more than one index signature, but the output model supports one. The extractor omitted the signature with key type \"number\". Review the generated API if both signatures matter.",
             "filePath": "test/fixtures/react-mui-overridable-component/input.d.ts",
             "line": 1,
             "column": 1,
@@ -2080,7 +2080,7 @@
             ]
           },
           {
-            "message": "Type extraction warning: Unable to represent index signature key type \"symbol\" at \"test/fixtures/react-mui-overridable-component/input.d.ts:1:1\". The index signature was omitted.",
+            "message": "The index signature at \"test/fixtures/react-mui-overridable-component/input.d.ts:1:1\" uses unsupported key type \"symbol\". The extractor omitted it. Change the key type or review the generated API.",
             "filePath": "test/fixtures/react-mui-overridable-component/input.d.ts",
             "line": 1,
             "column": 1,
@@ -2096,7 +2096,7 @@
             ]
           },
           {
-            "message": "Type extraction warning: Unable to represent more than one index signature at \"test/fixtures/react-mui-overridable-component/input.d.ts:1:1\". The index signature with key type \"number\" was omitted.",
+            "message": "The type at \"test/fixtures/react-mui-overridable-component/input.d.ts:1:1\" has more than one index signature, but the output model supports one. The extractor omitted the signature with key type \"number\". Review the generated API if both signatures matter.",
             "filePath": "test/fixtures/react-mui-overridable-component/input.d.ts",
             "line": 1,
             "column": 1,
@@ -2112,7 +2112,7 @@
             ]
           },
           {
-            "message": "Type extraction warning: Unable to represent index signature key type \"symbol\" at \"test/fixtures/react-mui-overridable-component/input.d.ts:1:1\". The index signature was omitted.",
+            "message": "The index signature at \"test/fixtures/react-mui-overridable-component/input.d.ts:1:1\" uses unsupported key type \"symbol\". The extractor omitted it. Change the key type or review the generated API.",
             "filePath": "test/fixtures/react-mui-overridable-component/input.d.ts",
             "line": 1,
             "column": 1,
@@ -2128,7 +2128,7 @@
             ]
           },
           {
-            "message": "Type extraction warning: Unable to represent more than one index signature at \"test/fixtures/react-mui-overridable-component/input.d.ts:1:1\". The index signature with key type \"number\" was omitted.",
+            "message": "The type at \"test/fixtures/react-mui-overridable-component/input.d.ts:1:1\" has more than one index signature, but the output model supports one. The extractor omitted the signature with key type \"number\". Review the generated API if both signatures matter.",
             "filePath": "test/fixtures/react-mui-overridable-component/input.d.ts",
             "line": 1,
             "column": 1,
@@ -2144,7 +2144,7 @@
             ]
           },
           {
-            "message": "Type extraction warning: Unable to represent index signature key type \"symbol\" at \"test/fixtures/react-mui-overridable-component/input.d.ts:1:1\". The index signature was omitted.",
+            "message": "The index signature at \"test/fixtures/react-mui-overridable-component/input.d.ts:1:1\" uses unsupported key type \"symbol\". The extractor omitted it. Change the key type or review the generated API.",
             "filePath": "test/fixtures/react-mui-overridable-component/input.d.ts",
             "line": 1,
             "column": 1,
@@ -2160,7 +2160,7 @@
             ]
           },
           {
-            "message": "Type extraction warning: Unable to represent more than one index signature at \"test/fixtures/react-mui-overridable-component/input.d.ts:1:1\". The index signature with key type \"number\" was omitted.",
+            "message": "The type at \"test/fixtures/react-mui-overridable-component/input.d.ts:1:1\" has more than one index signature, but the output model supports one. The extractor omitted the signature with key type \"number\". Review the generated API if both signatures matter.",
             "filePath": "test/fixtures/react-mui-overridable-component/input.d.ts",
             "line": 1,
             "column": 1,
@@ -2176,7 +2176,7 @@
             ]
           },
           {
-            "message": "Type extraction warning: Unable to represent index signature key type \"symbol\" at \"test/fixtures/react-mui-overridable-component/input.d.ts:1:1\". The index signature was omitted.",
+            "message": "The index signature at \"test/fixtures/react-mui-overridable-component/input.d.ts:1:1\" uses unsupported key type \"symbol\". The extractor omitted it. Change the key type or review the generated API.",
             "filePath": "test/fixtures/react-mui-overridable-component/input.d.ts",
             "line": 1,
             "column": 1,
@@ -2192,7 +2192,7 @@
             ]
           }
         ],
-        "warningDigest": "73204c2878aa1f1f1adb6055763607db570c89cf9e1c37e7dc2f3c309348efdc",
+        "warningDigest": "bd466e8155f43fbf2028e22b2d714476945dc7f7eaa6458fc8cdafd28559590a",
         "warningOracle": "react-mui-overridable-component/warnings.tsgo.json",
         "divergenceRecord": "react-mui-overridable-component/ts7-oracle.json"
       }
@@ -2690,7 +2690,7 @@
         "warningCount": 1,
         "warningDetails": [
           {
-            "message": "Type extraction warning: Unable to handle type \"__Named\" with flag \"Object\" at \"test/fixtures/symbol-double-underscore-name-preservation/input.ts:1:1\". Using any instead.",
+            "message": "Could not extract type \"__Named\" at \"test/fixtures/symbol-double-underscore-name-preservation/input.ts:1:1\". The extractor used any. Review this API or add support for this type.",
             "filePath": "test/fixtures/symbol-double-underscore-name-preservation/input.ts",
             "line": 1,
             "column": 1,
@@ -2705,7 +2705,7 @@
             "typeText": "__Named"
           }
         ],
-        "warningDigest": "be5b572512958c1ad185894e7d2daef1c3303f7d14a63cd360656e4cb5b2b30d",
+        "warningDigest": "a2d6079e4ef3cef00cafcd55a3dc18090fdcc2b6fa27f23cec646b5fd75429c6",
         "warningOracle": "symbol-double-underscore-name-preservation/warnings.tsgo.json",
         "divergenceRecord": "symbol-double-underscore-name-preservation/ts7-oracle.json"
       }

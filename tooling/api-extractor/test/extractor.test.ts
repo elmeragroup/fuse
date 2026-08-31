@@ -496,7 +496,8 @@ describe("ProjectExtractor", () => {
         name: "value",
         type: { kind: "intrinsic", intrinsic: "any" },
       });
-      expect(result.warnings[0]?.message).toContain("Using any instead.");
+      expect(result.warnings[0]?.message).toContain("The extractor used any.");
+      expect(result.warnings[0]?.message).toContain("Review this API or add support for this type.");
       for (const consoleSpy of consoleSpies) expect(consoleSpy).not.toHaveBeenCalled();
     } finally {
       for (const consoleSpy of consoleSpies) consoleSpy.mockRestore();
@@ -510,7 +511,7 @@ describe("ProjectExtractor", () => {
     expect(result.warnings).toEqual([
       {
         code: "unsupported-type-fallback",
-        message: `Type extraction warning: Unable to handle type "\`prefix-\${string}\`" with flag "TemplateLiteral" at "${unsupportedTemplatePath}:1:24". Using any instead.`,
+        message: `Could not extract type "\`prefix-\${string}\`" at "${unsupportedTemplatePath}:1:24". The extractor used any. Review this API or add support for this type.`,
         filePath: unsupportedTemplatePath,
         line: 1,
         column: 24,

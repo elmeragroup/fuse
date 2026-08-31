@@ -155,9 +155,9 @@ describe("Issue 05 review regressions", () => {
     const [tieLoss, unrepresentable] = omitted;
     // A number key is representable; only the model's single signature slot is
     // not, and the message has to say so.
-    expect(tieLoss?.message).toContain("Unable to represent more than one index signature");
+    expect(tieLoss?.message).toContain("output model supports one");
     expect(tieLoss?.message).toContain('key type "number"');
-    expect(unrepresentable?.message).toContain('Unable to represent index signature key type "symbol"');
+    expect(unrepresentable?.message).toContain('uses unsupported key type "symbol"');
     // The representable signature is the one the model kept.
     expect(exportedType(result, "DualIndexed")).toMatchObject({
       indexSignature: { keyName: "name", keyType: "string" },

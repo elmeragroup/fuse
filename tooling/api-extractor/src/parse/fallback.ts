@@ -24,13 +24,13 @@ export function warningMessage(warning: BackendWarningFact): ExtractWarning {
   if (warning.code === "missing-enum-declaration") {
     return {
       ...warning,
-      message: `Type extraction warning: Unable to resolve enum declaration "${warning.enumName}"${warning.memberName === undefined ? "" : ` member "${warning.memberName}"`} at "${warning.filePath}:${warning.line}:${warning.column}". The unavailable enum member or declaration was omitted.`,
+      message: `Could not resolve enum "${warning.enumName}"${warning.memberName === undefined ? "" : ` member "${warning.memberName}"`} at "${warning.filePath}:${warning.line}:${warning.column}". The extractor omitted it. Check that the enum declaration is included in the configured TypeScript project.`,
     };
   }
   if (warning.code === "missing-default-export-symbol") {
     return {
       ...warning,
-      message: `Type extraction warning: Could not find the symbol of default export "${warning.sourceText}" at "${warning.filePath}:${warning.line}:${warning.column}". Skipping this export.`,
+      message: `Could not resolve default export "${warning.sourceText}" to a symbol at "${warning.filePath}:${warning.line}:${warning.column}". The extractor skipped it. Name the declaration before exporting it if it must appear in the API.`,
     };
   }
   if (warning.code === "unresolved-re-export") {
@@ -42,7 +42,7 @@ export function warningMessage(warning: BackendWarningFact): ExtractWarning {
           : "the re-export target could not be resolved";
     return {
       ...warning,
-      message: `Type extraction warning: Could not include re-export "${warning.name}" at "${warning.filePath}:${warning.line}:${warning.column}" because ${reasonText}. Skipping this export.`,
+      message: `Could not resolve re-export "${warning.name}" at "${warning.filePath}:${warning.line}:${warning.column}" because ${reasonText}. The extractor skipped it. Check the export chain if it must appear in the API.`,
     };
   }
   if (warning.code === "omitted-index-signature") {
@@ -50,26 +50,26 @@ export function warningMessage(warning: BackendWarningFact): ExtractWarning {
       ...warning,
       message:
         warning.reason === "additional-signature"
-          ? `Type extraction warning: Unable to represent more than one index signature at "${warning.filePath}:${warning.line}:${warning.column}". The index signature with key type "${warning.keyTypes.join(" | ")}" was omitted.`
-          : `Type extraction warning: Unable to represent index signature key type "${warning.keyTypes.join(" | ")}" at "${warning.filePath}:${warning.line}:${warning.column}". The index signature was omitted.`,
+          ? `The type at "${warning.filePath}:${warning.line}:${warning.column}" has more than one index signature, but the output model supports one. The extractor omitted the signature with key type "${warning.keyTypes.join(" | ")}". Review the generated API if both signatures matter.`
+          : `The index signature at "${warning.filePath}:${warning.line}:${warning.column}" uses unsupported key type "${warning.keyTypes.join(" | ")}". The extractor omitted it. Change the key type or review the generated API.`,
     };
   }
   if (warning.code === "unrepresented-construct-signatures") {
     return {
       ...warning,
-      message: `Type extraction warning: Unable to represent ${warning.signatureCount} construct signature${warning.signatureCount === 1 ? "" : "s"} at "${warning.filePath}:${warning.line}:${warning.column}". The construct signatures at ${warning.structuralPath.join("/")} were omitted because the shape is not a class.`,
+      message: `The non-class shape at "${warning.filePath}:${warning.line}:${warning.column}" has ${warning.signatureCount} construct signature${warning.signatureCount === 1 ? "" : "s"} at ${warning.structuralPath.join("/")}, which the output model cannot represent. The extractor omitted ${warning.signatureCount === 1 ? "it" : "them"}. Use a class declaration or review the generated API.`,
     };
   }
   if (warning.code === "omitted-callable-members") {
     return {
       ...warning,
-      message: `Type extraction warning: Unable to represent named members alongside the call signature at "${warning.filePath}:${warning.line}:${warning.column}". The members ${warning.memberNames.map((name) => `"${name}"`).join(", ")} of ${warning.structuralPath.join("/")} were omitted.`,
+      message: `The callable shape at "${warning.filePath}:${warning.line}:${warning.column}" also has named members ${warning.memberNames.map((name) => `"${name}"`).join(", ")} at ${warning.structuralPath.join("/")}, which the output model cannot represent beside a call signature. The extractor omitted those members. Model them separately or review the generated API.`,
     };
   }
   if (warning.code === "uncertain-component-recognition") {
     return {
       ...warning,
-      message: `Type extraction warning: Could not confirm that "${warning.name}" is a React component at "${warning.filePath}:${warning.line}:${warning.column}". Some arms of its union type do not return React node types, so the export kept its resolved type instead of becoming a component.`,
+      message: `Could not classify "${warning.name}" as a React component at "${warning.filePath}:${warning.line}:${warning.column}" because part of its union returns a non-React value. The extractor kept the original union type. Review the export if it should be a component.`,
     };
   }
   const resolvingText =
@@ -78,22 +78,11 @@ export function warningMessage(warning: BackendWarningFact): ExtractWarning {
       : "";
   return {
     ...warning,
-    message: `Type extraction warning: Unable to handle type "${warning.typeText}" with flag "${warning.typeFlags.join(" | ")}"${resolvingText} at "${warning.filePath}:${warning.line}:${warning.column}". Using any instead.`,
+    message: `Could not extract type "${warning.typeText}"${resolvingText} at "${warning.filePath}:${warning.line}:${warning.column}". The extractor used any. Review this API or add support for this type.`,
   };
 }
 
-/**
- * Degrades a type the resolver cannot represent to `any`, pushing the
- * structured `unsupported-type-fallback` warning.
- *
- * Location anchoring prefers the AUTHORED node under resolution and falls
- * back to the symbol's first declaration — the same precedence
- * `recordMissingEnumWarning` applies. When an authored node is available,
- * its source text is recorded on the warning as `sourceText`; structured
- * assertions key on it and the rendered message gains its
- * `while resolving "…"` clause. The field stays optional because callers
- * without any node anchor none.
- */
+/** Prefer the authored node when locating and describing an unsupported type. */
 export function unsupported(
   context: ResolverContext,
   type: BackendTypeHandle | undefined,

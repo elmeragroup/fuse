@@ -1,6 +1,6 @@
 [
   {
-    "message": "Type extraction warning: Unable to handle type \"any\" with flag \"Any\" at \"test/fixtures/interface-extends-basic-resolution/input.ts:23:1\". Using any instead.",
+    "message": "Could not extract type \"any\" at \"test/fixtures/interface-extends-basic-resolution/input.ts:23:1\". The extractor used any. Review this API or add support for this type.",
     "filePath": "test/fixtures/interface-extends-basic-resolution/input.ts",
     "line": 23,
     "column": 1,

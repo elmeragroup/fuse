@@ -7,10 +7,11 @@ import { createRequire } from "node:module";
 import { join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { ProjectExtractor } from "../src/index.ts";
+import { ExtractWarningSchema, ProjectExtractor } from "../src/index.ts";
 import type { ExtractWarning } from "../src/index.ts";
 import { writeArtifactBatch } from "./artifact-batch-writer.ts";
 import type { ArtifactBatchItem } from "./artifact-batch-writer.ts";
+import { deriveWarningEvidencePlan, fixtureEvidenceCatalog } from "./fixture-catalog.ts";
 import {
   assertTs7DivergenceEvidence,
   canonicalDifferencePaths,
@@ -263,6 +264,11 @@ function decodeJson(path: string): Schema.Json {
   return Schema.decodeUnknownSync(Schema.Json)(JSON.parse(readFileSync(path, "utf8")));
 }
 
+function existingJsonIndent(path: string): string | number {
+  const indentation = /\n([\t ]+)\S/u.exec(readFileSync(path, "utf8"))?.[1];
+  return indentation ?? 2;
+}
+
 function warningOraclePath(fixture: string): string | undefined {
   const path = join(fixtureDirectory, fixture, "warnings.tsgo.json");
   return existsSync(path) ? path : undefined;
@@ -307,7 +313,8 @@ function failedExtraction(definition: Issue14Fixture, error: string): Extraction
 
 function compareFixtureExtraction(
   definition: Issue14Fixture,
-  result: FixtureExtractionValue
+  result: FixtureExtractionValue,
+  warningOverrides: ReadonlyMap<string, readonly Schema.Json[]> = new Map()
 ): ExtractionResult {
   const oracleFile = issue14SelectedOracleFile(definition);
   const selectedOraclePath = join(fixtureDirectory, definition.fixture, oracleFile);
@@ -318,9 +325,11 @@ function compareFixtureExtraction(
     const expected = decodeJson(join(fixtureDirectory, definition.fixture, oracleFile));
     const differences = canonicalDifferencePaths(actual, expected);
     const warningPath = warningOraclePath(definition.fixture);
-    const expectedWarnings = Schema.decodeUnknownSync(Schema.Array(Schema.Json))(
-      warningPath === undefined ? [] : decodeJson(warningPath)
-    );
+    const expectedWarnings =
+      warningOverrides.get(definition.fixture) ??
+      Schema.decodeUnknownSync(Schema.Array(Schema.Json))(
+        warningPath === undefined ? [] : decodeJson(warningPath)
+      );
     const actualWarnings = Schema.decodeUnknownSync(Schema.Array(Schema.Json))(
       JSON.parse(JSON.stringify(normalizeWarnings(result.warnings)))
     );
@@ -378,7 +387,8 @@ function compareFixtureExtraction(
  */
 export function extractFixtureResults(
   definitions: readonly Issue14Fixture[],
-  extract: FixtureExtraction
+  extract: FixtureExtraction,
+  warningOverrides: ReadonlyMap<string, readonly Schema.Json[]> = new Map()
 ): Effect.Effect<readonly ExtractionResult[], never> {
   return Effect.gen(function* () {
     const results: ExtractionResult[] = [];
@@ -389,19 +399,21 @@ export function extractFixtureResults(
         results.push(failedExtraction(definition, Cause.pretty(exit.cause) || "fixture extraction failed"));
         continue;
       }
-      results.push(compareFixtureExtraction(definition, exit.value));
+      results.push(compareFixtureExtraction(definition, exit.value, warningOverrides));
     }
     return results;
   });
 }
 
-function extractAll(): Promise<readonly ExtractionResult[]> {
+function extractAll(
+  warningOverrides: ReadonlyMap<string, readonly Schema.Json[]> = new Map()
+): Promise<readonly ExtractionResult[]> {
   // Keep the actual conformance path on the public seam: the fixture FS is
   // where module-imports-only receives its upstream dependency in memory.
   const effect = Effect.gen(function* () {
     const extractor = yield* ProjectExtractor;
     const extract: FixtureExtraction = (inputPath) => extractor.extractModule(inputPath);
-    return yield* extractFixtureResults(issue14FixtureManifest, extract);
+    return yield* extractFixtureResults(issue14FixtureManifest, extract, warningOverrides);
   }).pipe(
     Effect.provide(
       ProjectExtractor.live({
@@ -549,6 +561,121 @@ export async function writeAdditionalTs7Evidence(
   await writeEvidenceBatch(generatedFiles);
 }
 
+type WarningEvidenceSelection = {
+  readonly definition: Issue14Fixture;
+  readonly oracleFile: "warnings.tsgo.json";
+  readonly codes: readonly string[];
+};
+
+function warningStructure(warnings: readonly ExtractWarning[]): string {
+  return JSON.stringify(
+    warnings.map((warning) =>
+      Object.fromEntries(Object.entries(warning).filter(([field]) => field !== "message"))
+    )
+  );
+}
+
+function selectWarningEvidence(names: readonly string[]): readonly WarningEvidenceSelection[] {
+  const plan = deriveWarningEvidencePlan(fixtureEvidenceCatalog);
+  const selectedNames = names.length === 0 ? plan.map((entry) => entry.fixture) : names;
+  if (new Set(selectedNames).size !== selectedNames.length) {
+    throw new Error("--write-warnings accepts each fixture name at most once.");
+  }
+  return selectedNames.map((name) => {
+    const warning = plan.find((entry) => entry.fixture === name);
+    const definition = issue14FixtureManifest.find((entry) => entry.fixture === name);
+    if (warning === undefined || definition === undefined) {
+      throw new Error(`--write-warnings accepts only cataloged warning fixtures: ${name}`);
+    }
+    return { definition, oracleFile: warning.oracleFile, codes: warning.codes };
+  });
+}
+
+async function extractWarningEvidence(
+  selections: readonly WarningEvidenceSelection[]
+): Promise<ReadonlyMap<string, readonly Schema.Json[]>> {
+  const effect = Effect.gen(function* () {
+    const extractor = yield* ProjectExtractor;
+    const warnings = new Map<string, readonly ExtractWarning[]>();
+    for (const { definition } of selections) {
+      const inputPath = join(fixtureDirectory, definition.fixture, definition.file);
+      const result = yield* extractor.extractModule(inputPath);
+      warnings.set(definition.fixture, result.warnings);
+    }
+    return warnings;
+  }).pipe(
+    Effect.provide(
+      ProjectExtractor.live({
+        tsconfigPath: configPath,
+        fileSystem: createFixtureFileSystem(),
+      })
+    )
+  );
+  const extracted = await Effect.runPromise(Effect.scoped(effect));
+  return new Map(
+    selections.map(({ definition, codes }) => {
+      const warnings = extracted.get(definition.fixture);
+      if (warnings === undefined) throw new Error(`No warning result for ${definition.fixture}.`);
+      const actualCodes = warnings.map((warning) => warning.code);
+      if (JSON.stringify(actualCodes) !== JSON.stringify(codes)) {
+        throw new Error(
+          `Warning identities changed for ${definition.fixture}; expected ${JSON.stringify(codes)}, found ${JSON.stringify(actualCodes)}.`
+        );
+      }
+      const normalizedWarnings = normalizeWarnings(warnings);
+      const existingWarnings = Schema.decodeUnknownSync(Schema.Array(ExtractWarningSchema))(
+        decodeJson(join(fixtureDirectory, definition.fixture, "warnings.tsgo.json"))
+      );
+      if (warningStructure(normalizedWarnings) !== warningStructure(existingWarnings)) {
+        throw new Error(
+          `Warning structure changed for ${definition.fixture}; --write-warnings may update prose only.`
+        );
+      }
+      const normalized = Schema.decodeUnknownSync(Schema.Array(Schema.Json))(
+        JSON.parse(JSON.stringify(normalizedWarnings))
+      );
+      return [definition.fixture, normalized] as const;
+    })
+  );
+}
+
+/** Refresh only cataloged warning oracles and the report that records their reviewed bytes. */
+export async function refreshWarningEvidence(
+  names: readonly string[] = [],
+  options: { readonly referenceRoot?: string } = {}
+): Promise<void> {
+  assertManifest();
+  const selections = selectWarningEvidence(names);
+  const referenceCheck = auditPinnedReference("optional", { referenceRoot: options.referenceRoot });
+  if (referenceCheck.status !== "verified") {
+    throw new Error("--write-warnings requires a verified pinned upstream reference before extraction.");
+  }
+  const warningOverrides = await extractWarningEvidence(selections);
+  const typechecks = issue14FixtureManifest.map(typecheckFixture);
+  const extractions = await extractAll(warningOverrides);
+  const measured = reportFrom(typechecks, extractions, referenceCheck);
+  assertReferenceEvidence(measured.referenceCheck, true);
+  const artifacts: ArtifactBatchItem[] = selections.map(({ definition, oracleFile }) => {
+    const warnings = warningOverrides.get(definition.fixture);
+    if (warnings === undefined) throw new Error(`No warning evidence for ${definition.fixture}.`);
+    return {
+      destination: join(definition.fixture, oracleFile),
+      content: `${JSON.stringify(
+        warnings,
+        null,
+        existingJsonIndent(join(fixtureDirectory, definition.fixture, oracleFile))
+      )}\n`,
+      evidence: "reviewed",
+    };
+  });
+  artifacts.push({
+    destination: "issue-14-conformance.json",
+    content: `${JSON.stringify(measured, null, 2)}\n`,
+    evidence: "generated",
+  });
+  await writeEvidenceBatch(artifacts);
+}
+
 function reportFrom(
   typechecks: readonly TypecheckResult[],
   extractions: readonly ExtractionResult[],
@@ -643,6 +770,12 @@ async function main(): Promise<void> {
   if (writeTs7Index >= 0) {
     const names = process.argv.slice(writeTs7Index + 1).filter((argument) => !argument.startsWith("--"));
     await writeAdditionalTs7Evidence(names);
+    return;
+  }
+  const writeWarningsIndex = process.argv.indexOf("--write-warnings");
+  if (writeWarningsIndex >= 0) {
+    const names = process.argv.slice(writeWarningsIndex + 1).filter((argument) => !argument.startsWith("--"));
+    await refreshWarningEvidence(names);
     return;
   }
   if (process.argv.some((argument) => argument.endsWith("output.json"))) {

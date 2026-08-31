@@ -1,6 +1,6 @@
 [
   {
-    "message": "Type extraction warning: Unable to handle type \"__Named\" with flag \"Object\" at \"test/fixtures/symbol-double-underscore-name-preservation/input.ts:1:1\". Using any instead.",
+    "message": "Could not extract type \"__Named\" at \"test/fixtures/symbol-double-underscore-name-preservation/input.ts:1:1\". The extractor used any. Review this API or add support for this type.",
     "filePath": "test/fixtures/symbol-double-underscore-name-preservation/input.ts",
     "line": 1,
     "column": 1,

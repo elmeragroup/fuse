@@ -1,6 +1,6 @@
 [
   {
-    "message": "Type extraction warning: Unable to represent 1 construct signature at \"test/fixtures/class-members-visibility-and-signatures/input.ts:285:2\". The construct signatures at Constructable/constructSignatures were omitted because the shape is not a class.",
+    "message": "The non-class shape at \"test/fixtures/class-members-visibility-and-signatures/input.ts:285:2\" has 1 construct signature at Constructable/constructSignatures, which the output model cannot represent. The extractor omitted it. Use a class declaration or review the generated API.",
     "filePath": "test/fixtures/class-members-visibility-and-signatures/input.ts",
     "line": 285,
     "column": 2,
@@ -16,7 +16,7 @@
     "signatureCount": 1
   },
   {
-    "message": "Type extraction warning: Unable to represent 1 construct signature at \"test/fixtures/class-members-visibility-and-signatures/input.ts:292:2\". The construct signatures at ConstructableType/constructSignatures were omitted because the shape is not a class.",
+    "message": "The non-class shape at \"test/fixtures/class-members-visibility-and-signatures/input.ts:292:2\" has 1 construct signature at ConstructableType/constructSignatures, which the output model cannot represent. The extractor omitted it. Use a class declaration or review the generated API.",
     "filePath": "test/fixtures/class-members-visibility-and-signatures/input.ts",
     "line": 292,
     "column": 2,
