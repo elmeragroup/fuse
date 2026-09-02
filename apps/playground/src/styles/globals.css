@@ -1,0 +1,8 @@
+@import "tailwindcss";
+@import "@elmeragroup/ui/css";
+@import "@elmeragroup/ui/themes.css";
+/* Tailwind source mode (ticket 77 ruling): the library's recipes are scanned from source, so
+   a class added under packages/ui/src is emitted on the next refresh without a package
+   build. The app's own files are the second source. */
+@source "../../../../packages/ui/src";
+@source "../../src";

@@ -1,0 +1,12 @@
+{
+  "extends": "@elmeragroup/typescript-config/base.json",
+  "compilerOptions": {
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "jsx": "preserve",
+    "declaration": false,
+    "declarationMap": false,
+    "incremental": true
+  },
+  "include": ["src", "next.config.ts", "next-env.d.ts"],
+  "exclude": ["node_modules"]
+}
