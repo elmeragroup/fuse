@@ -50,46 +50,53 @@ function createApi(options: InternalOpenProjectOptions): OpenedProject {
     });
   }
   try {
-    api.parseConfigFile(tsconfigPath);
+    return { api, project: openProject(api, tsconfigPath) };
   } catch (cause) {
     api.close();
+    throw cause;
+  }
+}
+
+/** Parses and opens one tsconfig on an already started compiler; the caller owns `api`. */
+function openProject(api: API, tsconfigPath: string): Project {
+  try {
+    api.parseConfigFile(tsconfigPath);
+  } catch (cause) {
     throw new ConfigError({
       tsconfigPath,
       message: `Could not read TypeScript configuration ${tsconfigPath}`,
       cause: safeCause(cause),
     });
   }
+  let project: Project | undefined;
   try {
-    const snapshot = api.updateSnapshot({ openProjects: [tsconfigPath] });
-    const project = snapshot.getProject(tsconfigPath);
-    if (project === undefined) {
-      throw new BackendError({
-        message: `TypeScript did not open project ${tsconfigPath}`,
-        cause: tsconfigPath,
-        filePath: tsconfigPath,
-      });
-    }
-    const diagnostics = project.program.getConfigFileParsingDiagnostics();
-    if (diagnostics.length > 0) {
-      const details = diagnostics
-        .map((diagnostic) => `${diagnostic.fileName ?? tsconfigPath}: ${diagnostic.text}`)
-        .join("; ");
-      throw new ConfigError({
-        tsconfigPath,
-        message: `Invalid TypeScript configuration ${tsconfigPath}: ${details}`,
-        cause: details,
-      });
-    }
-    return { api, project };
+    project = api.updateSnapshot({ openProjects: [tsconfigPath] }).getProject(tsconfigPath);
   } catch (cause) {
-    api.close();
-    if (cause instanceof BackendError || cause instanceof ConfigError) throw cause;
     throw new BackendError({
       message: `Could not open TypeScript project ${tsconfigPath}`,
       cause: safeCause(cause),
       filePath: tsconfigPath,
     });
   }
+  if (project === undefined) {
+    throw new BackendError({
+      message: `TypeScript did not open project ${tsconfigPath}`,
+      cause: tsconfigPath,
+      filePath: tsconfigPath,
+    });
+  }
+  const diagnostics = project.program.getConfigFileParsingDiagnostics();
+  if (diagnostics.length > 0) {
+    const details = diagnostics
+      .map((diagnostic) => `${diagnostic.fileName ?? tsconfigPath}: ${diagnostic.text}`)
+      .join("; ");
+    throw new ConfigError({
+      tsconfigPath,
+      message: `Invalid TypeScript configuration ${tsconfigPath}: ${details}`,
+      cause: details,
+    });
+  }
+  return project;
 }
 
 function normalizeTiming(info: ReturnType<API["getTimingInfo"]>): BackendTiming {

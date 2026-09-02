@@ -16,21 +16,12 @@ import type {
   InternalTimedExtraction,
   InternalTimingFactory,
 } from "./internal/project-options.ts";
-import { ExtractionResultSchema, ModuleNodeSchema } from "./model.ts";
-import type { ModuleNode } from "./model.ts";
+import { ExtractionResultSchema } from "./model.ts";
 import type { ExtractorOptions, OpenProjectOptions } from "./options.ts";
 import { ResolverFailure } from "./parse/resolver.ts";
 import { readModuleDraft, resolveModuleDraft } from "./parser.ts";
-import type { ProvenanceEntry } from "./provenance.ts";
-import { ProvenanceEntrySchema } from "./provenance.ts";
-import type { ExtractWarning } from "./warnings.ts";
-import { ExtractWarningSchema } from "./warnings.ts";
 
-export type ExtractionResult = {
-  readonly module: ModuleNode;
-  readonly warnings: readonly ExtractWarning[];
-  readonly provenance: readonly ProvenanceEntry[];
-};
+export type ExtractionResult = typeof ExtractionResultSchema.Type;
 
 type ExtractionErrors = BackendError | FileNotInProgramError | ExtractError;
 
@@ -44,32 +35,42 @@ export type ProjectExtractorService = {
 export class ProjectExtractor extends Context.Service<ProjectExtractor, ProjectExtractorService>()(
   "elmera/api-extractor/ProjectExtractor"
 ) {
-  static layer(options: OpenProjectOptions): Layer.Layer<ProjectExtractor, ConfigError | BackendError> {
-    return projectExtractorLayerInternal(publicProjectOptions(options)).pipe(
-      Layer.provide(CompilerBackend.layer)
-    );
-  }
-
   static live(options: OpenProjectOptions): Layer.Layer<ProjectExtractor, ConfigError | BackendError> {
-    return ProjectExtractor.layer(options);
+    return projectExtractorLayer(options).pipe(Layer.provide(CompilerBackend.layer));
   }
 }
+
+/** The one opened backend project every service built from the same layer shares. */
+class OpenedProject extends Context.Service<OpenedProject, BackendProject>()(
+  "elmera/api-extractor/OpenedProject"
+) {}
+
+function openedProjectLayer(
+  options: InternalOpenProjectOptions
+): Layer.Layer<OpenedProject, ConfigError | BackendError, CompilerBackend> {
+  return Layer.effect(
+    OpenedProject,
+    Effect.gen(function* () {
+      const backend = yield* CompilerBackend;
+      return yield* backend.openProject(options);
+    })
+  );
+}
+
+const extractorLayer: Layer.Layer<ProjectExtractor, never, OpenedProject> = Layer.effect(
+  ProjectExtractor,
+  Effect.map(OpenedProject, (project) => ({
+    extractModule: (filePath, options) =>
+      extractModule(project, filePath, options).pipe(Effect.map(({ result }) => result)),
+  }))
+);
+
 /** @internal Test seam for injecting a package-owned backend implementation. */
 export function projectExtractorLayer(
   options: OpenProjectOptions
 ): Layer.Layer<ProjectExtractor, ConfigError | BackendError, CompilerBackend> {
-  return projectExtractorLayerInternal(publicProjectOptions(options));
-}
-
-/** @internal Evidence-only factory; timing is deliberately absent from the public service. */
-export function projectExtractorLayerInternal(
-  options: InternalOpenProjectOptions
-): Layer.Layer<ProjectExtractor, ConfigError | BackendError, CompilerBackend> {
-  const project = openProject(options);
-  const createService = (opened: BackendProject): ProjectExtractorService => ({
-    extractModule: (filePath, extractorOptions) => extractFromProject(opened, filePath, extractorOptions),
-  });
-  return Layer.effect(ProjectExtractor, Effect.map(project, createService));
+  const { tsconfigPath, cwd, fileSystem } = options;
+  return extractorLayer.pipe(Layer.provide(openedProjectLayer({ tsconfigPath, cwd, fileSystem })));
 }
 
 /** @internal Evidence-only factory; timing is deliberately absent from the public service. */
@@ -81,162 +82,100 @@ export function projectExtractorLayerWithTiming(
   ConfigError | BackendError,
   CompilerBackend
 > {
-  const project = openProject(options);
-  return Layer.effectContext(
-    Effect.map(project, (opened) => {
-      const service: ProjectExtractorService = {
-        extractModule: (filePath, extractorOptions) => extractFromProject(opened, filePath, extractorOptions),
-      };
-      const timedMethod = (filePath: string, extractorOptions?: ExtractorOptions) =>
-        extractFromProjectWithTiming(opened, filePath, extractorOptions);
-      return Context.add(
-        Context.make(ProjectExtractor, service),
-        InternalProjectExtractorTiming,
-        timingFactory(timedMethod)
-      );
-    })
+  const timingLayer = Layer.effect(
+    InternalProjectExtractorTiming,
+    Effect.map(OpenedProject, (project) =>
+      timingFactory((filePath, extractorOptions) => extractModule(project, filePath, extractorOptions))
+    )
   );
-}
-
-function openProject(options: InternalOpenProjectOptions) {
-  const acquire = Effect.gen(function* () {
-    const backend = yield* CompilerBackend;
-    return yield* backend.openProject(options);
-  });
-  return Effect.acquireRelease(acquire, (opened) => Effect.sync(() => opened.close()));
-}
-
-function publicProjectOptions(options: OpenProjectOptions): InternalOpenProjectOptions {
-  return {
-    tsconfigPath: options.tsconfigPath,
-    cwd: options.cwd,
-    fileSystem: options.fileSystem,
-  };
-}
-
-function extractFromProject(
-  project: BackendProject,
-  filePath: string,
-  options: ExtractorOptions | undefined
-): Effect.Effect<ExtractionResult, BackendError | FileNotInProgramError | ExtractError> {
-  return extractFromProjectWithTiming(project, filePath, options).pipe(Effect.map(({ result }) => result));
+  return Layer.merge(extractorLayer, timingLayer).pipe(Layer.provide(openedProjectLayer(options)));
 }
 
 function openExtraction(project: BackendProject) {
   return Effect.acquireRelease(
     Effect.try({
       try: () => project.openExtraction(),
-      catch: (cause) => toBackendError("<session>", cause, "openExtraction"),
+      catch: (cause) => classifyThrown(cause, { filePath: "<session>", operation: "openExtraction" }),
     }),
-    (session) => Effect.sync(() => session.close())
+    (session) => Effect.try(() => session.close()).pipe(Effect.ignore)
   );
 }
 
-function extractFromProjectWithTiming(
+const extractModule = Effect.fn("ProjectExtractor.extractModule")(function* (
   project: BackendProject,
   filePath: string,
   options: ExtractorOptions | undefined
-): Effect.Effect<InternalTimedExtraction, BackendError | FileNotInProgramError | ExtractError> {
-  return Effect.scoped(
-    openExtraction(project).pipe(
-      Effect.map((session) => guardedExtractionSession(session, filePath)),
-      Effect.flatMap((guardedSession) =>
-        Effect.try({
-          try: () => readModuleDraft(guardedSession, filePath),
-          catch: (cause) => toBackendError(filePath, cause, "readModule"),
-        }).pipe(
-          Effect.flatMap((draft) =>
-            Effect.try({
-              try: () => resolveModuleDraft(guardedSession, draft, filePath, options),
-              catch: (cause) => toBackendOrExtractionError(filePath, cause),
-            })
-          )
-        )
-      ),
-      Effect.flatMap((resolved) =>
-        Effect.try({
-          try: () => decodeResult(resolved.module, resolved.warnings, resolved.provenance),
-          catch: (cause) => toExtractionError(filePath, cause),
-        })
-      ),
-      Effect.flatMap((result) =>
-        Effect.try({
-          try: () => project.getTimingInfo?.() ?? disabledTiming(),
-          catch: (cause) => toBackendError(filePath, cause, "getTimingInfo"),
-        }).pipe(Effect.map((timing) => ({ result, timing })))
-      )
-    )
-  );
-}
-
-function toBackendOrExtractionError(
-  filePath: string,
-  cause: unknown
-): BackendError | FileNotInProgramError | ExtractError {
-  if (cause instanceof BackendError || cause instanceof FileNotInProgramError) return cause;
-  return toExtractionError(filePath, cause);
-}
-
-function decodeResult(
-  module: ModuleNode,
-  warnings: readonly unknown[],
-  provenance: readonly ProvenanceEntry[]
-): ExtractionResult {
-  return Schema.decodeUnknownSync(ExtractionResultSchema)({
-    module: Schema.decodeUnknownSync(ModuleNodeSchema)(module),
-    warnings: warnings.map((warning) => Schema.decodeUnknownSync(ExtractWarningSchema)(warning)),
-    provenance: provenance.map((entry) => Schema.decodeUnknownSync(ProvenanceEntrySchema)(entry)),
+) {
+  const session = guardedExtractionSession(yield* openExtraction(project), filePath);
+  const draft = yield* Effect.try({
+    try: () => readModuleDraft(session, filePath),
+    catch: (cause) => classifyThrown(cause, { filePath, operation: "readModule" }),
   });
-}
+  const resolved = yield* Effect.try({
+    try: () => resolveModuleDraft(session, draft, filePath, options),
+    catch: (cause) => classifyThrown(cause, { filePath, operation: "resolveModule", fallback: "extract" }),
+  });
+  // The resolver violating its own schema is a bug, not user input.
+  const result = yield* Schema.decodeUnknownEffect(ExtractionResultSchema)(resolved).pipe(Effect.orDie);
+  const timing = yield* Effect.try({
+    try: () => project.getTimingInfo?.() ?? disabledTiming(),
+    catch: (cause) => classifyThrown(cause, { filePath, operation: "getTimingInfo" }),
+  });
+  return { result, timing } satisfies InternalTimedExtraction;
+}, Effect.scoped);
 
-function toBackendError(
-  filePath: string,
-  cause: unknown,
-  operation = "extractModule",
-  symbolStack: readonly string[] = []
-): BackendError | FileNotInProgramError {
-  if (cause instanceof FileNotInProgramError) return cause;
-  if (cause instanceof BackendError) {
-    const existingStack = cause.symbolStack;
-    const needsOperation = cause.operation === undefined;
-    const needsFilePath = cause.filePath === undefined;
-    const needsSymbolStack =
-      symbolStack.length > 0 && (existingStack === undefined || existingStack.length === 0);
-    if (!needsOperation && !needsFilePath && !needsSymbolStack) return cause;
-    return new BackendError({
-      message: cause.message,
-      cause: cause.cause,
-      operation: cause.operation ?? operation,
-      filePath: cause.filePath ?? filePath,
-      ...(needsSymbolStack
-        ? { symbolStack: [...symbolStack] }
-        : existingStack === undefined
-          ? {}
-          : { symbolStack: [...existingStack] }),
+type ThrownContext = {
+  readonly filePath: string;
+  readonly operation: string;
+  readonly symbolStack?: readonly string[];
+  /** What an unrecognised throw becomes: a compiler fault, or a resolver/policy fault. */
+  readonly fallback?: "backend" | "extract";
+};
+
+/**
+ * Classifies a value thrown across the synchronous seam. Typed errors pass
+ * through; a BackendError gains whichever of operation, file and symbol stack
+ * it lacks; a ResolverFailure keeps its breadcrumb; anything else becomes the
+ * fallback error for the phase that threw it.
+ */
+function classifyThrown(cause: unknown, context: ThrownContext): ExtractionErrors {
+  if (cause instanceof FileNotInProgramError || cause instanceof ExtractError) return cause;
+  if (cause instanceof BackendError) return withThrownContext(cause, context);
+  if (cause instanceof ResolverFailure || context.fallback === "extract") {
+    const resolver = cause instanceof ResolverFailure ? cause : undefined;
+    return new ExtractError({
+      filePath: context.filePath,
+      symbolStack: [context.filePath, ...(resolver?.symbolStack ?? [])],
+      message: `Could not parse or model ${context.filePath}${resolver === undefined ? "" : `: ${resolver.message}`}`,
+      cause: safeCause(resolver?.cause ?? cause),
     });
   }
+  const symbolStack = context.symbolStack ?? [];
   return new BackendError({
-    message: `Compiler operation ${operation} failed while extracting ${filePath}`,
+    message: `Compiler operation ${context.operation} failed while extracting ${context.filePath}`,
     cause: safeCause(cause),
-    operation,
-    filePath,
+    operation: context.operation,
+    filePath: context.filePath,
     ...(symbolStack.length === 0 ? {} : { symbolStack: [...symbolStack] }),
   });
 }
 
-function toExtractionError(
-  filePath: string,
-  cause: unknown
-): BackendError | FileNotInProgramError | ExtractError {
-  if (cause instanceof BackendError || cause instanceof FileNotInProgramError) return cause;
-  if (cause instanceof ExtractError) return cause;
-  const resolver = cause instanceof ResolverFailure ? cause : undefined;
-  const stack = resolver?.symbolStack ?? [];
-  return new ExtractError({
-    filePath,
-    symbolStack: [filePath, ...stack],
-    message: `Could not parse or model ${filePath}${resolver === undefined ? "" : `: ${resolver.message}`}`,
-    cause: safeCause(resolver?.cause ?? cause),
+function withThrownContext(error: BackendError, context: ThrownContext): BackendError {
+  const symbolStack = context.symbolStack ?? [];
+  const existingStack = error.symbolStack;
+  const needsSymbolStack =
+    symbolStack.length > 0 && (existingStack === undefined || existingStack.length === 0);
+  if (error.operation !== undefined && error.filePath !== undefined && !needsSymbolStack) return error;
+  return new BackendError({
+    message: error.message,
+    cause: error.cause,
+    operation: error.operation ?? context.operation,
+    filePath: error.filePath ?? context.filePath,
+    ...(needsSymbolStack
+      ? { symbolStack: [...symbolStack] }
+      : existingStack === undefined
+        ? {}
+        : { symbolStack: [...existingStack] }),
   });
 }
 
@@ -258,10 +197,42 @@ function disabledTiming(): InternalTimedExtraction["timing"] {
   };
 }
 
+type CompilerOperationName = Exclude<keyof BackendCompilerOperations, "setErrorContext">;
+type CompilerOperation = NonNullable<BackendCompilerOperations[CompilerOperationName]>;
+
+const compilerOperationNames = [
+  "typeOfSymbol",
+  "typeAtNode",
+  "typeFacts",
+  "symbolFacts",
+  "symbolOrigin",
+  "declaringParentIsClass",
+  "documentationOfSymbol",
+  "enumFacts",
+  "nodeFacts",
+  "nodeKind",
+  "typeNameFacts",
+  "signaturesOfType",
+  "constructSignaturesOfType",
+  "declarationOwnership",
+  "signatureFacts",
+  "documentationOfNode",
+  "documentationOfParameter",
+  "propertiesOfType",
+  "propertyType",
+  "indexSignaturesOfType",
+  "baseConstraintOfType",
+  "isArrayType",
+  "isReadonlyType",
+  "typeToString",
+] as const satisfies readonly CompilerOperationName[];
+
 /**
- * Wraps the complete backend session once per extraction. Backend operations
- * are kept distinct from resolver policy so transport/compiler failures stay
- * BackendErrors while user callbacks still become ExtractErrors at the shell.
+ * Wraps the complete backend session once per extraction. Every compiler
+ * operation that throws surfaces as a BackendError carrying the operation
+ * name, the current file and the resolver's symbol stack, so transport and
+ * compiler failures stay BackendErrors while user callbacks still become
+ * ExtractErrors at the shell.
  */
 function guardedExtractionSession(
   session: BackendExtractionSession,
@@ -271,73 +242,38 @@ function guardedExtractionSession(
   let currentFilePath = filePath;
   const guard =
     <Arguments extends readonly unknown[], Result>(
-      name: string,
-      operation: (...arguments_: Arguments) => Result,
+      operation: string,
+      run: (...arguments_: Arguments) => Result,
       operationFilePath?: (...arguments_: Arguments) => string
     ) =>
     (...arguments_: Arguments): Result => {
       const operationPath = operationFilePath?.(...arguments_) ?? currentFilePath;
       try {
-        return operation(...arguments_);
+        return run(...arguments_);
       } catch (cause) {
-        throw toBackendError(operationPath, cause, name, symbolStack);
+        throw classifyThrown(cause, { filePath: operationPath, operation, symbolStack });
       }
     };
 
   const compiler = session.compiler;
-  const constructSignaturesOfType = compiler.constructSignaturesOfType;
-  const declarationOwnership = compiler.declarationOwnership;
-  const documentationOfNode = compiler.documentationOfNode;
-  const documentationOfParameter = compiler.documentationOfParameter;
-  const guardedCompiler: BackendCompilerOperations = {
-    setErrorContext: (next) => {
-      symbolStack = [...next];
-      if (compiler.setErrorContext !== undefined) {
-        guard("setErrorContext", () => compiler.setErrorContext?.(next))();
-      }
-    },
-    typeOfSymbol: guard("typeOfSymbol", (symbol, declared) => compiler.typeOfSymbol(symbol, declared)),
-    typeAtNode: guard("typeAtNode", (node) => compiler.typeAtNode(node)),
-    typeFacts: guard("typeFacts", (type) => compiler.typeFacts(type)),
-    symbolFacts: guard("symbolFacts", (symbol) => compiler.symbolFacts(symbol)),
-    symbolOrigin: guard("symbolOrigin", (symbol) => compiler.symbolOrigin(symbol)),
-    declaringParentIsClass: guard("declaringParentIsClass", (symbol) =>
-      compiler.declaringParentIsClass(symbol)
-    ),
-    ...(compiler.documentationOfSymbol === undefined
-      ? {}
-      : {
-          documentationOfSymbol: guard("documentationOfSymbol", (symbol) =>
-            compiler.documentationOfSymbol?.(symbol)
-          ),
-        }),
-    ...(compiler.enumFacts === undefined
-      ? {}
-      : {
-          enumFacts: guard("enumFacts", (type) => compiler.enumFacts?.(type)),
-        }),
-    nodeFacts: guard("nodeFacts", (node) => compiler.nodeFacts(node)),
-    nodeKind: guard("nodeKind", (node) => compiler.nodeKind(node)),
-    typeNameFacts: guard("typeNameFacts", (type, sourceNode) => compiler.typeNameFacts(type, sourceNode)),
-    signaturesOfType: guard("signaturesOfType", (type) => compiler.signaturesOfType(type)),
-    ...(constructSignaturesOfType === undefined
-      ? {}
-      : { constructSignaturesOfType: guard("constructSignaturesOfType", constructSignaturesOfType) }),
-    declarationOwnership: guard("declarationOwnership", declarationOwnership),
-    signatureFacts: guard("signatureFacts", (signature) => compiler.signatureFacts(signature)),
-    ...(documentationOfNode === undefined
-      ? {}
-      : { documentationOfNode: guard("documentationOfNode", documentationOfNode) }),
-    ...(documentationOfParameter === undefined
-      ? {}
-      : { documentationOfParameter: guard("documentationOfParameter", documentationOfParameter) }),
-    propertiesOfType: guard("propertiesOfType", (type) => compiler.propertiesOfType(type)),
-    propertyType: guard("propertyType", (property) => compiler.propertyType(property)),
-    indexSignaturesOfType: guard("indexSignaturesOfType", (type) => compiler.indexSignaturesOfType(type)),
-    baseConstraintOfType: guard("baseConstraintOfType", (type) => compiler.baseConstraintOfType(type)),
-    isArrayType: guard("isArrayType", (type) => compiler.isArrayType(type)),
-    isReadonlyType: guard("isReadonlyType", (type) => compiler.isReadonlyType(type)),
-    typeToString: guard("typeToString", (type) => compiler.typeToString(type)),
+  const guardedOperations: Partial<Record<CompilerOperationName, CompilerOperation>> = {};
+  for (const name of compilerOperationNames) {
+    const operation = compiler[name];
+    if (operation === undefined) continue;
+    // SAFETY: `operation` is the session's own method for `name`; the guard
+    // forwards the exact arguments the typed caller supplied and returns the
+    // same result, so the wrapped function keeps that method's signature.
+    const uniform = operation as (
+      ...operationArguments: Parameters<CompilerOperation>
+    ) => ReturnType<CompilerOperation>;
+    // SAFETY: `guard` preserves `uniform`'s signature, which is the method's own.
+    guardedOperations[name] = guard(name, uniform) as CompilerOperation;
+  }
+  const setErrorContext = (next: readonly string[]) => {
+    symbolStack = [...next];
+    if (compiler.setErrorContext !== undefined) {
+      guard("setErrorContext", () => compiler.setErrorContext?.(next))();
+    }
   };
 
   return {
@@ -349,7 +285,8 @@ function guardedExtractionSession(
         return modulePath;
       }
     ),
-    compiler: guardedCompiler,
+    // SAFETY: every operation name was copied above with its own signature.
+    compiler: { ...guardedOperations, setErrorContext } as BackendCompilerOperations,
     resolveModule: guard(
       "resolveModule",
       (specifier, containingFile) => session.resolveModule(specifier, containingFile),

@@ -176,11 +176,11 @@ export function resolveObjectNode(
   try {
     callbackDecision = context.options.shouldResolveObject?.(resolveData);
   } catch (cause) {
-    throw new ResolverFailure(
-      `shouldResolveObject failed while resolving ${typeNameValue?.name ?? "an object"}`,
-      context.symbolStack,
-      cause
-    );
+    throw new ResolverFailure({
+      message: `shouldResolveObject failed while resolving ${typeNameValue?.name ?? "an object"}`,
+      symbolStack: context.symbolStack,
+      cause,
+    });
   }
   const shouldResolve = callbackDecision ?? defaultObjectResolution(resolveData);
 
@@ -456,11 +456,11 @@ function includeProperty(property: BackendSymbolHandle, context: Context): boole
   try {
     return context.options.shouldInclude?.({ name: info.name, depth: context.active.size + 1 }) ?? true;
   } catch (cause) {
-    throw new ResolverFailure(
-      `shouldInclude failed while resolving property ${info.name}`,
-      context.symbolStack,
-      cause
-    );
+    throw new ResolverFailure({
+      message: `shouldInclude failed while resolving property ${info.name}`,
+      symbolStack: context.symbolStack,
+      cause,
+    });
   }
 }
 
