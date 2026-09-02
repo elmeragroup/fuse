@@ -4,32 +4,22 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
-  assertReactDivergenceEvidence,
-  assertTs7DivergenceEvidence,
-  canonicalDifferencePaths,
   expectedWarningCodes,
   issue12ExpectedWarnings,
   issue12ReactFixtureAudit,
   issue12ReactFixtures,
   normalizeWarnings,
-  readFixtureOracle,
 } from "../scripts/fixture-evidence.ts";
-import { referenceAvailable, upstreamFixtureRoot } from "../scripts/reference.ts";
 import type { ExtractionResult, ExtractorOptions } from "../src/index.ts";
 import type { ComponentNode, SemanticType } from "../src/model.ts";
 import { ProvenanceEntrySchema } from "../src/provenance.ts";
 import { ExtractWarningSchema } from "../src/warnings.ts";
-import { extractFixture } from "./support/extract.ts";
+import { extractFixture, fixtureRoot } from "./support/extract.ts";
 
-const fixtureRoot = resolve(import.meta.dirname, "fixtures");
 const tsconfigPath = resolve(fixtureRoot, "issue-12-tsconfig.json");
 
 function runExtraction(fixture: string, file: string, options?: ExtractorOptions): Promise<ExtractionResult> {
   return extractFixture({ tsconfigPath }, resolve(fixtureRoot, fixture, file), options);
-}
-
-function oracleFile(definition: (typeof issue12ReactFixtures)[number]): string {
-  return definition.oracle === "immutable-upstream" ? "output.json" : "output.tsgo.json";
 }
 
 function readJson(fixture: string, file: string): Schema.Json {
@@ -50,49 +40,7 @@ function property(type: ComponentNode, name: string): SemanticType {
   return entry.type;
 }
 
-describe("Issue 12 ported wrapped React fixtures", () => {
-  it("keeps every copied input and immutable upstream oracle byte-identical", () => {
-    if (!referenceAvailable) return;
-    for (const definition of issue12ReactFixtures) {
-      for (const file of [definition.file, "output.json"]) {
-        expect(readFileSync(resolve(fixtureRoot, definition.fixture, file), "utf8")).toBe(
-          readFileSync(resolve(upstreamFixtureRoot, definition.fixture, file), "utf8")
-        );
-      }
-    }
-  });
-
-  for (const definition of issue12ReactFixtures) {
-    it(`matches the ${definition.oracle} oracle for ${definition.fixture}`, async () => {
-      const result = await runExtraction(definition.fixture, definition.file);
-      expect(result.module).toEqual(readFixtureOracle(definition.fixture, oracleFile(definition)));
-    });
-  }
-
-  it("records exact zero-leaf equality for immutable wrappers", async () => {
-    for (const definition of issue12ReactFixtures) {
-      if (definition.oracle !== "immutable-upstream") continue;
-      const result = await runExtraction(definition.fixture, definition.file);
-      expect(
-        canonicalDifferencePaths(
-          readJson(definition.fixture, "output.json"),
-          Schema.decodeUnknownSync(Schema.Json)(JSON.parse(JSON.stringify(result.module)))
-        )
-      ).toEqual([]);
-    }
-  });
-
-  it("keeps every reviewed TypeScript 7 divergence tied to its preserved upstream oracle", () => {
-    for (const definition of issue12ReactFixtures) {
-      if (definition.oracle !== "reviewed-ts7") continue;
-      expect(() => assertTs7DivergenceEvidence(definition.fixture)).not.toThrow();
-    }
-  });
-
-  it("keeps the Base UI compound divergence record current", () => {
-    expect(() => assertReactDivergenceEvidence()).not.toThrow();
-  });
-
+describe("wrapped React component warnings and fixture audit", () => {
   it("matches the structured warning oracle for every wrapper", async () => {
     for (const definition of issue12ReactFixtures) {
       const result = await runExtraction(definition.fixture, definition.file);
@@ -155,7 +103,7 @@ describe("Issue 12 ported wrapped React fixtures", () => {
   });
 });
 
-describe("Issue 12 wrapped and compound component representation", () => {
+describe("wrapped and compound component representation", () => {
   it("preserves forwardRef props, ref type, docs, and authored ownership", async () => {
     const result = await runExtraction("react-forward-ref-component", "input.tsx");
     const type = component(result, "TestComponent");

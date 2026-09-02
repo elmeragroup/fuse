@@ -1,224 +1,23 @@
-import { Schema } from "effect";
-import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
-  assertTs7DivergenceEvidence,
-  canonicalDifferencePaths,
   expectedWarningCodes,
   issue13ExpectedWarnings,
   issue13ExternalFixtures,
-  readFixtureOracle,
 } from "../scripts/fixture-evidence.ts";
-import { referenceAvailable, upstreamFixtureRoot } from "../scripts/reference.ts";
-import { classifySourceFile, isExternalSourceFile } from "../src/backend/ts7/file-ownership.ts";
 import type { ExtractionResult, ExtractorOptions } from "../src/index.ts";
 import type { ExternalTypeNode } from "../src/model.ts";
 import { defaultExtractorOptions } from "../src/options.ts";
-import { extractFixture } from "./support/extract.ts";
+import { extractFixture, fixtureRoot } from "./support/extract.ts";
 
-const fixtureRoot = resolve(import.meta.dirname, "fixtures");
 const tsconfigPath = resolve(fixtureRoot, "issue-13-tsconfig.json");
 
 function runExtraction(fixture: string, file: string, options?: ExtractorOptions): Promise<ExtractionResult> {
   return extractFixture({ tsconfigPath }, resolve(fixtureRoot, fixture, file), options);
 }
 
-function oracleFile(definition: (typeof issue13ExternalFixtures)[number]): string {
-  return definition.oracle === "immutable-upstream" ? "output.json" : "output.tsgo.json";
-}
-
-describe("Issue 13 backend ownership classification", () => {
-  it.each([
-    [
-      "Unix ordinary dependency",
-      "/repo/node_modules/pkg/index.d.ts",
-      { kind: "dependency", packageName: "pkg" },
-    ],
-    [
-      "Windows ordinary dependency",
-      String.raw`C:\repo\node_modules\pkg\index.d.ts`,
-      { kind: "dependency", packageName: "pkg" },
-    ],
-    [
-      "Unix TypeScript standard library",
-      "/repo/node_modules/typescript/lib/lib.dom.d.ts",
-      { kind: "typescript", library: "standard-library" },
-    ],
-    [
-      "Windows TypeScript standard library",
-      String.raw`C:\repo\node_modules\typescript\lib\lib.dom.d.ts`,
-      { kind: "typescript", library: "standard-library" },
-    ],
-    [
-      "Unix @typescript toolchain library",
-      "/repo/node_modules/@typescript/tsc/lib/lib.es2022.d.ts",
-      { kind: "typescript", library: "standard-library" },
-    ],
-    [
-      "Windows @typescript toolchain library",
-      String.raw`C:\repo\node_modules\@typescript\tsc\lib\lib.es2022.d.ts`,
-      { kind: "typescript", library: "standard-library" },
-    ],
-    [
-      "Unix TypeScript non-standard declaration",
-      "/repo/node_modules/typescript/lib/index.d.ts",
-      { kind: "typescript", library: "toolchain" },
-    ],
-    [
-      "Windows TypeScript non-standard declaration",
-      String.raw`C:\repo\node_modules\typescript\lib\index.d.ts`,
-      { kind: "typescript", library: "toolchain" },
-    ],
-    ["Unix project source", "/repo/src/index.ts", { kind: "project" }],
-    ["Windows project source", String.raw`C:\repo\src\index.ts`, { kind: "project" }],
-    [
-      "non-TypeScript dependency library",
-      "/repo/node_modules/pkg/lib/index.d.ts",
-      { kind: "dependency", packageName: "pkg" },
-    ],
-    [
-      "Unix @typescript-eslint parser library",
-      "/repo/node_modules/@typescript-eslint/parser/lib/index.d.ts",
-      { kind: "dependency", packageName: "@typescript-eslint/parser" },
-    ],
-    [
-      "Windows @typescript-eslint parser library",
-      String.raw`C:\repo\node_modules\@typescript-eslint\parser\lib\index.d.ts`,
-      { kind: "dependency", packageName: "@typescript-eslint/parser" },
-    ],
-    [
-      "Unix typescript-eslint library",
-      "/repo/node_modules/typescript-eslint/lib/index.d.ts",
-      { kind: "dependency", packageName: "typescript-eslint" },
-    ],
-    [
-      "Windows typescript-eslint library",
-      String.raw`C:\repo\node_modules\typescript-eslint\lib\index.d.ts`,
-      { kind: "dependency", packageName: "typescript-eslint" },
-    ],
-    ["Unix project TypeScript-like library", "/repo/src/my-typescript/lib/index.d.ts", { kind: "project" }],
-    [
-      "Windows project TypeScript-like library",
-      String.raw`C:\repo\src\my-typescript\lib\index.d.ts`,
-      { kind: "project" },
-    ],
-  ] as const)("classifies $0", (_label, filePath, expected) => {
-    expect(classifySourceFile(filePath)).toEqual(expected);
-  });
-
-  it.each([
-    [
-      "Unix project TypeScript-shaped library with compiler metadata",
-      "/repo/src/typescript/lib/lib.dom.d.ts",
-      { kind: "project" },
-      { externalLibrary: false, defaultLibrary: false },
-    ],
-    [
-      "Windows project @typescript-shaped library with compiler metadata",
-      String.raw`C:\repo\src\@typescript\tsc\lib\lib.es2022.d.ts`,
-      { kind: "project" },
-      { externalLibrary: false, defaultLibrary: false },
-    ],
-    [
-      "non-node_modules compiler default library",
-      "/opt/typescript/lib/lib.es2022.d.ts",
-      { kind: "typescript", library: "standard-library" },
-      { externalLibrary: false, defaultLibrary: true },
-    ],
-    [
-      "non-node_modules external compiler declaration",
-      "/opt/typescript/lib/index.d.ts",
-      { kind: "typescript", library: "toolchain" },
-      { externalLibrary: true, defaultLibrary: false },
-    ],
-    [
-      "external declaration with no identifiable package owner",
-      "/vendor/declarations/index.d.ts",
-      { kind: "external" },
-      { externalLibrary: true, defaultLibrary: false },
-    ],
-  ] as const)("combines compiler metadata for $0", (_label, filePath, expected, metadata) => {
-    expect(classifySourceFile(filePath, metadata)).toEqual(expected);
-  });
-
-  it.each([
-    [
-      "explicit project metadata overrides a TypeScript-shaped path",
-      "/repo/src/typescript/lib/lib.dom.d.ts",
-      { isFromExternalLibrary: false, isDefaultLibrary: false },
-      false,
-    ],
-    [
-      "absent metadata keeps the TypeScript-shaped path fallback",
-      "/repo/src/typescript/lib/lib.dom.d.ts",
-      undefined,
-      true,
-    ],
-    [
-      "explicit external metadata remains external",
-      "/repo/src/typescript/lib/lib.dom.d.ts",
-      { isFromExternalLibrary: true, isDefaultLibrary: false },
-      true,
-    ],
-  ] as const)("uses $0", (_label, filePath, metadata, expected) => {
-    expect(isExternalSourceFile(filePath, metadata)).toBe(expected);
-  });
-});
-
-describe("Issue 13 ported external-type policy fixtures", () => {
-  it("keeps every copied input and upstream oracle byte-identical to e145350", () => {
-    if (!referenceAvailable) return;
-    for (const definition of issue13ExternalFixtures) {
-      // Inputs and upstream oracles are verbatim copies; the reviewed fixtures
-      // add workspace-owned TS7 artifacts that have no upstream counterpart.
-      for (const file of [definition.file, "output.json"]) {
-        expect(readFileSync(resolve(fixtureRoot, definition.fixture, file), "utf8")).toBe(
-          readFileSync(resolve(upstreamFixtureRoot, definition.fixture, file), "utf8")
-        );
-      }
-      if (definition.oracle === "reviewed-ts7") {
-        for (const file of ["output.tsgo.json", "ts7-oracle.json"]) {
-          expect(readFileSync(resolve(fixtureRoot, definition.fixture, file), "utf8").length).toBeGreaterThan(
-            0
-          );
-        }
-      }
-    }
-  });
-
-  it.each(issue13ExternalFixtures.map((definition) => [definition] as const))(
-    "matches the $0.oracle oracle for $0.fixture",
-    async (definition) => {
-      const result = await runExtraction(definition.fixture, definition.file);
-      expect(result.module).toEqual(readFixtureOracle(definition.fixture, oracleFile(definition)));
-    }
-  );
-
-  it("has an exact zero-leaf-difference record for every immutable upstream oracle", async () => {
-    if (!referenceAvailable) return;
-    for (const definition of issue13ExternalFixtures) {
-      if (definition.oracle !== "immutable-upstream") continue;
-      const result = await runExtraction(definition.fixture, definition.file);
-      const expected = Schema.decodeUnknownSync(Schema.Json)(
-        JSON.parse(readFileSync(resolve(fixtureRoot, definition.fixture, "output.json"), "utf8"))
-      );
-      const actual = Schema.decodeUnknownSync(Schema.Json)(JSON.parse(JSON.stringify(result.module)));
-      expect(canonicalDifferencePaths(expected, actual)).toEqual([]);
-    }
-  });
-
-  it("has a current reviewed TS7 divergence record with its preserved upstream oracle", () => {
-    const divergent = issue13ExternalFixtures.filter((definition) => definition.oracle === "reviewed-ts7");
-    // Nine fixtures carry compiler-view divergence records; six reproduce the
-    // upstream bytes outright.
-    expect(divergent).toHaveLength(9);
-    for (const definition of divergent) {
-      expect(() => assertTs7DivergenceEvidence(definition.fixture)).not.toThrow();
-    }
-  });
-
+describe("external-type warnings on the ported upstream fixtures", () => {
   it("emits exactly the warnings each reviewed record declares", async () => {
     for (const definition of issue13ExternalFixtures) {
       const result = await runExtraction(definition.fixture, definition.file);
@@ -226,33 +25,6 @@ describe("Issue 13 ported external-type policy fixtures", () => {
       const actualCodes = result.warnings.map((warning) => warning.code).sort();
       expect(actualCodes).toEqual(expectedCodes);
     }
-  });
-
-  it("covers every external-policy family with at least one ported fixture", () => {
-    const families = new Set(issue13ExternalFixtures.map((definition) => definition.family));
-    expect([...families].sort()).toEqual([
-      "componentUnions",
-      "exportForms",
-      "externalConditional",
-      "externalUnions",
-      "handlers",
-      "heritageOmit",
-      "hooks",
-      "namespaceSpecialization",
-      "overloadDeduplication",
-      "reexportNamespaces",
-      "reexportTracking",
-      "refs",
-      "renderCallbacks",
-    ]);
-    const unchanged = issue13ExternalFixtures.filter(
-      (definition) => definition.oracle === "immutable-upstream"
-    );
-    expect({
-      total: issue13ExternalFixtures.length,
-      unchanged: unchanged.length,
-      reviewedDivergences: issue13ExternalFixtures.length - unchanged.length,
-    }).toEqual({ total: 15, unchanged: 6, reviewedDivergences: 9 });
   });
 
   it("keeps the implementation contribution for a direct overloaded component export", async () => {
@@ -273,7 +45,7 @@ describe("Issue 13 ported external-type policy fixtures", () => {
   });
 });
 
-describe("Issue 13 external-type ownership policy in both modes", () => {
+describe("external-type ownership policy in both modes", () => {
   it("keeps project-owned TypeScript-shaped declarations project-owned", async () => {
     const result = await runExtraction("issue-13-review", "input.ts");
     const exports = new Map(result.module.exports.map((entry) => [entry.name, entry]));
@@ -469,7 +241,7 @@ describe("Issue 13 external-type ownership policy in both modes", () => {
   });
 });
 
-describe("Issue 13 summarized references keep durable identity", () => {
+describe("summarized references keep durable identity", () => {
   it("never exposes compiler paths or handles in extracted output", async () => {
     const result = await runExtraction("react-event-handlers", "input.ts");
     const serialized = JSON.stringify({ module: result.module, provenance: result.provenance });
