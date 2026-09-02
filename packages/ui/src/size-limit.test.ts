@@ -284,9 +284,11 @@ describe("size-limit harness", () => {
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "react-aria/file-trigger")?.ceilingGzip).toBe(
       ceilingFromMeasured(36483)
     );
-    // styles.css recalibrated 2026-08-25: Table in-frame utilities exceeded 15860.
+    // styles.css recalibrated 2026-08-25: Table in-frame utilities exceeded 15860, then
+    // tightened 2026-09-02 by the gzip bytes `source(none)` removed from the sheet
+    // (ticket 22) rather than banking them as slack.
     expect(CSS_BUDGETS.find((budget) => budget.name === "styles.css")?.ceilingGzip).toBe(
-      ceilingFromMeasured(16843)
+      ceilingFromMeasured(16843) - (23685 - 23491)
     );
   });
 

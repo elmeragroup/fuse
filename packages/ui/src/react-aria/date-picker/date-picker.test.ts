@@ -95,9 +95,7 @@ describe("datePickerVariants", () => {
 
   it("sizes the trigger glyph without an important flag — buttonVariants defers to it", () => {
     // `buttonVariants` only sizes `svg:not([class*='size-'])`, so a plain `size-4` on the
-    // glyph already wins and the important flag it used to carry was noise. Asserted as an
-    // exact match rather than by grepping for the flagged class: spelling that class
-    // anywhere Tailwind scans would put the utility back into `styles.css`.
+    // glyph already wins and the important flag it used to carry was noise.
     expect(datePickerVariants().icon()).toBe("size-4 transition-colors");
   });
 

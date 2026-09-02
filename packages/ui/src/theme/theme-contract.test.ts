@@ -107,6 +107,9 @@ describe("theme contract", () => {
   });
 
   it("builds standalone CSS without Preflight", () => {
+    // The wrapper's source set — `source(none)` and the single dist `@source` — is
+    // asserted once, in `styles/standalone-css.test.ts`. This test owns the one rule
+    // that belongs to the token contract: a library never resets the host page.
     const wrapper = readFileSync(
       join(dirname(fileURLToPath(import.meta.url)), "../../scripts/standalone.css"),
       "utf8"
@@ -114,7 +117,6 @@ describe("theme contract", () => {
     expect(wrapper).toContain('@import "tailwindcss/theme.css"');
     expect(wrapper).toContain('@import "tailwindcss/utilities.css"');
     expect(wrapper).not.toContain("preflight");
-    expect(wrapper).toContain('@source "../dist/**/*.js"');
   });
 });
 

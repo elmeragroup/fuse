@@ -1,11 +1,4 @@
 @import "tailwindcss/theme.css";
-@import "tailwindcss/utilities.css";
+@import "tailwindcss/utilities.css" source(none);
 @import "../src/styles/ui.css";
 @source "../dist/**/*.js";
-/* The react-aria quarantine is package-private until its entries ship: none of it is
-   reachable through package.json exports, so none of it reaches dist. Excluding it from
-   automatic source detection keeps the standalone stylesheet a description of the
-   published JS (architecture.md section 5) rather than of the working tree. Once the
-   interim entries land, their classes arrive through the dist source above like
-   everything else. */
-@source not "../src/react-aria/**";

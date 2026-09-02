@@ -232,7 +232,7 @@ describe("SelectionItem", () => {
   it("places the control after the row at end and matches spacer width in both positions", () => {
     renderThemed(
       <div>
-        <Field.Root className="contents">
+        <Field.Root style={{ display: "contents" }}>
           <SelectionItem.Shell dataSlot="checkbox-item" control={<Checkbox.Root />}>
             <RowTitle>Start row</RowTitle>
             <SelectionItem.SubSection role="region" aria-label="Start extra">
@@ -240,7 +240,7 @@ describe("SelectionItem", () => {
             </SelectionItem.SubSection>
           </SelectionItem.Shell>
         </Field.Root>
-        <Field.Root className="contents">
+        <Field.Root style={{ display: "contents" }}>
           <SelectionItem.Shell dataSlot="checkbox-item" controlPosition="end" control={<Checkbox.Root />}>
             <RowTitle>End row</RowTitle>
             <SelectionItem.SubSection role="region" aria-label="End extra">
@@ -248,11 +248,20 @@ describe("SelectionItem", () => {
             </SelectionItem.SubSection>
           </SelectionItem.Shell>
         </Field.Root>
-        <Field.Root className="contents">
+        <Field.Root style={{ display: "contents" }}>
           <SelectionItem.Shell
             dataSlot="checkbox-item"
             controlPosition="end"
-            control={<span role="img" aria-label="Wide indicator" className="block h-4 w-12" />}>
+            control={
+              // Inline, not utility classes: the browser suite loads `styles.css`, which is
+              // compiled from `dist/**/*.js` only, so a class spelled solely in a test never
+              // reaches the sheet (architecture.md §5).
+              <span
+                role="img"
+                aria-label="Wide indicator"
+                style={{ display: "block", height: "1rem", width: "3rem" }}
+              />
+            }>
             <RowTitle>Wide row</RowTitle>
             <SelectionItem.SubSection role="region" aria-label="Wide extra">
               Wide extra
