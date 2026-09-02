@@ -33,6 +33,7 @@ export const PHOSPHOR_ICON_NAMES = [
   "DeviceMobile",
   "Dot",
   "DotOutline",
+  "DotsSixVertical",
   "DotsThree",
   "DotsThreeVertical",
   "Download",

@@ -11,6 +11,7 @@ import {
 } from "../../../test/assert-focus-ring";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
 import { renderThemed } from "../../../test/themed-browser-render";
+import { Field } from "../field/field";
 import { InputGroup } from "../input-group/input-group";
 import { Combobox, useComboboxAnchor } from "./combobox";
 
@@ -35,6 +36,13 @@ const REMOVE_APPLE_COPY = {
   "sv-SE": "Ta bort Apple",
   "en-US": "Remove Apple",
   "fi-FI": "Poista Apple",
+} as const;
+
+const TOGGLE_COPY = {
+  "nb-NO": "Vis eller skjul alternativer",
+  "sv-SE": "Visa eller dölj alternativ",
+  "en-US": "Toggle options",
+  "fi-FI": "Näytä tai piilota vaihtoehdot",
 } as const;
 
 function renderCombobox(node: ReactNode, locale: (typeof SUPPORTED_LOCALES)[number] = "en-US") {
@@ -209,7 +217,7 @@ describe("Combobox", () => {
 
   it("opens and closes from the trigger button and rotates the caret via data-popup-open", async () => {
     renderCombobox(<FruitCombobox />);
-    const trigger = page.getByRole("button").element();
+    const trigger = page.getByRole("button", { name: TOGGLE_COPY["en-US"], exact: true }).element();
     if (!(trigger instanceof HTMLElement)) {
       throw new Error("expected a trigger button");
     }
@@ -247,7 +255,24 @@ describe("Combobox", () => {
     await vi.waitFor(() => {
       expect(page.getByRole("button", { name: /clear/i }).query()).toBeNull();
     });
-    expect(page.getByRole("button").query()).not.toBeNull();
+    expect(page.getByRole("button", { name: TOGGLE_COPY["en-US"], exact: true }).query()).not.toBeNull();
+  });
+
+  it("names the caret trigger Toggle options in every locale when a Field.Label is present", () => {
+    for (const locale of SUPPORTED_LOCALES) {
+      const { unmount } = renderCombobox(
+        <Field.Root>
+          <Field.Label>Fruit</Field.Label>
+          <FruitCombobox />
+        </Field.Root>,
+        locale
+      );
+      expect(
+        page.getByRole("button", { name: TOGGLE_COPY[locale], exact: true }).query(),
+        locale
+      ).not.toBeNull();
+      unmount();
+    }
   });
 
   it("disables the input, trigger, and clear from Combobox.Input disabled", () => {

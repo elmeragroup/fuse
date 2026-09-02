@@ -139,6 +139,7 @@ function ComboboxInput({
   clearLabel,
   ...props
 }: ComboboxInputProps): ReactElement {
+  const strings = useLocalizedStrings(comboboxStrings);
   return (
     <InputGroup.Root className={cn("w-auto", className)}>
       <ComboboxPrimitive.Input render={<InputGroup.Input disabled={disabled} />} {...props} />
@@ -147,6 +148,10 @@ function ComboboxInput({
           <InputGroup.Button
             size="icon-sm"
             variant="ghost"
+            aria-label={strings.format("toggle")}
+            // Field.Label labelledby would win over aria-label; drop it so the
+            // caret stays dictionary `toggle` (combobox.md §7).
+            aria-labelledby={undefined}
             render={<ComboboxTrigger />}
             data-slot="input-group-button"
             className="group-has-data-[slot=combobox-clear]/input-group:hidden data-pressed:bg-transparent"

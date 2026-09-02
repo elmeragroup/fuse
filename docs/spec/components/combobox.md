@@ -58,7 +58,7 @@ All rendering parts take `className` (merged via `cn`) and forward the rest of t
 
 | Prop          | Type        | Default           | Notes                                                                          |
 | ------------- | ----------- | ----------------- | ------------------------------------------------------------------------------ |
-| `showTrigger` | `boolean`   | `true`            | renders the caret trigger button in the inline-end addon                       |
+| `showTrigger` | `boolean`   | `true`            | renders the caret trigger button in the inline-end addon, named from dictionary `toggle` |
 | `showClear`   | `boolean`   | `false`           | renders `Combobox.Clear` in the same addon                                     |
 | `disabled`    | `boolean`   | `false`           | forwarded to the inner `InputGroup.Input` **and** to the trigger/clear buttons |
 | `className`   | `string`    | —                 | applied to the **outer InputGroup** (`w-auto`), not the input element          |
@@ -134,7 +134,7 @@ No `tv` recipes and no axes — all styling is inline per part; nothing exported
 
 - Base-ui wires `role="combobox"` + `aria-expanded`/`aria-controls`/`aria-autocomplete` on the input, `role="listbox"`/`role="option"` + `aria-selected` in the popup; label association via base-ui Field when composed.
 - Keyboard: typing filters the list (Root `filter`); ArrowDown/ArrowUp open the popup and move highlight; Enter selects the highlighted item (in single mode closes and fills the input; in multiple mode keeps the popup open and appends a chip); Escape closes; Backspace in an empty `ChipsInput` removes the last chip; Arrow keys navigate between chips, Delete/Backspace removes the focused chip.
-- Trigger and Clear are real buttons in the inline-end addon, focusable in DOM order after the input; Clear only renders while there is something to clear (base-ui behavior) and returns focus to the input.
+- Trigger and Clear are real buttons in the inline-end addon, focusable in DOM order after the input; Clear only renders while there is something to clear (base-ui behavior) and returns focus to the input. The caret Trigger's accessible name is dictionary `combobox.toggle` ("Toggle options" in en-US) so it is not named only after the field. _(Amended 2026-09-02.)_
 - Clear and chip-remove buttons receive localized accessible names by default; explicit props override them. `Combobox.Empty` supplies localized no-results text when children are absent and announces it when no options match.
 - Invalid state: `aria-invalid` on the input surfaces on the InputGroup chrome; in chips mode the `has-aria-invalid:` ring surfaces on the Chips container.
 
@@ -148,7 +148,7 @@ No `tv` recipes and no axes — all styling is inline per part; nothing exported
 6. **All `dark:` classes dropped** (`dark:bg-input/30 dark:has-aria-invalid:border-destructive/50 dark:has-aria-invalid:ring-destructive/40` on Chips) — dark axis lives in tokens.
 7. **Duplicated stacking classes deduped**: the Positioner keeps `isolate z-50`; the Popup drops its duplicate (ref repeats them on Select's popup; combobox's popup has no `z-50` but the ruling is applied family-wide — Positioner owns stacking).
 8. **Icons → Phosphor**: `CheckIcon`→`Check` (item indicator), `ChevronDownIcon`→`CaretDown` (trigger caret), `XIcon`→`X` (clear + chip remove).
-9. **Provider-owned locale and strings:** removes Root's public `locale`; Clear, Chip remove, and Empty use the co-located four-locale dictionary with optional copy overrides.
+9. **Provider-owned locale and strings:** removes Root's public `locale`; Clear, Chip remove, Empty, and the Input caret Trigger use the co-located four-locale dictionary with optional copy overrides (`clearLabel` / `removeLabel` / Empty `children`). The caret name is dictionary `toggle` in all four locales. _(Amended 2026-09-02.)_
 10. **Chip `removeLabel` default uses children, then `itemToStringLabel(value)`:** Chip still exposes no `value` prop. The wrapper reads the selected value for this chip via `Combobox.Value` plus render-order index under `Combobox.Chips`, and Root's `itemToStringLabel`, without importing the banned `@base-ui/react/combobox` subpath. Default accessible name formats dictionary `removeItem` with string/number children; non-string children fall back to `itemToStringLabel(value)`; if neither yields text, the localized "Remove" string alone with no trailing space. _(Amended 2026-09-02.)_
 
 Kept faithfully:
@@ -169,7 +169,7 @@ Role/label-based queries throughout; keyboard flows per §7:
 
 - Filtering: type into `getByRole("combobox")`; assert the listbox narrows to matching options and `Combobox.Empty` text appears for a no-match query (and disappears again).
 - Selection: ArrowDown + Enter selects the highlighted option, closes the popup, fills the input; `onValueChange` receives the value.
-- Trigger button: click opens/closes; caret rotation state via `data-popup-open` (attribute assertion, query by role).
+- Trigger button: `getByRole("button", { name })` using dictionary `toggle` in each locale; click opens/closes; caret rotation state via `data-popup-open` (attribute assertion).
 - Clear button: with `showClear`, after a selection `getByRole("button", { name: /clear/i })` empties the value and the trigger button stays hidden while Clear is present (assert exclusivity); focus returns to the input.
 - Chips multi-select: with `multiple` + Chips/Chip/ChipsInput, selecting options appends chips (popup stays open); chip remove button deletes its chip; Backspace in the empty ChipsInput removes the last chip; `aria-invalid` surfaces the Chips error ring.
 - Anchored mode: passing `anchor` from `useComboboxAnchor` sets `data-chips="true"` on the popup and positions against the anchor element.

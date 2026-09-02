@@ -41,6 +41,13 @@ const REMOVE_COPY = {
   "fi-FI": "Poista",
 } as const;
 
+const TOGGLE_COPY = {
+  "nb-NO": "Vis eller skjul alternativer",
+  "sv-SE": "Visa eller dölj alternativ",
+  "en-US": "Toggle options",
+  "fi-FI": "Näytä tai piilota vaihtoehdot",
+} as const;
+
 describe("combobox dictionary", () => {
   it("owns the locked combobox.* copy in all four locales", () => {
     for (const locale of SUPPORTED_LOCALES) {
@@ -49,15 +56,17 @@ describe("combobox dictionary", () => {
       expect(formatter.format("clear"), locale).toBe(CLEAR_COPY[locale]);
       expect(formatter.format("removeItem", { item: "Apple" }), locale).toBe(REMOVE_APPLE_COPY[locale]);
       expect(formatter.format("removeItem", { item: "" }), locale).toBe(REMOVE_COPY[locale]);
+      expect(formatter.format("toggle"), locale).toBe(TOGGLE_COPY[locale]);
     }
   });
 
-  it("carries no key beyond the three rows accessibility.md §4.1 assigns to Combobox", () => {
+  it("carries no key beyond the four rows accessibility.md §4.1 assigns to Combobox", () => {
     for (const locale of SUPPORTED_LOCALES) {
       expect(Object.keys(comboboxStrings.getStringsForLocale(locale)).sort(), locale).toEqual([
         "clear",
         "empty",
         "removeItem",
+        "toggle",
       ]);
     }
   });
@@ -110,6 +119,8 @@ describe("combobox source contract", () => {
     expect(source).toContain('"locale"');
     expect(source).toContain("locale={locale}");
     expect(source).toContain("useElmeraGroupUi");
+    expect(source).toContain('aria-label={strings.format("toggle")}');
+    expect(source).toContain("aria-labelledby={undefined}");
   });
 
   it("has no public recipe and composes the shared within focus ring on Chips", () => {

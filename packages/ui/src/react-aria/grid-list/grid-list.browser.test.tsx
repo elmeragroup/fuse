@@ -1,9 +1,12 @@
 import type { ReactNode } from "react";
 
+import { useDragAndDrop } from "react-aria-components";
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
+import { SUPPORTED_LOCALES } from "../../../test/locale-matrix";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { UiProviders } from "../ui-providers/ui-providers";
 import { GridList, GridListItem } from "./grid-list";
@@ -14,11 +17,36 @@ const METERS = [
   { id: "trondheim", name: "Trondheim" },
 ] as const;
 
-function renderList(node: ReactNode) {
+const DRAG_COPY = {
+  "nb-NO": "Dra for å endre rekkefølge",
+  "sv-SE": "Dra för att ändra ordning",
+  "en-US": "Drag to reorder",
+  "fi-FI": "Vedä järjestääksesi",
+} as const;
+
+function renderList(node: ReactNode, locale: (typeof SUPPORTED_LOCALES)[number] = "en-US") {
   return renderThemed(
-    <UiProviders locale="en-US" navigate={() => undefined}>
+    <UiProviders locale={locale} navigate={() => undefined}>
       {node}
     </UiProviders>
+  );
+}
+
+function DraggableMeters({
+  keyboardNavigationBehavior,
+}: {
+  keyboardNavigationBehavior?: "arrow" | "tab";
+} = {}) {
+  const { dragAndDropHooks } = useDragAndDrop({
+    getItems: (keys) => [...keys].map((key) => ({ "text/plain": String(key) })),
+  });
+  return (
+    <GridList
+      aria-label="Meters"
+      dragAndDropHooks={dragAndDropHooks}
+      keyboardNavigationBehavior={keyboardNavigationBehavior}>
+      <GridListItem id="oslo">Oslo</GridListItem>
+    </GridList>
   );
 }
 
@@ -196,5 +224,26 @@ describe("GridList", () => {
     expect(getComputedStyle(grid).display).toBe("flex");
     expect(getComputedStyle(grid).alignItems).toBe("center");
     expect(getComputedStyle(grid).justifyContent).toBe("center");
+  });
+
+  it("names the drag handle in every locale and paints the shared focus ring", async () => {
+    for (const locale of SUPPORTED_LOCALES) {
+      const { unmount } = renderList(<DraggableMeters />, locale);
+      const handle = page.getByRole("button", { name: DRAG_COPY[locale], exact: true }).element();
+      if (!(handle instanceof HTMLElement)) {
+        throw new Error(`expected drag handle in ${locale}`);
+      }
+      unmount();
+    }
+
+    // Default GridList Tab exits the collection (keyboardNavigationBehavior="arrow").
+    // "tab" lets Tab from the row land on the slot="drag" handle so the shared
+    // helper can probe :focus-visible / mouse-absence (grid-list.md §9).
+    renderList(<DraggableMeters keyboardNavigationBehavior="tab" />);
+    const handle = page.getByRole("button", { name: DRAG_COPY["en-US"], exact: true }).element();
+    if (!(handle instanceof HTMLElement)) {
+      throw new Error("expected the drag handle");
+    }
+    await assertFocusRingOnKeyboardAbsentOnMouse(rowNamed("Oslo"), handle);
   });
 });
