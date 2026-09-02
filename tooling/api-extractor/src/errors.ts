@@ -1,7 +1,7 @@
 /* oxlint-disable anti-slop/no-runtime-typeof -- safe-cause normalization narrows untrusted thrown values. */
 /* oxlint-disable anti-slop/require-safety-comment-for-type-assertion -- the object branch only reads optional diagnostic fields. */
 
-import { Schema } from "effect";
+import { Data, Schema } from "effect";
 
 /**
  * Errors cross the extractor boundary as data.  In particular, never retain a
@@ -65,3 +65,15 @@ export class ExtractError extends Schema.TaggedError<ExtractError>()("ExtractErr
   message: Schema.String,
   cause: Schema.String,
 }) {}
+
+/**
+ * A resolver/policy failure raised inside the compiler-free parser. It keeps
+ * the symbol breadcrumb and the original cause without naming a compiler type;
+ * the extraction shell classifies it into an `ExtractError`. It lives here so
+ * `src/parse/**` imports no Effect module at all.
+ */
+export class ResolverFailure extends Data.TaggedError("ResolverFailure")<{
+  readonly message: string;
+  readonly symbolStack: readonly string[];
+  readonly cause: unknown;
+}> {}

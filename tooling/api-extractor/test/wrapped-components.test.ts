@@ -10,17 +10,13 @@ import {
   issue12ReactFixtures,
   normalizeWarnings,
 } from "../scripts/fixture-evidence.ts";
-import type { ExtractionResult, ExtractorOptions } from "../src/index.ts";
+import type { ExtractionResult } from "../src/index.ts";
 import type { ComponentNode, SemanticType } from "../src/model.ts";
 import { ProvenanceEntrySchema } from "../src/provenance.ts";
 import { ExtractWarningSchema } from "../src/warnings.ts";
 import { extractFixture, fixtureRoot } from "./support/extract.ts";
 
 const tsconfigPath = resolve(fixtureRoot, "issue-12-tsconfig.json");
-
-function runExtraction(fixture: string, file: string, options?: ExtractorOptions): Promise<ExtractionResult> {
-  return extractFixture({ tsconfigPath }, resolve(fixtureRoot, fixture, file), options);
-}
 
 function readJson(fixture: string, file: string): Schema.Json {
   return Schema.decodeUnknownSync(Schema.Json)(
@@ -43,7 +39,10 @@ function property(type: ComponentNode, name: string): SemanticType {
 describe("wrapped React component warnings and fixture audit", () => {
   it("matches the structured warning oracle for every wrapper", async () => {
     for (const definition of issue12ReactFixtures) {
-      const result = await runExtraction(definition.fixture, definition.file);
+      const result = await extractFixture(
+        { tsconfigPath },
+        resolve(fixtureRoot, definition.fixture, definition.file)
+      );
       const expected = Schema.decodeUnknownSync(Schema.Array(ExtractWarningSchema))(
         readJson(definition.fixture, definition.warningOracle)
       );
@@ -105,7 +104,10 @@ describe("wrapped React component warnings and fixture audit", () => {
 
 describe("wrapped and compound component representation", () => {
   it("preserves forwardRef props, ref type, docs, and authored ownership", async () => {
-    const result = await runExtraction("react-forward-ref-component", "input.tsx");
+    const result = await extractFixture(
+      { tsconfigPath },
+      resolve(fixtureRoot, "react-forward-ref-component", "input.tsx")
+    );
     const type = component(result, "TestComponent");
     expect(type.typeName).toMatchObject({
       name: "ForwardRefExoticComponent",
@@ -138,12 +140,19 @@ describe("wrapped and compound component representation", () => {
     );
     expect(propProvenance.length).toBeGreaterThan(0);
     expect(
-      propProvenance.every((entry) => entry.declarationPaths.every((path) => !path.includes("node_modules")))
+      propProvenance.every((entry) =>
+        entry.declarations
+          .map((declaration) => declaration.path)
+          .every((path) => !path.includes("node_modules"))
+      )
     ).toBe(true);
   });
 
   it("preserves memo props and display documentation", async () => {
-    const result = await runExtraction("react-memo-component", "input.tsx");
+    const result = await extractFixture(
+      { tsconfigPath },
+      resolve(fixtureRoot, "react-memo-component", "input.tsx")
+    );
     const type = component(result, "TestComponent");
     expect(type.typeName).toMatchObject({ name: "NamedExoticComponent", namespaces: ["React"] });
     expect(type.props.map((entry) => entry.name)).toEqual(["className", "id"]);
@@ -155,7 +164,10 @@ describe("wrapped and compound component representation", () => {
   });
 
   it("squashes forwardRef union props while retaining each ref arm", async () => {
-    const result = await runExtraction("react-forward-ref-union-props", "input.tsx");
+    const result = await extractFixture(
+      { tsconfigPath },
+      resolve(fixtureRoot, "react-forward-ref-union-props", "input.tsx")
+    );
     const type = component(result, "Button");
     expect(type.typeName).toMatchObject({
       name: "ForwardRefExoticComponent",
@@ -184,7 +196,10 @@ describe("wrapped and compound component representation", () => {
   });
 
   it("resolves MUI overridable props as one established component model", async () => {
-    const result = await runExtraction("react-mui-overridable-component", "input.d.ts");
+    const result = await extractFixture(
+      { tsconfigPath },
+      resolve(fixtureRoot, "react-mui-overridable-component", "input.d.ts")
+    );
     const type = component(result, "default");
     expect(type.typeName).toBeUndefined();
     expect(type.props.map((entry) => entry.name)).toEqual(["component", "variant", "className", "style"]);
@@ -205,7 +220,10 @@ describe("wrapped and compound component representation", () => {
   });
 
   it("supports nested wrappers and namespace compound members at the public seam", async () => {
-    const result = await runExtraction("issue-12-review", "input.tsx");
+    const result = await extractFixture(
+      { tsconfigPath },
+      resolve(fixtureRoot, "issue-12-review", "input.tsx")
+    );
     const nested = component(result, "NestedWrapped");
     expect(nested.typeName).toMatchObject({ name: "NamedExoticComponent", namespaces: ["React"] });
     expect(nested.props.map((entry) => entry.name)).toEqual(["label", "children"]);
@@ -256,7 +274,10 @@ describe("wrapped and compound component representation", () => {
   });
 
   it("follows only React wrappers and never imports arbitrary callback or comparator props", async () => {
-    const result = await runExtraction("issue-12-review", "input.tsx");
+    const result = await extractFixture(
+      { tsconfigPath },
+      resolve(fixtureRoot, "issue-12-review", "input.tsx")
+    );
 
     expect(component(result, "ArbitraryWrapped").props.map((entry) => entry.name)).toEqual(["resolvedOnly"]);
     expect(component(result, "ArbitraryWrapped").props.map((entry) => entry.name)).not.toContain(
@@ -275,7 +296,10 @@ describe("wrapped and compound component representation", () => {
   });
 
   it("derives overloaded wrapper props from public signatures only", async () => {
-    const result = await runExtraction("issue-12-review", "input.tsx");
+    const result = await extractFixture(
+      { tsconfigPath },
+      resolve(fixtureRoot, "issue-12-review", "input.tsx")
+    );
 
     expect(component(result, "ImplementationLeakWrapped").props.map((entry) => entry.name)).toEqual([
       "text",
@@ -296,13 +320,21 @@ describe("wrapped and compound component representation", () => {
   });
 
   it("keeps wrapper components recognizable when external expansion is enabled", async () => {
-    const forward = await runExtraction("react-forward-ref-component", "input.tsx", {
-      includeExternalTypes: true,
-    });
+    const forward = await extractFixture(
+      { tsconfigPath },
+      resolve(fixtureRoot, "react-forward-ref-component", "input.tsx"),
+      {
+        includeExternalTypes: true,
+      }
+    );
     expect(component(forward, "TestComponent").props.map((entry) => entry.name)).toEqual(["className", "id"]);
-    const memo = await runExtraction("react-memo-component", "input.tsx", {
-      includeExternalTypes: true,
-    });
+    const memo = await extractFixture(
+      { tsconfigPath },
+      resolve(fixtureRoot, "react-memo-component", "input.tsx"),
+      {
+        includeExternalTypes: true,
+      }
+    );
     expect(memo.module.exports.find((entry) => entry.name === "TestComponent")?.type.kind).toBe("component");
   });
 });

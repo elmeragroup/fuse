@@ -146,6 +146,30 @@ export function isExternalOwnership(ownership: BackendDeclarationOwnership): boo
   return ownership.kind !== "project";
 }
 
+/**
+ * Which declarations outside the project one extraction may expand: none,
+ * every dependency, or an exact set of package names. The parser derives it
+ * from `includeExternalTypes`; the backend applies the same policy to the
+ * source files it materializes on the parser's behalf.
+ */
+export type BackendExternalTypeSelection =
+  | { readonly kind: "none" }
+  | { readonly kind: "all" }
+  | { readonly kind: "packages"; readonly packageNames: ReadonlySet<string> };
+
+/** Whether one normalized declaration owner is eligible under a selection. */
+export function externalTypeSelectionAllowsOwnership(
+  ownership: BackendDeclarationOwnership,
+  selection: BackendExternalTypeSelection
+): boolean {
+  if (ownership.kind === "project" || selection.kind === "all") return true;
+  return (
+    selection.kind === "packages" &&
+    ownership.kind === "dependency" &&
+    selection.packageNames.has(ownership.packageName)
+  );
+}
+
 export type BackendTypeNameFacts = {
   readonly name: string;
   readonly namespaces: readonly string[];
@@ -404,8 +428,13 @@ export type BackendExtractionSession = {
   readonly close: () => void;
 };
 
+/** Per-extraction policy the parser settled before the session opened. */
+export type BackendExtractionOptions = {
+  readonly externalTypes?: BackendExternalTypeSelection;
+};
+
 export type BackendProject = {
-  readonly openExtraction: () => BackendExtractionSession;
+  readonly openExtraction: (options?: BackendExtractionOptions) => BackendExtractionSession;
   readonly getTimingInfo?: () => BackendTiming;
   readonly close: () => void;
 };

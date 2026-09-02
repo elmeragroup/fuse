@@ -10,7 +10,7 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 276,
+      "forwardedCount": 275,
       "props": [
         {
           "name": "className",
@@ -21,6 +21,17 @@
           "shortType": "function",
           "defaultValue": null,
           "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, AvatarRootState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
           "required": false
         },
         {
@@ -44,7 +55,7 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 288,
+      "forwardedCount": 287,
       "props": [
         {
           "name": "className",
@@ -69,6 +80,17 @@
           "required": false
         },
         {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, AvatarImageState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
           "name": "style",
           "origin": {
             "packageName": "@base-ui/react"
@@ -89,7 +111,7 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 276,
+      "forwardedCount": 275,
       "props": [
         {
           "name": "className",
@@ -111,6 +133,17 @@
           "shortType": null,
           "defaultValue": null,
           "description": "How long to wait before showing the fallback. Specified in milliseconds.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, AvatarFallbackState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
           "required": false
         },
         {

@@ -10,7 +10,7 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 276,
+      "forwardedCount": 275,
       "props": [
         {
           "name": "className",
@@ -128,6 +128,17 @@
           "required": false
         },
         {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, State<Value>> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
           "name": "style",
           "origin": {
             "packageName": "@base-ui/react"
@@ -159,7 +170,7 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 276,
+      "forwardedCount": 275,
       "props": [
         {
           "name": "className",
@@ -190,6 +201,17 @@
           "shortType": "function",
           "defaultValue": null,
           "description": "Event handler called when the panel is opened or closed.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, AccordionItemState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
           "required": false
         },
         {
@@ -224,7 +246,7 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 276,
+      "forwardedCount": 275,
       "props": [
         {
           "name": "className",
@@ -233,6 +255,17 @@
           "shortType": null,
           "defaultValue": null,
           "description": "Extra classes, merged into the part's recipe slot via the recipe `className` argument.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, AccordionHeaderState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
           "required": false
         },
         {
@@ -256,7 +289,7 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 286,
+      "forwardedCount": 285,
       "props": [
         {
           "name": "className",
@@ -276,6 +309,17 @@
           "shortType": null,
           "defaultValue": "true",
           "description": "Whether the component renders a native `<button>` element when replacing it via the `render` prop. Set to `false` if the rendered element is not a button (for example, `<div>`).",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, AccordionTriggerState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
           "required": false
         },
         {
@@ -299,7 +343,7 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 276,
+      "forwardedCount": 275,
       "props": [
         {
           "name": "className",
@@ -330,6 +374,17 @@
           "shortType": null,
           "defaultValue": "false",
           "description": "Whether to keep the element in the DOM while the panel is closed. This prop is ignored when `hiddenUntilFound` is used.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, AccordionPanelState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
           "required": false
         },
         {

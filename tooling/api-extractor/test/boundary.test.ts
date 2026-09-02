@@ -11,7 +11,9 @@ import {
   packageSourceFiles,
   publicDeclarationGraph,
   scanCompilerImports,
+  scanModuleSpecifiers,
   sourceBoundaryViolations,
+  sourceFiles,
 } from "../scripts/boundary-scanner.ts";
 import { cleanPackageDist } from "../scripts/build.ts";
 import { assertFreshDeclarationOutput } from "../scripts/check-boundary.ts";
@@ -85,6 +87,21 @@ describe("compiler boundary", () => {
         'import { resolverFixture } from "./resolver.ts";'
       )
     ).toEqual([]);
+  });
+
+  it("keeps the parser and canonicalizer free of Effect imports", () => {
+    // `src/parse/**` and `src/canonical/**` are synchronous and compiler-free;
+    // they also use no Effect module, so a replacement backend or a plain
+    // script can run the resolver without the Effect runtime or data types.
+    const packageDirectory = join(import.meta.dirname, "..");
+    const effectImports = ["src/parse", "src/canonical"].flatMap((directory) =>
+      sourceFiles(join(packageDirectory, directory)).flatMap((path) =>
+        scanModuleSpecifiers(readFileSync(path, "utf8"))
+          .filter((specifier) => specifier === "effect" || specifier.startsWith("effect/"))
+          .map((specifier) => `${path}: ${specifier}`)
+      )
+    );
+    expect(effectImports).toEqual([]);
   });
 
   it("scans package scripts, tests, and root config while excluding fixture data", () => {

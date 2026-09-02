@@ -8,7 +8,7 @@ import type {
   BackendProject,
 } from "./backend/contracts.ts";
 import { CompilerBackend } from "./backend/service.ts";
-import { BackendError, ExtractError, FileNotInProgramError, safeCause } from "./errors.ts";
+import { BackendError, ExtractError, FileNotInProgramError, ResolverFailure, safeCause } from "./errors.ts";
 import type { ConfigError } from "./errors.ts";
 import { InternalProjectExtractorTiming } from "./internal/project-options.ts";
 import type {
@@ -18,7 +18,7 @@ import type {
 } from "./internal/project-options.ts";
 import { ExtractionResultSchema } from "./model.ts";
 import type { ExtractorOptions, OpenProjectOptions } from "./options.ts";
-import { ResolverFailure } from "./parse/resolver.ts";
+import { normalizeExternalTypeSelection } from "./parse/external-type-selection.ts";
 import { readModuleDraft, resolveModuleDraft } from "./parser.ts";
 
 export type ExtractionResult = typeof ExtractionResultSchema.Type;
@@ -91,10 +91,13 @@ export function projectExtractorLayerWithTiming(
   return Layer.merge(extractorLayer, timingLayer).pipe(Layer.provide(openedProjectLayer(options)));
 }
 
-function openExtraction(project: BackendProject) {
+function openExtraction(project: BackendProject, options: ExtractorOptions | undefined) {
   return Effect.acquireRelease(
     Effect.try({
-      try: () => project.openExtraction(),
+      try: () =>
+        project.openExtraction({
+          externalTypes: normalizeExternalTypeSelection(options?.includeExternalTypes ?? false),
+        }),
       catch: (cause) => classifyThrown(cause, { filePath: "<session>", operation: "openExtraction" }),
     }),
     (session) => Effect.try(() => session.close()).pipe(Effect.ignore)
@@ -106,7 +109,7 @@ const extractModule = Effect.fn("ProjectExtractor.extractModule")(function* (
   filePath: string,
   options: ExtractorOptions | undefined
 ) {
-  const session = guardedExtractionSession(yield* openExtraction(project), filePath);
+  const session = guardedExtractionSession(yield* openExtraction(project, options), filePath);
   const draft = yield* Effect.try({
     try: () => readModuleDraft(session, filePath),
     catch: (cause) => classifyThrown(cause, { filePath, operation: "readModule" }),
@@ -200,32 +203,40 @@ function disabledTiming(): InternalTimedExtraction["timing"] {
 type CompilerOperationName = Exclude<keyof BackendCompilerOperations, "setErrorContext">;
 type CompilerOperation = NonNullable<BackendCompilerOperations[CompilerOperationName]>;
 
-const compilerOperationNames = [
-  "typeOfSymbol",
-  "typeAtNode",
-  "typeFacts",
-  "symbolFacts",
-  "symbolOrigin",
-  "declaringParentIsClass",
-  "documentationOfSymbol",
-  "enumFacts",
-  "nodeFacts",
-  "nodeKind",
-  "typeNameFacts",
-  "signaturesOfType",
-  "constructSignaturesOfType",
-  "declarationOwnership",
-  "signatureFacts",
-  "documentationOfNode",
-  "documentationOfParameter",
-  "propertiesOfType",
-  "propertyType",
-  "indexSignaturesOfType",
-  "baseConstraintOfType",
-  "isArrayType",
-  "isReadonlyType",
-  "typeToString",
-] as const satisfies readonly CompilerOperationName[];
+/**
+ * Every compiler operation the guard wraps. A `Record` over the operation
+ * names makes the list exhaustive at the type level: adding an operation to
+ * `BackendCompilerOperations` without listing it here is a compile error, as
+ * is listing a name the contract does not have.
+ */
+const guardedCompilerOperations = {
+  typeOfSymbol: true,
+  typeAtNode: true,
+  typeFacts: true,
+  symbolFacts: true,
+  symbolOrigin: true,
+  declaringParentIsClass: true,
+  documentationOfSymbol: true,
+  enumFacts: true,
+  nodeFacts: true,
+  nodeKind: true,
+  typeNameFacts: true,
+  signaturesOfType: true,
+  constructSignaturesOfType: true,
+  declarationOwnership: true,
+  signatureFacts: true,
+  documentationOfNode: true,
+  documentationOfParameter: true,
+  propertiesOfType: true,
+  propertyType: true,
+  indexSignaturesOfType: true,
+  baseConstraintOfType: true,
+  isArrayType: true,
+  isReadonlyType: true,
+  typeToString: true,
+} satisfies Record<CompilerOperationName, true>;
+// SAFETY: the literal satisfies `Record<CompilerOperationName, true>`, so its keys are exactly the operation names.
+const compilerOperationNames = Object.keys(guardedCompilerOperations) as readonly CompilerOperationName[];
 
 /**
  * Wraps the complete backend session once per extraction. Every compiler

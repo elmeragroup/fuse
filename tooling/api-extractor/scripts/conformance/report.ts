@@ -33,6 +33,7 @@ import {
   assertReferenceEvidence,
   assertStoredReport,
   assertStoredReportDecoded,
+  manifestSha256,
   summarizeFixtureRun,
 } from "./invariants.ts";
 import type { ConformanceInvariantOptions } from "./invariants.ts";
@@ -240,10 +241,6 @@ function assertCompilerIdentity(): void {
 
 function relativeFixturePath(path: string): string {
   return posixRelative(fixtureDirectory, path);
-}
-
-function manifestSha256(): string {
-  return createHash("sha256").update(JSON.stringify(issue14FixtureManifest), "utf8").digest("hex");
 }
 
 function existingJsonIndent(path: string): string | number {

@@ -4,11 +4,11 @@
     "currentPartCount": 225,
     "effectPartCount": 225,
     "currentPropCount": 403,
-    "effectPropCount": 392,
+    "effectPropCount": 401,
     "currentProblemCount": 0,
-    "effectProblemCount": 88,
+    "effectProblemCount": 92,
     "apiDifferenceCount": 1122,
-    "problemDifferenceCount": 88
+    "problemDifferenceCount": 92
   },
   "apiDifferences": [
     {
@@ -1263,12 +1263,6 @@
     },
     {
       "component": "checkbox",
-      "path": "parts.CheckboxItem.props.parent.type",
-      "current": "boolean | undefined",
-      "effect": "boolean | false | true | undefined"
-    },
-    {
-      "component": "checkbox",
       "path": "parts.CheckboxItem.props.value.description",
       "current": "Member value in the group. Required unless `parent`. Parent rows must not set `value`.",
       "effect": "Member value in the group. Required unless `parent`."
@@ -1789,17 +1783,6 @@
     },
     {
       "component": "description-list",
-      "path": "evidence.DescriptionList.Heading.props.render.declarationPaths[0]",
-      "current": "packages/ui/src/components/description-list/description-list-heading.tsx",
-      "effect": "node_modules/.pnpm/@types+react@19.2.17/node_modules/@types/react/index.d.ts"
-    },
-    {
-      "component": "description-list",
-      "path": "evidence.DescriptionList.Heading.props.render.declarationPaths[1]",
-      "effect": "packages/ui/src/components/description-list/description-list-heading.tsx"
-    },
-    {
-      "component": "description-list",
       "path": "parts.DescriptionList.Content.forwardedCount",
       "current": 280,
       "effect": 0
@@ -1825,6 +1808,11 @@
       "path": "parts.DescriptionList.Heading.forwardedCount",
       "current": 280,
       "effect": 0
+    },
+    {
+      "component": "description-list",
+      "path": "parts.DescriptionList.Heading.forwardedFrom[0]",
+      "current": "@types/react"
     },
     {
       "component": "description-list",
@@ -2440,33 +2428,37 @@
     },
     {
       "component": "empty",
-      "path": "evidence.Empty.Media.propOrder[0]",
-      "current": "variant"
+      "path": "evidence.Empty.Media.props.variant.declarationPaths[0]",
+      "effect": "packages/ui/src/components/empty/empty-variants.ts"
     },
     {
       "component": "empty",
-      "path": "evidence.Empty.Media.props.variant",
-      "current": {
-        "name": "variant",
-        "declarationPaths": [],
-        "ownership": "synthesized",
-        "synthesized": true
-      }
+      "path": "evidence.Empty.Media.props.variant.ownership",
+      "current": "synthesized",
+      "effect": "library"
     },
     {
       "component": "empty",
-      "path": "evidence.Empty.Root.propOrder[0]",
-      "current": "variant"
+      "path": "evidence.Empty.Media.props.variant.synthesized",
+      "current": true,
+      "effect": false
     },
     {
       "component": "empty",
-      "path": "evidence.Empty.Root.props.variant",
-      "current": {
-        "name": "variant",
-        "declarationPaths": [],
-        "ownership": "synthesized",
-        "synthesized": true
-      }
+      "path": "evidence.Empty.Root.props.variant.declarationPaths[0]",
+      "effect": "packages/ui/src/components/empty/empty-variants.ts"
+    },
+    {
+      "component": "empty",
+      "path": "evidence.Empty.Root.props.variant.ownership",
+      "current": "synthesized",
+      "effect": "library"
+    },
+    {
+      "component": "empty",
+      "path": "evidence.Empty.Root.props.variant.synthesized",
+      "current": true,
+      "effect": false
     },
     {
       "component": "empty",
@@ -2514,18 +2506,6 @@
     },
     {
       "component": "empty",
-      "path": "parts.Empty.Media.props.variant",
-      "current": {
-        "name": "variant",
-        "origin": "recipe-axis",
-        "type": "\"default\" | \"icon\" | undefined",
-        "defaultValue": "\"default\"",
-        "description": "",
-        "required": false
-      }
-    },
-    {
-      "component": "empty",
       "path": "parts.Empty.Root.forwardedCount",
       "current": 280,
       "effect": 0
@@ -2534,18 +2514,6 @@
       "component": "empty",
       "path": "parts.Empty.Root.forwardedFrom[0]",
       "current": "@types/react"
-    },
-    {
-      "component": "empty",
-      "path": "parts.Empty.Root.props.variant",
-      "current": {
-        "name": "variant",
-        "origin": "recipe-axis",
-        "type": "\"default\" | \"outline\" | \"outline-dashed\" | undefined",
-        "defaultValue": "\"default\"",
-        "description": "",
-        "required": false
-      }
     },
     {
       "component": "empty",
@@ -2560,18 +2528,20 @@
     },
     {
       "component": "field",
-      "path": "evidence.Field.Root.propOrder[0]",
-      "current": "orientation"
+      "path": "evidence.Field.Root.props.orientation.declarationPaths[0]",
+      "effect": "packages/ui/src/components/field/field.tsx"
     },
     {
       "component": "field",
-      "path": "evidence.Field.Root.props.orientation",
-      "current": {
-        "name": "orientation",
-        "declarationPaths": [],
-        "ownership": "synthesized",
-        "synthesized": true
-      }
+      "path": "evidence.Field.Root.props.orientation.ownership",
+      "current": "synthesized",
+      "effect": "library"
+    },
+    {
+      "component": "field",
+      "path": "evidence.Field.Root.props.orientation.synthesized",
+      "current": true,
+      "effect": false
     },
     {
       "component": "field",
@@ -2720,15 +2690,9 @@
     },
     {
       "component": "field",
-      "path": "parts.Field.Root.props.orientation",
-      "current": {
-        "name": "orientation",
-        "origin": "recipe-axis",
-        "type": "\"horizontal\" | \"responsive\" | \"vertical\" | undefined",
-        "defaultValue": "\"vertical\"",
-        "description": "",
-        "required": false
-      }
+      "path": "parts.Field.Root.props.orientation.origin",
+      "current": "recipe-axis",
+      "effect": "declared"
     },
     {
       "component": "field",
@@ -3222,11 +3186,6 @@
     },
     {
       "component": "item",
-      "path": "evidence.Item.Footer.propOrder[1]",
-      "current": "mode"
-    },
-    {
-      "component": "item",
       "path": "evidence.Item.Footer.props.children.declarationPaths[0]",
       "current": "node_modules/.pnpm/@types+react@19.2.17/node_modules/@types/react/index.d.ts",
       "effect": "packages/ui/src/components/item/item.tsx"
@@ -3238,58 +3197,71 @@
     },
     {
       "component": "item",
-      "path": "evidence.Item.Footer.props.mode",
-      "current": {
-        "name": "mode",
-        "declarationPaths": [],
-        "ownership": "synthesized",
-        "synthesized": true
-      }
+      "path": "evidence.Item.Footer.props.mode.declarationPaths[0]",
+      "effect": "packages/ui/src/components/item/item.tsx"
     },
     {
       "component": "item",
-      "path": "evidence.Item.Media.propOrder[0]",
-      "current": "variant"
+      "path": "evidence.Item.Footer.props.mode.ownership",
+      "current": "synthesized",
+      "effect": "library"
     },
     {
       "component": "item",
-      "path": "evidence.Item.Media.props.variant",
-      "current": {
-        "name": "variant",
-        "declarationPaths": [],
-        "ownership": "synthesized",
-        "synthesized": true
-      }
+      "path": "evidence.Item.Footer.props.mode.synthesized",
+      "current": true,
+      "effect": false
     },
     {
       "component": "item",
-      "path": "evidence.Item.Root.propOrder[0]",
-      "current": "size"
+      "path": "evidence.Item.Media.props.variant.declarationPaths[0]",
+      "effect": "packages/ui/src/components/item/item.tsx"
     },
     {
       "component": "item",
-      "path": "evidence.Item.Root.propOrder[1]",
-      "current": "variant"
+      "path": "evidence.Item.Media.props.variant.ownership",
+      "current": "synthesized",
+      "effect": "library"
     },
     {
       "component": "item",
-      "path": "evidence.Item.Root.props.size",
-      "current": {
-        "name": "size",
-        "declarationPaths": [],
-        "ownership": "synthesized",
-        "synthesized": true
-      }
+      "path": "evidence.Item.Media.props.variant.synthesized",
+      "current": true,
+      "effect": false
     },
     {
       "component": "item",
-      "path": "evidence.Item.Root.props.variant",
-      "current": {
-        "name": "variant",
-        "declarationPaths": [],
-        "ownership": "synthesized",
-        "synthesized": true
-      }
+      "path": "evidence.Item.Root.props.size.declarationPaths[0]",
+      "effect": "packages/ui/src/components/item/item-variants.ts"
+    },
+    {
+      "component": "item",
+      "path": "evidence.Item.Root.props.size.ownership",
+      "current": "synthesized",
+      "effect": "library"
+    },
+    {
+      "component": "item",
+      "path": "evidence.Item.Root.props.size.synthesized",
+      "current": true,
+      "effect": false
+    },
+    {
+      "component": "item",
+      "path": "evidence.Item.Root.props.variant.declarationPaths[0]",
+      "effect": "packages/ui/src/components/item/item-variants.ts"
+    },
+    {
+      "component": "item",
+      "path": "evidence.Item.Root.props.variant.ownership",
+      "current": "synthesized",
+      "effect": "library"
+    },
+    {
+      "component": "item",
+      "path": "evidence.Item.Root.props.variant.synthesized",
+      "current": true,
+      "effect": false
     },
     {
       "component": "item",
@@ -3343,15 +3315,9 @@
     },
     {
       "component": "item",
-      "path": "parts.Item.Footer.props.mode",
-      "current": {
-        "name": "mode",
-        "origin": "recipe-axis",
-        "type": "\"default\" | \"hidden\" | \"visible\" | undefined",
-        "defaultValue": "\"default\"",
-        "description": "",
-        "required": false
-      }
+      "path": "parts.Item.Footer.props.mode.origin",
+      "current": "recipe-axis",
+      "effect": "declared"
     },
     {
       "component": "item",
@@ -3388,15 +3354,9 @@
     },
     {
       "component": "item",
-      "path": "parts.Item.Media.props.variant",
-      "current": {
-        "name": "variant",
-        "origin": "recipe-axis",
-        "type": "\"default\" | \"icon\" | \"image\" | undefined",
-        "defaultValue": "\"default\"",
-        "description": "",
-        "required": false
-      }
+      "path": "parts.Item.Media.props.variant.origin",
+      "current": "recipe-axis",
+      "effect": "declared"
     },
     {
       "component": "item",
@@ -3413,30 +3373,6 @@
       "component": "item",
       "path": "parts.Item.Root.forwardedFrom[1]",
       "current": "@types/react"
-    },
-    {
-      "component": "item",
-      "path": "parts.Item.Root.props.size",
-      "current": {
-        "name": "size",
-        "origin": "recipe-axis",
-        "type": "\"default\" | \"sm\" | \"xs\" | undefined",
-        "defaultValue": "\"default\"",
-        "description": "",
-        "required": false
-      }
-    },
-    {
-      "component": "item",
-      "path": "parts.Item.Root.props.variant",
-      "current": {
-        "name": "variant",
-        "origin": "recipe-axis",
-        "type": "\"default\" | \"muted\" | \"outline\" | undefined",
-        "defaultValue": "\"default\"",
-        "description": "",
-        "required": false
-      }
     },
     {
       "component": "item",
@@ -4894,11 +4830,6 @@
     },
     {
       "component": "selection-item",
-      "path": "evidence.SelectionItem.SubSection.propOrder[1]",
-      "current": "mode"
-    },
-    {
-      "component": "selection-item",
       "path": "evidence.SelectionItem.SubSection.props.children.declarationPaths[0]",
       "current": "node_modules/.pnpm/@types+react@19.2.17/node_modules/@types/react/index.d.ts",
       "effect": "packages/ui/src/components/item/item.tsx"
@@ -4910,13 +4841,20 @@
     },
     {
       "component": "selection-item",
-      "path": "evidence.SelectionItem.SubSection.props.mode",
-      "current": {
-        "name": "mode",
-        "declarationPaths": [],
-        "ownership": "synthesized",
-        "synthesized": true
-      }
+      "path": "evidence.SelectionItem.SubSection.props.mode.declarationPaths[0]",
+      "effect": "packages/ui/src/components/item/item.tsx"
+    },
+    {
+      "component": "selection-item",
+      "path": "evidence.SelectionItem.SubSection.props.mode.ownership",
+      "current": "synthesized",
+      "effect": "library"
+    },
+    {
+      "component": "selection-item",
+      "path": "evidence.SelectionItem.SubSection.props.mode.synthesized",
+      "current": true,
+      "effect": false
     },
     {
       "component": "selection-item",
@@ -5016,15 +4954,9 @@
     },
     {
       "component": "selection-item",
-      "path": "parts.SelectionItem.SubSection.props.mode",
-      "current": {
-        "name": "mode",
-        "origin": "recipe-axis",
-        "type": "\"default\" | \"hidden\" | \"visible\" | undefined",
-        "defaultValue": "\"default\"",
-        "description": "",
-        "required": false
-      }
+      "path": "parts.SelectionItem.SubSection.props.mode.origin",
+      "current": "recipe-axis",
+      "effect": "declared"
     },
     {
       "component": "selection-item",
@@ -5488,17 +5420,6 @@
     },
     {
       "component": "table",
-      "path": "evidence.VerticalTable.Header.props.render.declarationPaths[0]",
-      "current": "packages/ui/src/components/table/vertical-table-header.tsx",
-      "effect": "node_modules/.pnpm/@types+react@19.2.17/node_modules/@types/react/index.d.ts"
-    },
-    {
-      "component": "table",
-      "path": "evidence.VerticalTable.Header.props.render.declarationPaths[1]",
-      "effect": "packages/ui/src/components/table/vertical-table-header.tsx"
-    },
-    {
-      "component": "table",
       "path": "evidence.VerticalTable.Key.declarationPaths[0]",
       "current": "packages/ui/src/components/table/vertical-table-key.tsx",
       "effect": "packages/ui/src/components/table/table.tsx"
@@ -5520,17 +5441,6 @@
       "path": "evidence.VerticalTable.Key.propOrder[2]",
       "current": "render",
       "effect": "text"
-    },
-    {
-      "component": "table",
-      "path": "evidence.VerticalTable.Key.props.render.declarationPaths[0]",
-      "current": "packages/ui/src/components/table/vertical-table-key.tsx",
-      "effect": "node_modules/.pnpm/@types+react@19.2.17/node_modules/@types/react/index.d.ts"
-    },
-    {
-      "component": "table",
-      "path": "evidence.VerticalTable.Key.props.render.declarationPaths[1]",
-      "effect": "packages/ui/src/components/table/vertical-table-key.tsx"
     },
     {
       "component": "table",
@@ -5657,6 +5567,11 @@
     },
     {
       "component": "table",
+      "path": "parts.VerticalTable.Header.forwardedFrom[0]",
+      "current": "@types/react"
+    },
+    {
+      "component": "table",
       "path": "parts.VerticalTable.Header.props.render.type",
       "current": "RenderProp<Record<string, unknown>> | undefined",
       "effect": "ComponentRenderFn<React.HTMLAttributes<any>, Record<string, unknown>> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>"
@@ -5666,6 +5581,11 @@
       "path": "parts.VerticalTable.Key.forwardedCount",
       "current": 289,
       "effect": 0
+    },
+    {
+      "component": "table",
+      "path": "parts.VerticalTable.Key.forwardedFrom[0]",
+      "current": "@types/react"
     },
     {
       "component": "table",
@@ -5708,18 +5628,20 @@
     },
     {
       "component": "tabs",
-      "path": "evidence.Tabs.List.propOrder[0]",
-      "current": "variant"
+      "path": "evidence.Tabs.List.props.variant.declarationPaths[0]",
+      "effect": "packages/ui/src/components/tabs/tabs-variants.ts"
     },
     {
       "component": "tabs",
-      "path": "evidence.Tabs.List.props.variant",
-      "current": {
-        "name": "variant",
-        "declarationPaths": [],
-        "ownership": "synthesized",
-        "synthesized": true
-      }
+      "path": "evidence.Tabs.List.props.variant.ownership",
+      "current": "synthesized",
+      "effect": "library"
+    },
+    {
+      "component": "tabs",
+      "path": "evidence.Tabs.List.props.variant.synthesized",
+      "current": true,
+      "effect": false
     },
     {
       "component": "tabs",
@@ -5752,18 +5674,6 @@
       "component": "tabs",
       "path": "parts.Tabs.List.forwardedFrom[1]",
       "current": "@types/react"
-    },
-    {
-      "component": "tabs",
-      "path": "parts.Tabs.List.props.variant",
-      "current": {
-        "name": "variant",
-        "origin": "recipe-axis",
-        "type": "\"default\" | \"line\" | undefined",
-        "defaultValue": "\"default\"",
-        "description": "",
-        "required": false
-      }
     },
     {
       "component": "tabs",
@@ -6837,6 +6747,16 @@
       }
     },
     {
+      "component": "field",
+      "key": "docs-adapter|field|missing-description|Field.Root.orientation: public prop has no JSDoc description (packages/ui/src/components/field/field.tsx)#1",
+      "effect": {
+        "component": "field",
+        "source": "docs-adapter",
+        "code": "missing-description",
+        "message": "Field.Root.orientation: public prop has no JSDoc description (packages/ui/src/components/field/field.tsx)"
+      }
+    },
+    {
       "component": "heading",
       "key": "effect-extractor|heading|unsupported-type-fallback|Could not extract type \"{ render?: ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined; }\" at \"<repo>/packages/ui/src/heading.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/heading.ts:1:1]#1",
       "effect": {
@@ -6894,6 +6814,26 @@
         "source": "effect-extractor",
         "code": "unsupported-type-fallback",
         "message": "Could not extract type \"{ variant: { readonly default: \"text-inherit\"; readonly foreground: \"text-foreground\"; readonly primary: \"text-primary\"; readonly secondary: \"text-secondary\"; readonly brand: \"text-brand\"; readonly muted: \"text-muted-foreground\"; readonly inherit: \"text-inherit\"; readonly destructive: \"text-error\"; }; ... 5 more ......\" at \"<repo>/packages/ui/src/heading.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/heading.ts:1:1]"
+      }
+    },
+    {
+      "component": "item",
+      "key": "docs-adapter|item|missing-description|Item.Footer.mode: public prop has no JSDoc description (packages/ui/src/components/item/item.tsx)#1",
+      "effect": {
+        "component": "item",
+        "source": "docs-adapter",
+        "code": "missing-description",
+        "message": "Item.Footer.mode: public prop has no JSDoc description (packages/ui/src/components/item/item.tsx)"
+      }
+    },
+    {
+      "component": "item",
+      "key": "docs-adapter|item|missing-description|Item.Media.variant: public prop has no JSDoc description (packages/ui/src/components/item/item.tsx)#1",
+      "effect": {
+        "component": "item",
+        "source": "docs-adapter",
+        "code": "missing-description",
+        "message": "Item.Media.variant: public prop has no JSDoc description (packages/ui/src/components/item/item.tsx)"
       }
     },
     {
@@ -7134,6 +7074,16 @@
         "source": "effect-extractor",
         "code": "unsupported-type-fallback",
         "message": "Could not extract type \"{ nativeButton?: boolean | undefined; handle?: PopoverHandle<unknown> | undefined; payload?: unknown; id?: string | undefined; openOnHover?: boolean | undefined; delay?: number | undefined; closeDelay?: number | undefined; }\" at \"<repo>/packages/ui/src/popover.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/popover.ts:1:1]"
+      }
+    },
+    {
+      "component": "selection-item",
+      "key": "docs-adapter|selection-item|missing-description|SelectionItem.SubSection.mode: public prop has no JSDoc description (packages/ui/src/components/selection-item/selection-item.tsx)#1",
+      "effect": {
+        "component": "selection-item",
+        "source": "docs-adapter",
+        "code": "missing-description",
+        "message": "SelectionItem.SubSection.mode: public prop has no JSDoc description (packages/ui/src/components/selection-item/selection-item.tsx)"
       }
     },
     {

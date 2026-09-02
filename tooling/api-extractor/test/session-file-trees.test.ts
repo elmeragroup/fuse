@@ -7,7 +7,7 @@ import type { BackendExtractionSession, BackendProject } from "../src/backend/co
 import { openTsgoProject } from "../src/backend/ts7/project.ts";
 import { ProjectExtractor } from "../src/index.ts";
 import { InternalProjectExtractorTiming, timedProjectExtractorLayer } from "../src/internal/timing.ts";
-import type { ProjectFileSystem } from "../src/options.ts";
+import type { ExtractorOptions, ProjectFileSystem } from "../src/options.ts";
 
 const fixtureDirectory = resolve(import.meta.dirname, "fixtures");
 const basicDirectory = resolve(fixtureDirectory, "basic");
@@ -21,6 +21,9 @@ const dtsInputPath = resolve(dtsDirectory, "input.d.ts");
 const starExcludedDirectory = resolve(fixtureDirectory, "star-excluded-package");
 const starExcludedTsconfigPath = resolve(starExcludedDirectory, "tsconfig.json");
 const starExcludedInputPath = resolve(starExcludedDirectory, "input.ts");
+const mixinDirectory = resolve(fixtureDirectory, "component-external-mixin-props");
+const mixinTsconfigPath = resolve(mixinDirectory, "tsconfig.json");
+const mixinHostInputPath = resolve(mixinDirectory, "host.ts");
 
 function sourceFileTotals(project: BackendProject) {
   const totals = project.getTimingInfo?.().totals;
@@ -174,6 +177,35 @@ describe("TypeScript 7 session-owned file trees", () => {
       disk.close();
       virtual.close();
     }
+  });
+
+  it("materializes a dependency's class declaration only when the extraction selected its package", async () => {
+    const extract = (options?: ExtractorOptions) =>
+      Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const timing = yield* InternalProjectExtractorTiming;
+            return yield* timing.extractModule(mixinHostInputPath, options);
+          }).pipe(Effect.provide(timedProjectExtractorLayer({ tsconfigPath: mixinTsconfigPath })))
+        )
+      );
+    const hostType = (result: (typeof unselected)["result"]) => {
+      const entry = result.module.exports.find((candidate) => candidate.name === "HostProps");
+      if (entry?.type.kind !== "object") throw new Error("Expected HostProps to be an object");
+      return entry.type.properties.find((property) => property.name === "host")?.type;
+    };
+
+    // The dependency boundary asks where `RenderHost` comes from before it
+    // summarizes the class. Its origin is read from the declaration's path
+    // and the checker; the class body is never fetched unless the package was
+    // selected, in which case the class is expanded from its declaration.
+    const unselected = await extract();
+    expect(hostType(unselected.result)).toMatchObject({ kind: "external", typeName: { name: "RenderHost" } });
+    expect(unselected.timing.totals.sourceFilesFetched).toBe(1);
+
+    const selected = await extract({ includeExternalTypes: ["@fixture/render"] });
+    expect(hostType(selected.result)).toMatchObject({ kind: "object", properties: [{ name: "id" }] });
+    expect(selected.timing.totals.sourceFilesFetched).toBe(2);
   });
 
   it("does not fetch an excluded export-star target until a declaration node is needed", async () => {

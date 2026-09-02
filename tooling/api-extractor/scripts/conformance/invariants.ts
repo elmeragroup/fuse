@@ -240,7 +240,7 @@ export function assertConformanceDecoded(
   ) {
     throw new Error("Issue 14 conformance identity is stale.");
   }
-  if (report.manifestSha256 !== sha256Manifest()) {
+  if (report.manifestSha256 !== manifestSha256()) {
     throw new Error("Issue 14 fixture manifest digest is stale.");
   }
   assertReferenceEvidence(report.referenceCheck, false);
@@ -285,7 +285,8 @@ export function assertConformanceDecoded(
   }
 }
 
-function sha256Manifest(): string {
+/** The stable identity of the fixture manifest every conformance report is bound to. */
+export function manifestSha256(): string {
   return createHash("sha256").update(JSON.stringify(issue14FixtureManifest), "utf8").digest("hex");
 }
 

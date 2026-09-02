@@ -1,5 +1,3 @@
-/* oxlint-disable typescript/no-unnecessary-condition -- remote AST parents can end before the shared type says they do. */
-
 import type { Node, SourceFile } from "typescript/unstable/ast";
 import { isExportDeclaration, isStringLiteral } from "typescript/unstable/ast/is";
 
@@ -49,6 +47,7 @@ export function enclosingExportDeclaration(
   // absent at runtime even though the shared `Node` typing claims otherwise,
   // hence the explicit undefined-typed accumulator.
   let owner: Node | undefined = specifier.parent;
+  // oxlint-disable-next-line typescript/no-unnecessary-condition -- remote AST parents can end before the shared type says they do.
   while (owner !== undefined && !isExportDeclaration(owner)) owner = owner.parent;
   return owner;
 }

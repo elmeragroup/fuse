@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, mkdtempSync, readdirSync, realpathSync } from "n
 import { tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 
+/** `test/fixtures`; every test support module and test derives fixture paths from this one root. */
 export const fixtureRoot = resolve(import.meta.dirname, "../fixtures");
 const packageRoot = resolve(fixtureRoot, "../..");
 const ignoredTemporaryDirectory = resolve(packageRoot, "node_modules/.cache");

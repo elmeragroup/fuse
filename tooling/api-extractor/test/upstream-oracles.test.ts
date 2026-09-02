@@ -73,7 +73,7 @@ const suites: readonly UpstreamSuite[] = [
     label: "Issue 03 object APIs",
     tsconfig: "issue-03-tsconfig.json",
     fixtures: normalize(issue03UpstreamFixtures),
-    totals: { total: issue03UpstreamFixtures.length, reviewedDivergences: 0 },
+    totals: { total: 5, reviewedDivergences: 0 },
     recoverableWarnings: "none",
   },
   {

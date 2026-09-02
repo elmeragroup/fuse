@@ -6,6 +6,9 @@ import { relative } from "node:path";
 
 /** Leaf file helpers shared by every script; this module imports no sibling. */
 
+/** The Node release every timing and conformance evidence artifact is pinned to. */
+export const requiredNodeVersion = "24.13.0" as const;
+
 /** The installed version of a dependency, read from its package.json. */
 export function packageVersion(packageName: string): string {
   const require = createRequire(import.meta.url);

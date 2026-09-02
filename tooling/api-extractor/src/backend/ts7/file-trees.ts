@@ -19,10 +19,21 @@ export class SessionFileTrees {
   private readonly trees = new Map<string, SourceFileTree>();
   private readonly project: Project;
   private readonly isExternalPath: (path: string) => boolean;
+  private readonly isSelectedPath: (path: string) => boolean;
 
-  constructor(project: Project, isExternalPath: (path: string) => boolean) {
+  /**
+   * `isExternalPath` bounds whole-module reads to the project; `isSelectedPath`
+   * says which files the extraction's external-type selection lets the backend
+   * materialize on its own initiative.
+   */
+  constructor(
+    project: Project,
+    isExternalPath: (path: string) => boolean,
+    isSelectedPath: (path: string) => boolean
+  ) {
     this.project = project;
     this.isExternalPath = isExternalPath;
+    this.isSelectedPath = isSelectedPath;
   }
 
   /** Whole-module reads stay inside project ownership; excluded files are never read as modules. */
@@ -35,12 +46,28 @@ export class SessionFileTrees {
     return this.remember(sourceFile);
   }
 
+  /**
+   * Materializes a declaration the parser holds a handle for. The parser has
+   * already applied its dependency policy to that handle, so the read is
+   * honored for any owner; a tree fetched once serves every later lookup.
+   */
   resolve(declaration: CompilerDeclaration): Node | undefined {
     const tree = this.trees.get(declaration.path);
     if (tree !== undefined) return tree.getOrCreateNodeAtIndex(declaration.index);
     const node = declaration.resolve(this.project);
     if (node !== undefined) this.remember(node.getSourceFile());
     return node;
+  }
+
+  /**
+   * Materializes a declaration the backend reaches on its own while answering
+   * a fact (a value's declaration site, an enum member, an index signature, a
+   * parameter's JSDoc). Files the selection excludes are never fetched for
+   * that; the fact degrades to what the checker knows without the node.
+   */
+  resolveSelected(declaration: CompilerDeclaration): Node | undefined {
+    if (!this.trees.has(declaration.path) && !this.isSelectedPath(declaration.path)) return undefined;
+    return this.resolve(declaration);
   }
 
   clear(): void {

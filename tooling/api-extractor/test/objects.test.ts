@@ -26,10 +26,6 @@ const baseUiFixtureDirectory = resolve(import.meta.dirname, "fixtures/base-ui-co
 const baseUiTsconfigPath = resolve(import.meta.dirname, "fixtures/issue-02-tsconfig.json");
 const baseUiInputPath = resolve(baseUiFixtureDirectory, "input.tsx");
 
-function runExtraction(options?: ExtractorOptions): Promise<ExtractionResult> {
-  return extractFixture({ tsconfigPath }, inputPath, options);
-}
-
 function runReviewExtraction(options?: ExtractorOptions): Promise<ExtractionResult> {
   return extractFixture({ tsconfigPath: reviewTsconfigPath }, reviewInputPath, options);
 }
@@ -40,7 +36,7 @@ function runBaseUiExtraction(): Promise<ExtractionResult> {
 
 describe("Issue 03 object APIs, documentation, enums, and provenance", () => {
   it("extracts interface members and enum members through extractModule", async () => {
-    const result = await runExtraction();
+    const result = await extractFixture({ tsconfigPath }, inputPath);
     const options = result.module.exports.find((entry) => entry.name === "Options");
     const mode = result.module.exports.find((entry) => entry.name === "Mode");
 
@@ -107,7 +103,7 @@ describe("Issue 03 object APIs, documentation, enums, and provenance", () => {
   });
 
   it("anchors return-value provenance beneath object-valued functions and methods", async () => {
-    const result = await runExtraction();
+    const result = await extractFixture({ tsconfigPath }, inputPath);
     const make = result.module.exports.find((entry) => entry.name === "makeReturnShape");
     const methods = result.module.exports.find((entry) => entry.name === "ReturnMethods");
 
@@ -171,7 +167,7 @@ describe("Issue 03 object APIs, documentation, enums, and provenance", () => {
   });
 
   it("preserves ordinary destructuring defaults on parameter-object properties", async () => {
-    const result = await runExtraction();
+    const result = await extractFixture({ tsconfigPath }, inputPath);
     const configure = result.module.exports.find((entry) => entry.name === "configure");
     expect(configure?.type.kind).toBe("function");
     if (configure?.type.kind !== "function") return;
@@ -190,23 +186,23 @@ describe("Issue 03 object APIs, documentation, enums, and provenance", () => {
   });
 
   it("keeps stable repository-relative provenance and authored defaults", async () => {
-    const result = await runExtraction();
+    const result = await extractFixture({ tsconfigPath }, inputPath);
     expect(result.provenance).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           path: ["Options"],
-          declarationPaths: ["test/fixtures/issue-03-object-apis/input.ts"],
+          declarations: [expect.objectContaining({ path: "test/fixtures/issue-03-object-apis/input.ts" })],
           synthesized: false,
         }),
         expect.objectContaining({
           path: ["Options", "properties", "label"],
-          declarationPaths: ["test/fixtures/issue-03-object-apis/input.ts"],
+          declarations: [expect.objectContaining({ path: "test/fixtures/issue-03-object-apis/input.ts" })],
           synthesized: false,
           readonly: true,
         }),
         expect.objectContaining({
           path: ["use", "callSignatures", "0", "parameters", "options"],
-          declarationPaths: ["test/fixtures/issue-03-object-apis/input.ts"],
+          declarations: [expect.objectContaining({ path: "test/fixtures/issue-03-object-apis/input.ts" })],
           synthesized: false,
           defaultInitializer: "{ nested: { id: 1 }, format: String }",
         }),
@@ -215,7 +211,7 @@ describe("Issue 03 object APIs, documentation, enums, and provenance", () => {
   });
 
   it("decodes semantic output and provenance as independent schemas", async () => {
-    const result = await runExtraction();
+    const result = await extractFixture({ tsconfigPath }, inputPath);
 
     expect(Schema.decodeUnknownSync(ExtractionResultSchema)(result)).toEqual(result);
     expect(Schema.decodeUnknownSync(ProvenanceSchema)(result.provenance)).toEqual(result.provenance);
@@ -223,7 +219,7 @@ describe("Issue 03 object APIs, documentation, enums, and provenance", () => {
       Schema.decodeUnknownSync(ProvenanceSchema)([
         {
           path: ["Options"],
-          declarationPaths: ["input.ts"],
+          declarations: [{ path: "input.ts" }],
           synthesized: "no",
         },
       ])
@@ -231,7 +227,7 @@ describe("Issue 03 object APIs, documentation, enums, and provenance", () => {
   });
 
   it("honors inclusion and object-resolution policies with deterministic callback data", async () => {
-    const includeResult = await runExtraction({
+    const includeResult = await extractFixture({ tsconfigPath }, inputPath, {
       shouldInclude: ({ name }) => name !== "id",
     });
     const options = includeResult.module.exports.find((entry) => entry.name === "Options");
@@ -244,7 +240,7 @@ describe("Issue 03 object APIs, documentation, enums, and provenance", () => {
     }
 
     const resolveCalls: ShouldResolveObjectData[] = [];
-    const resolvedResult = await runExtraction({
+    const resolvedResult = await extractFixture({ tsconfigPath }, inputPath, {
       shouldResolveObject: (data) => {
         resolveCalls.push(data);
         return data.name !== "Options";
@@ -354,13 +350,23 @@ describe("Issue 03 object APIs, documentation, enums, and provenance", () => {
       resolve(mixedRoot, "packages/UI/src/Widget.ts")
     );
     expect(result.provenance).toEqual(
-      expect.arrayContaining([expect.objectContaining({ declarationPaths: ["packages/UI/src/Widget.ts"] })])
+      expect.arrayContaining([
+        expect.objectContaining({
+          declarations: [expect.objectContaining({ path: "packages/UI/src/Widget.ts" })],
+        }),
+      ])
     );
     expect(result.provenance).not.toEqual(
-      expect.arrayContaining([expect.objectContaining({ declarationPaths: ["packages/ui/src/widget.ts"] })])
+      expect.arrayContaining([
+        expect.objectContaining({
+          declarations: [expect.objectContaining({ path: "packages/ui/src/widget.ts" })],
+        }),
+      ])
     );
     expect(
-      result.provenance.every((entry) => entry.declarationPaths.every((path) => !isAbsolute(path)))
+      result.provenance.every((entry) =>
+        entry.declarations.map((declaration) => declaration.path).every((path) => !isAbsolute(path))
+      )
     ).toBe(true);
   });
 
@@ -373,12 +379,20 @@ describe("Issue 03 object APIs, documentation, enums, and provenance", () => {
     expect(result.provenance).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          declarationPaths: ["test/fixtures/issue-03-review/MixedRepo/packages/UI/src/Widget.ts"],
+          declarations: [
+            expect.objectContaining({
+              path: "test/fixtures/issue-03-review/MixedRepo/packages/UI/src/Widget.ts",
+            }),
+          ],
         }),
       ])
     );
     expect(result.provenance).not.toEqual(
-      expect.arrayContaining([expect.objectContaining({ declarationPaths: ["packages/ui/src/widget.ts"] })])
+      expect.arrayContaining([
+        expect.objectContaining({
+          declarations: [expect.objectContaining({ path: "packages/ui/src/widget.ts" })],
+        }),
+      ])
     );
   });
 
@@ -488,13 +502,8 @@ describe("synthesized properties and missing enums through a replacement backend
       properties: [{ name: "generated", type: { kind: "intrinsic", intrinsic: "number" } }],
     });
     expect(result.provenance).toEqual([
-      { path: ["Synthesized"], declarationPaths: [], owners: [], synthesized: true },
-      {
-        path: ["Synthesized", "properties", "generated"],
-        declarationPaths: [],
-        owners: [],
-        synthesized: true,
-      },
+      { path: ["Synthesized"], declarations: [], synthesized: true },
+      { path: ["Synthesized", "properties", "generated"], declarations: [], synthesized: true },
     ]);
     expect(Schema.decodeUnknownSync(ExtractionResultSchema)(result)).toEqual(result);
   });

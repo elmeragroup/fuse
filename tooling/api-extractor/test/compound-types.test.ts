@@ -10,10 +10,6 @@ const fixtureDirectory = resolve(import.meta.dirname, "fixtures/issue-04-canonic
 const tsconfigPath = resolve(fixtureDirectory, "tsconfig.json");
 const inputPath = resolve(fixtureDirectory, "input.ts");
 
-function runExtraction(): Promise<ExtractionResult> {
-  return extractFixture({ tsconfigPath }, inputPath);
-}
-
 function runTwiceInOneProject(): Promise<readonly [ExtractionResult, ExtractionResult]> {
   return Effect.runPromise(
     Effect.scoped(
@@ -46,7 +42,7 @@ function property(properties: readonly PropertyNode[], name: string): PropertyNo
 
 describe("Issue 04 compound type extraction through extractModule", () => {
   it("cuts a recursive union without losing its discriminant", async () => {
-    const cycle = exportedType(await runExtraction(), "Cycle");
+    const cycle = exportedType(await extractFixture({ tsconfigPath }, inputPath), "Cycle");
     expect(cycle.kind).toBe("union");
     if (cycle.kind !== "union") return;
     expect(cycle.typeName?.name).toBe("Cycle");
@@ -63,7 +59,7 @@ describe("Issue 04 compound type extraction through extractModule", () => {
   });
 
   it("cuts a recursive intersection without losing its discriminant", async () => {
-    const cyclic = exportedType(await runExtraction(), "CyclicIntersection");
+    const cyclic = exportedType(await extractFixture({ tsconfigPath }, inputPath), "CyclicIntersection");
     expect(cyclic.kind).toBe("intersection");
     if (cyclic.kind !== "intersection") return;
     expect(property(cyclic.properties, "self").type).toEqual({
@@ -75,7 +71,7 @@ describe("Issue 04 compound type extraction through extractModule", () => {
   });
 
   it("describes a callable intersection by its call signatures", async () => {
-    expect(exportedType(await runExtraction(), "callable")).toMatchObject({
+    expect(exportedType(await extractFixture({ tsconfigPath }, inputPath), "callable")).toMatchObject({
       kind: "function",
       callSignatures: [
         {
@@ -87,7 +83,7 @@ describe("Issue 04 compound type extraction through extractModule", () => {
   });
 
   it("keeps an authored boolean as one intrinsic member of the optional union", async () => {
-    const flags = exportedType(await runExtraction(), "Flags");
+    const flags = exportedType(await extractFixture({ tsconfigPath }, inputPath), "Flags");
     expect(flags.kind).toBe("object");
     if (flags.kind !== "object") return;
     expect(property(flags.properties, "toggled")).toMatchObject({
@@ -103,7 +99,7 @@ describe("Issue 04 compound type extraction through extractModule", () => {
   });
 
   it("merges intersection properties while preserving members, optionality and documentation", async () => {
-    const flags = exportedType(await runExtraction(), "Flags");
+    const flags = exportedType(await extractFixture({ tsconfigPath }, inputPath), "Flags");
     if (flags.kind !== "object") throw new Error("Flags is not an object");
     const merged = property(flags.properties, "merged").type;
     expect(merged.kind).toBe("intersection");
@@ -137,7 +133,10 @@ describe("Issue 04 compound type extraction through extractModule", () => {
   });
 
   it("names deduplicated intersection members after their own authored syntax", async () => {
-    const duplicate = exportedType(await runExtraction(), "DuplicateIntersection");
+    const duplicate = exportedType(
+      await extractFixture({ tsconfigPath }, inputPath),
+      "DuplicateIntersection"
+    );
     expect(duplicate.kind).toBe("intersection");
     if (duplicate.kind !== "intersection") return;
     // The checker collapses `Alpha & Alpha` to `[Alpha, Beta]`. Pairing members
@@ -154,7 +153,7 @@ describe("Issue 04 compound type extraction through extractModule", () => {
   });
 
   it("does not mistake a generic reference's type arguments for intersection member syntax", async () => {
-    const value = exportedType(await runExtraction(), "pair");
+    const value = exportedType(await extractFixture({ tsconfigPath }, inputPath), "pair");
     expect(value.kind).toBe("intersection");
     if (value.kind !== "intersection") return;
     expect(value.typeName?.name).toBe("Pair");
@@ -172,7 +171,7 @@ describe("Issue 04 compound type extraction through extractModule", () => {
   });
 
   it("keeps the authored member order of an instantiated generic alias union", async () => {
-    const alias = exportedType(await runExtraction(), "instantiatedAlias");
+    const alias = exportedType(await extractFixture({ tsconfigPath }, inputPath), "instantiatedAlias");
     if (alias.kind !== "function") throw new Error("instantiatedAlias is not a function");
     const parameter = alias.callSignatures[0]?.parameters[0];
     expect(parameter?.type).toMatchObject({
@@ -187,7 +186,7 @@ describe("Issue 04 compound type extraction through extractModule", () => {
   });
 
   it("keeps the authored position of a generic container member", async () => {
-    const alias = exportedType(await runExtraction(), "genericContainer");
+    const alias = exportedType(await extractFixture({ tsconfigPath }, inputPath), "genericContainer");
     if (alias.kind !== "function") throw new Error("genericContainer is not a function");
     const parameter = alias.callSignatures[0]?.parameters[0];
     // The alias body is `Value[] | string`. `Value[]` resolves to the
@@ -204,7 +203,7 @@ describe("Issue 04 compound type extraction through extractModule", () => {
   });
 
   it("keeps an authored member that its sibling alias union also contains", async () => {
-    const overlapping = exportedType(await runExtraction(), "OverlappingUnion");
+    const overlapping = exportedType(await extractFixture({ tsconfigPath }, inputPath), "OverlappingUnion");
     expect(overlapping).toEqual({
       kind: "union",
       typeName: { name: "OverlappingUnion" },
@@ -223,7 +222,7 @@ describe("Issue 04 compound type extraction through extractModule", () => {
   });
 
   it("moves an aliased null to the end of its union", async () => {
-    expect(exportedType(await runExtraction(), "WithAliasedNull")).toEqual({
+    expect(exportedType(await extractFixture({ tsconfigPath }, inputPath), "WithAliasedNull")).toEqual({
       kind: "union",
       typeName: { name: "WithAliasedNull" },
       types: [
@@ -234,18 +233,20 @@ describe("Issue 04 compound type extraction through extractModule", () => {
   });
 
   it("records provenance for merged intersection properties", async () => {
-    const result = await runExtraction();
+    const result = await extractFixture({ tsconfigPath }, inputPath);
     const paths = result.provenance.map((entry) => JSON.stringify(entry.path));
     expect(paths).toContain(JSON.stringify(["Flags", "properties", "merged"]));
     expect(paths).toContain(JSON.stringify(["Flags", "properties", "merged", "properties", "count"]));
     expect(paths).toContain(JSON.stringify(["Flags", "properties", "merged", "properties", "tags"]));
-    expect(result.provenance.every((entry) => entry.declarationPaths.length > 0)).toBe(true);
+    expect(
+      result.provenance.every((entry) => entry.declarations.map((declaration) => declaration.path).length > 0)
+    ).toBe(true);
   });
 
   it("produces identical output for repeated extractions and keeps the result decodable", async () => {
     const [first, second] = await runTwiceInOneProject();
     expect(JSON.stringify(second)).toBe(JSON.stringify(first));
-    const separateProject = await runExtraction();
+    const separateProject = await extractFixture({ tsconfigPath }, inputPath);
     expect(JSON.stringify(separateProject)).toBe(JSON.stringify(first));
     // SAFETY: the round-tripped JSON is unknown-shaped data that the schema decodes here.
     const encoded = JSON.parse(JSON.stringify(first)) as unknown;

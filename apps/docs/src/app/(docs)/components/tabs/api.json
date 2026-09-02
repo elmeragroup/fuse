@@ -10,7 +10,7 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 276,
+      "forwardedCount": 275,
       "props": [
         {
           "name": "className",
@@ -57,6 +57,17 @@
           "required": false
         },
         {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, TabsRootState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
           "name": "style",
           "origin": {
             "packageName": "@base-ui/react"
@@ -88,7 +99,7 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 276,
+      "forwardedCount": 275,
       "props": [
         {
           "name": "variant",
@@ -133,6 +144,17 @@
           "required": false
         },
         {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, TabsListState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
           "name": "style",
           "origin": {
             "packageName": "@base-ui/react"
@@ -153,7 +175,7 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 284,
+      "forwardedCount": 283,
       "props": [
         {
           "name": "className",
@@ -189,6 +211,17 @@
           "required": false
         },
         {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, TabsTabState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
           "name": "style",
           "origin": {
             "packageName": "@base-ui/react"
@@ -220,7 +253,7 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 276,
+      "forwardedCount": 275,
       "props": [
         {
           "name": "className",
@@ -242,6 +275,17 @@
           "shortType": null,
           "defaultValue": "false",
           "description": "Whether to keep the HTML element in the DOM while the panel is hidden.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, TabsPanelState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
           "required": false
         },
         {

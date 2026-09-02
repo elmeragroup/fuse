@@ -58,7 +58,11 @@ export function indexSignatureKeySemanticPath(ownerPath: SemanticPath): Semantic
  * Component props can be discovered either from an authored props object or
  * from a function parameter. Both source shapes collapse into the same
  * `props` collection in the final semantic model, so the source grammar is
- * kept here with the rest of the path constructors.
+ * kept here with the rest of the path constructors. Only the prefix that
+ * names the prop is rewritten: an entry nested under the prop (a render
+ * callback's parameter, a member of an object-typed prop) keeps its own
+ * path below `props.<name>`, so the prop's entry lists the prop's
+ * declarations alone rather than the union of every descendant's.
  */
 export function componentPropSemanticPathFromProvenancePath(
   path: SemanticPath,
@@ -66,9 +70,9 @@ export function componentPropSemanticPathFromProvenancePath(
   propertyNames: ReadonlySet<string>
 ): SemanticPath | undefined {
   if (!startsWithPath(path, componentPath)) return undefined;
-  const propertyName = componentPropertyNameFromProvenancePath(path.slice(componentPath.length));
-  return propertyName !== undefined && propertyNames.has(propertyName)
-    ? componentPropSemanticPath(componentPath, propertyName)
+  const located = componentPropertyFromProvenancePath(path.slice(componentPath.length));
+  return located !== undefined && propertyNames.has(located.name)
+    ? [...componentPropSemanticPath(componentPath, located.name), ...located.rest]
     : undefined;
 }
 
@@ -172,10 +176,16 @@ function collectSemanticTypePaths(type: SemanticType, path: SemanticPath, paths:
   }
 }
 
-function componentPropertyNameFromProvenancePath(path: SemanticPath): string | undefined {
-  if (path[0] === "properties") return path[1];
+/** The prop a source-shape path addresses, and the path that continues below it. */
+function componentPropertyFromProvenancePath(
+  path: SemanticPath
+): { readonly name: string; readonly rest: SemanticPath } | undefined {
+  if (path[0] === "properties") {
+    return path[1] === undefined ? undefined : { name: path[1], rest: path.slice(2) };
+  }
   if (path[0] !== "callSignatures" || path[2] !== "parameters" || path[3] === undefined) return undefined;
-  return path[4] === "properties" ? path[5] : undefined;
+  if (path[4] !== "properties" || path[5] === undefined) return undefined;
+  return { name: path[5], rest: path.slice(6) };
 }
 
 function startsWithPath(path: SemanticPath, prefix: SemanticPath): boolean {

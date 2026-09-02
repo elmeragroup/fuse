@@ -1,7 +1,7 @@
 {
   "issue": "02-prove-compiler-boundary",
   "decision": "go",
-  "decisionRationale": "Proceed past the Issue 02 boundary gate after the timed public-seam samples and compiler-resolution regressions pass. Three fixtures match the immutable upstream oracle exactly; the React fixture matches the complete tracked TS7 oracle and exact warning oracle with explicit generic alias and mapped-alias coverage, while the type-operator policy remains configurable and the exact React divergence leaves are mechanically accounted for. The required module-resolution operation is consumed by the parser and the measured aggregate IPC round-trip remains below the checked-in stop threshold.",
+  "decisionRationale": "Proceed past the Issue 02 boundary gate after the timed public-seam samples and compiler-resolution regressions pass. Three fixtures match the immutable upstream oracle exactly; the React fixture matches the complete tracked TS7 oracle and exact warning oracle with explicit generic alias and mapped-alias coverage, while the type-operator policy remains configurable and the exact React divergence leaves are mechanically accounted for. The required module-resolution operation is consumed by the parser and the measured request counts and bytes received stay within the checked-in catalog ceilings.",
   "runtime": {
     "node": "24.13.0",
     "compiler": "typescript@7.0.2",
@@ -74,8 +74,8 @@
     },
     "unacceptableIpcGrowth": {
       "status": "not-triggered",
-      "threshold": "aggregate roundTripMs <= 1000",
-      "evidence": "test/fixtures/issue-02-timing.json records all four sequential public-seam samples and the checked command recomputes the decision without exact-latency equality"
+      "threshold": "each fixture's requestCount and bytesReceived <= its catalog ceiling",
+      "evidence": "test/fixtures/issue-02-timing.json records all four sequential public-seam samples and the checked command recomputes the decision from request-count and bytes-received ceilings, never from latency"
     }
   },
   "verification": {
@@ -92,6 +92,6 @@
   "residualRisk": [
     "TypeScript 7 unstable APIs may change in a future compiler release; the unstable import seam limits the intended blast radius.",
     "External React conditional and recursive graphs remain an explicit reviewed TS7 fidelity divergence and require a future compatibility decision before claiming upstream React equality.",
-    "Timing totals are environment-dependent evidence; the report checks signs, availability, fixture coverage, and a broad aggregate threshold rather than exact latency."
+    "Wall-clock timing totals are environment-dependent evidence and are recorded only; the report gates on request-count and bytes-received ceilings, fixture coverage, and exact semantic counters rather than latency."
   ]
 }

@@ -16,10 +16,11 @@ import type {
 } from "typescript/unstable/sync";
 
 import { BackendError } from "../../errors.ts";
-import { isExternalOwnership } from "../contracts.ts";
+import { externalTypeSelectionAllowsOwnership, isExternalOwnership } from "../contracts.ts";
 import type {
   BackendCompilerOperations,
   BackendDeclarationOwnership,
+  BackendExternalTypeSelection,
   BackendModuleDraft,
   BackendNodeReference,
   BackendExtractionSession,
@@ -50,6 +51,7 @@ export class TsgoExtractionSession implements BackendExtractionSession {
   private readonly provenanceRoot: string;
   private readonly cwd: string;
   private readonly pathIdentity: PathIdentity;
+  private readonly externalTypes: BackendExternalTypeSelection;
   private readonly registry = new HandleRegistry();
   private readonly nodeInterner: NodeHandleInterner;
   private readonly symbolHandles = new Map<TsSymbol, BackendSymbolHandle>();
@@ -76,6 +78,7 @@ export class TsgoExtractionSession implements BackendExtractionSession {
     provenanceRoot: string,
     cwd: string,
     pathIdentity: PathIdentity,
+    externalTypes: BackendExternalTypeSelection,
     onClose: (session: TsgoExtractionSession) => void
   ) {
     this.project = project;
@@ -85,8 +88,13 @@ export class TsgoExtractionSession implements BackendExtractionSession {
     this.provenanceRoot = provenanceRoot;
     this.cwd = cwd;
     this.pathIdentity = pathIdentity;
+    this.externalTypes = externalTypes;
     this.onClose = onClose;
-    this.fileTrees = new SessionFileTrees(this.project, (path) => this.isExternalPath(path));
+    this.fileTrees = new SessionFileTrees(
+      this.project,
+      (path) => this.isExternalPath(path),
+      (path) => this.isSelectedPath(path)
+    );
     this.nodeInterner = new NodeHandleInterner(
       this.registry,
       (path) => this.internedSourceFileName(path),
@@ -122,7 +130,7 @@ export class TsgoExtractionSession implements BackendExtractionSession {
       symbolAt: (node) => this.symbolAt(node),
       rawSymbolAt: (node) => this.rawSymbolAt(node),
       ownershipOfPath: (path) => this.ownershipOfPath(path),
-      resolveNode: (node) => this.fileTrees.resolve(node),
+      resolveNode: (node) => this.fileTrees.resolveSelected(node),
       nodePath: (node) => this.nodeRecord(node, "nodePath").path,
       compilerKind: (node) => this.nodeRecord(node, "nodeKind").kind,
     };
@@ -211,17 +219,17 @@ export class TsgoExtractionSession implements BackendExtractionSession {
 
   private symbol(handle: BackendSymbolHandle, operation: string): TsSymbol {
     this.ensureOpen(operation);
-    return this.registry.get(handle, "symbol", this.context(operation));
+    return this.registry.get(handle, "symbol", () => this.context(operation));
   }
 
   private type(handle: BackendTypeHandle, operation: string): Type {
     this.ensureOpen(operation);
-    return this.registry.get(handle, "type", this.context(operation));
+    return this.registry.get(handle, "type", () => this.context(operation));
   }
 
   private signature(handle: BackendSignatureHandle, operation: string): Signature {
     this.ensureOpen(operation);
-    return this.registry.get(handle, "signature", this.context(operation));
+    return this.registry.get(handle, "signature", () => this.context(operation));
   }
 
   private node(handle: BackendNodeReference, operation: string): Node {
@@ -243,8 +251,8 @@ export class TsgoExtractionSession implements BackendExtractionSession {
   private nodeRecord(handle: BackendNodeReference, operation: string): SessionNodeReference {
     this.ensureOpen(operation);
     return handle.kind === "type-node"
-      ? this.registry.get(handle, "type-node", this.context(operation))
-      : this.registry.get(handle, "node", this.context(operation));
+      ? this.registry.get(handle, "type-node", () => this.context(operation))
+      : this.registry.get(handle, "node", () => this.context(operation));
   }
 
   private nodeReference(node: Node): BackendNodeReference {
@@ -310,6 +318,10 @@ export class TsgoExtractionSession implements BackendExtractionSession {
   }
   private isExternalPath(path: string): boolean {
     return isExternalOwnership(this.ownershipOfPath(path));
+  }
+  /** Project files always; other owners only when this extraction's selection includes them. */
+  private isSelectedPath(path: string): boolean {
+    return externalTypeSelectionAllowsOwnership(this.ownershipOfPath(path), this.externalTypes);
   }
 }
 

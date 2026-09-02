@@ -16,16 +16,23 @@ export const DeclarationOwnerSchema = Schema.Union([
 ]);
 export type DeclarationOwner = typeof DeclarationOwnerSchema.Type;
 
+/** One declaring source file of a model node, with its owner when the backend could classify it. */
+export const ProvenanceDeclarationSchema = Schema.Struct({
+  /** Repository-relative path of the declaring file. */
+  path: Schema.String,
+  /**
+   * Who owns the file. Present whenever the backend reported a declaration
+   * handle for the path, so a consumer can ask "is this project-owned?" or
+   * "which package declares it?" without parsing the path.
+   */
+  owner: Schema.optionalKey(DeclarationOwnerSchema),
+});
+export type ProvenanceDeclaration = typeof ProvenanceDeclarationSchema.Type;
+
 export const ProvenanceEntrySchema = Schema.Struct({
   path: Schema.Array(Schema.String),
-  declarationPaths: Schema.Array(Schema.String),
-  /**
-   * The owner of each `declarationPaths` entry, in the same order. Present
-   * whenever the backend reported a declaration handle for every path, so a
-   * consumer can ask "is this project-owned?" or "which package declares it?"
-   * without parsing paths.
-   */
-  owners: Schema.optionalKey(Schema.Array(DeclarationOwnerSchema)),
+  /** The declaring files, sorted by path; empty for a compiler-synthesized node. */
+  declarations: Schema.Array(ProvenanceDeclarationSchema),
   synthesized: Schema.Boolean,
   /** Readonly declaration state kept out of the upstream semantic JSON model. */
   readonly: Schema.optionalKey(Schema.Boolean),
@@ -33,7 +40,7 @@ export const ProvenanceEntrySchema = Schema.Struct({
   /**
    * Repository-relative files of each intermediate re-export declaration that
    * forwarded this export, outermost first. The original declaration site is
-   * carried by `declarationPaths`; a directly declared export has no chain.
+   * carried by `declarations`; a directly declared export has no chain.
    */
   reexportChain: Schema.optionalKey(Schema.Array(Schema.String)),
 });

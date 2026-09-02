@@ -26,10 +26,10 @@ describe("HandleRegistry", () => {
       session: registry.session,
     } as BackendSymbolHandle;
 
-    expect(() => registry.get(missing, "symbol", context)).toThrow(
+    expect(() => registry.get(missing, "symbol", () => context)).toThrow(
       /Invalid symbol compiler handle in test\.handle/u
     );
-    expect(() => registry.get(missing, "symbol", context)).toThrow(
+    expect(() => registry.get(missing, "symbol", () => context)).toThrow(
       expect.objectContaining({ filePath: context.filePath, symbolStack: context.symbolStack })
     );
   });
@@ -39,7 +39,7 @@ describe("HandleRegistry", () => {
     const second = new HandleRegistry();
     const handle = first.create("symbol", { name: "Widget" });
 
-    expect(() => second.get(handle, "symbol", context)).toThrow(/Invalid symbol compiler handle/u);
+    expect(() => second.get(handle, "symbol", () => context)).toThrow(/Invalid symbol compiler handle/u);
   });
 
   it("rejects a handle whose runtime kind differs from the operation", () => {
@@ -47,7 +47,7 @@ describe("HandleRegistry", () => {
     const symbol = registry.create("symbol", { name: "Widget" });
 
     const wrongKind = { ...symbol, kind: "type" as const };
-    expect(() => registry.get(wrongKind, "type", context)).toThrow(/Invalid type compiler handle/u);
+    expect(() => registry.get(wrongKind, "type", () => context)).toThrow(/Invalid type compiler handle/u);
   });
 
   it("keeps TypeNode handles explicitly distinct from generic node handles", () => {
@@ -55,9 +55,9 @@ describe("HandleRegistry", () => {
     const typeNode = {};
     const handle = registry.create("type-node", typeNode);
 
-    expect(registry.get<"type-node", object>(handle, "type-node", context)).toBe(typeNode);
+    expect(registry.get<"type-node", object>(handle, "type-node", () => context)).toBe(typeNode);
     const wrongKind = { ...handle, kind: "node" as const };
-    expect(() => registry.get(wrongKind, "node", context)).toThrow(/Invalid node compiler handle/u);
+    expect(() => registry.get(wrongKind, "node", () => context)).toThrow(/Invalid node compiler handle/u);
     // Keep the package-owned type visible to this adversarial test's compile-time seam.
     const typedHandle: BackendTypeNodeHandle = handle;
     expect(typedHandle.kind).toBe("type-node");
@@ -68,7 +68,9 @@ describe("HandleRegistry", () => {
     const handle = registry.create("symbol", { name: "Widget" });
     registry.clear();
 
-    expect(() => registry.get(handle, "symbol", context)).toThrow(/after the extraction session closed/u);
+    expect(() => registry.get(handle, "symbol", () => context)).toThrow(
+      /after the extraction session closed/u
+    );
     expect(() => registry.create("symbol", { name: "Other" })).toThrow(
       /after the extraction session closed/u
     );

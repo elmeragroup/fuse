@@ -7,7 +7,7 @@ import type { Project } from "typescript/unstable/sync";
 import { BackendError, ConfigError, safeCause } from "../../errors.ts";
 import type { InternalOpenProjectOptions } from "../../internal/project-options.ts";
 import type { ProjectFileSystem } from "../../options.ts";
-import type { BackendProject, BackendTiming } from "../contracts.ts";
+import type { BackendExtractionOptions, BackendProject, BackendTiming } from "../contracts.ts";
 import { createPathIdentity } from "./path-identity.ts";
 import type { PathIdentity } from "./path-identity.ts";
 import { TsgoExtractionSession } from "./session.ts";
@@ -179,7 +179,7 @@ class TsgoProject implements BackendProject {
     });
   }
 
-  openExtraction(): TsgoExtractionSession {
+  openExtraction(options: BackendExtractionOptions = {}): TsgoExtractionSession {
     if (this.closed) {
       throw new BackendError({
         message: "Cannot open an extraction after the TypeScript project closed",
@@ -194,6 +194,7 @@ class TsgoProject implements BackendProject {
       this.provenanceRoot,
       this.cwd,
       this.pathIdentity,
+      options.externalTypes ?? { kind: "none" },
       (closedSession) => sessions.delete(closedSession)
     );
     this.sessions.add(session);

@@ -62,8 +62,6 @@ const TimingStopConditionEvidenceSchema = Schema.Struct({
 });
 
 const TimingIpcStopConditionEvidenceSchema = Schema.Struct({
-  maxAggregateRoundTripMs: Schema.Number,
-  measuredAggregateRoundTripMs: Schema.Number,
   status: TimingStatusSchema,
   evidence: EvidenceTextSchema,
 });
@@ -243,6 +241,14 @@ export function bytesReceivedCeiling(budget: {
   readonly bytesReceivedPathLengthHeadroom?: number;
 }): number {
   return budget.maxBytesReceived + (budget.bytesReceivedPathLengthHeadroom ?? 0);
+}
+
+/** The deterministic IPC gate: a sample stays within its catalog request-count and bytes-received ceilings. */
+export function isWithinIpcBudget(sample: TimingReport["samples"][number]): boolean {
+  return (
+    sample.totals.requestCount <= sample.budget.maxRequestCount &&
+    sample.totals.bytesReceived <= bytesReceivedCeiling(sample.budget)
+  );
 }
 
 export function assertBytesReceivedBudget(sample: TimingReport["samples"][number]): void {

@@ -16,9 +16,11 @@ import {
 } from "../conformance/contract.ts";
 import {
   assertFixtureOracle,
+  bytesReceivedCeiling,
   decodeJson,
   fixtureDirectory,
   fixtureInputPath,
+  issue02TimingFixtures,
   issue14TimingFixtures,
   packageVersion,
   readTimingReport,
@@ -30,14 +32,13 @@ import type { BoundaryStatuses } from "./shared.ts";
 const reportPath = join(fixtureDirectory, "issue-14-timing.json");
 const baselinePath = join(fixtureDirectory, "issue-02-timing.json");
 const configPath = join(fixtureDirectory, "issue-14-tsconfig.json");
-export const maxAggregateRoundTripMs = 1_000;
 export const timingToleranceMs = 0.001;
 /**
  * IPC wall-clock counters are scheduler-sensitive. Keep the durable timing
- * contract explicit: semantic counters must match exactly, while wall clock
- * fields and transport byte counts remain finite non-negative observations.
- * Both the live and stored aggregate round-trip values still have to pass the
- * 1000ms stop condition, so fabricated stale values cannot be used as a gate.
+ * contract explicit: semantic counters must match exactly, wall-clock fields
+ * remain finite non-negative observations, and the IPC stop condition is
+ * decided by the aggregate request count and bytes received against the
+ * catalog ceilings, so a loaded machine cannot flip the decision.
  */
 export const wallClockContract = issue14TimingWallClockContract;
 export const wallClockContractRationale = issue14TimingWallClockRationale;
@@ -103,10 +104,12 @@ export const Issue14TimingReportSchema = Schema.Struct({
     unacceptableIpcGrowth: Schema.Struct({
       status: Schema.Literals(["not-triggered", "triggered"] as const),
       threshold: Schema.Literal(issue14IpcThreshold),
-      baselineAggregateRoundTripMs: Schema.Number,
-      measuredAggregateRoundTripMs: Schema.Number,
-      deltaAggregateRoundTripMs: Schema.Number,
-      maxAggregateRoundTripMs: Schema.Number,
+      baselineAggregateRequestCount: Schema.Number,
+      measuredAggregateRequestCount: Schema.Number,
+      maxAggregateRequestCount: Schema.Number,
+      baselineAggregateBytesReceived: Schema.Number,
+      measuredAggregateBytesReceived: Schema.Number,
+      maxAggregateBytesReceived: Schema.Number,
       evidence: Schema.Literal(issue14IpcEvidence),
     }),
   }),
@@ -141,13 +144,43 @@ export type TimingCommandOutput = Schema.Schema.Type<typeof TimingCommandOutputS
 export type TimingTotals = Schema.Schema.Type<typeof NumberTotalsSchema>;
 export type TimingCheckMode = "enforce-live-budget" | "verify-checkout-portability";
 export type SemanticDecision = "go" | "no-go";
+type IpcCeilings = {
+  readonly maxAggregateRequestCount: number;
+  readonly maxAggregateBytesReceived: number;
+};
+type IpcStatus = Issue14TimingReport["stopConditions"]["unacceptableIpcGrowth"]["status"];
+
+/** The Issue 14 IPC ceilings are the catalog's Issue 02 per-fixture ceilings summed over the four fixtures. */
+export function issue14IpcCeilings(): IpcCeilings {
+  const budgets = new Map(issue02TimingFixtures.map((definition) => [definition.fixture, definition]));
+  let maxAggregateRequestCount = 0;
+  let maxAggregateBytesReceived = 0;
+  for (const definition of issue14TimingFixtures) {
+    const budget = budgets.get(definition.fixture);
+    if (budget === undefined) {
+      throw new Error(`Issue 14 timing fixture ${definition.fixture} has no catalog IPC ceiling.`);
+    }
+    maxAggregateRequestCount += budget.maxRequestCount;
+    maxAggregateBytesReceived += bytesReceivedCeiling(budget);
+  }
+  return { maxAggregateRequestCount, maxAggregateBytesReceived };
+}
+
+function ipcStatusFor(measured: TimingTotals, ceilings: IpcCeilings): IpcStatus {
+  return measured.requestCount <= ceilings.maxAggregateRequestCount &&
+    measured.bytesReceived <= ceilings.maxAggregateBytesReceived
+    ? "not-triggered"
+    : "triggered";
+}
 
 function currentRuntimeIdentity(): Issue14TimingReport["runtime"] {
   if (
     process.versions.node !== issue14NodeVersion ||
     `typescript@${packageVersion("typescript")}` !== issue14CompilerVersion
   ) {
-    throw new Error("Issue 14 timing evidence requires Node 24.13.0 and typescript@7.0.2.");
+    throw new Error(
+      `Issue 14 timing evidence requires Node ${issue14NodeVersion} and ${issue14CompilerVersion}.`
+    );
   }
   return { node: issue14NodeVersion, compiler: issue14CompilerVersion };
 }
@@ -199,8 +232,10 @@ export function subtractTotals(current: TimingTotals, baseline: TimingTotals): T
 }
 
 function assertBaselineIdentity(baseline: TimingReport): void {
-  if (baseline.runtime.node !== "24.13.0" || baseline.runtime.compiler !== "typescript@7.0.2") {
-    throw new Error("Issue 14 timing requires the Node 24.13.0 / typescript@7.0.2 Issue 02 baseline.");
+  if (baseline.runtime.node !== issue14NodeVersion || baseline.runtime.compiler !== issue14CompilerVersion) {
+    throw new Error(
+      `Issue 14 timing requires the Node ${issue14NodeVersion} / ${issue14CompilerVersion} Issue 02 baseline.`
+    );
   }
   if (
     JSON.stringify(baseline.samples.map((sample) => sample.fixture)) !== JSON.stringify(expectedFixtureOrder)
@@ -355,21 +390,24 @@ function assertCommonReportInvariants(report: Issue14TimingReport): void {
     sumTotals(report.samples.map((sample) => sample.delta))
   );
   assertArithmetic("baseline.aggregate", report.baseline.aggregate, baseline);
+  const ipc = report.stopConditions.unacceptableIpcGrowth;
   if (
-    Math.abs(
-      report.stopConditions.unacceptableIpcGrowth.baselineAggregateRoundTripMs - baseline.roundTripMs
-    ) > timingToleranceMs ||
-    Math.abs(
-      report.stopConditions.unacceptableIpcGrowth.measuredAggregateRoundTripMs - measured.roundTripMs
-    ) > timingToleranceMs ||
-    Math.abs(report.stopConditions.unacceptableIpcGrowth.deltaAggregateRoundTripMs - delta.roundTripMs) >
-      timingToleranceMs ||
-    report.stopConditions.unacceptableIpcGrowth.maxAggregateRoundTripMs !== maxAggregateRoundTripMs
+    ipc.baselineAggregateRequestCount !== baseline.requestCount ||
+    ipc.measuredAggregateRequestCount !== measured.requestCount ||
+    ipc.baselineAggregateBytesReceived !== baseline.bytesReceived ||
+    ipc.measuredAggregateBytesReceived !== measured.bytesReceived
   ) {
     throw new Error("Issue 14 timing stop-condition arithmetic is stale.");
   }
-  const expectedIpcStatus = measured.roundTripMs <= maxAggregateRoundTripMs ? "not-triggered" : "triggered";
-  if (report.stopConditions.unacceptableIpcGrowth.status !== expectedIpcStatus) {
+  const ceilings = issue14IpcCeilings();
+  if (
+    ipc.maxAggregateRequestCount !== ceilings.maxAggregateRequestCount ||
+    ipc.maxAggregateBytesReceived !== ceilings.maxAggregateBytesReceived
+  ) {
+    throw new Error("Issue 14 timing stop-condition ceilings are stale against the catalog.");
+  }
+  const expectedIpcStatus = ipcStatusFor(measured, ceilings);
+  if (ipc.status !== expectedIpcStatus) {
     throw new Error("Issue 14 timing IPC status is stale.");
   }
   const expectedDecision =
@@ -394,7 +432,8 @@ function reportFrom(
   const baselineAggregate = sumTotals(samples.map((sample) => sample.baseline));
   const measuredAggregate = sumTotals(samples.map((sample) => sample.measured));
   const deltaAggregate = subtractTotals(measuredAggregate, baselineAggregate);
-  const ipcStatus = measuredAggregate.roundTripMs <= maxAggregateRoundTripMs ? "not-triggered" : "triggered";
+  const ceilings = issue14IpcCeilings();
+  const ipcStatus = ipcStatusFor(measuredAggregate, ceilings);
   const report = {
     issue: "14-full-conformance" as const,
     command: issue14TimingCommand,
@@ -426,10 +465,12 @@ function reportFrom(
       unacceptableIpcGrowth: {
         status: ipcStatus,
         threshold: issue14IpcThreshold,
-        baselineAggregateRoundTripMs: baselineAggregate.roundTripMs,
-        measuredAggregateRoundTripMs: measuredAggregate.roundTripMs,
-        deltaAggregateRoundTripMs: deltaAggregate.roundTripMs,
-        maxAggregateRoundTripMs,
+        baselineAggregateRequestCount: baselineAggregate.requestCount,
+        measuredAggregateRequestCount: measuredAggregate.requestCount,
+        maxAggregateRequestCount: ceilings.maxAggregateRequestCount,
+        baselineAggregateBytesReceived: baselineAggregate.bytesReceived,
+        measuredAggregateBytesReceived: measuredAggregate.bytesReceived,
+        maxAggregateBytesReceived: ceilings.maxAggregateBytesReceived,
         evidence: issue14IpcEvidence,
       },
     },
@@ -574,13 +615,6 @@ export function assertStoredTimingReport(
     measured.aggregate.delta,
     true
   );
-  if (
-    mode === "enforce-live-budget" &&
-    (stored.aggregate.measured.roundTripMs > maxAggregateRoundTripMs ||
-      measured.aggregate.measured.roundTripMs > maxAggregateRoundTripMs)
-  ) {
-    throw new Error("Issue 14 IPC stop condition is triggered.");
-  }
   return "go";
 }
 

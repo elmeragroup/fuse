@@ -198,13 +198,56 @@ function collectPropertyObjects(type: SemanticType): readonly (readonly Property
  */
 function collectPropsEntries(type: SemanticType): readonly (readonly PropertyNode[])[] {
   if (type.kind === "object") return [type.properties];
-  if (type.kind === "intersection") return type.types.flatMap(collectPropertyObjects);
+  if (type.kind === "intersection") return intersectionPropsEntries(type);
   if (type.kind === "union") {
     return type.types.flatMap((member) =>
-      member.kind === "intersection" ? [member.properties] : collectPropsEntries(member)
+      member.kind === "intersection" ? [intersectionArmProperties(member)] : collectPropsEntries(member)
     );
   }
   return [];
+}
+
+/**
+ * One used-set for an intersection arm of a union: the checker's merged view
+ * of the arm, plus any prop an object member of the arm declares that the
+ * merged view left out. The merged symbol of a prop the arm re-declares over a
+ * dependency's attribute (`"aria-label"` beside React's `AriaAttributes`)
+ * carries the dependency's declaration too, so the ownership filter drops it
+ * from the aggregate; the arm's own object member still names it.
+ */
+function intersectionArmProperties(
+  type: Extract<SemanticType, { kind: "intersection" }>
+): readonly PropertyNode[] {
+  const covered = new Set(type.properties.map((property) => property.name));
+  const fromMembers = type.types
+    .flatMap(collectPropertyObjects)
+    .flat()
+    .filter((property) => !covered.has(property.name));
+  return fromMembers.length === 0 ? type.properties : [...type.properties, ...fromMembers];
+}
+
+/**
+ * A direct intersection's object members, each its own used-set, plus the
+ * props only the checker's merged view of the intersection knows about.
+ *
+ * A member that resolved to something other than an object can still
+ * contribute props: a dependency-owned mapped alias over the project's own
+ * table (`VariantProps<typeof buttonVariants>`) stays an external reference
+ * while the props it produces are project-keyed and therefore present in the
+ * intersection's merged property list. Those props are appended to EVERY
+ * member set rather than forming a set of their own: they belong to the whole
+ * intersection, so no member may be read as "not using" them, and identical
+ * contributions collapse in the union constructor.
+ */
+function intersectionPropsEntries(
+  type: Extract<SemanticType, { kind: "intersection" }>
+): readonly (readonly PropertyNode[])[] {
+  const memberObjects = type.types.flatMap(collectPropertyObjects);
+  const covered = new Set(memberObjects.flat().map((property) => property.name));
+  const uncovered = type.properties.filter((property) => !covered.has(property.name));
+  if (uncovered.length === 0) return memberObjects;
+  if (memberObjects.length === 0) return [uncovered];
+  return memberObjects.map((object) => [...object, ...uncovered]);
 }
 
 export function addUndefined(type: SemanticType): SemanticType {

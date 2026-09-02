@@ -200,9 +200,9 @@ describe("fixture evidence catalog", () => {
         "base-ui-component",
       ],
       packageTypechecks: {
-        count: 33,
+        count: 34,
         first: "test/fixtures/issue-02-tsconfig.json",
-        last: "test/fixtures/component-object/tsconfig.json",
+        last: "test/fixtures/component-external-mixin-props/tsconfig.json",
       },
     });
   });
@@ -339,6 +339,7 @@ describe("fixture evidence catalog", () => {
         fixture: "package-selective-external-types",
         file: "input.ts",
         maxRequestCount: 310,
+        maxBytesReceived: 2000000,
       },
     ]);
     const fixture = externalSelectionTimingFixtures[0];

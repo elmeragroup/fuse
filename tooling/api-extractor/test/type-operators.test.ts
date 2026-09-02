@@ -7,13 +7,12 @@ import { extractFixture, fixtureRoot } from "./support/extract.ts";
 
 const tsconfigPath = resolve(fixtureRoot, "issue-09-tsconfig.json");
 
-function runExtraction(fixture: string, file: string): Promise<ExtractionResult> {
-  return extractFixture({ tsconfigPath }, resolve(fixtureRoot, fixture, file));
-}
-
 describe("type operators on the ported upstream fixtures", () => {
   it("preserves the authored operator beside its resolved key set", async () => {
-    const result = await runExtraction("type-literal-union-resolution", "input.ts");
+    const result = await extractFixture(
+      { tsconfigPath },
+      resolve(fixtureRoot, "type-literal-union-resolution", "input.ts")
+    );
     const entry = result.module.exports.find((candidate) => candidate.name === "acceptsKeyofProp");
     if (entry === undefined) throw new Error("The fixture does not export acceptsKeyofProp");
     if (entry.type.kind !== "function") {
@@ -33,7 +32,10 @@ describe("type operators on the ported upstream fixtures", () => {
   });
 
   it("attaches a resolved key set to every preserved operator", async () => {
-    const result = await runExtraction("type-literal-union-resolution", "input.ts");
+    const result = await extractFixture(
+      { tsconfigPath },
+      resolve(fixtureRoot, "type-literal-union-resolution", "input.ts")
+    );
     const serialized = JSON.stringify(result.module);
     expect(serialized).toContain('"typeOperator"');
     expect(serialized.split('"typeOperator"').length).toBe(serialized.split('"resolutionKind"').length);

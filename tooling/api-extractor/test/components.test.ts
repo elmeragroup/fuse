@@ -10,13 +10,12 @@ import { extractFixture, fixtureRoot } from "./support/extract.ts";
 
 const tsconfigPath = resolve(fixtureRoot, "issue-11-tsconfig.json");
 
-function runExtraction(fixture: string, file: string): Promise<ExtractionResult> {
-  return extractFixture({ tsconfigPath }, resolve(fixtureRoot, fixture, file));
-}
-
 describe("basic component representation", () => {
   it("reports components with only the upstream-compatible shape and squashed props", async () => {
-    const result = await runExtraction("react-component-function-declaration", "input.tsx");
+    const result = await extractFixture(
+      { tsconfigPath },
+      resolve(fixtureRoot, "react-component-function-declaration", "input.tsx")
+    );
     const declared = result.module.exports.find((entry) => entry.name === "DeclaredComponent");
     expect(declared?.type).toEqual({
       kind: "component",
@@ -38,7 +37,10 @@ describe("basic component representation", () => {
   });
 
   it("keeps FC-annotated variables as named components through their callable surface", async () => {
-    const result = await runExtraction("react-component-function-variable", "input.tsx");
+    const result = await extractFixture(
+      { tsconfigPath },
+      resolve(fixtureRoot, "react-component-function-variable", "input.tsx")
+    );
     for (const [exportName, typeName] of [
       ["TestComponent1", "TestComponent"],
       ["TestComponent2", "FC"],
@@ -50,7 +52,10 @@ describe("basic component representation", () => {
   });
 
   it("squashes the props of every overload into one table exactly as upstream", async () => {
-    const result = await runExtraction("react-component-function-overloads", "input.ts");
+    const result = await extractFixture(
+      { tsconfigPath },
+      resolve(fixtureRoot, "react-component-function-overloads", "input.ts")
+    );
     const overloaded = result.module.exports.find((entry) => entry.name === "OverloadedComponent");
     if (overloaded?.type.kind !== "component") throw new Error("the overload squash disappeared");
     expect(overloaded.type.props.map((prop) => prop.name)).toEqual([

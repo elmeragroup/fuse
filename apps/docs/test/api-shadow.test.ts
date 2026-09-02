@@ -167,16 +167,16 @@ describe("docs API shadow", () => {
       current: "recipe-axis",
       effect: "declared",
     });
-    expect(effectOrigin({ path: ["A", "props", "x"], declarationPaths: [], synthesized: false })).toBe(
+    expect(effectOrigin({ path: ["A", "props", "x"], declarations: [], synthesized: false })).toBe(
       "declared"
     );
-    expect(effectOrigin({ path: ["A", "props", "variant"], declarationPaths: [], synthesized: true })).toBe(
+    expect(effectOrigin({ path: ["A", "props", "variant"], declarations: [], synthesized: true })).toBe(
       "recipe-axis"
     );
     expect(
       effectOrigin({
         path: ["A", "props", "size"],
-        declarationPaths: ["packages/ui/src/components/a/a-variants.ts"],
+        declarations: [{ path: "packages/ui/src/components/a/a-variants.ts" }],
         synthesized: false,
       })
     ).toBe("recipe-axis");

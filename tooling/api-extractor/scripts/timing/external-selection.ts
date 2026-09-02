@@ -1,13 +1,13 @@
 import { resolve } from "node:path";
 
 import {
+  assertBytesReceivedCeiling,
   assertRequestCountCeiling,
   externalSelectionTimingFixtures,
   fixtureDirectory,
 } from "../fixture-evidence.ts";
 import { timedExtraction } from "./shared.ts";
 
-const maxRoundTripMs = 1_000;
 const selectedPackage = "@fixture/selected";
 
 /** Checks the one catalog-owned selective external-type fixture against its request plateau. */
@@ -40,24 +40,26 @@ export async function runExternalSelectionTiming(): Promise<void> {
     throw new Error("Selective expansion entered the React or DOM graph.");
   }
   if (!extraction.timing.enabled) throw new Error("Selective-expansion timing evidence is disabled.");
-  if (extraction.timing.totals.roundTripMs > maxRoundTripMs) {
-    throw new Error(
-      `Selective expansion exceeded the ${maxRoundTripMs}ms round-trip limit: ${extraction.timing.totals.roundTripMs}ms.`
-    );
-  }
+  // Wall-clock fields are recorded observations; only the deterministic counters gate.
   assertRequestCountCeiling({
     fixture: fixtureDefinition.fixture,
     requestCount: extraction.timing.totals.requestCount,
     maxRequestCount: fixtureDefinition.maxRequestCount,
+  });
+  assertBytesReceivedCeiling({
+    fixture: fixtureDefinition.fixture,
+    bytesReceived: extraction.timing.totals.bytesReceived,
+    maxBytesReceived: fixtureDefinition.maxBytesReceived,
   });
   console.log(
     JSON.stringify({
       fixture: fixtureDefinition.fixture,
       selectedPackage,
       roundTripMs: extraction.timing.totals.roundTripMs,
-      maxRoundTripMs,
       requestCount: extraction.timing.totals.requestCount,
       maxRequestCount: fixtureDefinition.maxRequestCount,
+      bytesReceived: extraction.timing.totals.bytesReceived,
+      maxBytesReceived: fixtureDefinition.maxBytesReceived,
       props: [...props.keys()],
     })
   );

@@ -60,6 +60,8 @@ policy: recursion, aliases, generics, containers, mapped types, callables, class
 external types, warnings, and React component recognition.
 
 The public model, warnings, errors, provenance, options, and service contain no compiler handles.
+`src/parse/**` and `src/canonical/**` import no Effect module either; `test/boundary.test.ts` pins
+both rules.
 Each `extractModule` call gets an isolated synchronous extraction session, so recursion state and
 warning collection cannot leak between calls. Output ordering and canonicalization are
 deterministic for the pinned toolchain.
@@ -85,7 +87,7 @@ Consumers should branch on `code` and structured fields, not parse `message` tex
 
 ## Fixture evidence
 
-`scripts/fixture-catalog.ts` is the canonical fixture inventory. Its 121 records describe inputs,
+`scripts/fixture-catalog.ts` is the canonical fixture inventory. Its 123 records describe inputs,
 oracle ownership, warning evidence, issue membership, type-check strategy, timing membership, and
 package execution. Scripts and tests derive their ordered views from that catalog; do not add a
 second fixture list.
@@ -166,10 +168,11 @@ stores the reviewed difference set in `apps/docs/test/api-shadow.snapshot.json`.
 change on either side, review the differences and run `pnpm --filter docs shadow:update`.
 
 Timing reports are evidence, not benchmarks. `scripts/timing.ts --plan <issue02|issue14|externalSelection>`
-runs one plan. Deterministic counters must match exactly; scheduler-sensitive durations and byte
-observations must stay finite and non-negative, and the recorded aggregate stop condition must pass.
-The Issue 02 plan also enforces per-fixture request-count and bytes-received ceilings from the
-catalog so a dense walk cannot trade one for a megabyte dump. `test/fixtures/issue-02-timing.json`
+runs one plan. Deterministic counters must match exactly and scheduler-sensitive durations are
+recorded observations that only need to stay finite and non-negative; no check depends on
+milliseconds. The IPC stop condition is decided by request count and bytes received against the
+catalog ceilings: per fixture in the Issue 02 and external-selection plans, and summed over the four
+fixtures in the Issue 14 plan, so a dense walk cannot trade one for a megabyte dump. `test/fixtures/issue-02-timing.json`
 is the immutable pre-optimization baseline the Issue 14 plan measures against; only its ceiling
 metadata moves with the catalog. Refresh the Issue 14 report (`report:timing:issue14`) only after
 reviewing the semantic output and the reason for a timing change.

@@ -44,7 +44,12 @@ export type TimingMetadata =
       readonly bytesReceivedPathLengthHeadroom?: number;
     }
   | { readonly plan: "issue14"; readonly order: number }
-  | { readonly plan: "externalSelection"; readonly order: number; readonly maxRequestCount: number };
+  | {
+      readonly plan: "externalSelection";
+      readonly order: number;
+      readonly maxRequestCount: number;
+      readonly maxBytesReceived: number;
+    };
 
 export type Issue02TimingMetadata = Extract<TimingMetadata, { readonly plan: "issue02" }>;
 export type Issue14TimingMetadata = Extract<TimingMetadata, { readonly plan: "issue14" }>;
@@ -233,6 +238,22 @@ export const fixtureEvidenceCatalog = [
   }),
   fixture("class-private-members-type-alias-filtering", "input.ts", ["06", "14"], "immutable-upstream", {
     metadata: { issueViews: { "06": { order: 3, group: "class" } } },
+  }),
+  fixture("component-external-mixin-props", "input.tsx", ["13"], "not-applicable", {
+    conformance: false,
+    typecheck: "not-applicable",
+    metadata: {
+      packageTypechecks: [
+        { order: 33, project: "test/fixtures/component-external-mixin-props/tsconfig.json" },
+      ],
+    },
+  }),
+  fixture("component-object", "input.tsx", ["11"], "not-applicable", {
+    conformance: false,
+    typecheck: "not-applicable",
+    metadata: {
+      packageTypechecks: [{ order: 32, project: "test/fixtures/component-object/tsconfig.json" }],
+    },
   }),
   fixture("distributive-conditional-intersection-expansion", "input.ts", ["04", "14"], "immutable-upstream", {
     metadata: {
@@ -524,7 +545,7 @@ export const fixtureEvidenceCatalog = [
   }),
   fixture("package-selective-external-types", "input.ts", ["13"], "not-applicable", {
     conformance: false,
-    timing: [{ plan: "externalSelection", order: 0, maxRequestCount: 310 }],
+    timing: [{ plan: "externalSelection", order: 0, maxRequestCount: 310, maxBytesReceived: 2000000 }],
     typecheck: "not-applicable",
     metadata: {
       packageTypechecks: [
@@ -539,7 +560,6 @@ export const fixtureEvidenceCatalog = [
       packageTypechecks: [
         { order: 20, project: "test/fixtures/issue-11-tsconfig.json" },
         { order: 21, project: "test/fixtures/issue-11-review/tsconfig.json" },
-        { order: 32, project: "test/fixtures/component-object/tsconfig.json" },
       ],
     },
   }),
@@ -944,7 +964,13 @@ export function validateFixtureEvidenceCatalog(catalog: readonly FixtureEvidence
         throw new Error(`Fixture ${record.id} has invalid ${entry.plan} timing order metadata.`);
       }
       if (entry.plan === "issue02") validateIssue02TimingMetadata(record.id, entry);
-      if (entry.plan === "externalSelection" && entry.maxRequestCount <= 0) {
+      if (
+        entry.plan === "externalSelection" &&
+        (!Number.isSafeInteger(entry.maxRequestCount) ||
+          entry.maxRequestCount <= 0 ||
+          !Number.isSafeInteger(entry.maxBytesReceived) ||
+          entry.maxBytesReceived <= 0)
+      ) {
         throw new Error(`Fixture ${record.id} has invalid external-selection timing metadata.`);
       }
     }

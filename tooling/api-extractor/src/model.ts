@@ -16,11 +16,7 @@ export type IntrinsicName =
   | "unknown"
   | "void";
 
-export type TypeName = {
-  readonly name: string;
-  readonly namespaces?: readonly string[];
-  readonly typeArguments?: readonly TypeArgument[];
-};
+export type TypeName = typeof TypeNameSchema.Type;
 
 export type TypeArgument = {
   readonly type: SemanticType;
@@ -213,7 +209,7 @@ export type SemanticType =
   | TypeQueryNode
   | UnionNode;
 
-const TypeNameSchema: Schema.Codec<TypeName> = Schema.Struct({
+const TypeNameSchema = Schema.Struct({
   name: Schema.String,
   namespaces: Schema.optionalKey(Schema.Array(Schema.String)),
   typeArguments: Schema.optionalKey(

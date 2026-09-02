@@ -1,15 +1,15 @@
 import type {
   BackendCompilerOperations,
-  BackendDeclarationOwnership,
+  BackendExternalTypeSelection,
   BackendSymbolHandle,
 } from "../backend/contracts.ts";
+import { externalTypeSelectionAllowsOwnership } from "../backend/contracts.ts";
 import { symbolDeclarations } from "./ownership.ts";
 
-/** Normalized request policy for declarations outside the extracted project. */
-export type ExternalTypeSelection =
-  | { readonly kind: "none" }
-  | { readonly kind: "all" }
-  | { readonly kind: "packages"; readonly packageNames: ReadonlySet<string> };
+export { externalTypeSelectionAllowsOwnership };
+
+/** Normalized request policy for declarations outside the extracted project; shared with the backend session. */
+export type ExternalTypeSelection = BackendExternalTypeSelection;
 
 const noExternalTypes = { kind: "none" } as const;
 const allExternalTypes = { kind: "all" } as const;
@@ -46,18 +46,5 @@ export function externalTypeSelectionAllowsSymbol(
     declarations.every((declaration) =>
       externalTypeSelectionAllowsOwnership(operations.declarationOwnership(declaration), selection)
     )
-  );
-}
-
-/** Whether one normalized declaration owner is eligible for traversal. */
-export function externalTypeSelectionAllowsOwnership(
-  ownership: BackendDeclarationOwnership,
-  selection: ExternalTypeSelection
-): boolean {
-  if (ownership.kind === "project" || selection.kind === "all") return true;
-  return (
-    selection.kind === "packages" &&
-    ownership.kind === "dependency" &&
-    selection.packageNames.has(ownership.packageName)
   );
 }

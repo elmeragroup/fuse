@@ -4,6 +4,7 @@ import { InternalProjectExtractorTiming, timedProjectExtractorLayer } from "../.
 import type { TimedExtraction } from "../../src/internal/timing.ts";
 import type { ExtractorOptions } from "../../src/options.ts";
 import { checkBoundary } from "../check-boundary.ts";
+import { requiredNodeVersion } from "../files.ts";
 
 export type BoundaryStatuses = {
   readonly backendLeakage: "clear" | "triggered";
@@ -35,8 +36,6 @@ export function timedExtraction(
     )
   );
 }
-
-export const requiredNodeVersion = "24.13.0";
 
 export function assertTimingNodeVersion(): void {
   if (process.versions.node !== requiredNodeVersion) {

@@ -1,6 +1,7 @@
 import { join } from "node:path";
 
 import { writeArtifactBatchOrThrow } from "../artifact-batch-writer.ts";
+import { requiredNodeVersion } from "../files.ts";
 import {
   assertBytesReceivedBudget,
   assertFetchedToMaterializedRatioBudget,
@@ -15,6 +16,7 @@ import {
   issue02SupplementalFixtures,
   issue02TimingBudget,
   issue02TimingFixtures,
+  isWithinIpcBudget,
   packageVersion,
   readGoNoGoArtifact,
   readTimingReport,
@@ -26,7 +28,8 @@ import { boundaryStatuses, timedExtraction } from "./shared.ts";
 const reportPath = join(fixtureDirectory, "issue-02-timing.json");
 const goNoGoPath = join(fixtureDirectory, "issue-02-go-no-go.json");
 const tsconfigPath = join(fixtureDirectory, "issue-02-tsconfig.json");
-const maxAggregateRoundTripMs = 1_000;
+/** The go/no-go artifact names the deterministic IPC gate; wall-clock fields are recorded observations only. */
+const issue02IpcThreshold = "each fixture's requestCount and bytesReceived <= its catalog ceiling";
 const expectedFixtureOrder = issue02TimingFixtures.map((fixture) => fixture.fixture);
 
 function isTransportByteObservation(value: number): boolean {
@@ -39,7 +42,7 @@ const stopConditionEvidence = {
   durableContractLeakage:
     "package-owned backend contracts, parser, model, warnings, errors, provenance, and ProjectExtractor expose no compiler objects",
   unacceptableIpcGrowth:
-    "aggregate roundTripMs is measured across all four sequential boundary fixtures and compared with the 1000ms stop threshold",
+    "all four sequential boundary fixtures must keep requestCount and bytesReceived within their catalog ceilings; roundTripMs is recorded as an observation only",
 } as const;
 
 async function verifySupplementalFixtures(): Promise<void> {
@@ -69,20 +72,12 @@ async function collectSamples(): Promise<TimingReport["samples"]> {
 }
 
 function reportFrom(samples: TimingReport["samples"]): TimingReport {
-  for (const sample of samples) {
-    assertFetchedToMaterializedRatioEvidence(sample);
-    assertRequestCountBudget(sample);
-    assertBytesReceivedBudget(sample);
-  }
+  for (const sample of samples) assertFetchedToMaterializedRatioEvidence(sample);
   const { backendLeakage: backend, durableContractLeakage: durable } = boundaryStatuses();
-  const measuredAggregateRoundTripMs = samples.reduce(
-    (total, sample) => total + sample.totals.roundTripMs,
-    0
-  );
-  const ipcStatus = measuredAggregateRoundTripMs <= maxAggregateRoundTripMs ? "not-triggered" : "triggered";
+  const ipcStatus = samples.every(isWithinIpcBudget) ? "not-triggered" : "triggered";
   return {
     issue: "02-prove-compiler-boundary",
-    command: "fnm exec --using 24.13.0 -- node scripts/timing.ts --plan issue02 --check",
+    command: `fnm exec --using ${requiredNodeVersion} -- node scripts/timing.ts --plan issue02 --check`,
     runtime: {
       node: process.versions.node,
       compiler: "typescript@" + packageVersion("typescript"),
@@ -92,8 +87,6 @@ function reportFrom(samples: TimingReport["samples"]): TimingReport {
       backendLeakage: { status: backend, evidence: stopConditionEvidence.backendLeakage },
       durableContractLeakage: { status: durable, evidence: stopConditionEvidence.durableContractLeakage },
       unacceptableIpcGrowth: {
-        maxAggregateRoundTripMs,
-        measuredAggregateRoundTripMs,
         status: ipcStatus,
         evidence: stopConditionEvidence.unacceptableIpcGrowth,
       },
@@ -104,8 +97,8 @@ function reportFrom(samples: TimingReport["samples"]): TimingReport {
 
 function checkGoNoGoArtifact(artifact: GoNoGoArtifact, measured: TimingReport): void {
   assertReactDivergenceEvidence();
-  if (artifact.runtime.node !== "24.13.0") {
-    throw new Error("The Issue 02 go/no-go artifact must target Node 24.13.0.");
+  if (artifact.runtime.node !== requiredNodeVersion) {
+    throw new Error(`The Issue 02 go/no-go artifact must target Node ${requiredNodeVersion}.`);
   }
   if (artifact.runtime.compiler !== measured.runtime.compiler) {
     throw new Error("The Issue 02 go/no-go compiler pin is stale: " + artifact.runtime.compiler);
@@ -132,7 +125,7 @@ function checkGoNoGoArtifact(artifact: GoNoGoArtifact, measured: TimingReport): 
   ) {
     throw new Error("The Issue 02 go/no-go timing stop status is stale.");
   }
-  if (artifact.stopConditions.unacceptableIpcGrowth.threshold !== "aggregate roundTripMs <= 1000") {
+  if (artifact.stopConditions.unacceptableIpcGrowth.threshold !== issue02IpcThreshold) {
     throw new Error("The Issue 02 go/no-go timing threshold is stale.");
   }
   if (
@@ -166,12 +159,31 @@ function checkGoNoGoArtifact(artifact: GoNoGoArtifact, measured: TimingReport): 
   }
 }
 
+function checkLiveSamples(measured: TimingReport): void {
+  for (const sample of measured.samples) {
+    // Only the fresh measurement is a live budget decision. Issue 14 consumes
+    // the same measurement as its exact semantic-counter contract.
+    assertFetchedToMaterializedRatioBudget(sample);
+    assertRequestCountBudget(sample);
+    assertBytesReceivedBudget(sample);
+    if (
+      !sample.enabled ||
+      sample.totals.requestCount <= 0 ||
+      !isTransportByteObservation(sample.totals.bytesSent) ||
+      !isTransportByteObservation(sample.totals.bytesReceived)
+    ) {
+      throw new Error("Invalid live timing sample for " + sample.fixture);
+    }
+  }
+}
+
 function checkStoredReport(stored: TimingReport, measured: TimingReport, goNoGo: GoNoGoArtifact): void {
+  checkLiveSamples(measured);
   if (stored.command !== measured.command) {
     throw new Error("The stored Issue 02 timing report identity is stale.");
   }
-  if (stored.runtime.node !== "24.13.0") {
-    throw new Error("The stored Issue 02 timing report must target Node 24.13.0.");
+  if (stored.runtime.node !== requiredNodeVersion) {
+    throw new Error(`The stored Issue 02 timing report must target Node ${requiredNodeVersion}.`);
   }
   if (stored.runtime.compiler !== measured.runtime.compiler) {
     throw new Error("The timing report compiler pin is stale: " + stored.runtime.compiler);
@@ -183,9 +195,6 @@ function checkStoredReport(stored: TimingReport, measured: TimingReport, goNoGo:
   if (JSON.stringify(storedFixtures) !== JSON.stringify(expectedFixtureOrder)) {
     throw new Error("The checked-in Issue 02 timing report has the wrong fixture order.");
   }
-  if (stored.stopConditions.unacceptableIpcGrowth.maxAggregateRoundTripMs !== maxAggregateRoundTripMs) {
-    throw new Error("The checked-in Issue 02 timing threshold is stale.");
-  }
   if (
     stored.stopConditions.backendLeakage.status !== measured.stopConditions.backendLeakage.status ||
     stored.stopConditions.durableContractLeakage.status !==
@@ -195,20 +204,9 @@ function checkStoredReport(stored: TimingReport, measured: TimingReport, goNoGo:
   ) {
     throw new Error("The checked-in Issue 02 timing stop-condition statuses are stale.");
   }
-  const storedAggregate = stored.samples.reduce((total, sample) => total + sample.totals.roundTripMs, 0);
-  const storedAggregateDelta = Math.abs(
-    stored.stopConditions.unacceptableIpcGrowth.measuredAggregateRoundTripMs - storedAggregate
-  );
-  if (
-    !Number.isFinite(stored.stopConditions.unacceptableIpcGrowth.measuredAggregateRoundTripMs) ||
-    !Number.isFinite(storedAggregate) ||
-    stored.stopConditions.unacceptableIpcGrowth.measuredAggregateRoundTripMs < 0 ||
-    storedAggregateDelta > 0.001 ||
-    stored.stopConditions.unacceptableIpcGrowth.status !==
-      (storedAggregate <= maxAggregateRoundTripMs ? "not-triggered" : "triggered")
-  ) {
-    throw new Error("The checked-in Issue 02 timing aggregate evidence is stale.");
-  }
+  // The stored IPC status is the decision recorded when the pre-optimization
+  // baseline was written; today's ceilings are enforced on the live samples
+  // above, never recomputed against these historical totals.
   const expectedStoredDecision =
     stored.stopConditions.backendLeakage.status === "clear" &&
     stored.stopConditions.durableContractLeakage.status === "clear" &&
@@ -243,21 +241,6 @@ function checkStoredReport(stored: TimingReport, measured: TimingReport, goNoGo:
       sample.totals.roundTripMs < 0
     ) {
       throw new Error("Invalid stored timing sample for " + sample.fixture);
-    }
-  }
-  for (const sample of measured.samples) {
-    // Only the fresh measurement is a live budget decision. Issue 14 consumes
-    // the same measurement as its exact semantic-counter contract.
-    assertFetchedToMaterializedRatioBudget(sample);
-    assertRequestCountBudget(sample);
-    assertBytesReceivedBudget(sample);
-    if (
-      !sample.enabled ||
-      sample.totals.requestCount <= 0 ||
-      !isTransportByteObservation(sample.totals.bytesSent) ||
-      !isTransportByteObservation(sample.totals.bytesReceived)
-    ) {
-      throw new Error("Invalid live timing sample for " + sample.fixture);
     }
   }
   checkGoNoGoArtifact(goNoGo, measured);

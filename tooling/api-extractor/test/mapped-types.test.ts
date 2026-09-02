@@ -83,18 +83,18 @@ describe("mapped-type resolution", () => {
     for (const name of ["a", "b"]) {
       const entry = provenanceFor(result, ["Specialized", "properties", name]);
       expect(entry.synthesized).toBe(true);
-      expect(entry.declarationPaths).toEqual([]);
+      expect(entry.declarations.map((declaration) => declaration.path)).toEqual([]);
     }
     // A key invented by a conditional remap is synthesized the same way.
     const remappedKey = provenanceFor(result, ["Renamed", "properties", "renamed"]);
     expect(remappedKey.synthesized).toBe(true);
-    expect(remappedKey.declarationPaths).toEqual([]);
+    expect(remappedKey.declarations.map((declaration) => declaration.path)).toEqual([]);
     // Authored source facts keep their declaration ownership, including
     // members reached only through a mapped alias instantiation whose
     // declaration the checker still associates them with.
     const authoredProperty = provenanceFor(result, ["Base", "properties", "a"]);
     expect(authoredProperty.synthesized).toBe(false);
-    expect(authoredProperty.declarationPaths.length).toBeGreaterThan(0);
+    expect(authoredProperty.declarations.map((declaration) => declaration.path).length).toBeGreaterThan(0);
     // A homomorphic modifier keeps the member's own declaration associated,
     // so `+?`/`-?` members are not marked synthesized.
     expect(provenanceFor(result, ["PlusOptional", "properties", "a"]).synthesized).toBe(false);

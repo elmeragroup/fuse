@@ -7,13 +7,12 @@ import { extractFixture, fixtureRoot } from "./support/extract.ts";
 
 const tsconfigPath = resolve(fixtureRoot, "issue-06-tsconfig.json");
 
-function runExtraction(fixture: string, file: string): Promise<ExtractionResult> {
-  return extractFixture({ tsconfigPath }, resolve(fixtureRoot, fixture, file));
-}
-
 describe("classes and callables on the ported upstream fixtures", () => {
   it("reports the construct signatures a non-class shape carries as structured warnings", async () => {
-    const result = await runExtraction("class-members-visibility-and-signatures", "input.ts");
+    const result = await extractFixture(
+      { tsconfigPath },
+      resolve(fixtureRoot, "class-members-visibility-and-signatures", "input.ts")
+    );
     const expected = [
       {
         code: "unrepresented-construct-signatures",
@@ -43,7 +42,10 @@ describe("classes and callables on the ported upstream fixtures", () => {
     // — expand the base constraint when one exists, otherwise report `any`
     // silently, "an expected limitation rather than a parser bug" — so the
     // model still matches the immutable oracle and the extra warning is gone.
-    const result = await runExtraction("class-method-generic-signatures", "input.ts");
+    const result = await extractFixture(
+      { tsconfigPath },
+      resolve(fixtureRoot, "class-method-generic-signatures", "input.ts")
+    );
     expect(
       result.warnings.filter(
         (warning) =>
@@ -69,7 +71,10 @@ describe("classes and callables on the ported upstream fixtures", () => {
     // by upstream as bare objects rather than unsupported-type fallbacks, so
     // the module stays byte-identical to the immutable oracle with no
     // recoverable warnings at all.
-    const result = await runExtraction("function-callable-intersection-extra-properties", "input.tsx");
+    const result = await extractFixture(
+      { tsconfigPath },
+      resolve(fixtureRoot, "function-callable-intersection-extra-properties", "input.tsx")
+    );
     expect(result.warnings.map((warning) => warning.code)).toEqual([]);
   });
 
@@ -82,7 +87,7 @@ describe("classes and callables on the ported upstream fixtures", () => {
       ["merged-interface-signature-typeparams", "input.ts"],
       ["module-reexport-imported-class-type", "input.ts"],
     ] as const) {
-      const result = await runExtraction(fixture, file);
+      const result = await extractFixture({ tsconfigPath }, resolve(fixtureRoot, fixture, file));
       expect(result.warnings).toEqual([]);
     }
   });

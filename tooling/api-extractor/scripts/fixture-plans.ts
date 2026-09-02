@@ -28,6 +28,7 @@ export type ExternalSelectionTimingFixture = {
   readonly fixture: string;
   readonly file: string;
   readonly maxRequestCount: number;
+  readonly maxBytesReceived: number;
 };
 
 type TimingPlanResult = {
@@ -68,6 +69,7 @@ export function deriveTimingPlan<Plan extends TimingPlan>(
           fixture: record.id,
           file: record.input.file,
           maxRequestCount: entry.maxRequestCount,
+          maxBytesReceived: entry.maxBytesReceived,
           order: entry.order,
         });
         continue;

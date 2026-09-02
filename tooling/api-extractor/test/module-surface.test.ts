@@ -6,13 +6,12 @@ import { extractFixture, fixtureRoot } from "./support/extract.ts";
 
 const tsconfigPath = resolve(fixtureRoot, "issue-10-tsconfig.json");
 
-function runExtraction(fixture: string, file: string): Promise<ExtractionResult> {
-  return extractFixture({ tsconfigPath }, resolve(fixtureRoot, fixture, file));
-}
-
 describe("re-export provenance and authored names", () => {
   it("records the original name of a renamed module re-export on the export node", async () => {
-    const result = await runExtraction("module-reexports-basic", "input.ts");
+    const result = await extractFixture(
+      { tsconfigPath },
+      resolve(fixtureRoot, "module-reexports-basic", "input.ts")
+    );
     const root = result.module.exports.find((entry) => entry.name === "Root");
     expect(root).toBeDefined();
     // `export { RootComponent as Root } from './source'` keeps the public name…
@@ -25,12 +24,19 @@ describe("re-export provenance and authored names", () => {
   });
 
   it("records the intermediate re-export chain in provenance while the declaration paths keep the origin", async () => {
-    const result = await runExtraction("module-reexports-basic", "input.ts");
+    const result = await extractFixture(
+      { tsconfigPath },
+      resolve(fixtureRoot, "module-reexports-basic", "input.ts")
+    );
     const rootEntry = result.provenance.find((entry) => entry.path.join("/") === "Root");
     expect(rootEntry).toBeDefined();
     if (rootEntry === undefined) throw new Error("missing provenance for Root");
     // The origin is the declaring module; the chain is the forwarding hop.
-    expect(rootEntry.declarationPaths.some((path) => path.endsWith("source.tsx"))).toBe(true);
+    expect(
+      rootEntry.declarations
+        .map((declaration) => declaration.path)
+        .some((path) => path.endsWith("source.tsx"))
+    ).toBe(true);
     expect(rootEntry.reexportChain).toEqual(["test/fixtures/module-reexports-basic/input.ts"]);
     // A directly declared export has no chain.
     const localEntry = result.provenance.find((entry) => entry.path.join("/") === "localFunction");
@@ -38,7 +44,10 @@ describe("re-export provenance and authored names", () => {
   });
 
   it("flattens a namespace export under its public name without emitting the namespace object", async () => {
-    const result = await runExtraction("module-reexports-basic", "input.ts");
+    const result = await extractFixture(
+      { tsconfigPath },
+      resolve(fixtureRoot, "module-reexports-basic", "input.ts")
+    );
     const names = result.module.exports.map((entry) => entry.name);
     // No bare `Source` object export exists; every member carries the namespace.
     expect(names).not.toContain("Source");
@@ -97,7 +106,7 @@ describe("module-surface review regressions", () => {
   it("records every intermediate forwarding file of a multi-hop re-export chain", async () => {
     // input -> middle -> origin: each forwarding file appears in
     // `reexportChain` outermost first, and the origin stays only in
-    // `declarationPaths`. Both value and type-only re-exports are pinned.
+    // `declarations`. Both value and type-only re-exports are pinned.
     const result = await runReviewExtraction("multi-hop", "input.ts");
     const names = result.module.exports.map((entry) => entry.name);
     expect(names).toEqual(["ping", "Pong"]);
@@ -109,7 +118,9 @@ describe("module-surface review regressions", () => {
         "fixtures/issue-10-review/multi-hop/input.ts",
         "fixtures/issue-10-review/multi-hop/middle.ts",
       ]);
-      expect(entry.declarationPaths.some((path) => path.endsWith("origin.ts"))).toBe(true);
+      expect(
+        entry.declarations.map((declaration) => declaration.path).some((path) => path.endsWith("origin.ts"))
+      ).toBe(true);
     }
   });
 

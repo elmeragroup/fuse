@@ -1,6 +1,7 @@
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
+import type { ExtractionResult } from "../src/index.ts";
 import type { ComponentNode } from "../src/model.ts";
 import { extractFixture } from "./support/extract.ts";
 
@@ -22,11 +23,7 @@ const sameOriginStarInputPath = resolve(sameOriginStarFixtureRoot, "input.tsx");
 const sameOriginStarBarrelPath = resolve(sameOriginStarFixtureRoot, "barrel.ts");
 const sameOriginStarTsconfigPath = resolve(sameOriginStarFixtureRoot, "tsconfig.json");
 
-function runExtraction(sourcePath: string = inputPath, projectTsconfigPath: string = tsconfigPath) {
-  return extractFixture({ tsconfigPath: projectTsconfigPath }, sourcePath);
-}
-
-function component(result: Awaited<ReturnType<typeof runExtraction>>, name: string): ComponentNode {
+function component(result: ExtractionResult, name: string): ComponentNode {
   const entry = result.module.exports.find((candidate) => candidate.name === name);
   if (entry?.type.kind !== "component") throw new Error(`Expected component export ${name}`);
   return entry.type;
@@ -34,7 +31,7 @@ function component(result: Awaited<ReturnType<typeof runExtraction>>, name: stri
 
 describe("Issue 12 React module-origin regressions", () => {
   it("rejects local React lookalikes without losing the resolved public props", async () => {
-    const result = await runExtraction();
+    const result = await extractFixture({ tsconfigPath }, inputPath);
 
     expect(component(result, "FakeModule").props.map((entry) => entry.name)).toEqual(["resolvedOnly"]);
     expect(component(result, "ShadowedNamespace").props.map((entry) => entry.name)).toEqual(["resolvedOnly"]);
@@ -46,7 +43,7 @@ describe("Issue 12 React module-origin regressions", () => {
   });
 
   it("follows a multi-hop re-export back to the public React module", async () => {
-    const result = await runExtraction();
+    const result = await extractFixture({ tsconfigPath }, inputPath);
 
     expect(component(result, "Bridged").props.map((entry) => entry.name)).toEqual(["bridgedOnly"]);
     expect(component(result, "StarBridged").props.map((entry) => entry.name)).toEqual(["starOnly"]);
@@ -57,7 +54,7 @@ describe("Issue 12 React module-origin regressions", () => {
   });
 
   it("supports import-equals bindings against export = React and keeps every overload", async () => {
-    const result = await runExtraction(importEqualsInputPath, importEqualsTsconfigPath);
+    const result = await extractFixture({ tsconfigPath: importEqualsTsconfigPath }, importEqualsInputPath);
 
     expect(component(result, "ImportEqualsWrapped").props.map((entry) => entry.name)).toEqual(["a", "b"]);
     expect(component(result, "ExportEqualsBridgeWrapped").props.map((entry) => entry.name)).toEqual([
@@ -71,19 +68,22 @@ describe("Issue 12 React module-origin regressions", () => {
   });
 
   it("resolves complete nested namespace paths through export-star-as", async () => {
-    const result = await runExtraction();
+    const result = await extractFixture({ tsconfigPath }, inputPath);
 
     expect(component(result, "NestedBridgeWrapped").props.map((entry) => entry.name)).toEqual(["a", "b"]);
   });
 
   it("unwraps angle-bracket assertions in .ts module-origin expressions", async () => {
-    const result = await runExtraction(angleAssertionInputPath, angleAssertionTsconfigPath);
+    const result = await extractFixture(
+      { tsconfigPath: angleAssertionTsconfigPath },
+      angleAssertionInputPath
+    );
 
     expect(component(result, "AngleAssertionWrapped").props.map((entry) => entry.name)).toEqual(["a", "b"]);
   });
 
   it("follows local initializer and exported React aliases without accepting lookalikes", async () => {
-    const result = await runExtraction();
+    const result = await extractFixture({ tsconfigPath }, inputPath);
 
     expect(component(result, "LocalAliasWrapped").props.map((entry) => entry.name)).toEqual(["a", "b"]);
     expect(component(result, "ElementAccessWrapped").props.map((entry) => entry.name)).toEqual(["a", "b"]);
@@ -98,13 +98,13 @@ describe("Issue 12 React module-origin regressions", () => {
   it("does not select a React origin from an ambiguous star barrel", async () => {
     // The fixture deliberately suppresses TS2308 at its conflicting star so
     // this invalid-input disposition stays typechecked and reviewable.
-    const result = await runExtraction(ambiguousInputPath, ambiguousTsconfigPath);
+    const result = await extractFixture({ tsconfigPath: ambiguousTsconfigPath }, ambiguousInputPath);
     expect(component(result, "AmbiguousWrapped").props.map((entry) => entry.name)).toEqual(["b"]);
     expect(component(result, "TransitiveAmbiguousWrapped").props.map((entry) => entry.name)).toEqual(["b"]);
   });
 
   it("keeps distinct star origins ambiguous", async () => {
-    const result = await runExtraction(ambiguousBarrelPath, ambiguousTsconfigPath);
+    const result = await extractFixture({ tsconfigPath: ambiguousTsconfigPath }, ambiguousBarrelPath);
 
     expect(
       result.warnings.some(
@@ -114,8 +114,14 @@ describe("Issue 12 React module-origin regressions", () => {
   });
 
   it("accepts diagnostic-free stars that resolve to the same ultimate symbol", async () => {
-    const result = await runExtraction(sameOriginStarInputPath, sameOriginStarTsconfigPath);
-    const barrel = await runExtraction(sameOriginStarBarrelPath, sameOriginStarTsconfigPath);
+    const result = await extractFixture(
+      { tsconfigPath: sameOriginStarTsconfigPath },
+      sameOriginStarInputPath
+    );
+    const barrel = await extractFixture(
+      { tsconfigPath: sameOriginStarTsconfigPath },
+      sameOriginStarBarrelPath
+    );
 
     expect(component(result, "SameOriginWrapped").props.map((entry) => entry.name)).toEqual(["a", "b"]);
     expect(

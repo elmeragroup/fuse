@@ -74,14 +74,19 @@ function isLibraryDeclaration(value: string): boolean {
 
 /** The Effect extractor reports each declaration's owner beside its path. */
 function isLibraryOwned(provenance: ProvenanceEntry): boolean {
-  return provenance.owners?.some((owner) => owner.kind === "project") ?? false;
+  return provenance.declarations.some((declaration) => declaration.owner?.kind === "project");
+}
+
+/** The declaring files of an entry, in the extractor's sorted order. */
+function declarationPathsOf(provenance: ProvenanceEntry | undefined): readonly string[] {
+  return provenance?.declarations.map((declaration) => declaration.path) ?? [];
 }
 
 /** Distinct dependency packages that declare the entry, sorted. */
 function dependencyPackages(provenance: ProvenanceEntry | undefined): readonly string[] {
   const packages = new Set<string>();
-  for (const owner of provenance?.owners ?? []) {
-    if (owner.kind === "dependency") packages.add(owner.packageName);
+  for (const { owner } of provenance?.declarations ?? []) {
+    if (owner?.kind === "dependency") packages.add(owner.packageName);
   }
   return [...packages].sort((left, right) => left.localeCompare(right));
 }
@@ -304,7 +309,7 @@ function propEvidence(name: string, paths: readonly string[], synthesized: boole
 
 /** Evidence for the Effect side, read from the entry's owners. */
 function effectPropEvidence(name: string, provenance: ProvenanceEntry | undefined): ShadowPropEvidence {
-  const declarationPaths = normalizedUniquePaths(provenance?.declarationPaths ?? []);
+  const declarationPaths = normalizedUniquePaths(declarationPathsOf(provenance));
   const synthesized = provenance?.synthesized ?? true;
   return {
     name,
@@ -339,10 +344,9 @@ function implementationSource(
   const canonical = sources.get(partName);
   if (canonical !== undefined) return canonical.sourcePath;
   const root = provenanceAt(result, ownerPath);
-  const implementation = root?.declarationPaths.find(
-    (candidate, index) =>
-      root.owners?.[index]?.kind === "project" && /\.tsx?$/u.test(normalizePath(candidate))
-  );
+  const implementation = root?.declarations.find(
+    (declaration) => declaration.owner?.kind === "project" && /\.tsx?$/u.test(normalizePath(declaration.path))
+  )?.path;
   return implementation === undefined
     ? repoRelativePath(inventory.sourceFile)
     : normalizePath(implementation);
@@ -358,7 +362,7 @@ function canonicalDefault(source: PartSource | undefined, propName: string): str
  * parity into a tautology and hide a current-side policy drift.
  */
 export function effectOrigin(provenance: ProvenanceEntry | undefined): ApiProp["origin"] {
-  const declarationPaths = provenance?.declarationPaths ?? [];
+  const declarationPaths = declarationPathsOf(provenance);
   const localOrigin = propOrigin(declarationPaths, provenance?.synthesized === true);
   if (localOrigin === "recipe-axis" || (provenance !== undefined && isLibraryOwned(provenance))) {
     return localOrigin;
@@ -367,67 +371,24 @@ export function effectOrigin(provenance: ProvenanceEntry | undefined): ApiProp["
   return packages.length === 1 && packages[0] !== undefined ? { packageName: packages[0] } : localOrigin;
 }
 
-/**
- * A component root and, when the entry also exports the package's conventional
- * `<Root>Props` alias, that alias. The component transform squashes props from
- * expanded object members only, so a prop contributed by a summarized member of
- * the props intersection (Base UI's `render` from `useRender.ComponentProps`)
- * is visible only through the alias's merged property list.
- */
-type PartSemantics = {
-  readonly type: SemanticType;
-  readonly propsAlias?: string;
-};
-
-function withPropsAlias(result: ExtractionResult, type: SemanticType, propsAlias: string): PartSemantics {
-  return exportType(result, propsAlias) === undefined ? { type } : { type, propsAlias };
-}
-
-/**
- * The provenance a prop is attributed to: the part's own prop entry, unless the
- * props alias attributes the same prop to exactly one dependency while the
- * part's entry (a squash over several declarations) cannot name one.
- */
-function propProvenance(
-  result: ExtractionResult,
-  ownerPath: PartOwnerPath,
-  semantics: PartSemantics,
-  propName: string
-): ProvenanceEntry | undefined {
-  const own = provenanceAt(result, [...ownerPath, "props", propName]);
-  const alias =
-    semantics.propsAlias === undefined
-      ? undefined
-      : provenanceAt(result, [semantics.propsAlias, "properties", propName]);
-  if (own === undefined) return alias;
-  if (alias === undefined) return own;
-  return dependencyPackageName(effectOrigin(own)) === null &&
-    dependencyPackageName(effectOrigin(alias)) !== null
-    ? alias
-    : own;
-}
-
 function toApiPart(
   inventory: DocsApiComponent,
   result: ExtractionResult,
   partName: string,
   ownerPath: PartOwnerPath,
-  semantics: PartSemantics,
+  type: SemanticType,
   canonicalSources: ReadonlyMap<string, PartSource>,
   problems: ShadowProblem[]
 ): ApiPartMapping {
   const source = canonicalSources.get(partName);
   const sourcePath = implementationSource(inventory, result, partName, ownerPath, canonicalSources);
-  const aliasType = semantics.propsAlias === undefined ? undefined : exportType(result, semantics.propsAlias);
-  const semanticProps = mergedProperties(
-    aliasType === undefined ? [semantics.type] : [semantics.type, aliasType]
-  );
+  const semanticProps = mergedProperties([type]);
   const props: ApiProp[] = [];
   const evidence: ShadowPropEvidence[] = [];
   const forwarded = new Set<string>();
 
   for (const property of semanticProps) {
-    const provenance = propProvenance(result, ownerPath, semantics, property.name);
+    const provenance = provenanceAt(result, [...ownerPath, "props", property.name]);
     const origin = effectOrigin(provenance);
     const description = dedupeDocumentation(property.documentation?.description);
     if (origin === "declared" && description === "") {
@@ -457,7 +418,7 @@ function toApiPart(
   props.sort((left, right) => left.name.localeCompare(right.name));
   const sortedEvidence = [...evidence].sort((left, right) => left.name.localeCompare(right.name));
   const owner = provenanceAt(result, ownerPath);
-  const declarationPaths = owner?.declarationPaths ?? [];
+  const declarationPaths = declarationPathsOf(owner);
   const synthesized = owner?.synthesized === true;
   return {
     part: {
@@ -496,8 +457,7 @@ function partsFromRoot(
     return { parts: [], evidence: [] };
   }
   if (exported.kind === "component") {
-    const semantics = withPropsAlias(result, exported, `${rootName}Props`);
-    const mapped = toApiPart(inventory, result, rootName, [rootName], semantics, canonical.sources, problems);
+    const mapped = toApiPart(inventory, result, rootName, [rootName], exported, canonical.sources, problems);
     return { parts: [mapped.part], evidence: [mapped.evidence] };
   }
   const members = componentObjectMembers(exported);
@@ -508,7 +468,7 @@ function partsFromRoot(
         result,
         `${rootName}.${member.name}`,
         [rootName, "properties", member.name],
-        withPropsAlias(result, member.type, `${rootName}${member.name}Props`),
+        member.type,
         canonical.sources,
         problems
       )
@@ -584,41 +544,39 @@ function shadowCurrentEvidence(value: CurrentPartEvidence): ShadowPartEvidence {
 
 export function currentSide(inventory: readonly DocsShadowComponent[], context: LibraryProject): SideRun {
   const inputs = captureInputs(inventory);
-  {
-    const results = inventory.map((entry) => {
-      const problems = new ProblemLog();
-      const request = { entryFile: entry.entryFile, exportNames: entry.exportNames };
-      try {
-        inspectComponentDemos(inspectComponent(entry.slug), problems);
-      } catch (error) {
-        problems.add(error instanceof Error ? error.message : String(error));
-      }
-      const parts = describeComponentApi(context, request, problems);
-      return {
-        parts,
-        evidence: componentPartRequests(context, request).map((part) => {
-          const visible = parts.find((candidate) => candidate.name === part.name);
-          return shadowCurrentEvidence(
-            inspectCurrentPartEvidence(context, part, new Set(visible?.props.map((prop) => prop.name) ?? []))
-          );
-        }),
-        problems: problems.problems.map((message) => currentProblem(entry.slug, message)),
-      };
-    });
-    const global = new ProblemLog();
+  const results = inventory.map((entry) => {
+    const problems = new ProblemLog();
+    const request = { entryFile: entry.entryFile, exportNames: entry.exportNames };
     try {
-      inspectGlobalDocs(global);
+      inspectComponentDemos(inspectComponent(entry.slug), problems);
     } catch (error) {
-      global.add(error instanceof Error ? error.message : String(error));
+      problems.add(error instanceof Error ? error.message : String(error));
     }
-    const globalProblems = global.problems.map((message) => currentProblem("docs-global", message));
-    const first = results[0];
-    if (first === undefined || globalProblems.length === 0) return { results, inputs };
+    const parts = describeComponentApi(context, request, problems);
     return {
-      results: [{ ...first, problems: [...first.problems, ...globalProblems] }, ...results.slice(1)],
-      inputs,
+      parts,
+      evidence: componentPartRequests(context, request).map((part) => {
+        const visible = parts.find((candidate) => candidate.name === part.name);
+        return shadowCurrentEvidence(
+          inspectCurrentPartEvidence(context, part, new Set(visible?.props.map((prop) => prop.name) ?? []))
+        );
+      }),
+      problems: problems.problems.map((message) => currentProblem(entry.slug, message)),
     };
+  });
+  const global = new ProblemLog();
+  try {
+    inspectGlobalDocs(global);
+  } catch (error) {
+    global.add(error instanceof Error ? error.message : String(error));
   }
+  const globalProblems = global.problems.map((message) => currentProblem("docs-global", message));
+  const first = results[0];
+  if (first === undefined || globalProblems.length === 0) return { results, inputs };
+  return {
+    results: [{ ...first, problems: [...first.problems, ...globalProblems] }, ...results.slice(1)],
+    inputs,
+  };
 }
 
 export type EffectSideOptions = Pick<ExtractorOptions, "includeExternalTypes">;

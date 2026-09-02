@@ -56,14 +56,14 @@ function expectDependencyProvenance(result: ExtractionResult, path: readonly str
   const entry = result.provenance.find(
     (candidate) => JSON.stringify(candidate.path) === JSON.stringify(path)
   );
-  expect(entry?.declarationPaths).toEqual([dependencyDeclaration]);
+  expect(entry?.declarations.map((declaration) => declaration.path)).toEqual([dependencyDeclaration]);
 }
 
 function expectInputProvenance(result: ExtractionResult, path: readonly string[]) {
   const entry = result.provenance.find(
     (candidate) => JSON.stringify(candidate.path) === JSON.stringify(path)
   );
-  expect(entry?.declarationPaths).toEqual([inputDeclaration]);
+  expect(entry?.declarations.map((declaration) => declaration.path)).toEqual([inputDeclaration]);
 }
 
 function symbolOrigin(name: string, moduleOrigin: BackendModuleOrigin): ParserSymbolOrigin {

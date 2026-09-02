@@ -48,9 +48,11 @@ export {
 } from "./options.ts";
 export {
   DeclarationOwnerSchema,
+  ProvenanceDeclarationSchema,
   ProvenanceEntrySchema,
   ProvenanceSchema,
   type DeclarationOwner,
+  type ProvenanceDeclaration,
   type ProvenanceEntry,
 } from "./provenance.ts";
 export {

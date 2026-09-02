@@ -39,24 +39,30 @@ export class HandleRegistry {
     return Object.freeze({ kind, id, session: this.session }) as BackendHandle<Tag>;
   }
 
+  /**
+   * `context` is a thunk: the operation name, file and symbol breadcrumb are
+   * only assembled when a lookup fails, never on the hot path of a valid
+   * handle.
+   */
   get<Tag extends HandleKind, Value>(
     handle: BackendHandle<Tag>,
     expectedKind: Tag,
-    context: HandleContext
+    context: () => HandleContext
   ): Value {
     if (this.closed) {
       throw new BackendError({
         message: `Cannot use a ${expectedKind} compiler handle after the extraction session closed`,
         cause: "The extraction handle registry has been cleared.",
-        ...diagnosticFields(context),
+        ...diagnosticFields(context()),
       });
     }
-    if (!isRecord(handle)) throw invalidHandle("missing", expectedKind, context);
-    if (handle.session !== this.session) throw invalidHandle("wrong-session", expectedKind, context);
-    if (handle.kind !== expectedKind) throw invalidHandle(`wrong-kind:${handle.kind}`, expectedKind, context);
+    if (!isRecord(handle)) throw invalidHandle("missing", expectedKind, context());
+    if (handle.session !== this.session) throw invalidHandle("wrong-session", expectedKind, context());
+    if (handle.kind !== expectedKind)
+      throw invalidHandle(`wrong-kind:${handle.kind}`, expectedKind, context());
     const entry = this.values.get(handle.id);
-    if (entry === undefined) throw invalidHandle("missing", expectedKind, context);
-    if (entry.kind !== expectedKind) throw invalidHandle(`wrong-kind:${entry.kind}`, expectedKind, context);
+    if (entry === undefined) throw invalidHandle("missing", expectedKind, context());
+    if (entry.kind !== expectedKind) throw invalidHandle(`wrong-kind:${entry.kind}`, expectedKind, context());
     // SAFETY: an entry is inserted by create with this caller's Value type.
     return entry.value as Value;
   }

@@ -6,21 +6,20 @@ import {
   issue13ExpectedWarnings,
   issue13ExternalFixtures,
 } from "../scripts/fixture-evidence.ts";
-import type { ExtractionResult, ExtractorOptions } from "../src/index.ts";
+import type { ExtractionResult } from "../src/index.ts";
 import type { ExternalTypeNode } from "../src/model.ts";
 import { defaultExtractorOptions } from "../src/options.ts";
 import { extractFixture, fixtureRoot } from "./support/extract.ts";
 
 const tsconfigPath = resolve(fixtureRoot, "issue-13-tsconfig.json");
 
-function runExtraction(fixture: string, file: string, options?: ExtractorOptions): Promise<ExtractionResult> {
-  return extractFixture({ tsconfigPath }, resolve(fixtureRoot, fixture, file), options);
-}
-
 describe("external-type warnings on the ported upstream fixtures", () => {
   it("emits exactly the warnings each reviewed record declares", async () => {
     for (const definition of issue13ExternalFixtures) {
-      const result = await runExtraction(definition.fixture, definition.file);
+      const result = await extractFixture(
+        { tsconfigPath },
+        resolve(fixtureRoot, definition.fixture, definition.file)
+      );
       const expectedCodes = [...expectedWarningCodes(issue13ExpectedWarnings, definition.fixture)].sort();
       const actualCodes = result.warnings.map((warning) => warning.code).sort();
       expect(actualCodes).toEqual(expectedCodes);
@@ -28,7 +27,10 @@ describe("external-type warnings on the ported upstream fixtures", () => {
   });
 
   it("keeps the implementation contribution for a direct overloaded component export", async () => {
-    const result = await runExtraction("react-component-overload-any-callback-deduplication", "input.tsx");
+    const result = await extractFixture(
+      { tsconfigPath },
+      resolve(fixtureRoot, "react-component-overload-any-callback-deduplication", "input.tsx")
+    );
     const entry = result.module.exports.find((candidate) => candidate.name === "GenericComponent");
     if (entry?.type.kind !== "component") throw new Error("Expected GenericComponent component export");
     const items = entry.type.props.find((property) => property.name === "items")?.type;
@@ -47,7 +49,10 @@ describe("external-type warnings on the ported upstream fixtures", () => {
 
 describe("external-type ownership policy in both modes", () => {
   it("keeps project-owned TypeScript-shaped declarations project-owned", async () => {
-    const result = await runExtraction("issue-13-review", "input.ts");
+    const result = await extractFixture(
+      { tsconfigPath },
+      resolve(fixtureRoot, "issue-13-review", "input.ts")
+    );
     const exports = new Map(result.module.exports.map((entry) => [entry.name, entry]));
     expect(exports.get("ProjectArray")?.type).toMatchObject({
       kind: "object",
@@ -79,18 +84,29 @@ describe("external-type ownership policy in both modes", () => {
       expect.arrayContaining([
         expect.objectContaining({
           path: ["ProjectArray"],
-          declarationPaths: ["test/fixtures/issue-13-review/src/typescript/lib/lib.dom.d.ts"],
+          declarations: [
+            expect.objectContaining({
+              path: "test/fixtures/issue-13-review/src/typescript/lib/lib.dom.d.ts",
+            }),
+          ],
         }),
         expect.objectContaining({
           path: ["ProjectReadonlyArray"],
-          declarationPaths: ["test/fixtures/issue-13-review/src/@typescript/tsc/lib/lib.es2022.d.ts"],
+          declarations: [
+            expect.objectContaining({
+              path: "test/fixtures/issue-13-review/src/@typescript/tsc/lib/lib.es2022.d.ts",
+            }),
+          ],
         }),
       ])
     );
   });
 
   it("does not apply an enclosing project namespace to a top-level concrete argument", async () => {
-    const result = await runExtraction("issue-13-review", "input.ts");
+    const result = await extractFixture(
+      { tsconfigPath },
+      resolve(fixtureRoot, "issue-13-review", "input.ts")
+    );
     const entry = result.module.exports.find(
       (candidate) => candidate.name === "ProjectNamespaceSubstitution"
     );
@@ -122,7 +138,10 @@ describe("external-type ownership policy in both modes", () => {
   });
 
   it("preserves a project namespace through a local holder into an external ref argument", async () => {
-    const result = await runExtraction("issue-13-review", "input.ts");
+    const result = await extractFixture(
+      { tsconfigPath },
+      resolve(fixtureRoot, "issue-13-review", "input.ts")
+    );
     const entry = result.module.exports.find(
       (candidate) => candidate.name === "ProjectNestedNamespaceSubstitution"
     );
@@ -152,7 +171,10 @@ describe("external-type ownership policy in both modes", () => {
   });
 
   it("pins dependency-owned bare interface and value roots as anonymous empty objects", async () => {
-    const result = await runExtraction("issue-13-review", "input.ts");
+    const result = await extractFixture(
+      { tsconfigPath },
+      resolve(fixtureRoot, "issue-13-review", "input.ts")
+    );
     const rootTypes = new Map(result.module.exports.map((entry) => [entry.name, entry.type]));
 
     expect(rootTypes.get("BareInterface")).toEqual({ kind: "object", properties: [] });
@@ -165,7 +187,10 @@ describe("external-type ownership policy in both modes", () => {
   });
 
   it("summarizes dependency-owned handlers as opaque references when expansion is disabled", async () => {
-    const result = await runExtraction("react-event-handlers", "input.ts");
+    const result = await extractFixture(
+      { tsconfigPath },
+      resolve(fixtureRoot, "react-event-handlers", "input.ts")
+    );
     const component = result.module.exports.find((entry) => entry.name === "EventHandlersComponent");
     if (component?.type.kind !== "component") throw new Error("the component transform vanished");
     const onClick = component.type.props.find((prop) => prop.name === "onClick");
@@ -185,9 +210,13 @@ describe("external-type ownership policy in both modes", () => {
   });
 
   it("resolves dependency-owned properties without losing the library/dependency boundary when expansion is enabled", async () => {
-    const result = await runExtraction("react-event-handlers", "input.ts", {
-      includeExternalTypes: true,
-    });
+    const result = await extractFixture(
+      { tsconfigPath },
+      resolve(fixtureRoot, "react-event-handlers", "input.ts"),
+      {
+        includeExternalTypes: true,
+      }
+    );
     const component = result.module.exports.find((entry) => entry.name === "EventHandlersComponent");
     if (component?.type.kind !== "component") throw new Error("the component transform vanished");
     const onKeyDown = component.type.props.find((prop) => prop.name === "onKeyDown");
@@ -211,8 +240,8 @@ describe("external-type ownership policy in both modes", () => {
   });
 
   it("expands a standard-library-owned property surface only when the option asks for it", async () => {
-    const disabled = await runExtraction("react-refs", "input.tsx");
-    const enabled = await runExtraction("react-refs", "input.tsx", {
+    const disabled = await extractFixture({ tsconfigPath }, resolve(fixtureRoot, "react-refs", "input.tsx"));
+    const enabled = await extractFixture({ tsconfigPath }, resolve(fixtureRoot, "react-refs", "input.tsx"), {
       includeExternalTypes: true,
     });
     const propOf = (result: ExtractionResult, name: string) => {
@@ -243,7 +272,10 @@ describe("external-type ownership policy in both modes", () => {
 
 describe("summarized references keep durable identity", () => {
   it("never exposes compiler paths or handles in extracted output", async () => {
-    const result = await runExtraction("react-event-handlers", "input.ts");
+    const result = await extractFixture(
+      { tsconfigPath },
+      resolve(fixtureRoot, "react-event-handlers", "input.ts")
+    );
     const serialized = JSON.stringify({ module: result.module, provenance: result.provenance });
     expect(serialized.includes("node_modules")).toBe(false);
     expect(serialized.includes("/lib/")).toBe(false);
@@ -259,7 +291,10 @@ describe("summarized references keep durable identity", () => {
     // The flattened Prettify member in this fixture has no representable
     // dependency-owned identity on TypeScript 7's checker view; it degrades to
     // `any` behind the structured warning instead of disappearing silently.
-    const result = await runExtraction("external-union-type-name-preservation", "input.ts");
+    const result = await extractFixture(
+      { tsconfigPath },
+      resolve(fixtureRoot, "external-union-type-name-preservation", "input.ts")
+    );
     const fallbacks = result.warnings.filter((warning) => warning.code === "unsupported-type-fallback");
     expect(fallbacks).toHaveLength(1);
     expect(fallbacks[0]?.message).toContain("The extractor used any");

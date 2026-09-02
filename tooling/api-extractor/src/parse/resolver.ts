@@ -58,7 +58,6 @@ import {
   typeOperatorNode,
 } from "./type-operator.ts";
 import { isTypeParameterSymbol, isUnauthoredAny, occurrenceTypeParameter } from "./type-parameter.ts";
-export { ResolverFailure } from "./resolver-error.ts";
 
 export type ResolvedModule = {
   readonly module: ModuleNode;

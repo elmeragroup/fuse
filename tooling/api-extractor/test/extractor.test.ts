@@ -49,14 +49,6 @@ class CompilerFailure extends Error {
   }
 }
 
-function runExtraction(
-  filePath: string,
-  options: { readonly tsconfigPath: string } = { tsconfigPath },
-  extractorOptions?: ExtractorOptions
-): Promise<ExtractionResult> {
-  return extractFixture(options, filePath, extractorOptions);
-}
-
 function runWithBackend(
   backendSession: BackendExtractionSession,
   filePath: string,
@@ -133,7 +125,7 @@ const testCompiler: BackendCompilerOperations = {
 
 describe("ProjectExtractor", () => {
   it("extracts an exported function through the scoped service", async () => {
-    const result = await runExtraction(inputPath);
+    const result = await extractFixture({ tsconfigPath }, inputPath);
     const exported = result.module.exports.find((entry) => entry.name === "greet");
 
     expect(result.module.name).toBe("input");
@@ -168,7 +160,7 @@ describe("ProjectExtractor", () => {
   });
 
   it("names modules relative to compilerOptions.rootDir rather than the tsconfig directory", async () => {
-    const result = await runExtraction(rootDirInputPath, { tsconfigPath: rootDirTsconfigPath });
+    const result = await extractFixture({ tsconfigPath: rootDirTsconfigPath }, rootDirInputPath);
 
     expect(result.module.name).toBe("root-dir/src/input");
   });
@@ -217,7 +209,7 @@ describe("ProjectExtractor", () => {
   });
 
   it("decodes the kind-discriminated module schema and rejects malformed nodes", async () => {
-    const result = await runExtraction(inputPath);
+    const result = await extractFixture({ tsconfigPath }, inputPath);
     const decoded = Schema.decodeUnknownSync(ModuleNodeSchema)(result.module);
 
     expect(decoded).toEqual(result.module);
@@ -452,15 +444,11 @@ describe("ProjectExtractor", () => {
 
   it("maps resolver policy callback failures to ExtractError with a symbol breadcrumb", async () => {
     try {
-      await runExtraction(
-        unsupportedPath,
-        { tsconfigPath },
-        {
-          shouldInclude: () => {
-            throw new Error("user policy failed");
-          },
-        }
-      );
+      await extractFixture({ tsconfigPath }, unsupportedPath, {
+        shouldInclude: () => {
+          throw new Error("user policy failed");
+        },
+      });
       throw new Error("Expected resolver policy failure");
     } catch (cause) {
       expect(cause).toBeInstanceOf(ExtractError);
@@ -477,7 +465,7 @@ describe("ProjectExtractor", () => {
       vi.spyOn(console, method).mockImplementation(() => undefined)
     );
     try {
-      const result = await runExtraction(unsupportedPath);
+      const result = await extractFixture({ tsconfigPath }, unsupportedPath);
       expect(result.warnings).toHaveLength(1);
       expect(result.warnings[0]).toEqual(
         expect.objectContaining({
@@ -503,7 +491,7 @@ describe("ProjectExtractor", () => {
   });
 
   it("preserves the upstream unsupported warning contract and source text", async () => {
-    const result = await runExtraction(unsupportedTemplatePath);
+    const result = await extractFixture({ tsconfigPath }, unsupportedTemplatePath);
 
     expect(result.module.exports[0]?.type).toEqual({ kind: "intrinsic", intrinsic: "any" });
     expect(result.warnings).toEqual([
@@ -522,7 +510,7 @@ describe("ProjectExtractor", () => {
   });
 
   it("preserves upstream symbol stacks for nested parameter and return warnings", async () => {
-    const result = await runExtraction(unsupportedSignaturesPath);
+    const result = await extractFixture({ tsconfigPath }, unsupportedSignaturesPath);
 
     expect(result.warnings).toEqual([
       expect.objectContaining({

@@ -108,8 +108,12 @@ describe("package-selective external-type expansion", () => {
       ]);
       expect(expandedResult.provenance).toContainEqual({
         path: ["PublicShape", "properties", "externalLabel"],
-        declarationPaths: ["consumer/node_modules/@fixture/workspace-dependency/index.d.ts"],
-        owners: [{ kind: "dependency", packageName: "@fixture/workspace-dependency" }],
+        declarations: [
+          {
+            path: "consumer/node_modules/@fixture/workspace-dependency/index.d.ts",
+            owner: { kind: "dependency", packageName: "@fixture/workspace-dependency" },
+          },
+        ],
         synthesized: false,
       });
     } finally {
@@ -153,10 +157,12 @@ describe("package-selective external-type expansion", () => {
     expect(props.has("prefixedPackageProp")).toBe(false);
     expect(result.provenance).toContainEqual({
       path: ["PrimitiveComponent", "props", "focusableWhenDisabled"],
-      declarationPaths: [
-        "test/fixtures/package-selective-external-types/node_modules/@fixture/selected/button.d.ts",
+      declarations: [
+        {
+          path: "test/fixtures/package-selective-external-types/node_modules/@fixture/selected/button.d.ts",
+          owner: { kind: "dependency", packageName: "@fixture/selected" },
+        },
       ],
-      owners: [{ kind: "dependency", packageName: "@fixture/selected" }],
       synthesized: false,
     });
     expect(Schema.decodeUnknownSync(ExtractionResultSchema)(result)).toEqual(result);

@@ -9,6 +9,7 @@ import type {
   BackendSymbolHandle,
   BackendTypeHandle,
 } from "../backend/contracts.ts";
+import { ResolverFailure } from "../errors.ts";
 import type {
   CallSignatureNode,
   EnumMember,
@@ -24,8 +25,7 @@ import type { OmittedIndexSignatureReason } from "../warnings.ts";
 import type { ResolveSemanticType, ResolverContext } from "./contracts.ts";
 import { isInternalSymbolName, warningLocation } from "./contracts.ts";
 import { externalTypeSelectionAllowsSymbol } from "./external-type-selection.ts";
-import { isExternalSymbol, primaryDeclaration, symbolDeclarations } from "./ownership.ts";
-import { ResolverFailure } from "./resolver-error.ts";
+import { primaryDeclaration, symbolDeclarations } from "./ownership.ts";
 import {
   callSignatureSemanticPath,
   componentPropSemanticPath,
@@ -196,10 +196,17 @@ export function resolveObjectNode(
   // Class-origin modifier facts were paid for pre-gate because they are
   // required for the exact public propertyCount; non-class members remain
   // lazy.
-  const hasLocalCandidate = properties.some(
+  //
+  // An anonymous shape is worth describing when at least one member can be
+  // expanded under the caller's dependency selection: a project-owned member
+  // always, a dependency-owned one only when its package was selected. A
+  // headless library's `ComponentProps<E> = ElementProps<E> & { render?: … }`
+  // reaches a consumer's props as exactly such a member; declining it would
+  // silently drop `render` from every component built on that library.
+  const hasExpandableCandidate = properties.some(
     (property) =>
       context.operations.symbolFacts(property).declarations.length === 0 ||
-      !isExternalSymbol(property, context)
+      externalTypeSelectionAllowsSymbol(property, context.operations, context.externalTypes)
   );
   const objectSymbol = facts.symbol === undefined ? undefined : context.operations.symbolFacts(facts.symbol);
   const isReadonlyObject =
@@ -227,7 +234,7 @@ export function resolveObjectNode(
     objectSymbol !== undefined &&
     isInternalSymbolName(objectSymbol.name) &&
     !isReadonlyObject &&
-    !hasLocalCandidate &&
+    !hasExpandableCandidate &&
     !hasAuthoredObjectSyntax;
   const isAnonymousModuleValue =
     typeNameValue === undefined &&
@@ -243,7 +250,7 @@ export function resolveObjectNode(
     properties.length === 0 &&
     indexSignature === undefined &&
     typeNameValue === undefined &&
-    !hasLocalCandidate &&
+    !hasExpandableCandidate &&
     !hasAuthoredObjectSyntax;
   if (isAnonymousCompilerObject || isAnonymousModuleValue || isEmptyUnanchored) {
     // The callback order is observable, but an anonymous compiler object still
@@ -340,18 +347,20 @@ export function declarationPathsFor(info: {
 export function declarationProvenance(
   info: Pick<BackendSymbolFacts, "declarationPaths" | "repositoryRelativeDeclarationPaths" | "declarations">,
   context: Context
-): Pick<ProvenanceEntry, "declarationPaths" | "owners" | "synthesized"> {
+): Pick<ProvenanceEntry, "declarations" | "synthesized"> {
   const declarationPaths = declarationPathsFor(info);
-  const result: Pick<ProvenanceEntry, "declarationPaths" | "owners" | "synthesized"> = {
-    declarationPaths,
+  // Owners are read from the handles, so they are known only when the backend
+  // reported one handle per path.
+  const ownersKnown = info.declarations.length === declarationPaths.length;
+  return {
+    declarations: declarationPaths.map((path, index) => {
+      const handle = info.declarations[index];
+      return ownersKnown && handle !== undefined
+        ? { path, owner: context.operations.declarationOwnership(handle) }
+        : { path };
+    }),
     synthesized: info.declarations.length === 0,
   };
-  if (info.declarations.length === declarationPaths.length) {
-    Object.assign(result, {
-      owners: info.declarations.map((declaration) => context.operations.declarationOwnership(declaration)),
-    });
-  }
-  return result;
 }
 
 /**
@@ -385,21 +394,19 @@ export function recordProvenance(context: Context, entry: ProvenanceEntry): void
   }
   const ownerByPath = new Map<string, DeclarationOwner | undefined>();
   for (const candidate of [existing, entry]) {
-    candidate.declarationPaths.forEach((path, index) => {
-      ownerByPath.set(path, ownerByPath.get(path) ?? candidate.owners?.[index]);
-    });
+    for (const declaration of candidate.declarations) {
+      ownerByPath.set(declaration.path, ownerByPath.get(declaration.path) ?? declaration.owner);
+    }
   }
-  const declarationPaths = [...ownerByPath.keys()].sort();
-  const owners = declarationPaths.map((path) => ownerByPath.get(path));
-  const { owners: _owners, ...rest } = existing;
+  const declarations = [...ownerByPath.keys()].sort().map((path) => {
+    const owner = ownerByPath.get(path);
+    return owner === undefined ? { path } : { path, owner };
+  });
   const merged: ProvenanceEntry = {
-    ...rest,
-    declarationPaths,
+    ...existing,
+    declarations,
     synthesized: existing.synthesized && entry.synthesized,
   };
-  if (owners.every((owner): owner is DeclarationOwner => owner !== undefined)) {
-    Object.assign(merged, { owners });
-  }
   if (existing.readonly === true || entry.readonly === true) Object.assign(merged, { readonly: true });
   const defaultInitializer = existing.defaultInitializer ?? entry.defaultInitializer;
   if (defaultInitializer !== undefined) Object.assign(merged, { defaultInitializer });
@@ -692,7 +699,7 @@ export function recordIndexSignatureKeyProvenance(
   const symbol = facts?.aliasSymbol ?? facts?.symbol;
   const info = symbol === undefined ? undefined : context.operations.symbolFacts(symbol);
   const declared =
-    info === undefined ? { declarationPaths: [], synthesized: true } : declarationProvenance(info, context);
+    info === undefined ? { declarations: [], synthesized: true } : declarationProvenance(info, context);
   recordProvenance(context, {
     path: indexSignatureKeySemanticPath(context.provenancePath),
     ...declared,

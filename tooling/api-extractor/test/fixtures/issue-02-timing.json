@@ -103,10 +103,8 @@
       "evidence": "package-owned backend contracts, parser, model, warnings, errors, provenance, and ProjectExtractor expose no compiler objects"
     },
     "unacceptableIpcGrowth": {
-      "maxAggregateRoundTripMs": 1000,
-      "measuredAggregateRoundTripMs": 179.67261400000103,
       "status": "not-triggered",
-      "evidence": "aggregate roundTripMs is measured across all four sequential boundary fixtures and compared with the 1000ms stop threshold"
+      "evidence": "all four sequential boundary fixtures must keep requestCount and bytesReceived within their catalog ceilings; roundTripMs is recorded as an observation only"
     }
   },
   "decision": "go"
