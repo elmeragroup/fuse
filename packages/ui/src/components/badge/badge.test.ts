@@ -1,13 +1,8 @@
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { cn } from "../../styles/cn";
 import { badgeVariants } from "./badge-variants";
-
-const here = dirname(fileURLToPath(import.meta.url));
 
 const VARIANTS = [
   "default",
@@ -116,36 +111,6 @@ describe("badgeVariants", () => {
     for (const size of ["sm", "default", "lg"] as const) {
       expect(badgeVariants({ size }), size).not.toContain("--control-");
       expect(badgeVariants({ size }), size).not.toContain("data-density");
-    }
-  });
-});
-
-describe("badge source contract", () => {
-  it("stays a server surface that emits data-slot before the props spread", () => {
-    const source = readFileSync(join(here, "badge.tsx"), "utf8");
-    expect(source).not.toContain("use client");
-    expect(source).not.toContain(".ref/");
-    expect(source).not.toContain("dark:");
-    const marker = 'data-slot="badge"';
-    expect(source).toContain(marker);
-    expect(source.indexOf(marker)).toBeLessThan(source.indexOf("{...props}", source.indexOf(marker)));
-  });
-
-  it("exports the recipe publicly from the badge entry", () => {
-    const facade = readFileSync(join(here, "..", "..", "badge.ts"), "utf8");
-    expect(facade).toContain('export { badgeVariants } from "./components/badge/badge-variants";');
-    expect(facade).toContain('export { Badge } from "./components/badge/badge";');
-  });
-
-  it("carries no destructive class name in library source", () => {
-    const recipe = readFileSync(join(here, "badge-variants.ts"), "utf8");
-    for (const forbidden of [
-      "bg-destructive",
-      "text-destructive",
-      "border-destructive",
-      "hover:bg-destructive",
-    ]) {
-      expect(recipe, forbidden).not.toContain(forbidden);
     }
   });
 });

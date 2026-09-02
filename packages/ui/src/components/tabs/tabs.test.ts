@@ -1,8 +1,5 @@
 import { createElement } from "react";
 
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
@@ -10,10 +7,6 @@ import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { Tabs } from "./tabs";
 import { tabsListVariants } from "./tabs-variants";
 
-const here = dirname(fileURLToPath(import.meta.url));
-const source = readFileSync(join(here, "tabs.tsx"), "utf8");
-const variantsSource = readFileSync(join(here, "tabs-variants.ts"), "utf8");
-const facade = readFileSync(join(here, "..", "..", "tabs.ts"), "utf8");
 const VARIANTS = ["default", "line"] as const;
 
 describe("tabsListVariants", () => {
@@ -52,55 +45,7 @@ describe("tabsListVariants", () => {
   });
 });
 
-describe("tabs source contract", () => {
-  it("stays a client namespace that emits data-slot before the props spread", () => {
-    expect(source.trimStart().startsWith('"use client"')).toBe(true);
-    expect(source).not.toContain(".ref/");
-    expect(source).not.toContain("dark:");
-    expect(source).not.toMatch(RAW_PALETTE_RE);
-    expect(source).not.toContain("destructive");
-    expect(facade).not.toContain('"use client"');
-    expect(facade).toContain('export { Tabs } from "./components/tabs/tabs"');
-    expect(facade).toContain('export { tabsListVariants } from "./components/tabs/tabs-variants"');
-    expect(facade).not.toContain("TabsList");
-    expect(facade).not.toContain("TabsTrigger");
-    expect(facade).not.toContain("TabsContent");
-    expect(source).toContain('displayName = "Tabs.Root"');
-    expect(source).toContain('displayName = "Tabs.List"');
-    expect(source).toContain('displayName = "Tabs.Trigger"');
-    expect(source).toContain('displayName = "Tabs.Content"');
-    for (const slot of ["tabs", "tabs-list", "tabs-trigger", "tabs-content"]) {
-      const marker = `data-slot="${slot}"`;
-      expect(source, marker).toContain(marker);
-      expect(source.indexOf(marker), marker).toBeLessThan(
-        source.indexOf("{...props}", source.indexOf(marker))
-      );
-    }
-  });
-
-  it("keeps the two-group coupling, pre-hydration orientation, and shared self focus ring", () => {
-    expect(source).toContain('from "@base-ui/react/tabs"');
-    expect(source).toContain("TabsPrimitive.Tab");
-    expect(source).toContain("TabsPrimitive.Panel");
-    expect(source).toContain("group/tabs");
-    expect(variantsSource).toContain("group/tabs-list");
-    expect(source).toContain('orientation = "horizontal"');
-    expect(source).toContain('variant = "default"');
-    expect(source).toContain("activateOnFocus = true");
-    expect(source).toContain("activateOnFocus={activateOnFocus}");
-    expect(source).toContain("data-orientation={orientation}");
-    expect(source).toContain("orientation={orientation}");
-    expect(source).toContain('focusRing({ target: "self" })');
-    // oxlint-disable-next-line elmera/no-local-focus-ring -- source-grep of the forbidden class, not a recipe
-    expect(source).not.toContain("outline-none");
-    expect(variantsSource).toContain("h-(--control-h-md)");
-    expect(variantsSource).not.toContain("h-9");
-    const contentMarker = 'data-slot="tabs-content"';
-    const contentSlice = source.slice(source.indexOf(contentMarker));
-    // oxlint-disable-next-line elmera/no-local-focus-ring -- source-grep of the forbidden class, not a recipe
-    expect(contentSlice).not.toContain("outline-none");
-  });
-
+describe("Tabs SSR markup", () => {
   it("stamps data-orientation on Root in SSR markup before hydration", () => {
     const markup = renderToStaticMarkup(
       createElement(

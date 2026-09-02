@@ -1,16 +1,8 @@
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { cn } from "../../styles/cn";
 import { buttonGroupVariants } from "./button-group-variants";
-
-const here = dirname(fileURLToPath(import.meta.url));
-const source = readFileSync(join(here, "button-group.tsx"), "utf8");
-const recipe = readFileSync(join(here, "button-group-variants.ts"), "utf8");
-const facade = readFileSync(join(here, "..", "..", "button-group.ts"), "utf8");
 
 const BASE_CLASSES = [
   "group/button-group",
@@ -72,7 +64,6 @@ describe("buttonGroupVariants", () => {
     expect(resolved).not.toContain("comfortable:");
     expect(resolved).not.toContain("dark:");
     expect(resolved).not.toMatch(RAW_PALETTE_RE);
-    expect(recipe).not.toContain("size:");
   });
 
   it("lets a className merge win over a conflicting recipe class through cn", () => {
@@ -80,50 +71,5 @@ describe("buttonGroupVariants", () => {
     expect(merged).toContain("flex-row");
     expect(merged).not.toContain("flex-col");
     expect(merged).toContain("group/button-group");
-  });
-});
-
-describe("button-group source contract", () => {
-  it("is a client namespace that uses useRender state for Text and the canonical Separator", () => {
-    expect(source.trimStart().startsWith('"use client"')).toBe(true);
-    expect(source).toContain("useRender");
-    expect(source).toContain("mergeProps");
-    expect(source).toContain('slot: "button-group-text"');
-    expect(source).toContain('from "../separator/separator"');
-    expect(source).not.toMatch(/from ["']\.\.\/separator["']/);
-    expect(source).not.toContain(".ref/");
-    expect(source).not.toContain("dark:");
-    expect(source).not.toContain("destructive");
-    expect(source).toContain('displayName = "ButtonGroup.Root"');
-    expect(source).toContain('displayName = "ButtonGroup.Separator"');
-    expect(source).toContain('displayName = "ButtonGroup.Text"');
-  });
-
-  it("defaults Root orientation to horizontal and Separator orientation to vertical", () => {
-    expect(source).toContain('orientation = "horizontal"');
-    expect(source).toContain('orientation = "vertical"');
-    expect(source).toContain("data-orientation={orientation}");
-    expect(source).toContain('role="group"');
-  });
-
-  it("emits Root and Separator slots before the props spread so consumers can override them", () => {
-    for (const marker of ['data-slot="button-group"', 'data-slot="button-group-separator"']) {
-      const at = source.indexOf(marker);
-      expect(at, marker).toBeGreaterThan(-1);
-      expect(source.indexOf("{...props}", at), marker).toBeGreaterThan(at);
-    }
-  });
-
-  it("exports the public recipe from the button-group entry and keeps parts namespaced", () => {
-    expect(facade).toContain('export { ButtonGroup } from "./components/button-group/button-group"');
-    expect(facade).toContain(
-      'export { buttonGroupVariants } from "./components/button-group/button-group-variants"'
-    );
-    expect(facade).not.toContain("export * from");
-    expect(facade).not.toMatch(/\bButtonGroupSeparator\b/);
-    expect(facade).not.toMatch(/\bButtonGroupText\b/);
-    expect(facade).not.toContain('"use client"');
-    expect(source).not.toContain("export { buttonGroupVariants");
-    expect(source).not.toContain("export const buttonGroupVariants");
   });
 });

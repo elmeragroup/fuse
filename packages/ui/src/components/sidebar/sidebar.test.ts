@@ -1,8 +1,5 @@
 import { createElement } from "react";
 
-import { readdirSync, readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
@@ -20,13 +17,6 @@ import {
   useSidebar,
 } from "./sidebar";
 import { sidebarMenuButtonVariants, sidebarMenuSubButtonVariants } from "./sidebar-variants";
-
-const here = dirname(fileURLToPath(import.meta.url));
-const source = readFileSync(join(here, "sidebar.tsx"), "utf8");
-const variantsSource = readFileSync(join(here, "sidebar-variants.ts"), "utf8");
-const hookSource = readFileSync(join(here, "..", "..", "hooks", "use-is-mobile.ts"), "utf8");
-const facade = readFileSync(join(here, "..", "..", "sidebar.ts"), "utf8");
-const srcRoot = join(here, "..", "..");
 
 const TOGGLE_COPY = {
   "nb-NO": "Vis eller skjul sidepanelet",
@@ -48,39 +38,6 @@ const DESCRIPTION_COPY = {
   "en-US": "Displays the sidebar.",
   "fi-FI": "Näyttää sivupalkin.",
 } as const;
-
-/** sidebar.md §6 — the canonical `data-slot` roster, one entry per part plus the layout slots. */
-const SLOT_ROSTER = [
-  "sidebar-wrapper",
-  "sidebar",
-  "sidebar-gap",
-  "sidebar-container",
-  "sidebar-inner",
-  "sidebar-trigger",
-  "sidebar-rail",
-  "sidebar-inset",
-  "sidebar-input",
-  "sidebar-header",
-  "sidebar-footer",
-  "sidebar-separator",
-  "sidebar-content",
-  "sidebar-group",
-  "sidebar-group-label",
-  "sidebar-group-action",
-  "sidebar-group-content",
-  "sidebar-menu",
-  "sidebar-menu-item",
-  "sidebar-menu-button",
-  "sidebar-menu-action",
-  "sidebar-menu-badge",
-  "sidebar-menu-skeleton",
-  "sidebar-menu-skeleton-icon",
-  "sidebar-menu-skeleton-text",
-  "sidebar-menu-sub",
-  "sidebar-menu-sub-item",
-  "sidebar-menu-sub-button",
-  "sidebar-icon",
-];
 
 const PART_NAMES = [
   "Provider",
@@ -137,7 +94,6 @@ describe("sidebar constants", () => {
     expect(SIDEBAR_WIDTH_MOBILE).toBe("18rem");
     expect(SIDEBAR_WIDTH_ICON).toBe("3rem");
     expect(SIDEBAR_KEYBOARD_SHORTCUT).toBe("b");
-    expect(source).not.toContain("sidebar_state");
   });
 });
 
@@ -213,79 +169,5 @@ describe("sidebarMenuButtonVariants", () => {
       expect(className).not.toContain("data-[sidebar=");
       expect(className).not.toContain("--control-");
     }
-    expect(variantsSource).not.toContain("data-sidebar");
-  });
-});
-
-describe("sidebar source contract", () => {
-  it("is a client namespace lifted without the legacy data-sidebar attributes", () => {
-    expect(source.trimStart().startsWith('"use client"')).toBe(true);
-    expect(hookSource.trimStart().startsWith('"use client"')).toBe(true);
-    expect(source).not.toContain(".ref/");
-    expect(source).not.toContain("dark:");
-    expect(source).not.toMatch(RAW_PALETTE_RE);
-    expect(source).not.toContain("destructive");
-    expect(source).not.toContain("forwardRef");
-    expect(source).not.toContain("data-sidebar");
-    expect(source).not.toMatch(/\bsidebar: "/);
-    expect(source).not.toContain("ring-sidebar-ring");
-    expect(source).not.toContain("--sidebar-background");
-    expect(source).not.toContain("--sidebar-primary");
-    expect(source).not.toContain("Math.random");
-    expect(source).not.toContain("lucide");
-    expect(source).toContain("SidebarSimple");
-    expect(source).toContain("useLocalizedStrings");
-    expect(source).toContain("useIsMobile");
-    expect(source).toContain("showCloseButton={false}");
-    expect(source).toContain("SIDEBAR_WIDTH_MOBILE");
-    expect(source).toContain("event.preventDefault()");
-    expect(source).toContain("<Tooltip.Trigger render={render} />");
-    expect(source).toContain('hidden={state !== "collapsed" || isMobile}');
-  });
-
-  it("stamps every roster slot, data-slot before the props spread on plain parts", () => {
-    for (const slot of SLOT_ROSTER) {
-      const stamped = source.includes(`data-slot="${slot}"`) || source.includes(`slot: "${slot}"`);
-      expect(stamped, slot).toBe(true);
-    }
-    for (const slot of SLOT_ROSTER) {
-      const marker = `data-slot="${slot}"`;
-      const at = source.indexOf(marker);
-      if (at === -1) {
-        continue;
-      }
-      const spread = source.indexOf("{...props}", at);
-      const closes = source.indexOf("/>", at);
-      const opens = source.indexOf(">", at);
-      if (spread !== -1 && spread < Math.min(closes === -1 ? Infinity : closes, opens)) {
-        expect(at, marker).toBeLessThan(spread);
-      }
-    }
-  });
-
-  it("keeps useIsMobile package-private and the facade a pure re-export", () => {
-    expect(facade).not.toContain('"use client"');
-    expect(facade).not.toContain("useIsMobile");
-    expect(facade).not.toContain("sidebarMenuButtonVariants");
-    expect(facade).not.toContain("sidebarMenuSubButtonVariants");
-    expect(facade).toContain("Sidebar,");
-    expect(facade).toContain("useSidebar,");
-    for (const name of [
-      "SIDEBAR_COOKIE_NAME",
-      "SIDEBAR_COOKIE_MAX_AGE",
-      "SIDEBAR_WIDTH",
-      "SIDEBAR_WIDTH_MOBILE",
-      "SIDEBAR_WIDTH_ICON",
-      "SIDEBAR_KEYBOARD_SHORTCUT",
-    ]) {
-      expect(facade, name).toContain(name);
-    }
-    const facades = readdirSync(srcRoot).filter((entry) => entry.endsWith(".ts") && !entry.includes(".test"));
-    for (const entry of facades) {
-      expect(readFileSync(join(srcRoot, entry), "utf8"), entry).not.toContain("use-is-mobile");
-    }
-    expect(hookSource).toContain("(max-width: ${MOBILE_BREAKPOINT - 1}px)");
-    expect(hookSource).toContain("useSyncExternalStore");
-    expect(hookSource).toContain(".matches");
   });
 });

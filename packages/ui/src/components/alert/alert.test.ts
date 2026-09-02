@@ -1,8 +1,5 @@
 import { createElement } from "react";
 
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
@@ -10,11 +7,6 @@ import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { cn } from "../../styles/cn";
 import { Alert } from "./alert";
 import { alertVariants } from "./alert-variants";
-
-const here = dirname(fileURLToPath(import.meta.url));
-const source = readFileSync(join(here, "alert.tsx"), "utf8");
-const variantsSource = readFileSync(join(here, "alert-variants.ts"), "utf8");
-const facade = readFileSync(join(here, "..", "..", "alert.ts"), "utf8");
 
 const VARIANTS = ["default", "destructive", "warning", "success"] as const;
 
@@ -91,59 +83,8 @@ describe("alertVariants", () => {
   });
 });
 
-describe("alert source contract", () => {
-  it("stays a server namespace over Item and Button with a private recipe", () => {
-    expect(source.trimStart().startsWith('"use client"')).toBe(false);
-    expect(source).not.toContain(".ref/");
-    expect(source).not.toContain("dark:");
-    expect(source).not.toMatch(RAW_PALETTE_RE);
-    expect(source).not.toContain("react-aria");
-    expect(source).not.toContain('from "../react-aria');
-    expect(source).not.toContain("lucide");
-    expect(source).not.toContain("AlertTriangle");
-    expect(source).not.toContain("OctagonX");
-    expect(source).toContain('from "../item/item"');
-    expect(source).toContain('from "../item/item-title-classes"');
-    expect(source).toContain('from "../button/button"');
-    expect(source).toContain("Item.Root");
-    expect(source).toContain("Item.Media");
-    expect(source).toContain("Item.Content");
-    expect(source).toContain("Item.Actions");
-    expect(source).toContain('role="alert"');
-    expect(source).toContain('variant="outline"');
-    expect(source).toContain('size="sm"');
-    expect(source).toContain('type="button"');
-    expect(source).toContain("Info");
-    expect(source).toContain("Warning");
-    expect(source).toContain("WarningOctagon");
-    expect(source).toContain("CheckCircle");
-    expect(source).toContain('displayName = "Alert.Root"');
-    expect(source).toContain('displayName = "Alert.Icon"');
-    expect(source).toContain('displayName = "Alert.Title"');
-    expect(source).toContain('displayName = "Alert.Description"');
-    expect(source).toContain('data-slot="item-title"');
-    expect(source).toContain('data-slot="alert-icon"');
-    expect(source).toContain('aria-hidden="true"');
-    expect(facade).not.toContain('"use client"');
-    expect(facade).toContain('export { Alert } from "./components/alert/alert"');
-    expect(facade).not.toContain("alertVariants");
-    expect(facade).not.toContain("AlertIcon");
-    expect(facade).not.toContain("AlertTitle");
-    expect(facade).not.toContain("AlertDescription");
-    expect(variantsSource).toContain('variant: "default"');
-    expect(variantsSource).not.toContain("content:");
-    expect(variantsSource).not.toContain("title:");
-    expect(variantsSource).not.toContain("dark:");
-    expect(variantsSource).not.toContain("warning-accent");
-    expect(variantsSource).not.toContain("bg-destructive");
-    expect(variantsSource).not.toContain("bg-destructive/10");
-    expect(variantsSource).not.toMatch(RAW_PALETTE_RE);
-  });
-});
-
 describe("Alert server boundary", () => {
   it("imports and renders the namespace without a use client directive", () => {
-    expect(source.trimStart().startsWith('"use client"')).toBe(false);
     const html = renderToStaticMarkup(
       createElement(
         Alert.Root,

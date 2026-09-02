@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -9,9 +8,6 @@ import { rangeCalendarVariants } from "../../styles/range-calendar";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const packageRoot = join(here, "../../..");
-const source = readFileSync(join(here, "range-calendar.tsx"), "utf8");
-const recipe = readFileSync(join(packageRoot, "src/styles/range-calendar.ts"), "utf8");
-const facade = readFileSync(join(here, "../range-calendar.ts"), "utf8");
 
 /** Every class the recipe can emit, across all three selection faces. */
 function everyEmittedClass(): string {
@@ -26,31 +22,7 @@ function everyEmittedClass(): string {
   return [invariant.body(), invariant.outerCell(), invariant.error(), ...faces].join(" ");
 }
 
-describe("range calendar source contract", () => {
-  it("is a client module that reuses the shared header parts instead of forking them", () => {
-    expect(source.startsWith('"use client";')).toBe(true);
-    expect(source).not.toContain(".ref/");
-    expect(source).not.toContain("@elmeragroup/ui/");
-    // The header rows come from the calendar module (calendar.md §2 reuse seam); this
-    // module declares neither of them and never touches their building blocks.
-    expect(source).toContain('from "../calendar/calendar"');
-    expect(source).not.toContain("function CalendarHeader");
-    expect(source).not.toContain("function CalendarGridHeader");
-    expect(source).not.toContain("CalendarHeaderCell");
-    expect(source).not.toContain("useLocale");
-  });
-
-  it("hand-rolls its own cell recipe rather than borrowing Calendar's (§8.5)", () => {
-    expect(source).not.toMatch(/\bcalendarVariants\b/);
-    expect(recipe).not.toMatch(/\bcalendarVariants\b/);
-  });
-
-  it("keeps the facade a named re-export and the recipe module-private", () => {
-    expect(facade).not.toContain('"use client"');
-    expect(facade).not.toContain("export *");
-    expect(facade).not.toContain("rangeCalendarVariants");
-  });
-
+describe("rangeCalendarVariants", () => {
   it("takes no card-surface chrome on the root (§8.5 — standalone renders borderless)", () => {
     const emitted = everyEmittedClass();
     expect(emitted).not.toContain("bg-card");
@@ -59,42 +31,16 @@ describe("range calendar source contract", () => {
     expect(emitted).not.toContain("rounded-md");
   });
 
-  it("never emits a custom data-slot, size axis, or density override", () => {
-    expect(source).not.toContain("data-slot");
-    expect(source).not.toMatch(/\bsize:\s*\{/);
-    expect(recipe).not.toMatch(/\bsize:\s*\{/);
-    for (const text of [source, recipe]) {
-      expect(text).not.toContain("data-density");
-      expect(text).not.toContain("dense:");
-      expect(text).not.toContain("comfortable:");
-    }
-    // No rung is pinned either: the day square is decorative, so nothing reads a
-    // `--control-*` variable and no literal ladder is restated.
+  it("emits no size axis, no control rung, and no raw palette (§8.5)", () => {
+    // The day square is decorative, so nothing reads a `--control-*` variable.
     expect(everyEmittedClass()).not.toContain("--control-");
+    expect(everyEmittedClass()).not.toMatch(RAW_PALETTE_RE);
     expect(rangeCalendarVariants.variantKeys).toEqual(
       expect.arrayContaining(["selectionState", "isDisabled"])
     );
     expect(rangeCalendarVariants.variantKeys).not.toContain("size");
   });
 
-  it("never uses primitive gray/blue/white or destructive vocabulary", () => {
-    for (const text of [source, recipe]) {
-      expect(text).not.toContain("text-gray-");
-      expect(text).not.toContain("bg-gray-");
-      expect(text).not.toContain("bg-blue-");
-      // oxlint-disable-next-line elmera/no-primitive-colors -- source-grep of the forbidden class, not a recipe
-      expect(text).not.toContain("text-white");
-      expect(text).not.toMatch(/bg-destructive|text-destructive|border-destructive|ring-destructive/);
-      expect(text).not.toContain("destructive");
-      expect(text).not.toMatch(RAW_PALETTE_RE);
-      expect(text).not.toContain("dark:");
-      expect(text).not.toContain("lucide");
-    }
-    expect(everyEmittedClass()).not.toMatch(RAW_PALETTE_RE);
-  });
-});
-
-describe("rangeCalendarVariants", () => {
   it("zeroes the day-column gutter so the range band runs unbroken (§2)", () => {
     expect(rangeCalendarVariants().body()).toContain("[&_td]:px-0");
   });

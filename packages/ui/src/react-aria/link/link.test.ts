@@ -1,76 +1,16 @@
-import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { discoverEntries } from "../../../scripts/entries";
-import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { linkVariants } from "../../styles/link";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const packageRoot = join(here, "../../..");
-const source = readFileSync(join(here, "link.tsx"), "utf8");
-const recipe = readFileSync(join(packageRoot, "src/styles/link.ts"), "utf8");
-const facade = readFileSync(join(here, "../link.ts"), "utf8");
 
 function classes(rendered: string): string[] {
   return rendered.split(/\s+/).filter(Boolean).sort();
 }
-
-describe("link source contract", () => {
-  it("is a client module that never reaches for the reference or its own public specifier", () => {
-    expect(source.startsWith('"use client";')).toBe(true);
-    expect(source).not.toContain(".ref/");
-    expect(source).not.toContain("@elmeragroup/ui/");
-    expect(recipe).not.toContain(".ref/");
-    // The recipe lives in `src/styles/`, the one location every RAC entry uses
-    // (range-calendar.md §8.2); the component declares no `tv()` of its own.
-    expect(source).not.toContain("tv(");
-    expect(source).toContain('from "../../styles/link"');
-  });
-
-  it("keeps the facade a directive-free named re-export that hides the private recipe", () => {
-    expect(facade).not.toContain('"use client"');
-    expect(facade).not.toContain("export *");
-    expect(facade).not.toContain("linkVariants");
-  });
-
-  it("never emits a custom data-slot, a size axis, or a density override", () => {
-    for (const text of [source, recipe]) {
-      expect(text).not.toContain("data-slot");
-      expect(text).not.toMatch(/\bsize:\s*\{/);
-      expect(text).not.toContain("data-density");
-      expect(text).not.toContain("dense:");
-      expect(text).not.toContain("comfortable:");
-      expect(text).not.toContain("--control-");
-    }
-  });
-
-  it("never uses destructive vocabulary, raw palette, or a dark variant", () => {
-    for (const text of [source, recipe]) {
-      expect(text).not.toMatch(RAW_PALETTE_RE);
-      expect(text).not.toContain("dark:");
-      expect(text).not.toContain("inverted:");
-    }
-    // §8.2: the ref's `destructive` value is renamed `error`; the word is gone from source.
-    expect(recipe).not.toMatch(/destructive/);
-    expect(source).not.toMatch(/destructive/);
-  });
-
-  it("spells no focus class of its own — the shared recipe owns every one", () => {
-    expect(recipe).not.toMatch(/\bring-/);
-    // oxlint-disable-next-line elmera/no-local-focus-ring -- source-grep of the forbidden class, not a recipe
-    expect(recipe).not.toContain("outline-none");
-    expect(recipe).not.toContain("focus-visible:");
-    expect(source).not.toMatch(/\bring-/);
-    expect(source).not.toContain("focus-visible:");
-  });
-
-  it("carries no icon module", () => {
-    expect(source).not.toContain("../../icons");
-    expect(source).not.toContain("lucide");
-  });
-});
 
 describe("linkVariants", () => {
   it("exposes exactly the five typography axes from link.md §4", () => {

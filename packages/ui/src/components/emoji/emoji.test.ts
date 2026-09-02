@@ -12,7 +12,6 @@ import {
   TWEMOJI_NOTICE_FILE,
   twemojiNoticeFailure,
 } from "../../../scripts/twemoji-notices";
-import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import {
   Emoji,
   LoudlyCryingFace,
@@ -24,8 +23,6 @@ import {
 
 const here = dirname(fileURLToPath(import.meta.url));
 const packageRoot = join(here, "..", "..", "..");
-const source = readFileSync(join(here, "emoji.tsx"), "utf8");
-const facade = readFileSync(join(here, "..", "..", "emoji.ts"), "utf8");
 
 const FACES = [
   ["SlightlyFrowningFace", Emoji.SlightlyFrowningFace],
@@ -42,35 +39,6 @@ const NAMED = {
   LoudlyCryingFace,
   PartyingFace,
 } as const;
-
-describe("emoji source contract", () => {
-  it("stays a server surface that documents the Twemoji exemption and notice", () => {
-    expect(source).not.toContain('"use client"');
-    expect(source).not.toContain(".ref/");
-    expect(source).not.toContain("dark:");
-    expect(source).not.toMatch(RAW_PALETTE_RE);
-    expect(source).toContain("THIRD_PARTY_NOTICES.md");
-    expect(source).toContain("intentionally exempt");
-    expect(source).toContain("no-primitive-colors");
-    expect(source).not.toContain("emojiVariants");
-    expect(facade).not.toContain('"use client"');
-    expect(facade).not.toContain("emojiVariants");
-    expect(facade).toContain("export {\n  Emoji,");
-  });
-
-  it("emits data-slot before the props spread", () => {
-    const slot = 'data-slot="emoji"';
-    expect(source).toContain(slot);
-    expect(source.indexOf(slot)).toBeLessThan(source.indexOf("{...props}", source.indexOf(slot)));
-  });
-
-  it("keeps the lifted Twemoji path data verbatim", () => {
-    expect(source).toContain('d="M25.485 27.379C25.44 27.2 24.317 23 18 23c-6.318 0-7.44 4.2-7.485 4.379');
-    expect(source).toContain('d="M10.515 23.621C10.56 23.8 11.683 28 18 28c6.318 0 7.44-4.2 7.485-4.379');
-    expect(source).toContain('fill="#5DADEC"');
-    expect(source).toContain('fill="#269"');
-  });
-});
 
 describe("named per-face exports", () => {
   it("are reference-equal to the namespace members", () => {

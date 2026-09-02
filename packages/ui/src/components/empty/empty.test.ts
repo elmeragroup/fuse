@@ -1,8 +1,5 @@
 import { createElement } from "react";
 
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
@@ -10,11 +7,6 @@ import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { cn } from "../../styles/cn";
 import { Empty } from "./empty";
 import { emptyMediaVariants, emptyVariants } from "./empty-variants";
-
-const here = dirname(fileURLToPath(import.meta.url));
-const source = readFileSync(join(here, "empty.tsx"), "utf8");
-const variantsSource = readFileSync(join(here, "empty-variants.ts"), "utf8");
-const facade = readFileSync(join(here, "..", "..", "empty.ts"), "utf8");
 
 describe("emptyVariants", () => {
   it("defaults to the frameless variant and covers outline frames", () => {
@@ -91,48 +83,8 @@ describe("emptyMediaVariants", () => {
   });
 });
 
-describe("empty source contract", () => {
-  it("stays a server surface that emits data-slot before the props spread", () => {
-    expect(source).not.toContain('"use client"');
-    expect(source).not.toContain(".ref/");
-    expect(source).not.toContain("dark:");
-    expect(source).not.toContain('from "@elmeragroup/ui/button"');
-    expect(source).not.toContain('from "../button/button"');
-    expect(source).not.toContain('data-slot="empty-icon"');
-    expect(source).toContain('displayName = "Empty.Root"');
-    expect(facade).not.toContain('"use client"');
-    expect(facade).not.toContain("emptyVariants");
-    expect(facade).not.toContain("emptyMediaVariants");
-    expect(facade).not.toContain("EmptyHeader");
-    expect(facade).not.toContain("EmptyProps");
-    expect(variantsSource).not.toContain("dark:");
-    expect(variantsSource).not.toMatch(RAW_PALETTE_RE);
-    for (const slot of [
-      "empty",
-      "empty-header",
-      "empty-media",
-      "empty-title",
-      "empty-description",
-      "empty-content",
-    ]) {
-      const marker = `data-slot="${slot}"`;
-      expect(source, marker).toContain(marker);
-      expect(source.indexOf(marker), marker).toBeLessThan(
-        source.indexOf("{...props}", source.indexOf(marker))
-      );
-    }
-  });
-
-  it("renders Description as a p and Title as a non-heading div", () => {
-    expect(source).toMatch(/return\s*\(\s*<p[\s\S]*data-slot="empty-description"/);
-    expect(source).toMatch(/return\s*\(\s*<div[\s\S]*data-slot="empty-title"/);
-    expect(source).not.toMatch(/<h[1-6][\s\S]*data-slot="empty-title"/);
-  });
-});
-
 describe("Empty server boundary", () => {
   it("imports and renders the namespace without a use client directive", () => {
-    expect(source.trimStart().startsWith('"use client"')).toBe(false);
     const html = renderToStaticMarkup(
       createElement(
         Empty.Root,

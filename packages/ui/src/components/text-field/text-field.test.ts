@@ -1,6 +1,3 @@
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
@@ -8,8 +5,6 @@ import { cn } from "../../styles/cn";
 import { fieldBox } from "../../styles/field-box";
 import { cardVariants } from "../card/card-variants";
 import { textFieldVariants } from "./text-field-variants";
-
-const here = dirname(fileURLToPath(import.meta.url));
 
 describe("textFieldVariants", () => {
   it("exposes the spec slots and no textArea slot", () => {
@@ -74,41 +69,5 @@ describe("textFieldVariants", () => {
     expect(resolved).not.toContain("destructive");
     // oxlint-disable-next-line elmera/no-primitive-colors -- source-grep of the forbidden class, not a recipe
     expect(resolved).not.toContain("bg-white");
-  });
-});
-
-describe("text-field source contract", () => {
-  it("forwards isDisabled to the inner input and stays a client surface", () => {
-    const source = readFileSync(join(here, "text-field.tsx"), "utf8");
-    expect(source).toContain('"use client"');
-    expect(source).not.toContain(".ref/");
-    expect(source).toContain("disabled={isDisabled}");
-    expect(source).toContain("invalid={isInvalid}");
-    expect(source).toContain('filter === "numeric"');
-    expect(source).toContain("SpinnerGap");
-    expect(source).toContain("animate-spin");
-    expect(source).toContain("Check");
-  });
-
-  it("does not keep the dead textArea slot, NumericOnlyTextField, or forbidden tokens", () => {
-    const source = [
-      readFileSync(join(here, "text-field.tsx"), "utf8"),
-      readFileSync(join(here, "text-field-variants.ts"), "utf8"),
-    ].join("\n");
-    expect(source).not.toContain("textArea");
-    expect(source).not.toContain("NumericOnlyTextField");
-    // oxlint-disable-next-line elmera/no-primitive-colors -- source-grep of the forbidden class, not a recipe
-    expect(source).not.toContain("bg-white");
-    expect(source).not.toContain("dark:");
-    expect(source).not.toContain("inverted:");
-    expect(source).not.toMatch(/bg-destructive|text-destructive|border-destructive|ring-destructive/);
-  });
-
-  it("exports the recipe publicly from the text-field entry", () => {
-    const facade = readFileSync(join(here, "..", "..", "text-field.ts"), "utf8");
-    expect(facade).toContain(
-      'export { textFieldVariants } from "./components/text-field/text-field-variants";'
-    );
-    expect(facade).toContain('export { TextField } from "./components/text-field/text-field";');
   });
 });

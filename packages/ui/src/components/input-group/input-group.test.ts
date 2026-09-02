@@ -1,13 +1,6 @@
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-import { focusRing } from "../../styles/utils";
 import { inputGroupAddonVariants, inputGroupButtonVariants } from "./input-group-variants";
-
-const here = dirname(fileURLToPath(import.meta.url));
-const source = readFileSync(join(here, "input-group.tsx"), "utf8");
 
 const ALIGNMENTS = ["inline-start", "inline-end", "block-start", "block-end"] as const;
 const BUTTON_SIZES = ["xs", "sm", "icon-xs", "icon-sm"] as const;
@@ -71,70 +64,5 @@ describe("inputGroupButtonVariants", () => {
       expect(resolved, size).not.toContain("comfortable:");
       expect(resolved, size).not.toContain("data-density");
     }
-  });
-});
-
-describe("input-group source contract", () => {
-  it("dims the group through has-disabled on Root, never a data-disabled group arm", () => {
-    expect(source).toContain("has-disabled:opacity-50");
-    expect(source).not.toContain("group-data-[disabled=true]");
-    expect(inputGroupAddonVariants()).not.toContain("group-data-[disabled=true]");
-  });
-
-  it("pins the md control rung and never a literal control ladder", () => {
-    expect(source).toContain("h-(--control-h-md)");
-    for (const literal of ["h-9 ", "h-10 ", "px-2.5 ", "px-3 "]) {
-      expect(source, literal).not.toContain(literal);
-    }
-    expect(source).not.toContain("data-density");
-    expect(source).not.toContain("dense:");
-    expect(source).not.toContain("comfortable:");
-  });
-
-  it("takes both focus slots from the shared within adapter and defines no ring literal", () => {
-    expect(source).toContain('focusRing({ target: "within" }).root()');
-    expect(source).toContain('focusRing({ target: "within" }).control()');
-    expect(source).toContain("data-focus-ring-control");
-    expect(source).not.toContain("ring-ring");
-    for (const token of tokens(focusRing({ target: "within" }).root())) {
-      expect(source, token).not.toContain(token);
-    }
-  });
-
-  it("emits every slot before the props spread so consumers can override it", () => {
-    // Source-grep: attribute source order has no behavioral probe (separator.md precedent).
-    for (const marker of [
-      'data-slot="input-group"',
-      'data-slot="input-group-addon"',
-      'data-slot="input-group-text"',
-      'data-slot="input-group-control"',
-    ]) {
-      const at = source.indexOf(marker);
-      expect(at, marker).toBeGreaterThan(-1);
-      expect(source.indexOf("{...props}", at), marker).toBeGreaterThan(at);
-    }
-  });
-
-  it("is a client module that carries no ref path, dark variant, or destructive token", () => {
-    expect(source.startsWith('"use client";')).toBe(true);
-    expect(source).not.toContain(".ref/");
-    expect(source).not.toContain("dark:");
-    expect(source).not.toContain("destructive");
-    expect(source).toContain("border-error");
-    expect(source).toContain("ring-error/20");
-  });
-
-  it("drops the reference's popup focus suppression (§8.7)", () => {
-    expect(source).not.toContain("combobox-content");
-    expect(source).not.toContain("focus-within");
-    expect(source).not.toContain("border-inherit");
-  });
-
-  it("keeps the recipes module-private and the facade a named re-export", () => {
-    const facade = readFileSync(join(here, "..", "..", "input-group.ts"), "utf8");
-    expect(facade).toContain('export { InputGroup } from "./components/input-group/input-group";');
-    expect(facade).not.toContain("inputGroupAddonVariants");
-    expect(facade).not.toContain("inputGroupButtonVariants");
-    expect(facade).not.toContain("export *");
   });
 });

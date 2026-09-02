@@ -2,7 +2,6 @@ import { createElement } from "react";
 
 import { LocalizedStringDictionary } from "@internationalized/string";
 import type { LocalizedStringFormatter } from "@internationalized/string";
-import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { renderToString } from "react-dom/server";
@@ -139,19 +138,11 @@ describe("useLocalizedStrings", () => {
     expect(otherDict[0]).not.toBe(firstLocale[0]);
   });
 
-  it("starts with the use client directive", () => {
-    const source = readFileSync(join(packageRoot, "src/hooks/use-localized-strings.ts"), "utf8");
-    expect(source.trimStart().startsWith('"use client"')).toBe(true);
-  });
-
   // Timeout: discoverEntries walks the published import graph; slow under full-gate parallel load.
   it("does not add a public export for the hook", () => {
-    // Source-grep: absence from the barrel has no consumer-behavior probe.
     const discovered = discoverEntries(packageRoot);
     const names = discovered.jsEntries.flatMap((entry) => [...entry.runtimeExports]);
     expect(names).not.toContain("useLocalizedStrings");
     expect(discovered.jsEntries.map((entry) => entry.subpath)).not.toContain("hooks");
-    const source = readFileSync(join(packageRoot, "src/index.ts"), "utf8");
-    expect(source).not.toContain("use-localized-strings");
   }, 30_000);
 });

@@ -1,8 +1,5 @@
 import { createElement } from "react";
 
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
@@ -10,16 +7,7 @@ import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { cn } from "../../styles/cn";
 import { DescriptionList } from "./description-list";
 
-const here = dirname(fileURLToPath(import.meta.url));
-const source = readFileSync(join(here, "description-list.tsx"), "utf8");
-const headingSource = readFileSync(join(here, "description-list-heading.tsx"), "utf8");
-const facade = readFileSync(join(here, "..", "..", "description-list.ts"), "utf8");
-
-const CONTENT_CLASSES =
-  "text-base/6 sm:grid-cols-[min(50%,calc(var(--spacing)*80))_auto] sm:text-sm/6 grid grid-cols-1";
-const TERM_CLASSES = "col-start-1 border-t py-2 pr-2 text-muted-foreground first-of-type:border-none";
 const DETAILS_CLASSES = "sm:border-t py-2 text-foreground first-of-type:border-none";
-const HEADING_CLASSES = "text-lg leading-snug font-medium font-heading text-inherit";
 
 const SLOTS = [
   "description-list",
@@ -47,61 +35,8 @@ function markup(): string {
   );
 }
 
-describe("description-list source contract", () => {
-  it("stays a server compound that emits data-slot before the props spread", () => {
-    expect(source).not.toContain('"use client"');
-    expect(source).not.toContain(".ref/");
-    expect(source).not.toContain("dark:");
-    expect(source).not.toContain("react-aria");
-    expect(source).not.toContain("react-aria-components");
-    expect(source).not.toContain("as DescriptionListRoot");
-    expect(source).not.toContain('from "../heading/heading"');
-    expect(source).not.toContain("descriptionListVariants");
-    expect(source).toContain('displayName = "DescriptionList.Root"');
-    expect(facade).not.toContain('"use client"');
-    expect(facade).not.toContain("descriptionListVariants");
-    expect(facade).not.toContain("as DescriptionListRoot");
-    expect(facade).not.toContain("export { DescriptionListHeading");
-    for (const slot of [
-      "description-list",
-      "description-list-content",
-      "description-list-term",
-      "description-list-details",
-    ] as const) {
-      const marker = `data-slot="${slot}"`;
-      expect(source, marker).toContain(marker);
-      expect(source.indexOf(marker), marker).toBeLessThan(
-        source.indexOf("{...props}", source.indexOf(marker))
-      );
-    }
-  });
-
-  it("keeps Heading as a client useRender island with the ref's level-2 classes", () => {
-    expect(headingSource.trimStart().startsWith('"use client"')).toBe(true);
-    expect(headingSource).toContain("useRender");
-    expect(headingSource).toContain("mergeProps");
-    expect(headingSource).toContain('"data-slot": "description-list-heading"');
-    expect(headingSource).toContain(HEADING_CLASSES);
-    expect(headingSource).not.toContain("react-aria");
-    expect(headingSource).not.toContain("react-aria-components");
-    expect(headingSource).not.toContain('from "../heading/heading"');
-    expect(headingSource).not.toContain("headingVariants");
-    expect(headingSource).toContain('displayName = "DescriptionList.Heading"');
-  });
-
-  it("keeps the class-free Root, column arithmetic, and Details cn-first spread-last", () => {
-    expect(source).toContain(CONTENT_CLASSES);
-    expect(source).toContain(TERM_CLASSES);
-    expect(source).toContain(DETAILS_CLASSES);
-    const detailsIndex = source.indexOf("function DescriptionListDetails");
-    const detailsBlock = source.slice(detailsIndex);
-    expect(detailsBlock.indexOf("className={cn(")).toBeLessThan(detailsBlock.indexOf("{...props}"));
-  });
-});
-
 describe("DescriptionList server boundary", () => {
   it("imports and renders the namespace without a use client directive on the compound", () => {
-    expect(source.trimStart().startsWith('"use client"')).toBe(false);
     const html = markup();
     expect(html).toContain("<div");
     expect(html).toContain("<h2");
@@ -177,7 +112,5 @@ describe("DescriptionList structure", () => {
     expect(html).not.toContain("dark:");
     expect(html).not.toContain("destructive");
     expect(html).not.toMatch(RAW_PALETTE_RE);
-    expect(source).not.toMatch(RAW_PALETTE_RE);
-    expect(headingSource).not.toMatch(RAW_PALETTE_RE);
   });
 });

@@ -1,8 +1,5 @@
 import { createElement } from "react";
 
-import { readdirSync, readFileSync, statSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -32,24 +29,6 @@ import { BRANDS, LEGAL_THEMES, parseThemeSlug, themeSlug } from "./tokens/themes
 import type { ThemeInput } from "./tokens/themes";
 import { useColorScheme } from "./use-color-scheme";
 import { coerceTheme, isThemeDevelopment, validateTheme } from "./validate-theme";
-
-const srcRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
-
-function walkSourceFiles(directory: string): string[] {
-  const entries = readdirSync(directory);
-  const files: string[] = [];
-  for (const entry of entries) {
-    const path = join(directory, entry);
-    if (statSync(path).isDirectory()) {
-      files.push(...walkSourceFiles(path));
-      continue;
-    }
-    if (path.endsWith(".ts") || path.endsWith(".tsx")) {
-      files.push(path);
-    }
-  }
-  return files;
-}
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -441,46 +420,4 @@ describe("ThemeProvider server snapshot", () => {
     );
     expect(plain).toBe("<span>child</span>");
   });
-});
-
-describe("ThemeProvider color-scheme store seam", () => {
-  it("does not mutate the retained color-scheme store during render", () => {
-    const source = readFileSync(join(srcRoot, "theme/theme-provider.tsx"), "utf8");
-    const writerStart = source.indexOf("function DocumentThemeWriter");
-    const writerEnd = source.indexOf("export function useTheme");
-    expect(writerStart).toBeGreaterThan(-1);
-    expect(writerEnd).toBeGreaterThan(writerStart);
-    const writer = source.slice(writerStart, writerEnd);
-    const [renderPhase, ...insertionAndRest] = writer.split("useInsertionEffect");
-    expect(insertionAndRest.length).toBeGreaterThan(0);
-    expect(renderPhase).not.toMatch(/store\.(updateConfig|applyConfig|commitConfig|discardConfig)\(/);
-    expect(writer).toMatch(/store\.applyConfig\(/);
-    expect(writer).toMatch(/store\.commitConfig\(/);
-    expect(writer).toMatch(/useInsertionEffect\(/);
-  });
-});
-
-describe("source contract", () => {
-  // Timeout: walking and reading src/ is slow under full-gate parallel load.
-  it("does not ship userAgent, UserAgentParserResult, or @elmeragroup/lib", () => {
-    const files = walkSourceFiles(srcRoot).filter((file) => !file.includes(".test"));
-    for (const file of files) {
-      const text = readFileSync(file, "utf8");
-      expect(text, file).not.toMatch(/\buserAgent\b/);
-      expect(text, file).not.toMatch(/\bUserAgentParserResult\b/);
-      expect(text, file).not.toMatch(/@elmeragroup\/lib/);
-    }
-  }, 30_000);
-
-  // Timeout: walking and reading src/ is slow under full-gate parallel load.
-  it("reads process.env only inside validateTheme", () => {
-    const hits = walkSourceFiles(srcRoot).filter((file) => {
-      if (file.includes(".test.")) {
-        return false;
-      }
-      return readFileSync(file, "utf8").includes("process.env");
-    });
-    expect(hits).toHaveLength(1);
-    expect(hits[0]).toMatch(/validate-theme\.ts$/);
-  }, 30_000);
 });

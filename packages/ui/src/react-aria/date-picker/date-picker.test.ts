@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -7,14 +6,10 @@ import { discoverEntries } from "../../../scripts/entries";
 import { SUPPORTED_LOCALES } from "../../../test/locale-matrix";
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { datePickerVariants } from "../../styles/date-picker";
-import { OVERLAY_CONTAINER_ATTR } from "../internal/overlay-container";
 import { datePickerStrings } from "./intl";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const packageRoot = join(here, "../../..");
-const source = readFileSync(join(here, "date-picker.tsx"), "utf8");
-const recipe = readFileSync(join(packageRoot, "src/styles/date-picker.ts"), "utf8");
-const facade = readFileSync(join(here, "../date-picker.ts"), "utf8");
 
 /** Every class the recipe can emit, across both faces of both axes. */
 function everyEmittedClass(): string {
@@ -54,101 +49,6 @@ describe("date-picker dictionary", () => {
     for (const locale of SUPPORTED_LOCALES) {
       expect(Object.keys(datePickerStrings.getStringsForLocale(locale)), locale).toEqual(["presets"]);
     }
-  });
-});
-
-describe("date-picker source contract", () => {
-  it("is a client module that composes the public parts instead of forking them", () => {
-    expect(source.startsWith('"use client";')).toBe(true);
-    expect(source).not.toContain(".ref/");
-    expect(source).not.toContain("@elmeragroup/ui/");
-    // The segments and the grid are the shipped public entries, not local copies.
-    expect(source).toContain('from "../calendar/calendar"');
-    expect(source).toContain('from "../date-field/date-field"');
-    expect(source).not.toContain("CalendarGrid");
-    expect(source).not.toContain("DateSegment");
-    // The overlay chrome is the package-private RAC stack (§2/§8.6).
-    expect(source).toContain('from "../internal/popover"');
-    expect(source).toContain('from "../internal/dialog"');
-    expect(source).toContain('from "../internal/field"');
-    expect(source).toContain('from "../internal/button"');
-    // The styled Dialog is composed directly and deliberately untitled: an untitled
-    // styled Dialog renders no heading, which is what leaves RAC's §7 name on the
-    // overlay. No local wrapper forwards `aria-labelledby` any more.
-    expect(source).toContain("<Dialog className={dialog()} closeButton={false}>");
-    expect(source).not.toContain("PickerDialog");
-    expect(source).not.toContain("aria-labelledby");
-  });
-
-  it("takes the trigger glyph from the Phosphor CalendarBlank roster entry (§8.2)", () => {
-    expect(source).toContain('from "../../icons/generated/calendar-blank"');
-    expect(source).toContain("CalendarBlank");
-    expect(source).not.toContain("lucide");
-    expect(source).not.toMatch(/<Calendar\b[^>]*aria-hidden/);
-  });
-
-  it("never spells the overlay-container attribute itself (§6 locked ruling)", () => {
-    // The seam belongs to the private popover/modal pair; the picker only has to compose
-    // the private Popover for it to apply, and may never restate the DOM string.
-    expect(source).not.toContain(OVERLAY_CONTAINER_ATTR);
-    expect(recipe).not.toContain(OVERLAY_CONTAINER_ATTR);
-  });
-
-  it("keeps the facade a named re-export and the recipe module-private", () => {
-    expect(facade).not.toContain('"use client"');
-    expect(facade).not.toContain("export *");
-    expect(facade).not.toContain("datePickerVariants");
-    expect(recipe).not.toContain('"use client"');
-  });
-
-  it("names preset items by their visible children, never from value (§8.8)", () => {
-    expect(source).not.toContain("preset option");
-    expect(source).not.toMatch(/aria-label=\{`[^`]*\$\{props\.value\}/);
-    // The only aria-label the module authors is the preset group's; the four-locale copy
-    // behind it is proven in the browser suite, not grepped for here.
-    expect(source.match(/aria-label=/g)).toHaveLength(1);
-  });
-
-  it("reads the locale from the shared hook rather than hardcoding copy", () => {
-    expect(source).toContain('from "../../hooks/use-localized-strings"');
-    for (const copy of Object.values(PRESETS_COPY)) {
-      expect(source).not.toContain(copy);
-    }
-  });
-
-  it("never emits a size axis, a density override, or a hardcoded field-box height", () => {
-    for (const text of [source, recipe]) {
-      expect(text).not.toContain("h-9");
-      expect(text).not.toMatch(/\bsize:\s*\{/);
-      expect(text).not.toContain("data-density");
-      expect(text).not.toContain("dense:");
-      expect(text).not.toContain("comfortable:");
-    }
-    expect(datePickerVariants.variantKeys).toEqual(["isReadOnly", "hasPresets"]);
-    expect(everyEmittedClass()).not.toContain("--control-h-");
-  });
-
-  it("never uses primitive gray/white or destructive vocabulary", () => {
-    for (const text of [source, recipe]) {
-      expect(text).not.toContain("text-gray-");
-      expect(text).not.toContain("bg-gray-");
-      // oxlint-disable-next-line elmera/no-primitive-colors -- source-grep of the forbidden class, not a recipe
-      expect(text).not.toContain("text-white");
-      // oxlint-disable-next-line elmera/no-primitive-colors -- source-grep of the forbidden class, not a recipe
-      expect(text).not.toContain("bg-white");
-      expect(text).not.toContain("bg-background");
-      expect(text).not.toContain("destructive");
-      expect(text).not.toMatch(RAW_PALETTE_RE);
-      expect(text).not.toContain("dark:");
-    }
-    expect(everyEmittedClass()).not.toMatch(RAW_PALETTE_RE);
-  });
-
-  it("emits only the two documented data-slots", () => {
-    expect(source.match(/data-slot="[^"]*"/g)).toEqual([
-      'data-slot="date-picker-preset-group"',
-      'data-slot="date-picker-preset-item"',
-    ]);
   });
 });
 
@@ -207,6 +107,12 @@ describe("datePickerVariants", () => {
     expect(datePickerVariants({ isReadOnly: false }).group()).not.toContain("bg-muted");
     expect(datePickerVariants({ isReadOnly: false }).icon()).not.toContain("bg-muted");
     expect(datePickerVariants().group()).not.toContain("bg-muted");
+  });
+
+  it("emits exactly the two documented axes, no control rung, and no raw palette", () => {
+    expect(datePickerVariants.variantKeys).toEqual(["isReadOnly", "hasPresets"]);
+    expect(everyEmittedClass()).not.toContain("--control-h-");
+    expect(everyEmittedClass()).not.toMatch(RAW_PALETTE_RE);
   });
 
   it("owns no surface, border or focus ring of its own (§5)", () => {

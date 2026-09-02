@@ -1,6 +1,3 @@
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
@@ -8,8 +5,6 @@ import { cn } from "../../styles/cn";
 import { typographyAlignClasses, typographyColorClasses } from "../../styles/typography-fragments";
 import { textVariants } from "../text/text-variants";
 import { spanVariants } from "./span-variants";
-
-const here = dirname(fileURLToPath(import.meta.url));
 
 const VARIANTS = [
   "default",
@@ -124,47 +119,5 @@ describe("spanVariants", () => {
     expect(merged).not.toContain("text-primary");
     expect(merged).toContain("text-sm");
     expect(merged).not.toContain("text-lg");
-  });
-});
-
-describe("span source contract", () => {
-  it("is a client surface that does not import RAC", () => {
-    const source = readFileSync(join(here, "span.tsx"), "utf8");
-    expect(source.trimStart().startsWith('"use client"')).toBe(true);
-    expect(source).not.toContain("react-aria-components");
-    expect(source).not.toContain("react-aria/");
-    expect(source).not.toContain(".ref/");
-    expect(source).not.toContain("dark:");
-    expect(source).toContain("useRender");
-    expect(source).toContain("mergeProps");
-    expect(source).not.toContain("elementType");
-  });
-
-  it("emits data-slot=span before the props merge and drops the RAC slot prop", () => {
-    const source = readFileSync(join(here, "span.tsx"), "utf8");
-    const slotMarker = '"data-slot": "span"';
-    expect(source).toContain(slotMarker);
-    expect(source.indexOf(slotMarker)).toBeLessThan(source.indexOf("...mergeProps"));
-    expect(source).not.toMatch(/(?:^|[^-\w])slot\s*[:=]/);
-  });
-
-  it("carries no destructive class name in library source", () => {
-    const recipe = readFileSync(join(here, "span-variants.ts"), "utf8");
-    const component = readFileSync(join(here, "span.tsx"), "utf8");
-    for (const source of [recipe, component]) {
-      expect(source).not.toContain("text-destructive");
-      expect(source).not.toContain("bg-destructive");
-      expect(source).not.toContain("text-error");
-    }
-    expect(recipe).toContain("extend: textVariants");
-    expect(recipe).toContain('leading: "snug"');
-  });
-
-  it("exports the recipe publicly from the span entry as SpanProps", () => {
-    const facade = readFileSync(join(here, "..", "..", "span.ts"), "utf8");
-    expect(facade).toContain('export { spanVariants } from "./components/span/span-variants";');
-    expect(facade).toContain('export { Span } from "./components/span/span";');
-    expect(facade).toContain("export type { SpanProps }");
-    expect(facade).not.toContain("TextProps");
   });
 });

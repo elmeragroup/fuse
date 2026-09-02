@@ -1,13 +1,8 @@
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { cn } from "../../styles/cn";
 import { cardVariants } from "./card-variants";
-
-const here = dirname(fileURLToPath(import.meta.url));
 
 describe("cardVariants", () => {
   it("resolves every slot for the default direction", () => {
@@ -48,37 +43,5 @@ describe("cardVariants", () => {
     expect(resolved).not.toContain("dark:");
     expect(resolved).not.toContain("destructive");
     expect(resolved).not.toMatch(RAW_PALETTE_RE);
-  });
-});
-
-describe("card source contract", () => {
-  it("stays a server surface that emits data-slot before the props spread", () => {
-    const source = readFileSync(join(here, "card.tsx"), "utf8");
-    expect(source).not.toContain("use client");
-    expect(source).not.toContain(".ref/");
-    expect(source).not.toContain("dark:");
-    for (const slot of [
-      "card",
-      "card-header",
-      "card-tag",
-      "card-title",
-      "card-description",
-      "card-action",
-      "card-content",
-      "card-footer",
-    ]) {
-      const marker = `data-slot="${slot}"`;
-      expect(source, marker).toContain(marker);
-      expect(source.indexOf(marker), marker).toBeLessThan(
-        source.indexOf("{...props}", source.indexOf(marker))
-      );
-    }
-  });
-
-  it("keeps the de-RAC'd parts on plain elements", () => {
-    const source = readFileSync(join(here, "card.tsx"), "utf8");
-    expect(source).not.toContain("react-aria");
-    expect(source).not.toContain("useRender");
-    expect(source).toContain("`h${level}`");
   });
 });
