@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
@@ -301,4 +301,37 @@ describe("react-aria overlay-container seam", () => {
     expect(readSrc("react-aria/internal/popover.tsx")).not.toContain("data-overlay-container");
     expect(readSrc("react-aria/internal/modal.tsx")).not.toContain("data-overlay-container");
   });
+});
+
+describe("Twemoji artwork fidelity", () => {
+  // Why not a lint rule: the contract is that the bundled third-party artwork
+  // is a verbatim lift of the Twemoji path data the NOTICE file attributes
+  // (emoji.md §5). A lint rule cannot know which literal is the licensed
+  // original; the path data itself is the contract, so it is pinned here.
+  it("keeps the lifted Twemoji path data and fills verbatim", () => {
+    const source = readSrc("components/emoji/emoji.tsx");
+    expect(source).toContain('d="M25.485 27.379C25.44 27.2 24.317 23 18 23c-6.318 0-7.44 4.2-7.485 4.379');
+    expect(source).toContain('d="M10.515 23.621C10.56 23.8 11.683 28 18 28c6.318 0 7.44-4.2 7.485-4.379');
+    expect(source).toContain('fill="#5DADEC"');
+    expect(source).toContain('fill="#269"');
+  });
+});
+
+describe("overlay layer", () => {
+  // Why not a lint rule: the invariant is a count across two places — the
+  // shared overlay module spells `z-50` once (theming.md §7.4) and no
+  // component restates it (popover.md §8.4). A lint rule banning the class
+  // would need a per-file exemption for exactly the module that owns it, and
+  // could not assert the "exactly once" half.
+  it("is declared once in overlay-classes.ts and nowhere else in component source", () => {
+    const overlayClasses = readSrc("components/overlay/overlay-classes.ts");
+    expect(overlayClasses.match(/z-50/gu)).toHaveLength(1);
+    expect(overlayClasses).toContain('export const overlayLayer = "z-50"');
+
+    const owner = join(SRC_ROOT, "components/overlay/overlay-classes.ts");
+    const restating = walkSourceFiles(SRC_ROOT)
+      .filter((file) => file !== owner && readFileSync(file, "utf8").includes("z-50"))
+      .map((file) => relative(SRC_ROOT, file));
+    expect(restating).toEqual([]);
+  }, 30_000);
 });
