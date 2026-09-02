@@ -1,6 +1,6 @@
 # 0005 — Single-package architecture with kumo-style tsdown builds and dual CSS
 
-Date: 2026-08-17. Status: accepted; amended 2026-08-18 to preserve source-level RSC boundaries.
+Date: 2026-08-17. Status: accepted; amended 2026-08-18 to preserve source-level RSC boundaries; amended 2026-09-02 — chart deferred (Wave 9), recharts not a published peer.
 
 ## Context
 
@@ -10,10 +10,10 @@ Both reference monorepos ship raw TSX consumed via `transpilePackages` — a sha
 
 - **One public package**: `@elmeragroup/ui` with subpath exports (`/theme`, `/icons`, `/illustrations`, per-component paths, CSS entries). Tooling lives in separate `tooling/*` packages. No `/tokens` or `/icons` sibling packages.
 - **Build**: tsdown/rolldown, unbundled ESM-only — one JS+d.ts pass preserves a one-source/one-output module graph and each source module's own `'use client'` directive; npm dependencies remain external. `publint` + `arethetypeswrong` gate CI; the exports map is code-generated with a test asserting every subpath resolves.
-- **Exports**: per-component subpaths plus a root barrel scoped to the 56 bare components + `/theme`; the 11 interim `react-aria/*` entries, icons, and illustrations remain subpath-only; `sideEffects: false` except `*.css`.
+- **Exports**: per-component subpaths plus a root barrel scoped to the 55 shipped bare components + `/theme`; `chart` is deferred (Wave 9); the 11 interim `react-aria/*` entries, icons, and illustrations remain subpath-only; `sideEffects: false` except `*.css`.
 - **CSS**: dual distribution — raw Tailwind v4 source (consumer adds one `@source` line so utilities survive node_modules non-scanning) and a precompiled standalone bundle for non-Tailwind apps; theme CSS is its own entry in both.
 - **Workspace consumers**: `publishConfig.directory` — src exports in-repo, dist when published; CI tests the published shape.
-- **Dependencies**: react/react-dom peers `^19`; base-ui, react-aria-components, Phosphor pinned regular; recharts optional peer.
+- **Dependencies**: react/react-dom peers `^19`; base-ui, react-aria-components, Phosphor pinned regular; recharts is a future optional peer when chart ships.
 
 ## Alternatives rejected
 
@@ -31,3 +31,7 @@ Both reference monorepos ship raw TSX consumed via `transpilePackages` — a sha
 - Adding a component = adding a source file; the exports map and its test regenerate.
 - Non-Tailwind consumers are first-class via the standalone CSS bundle.
 - The public/private name-collision check against the internal `@elmeragroup/*` scope belongs to the release pipeline.
+
+## Amendment 2026-09-02 — chart deferred, recharts not a published peer
+
+`chart` is Wave 9 ([roadmap](../spec/roadmap.md) §11). The barrel is 55 shipped bare components + `/theme`. `recharts` is a future optional peer, not a published range, until chart ships.

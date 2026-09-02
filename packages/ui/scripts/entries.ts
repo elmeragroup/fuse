@@ -6,7 +6,7 @@ import { BESPOKE_ICON_NAMES, LOGO_NAMES, PHOSPHOR_ICON_NAMES } from "../src/icon
 import { requireFlagsDirectory } from "./flag-assets.ts";
 import { parseFacadeValueExports } from "./parse-facade.ts";
 
-/** Appendix A — 56 bare component entries. */
+/** Appendix A — 55 shipped bare component entries plus 1 deferred (`chart`). */
 export const BARE_COMPONENT_ENTRIES = [
   "accordion",
   "alert",
@@ -66,6 +66,12 @@ export const BARE_COMPONENT_ENTRIES = [
   "tooltip",
 ] as const;
 
+/**
+ * Allowlisted entries with no source until they ship.
+ * `chart` is Wave 9 — docs/spec/roadmap.md §11 (ruling 2026-09-02).
+ */
+export const DEFERRED_ENTRIES = ["chart"] as const;
+
 /** Appendix A — 11 quarantined react-aria interim entries. */
 export const RAC_ENTRIES = [
   "calendar",
@@ -93,7 +99,6 @@ export const runtimeDependencies = [
   "clsx",
   "tailwind-merge",
   "tailwind-variants",
-  "recharts",
   "react-aria-components",
   "react-aria",
   "@internationalized/date",
@@ -107,7 +112,6 @@ export const PUBLISHED_PEER_RANGES = {
   react: "^19",
   "react-dom": "^19",
   tailwindcss: "^4",
-  recharts: "^2.15.4",
 } as const;
 
 export const PUBLISHED_DEPENDENCY_RANGES = {
@@ -126,8 +130,6 @@ export const PUBLISHED_DEPENDENCY_RANGES = {
   "sugar-high": "^1.2.1",
 } as const;
 
-const REQUIRED_JS_SUBPATHS: readonly string[] = [".", "theme"];
-
 function isBareComponent(subpath: string): boolean {
   for (const name of BARE_COMPONENT_ENTRIES) {
     if (name === subpath) {
@@ -135,6 +137,10 @@ function isBareComponent(subpath: string): boolean {
     }
   }
   return false;
+}
+
+export function isDeferredEntry(subpath: string, deferred: readonly string[] = DEFERRED_ENTRIES): boolean {
+  return deferred.includes(subpath);
 }
 const IMPLEMENTATION_DIRECTORIES = new Set(["components", "hooks", "icons", "styles", "theme", "react-aria"]);
 
@@ -413,30 +419,22 @@ function flagAssetPattern(packageRoot: string): AssetPatternExport | undefined {
   };
 }
 
-export function discoverEntries(packageRoot: string): DiscoveredEntries {
-  const unexpected = unexpectedJsEntryFiles(packageRoot);
-  if (unexpected.length > 0) {
-    throw new Error(
-      `Unexpected public entry files (not in architecture Appendix A): ${unexpected.join(", ")}`
-    );
-  }
-
+export function discoverJsEntriesFromAllowlist(
+  packageRoot: string,
+  allow: readonly string[],
+  deferred: readonly string[] = DEFERRED_ENTRIES
+): JsExportEntry[] {
   const jsEntries: JsExportEntry[] = [];
   const seenSubpaths = new Set<string>();
-  const allow = [
-    ...NON_COMPONENT_JS_ENTRIES,
-    ...BARE_COMPONENT_ENTRIES,
-    ...RAC_ENTRIES.map((name) => `react-aria/${name}`),
-  ];
   let rootSourceFile: string | undefined;
 
   for (const subpath of allow) {
+    if (isDeferredEntry(subpath, deferred)) {
+      continue;
+    }
     const sourceFile = resolveJsSource(packageRoot, subpath);
     if (sourceFile === undefined) {
-      if (REQUIRED_JS_SUBPATHS.includes(subpath)) {
-        throw new Error(`Missing required source entry for ${subpath}`);
-      }
-      continue;
+      throw new Error(`Missing source entry for ${subpath}`);
     }
     if (seenSubpaths.has(subpath)) {
       throw new Error(`Duplicate public entry ${subpath}`);
@@ -455,7 +453,7 @@ export function discoverEntries(packageRoot: string): DiscoveredEntries {
   }
 
   if (rootSourceFile === undefined) {
-    throw new Error("Missing required source entry for .");
+    throw new Error("Missing source entry for .");
   }
   jsEntries.unshift({
     subpath: ".",
@@ -463,6 +461,23 @@ export function discoverEntries(packageRoot: string): DiscoveredEntries {
     runtimeExports: uniqueBarrelRuntimeExports(jsEntries),
     inRootBarrel: true,
   });
+  return jsEntries;
+}
+
+export function discoverEntries(packageRoot: string): DiscoveredEntries {
+  const unexpected = unexpectedJsEntryFiles(packageRoot);
+  if (unexpected.length > 0) {
+    throw new Error(
+      `Unexpected public entry files (not in architecture Appendix A): ${unexpected.join(", ")}`
+    );
+  }
+
+  const allow = [
+    ...NON_COMPONENT_JS_ENTRIES,
+    ...BARE_COMPONENT_ENTRIES,
+    ...RAC_ENTRIES.map((name) => `react-aria/${name}`),
+  ];
+  const jsEntries = discoverJsEntriesFromAllowlist(packageRoot, allow);
 
   const css = cssEntries(packageRoot);
   const assetPatterns = flagAssetPattern(packageRoot);

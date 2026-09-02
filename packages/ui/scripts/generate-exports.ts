@@ -210,16 +210,12 @@ type PublishManifest = {
   publishConfig: { access: "public" };
 };
 
-function publishedPeerDependencies(declared: WorkspacePeers): WorkspacePeers {
-  const peers: WorkspacePeers = {
+function publishedPeerDependencies(): WorkspacePeers {
+  return {
     react: PUBLISHED_PEER_RANGES.react,
     "react-dom": PUBLISHED_PEER_RANGES["react-dom"],
     tailwindcss: PUBLISHED_PEER_RANGES.tailwindcss,
   };
-  if (declared.recharts !== undefined) {
-    peers.recharts = PUBLISHED_PEER_RANGES.recharts;
-  }
-  return peers;
 }
 
 export function publishedDependencies(declared: WorkspaceDependencies): WorkspaceDependencies {
@@ -300,7 +296,7 @@ export function writePublishManifest(packageRoot: string): void {
     type: "module",
     sideEffects: ["**/*.css"],
     exports: exportBindingsObject(buildPublishExportMap(discovered)),
-    peerDependencies: publishedPeerDependencies(workspace.peerDependencies),
+    peerDependencies: publishedPeerDependencies(),
     peerDependenciesMeta: workspace.peerDependenciesMeta,
     dependencies: publishedDependencies(workspace.dependencies),
     publishConfig: { access: "public" },

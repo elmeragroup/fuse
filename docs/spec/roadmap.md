@@ -78,3 +78,11 @@ Directional chapter for `@elmeragroup/ui`: work deliberately deferred out of v1,
 - **Already prepared**: `Density` / `densityAttributes` / `defaultDensityForVariant` are public and server-safe ([theming](theming.md) §7.2). Variant does not select `--control-*` in generated theme CSS. Library metrics stay `:root[data-density]`-anchored. `ThemeProvider` and `ThemeScope` have no `density` prop.
 - **Out of this item**: nested `data-density` in library CSS; a reserved `"system"` density value (there is no system density resolver); table row density (`h-10` / cell `p-2` / in-frame calc — [conventions](components/conventions.md)); OrderModule app migrations.
 - **Cost when triggered**: a host-placed pre-paint density stamp (not a copied IIFE); persistence and storage-failure behaviour; cross-tab sync; scroll/form/overlay preservation on toggle; docs picker only if product wants an override preview. Revisit `ThemeProvider` only if diagnosis/runtime echo is actually required — do not add a prop solely to repeat a server-known primitive.
+
+## 11 Chart (Wave 9)
+
+- **What**: ship `@elmeragroup/ui/chart` — recharts composition wrappers (`Chart.Container` / tooltip / legend / style) per [chart](components/chart.md). `recharts` becomes an optional peer; the entry is removed from `DEFERRED_ENTRIES` and joins the exports map, barrel, packed-name assertions, and size budgets.
+- **Why deferred**: ruling 2026-09-02 — Chart (wayfinder ticket 072) moved to Wave 9 and does not gate the v1 publish. No consumer surface requires it for v1.
+- **Trigger**: a consuming product committing to a charted surface, with `recharts` accepted as an optional peer.
+- **Already prepared**: the component spec, `--chart-1..8` tokens, and the exports-codegen deferred-entry seam (`DEFERRED_ENTRIES` in `packages/ui/scripts/entries.ts`). No docs page or nav entry until the component exists.
+- **Completion criteria**: `chart.ts` source; `recharts` in published optional-peer ranges; size-limit row excluding recharts; docs page + §10 demos; `DEFERRED_ENTRIES` empty or without `chart`.
