@@ -1190,7 +1190,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Accessible name for the remove button. Defaults to the locale dictionary `removeItem` formatted with the chip's string children (the displayed value).",
+          "description": "Accessible name for the remove button. Defaults to dictionary `removeItem` formatted with the chip's string children, then `itemToStringLabel(value)`. When neither yields text, the localized \"Remove\" string with no trailing space.",
           "required": false
         },
         {

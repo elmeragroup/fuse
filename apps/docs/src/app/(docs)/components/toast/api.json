@@ -114,7 +114,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Accessible name for the close button. Defaults to the locale dictionary `toast.close`. Rendered sr-only unless the consumer supplies visible children.",
+          "description": "Accessible name for the close button. Defaults to the locale dictionary `toast.close`. Icon-only Close sets it as `aria-label`; visible children replace the icon face and name the control themselves.",
           "required": false
         }
       ]

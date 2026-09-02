@@ -51,12 +51,12 @@ All rendering parts take `className` (merged via `cn`) and forward the rest of t
 
 **Dialog.Content** — `ComponentProps<DialogPrimitive.Popup>` + `VariantProps<dialogContentVariants>` plus:
 
-| Prop              | Type                                    | Default                      | Notes                                                                                                                                                                                                 |
-| ----------------- | --------------------------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `size`            | 13-value axis, see §4                   | `"md"`                       | max-width of the popup                                                                                                                                                                                |
-| `showCloseButton` | `boolean`                               | `true`                       | corner close button: `Dialog.Close` rendered as `Button variant="ghost" size="icon-sm"` with `hit-area-1 absolute top-4 right-4`, Phosphor `X` icon + locale-dictionary `closeLabel` rendered sr-only |
-| `container`       | `HTMLElement \| RefObject<HTMLElement>` | nearest `ThemeScope` element | forwarded to the internal Portal (§8)                                                                                                                                                                 |
-| `closeLabel`      | `string`                                | locale dictionary            | accessible name for the built-in corner close button                                                                                                                                                  |
+| Prop              | Type                                    | Default                      | Notes                                                                                                                                                                                                                       |
+| ----------------- | --------------------------------------- | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `size`            | 13-value axis, see §4                   | `"md"`                       | max-width of the popup                                                                                                                                                                                                      |
+| `showCloseButton` | `boolean`                               | `true`                       | corner close button: `Dialog.Close` rendered as `Button variant="ghost" size="icon-sm"` with `hit-area-1 absolute top-4 right-4`, Phosphor `X` icon + locale-dictionary `closeLabel` as `aria-label` (no sr-only duplicate) |
+| `container`       | `HTMLElement \| RefObject<HTMLElement>` | nearest `ThemeScope` element | forwarded to the internal Portal (§8)                                                                                                                                                                                       |
+| `closeLabel`      | `string`                                | locale dictionary            | accessible name for the built-in corner close button                                                                                                                                                                        |
 
 `children` render before the corner close button inside the Popup.
 
@@ -108,14 +108,14 @@ Animation strategy: **keyframe-based** (`tw-animate-css`) — `data-open:animate
 - Focus is trapped inside the popup while open; on open, focus moves into the popup; on close, focus returns to the trigger.
 - Keyboard: Escape closes unless the consumer cancels it (`onOpenChange(open, eventDetails)` → `eventDetails.cancel()` when `eventDetails.reason === "escape-key"`); Tab cycles within the trap.
 - Backdrop click dismisses unless `disablePointerDismissal` is set (base-ui defaults; `modal` also governs outside interaction).
-- Corner close button carries the localized `closeLabel` as sr-only text and a `hit-area-1` expanded hit target.
+- Corner close button carries the localized `closeLabel` as `aria-label` and a `hit-area-1` expanded hit target. _(Amended 2026-09-02 — one accessible name; the sr-only span is dropped.)_
 - Consumers should always render `Dialog.Title` (base-ui warns otherwise); `Dialog.Description` is optional but recommended.
 
 ## 8 Divergence from reference
 
 1. **Renames (flat → namespace)**: `Dialog`→`Dialog.Root`, `DialogTrigger`→`Dialog.Trigger`, `DialogPortal`→`Dialog.Portal`, `DialogClose`→`Dialog.Close`, `DialogOverlay`→`Dialog.Overlay`, `DialogContent`→`Dialog.Content`, `DialogHeader`→`Dialog.Header`, `DialogFooter`→`Dialog.Footer`, `DialogTitle`→`Dialog.Title`, `DialogDescription`→`Dialog.Description`.
 2. **Overlay `container` prop added (mandated)** to `Dialog.Content` — forwarded to the internal `DialogPrimitive.Portal`, defaulting to the nearest `ThemeScope` element (portal-inside-ThemeScope discipline). The ref hardcodes `<DialogPortal>` with **nothing forwarded** — no way to retarget the portal without recomposing Content manually; this gap is closed.
-3. **Close-button unification**: the corner close button (Button ghost `icon-sm` + `sr-only` label + `hit-area-1`) becomes the **shared** close-button rendering also used by `Sheet.Content` (Dialog's pattern wins; see sheet spec §8).
+3. **Close-button unification**: the corner close button (Button ghost `icon-sm` + `aria-label` + `hit-area-1`) becomes the **shared** close-button rendering also used by `Sheet.Content` (Dialog's pattern wins; see sheet spec §8). _(Amended 2026-09-02 — `aria-label` only; the sr-only span is dropped so assistive tech receives one name.)_
 4. **z-index deduped**: the ref stamps `z-50` on both Overlay and Popup. One `z-50` at the outermost layer per overlay; within it, DOM order stacks Backdrop under Popup. The flat z-50 strategy (every overlay component at the same level, DOM-order stacking) is deliberate and documented.
 5. **Icons → Phosphor**: `XIcon` (lucide) → `X`.
 6. **Overlay scrim** stays literal `bg-black/10` (matches ref); flagged as the one deliberate primitive-color exception, with a dark-mode token migration on the roadmap.

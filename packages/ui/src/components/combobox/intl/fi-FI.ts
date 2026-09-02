@@ -4,5 +4,8 @@ import type { Variables } from "@internationalized/string";
 export const fiFI = {
   empty: "Ei tuloksia.",
   clear: "Tyhjennä valinta",
-  removeItem: (vars: Variables) => `Poista ${String(vars?.item ?? "")}`,
+  removeItem: (vars: Variables) => {
+    const item = String(vars?.item ?? "").trim();
+    return item === "" ? "Poista" : `Poista ${item}`;
+  },
 };

@@ -85,7 +85,7 @@ Both recipes are **module-private** (no borrow pattern; stated per convention):
 
 **Emitted**: `data-slot="input-group"` (Root), `"input-group-addon"` + `data-align` (Addon), `"input-group-text"` (Text — added, §8), `"input-group-control"` + `data-focus-ring-control` (Input/Textarea, overriding the primitives' own slot and identifying the owned focus receiver), `data-size` (Button).
 
-**Consumed**: `[data-slot=input-group-control]:focus-visible` and `[data-slot][aria-invalid=true]` (Root chrome); `>[data-align=block-start/end]` and `>[data-align=inline-start/end]` (Root layout + input padding); `group-data-[disabled=true]/input-group` (Addon dimming). `InputGroup.Text`'s slot participates in the ButtonGroup `[data-slot]` sizing contract (§8). There is no popup-specific focus exception: an InputGroup inside Combobox content keeps the same visible ring as every other instance.
+**Consumed**: `[data-slot=input-group-control]:focus-visible` and `[data-slot][aria-invalid=true]` (Root chrome); `>[data-align=block-start/end]` and `>[data-align=inline-start/end]` (Root layout + input padding); Root `has-disabled:opacity-50` (group dimming, including Addon — Root never stamps `data-disabled`, so a `group-data-[disabled=true]/input-group` arm cannot match). `InputGroup.Text`'s slot participates in the ButtonGroup `[data-slot]` sizing contract (§8). There is no popup-specific focus exception: an InputGroup inside Combobox content keeps the same visible ring as every other instance. _(Amended 2026-09-02 — Addon dimming is Root `has-disabled:`, not a never-matching `data-disabled` group selector.)_
 
 ## 7 Accessibility
 

@@ -28,7 +28,7 @@ describe("inputGroupAddonVariants", () => {
       const resolved = inputGroupAddonVariants({ align });
       expect(resolved, align).toContain("cursor-text");
       expect(resolved, align).toContain("text-muted-foreground");
-      expect(resolved, align).toContain("group-data-[disabled=true]/input-group:opacity-50");
+      expect(resolved, align).not.toContain("group-data-[disabled=true]");
       expect(resolved, align).not.toContain("dark:");
     }
     expect(inputGroupAddonVariants({ align: "inline-end" })).toContain("order-last");
@@ -75,6 +75,12 @@ describe("inputGroupButtonVariants", () => {
 });
 
 describe("input-group source contract", () => {
+  it("dims the group through has-disabled on Root, never a data-disabled group arm", () => {
+    expect(source).toContain("has-disabled:opacity-50");
+    expect(source).not.toContain("group-data-[disabled=true]");
+    expect(inputGroupAddonVariants()).not.toContain("group-data-[disabled=true]");
+  });
+
   it("pins the md control rung and never a literal control ladder", () => {
     expect(source).toContain("h-(--control-h-md)");
     for (const literal of ["h-9 ", "h-10 ", "px-2.5 ", "px-3 "]) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { createContext, useContext, useMemo, useRef } from "react";
 import type { ComponentProps, ReactElement, ReactNode, RefObject } from "react";
 
 // Subpath import (`@base-ui/react/combobox`) type-checks but crashes at runtime with a
@@ -24,6 +24,12 @@ import { comboboxStrings } from "./intl";
 /** Resolved once at module scope — the recipe below does the same (no per-render work). */
 const withinFocusRing = focusRing({ target: "within" });
 
+type ComboboxItemLabelFn = (itemValue: ReactNode) => string;
+
+const ComboboxItemToStringLabelContext = createContext<ComboboxItemLabelFn | undefined>(undefined);
+
+const ComboboxChipIndexContext = createContext<{ next: () => number } | null>(null);
+
 export type ComboboxRootProps<Value = unknown, Multiple extends boolean | undefined = false> = Omit<
   ComboboxRootType.Props<Value, Multiple>,
   "locale"
@@ -33,7 +39,21 @@ function ComboboxRoot<Value = unknown, Multiple extends boolean | undefined = fa
   props: ComboboxRootProps<Value, Multiple>
 ): ReactElement {
   const { locale } = useElmeraGroupUi();
-  return <ComboboxPrimitive.Root {...props} locale={locale} />;
+  const itemToStringLabel = props.itemToStringLabel;
+  return (
+    <ComboboxItemToStringLabelContext.Provider
+      value={
+        itemToStringLabel === undefined
+          ? undefined
+          : (itemValue) => {
+              // SAFETY: Chip only calls this with the selected value from this Root,
+              // which is `Value` (combobox.md §3 removeLabel).
+              return itemToStringLabel(itemValue as Value);
+            }
+      }>
+      <ComboboxPrimitive.Root {...props} locale={locale} />
+    </ComboboxItemToStringLabelContext.Provider>
+  );
 }
 
 function ComboboxValue({ ...props }: ComponentProps<typeof ComboboxPrimitive.Value>): ReactElement {
@@ -313,15 +333,31 @@ function ComboboxChips({
   ...props
 }: ComponentProps<typeof ComboboxPrimitive.Chips>): ReactElement {
   return (
-    <ComboboxPrimitive.Chips
-      data-slot="combobox-chips"
-      className={cn(
-        "text-sm shadow-xs flex min-h-(--control-h-md) flex-wrap items-center gap-1.5 rounded-md border border-input bg-transparent bg-clip-padding px-(--control-px-md) py-1.5 transition-[color,box-shadow] has-aria-invalid:border-error has-aria-invalid:ring-3 has-aria-invalid:ring-error/20 has-data-[slot=combobox-chip]:px-1.5",
-        withinFocusRing.root(),
-        className
-      )}
-      {...props}
-    />
+    <ComboboxPrimitive.Value>
+      {() => <ComboboxChipsIndexed className={className} {...props} />}
+    </ComboboxPrimitive.Value>
+  );
+}
+
+function ComboboxChipsIndexed({
+  className,
+  ...props
+}: ComponentProps<typeof ComboboxPrimitive.Chips>): ReactElement {
+  const counter = useRef(0);
+  counter.current = 0;
+  const indexApi = useMemo(() => ({ next: () => counter.current++ }), []);
+  return (
+    <ComboboxChipIndexContext.Provider value={indexApi}>
+      <ComboboxPrimitive.Chips
+        data-slot="combobox-chips"
+        className={cn(
+          "text-sm shadow-xs flex min-h-(--control-h-md) flex-wrap items-center gap-1.5 rounded-md border border-input bg-transparent bg-clip-padding px-(--control-px-md) py-1.5 transition-[color,box-shadow] has-aria-invalid:border-error has-aria-invalid:ring-3 has-aria-invalid:ring-error/20 has-data-[slot=combobox-chip]:px-1.5",
+          withinFocusRing.root(),
+          className
+        )}
+        {...props}
+      />
+    </ComboboxChipIndexContext.Provider>
   );
 }
 
@@ -332,8 +368,9 @@ export type ComboboxChipProps = ComponentProps<typeof ComboboxPrimitive.Chip> & 
    */
   showRemove?: boolean;
   /**
-   * Accessible name for the remove button. Defaults to the locale dictionary
-   * `removeItem` formatted with the chip's string children (the displayed value).
+   * Accessible name for the remove button. Defaults to dictionary `removeItem`
+   * formatted with the chip's string children, then `itemToStringLabel(value)`.
+   * When neither yields text, the localized "Remove" string with no trailing space.
    */
   removeLabel?: string;
 };
@@ -347,7 +384,26 @@ function chipItemName(children: ReactNode): string {
   if (!isChipText(children)) {
     return "";
   }
-  return children.toString();
+  return children.toString().trim();
+}
+
+function chipValueAt(selected: ReactNode, index: number): ReactNode {
+  if (!Array.isArray(selected)) {
+    return selected;
+  }
+  // SAFETY: multiple-mode `Value` yields the consumer's selected items; Chip
+  // indexes that list in render order (combobox.md §3 removeLabel).
+  return (selected[index] ?? null) as ReactNode;
+}
+
+function stringifyChipValue(value: ReactNode, itemToStringLabel?: ComboboxItemLabelFn): string {
+  if (value == null || value === false || value === true) {
+    return "";
+  }
+  if (itemToStringLabel !== undefined) {
+    return itemToStringLabel(value).trim();
+  }
+  return chipItemName(value);
 }
 
 function ComboboxChip({
@@ -357,8 +413,8 @@ function ComboboxChip({
   removeLabel,
   ...props
 }: ComboboxChipProps): ReactElement {
-  const strings = useLocalizedStrings(comboboxStrings);
-  const accessibleName = removeLabel ?? strings.format("removeItem", { item: chipItemName(children) });
+  const indexApi = useContext(ComboboxChipIndexContext);
+  const index = indexApi?.next() ?? 0;
   return (
     <ComboboxPrimitive.Chip
       data-slot="combobox-chip"
@@ -368,8 +424,33 @@ function ComboboxChip({
       )}
       {...props}>
       {children}
-      {showRemove ? <ComboboxChipRemove label={accessibleName} /> : null}
+      {showRemove ? (
+        <ComboboxChipRemoveLabel removeLabel={removeLabel} chipChildren={children} index={index} />
+      ) : null}
     </ComboboxPrimitive.Chip>
+  );
+}
+
+function ComboboxChipRemoveLabel({
+  removeLabel,
+  chipChildren,
+  index,
+}: {
+  removeLabel?: string;
+  chipChildren: ReactNode;
+  index: number;
+}): ReactElement {
+  const strings = useLocalizedStrings(comboboxStrings);
+  const itemToStringLabel = useContext(ComboboxItemToStringLabelContext);
+  return (
+    <ComboboxPrimitive.Value>
+      {(selected: ReactNode) => {
+        const fromChildren = chipItemName(chipChildren);
+        const item = fromChildren || stringifyChipValue(chipValueAt(selected, index), itemToStringLabel);
+        const accessibleName = removeLabel ?? strings.format("removeItem", { item });
+        return <ComboboxChipRemove label={accessibleName} />;
+      }}
+    </ComboboxPrimitive.Value>
   );
 }
 

@@ -21,7 +21,6 @@ import { X } from "../../icons/generated/x";
 import { cn } from "../../styles/cn";
 import { focusRing } from "../../styles/utils";
 import { useThemeScopeContainer } from "../../theme/theme-scope-container";
-import type { ButtonProps } from "../button/button";
 import { Button } from "../button/button";
 import { overlayLayer } from "../overlay/overlay-classes";
 import { toastStrings } from "./intl";
@@ -358,7 +357,8 @@ function ToastAction({ className, ...props }: ComponentProps<typeof ToastPrimiti
 export type ToastCloseProps = ComponentProps<typeof ToastPrimitive.Close> & {
   /**
    * Accessible name for the close button. Defaults to the locale dictionary
-   * `toast.close`. Rendered sr-only unless the consumer supplies visible children.
+   * `toast.close`. Icon-only Close sets it as `aria-label`; visible children
+   * replace the icon face and name the control themselves.
    */
   label?: string;
 };
@@ -374,14 +374,7 @@ function ToastClose({ className, label, children, ...props }: ToastCloseProps): 
   const closeButton = visible ? (
     <Button variant="ghost" size="sm" />
   ) : (
-    // SAFETY: icon-sm requires aria-label at the type level; Close's sr-only child is
-    // the accessible name after the primitive merges onto Button (toast.md §3).
-    <Button
-      {...({
-        variant: "ghost",
-        size: "icon-sm",
-      } as ButtonProps)}
-    />
+    <Button variant="ghost" size="icon-sm" aria-label={resolvedLabel} />
   );
 
   return (
@@ -390,14 +383,7 @@ function ToastClose({ className, label, children, ...props }: ToastCloseProps): 
       className={cn("absolute top-2 right-2 text-muted-foreground", className)}
       render={closeButton}
       {...props}>
-      {visible ? (
-        children
-      ) : (
-        <>
-          <X aria-hidden="true" />
-          <span className="sr-only">{resolvedLabel}</span>
-        </>
-      )}
+      {visible ? children : <X aria-hidden="true" />}
     </ToastPrimitive.Close>
   );
 }

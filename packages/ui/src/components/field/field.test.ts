@@ -25,6 +25,9 @@ describe("field source contract", () => {
     expect(source).toContain("group-data-disabled/field:opacity-50");
     expect(source).not.toContain("data-[invalid=true]");
     expect(source).not.toContain("group-data-[disabled=true]");
+    expect(source).toContain("*:data-[slot=checkbox-group]:gap-3");
+    expect(source).toContain("*:data-[slot=radio-group]:gap-3");
+    expect(source).not.toContain(" gap-7 data-[slot=checkbox-group]:gap-3");
   });
 
   it("derives responsive orientation tokens from the vertical and horizontal literals", () => {

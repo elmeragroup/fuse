@@ -76,7 +76,8 @@ describe("dialog source contract", () => {
     expect(source).toContain("overlayCornerCloseButton");
     expect(source).toContain("overlayFooterCloseButton");
     expect(closeButtonSource).toContain("hit-area-1");
-    expect(closeButtonSource).toContain("sr-only");
+    expect(closeButtonSource).toContain("aria-label={label}");
+    expect(closeButtonSource).not.toContain("sr-only");
     expect(closeButtonSource).toContain('size="icon-sm"');
     expect(closeButtonSource).toContain('variant="ghost"');
   });
