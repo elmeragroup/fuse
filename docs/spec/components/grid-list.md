@@ -13,7 +13,7 @@
 ```
 AriaGridList data-slot="grid-list"          (role="grid"; empty-state centering via data-empty)
 └─ AriaGridListItem data-slot="grid-list-item"  (role="row" > gridcell; itemStyles = tv extend focusRing)
-   ├─ Button slot="drag" "≡"                 — only when allowsDragging
+   ├─ internal RAC Button slot="drag"        — Phosphor `DotsSixVertical`, locale `gridList.drag` name; only when allowsDragging
    ├─ Checkbox slot="selection"              — only when selectionMode !== "none" && selectionBehavior === "toggle"
    │  └─ box div + Check / Minus             (named icon imports; module-private RAC Checkbox styled by checkboxVariants)
    └─ children (render props composed)
@@ -52,12 +52,12 @@ Both parts accept `className` (string or render-prop function, composed via `com
 
 - RAC GridList semantics: `role="grid"` with rows/gridcells; selection checkbox is announced per row; `textValue` feeds typeahead
 - Keyboard: Arrow Up/Down move row focus; Space toggles selection (Enter fires `onAction` when set); Ctrl/Cmd+A selects all in multiple mode; Escape clears selection (unless `disallowEmptySelection`); typeahead by `textValue`
-- Drag button (`slot="drag"`) receives keyboard drag semantics from RAC when `dragAndDropHooks` is supplied
+- Drag button (`slot="drag"`) is the package-private RAC Button (ghost `icon-sm`, shared focus ring) with Phosphor `DotsSixVertical` and the localized `gridList.drag` accessible name; it receives keyboard drag semantics from RAC when `dragAndDropHooks` is supplied. _(Amended 2026-09-02.)_
 
 ## 8 Divergence from reference
 
 1. **Export path**: bare export → `@elmeragroup/ui/react-aria/grid-list` (interim quarantine prefix).
-2. **Icons**: the ref imports `Check` / `Minus` **directly from `lucide-react`** — swapped to curated Phosphor `Check` / `Minus` from `@elmeragroup/ui/icons`, regular weight.
+2. **Icons**: the ref imports `Check` / `Minus` **directly from `lucide-react`** — swapped to curated Phosphor `Check` / `Minus` from `@elmeragroup/ui/icons`, regular weight. The drag handle uses Phosphor `DotsSixVertical` (added to the curated roster 2026-09-02) instead of the ref's `≡` text glyph, on the package-private RAC Button so the shared focus ring applies.
 3. **Raw colors converted** (all inside the shared `checkboxVariants` this module consumes): `text-gray-400` / `text-gray-300` (disabled icon/label) → `text-muted-foreground`; `--color-gray-200` (disabled box) → `var(--border)`; `gray.500` pressed border → `border` token; `theme(colors.primary/success/destructive.DEFAULT)` arbitrary values → plain token utilities. `grid-list.tsx` itself has no raw colors.
 4. **destructive → error**: checkbox invalid state `colors.destructive.DEFAULT` → `error` token. No `dark:`/`inverted:` variants present in this module.
 5. `empty:` plugin variants rewritten as explicit `data-[empty]:` (drops `tailwindcss-react-aria-components`).
@@ -69,6 +69,7 @@ Both parts accept `className` (string or render-prop function, composed via `com
 - `selectionMode="multiple"` + toggle: row checkboxes appear (`getAllByRole("checkbox")`), Space toggles, `onSelectionChange` receives keys; Ctrl/Cmd+A selects all
 - Arrow-key navigation moves focus between rows; typeahead focuses matching `textValue`
 - `disabledKeys` rows expose `aria-disabled` and refuse selection; `renderEmptyState` content centers when the collection is empty
+- Drag handle: with `dragAndDropHooks`, `getByRole("button", { name })` finds the handle in every locale; the shared focus-ring helper passes on keyboard focus and is absent on mouse focus
 
 ## 10 Demo requirements
 

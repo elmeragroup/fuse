@@ -14,7 +14,7 @@ const byName = [...PHOSPHOR_ICON_NAMES].toSorted((left, right) => left.localeCom
 
 describe("Phosphor adapters", () => {
   it("treats the roster as a public API snapshot", async () => {
-    expect(PHOSPHOR_ICON_NAMES).toHaveLength(111);
+    expect(PHOSPHOR_ICON_NAMES).toHaveLength(112);
     expect(new Set(PHOSPHOR_ICON_NAMES).size).toBe(PHOSPHOR_ICON_NAMES.length);
     await expect([...PHOSPHOR_ICON_NAMES]).toMatchFileSnapshot("./__snapshots__/roster.json");
   });

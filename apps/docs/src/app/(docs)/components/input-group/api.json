@@ -98,11 +98,11 @@
         },
         {
           "name": "size",
-          "origin": "recipe-axis",
-          "type": "\"icon-sm\" | \"icon-xs\" | \"sm\" | \"xs\" | undefined",
+          "origin": "declared",
+          "type": "IconInputGroupButtonSize | LabelInputGroupButtonSize | undefined",
           "shortType": "Union",
           "defaultValue": "\"xs\"",
-          "description": "",
+          "description": "Local compact size axis, not Button's `size`. Labelled values; icon sizes require `aria-label`. Local compact size axis, not Button's `size`. Icon sizes require `aria-label`.",
           "required": false
         },
         {

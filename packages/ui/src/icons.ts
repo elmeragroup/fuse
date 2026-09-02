@@ -38,6 +38,7 @@ export { CurrencyCircleDollar } from "./icons/generated/currency-circle-dollar";
 export { DeviceMobile } from "./icons/generated/device-mobile";
 export { Dot } from "./icons/generated/dot";
 export { DotOutline } from "./icons/generated/dot-outline";
+export { DotsSixVertical } from "./icons/generated/dots-six-vertical";
 export { DotsThree } from "./icons/generated/dots-three";
 export { DotsThreeVertical } from "./icons/generated/dots-three-vertical";
 export { Download } from "./icons/generated/download";

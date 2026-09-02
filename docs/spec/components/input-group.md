@@ -49,11 +49,11 @@ Built-in `onClick`: if the click target is not inside a `<button>`, focuses the 
 
 **InputGroup.Button** — `Omit<ComponentProps<typeof Button>, "size" | "type">` plus:
 
-| Prop      | Type                                     | Default    | Notes                                          |
-| --------- | ---------------------------------------- | ---------- | ---------------------------------------------- |
-| `size`    | `"xs" \| "sm" \| "icon-xs" \| "icon-sm"` | `"xs"`     | local 4-value subset, NOT Button's `size` (§4) |
-| `type`    | `"button" \| "submit" \| "reset"`        | `"button"` | re-typed; defaults to non-submitting           |
-| `variant` | Button's `variant`                       | `"ghost"`  | forwarded to Button                            |
+| Prop      | Type                                     | Default    | Notes                                                                                                               |
+| --------- | ---------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------- |
+| `size`    | `"xs" \| "sm" \| "icon-xs" \| "icon-sm"` | `"xs"`     | local 4-value subset, NOT Button's `size` (§4). `icon-xs` / `icon-sm` require `aria-label` (icon-only union guard). |
+| `type`    | `"button" \| "submit" \| "reset"`        | `"button"` | re-typed; defaults to non-submitting                                                                                |
+| `variant` | Button's `variant`                       | `"ghost"`  | forwarded to Button                                                                                                 |
 
 **InputGroup.Text** — `ComponentProps<"span">`.
 
@@ -114,7 +114,7 @@ Kept faithfully: Addon focus-sibling-input `onClick`; Button size re-typing via 
 - Root renders `getByRole("group")`; input reachable by role (with Field-provided or aria-label name).
 - Addon click focuses the input (userEvent click on addon text → input has focus); clicking a button inside the addon does NOT move focus to the input and fires the button.
 - Keyboard: Tab order is input → addon button (DOM order); focusing the input via keyboard sets `:focus-visible` on the control (assert via the control's `data-slot="input-group-control"` state, queries still role-based).
-- `InputGroup.Button`: default `type="button"` (pressing Enter inside a form's group input does not trigger it); `data-size` reflects the size prop for all four values; Button's own `size` prop is not accepted (type-level test).
+- `InputGroup.Button`: default `type="button"` (pressing Enter inside a form's group input does not trigger it); `data-size` reflects the size prop for all four values; Button's own `size` prop is not accepted (type-level test); icon-size without `aria-label` fails to compile. _(Amended 2026-09-02.)_
 - `aria-invalid` on the control surfaces group invalid chrome (attribute assertion on control; chrome via state attr, not snapshot).
 - `align` reflected as `data-align` for all four values; block alignments render Root as column.
 - Disabled input dims the group (`has-disabled` state) and addon.

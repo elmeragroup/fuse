@@ -13,14 +13,36 @@ import { inputGroupAddonVariants, inputGroupButtonVariants } from "./input-group
 
 export type InputGroupRootProps = ComponentProps<"div">;
 export type InputGroupAddonProps = ComponentProps<"div"> & VariantProps<typeof inputGroupAddonVariants>;
-export type InputGroupButtonProps = Omit<ComponentProps<typeof Button>, "size" | "type"> &
-  VariantProps<typeof inputGroupButtonVariants> & {
-    /**
-     * Native button type, re-typed over `Button`'s own. Defaults to `"button"`, so an
-     * addon action never submits the surrounding form unless it asks to.
-     */
-    type?: "button" | "submit" | "reset";
-  };
+
+type InputGroupButtonSize = NonNullable<VariantProps<typeof inputGroupButtonVariants>["size"]>;
+type IconInputGroupButtonSize = Extract<InputGroupButtonSize, `icon${string}`>;
+type LabelInputGroupButtonSize = Exclude<InputGroupButtonSize, IconInputGroupButtonSize>;
+
+type InputGroupButtonBase = Omit<ComponentProps<typeof Button>, "size" | "type"> & {
+  /**
+   * Native button type, re-typed over `Button`'s own. Defaults to `"button"`, so an
+   * addon action never submits the surrounding form unless it asks to.
+   */
+  type?: "button" | "submit" | "reset";
+};
+
+export type InputGroupButtonProps =
+  | (InputGroupButtonBase & {
+      /**
+       * Local compact size axis, not Button's `size`. Labelled values; icon
+       * sizes require `aria-label`.
+       * @default "xs"
+       */
+      size?: LabelInputGroupButtonSize;
+    })
+  | (InputGroupButtonBase & {
+      /**
+       * Local compact size axis, not Button's `size`. Icon sizes require
+       * `aria-label`.
+       */
+      size: IconInputGroupButtonSize;
+      "aria-label": string;
+    });
 export type InputGroupTextProps = ComponentProps<"span">;
 export type InputGroupInputProps = ComponentProps<"input">;
 export type InputGroupTextareaProps = ComponentProps<"textarea">;

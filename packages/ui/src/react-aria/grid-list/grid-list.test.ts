@@ -4,13 +4,36 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { discoverEntries } from "../../../scripts/entries";
+import { SUPPORTED_LOCALES } from "../../../test/locale-matrix";
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
+import { gridListStrings } from "./intl";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const packageRoot = join(here, "../../..");
 const source = readFileSync(join(here, "grid-list.tsx"), "utf8");
 const recipe = readFileSync(join(packageRoot, "src/styles/grid-list.ts"), "utf8");
 const facade = readFileSync(join(here, "../grid-list.ts"), "utf8");
+
+const DRAG_COPY = {
+  "nb-NO": "Dra for å endre rekkefølge",
+  "sv-SE": "Dra för att ändra ordning",
+  "en-US": "Drag to reorder",
+  "fi-FI": "Vedä järjestääksesi",
+} as const;
+
+describe("grid-list dictionary", () => {
+  it("owns the locked gridList.drag copy in all four locales", () => {
+    for (const locale of SUPPORTED_LOCALES) {
+      expect(gridListStrings.getStringForLocale("drag", locale), locale).toBe(DRAG_COPY[locale]);
+    }
+  });
+
+  it("carries no key beyond the one row accessibility.md §4.1 assigns to GridList", () => {
+    for (const locale of SUPPORTED_LOCALES) {
+      expect(Object.keys(gridListStrings.getStringsForLocale(locale)), locale).toEqual(["drag"]);
+    }
+  });
+});
 
 describe("grid-list source contract", () => {
   it("is a client module that never reaches for the reference or its own public specifier", () => {
@@ -43,11 +66,15 @@ describe("grid-list source contract", () => {
     expect(recipe).not.toContain("list-box");
   });
 
-  it("takes the glyphs from the Phosphor Check and Minus roster entries (§8.2)", () => {
+  it("takes the glyphs from the Phosphor Check, Minus, and DotsSixVertical roster entries", () => {
     expect(source).toContain('from "../../icons/generated/check"');
     expect(source).toContain('from "../../icons/generated/minus"');
+    expect(source).toContain('from "../../icons/generated/dots-six-vertical"');
     expect(source).toContain("<Check ");
     expect(source).toContain("<Minus ");
+    expect(source).toContain("<DotsSixVertical");
+    expect(source).toContain('from "../internal/button"');
+    expect(source).not.toContain("≡");
     expect(source).not.toContain("lucide");
   });
 

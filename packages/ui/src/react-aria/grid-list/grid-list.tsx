@@ -3,7 +3,6 @@
 import type { ReactElement, RefAttributes } from "react";
 
 import {
-  Button,
   Checkbox as AriaCheckbox,
   GridList as AriaGridList,
   GridListItem as AriaGridListItem,
@@ -15,11 +14,15 @@ import type {
   GridListProps as AriaGridListProps,
 } from "react-aria-components";
 
+import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { Check } from "../../icons/generated/check";
+import { DotsSixVertical } from "../../icons/generated/dots-six-vertical";
 import { Minus } from "../../icons/generated/minus";
 import { gridListVariants, itemStyles } from "../../styles/grid-list";
+import { Button } from "../internal/button";
 import { checkboxVariants } from "../internal/checkbox";
 import { composeTailwindRenderProps } from "../internal/utils";
+import { gridListStrings } from "./intl";
 
 /**
  * Module-private RAC selection checkbox (grid-list.md §2). RAC GridList requires
@@ -96,6 +99,7 @@ export function GridListItem<T extends object = object>({
   ...props
 }: GridListItemProps<T> & RefAttributes<HTMLDivElement>): ReactElement {
   const textValue = stringChild(children);
+  const strings = useLocalizedStrings(gridListStrings);
 
   return (
     <AriaGridListItem
@@ -112,7 +116,18 @@ export function GridListItem<T extends object = object>({
       )}>
       {composeRenderProps(children, (children, { selectionMode, selectionBehavior, allowsDragging }) => (
         <>
-          {allowsDragging ? <Button slot="drag">≡</Button> : null}
+          {allowsDragging ? (
+            <Button
+              slot="drag"
+              variant="ghost"
+              size="icon-sm"
+              aria-label={strings.format("drag")}
+              // RAC injects pointer-events:none so the row owns HTML5 drag; override
+              // so the handle can take mouse focus for the shared ring helper.
+              style={{ pointerEvents: "auto" }}>
+              <DotsSixVertical />
+            </Button>
+          ) : null}
           {selectionMode !== "none" && selectionBehavior === "toggle" ? <Checkbox slot="selection" /> : null}
           {children}
         </>
