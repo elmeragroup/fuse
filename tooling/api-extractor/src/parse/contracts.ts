@@ -36,6 +36,24 @@ export type ResolverContext = {
   readonly generatedTypeArgumentNamespaces?: readonly string[];
 };
 
+/**
+ * The location fields every resolver warning carries: the declaration's own
+ * position when one is known, otherwise the module being extracted, plus the
+ * resolver's symbol breadcrumb rooted at that module.
+ */
+export function warningLocation(
+  context: ResolverContext,
+  declaration: BackendNodeReference | undefined
+): Pick<BackendWarningFact, "filePath" | "line" | "column" | "parsedSymbolStack"> {
+  const location = declaration === undefined ? undefined : context.operations.nodeFacts(declaration);
+  return {
+    filePath: location?.filePath ?? context.filePath,
+    line: location?.line ?? 1,
+    column: location?.column ?? 1,
+    parsedSymbolStack: [context.filePath, ...context.symbolStack],
+  };
+}
+
 export type ResolveSemanticType = (
   type: BackendTypeHandle | undefined,
   sourceNode: BackendNodeReference | undefined,

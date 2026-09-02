@@ -2,13 +2,14 @@
 /* oxlint-disable typescript/no-unnecessary-condition, typescript/prefer-optional-chain -- remote AST parents can end earlier at runtime than the shared node typing admits, so guards stay explicit. */
 
 import type { Node, SourceFile } from "typescript/unstable/ast";
-import { isExportDeclaration, isExportSpecifier, isStringLiteral } from "typescript/unstable/ast/is";
+import { isExportSpecifier, isStringLiteral } from "typescript/unstable/ast/is";
 import type { Symbol as TsSymbol } from "typescript/unstable/sync";
 
 import { resolveOwnedDeclaration } from "./declarations.ts";
 import { exportsOf } from "./module-ordering.ts";
 import type { DescriptorScope, TsgoModuleSession } from "./module.ts";
 import { repositoryRelativePath } from "./path-identity.ts";
+import { enclosingExportDeclaration } from "./syntax.ts";
 
 /**
  * Re-export chain walking for the module surface.
@@ -102,11 +103,7 @@ function forwardingReExport(session: TsgoModuleSession, symbol: TsSymbol): Forwa
     // complete external declaration file before that policy runs.
     const resolved = resolveOwnedDeclaration(session, declaration);
     if (resolved === undefined || !isExportSpecifier(resolved)) continue;
-    // SAFETY: remote specifier nodes materialize with a parent chain whose
-    // tail can be absent at runtime even though the shared node typing admits
-    // it, hence the explicit undefined-typed accumulator.
-    let owner: Node | undefined = resolved.parent;
-    while (owner !== undefined && !isExportDeclaration(owner)) owner = owner.parent;
+    const owner = enclosingExportDeclaration(resolved);
     if (
       owner === undefined ||
       owner.moduleSpecifier === undefined ||

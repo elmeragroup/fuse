@@ -58,15 +58,14 @@ export type BackendTypeFacts = {
   readonly isTypeParameter?: boolean;
   readonly isUnion?: boolean;
   readonly isIntersection?: boolean;
-  readonly isIndex?: boolean;
   readonly isTuple?: boolean;
   readonly isArray?: boolean;
   readonly isObject?: boolean;
-  readonly isTypeReference?: boolean;
   readonly isEnum?: boolean;
   readonly symbol?: BackendSymbolHandle;
   readonly aliasSymbol?: BackendSymbolHandle;
   readonly unionOrIntersectionTypes?: readonly BackendTypeHandle[];
+  /** The operand of an index (`keyof`) type; present exactly when the type is one. */
   readonly indexTarget?: BackendTypeHandle;
   /**
    * The three operand types of a deferred conditional (`T extends U ? X : Y`).
@@ -84,7 +83,7 @@ export type BackendTypeFacts = {
    */
   readonly substitutionBaseType?: BackendTypeHandle;
   readonly substitutionConstraint?: BackendTypeHandle;
-  /** The uninstantiated generic a type reference instantiates, if it is one. */
+  /** The uninstantiated generic a type reference instantiates; present exactly when the type is one. */
   readonly referenceTarget?: BackendTypeHandle;
   readonly typeArguments?: readonly BackendTypeHandle[];
   readonly aliasTypeArguments?: readonly BackendTypeHandle[];
@@ -143,6 +142,11 @@ export type BackendDeclarationOwnership =
   | { readonly kind: "dependency"; readonly packageName: string }
   | { readonly kind: "external" }
   | { readonly kind: "typescript"; readonly library: "standard-library" | "toolchain" };
+
+/** Dependency, unowned external and TypeScript declarations are all outside the project. */
+export function isExternalOwnership(ownership: BackendDeclarationOwnership): boolean {
+  return ownership.kind !== "project";
+}
 
 export type BackendTypeNameFacts = {
   readonly name: string;

@@ -5,7 +5,10 @@ import type {
   BackendSymbolFacts,
   BackendSymbolHandle,
 } from "../backend/contracts.ts";
+import { isExternalOwnership } from "../backend/contracts.ts";
 import type { ResolverContext } from "./contracts.ts";
+
+export { isExternalOwnership };
 
 type Context = ResolverContext;
 
@@ -31,9 +34,14 @@ export function declarationOwnership(
   return context.operations.declarationOwnership(node);
 }
 
-/** Dependency and TypeScript declarations are both outside the project. */
-export function isExternalOwnership(ownership: BackendDeclarationOwnership): boolean {
-  return ownership.kind !== "project";
+/**
+ * The declaration a symbol is read from when one must stand for it: the value
+ * declaration when it has one, otherwise the first declaration.
+ */
+export function primaryDeclaration(
+  info: Pick<BackendSymbolFacts, "declarations" | "valueDeclaration">
+): BackendNodeHandle | undefined {
+  return info.valueDeclaration ?? info.declarations[0];
 }
 
 /** Every distinct declaration that can establish a symbol's ownership. */

@@ -31,6 +31,7 @@ import type { BackendDeclarationOwnership, BackendModuleOrigin } from "../contra
 import type { TsgoFactsSession } from "./facts.ts";
 import { classifySourceFile, declarationOwnershipOfPath } from "./file-ownership.ts";
 import { aliasedSymbol } from "./module-resolution.ts";
+import { isStarExport } from "./syntax.ts";
 import { sameUltimateSymbol } from "./ultimate-symbol.ts";
 
 type ModuleSource = {
@@ -233,6 +234,22 @@ function moduleSource(node: Node): ModuleSource | undefined {
   return undefined;
 }
 
+/** `moduleOriginFromSource` for an authored string-literal specifier node. */
+function originFromSpecifier(
+  session: TsgoFactsSession,
+  node: Node & { readonly text: string },
+  seen: ReadonlySet<TsSymbol>,
+  memberPath: readonly string[],
+  importedName?: string
+): OriginResolution {
+  return moduleOriginFromSource(
+    session,
+    { specifier: node.text, node, ...(importedName === undefined ? {} : { importedName }) },
+    seen,
+    memberPath
+  );
+}
+
 function moduleOriginFromSource(
   session: TsgoFactsSession,
   source: ModuleSource,
@@ -320,27 +337,12 @@ function starReExportOrigin(
     )
       continue;
     for (const statement of sourceFile.statements) {
-      if (
-        !isExportDeclaration(statement) ||
-        statement.exportClause !== undefined ||
-        statement.moduleSpecifier === undefined ||
-        !isStringLiteral(statement.moduleSpecifier)
-      )
-        continue;
+      if (!isStarExport(statement, undefined)) continue;
       const forwardedModule = session.checker.getSymbolAtLocation(statement.moduleSpecifier);
       if (forwardedModule === undefined) continue;
       const forwardedMember = session.checker.getMemberInModuleExports(forwardedModule, memberName);
       if (forwardedMember === undefined) continue;
-      const origin = moduleOriginFromSource(
-        session,
-        {
-          specifier: statement.moduleSpecifier.text,
-          node: statement.moduleSpecifier,
-        },
-        seen,
-        memberPath
-      );
-      candidates.push(origin);
+      candidates.push(originFromSpecifier(session, statement.moduleSpecifier, seen, memberPath));
     }
   }
   return mergeOrigins(session, candidates);
@@ -366,6 +368,8 @@ function localExportOrigin(
   // in the source file, so recover its generic module relation from syntax.
   const sourceFile = declaration.getSourceFile();
   const localText = localName.getText();
+  const fromSpecifier = (node: Node & { readonly text: string }, importedName?: string) =>
+    originFromSpecifier(session, node, seen, memberPath, importedName);
   for (const statement of sourceFile.statements) {
     if (isImportEqualsDeclaration(statement)) {
       const moduleReference = statement.moduleReference;
@@ -375,54 +379,24 @@ function localExportOrigin(
         !isStringLiteral(moduleReference.expression)
       )
         continue;
-      return moduleOriginFromSource(
-        session,
-        {
-          specifier: moduleReference.expression.text,
-          node: moduleReference.expression,
-        },
-        seen,
-        memberPath
-      );
+      return fromSpecifier(moduleReference.expression);
     }
     if (!isImportDeclaration(statement) || !isStringLiteral(statement.moduleSpecifier)) continue;
     const clause = statement.importClause;
     if (clause?.name !== undefined && clause.name.text === localText)
-      return moduleOriginFromSource(
-        session,
-        {
-          specifier: statement.moduleSpecifier.text,
-          node: statement.moduleSpecifier,
-        },
-        seen,
-        memberPath
-      );
+      return fromSpecifier(statement.moduleSpecifier);
     const bindings = clause?.namedBindings;
     if (bindings === undefined) continue;
     if (isNamespaceImport(bindings) && bindings.name.text === localText)
-      return moduleOriginFromSource(
-        session,
-        {
-          specifier: statement.moduleSpecifier.text,
-          node: statement.moduleSpecifier,
-        },
-        seen,
-        memberPath
-      );
+      return fromSpecifier(statement.moduleSpecifier);
     if (!isNamedImports(bindings)) continue;
     const imported = bindings.elements.find(
       (entry) => isIdentifier(entry.name) && entry.name.text === localText
     );
     if (imported === undefined) continue;
-    return moduleOriginFromSource(
-      session,
-      {
-        specifier: statement.moduleSpecifier.text,
-        node: statement.moduleSpecifier,
-        importedName: imported.propertyName?.getText() ?? imported.name.getText(),
-      },
-      seen,
-      memberPath
+    return fromSpecifier(
+      statement.moduleSpecifier,
+      imported.propertyName?.getText() ?? imported.name.getText()
     );
   }
   return missingOrigin();

@@ -3,10 +3,10 @@
 
 import { SyntaxKind } from "typescript/unstable/ast";
 import type { SourceFile } from "typescript/unstable/ast";
-import { isExportDeclaration, isStringLiteral } from "typescript/unstable/ast/is";
 import type { Symbol as TsSymbol } from "typescript/unstable/sync";
 
 import type { TsgoModuleSession } from "./module.ts";
+import { isStarExport } from "./syntax.ts";
 
 /**
  * Export ordering for one container: the rank/position rule `readModule`
@@ -75,8 +75,7 @@ export function exportsOf(session: TsgoModuleSession, containerSymbol: TsSymbol)
 function starContributionOrder(session: TsgoModuleSession, source: SourceFile): readonly StarContribution[] {
   const contributions: StarContribution[] = [];
   for (const statement of source.statements) {
-    if (!isExportDeclaration(statement) || statement.exportClause !== undefined) continue;
-    if (statement.moduleSpecifier === undefined || !isStringLiteral(statement.moduleSpecifier)) continue;
+    if (!isStarExport(statement, undefined)) continue;
     // The authored module-specifier node already carries the checker symbol.
     // Looking the resolved path up again would fetch the entire dependency
     // source file solely to enumerate names for ordering.

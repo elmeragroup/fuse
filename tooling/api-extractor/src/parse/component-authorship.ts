@@ -5,6 +5,7 @@ import type {
   BackendTypeNodeHandle,
 } from "../backend/contracts.ts";
 import type { ResolverContext } from "./contracts.ts";
+import { primaryDeclaration } from "./ownership.ts";
 import { isReactWrapperCall } from "./react-policy.ts";
 
 /** One authored props parameter and the type syntax attached to it. */
@@ -112,7 +113,7 @@ function inspectAuthoredSymbol(
   if (exportName !== "default" && (exportName === undefined || !/^[A-Z]/u.test(exportName))) return undefined;
   context.operations.setErrorContext(context.symbolStack);
   const facts = context.operations.symbolFacts(symbol);
-  const declaration = facts.valueDeclaration ?? facts.declarations[0];
+  const declaration = primaryDeclaration(facts);
   if (declaration === undefined) return undefined;
   return { facts, declarationFacts: context.operations.nodeFacts(declaration), nextSeenSymbols };
 }
@@ -205,18 +206,10 @@ function authoredFunctionParameters(
       declarationFacts?.parameters?.[0] ??
       (signatureFacts.parameters[0] === undefined
         ? undefined
-        : authoredParameterDeclaration(signatureFacts.parameters[0], context));
+        : primaryDeclaration(context.operations.symbolFacts(signatureFacts.parameters[0])));
     if (parameter === undefined || seenDeclarations.has(parameter)) continue;
     seenDeclarations.add(parameter);
     parameters.push({ parameter, propsType: context.operations.nodeFacts(parameter).type });
   }
   return parameters;
-}
-
-function authoredParameterDeclaration(
-  symbol: BackendSymbolHandle,
-  context: ResolverContext
-): BackendNodeHandle | undefined {
-  const facts = context.operations.symbolFacts(symbol);
-  return facts.valueDeclaration ?? facts.declarations[0];
 }

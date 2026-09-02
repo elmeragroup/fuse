@@ -29,6 +29,7 @@ import type {
   Type,
 } from "typescript/unstable/sync";
 
+import { typeFlagNames } from "../../warnings.ts";
 import type { TypeFlagName } from "../../warnings.ts";
 import type {
   BackendCompilerOperations,
@@ -60,6 +61,7 @@ import type { TsgoHeritageSession } from "./heritage.ts";
 import { nodeFacts, nodeKindOfHandle } from "./node-facts.ts";
 import { SessionFactCache } from "./session-fact-cache.ts";
 import { declaringParentIsClass, symbolFacts, symbolNamespaces, symbolOrigin } from "./symbol-facts.ts";
+import { authoredLocation } from "./syntax.ts";
 
 export type TsgoFactsSession = {
   readonly checker: Checker;
@@ -90,37 +92,10 @@ export type TsgoFactsSession = {
   readonly compilerKind: (node: BackendNodeReference) => Node["kind"];
 };
 
-const typeFlagDisplayOrder: readonly [TypeFlags, TypeFlagName][] = [
-  [TypeFlags.Any, "Any"],
-  [TypeFlags.Unknown, "Unknown"],
-  [TypeFlags.Undefined, "Undefined"],
-  [TypeFlags.Null, "Null"],
-  [TypeFlags.Void, "Void"],
-  [TypeFlags.String, "String"],
-  [TypeFlags.Number, "Number"],
-  [TypeFlags.BigInt, "BigInt"],
-  [TypeFlags.Boolean, "Boolean"],
-  [TypeFlags.ESSymbol, "ESSymbol"],
-  [TypeFlags.StringLiteral, "StringLiteral"],
-  [TypeFlags.NumberLiteral, "NumberLiteral"],
-  [TypeFlags.BigIntLiteral, "BigIntLiteral"],
-  [TypeFlags.BooleanLiteral, "BooleanLiteral"],
-  [TypeFlags.UniqueESSymbol, "UniqueESSymbol"],
-  [TypeFlags.EnumLiteral, "EnumLiteral"],
-  [TypeFlags.Enum, "Enum"],
-  [TypeFlags.NonPrimitive, "NonPrimitive"],
-  [TypeFlags.Never, "Never"],
-  [TypeFlags.TypeParameter, "TypeParameter"],
-  [TypeFlags.Object, "Object"],
-  [TypeFlags.Index, "Index"],
-  [TypeFlags.TemplateLiteral, "TemplateLiteral"],
-  [TypeFlags.StringMapping, "StringMapping"],
-  [TypeFlags.Substitution, "Substitution"],
-  [TypeFlags.IndexedAccess, "IndexedAccess"],
-  [TypeFlags.Conditional, "Conditional"],
-  [TypeFlags.Union, "Union"],
-  [TypeFlags.Intersection, "Intersection"],
-];
+/** `typeFlagNames` order minus the `Other` sentinel, paired with the compiler's flag bits. */
+const typeFlagDisplayOrder: readonly (readonly [TypeFlags, TypeFlagName])[] = typeFlagNames
+  .filter((name): name is Exclude<TypeFlagName, "Other"> => name !== "Other")
+  .map((name) => [TypeFlags[name], name] as const);
 
 export type TsgoSessionFacts = {
   /** Every operation except the error-context breadcrumb, which the session itself owns. */
@@ -247,13 +222,13 @@ function typeFacts(session: TsgoFactsSession, handle: BackendTypeHandle): Backen
   const typeText = session.checker.typeToString(type);
   return {
     typeText,
-    flags: typeFlagNames(type.flags),
+    flags: typeFlagNamesOf(type.flags),
     ...(intrinsic === undefined ? {} : { intrinsic }),
     ...(type.isErrorType() ? { isError: true } : {}),
     ...(type.isTypeParameter() ? { isTypeParameter: true } : {}),
     ...(type.isUnionType() ? { isUnion: true } : {}),
     ...(type.isIntersectionType() ? { isIntersection: true } : {}),
-    ...(type.isIndexType() ? { isIndex: true, indexTarget: session.typeHandle(type.getTarget()) } : {}),
+    ...(type.isIndexType() ? { indexTarget: session.typeHandle(type.getTarget()) } : {}),
     ...(tupleTarget(type) === undefined ? {} : { isTuple: true }),
     ...(session.checker.isArrayType(type) ? { isArray: true } : {}),
     ...(type.isIntersectionType() ||
@@ -261,7 +236,6 @@ function typeFacts(session: TsgoFactsSession, handle: BackendTypeHandle): Backen
     ((type.flags & TypeFlags.NonPrimitive) !== 0 && typeText === "object")
       ? { isObject: true }
       : {}),
-    ...(type.isTypeReference() ? { isTypeReference: true } : {}),
     ...((type.flags & TypeFlags.EnumLike) !== 0 ? { isEnum: true } : {}),
     ...(symbol === undefined ? {} : { symbol: session.symbolHandle(symbol) }),
     ...(aliasSymbol === undefined ? {} : { aliasSymbol: session.symbolHandle(aliasSymbol) }),
@@ -369,14 +343,12 @@ function enumWarning(session: TsgoFactsSession, symbol: TsSymbol, memberName: st
   const declaration = symbol.declarations
     .map((candidate) => session.resolveNode(candidate))
     .find((candidate): candidate is Node => candidate !== undefined);
-  const sourceFile = declaration?.getSourceFile();
-  const start = declaration === undefined || sourceFile === undefined ? 0 : declaration.getStart(sourceFile);
-  const position = sourceFile?.getLineAndCharacterOfPosition(start);
+  const location = declaration === undefined ? undefined : authoredLocation(declaration);
   return {
     code: "missing-enum-declaration",
-    filePath: sourceFile?.fileName ?? "<unknown>",
-    line: (position?.line ?? 0) + 1,
-    column: (position?.character ?? 0) + 1,
+    filePath: location?.filePath ?? "<unknown>",
+    line: location?.line ?? 1,
+    column: location?.column ?? 1,
     parsedSymbolStack: [],
     enumName: symbol.name,
     memberName,
@@ -619,7 +591,7 @@ function typeToString(session: TsgoFactsSession, handle: BackendTypeHandle): str
   return session.checker.typeToString(session.type(handle, "typeToString"));
 }
 
-function typeFlagNames(flags: TypeFlags): readonly TypeFlagName[] {
+function typeFlagNamesOf(flags: TypeFlags): readonly TypeFlagName[] {
   const names = typeFlagDisplayOrder.filter(([flag]) => (flags & flag) === flag).map(([, name]) => name);
   return names.length === 0 ? ["Other"] : names;
 }

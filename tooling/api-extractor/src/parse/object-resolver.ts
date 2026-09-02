@@ -21,9 +21,9 @@ import { defaultExtractorOptions } from "../options.ts";
 import type { ProvenanceEntry } from "../provenance.ts";
 import type { OmittedIndexSignatureReason } from "../warnings.ts";
 import type { ResolveSemanticType, ResolverContext } from "./contracts.ts";
-import { isInternalSymbolName } from "./contracts.ts";
+import { isInternalSymbolName, warningLocation } from "./contracts.ts";
 import { externalTypeSelectionAllowsSymbol } from "./external-type-selection.ts";
-import { isExternalSymbol, symbolDeclarations } from "./ownership.ts";
+import { isExternalSymbol, primaryDeclaration, symbolDeclarations } from "./ownership.ts";
 import { ResolverFailure } from "./resolver-error.ts";
 import {
   callSignatureSemanticPath,
@@ -112,7 +112,7 @@ export function resolveParameter(
   ownerDeclaration?: BackendNodeHandle
 ): ParameterNode {
   const info = context.operations.symbolFacts(parameter);
-  const declaration = info.valueDeclaration ?? info.declarations[0];
+  const declaration = primaryDeclaration(info);
   const node = declaration === undefined ? undefined : context.operations.nodeFacts(declaration);
   const parameterType =
     context.operations.propertyType(parameter) ?? context.operations.typeOfSymbol(parameter, false);
@@ -194,14 +194,7 @@ export function resolveObjectNode(
   const isNamedOrAnchored = typeNameValue !== undefined || hasAuthoredObjectSyntax;
   if (shouldResolve === false && isNamedOrAnchored) {
     recordUnrepresentedConstructSignatures(type, context);
-    const indexSignature = selectIndexSignature(type, context);
-    return objectResult(
-      [],
-      typeNameValue,
-      indexSignature === undefined
-        ? undefined
-        : indexSignatureNode(indexSignature, type, context, resolveType)
-    );
+    return objectResult([], typeNameValue, selectIndexSignature(type, context), type, context, resolveType);
   }
 
   // Class-origin modifier facts were paid for pre-gate because they are
@@ -216,14 +209,10 @@ export function resolveObjectNode(
   const isReadonlyObject =
     properties.length > 0 &&
     properties.every((property) => {
-      const info = context.operations.symbolFacts(property);
-      const declarations = symbolDeclarations(info);
+      const declarations = symbolDeclarations(context.operations.symbolFacts(property));
       return (
         declarations.length > 0 &&
-        declarations.every(
-          (declaration) =>
-            context.operations.nodeFacts(declaration).declarationFlags?.includes("readonly") === true
-        )
+        declarations.every((declaration) => isReadonlyDeclaration(declaration, context))
       );
     });
   // The index-signature view is needed to decide whether an anonymous shape
@@ -270,15 +259,8 @@ export function resolveObjectNode(
     return undefined;
   }
   recordUnrepresentedConstructSignatures(type, context);
-  if (shouldResolve === false) {
-    return objectResult(
-      [],
-      typeNameValue,
-      indexSignature === undefined
-        ? undefined
-        : indexSignatureNode(indexSignature, type, context, resolveType)
-    );
-  }
+  if (shouldResolve === false)
+    return objectResult([], typeNameValue, indexSignature, type, context, resolveType);
   // Preserve inclusion callback failures for anonymous authored values while
   // keeping the required resolution-before-inclusion order.
   const includedProperties = properties.filter((property) => includeProperty(property, context));
@@ -292,10 +274,7 @@ export function resolveObjectNode(
       context.operations.propertyType(property) ?? context.operations.typeOfSymbol(property, false);
     const docs = context.operations.documentationOfSymbol(property);
     const declarationHandles = symbolDeclarations(info);
-    const readonly = declarationHandles.some(
-      (declaration) =>
-        context.operations.nodeFacts(declaration).declarationFlags?.includes("readonly") === true
-    );
+    const readonly = declarationHandles.some((declaration) => isReadonlyDeclaration(declaration, context));
     const declarationInitializer = declarationHandles
       .map((declaration) => context.operations.nodeFacts(declaration).initializerText)
       .find((value): value is string => value !== undefined);
@@ -330,11 +309,7 @@ export function resolveObjectNode(
     if (docs !== undefined) Object.assign(result, { documentation: docs });
     return result satisfies PropertyNode;
   });
-  return objectResult(
-    resolvedProperties,
-    typeNameValue,
-    indexSignature === undefined ? undefined : indexSignatureNode(indexSignature, type, context, resolveType)
-  );
+  return objectResult(resolvedProperties, typeNameValue, indexSignature, type, context, resolveType);
 }
 
 /**
@@ -423,6 +398,10 @@ function defaultObjectResolution(data: {
   return defaultExtractorOptions.shouldResolveObject(data) ?? true;
 }
 
+function isReadonlyDeclaration(declaration: BackendNodeHandle, context: Context): boolean {
+  return context.operations.nodeFacts(declaration).declarationFlags?.includes("readonly") === true;
+}
+
 function propertiesOfType(
   all: readonly BackendSymbolHandle[],
   ownerType: BackendTypeHandle,
@@ -492,11 +471,8 @@ function propertyEligible(
   // whitelists the declaration kinds an object property may be written as
   // (`objectTypeResolver.ts`), which excludes plain method declarations and
   // leaves method *signatures* (interfaces) in place.
-  const primaryDeclaration = info.valueDeclaration ?? declarations[0];
-  if (
-    primaryDeclaration !== undefined &&
-    !objectMemberDeclarationKinds.has(context.operations.nodeKind(primaryDeclaration))
-  )
+  const primary = primaryDeclaration(info);
+  if (primary !== undefined && !objectMemberDeclarationKinds.has(context.operations.nodeKind(primary)))
     return false;
   if (context.operations.declaringParentIsClass(property)) {
     if (
@@ -569,13 +545,9 @@ function recordOmittedIndexSignatures(
 ): void {
   if (omitted.length === 0) return;
   const declaration = omitted.find((candidate) => candidate.declaration !== undefined)?.declaration;
-  const location = declaration === undefined ? undefined : context.operations.nodeFacts(declaration);
   context.warnings.push({
     code: "omitted-index-signature",
-    filePath: location?.filePath ?? context.filePath,
-    line: location?.line ?? 1,
-    column: location?.column ?? 1,
-    parsedSymbolStack: [context.filePath, ...context.symbolStack],
+    ...warningLocation(context, declaration),
     reason,
     keyTypes: omitted.map((candidate) => candidate.keyType),
   });
@@ -596,14 +568,9 @@ export function recordUnrepresentedConstructSignatures(type: BackendTypeHandle, 
   const constructs = context.operations.constructSignaturesOfType(type);
   const first = constructs.at(0);
   if (first === undefined) return;
-  const declaration = context.operations.signatureFacts(first).declaration;
-  const location = declaration === undefined ? undefined : context.operations.nodeFacts(declaration);
   context.warnings.push({
     code: "unrepresented-construct-signatures",
-    filePath: location?.filePath ?? context.filePath,
-    line: location?.line ?? 1,
-    column: location?.column ?? 1,
-    parsedSymbolStack: [context.filePath, ...context.symbolStack],
+    ...warningLocation(context, context.operations.signatureFacts(first).declaration),
     structuralPath: [...context.provenancePath, "constructSignatures"],
     signatureCount: constructs.length,
   });
@@ -645,14 +612,9 @@ export function recordOmittedCallableMembers(
   if (memberNames.length === 0) return;
   const firstSignature = signatures.at(0);
   if (firstSignature === undefined) return;
-  const declaration = context.operations.signatureFacts(firstSignature).declaration;
-  const location = declaration === undefined ? undefined : context.operations.nodeFacts(declaration);
   context.warnings.push({
     code: "omitted-callable-members",
-    filePath: location?.filePath ?? context.filePath,
-    line: location?.line ?? 1,
-    column: location?.column ?? 1,
-    parsedSymbolStack: [context.filePath, ...context.symbolStack],
+    ...warningLocation(context, context.operations.signatureFacts(firstSignature).declaration),
     structuralPath: [...context.provenancePath],
     memberNames,
   });
@@ -722,22 +684,26 @@ function normalizedBindingDefaults(
 function objectResult(
   properties: readonly PropertyNode[],
   typeName: TypeName | undefined,
-  indexSignature: IndexSignatureNode | undefined
+  indexSignature: BackendIndexSignatureFacts | undefined,
+  owner: BackendTypeHandle,
+  context: Context,
+  resolveType: ResolveSemanticType
 ): Extract<SemanticType, { kind: "object" }> {
-  if (typeName !== undefined && indexSignature !== undefined) {
-    return { kind: "object", properties, typeName, indexSignature };
+  const result: Extract<SemanticType, { kind: "object" }> = { kind: "object", properties };
+  if (typeName !== undefined) Object.assign(result, { typeName });
+  if (indexSignature !== undefined) {
+    Object.assign(result, {
+      indexSignature: indexSignatureNode(indexSignature, owner, context, resolveType),
+    });
   }
-  if (typeName !== undefined) return { kind: "object", properties, typeName };
-  if (indexSignature !== undefined) return { kind: "object", properties, indexSignature };
-  return { kind: "object", properties };
+  return result;
 }
 
 export function propertyTypeNode(
   property: BackendSymbolHandle,
   context: Context
 ): BackendNodeReference | undefined {
-  const info = context.operations.symbolFacts(property);
-  const declaration = info.valueDeclaration ?? info.declarations[0];
+  const declaration = primaryDeclaration(context.operations.symbolFacts(property));
   return declaration === undefined ? undefined : context.operations.nodeFacts(declaration).type;
 }
 

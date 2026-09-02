@@ -7,9 +7,10 @@ import { SymbolFlags } from "typescript/unstable/sync";
 import type { Symbol as TsSymbol } from "typescript/unstable/sync";
 
 import type { BackendSymbolFacts, BackendSymbolHandle, BackendSymbolOrigin } from "../contracts.ts";
+import { isExternalOwnership } from "../contracts.ts";
 import { authoredSymbolName } from "./class-facts.ts";
 import type { TsgoFactsSession } from "./facts.ts";
-import { classifySourceFile, isExternalDeclaration, isExternalOwnership } from "./file-ownership.ts";
+import { classifySourceFile, isExternalDeclaration } from "./file-ownership.ts";
 import { moduleOriginOfSymbol } from "./module-origin.ts";
 import { repositoryRelativePath } from "./path-identity.ts";
 

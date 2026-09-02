@@ -44,6 +44,7 @@ import type {
 import { callExpressionFacts } from "./call-facts.ts";
 import { declarationModifiers } from "./class-facts.ts";
 import type { TsgoFactsSession } from "./facts.ts";
+import { authoredLocation } from "./syntax.ts";
 
 /**
  * Reads one handle's parser-facing kind. Answers from the compiler kind alone
@@ -193,14 +194,10 @@ export function nodeFacts(
 ): BackendNodeFacts {
   const node = session.node(handle, "nodeFacts");
   const sourceFile = node.getSourceFile();
-  const start = node.getStart(sourceFile);
-  const position = sourceFile.getLineAndCharacterOfPosition(start);
   const base: BackendNodeFacts = {
     kind: nodeKind(node),
     text: node.getText().replaceAll(/\s+/gu, " ").trim(),
-    filePath: sourceFile.fileName,
-    line: position.line + 1,
-    column: position.character + 1,
+    ...authoredLocation(node, sourceFile),
   };
   const type = sourceNodeType(node);
   const result: BackendNodeFacts =
@@ -382,16 +379,18 @@ function nodeKind(node: Node): BackendNodeFacts["kind"] {
   return nodeKindFromCompilerKind(node.kind);
 }
 
-function modifierFlags(node: Node): readonly ("readonly" | "private" | "protected" | "static")[] {
-  return declarationModifiers(node).flatMap((modifier) =>
-    modifier.kind === SyntaxKind.ReadonlyKeyword
-      ? (["readonly"] as const)
-      : modifier.kind === SyntaxKind.PrivateKeyword
-        ? (["private"] as const)
-        : modifier.kind === SyntaxKind.ProtectedKeyword
-          ? (["protected"] as const)
-          : modifier.kind === SyntaxKind.StaticKeyword
-            ? (["static"] as const)
-            : []
-  );
+type DeclarationFlag = NonNullable<BackendNodeFacts["declarationFlags"]>[number];
+
+const declarationFlagByModifier: ReadonlyMap<SyntaxKind, DeclarationFlag> = new Map([
+  [SyntaxKind.ReadonlyKeyword, "readonly"],
+  [SyntaxKind.PrivateKeyword, "private"],
+  [SyntaxKind.ProtectedKeyword, "protected"],
+  [SyntaxKind.StaticKeyword, "static"],
+]);
+
+function modifierFlags(node: Node): readonly DeclarationFlag[] {
+  return declarationModifiers(node).flatMap((modifier) => {
+    const flag = declarationFlagByModifier.get(modifier.kind);
+    return flag === undefined ? [] : [flag];
+  });
 }

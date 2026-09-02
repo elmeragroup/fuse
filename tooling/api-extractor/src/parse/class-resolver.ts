@@ -17,6 +17,7 @@ import {
   resolveParameter,
   resolveSignatureNode,
 } from "./object-resolver.ts";
+import { primaryDeclaration } from "./ownership.ts";
 import {
   constructSignatureSemanticPath,
   methodSemanticPath,
@@ -137,7 +138,7 @@ function extractMembers(
       continue;
     if (info.name.startsWith("_") || info.name.startsWith("#")) continue;
     if (isStatic && functionBuiltInStaticNames.has(info.name)) continue;
-    const declaration = info.valueDeclaration ?? info.declarations[0];
+    const declaration = primaryDeclaration(info);
     if (declaration === undefined) continue;
     const declarationFacts = context.operations.nodeFacts(declaration);
     if (

@@ -8,15 +8,12 @@ import type {
 import type { SemanticType } from "../model.ts";
 import type { ExtractWarning, TypeFlagName } from "../warnings.ts";
 import type { ResolverContext } from "./contracts.ts";
+import { warningLocation } from "./contracts.ts";
 
-type FallbackWarning = {
-  code: "unsupported-type-fallback";
-  filePath: string;
-  line: number;
-  column: number;
-  parsedSymbolStack: string[];
-  typeFlags: readonly TypeFlagName[];
-  typeText: string;
+type FallbackWarning = Omit<
+  Extract<BackendWarningFact, { readonly code: "unsupported-type-fallback" }>,
+  "sourceText"
+> & {
   sourceText?: string;
 };
 
@@ -93,19 +90,15 @@ export function unsupported(
     type === undefined ? undefined : context.operations.typeFacts(type);
   const symbolInfo = symbol === undefined ? undefined : context.operations.symbolFacts(symbol);
   const locationNode = sourceNode ?? symbolInfo?.declarations[0];
-  const location = locationNode === undefined ? undefined : context.operations.nodeFacts(locationNode);
-  const filePath = location?.filePath ?? context.filePath;
   const fallbackFlags: readonly TypeFlagName[] = ["Other"];
   const warning: FallbackWarning = {
     code: "unsupported-type-fallback" as const,
-    filePath,
-    line: location?.line ?? 1,
-    column: location?.column ?? 1,
-    parsedSymbolStack: [context.filePath, ...context.symbolStack],
+    ...warningLocation(context, locationNode),
     typeFlags: facts?.flags ?? fallbackFlags,
     typeText: facts?.typeText ?? "<missing type>",
   };
-  if (sourceNode !== undefined && location?.text !== undefined) warning.sourceText = location.text;
+  const sourceText = sourceNode === undefined ? undefined : context.operations.nodeFacts(sourceNode).text;
+  if (sourceText !== undefined) warning.sourceText = sourceText;
   context.warnings.push(warning);
   return { kind: "intrinsic", intrinsic: "any" };
 }

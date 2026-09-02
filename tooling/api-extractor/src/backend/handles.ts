@@ -44,12 +44,11 @@ export class HandleRegistry {
     expectedKind: Tag,
     context: HandleContext
   ): Value {
-    const contextFields = diagnosticFields(context);
     if (this.closed) {
       throw new BackendError({
         message: `Cannot use a ${expectedKind} compiler handle after the extraction session closed`,
         cause: "The extraction handle registry has been cleared.",
-        ...contextFields,
+        ...diagnosticFields(context),
       });
     }
     if (!isRecord(handle)) throw invalidHandle("missing", expectedKind, context);

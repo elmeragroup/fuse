@@ -28,7 +28,7 @@ import { componentNode } from "./component.ts";
 import { authoredUndefinedUnionSyntax, intersectionNode, unionNode } from "./compound.ts";
 import { arrayNode, tupleNode } from "./container.ts";
 import type { ResolverContext } from "./contracts.ts";
-import { isInternalSymbolName } from "./contracts.ts";
+import { isInternalSymbolName, warningLocation } from "./contracts.ts";
 import { externalPolicy } from "./external-policy.ts";
 import type { ExternalPolicyDecision } from "./external-policy.ts";
 import { normalizeExternalTypeSelection } from "./external-type-selection.ts";
@@ -44,7 +44,7 @@ import {
   canonicalizeProvenance,
   recordProvenance,
 } from "./object-resolver.ts";
-import { isStandardLibraryDeclaration } from "./ownership.ts";
+import { isStandardLibraryDeclaration, primaryDeclaration } from "./ownership.ts";
 import {
   collectSemanticPaths,
   componentPropSemanticPathFromProvenancePath,
@@ -122,7 +122,7 @@ function resolveExport(entry: BackendExportDraft, base: Context): ExportNode {
     synthesized: symbolFacts.declarations.length === 0,
     ...(entry.reexportChain === undefined ? {} : { reexportChain: entry.reexportChain }),
   };
-  const declaration = symbolFacts.valueDeclaration ?? symbolFacts.declarations[0];
+  const declaration = primaryDeclaration(symbolFacts);
   const declarationFacts = declaration === undefined ? undefined : base.operations.nodeFacts(declaration);
   const sourceNode =
     declarationFacts?.kind === "function" || declarationFacts?.kind === "functionLike"
@@ -250,14 +250,12 @@ function recordUncertainComponentRecognition(
   },
   recognition: { readonly reason: "mixed-component-union" }
 ): void {
-  const declaration = symbolFacts.valueDeclaration ?? symbolFacts.declarations[0];
-  const location = declaration === undefined ? undefined : base.operations.nodeFacts(declaration);
   base.warnings.push({
     code: "uncertain-component-recognition",
-    filePath: location?.filePath ?? base.filePath,
-    line: location?.line ?? 1,
-    column: location?.column ?? 1,
-    parsedSymbolStack: [base.filePath, ...(entry.symbolStack ?? [entry.name])],
+    ...warningLocation(
+      { ...base, symbolStack: entry.symbolStack ?? [entry.name] },
+      primaryDeclaration(symbolFacts)
+    ),
     reason: recognition.reason,
     name: entry.name,
   });
@@ -415,7 +413,7 @@ function typeNodeUnsafe(
   if (facts.isUnion === true) return unionNode(type, sourceNode, typeNameValue, context, typeNode);
   if (facts.isIntersection === true)
     return intersectionNode(type, sourceNode, typeNameValue, context, typeNode);
-  if (facts.isIndex === true && sourceNode !== undefined) {
+  if (facts.indexTarget !== undefined && sourceNode !== undefined) {
     return typeOperatorNode(type, sourceNode, typeNameValue, context, typeNode);
   }
   // An Index type reached WITHOUT its authored `keyof` syntax — an inferred
@@ -425,7 +423,7 @@ function typeNodeUnsafe(
   // upstream's `resolveIndexLikeType` — base constraint when one exists,
   // otherwise `any` carrying the authored alias name, silently: an expected
   // limit rather than a parser bug.
-  if (facts.isIndex === true || facts.flags.includes("IndexedAccess")) {
+  if (facts.indexTarget !== undefined || facts.flags.includes("IndexedAccess")) {
     return baseConstraintOrAny(type, typeNameValue, context);
   }
   if (facts.isArray === true || context.operations.isArrayType(type))
@@ -553,14 +551,9 @@ function recordMissingEnumWarning(
   const facts = context.operations.typeFacts(type);
   const symbol = facts.aliasSymbol ?? facts.symbol;
   const symbolFacts = symbol === undefined ? undefined : context.operations.symbolFacts(symbol);
-  const declaration = symbolFacts?.declarations[0];
-  const location = declaration === undefined ? undefined : context.operations.nodeFacts(declaration);
   context.warnings.push({
     code: "missing-enum-declaration",
-    filePath: location?.filePath ?? context.filePath,
-    line: location?.line ?? 1,
-    column: location?.column ?? 1,
-    parsedSymbolStack: [context.filePath, ...context.symbolStack],
+    ...warningLocation(context, symbolFacts?.declarations[0]),
     enumName: typeNameValue?.name ?? symbolFacts?.name ?? "enum",
     ...(memberName === undefined ? {} : { memberName }),
   });
@@ -758,7 +751,7 @@ function typeNameFor(
         .filter((value): value is BackendTypeHandle => value !== undefined)
     : aliasWithoutArguments
       ? []
-      : facts.isTypeReference === true
+      : facts.referenceTarget !== undefined
         ? (facts.typeArguments ?? [])
         : (facts.aliasTypeArguments ?? []);
   const named = namedTypeArguments({

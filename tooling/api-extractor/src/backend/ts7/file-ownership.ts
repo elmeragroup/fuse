@@ -1,6 +1,7 @@
 import type { Node } from "typescript/unstable/ast";
 
 import type { BackendDeclarationOwnership, BackendNodeReference } from "../contracts.ts";
+import { isExternalOwnership } from "../contracts.ts";
 import type { TsgoFactsSession } from "./facts.ts";
 
 /**
@@ -128,11 +129,6 @@ export function classifySourceFile(
     return packageName === undefined ? { kind: "external" } : { kind: "dependency", packageName };
   }
   return { kind: "project" };
-}
-
-/** Ownership predicates stay in the backend adapter, beside classification. */
-export function isExternalOwnership(ownership: BackendDeclarationOwnership): boolean {
-  return ownership.kind !== "project";
 }
 
 function packageNameFromPath(pathSegments: readonly string[]): string | undefined {

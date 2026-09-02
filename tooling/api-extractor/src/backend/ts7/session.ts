@@ -179,14 +179,15 @@ export class TsgoExtractionSession implements BackendExtractionSession {
 
   private ensureOpen(operation: string): void {
     if (!this.closed) return;
+    const { operation: _operation, ...diagnostics } = this.context(operation);
     throw new BackendError({
       message: `Cannot use the TypeScript extraction session after it closed (${operation})`,
       cause: "The extraction handle registry has been cleared.",
-      ...(this.currentFilePath === undefined ? {} : { filePath: this.currentFilePath }),
-      ...(this.symbolStack.length === 0 ? {} : { symbolStack: [...this.symbolStack] }),
+      ...diagnostics,
     });
   }
 
+  /** The operation name plus whatever file and symbol breadcrumb this session knows. */
   private context(operation: string) {
     return {
       operation,
@@ -215,11 +216,11 @@ export class TsgoExtractionSession implements BackendExtractionSession {
     const record = this.nodeRecord(handle, operation);
     const node = record.resolve();
     if (node === undefined) {
+      const { operation: _operation, ...diagnostics } = this.context(operation);
       throw new BackendError({
         message: `Could not resolve a ${handle.kind} compiler handle in ${operation}`,
         cause: `The compiler declaration at ${record.path} is no longer available.`,
-        ...(this.currentFilePath === undefined ? {} : { filePath: this.currentFilePath }),
-        ...(this.symbolStack.length === 0 ? {} : { symbolStack: [...this.symbolStack] }),
+        ...diagnostics,
       });
     }
     if (handle.kind === "node") this.nodeInterner.rememberResolvedNode(node, handle);
@@ -238,45 +239,32 @@ export class TsgoExtractionSession implements BackendExtractionSession {
   }
 
   private typeNodeHandle(node: TypeNode): BackendTypeNodeHandle {
-    const existing = this.typeNodeHandles.get(node);
-    if (existing !== undefined) return existing;
-    const sourceFile = node.getSourceFile();
-    const handle = this.registry.create("type-node", {
-      deferred: false,
-      kind: node.kind,
-      path: sourceFile.fileName,
-      resolve: () => node,
-    } satisfies SessionNodeReference);
-    this.typeNodeHandles.set(node, handle);
-    return handle;
+    return intern(this.typeNodeHandles, node, () =>
+      this.registry.create("type-node", {
+        deferred: false,
+        kind: node.kind,
+        path: node.getSourceFile().fileName,
+        resolve: () => node,
+      } satisfies SessionNodeReference)
+    );
   }
 
   private symbolHandle(symbol: TsSymbol): BackendSymbolHandle {
-    const existing = this.symbolHandles.get(symbol);
-    if (existing !== undefined) return existing;
-    const handle = this.registry.create("symbol", symbol);
-    this.symbolHandles.set(symbol, handle);
-    return handle;
+    return intern(this.symbolHandles, symbol, () => this.registry.create("symbol", symbol));
   }
   private typeHandle(type: Type): BackendTypeHandle {
-    const existing = this.typeHandles.get(type);
-    if (existing !== undefined) return existing;
-    const handle = this.registry.create("type", type);
-    this.typeHandles.set(type, handle);
-    return handle;
+    return intern(this.typeHandles, type, () => this.registry.create("type", type));
   }
   private typeHandlesFor(types: readonly Type[]): readonly BackendTypeHandle[] {
     return types.map((type) => this.typeHandle(type));
   }
   private internedSourceFileName(path: string): string {
-    const existing = this.declarationPaths.get(path);
-    if (existing !== undefined) return existing;
-    const resolved = this.pathIdentity.compilerSourceFileName(
-      path,
-      (candidate) => this.sourceFileMetadata(candidate) !== undefined
+    return intern(this.declarationPaths, path, () =>
+      this.pathIdentity.compilerSourceFileName(
+        path,
+        (candidate) => this.sourceFileMetadata(candidate) !== undefined
+      )
     );
-    this.declarationPaths.set(path, resolved);
-    return resolved;
   }
   private sourceFileMetadata(path: string): ReturnType<Program["getSourceFileMetadata"]> {
     this.ensureOpen("sourceFileMetadata");
@@ -286,11 +274,7 @@ export class TsgoExtractionSession implements BackendExtractionSession {
     return metadata;
   }
   private signatureHandle(signature: Signature): BackendSignatureHandle {
-    const existing = this.signatureHandles.get(signature);
-    if (existing !== undefined) return existing;
-    const handle = this.registry.create("signature", signature);
-    this.signatureHandles.set(signature, handle);
-    return handle;
+    return intern(this.signatureHandles, signature, () => this.registry.create("signature", signature));
   }
   private symbolAt(node: Node): BackendSymbolHandle | undefined {
     const cached = this.symbolsAtNodes.get(node);
@@ -300,4 +284,13 @@ export class TsgoExtractionSession implements BackendExtractionSession {
     this.symbolsAtNodes.set(node, handle ?? null);
     return handle;
   }
+}
+
+/** Get-or-create for the session's identity maps; `create` runs once per key. */
+function intern<Key, Value>(entries: Map<Key, Value>, key: Key, create: () => Value): Value {
+  const existing = entries.get(key);
+  if (existing !== undefined) return existing;
+  const value = create();
+  entries.set(key, value);
+  return value;
 }
