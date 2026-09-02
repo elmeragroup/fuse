@@ -765,6 +765,12 @@ export const fixtureEvidenceCatalog = [
   fixture("readonly-array-mapped-type-with-concrete-props", "input.ts", ["05", "14"], "immutable-upstream", {
     metadata: { issueViews: { "05": { order: 23, group: "readonlyArray" } } },
   }),
+  fixture("render-prop-union", "input.tsx", ["02"], "generated", {
+    conformance: false,
+    metadata: {
+      packageTypechecks: [{ order: 35, project: "test/fixtures/render-prop-union/tsconfig.json" }],
+    },
+  }),
   fixture("symbol-double-underscore-name-preservation", "input.ts", ["14"], "reviewed-divergence", {
     warnings: { oracleFile: "warnings.tsgo.json", codes: ["unsupported-type-fallback"] },
   }),
