@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { buildFigmaThemeIndex, figmaDocumentFromCatalog } from "../scripts/lib/theme-catalog-figma.ts";
+import {
+  buildFigmaThemeIndex,
+  figmaDocumentFromCatalog,
+  figmaThemeArtifacts,
+} from "../scripts/lib/theme-catalog-figma.ts";
 import { THEME_CATALOG } from "../src/generated/theme-catalog";
 import { FIGMA_THEME_FILES, FIGMA_THEME_INDEX } from "../src/generated/theme-catalog-figma";
 import type {
@@ -107,6 +111,16 @@ describe("Figma DTCG documents", () => {
       $type: "fontFamily",
       $value: "Neo Sans",
     });
+  });
+
+  it("emits a typed FIGMA_THEME_FILES const without chained assertions", () => {
+    const module = figmaThemeArtifacts(THEME_CATALOG).indexModule;
+    expect(module).toContain(
+      "export const FIGMA_THEME_FILES: { readonly [slug: string]: FigmaThemeDocument } = {"
+    );
+    expect(module).not.toContain("as unknown as");
+    expect(module).not.toMatch(/\bas\s+/);
+    expect(module).not.toContain('from "./figma/');
   });
 
   it("is a projection of the catalog", () => {

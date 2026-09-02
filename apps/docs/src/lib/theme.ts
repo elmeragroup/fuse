@@ -1,10 +1,17 @@
-import { BRAND_CODES, BRANDS, coerceTheme, isBrandCode } from "@elmeragroup/ui/theme";
+import { isBrandCode } from "@elmeragroup/ui/theme";
 import type {
   BrandCode,
   ColorSchemeOptions,
   ThemeInput,
   ThemeSegment,
   ThemeVariant,
+} from "@elmeragroup/ui/theme";
+
+export {
+  BRAND_CODES as THEME_BRANDS,
+  LEGAL_THEMES,
+  THEME_SEGMENTS,
+  THEME_VARIANTS,
 } from "@elmeragroup/ui/theme";
 
 export const DOCUMENT_THEME = {
@@ -24,28 +31,6 @@ export const DEFAULT_THEME = {
   brand: "fkas",
   segment: "private",
 } as const satisfies ThemeInput;
-
-export const THEME_VARIANTS = ["internal", "external"] as const satisfies readonly ThemeVariant[];
-
-export const THEME_BRANDS = BRAND_CODES;
-
-export const THEME_SEGMENTS = ["private", "company"] as const satisfies readonly ThemeSegment[];
-
-/**
- * The 20 legal theme permutations, in variant → brand → segment order.
- *
- * Built from the library's own pin table rather than a list written here, so a brand
- * that gains or loses a segment changes this set without an edit. `coerceTheme` is what
- * narrows each candidate — the four illegal permutations return `null` and never enter
- * the array, so the matrix cannot render one.
- */
-export const LEGAL_THEMES: readonly ThemeInput[] = THEME_VARIANTS.flatMap((variant) =>
-  THEME_BRANDS.flatMap((brand) =>
-    BRANDS[brand].segments
-      .map((segment) => coerceTheme({ variant, brand, segment }))
-      .filter((theme): theme is ThemeInput => theme !== null)
-  )
-);
 
 export function parseThemeVariant(value: string): ThemeVariant | null {
   if (value === "internal" || value === "external") {

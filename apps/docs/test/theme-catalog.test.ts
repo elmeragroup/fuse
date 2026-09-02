@@ -1,9 +1,15 @@
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { TOKEN_NAMES, buildThemeCatalog } from "../scripts/lib/theme-catalog.ts";
 import { THEME_CATALOG } from "../src/generated/theme-catalog";
 import type { ThemeCatalogEntry } from "../src/lib/docs-model";
 import { docsBaseUrl } from "./docs-server";
+
+const here = dirname(fileURLToPath(import.meta.url));
+const appsRoot = join(here, "../../");
 
 /** The four permutations the pin table forbids. */
 const ILLEGAL_SLUGS = [
@@ -93,6 +99,43 @@ describe("theme catalog payload", () => {
 
   it("matches the generate-pipeline artifact the route serves", () => {
     expect(buildThemeCatalog()).toEqual(THEME_CATALOG);
+  });
+});
+
+const SOURCE_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".mjs"]);
+const DEEP_UI_SRC_IMPORT = /(?:from|import)\s+["'][^"']*packages\/ui\/src/;
+
+function walkSourceFiles(directory: string): string[] {
+  const files: string[] = [];
+  for (const entry of readdirSync(directory)) {
+    if (entry === "node_modules" || entry === "generated") {
+      continue;
+    }
+    const absolute = join(directory, entry);
+    if (statSync(absolute).isDirectory()) {
+      files.push(...walkSourceFiles(absolute));
+      continue;
+    }
+    if (SOURCE_EXTENSIONS.has(entry.slice(entry.lastIndexOf(".")))) {
+      files.push(absolute);
+    }
+  }
+  return files;
+}
+
+describe("workspace package boundary", () => {
+  it("does not deep-import packages/ui/src from apps", () => {
+    const offenders = walkSourceFiles(appsRoot)
+      .filter((file) => DEEP_UI_SRC_IMPORT.test(readFileSync(file, "utf8")))
+      .map((file) => file.slice(appsRoot.length));
+    expect(offenders).toEqual([]);
+  });
+
+  it("does not list transpilePackages in the Next hosts", () => {
+    expect(readFileSync(join(appsRoot, "docs/next.config.ts"), "utf8")).not.toContain("transpilePackages");
+    expect(readFileSync(join(appsRoot, "playground/next.config.ts"), "utf8")).not.toContain(
+      "transpilePackages"
+    );
   });
 });
 

@@ -7,6 +7,7 @@ import {
   BARE_COMPONENT_ENTRIES,
   DEFERRED_ENTRIES,
   discoverEntries,
+  TOOLING_ONLY_JS_ENTRIES,
   unexpectedJsEntryFiles,
   uniqueBarrelRuntimeExports,
 } from "../scripts/entries";
@@ -414,6 +415,12 @@ describe("exports map", () => {
     );
     expect(theme?.runtimeExports).toContain("BRAND_CODES");
     expect(theme?.runtimeExports).toContain("isBrandCode");
+    expect(theme?.runtimeExports).toContain("THEME_VARIANTS");
+    expect(theme?.runtimeExports).toContain("THEME_SEGMENTS");
+    expect(theme?.runtimeExports).toContain("LEGAL_THEMES");
+    expect(theme?.runtimeExports).not.toContain("composeTheme");
+    expect(theme?.runtimeExports).not.toContain("TOKEN_NAMES");
+    expect(theme?.runtimeExports).not.toContain("PRIMITIVES");
     expect(theme?.runtimeExports).toContain("ThemeProvider");
     expect(theme?.runtimeExports).toContain("coerceTheme");
     expect(theme?.runtimeExports).toContain("themeAttributes");
@@ -427,6 +434,39 @@ describe("exports map", () => {
     expect(root?.runtimeExports).toContain("buttonVariants");
     expect(root?.runtimeExports).toContain("ScrollArea");
     expect(root?.runtimeExports).toContain("ThemeProvider");
+    expect(root?.runtimeExports).toContain("LEGAL_THEMES");
+    expect(root?.runtimeExports).not.toContain("composeTheme");
+  });
+
+  it("exposes a workspace-only theme-catalog tooling entry that is not published", () => {
+    expect(TOOLING_ONLY_JS_ENTRIES).toEqual([
+      { subpath: "theme-catalog", sourceFile: "src/theme/catalog.ts" },
+    ]);
+    expect(exportBindingTarget(sourceExports, "./theme-catalog")).toEqual({
+      types: "./src/theme/catalog.ts",
+      import: "./src/theme/catalog.ts",
+    });
+    expect(exportBindingTarget(publishExports, "./theme-catalog")).toBeUndefined();
+    expect(discovered.jsEntries.map((entry) => entry.subpath)).not.toContain("theme-catalog");
+    const catalog = parseFacadeValueExports(
+      "src/theme/catalog.ts",
+      readFileSync(join(packageRoot, "src/theme/catalog.ts"), "utf8")
+    );
+    expect(catalog).toEqual([
+      "composeTheme",
+      "oklchToLinearSrgb",
+      "parseOklch",
+      "defaultDensityForVariant",
+      "densityAttributes",
+      "themeAttributes",
+      "TOKEN_NAMES",
+      "PRIMITIVE_NAMES",
+      "PRIMITIVES",
+      "LEGAL_THEMES",
+      "themeSlug",
+    ]);
+    expect(catalog).not.toContain("ThemeProvider");
+    expect(catalog).not.toContain("ColorSchemeScript");
   });
 
   it("publishes Button and buttonVariants from /button and the root barrel", () => {

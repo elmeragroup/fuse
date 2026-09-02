@@ -5,7 +5,8 @@
  * `{group.name}` aliases. Conversion stays here — routes serve generated JSON.
  */
 
-import { oklchToLinearSrgb, parseOklch } from "../../../../packages/ui/src/theme/contrast.ts";
+import { oklchToLinearSrgb, parseOklch } from "@elmeragroup/ui/theme-catalog";
+
 import type {
   FigmaColorToken,
   FigmaDimensionToken,
@@ -209,28 +210,21 @@ export function buildFigmaThemeIndex(catalog: ThemeCatalog): FigmaThemeIndex {
   };
 }
 
-/** `internal-fkas-private` → `internalFkasPrivate`. */
-function jsonImportBinding(slug: string): string {
-  return slug.replace(/-([a-z])/g, (hyphenLetter) => hyphenLetter.slice(1).toUpperCase());
-}
-
 /** The generated barrel the `/api/themes/figma` routes import. */
 function renderFigmaThemeCatalog(catalog: ThemeCatalog): string {
-  const imports = catalog.themes
-    .map((theme) => `import ${jsonImportBinding(theme.slug)} from "./figma/${theme.slug}.json";`)
-    .join("\n");
   const files = catalog.themes
-    .map((theme) => `  "${theme.slug}": ${jsonImportBinding(theme.slug)},`)
-    .join("\n");
+    .map((theme) => {
+      const document = figmaDocumentFromCatalog(theme, catalog.primitives);
+      return `  "${theme.slug}": ${JSON.stringify(document)}`;
+    })
+    .join(",\n");
   return `import type { FigmaThemeDocument, FigmaThemeIndex } from "../lib/docs-model";
-${imports}
 
 export const FIGMA_THEME_INDEX: FigmaThemeIndex = ${JSON.stringify(buildFigmaThemeIndex(catalog), null, 2)};
 
-// SAFETY: each JSON file is written from figmaDocumentFromCatalog; JSON imports widen literals and tuples.
-export const FIGMA_THEME_FILES = {
+export const FIGMA_THEME_FILES: { readonly [slug: string]: FigmaThemeDocument } = {
 ${files}
-} as unknown as { readonly [slug: string]: FigmaThemeDocument };
+};
 `;
 }
 

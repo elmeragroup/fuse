@@ -1,5 +1,7 @@
-import { BRAND_CODES, BRANDS, coerceTheme, parseThemeSlug, themeSlug } from "@elmeragroup/ui/theme";
-import type { ThemeInput, ThemeSegment, ThemeSlug, ThemeVariant } from "@elmeragroup/ui/theme";
+import { coerceTheme, LEGAL_THEMES, parseThemeSlug, themeSlug } from "@elmeragroup/ui/theme";
+import type { ThemeInput, ThemeSlug } from "@elmeragroup/ui/theme";
+
+export { LEGAL_THEMES };
 
 /** The coordinate the server renders `<html>` with; the switcher starts here. */
 export const DEFAULT_THEME = {
@@ -13,23 +15,6 @@ export const COLOR_SCHEME = {
   defaultColorScheme: "system",
   enableSystem: true,
 } as const;
-
-const THEME_VARIANTS = ["internal", "external"] as const satisfies readonly ThemeVariant[];
-
-/**
- * The 20 legal theme permutations, in variant → brand → segment order — the same
- * derivation `apps/docs/src/lib/theme.ts` uses. Built from the library's own pin table
- * rather than a list written here, so a brand that gains or loses a segment changes this
- * set without an edit. `coerceTheme` narrows each candidate: the illegal permutations
- * return `null` and never enter the array, so the switcher cannot offer one.
- */
-export const LEGAL_THEMES: readonly ThemeInput[] = THEME_VARIANTS.flatMap((variant) =>
-  BRAND_CODES.flatMap((brand) =>
-    BRANDS[brand].segments
-      .map((segment: ThemeSegment) => coerceTheme({ variant, brand, segment }))
-      .filter((theme): theme is ThemeInput => theme !== null)
-  )
-);
 
 export const LEGAL_THEME_SLUGS: readonly ThemeSlug[] = LEGAL_THEMES.map((theme) => themeSlug(theme));
 

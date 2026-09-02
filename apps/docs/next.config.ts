@@ -7,7 +7,6 @@ const workspaceRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), ".
 
 const nextConfig: NextConfig = {
   outputFileTracingRoot: workspaceRoot,
-  transpilePackages: ["@elmeragroup/ui"],
   /** Component pages are authored as `page.mdx` route files (docs-site.md §1). */
   pageExtensions: ["ts", "tsx", "mdx"],
   /**

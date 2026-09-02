@@ -10,6 +10,7 @@ import {
   publishExportTarget,
   sourceCssTarget,
   sourceExportTarget,
+  TOOLING_ONLY_JS_ENTRIES,
 } from "./entries";
 import type { CssExportEntry, DiscoveredEntries, ExportCondition, JsExportEntry } from "./entries";
 import { ARTIFACTS_DIR } from "./tarball";
@@ -124,9 +125,17 @@ function pushCssBindings(
   }
 }
 
+function pushToolingOnlyBindings(bindings: ExportBinding[]): void {
+  for (const entry of TOOLING_ONLY_JS_ENTRIES) {
+    const target = `./${entry.sourceFile}`;
+    bindings.push({ key: exportKey(entry.subpath), target: { types: target, import: target } });
+  }
+}
+
 export function buildSourceExportMap(discovered: DiscoveredEntries): ExportBinding[] {
   const bindings: ExportBinding[] = [];
   pushJsBindings(bindings, discovered.jsEntries, sourceExportTarget);
+  pushToolingOnlyBindings(bindings);
   pushCssBindings(bindings, discovered.cssEntries, sourceCssTarget);
   for (const pattern of discovered.assetPatterns) {
     bindings.push({ key: exportKey(pattern.subpath), target: `./${pattern.sourceFile}` });
@@ -270,6 +279,11 @@ export function renderRootBarrel(discovered: DiscoveredEntries): string {
 }
 
 export function writeSourceExports(packageRoot: string): DiscoveredEntries {
+  for (const entry of TOOLING_ONLY_JS_ENTRIES) {
+    if (!existsSync(join(packageRoot, entry.sourceFile))) {
+      throw new Error(`Missing tooling-only source ${entry.sourceFile}`);
+    }
+  }
   const discovered = discoverEntries(packageRoot);
   writeFileSync(join(packageRoot, "src/index.ts"), renderRootBarrel(discovered));
   const packageJsonPath = join(packageRoot, "package.json");
