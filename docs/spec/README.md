@@ -1,6 +1,6 @@
 # @elmeragroup/ui — implementation specification
 
-The implementation-ready architecture and product specification for `@elmeragroup/ui`: the whitelabel React component library serving Elmera Group's five consumer energy brands plus corporate Elmera across **20 theme permutations** (variant × brand × segment). This document set, [CONTEXT.md](../../CONTEXT.md), and the ADRs in [../adr/](../adr/) are the **normative decision layer**. The pinned `.ref/` snapshots are the **required lift-source layer** wherever a component header or asset chapter names one: copy the named implementation/assets, then apply every normative rule and that component's §8 divergences. Tickets, research, and prototypes are provenance only; an implementation agent does not need them and they never override the normative layer. The pre-v1 `wayfinder/` planning tree (tickets, research, prototypes) was removed when v1 was reached; "wayfinder ticket NNN" citations in the chapters are provenance pointers into git history before that removal, and new decisions land in a chapter's §8 or an ADR.
+The implementation-ready architecture and product specification for `@elmeragroup/ui`: the whitelabel React component library serving Elmera Group's five consumer energy brands plus corporate Elmera across **20 theme permutations** (variant × brand × segment). This document set, [CONTEXT.md](../../CONTEXT.md), and the ADRs in [../adr/](../adr/) are the **normative decision layer**. The pinned `.ref/` snapshots are the **required lift-source layer** wherever a component header or asset chapter names one: copy the named implementation/assets, then apply every normative rule and that component's §8 divergences. Tickets, research, and prototypes are provenance only; an implementation agent does not need them and they never override the normative layer. The pre-v1 `wayfinder/` planning tree (tickets, research, prototypes) was removed when v1 was reached; "wayfinder ticket NNN" citations in the chapters are provenance pointers into git history before that removal, and new decisions land in a chapter's §8 or an ADR. A spec amendment lands in the same change as the code it describes, is dated to that change, and names its ADR or §8 entry.
 
 ## What is being built
 
@@ -25,7 +25,7 @@ React 19 · base-ui primitives · Tailwind v4 · tv (tailwind-variants) · Phosp
 | [release.md](release.md)             | Changesets flow, channels, npm Trusted Publishing, org-setup prerequisites                                                                      |
 | [roadmap.md](roadmap.md)             | Deferred work with triggers: react-aria→base-ui migration, dark mode, VR, new brands/locales                                                    |
 
-Hard-to-reverse trade-offs are recorded as ADRs in [../adr/](../adr/) (0001 token contract · 0002 theme attributes · 0003 controlled brand / host first-paint · 0004 Phosphor · 0005 package architecture · 0006 intl strings). The spec documents are normative; ADRs carry the why.
+Hard-to-reverse trade-offs are recorded as ADRs in [../adr/](../adr/) (0001 token contract · 0002 theme attributes · 0003 controlled brand / host first-paint · 0004 Phosphor · 0005 package architecture · 0006 intl strings · 0007 docs API extraction pipeline). The spec documents are normative; ADRs carry the why.
 
 ## How to implement from this spec
 

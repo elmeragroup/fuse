@@ -70,7 +70,7 @@ Recipe: **`itemVariants`** — **PUBLIC**. The ref exports it and `selection-ite
 | `itemMediaVariants` (private)  | `variant` | `default` · `icon` (`svg size-4` guard) · `image` (`size-10 rounded-sm` box, shrinks with item size; see outline note)                                                            | `default` |
 | `itemFooterVariants` (private) | `mode`    | `default` (static open) · `visible` (`starting:` entry animation) · `hidden` (collapsed `0fr`, pointer-events-none)                                                               | `default` |
 
-Item's `size` axis is density-classified as **not a control-box rung**: it encodes row padding and gap, which sit outside the control-box remit (conventions.md density ladder; ticket 82). The lint treats a layout size axis without a pinned control height as legal.
+Item's `size` axis is density-classified as **not a control-box rung**: it encodes row padding and gap, which sit outside the control-box remit (conventions.md density ladder; ruling 82, 2026-08-22: a layout size axis without a pinned control height is legal). The lint treats a layout size axis without a pinned control height as legal.
 
 Base notes:
 
@@ -116,6 +116,7 @@ Base notes:
    - RAC sizes were `default`/`sm`; base-ui adds `xs`.
 5. **List semantics fixed:** the base-ui ref dropped the RAC item's default `role="listitem"` while `Item.Group` kept `role="list"`, creating a half-list. This spec follows the cluster-wide accessibility ruling: group context makes `Item.Root` default to `role="listitem"` inside `Item.Group`, while an explicit consumer `role` remains authoritative.
 6. `itemVariants` publicity confirmed (ref exports it; `selection-item` borrows it). `itemMediaVariants`/`itemFooterVariants` stay private.
+7. **Layout size axis (ruling 82, 2026-08-22):** Item's `size` encodes row padding and gap, not a control-box rung; a layout size axis without a pinned control height is legal for the density lint.
 
 ## 9 Test requirements
 

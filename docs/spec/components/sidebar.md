@@ -184,7 +184,7 @@ The desktop branch is a two-element trick that must not be "simplified":
 
 ## 5 Consumed tokens
 
-Constrained to the canonical contract's **eight sidebar tokens** (ticket 001): `--sidebar`, `--sidebar-foreground`, `--sidebar-accent`, `--sidebar-accent-foreground`, `--sidebar-border`, `--sidebar-ring`, `--sidebar-brand`, `--sidebar-brand-foreground` — with the **new light values** (`--sidebar: oklch(0.9851 0 0)`; `--sidebar-border` / `--sidebar-accent`: `oklch(0.9219 0 0)`).
+Constrained to the canonical contract's **eight sidebar tokens** (wayfinder ticket 001): `--sidebar`, `--sidebar-foreground`, `--sidebar-accent`, `--sidebar-accent-foreground`, `--sidebar-border`, `--sidebar-ring`, `--sidebar-brand`, `--sidebar-brand-foreground` — with the **new light values** (`--sidebar: oklch(0.9851 0 0)`; `--sidebar-border` / `--sidebar-accent`: `oklch(0.9219 0 0)`).
 
 - `sidebar` / `sidebar-foreground` — surface (inner container, mobile Sheet, `none` branch, wrapper `has-data-[variant=inset]:bg-sidebar`) and text.
 - `sidebar-accent` / `sidebar-accent-foreground` — hover/active/`isActive` states on MenuButton, MenuAction, GroupAction, MenuSubButton; sub-button icons.
