@@ -245,6 +245,48 @@ function callSignature(checker: Checker, type: Type): Signature | null {
   return signatures[0] ?? null;
 }
 
+function isForwardedProp(symbol: TsSymbol): boolean {
+  const declarationPaths = symbol.declarations.map((declaration) => declaration.path);
+  return (
+    propOrigin(declarationPaths, symbol.declarations.length === 0) !== "recipe-axis" && !isOwnProp(symbol)
+  );
+}
+
+/** Forwarded-prop summary for one checker-backed part: omitted count and declaring packages. */
+export type PartForwarded = {
+  readonly count: number;
+  readonly from: readonly string[];
+};
+
+const emptyForwarded: PartForwarded = { count: 0, from: [] };
+
+function forwardedOfPropsType(checker: Checker, propsType: Type): PartForwarded {
+  const from = new Set<string>();
+  let count = 0;
+  for (const property of checker.getPropertiesOfType(propsType)) {
+    if (!isForwardedProp(property)) continue;
+    count += 1;
+    for (const declaration of property.declarations) {
+      const packageName = declaringPackage(declaration.path);
+      if (packageName !== null) from.add(packageName);
+    }
+  }
+  return { count, from: [...from].sort((left, right) => left.localeCompare(right)) };
+}
+
+/**
+ * Counts props the part accepts that are neither library-declared nor recipe
+ * axes — the same omitted set `describePart` drops from the table.
+ */
+export function inspectPartForwarded(context: LibraryProject, part: PartRequest): PartForwarded {
+  const signature = callSignature(context.checker, part.type);
+  const parameter = signature?.getParameters()[0];
+  if (parameter === undefined) return emptyForwarded;
+  const propsType = context.checker.getTypeOfSymbol(parameter);
+  if (propsType === undefined || propsType.isErrorType()) return emptyForwarded;
+  return forwardedOfPropsType(context.checker, propsType);
+}
+
 function addProblem(problems: ProblemLog | undefined, message: string): void {
   problems?.add(message);
 }
@@ -424,8 +466,7 @@ function describePart(context: LibraryProject, request: PartRequest, problems: P
   }
 
   const props: ApiProp[] = [];
-  const forwarded = new Set<string>();
-  let forwardedCount = 0;
+  const forwardedInfo = forwardedOfPropsType(checker, propsType);
 
   for (const property of checker.getPropertiesOfType(propsType)) {
     // A prop with no declaration at all is synthesised by `VariantProps` over a library
@@ -433,16 +474,7 @@ function describePart(context: LibraryProject, request: PartRequest, problems: P
     // is the documentation and the JSDoc gate does not apply.
     const declarationPaths = property.declarations.map((declaration) => declaration.path);
     const isRecipeAxis = propOrigin(declarationPaths, property.declarations.length === 0) === "recipe-axis";
-    if (!isRecipeAxis && !isOwnProp(property)) {
-      forwardedCount += 1;
-      for (const declaration of property.declarations) {
-        const packageName = declaringPackage(declaration.path);
-        if (packageName !== null) {
-          forwarded.add(packageName);
-        }
-      }
-      continue;
-    }
+    if (isForwardedProp(property)) continue;
     const printed = printType(checker, checker.getTypeOfSymbol(property));
     if (printed === null) {
       problems.add(
@@ -475,8 +507,8 @@ function describePart(context: LibraryProject, request: PartRequest, problems: P
     rsc: source.rsc,
     sourcePath: source.sourcePath,
     props,
-    forwardedFrom: [...forwarded].sort((left, right) => left.localeCompare(right)),
-    forwardedCount,
+    forwardedFrom: forwardedInfo.from,
+    forwardedCount: forwardedInfo.count,
   };
 }
 
