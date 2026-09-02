@@ -56,7 +56,7 @@ import { renderSearchIndex } from "./lib/search.ts";
 import { readBundleSizes } from "./lib/sizes.ts";
 import type { BundleSizeReport } from "./lib/sizes.ts";
 import { collectRecipeSources } from "./lib/sources.ts";
-import { figmaThemeArtifacts } from "./lib/theme-catalog-figma.ts";
+import { renderFigmaThemeCatalog } from "./lib/theme-catalog-figma.ts";
 import { buildThemeCatalog, renderThemeCatalog } from "./lib/theme-catalog.ts";
 import { extractTokens, readColorTokenMapFromFile } from "./lib/tokens.ts";
 import type { ColorTokenMap } from "./lib/tokens.ts";
@@ -277,13 +277,12 @@ function emitThemeCatalog(catalog: ThemeCatalog): void {
   writeFile(path.join(generatedDir, "theme-catalog.ts"), `${BANNER}${renderThemeCatalog(catalog)}`);
 }
 
-/** Per-mode DTCG files for native Figma import (docs-site.md §9.2). */
+/** Per-mode DTCG documents for native Figma import, inlined in one module (docs-site.md §9.2). */
 function emitFigmaThemeCatalog(catalog: ThemeCatalog): void {
-  const artifacts = figmaThemeArtifacts(catalog);
-  writeFile(path.join(generatedDir, "theme-catalog-figma.ts"), `${BANNER}${artifacts.indexModule}`);
-  for (const document of artifacts.documents) {
-    writeFile(path.join(generatedDir, "figma", `${document.slug}.json`), document.json);
-  }
+  writeFile(
+    path.join(generatedDir, "theme-catalog-figma.ts"),
+    `${BANNER}${renderFigmaThemeCatalog(catalog)}`
+  );
 }
 
 /** Every authored nav destination has to be a real route (`lib/routes.ts`, §3.3). */

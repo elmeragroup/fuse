@@ -2,7 +2,9 @@
  * DTCG JSON projected from the theme catalog for native Figma import (docs-site.md §9.2).
  *
  * One file is one Figma mode. Colors are sRGB; dimensions are px; CSS var() becomes
- * `{group.name}` aliases. Conversion stays here — routes serve generated JSON.
+ * `{group.name}` aliases. Conversion stays here; the generation pass writes one module
+ * that inlines every document (`FIGMA_THEME_FILES`), and the routes serve from it — there
+ * is no second, per-slug JSON serialisation.
  */
 
 import { oklchToLinearSrgb, parseOklch } from "@elmeragroup/ui/theme-catalog";
@@ -210,8 +212,8 @@ export function buildFigmaThemeIndex(catalog: ThemeCatalog): FigmaThemeIndex {
   };
 }
 
-/** The generated barrel the `/api/themes/figma` routes import. */
-function renderFigmaThemeCatalog(catalog: ThemeCatalog): string {
+/** The generated module the `/api/themes/figma` routes import (docs-site.md §9.2). */
+export function renderFigmaThemeCatalog(catalog: ThemeCatalog): string {
   const files = catalog.themes
     .map((theme) => {
       const document = figmaDocumentFromCatalog(theme, catalog.primitives);
@@ -226,15 +228,4 @@ export const FIGMA_THEME_FILES: { readonly [slug: string]: FigmaThemeDocument } 
 ${files}
 };
 `;
-}
-
-/** Barrel module plus per-slug DTCG JSON the generation pass writes (docs-site.md §9.2). */
-export function figmaThemeArtifacts(catalog: ThemeCatalog) {
-  return {
-    indexModule: renderFigmaThemeCatalog(catalog),
-    documents: catalog.themes.map((entry) => ({
-      slug: entry.slug,
-      json: JSON.stringify(figmaDocumentFromCatalog(entry, catalog.primitives)),
-    })),
-  };
 }

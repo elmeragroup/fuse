@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildFigmaThemeIndex,
   figmaDocumentFromCatalog,
-  figmaThemeArtifacts,
+  renderFigmaThemeCatalog,
 } from "../scripts/lib/theme-catalog-figma.ts";
 import { THEME_CATALOG } from "../src/generated/theme-catalog";
 import { FIGMA_THEME_FILES, FIGMA_THEME_INDEX } from "../src/generated/theme-catalog-figma";
@@ -114,7 +114,7 @@ describe("Figma DTCG documents", () => {
   });
 
   it("emits a typed FIGMA_THEME_FILES const without chained assertions", () => {
-    const module = figmaThemeArtifacts(THEME_CATALOG).indexModule;
+    const module = renderFigmaThemeCatalog(THEME_CATALOG);
     expect(module).toContain(
       "export const FIGMA_THEME_FILES: { readonly [slug: string]: FigmaThemeDocument } = {"
     );
