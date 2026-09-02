@@ -8,9 +8,11 @@ const workspaceRoot = join(here, "../../..");
 const specRoot = join(workspaceRoot, "docs/spec");
 const adrRoot = join(workspaceRoot, "docs/adr");
 
-const CITATION = /\b(?<kind>ticket|ruling)\s+(?<id>\d+[a-z]?)\b/gi;
+// `\b(?!-)` keeps `ruling 2026-09-02` as a dated event, not citation id 2026 / 202.
+const CITATION = /\b(?<kind>ticket|ruling)\s+(?<id>\d+[a-z]?)\b(?!-)/gi;
 const DATE = /\b\d{4}-\d{2}-\d{2}\b/;
-const NAMED_DENSITY_RULING = /^(?:1|2)$/;
+const DATED_PHRASE = /\b(?:ticket|ruling)\s+\d+[a-z]?\b(?!-)\s*[,:(]\s*\d{4}-\d{2}-\d{2}/i;
+const REQUIRED_IDS = ["74b", "79", "82"] as const;
 
 type CitationHit = {
   readonly file: string;
@@ -45,10 +47,7 @@ function collectCitations(root: string): CitationHit[] {
         const kind = match.groups?.kind ?? "";
         const id = match.groups?.id ?? "";
         const prefix = text.slice(0, match.index);
-        if (kind === "ticket" && /\bwayfinder\s+$/i.test(prefix)) {
-          continue;
-        }
-        if (kind === "ruling" && NAMED_DENSITY_RULING.test(id)) {
+        if (kind.toLowerCase() === "ticket" && /\bwayfinder\s+$/i.test(prefix)) {
           continue;
         }
         hits.push({
@@ -78,10 +77,18 @@ describe("spec citation provenance", () => {
 
   it("places every ticket/ruling citation on a dated line with one-sentence substance", () => {
     expect(citations.length, "expected dated 74b/79/82 citations to exist").toBeGreaterThan(0);
-    const missing = citations.filter((hit) => !DATE.test(hit.text) || substanceLength(hit.text) < 40);
+    const missing = citations.filter((hit) => !DATED_PHRASE.test(hit.text) || substanceLength(hit.text) < 40);
     expect(
       missing,
       missing.map((hit) => `${hit.file}:${String(hit.line)} ${hit.kind} ${hit.id}`).join("\n")
+    ).toEqual([]);
+  });
+
+  it("records rulings 74b, 79, and 82 as dated self-contained citations", () => {
+    const ids = new Set(citations.map((hit) => hit.id.toLowerCase()));
+    expect(
+      REQUIRED_IDS.filter((id) => !ids.has(id)),
+      "docs/spec and docs/adr must cite 74b, 79, and 82 with a date and substance"
     ).toEqual([]);
   });
 });

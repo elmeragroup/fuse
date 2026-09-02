@@ -67,7 +67,7 @@ Both recipes are **module-private** (no borrow pattern; stated per convention):
 - `inputGroupAddonVariants` (tv) — axis `align`: `inline-start` (default; `order-first pl-2`, negative-margin trims for nested button/kbd), `inline-end` (`order-last pr-2`), `block-start` / `block-end` (full-width rows above/below; Root switches to `flex-col h-auto` and pads the input via `has-[>[data-align=block-*]]` selectors). Base includes `cursor-text`, muted text, `[&>svg:not([class*='size-'])]:size-4`, kbd radius `rounded-[calc(var(--radius)-5px)]` (kept clamp arithmetic, documented).
 - `inputGroupButtonVariants` (tv) — axis `size`: `xs` (default; `h-6`, `rounded-[calc(var(--radius)-5px)]`), `sm` (empty string — Button's own `sm` metrics pass through), `icon-xs` (`size-6`, zero padding), `icon-sm` (`size-8`, zero padding).
 
-**Density mapping.** Root is a single-height field box: pin `h-(--control-h-md)` per [conventions](conventions.md) ruling 2 (`h-auto` still wins for block addons/textarea). No `dense:` / `comfortable:` variants.
+**Density mapping.** Root is a single-height field box: pin `h-(--control-h-md)` per [conventions](conventions.md) ruling 2, 2026-08-21 (`h-auto` still wins for block addons/textarea). No `dense:` / `comfortable:` variants.
 
 **Exemption — `InputGroup.Button` compact axis.** The local `xs` / `icon-xs` / `icon-sm` values (`h-6`, `size-6`, `size-8`) are addon chrome inside the group, not the four-rung control box. They do not match `xs`/`sm`/`md`/`lg` and **must not** invent a fifth `--control-*` rung. `sm` stays an empty string so Button's own `sm` metrics pass through. Dual-density tests assert these compact addon sizes stay identical across stamps.
 
