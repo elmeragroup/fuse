@@ -8,6 +8,7 @@ import {
 } from "typescript/unstable/ast/is";
 import type { Checker, Symbol as TsSymbol, Type } from "typescript/unstable/sync";
 
+import { isInternalSymbolName } from "../contracts.ts";
 import type { CompilerDeclaration } from "./declarations.ts";
 import { resolveOwnedDeclaration } from "./declarations.ts";
 
@@ -119,17 +120,4 @@ function underlyingSymbolName(
     }
   }
   return symbol.name;
-}
-
-/**
- * Backend-layer internal-name policy: TypeScript prefixes compiler-invented
- * symbol names with `__`, and no such name may surface as a public API name.
- *
- * This prefix test is the module-walk layer's owner. The hot fact reader
- * deliberately keeps a closed allowlist instead (`internalSymbolNames` in
- * `facts.ts`, which also admits "VoidOrUndefinedOnly" — a name with no `__`
- * prefix), so do not merge the two policies in either direction.
- */
-function isInternalSymbolName(name: string): boolean {
-  return name.startsWith("__");
 }

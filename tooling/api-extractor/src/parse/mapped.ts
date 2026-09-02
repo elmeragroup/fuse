@@ -7,7 +7,7 @@ import { addUndefined } from "./component.ts";
 import type { ResolveSemanticType, ResolverContext } from "./contracts.ts";
 import { recordIndexSignatureKeyProvenance } from "./object-resolver.ts";
 import { declarationOwnership, isExternalOwnership } from "./ownership.ts";
-import { aliasInstantiationArguments, bindAliasParameters } from "./substitutions.ts";
+import { aliasInstantiationArguments, applySubstitutions, bindAliasParameters } from "./substitutions.ts";
 import type { Substitutions } from "./substitutions.ts";
 
 type Context = ResolverContext;
@@ -142,10 +142,10 @@ function mappedKeySignature(
   if (facts.mappedNameType !== undefined) return undefined;
   const keyType = mappedKeyType(facts.constraint, substitutions, context);
   if (keyType === undefined) return undefined;
-  const valueType = substituted(
+  const valueType = applySubstitutions(
     facts.mappedValueType === undefined ? undefined : context.operations.typeAtNode(facts.mappedValueType),
     substitutions,
-    context
+    context.operations
   );
   if (valueType === undefined) return undefined;
   // The value template's syntax rides along only when it carries a `keyof`
@@ -180,7 +180,11 @@ function mappedKeyType(
   context: Context
 ): "string" | "number" | undefined {
   if (constraint === undefined) return undefined;
-  const constraintType = substituted(context.operations.typeAtNode(constraint), substitutions, context);
+  const constraintType = applySubstitutions(
+    context.operations.typeAtNode(constraint),
+    substitutions,
+    context.operations
+  );
   if (constraintType === undefined) return undefined;
   // The base constraint is only asked for when the constraint is still a type
   // parameter. TypeScript 7 widens a *concrete* literal union to its primitive
@@ -192,16 +196,6 @@ function mappedKeyType(
       : constraintType;
   const intrinsic = context.operations.typeFacts(base).intrinsic;
   return intrinsic === "string" ? "string" : intrinsic === "number" ? "number" : undefined;
-}
-
-function substituted(
-  type: BackendTypeHandle | undefined,
-  substitutions: Substitutions,
-  context: Context
-): BackendTypeHandle | undefined {
-  if (type === undefined) return undefined;
-  const symbol = context.operations.typeFacts(type).symbol;
-  return symbol === undefined ? type : (substitutions.get(symbol) ?? type);
 }
 
 /** Binds an alias declaration's type parameters to one instantiation's arguments. */
@@ -251,9 +245,7 @@ function followAliasToMappedDeclaration(
         const argumentNode = authoredArguments?.[index];
         const authoredArgument =
           argumentNode === undefined ? undefined : context.operations.typeAtNode(argumentNode);
-        return authoredArgument === undefined
-          ? undefined
-          : substituted(authoredArgument, substitutions, context);
+        return applySubstitutions(authoredArgument, substitutions, context.operations);
       },
       substitutions
     ) ?? substitutions;

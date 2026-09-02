@@ -6,7 +6,7 @@ import type { SemanticType, TypeName } from "../model.ts";
 import { unwrapAuthoredNode } from "./authored-node.ts";
 import type { ResolveSemanticType, ResolverContext } from "./contracts.ts";
 import { resolveObjectNode, resolveSignatureNode } from "./object-resolver.ts";
-import { aliasInstantiationArguments, bindAliasParameters } from "./substitutions.ts";
+import { aliasInstantiationArguments, applySubstitutions, bindAliasParameters } from "./substitutions.ts";
 import type { Substitutions } from "./substitutions.ts";
 
 type Context = ResolverContext;
@@ -61,7 +61,11 @@ export function unionNode(
   if (members.length === 0 && authored.nodes.length > 0) {
     const resolvedMembers: SemanticType[] = [];
     for (const node of authored.nodes) {
-      const nodeType = substitutedTypeAtNode(node, context);
+      const nodeType = applySubstitutions(
+        context.operations.typeAtNode(node),
+        context.substitutions,
+        context.operations
+      );
       if (nodeType === undefined) continue;
       // A member whose checker type is the very collapse being walked is
       // already active; its cycle cut keeps this node's authored name.
@@ -85,7 +89,11 @@ export function unionNode(
   const covered = new Set<BackendTypeHandle>();
   const matched = new Set<BackendTypeHandle>();
   for (const node of authored.nodes) {
-    const nodeType = substitutedTypeAtNode(node, scope);
+    const nodeType = applySubstitutions(
+      scope.operations.typeAtNode(node),
+      scope.substitutions,
+      scope.operations
+    );
     if (nodeType === undefined) continue;
     // TypeScript expands an authored `boolean` into `false | true`, so one
     // authored node claims every boolean-literal member at its position.
@@ -429,17 +437,6 @@ function flattenAuthoredUnion(node: BackendNodeReference, context: Context): rea
       ? flattenAuthoredUnion(unwrapped, context)
       : [unwrapped];
   });
-}
-
-/** Applies the active alias bindings to the type an authored member node names. */
-function substitutedTypeAtNode(node: BackendNodeReference, context: Context): BackendTypeHandle | undefined {
-  const nodeType = context.operations.typeAtNode(node);
-  if (nodeType === undefined || context.substitutions.size === 0) return nodeType;
-  // Only a bare type-parameter reference can be rebound. A generic container
-  // that merely mentions a parameter (`Value[]`) keeps naming the uninstantiated
-  // type, and `matchUnionMember` pairs it with its instantiation by target.
-  const symbol = context.operations.typeFacts(nodeType).symbol;
-  return symbol === undefined ? nodeType : (context.substitutions.get(symbol) ?? nodeType);
 }
 
 function authoredBooleanValue(node: BackendNodeReference, context: Context): boolean | undefined {

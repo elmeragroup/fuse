@@ -6,12 +6,12 @@ import type {
   BackendTypeFacts,
   BackendTypeHandle,
 } from "../backend/contracts.ts";
+import { isInternalSymbolName } from "../backend/contracts.ts";
 import type { TypeName } from "../model.ts";
 import type { ResolverContext } from "./contracts.ts";
-import { isInternalSymbolName } from "./contracts.ts";
 import { externalTypeSelectionAllowsSymbol } from "./external-type-selection.ts";
 import { isExternalSymbol, isTypeScriptToolchainDeclaration } from "./ownership.ts";
-import { isReactWrapperType } from "./react-policy.ts";
+import { isReactWrapperType, reactRefCallbackName } from "./react-policy.ts";
 
 const builtInTypeScriptUtilityNames = new Set([
   "Pick",
@@ -126,16 +126,8 @@ export function externalPolicy(input: ExternalPolicyInput): ExternalPolicyDecisi
       },
     };
   }
-  if (value.name === "bivarianceHack") {
-    return {
-      kind: "external-reference",
-      typeName: {
-        name: "RefCallback",
-        namespaces: ["React"],
-        ...(value.typeArguments === undefined ? {} : { typeArguments: value.typeArguments }),
-      },
-    };
-  }
+  const reactRefCallback = reactRefCallbackName(value, facts.symbol, context.operations);
+  if (reactRefCallback !== undefined) return { kind: "external-reference", typeName: reactRefCallback };
   return { kind: "external-reference", typeName: value };
 }
 

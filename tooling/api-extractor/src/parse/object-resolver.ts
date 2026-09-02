@@ -9,6 +9,7 @@ import type {
   BackendSymbolHandle,
   BackendTypeHandle,
 } from "../backend/contracts.ts";
+import { isInternalSymbolName } from "../backend/contracts.ts";
 import type {
   CallSignatureNode,
   EnumMember,
@@ -22,7 +23,7 @@ import { defaultExtractorOptions } from "../options.ts";
 import type { DeclarationOwner, ProvenanceEntry } from "../provenance.ts";
 import type { OmittedIndexSignatureReason } from "../warnings.ts";
 import type { ResolveSemanticType, ResolverContext } from "./contracts.ts";
-import { isInternalSymbolName, warningLocation } from "./contracts.ts";
+import { warningLocation } from "./contracts.ts";
 import { externalTypeSelectionAllowsSymbol } from "./external-type-selection.ts";
 import { primaryDeclaration, symbolDeclarations } from "./ownership.ts";
 import { ResolverFailure } from "./resolver-failure.ts";

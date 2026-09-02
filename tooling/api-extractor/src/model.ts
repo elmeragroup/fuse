@@ -3,18 +3,22 @@ import { Schema } from "effect";
 import { ProvenanceEntrySchema } from "./provenance.ts";
 import { ExtractWarningSchema } from "./warnings.ts";
 
-export type IntrinsicName =
-  | "any"
-  | "bigint"
-  | "boolean"
-  | "never"
-  | "null"
-  | "number"
-  | "string"
-  | "symbol"
-  | "undefined"
-  | "unknown"
-  | "void";
+/** Every intrinsic the model can name; the type, the schema, and the backend contract derive from it. */
+export const intrinsicNames = [
+  "any",
+  "bigint",
+  "boolean",
+  "never",
+  "null",
+  "number",
+  "string",
+  "symbol",
+  "undefined",
+  "unknown",
+  "void",
+] as const;
+
+export type IntrinsicName = (typeof intrinsicNames)[number];
 
 export type TypeName = typeof TypeNameSchema.Type;
 
@@ -225,19 +229,7 @@ const TypeNameSchema = Schema.Struct({
 const IntrinsicNodeSchema: Schema.Codec<IntrinsicNode> = Schema.Struct({
   kind: Schema.Literal("intrinsic"),
   typeName: Schema.optionalKey(TypeNameSchema),
-  intrinsic: Schema.Literals([
-    "any",
-    "bigint",
-    "boolean",
-    "never",
-    "null",
-    "number",
-    "string",
-    "symbol",
-    "undefined",
-    "unknown",
-    "void",
-  ] as const),
+  intrinsic: Schema.Literals(intrinsicNames),
 });
 
 const PropertyNodeSchema: Schema.Codec<PropertyNode> = Schema.Struct({

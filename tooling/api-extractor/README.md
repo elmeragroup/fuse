@@ -59,6 +59,11 @@ state into opaque handles and primitive facts. `src/parser.ts` and `src/parse/**
 policy: recursion, aliases, generics, containers, mapped types, callables, classes, modules,
 external types, warnings, and React component recognition.
 
+The type-only star re-export filter is one backend-owned, compiler-free function
+(`src/backend/type-only-star-filter.ts`): the ts7 walk applies it before descriptor expansion and
+`src/parser.ts` delegates to the same function for any replacement backend's drafts. _(Amended
+2026-09-02.)_
+
 The public model, warnings, errors, provenance, options, and service contain no compiler handles.
 `src/parse/**` and `src/canonical/**` import no Effect module, including through value-import
 graphs; `test/boundary.test.ts` pins both the compiler boundary and that Effect-free walk.

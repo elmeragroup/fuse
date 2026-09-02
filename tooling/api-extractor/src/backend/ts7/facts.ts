@@ -634,8 +634,8 @@ function qualifiedNamespaces(node: Node): string[] {
  * Compiler-internal symbol names that never describe a public API name.
  * Hoisted so the hot `typeNameFacts` path does not rebuild the set per call.
  *
- * DELIBERATELY NOT the parse layer's prefix rule (`isInternalSymbolName` in
- * `parse/contracts.ts`): this closed set lists exactly the names the checker
+ * DELIBERATELY NOT the shared prefix rule (`isInternalSymbolName` in
+ * `backend/contracts.ts`): this closed set lists exactly the names the checker
  * reports here and also admits "VoidOrUndefinedOnly", which carries no `__`
  * prefix; merging either policy into the other would change what is refused.
  */
