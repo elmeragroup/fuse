@@ -56,14 +56,14 @@ All rendering parts take `className` (merged via `cn`) and forward the rest of t
 
 **Combobox.Input** — `ComponentProps<ComboboxPrimitive.Input>` plus:
 
-| Prop          | Type        | Default           | Notes                                                                          |
-| ------------- | ----------- | ----------------- | ------------------------------------------------------------------------------ |
+| Prop          | Type        | Default           | Notes                                                                                    |
+| ------------- | ----------- | ----------------- | ---------------------------------------------------------------------------------------- |
 | `showTrigger` | `boolean`   | `true`            | renders the caret trigger button in the inline-end addon, named from dictionary `toggle` |
-| `showClear`   | `boolean`   | `false`           | renders `Combobox.Clear` in the same addon                                     |
-| `disabled`    | `boolean`   | `false`           | forwarded to the inner `InputGroup.Input` **and** to the trigger/clear buttons |
-| `className`   | `string`    | —                 | applied to the **outer InputGroup** (`w-auto`), not the input element          |
-| `children`    | `ReactNode` | —                 | rendered inside the InputGroup after the addon                                 |
-| `clearLabel`  | `string`    | locale dictionary | forwarded to the auto-rendered Clear button when `showClear`                   |
+| `showClear`   | `boolean`   | `false`           | renders `Combobox.Clear` in the same addon                                               |
+| `disabled`    | `boolean`   | `false`           | forwarded to the inner `InputGroup.Input` **and** to the trigger/clear buttons           |
+| `className`   | `string`    | —                 | applied to the **outer InputGroup** (`w-auto`), not the input element                    |
+| `children`    | `ReactNode` | —                 | rendered inside the InputGroup after the addon                                           |
+| `clearLabel`  | `string`    | locale dictionary | forwarded to the auto-rendered Clear button when `showClear`                             |
 
 Runtime note (kept, §8): `showTrigger` and `showClear` are effectively mutually exclusive — the trigger button carries `group-has-data-[slot=combobox-clear]/input-group:hidden`, so whenever a clear button exists in the group the trigger is hidden even if both flags are true.
 
@@ -84,9 +84,9 @@ Runtime note (kept, §8): `showTrigger` and `showClear` are effectively mutually
 
 **Combobox.Chip** — `ComponentProps<ComboboxPrimitive.Chip>` plus:
 
-| Prop          | Type      | Default                                                           | Notes                                                                                                                                                                                                        |
-| ------------- | --------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `showRemove`  | `boolean` | `true`                                                            | renders the `ChipRemove` button with `X`                                                                                                                                                                     |
+| Prop          | Type      | Default                                                                                            | Notes                                                                                                                                                                                                                                                                                      |
+| ------------- | --------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `showRemove`  | `boolean` | `true`                                                                                             | renders the `ChipRemove` button with `X`                                                                                                                                                                                                                                                   |
 | `removeLabel` | `string`  | dictionary `removeItem` formatted with the Chip's string children, then `itemToStringLabel(value)` | explicit accessible-name override (always wins); default formats `removeItem` with string/number children; when children are not a string, falls back to Root `itemToStringLabel(value)` for this chip; if neither yields text, the localized "Remove" string alone with no trailing space |
 
 **Combobox.Empty** — its primitive props with optional `children`; absent children render dictionary `empty`. **Combobox.Value / List / Item / Group / Label / Collection / Separator / Chips / ChipsInput** — their base-ui part's props verbatim (`Combobox.Item`: `value`, `disabled`; `Combobox.ChipsInput` is `ComboboxPrimitive.Input` props without the InputGroup extras).
@@ -122,7 +122,7 @@ No `tv` recipes and no axes — all styling is inline per part; nothing exported
 **Consumed selectors**:
 
 - `Combobox.Input`'s trigger button: `group-has-data-[slot=combobox-clear]/input-group:hidden` (trigger/clear exclusivity) and `data-pressed:bg-transparent`.
-- Popup: `data-open:animate-in fade-in-0 zoom-in-95`, `data-closed:animate-out fade-out-0 zoom-out-95`, `data-[side=bottom|top|left|right|inline-start|inline-end]:slide-in-from-*`, `data-[chips=true]:min-w-(--anchor-width)`; sizing vars `max-h-(--available-height) w-(--anchor-width) max-w-(--available-width) origin-(--transform-origin)`; child restyle `*:data-[slot=input-group]:m-1 …mb-0 …h-8 …border-input/30 …bg-input/30 …shadow-none` for a popup-embedded search InputGroup. Bare `data-open:`/`data-closed:` are the self-scoped custom variants from conventions and stay on the popup that emits the state.
+- Popup: `data-open:animate-in fade-in-0 zoom-in-95`, `data-closed:animate-out fade-out-0 zoom-out-95`, `data-[side=bottom|top|left|right|inline-start|inline-end]:slide-in-from-*`, `data-[chips=true]:min-w-(--anchor-width)`; sizing vars `max-h-(--available-height) w-(--anchor-width) max-w-(--available-width) origin-(--transform-origin)`; child restyle `*:data-[slot=input-group]:m-1 …mb-0 …h-(--control-h-sm) …border-input/30 …bg-input/30 …shadow-none` for a popup-embedded search InputGroup (the `sm` control rung, not a literal 32 px). Bare `data-open:`/`data-closed:` are the self-scoped custom variants from conventions and stay on the popup that emits the state. _(Amended 2026-09-02.)_
 - List: `data-empty:p-0` and the kept max-height calc `max-h-[min(calc(--spacing(72)---spacing(9)),calc(var(--available-height)---spacing(9)))]` — caps the list at 72 spacing units minus a 9-unit allowance for popup-embedded chrome, never exceeding available height minus the same allowance.
 - Empty: `group-data-empty/combobox-content:flex` (visible only when the popup reports no matches).
 - Item: `data-highlighted:bg-accent data-highlighted:text-accent-foreground`, `data-disabled:pointer-events-none data-disabled:opacity-50`.
@@ -160,7 +160,7 @@ Kept faithfully:
 - `data-chips={!!anchor}` on Content and its `min-w` switch.
 - The chips family (multi-select) incl. `has-aria-invalid:` chrome, `has-data-[slot=combobox-chip]:px-1.5`, chip `showRemove`, `ChipsInput` as a bare input.
 - `data-slot="combobox-chip-input"` singular spelling on ChipsInput.
-- Popup-embedded InputGroup spacing, height, border tint, fill, and shadow restyle selectors; focus-ring suppression is explicitly not carried forward.
+- Popup-embedded InputGroup spacing, height (`h-(--control-h-sm)`), border tint, fill, and shadow restyle selectors; focus-ring suppression is explicitly not carried forward.
 - `useComboboxAnchor` as a plain typed `useRef` helper.
 
 ## 9 Test requirements

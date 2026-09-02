@@ -70,14 +70,14 @@ All rendering parts take `className` (merged via `cn`) and forward the rest of t
 
 ## 4 Variants
 
-No `tv` recipe — the trigger's `size` axis is a hand-rolled `data-size` attribute styled via `data-[size=default]:h-(--control-h-md) data-[size=sm]:h-(--control-h-sm)`; kept without a recipe export (no borrow pattern). `elmera/no-hardcoded-density-metrics` covers these `data-[size=…]` class strings. All other styling is inline per part.
+No `tv` recipe — the trigger's `size` axis is a hand-rolled `data-size` attribute styled via `data-[size=…]` height/padding/gap/type tokens; kept without a recipe export (no borrow pattern). `elmera/no-hardcoded-density-metrics` covers these `data-[size=…]` class strings. All other styling is inline per part.
 
-**Density mapping.** Select Trigger `size` selects a shared density rung per [conventions](conventions.md). No `dense:` / `comfortable:` variants.
+**Density mapping.** Select Trigger `size` selects a shared density rung per [conventions](conventions.md). No `dense:` / `comfortable:` variants. Height is pinned, so there is no `py-*`. _(Amended 2026-09-02.)_
 
-| Trigger `size` | Density rung | Notes                                     |
-| -------------- | ------------ | ----------------------------------------- |
-| `sm`           | `sm`         | `data-[size=sm]:h-(--control-h-sm)`.      |
-| `default`      | `md`         | `data-[size=default]:h-(--control-h-md)`. |
+| Trigger `size` | Density rung | Notes                                                                                                                    |
+| -------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| `sm`           | `sm`         | `data-[size=sm]:h-(--control-h-sm) px-(--control-px-sm) gap-(--control-gap-sm) text-sm`. Type is size-owned (`text-sm`). |
+| `default`      | `md`         | `data-[size=default]:h-(--control-h-md) px-(--control-px-md) gap-(--control-gap-md)` plus the control-type pair.         |
 
 ## 5 Consumed tokens
 
@@ -128,7 +128,7 @@ No `tv` recipe — the trigger's `size` axis is a hand-rolled `data-size` attrib
 6. **All `dark:` and `inverted:` classes dropped** (`dark:bg-input/30 dark:hover:bg-input/50 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 inverted:bg-input/30 inverted:hover:bg-input/50` on the trigger) — dark axis lives in tokens.
 7. **Duplicated `isolate z-50` deduped**: the ref puts `isolate z-50` on both Positioner and Popup; kept on the Positioner only (minor divergence, no stacking-context behavior change — the Positioner already isolates).
 8. **Icons → Phosphor**: `CheckIcon`→`Check` (item indicator), `ChevronDownIcon`→`CaretDown` (trigger icon + scroll-down), `ChevronUpIcon`→`CaretUp` (scroll-up).
-9. **Density retokenization:** Trigger `data-[size=default]:h-9` / `data-[size=sm]:h-8` become `--control-h-md` / `--control-h-sm`. Dense computed height matches the ref; comfortable is the signed `ui.css` column.
+9. **Density retokenization:** Trigger `data-[size=default]:h-9` / `data-[size=sm]:h-8` become `--control-h-md` / `--control-h-sm`. Padding, gap, and type at `default` read `--control-px-md` / `--control-gap-md` / the control-type pair; `sm` reads the `sm` rungs with `text-sm`. `py-*` is omitted beside the pinned height. Dense computed height matches the ref; comfortable is the signed `ui.css` column. _(Amended 2026-09-02.)_
 
 Kept faithfully: `data-size` sm|default trigger axis; `alignItemWithTrigger` default `true` and its `data-[align-trigger=true]:animate-none` consequence; auto-rendered scroll buttons inside Content; the rotating trigger caret keyed off `data-popup-open`; the Value child-selector styling from the trigger; `min-w-36` popup floor; item's `*:[span]:last:` layout selectors.
 
@@ -140,7 +140,7 @@ Role/label-based queries throughout; keyboard flows per §7:
 - Arrow navigation: ArrowDown/ArrowUp move the highlighted option (a disabled option may be highlighted); Enter selects a highlighted enabled option (`onValueChange` fires with the value, not an event) and does not select a highlighted disabled option (popup stays open); Home/End reach first/last. Typeahead skips disabled items.
 - Typeahead: with the popup open, typing a prefix highlights the matching option; typing on the closed trigger changes the value without opening.
 - `data-size` reflects `size` for both values; `data-align-trigger` reflects `alignItemWithTrigger`.
-- Dual-density: at document `dense` and `comfortable`, Trigger height for `default`/`sm` matches the signed `--control-h-md` / `--control-h-sm` ladder; nested `data-density` and `ThemeScope` variant changes do not rescope metrics.
+- Dual-density: at document `dense` and `comfortable`, Trigger height, padding, gap, and type for `default`/`sm` match the signed `--control-*` ladder; nested `data-density` and `ThemeScope` variant changes do not rescope metrics.
 - `aria-invalid` on the trigger surfaces error chrome (attribute assertion); `disabled` root disables the trigger.
 - Groups: `Select.Label` names its group in the accessibility tree (`getByRole("group", { name })`).
 - `container`: popup renders inside the provided element / nearest ThemeScope, not `document.body`.

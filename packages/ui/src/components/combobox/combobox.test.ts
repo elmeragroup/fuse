@@ -103,6 +103,8 @@ describe("combobox source contract", () => {
   });
 
   it("keeps trigger/clear exclusivity, the List max-height calc, and Phosphor icons", () => {
+    expect(source).toContain("*:data-[slot=input-group]:h-(--control-h-sm)");
+    expect(source).not.toContain("*:data-[slot=input-group]:h-8");
     expect(source).toContain("group-has-data-[slot=combobox-clear]/input-group:hidden");
     expect(source).toContain(
       "max-h-[min(calc(--spacing(72)---spacing(9)),calc(var(--available-height)---spacing(9)))]"
