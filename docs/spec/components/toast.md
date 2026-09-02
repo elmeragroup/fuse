@@ -100,6 +100,7 @@ toastManager.add({ type: "success", title: "Saved", description: "Changes stored
 - Timers pause while the viewport is hovered or holds focus (the same condition that sets `data-expanded`).
 - Swipe-to-dismiss (pointer) is supplementary — every toast keeps a locale-labeled `Toast.Close` button, so dismissal never requires a gesture.
 - The loading status is decorative (`SpinnerGap` is `aria-hidden`); state changes announce via the promise toast's updated description.
+- Motion: Root transitions `transform` and `opacity` only, 200 ms (accessibility.md §7 band). Height is layout (`--toast-height` / `--toast-frontmost-height`), not a transitioned property. _(Amended 2026-09-02.)_
 
 ## 8 Divergence from reference
 
@@ -138,6 +139,7 @@ Role/label-based queries throughout:
 - Close copy renders in all four locales and an explicit `label` override wins.
 - F6 moves focus into the viewport region; Escape restores focus to the prior element.
 - `data-status` reflects each `type`; neutral toast omits status chrome.
+- Motion: computed `transition-property` on Root contains `transform` and `opacity` and does not contain `height`; each `transition-duration` is in the 150–300 ms band.
 - `container`: viewport portal renders inside the provided element / nearest ThemeScope, not `document.body`.
 - **Swipe-to-dismiss is not unit-testable** (pointer-gesture physics; jsdom and even browser-mode synthetic events don't reproduce base-ui's swipe tracking) — covered by the labeled Close button tests plus a future VR/interaction pass; assert only that `data-base-ui-swipe-ignore` passes through.
 

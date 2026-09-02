@@ -22,14 +22,14 @@ export const accordionVariants = tv({
     ),
     icon: "size-4 shrink-0 text-foreground transition-transform duration-200 group-data-[panel-open]/accordion-trigger:rotate-180",
     content:
-      "ease-in-out h-0 overflow-hidden transition-[height] duration-200 data-[open]:h-(--accordion-panel-height) motion-reduce:transition-none",
+      "ease-in-out h-0 overflow-hidden transition-[height] duration-200 data-[open]:h-(--accordion-panel-height)",
     contentInner: "pt-1.5",
   },
   variants: {
     variant: {
       default: {
         item: "rounded-sm bg-muted",
-        trigger: "transition-all",
+        trigger: "transition-[padding-bottom]",
       },
       card: {
         base: "space-y-3",

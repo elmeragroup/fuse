@@ -29,10 +29,14 @@ export async function assertFocusRingOnKeyboardAbsentOnMouse(
 }
 
 /**
- * Ring-absence probe for hosts that are not themselves the focus receiver
- * (`focusRing({ target: "within" })` group roots). Keeps the Tailwind ring
- * fingerprint inside this helper.
+ * Ring-presence/absence probes for hosts that are already the active element
+ * (a portalled popup that received initial keyboard focus). Keeps the Tailwind
+ * ring fingerprint inside this helper.
  */
+export function expectFocusRing(element: HTMLElement, message: string): void {
+  expect(hasFocusRing(element), message).toBe(true);
+}
+
 export function expectNoFocusRing(element: HTMLElement, message: string): void {
   expect(hasFocusRing(element), message).toBe(false);
 }

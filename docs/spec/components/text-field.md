@@ -61,12 +61,12 @@ Recipe: `textFieldVariants` (tv, slots) — **public export** (borrowed by `Phon
 
 Slots: `base`, `fieldGroup`, `input`, `labelContainer`, `label`, `container`, `description`, `iconContainer`. The ref's `textArea` slot (`min-h-16`) is dead and removed (§8).
 
-| Axis           | Values          | Default | Effect                                                                                                                                                                                                                                     |
-| -------------- | --------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `variant`      | `card`          | —       | `base` composes `cardVariants.slots.base` + `gap-0 px-6 py-4`; borderless full-width `fieldGroup`; `input` unstyled `text-lg`; `label`/`description` `text-muted-foreground`; `container` becomes horizontal `flex-row items-center gap-3` |
-|                | `inline`        |         | `base` adds `group/inline-field`; the inner input retains shared `focusRing({ target: "self" })` and is transparent at rest, `border-input` + `bg-background` on hover, `border-error` + `bg-background` on `group-data-[invalid]`         |
-| `hidden`       | `true \| false` | `false` | `base: hidden`                                                                                                                                                                                                                             |
-| `isIconActive` | `true \| false` | `false` | `fieldGroup: relative`; `input: truncate overflow-hidden pr-10 whitespace-nowrap`                                                                                                                                                          |
+| Axis           | Values          | Default | Effect                                                                                                                                                                                                                                                                                              |
+| -------------- | --------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `variant`      | `card`          | —       | `base` composes `cardVariants.slots.base` + `gap-0 px-6 py-4`; borderless full-width `fieldGroup`; `input` unstyled `text-lg`; `label`/`description` `text-muted-foreground`; `container` becomes horizontal `flex-row items-center gap-3`                                                          |
+|                | `inline`        |         | `base` adds `group/inline-field`; the inner input retains shared `focusRing({ target: "self" })` and is transparent at rest, `border-input` + `bg-background` on hover, `border-ring` on `:focus-visible` (`focus-visible:border-ring`), `border-error` + `bg-background` on `group-data-[invalid]` |
+| `hidden`       | `true \| false` | `false` | `base: hidden`                                                                                                                                                                                                                                                                                      |
+| `isIconActive` | `true \| false` | `false` | `fieldGroup: relative`; `input: truncate overflow-hidden pr-10 whitespace-nowrap`                                                                                                                                                                                                                   |
 
 `variant` unset renders the plain Input styling. When `variant` is set, the component applies `fieldGroup()` after `input()` on the inner input (ref comment: fieldGroup's default `w-auto` would otherwise override the input's `w-full`).
 
@@ -96,6 +96,7 @@ Slots: `base`, `fieldGroup`, `input`, `labelContainer`, `label`, `container`, `d
 4. **Pending/success placement kept but flagged:** `isPending`/`isSuccess` render in the label row and force that row to exist even when `label` is absent (layout shifts by one row). Kept for ref parity; candidates for a later in-input placement.
 5. **Icon swaps:** the reference loader/check icons become named Phosphor `SpinnerGap` (with `animate-spin`) / `Check` imports.
 6. **Token renames:** `destructive` → `error`, `bg-white` → `bg-card`, `dark:`/`inverted:` input-surface variants dropped in favor of token-level dark axis.
+7. **Inline-field border is `:focus-visible` only (2026-09-02):** the first port painted `border-ring` on `group-focus-within`, so mouse and programmatic focus got a ring-coloured border. The class lives on the input, so it is `focus-visible:border-ring` (Tailwind `has-focus-visible` is `:has(:focus-visible)` and would miss self-focus).
 
 ## 9 Test requirements
 
@@ -106,6 +107,7 @@ Slots: `base`, `fieldGroup`, `input`, `labelContainer`, `label`, `container`, `d
 - `filter="numeric"`: typing letters produces no `onChange` and no value change; digits pass; paste of mixed content is rejected wholesale; `inputMode` is `numeric` unless overridden.
 - `isPending`/`isSuccess` render the indicator row without a label; success wins over pending.
 - Keyboard per §7: Tab order label→input; disabled input skipped.
+- Inline variant: keyboard `:focus-visible` paints the ring-coloured border; focus that is not `:focus-visible` does not.
 
 ## 10 Demo requirements
 

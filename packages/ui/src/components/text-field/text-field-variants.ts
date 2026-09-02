@@ -32,7 +32,7 @@ export const textFieldVariants = tv({
       inline: {
         base: "group/inline-field",
         fieldGroup:
-          "border-transparent bg-transparent group-focus-within/inline-field:border-ring group-focus-within/inline-field:bg-background group-hover/inline-field:border-input group-hover/inline-field:bg-background group-data-[invalid]/inline-field:border-error group-data-[invalid]/inline-field:bg-background",
+          "border-transparent bg-transparent group-focus-within/inline-field:bg-background group-hover/inline-field:border-input group-hover/inline-field:bg-background group-data-[invalid]/inline-field:border-error group-data-[invalid]/inline-field:bg-background focus-visible:border-ring",
       },
     },
     hidden: {
