@@ -26,7 +26,7 @@ tooling/api-extractor/        # @elmeragroup/api-extractor — Effect-native Typ
 ## 2 Package manager & supply chain
 
 - **pnpm 11**, pinned as `"packageManager": "pnpm@11.20.0"` in the root manifest.
-- **pnpm catalog** (`pnpm-workspace.yaml` `catalog:`) is the single version-pinning point for every shared dependency (react, base-ui, tailwind, oxlint, vitest, …). Workspace `package.json`s reference `"catalog:"` — a dependency version literal in a package manifest is a review error.
+- **pnpm catalog** (`pnpm-workspace.yaml` `catalog:`) is the single version-pinning point for every shared dependency (react, base-ui, tailwind, oxlint, vitest, …). Every catalog entry is an exact version — no range operators. Workspace `package.json`s reference `"catalog:"` — a dependency version literal in a package manifest is a review error. _(Amended 2026-09-02: `@internationalized/date` pinned to `3.12.2`.)_
 - **Release-age guard**: `minimumReleaseAge: 4320` (72 hours) in pnpm settings — no package version installs until it has been on the registry for three days. The refs' `overrides` block carries any forced resolutions; additions to it require a PR comment stating why.
 - **oxlint and `@oxlint/plugins` are pinned to the same minor, ≥ 1.78.0** — the floor the vendored anti-slop code is validated against (§5.3).
 - **Node 24**, pinned as `"engines": { "node": ">=24.13.0 <25" }` and `.node-version` containing `24.13.0`. Node 24 and pnpm 11 majors are normative; patch bumps within those majors are maintenance changes.
@@ -88,7 +88,7 @@ Exactly these existing rules carry over from the internal plugin and run as `err
 - **`elmera/require-icon-button-label`**: a `Button`/`ToggleButton` rendered in an icon size or icon-only variant must have an `aria-label`, an accessible slot, or visible text. The type-level Button contract remains the first line; lint catches JSX shapes the type cannot prove.
 - **`elmera/restrict-process-env`**: direct `process.env` access is forbidden except for the exact `process.env.NODE_ENV` comparison inside the theme validator module, required for its accepted dev-throw/prod-coerce contract. The rule allowlists that file/key pair only; aliases, computed access, other keys, and every other library module still fail. Apps validate their own environment variables and pass values/data into the library.
 
-`elmera/no-primitive-colors` has a narrow reviewed allowlist: backdrop scrims may use the exact black-alpha class documented by Dialog/Sheet; Item image media may use its exact black-alpha optical hairline; and the single package-private `disabledHatch` recipe may contain its documented `rgb(0 0 0 / 0.02)` repeating-gradient texture. No path-wide, component-wide, or arbitrary-alpha exemption is allowed; private RAC surfaces use role tokens.
+`elmera/no-primitive-colors` has a narrow reviewed allowlist: backdrop scrims may use the exact black-alpha class documented by Dialog/Sheet; Item image media may use its exact black-alpha optical hairline; and the single package-private `disabledHatch` recipe may contain its documented `rgb(0 0 0 / 0.02)` repeating-gradient texture. The allowlist compares whole class tokens (variant prefixes are part of the token): `bg-black/10` matches, `bg-black/100` and `hover:bg-black/10` do not. No path-wide, component-wide, or arbitrary-alpha exemption is allowed; private RAC surfaces use role tokens.
 
 ### 5.3 anti-slop (vendored third plugin)
 

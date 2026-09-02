@@ -184,14 +184,23 @@ function isNonColorUtility(tokenName) {
 }
 
 /**
+ * @param {string} token
+ */
+function isAllowedExactClass(token) {
+  return ALLOWED_EXACT_CLASSES.includes(token);
+}
+
+/**
+ * Whole class tokens only (tooling.md §5.2). Variant prefixes are part of the
+ * token, so `hover:bg-black/10` is not the documented `bg-black/10` literal.
+ *
  * @param {string} str
  */
 function stripAllowedClasses(str) {
-  let next = str;
-  for (const allowed of ALLOWED_EXACT_CLASSES) {
-    next = next.split(allowed).join(" ");
-  }
-  return next;
+  return str
+    .split(/\s+/)
+    .filter((token) => token.length > 0 && !isAllowedExactClass(token))
+    .join(" ");
 }
 
 /**
