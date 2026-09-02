@@ -9,13 +9,11 @@
 /* oxlint-disable anti-slop/no-runtime-typeof -- recursive canonicalization must distinguish primitive model values. */
 /* oxlint-disable anti-slop/no-known-value-widening -- named-record views are the comparator's canonical boundary. */
 
-import { createHash } from "node:crypto";
-
 import type { ApiPart } from "../../src/lib/docs-model.ts";
 import type {
   ApiShadowDifference,
   DocsShadowComponentResult,
-  ParityDecision,
+  DocsShadowSnapshot,
   ProblemShadowDifference,
   ShadowPartEvidence,
   ShadowProblem,
@@ -53,14 +51,6 @@ export function canonicalJson(value: unknown): string {
   // The extractor model contains only JSON-shaped values at this point; the
   // fallback branch above handles every non-serializable representation.
   return JSON.stringify(value);
-}
-
-export function differenceFingerprint(values: readonly unknown[]): string {
-  const canonical = values
-    .map((value) => canonicalJson(value))
-    .sort((left, right) => left.localeCompare(right))
-    .join("\n");
-  return createHash("sha256").update(canonical).digest("hex");
 }
 
 function compareJson(
@@ -369,97 +359,53 @@ export function compareProblems(
   return differences;
 }
 
-function decisionKey(kind: "api" | "problem", component: string, path: string): string {
+function differenceKey(kind: "api" | "problem", component: string, path: string): string {
   return `${kind}|${component}|${path}`;
 }
 
-export type ReviewedDifferences = {
-  readonly reviewedApiDifferences: readonly ApiShadowDifference[];
-  readonly reviewedProblemDifferences: readonly ProblemShadowDifference[];
-  readonly unexplainedApiDifferences: readonly ApiShadowDifference[];
-  readonly unexplainedProblemDifferences: readonly ProblemShadowDifference[];
+export type SnapshotReview = {
+  /** Measured now, absent from (or different in) the snapshot. */
+  readonly unexplained: readonly string[];
+  /** In the snapshot, no longer measured (or measured with another value). */
+  readonly stale: readonly string[];
 };
 
-/** Applies only exact checked-in decision paths; prefixes, globs, and wildcard approval are rejected. */
-export function reviewDifferences(
+/**
+ * Compares the measured differences with the reviewed snapshot by exact key and
+ * canonical value. Both directions are reported so an improvement that removes a
+ * difference is as visible as a regression that adds one.
+ */
+export function reviewAgainstSnapshot(
   apiDifferences: readonly ApiShadowDifference[],
   problemDifferences: readonly ProblemShadowDifference[],
-  decisions: readonly ParityDecision[]
-): ReviewedDifferences {
-  const claimedApi = new Map<string, ApiShadowDifference[]>();
-  const claimedProblems = new Map<string, ProblemShadowDifference[]>();
-  const byApiKey = new Map<string, ApiShadowDifference>();
+  snapshot: DocsShadowSnapshot
+): SnapshotReview {
+  // The snapshot is JSON on disk, so both sides are compared in their JSON
+  // form: an `undefined` side of a difference and an absent one are the same.
+  const stored = (difference: ApiShadowDifference | ProblemShadowDifference): string =>
+    canonicalJson(JSON.parse(JSON.stringify(difference)));
+  const measured = new Map<string, string>();
   for (const difference of apiDifferences) {
-    const key = decisionKey("api", difference.component, difference.path);
-    if (byApiKey.has(key)) throw new Error(`duplicate measured API difference ${key}`);
-    byApiKey.set(key, difference);
+    const key = differenceKey("api", difference.component, difference.path);
+    if (measured.has(key)) throw new Error(`duplicate measured API difference ${key}`);
+    measured.set(key, stored(difference));
   }
-  const byProblemKey = new Map<string, ProblemShadowDifference>();
   for (const difference of problemDifferences) {
-    const key = decisionKey("problem", difference.component, difference.key);
-    if (byProblemKey.has(key)) throw new Error(`duplicate measured problem difference ${key}`);
-    byProblemKey.set(key, difference);
+    const key = differenceKey("problem", difference.component, difference.key);
+    if (measured.has(key)) throw new Error(`duplicate measured problem difference ${key}`);
+    measured.set(key, stored(difference));
   }
-  const decisionIds = new Set<string>();
-  for (const decision of decisions) {
-    if (decisionIds.has(decision.id)) throw new Error(`duplicate shadow decision id ${decision.id}`);
-    decisionIds.add(decision.id);
-    if (decision.id.trim() === "" || decision.paths.length === 0)
-      throw new Error(`shadow decision ${decision.id || "<empty>"} has no exact paths`);
-    if (
-      decision.paths.some(
-        (path) =>
-          path === "" ||
-          (decision.kind === "api" && /[*?]/u.test(path)) ||
-          (decision.kind === "problem" && path === "*")
-      )
-    ) {
-      throw new Error(`shadow decision ${decision.id} contains a wildcard or empty path`);
-    }
-    const matches: (ApiShadowDifference | ProblemShadowDifference)[] = [];
-    for (const path of decision.paths) {
-      const key = decisionKey(decision.kind, decision.component, path);
-      const difference = decision.kind === "api" ? byApiKey.get(key) : byProblemKey.get(key);
-      if (difference === undefined)
-        throw new Error(`shadow decision ${decision.id} does not match exact measured path ${path}`);
-      matches.push(difference);
-    }
-    if (new Set(decision.paths).size !== decision.paths.length)
-      throw new Error(`shadow decision ${decision.id} repeats an exact path`);
-    if (differenceFingerprint(matches) !== decision.differenceSha256) {
-      throw new Error(`shadow decision ${decision.id} fingerprint does not match measured differences`);
-    }
-    if (decision.kind === "api") {
-      for (const path of decision.paths) {
-        const key = decisionKey("api", decision.component, path);
-        if (claimedApi.has(key)) throw new Error(`shadow difference ${key} is covered by multiple decisions`);
-        const difference = byApiKey.get(key);
-        if (difference === undefined)
-          throw new Error(`shadow decision ${decision.id} lost exact match ${key}`);
-        claimedApi.set(key, [difference]);
-      }
-    } else {
-      for (const path of decision.paths) {
-        const key = decisionKey("problem", decision.component, path);
-        if (claimedProblems.has(key))
-          throw new Error(`shadow difference ${key} is covered by multiple decisions`);
-        const difference = byProblemKey.get(key);
-        if (difference === undefined)
-          throw new Error(`shadow decision ${decision.id} lost exact match ${key}`);
-        claimedProblems.set(key, [difference]);
-      }
-    }
+  const reviewed = new Map<string, string>();
+  for (const difference of snapshot.apiDifferences) {
+    reviewed.set(differenceKey("api", difference.component, difference.path), stored(difference));
   }
-  const reviewedApiDifferences = [...claimedApi.values()].flat();
-  const reviewedProblemDifferences = [...claimedProblems.values()].flat();
+  for (const difference of snapshot.problemDifferences) {
+    reviewed.set(differenceKey("problem", difference.component, difference.key), stored(difference));
+  }
+  const unexplained = [...measured].filter(([key, value]) => reviewed.get(key) !== value).map(([key]) => key);
+  const stale = [...reviewed].filter(([key, value]) => measured.get(key) !== value).map(([key]) => key);
   return {
-    reviewedApiDifferences,
-    reviewedProblemDifferences,
-    unexplainedApiDifferences: apiDifferences.filter(
-      (difference) => !claimedApi.has(decisionKey("api", difference.component, difference.path))
-    ),
-    unexplainedProblemDifferences: problemDifferences.filter(
-      (difference) => !claimedProblems.has(decisionKey("problem", difference.component, difference.key))
-    ),
+    unexplained: unexplained.sort((left, right) => left.localeCompare(right)),
+    stale: stale.sort((left, right) => left.localeCompare(right)),
   };
 }

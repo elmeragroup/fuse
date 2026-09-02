@@ -9,11 +9,11 @@
 
 import type { ApiPart } from "../../src/lib/docs-model.ts";
 import { BASE_UI_PACKAGE_NAME, dependencyPackageName } from "../../src/lib/docs-model.ts";
-import { assertExpectedBaseUiDiagnostics } from "./api-external-diagnostics.ts";
-import { effectSide } from "./api-shadow-adapter.ts";
+import { effectSide } from "./api-effect-adapter.ts";
+import { assertKnownBaseUiDiagnostics } from "./api-external-diagnostics.ts";
 import type { DocsApiComponent } from "./api-shadow-types.ts";
-import { componentPartPropFacts, openLibraryProject, shortTypeOf } from "./api.ts";
-import type { CurrentPartPropFact } from "./api.ts";
+import { componentPartPropFacts, shortTypeOf } from "./api.ts";
+import type { CurrentPartPropFact, LibraryProject } from "./api.ts";
 import { resolveComponentPaths } from "./components.ts";
 
 export type ComponentApiParts = {
@@ -36,21 +36,16 @@ function productionInventory(components: readonly ComponentApiParts[]): readonly
   });
 }
 
-function currentPropFacts(inventory: readonly DocsApiComponent[]): CurrentPropFacts {
-  const context = openLibraryProject();
-  try {
-    return new Map(
-      inventory.map((component) => [
-        component.slug,
-        componentPartPropFacts(context, {
-          entryFile: component.entryFile,
-          exportNames: component.exportNames,
-        }),
-      ])
-    );
-  } finally {
-    context.close();
-  }
+function currentPropFacts(inventory: readonly DocsApiComponent[], context: LibraryProject): CurrentPropFacts {
+  return new Map(
+    inventory.map((component) => [
+      component.slug,
+      componentPartPropFacts(context, {
+        entryFile: component.entryFile,
+        exportNames: component.exportNames,
+      }),
+    ])
+  );
 }
 
 function mergeSelectedProps(
@@ -95,7 +90,8 @@ function mergeSelectedProps(
  * Inventory and ordering continue to come from the current generator.
  */
 export async function includeBaseUiPrimitiveProps(
-  components: readonly ComponentApiParts[]
+  components: readonly ComponentApiParts[],
+  context: LibraryProject
 ): Promise<ReadonlyMap<string, readonly ApiPart[]>> {
   const inventory = productionInventory(components);
   const currentBySlug = new Map(components.map((component) => [component.slug, component.parts]));
@@ -103,9 +99,9 @@ export async function includeBaseUiPrimitiveProps(
     throw new Error("Base UI API enrichment received duplicate component slugs");
   }
 
-  const factsBySlug = currentPropFacts(inventory);
-  const extracted = await effectSide(inventory, { includeExternalTypes: [BASE_UI_PACKAGE_NAME] });
-  assertExpectedBaseUiDiagnostics(extracted.results.flatMap((result) => result.problems));
+  const factsBySlug = currentPropFacts(inventory, context);
+  const extracted = await effectSide(inventory, context, { includeExternalTypes: [BASE_UI_PACKAGE_NAME] });
+  assertKnownBaseUiDiagnostics(extracted.results.flatMap((result) => result.problems));
   return new Map(
     inventory.map((component, index) => {
       const current = currentBySlug.get(component.slug);

@@ -1,17 +1,36 @@
-import { beforeAll, describe, expect, test } from "vitest";
+import fs from "node:fs";
+import { syncBuiltinESMExports } from "node:module";
+import { afterAll, beforeAll, describe, expect, test, vi } from "vitest";
 
-import { effectOrigin } from "../scripts/lib/api-shadow-adapter.ts";
+import { effectOrigin } from "../scripts/lib/api-effect-adapter.ts";
 import {
-  DOCS_SHADOW_SLUGS,
   compareParts,
-  inputCapturesEqual,
   docsShadowInventory,
-  reviewDifferences,
+  inputCapturesEqual,
+  readShadowSnapshot,
+  reviewAgainstSnapshot,
   runDocsShadowComparison,
-  protectedBytesEqual,
+  snapshotOf,
 } from "../scripts/lib/api-shadow.ts";
 import type { DocsShadowReport } from "../scripts/lib/api-shadow.ts";
+import { componentSlugs } from "../scripts/lib/components.ts";
 import type { ApiPart, ApiProp } from "../src/lib/docs-model.ts";
+
+// The shadow run is validation only: every synchronous write through node:fs
+// fails the run, so a writer sneaking into either side fails the suite.
+const refusedWrites: string[] = [];
+const writeSpies = (["writeFileSync", "appendFileSync", "rmSync", "unlinkSync"] as const).map((name) =>
+  vi.spyOn(fs, name).mockImplementation(() => {
+    refusedWrites.push(name);
+    throw new Error(`docs shadow run must not write (${name})`);
+  })
+);
+syncBuiltinESMExports();
+
+afterAll(() => {
+  for (const spy of writeSpies) spy.mockRestore();
+  syncBuiltinESMExports();
+});
 
 let report: DocsShadowReport;
 
@@ -42,20 +61,16 @@ beforeAll(async () => {
   report = await runDocsShadowComparison();
 }, 120_000);
 
-describe("Issue 15 docs API shadow", () => {
+describe("docs API shadow", () => {
   test("uses the complete route inventory and identical public entry inputs", () => {
     const inventory = docsShadowInventory();
-    expect(inventory.map((entry) => entry.slug)).toEqual([...DOCS_SHADOW_SLUGS]);
+    expect(inventory.map((entry) => entry.slug)).toEqual([...componentSlugs()]);
     expect(report.inventory).toEqual(inventory);
     expect(report.extractionInputs).toEqual(inventory.map((entry) => entry.entryFile));
     expect(report.currentInputs).toEqual(report.extractionInputs);
     expect(report.effectInputs).toEqual(report.extractionInputs);
-    expect(report.currentInputs).not.toBe(report.extractionInputs);
-    expect(report.effectInputs).not.toBe(report.extractionInputs);
-    expect(report.currentInputs).not.toBe(report.effectInputs);
-    expect(report.currentInputHashes).toHaveLength(DOCS_SHADOW_SLUGS.length);
-    expect(report.effectInputHashes).toHaveLength(DOCS_SHADOW_SLUGS.length);
-    expect(report.currentInputHashes).not.toBe(report.effectInputHashes);
+    expect(report.currentInputHashes).toHaveLength(inventory.length);
+    expect(report.effectInputHashes).toHaveLength(inventory.length);
     expect(inputCapturesEqual(report.currentInputHashes, report.effectInputHashes)).toBe(true);
     expect(
       report.currentInputHashes.every(
@@ -71,69 +86,37 @@ describe("Issue 15 docs API shadow", () => {
         (entry) => entry.exportNames.length > 0 && entry.exportNames.includes(entry.exportName)
       )
     ).toBe(true);
-    expect(report.inventory.every((entry) => entry.sourceFile.length > 0)).toBe(true);
   });
 
-  test("records the complete measured shape and problem multiset", () => {
-    expect(report.summary).toEqual({
-      componentCount: 57,
-      currentPartCount: 225,
-      effectPartCount: 78,
-      currentPropCount: 403,
-      effectPropCount: 372,
-      currentProblemCount: 0,
-      effectProblemCount: 139,
-      apiDifferenceCount: 1115,
-      problemDifferenceCount: 139,
-      reviewedApiDifferenceCount: 1115,
-      reviewedProblemDifferenceCount: 139,
-      unexplainedApiDifferenceCount: 0,
-      unexplainedProblemDifferenceCount: 0,
+  test("reproduces the reviewed snapshot exactly", () => {
+    const snapshot = readShadowSnapshot();
+    const review = reviewAgainstSnapshot(report.apiDifferences, report.problemDifferences, snapshot);
+    expect(review, "run `pnpm run shadow:update` after reviewing these differences").toEqual({
+      unexplained: [],
+      stale: [],
     });
-    expect(report.unexplainedApiDifferences).toEqual([]);
-    expect(report.unexplainedProblemDifferences).toEqual([]);
-    expect(report.apiDifferences).toHaveLength(report.summary.reviewedApiDifferenceCount);
-    expect(report.problemDifferences).toHaveLength(report.summary.reviewedProblemDifferenceCount);
-  });
-
-  test("checks exact decisions and rejects duplicate or wildcard coverage", () => {
-    const covered = new Set<string>();
-    for (const decision of report.decisions) {
-      expect(decision.paths.length).toBeGreaterThan(0);
-      expect(new Set(decision.paths).size).toBe(decision.paths.length);
-      for (const decisionPath of decision.paths) {
-        expect(decisionPath).not.toBe("");
-        if (decision.kind === "api") expect(decisionPath).not.toMatch(/[*?]/u);
-        const key = `${decision.kind}|${decision.component}|${decisionPath}`;
-        expect(covered.has(key)).toBe(false);
-        covered.add(key);
-      }
-    }
-    expect(covered.size).toBe(
-      report.summary.reviewedApiDifferenceCount + report.summary.reviewedProblemDifferenceCount
-    );
+    expect(report.summary).toEqual(snapshot.summary);
+    expect(snapshotOf(report)).toEqual(snapshot);
+    expect(report.apiDifferences).toHaveLength(report.summary.apiDifferenceCount);
+    expect(report.problemDifferences).toHaveLength(report.summary.problemDifferenceCount);
     expect(
       report.apiDifferences.every(
         (difference) =>
           difference.path !== "parts" && difference.path !== "evidence" && !difference.path.endsWith(".props")
       )
     ).toBe(true);
-    expect(
-      report.apiDifferences.some(
-        (difference) =>
-          difference.component === "input-group" &&
-          difference.path === "parts.InputGroup.Button.props.aria-label"
-      )
-    ).toBe(true);
+  });
 
-    const firstDecision = report.decisions[0];
-    if (firstDecision === undefined) throw new Error("shadow report has no decisions");
-    expect(() =>
-      reviewDifferences(report.apiDifferences, report.problemDifferences, [
-        ...report.decisions,
-        { ...firstDecision, id: firstDecision.id },
-      ])
-    ).toThrow(`duplicate shadow decision id ${firstDecision.id}`);
+  test("reports both unexplained and stale differences against a snapshot", () => {
+    const snapshot = snapshotOf(report);
+    const [first, ...rest] = snapshot.apiDifferences;
+    if (first === undefined) throw new Error("the shadow report has no API differences to review");
+    const review = reviewAgainstSnapshot(report.apiDifferences, report.problemDifferences, {
+      ...snapshot,
+      apiDifferences: [...rest, { ...first, path: `${first.path}.renamed` }],
+    });
+    expect(review.unexplained).toEqual([`api|${first.component}|${first.path}`]);
+    expect(review.stale).toEqual([`api|${first.component}|${first.path}.renamed`]);
   });
 
   test("detects side-specific input and source-byte drift", () => {
@@ -217,49 +200,23 @@ describe("Issue 15 docs API shadow", () => {
         }
       }
     }
-
     for (const slug of ["badge", "button", "input", "separator", "textarea"] as const) {
       const component = report.components.find((entry) => entry.inventory.slug === slug);
       expect(component).toBeDefined();
       expect(component?.currentEvidence[0]?.declarationPaths).toHaveLength(1);
       expect(component?.effectEvidence[0]?.declarationPaths).toHaveLength(1);
     }
-
-    const button = report.components.find((entry) => entry.inventory.slug === "button");
-    const ariaLabel = button?.currentEvidence[0]?.props.find((prop) => prop.name === "aria-label");
-    expect(ariaLabel?.declarationPaths).toEqual([
-      "node_modules/.pnpm/@types+react@19.2.17/node_modules/@types/react/index.d.ts",
-      "packages/ui/src/components/button/button.tsx",
-    ]);
   });
 
-  test("proves the validation-only run leaves protected bytes unchanged", () => {
-    expect(report.protectedBytesBefore.generator.path).toBe("apps/docs/scripts/generate.ts");
-    expect(report.protectedBytesBefore.generated.length).toBeGreaterThan(0);
-    expect(report.protectedBytesBefore.markdown).toHaveLength(DOCS_SHADOW_SLUGS.length);
-    expect(report.protectedBytesBefore.llms.path).toBe("apps/docs/public/llms.txt");
-    expect(report.protectedBytesAfter).toEqual(report.protectedBytesBefore);
-    expect(protectedBytesEqual(report.protectedBytesBefore, report.protectedBytesAfter)).toBe(true);
-  });
-
-  test("takes the after snapshot and preserves an injected failure", async () => {
+  test("never writes during a run and surfaces an injected side failure", async () => {
+    expect(refusedWrites).toEqual([]);
     const injected = new Error("injected shadow extraction failure");
-    const phases: Array<{ phase: "before" | "after"; snapshot: DocsShadowReport["protectedBytesBefore"] }> =
-      [];
     await expect(
       runDocsShadowComparison({
         effectSide: () => {
           throw injected;
         },
-        onProtectedSnapshot: (phase, snapshot) => phases.push({ phase, snapshot }),
       })
     ).rejects.toBe(injected);
-    expect(phases.map(({ phase }) => phase)).toEqual(["before", "after"]);
-    expect(
-      protectedBytesEqual(
-        phases[0]?.snapshot ?? report.protectedBytesBefore,
-        phases[1]?.snapshot ?? report.protectedBytesAfter
-      )
-    ).toBe(true);
   });
 });

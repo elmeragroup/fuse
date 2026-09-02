@@ -75,6 +75,7 @@ export async function regenerateApiArtifacts(): Promise<RegeneratedApi> {
   const problems = new ProblemLog();
   const current: { readonly slug: string; readonly parts: readonly ApiPart[] }[] = [];
   const context = openLibraryProject();
+  let enriched: ReadonlyMap<string, readonly ApiPart[]>;
   try {
     for (const slug of componentSlugs()) {
       const paths = resolveComponentPaths(slug);
@@ -85,10 +86,10 @@ export async function regenerateApiArtifacts(): Promise<RegeneratedApi> {
       );
       current.push({ slug, parts });
     }
+    enriched = await includeBaseUiPrimitiveProps(current, context);
   } finally {
     context.close();
   }
-  const enriched = await includeBaseUiPrimitiveProps(current);
   const texts = new Map<string, string>();
   for (const { slug } of current) {
     texts.set(slug, serializeApiArtifact(buildApiArtifact(slug, enriched.get(slug) ?? [])));

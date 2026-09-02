@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Cause, Effect, Exit } from "effect";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 
@@ -31,11 +31,11 @@ import {
   componentPartSources,
   describeComponentApi,
   inspectCurrentPartEvidence,
-  openLibraryProject,
   propOrigin,
   shortTypeOf,
 } from "./api.ts";
 import type { CurrentPartEvidence, PartSource } from "./api.ts";
+import type { LibraryProject } from "./api.ts";
 import { inspectComponent, inspectComponentDemos, inspectGlobalDocs } from "./docs-inspection.ts";
 import { ProblemLog } from "./errors.ts";
 import { repoRoot, uiTsconfig } from "./paths.ts";
@@ -153,7 +153,7 @@ function renderSemanticType(type: SemanticType, nested = false): string {
     case "intersection":
       return renderIntersection(type);
     case "typeOperator":
-      return renderSemanticType(type.resolvedType ?? type.type, nested);
+      return renderSemanticType(type.resolvedType, nested);
     case "function": {
       const signatures = type.callSignatures.map((signature) => {
         const parameters = signature.parameters
@@ -260,20 +260,8 @@ function exportType(result: ExtractionResult, name: string): SemanticType | unde
   return result.module.exports.find((candidate) => candidate.name === name)?.type;
 }
 
-function propertyProvenance(
-  result: ExtractionResult,
-  partName: string,
-  propName: string,
-  aliases: readonly string[]
-): ProvenanceEntry | undefined {
-  const direct = provenanceAt(result, [partName, "props", propName]);
-  if (direct !== undefined) return direct;
-  for (const alias of aliases) {
-    const candidate = provenanceAt(result, [alias, "properties", propName]);
-    if (candidate !== undefined) return candidate;
-  }
-  return undefined;
-}
+/** Semantic path of the node that owns a part's props: the export root, or one member of a component object. */
+type PartOwnerPath = readonly string[];
 
 function provenanceAt(result: ExtractionResult, pathParts: readonly string[]): ProvenanceEntry | undefined {
   return result.provenance.find(
@@ -327,13 +315,12 @@ function implementationSource(
   inventory: DocsApiComponent,
   result: ExtractionResult,
   partName: string,
-  aliases: readonly string[],
+  ownerPath: PartOwnerPath,
   sources: ReadonlyMap<string, PartSource>
 ): string {
-  const canonical = sources.get(partName) ?? aliases.map((alias) => sources.get(alias)).find(Boolean);
+  const canonical = sources.get(partName);
   if (canonical !== undefined) return canonical.sourcePath;
-  const root =
-    provenanceAt(result, [partName]) ?? aliases.map((alias) => provenanceAt(result, [alias])).find(Boolean);
+  const root = provenanceAt(result, ownerPath);
   const implementation = root?.declarationPaths.find(
     (candidate) => isLibraryDeclaration(candidate) && /\.tsx?$/u.test(normalizePath(candidate))
   );
@@ -361,26 +348,67 @@ export function effectOrigin(provenance: ProvenanceEntry | undefined): ApiProp["
   return packages.length === 1 && packages[0] !== undefined ? { packageName: packages[0] } : localOrigin;
 }
 
+/**
+ * A component root and, when the entry also exports the package's conventional
+ * `<Root>Props` alias, that alias. The component transform squashes props from
+ * expanded object members only, so a prop contributed by a summarized member of
+ * the props intersection (Base UI's `render` from `useRender.ComponentProps`)
+ * is visible only through the alias's merged property list.
+ */
+type PartSemantics = {
+  readonly type: SemanticType;
+  readonly propsAlias?: string;
+};
+
+function withPropsAlias(result: ExtractionResult, type: SemanticType, propsAlias: string): PartSemantics {
+  return exportType(result, propsAlias) === undefined ? { type } : { type, propsAlias };
+}
+
+/**
+ * The provenance a prop is attributed to: the part's own prop entry, unless the
+ * props alias attributes the same prop to exactly one dependency while the
+ * part's entry (a squash over several declarations) cannot name one.
+ */
+function propProvenance(
+  result: ExtractionResult,
+  ownerPath: PartOwnerPath,
+  semantics: PartSemantics,
+  propName: string
+): ProvenanceEntry | undefined {
+  const own = provenanceAt(result, [...ownerPath, "props", propName]);
+  const alias =
+    semantics.propsAlias === undefined
+      ? undefined
+      : provenanceAt(result, [semantics.propsAlias, "properties", propName]);
+  if (own === undefined) return alias;
+  if (alias === undefined) return own;
+  return dependencyPackageName(effectOrigin(own)) === null &&
+    dependencyPackageName(effectOrigin(alias)) !== null
+    ? alias
+    : own;
+}
+
 function toApiPart(
   inventory: DocsApiComponent,
   result: ExtractionResult,
-  rootName: string,
   partName: string,
-  semanticTypes: readonly SemanticType[],
-  aliases: readonly string[],
+  ownerPath: PartOwnerPath,
+  semantics: PartSemantics,
   canonicalSources: ReadonlyMap<string, PartSource>,
   problems: ShadowProblem[]
 ): ApiPartMapping {
-  const source =
-    canonicalSources.get(partName) ?? aliases.map((alias) => canonicalSources.get(alias)).find(Boolean);
-  const sourcePath = implementationSource(inventory, result, partName, aliases, canonicalSources);
-  const semanticProps = mergedProperties(semanticTypes);
+  const source = canonicalSources.get(partName);
+  const sourcePath = implementationSource(inventory, result, partName, ownerPath, canonicalSources);
+  const aliasType = semantics.propsAlias === undefined ? undefined : exportType(result, semantics.propsAlias);
+  const semanticProps = mergedProperties(
+    aliasType === undefined ? [semantics.type] : [semantics.type, aliasType]
+  );
   const props: ApiProp[] = [];
   const evidence: ShadowPropEvidence[] = [];
   const forwarded = new Set<string>();
 
   for (const property of semanticProps) {
-    const provenance = propertyProvenance(result, rootName, property.name, aliases);
+    const provenance = propProvenance(result, ownerPath, semantics, property.name);
     const origin = effectOrigin(provenance);
     const description = dedupeDocumentation(property.documentation?.description);
     if (origin === "declared" && description === "") {
@@ -411,12 +439,9 @@ function toApiPart(
   }
   props.sort((left, right) => left.name.localeCompare(right.name));
   const sortedEvidence = [...evidence].sort((left, right) => left.name.localeCompare(right.name));
-  const declarationPaths = [partName, ...aliases]
-    .map((name) => provenanceAt(result, [name]))
-    .flatMap((entry) => entry?.declarationPaths ?? []);
-  const synthesized = [partName, ...aliases]
-    .map((name) => provenanceAt(result, [name]))
-    .some((entry) => entry?.synthesized === true);
+  const owner = provenanceAt(result, ownerPath);
+  const declarationPaths = owner?.declarationPaths ?? [];
+  const synthesized = owner?.synthesized === true;
   return {
     part: {
       name: partName,
@@ -430,17 +455,13 @@ function toApiPart(
   };
 }
 
-function aliasNames(result: ExtractionResult, rootName: string): readonly string[] {
-  return result.module.exports
-    .map((candidate) => candidate.name)
-    .filter((name) => name.startsWith(`${rootName}`) && name.endsWith("Props"));
-}
-
-function partNameForAlias(rootName: string, alias: string): string | null {
-  const suffix = alias.slice(rootName.length, -"Props".length);
-  if (suffix === "") return rootName;
-  if (!/^[A-Z][A-Za-z0-9]*$/u.test(suffix)) return null;
-  return `${rootName}.${suffix}`;
+/** The member components of `export const Root = { Part, OtherPart }`, or undefined for any other export shape. */
+function componentObjectMembers(
+  type: SemanticType
+): readonly { readonly name: string; readonly type: SemanticType }[] | undefined {
+  if (type.kind !== "object" || type.properties.length === 0) return undefined;
+  const members = type.properties.filter((property) => property.type.kind === "component");
+  return members.length === type.properties.length ? members : undefined;
 }
 
 function partsFromRoot(
@@ -457,58 +478,25 @@ function partsFromRoot(
     );
     return { parts: [], evidence: [] };
   }
-  const aliases = aliasNames(result, rootName);
   if (exported.kind === "component") {
-    const mapped = toApiPart(
-      inventory,
-      result,
-      rootName,
-      rootName,
-      [
-        exported,
-        ...aliases
-          .map((alias) => exportType(result, alias))
-          .filter((type): type is SemanticType => type !== undefined),
-      ],
-      aliases,
-      canonical.sources,
-      problems
-    );
+    const semantics = withPropsAlias(result, exported, `${rootName}Props`);
+    const mapped = toApiPart(inventory, result, rootName, [rootName], semantics, canonical.sources, problems);
     return { parts: [mapped.part], evidence: [mapped.evidence] };
   }
-  const parts: ApiPart[] = [];
-  const evidence: ShadowPartEvidence[] = [];
-  for (const alias of aliases) {
-    const partName = partNameForAlias(rootName, alias);
-    const aliasType = exportType(result, alias);
-    if (
-      partName === null ||
-      aliasType === undefined ||
-      !["component", "object", "intersection", "union"].includes(aliasType.kind)
-    )
-      continue;
-    const mapped = toApiPart(
-      inventory,
-      result,
-      rootName,
-      partName,
-      [aliasType],
-      [alias],
-      canonical.sources,
-      problems
-    );
-    parts.push(mapped.part);
-    evidence.push(mapped.evidence);
-  }
-  if (parts.length > 0) {
-    problems.push(
-      adapterProblem(
-        inventory.slug,
-        "partial-compound-export",
-        `${rootName}: semantic export kind "${exported.kind}" yielded ${String(parts.length)} aliased part(s); unaliased members are not represented`
+  const members = componentObjectMembers(exported);
+  if (members !== undefined) {
+    const mapped = members.map((member) =>
+      toApiPart(
+        inventory,
+        result,
+        `${rootName}.${member.name}`,
+        [rootName, "properties", member.name],
+        withPropsAlias(result, member.type, `${rootName}${member.name}Props`),
+        canonical.sources,
+        problems
       )
     );
-    return { parts, evidence };
+    return { parts: mapped.map((entry) => entry.part), evidence: mapped.map((entry) => entry.evidence) };
   }
   problems.push(
     adapterProblem(
@@ -577,10 +565,9 @@ function shadowCurrentEvidence(value: CurrentPartEvidence): ShadowPartEvidence {
   };
 }
 
-export function currentSide(inventory: readonly DocsShadowComponent[]): SideRun {
+export function currentSide(inventory: readonly DocsShadowComponent[], context: LibraryProject): SideRun {
   const inputs = captureInputs(inventory);
-  const context = openLibraryProject();
-  try {
+  {
     const results = inventory.map((entry) => {
       const problems = new ProblemLog();
       const request = { entryFile: entry.entryFile, exportNames: entry.exportNames };
@@ -614,43 +601,47 @@ export function currentSide(inventory: readonly DocsShadowComponent[]): SideRun 
       results: [{ ...first, problems: [...first.problems, ...globalProblems] }, ...results.slice(1)],
       inputs,
     };
-  } finally {
-    context.close();
   }
 }
 
 export type EffectSideOptions = Pick<ExtractorOptions, "includeExternalTypes">;
 
+/**
+ * Extracts every inventory entry through the Effect extractor in one opened
+ * project. The bridge to the native compiler is synchronous and every entry
+ * shares that project, so the entries run sequentially by design.
+ */
+async function extractInventory(
+  inventory: readonly DocsApiComponent[],
+  options: EffectSideOptions
+): Promise<readonly ExtractionResult[]> {
+  const exit = await Effect.runPromiseExit(
+    Effect.gen(function* () {
+      const extractor = yield* ProjectExtractor;
+      return yield* Effect.forEach(inventory, (entry) => extractor.extractModule(entry.entryFile, options));
+    }).pipe(Effect.provide(ProjectExtractor.live({ tsconfigPath: uiTsconfig, cwd: repoRoot })))
+  );
+  if (Exit.isSuccess(exit)) return exit.value;
+  const failure = Cause.squash(exit.cause);
+  if (failure instanceof Error && "_tag" in failure) {
+    throw new Error(`Effect API extraction failed (${String(failure._tag)}): ${failure.message}`, {
+      cause: failure,
+    });
+  }
+  throw failure instanceof Error ? failure : new Error(String(failure));
+}
+
 export async function effectSide(
   inventory: readonly DocsApiComponent[],
+  context: LibraryProject,
   options: EffectSideOptions = {}
 ): Promise<SideRun> {
   const inputs = captureInputs(inventory);
-  const extraction = await Effect.runPromise(
-    Effect.scoped(
-      Effect.gen(function* () {
-        const extractor = yield* ProjectExtractor;
-        const results: ExtractionResult[] = [];
-        for (const entry of inventory) {
-          results.push(
-            yield* extractor.extractModule(entry.entryFile, options)
-          );
-        }
-        return results;
-      }).pipe(Effect.provide(ProjectExtractor.live({ tsconfigPath: uiTsconfig, cwd: repoRoot })))
-    )
-  );
+  const extraction = await extractInventory(inventory, options);
   const canonical = new Map<string, CanonicalComponentFacts>();
-  const context = openLibraryProject();
-  try {
-    for (const entry of inventory) {
-      const request = { entryFile: entry.entryFile, exportNames: entry.exportNames };
-      canonical.set(entry.slug, {
-        sources: componentPartSources(context, request),
-      });
-    }
-  } finally {
-    context.close();
+  for (const entry of inventory) {
+    const request = { entryFile: entry.entryFile, exportNames: entry.exportNames };
+    canonical.set(entry.slug, { sources: componentPartSources(context, request) });
   }
   const results = extraction.map((result, index) => {
     const entry = inventory[index];

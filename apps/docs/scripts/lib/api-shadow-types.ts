@@ -1,68 +1,5 @@
 import type { ApiPart } from "../../src/lib/docs-model.ts";
 
-/** The complete component shell inventory used by the production docs generator. */
-export const DOCS_SHADOW_SLUGS = [
-  "accordion",
-  "alert",
-  "alert-dialog",
-  "avatar",
-  "badge",
-  "breadcrumb",
-  "button",
-  "button-group",
-  "calendar",
-  "card",
-  "checkbox",
-  "checkbox-card",
-  "code",
-  "collapsible",
-  "confirm-button",
-  "date-field",
-  "date-picker",
-  "date-range-picker",
-  "description-list",
-  "dialog",
-  "dropdown-menu",
-  "emoji",
-  "empty",
-  "field",
-  "frame",
-  "heading",
-  "input",
-  "input-group",
-  "item",
-  "link",
-  "loader",
-  "meter",
-  "number-field",
-  "pagination",
-  "popover",
-  "radio-group",
-  "range-calendar",
-  "scroll-area",
-  "search-field",
-  "select",
-  "selection-item",
-  "separator",
-  "sheet",
-  "show",
-  "skeleton",
-  "span",
-  "switch",
-  "table",
-  "tabs",
-  "text",
-  "text-field",
-  "textarea",
-  "textarea-field",
-  "timeline-list",
-  "toggle",
-  "tooltip",
-  "ui-providers",
-] as const;
-
-export type DocsShadowSlug = (typeof DOCS_SHADOW_SLUGS)[number];
-
 /** Component input shared by production extraction and the closed shadow inventory. */
 export type DocsApiComponent = {
   readonly slug: string;
@@ -74,9 +11,7 @@ export type DocsApiComponent = {
   readonly sourceFile: string;
 };
 
-export type DocsShadowComponent = Omit<DocsApiComponent, "slug"> & {
-  readonly slug: DocsShadowSlug;
-};
+export type DocsShadowComponent = DocsApiComponent;
 
 /** One diagnostic from either extractor or from the docs-owned adapter. */
 export type ShadowProblem = {
@@ -127,13 +62,6 @@ export type ShadowPartEvidence = {
   readonly props: readonly ShadowPropEvidence[];
 };
 
-export type ProtectedBytes = {
-  readonly generator: { readonly path: string; readonly sha256: string };
-  readonly generated: readonly { readonly path: string; readonly sha256: string }[];
-  readonly markdown: readonly { readonly path: string; readonly sha256: string }[];
-  readonly llms: { readonly path: string; readonly sha256: string };
-};
-
 export type DocsShadowComponentResult = {
   readonly inventory: DocsShadowComponent;
   readonly current: readonly ApiPart[];
@@ -144,23 +72,17 @@ export type DocsShadowComponentResult = {
   readonly effectEvidence: readonly ShadowPartEvidence[];
 };
 
-export type ParityDecisionKind = "api" | "problem";
-
 /**
- * A checked-in adjudication for a measured difference.
- *
- * `paths` are exact leaf paths (or exact problem keys), never prefixes or globs.
- * `differenceSha256` fingerprints the measured values covered by this decision;
- * changing the source inputs or the extractor output therefore invalidates it.
+ * The reviewed steady state of the shadow comparison: every measured difference
+ * between the current docs generator and the Effect extractor, as last accepted
+ * with `pnpm run shadow:update`. A run must reproduce it exactly; anything
+ * measured but absent here is unexplained, anything here but no longer measured
+ * is stale, and either fails the shadow suite.
  */
-export type ParityDecision = {
-  readonly id: string;
-  readonly kind: ParityDecisionKind;
-  readonly component: string;
-  readonly paths: readonly string[];
-  readonly differenceSha256: string;
-  readonly rationale: string;
-  readonly evidence: string;
+export type DocsShadowSnapshot = {
+  readonly summary: DocsShadowSummary;
+  readonly apiDifferences: readonly ApiShadowDifference[];
+  readonly problemDifferences: readonly ProblemShadowDifference[];
 };
 
 export type DocsShadowSummary = {
@@ -173,10 +95,6 @@ export type DocsShadowSummary = {
   readonly effectProblemCount: number;
   readonly apiDifferenceCount: number;
   readonly problemDifferenceCount: number;
-  readonly reviewedApiDifferenceCount: number;
-  readonly reviewedProblemDifferenceCount: number;
-  readonly unexplainedApiDifferenceCount: number;
-  readonly unexplainedProblemDifferenceCount: number;
 };
 
 export type DocsShadowReport = {
@@ -191,10 +109,5 @@ export type DocsShadowReport = {
   readonly components: readonly DocsShadowComponentResult[];
   readonly apiDifferences: readonly ApiShadowDifference[];
   readonly problemDifferences: readonly ProblemShadowDifference[];
-  readonly decisions: readonly ParityDecision[];
-  readonly unexplainedApiDifferences: readonly ApiShadowDifference[];
-  readonly unexplainedProblemDifferences: readonly ProblemShadowDifference[];
   readonly summary: DocsShadowSummary;
-  readonly protectedBytesBefore: ProtectedBytes;
-  readonly protectedBytesAfter: ProtectedBytes;
 };

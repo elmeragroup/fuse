@@ -28,7 +28,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, wri
 import path from "node:path";
 
 import { normalizeDemoSource } from "../src/lib/docs-model.ts";
-import type { DocsComponent, DocsDemo, ThemeCatalog } from "../src/lib/docs-model.ts";
+import type { ApiPart, DocsComponent, DocsDemo, ThemeCatalog } from "../src/lib/docs-model.ts";
 import { API_REGEN_COMMAND, buildApiArtifact, serializeApiArtifact } from "./lib/api-artifact.ts";
 import { includeBaseUiPrimitiveProps } from "./lib/api-external.ts";
 import { describeComponentApi, openLibraryProject } from "./lib/api.ts";
@@ -308,16 +308,18 @@ async function main(): Promise<void> {
   const colors = readColorTokenMapFromFile(path.join(uiSrc, "styles/ui.css"));
   const context = openLibraryProject();
   let currentComponents: readonly DocsComponent[];
+  let partsBySlug: ReadonlyMap<string, readonly ApiPart[]>;
   try {
     currentComponents = componentSlugs().map((slug) => buildComponent(context, slug, problems, colors));
+    verifyStaticRoutes(problems);
+    problems.throwIfFailed();
+    partsBySlug = await includeBaseUiPrimitiveProps(currentComponents, context);
   } finally {
     context.close();
   }
-  verifyStaticRoutes(problems);
   const sizes = readBundleSizes(sizeBudgetsFile, problems);
   problems.throwIfFailed();
 
-  const partsBySlug = await includeBaseUiPrimitiveProps(currentComponents);
   const components = currentComponents.map((component) => ({
     ...component,
     parts: partsBySlug.get(component.slug) ?? component.parts,

@@ -1,24 +1,28 @@
 import { describe, expect, it } from "vitest";
 
-import { assertExpectedBaseUiDiagnostics } from "../scripts/lib/api-external-diagnostics.ts";
+import { assertKnownBaseUiDiagnostics } from "../scripts/lib/api-external-diagnostics.ts";
 
 describe("selective Base UI extraction diagnostics", () => {
-  it("rejects a missing reviewed diagnostic", () => {
+  it("accepts any number of diagnostics from reviewed categories", () => {
     expect(() => {
-      assertExpectedBaseUiDiagnostics([]);
-    }).toThrow("accordion|docs-adapter:unsupported-component-shape: expected 1, received 0");
+      assertKnownBaseUiDiagnostics([
+        { component: "a", source: "docs-adapter", code: "missing-description", message: "x" },
+        { component: "a", source: "effect-extractor", code: "unsupported-type-fallback", message: "y" },
+        { component: "b", source: "effect-extractor", code: "unsupported-type-fallback", message: "z" },
+      ]);
+    }).not.toThrow();
   });
 
-  it("rejects a new diagnostic even when its source and code are already reviewed elsewhere", () => {
+  it("rejects a diagnostic category nobody has reviewed", () => {
     expect(() => {
-      assertExpectedBaseUiDiagnostics([
+      assertKnownBaseUiDiagnostics([
         {
           component: "new-component",
-          source: "docs-adapter",
-          code: "unsupported-component-shape",
-          message: "new gap",
+          source: "effect-extractor",
+          code: "omitted-index-signature",
+          message: "gap",
         },
       ]);
-    }).toThrow("new-component|docs-adapter:unsupported-component-shape: expected 0, received 1");
+    }).toThrow("new-component|effect-extractor:omitted-index-signature: gap");
   });
 });
