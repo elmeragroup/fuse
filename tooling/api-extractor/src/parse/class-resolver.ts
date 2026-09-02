@@ -10,7 +10,7 @@ import type {
 import type { ClassMethod, ClassNode, ClassProperty, ConstructSignatureNode, TypeName } from "../model.ts";
 import type { ResolveSemanticType, ResolverContext } from "./contracts.ts";
 import {
-  declarationPathsFor,
+  declarationProvenance,
   omitTypeParameterSourceNode,
   propertyTypeNode,
   recordProvenance,
@@ -162,8 +162,7 @@ function extractMembers(
     const readonly = isReadOnlyMember(info, declarationFacts, context);
     recordProvenance(context, {
       path: objectPropertySemanticPath(classPath, info.name),
-      declarationPaths: declarationPathsFor(info),
-      synthesized: info.declarations.length === 0,
+      ...declarationProvenance(info, context),
       ...(readonly ? { readonly: true } : {}),
     });
     const property: ClassProperty = {
@@ -202,11 +201,7 @@ function resolveClassMethod(
   resolveType: ResolveSemanticType
 ): ClassMethod {
   const memberPath = methodSemanticPath(classPath, info.name);
-  recordProvenance(context, {
-    path: memberPath,
-    declarationPaths: declarationPathsFor(info),
-    synthesized: info.declarations.length === 0,
-  });
+  recordProvenance(context, { path: memberPath, ...declarationProvenance(info, context) });
   const method: ClassMethod = {
     name: info.name,
     ...(docs === undefined ? {} : { documentation: docs }),

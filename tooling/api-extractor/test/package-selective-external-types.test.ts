@@ -109,6 +109,7 @@ describe("package-selective external-type expansion", () => {
       expect(expandedResult.provenance).toContainEqual({
         path: ["PublicShape", "properties", "externalLabel"],
         declarationPaths: ["consumer/node_modules/@fixture/workspace-dependency/index.d.ts"],
+        owners: [{ kind: "dependency", packageName: "@fixture/workspace-dependency" }],
         synthesized: false,
       });
     } finally {
@@ -155,6 +156,7 @@ describe("package-selective external-type expansion", () => {
       declarationPaths: [
         "test/fixtures/package-selective-external-types/node_modules/@fixture/selected/button.d.ts",
       ],
+      owners: [{ kind: "dependency", packageName: "@fixture/selected" }],
       synthesized: false,
     });
     expect(Schema.decodeUnknownSync(ExtractionResultSchema)(result)).toEqual(result);

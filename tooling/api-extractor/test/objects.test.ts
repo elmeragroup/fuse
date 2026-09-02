@@ -488,8 +488,13 @@ describe("synthesized properties and missing enums through a replacement backend
       properties: [{ name: "generated", type: { kind: "intrinsic", intrinsic: "number" } }],
     });
     expect(result.provenance).toEqual([
-      { path: ["Synthesized"], declarationPaths: [], synthesized: true },
-      { path: ["Synthesized", "properties", "generated"], declarationPaths: [], synthesized: true },
+      { path: ["Synthesized"], declarationPaths: [], owners: [], synthesized: true },
+      {
+        path: ["Synthesized", "properties", "generated"],
+        declarationPaths: [],
+        owners: [],
+        synthesized: true,
+      },
     ]);
     expect(Schema.decodeUnknownSync(ExtractionResultSchema)(result)).toEqual(result);
   });

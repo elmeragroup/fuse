@@ -3,7 +3,7 @@ import type { PropertyNode, SemanticType } from "../model.ts";
 import type { ProvenanceEntry } from "../provenance.ts";
 import { componentNode } from "./component.ts";
 import type { ResolveSemanticType, ResolverContext } from "./contracts.ts";
-import { declarationPathsFor, propertyTypeNode, recordProvenance } from "./object-resolver.ts";
+import { declarationProvenance, propertyTypeNode, recordProvenance } from "./object-resolver.ts";
 import { componentPropSemanticPathFromProvenancePath, objectPropertySemanticPath } from "./semantic-paths.ts";
 
 type Context = ResolverContext;
@@ -58,11 +58,7 @@ function componentMember(
   const component = componentNode(resolved, info.name, []);
   if (component.type.kind !== "component") return undefined;
   const propNames = new Set(component.type.props.map((property) => property.name));
-  provenance.push({
-    path: memberPath,
-    declarationPaths: declarationPathsFor(info),
-    synthesized: info.declarations.length === 0,
-  });
+  provenance.push({ path: memberPath, ...declarationProvenance(info, context) });
   for (const entry of memberProvenance) {
     const propPath = componentPropSemanticPathFromProvenancePath(entry.path, memberPath, propNames);
     if (propPath !== undefined) provenance.push({ ...entry, path: propPath });

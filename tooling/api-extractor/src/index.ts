@@ -46,7 +46,13 @@ export {
   type ShouldIncludeData,
   type ShouldResolveObjectData,
 } from "./options.ts";
-export { ProvenanceEntrySchema, ProvenanceSchema, type ProvenanceEntry } from "./provenance.ts";
+export {
+  DeclarationOwnerSchema,
+  ProvenanceEntrySchema,
+  ProvenanceSchema,
+  type DeclarationOwner,
+  type ProvenanceEntry,
+} from "./provenance.ts";
 export {
   ExtractWarningSchema,
   MissingDefaultExportSymbolWarningSchema,

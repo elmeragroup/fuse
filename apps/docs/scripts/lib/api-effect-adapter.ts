@@ -67,8 +67,23 @@ type CanonicalComponentFacts = {
 
 type SemanticProperty = PropertyNode;
 
+/** The current checker walk reports paths only, so its ownership is read from the path. */
 function isLibraryDeclaration(value: string): boolean {
   return normalizePath(value).toLowerCase().includes("packages/ui/src/");
+}
+
+/** The Effect extractor reports each declaration's owner beside its path. */
+function isLibraryOwned(provenance: ProvenanceEntry): boolean {
+  return provenance.owners?.some((owner) => owner.kind === "project") ?? false;
+}
+
+/** Distinct dependency packages that declare the entry, sorted. */
+function dependencyPackages(provenance: ProvenanceEntry | undefined): readonly string[] {
+  const packages = new Set<string>();
+  for (const owner of provenance?.owners ?? []) {
+    if (owner.kind === "dependency") packages.add(owner.packageName);
+  }
+  return [...packages].sort((left, right) => left.localeCompare(right));
 }
 
 function adapterProblem(component: string, code: string, message: string): ShadowProblem {
@@ -271,29 +286,32 @@ function provenanceAt(result: ExtractionResult, pathParts: readonly string[]): P
   );
 }
 
-function declarationPackages(paths: readonly string[]): readonly string[] {
-  const packages = new Set<string>();
-  for (const candidate of paths) {
-    const normalized = normalizePath(candidate);
-    const marker = "/node_modules/";
-    const index = normalized.lastIndexOf(marker);
-    if (index === -1) continue;
-    const segments = normalized.slice(index + marker.length).split("/");
-    const first = segments[0];
-    if (first === undefined || first === "") continue;
-    packages.add(first.startsWith("@") ? `${first}/${segments[1] ?? ""}`.replace(/\/$/u, "") : first);
-  }
-  return [...packages].sort((left, right) => left.localeCompare(right));
-}
-
-function ownership(paths: readonly string[], synthesized: boolean): ShadowPropEvidence["ownership"] {
+function ownershipOf(synthesized: boolean, library: boolean): ShadowPropEvidence["ownership"] {
   if (synthesized) return "synthesized";
-  return paths.some(isLibraryDeclaration) ? "library" : "external";
+  return library ? "library" : "external";
 }
 
+/** Evidence for the current side, whose walk reports declaration paths only. */
 function propEvidence(name: string, paths: readonly string[], synthesized: boolean): ShadowPropEvidence {
   const declarationPaths = normalizedUniquePaths(paths);
-  return { name, declarationPaths, ownership: ownership(declarationPaths, synthesized), synthesized };
+  return {
+    name,
+    declarationPaths,
+    ownership: ownershipOf(synthesized, declarationPaths.some(isLibraryDeclaration)),
+    synthesized,
+  };
+}
+
+/** Evidence for the Effect side, read from the entry's owners. */
+function effectPropEvidence(name: string, provenance: ProvenanceEntry | undefined): ShadowPropEvidence {
+  const declarationPaths = normalizedUniquePaths(provenance?.declarationPaths ?? []);
+  const synthesized = provenance?.synthesized ?? true;
+  return {
+    name,
+    declarationPaths,
+    ownership: ownershipOf(synthesized, provenance !== undefined && isLibraryOwned(provenance)),
+    synthesized,
+  };
 }
 
 function partEvidence(
@@ -322,7 +340,8 @@ function implementationSource(
   if (canonical !== undefined) return canonical.sourcePath;
   const root = provenanceAt(result, ownerPath);
   const implementation = root?.declarationPaths.find(
-    (candidate) => isLibraryDeclaration(candidate) && /\.tsx?$/u.test(normalizePath(candidate))
+    (candidate, index) =>
+      root.owners?.[index]?.kind === "project" && /\.tsx?$/u.test(normalizePath(candidate))
   );
   return implementation === undefined
     ? repoRelativePath(inventory.sourceFile)
@@ -341,10 +360,10 @@ function canonicalDefault(source: PartSource | undefined, propName: string): str
 export function effectOrigin(provenance: ProvenanceEntry | undefined): ApiProp["origin"] {
   const declarationPaths = provenance?.declarationPaths ?? [];
   const localOrigin = propOrigin(declarationPaths, provenance?.synthesized === true);
-  if (localOrigin === "recipe-axis" || declarationPaths.some(isLibraryDeclaration)) {
+  if (localOrigin === "recipe-axis" || (provenance !== undefined && isLibraryOwned(provenance))) {
     return localOrigin;
   }
-  const packages = declarationPackages(declarationPaths);
+  const packages = dependencyPackages(provenance);
   return packages.length === 1 && packages[0] !== undefined ? { packageName: packages[0] } : localOrigin;
 }
 
@@ -420,10 +439,8 @@ function toApiPart(
         )
       );
     }
-    const declarationPaths = provenance?.declarationPaths ?? [];
-    const synthesized = provenance?.synthesized ?? true;
-    evidence.push(propEvidence(property.name, declarationPaths, synthesized));
-    for (const packageName of declarationPackages(declarationPaths)) forwarded.add(packageName);
+    evidence.push(effectPropEvidence(property.name, provenance));
+    for (const packageName of dependencyPackages(provenance)) forwarded.add(packageName);
     const type = withUndefined(renderSemanticType(property.type), property.optional);
     props.push({
       name: property.name,

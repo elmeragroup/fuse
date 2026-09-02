@@ -5,6 +5,7 @@ import type {
   BackendNodeHandle,
   BackendNodeReference,
   BackendSignatureHandle,
+  BackendSymbolFacts,
   BackendSymbolHandle,
   BackendTypeHandle,
 } from "../backend/contracts.ts";
@@ -18,7 +19,7 @@ import type {
   TypeName,
 } from "../model.ts";
 import { defaultExtractorOptions } from "../options.ts";
-import type { ProvenanceEntry } from "../provenance.ts";
+import type { DeclarationOwner, ProvenanceEntry } from "../provenance.ts";
 import type { OmittedIndexSignatureReason } from "../warnings.ts";
 import type { ResolveSemanticType, ResolverContext } from "./contracts.ts";
 import { isInternalSymbolName, warningLocation } from "./contracts.ts";
@@ -53,8 +54,7 @@ export function resolveEnumNode(facts: BackendEnumFacts, context: Context): Sema
     const symbolFacts = context.operations.symbolFacts(member.symbol);
     recordProvenance(context, {
       path: enumMemberSemanticPath(exportPath, member.name),
-      declarationPaths: declarationPathsFor(symbolFacts),
-      synthesized: symbolFacts.declarations.length === 0,
+      ...declarationProvenance(symbolFacts, context),
     });
   }
   const members = facts.members.map((member): EnumMember => {
@@ -137,11 +137,7 @@ export function resolveParameter(
     }),
     optional: info.flags.includes("optional") || node?.optional === true || defaultValue !== undefined,
   };
-  const provenance: ProvenanceEntry = {
-    path: parameterPath,
-    declarationPaths: declarationPathsFor(info),
-    synthesized: info.declarations.length === 0,
-  };
+  const provenance: ProvenanceEntry = { path: parameterPath, ...declarationProvenance(info, context) };
   if (authoredDefaultValue !== undefined)
     Object.assign(provenance, { defaultInitializer: authoredDefaultValue });
   recordProvenance(context, provenance);
@@ -285,11 +281,7 @@ export function resolveObjectNode(
       context.provenancePropertyContainer === "componentProps"
         ? componentPropSemanticPath(context.provenancePath, info.name)
         : objectPropertySemanticPath(context.provenancePath, info.name);
-    const provenance: ProvenanceEntry = {
-      path: propertyPath,
-      declarationPaths: declarationPathsFor(info),
-      synthesized: info.declarations.length === 0,
-    };
+    const provenance: ProvenanceEntry = { path: propertyPath, ...declarationProvenance(info, context) };
     if (readonly) Object.assign(provenance, { readonly: true });
     if (initializer !== undefined) Object.assign(provenance, { defaultInitializer: initializer });
     recordProvenance(context, provenance);
@@ -341,6 +333,28 @@ export function declarationPathsFor(info: {
 }
 
 /**
+ * The declaration facts every provenance entry carries for one symbol: its
+ * repository-relative declaration paths, each path's owner, and whether the
+ * symbol has no declaration at all.
+ */
+export function declarationProvenance(
+  info: Pick<BackendSymbolFacts, "declarationPaths" | "repositoryRelativeDeclarationPaths" | "declarations">,
+  context: Context
+): Pick<ProvenanceEntry, "declarationPaths" | "owners" | "synthesized"> {
+  const declarationPaths = declarationPathsFor(info);
+  const result: Pick<ProvenanceEntry, "declarationPaths" | "owners" | "synthesized"> = {
+    declarationPaths,
+    synthesized: info.declarations.length === 0,
+  };
+  if (info.declarations.length === declarationPaths.length) {
+    Object.assign(result, {
+      owners: info.declarations.map((declaration) => context.operations.declarationOwnership(declaration)),
+    });
+  }
+  return result;
+}
+
+/**
  * Keep one deterministic sidecar entry for each structural semantic path.
  *
  * Known collision, deliberately kept: the path grammar addresses a member by
@@ -369,12 +383,23 @@ export function recordProvenance(context: Context, entry: ProvenanceEntry): void
     context.provenance.push(entry);
     return;
   }
-  const declarationPaths = [...new Set([...existing.declarationPaths, ...entry.declarationPaths])].sort();
+  const ownerByPath = new Map<string, DeclarationOwner | undefined>();
+  for (const candidate of [existing, entry]) {
+    candidate.declarationPaths.forEach((path, index) => {
+      ownerByPath.set(path, ownerByPath.get(path) ?? candidate.owners?.[index]);
+    });
+  }
+  const declarationPaths = [...ownerByPath.keys()].sort();
+  const owners = declarationPaths.map((path) => ownerByPath.get(path));
+  const { owners: _owners, ...rest } = existing;
   const merged: ProvenanceEntry = {
-    ...existing,
+    ...rest,
     declarationPaths,
     synthesized: existing.synthesized && entry.synthesized,
   };
+  if (owners.every((owner): owner is DeclarationOwner => owner !== undefined)) {
+    Object.assign(merged, { owners });
+  }
   if (existing.readonly === true || entry.readonly === true) Object.assign(merged, { readonly: true });
   const defaultInitializer = existing.defaultInitializer ?? entry.defaultInitializer;
   if (defaultInitializer !== undefined) Object.assign(merged, { defaultInitializer });
@@ -666,10 +691,12 @@ export function recordIndexSignatureKeyProvenance(
   const facts = owner === undefined ? undefined : context.operations.typeFacts(owner);
   const symbol = facts?.aliasSymbol ?? facts?.symbol;
   const info = symbol === undefined ? undefined : context.operations.symbolFacts(symbol);
+  const declared =
+    info === undefined ? { declarationPaths: [], synthesized: true } : declarationProvenance(info, context);
   recordProvenance(context, {
     path: indexSignatureKeySemanticPath(context.provenancePath),
-    declarationPaths: info === undefined ? [] : declarationPathsFor(info),
-    synthesized: synthesized || info === undefined || info.declarations.length === 0,
+    ...declared,
+    synthesized: synthesized || declared.synthesized,
   });
 }
 

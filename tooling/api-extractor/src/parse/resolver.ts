@@ -35,7 +35,7 @@ import { normalizeExternalTypeSelection } from "./external-type-selection.ts";
 import { unsupported, warningMessage } from "./fallback.ts";
 import { mappedObjectNode } from "./mapped.ts";
 import {
-  declarationPathsFor,
+  declarationProvenance,
   recordOmittedCallableMembers,
   recordUnrepresentedConstructSignatures,
   resolveEnumNode,
@@ -118,8 +118,7 @@ function resolveExport(entry: BackendExportDraft, base: Context): ExportNode {
   const symbolFacts = base.operations.symbolFacts(entry.symbol);
   const rootProvenance: ProvenanceEntry = {
     path: semanticPath,
-    declarationPaths: declarationPathsFor(symbolFacts),
-    synthesized: symbolFacts.declarations.length === 0,
+    ...declarationProvenance(symbolFacts, base),
     ...(entry.reexportChain === undefined ? {} : { reexportChain: entry.reexportChain }),
   };
   const declaration = primaryDeclaration(symbolFacts);
