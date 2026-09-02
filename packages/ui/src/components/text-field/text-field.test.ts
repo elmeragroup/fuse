@@ -43,6 +43,7 @@ describe("textFieldVariants", () => {
     expect(inline.base()).toContain("group/inline-field");
     expect(inline.fieldGroup()).toContain("border-transparent");
     expect(inline.fieldGroup()).toContain("focus-visible:border-ring");
+    // oxlint-disable-next-line elmera/no-local-focus-ring -- source-grep of the forbidden class, not a recipe
     expect(inline.fieldGroup()).not.toContain("group-focus-within/inline-field:border-ring");
     expect(inline.fieldGroup()).not.toContain("has-focus-visible:border-ring");
     expect(cn(fieldBox(), inline.fieldGroup())).toContain("focus-visible:border-ring");

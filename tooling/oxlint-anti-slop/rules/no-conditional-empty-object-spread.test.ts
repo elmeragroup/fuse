@@ -2,7 +2,7 @@ import { RuleTester } from "oxlint/plugins-dev";
 
 import { noConditionalEmptyObjectSpreadRule } from "./no-conditional-empty-object-spread.ts";
 
-const tester = new RuleTester({ languageOptions: { parserOptions: { lang: "ts" } } });
+const tester = new RuleTester({ languageOptions: { parserOptions: { lang: "tsx" } } });
 const error = { messageId: "avoid" };
 
 if (noConditionalEmptyObjectSpreadRule.meta?.fixable !== undefined) {
@@ -17,6 +17,14 @@ tester.run(
       "const result = { value };",
       "const result = { ...values };",
       "const result = condition ? { value } : {};",
+      {
+        name: "JSX spread of props is not an empty-object omit",
+        code: "const node = <svg {...props} />;",
+      },
+      {
+        name: "JSX spread of null is not an empty-object omit",
+        code: "const node = <div {...(inGroup ? { role: 'listitem' } : null)} />;",
+      },
     ],
     invalid: [
       {
@@ -25,6 +33,11 @@ tester.run(
       },
       {
         code: "const result = { ...(condition ? {} : { value }) };",
+        errors: [error],
+      },
+      {
+        name: "JSX spread of a conditional empty object",
+        code: 'const node = <svg {...(label ? { role: "img", "aria-label": label } : {})} />;',
         errors: [error],
       },
     ],

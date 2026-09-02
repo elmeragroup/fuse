@@ -1,6 +1,6 @@
 import { defineRule } from "@oxlint/plugins";
 
-import { extractStrings, isNamedCall } from "../extract-strings.js";
+import { extractStrings } from "../extract-strings.js";
 import { normalizeFilename } from "../filename-normalizer.js";
 
 const ALLOWED_UTILS_SUFFIX = "/src/styles/utils.ts";
@@ -9,6 +9,11 @@ const ALLOWED_UTILS_SUFFIX = "/src/styles/utils.ts";
 // popup hairlines (ring-1 ring-border) do not include a focus prefix and are not matched.
 const FOCUS_RING_RE =
   /(?:^|[\s"'`[])(?:[\w-[\]]+:)*(?:focus(?:-visible|-within)?|has-focus|in-focus|data-\[focus(?:-visible)?\]):(?:[\w-[\]]+:)*ring(?:-|\b)/;
+
+const OUTLINE_SUPPRESSION_RE = /(?:^|[\s"'`])(?:[\w-[\]./*]+?:)*outline-(?:none|hidden)(?:\s|"|'|`|$)/;
+
+const FOCUS_WITHIN_BORDER_RE =
+  /(?:^|[\s"'`])(?:[\w-[\]./*]+?:)*(?:group-|peer-)?focus-within(?:\/[\w-]+)?:(?:[\w-[\]./*]+?:)*border(?:-|\b)/;
 
 /**
  * @param {string} filename
@@ -35,7 +40,8 @@ export default defineRule({
   meta: {
     type: "problem",
     docs: {
-      description: "Forbid focus-state ring classes outside packages/ui/src/styles/utils.ts",
+      description:
+        "Forbid focus-state ring classes, outline-(none|hidden), and focus-within border colours outside packages/ui/src/styles/utils.ts",
     },
     messages: {
       localFocusRing:
@@ -51,7 +57,11 @@ export default defineRule({
      */
     function reportFocusRingStrings(node, collected) {
       for (const value of collected) {
-        if (FOCUS_RING_RE.test(value)) {
+        if (
+          FOCUS_RING_RE.test(value) ||
+          OUTLINE_SUPPRESSION_RE.test(value) ||
+          FOCUS_WITHIN_BORDER_RE.test(value)
+        ) {
           context.report({ node, messageId: "localFocusRing" });
           return;
         }
@@ -73,19 +83,6 @@ export default defineRule({
     return {
       Program() {
         skipFile = isFocusRingUtils(context.filename);
-      },
-      JSXAttribute(node) {
-        if (skipFile) return;
-        const name = node.name.type === "JSXIdentifier" ? node.name.name : undefined;
-        if (name !== "className" && name !== "class") return;
-        if (node.value) {
-          reportFocusRingStrings(node, extractStrings(node.value));
-        }
-      },
-      CallExpression(node) {
-        if (skipFile) return;
-        if (!isNamedCall(node.callee, "tv") && !isNamedCall(node.callee, "cn")) return;
-        reportFocusRingStrings(node, extractStrings(node));
       },
       Literal(node) {
         if (skipFile) return;

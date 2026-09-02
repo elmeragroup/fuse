@@ -24,7 +24,8 @@ function EmojiSvg({ label, children, ...props }: EmojiProps & { children: ReactN
       data-slot="emoji"
       aria-hidden={label ? undefined : true}
       focusable="false"
-      {...(label ? { role: "img" as const, "aria-label": label } : {})}
+      role={label ? "img" : undefined}
+      aria-label={label}
       {...props}>
       {children}
     </svg>

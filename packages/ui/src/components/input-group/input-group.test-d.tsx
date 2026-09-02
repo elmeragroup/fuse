@@ -49,9 +49,9 @@ test("the parts take the spec's props and no polymorphic as prop", () => {
   // @ts-expect-error Button's own control-box `size` values are not accepted (§4)
   const _badSize = <InputGroup.Button size="lg" />;
   // @ts-expect-error icon-sm requires aria-label
-  const _unlabeledIconSm = <InputGroup.Button size="icon-sm" />;
+  const _unlabeledIconSm = <InputGroup.Button size="icon-sm" />; // oxlint-disable-line elmera/require-icon-button-label -- input-group.md §3: type-level icon-name contract under test
   // @ts-expect-error icon-xs requires aria-label
-  const _unlabeledIconXs = <InputGroup.Button size="icon-xs" />;
+  const _unlabeledIconXs = <InputGroup.Button size="icon-xs" />; // oxlint-disable-line elmera/require-icon-button-label -- input-group.md §3: type-level icon-name contract under test
   // @ts-expect-error `align` is the four-value axis only
   const _badAlign = <InputGroup.Addon align="top" />;
   // @ts-expect-error polymorphism is never an `as` prop

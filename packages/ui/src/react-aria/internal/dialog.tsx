@@ -31,6 +31,7 @@ import { Modal } from "./modal";
  */
 const dialogVariants = tv({
   slots: {
+    // oxlint-disable-next-line elmera/no-local-focus-ring -- dialog.md §7: dialog surface; focusable descendants own the adapter
     base: "relative max-h-[inherit] overflow-y-auto p-6 outline-none [[data-placement]>&]:p-4",
     header: "flex items-start justify-between gap-4",
     // Heading and footer borrow the public Dialog's literals (dialog.md §2) so the

@@ -20,6 +20,7 @@ const selfFocusRing = focusRing({ target: "self" }).root();
  */
 const dropdownMenuItemClassName = cn(
   selfFocusRing,
+  // oxlint-disable-next-line elmera/no-local-focus-ring -- dropdown-menu.md §7: highlight face, not native outline; ring comes from the shared adapter
   "group/dropdown-menu-item text-sm relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-inset:pl-8 data-[variant=destructive]:text-error data-[variant=destructive]:focus:bg-error/10 data-[variant=destructive]:focus:text-error data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 data-[variant=destructive]:*:[svg]:text-error"
 );
 
@@ -98,6 +99,7 @@ function DropdownMenuContent({
   return (
     <MenuPrimitive.Portal data-slot="dropdown-menu-portal" container={resolvedContainer}>
       <MenuPrimitive.Positioner
+        // oxlint-disable-next-line elmera/no-local-focus-ring -- dropdown-menu.md §7: positioner is not a focus target
         className={cn("isolate outline-none", overlayLayer)}
         align={align}
         alignOffset={alignOffset}
@@ -106,6 +108,7 @@ function DropdownMenuContent({
         <MenuPrimitive.Popup
           data-slot="dropdown-menu-content"
           className={cn(
+            // oxlint-disable-next-line elmera/no-local-focus-ring -- dropdown-menu.md §7: popup chrome; items own the adapter
             "shadow-md max-h-(--available-height) min-w-32 overflow-x-hidden overflow-y-auto rounded-md bg-popover p-1 text-popover-foreground ring-1 ring-foreground/10 outline-none data-closed:overflow-hidden",
             popupMotionClassName,
             className
@@ -359,6 +362,7 @@ function DropdownMenuSubContent({
   return (
     <MenuPrimitive.Portal data-slot="dropdown-menu-portal" container={resolvedContainer}>
       <MenuPrimitive.Positioner
+        // oxlint-disable-next-line elmera/no-local-focus-ring -- dropdown-menu.md §7: positioner is not a focus target
         className={cn("isolate outline-none", overlayLayer)}
         align={align}
         alignOffset={alignOffset}

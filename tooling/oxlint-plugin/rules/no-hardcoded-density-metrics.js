@@ -48,6 +48,20 @@ const TYPE_SCALE = new Set([
 
 const MD_LG_KEYS = new Set(["md", "lg", "default"]);
 
+const BUTTON_SIZE_KEYS = new Set([
+  "default",
+  "xs",
+  "sm",
+  "md",
+  "lg",
+  "icon",
+  "icon-xxs",
+  "icon-xs",
+  "icon-sm",
+  "icon-inline",
+  "icon-lg",
+]);
+
 /**
  * @param {import("estree").ObjectExpression} obj
  * @param {string} name
@@ -106,6 +120,10 @@ function stripVariantPrefixes(className) {
         continue;
       }
       break;
+    }
+    if (rest.startsWith("*:") || rest.startsWith("**:")) {
+      rest = rest.slice(rest.indexOf(":") + 1);
+      continue;
     }
     const nameMatch = /^[a-zA-Z@][\w-]*(?:\/[\w-]+)?/.exec(rest);
     if (!nameMatch) break;
@@ -274,6 +292,9 @@ function densityOwnedFamily(className, checkType) {
   const utility = stripImportant(stripVariantPrefixes(className));
   if (!utility) return null;
   if (readsDensityVariable(utility)) return null;
+  // Token reads (any custom property) and arbitrary values are not the numeric ladder.
+  if (/\(--[\w-]+\)/.test(utility) || /var\(--/.test(utility)) return null;
+  if (/^(?:h|w|size|min-h|min-w|px|pl|pr|ps|pe|gap(?:-[xy])?)-\[/.test(utility)) return null;
   if (isOpticalArbitrary(utility)) return null;
   const box = boxFamily(utility);
   if (box) return box;
@@ -289,12 +310,84 @@ function classTokens(str) {
   return str.split(/\s+/).filter(Boolean);
 }
 
+/**
+ * @param {import("estree").Node | null | undefined} node
+ * @param {string} name
+ */
+function isInsideNamedCall(node, name) {
+  for (let current = node?.parent; current; current = current.parent) {
+    if (current.type === "CallExpression" && isNamedCall(current.callee, name)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * @param {string[]} tokens
+ */
+function tokensHaveControlHeightPin(tokens) {
+  return tokens.some((token) => token.includes("--control-h-"));
+}
+
+/**
+ * @param {string[]} tokens
+ */
+function tokensHaveControlVar(tokens) {
+  return tokens.some((token) => CONTROL_VAR_RE.test(token));
+}
+
+/**
+ * @param {string[]} tokens
+ */
+function checkTypeForTokens(tokens) {
+  return tokens.some((token) => /--control-h-(?:md|lg)\b/.test(token) || /--control-text\b/.test(token));
+}
+
+/**
+ * Inspect cn()/slot/record groups that sit beside a height pin, or that are
+ * themselves a control-box height ladder, once the file mentions `--control-h-`.
+ * @param {string[]} tokens
+ * @param {boolean} fileHasControlH
+ */
+function shouldInspectBesidePin(tokens, fileHasControlH) {
+  if (tokensHaveControlHeightPin(tokens)) return true;
+  const hasHeight = tokens.some(isControlBoxHeightClass);
+  const hasControlVar = tokensHaveControlVar(tokens);
+  return fileHasControlH && (hasHeight || hasControlVar);
+}
+
+/**
+ * @param {import("estree").ObjectExpression} obj
+ * @returns {Array<{ key: string; value: import("estree").Node }> | null}
+ */
+function recordArms(obj) {
+  /** @type {Array<{ key: string; value: import("estree").Node }>} */
+  const arms = [];
+  for (const prop of obj.properties) {
+    if (prop.type !== "Property") return null;
+    const key = propertyName(prop);
+    if (key === null) return null;
+    arms.push({ key, value: prop.value });
+  }
+  return arms;
+}
+
+/**
+ * @param {import("estree").ObjectExpression} obj
+ */
+function isButtonSizeKeyedRecord(obj) {
+  const arms = recordArms(obj);
+  if (arms === null || arms.length === 0) return false;
+  return arms.every((arm) => BUTTON_SIZE_KEYS.has(arm.key));
+}
+
 export default defineRule({
   meta: {
     type: "suggestion",
     docs: {
       description:
-        "Warn when control-box recipes or data-[size] class strings hardcode density-owned metrics instead of reading --control-* variables",
+        "Warn when control-box recipes, data-[size] class strings, cn() strings, tv slots, or Button-size-keyed records hardcode density-owned metrics instead of reading --control-* variables",
     },
     messages: {
       hardcodedMetric:
@@ -304,6 +397,8 @@ export default defineRule({
   },
   defaultOptions: [],
   createOnce(context) {
+    let fileHasControlH = false;
+
     /**
      * @param {import("estree").Node} node
      * @param {string[]} tokens
@@ -329,7 +424,66 @@ export default defineRule({
       reportTokens(node, classTokens(value).filter(isDataSizeToken), false);
     }
 
+    /**
+     * @param {import("estree").Node} node
+     */
+    function tokensOf(node) {
+      return extractStrings(node)
+        .flatMap(classTokens)
+        .filter((token) => !isDataSizeToken(token));
+    }
+
+    /**
+     * @param {import("estree").CallExpression} node
+     */
+    function reportCnLiterals(node) {
+      if (isInsideNamedCall(node, "tv")) return;
+      const tokens = tokensOf(node);
+      if (!tokensHaveControlHeightPin(tokens)) return;
+      reportTokens(node, tokens, checkTypeForTokens(tokens));
+    }
+
+    /**
+     * @param {import("estree").ObjectExpression} recipe
+     */
+    function reportTvSlots(recipe) {
+      const slots = objectPropValue(recipe, "slots");
+      if (slots?.type !== "ObjectExpression") return;
+      for (const prop of slots.properties) {
+        if (prop.type !== "Property") continue;
+        const tokens = tokensOf(prop.value);
+        if (!shouldInspectBesidePin(tokens, fileHasControlH) && !tokensHaveControlVar(tokens)) {
+          continue;
+        }
+        reportTokens(prop.value, tokens, checkTypeForTokens(tokens));
+      }
+    }
+
+    /**
+     * @param {import("estree").ObjectExpression} node
+     */
+    function reportSizeKeyedRecord(node) {
+      if (isInsideNamedCall(node, "tv")) return;
+      if (!isButtonSizeKeyedRecord(node)) return;
+      const arms = recordArms(node);
+      if (arms === null) return;
+      const groups = arms.map((arm) => ({
+        key: arm.key,
+        node: arm.value,
+        tokens: tokensOf(arm.value),
+      }));
+      const allTokens = groups.flatMap((group) => group.tokens);
+      const isControlBox = allTokens.some(isControlBoxHeightClass);
+      if (!isControlBox && !shouldInspectBesidePin(allTokens, fileHasControlH)) return;
+      for (const group of groups) {
+        reportTokens(group.node, group.tokens, isMdLgRung(group.key));
+      }
+    }
+
     return {
+      Program() {
+        fileHasControlH = context.sourceCode.getText().includes("--control-h-");
+      },
       Literal(node) {
         if (typeof node.value === "string") {
           reportDataSizeLiterals(node, node.value);
@@ -342,7 +496,14 @@ export default defineRule({
           }
         }
       },
+      ObjectExpression(node) {
+        reportSizeKeyedRecord(node);
+      },
       CallExpression(node) {
+        if (isNamedCall(node.callee, "cn")) {
+          reportCnLiterals(node);
+          return;
+        }
         if (!isNamedCall(node.callee, "tv")) return;
         if (node.arguments.length === 0) return;
         const recipe = node.arguments[0];
@@ -355,51 +516,45 @@ export default defineRule({
             if (prop.type !== "Property") continue;
             const sizeKey = propertyName(prop);
             if (sizeKey === null) continue;
-            const tokens = extractStrings(prop.value)
-              .flatMap(classTokens)
-              .filter((token) => !isDataSizeToken(token));
+            const tokens = tokensOf(prop.value);
             const isControlBox = tokens.some(isControlBoxHeightClass);
             // Decorative/layout size axes (no pinned control height) are not density rungs.
             if (!isControlBox) continue;
             const checkType = isMdLgRung(sizeKey);
             reportTokens(prop.value, tokens, checkType);
           }
-          return;
-        }
-
-        // No size axis: a control-box recipe may still pin its height in base or
-        // on a `box` axis (field-box's control/content height model). Decorative
-        // variant axes (e.g. media image sizes) are not density rungs, so only
-        // base and the `box` axis are scanned.
-        /** @type {Array<{ node: import("estree").Node; tokens: string[] }>} */
-        const groups = [];
-        const base = objectPropValue(recipe, "base");
-        if (base) {
-          groups.push({
-            node: base,
-            tokens: extractStrings(base)
-              .flatMap(classTokens)
-              .filter((token) => !isDataSizeToken(token)),
-          });
-        }
-        const box = variants?.type === "ObjectExpression" ? objectPropValue(variants, "box") : null;
-        if (box?.type === "ObjectExpression") {
-          for (const arm of box.properties) {
-            if (arm.type !== "Property") continue;
+        } else {
+          // No size axis: a control-box recipe may still pin its height in base or
+          // on a `box` axis (field-box's control/content height model). Decorative
+          // variant axes (e.g. media image sizes) are not density rungs, so only
+          // base and the `box` axis are scanned.
+          /** @type {Array<{ node: import("estree").Node; tokens: string[] }>} */
+          const groups = [];
+          const base = objectPropValue(recipe, "base");
+          if (base) {
             groups.push({
-              node: arm.value,
-              tokens: extractStrings(arm.value)
-                .flatMap(classTokens)
-                .filter((token) => !isDataSizeToken(token)),
+              node: base,
+              tokens: tokensOf(base),
             });
           }
+          const box = variants?.type === "ObjectExpression" ? objectPropValue(variants, "box") : null;
+          if (box?.type === "ObjectExpression") {
+            for (const arm of box.properties) {
+              if (arm.type !== "Property") continue;
+              groups.push({
+                node: arm.value,
+                tokens: tokensOf(arm.value),
+              });
+            }
+          }
+          if (groups.some((group) => group.tokens.some(isControlBoxHeightClass))) {
+            for (const group of groups) {
+              reportTokens(group.node, group.tokens, false);
+            }
+          }
         }
-        if (!groups.some((group) => group.tokens.some(isControlBoxHeightClass))) {
-          return;
-        }
-        for (const group of groups) {
-          reportTokens(group.node, group.tokens, false);
-        }
+
+        reportTvSlots(recipe);
       },
     };
   },

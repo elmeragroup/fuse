@@ -43,6 +43,7 @@ function SelectTrigger({
       data-size={size}
       className={cn(
         selfFocusRing,
+        // oxlint-disable-next-line elmera/no-local-focus-ring -- select.md §7: native outline off; ring comes from the shared adapter
         "group/select-trigger shadow-xs data-[size=sm]:text-sm flex w-fit items-center justify-between rounded-md border border-input bg-card whitespace-nowrap transition-[color,box-shadow] outline-none select-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-error aria-invalid:ring-3 aria-invalid:ring-error/20 data-placeholder:text-muted-foreground data-[size=default]:h-(--control-h-md) data-[size=default]:gap-(--control-gap-md) data-[size=default]:px-(--control-px-md) data-[size=default]:[font-size:var(--control-text)] data-[size=default]:[line-height:var(--control-leading)] data-[size=sm]:h-(--control-h-sm) data-[size=sm]:gap-(--control-gap-sm) data-[size=sm]:px-(--control-px-sm) *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className
       )}
@@ -156,6 +157,7 @@ function SelectItem({
     <SelectPrimitive.Item
       data-slot="select-item"
       className={cn(
+        // oxlint-disable-next-line elmera/no-local-focus-ring -- select.md §7: option highlight face, not native outline
         "text-sm relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 outline-hidden select-none focus:bg-accent focus:text-accent-foreground focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
         className
       )}
