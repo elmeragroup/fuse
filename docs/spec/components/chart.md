@@ -1,5 +1,7 @@
 # Chart
 
+**Deferred (Wave 9, ruling 2026-09-02).** This spec is the target contract. `@elmeragroup/ui/chart` is not a published entry at v1; `recharts` is not a published peer. See [roadmap](../roadmap.md) §11 and [architecture](../architecture.md) Appendix A.
+
 ## 1 Header
 
 - **Canonical name**: `Chart` — namespace compound: `Chart.Container`, `Chart.Tooltip`, `Chart.TooltipContent`, `Chart.Legend`, `Chart.LegendContent`, `Chart.Style` + exported `ChartConfig` type

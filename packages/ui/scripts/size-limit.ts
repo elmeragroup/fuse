@@ -16,14 +16,7 @@ import {
 import { extractPackedPackage, findTarball } from "./tarball.ts";
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
-const PEER_EXTERNALS = [
-  "react",
-  "react-dom",
-  "react/jsx-runtime",
-  "react/jsx-dev-runtime",
-  "tailwindcss",
-  "recharts",
-];
+const PEER_EXTERNALS = ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime", "tailwindcss"];
 
 function fail(message: string): never {
   console.error(message);

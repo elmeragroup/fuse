@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   BARE_COMPONENT_ENTRIES,
+  DEFERRED_ENTRIES,
   discoverEntries,
   unexpectedJsEntryFiles,
   uniqueBarrelRuntimeExports,
@@ -101,7 +102,18 @@ describe("exports map", () => {
       "react-aria/ui-providers",
     ]);
     expect(unexpectedJsEntryFiles(packageRoot)).toEqual([]);
+  });
+
+  it("asserts the deferred list and the shipped bare-component count separately", () => {
+    expect(DEFERRED_ENTRIES).toEqual(["chart"]);
     expect(BARE_COMPONENT_ENTRIES).toHaveLength(56);
+    const shippedBare = discovered.jsEntries.filter(
+      (entry) => entry.inRootBarrel && entry.subpath !== "." && entry.subpath !== "theme"
+    );
+    expect(shippedBare).toHaveLength(BARE_COMPONENT_ENTRIES.length - DEFERRED_ENTRIES.length);
+    expect(shippedBare.map((entry) => entry.subpath)).not.toContain("chart");
+    expect(exportBindingTarget(sourceExports, "./chart")).toBeUndefined();
+    expect(exportBindingTarget(publishExports, "./chart")).toBeUndefined();
   });
 
   it("always includes the CSS dual-mode entries and /theme", () => {

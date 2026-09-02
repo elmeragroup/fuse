@@ -4,7 +4,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { discoverEntries } from "../scripts/entries";
+import { discoverJsEntriesFromAllowlist } from "../scripts/entries";
 import { buildSourceExportMap, exportBindingTarget, renderRootBarrel } from "../scripts/generate-exports";
 
 const scratchDirs: string[] = [];
@@ -41,8 +41,9 @@ describe("barrel generation", () => {
       "src/components/badge/badge.ts": `export const Badge = 1;\n`,
     });
 
-    const discovered = discoverEntries(packageRoot);
-    const badge = discovered.jsEntries.find((entry) => entry.subpath === "badge");
+    const jsEntries = discoverJsEntriesFromAllowlist(packageRoot, [".", "theme", "badge"]);
+    const discovered = { jsEntries, cssEntries: [], assetPatterns: [], sourceFiles: [] };
+    const badge = jsEntries.find((entry) => entry.subpath === "badge");
     expect(badge?.inRootBarrel).toBe(true);
     expect(badge?.runtimeExports).toEqual(["Badge"]);
     expect(renderRootBarrel(discovered)).toContain(`export * from "./badge";`);
@@ -52,7 +53,7 @@ describe("barrel generation", () => {
       types: "./src/badge.ts",
       import: "./src/badge.ts",
     });
-    expect(discovered.jsEntries.find((entry) => entry.subpath === ".")?.runtimeExports).toContain("Badge");
+    expect(jsEntries.find((entry) => entry.subpath === ".")?.runtimeExports).toContain("Badge");
   });
 
   it("fails generation when two barrel facades export the same value name", () => {
@@ -61,7 +62,7 @@ describe("barrel generation", () => {
       "src/button.ts": `export { Shared } from "./components/button/button";\n`,
     });
 
-    expect(() => discoverEntries(packageRoot)).toThrow(
+    expect(() => discoverJsEntriesFromAllowlist(packageRoot, [".", "theme", "badge", "button"])).toThrow(
       /Duplicate barrel export Shared from badge and button/
     );
   });
@@ -71,7 +72,31 @@ describe("barrel generation", () => {
       "src/button.ts": `export * from "./components/button/button";\n`,
     });
 
-    expect(() => discoverEntries(packageRoot)).toThrow(/export \*/);
+    expect(() => discoverJsEntriesFromAllowlist(packageRoot, [".", "theme", "button"])).toThrow(/export \*/);
+  });
+
+  it("throws with the entry name when a non-deferred allowlisted entry has no source", () => {
+    const packageRoot = scratchPackage({
+      "src/theme/theme-provider.ts": `export const ThemeProvider = 1;\n`,
+    });
+
+    expect(() => discoverJsEntriesFromAllowlist(packageRoot, [".", "theme", "button"], ["chart"])).toThrow(
+      /Missing source entry for button/
+    );
+  });
+
+  it("omits a deferred entry from the produced map and counts allowlist minus deferred", () => {
+    const packageRoot = scratchPackage({
+      "src/badge.ts": `export { Badge } from "./components/badge/badge";\n`,
+      "src/theme/theme-provider.ts": `export const ThemeProvider = 1;\n`,
+      "src/components/badge/badge.ts": `export const Badge = 1;\n`,
+    });
+    const allow = [".", "theme", "badge", "chart"] as const;
+    const deferred = ["chart"] as const;
+    const jsEntries = discoverJsEntriesFromAllowlist(packageRoot, allow, deferred);
+
+    expect(jsEntries.map((entry) => entry.subpath)).not.toContain("chart");
+    expect(jsEntries).toHaveLength(allow.length - deferred.length);
   });
 });
 
