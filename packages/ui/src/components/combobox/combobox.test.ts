@@ -34,6 +34,13 @@ const REMOVE_APPLE_COPY = {
   "fi-FI": "Poista Apple",
 } as const;
 
+const REMOVE_COPY = {
+  "nb-NO": "Fjern",
+  "sv-SE": "Ta bort",
+  "en-US": "Remove",
+  "fi-FI": "Poista",
+} as const;
+
 describe("combobox dictionary", () => {
   it("owns the locked combobox.* copy in all four locales", () => {
     for (const locale of SUPPORTED_LOCALES) {
@@ -41,6 +48,7 @@ describe("combobox dictionary", () => {
       expect(formatter.format("empty"), locale).toBe(EMPTY_COPY[locale]);
       expect(formatter.format("clear"), locale).toBe(CLEAR_COPY[locale]);
       expect(formatter.format("removeItem", { item: "Apple" }), locale).toBe(REMOVE_APPLE_COPY[locale]);
+      expect(formatter.format("removeItem", { item: "" }), locale).toBe(REMOVE_COPY[locale]);
     }
   });
 

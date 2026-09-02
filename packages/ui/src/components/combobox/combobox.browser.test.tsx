@@ -317,6 +317,49 @@ describe("Combobox", () => {
     expect(onValueChange.mock.calls.at(-1)?.[0]).toEqual([]);
   });
 
+  it("names the chip-remove button from itemToStringLabel for object items", () => {
+    const fruits = [
+      { id: "apple", label: "Apple" },
+      { id: "banana", label: "Banana" },
+    ] as const;
+    renderCombobox(
+      <Combobox.Root
+        items={[...fruits]}
+        itemToStringLabel={(item) => item.label}
+        multiple
+        defaultValue={[fruits[0]]}>
+        <Combobox.Chips aria-label="Selected fruit">
+          <Combobox.Value>
+            {(value: (typeof fruits)[number][]) =>
+              value.map((item) => (
+                <Combobox.Chip key={item.id}>
+                  <span aria-hidden="true">★</span>
+                </Combobox.Chip>
+              ))
+            }
+          </Combobox.Value>
+          <Combobox.ChipsInput aria-label="Fruit" />
+        </Combobox.Chips>
+      </Combobox.Root>
+    );
+    expect(page.getByRole("button", { name: "Remove Apple", exact: true }).query()).not.toBeNull();
+  });
+
+  it("names the chip-remove button Remove alone when neither children nor itemToStringLabel yield text", () => {
+    renderCombobox(
+      <Combobox.Root multiple defaultValue={[{ id: "anon" }]}>
+        <Combobox.Chips aria-label="Selected fruit">
+          <Combobox.Chip>
+            <span aria-hidden="true">★</span>
+          </Combobox.Chip>
+          <Combobox.ChipsInput aria-label="Fruit" />
+        </Combobox.Chips>
+      </Combobox.Root>
+    );
+    expect(page.getByRole("button", { name: "Remove", exact: true }).query()).not.toBeNull();
+    expect(page.getByRole("button", { name: "Remove [object Object]", exact: true }).query()).toBeNull();
+  });
+
   it("surfaces aria-invalid on the Chips container", () => {
     renderCombobox(
       <Combobox.Root items={[...FRUITS]} multiple defaultValue={["Apple"]}>

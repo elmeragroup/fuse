@@ -112,7 +112,9 @@ describe("toast source contract", () => {
     expect(source).not.toContain('weight="fill"');
     expect(source).toContain("render={");
     expect(source).toContain('variant="ghost"');
-    expect(source).toContain("sr-only");
+    expect(source).toContain("aria-label={resolvedLabel}");
+    expect(source).not.toContain("as ButtonProps");
+    expect(source).not.toContain("sr-only");
     expect(variantsSource).toContain("animate-spin");
     expect(source).toContain("{...props}");
   });

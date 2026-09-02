@@ -51,7 +51,7 @@ toastManager.add({ type: "success", title: "Saved", description: "Changes stored
 
 **Manager `promise`** — `promise(p, { loading, success, error })`; each state is either a description shorthand string/function or a full method-options object (title, description, actionProps, …). The same adapter normalizes every resolved state: base-ui's `loading`/`success`/`error` type drives status chrome, the rejection state defaults high/assertive, and loading/success default low/polite unless that state explicitly supplies `priority`.
 
-**Toast.Root / Content / Title / Description / Action** — their base-ui part's props verbatim. **Toast.Close** adds `label?: string`, defaulting to the locale dictionary's `toast.close`; it renders that label sr-only unless the consumer supplies visible children. All take `className` (merged via `cn`). These parts are exported for custom renderers but the built-in `Toast.Viewport` list covers the standard cases.
+**Toast.Root / Content / Title / Description / Action** — their base-ui part's props verbatim. **Toast.Close** adds `label?: string`, defaulting to the locale dictionary's `toast.close`; icon-only Close names itself via `aria-label` on Button (satisfying the icon-size type guard with no cast) and does not also render an sr-only span. Visible children replace the icon face and name the control themselves. All take `className` (merged via `cn`). These parts are exported for custom renderers but the built-in `Toast.Viewport` list covers the standard cases. _(Amended 2026-09-02 — Close name is `aria-label`, not an sr-only duplicate.)_
 
 ## 4 Variants
 

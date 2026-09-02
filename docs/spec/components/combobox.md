@@ -87,7 +87,7 @@ Runtime note (kept, §8): `showTrigger` and `showClear` are effectively mutually
 | Prop          | Type      | Default                                                           | Notes                                                                                                                                                                                                        |
 | ------------- | --------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `showRemove`  | `boolean` | `true`                                                            | renders the `ChipRemove` button with `X`                                                                                                                                                                     |
-| `removeLabel` | `string`  | dictionary `removeItem` formatted with the Chip's string children | explicit accessible-name override (always wins); default formats `removeItem` with `String(children)` when children are text/number; object-item labels that are not string children must pass `removeLabel` |
+| `removeLabel` | `string`  | dictionary `removeItem` formatted with the Chip's string children, then `itemToStringLabel(value)` | explicit accessible-name override (always wins); default formats `removeItem` with string/number children; when children are not a string, falls back to Root `itemToStringLabel(value)` for this chip; if neither yields text, the localized "Remove" string alone with no trailing space |
 
 **Combobox.Empty** — its primitive props with optional `children`; absent children render dictionary `empty`. **Combobox.Value / List / Item / Group / Label / Collection / Separator / Chips / ChipsInput** — their base-ui part's props verbatim (`Combobox.Item`: `value`, `disabled`; `Combobox.ChipsInput` is `ComboboxPrimitive.Input` props without the InputGroup extras).
 
@@ -149,7 +149,7 @@ No `tv` recipes and no axes — all styling is inline per part; nothing exported
 7. **Duplicated stacking classes deduped**: the Positioner keeps `isolate z-50`; the Popup drops its duplicate (ref repeats them on Select's popup; combobox's popup has no `z-50` but the ruling is applied family-wide — Positioner owns stacking).
 8. **Icons → Phosphor**: `CheckIcon`→`Check` (item indicator), `ChevronDownIcon`→`CaretDown` (trigger caret), `XIcon`→`X` (clear + chip remove).
 9. **Provider-owned locale and strings:** removes Root's public `locale`; Clear, Chip remove, and Empty use the co-located four-locale dictionary with optional copy overrides.
-10. **Chip `removeLabel` default uses children, not `itemToStringLabel`:** `@base-ui/react` Chip exposes no `value`. Reading the combobox store would require the banned `@base-ui/react/combobox` subpath (same root-import ruling). Default accessible name formats dictionary `removeItem` with the Chip's string children; object-item labels that are not string children must pass `removeLabel`.
+10. **Chip `removeLabel` default uses children, then `itemToStringLabel(value)`:** Chip still exposes no `value` prop. The wrapper reads the selected value for this chip via `Combobox.Value` plus render-order index under `Combobox.Chips`, and Root's `itemToStringLabel`, without importing the banned `@base-ui/react/combobox` subpath. Default accessible name formats dictionary `removeItem` with string/number children; non-string children fall back to `itemToStringLabel(value)`; if neither yields text, the localized "Remove" string alone with no trailing space. _(Amended 2026-09-02.)_
 
 Kept faithfully:
 
@@ -175,7 +175,7 @@ Role/label-based queries throughout; keyboard flows per §7:
 - Anchored mode: passing `anchor` from `useComboboxAnchor` sets `data-chips="true"` on the popup and positions against the anchor element.
 - `container`: popup renders inside the provided element / nearest ThemeScope, not `document.body`.
 - Disabled: `Combobox.Input disabled` disables input, trigger, and clear.
-- Empty/Clear/Remove defaults render in all four locales; `children`, `clearLabel`, `label`, and `removeLabel` override their respective copy.
+- Empty/Clear/Remove defaults render in all four locales; `children`, `clearLabel`, `label`, and `removeLabel` override their respective copy. Chip-remove for object items without string children is named from `itemToStringLabel(value)`; if that yields no text, the name is the localized "Remove" string with no trailing space.
 - Import-shape guard: source-level test/lint asserting the base-ui root import (no `@base-ui/react/combobox` subpath).
 
 ## 10 Demo requirements

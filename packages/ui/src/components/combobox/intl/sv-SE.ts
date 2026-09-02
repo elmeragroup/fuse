@@ -4,5 +4,8 @@ import type { Variables } from "@internationalized/string";
 export const svSE = {
   empty: "Inga resultat.",
   clear: "Rensa val",
-  removeItem: (vars: Variables) => `Ta bort ${String(vars?.item ?? "")}`,
+  removeItem: (vars: Variables) => {
+    const item = String(vars?.item ?? "").trim();
+    return item === "" ? "Ta bort" : `Ta bort ${item}`;
+  },
 };

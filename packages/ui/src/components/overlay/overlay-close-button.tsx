@@ -15,7 +15,7 @@ import { Button } from "../button/button";
  * `<Dialog.Close render={overlayCornerCloseButton({ label })} />`.
  */
 
-/** Corner dismiss affordance: ghost `icon-sm` Button, expanded hit area, sr-only label. */
+/** Corner dismiss affordance: ghost `icon-sm` Button, expanded hit area, `aria-label`. */
 export function overlayCornerCloseButton({
   label,
   className,
@@ -30,7 +30,6 @@ export function overlayCornerCloseButton({
       size="icon-sm"
       className={cn("hit-area-1 absolute top-4 right-4", className)}>
       <X />
-      <span className="sr-only">{label}</span>
     </Button>
   );
 }

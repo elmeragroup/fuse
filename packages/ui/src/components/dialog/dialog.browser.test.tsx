@@ -140,7 +140,7 @@ describe("Dialog", () => {
     const corner = page.getByRole("button", { name: "Close", exact: true }).element();
     expect(corner.getAttribute("data-slot")).toBe("dialog-close");
     expect(corner.querySelector("svg")).not.toBeNull();
-    expect(corner.querySelector(".sr-only")?.textContent).toBe("Close");
+    expect(corner.getAttribute("aria-label")).toBe("Close");
     expect(corner.className).toContain("hit-area-1");
     await userEvent.click(corner);
     await vi.waitFor(() => {
