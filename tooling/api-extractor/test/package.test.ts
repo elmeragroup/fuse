@@ -1,5 +1,6 @@
 import { Effect } from "effect";
 import type { Error as EffectError } from "effect/Effect";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, expectTypeOf, it } from "vitest";
 
@@ -85,5 +86,15 @@ describe("package entry point", () => {
     expect(includeCalls).toEqual([]);
     expect(result.module.exports.map((entry) => entry.name)).toEqual(["greet"]);
     expect(result.provenance.map((entry) => entry.path[0])).toEqual(["greet", "greet"]);
+  });
+
+  it("does not install unused Effect packages or their release-age exclusions", () => {
+    const packageManifest = readFileSync(resolve(import.meta.dirname, "../package.json"), "utf8");
+    const workspace = readFileSync(resolve(import.meta.dirname, "../../../pnpm-workspace.yaml"), "utf8");
+    expect(packageManifest).not.toMatch(/@effect\/platform-node/u);
+    expect(packageManifest).not.toMatch(/@effect\/vitest/u);
+    expect(workspace).not.toMatch(/@effect\/platform-node/u);
+    expect(workspace).not.toMatch(/@effect\/vitest/u);
+    expect(workspace).not.toMatch(/@effect\/platform-node-shared/u);
   });
 });

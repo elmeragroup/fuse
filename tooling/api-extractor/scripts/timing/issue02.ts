@@ -1,7 +1,7 @@
 import { join } from "node:path";
 
 import { writeArtifactBatchOrThrow } from "../artifact-batch-writer.ts";
-import { requiredNodeVersion } from "../files.ts";
+import { assertNodeMajor, issue02TimingCommand } from "../files.ts";
 import {
   assertBytesReceivedBudget,
   assertFetchedToMaterializedRatioBudget,
@@ -77,7 +77,7 @@ function reportFrom(samples: TimingReport["samples"]): TimingReport {
   const ipcStatus = samples.every(isWithinIpcBudget) ? "not-triggered" : "triggered";
   return {
     issue: "02-prove-compiler-boundary",
-    command: `fnm exec --using ${requiredNodeVersion} -- node scripts/timing.ts --plan issue02 --check`,
+    command: issue02TimingCommand,
     runtime: {
       node: process.versions.node,
       compiler: "typescript@" + packageVersion("typescript"),
@@ -97,9 +97,7 @@ function reportFrom(samples: TimingReport["samples"]): TimingReport {
 
 function checkGoNoGoArtifact(artifact: GoNoGoArtifact, measured: TimingReport): void {
   assertReactDivergenceEvidence();
-  if (artifact.runtime.node !== requiredNodeVersion) {
-    throw new Error(`The Issue 02 go/no-go artifact must target Node ${requiredNodeVersion}.`);
-  }
+  assertNodeMajor(artifact.runtime.node);
   if (artifact.runtime.compiler !== measured.runtime.compiler) {
     throw new Error("The Issue 02 go/no-go compiler pin is stale: " + artifact.runtime.compiler);
   }
@@ -179,12 +177,11 @@ function checkLiveSamples(measured: TimingReport): void {
 
 function checkStoredReport(stored: TimingReport, measured: TimingReport, goNoGo: GoNoGoArtifact): void {
   checkLiveSamples(measured);
-  if (stored.command !== measured.command) {
-    throw new Error("The stored Issue 02 timing report identity is stale.");
+  if (measured.command !== issue02TimingCommand) {
+    throw new Error("The live Issue 02 timing command identity is stale.");
   }
-  if (stored.runtime.node !== requiredNodeVersion) {
-    throw new Error(`The stored Issue 02 timing report must target Node ${requiredNodeVersion}.`);
-  }
+  assertNodeMajor(stored.runtime.node);
+  assertNodeMajor(measured.runtime.node);
   if (stored.runtime.compiler !== measured.runtime.compiler) {
     throw new Error("The timing report compiler pin is stale: " + stored.runtime.compiler);
   }

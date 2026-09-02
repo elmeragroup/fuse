@@ -8,10 +8,11 @@ import { describe, expect, expectTypeOf, it } from "vitest";
 
 import {
   declarationBoundaryViolations,
+  effectImportViolations,
   packageSourceFiles,
   publicDeclarationGraph,
   scanCompilerImports,
-  scanModuleSpecifiers,
+  scanValueModuleSpecifiers,
   sourceBoundaryViolations,
   sourceFiles,
 } from "../scripts/boundary-scanner.ts";
@@ -94,14 +95,54 @@ describe("compiler boundary", () => {
     // they also use no Effect module, so a replacement backend or a plain
     // script can run the resolver without the Effect runtime or data types.
     const packageDirectory = join(import.meta.dirname, "..");
-    const effectImports = ["src/parse", "src/canonical"].flatMap((directory) =>
-      sourceFiles(join(packageDirectory, directory)).flatMap((path) =>
-        scanModuleSpecifiers(readFileSync(path, "utf8"))
-          .filter((specifier) => specifier === "effect" || specifier.startsWith("effect/"))
-          .map((specifier) => `${path}: ${specifier}`)
-      )
+    const entries = ["src/parse", "src/canonical"].flatMap((directory) =>
+      sourceFiles(join(packageDirectory, directory))
     );
-    expect(effectImports).toEqual([]);
+    expect(effectImportViolations(entries)).toEqual([]);
+  });
+
+  it("fails on a transitive Effect import from parse", () => {
+    const directory = mkdtempSync(join(tmpdir(), "api-extractor-effect-boundary-"));
+    try {
+      const parseDirectory = join(directory, "src/parse");
+      mkdirSync(parseDirectory, { recursive: true });
+      const leafPath = join(parseDirectory, "leaf.ts");
+      const helperPath = join(directory, "src/errors.ts");
+      writeFileSync(leafPath, 'import { fail } from "../errors.ts";\nexport const leaf = fail;\n');
+      writeFileSync(helperPath, 'import { Data } from "effect";\nexport const fail = Data;\n');
+
+      expect(effectImportViolations([leafPath])).toEqual([
+        {
+          path: helperPath,
+          reason: "Effect import effect",
+        },
+      ]);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
+  it("does not treat a type-only import of an Effect module as a parse-layer leak", () => {
+    const directory = mkdtempSync(join(tmpdir(), "api-extractor-effect-typeonly-"));
+    try {
+      const parseDirectory = join(directory, "src/parse");
+      mkdirSync(parseDirectory, { recursive: true });
+      const leafPath = join(parseDirectory, "leaf.ts");
+      const modelPath = join(directory, "src/model.ts");
+      writeFileSync(
+        leafPath,
+        'import type { SemanticType } from "../model.ts";\nexport type T = SemanticType;\n'
+      );
+      writeFileSync(
+        modelPath,
+        'import { Schema } from "effect";\nexport type SemanticType = typeof Schema.String;\n'
+      );
+
+      expect(scanValueModuleSpecifiers(readFileSync(leafPath, "utf8"))).toEqual([]);
+      expect(effectImportViolations([leafPath])).toEqual([]);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
   });
 
   it("scans package scripts, tests, and root config while excluding fixture data", () => {

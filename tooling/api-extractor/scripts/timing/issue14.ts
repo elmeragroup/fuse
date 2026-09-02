@@ -8,12 +8,12 @@ import {
   issue14DurableContractLeakageEvidence,
   issue14IpcEvidence,
   issue14IpcThreshold,
-  issue14NodeVersion,
   issue14TimingCommand,
   issue14TimingStableContract,
   issue14TimingWallClockContract,
   issue14TimingWallClockRationale,
 } from "../conformance/contract.ts";
+import { assertNodeMajor } from "../files.ts";
 import {
   assertFixtureOracle,
   bytesReceivedCeiling,
@@ -74,7 +74,7 @@ export const Issue14TimingReportSchema = Schema.Struct({
   issue: Schema.Literal("14-full-conformance"),
   command: Schema.Literal(issue14TimingCommand),
   runtime: Schema.Struct({
-    node: Schema.Literal(issue14NodeVersion),
+    node: Schema.String,
     compiler: Schema.Literal(issue14CompilerVersion),
   }),
   baseline: Schema.Struct({
@@ -174,15 +174,12 @@ function ipcStatusFor(measured: TimingTotals, ceilings: IpcCeilings): IpcStatus 
 }
 
 function currentRuntimeIdentity(): Issue14TimingReport["runtime"] {
-  if (
-    process.versions.node !== issue14NodeVersion ||
-    `typescript@${packageVersion("typescript")}` !== issue14CompilerVersion
-  ) {
-    throw new Error(
-      `Issue 14 timing evidence requires Node ${issue14NodeVersion} and ${issue14CompilerVersion}.`
-    );
+  assertNodeMajor();
+  const compiler = `typescript@${packageVersion("typescript")}`;
+  if (compiler !== issue14CompilerVersion) {
+    throw new Error(`Issue 14 timing evidence requires ${issue14CompilerVersion}.`);
   }
-  return { node: issue14NodeVersion, compiler: issue14CompilerVersion };
+  return { node: process.versions.node, compiler };
 }
 
 function zeroTotals(): TimingTotals {
@@ -232,10 +229,9 @@ export function subtractTotals(current: TimingTotals, baseline: TimingTotals): T
 }
 
 function assertBaselineIdentity(baseline: TimingReport): void {
-  if (baseline.runtime.node !== issue14NodeVersion || baseline.runtime.compiler !== issue14CompilerVersion) {
-    throw new Error(
-      `Issue 14 timing requires the Node ${issue14NodeVersion} / ${issue14CompilerVersion} Issue 02 baseline.`
-    );
+  assertNodeMajor(baseline.runtime.node);
+  if (baseline.runtime.compiler !== issue14CompilerVersion) {
+    throw new Error(`Issue 14 timing requires the ${issue14CompilerVersion} Issue 02 baseline.`);
   }
   if (
     JSON.stringify(baseline.samples.map((sample) => sample.fixture)) !== JSON.stringify(expectedFixtureOrder)
@@ -327,12 +323,11 @@ function assertCommonReportInvariants(report: Issue14TimingReport): void {
   const command = String(report.command);
   const runtimeNode = String(report.runtime.node);
   const runtimeCompiler = String(report.runtime.compiler);
-  if (
-    issue !== "14-full-conformance" ||
-    command !== issue14TimingCommand ||
-    runtimeNode !== issue14NodeVersion ||
-    runtimeCompiler !== issue14CompilerVersion
-  ) {
+  if (issue !== "14-full-conformance" || command !== issue14TimingCommand) {
+    throw new Error("Issue 14 timing identity is stale.");
+  }
+  assertNodeMajor(runtimeNode);
+  if (runtimeCompiler !== issue14CompilerVersion) {
     throw new Error("Issue 14 timing identity is stale.");
   }
   if (

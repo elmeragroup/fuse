@@ -1,6 +1,6 @@
 {
   "issue": "14-full-conformance",
-  "command": "fnm exec --using 24.13.0 -- node scripts/timing.ts --plan issue14 --check",
+  "command": "node scripts/timing.ts --plan issue14 --check",
   "runtime": {
     "node": "24.13.0",
     "compiler": "typescript@7.0.2"

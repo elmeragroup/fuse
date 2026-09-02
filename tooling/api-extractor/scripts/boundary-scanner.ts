@@ -141,6 +141,76 @@ export function scanModuleSpecifiers(source: string): readonly string[] {
   return [...new Set(matches)];
 }
 
+function isTypeOnlySpecifierContext(before: string): boolean {
+  if (/(?:^|[\s;{(])(?:import|export)\s+type\b[\s\S]*$/u.test(before)) return true;
+  const inline = /\{([^}]*)\}\s*$/u.exec(before)?.[1];
+  if (inline === undefined) return false;
+  const bindings = inline
+    .split(",")
+    .map((binding) => binding.trim())
+    .filter((binding) => binding.length > 0);
+  return bindings.length > 0 && bindings.every((binding) => /^type\s+/u.test(binding));
+}
+
+/** Return value import/export specifiers, skipping `import type` / `export type`. */
+export function scanValueModuleSpecifiers(source: string): readonly string[] {
+  const cleaned = stripComments(source);
+  const matches: string[] = [];
+  const pattern =
+    /(?:\bfrom\s*|\bimport\s*\(\s*|\bimport\s+|\brequire(?:\.resolve)?\s*\(\s*)["'`]([^"'`$]*?)["'`]/gu;
+  for (const match of cleaned.matchAll(pattern)) {
+    const specifier = match[1];
+    if (specifier === undefined || specifier.includes("${")) continue;
+    const before = cleaned.slice(0, match.index).trimEnd();
+    if (isTypeOnlySpecifierContext(before)) continue;
+    matches.push(specifier);
+  }
+  return [...new Set(matches)];
+}
+
+function isEffectSpecifier(specifier: string): boolean {
+  return specifier === "effect" || specifier.startsWith("effect/");
+}
+
+function sourceImportCandidates(filePath: string, specifier: string): readonly string[] {
+  const base = resolve(dirname(filePath), specifier);
+  const scriptExtension = /\.(?:[cm]?[jt]sx?)$/u.exec(base)?.[0];
+  const withoutScriptExtension =
+    scriptExtension === undefined ? base : base.slice(0, -scriptExtension.length);
+  return [
+    base,
+    ...sourceExtensions.map((extension) => `${withoutScriptExtension}${extension}`),
+    ...sourceExtensions.map((extension) => join(withoutScriptExtension, `index${extension}`)),
+  ];
+}
+
+function resolveSourceImport(filePath: string, specifier: string): string | undefined {
+  return sourceImportCandidates(filePath, specifier).find((candidate) => existsSync(candidate));
+}
+
+/** Walk value-import graphs from `entries` and report every Effect module they reach. */
+export function effectImportViolations(entries: readonly string[]): readonly BoundaryViolation[] {
+  const queue = [...entries];
+  const seen = new Set<string>();
+  const violations: BoundaryViolation[] = [];
+  while (queue.length > 0) {
+    const current = queue.shift();
+    if (current === undefined || seen.has(current) || !existsSync(current)) continue;
+    seen.add(current);
+    const source = readFileSync(current, "utf8");
+    for (const specifier of scanValueModuleSpecifiers(source)) {
+      if (isEffectSpecifier(specifier)) {
+        violations.push({ path: current, reason: `Effect import ${specifier}` });
+        continue;
+      }
+      if (!specifier.startsWith(".")) continue;
+      const target = resolveSourceImport(current, specifier);
+      if (target !== undefined) queue.push(target);
+    }
+  }
+  return violations;
+}
+
 function files(directory: string, extensions: readonly string[]): readonly string[] {
   if (!existsSync(directory)) return [];
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {

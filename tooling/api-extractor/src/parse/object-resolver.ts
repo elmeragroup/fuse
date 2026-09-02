@@ -9,7 +9,6 @@ import type {
   BackendSymbolHandle,
   BackendTypeHandle,
 } from "../backend/contracts.ts";
-import { ResolverFailure } from "../errors.ts";
 import type {
   CallSignatureNode,
   EnumMember,
@@ -26,6 +25,7 @@ import type { ResolveSemanticType, ResolverContext } from "./contracts.ts";
 import { isInternalSymbolName, warningLocation } from "./contracts.ts";
 import { externalTypeSelectionAllowsSymbol } from "./external-type-selection.ts";
 import { primaryDeclaration, symbolDeclarations } from "./ownership.ts";
+import { ResolverFailure } from "./resolver-failure.ts";
 import {
   callSignatureSemanticPath,
   componentPropSemanticPath,

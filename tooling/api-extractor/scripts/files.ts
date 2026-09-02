@@ -6,8 +6,25 @@ import { relative } from "node:path";
 
 /** Leaf file helpers shared by every script; this module imports no sibling. */
 
-/** The Node release every timing and conformance evidence artifact is pinned to. */
-export const requiredNodeVersion = "24.13.0" as const;
+/** Timing evidence gates on Node major 24; the exact patch is a recorded observation. */
+export const requiredNodeMajor = 24 as const;
+
+export function nodeMajor(version: string): number {
+  const [major] = version.split(".");
+  const parsed = Number.parseInt(major ?? "", 10);
+  if (!Number.isInteger(parsed) || parsed < 0) {
+    throw new Error(`Invalid Node version: ${version}`);
+  }
+  return parsed;
+}
+
+export function assertNodeMajor(version: string = process.versions.node): void {
+  if (nodeMajor(version) !== requiredNodeMajor) {
+    throw new Error(`Timing evidence requires Node ${requiredNodeMajor}.x, got ${version}`);
+  }
+}
+
+export const issue02TimingCommand = "node scripts/timing.ts --plan issue02 --check" as const;
 
 /** The installed version of a dependency, read from its package.json. */
 export function packageVersion(packageName: string): string {

@@ -8,7 +8,7 @@ import type {
   BackendProject,
 } from "./backend/contracts.ts";
 import { CompilerBackend } from "./backend/service.ts";
-import { BackendError, ExtractError, FileNotInProgramError, ResolverFailure, safeCause } from "./errors.ts";
+import { BackendError, ExtractError, FileNotInProgramError, safeCause } from "./errors.ts";
 import type { ConfigError } from "./errors.ts";
 import { InternalProjectExtractorTiming } from "./internal/project-options.ts";
 import type {
@@ -19,6 +19,7 @@ import type {
 import { ExtractionResultSchema } from "./model.ts";
 import type { ExtractorOptions, OpenProjectOptions } from "./options.ts";
 import { normalizeExternalTypeSelection } from "./parse/external-type-selection.ts";
+import { ResolverFailure } from "./parse/resolver-failure.ts";
 import { readModuleDraft, resolveModuleDraft } from "./parser.ts";
 
 export type ExtractionResult = typeof ExtractionResultSchema.Type;
