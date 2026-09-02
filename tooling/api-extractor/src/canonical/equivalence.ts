@@ -2,7 +2,7 @@ import type { CallSignatureNode, FunctionNode, SemanticType, TypeName, TypeParam
 import { renderType, typeNameOf } from "./render.ts";
 
 /** Right-to-left generic parameter renames scoped to one signature comparison. */
-export type TypeParameterRenames = ReadonlyMap<string, string>;
+type TypeParameterRenames = ReadonlyMap<string, string>;
 
 /**
  * Compares model types structurally for canonicalization. An unaliased `any` is

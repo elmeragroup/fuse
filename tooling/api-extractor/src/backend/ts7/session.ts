@@ -38,29 +38,6 @@ import { NodeHandleInterner } from "./node-handles.ts";
 import type { SessionNodeReference } from "./node-handles.ts";
 import type { PathIdentity } from "./path-identity.ts";
 
-/**
- * Holds the project callback only until the first close notification. Keeping
- * this lifecycle seam explicit prevents a closed session from retaining the
- * project (and its native compiler API) through an otherwise inert callback.
- */
-export class DetachableCloseCallback<Value> {
-  private callback: ((value: Value) => void) | undefined;
-
-  constructor(callback: (value: Value) => void) {
-    this.callback = callback;
-  }
-
-  invoke(value: Value): void {
-    const callback = this.callback;
-    this.callback = undefined;
-    callback?.(value);
-  }
-
-  detach(): void {
-    this.callback = undefined;
-  }
-}
-
 export class TsgoExtractionSession implements BackendExtractionSession {
   private readonly project: Project;
   private readonly checker: Checker;
@@ -78,7 +55,7 @@ export class TsgoExtractionSession implements BackendExtractionSession {
   private readonly declarationPaths = new Map<string, string>();
   private readonly typeNodeHandles = new Map<TypeNode, BackendTypeNodeHandle>();
   private readonly signatureHandles = new Map<Signature, BackendSignatureHandle>();
-  private readonly onClose: DetachableCloseCallback<TsgoExtractionSession>;
+  private onClose: ((session: TsgoExtractionSession) => void) | undefined;
   private readonly facts: TsgoSessionFacts;
   private readonly fileTrees: SessionFileTrees;
   private currentFilePath: string | undefined;
@@ -103,7 +80,7 @@ export class TsgoExtractionSession implements BackendExtractionSession {
     this.provenanceRoot = provenanceRoot;
     this.cwd = cwd;
     this.pathIdentity = pathIdentity;
-    this.onClose = new DetachableCloseCallback(onClose);
+    this.onClose = onClose;
     this.fileTrees = new SessionFileTrees(this.project, (path) => this.sourceFileMetadata(path));
     this.nodeInterner = new NodeHandleInterner(
       this.registry,
@@ -194,7 +171,10 @@ export class TsgoExtractionSession implements BackendExtractionSession {
     this.declarationPaths.clear();
     this.typeNodeHandles.clear();
     this.signatureHandles.clear();
-    this.onClose.invoke(this);
+    // Drop the project callback so a closed session cannot retain the native API.
+    const onClose = this.onClose;
+    this.onClose = undefined;
+    onClose?.(this);
   }
 
   private ensureOpen(operation: string): void {

@@ -4,13 +4,7 @@ export {
   type ProjectExtractorService,
   type SyntaxOnlyExtractionResult,
 } from "./extractor.ts";
-export {
-  BackendError,
-  ConfigError,
-  ExtractError,
-  FileNotInProgramError,
-  type FatalExtractionError,
-} from "./errors.ts";
+export { BackendError, ConfigError, ExtractError, FileNotInProgramError } from "./errors.ts";
 export {
   ExtractionResultSchema,
   ModuleNodeSchema,

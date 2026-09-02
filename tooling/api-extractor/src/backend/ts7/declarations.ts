@@ -12,7 +12,7 @@ export type CompilerDeclaration = {
   readonly resolve: (project?: Project) => Node | undefined;
 };
 
-export type OwnedDeclarationSession = {
+type OwnedDeclarationSession = {
   readonly sourceFileMetadata: (path: string) => CompilerSourceFileMetadata | undefined;
   readonly resolveDeclaration: (declaration: CompilerDeclaration) => Node | undefined;
 };

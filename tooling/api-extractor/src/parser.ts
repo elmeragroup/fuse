@@ -57,7 +57,7 @@ export function resolveModuleDraft(
  * stronger group-aware filter BEFORE descriptor expansion; this flatter pass
  * remains the contract every replacement backend sees.
  */
-export function filterModuleDraft(
+function filterModuleDraft(
   session: BackendExtractionSession,
   draft: BackendModuleDraft,
   filePath: string

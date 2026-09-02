@@ -487,5 +487,3 @@ export const ExtractionResultSchema = Schema.Struct({
   warnings: Schema.Array(ExtractWarningSchema),
   provenance: Schema.Array(ProvenanceEntrySchema),
 });
-
-export type EncodedModuleNode = typeof ModuleNodeSchema.Encoded;

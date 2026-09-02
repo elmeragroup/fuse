@@ -3,7 +3,7 @@ import type { Checker, Symbol as TsSymbol } from "typescript/unstable/sync";
 import { aliasedSymbol } from "./module-resolution.ts";
 
 /** Explicit result for alias resolution; ambiguity never degrades to missing. */
-export type UltimateSymbolResolution =
+type UltimateSymbolResolution =
   | { readonly status: "resolved"; readonly symbol: TsSymbol }
   | { readonly status: "ambiguous"; readonly symbols: readonly TsSymbol[] }
   | { readonly status: "missing" };

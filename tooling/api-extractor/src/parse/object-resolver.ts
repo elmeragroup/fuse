@@ -617,7 +617,7 @@ export function recordUnrepresentedConstructSignatures(type: BackendTypeHandle, 
  * they are dropped. Inclusion callbacks are deliberately not consulted here —
  * this is about what the model could represent, not what a caller filtered.
  */
-export function eligiblePropertyNames(type: BackendTypeHandle, context: Context): readonly string[] {
+function eligiblePropertyNames(type: BackendTypeHandle, context: Context): readonly string[] {
   return propertiesOfType(context.operations.propertiesOfType(type), type, context).map(
     (property) => context.operations.symbolFacts(property).name
   );
@@ -658,7 +658,7 @@ export function recordOmittedCallableMembers(
   });
 }
 
-export function indexSignatureNode(
+function indexSignatureNode(
   index: BackendIndexSignatureFacts,
   owner: BackendTypeHandle | undefined,
   context: Context,

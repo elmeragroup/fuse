@@ -19,11 +19,7 @@ import {
   validateGoNoGoFixtureMatrix,
 } from "../scripts/fixture-evidence.ts";
 import { ProjectExtractor } from "../src/index.ts";
-import {
-  extractModuleWithTiming,
-  InternalProjectExtractorTiming,
-  timedProjectExtractorLayer,
-} from "../src/internal/timing.ts";
+import { InternalProjectExtractorTiming, timedProjectExtractorLayer } from "../src/internal/timing.ts";
 
 const fixtureDirectory = resolve(import.meta.dirname, "fixtures");
 const tsconfigPath = resolve(fixtureDirectory, "issue-02-tsconfig.json");
@@ -288,7 +284,7 @@ describe("Issue 02 compiler timing boundary", () => {
           Effect.gen(function* () {
             yield* ProjectExtractor;
             const timing = yield* InternalProjectExtractorTiming;
-            return yield* extractModuleWithTiming(timing, inputPath);
+            return yield* timing.extractModule(inputPath);
           }).pipe(Effect.provide(timedProjectExtractorLayer({ tsconfigPath })))
         )
       );

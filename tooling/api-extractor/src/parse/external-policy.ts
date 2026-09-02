@@ -32,7 +32,7 @@ export type ExternalPolicyDecision =
   | { readonly kind: "external-reference"; readonly typeName: TypeName }
   | { readonly kind: "anonymous-root" };
 
-export type ExternalPolicyInput = {
+type ExternalPolicyInput = {
   readonly type: BackendTypeHandle;
   readonly sourceNode: BackendNodeReference | undefined;
   readonly typeName: TypeName | undefined;

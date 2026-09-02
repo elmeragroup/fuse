@@ -6,11 +6,7 @@ import { describe, expect, it } from "vitest";
 import type { BackendExtractionSession, BackendProject } from "../src/backend/contracts.ts";
 import { openTsgoProject } from "../src/backend/ts7/project.ts";
 import { ProjectExtractor } from "../src/index.ts";
-import {
-  extractModuleWithTiming,
-  InternalProjectExtractorTiming,
-  timedProjectExtractorLayer,
-} from "../src/internal/timing.ts";
+import { InternalProjectExtractorTiming, timedProjectExtractorLayer } from "../src/internal/timing.ts";
 import type { ProjectFileSystem } from "../src/options.ts";
 
 const fixtureDirectory = resolve(import.meta.dirname, "fixtures");
@@ -186,7 +182,7 @@ describe("TypeScript 7 session-owned file trees", () => {
         Effect.gen(function* () {
           yield* ProjectExtractor;
           const timing = yield* InternalProjectExtractorTiming;
-          return yield* extractModuleWithTiming(timing, starExcludedInputPath);
+          return yield* timing.extractModule(starExcludedInputPath);
         }).pipe(Effect.provide(timedProjectExtractorLayer({ tsconfigPath: starExcludedTsconfigPath })))
       )
     );

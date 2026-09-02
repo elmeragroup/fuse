@@ -45,16 +45,6 @@ import { callExpressionFacts } from "./call-facts.ts";
 import { declarationModifiers } from "./class-facts.ts";
 import type { TsgoFactsSession } from "./facts.ts";
 
-/** Reads one node's normalized syntax facts, resolving the AST. */
-export function nodeFacts(
-  session: TsgoFactsSession,
-  handle: BackendNodeReference,
-  readTypeName: (node: TypeNode) => NonNullable<BackendNodeFacts["typeName"]>,
-  originOf: (symbol: BackendSymbolHandle) => BackendSymbolOrigin
-): BackendNodeFacts {
-  return materializedNodeFacts(session, handle, readTypeName, originOf);
-}
-
 /**
  * Reads one handle's parser-facing kind. Answers from the compiler kind alone
  * except for import types, whose `typeof` form is only visible on the resolved
@@ -194,7 +184,8 @@ export function typeNodeKindTableDrift(): readonly string[] {
   return drift;
 }
 
-function materializedNodeFacts(
+/** Reads one node's normalized syntax facts, resolving the AST. */
+export function nodeFacts(
   session: TsgoFactsSession,
   handle: BackendNodeReference,
   readTypeName: (node: TypeNode) => NonNullable<BackendNodeFacts["typeName"]>,
@@ -354,7 +345,6 @@ function bindingDefaults(
 }
 
 function typeQueryExpressionName(node: Node, sourceFile: ReturnType<Node["getSourceFile"]>): string {
-  if (isTypeQueryNode(node)) return node.exprName.getText();
   const text = node.getText(sourceFile);
   const importTokenIndex = text.search(/\bimport\b/u);
   return importTokenIndex === -1 ? text.trimStart() : text.slice(importTokenIndex).trimStart();

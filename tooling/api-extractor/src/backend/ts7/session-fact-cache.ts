@@ -67,7 +67,7 @@ export class SessionFactCache {
  * Freezes normalized records before sharing them between authored read sites.
  * Handles are already frozen by the registry, so recursion stops at them.
  */
-export function freezeFact<Result>(value: Result): Result {
+function freezeFact<Result>(value: Result): Result {
   return deepFreezeFact(value, new WeakSet());
 }
 

@@ -68,7 +68,7 @@ export type CompilerSourceFileMetadata = {
  * `classifySourceFile`; an explicit record is authoritative, including two
  * `false` flags for a project file whose path resembles TypeScript's library.
  */
-export function sourceFileOwnership(
+function sourceFileOwnership(
   filePath: string,
   metadata?: CompilerSourceFileMetadata
 ): BackendDeclarationOwnership {

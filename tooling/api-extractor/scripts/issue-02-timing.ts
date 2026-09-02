@@ -2,11 +2,7 @@ import { Effect } from "effect";
 import { createRequire } from "node:module";
 import { join } from "node:path";
 
-import {
-  extractModuleWithTiming,
-  InternalProjectExtractorTiming,
-  timedProjectExtractorLayer,
-} from "../src/internal/timing.ts";
+import { InternalProjectExtractorTiming, timedProjectExtractorLayer } from "../src/internal/timing.ts";
 import type { TimedExtraction } from "../src/internal/timing.ts";
 import { writeArtifactBatchOrThrow } from "./artifact-batch-command.ts";
 import { checkBoundary } from "./check-boundary.ts";
@@ -75,7 +71,7 @@ function timedExtraction(inputPath: string): Promise<TimedExtraction> {
     Effect.scoped(
       Effect.gen(function* () {
         const timing = yield* InternalProjectExtractorTiming;
-        return yield* extractModuleWithTiming(timing, inputPath);
+        return yield* timing.extractModule(inputPath);
       }).pipe(Effect.provide(timedProjectExtractorLayer({ tsconfigPath })))
     )
   );

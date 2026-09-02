@@ -44,14 +44,8 @@ type ModuleSource = {
  * branch has been compared. Reducing to `BackendModuleOrigin` too early makes
  * unrelated declarations with the same textual module facts indistinguishable.
  */
-type OriginResolution =
+export type OriginResolution =
   | { readonly status: "resolved"; readonly origin: BackendModuleOrigin; readonly symbol?: TsSymbol }
-  | { readonly status: "ambiguous" }
-  | { readonly status: "missing" };
-
-/** Backend-only origin status used to keep ambiguity distinct from absence. */
-export type ModuleOriginResolution =
-  | { readonly status: "resolved"; readonly origin: BackendModuleOrigin }
   | { readonly status: "ambiguous" }
   | { readonly status: "missing" };
 
@@ -93,23 +87,13 @@ export function moduleOriginOfSymbol(
   symbol: TsSymbol,
   memberName?: string
 ): BackendModuleOrigin | undefined {
-  const origin = moduleOriginResolutionOfSymbol(session, symbol, memberName);
-  return origin.status === "resolved" ? origin.origin : undefined;
-}
-
-/** Returns the complete backend-internal status for one symbol origin. */
-export function moduleOriginResolutionOfSymbol(
-  session: TsgoFactsSession,
-  symbol: TsSymbol,
-  memberName?: string
-): ModuleOriginResolution {
   const origin = moduleOriginOfSymbolUnsafe(
     session,
     symbol,
     new Set(),
     memberName === undefined ? [] : [memberName]
   );
-  return publicOriginResolution(origin);
+  return origin.status === "resolved" ? origin.origin : undefined;
 }
 
 /**
@@ -118,28 +102,11 @@ export function moduleOriginResolutionOfSymbol(
  * resolved property and therefore no longer carries the namespace import;
  * walking to the root preserves that authored relation.
  */
-export function moduleOriginOfExpression(
-  session: TsgoFactsSession,
-  expression: Node
-): BackendModuleOrigin | undefined {
-  const origin = moduleOriginResolutionOfExpression(session, expression);
-  return origin.status === "resolved" ? origin.origin : undefined;
-}
-
-/** Returns the complete backend-internal status for one expression origin. */
 export function moduleOriginResolutionOfExpression(
   session: TsgoFactsSession,
   expression: Node
-): ModuleOriginResolution {
-  return publicOriginResolution(moduleOriginOfExpressionUnsafe(session, expression, new Set()));
-}
-
-function publicOriginResolution(origin: OriginResolution): ModuleOriginResolution {
-  return origin.status === "resolved"
-    ? { status: "resolved", origin: origin.origin }
-    : origin.status === "ambiguous"
-      ? { status: "ambiguous" }
-      : { status: "missing" };
+): OriginResolution {
+  return moduleOriginOfExpressionUnsafe(session, expression, new Set());
 }
 
 function moduleOriginOfExpressionUnsafe(

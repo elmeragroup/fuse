@@ -58,15 +58,6 @@ export function isExternalSymbol(symbol: BackendSymbolHandle, context: Context):
     .declarations.some((declaration) => isExternalOwnership(declarationOwnership(declaration, context)));
 }
 
-/** Whether every declaration of the symbol is project-authored. */
-export function isProjectSymbol(symbol: BackendSymbolHandle, context: Context): boolean {
-  const info = context.operations.symbolFacts(symbol);
-  return (
-    info.declarations.length > 0 &&
-    info.declarations.every((declaration) => !isExternalOwnership(declarationOwnership(declaration, context)))
-  );
-}
-
 /** Whether one declaration lives in TypeScript's own standard-library files. */
 export function isStandardLibraryDeclaration(node: BackendNodeHandle, context: Context): boolean {
   const ownership = declarationOwnership(node, context);

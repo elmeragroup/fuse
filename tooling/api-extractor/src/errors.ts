@@ -62,9 +62,6 @@ export class FileNotInProgramError extends Schema.TaggedError<FileNotInProgramEr
 export class ExtractError extends Schema.TaggedError<ExtractError>()("ExtractError", {
   filePath: Schema.String,
   symbolStack: Schema.Array(Schema.String),
-  modelPath: Schema.optionalKey(Schema.Array(Schema.String)),
   message: Schema.String,
   cause: Schema.String,
 }) {}
-
-export type FatalExtractionError = ConfigError | BackendError | FileNotInProgramError | ExtractError;

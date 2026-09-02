@@ -72,7 +72,7 @@ export function componentPropSemanticPathFromProvenancePath(
     : undefined;
 }
 
-export function semanticPathKey(path: SemanticPath): string {
+function semanticPathKey(path: SemanticPath): string {
   return JSON.stringify(path);
 }
 

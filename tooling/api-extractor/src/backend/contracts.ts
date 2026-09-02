@@ -20,7 +20,7 @@ export type BackendTypeNodeHandle = BackendHandle<"type-node">;
 export type BackendSignatureHandle = BackendHandle<"signature">;
 export type BackendNodeReference = BackendNodeHandle | BackendTypeNodeHandle;
 
-export type BackendSymbolFlag = "alias" | "class" | "typeParameter" | "optional";
+type BackendSymbolFlag = "alias" | "class" | "typeParameter" | "optional";
 
 /** Stable checker identity for a symbol, with aliases resolved by the backend. */
 export type BackendSymbolIdentity = {
@@ -42,7 +42,7 @@ export type BackendModuleOrigin = {
 };
 
 /** One parser-facing identity/origin observation for an invoked symbol. */
-export type BackendCalleeFacts = {
+type BackendCalleeFacts = {
   readonly symbol: BackendSymbolHandle;
   readonly identity?: BackendSymbolIdentity;
   readonly moduleOrigin?: BackendModuleOrigin;
@@ -244,7 +244,7 @@ export type BackendNodeFacts = {
   readonly bindingDefaults?: readonly BackendBindingDefaultFact[];
 };
 
-export type BackendBindingDefaultFact = {
+type BackendBindingDefaultFact = {
   readonly name: string;
   readonly initializerText: string;
 };
@@ -414,7 +414,7 @@ export type BackendProject = {
 
 export type BackendResolvedModule = { readonly filePath: string };
 
-export type BackendTimingRequest = {
+type BackendTimingRequest = {
   readonly method: string;
   readonly roundTripMs: number;
   readonly bytesSent: number;

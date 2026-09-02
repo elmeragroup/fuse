@@ -1,11 +1,7 @@
 import { Effect } from "effect";
 import { resolve } from "node:path";
 
-import {
-  extractModuleWithTiming,
-  InternalProjectExtractorTiming,
-  timedProjectExtractorLayer,
-} from "../src/internal/timing.ts";
+import { InternalProjectExtractorTiming, timedProjectExtractorLayer } from "../src/internal/timing.ts";
 import { assertRequestCountCeiling, externalSelectionTimingFixtures } from "./fixture-evidence.ts";
 
 const maxRoundTripMs = 1_000;
@@ -25,7 +21,7 @@ const extraction = await Effect.runPromise(
   Effect.scoped(
     Effect.gen(function* () {
       const timing = yield* InternalProjectExtractorTiming;
-      return yield* extractModuleWithTiming(timing, inputPath, {
+      return yield* timing.extractModule(inputPath, {
         includeExternalTypes: ["@fixture/selected"],
       });
     }).pipe(Effect.provide(timedProjectExtractorLayer({ tsconfigPath })))

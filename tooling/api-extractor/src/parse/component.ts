@@ -22,7 +22,7 @@ const componentReturnTypeNames = new Set(["Element", "ReactElement", "ReactNode"
  * semantic kind is deliberately unchanged and the resolver reports a
  * structured warning instead of silently guessing.
  */
-export type ComponentRecognition =
+type ComponentRecognition =
   | { readonly outcome: "transformed" }
   | { readonly outcome: "notAComponent" }
   | { readonly outcome: "uncertain"; readonly reason: "mixed-component-union" };

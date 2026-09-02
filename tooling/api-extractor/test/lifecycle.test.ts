@@ -5,8 +5,6 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { afterAll, describe, expect, it, vi } from "vitest";
 
-import type { DetachableCloseCallback as DetachableCloseCallbackType } from "../src/backend/ts7/session.ts";
-
 const nativeChildren: ChildProcess[] = [];
 const originalSpawn = childProcess.spawn;
 
@@ -24,8 +22,6 @@ syncBuiltinESMExports();
 
 const { Effect, Schema } = await import("effect");
 const { ConfigError, ProjectExtractor } = await import("../src/index.ts");
-const { DetachableCloseCallback: DetachableCloseCallbackRuntime } =
-  await import("../src/backend/ts7/session.ts");
 const { openTsgoProject } = await import("../src/backend/ts7/project.ts");
 
 const fixtureDirectory = resolve(import.meta.dirname, "fixtures/basic");
@@ -168,19 +164,6 @@ describe("ProjectExtractor native compiler lifecycle", () => {
     expect(failure._tag).toBe("ConfigError");
     expect(failure.tsconfigPath).toBe(invalidTsconfigPath);
     expect(failure.message).toContain(invalidTsconfigPath);
-  });
-
-  it("detaches the retained close callback before notifying the project", () => {
-    const notifications: string[] = [];
-    let callback: DetachableCloseCallbackType<string>;
-    callback = new DetachableCloseCallbackRuntime((value: string) => {
-      notifications.push(value);
-      callback.invoke("reentrant");
-    });
-
-    callback.invoke("closed");
-
-    expect(notifications).toEqual(["closed"]);
   });
 
   it("unregisters closed sessions while retaining active project cleanup", () => {
