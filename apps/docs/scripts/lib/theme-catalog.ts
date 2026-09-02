@@ -1,16 +1,22 @@
 /**
  * The `/api/themes` catalog builder (docs-site.md §9).
  *
- * Deep-imports `composeTheme` and `LEGAL_THEMES` from library internals; the public
- * `/theme` entry does not publish the token pipeline.
+ * Imports through the workspace-only `@elmeragroup/ui/theme-catalog` tooling entry —
+ * Node generate cannot load `/theme` because that facade re-exports client TSX.
  */
 
-import { composeTheme } from "../../../../packages/ui/src/theme/compose-theme.ts";
-import { defaultDensityForVariant, densityAttributes } from "../../../../packages/ui/src/theme/density.ts";
-import { themeAttributes } from "../../../../packages/ui/src/theme/theme-attributes.ts";
-import { TOKEN_NAMES } from "../../../../packages/ui/src/theme/tokens/contract.ts";
-import { PRIMITIVE_NAMES, PRIMITIVES } from "../../../../packages/ui/src/theme/tokens/primitives.ts";
-import { LEGAL_THEMES, themeSlug } from "../../../../packages/ui/src/theme/tokens/themes.ts";
+import {
+  composeTheme,
+  defaultDensityForVariant,
+  densityAttributes,
+  LEGAL_THEMES,
+  PRIMITIVE_NAMES,
+  PRIMITIVES,
+  themeAttributes,
+  themeSlug,
+  TOKEN_NAMES,
+} from "@elmeragroup/ui/theme-catalog";
+
 import type { ThemeCatalog, ThemeCatalogEntry } from "../../src/lib/docs-model.ts";
 
 export { TOKEN_NAMES };

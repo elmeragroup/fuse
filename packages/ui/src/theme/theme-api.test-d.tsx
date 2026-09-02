@@ -11,6 +11,7 @@ import type {
   ForceColorSchemeProps,
   SupportedLocale,
   ThemeInput,
+  ThemeSegment,
   ThemeSlug,
   ThemeProviderProps,
   ThemeScopeProps,
@@ -24,6 +25,9 @@ import {
   defaultDensityForVariant,
   densityAttributes,
   ForceColorScheme,
+  LEGAL_THEMES,
+  THEME_SEGMENTS,
+  THEME_VARIANTS,
   useColorScheme,
 } from "../theme";
 import type * as ThemeApi from "../theme";
@@ -116,6 +120,16 @@ test("SupportedLocale is the four shipped locales and locale is required", () =>
 
 test("UserAgentParserResult is not a public theme export", () => {
   expectTypeOf<typeof ThemeApi>().not.toHaveProperty("UserAgentParserResult");
+});
+
+test("theme constant tuples are public /theme values", () => {
+  expectTypeOf(THEME_VARIANTS).toEqualTypeOf<readonly ["internal", "external"]>();
+  expectTypeOf(THEME_SEGMENTS).toEqualTypeOf<readonly ["private", "company"]>();
+  expectTypeOf(LEGAL_THEMES).toEqualTypeOf<readonly ThemeInput[]>();
+  expectTypeOf<(typeof THEME_VARIANTS)[number]>().toEqualTypeOf<ThemeVariant>();
+  expectTypeOf<(typeof THEME_SEGMENTS)[number]>().toEqualTypeOf<ThemeSegment>();
+  expectTypeOf<typeof ThemeApi>().toHaveProperty("LEGAL_THEMES");
+  expectTypeOf<typeof ThemeApi>().not.toHaveProperty("composeTheme");
 });
 
 test("coerceTheme is the env-free pin-table parse", () => {

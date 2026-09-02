@@ -89,6 +89,14 @@ export const RAC_ENTRIES = [
 
 export const NON_COMPONENT_JS_ENTRIES = [".", "theme", "icons", "illustrations", "flags"] as const;
 
+/**
+ * In-repo `package.json#exports` only — not packed, not in the root barrel
+ * (architecture.md §8).
+ */
+export const TOOLING_ONLY_JS_ENTRIES = [
+  { subpath: "theme-catalog", sourceFile: "src/theme/catalog.ts" },
+] as const;
+
 export const CSS_ENTRY_NAMES = ["css", "demo-stage-comfortable.css", "styles.css", "themes.css"] as const;
 
 /** architecture.md §6 packages that published JS is allowed to import. */

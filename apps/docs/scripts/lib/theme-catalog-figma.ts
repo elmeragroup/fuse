@@ -2,10 +2,13 @@
  * DTCG JSON projected from the theme catalog for native Figma import (docs-site.md §9.2).
  *
  * One file is one Figma mode. Colors are sRGB; dimensions are px; CSS var() becomes
- * `{group.name}` aliases. Conversion stays here — routes serve generated JSON.
+ * `{group.name}` aliases. Conversion stays here; the generation pass writes one module
+ * that inlines every document (`FIGMA_THEME_FILES`), and the routes serve from it — there
+ * is no second, per-slug JSON serialisation.
  */
 
-import { oklchToLinearSrgb, parseOklch } from "../../../../packages/ui/src/theme/contrast.ts";
+import { oklchToLinearSrgb, parseOklch } from "@elmeragroup/ui/theme-catalog";
+
 import type {
   FigmaColorToken,
   FigmaDimensionToken,
@@ -209,38 +212,20 @@ export function buildFigmaThemeIndex(catalog: ThemeCatalog): FigmaThemeIndex {
   };
 }
 
-/** `internal-fkas-private` → `internalFkasPrivate`. */
-function jsonImportBinding(slug: string): string {
-  return slug.replace(/-([a-z])/g, (hyphenLetter) => hyphenLetter.slice(1).toUpperCase());
-}
-
-/** The generated barrel the `/api/themes/figma` routes import. */
-function renderFigmaThemeCatalog(catalog: ThemeCatalog): string {
-  const imports = catalog.themes
-    .map((theme) => `import ${jsonImportBinding(theme.slug)} from "./figma/${theme.slug}.json";`)
-    .join("\n");
+/** The generated module the `/api/themes/figma` routes import (docs-site.md §9.2). */
+export function renderFigmaThemeCatalog(catalog: ThemeCatalog): string {
   const files = catalog.themes
-    .map((theme) => `  "${theme.slug}": ${jsonImportBinding(theme.slug)},`)
-    .join("\n");
+    .map((theme) => {
+      const document = figmaDocumentFromCatalog(theme, catalog.primitives);
+      return `  "${theme.slug}": ${JSON.stringify(document)}`;
+    })
+    .join(",\n");
   return `import type { FigmaThemeDocument, FigmaThemeIndex } from "../lib/docs-model";
-${imports}
 
 export const FIGMA_THEME_INDEX: FigmaThemeIndex = ${JSON.stringify(buildFigmaThemeIndex(catalog), null, 2)};
 
-// SAFETY: each JSON file is written from figmaDocumentFromCatalog; JSON imports widen literals and tuples.
-export const FIGMA_THEME_FILES = {
+export const FIGMA_THEME_FILES: { readonly [slug: string]: FigmaThemeDocument } = {
 ${files}
-} as unknown as { readonly [slug: string]: FigmaThemeDocument };
+};
 `;
-}
-
-/** Barrel module plus per-slug DTCG JSON the generation pass writes (docs-site.md §9.2). */
-export function figmaThemeArtifacts(catalog: ThemeCatalog) {
-  return {
-    indexModule: renderFigmaThemeCatalog(catalog),
-    documents: catalog.themes.map((entry) => ({
-      slug: entry.slug,
-      json: JSON.stringify(figmaDocumentFromCatalog(entry, catalog.primitives)),
-    })),
-  };
 }

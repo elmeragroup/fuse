@@ -276,6 +276,10 @@
       "types": "./src/theme.ts",
       "import": "./src/theme.ts"
     },
+    "./theme-catalog": {
+      "types": "./src/theme/catalog.ts",
+      "import": "./src/theme/catalog.ts"
+    },
     "./themes.css": "./dist/themes.css",
     "./timeline-list": {
       "types": "./src/timeline-list.ts",

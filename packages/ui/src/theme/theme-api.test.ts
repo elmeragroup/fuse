@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { LEGAL_THEMES as PUBLIC_LEGAL_THEMES, THEME_SEGMENTS, THEME_VARIANTS } from "../theme";
 import {
   COLOR_SCHEME_BOOTSTRAP_SOURCE_DUPLICATE,
   COLOR_SCHEME_BOOTSTRAP_SOURCE_KEY,
@@ -53,6 +54,15 @@ function walkSourceFiles(directory: string): string[] {
 afterEach(() => {
   vi.unstubAllEnvs();
   vi.restoreAllMocks();
+});
+
+describe("public /theme constant tuples", () => {
+  it("exports the axis tuples and the pin-table legal set", () => {
+    expect(THEME_VARIANTS).toEqual(["internal", "external"]);
+    expect(THEME_SEGMENTS).toEqual(["private", "company"]);
+    expect(PUBLIC_LEGAL_THEMES).toHaveLength(20);
+    expect(PUBLIC_LEGAL_THEMES).toEqual(LEGAL_THEMES);
+  });
 });
 
 describe("BRANDS pin table", () => {

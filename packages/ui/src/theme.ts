@@ -23,7 +23,16 @@ export { ThemeProvider, useTheme } from "./theme/theme-provider";
 export type { ThemeProviderProps } from "./theme/theme-provider";
 export { ThemeScope } from "./theme/theme-scope";
 export type { ThemeScopeProps } from "./theme/theme-scope";
-export { BRAND_CODES, BRANDS, isBrandCode, parseThemeSlug, themeSlug } from "./theme/tokens/themes";
+export {
+  BRAND_CODES,
+  BRANDS,
+  isBrandCode,
+  LEGAL_THEMES,
+  parseThemeSlug,
+  THEME_SEGMENTS,
+  THEME_VARIANTS,
+  themeSlug,
+} from "./theme/tokens/themes";
 export type { BrandCode, ThemeInput, ThemeSegment, ThemeSlug, ThemeVariant } from "./theme/tokens/themes";
 export { useColorScheme } from "./theme/use-color-scheme";
 export { coerceTheme, validateTheme } from "./theme/validate-theme";
