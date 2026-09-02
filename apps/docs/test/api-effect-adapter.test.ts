@@ -3,6 +3,9 @@ import { describe, expect, it } from "vitest";
 import type { SemanticType } from "@elmeragroup/api-extractor";
 
 import { renderableExportParts } from "../scripts/lib/api-effect-adapter.ts";
+import { describeComponentApi, openLibraryProject } from "../scripts/lib/api.ts";
+import { resolveComponentPaths } from "../scripts/lib/components.ts";
+import { ProblemLog } from "../scripts/lib/errors.ts";
 
 function componentType(): SemanticType {
   return { kind: "component", props: [] };
@@ -28,7 +31,7 @@ describe("renderableExportParts", () => {
         { name: "createToastManager", type: functionType(), optional: false },
       ],
     };
-    expect(renderableExportParts("Toast", type, []).map((part) => part.name)).toEqual([
+    expect(renderableExportParts("Toast", type, [])?.map((part) => part.name)).toEqual([
       "Toast.Provider",
       "Toast.useToastManager",
       "Toast.createToastManager",
@@ -43,7 +46,7 @@ describe("renderableExportParts", () => {
         "Toast.Viewport",
         "Toast.useToastManager",
         "Toast.createToastManager",
-      ]).map((part) => part.name)
+      ])?.map((part) => part.name)
     ).toEqual(["Toast.Provider", "Toast.Viewport", "Toast.useToastManager", "Toast.createToastManager"]);
   });
 
@@ -56,5 +59,33 @@ describe("renderableExportParts", () => {
 
   it("still rejects a non-renderable export kind with no canonical parts", () => {
     expect(renderableExportParts("Tokens", { kind: "literal", value: "x" }, [])).toBeUndefined();
+  });
+});
+
+describe("library JSDoc required by the docs API tables", () => {
+  it("documents Sidebar.Trigger aria-label and PopoverInfoButton contentSize", () => {
+    const context = openLibraryProject();
+    try {
+      const problems = new ProblemLog();
+      const sidebar = resolveComponentPaths("sidebar");
+      const popoverInfoButton = resolveComponentPaths("popover-info-button");
+      describeComponentApi(
+        context,
+        { entryFile: sidebar.entryFile, exportNames: sidebar.apiExportNames },
+        problems
+      );
+      describeComponentApi(
+        context,
+        { entryFile: popoverInfoButton.entryFile, exportNames: popoverInfoButton.apiExportNames },
+        problems
+      );
+      expect(
+        problems.problems.filter(
+          (problem) => problem.includes("aria-label") || problem.includes("contentSize")
+        )
+      ).toEqual([]);
+    } finally {
+      context.close();
+    }
   });
 });

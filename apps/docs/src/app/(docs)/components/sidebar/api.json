@@ -112,7 +112,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Defines a string value that labels the current element.",
+          "description": "Defines a string value that labels the current element. Accessible name for the icon-only trigger. Defaults to the locale dictionary `sidebar.toggle`.",
           "required": false
         },
         {

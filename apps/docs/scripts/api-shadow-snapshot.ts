@@ -5,21 +5,20 @@
  *   node scripts/api-shadow-snapshot.ts --update   # accept the measured differences
  */
 
-import { writeFileSync } from "node:fs";
-
 import {
   readShadowSnapshot,
   reviewAgainstSnapshot,
   runDocsShadowComparison,
-  serializeShadowSnapshot,
   shadowSnapshotFile,
-  snapshotOf,
 } from "./lib/api-shadow.ts";
+import { nodeDocsWriter } from "./lib/docs-writer.ts";
 
 const update = process.argv.includes("--update");
-const report = await runDocsShadowComparison();
+const report = await runDocsShadowComparison({
+  writer: nodeDocsWriter,
+  persistSnapshot: update,
+});
 if (update) {
-  writeFileSync(shadowSnapshotFile, serializeShadowSnapshot(snapshotOf(report)));
   console.log(`wrote ${shadowSnapshotFile}: ${JSON.stringify(report.summary)}`);
 } else {
   const review = reviewAgainstSnapshot(

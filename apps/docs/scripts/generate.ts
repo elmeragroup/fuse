@@ -24,7 +24,7 @@
  * build (§8).
  */
 
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 
 import { normalizeDemoSource } from "../src/lib/docs-model.ts";
@@ -34,6 +34,7 @@ import { includeBaseUiPrimitiveProps } from "./lib/api-external.ts";
 import { describeComponentApi, openLibraryProject } from "./lib/api.ts";
 import type { LibraryProject } from "./lib/api.ts";
 import { componentSlugs, resolveComponentPaths } from "./lib/components.ts";
+import { nodeDocsWriter } from "./lib/docs-writer.ts";
 import { ProblemLog } from "./lib/errors.ts";
 import { renderLlmsTxt } from "./lib/llms.ts";
 import { renderComponentPages } from "./lib/manifest.ts";
@@ -78,7 +79,7 @@ function writeFile(target: string, contents: string): boolean {
     return false;
   }
   mkdirSync(path.dirname(target), { recursive: true });
-  writeFileSync(target, contents, "utf8");
+  nodeDocsWriter.writeFile(target, contents);
   return true;
 }
 
@@ -92,12 +93,12 @@ function pruneStale(directory: string): void {
     if (statSync(target).isDirectory()) {
       pruneStale(target);
       if (readdirSync(target).length === 0) {
-        rmSync(target, { recursive: true, force: true });
+        nodeDocsWriter.rm(target);
       }
       continue;
     }
     if (!written.has(target)) {
-      rmSync(target, { force: true });
+      nodeDocsWriter.rm(target);
     }
   }
 }
@@ -351,5 +352,5 @@ try {
   process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
   process.exitCode = 1;
   // Leave no half-written manifest behind for the bundler to pick up.
-  rmSync(path.join(generatedDir, "component-pages.ts"), { force: true });
+  nodeDocsWriter.rm(path.join(generatedDir, "component-pages.ts"));
 }

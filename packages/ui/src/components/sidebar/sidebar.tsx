@@ -324,7 +324,13 @@ function SidebarRoot({
   );
 }
 
-export type SidebarTriggerProps = ButtonProps;
+export type SidebarTriggerProps = ButtonProps & {
+  /**
+   * Accessible name for the icon-only trigger. Defaults to the locale
+   * dictionary `sidebar.toggle`.
+   */
+  "aria-label"?: string;
+};
 
 function SidebarTrigger({
   className,

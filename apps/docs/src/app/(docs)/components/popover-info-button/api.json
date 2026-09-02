@@ -41,11 +41,11 @@
         },
         {
           "name": "contentSize",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"2xl\" | \"3xl\" | \"4xl\" | \"5xl\" | \"6xl\" | \"7xl\" | \"default\" | \"lg\" | \"sm\" | \"xl\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "",
+          "description": "Max-width of the popover content. `sm`–`7xl` map to `max-w-sm`–`max-w-7xl`; `\"default\"` is `max-w-md`.",
           "required": false
         },
         {

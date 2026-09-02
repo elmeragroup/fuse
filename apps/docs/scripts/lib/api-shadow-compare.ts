@@ -15,6 +15,8 @@ import type {
   DocsShadowComponentResult,
   DocsShadowSnapshot,
   ProblemShadowDifference,
+  ReviewedApiShadowDifference,
+  ReviewedProblemShadowDifference,
   ShadowPartEvidence,
   ShadowProblem,
 } from "./api-shadow-types.ts";
@@ -363,6 +365,55 @@ function differenceKey(kind: "api" | "problem", component: string, path: string)
   return `${kind}|${component}|${path}`;
 }
 
+function hasReviewedReason(reason: string | undefined): boolean {
+  return typeof reason === "string" && reason.trim() !== "";
+}
+
+/**
+ * Fails when a snapshot entry has no one-line reason, naming the first such
+ * entry so a reviewer can fill it without scanning the whole file.
+ */
+export function assertReviewedReasons(snapshot: DocsShadowSnapshot): void {
+  for (const difference of snapshot.apiDifferences) {
+    if (hasReviewedReason(difference.reason)) continue;
+    throw new Error(
+      `snapshot entry missing reason: ${differenceKey("api", difference.component, difference.path)}`
+    );
+  }
+  for (const difference of snapshot.problemDifferences) {
+    if (hasReviewedReason(difference.reason)) continue;
+    throw new Error(
+      `snapshot entry missing reason: ${differenceKey("problem", difference.component, difference.key)}`
+    );
+  }
+}
+
+function apiFingerprint(difference: ApiShadowDifference | ReviewedApiShadowDifference): string {
+  return canonicalJson(
+    JSON.parse(
+      JSON.stringify({
+        component: difference.component,
+        path: difference.path,
+        current: difference.current,
+        effect: difference.effect,
+      })
+    )
+  );
+}
+
+function problemFingerprint(difference: ProblemShadowDifference | ReviewedProblemShadowDifference): string {
+  return canonicalJson(
+    JSON.parse(
+      JSON.stringify({
+        component: difference.component,
+        key: difference.key,
+        current: difference.current,
+        effect: difference.effect,
+      })
+    )
+  );
+}
+
 export type SnapshotReview = {
   /** Measured now, absent from (or different in) the snapshot. */
   readonly unexplained: readonly string[];
@@ -378,29 +429,33 @@ export type SnapshotReview = {
 export function reviewAgainstSnapshot(
   apiDifferences: readonly ApiShadowDifference[],
   problemDifferences: readonly ProblemShadowDifference[],
-  snapshot: DocsShadowSnapshot
+  snapshot: {
+    readonly apiDifferences: readonly ApiShadowDifference[];
+    readonly problemDifferences: readonly ProblemShadowDifference[];
+  }
 ): SnapshotReview {
-  // The snapshot is JSON on disk, so both sides are compared in their JSON
-  // form: an `undefined` side of a difference and an absent one are the same.
-  const stored = (difference: ApiShadowDifference | ProblemShadowDifference): string =>
-    canonicalJson(JSON.parse(JSON.stringify(difference)));
+  // Reasons live only on the snapshot; fingerprints ignore them so a review
+  // note cannot manufacture a measured-vs-reviewed mismatch.
   const measured = new Map<string, string>();
   for (const difference of apiDifferences) {
     const key = differenceKey("api", difference.component, difference.path);
     if (measured.has(key)) throw new Error(`duplicate measured API difference ${key}`);
-    measured.set(key, stored(difference));
+    measured.set(key, apiFingerprint(difference));
   }
   for (const difference of problemDifferences) {
     const key = differenceKey("problem", difference.component, difference.key);
     if (measured.has(key)) throw new Error(`duplicate measured problem difference ${key}`);
-    measured.set(key, stored(difference));
+    measured.set(key, problemFingerprint(difference));
   }
   const reviewed = new Map<string, string>();
   for (const difference of snapshot.apiDifferences) {
-    reviewed.set(differenceKey("api", difference.component, difference.path), stored(difference));
+    reviewed.set(differenceKey("api", difference.component, difference.path), apiFingerprint(difference));
   }
   for (const difference of snapshot.problemDifferences) {
-    reviewed.set(differenceKey("problem", difference.component, difference.key), stored(difference));
+    reviewed.set(
+      differenceKey("problem", difference.component, difference.key),
+      problemFingerprint(difference)
+    );
   }
   const unexplained = [...measured].filter(([key, value]) => reviewed.get(key) !== value).map(([key]) => key);
   const stale = [...reviewed].filter(([key, value]) => measured.get(key) !== value).map(([key]) => key);
