@@ -31,10 +31,11 @@ import {
   componentPartSources,
   describeComponentApi,
   inspectCurrentPartEvidence,
+  inspectPartForwarded,
   propOrigin,
   shortTypeOf,
 } from "./api.ts";
-import type { CurrentPartEvidence, PartSource } from "./api.ts";
+import type { CurrentPartEvidence, PartForwarded, PartSource } from "./api.ts";
 import type { LibraryProject } from "./api.ts";
 import { inspectComponent, inspectComponentDemos, inspectGlobalDocs } from "./docs-inspection.ts";
 import { ProblemLog } from "./errors.ts";
@@ -63,6 +64,7 @@ type PartsExtraction = {
 
 type CanonicalComponentFacts = {
   readonly sources: ReadonlyMap<string, PartSource>;
+  readonly forwarded: ReadonlyMap<string, PartForwarded>;
 };
 
 type SemanticProperty = PropertyNode;
@@ -222,6 +224,28 @@ function withUndefined(type: string, optional: boolean): string {
   return `${type} | undefined`;
 }
 
+function partProperties(type: SemanticType): readonly SemanticProperty[] {
+  if (type.kind === "function") {
+    const parameter = type.callSignatures[0]?.parameters[0];
+    return parameter === undefined ? [] : propertiesOf(parameter.type);
+  }
+  return mergedProperties([type]);
+}
+
+function propProvenancePath(
+  ownerPath: PartOwnerPath,
+  type: SemanticType,
+  propertyName: string
+): readonly string[] {
+  if (type.kind === "function") {
+    const parameter = type.callSignatures[0]?.parameters[0];
+    if (parameter !== undefined) {
+      return [...ownerPath, "callSignatures", "0", "parameters", parameter.name, "properties", propertyName];
+    }
+  }
+  return [...ownerPath, "props", propertyName];
+}
+
 function propertiesOf(type: SemanticType): readonly SemanticProperty[] {
   switch (type.kind) {
     case "component":
@@ -377,18 +401,18 @@ function toApiPart(
   partName: string,
   ownerPath: PartOwnerPath,
   type: SemanticType,
-  canonicalSources: ReadonlyMap<string, PartSource>,
+  canonical: CanonicalComponentFacts,
   problems: ShadowProblem[]
 ): ApiPartMapping {
-  const source = canonicalSources.get(partName);
-  const sourcePath = implementationSource(inventory, result, partName, ownerPath, canonicalSources);
-  const semanticProps = mergedProperties([type]);
+  const source = canonical.sources.get(partName);
+  const sourcePath = implementationSource(inventory, result, partName, ownerPath, canonical.sources);
+  const semanticProps = partProperties(type);
   const props: ApiProp[] = [];
   const evidence: ShadowPropEvidence[] = [];
-  const forwarded = new Set<string>();
+  const counted = canonical.forwarded.get(partName) ?? { count: 0, from: [] };
 
   for (const property of semanticProps) {
-    const provenance = provenanceAt(result, [...ownerPath, "props", property.name]);
+    const provenance = provenanceAt(result, propProvenancePath(ownerPath, type, property.name));
     const origin = effectOrigin(provenance);
     const description = dedupeDocumentation(property.documentation?.description);
     if (origin === "declared" && description === "") {
@@ -401,13 +425,12 @@ function toApiPart(
       );
     }
     evidence.push(effectPropEvidence(property.name, provenance));
-    for (const packageName of dependencyPackages(provenance)) forwarded.add(packageName);
-    const type = withUndefined(renderSemanticType(property.type), property.optional);
+    const printedType = withUndefined(renderSemanticType(property.type), property.optional);
     props.push({
       name: property.name,
       origin,
-      type,
-      shortType: shortTypeOf(property.name, type),
+      type: printedType,
+      shortType: shortTypeOf(property.name, printedType),
       defaultValue:
         canonicalDefault(source, property.name) ??
         (dependencyPackageName(origin) === null ? null : (property.documentation?.defaultValue ?? null)),
@@ -426,20 +449,91 @@ function toApiPart(
       rsc: source?.rsc ?? "client",
       sourcePath,
       props,
-      forwardedFrom: [...forwarded].sort((left, right) => left.localeCompare(right)),
-      forwardedCount: 0,
+      forwardedFrom: counted.from,
+      forwardedCount: counted.count,
     },
     evidence: partEvidence(partName, declarationPaths, synthesized, sortedEvidence),
   };
 }
 
-/** The member components of `export const Root = { Part, OtherPart }`, or undefined for any other export shape. */
-function componentObjectMembers(
+function canonicalShellPart(
+  inventory: DocsApiComponent,
+  partName: string,
+  canonical: CanonicalComponentFacts
+): ApiPartMapping {
+  const source = canonical.sources.get(partName);
+  const counted = canonical.forwarded.get(partName) ?? { count: 0, from: [] };
+  const sourcePath = source?.sourcePath ?? repoRelativePath(inventory.sourceFile);
+  return {
+    part: {
+      name: partName,
+      rsc: source?.rsc ?? "client",
+      sourcePath,
+      props: [],
+      forwardedFrom: counted.from,
+      forwardedCount: counted.count,
+    },
+    evidence: partEvidence(partName, source === undefined ? [] : [source.sourcePath], false, []),
+  };
+}
+
+function namespaceMembers(
   type: SemanticType
 ): readonly { readonly name: string; readonly type: SemanticType }[] | undefined {
   if (type.kind !== "object" || type.properties.length === 0) return undefined;
-  const members = type.properties.filter((property) => property.type.kind === "component");
-  return members.length === type.properties.length ? members : undefined;
+  const members = type.properties.filter(
+    (property) =>
+      property.type.kind === "component" ||
+      property.type.kind === "function" ||
+      property.type.kind === "external"
+  );
+  return members.length === 0 ? undefined : members;
+}
+
+/** One Effect-side part planned from a semantic export, or a checker-backed fallback shell. */
+export type EffectExportPart = {
+  readonly name: string;
+  readonly ownerPath: readonly string[];
+  readonly type: SemanticType | undefined;
+};
+
+function canonicalNamesForRoot(rootName: string, names: readonly string[]): readonly string[] {
+  return names.filter((name) => name === rootName || name.startsWith(`${rootName}.`));
+}
+
+/**
+ * Maps a semantic export into API parts. Hooks (`function`) and unexpanded
+ * re-export/namespace roots (`intrinsic`/`external`) become parts; a namespace
+ * object that fell back to `any` uses the checker-discovered member names.
+ */
+export function renderableExportParts(
+  rootName: string,
+  type: SemanticType,
+  canonicalPartNames: readonly string[]
+): readonly EffectExportPart[] | undefined {
+  if (type.kind === "component" || type.kind === "function") {
+    return [{ name: rootName, ownerPath: [rootName], type }];
+  }
+  const members = namespaceMembers(type);
+  if (members !== undefined) {
+    return members.map((member) => ({
+      name: `${rootName}.${member.name}`,
+      ownerPath: [rootName, "properties", member.name],
+      type: member.type,
+    }));
+  }
+  const canonical = canonicalNamesForRoot(rootName, canonicalPartNames);
+  if (canonical.length > 1 || (canonical.length === 1 && canonical[0] !== rootName)) {
+    return canonical.map((name) => ({
+      name,
+      ownerPath: name === rootName ? [rootName] : [rootName, "properties", name.slice(rootName.length + 1)],
+      type: name === rootName ? type : undefined,
+    }));
+  }
+  if (type.kind === "external" || type.kind === "intrinsic" || canonical.length === 1) {
+    return [{ name: rootName, ownerPath: [rootName], type }];
+  }
+  return undefined;
 }
 
 function partsFromRoot(
@@ -456,33 +550,23 @@ function partsFromRoot(
     );
     return { parts: [], evidence: [] };
   }
-  if (exported.kind === "component") {
-    const mapped = toApiPart(inventory, result, rootName, [rootName], exported, canonical.sources, problems);
-    return { parts: [mapped.part], evidence: [mapped.evidence] };
-  }
-  const members = componentObjectMembers(exported);
-  if (members !== undefined) {
-    const mapped = members.map((member) =>
-      toApiPart(
-        inventory,
-        result,
-        `${rootName}.${member.name}`,
-        [rootName, "properties", member.name],
-        member.type,
-        canonical.sources,
-        problems
+  const planned = renderableExportParts(rootName, exported, [...canonical.sources.keys()]);
+  if (planned === undefined) {
+    problems.push(
+      adapterProblem(
+        inventory.slug,
+        "unsupported-component-shape",
+        `${rootName}: semantic export kind "${exported.kind}" has no renderable component parts`
       )
     );
-    return { parts: mapped.map((entry) => entry.part), evidence: mapped.map((entry) => entry.evidence) };
+    return { parts: [], evidence: [] };
   }
-  problems.push(
-    adapterProblem(
-      inventory.slug,
-      "unsupported-component-shape",
-      `${rootName}: semantic export kind "${exported.kind}" has no renderable component parts`
-    )
+  const mapped = planned.map((entry) =>
+    entry.type === undefined
+      ? canonicalShellPart(inventory, entry.name, canonical)
+      : toApiPart(inventory, result, entry.name, entry.ownerPath, entry.type, canonical, problems)
   );
-  return { parts: [], evidence: [] };
+  return { parts: mapped.map((entry) => entry.part), evidence: mapped.map((entry) => entry.evidence) };
 }
 
 function partsFromExtraction(
@@ -616,7 +700,11 @@ export async function effectSide(
   const canonical = new Map<string, CanonicalComponentFacts>();
   for (const entry of inventory) {
     const request = { entryFile: entry.entryFile, exportNames: entry.exportNames };
-    canonical.set(entry.slug, { sources: componentPartSources(context, request) });
+    const sources = componentPartSources(context, request);
+    const forwarded = new Map(
+      componentPartRequests(context, request).map((part) => [part.name, inspectPartForwarded(context, part)])
+    );
+    canonical.set(entry.slug, { sources, forwarded });
   }
   const results = extraction.map((result, index) => {
     const entry = inventory[index];
@@ -626,7 +714,7 @@ export async function effectSide(
     const mapped = partsFromExtraction(
       entry,
       result,
-      canonical.get(entry.slug) ?? { sources: new Map() },
+      canonical.get(entry.slug) ?? { sources: new Map(), forwarded: new Map() },
       problems
     );
     return { parts: mapped.parts, evidence: mapped.evidence, problems };

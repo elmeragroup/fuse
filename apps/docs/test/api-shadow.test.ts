@@ -208,6 +208,48 @@ describe("docs API shadow", () => {
     }
   });
 
+  test("Effect part count matches the checker walk for every component", () => {
+    expect(report.summary.componentCount).toBe(66);
+    expect(report.summary.effectPartCount).toBe(report.summary.currentPartCount);
+    for (const component of report.components) {
+      expect(
+        component.effect.map((part) => part.name),
+        component.inventory.slug
+      ).toEqual(component.current.map((part) => part.name));
+    }
+  });
+
+  test("represents hook and intrinsic exports as parts", () => {
+    const names = (slug: string): readonly string[] =>
+      report.components
+        .find((component) => component.inventory.slug === slug)
+        ?.effect.map((part) => part.name) ?? [];
+    expect(names("sidebar")).toContain("useSidebar");
+    expect(names("combobox")).toContain("useComboboxAnchor");
+    expect(names("focusable")).toContain("useFocusable");
+    expect(names("toast")).toEqual(
+      report.components
+        .find((component) => component.inventory.slug === "toast")
+        ?.current.map((part) => part.name)
+    );
+  });
+
+  test("does not drop hook or intrinsic exports as unrenderable", () => {
+    expect(
+      report.components
+        .flatMap((component) => component.effectProblems)
+        .filter((problem) => problem.message.includes("has no renderable component parts"))
+    ).toEqual([]);
+  });
+
+  test("computes forwardedCount from the part type rather than leaving it at zero", () => {
+    expect(report.apiDifferences.filter((difference) => difference.path.endsWith(".forwardedCount"))).toEqual(
+      []
+    );
+    const button = report.components.find((component) => component.inventory.slug === "button")?.effect[0];
+    expect(button?.forwardedCount).toBeGreaterThan(0);
+  });
+
   test("never writes during a run and surfaces an injected side failure", async () => {
     expect(refusedWrites).toEqual([]);
     const injected = new Error("injected shadow extraction failure");
