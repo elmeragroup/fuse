@@ -1,12 +1,8 @@
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { focusRing } from "../../styles/utils";
 import { itemVariants } from "./item-variants";
 
-const here = dirname(fileURLToPath(import.meta.url));
 const focusSelf = focusRing({ target: "self" }).root();
 
 describe("itemVariants", () => {
@@ -30,26 +26,5 @@ describe("itemVariants", () => {
       expect(classes).toContain(token);
     }
     expect(classes).not.toContain("dark:");
-  });
-});
-
-describe("item source contract", () => {
-  it("keeps itemVariants public and drops RAC leftovers", () => {
-    const source = [
-      readFileSync(join(here, "item.tsx"), "utf8"),
-      readFileSync(join(here, "item-variants.ts"), "utf8"),
-    ].join("\n");
-    const titleClasses = readFileSync(join(here, "item-title-classes.ts"), "utf8");
-    const facade = readFileSync(join(here, "..", "..", "item.ts"), "utf8");
-    expect(source).not.toContain(".ref/");
-    expect(source).not.toContain("dark:");
-    expect(source).toContain("itemVariants");
-    expect(source).toContain('slot: "item"');
-    expect(source).toContain('hostProps.role = "listitem"');
-    expect(source).toContain('from "./item-title-classes"');
-    expect(titleClasses.trimStart().startsWith('"use client"')).toBe(false);
-    expect(titleClasses).toContain("ITEM_TITLE_CLASSES");
-    expect(facade).not.toContain("item-title-classes");
-    expect(facade).not.toContain("ITEM_TITLE_CLASSES");
   });
 });

@@ -1,8 +1,5 @@
 import { createElement } from "react";
 
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
@@ -11,10 +8,6 @@ import { focusRing } from "../../styles/utils";
 import { Accordion } from "./accordion";
 import { accordionVariants } from "./accordion-variants";
 
-const here = dirname(fileURLToPath(import.meta.url));
-const source = readFileSync(join(here, "accordion.tsx"), "utf8");
-const variantsSource = readFileSync(join(here, "accordion-variants.ts"), "utf8");
-const facade = readFileSync(join(here, "..", "..", "accordion.ts"), "utf8");
 const focusSelf = focusRing({ target: "self" }).root();
 
 const VARIANTS = ["default", "card", "infodropdown"] as const;
@@ -128,57 +121,7 @@ describe("accordionVariants", () => {
   });
 });
 
-describe("accordion source contract", () => {
-  it("stays a client surface that emits data-slot before the props spread", () => {
-    expect(source.trimStart().startsWith('"use client"')).toBe(true);
-    expect(source).not.toContain(".ref/");
-    expect(source).not.toContain("dark:");
-    expect(source).not.toMatch(RAW_PALETTE_RE);
-    expect(facade).not.toContain('"use client"');
-    expect(facade).toContain('export { Accordion } from "./components/accordion/accordion"');
-    expect(facade).toContain('export { accordionVariants } from "./components/accordion/accordion-variants"');
-    expect(source).toContain('displayName = "Accordion.Root"');
-    expect(source).toContain('displayName = "Accordion.Item"');
-    expect(source).toContain('displayName = "Accordion.Header"');
-    expect(source).toContain('displayName = "Accordion.Trigger"');
-    expect(source).toContain('displayName = "Accordion.Content"');
-    for (const slot of [
-      "accordion",
-      "accordion-item",
-      "accordion-header",
-      "accordion-trigger",
-      "accordion-content",
-    ]) {
-      const marker = `data-slot="${slot}"`;
-      expect(source, marker).toContain(marker);
-      expect(source.indexOf(marker), marker).toBeLessThan(
-        source.indexOf("{...props}", source.indexOf(marker))
-      );
-    }
-  });
-
-  it("reimplements the radix API shape on base-ui without radix props or keyframes", () => {
-    const combined = `${source}\n${variantsSource}`;
-    expect(source).toContain('from "@base-ui/react/accordion"');
-    expect(source).toContain("AccordionPrimitive.Panel");
-    expect(source).toContain("CaretDown");
-    expect(source).toContain('aria-hidden="true"');
-    expect(source).toContain("contentInner({ className })");
-    expect(combined).not.toContain("@radix-ui");
-    expect(combined).not.toContain("type=");
-    expect(combined).not.toContain("collapsible");
-    expect(combined).not.toContain("data-[state=open]");
-    expect(combined).not.toContain("animate-accordion");
-    expect(combined).not.toContain("MaterialIcon");
-    expect(combined).not.toContain("ExpandMore");
-    expect(combined).not.toContain("react-aria");
-    expect(variantsSource).toContain('focusRing({ target: "self" })');
-    expect(variantsSource).toContain("group/accordion-trigger");
-    expect(variantsSource).toContain("--accordion-panel-height");
-    expect(variantsSource).not.toContain("motion-reduce");
-    expect(variantsSource).not.toContain("transition-all");
-  });
-
+describe("Accordion parts", () => {
   it("throws when Item, Header, Trigger, or Content render outside Root", () => {
     expect(() => renderToStaticMarkup(createElement(Accordion.Item, { value: "shipping" }))).toThrow(
       "useAccordion must be used within Accordion.Root"

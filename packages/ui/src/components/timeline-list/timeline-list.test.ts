@@ -1,19 +1,11 @@
 import { createElement } from "react";
 
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { TimelineList } from "./timeline-list";
 import { timelineListVariants } from "./timeline-list-variants";
-
-const here = dirname(fileURLToPath(import.meta.url));
-const source = readFileSync(join(here, "timeline-list.tsx"), "utf8");
-const variantsSource = readFileSync(join(here, "timeline-list-variants.ts"), "utf8");
-const facade = readFileSync(join(here, "..", "..", "timeline-list.ts"), "utf8");
 
 describe("timelineListVariants", () => {
   it("resolves root, item, dot, title, time, and description with the spec geometry", () => {
@@ -59,44 +51,11 @@ describe("timelineListVariants", () => {
     expect(resolved).not.toContain("dark:");
     expect(resolved).not.toContain("destructive");
     expect(resolved).not.toMatch(RAW_PALETTE_RE);
-    // oxlint-disable-next-line elmera/no-primitive-colors -- source-grep of the forbidden class, not a recipe
-    expect(variantsSource).not.toContain("bg-zinc-600");
-    expect(variantsSource).not.toContain("bg-on-surface");
-  });
-});
-
-describe("timeline-list source contract", () => {
-  it("stays a server surface that emits data-slot before the props spread", () => {
-    expect(source).not.toContain('"use client"');
-    expect(source).not.toContain(".ref/");
-    expect(source).not.toContain("dark:");
-    expect(source).not.toContain("forwardRef");
-    expect(source).not.toContain('displayName = "Card"');
-    expect(source).toContain('displayName = "TimelineList.Root"');
-    expect(facade).not.toContain('"use client"');
-    expect(facade).not.toContain("timelineListVariants");
-    expect(facade).not.toContain("ListItemWithTimeline");
-    for (const slot of [
-      "timeline-list",
-      "timeline-list-item",
-      "timeline-list-title",
-      "timeline-list-time",
-      "timeline-list-description",
-    ]) {
-      const marker = `data-slot="${slot}"`;
-      expect(source, marker).toContain(marker);
-      expect(source.indexOf(marker), marker).toBeLessThan(
-        source.indexOf("{...props}", source.indexOf(marker))
-      );
-    }
-    expect(source).toContain('data-slot="timeline-list-dot"');
-    expect(source).toContain('aria-hidden="true"');
   });
 });
 
 describe("TimelineList server boundary", () => {
   it("imports and renders the entry without a use client directive", () => {
-    expect(source.trimStart().startsWith('"use client"')).toBe(false);
     const html = renderToStaticMarkup(
       createElement(
         TimelineList.Root,

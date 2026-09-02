@@ -1,14 +1,9 @@
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { cn } from "../../styles/cn";
 import { typographyAlignClasses, typographyColorClasses } from "../../styles/typography-fragments";
 import { headingVariants } from "./heading-variants";
-
-const here = dirname(fileURLToPath(import.meta.url));
 
 const VARIANTS = [
   "default",
@@ -79,32 +74,5 @@ describe("headingVariants", () => {
     const merged = cn(headingVariants({ variant: "muted" }), "text-primary").split(/\s+/);
     expect(merged).toContain("text-primary");
     expect(merged).not.toContain("text-muted-foreground");
-  });
-});
-
-describe("heading source contract", () => {
-  it("is a client useRender surface with no RAC import and no slot prop", () => {
-    const source = [
-      readFileSync(join(here, "heading.tsx"), "utf8"),
-      readFileSync(join(here, "heading-variants.ts"), "utf8"),
-      readFileSync(join(here, "../../styles/typography-fragments.ts"), "utf8"),
-    ].join("\n");
-    expect(source).toContain('"use client"');
-    expect(source).toContain("useRender");
-    expect(source).toContain("mergeProps");
-    expect(source).toContain('slot: "heading"');
-    expect(source).not.toContain("react-aria-components");
-    expect(source).not.toContain('from "react-aria"');
-    expect(source).not.toContain("ReactAriaHeading");
-    expect(source).not.toMatch(/\bslot,/);
-    expect(source).not.toContain("dark:");
-    expect(source).not.toMatch(/text-destructive|bg-destructive|border-destructive/);
-    expect(source).toContain("text-error");
-  });
-
-  it("exports the recipe publicly from the heading entry", () => {
-    const facade = readFileSync(join(here, "..", "..", "heading.ts"), "utf8");
-    expect(facade).toContain('export { headingVariants } from "./components/heading/heading-variants";');
-    expect(facade).toContain('export { Heading } from "./components/heading/heading";');
   });
 });

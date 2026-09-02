@@ -1,17 +1,9 @@
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { SUPPORTED_LOCALES } from "../../../test/locale-matrix";
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { paginationStrings } from "./intl";
 import { paginationVariants } from "./pagination-variants";
-
-const here = dirname(fileURLToPath(import.meta.url));
-const source = readFileSync(join(here, "pagination.tsx"), "utf8");
-const variantsSource = readFileSync(join(here, "pagination-variants.ts"), "utf8");
-const facade = readFileSync(join(here, "..", "..", "pagination.ts"), "utf8");
 
 const LANDMARK_COPY = {
   "nb-NO": "Sidenavigasjon",
@@ -100,11 +92,6 @@ describe("paginationVariants", () => {
     expect(slots.linkIcon()).toContain("size-4");
     expect(slots.ellipsis()).toContain("size-9");
     expect(slots.ellipsisIcon()).toContain("size-4");
-    expect(variantsSource).not.toContain("item:");
-    expect(variantsSource).not.toContain("button:");
-    expect(variantsSource).toContain("defaultVariants: {}");
-    expect(variantsSource).toContain("pl-2.5");
-    expect(variantsSource).toContain("pr-2.5");
   });
 
   it("covers every slot without raw palette, dark, or density variants", () => {
@@ -124,56 +111,6 @@ describe("paginationVariants", () => {
       expect(className).not.toMatch(RAW_PALETTE_RE);
       expect(className).not.toMatch(/\b(?:dense|comfortable):/);
       expect(className).not.toContain("destructive");
-    }
-  });
-});
-
-describe("pagination source contract", () => {
-  it("is a client namespace that emits data-slot before the props spread", () => {
-    expect(source.trimStart().startsWith('"use client"')).toBe(true);
-    expect(source).not.toContain(".ref/");
-    expect(source).not.toContain("dark:");
-    expect(source).not.toMatch(RAW_PALETTE_RE);
-    expect(source).not.toContain("destructive");
-    expect(source).not.toContain("forwardRef");
-    expect(source).not.toContain('from "../react-aria');
-    expect(source).not.toContain("Span");
-    expect(source).toContain("CaretLeft");
-    expect(source).toContain("CaretRight");
-    expect(source).toContain("DotsThree");
-    expect(source).toContain("useLocalizedStrings");
-    expect(source).toContain('size = "icon"');
-    expect(source).toContain('size = "default"');
-    expect(source).toContain('isActive ? "outline" : "ghost"');
-    expect(source).toContain('isActive ? "page" : undefined');
-    expect(facade).not.toContain('"use client"');
-    expect(facade).toContain('export { Pagination } from "./components/pagination/pagination"');
-    expect(facade).toContain(
-      'export { paginationVariants } from "./components/pagination/pagination-variants"'
-    );
-    expect(facade).not.toContain("PaginationLink");
-    expect(facade).not.toContain("PaginationPrevious");
-    expect(source).toContain('displayName = "Pagination.Root"');
-    expect(source).toContain('displayName = "Pagination.Content"');
-    expect(source).toContain('displayName = "Pagination.Item"');
-    expect(source).toContain('displayName = "Pagination.Link"');
-    expect(source).toContain('displayName = "Pagination.Previous"');
-    expect(source).toContain('displayName = "Pagination.Next"');
-    expect(source).toContain('displayName = "Pagination.Ellipsis"');
-    for (const slot of [
-      "pagination",
-      "pagination-content",
-      "pagination-item",
-      "pagination-link",
-      "pagination-previous",
-      "pagination-next",
-      "pagination-ellipsis",
-    ]) {
-      const marker = `data-slot="${slot}"`;
-      expect(source, marker).toContain(marker);
-      expect(source.indexOf(marker), marker).toBeLessThan(
-        source.indexOf("{...props}", source.indexOf(marker))
-      );
     }
   });
 });

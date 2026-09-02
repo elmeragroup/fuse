@@ -177,6 +177,49 @@ describe("DropdownMenu", () => {
     expect(document.activeElement).toBe(subTrigger);
   });
 
+  it("places the submenu beside its trigger with the lifted popup metrics", async () => {
+    renderThemed(
+      <BasicMenu
+        extra={
+          <DropdownMenu.Sub>
+            <DropdownMenu.SubTrigger>More</DropdownMenu.SubTrigger>
+            <DropdownMenu.SubContent>
+              <DropdownMenu.Item>Team</DropdownMenu.Item>
+            </DropdownMenu.SubContent>
+          </DropdownMenu.Sub>
+        }
+      />
+    );
+    await openWithArrowDown();
+    await userEvent.keyboard("{End}{ArrowRight}");
+    const subTrigger = itemNamed("More");
+    await vi.waitFor(() => {
+      expect(subTrigger.getAttribute("data-popup-open")).not.toBeNull();
+    });
+
+    const submenu = itemNamed("Team").closest('[role="menu"]');
+    if (!(submenu instanceof HTMLElement)) {
+      throw new Error("expected the submenu to be a menu");
+    }
+    const parentMenu = subTrigger.closest('[role="menu"]');
+    if (!(parentMenu instanceof HTMLElement)) {
+      throw new Error("expected the sub-trigger to sit in a menu");
+    }
+
+    // side="right": the submenu opens off the parent's right edge rather than
+    // stacking under it, so it starts past the parent's midline and ends beyond
+    // the parent's right edge.
+    const submenuBox = submenu.getBoundingClientRect();
+    const parentBox = parentMenu.getBoundingClientRect();
+    expect(submenuBox.left).toBeGreaterThan(parentBox.left + parentBox.width / 2);
+    expect(submenuBox.right).toBeGreaterThan(parentBox.right);
+    // alignOffset={-3}: its first item lines up a hair above the trigger.
+    expect(submenuBox.top).toBeLessThan(subTrigger.getBoundingClientRect().top);
+    // min-w-[96px] and the deeper elevation the nested popup carries.
+    expect(submenuBox.width).toBeGreaterThanOrEqual(96);
+    expect(getComputedStyle(submenu).boxShadow).not.toBe("none");
+  });
+
   it("closes the entire tree on Escape from a submenu", async () => {
     renderThemed(
       <BasicMenu

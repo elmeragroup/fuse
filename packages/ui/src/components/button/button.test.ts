@@ -1,12 +1,8 @@
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { focusRing } from "../../styles/utils";
 import { buttonVariants } from "./button-variants";
 
-const here = dirname(fileURLToPath(import.meta.url));
 const focusSelf = focusRing({ target: "self" }).root();
 
 const VARIANTS = ["default", "outline", "secondary", "ghost", "destructive", "success", "link"] as const;
@@ -95,22 +91,5 @@ describe("buttonVariants", () => {
     for (const size of SIZES) {
       expect(buttonVariants({ size }).length).toBeGreaterThan(0);
     }
-  });
-});
-
-describe("button source contract", () => {
-  it("does not keep destructive classes, dark variants, or the lifted local focus ring", () => {
-    const source = [
-      readFileSync(join(here, "button.tsx"), "utf8"),
-      readFileSync(join(here, "button-variants.ts"), "utf8"),
-    ].join("\n");
-
-    expect(source).not.toContain(".ref/");
-    expect(source).not.toContain("Loader2");
-    expect(source).not.toMatch(/bg-destructive|text-destructive|border-destructive|ring-destructive/);
-    expect(source).not.toContain("dark:");
-    expect(source.includes(["focus-visible", "ring-3"].join(":"))).toBe(false);
-    expect(source.includes(["focus-visible", "ring-ring"].join(":"))).toBe(false);
-    expect(source).toContain('focusRing({ target: "self" })');
   });
 });

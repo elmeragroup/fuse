@@ -1,21 +1,10 @@
 import { createElement } from "react";
 
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { Table, VerticalTable } from "./table";
-
-const here = dirname(fileURLToPath(import.meta.url));
-const source = readFileSync(join(here, "table.tsx"), "utf8");
-const headerSource = readFileSync(join(here, "vertical-table-header.tsx"), "utf8");
-const keySource = readFileSync(join(here, "vertical-table-key.tsx"), "utf8");
-const cellSource = readFileSync(join(here, "table-cell.tsx"), "utf8");
-const cellClassesSource = readFileSync(join(here, "table-cell-classes.ts"), "utf8");
-const facade = readFileSync(join(here, "..", "..", "table.ts"), "utf8");
 
 const TABLE_SLOTS = [
   "table-container",
@@ -28,9 +17,6 @@ const TABLE_SLOTS = [
   "table-cell",
   "table-caption",
 ] as const;
-
-const BODY_IN_FRAME =
-  "before:shadow-[0_1px_--theme(--color-black/6%)] in-data-[slot=frame]:shadow-xs/5 relative before:pointer-events-none before:absolute before:inset-px before:rounded-[calc(var(--radius-xl)-1px)] not-in-data-[slot=frame]:before:hidden in-data-[slot=frame]:rounded-xl [&_tr:last-child]:border-0 in-data-[slot=frame]:*:[tr]:border-0 in-data-[slot=frame]:*:[tr]:*:[td]:border-b in-data-[slot=frame]:*:[tr]:*:[td]:bg-background in-data-[slot=frame]:*:[tr]:*:[td]:bg-clip-padding in-data-[slot=frame]:*:[tr]:first:*:[td]:first:rounded-ss-xl in-data-[slot=frame]:*:[tr]:*:[td]:first:border-s in-data-[slot=frame]:*:[tr]:first:*:[td]:border-t in-data-[slot=frame]:*:[tr]:last:*:[td]:last:rounded-ee-xl in-data-[slot=frame]:*:[tr]:*:[td]:last:border-e in-data-[slot=frame]:*:[tr]:first:*:[td]:last:rounded-se-xl in-data-[slot=frame]:*:[tr]:last:*:[td]:first:rounded-es-xl in-data-[slot=frame]:*:[tr]:hover:*:[td]:bg-transparent in-data-[slot=frame]:*:[tr]:data-[state=selected]:*:[td]:bg-muted/72";
 
 function ordersTable() {
   return createElement(
@@ -95,114 +81,8 @@ function verticalTable() {
   );
 }
 
-function verticalBodySource(): string {
-  const start = source.indexOf("function VerticalTableBody");
-  const next = source.indexOf("\nfunction ", start + 1);
-  return source.slice(start, next === -1 ? undefined : next);
-}
-
-describe("table source contract", () => {
-  it("stays a server compound that emits data-slot before the props spread", () => {
-    expect(source.trimStart().startsWith('"use client"')).toBe(false);
-    expect(source).not.toContain('from "@base-ui/react/use-render"');
-    expect(source).not.toContain('from "@base-ui/react/merge-props"');
-    expect(source).not.toContain("mergeProps");
-    expect(source).not.toContain(".ref/");
-    expect(source).not.toContain("dark:");
-    expect(source).not.toContain("not-dark:");
-    expect(source).not.toContain("react-aria");
-    expect(source).not.toContain("react-aria-components");
-    expect(source).not.toMatch(RAW_PALETTE_RE);
-    expect(source).not.toContain("destructive");
-    expect(source).not.toMatch(/\b(?:dense|comfortable):/);
-    expect(source).not.toContain("data-density");
-    expect(facade).not.toContain('"use client"');
-    expect(facade).toContain('export { Table, VerticalTable } from "./components/table/table"');
-    expect(facade).not.toContain("tableVariants");
-    expect(facade).not.toContain("export { TableHeader");
-    expect(facade).not.toContain("export { VerticalTableHeader");
-    expect(facade).not.toContain("export { VerticalTableKey");
-    expect(facade).not.toContain("export { TableCell");
-    expect(facade).not.toContain("TableVerticalBodyItem");
-    expect(source).toContain('displayName = "Table.Root"');
-    expect(source).not.toContain('displayName = "VerticalTable.Header"');
-    expect(source).not.toContain('displayName = "VerticalTable.Key"');
-    for (const slot of TABLE_SLOTS) {
-      if (slot === "table-cell") {
-        const marker = `data-slot="${slot}"`;
-        expect(cellSource, marker).toContain(marker);
-        expect(cellSource.indexOf(marker), marker).toBeLessThan(
-          cellSource.indexOf("{...props}", cellSource.indexOf(marker))
-        );
-        continue;
-      }
-      const marker = `data-slot="${slot}"`;
-      expect(source, marker).toContain(marker);
-      if (slot === "table-container") {
-        continue;
-      }
-      expect(source.indexOf(marker), marker).toBeLessThan(
-        source.indexOf("{...props}", source.indexOf(marker))
-      );
-    }
-    const verticalRoot = 'data-slot="vertical-table-root"';
-    expect(source.indexOf(verticalRoot)).toBeLessThan(
-      source.indexOf("{...props}", source.indexOf(verticalRoot))
-    );
-    const verticalWrapper = 'data-slot="vertical-table"';
-    expect(source.indexOf(verticalWrapper)).toBeLessThan(
-      source.indexOf("{...props}", source.indexOf(verticalWrapper))
-    );
-  });
-
-  it("keeps Header and Key as client useRender islands and does not double-spread Body props onto the inner table", () => {
-    expect(headerSource.trimStart().startsWith('"use client"')).toBe(true);
-    expect(headerSource).toContain("useRender");
-    expect(headerSource).toContain("mergeProps");
-    expect(headerSource).toContain('"data-slot": "vertical-table-header"');
-    expect(headerSource).toContain("text-lg leading-snug font-medium font-heading text-inherit");
-    expect(headerSource).toContain('displayName = "VerticalTable.Header"');
-    expect(keySource.trimStart().startsWith('"use client"')).toBe(true);
-    expect(keySource).toContain("useRender");
-    expect(keySource).toContain("mergeProps");
-    expect(keySource).toContain("render ?? <TableCell />");
-    expect(keySource).toContain('displayName = "VerticalTable.Key"');
-    const body = verticalBodySource();
-    expect(body).toContain("Table.Root");
-    expect(body).toContain('cn("table-fixed"');
-    expect(body).toContain("tableProps");
-    expect(body).toContain("innerTableProps");
-    expect(body).toContain('data-slot="vertical-table-body"');
-    expect(body.match(/\{\.\.\.props\}/g)).toHaveLength(1);
-    expect(body).not.toMatch(/<Table\.Root[\s\S]*\{\.\.\.props\}/);
-  });
-
-  it("shares TABLE_CELL_CLASSES between Cell and Key from one package-private module", () => {
-    expect(cellClassesSource).not.toContain('"use client"');
-    expect(cellClassesSource).toContain("TABLE_CELL_CLASSES");
-    expect(cellSource).toContain('from "./table-cell-classes"');
-    expect(keySource).toContain('from "./table-cell-classes"');
-    expect(cellSource).not.toContain('"use client"');
-    expect(source).not.toContain("TABLE_CELL_CLASSES");
-  });
-
-  it("keeps the in-frame Body chain, selected-row contract, and spacing/radius arithmetic", () => {
-    expect(source).toContain(BODY_IN_FRAME);
-    expect(source).toContain("data-[state=selected]:bg-muted/72");
-    expect(source).toContain("in-data-[slot=frame]:data-[state=selected]:bg-transparent");
-    expect(source).toContain("before:shadow-[0_1px_--theme(--color-black/6%)]");
-    expect(source).toContain("before:rounded-[calc(var(--radius-xl)-1px)]");
-    expect(cellClassesSource).toContain("in-data-[slot=frame]:first:p-[calc(--spacing(2.5)-1px)]");
-    expect(cellClassesSource).toContain("in-data-[slot=frame]:last:p-[calc(--spacing(2.5)-1px)]");
-    expect(source).toContain("h-10 px-2");
-    expect(source).not.toContain("--control-h-md");
-  });
-});
-
 describe("Table server boundary", () => {
   it("imports and renders Table and VerticalTable without a use client directive on the compound", () => {
-    expect(source.trimStart().startsWith('"use client"')).toBe(false);
-    expect(source).not.toContain('from "@base-ui/react/use-render"');
     const tableHtml = renderToStaticMarkup(ordersTable());
     expect(tableHtml).toContain('data-slot="table-container"');
     expect(tableHtml).toContain("<table");

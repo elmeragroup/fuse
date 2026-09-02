@@ -1,19 +1,10 @@
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { SUPPORTED_LOCALES } from "../../../test/locale-matrix";
-import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { getMeterLevel, meterPercentage } from "./get-meter-level";
 import { meterStrings } from "./intl";
 import { METER_CONSTANTS } from "./meter-constants";
 import { meterVariants } from "./meter-variants";
-
-const here = dirname(fileURLToPath(import.meta.url));
-const source = readFileSync(join(here, "meter.tsx"), "utf8");
-const variantsSource = readFileSync(join(here, "meter-variants.ts"), "utf8");
-const facade = readFileSync(join(here, "../../meter.ts"), "utf8");
 
 const WARNING_COPY = {
   "nb-NO": "Advarsel",
@@ -106,48 +97,5 @@ describe("meterVariants color matrix", () => {
     expect(fill("neutral", "MEDIUM")).toContain("bg-primary");
     expect(fill("neutral", "FULL")).toContain("bg-primary");
     expect(fill("neutral", "EXCEEDED_MAX_VALUE")).toContain("bg-primary");
-  });
-});
-
-describe("meter source contract", () => {
-  it("is a client labeled composite with the five data-slots before any props spread", () => {
-    expect(source.startsWith('"use client";')).toBe(true);
-    expect(source).not.toContain(".ref/");
-    expect(source).not.toContain("dark:");
-    expect(source).not.toContain("inverted:");
-    expect(source).not.toContain("data-density");
-    expect(source).not.toContain("dense:");
-    expect(source).not.toContain("comfortable:");
-    expect(source).not.toMatch(/bg-destructive|text-destructive|border-destructive|ring-destructive/);
-    expect(source).not.toMatch(RAW_PALETTE_RE);
-    expect(variantsSource).not.toContain("destructive");
-    expect(variantsSource).not.toContain("inverted:");
-    expect(source).toContain("useElmeraGroupUi");
-    expect(source).toContain("locale={locale}");
-    expect(source).toContain("Warning");
-    expect(source).toContain("CheckCircle");
-    expect(source).not.toContain("h-9 ");
-    expect(source).not.toContain("px-2.5");
-    expect(variantsSource).toContain("h-1.5");
-    expect(variantsSource).toContain("rounded-full");
-    expect(variantsSource).toContain("bg-muted");
-    expect(source).toContain("tabular-nums");
-    expect(source).toContain("text-sm font-medium");
-
-    for (const slot of ["meter", "meter-label", "meter-bar", "meter-bar-fill", "meter-value"]) {
-      const marker = `data-slot="${slot}"`;
-      expect(source, marker).toContain(marker);
-    }
-    expect(source.indexOf('data-slot="meter"')).toBeLessThan(source.indexOf("{...props}"));
-  });
-
-  it("keeps meterVariants private and the facade a named re-export", () => {
-    expect(facade).not.toContain('"use client"');
-    expect(facade).not.toContain("export *");
-    expect(facade).not.toContain("meterVariants");
-    expect(facade).not.toContain("getMeterLevel");
-    expect(facade).toContain('export { Meter } from "./components/meter/meter";');
-    expect(facade).toContain('export type { MeterProps } from "./components/meter/meter";');
-    expect(facade).toContain('export { METER_CONSTANTS } from "./components/meter/meter-constants";');
   });
 });

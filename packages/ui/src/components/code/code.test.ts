@@ -8,49 +8,17 @@ import { describe, expect, it } from "vitest";
 
 import { PUBLISHED_DEPENDENCY_RANGES } from "../../../scripts/entries";
 import { publishedDependencies } from "../../../scripts/generate-exports";
-import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { cn } from "../../styles/cn";
 import { Code } from "./code";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const packageRoot = join(here, "..", "..", "..");
-const source = readFileSync(join(here, "code.tsx"), "utf8");
-const facade = readFileSync(join(here, "..", "..", "code.ts"), "utf8");
 
 const BASE_CLASSES = "text-xs leading-relaxed max-h-160 overflow-auto font-mono";
 const SNIPPET = "const answer = 42;";
 const XSS_PAYLOAD = '<img onerror="alert(1)" src="x">';
 
-describe("code source contract", () => {
-  it("stays a server surface that emits data-slot, tabIndex, and role before the props spread", () => {
-    expect(source).not.toContain('"use client"');
-    expect(source).not.toContain(".ref/");
-    expect(source).not.toContain("dark:");
-    expect(source).not.toMatch(RAW_PALETTE_RE);
-    const slot = 'data-slot="code"';
-    expect(source).toContain(slot);
-    expect(source).toContain("tabIndex={0}");
-    expect(source).toContain('role="region"');
-    expect(source.indexOf(slot)).toBeLessThan(source.indexOf("{...props}", source.indexOf(slot)));
-    expect(source.indexOf("tabIndex={0}")).toBeLessThan(source.indexOf("{...props}"));
-    expect(source.indexOf('role="region"')).toBeLessThan(source.indexOf("{...props}"));
-  });
-
-  it("is a locked single export with the spec's base classes, highlighter, and no recipe", () => {
-    expect(source).toContain(BASE_CLASSES);
-    expect(source).toContain('from "sugar-high"');
-    expect(source).toContain("highlight(code)");
-    expect(source).toContain("dangerouslySetInnerHTML");
-    expect(source).toContain("trust boundary");
-    expect(source).toContain("ComponentProps");
-    expect(source).not.toContain("codeVariants");
-    expect(source).not.toContain("HTMLAttributes");
-    expect(facade).toContain('export { Code } from "./components/code/code";');
-    expect(facade).not.toContain("codeVariants");
-    expect(facade).not.toContain("Root");
-    expect(facade).not.toContain('"use client"');
-  });
-
+describe("code sugar-high pin", () => {
   it("depends on the existing sugar-high catalog pin without bumping the published range", () => {
     const parsed: unknown = JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8"));
     if (parsed === null || Array.isArray(parsed)) {

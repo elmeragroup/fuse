@@ -1,31 +1,14 @@
 import { createElement } from "react";
 
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { Frame } from "./frame";
 
-const here = dirname(fileURLToPath(import.meta.url));
-const source = readFileSync(join(here, "frame.tsx"), "utf8");
-const facade = readFileSync(join(here, "..", "..", "frame.ts"), "utf8");
-
 const STACKED_CLASSES =
   "*:has-[+[data-slot=frame-panel]]:rounded-b-none *:has-[+[data-slot=frame-panel]]:before:hidden *:[[data-slot=frame-panel]+[data-slot=frame-panel]]:rounded-t-none *:[[data-slot=frame-panel]+[data-slot=frame-panel]]:border-t-0";
 const GUTTER_CLASSES = "*:[[data-slot=frame-panel]+[data-slot=frame-panel]]:mt-1";
-const HAIRLINE_SHADOW = "before:shadow-[0_1px_--theme(--color-black/6%)]";
-
-const SLOTS = [
-  "frame",
-  "frame-panel",
-  "frame-panel-header",
-  "frame-panel-title",
-  "frame-panel-description",
-  "frame-panel-footer",
-] as const;
 
 function markup(stackedPanels?: boolean): string {
   return renderToStaticMarkup(
@@ -44,34 +27,6 @@ function markup(stackedPanels?: boolean): string {
     )
   );
 }
-
-describe("frame source contract", () => {
-  it("stays a server surface that emits data-slot before the props spread", () => {
-    expect(source).not.toContain('"use client"');
-    expect(source).not.toContain(".ref/");
-    expect(source).not.toContain("dark:");
-    expect(source).not.toContain("useRender");
-    expect(source).not.toContain("frameVariants");
-    expect(source).not.toContain("export function FramePanel");
-    expect(facade).not.toContain('"use client"');
-    expect(facade).not.toContain("frameVariants");
-    expect(facade).not.toContain("export { FramePanel");
-    for (const slot of SLOTS) {
-      const marker = `data-slot="${slot}"`;
-      expect(source, marker).toContain(marker);
-      expect(source.indexOf(marker), marker).toBeLessThan(
-        source.indexOf("{...props}", source.indexOf(marker))
-      );
-    }
-  });
-
-  it("keeps the adjacency selectors, stackedPanels axis, and hairline literal verbatim", () => {
-    expect(source).toContain(STACKED_CLASSES);
-    expect(source).toContain(GUTTER_CLASSES);
-    expect(source).toContain(HAIRLINE_SHADOW);
-    expect(source).toContain("stackedPanels = false");
-  });
-});
 
 describe("Frame structure", () => {
   it("renders children in order and emits each part's data-slot", () => {

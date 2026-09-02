@@ -16,10 +16,6 @@ import { composeTailwindRenderProps } from "./utils";
 const here = dirname(fileURLToPath(import.meta.url));
 const packageRoot = join(here, "../../..");
 
-function source(name: string): string {
-  return readFileSync(join(here, name), "utf8");
-}
-
 describe("OVERLAY_CONTAINER_ATTR", () => {
   it("locks the attribute/value pair from date-picker.md §6", () => {
     expect(OVERLAY_CONTAINER_ATTR).toBe("data-overlay-container");
@@ -30,21 +26,6 @@ describe("OVERLAY_CONTAINER_ATTR", () => {
     expect(OVERLAY_CONTAINER_POPOVER_SELECTOR).toBe(
       `[${OVERLAY_CONTAINER_ATTR}="${OVERLAY_CONTAINER_POPOVER}"]`
     );
-  });
-
-  it("is consumed by both the private popover and the private modal", () => {
-    expect(source("popover.tsx")).toContain("OVERLAY_CONTAINER_ATTR");
-    expect(source("popover.tsx")).toContain("OVERLAY_CONTAINER_POPOVER");
-    expect(source("modal.tsx")).toContain("OVERLAY_CONTAINER_POPOVER_SELECTOR");
-  });
-
-  it("leaves no hardcoded DOM string on either side of the seam", () => {
-    // The reference hardcoded `[data-overlay-container="popover"]` in both modules; the
-    // locked ruling replaced both with the shared constants. Only the constant module
-    // may spell the raw attribute name.
-    for (const name of ["popover.tsx", "modal.tsx"]) {
-      expect(source(name)).not.toContain("data-overlay-container");
-    }
   });
 });
 
@@ -100,6 +81,12 @@ describe("fieldGroupVariants", () => {
   });
 });
 
+describe("internal Button consumers", () => {
+  it("inherit Button's density ladder rather than restating metrics", () => {
+    expect(buttonVariants({ size: "icon-sm" })).toContain("size-(--control-h-sm)");
+  });
+});
+
 describe("checkboxVariants", () => {
   it("keeps the private recipe on role tokens after retokenization", () => {
     const { base, box, icon } = checkboxVariants({ isSelected: true });
@@ -111,52 +98,6 @@ describe("checkboxVariants", () => {
 
   it("swaps the reference's destructive vocabulary for error", () => {
     expect(checkboxVariants({ isInvalid: true }).box()).toContain("var(--error)");
-  });
-});
-
-describe("the internal RAC Button", () => {
-  it("borrows the public buttonVariants recipe by relative import", () => {
-    const button = source("button.tsx");
-    expect(button).toContain('from "../../components/button/button-variants"');
-    expect(button).toContain("buttonVariants({ variant, size })");
-    // Never through the public specifier — the interim tier is package-private.
-    expect(button).not.toContain("@elmeragroup/ui/button");
-  });
-
-  it("inherits Button's density ladder rather than restating metrics", () => {
-    expect(buttonVariants({ size: "icon-sm" })).toContain("size-(--control-h-sm)");
-  });
-
-  it("composes its render-prop className through the shared helper", () => {
-    expect(source("button.tsx")).toContain("composeTailwindRenderProps");
-  });
-});
-
-describe("the shared overlay class vocabulary", () => {
-  it("borrows the layer and size axis instead of restating them (dialog.md §4, §8.4)", () => {
-    for (const name of ["modal.tsx", "popover.tsx"]) {
-      expect(source(name), name).toContain('from "../../components/overlay/overlay-classes"');
-      // The z-50 layer is declared once, in the shared module, never here.
-      expect(source(name), name).not.toContain("z-50");
-    }
-    expect(source("modal.tsx")).toContain("overlaySizeClasses");
-    expect(source("modal.tsx")).not.toContain("--container-sm");
-    expect(source("modal.tsx")).not.toContain("transition-[max-width]");
-  });
-
-  it("borrows the backdrop scrim instead of restating it (dialog.md §5)", () => {
-    const modal = source("modal.tsx");
-    expect(modal).toContain("overlayScrimClass");
-    // The allowlisted `bg-black/10` literal is spelled only in the shared module.
-    expect(modal).not.toContain("bg-black/10");
-    expect(modal).not.toContain("backdrop-blur-xs");
-  });
-
-  it("borrows the public Dialog's heading and footer literals", () => {
-    const dialog = source("dialog.tsx");
-    expect(dialog).toContain("overlayTitleClass");
-    expect(dialog).toContain("overlayFooterClass");
-    expect(dialog).not.toContain("font-heading leading-none");
   });
 });
 

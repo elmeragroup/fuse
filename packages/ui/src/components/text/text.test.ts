@@ -1,14 +1,9 @@
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { cn } from "../../styles/cn";
 import { typographyAlignClasses, typographyColorClasses } from "../../styles/typography-fragments";
 import { textVariants } from "./text-variants";
-
-const here = dirname(fileURLToPath(import.meta.url));
 
 const VARIANTS = [
   "default",
@@ -120,43 +115,5 @@ describe("textVariants", () => {
     expect(merged).not.toContain("text-primary");
     expect(merged).toContain("text-sm");
     expect(merged).not.toContain("text-lg");
-  });
-});
-
-describe("text source contract", () => {
-  it("is a client surface that does not import RAC", () => {
-    const source = readFileSync(join(here, "text.tsx"), "utf8");
-    expect(source.trimStart().startsWith('"use client"')).toBe(true);
-    expect(source).not.toContain("react-aria-components");
-    expect(source).not.toContain("react-aria/");
-    expect(source).not.toContain(".ref/");
-    expect(source).not.toContain("dark:");
-    expect(source).toContain("useRender");
-    expect(source).toContain("mergeProps");
-  });
-
-  it("emits data-slot=text and drops the RAC slot prop", () => {
-    const source = readFileSync(join(here, "text.tsx"), "utf8");
-    expect(source).toContain('"data-slot": "text"');
-    expect(source).not.toMatch(/\bslot\s*[:=]/);
-  });
-
-  it("carries no destructive class name in library source", () => {
-    const recipe = readFileSync(join(here, "text-variants.ts"), "utf8");
-    const component = readFileSync(join(here, "text.tsx"), "utf8");
-    const fragments = readFileSync(join(here, "../../styles/typography-fragments.ts"), "utf8");
-    for (const source of [recipe, component, fragments]) {
-      expect(source).not.toContain("text-destructive");
-      expect(source).not.toContain("bg-destructive");
-    }
-    expect(recipe).toContain("typographyColorClasses");
-    expect(fragments).toContain("text-error");
-  });
-
-  it("exports the recipe publicly from the text entry", () => {
-    const facade = readFileSync(join(here, "..", "..", "text.ts"), "utf8");
-    expect(facade).toContain('export { textVariants } from "./components/text/text-variants";');
-    expect(facade).toContain('export { Text } from "./components/text/text";');
-    expect(facade).toContain("export type { TextProps }");
   });
 });

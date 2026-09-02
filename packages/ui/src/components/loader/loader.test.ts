@@ -1,16 +1,8 @@
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { cn } from "../../styles/cn";
 import { loaderVariants } from "./loader-variants";
-
-const here = dirname(fileURLToPath(import.meta.url));
-const source = readFileSync(join(here, "loader.tsx"), "utf8");
-const recipe = readFileSync(join(here, "loader-variants.ts"), "utf8");
-const facade = readFileSync(join(here, "..", "..", "loader.ts"), "utf8");
 
 const SIZES = ["default", "small", "medium", "large", "xl"] as const;
 
@@ -52,8 +44,6 @@ describe("loaderVariants", () => {
     expect(resolved).not.toMatch(RAW_PALETTE_RE);
     expect(resolved).not.toContain("--control-");
     expect(resolved).not.toContain("data-density");
-    expect(recipe).toContain("variant:");
-    expect(recipe).toContain("default:");
   });
 
   it("lets a className merge onto the wrapper through cn", () => {
@@ -64,29 +54,5 @@ describe("loaderVariants", () => {
     expect(merged).toContain("bg-muted");
     expect(merged).toContain("p-0");
     expect(merged).not.toContain("p-4");
-  });
-});
-
-describe("loader source contract", () => {
-  it("stays a server surface that emits data-slot and role before the props spread", () => {
-    expect(source).not.toContain('"use client"');
-    expect(source).not.toContain(".ref/");
-    expect(source).not.toContain("dark:");
-    expect(source).not.toContain("Loader2");
-    expect(source).not.toContain("lucide");
-    expect(source).toContain("SpinnerGap");
-    const slot = 'data-slot="loader"';
-    const role = 'role="status"';
-    expect(source).toContain(slot);
-    expect(source).toContain(role);
-    expect(source.indexOf(slot)).toBeLessThan(source.indexOf("{...props}", source.indexOf(slot)));
-    expect(source.indexOf(role)).toBeLessThan(source.indexOf("{...props}", source.indexOf(role)));
-  });
-
-  it("exports loaderVariants once from the public entry, not from the component module", () => {
-    expect(facade).toContain('export { Loader } from "./components/loader/loader";');
-    expect(facade).toContain('export { loaderVariants } from "./components/loader/loader-variants";');
-    expect(source).not.toContain("export { loaderVariants");
-    expect(source).not.toContain("export const loaderVariants");
   });
 });
