@@ -87,6 +87,13 @@ describe("docs API shadow", () => {
       stale: [],
     });
     expect(report.summary).toEqual(snapshot.summary);
+    expect(snapshot.summary.componentCount).toBe(66);
+    const reasons = [...snapshot.apiDifferences, ...snapshot.problemDifferences].map(
+      (difference) => difference.reason
+    );
+    expect(reasons.every((reason) => reason.trim() !== "")).toBe(true);
+    expect(new Set(reasons).size).toBeGreaterThan(1);
+    expect(reasons.every((reason) => !reason.includes("reviewed in the 57-component snapshot"))).toBe(true);
     expect(snapshotOf(report, snapshot)).toEqual(snapshot);
     expect(report.apiDifferences).toHaveLength(report.summary.apiDifferenceCount);
     expect(report.problemDifferences).toHaveLength(report.summary.problemDifferenceCount);
