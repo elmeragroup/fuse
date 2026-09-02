@@ -138,3 +138,59 @@ describe("docs Tailwind migration contract", () => {
     expect(styling).not.toContain("docs-styles.ts");
   });
 });
+
+const VAR_CALL = /var\(\s*(--[A-Za-z0-9_-]+)([^)]*)\)/g;
+
+function definedCustomProperties(css: string): Set<string> {
+  const names = new Set<string>();
+  for (const match of css.matchAll(/(?:^|[\s;{])(--[A-Za-z0-9_-]+)\s*:/gm)) {
+    names.add(match[1] ?? "");
+  }
+  names.delete("");
+  return names;
+}
+
+function componentVarFailures(source: string, defined: Set<string>): string[] {
+  const failures: string[] = [];
+  VAR_CALL.lastIndex = 0;
+  for (const match of source.matchAll(VAR_CALL)) {
+    const name = match[1] ?? "";
+    const rest = match[2] ?? "";
+    if (defined.has(name) || rest.includes(",")) {
+      continue;
+    }
+    failures.push(name);
+  }
+  return failures;
+}
+
+describe("docs component CSS variables", () => {
+  it("references only defined custom properties", () => {
+    const globals = readFileSync(join(docsRoot, "src/styles/globals.css"), "utf8");
+    const uiCss = readFileSync(join(workspaceRoot, "packages/ui/src/styles/ui.css"), "utf8");
+    const themesCss = readFileSync(
+      join(workspaceRoot, "packages/ui/src/theme/__snapshots__/themes.css"),
+      "utf8"
+    );
+    const defined = new Set([
+      ...definedCustomProperties(globals),
+      ...definedCustomProperties(uiCss),
+      ...definedCustomProperties(themesCss),
+    ]);
+
+    const failures = srcTsFiles()
+      .filter((relative) => relative.startsWith("src/components/"))
+      .flatMap((relative) => {
+        const source = readFileSync(join(docsRoot, relative), "utf8");
+        for (const match of source.matchAll(/\[(--[A-Za-z0-9_-]+):/g)) {
+          defined.add(match[1] ?? "");
+        }
+        return componentVarFailures(source, defined).map((name) => `${relative}: ${name}`);
+      });
+
+    expect(failures, failures.join("\n")).toEqual([]);
+    expect(
+      srcTsFiles().some((relative) => readFileSync(join(docsRoot, relative), "utf8").includes("--docs-ink"))
+    ).toBe(false);
+  });
+});

@@ -19,4 +19,11 @@ describe("demo source read at render time (docs-site.md §6)", () => {
       "apps/docs/src/app/(docs)/components/button/demos/button-no-such-demo.tsx does not exist"
     );
   });
+
+  it("composes Table.Root in the frame-with-table demo", async () => {
+    const demo = await readDemoSource("frame", "frame-with-table.tsx");
+    expect(demo.source).toContain('from "@elmeragroup/ui/table"');
+    expect(demo.source).toContain("Table.Root");
+    expect(demo.source).not.toContain("Table is not shipped");
+  });
 });
