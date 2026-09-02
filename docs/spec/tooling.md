@@ -1,6 +1,6 @@
 # Repo, tooling & testing
 
-Normative chapter for the `@elmeragroup/ui` monorepo: workspace layout, package manager and supply-chain settings, turbo task graph, lint/format stack, custom lint guardrails, scaffolding, and the full testing strategy including the merge gate. Sources: [Repo & tooling spec](../../wayfinder/tickets/016-repo-tooling-spec.md), [Testing strategy](../../wayfinder/tickets/013-testing-strategy.md), [anti-slop research](../../wayfinder/research/015-anti-slop.md), [Component spec conventions](components/conventions.md).
+Normative chapter for the `@elmeragroup/ui` monorepo: workspace layout, package manager and supply-chain settings, turbo task graph, lint/format stack, custom lint guardrails, scaffolding, and the full testing strategy including the merge gate. Sources: Repo & tooling spec (wayfinder ticket 016), Testing strategy (wayfinder ticket 013), anti-slop research, [Component spec conventions](components/conventions.md).
 
 Package build, exports map, and `publishConfig` are owned by [architecture](architecture.md); bundle/CSS budgets by [performance](performance.md); the publish pipeline itself by [release](release.md); the accessibility test floor by [accessibility](accessibility.md) §9.
 

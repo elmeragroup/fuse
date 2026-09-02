@@ -1,6 +1,6 @@
 # Icons, logos, illustrations, and flags
 
-Normative asset contract for `@elmeragroup/ui`. Sources: [Icon system](../../wayfinder/tickets/009-icon-system.md), [ADR 0004](../adr/0004-phosphor-icons.md), [Brand assets and licensing](../../wayfinder/tickets/010-brand-assets-licensing.md), and the pinned reference snapshots in [README](README.md).
+Normative asset contract for `@elmeragroup/ui`. Sources: Icon system (wayfinder ticket 009), [ADR 0004](../adr/0004-phosphor-icons.md), Brand assets and licensing (wayfinder ticket 010), and the pinned reference snapshots in [README](README.md).
 
 ## 1 Public entries
 

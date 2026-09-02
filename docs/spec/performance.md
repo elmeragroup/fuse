@@ -1,6 +1,6 @@
 # Performance guidelines
 
-Normative chapter for `@elmeragroup/ui`. Sources: [A11y & performance guideline chapters](../../wayfinder/tickets/026-a11y-performance-guidelines.md), [Package architecture](../../wayfinder/tickets/008-package-architecture.md), [Icon system](../../wayfinder/tickets/009-icon-system.md), [Token pipeline](../../wayfinder/tickets/018-token-pipeline.md).
+Normative chapter for `@elmeragroup/ui`. Sources: A11y & performance guideline chapters (wayfinder ticket 026), Package architecture (wayfinder ticket 008), Icon system (wayfinder ticket 009), Token pipeline (wayfinder ticket 018).
 
 ## 1 Principles
 
@@ -122,7 +122,7 @@ Normative chapter for `@elmeragroup/ui`. Sources: [A11y & performance guideline 
 ## 4 CSS
 
 - `themes.css` (15 CSS rules / 20 permutations plus one terminal dark-placeholder comment, ADR [0002](../adr/0002-theme-attributes.md) layer structure) is codegen output, uncommitted, reviewed via **CSS snapshot test** and capped by the §2 ceiling — the snapshot catches semantic drift, the ceiling catches generator bloat.
-- Dual distribution per [Package architecture](../../wayfinder/tickets/008-package-architecture.md): Tailwind-source consumers pay only for what they use via the normal content scan; the standalone bundle is the one that needs the budget.
+- Dual distribution per Package architecture (wayfinder ticket 008): Tailwind-source consumers pay only for what they use via the normal content scan; the standalone bundle is the one that needs the budget.
 - `sideEffects` lists only CSS; every JS module (intl modules included) is side-effect-free so tree-shaking holds.
 
 ## 5 Code splitting & lazy loading

@@ -10,8 +10,7 @@ Vendored copy of [`dmmulroy/anti-slop`](https://github.com/dmmulroy/anti-slop) `
 
 `rules/no-slop-comments.ts` and `rules/no-narration-comments.ts` are local rules, not
 part of upstream — keep them, their `index.ts` registrations, and
-`shared/slop-comments.ts` when refreshing the vendored files. Design rationale:
-[wayfinder/research/028-no-slop-comments-rule.md](../../wayfinder/research/028-no-slop-comments-rule.md).
+`shared/slop-comments.ts` when refreshing the vendored files. Design rationale: the pre-v1 wayfinder research note 028 (removed at v1; see git history).
 
 `no-slop-comments` takes one option, `ticketPattern` (regex source, default
 `[A-Z][A-Z0-9]*-\d+`), for the bare ticket ids that count as a tracker reference.

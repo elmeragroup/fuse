@@ -1,6 +1,6 @@
 # Component spec conventions
 
-Shared conventions every component spec references instead of repeating. Sources: [Component API spec template](../../../wayfinder/tickets/011-component-api-spec-template.md), [Theme provider API](../../../wayfinder/tickets/006-theme-provider-api.md), [Icon system](../../../wayfinder/tickets/009-icon-system.md), [Canonical token contract](../../../wayfinder/tickets/001-canonical-token-contract.md), [Spec: text inputs & fields](../../../wayfinder/tickets/019-spec-forms-text.md) (family-wide prop-style rulings).
+Shared conventions every component spec references instead of repeating. Sources: Component API spec template (wayfinder ticket 011), Theme provider API (wayfinder ticket 006), Icon system (wayfinder ticket 009), Canonical token contract (wayfinder ticket 001), Spec: text inputs & fields (wayfinder ticket 019) (family-wide prop-style rulings).
 
 ## Spec template
 

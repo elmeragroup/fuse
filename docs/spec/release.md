@@ -1,6 +1,6 @@
 # Release & versioning
 
-Normative chapter for how `@elmeragroup/ui` is versioned, published to public npmjs.com, and what infrastructure must exist before the first publish. Sources: [Release & versioning pipeline](../../wayfinder/tickets/014-release-pipeline.md), [npm & GitHub org setup](../../wayfinder/tickets/027-org-setup-task.md), [Brand assets & licensing](../../wayfinder/tickets/010-brand-assets-licensing.md), [Package architecture](../../wayfinder/tickets/008-package-architecture.md).
+Normative chapter for how `@elmeragroup/ui` is versioned, published to public npmjs.com, and what infrastructure must exist before the first publish. Sources: Release & versioning pipeline (wayfinder ticket 014), npm & GitHub org setup (wayfinder ticket 027), Brand assets & licensing (wayfinder ticket 010), Package architecture (wayfinder ticket 008).
 
 ## 1 Scope & home
 
@@ -59,7 +59,7 @@ The full merge gate (lint, types, unit/browser tests, changeset presence) runs o
 
 ## 7 Org-setup prerequisites (pending)
 
-The following infrastructure work is tracked as an **open HITL task** ([027 — npm & GitHub org setup](../../wayfinder/tickets/027-org-setup-task.md)); the human holds the accounts. It **blocks the first publish, not this spec**. Reproduced here so this chapter is self-contained:
+The following infrastructure work is tracked as an **open HITL task** (027 — npm & GitHub org setup); the human holds the accounts. It **blocks the first publish, not this spec**. Reproduced here so this chapter is self-contained:
 
 1. **npm org**: create/claim the `@elmeragroup` org on npmjs.com; Tommy Barvåg as owner; require 2FA for all members.
 2. **Name-collision check**: verify `@elmeragroup/ui` (and any future public name) does not collide with the internal private `@elmeragroup/*` package names used in the existing monorepos; record a **reserved-names policy** for future public names.

@@ -1,6 +1,6 @@
 # Accessibility guidelines
 
-Normative chapter for `@elmeragroup/ui`. Every component spec's §7 (Accessibility) is read against these library-wide rules; this chapter states what no per-component spec repeats. Sources: [A11y & performance guideline chapters](../../wayfinder/tickets/026-a11y-performance-guidelines.md), [Component spec conventions](components/conventions.md), [Testing strategy](../../wayfinder/tickets/013-testing-strategy.md).
+Normative chapter for `@elmeragroup/ui`. Every component spec's §7 (Accessibility) is read against these library-wide rules; this chapter states what no per-component spec repeats. Sources: A11y & performance guideline chapters (wayfinder ticket 026), [Component spec conventions](components/conventions.md), Testing strategy (wayfinder ticket 013).
 
 ## 1 Conformance target
 
@@ -79,7 +79,7 @@ Visible consumer content is not translated by the library. In particular, preset
 
 ## 6 Contrast
 
-Token values are **locked** ([Brand–segment matrix gaps](../../wayfinder/tickets/004-brand-segment-matrix-gaps.md): all mints final); this chapter's job is honest classification, not redesign.
+Token values are **locked** (Brand–segment matrix gaps (wayfinder ticket 004): all mints final); this chapter's job is honest classification, not redesign.
 
 - **Text-grade roles** — must meet **4.5:1** against their paired surface in all 20 themes: `foreground`/`background`, `card-foreground`/`card`, `card-soft-foreground`/`card-soft`, `muted-foreground`/`muted` and `/background`, every `*-soft-foreground`/`*-soft` pair, `primary-foreground`/`primary`, `secondary-foreground`/`secondary`, status `*-foreground` pairs.
 - **`feature-foreground` is reclassified as accent/decorative** — the external tints (L ≈ 0.80–0.91 on L ≈ 0.55–0.58 feature panels) are kicker/eyebrow-grade, not body-text-grade. **Text on `feature` panels uses white**, which passes 3:1 large-text/non-text everywhere; body text on feature panels is out of contract.
@@ -103,7 +103,7 @@ Dense `xs` / `icon-xs` Button is a 24px box (`1.5rem` at a 16px root). Comfortab
 
 ## 9 Testing bar
 
-Per [Testing strategy](../../wayfinder/tickets/013-testing-strategy.md), restated as the a11y floor. The target-size floor in §8 is verified on the smallest interactive Button rung at each density through the rendered box or documented hit-area expansion.
+Per Testing strategy (wayfinder ticket 013), restated as the a11y floor. The target-size floor in §8 is verified on the smallest interactive Button rung at each density through the rendered box or documented hit-area expansion.
 
 - All test queries **role/label-based** (no test-ids, no class queries); this makes every test double as a semantics assertion. **No axe** — matches all reference codebases; the role-based bar plus these rules is the gate.
 - Every spec §7 keyboard behavior has a browser-mode test; the `focusRing` recipe has one shared visual assertion (ring present on `:focus-visible`, absent on mouse focus).

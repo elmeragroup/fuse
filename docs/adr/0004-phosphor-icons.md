@@ -4,7 +4,7 @@ Date: 2026-08-17. Status: accepted; amended 2026-08-18 after inspection of the p
 
 ## Context
 
-The two reference codebases use different icon families: internal re-exports ~150 curated **lucide-react** icons; external ships 78 **Material Symbols** SVGs compiled via @svgr/webpack — a build-time requirement a published package cannot impose, and a set used _inside_ external components, gating every port. The library needs exactly one family. The owner directed a pivot to **Phosphor Icons**; research (wayfinder research 009) verified suitability: MIT, zero deps, ESM `sideEffects:false` per-icon tree-shaking, 1,512 icons × 6 weights, 232/232 coverage of the curated UI concepts, animatable spinners.
+The two reference codebases use different icon families: internal re-exports ~150 curated **lucide-react** icons; external ships 78 **Material Symbols** SVGs compiled via @svgr/webpack — a build-time requirement a published package cannot impose, and a set used _inside_ external components, gating every port. The library needs exactly one family. The owner directed a pivot to **Phosphor Icons**; pre-v1 research (wayfinder research 009) verified suitability: MIT, zero deps, ESM `sideEffects:false` per-icon tree-shaking, 1,512 icons × 6 weights, 232/232 coverage of the curated UI concepts, animatable spinners.
 
 ## Decision
 
