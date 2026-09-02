@@ -104,6 +104,12 @@ function backendModule(): BackendModuleDraft {
 }
 
 const testCompiler: BackendCompilerOperations = {
+  setErrorContext: () => undefined,
+  documentationOfSymbol: () => undefined,
+  enumFacts: () => undefined,
+  constructSignaturesOfType: () => [],
+  documentationOfNode: () => undefined,
+  documentationOfParameter: () => undefined,
   typeOfSymbol: () => undefined,
   typeAtNode: () => undefined,
   typeFacts: () => ({ typeText: "unknown", flags: ["Unknown"], intrinsic: "unknown" }),

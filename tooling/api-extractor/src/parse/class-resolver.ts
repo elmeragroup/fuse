@@ -92,7 +92,7 @@ function resolveConstructSignature(
   context: Context,
   resolveType: ResolveSemanticType
 ): ConstructSignatureNode {
-  context.operations.setErrorContext?.(context.symbolStack);
+  context.operations.setErrorContext(context.symbolStack);
   const facts = context.operations.signatureFacts(signature);
   const result: ConstructSignatureNode = {
     parameters: facts.parameters.map((parameter) =>
@@ -102,7 +102,7 @@ function resolveConstructSignature(
   // Constructor documentation lives on the declaration's JSDoc; no checker
   // symbol carries it, so the backend reads it from the authored node.
   const documentation =
-    facts.declaration === undefined ? undefined : context.operations.documentationOfNode?.(facts.declaration);
+    facts.declaration === undefined ? undefined : context.operations.documentationOfNode(facts.declaration);
   if (documentation !== undefined) Object.assign(result, { documentation });
   return result;
 }
@@ -126,7 +126,7 @@ function extractMembers(
     const docs =
       primaryMemberDeclaration === undefined
         ? undefined
-        : context.operations.documentationOfNode?.(primaryMemberDeclaration);
+        : context.operations.documentationOfNode(primaryMemberDeclaration);
     // JSDoc visibility and `@ignore` remove a member from the public surface
     // before any spelling-based rule runs.
     if (

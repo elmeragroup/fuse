@@ -110,7 +110,7 @@ function inspectAuthoredSymbol(
   nextSeenSymbols.add(symbol);
   const exportName = context.symbolStack.at(-1);
   if (exportName !== "default" && (exportName === undefined || !/^[A-Z]/u.test(exportName))) return undefined;
-  context.operations.setErrorContext?.(context.symbolStack);
+  context.operations.setErrorContext(context.symbolStack);
   const facts = context.operations.symbolFacts(symbol);
   const declaration = facts.valueDeclaration ?? facts.declarations[0];
   if (declaration === undefined) return undefined;

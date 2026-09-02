@@ -291,7 +291,7 @@ export type BackendExportDraft = {
 /** Operations expressed solely in package-owned handles and primitive facts. */
 export type BackendCompilerOperations = {
   /** Updates breadcrumbs included in backend failures for this extraction. */
-  readonly setErrorContext?: (symbolStack: readonly string[]) => void;
+  readonly setErrorContext: (symbolStack: readonly string[]) => void;
   readonly typeOfSymbol: (symbol: BackendSymbolHandle, declared: boolean) => BackendTypeHandle | undefined;
   readonly typeAtNode: (node: BackendNodeReference) => BackendTypeHandle | undefined;
   readonly typeFacts: (type: BackendTypeHandle) => BackendTypeFacts;
@@ -307,8 +307,8 @@ export type BackendCompilerOperations = {
    * record does not advertise the bit independently of identity or origin.
    */
   readonly declaringParentIsClass: (symbol: BackendSymbolHandle) => boolean;
-  readonly documentationOfSymbol?: (symbol: BackendSymbolHandle) => BackendDocumentation | undefined;
-  readonly enumFacts?: (type: BackendTypeHandle) => BackendEnumFacts | undefined;
+  readonly documentationOfSymbol: (symbol: BackendSymbolHandle) => BackendDocumentation | undefined;
+  readonly enumFacts: (type: BackendTypeHandle) => BackendEnumFacts | undefined;
   readonly nodeFacts: (node: BackendNodeReference) => BackendNodeFacts;
   /**
    * Declaration or type-node kind, always equal to `nodeFacts(node).kind`.
@@ -321,25 +321,21 @@ export type BackendCompilerOperations = {
     sourceNode: BackendNodeReference | undefined
   ) => BackendTypeNameFacts | undefined;
   readonly signaturesOfType: (type: BackendTypeHandle) => readonly BackendSignatureHandle[];
-  /**
-   * Construct (`new`) signatures of a type. Optional because only class
-   * extraction consumes them; a replacement graph that never reports classes
-   * can omit it.
-   */
-  readonly constructSignaturesOfType?: (type: BackendTypeHandle) => readonly BackendSignatureHandle[];
+  /** Construct (`new`) signatures of a type; a graph without classes answers with an empty list. */
+  readonly constructSignaturesOfType: (type: BackendTypeHandle) => readonly BackendSignatureHandle[];
   readonly signatureFacts: (signature: BackendSignatureHandle) => BackendSignatureFacts;
   /**
    * Documentation authored directly on a declaration node, which is where
    * TypeScript keeps constructor JSDoc — no checker symbol carries it.
    */
-  readonly documentationOfNode?: (node: BackendNodeReference) => BackendDocumentation | undefined;
+  readonly documentationOfNode: (node: BackendNodeReference) => BackendDocumentation | undefined;
   /**
    * Documentation authored for one signature parameter, read from the owning
    * declaration's own `@param` entry so overloaded owners cannot leak another
    * overload's summary into this one. Falls back to nothing rather than to an
    * aggregate; callers may layer their own fallback.
    */
-  readonly documentationOfParameter?: (
+  readonly documentationOfParameter: (
     parameter: BackendSymbolHandle,
     ownerDeclaration?: BackendNodeHandle
   ) => BackendDocumentation | undefined;

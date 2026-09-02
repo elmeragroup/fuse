@@ -412,6 +412,12 @@ const missingEnumType = {} as BackendTypeHandle;
 
 function synthesizedCompiler(): BackendCompilerOperations {
   return {
+    setErrorContext: () => undefined,
+    documentationOfSymbol: () => undefined,
+    enumFacts: () => undefined,
+    constructSignaturesOfType: () => [],
+    documentationOfNode: () => undefined,
+    documentationOfParameter: () => undefined,
     typeOfSymbol: (symbol) => (symbol === synthesizedSymbol ? synthesizedType : undefined),
     typeAtNode: () => undefined,
     typeFacts: (type) =>

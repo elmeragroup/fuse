@@ -72,9 +72,7 @@ describe("TypeScript 7 session fact memoization", () => {
       const session = project.openExtraction();
       const symbol = firstExport(session, enumInputPath);
       const type = session.compiler.typeOfSymbol(symbol, true);
-      if (type === undefined || session.compiler.enumFacts === undefined) {
-        throw new Error("Missing enum fact reader");
-      }
+      if (type === undefined) throw new Error("Missing enum type");
 
       const beforeFirst = requestCount(project);
       const first = session.compiler.enumFacts(type);

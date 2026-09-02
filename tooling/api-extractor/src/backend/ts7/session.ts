@@ -89,8 +89,8 @@ export class TsgoExtractionSession implements BackendExtractionSession {
     );
     this.facts = createSessionFacts(this.factsContext(), this.heritageContext());
     this.compiler = {
-      setErrorContext: (symbolStack) => (this.symbolStack = [...symbolStack]),
       ...this.facts.operations,
+      setErrorContext: (symbolStack) => (this.symbolStack = [...symbolStack]),
     };
   }
 
@@ -140,7 +140,7 @@ export class TsgoExtractionSession implements BackendExtractionSession {
       sourceFile: (path) => this.fileTrees.sourceFile(path),
       resolveDeclaration: (declaration) => this.fileTrees.resolve(declaration),
       symbolHandle: (symbol) => this.symbolHandle(symbol),
-      documentationOfSymbol: (symbol) => this.compiler.documentationOfSymbol?.(symbol),
+      documentationOfSymbol: (symbol) => this.compiler.documentationOfSymbol(symbol),
       heritageTypes: (declaration) =>
         declaration === undefined
           ? undefined

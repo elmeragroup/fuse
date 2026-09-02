@@ -346,9 +346,7 @@ describe("lazy TypeScript declaration handles", () => {
       const classSymbol = exportSymbol(session, "ThatClass", reviewInputPath);
       const classType = session.compiler.typeOfSymbol(classSymbol, false);
       if (classType === undefined) throw new Error("Missing ThatClass type");
-      const constructSignaturesOfType = session.compiler.constructSignaturesOfType;
-      if (constructSignaturesOfType === undefined) throw new Error("Missing construct signature reader");
-      const constructor = constructSignaturesOfType(classType)[0];
+      const constructor = session.compiler.constructSignaturesOfType(classType)[0];
       if (constructor === undefined) throw new Error("Missing ThatClass constructor");
       const instanceType = session.compiler.signatureFacts(constructor).returnType;
       if (instanceType === undefined) throw new Error("Missing ThatClass instance type");
@@ -382,9 +380,7 @@ describe("lazy TypeScript declaration handles", () => {
         const classSymbol = exportSymbol(session, "ThatClass", reviewInputPath);
         const classType = session.compiler.typeOfSymbol(classSymbol, false);
         if (classType === undefined) throw new Error("Missing ThatClass type");
-        const constructSignaturesOfType = session.compiler.constructSignaturesOfType;
-        if (constructSignaturesOfType === undefined) throw new Error("Missing construct signature reader");
-        const constructor = constructSignaturesOfType(classType)[0];
+        const constructor = session.compiler.constructSignaturesOfType(classType)[0];
         if (constructor === undefined) throw new Error("Missing ThatClass constructor");
         const instanceType = session.compiler.signatureFacts(constructor).returnType;
         if (instanceType === undefined) throw new Error("Missing ThatClass instance type");

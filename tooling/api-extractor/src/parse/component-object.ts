@@ -72,7 +72,7 @@ function componentMember(
     type: component.type,
     optional: info.flags.includes("optional"),
   };
-  const docs = context.operations.documentationOfSymbol?.(member);
+  const docs = context.operations.documentationOfSymbol(member);
   if (docs !== undefined) Object.assign(property, { documentation: docs });
   return property;
 }

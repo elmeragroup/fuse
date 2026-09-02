@@ -61,7 +61,7 @@ function memberDeclaration(
   type: BackendTypeHandle,
   name: string
 ): BackendNodeHandle {
-  const member = compiler.enumFacts?.(type)?.members.find((entry) => entry.name === name);
+  const member = compiler.enumFacts(type)?.members.find((entry) => entry.name === name);
   const declaration = member?.declaration;
   if (declaration === undefined) throw new Error(`Missing ${name} enum member declaration`);
   return declaration;
@@ -94,11 +94,7 @@ describe("point-shaped backend queries", () => {
       const ownerships = declarations.map((declaration) => compiler.declarationOwnership(declaration).kind);
       expect(ownerships).toEqual(expect.arrayContaining(["project"]));
 
-      const documentationOfNode = compiler.documentationOfNode;
-      if (documentationOfNode === undefined) {
-        throw new Error("ts7 adapter must expose documentationOfNode");
-      }
-      expect(declarations.map((declaration) => documentationOfNode(declaration))).toHaveLength(
+      expect(declarations.map((declaration) => compiler.documentationOfNode(declaration))).toHaveLength(
         declarations.length
       );
       session.close();
@@ -117,22 +113,18 @@ describe("point-shaped backend queries", () => {
       const compiler = session.compiler;
       const flags = declaredType(compiler, exportSymbol(session, enumInputPath, "Flags"));
       const side = declaredType(compiler, exportSymbol(session, enumInputPath, "Side"));
-      const enumFacts = compiler.enumFacts?.(flags);
+      const enumFacts = compiler.enumFacts(flags);
       if (enumFacts === undefined) throw new Error("Missing Flags enum facts");
       const memberNames = enumFacts.members.map((member) => compiler.symbolFacts(member.symbol).name);
       expect(memberNames).toEqual(enumFacts.members.map((member) => member.name));
-      expect(compiler.enumFacts?.(flags)?.warnings).toEqual(enumFacts.warnings);
+      expect(compiler.enumFacts(flags)?.warnings).toEqual(enumFacts.warnings);
 
-      const documentationOfNode = compiler.documentationOfNode;
-      if (documentationOfNode === undefined) {
-        throw new Error("ts7 adapter must expose documentationOfNode");
-      }
       const mixedDocs = [
         memberDeclaration(compiler, side, "left"),
         memberDeclaration(compiler, flags, "flag1"),
         memberDeclaration(compiler, side, "right"),
       ];
-      const docs = mixedDocs.map((declaration) => documentationOfNode(declaration));
+      const docs = mixedDocs.map((declaration) => compiler.documentationOfNode(declaration));
       expect(docs[0]).toEqual(expect.objectContaining({ description: "Left side." }));
       expect(docs[1]).toBeUndefined();
       expect(docs[2]).toEqual(expect.objectContaining({ description: "Right side." }));

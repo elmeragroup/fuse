@@ -91,7 +91,7 @@ export function resolveModule(
     pureTypeExport: false,
     authoredIntersectionMember: false,
   };
-  context.operations.setErrorContext?.([]);
+  context.operations.setErrorContext([]);
   // Module-walk warnings (unresolved re-exports, barrel cycles, ambiguous
   // stars) are discovered before resolution and lead the result's warnings.
   for (const warning of draft.warnings ?? []) context.warnings.push(warning);
@@ -114,7 +114,7 @@ export function resolveModule(
 function resolveExport(entry: BackendExportDraft, base: Context): ExportNode {
   const symbolStack = entry.symbolStack ?? [entry.name];
   const semanticPath = exportSemanticPath(entry.name);
-  base.operations.setErrorContext?.(symbolStack);
+  base.operations.setErrorContext(symbolStack);
   const symbolFacts = base.operations.symbolFacts(entry.symbol);
   const rootProvenance: ProvenanceEntry = {
     path: semanticPath,
@@ -287,7 +287,7 @@ function typeNode(
   symbol: BackendSymbolHandle | undefined,
   context: Context
 ): SemanticType {
-  context.operations.setErrorContext?.(context.symbolStack);
+  context.operations.setErrorContext(context.symbolStack);
   if (type === undefined) return unsupported(context, undefined, symbol, sourceNode);
   const originalFacts = context.operations.typeFacts(type);
   const substituted =
@@ -352,7 +352,7 @@ function typeNodeUnsafe(
   }
   if (externalDecision.kind === "anonymous-root") return { kind: "object", properties: [] };
   if (facts.isEnum === true) {
-    const enumValue = context.operations.enumFacts?.(type);
+    const enumValue = context.operations.enumFacts(type);
     if (enumValue !== undefined) return resolveEnumNode(enumValue, context);
     recordMissingEnumWarning(type, typeNameValue, context);
     return {
@@ -438,7 +438,7 @@ function typeNodeUnsafe(
     // function node returned below cannot carry. Only a class would have been
     // resolved through them, so any other shape's construct side is reported
     // here rather than vanishing silently.
-    const constructs = context.operations.constructSignaturesOfType?.(type) ?? [];
+    const constructs = context.operations.constructSignaturesOfType(type);
     if (constructs.length > 0 && !isClassType(type, context)) {
       recordUnrepresentedConstructSignatures(type, context);
     }
@@ -454,7 +454,7 @@ function typeNodeUnsafe(
   // upstream's resolver order: only the static side of a class carries
   // construct signatures, so a shape that merely declares `new (…)` still falls
   // through to object resolution here.
-  const constructs = context.operations.constructSignaturesOfType?.(type) ?? [];
+  const constructs = context.operations.constructSignaturesOfType(type);
   if (constructs.length > 0 && isClassType(type, context))
     return resolveClassNode(type, constructs, typeNameValue, context, typeNode);
   if (facts.isObject === true) {

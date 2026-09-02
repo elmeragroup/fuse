@@ -123,7 +123,8 @@ const typeFlagDisplayOrder: readonly [TypeFlags, TypeFlagName][] = [
 ];
 
 export type TsgoSessionFacts = {
-  readonly operations: BackendCompilerOperations;
+  /** Every operation except the error-context breadcrumb, which the session itself owns. */
+  readonly operations: Omit<BackendCompilerOperations, "setErrorContext">;
   readonly heritageTypes: (
     declaration: BackendNodeHandle
   ) => readonly { readonly name: string; readonly resolvedName?: string }[] | undefined;
@@ -141,7 +142,7 @@ export function createSessionFacts(
   const documentationOfSymbolRead = cache.byHandle("documentationOfSymbol", (symbol: BackendSymbolHandle) =>
     documentationOfSymbol(session, symbol)
   );
-  const operations: BackendCompilerOperations = {
+  const operations: Omit<BackendCompilerOperations, "setErrorContext"> = {
     typeOfSymbol: cache.byHandlePair("typeOfSymbol", (symbol, declared) =>
       typeOfSymbol(session, symbol, declared)
     ),

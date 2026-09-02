@@ -259,7 +259,6 @@ function guardedExtractionSession(
   const guardedOperations: Partial<Record<CompilerOperationName, CompilerOperation>> = {};
   for (const name of compilerOperationNames) {
     const operation = compiler[name];
-    if (operation === undefined) continue;
     // SAFETY: `operation` is the session's own method for `name`; the guard
     // forwards the exact arguments the typed caller supplied and returns the
     // same result, so the wrapped function keeps that method's signature.
@@ -271,9 +270,7 @@ function guardedExtractionSession(
   }
   const setErrorContext = (next: readonly string[]) => {
     symbolStack = [...next];
-    if (compiler.setErrorContext !== undefined) {
-      guard("setErrorContext", () => compiler.setErrorContext?.(next))();
-    }
+    guard("setErrorContext", () => compiler.setErrorContext(next))();
   };
 
   return {

@@ -77,7 +77,7 @@ export function resolveSignatureNode(
   signatureIndex: number,
   resolveType: ResolveSemanticType
 ): CallSignatureNode {
-  context.operations.setErrorContext?.(context.symbolStack);
+  context.operations.setErrorContext(context.symbolStack);
   const facts = context.operations.signatureFacts(signature);
   const signaturePath = callSignatureSemanticPath(context.provenancePath, signatureIndex);
   const parameters = facts.parameters.map((parameter) =>
@@ -149,7 +149,7 @@ export function resolveParameter(
   // owning declaration's `@param` entry, or a JSDoc block written directly on
   // the parameter. The checker's aggregate would leak another overload's
   // summary across signatures that share a parameter name.
-  const docs = context.operations.documentationOfParameter?.(parameter, ownerDeclaration);
+  const docs = context.operations.documentationOfParameter(parameter, ownerDeclaration);
   if (docs !== undefined) Object.assign(output, { documentation: docs });
   if (defaultValue !== undefined) Object.assign(output, { defaultValue });
   return output;
@@ -290,7 +290,7 @@ export function resolveObjectNode(
     const info = context.operations.symbolFacts(property);
     const propertyType =
       context.operations.propertyType(property) ?? context.operations.typeOfSymbol(property, false);
-    const docs = context.operations.documentationOfSymbol?.(property);
+    const docs = context.operations.documentationOfSymbol(property);
     const declarationHandles = symbolDeclarations(info);
     const readonly = declarationHandles.some(
       (declaration) =>
@@ -593,7 +593,7 @@ function recordOmittedIndexSignatures(
  * current structural path instead of a silent loss.
  */
 export function recordUnrepresentedConstructSignatures(type: BackendTypeHandle, context: Context): void {
-  const constructs = context.operations.constructSignaturesOfType?.(type) ?? [];
+  const constructs = context.operations.constructSignaturesOfType(type);
   const first = constructs.at(0);
   if (first === undefined) return;
   const declaration = context.operations.signatureFacts(first).declaration;
