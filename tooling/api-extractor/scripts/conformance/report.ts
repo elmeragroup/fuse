@@ -414,7 +414,14 @@ function assertManifest(requireTs7Evidence = true): void {
     throw new Error("Issue 14 manifest names must be sorted and unique.");
   }
   const discoveredNames = readdirSync(fixtureDirectory, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory() && existsSync(join(fixtureDirectory, entry.name, "output.json")))
+    .filter((entry) => {
+      if (!entry.isDirectory() || !existsSync(join(fixtureDirectory, entry.name, "output.json")))
+        return false;
+      const record = fixtureEvidenceCatalog.find((candidate) => candidate.id === entry.name);
+      // Local generated oracles keep `output.json` as their regression seam
+      // without joining the pinned Issue 14 set.
+      return record?.conformance !== false;
+    })
     .map((entry) => entry.name)
     .sort();
   if (JSON.stringify(discoveredNames) !== JSON.stringify(sortedNames)) {

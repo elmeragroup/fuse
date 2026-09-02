@@ -768,6 +768,12 @@ export const fixtureEvidenceCatalog = [
   fixture("symbol-double-underscore-name-preservation", "input.ts", ["14"], "reviewed-divergence", {
     warnings: { oracleFile: "warnings.tsgo.json", codes: ["unsupported-type-fallback"] },
   }),
+  fixture("template-literal-union-prop", "input.tsx", ["02"], "generated", {
+    conformance: false,
+    metadata: {
+      packageTypechecks: [{ order: 34, project: "test/fixtures/template-literal-union-prop/tsconfig.json" }],
+    },
+  }),
   fixture("type-alias-basic-resolution", "input.ts", ["07", "14"], "reviewed-divergence", {
     metadata: { issueViews: { "07": { order: 12, group: "alias" } } },
   }),

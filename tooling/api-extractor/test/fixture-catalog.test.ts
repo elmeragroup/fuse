@@ -200,9 +200,9 @@ describe("fixture evidence catalog", () => {
         "base-ui-component",
       ],
       packageTypechecks: {
-        count: 34,
+        count: 35,
         first: "test/fixtures/issue-02-tsconfig.json",
-        last: "test/fixtures/component-external-mixin-props/tsconfig.json",
+        last: "test/fixtures/template-literal-union-prop/tsconfig.json",
       },
     });
   });
@@ -221,7 +221,7 @@ describe("fixture evidence catalog", () => {
     ).toHaveLength(116);
     expect(
       fixtureEvidenceCatalog.filter((fixture) => fixture.oracle.disposition === "generated")
-    ).toHaveLength(3);
+    ).toHaveLength(4);
   });
 
   it("rejects duplicate fixture identities before deriving a plan", () => {
