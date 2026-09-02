@@ -57,6 +57,15 @@ function groupNamed(name: string): HTMLElement {
   return element;
 }
 
+function dateInputRow(name: string): HTMLElement {
+  const segment = spinbuttonNamed("month");
+  const row = segment.parentElement;
+  if (!(row instanceof HTMLElement) || !groupNamed(name).contains(row)) {
+    throw new Error(`expected DateInput around ${name}`);
+  }
+  return row;
+}
+
 function spinbuttonNamed(name: string): HTMLElement {
   const element = page.getByRole("spinbutton", { name }).element();
   if (!(element instanceof HTMLElement)) {
@@ -531,6 +540,10 @@ describe("DatePicker density metrics", () => {
     for (const density of ["dense", "comfortable"] as const) {
       stampDensity(density);
       expect(px(getComputedStyle(groupNamed("Meter")).height)).toBe(CONTROL_MD[density].height);
+      const inputStyle = getComputedStyle(dateInputRow("Meter"));
+      expect(px(inputStyle.paddingInlineStart)).toBe(CONTROL_MD[density].px);
+      expect(px(inputStyle.fontSize)).toBe(CONTROL_MD[density].font);
+      expect(px(inputStyle.lineHeight)).toBe(CONTROL_MD[density].leading);
     }
 
     stampDensity("dense");

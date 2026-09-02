@@ -44,7 +44,7 @@ No `presetGroup` (DatePicker-only; DatePickerStateContext has no range counterpa
 
 ## 4 Variants
 
-**Ruled addition:** `dateRangePickerVariants` in `styles/date-range-picker.ts`, **module-private**, mirroring `datePickerVariants`' shape exactly — slots `base` (`group flex flex-col gap-1`), `group` (`w-auto min-w-[208px]`), `input` (`px-2 py-1.5 text-sm`; end input adds `flex-1`), `separator` (the en-dash span, absorbing the ref's inline classes), `icon` (`size-4 transition-colors`), `dialog` (`p-0`), `calendar` (`p-2` — pays the inset Calendar's own root carries; RangeCalendar's root is bare and the dialog slot is `p-0`) — with the `isReadOnly` axis (`bg-muted` on `group`/`icon`). The ref styles everything inline with zero recipe; the recipe is the alignment ruling made concrete.
+**Ruled addition:** `dateRangePickerVariants` in `styles/date-range-picker.ts`, **module-private**, mirroring `datePickerVariants`' shape exactly — slots `base` (`group flex flex-col gap-1`), `group` (`w-auto min-w-[208px]`), `input` (`px-(--control-px-md)` plus the control type pair, no `py-*`; end input adds `flex-1`), `separator` (the en-dash span, absorbing the ref's inline classes), `icon` (`size-4 transition-colors`), `dialog` (`p-0`), `calendar` (`p-2` — pays the inset Calendar's own root carries; RangeCalendar's root is bare and the dialog slot is `p-0`) — with the `isReadOnly` axis (`bg-muted` on `group`/`icon`). The ref styles everything inline with zero recipe; the recipe is the alignment ruling made concrete.
 
 ## 5 Consumed tokens
 
@@ -75,6 +75,7 @@ Own slots: `foreground` (separator — ref `text-gray-800`), `muted-foreground` 
 9. **Interim-only regular dependency:** `tailwindcss-react-aria-components` modifiers (`group-disabled:` et al.) die with the tier.
 10. Adds `container` with nearest-ThemeScope default, matching DatePicker.
 11. Inherited RAC `fieldGroupVariants` uses `bg-card` instead of `bg-background`, aligning the range field box with the input-surface convention.
+12. **Density retokenization (2026-09-02):** the `input` slot reads `--control-px-md` and the control type pair; `py-*` is omitted because FieldGroup height is already pinned to `--control-h-md`.
 
 ## 9 Test requirements
 
@@ -85,6 +86,7 @@ Own slots: `foreground` (separator — ref `text-gray-800`), `muted-foreground` 
 - Overlay seam regression: DateRangePicker inside a Modal — selecting range endpoints must not dismiss the Modal (`OVERLAY_CONTAINER_ATTR`).
 - `isReadOnly`: segments inert, `bg-muted` group, popover does not open; `startName`/`endName` submit ISO strings in a form.
 - Explicit and nearest-scope container behavior; nested ThemeScope retains its theme.
+- Dual-density: FieldGroup height and DateInput inline padding/type match the signed `md` rung at `dense` and `comfortable`; nested `data-density` does not rescope.
 
 ## 10 Demo requirements
 

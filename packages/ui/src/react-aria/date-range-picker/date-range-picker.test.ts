@@ -103,8 +103,7 @@ describe("date-range-picker source contract", () => {
       expect(text).not.toContain("comfortable:");
     }
     expect(dateRangePickerVariants.variantKeys).toEqual(["isReadOnly"]);
-    // The field box's rung is `fieldGroupVariants`' business, so nothing here reads one.
-    expect(everyEmittedClass()).not.toContain("--control-");
+    expect(everyEmittedClass()).not.toContain("--control-h-");
   });
 
   it("never uses primitive gray/white or destructive vocabulary (§8.4)", () => {
@@ -134,9 +133,12 @@ describe("dateRangePickerVariants", () => {
 
   it("keeps the shared input slot flexless so only the end row grows (§4)", () => {
     const { input } = dateRangePickerVariants();
-    expect(input()).toContain("px-2");
-    expect(input()).toContain("py-1.5");
-    expect(input()).toContain("text-sm");
+    expect(input()).toContain("px-(--control-px-md)");
+    expect(input()).toContain("[font-size:var(--control-text)]");
+    expect(input()).toContain("[line-height:var(--control-leading)]");
+    expect(input()).not.toContain("py-");
+    expect(input()).not.toContain("text-sm");
+    expect(input()).not.toContain("px-2");
     expect(input()).not.toContain("flex-1");
     // The end row is the same slot plus the growth class the call site adds.
     expect(input({ class: "flex-1" }).split(/\s+/)).toContain("flex-1");

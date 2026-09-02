@@ -62,7 +62,7 @@ AriaDatePicker                        (RAC DatePicker; base slot)
 
 ## 4 Variants
 
-`datePickerVariants` — slotted tv recipe in `styles/date-picker.ts`, **module-private**. Slots: `base`, `group`, `input`, `icon`, `dialog` (`p-0`, overriding the styled Dialog's padding), `calendar` (`border-none` — strips Calendar's card border inside the popover, which already provides chrome), `pane` (the row inside the dialog holding the preset pane and the calendar; empty unless there are presets). Two axes: `isReadOnly` → `bg-muted` on `group` + `icon`; `hasPresets` → the divided two-pane row on `pane` (`flex gap-x-3 divide-x pr-3 pb-3`), empty when false. Preset items borrow the shared public `buttonVariants` (ghost/sm).
+`datePickerVariants` — slotted tv recipe in `styles/date-picker.ts`, **module-private**. Slots: `base`, `group`, `input` (`px-(--control-px-md)` plus the control type pair, no `py-*`), `icon`, `dialog` (`p-0`, overriding the styled Dialog's padding), `calendar` (`border-none` — strips Calendar's card border inside the popover, which already provides chrome), `pane` (the row inside the dialog holding the preset pane and the calendar; empty unless there are presets). Two axes: `isReadOnly` → `bg-muted` on `group` + `icon`; `hasPresets` → the divided two-pane row on `pane` (`flex gap-x-3 divide-x pr-3 pb-3`), empty when false. Preset items borrow the shared public `buttonVariants` (ghost/sm).
 
 ## 5 Consumed tokens
 
@@ -91,7 +91,7 @@ Via composed parts: `card` (FieldGroup, popover, and calendar surfaces) + `card-
 7. **Interim-only regular dependencies:** `tailwindcss-react-aria-components` modifiers and `@internationalized/date` uninstall with the cluster.
 8. Adds `container` and nearest-ThemeScope default; preset group copy uses the locale dictionary and preset items use visible names.
 9. Inherited RAC `fieldGroupVariants` uses `bg-card` instead of `bg-background`, aligning the date field box with the input-surface convention.
-10. **Density retokenization:** `fieldGroupVariants` pins `--control-h-md` instead of literal `h-9` (gates the RAC private stack).
+10. **Density retokenization:** `fieldGroupVariants` pins `--control-h-md` instead of literal `h-9` (gates the RAC private stack). The `input` slot reads `--control-px-md` and the control type pair; `py-*` is omitted because height is pinned. _(Amended 2026-09-02.)_
 11. **Focused-month sync reads the picker state, not `props.value`:** the month is derived from the committed value on RAC's `DatePickerStateContext` (see §2), initialized on each open and re-synced on every value change, keeping the today-fallback — so an uncontrolled `defaultValue` picker also opens on the selected month. The reference's `props.value`-only sync left uncontrolled pickers on today's month with the selection off-screen.
 
 ## 9 Test requirements
@@ -103,7 +103,7 @@ Via composed parts: `card` (FieldGroup, popover, and calendar surfaces) + `card-
 - Overlay seam: DatePicker inside a Modal — clicking a calendar day must not dismiss the Modal (regression test for `OVERLAY_CONTAINER_ATTR`).
 - `shouldForceLeadingZeros` default; `errorMessage` function form renders per `ValidationResult`; `isReadOnly` applies `bg-muted` state and keeps the popover closed.
 - Explicit/nearest-scope portal container behavior; all four preset-group locale defaults and the `label` override.
-- Dual-density: FieldGroup height matches the signed `md` rung at `dense` and `comfortable`; nested `data-density` does not rescope.
+- Dual-density: FieldGroup height and DateInput inline padding/type match the signed `md` rung at `dense` and `comfortable`; nested `data-density` does not rescope.
 
 ## 10 Demo requirements
 

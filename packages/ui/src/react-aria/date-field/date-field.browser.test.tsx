@@ -313,7 +313,11 @@ describe("DateField density metrics", () => {
     const { rerender } = renderField(<DateField label="Meter" defaultValue={july14} />);
     for (const density of ["dense", "comfortable"] as const) {
       stampDensity(density);
-      expect(px(getComputedStyle(groupNamed("Meter")).height)).toBe(CONTROL_MD[density].height);
+      const style = getComputedStyle(groupNamed("Meter"));
+      expect(px(style.height)).toBe(CONTROL_MD[density].height);
+      expect(px(style.paddingInlineStart)).toBe(CONTROL_MD[density].px);
+      expect(px(style.fontSize)).toBe(CONTROL_MD[density].font);
+      expect(px(style.lineHeight)).toBe(CONTROL_MD[density].leading);
     }
 
     stampDensity("dense");

@@ -12,9 +12,10 @@ import { tv } from "tailwind-variants";
  *
  * Two axes (§4): `isReadOnly` puts `bg-muted` on the field box and the trigger icon, and
  * `hasPresets` turns the dialog's single pane into the divided two-pane row. There is
- * deliberately no `size` axis — `fieldGroupVariants` already pins the
- * `md` control rung for the whole field family (conventions.md ruling 2), so this recipe
- * reads no `--control-*` variable and restates no box metric.
+ * deliberately no `size` axis — `fieldGroupVariants` already pins
+ * `h-(--control-h-md)` for the whole field family (conventions.md ruling 2). The `input`
+ * slot reads `--control-px-md` and the control type pair so the segmented row matches
+ * Input at both densities; `py-*` stays off the height-pinned box.
  */
 export const datePickerVariants = tv({
   slots: {
@@ -23,7 +24,8 @@ export const datePickerVariants = tv({
     /** The private FieldGroup around the segments and the trigger. */
     group: "w-auto min-w-[180px]",
     /** The public DateInput inside the field box. */
-    input: "text-sm flex min-w-[150px] flex-1 px-2 py-1.5",
+    input:
+      "flex min-w-[150px] flex-1 px-(--control-px-md) [font-size:var(--control-text)] [line-height:var(--control-leading)]",
     /**
      * The CalendarBlank glyph in the trigger button. A plain `size-4`: `buttonVariants`
      * only sizes `svg:not([class*='size-'])`, so this class already wins on its own and
