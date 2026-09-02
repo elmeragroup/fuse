@@ -35,7 +35,8 @@ describe("accordionVariants", () => {
   it("maps each variant onto the spec slots without leaking the others", () => {
     const defaults = accordionVariants({ variant: "default" });
     expect(defaults.item()).toContain("bg-muted");
-    expect(defaults.trigger()).toContain("transition-all");
+    expect(defaults.trigger()).toContain("transition-[padding-bottom]");
+    expect(defaults.trigger()).not.toContain("transition-all");
     expect(defaults.item()).not.toContain("bg-card");
     expect(defaults.content()).not.toContain("pl-7");
 
@@ -94,7 +95,7 @@ describe("accordionVariants", () => {
     expect(slots.content()).toContain("h-0");
     expect(slots.content()).toContain("overflow-hidden");
     expect(slots.content()).toContain("transition-[height]");
-    expect(slots.content()).toContain("motion-reduce:transition-none");
+    expect(slots.content()).not.toContain("motion-reduce");
     expect(slots.content()).toContain("data-[open]:h-(--accordion-panel-height)");
     expect(slots.contentInner()).toContain("pt-1.5");
   });
@@ -174,7 +175,8 @@ describe("accordion source contract", () => {
     expect(variantsSource).toContain('focusRing({ target: "self" })');
     expect(variantsSource).toContain("group/accordion-trigger");
     expect(variantsSource).toContain("--accordion-panel-height");
-    expect(variantsSource).toContain("motion-reduce:transition-none");
+    expect(variantsSource).not.toContain("motion-reduce");
+    expect(variantsSource).not.toContain("transition-all");
   });
 
   it("throws when Item, Header, Trigger, or Content render outside Root", () => {

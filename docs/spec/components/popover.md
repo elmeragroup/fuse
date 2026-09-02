@@ -58,14 +58,14 @@ All rendering parts take `className` (merged via `cn`) and forward the rest of t
 
 ## 4 Variants
 
-No component-specific `tv` recipe and no variant axes — Content styling is inline; Trigger composes shared `focusRing({ target: "self" })`. `showArrow` is a boolean render toggle, not a styling variant.
+No component-specific `tv` recipe and no variant axes — Content styling is inline; Trigger and the Popup both compose shared `focusRing({ target: "self" })`. `showArrow` is a boolean render toggle, not a styling variant.
 
 ## 5 Consumed tokens
 
 - `popover` / `popover-foreground` — popup surface and text (`bg-popover text-popover-foreground`).
 - `ring-foreground/10` — popup hairline (`ring-1`), paired with `shadow-md`.
 - `muted-foreground` — Description text.
-- `ring` + `background` — Trigger focus treatment.
+- `ring` + `background` — Trigger and Popup focus treatment.
 - `popover` + `border` — arrow fill and edge (`before:bg-popover before:border-border`), matching the popup surface (§8; ref uses raw `bg-white` / `dark:` neutrals).
 - Radii: popup `rounded-md` — `--radius`-derived scale step, no hardcoded values.
 
@@ -93,7 +93,7 @@ No component-specific `tv` recipe and no variant axes — Content styling is inl
 2. **Overlay `container` prop added (mandated)** to `Popover.Content`, forwarded to the internal `PopoverPrimitive.Portal`, defaulting to the nearest `ThemeScope` element. The ref hardcodes the portal with no target (→ `document.body`) and does not export a Portal part at all — `container` on Content is therefore the _only_ portal-control surface; documented as intentional (Portal/Positioner/Popup stay unexported here too).
 3. **Arrow tokenized (LOCKED ruling)**: the ref arrow hardcodes `before:bg-white` plus `dark:before:border-white dark:before:bg-neutral-950` — raw palette colors, the family's worst `no-primitive-colors` violation, and mismatched with the token-driven `bg-popover` popup it decorates. Re-expressed as `before:bg-popover before:border-border` so the arrow always matches its popup across all 20 themes; the `sqrt(2)` clip-window geometry is kept verbatim. All `dark:` classes dropped per conventions. `showArrow` stays default `false`. Deliberately _not_ unified with Tooltip's always-rendered arrow — the two components' differing arrow show-behavior is intentional (see tooltip.md §8).
 4. **`z-50` deduped**: the ref sets `isolate z-50` on the Positioner _and_ `z-50` on the Popup; kept on the outermost layer (Positioner) only. Flat z-strategy: every overlay gets exactly one `z-50` at its outermost portalled element.
-5. **Focus unified:** Trigger composes the canonical self-focus adapter, including when rendered without a Button target.
+5. **Focus unified:** Trigger and the Popup compose the canonical self-focus adapter, including when the Trigger is rendered without a Button target. The Popup does not use `outline-hidden`. _(Amended 2026-09-02.)_
 
 Kept faithfully: `w-72 p-4 gap-4` popup dimensions; `shadow-md` + `ring-1 ring-foreground/10` elevation; `duration-100` animation timing and the full slide/fade/zoom class set; `Header` as a plain unstyled-primitive div; `showArrow` default `false`; Title/Description typography.
 
@@ -102,7 +102,7 @@ Kept faithfully: `w-72 p-4 gap-4` popup dimensions; `shadow-md` + `ring-1 ring-f
 Role/label-based queries throughout; keyboard flows per §7:
 
 - Open/close: click on `getByRole("button")` trigger opens `getByRole("dialog")`; Escape closes and returns focus to the trigger; outside press (pointerdown outside the popup) closes.
-- Focus management: on open, focus lands inside the popup; on close (Escape and outside press), focus returns to the trigger.
+- Focus management: on open, focus lands inside the popup; on close (Escape and outside press), focus returns to the trigger. When the popup itself is the keyboard focus target, the shared focus ring is visible (and absent on mouse focus).
 - Naming: with `Popover.Title` / `Popover.Description`, the dialog is queryable via `getByRole("dialog", { name })` and exposes the description text via `toHaveAccessibleDescription`.
 - `showArrow`: arrow element absent by default; present (with `data-side` mirroring placement) when `showArrow` is set.
 - Positioner forwarding: `side`/`align` overrides surface as `data-side` on the popup.

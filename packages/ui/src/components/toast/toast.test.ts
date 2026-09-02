@@ -93,6 +93,9 @@ describe("toast source contract", () => {
     expect(variantsSource).toContain("bg-success-soft");
     expect(variantsSource).toContain("bg-warning-soft");
     expect(variantsSource).toContain("bg-popover");
+    expect(variantsSource).toContain("[transition:transform_0.2s_cubic-bezier(0.22,1,0.36,1),opacity_0.2s]");
+    expect(variantsSource).not.toContain("height_0.15s");
+    expect(variantsSource).not.toContain("0.5s");
     expect(variantsSource).not.toMatch(RAW_PALETTE_RE);
     expect(source).not.toMatch(RAW_PALETTE_RE);
     expect(source).not.toMatch(/bg-destructive|text-destructive|border-destructive|ring-destructive/);

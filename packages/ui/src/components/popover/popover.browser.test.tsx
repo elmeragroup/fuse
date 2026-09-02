@@ -4,7 +4,11 @@ import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
+import {
+  assertFocusRingOnKeyboardAbsentOnMouse,
+  expectFocusRing,
+  expectNoFocusRing,
+} from "../../../test/assert-focus-ring";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme/theme-scope";
 import type { PopoverContentProps } from "./popover";
@@ -232,5 +236,38 @@ describe("Popover", () => {
       throw new Error("expected buttons");
     }
     await assertFocusRingOnKeyboardAbsentOnMouse(previous, trigger);
+  });
+
+  it("paints the shared ring when the popup itself receives keyboard focus", async () => {
+    renderThemed(
+      <>
+        <button type="button">Before</button>
+        <Popover.Root>
+          <Popover.Trigger>Details</Popover.Trigger>
+          <Popover.Content>
+            <Popover.Title>Dimensions</Popover.Title>
+          </Popover.Content>
+        </Popover.Root>
+      </>
+    );
+    const previous = page.getByRole("button", { name: "Before", exact: true }).element();
+    if (!(previous instanceof HTMLElement)) {
+      throw new Error("expected before");
+    }
+    previous.focus();
+    await userEvent.keyboard("{Tab}");
+    await userEvent.keyboard("{Enter}");
+    const dialog = page.getByRole("dialog", { name: "Dimensions" }).element();
+    if (!(dialog instanceof HTMLElement)) {
+      throw new Error("expected the popup");
+    }
+    expect(document.activeElement).toBe(dialog);
+    expect(dialog.matches(":focus-visible"), "keyboard open must land with :focus-visible").toBe(true);
+    expectFocusRing(dialog, "keyboard-focused popup must paint the shared ring");
+
+    dialog.blur();
+    await userEvent.click(dialog);
+    expect(dialog.matches(":focus-visible"), "mouse focus must not match :focus-visible").toBe(false);
+    expectNoFocusRing(dialog, "mouse focus must not paint the shared ring");
   });
 });

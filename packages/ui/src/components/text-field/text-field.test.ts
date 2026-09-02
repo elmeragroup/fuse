@@ -4,6 +4,8 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
+import { cn } from "../../styles/cn";
+import { fieldBox } from "../../styles/field-box";
 import { cardVariants } from "../card/card-variants";
 import { textFieldVariants } from "./text-field-variants";
 
@@ -40,6 +42,10 @@ describe("textFieldVariants", () => {
     const inline = textFieldVariants({ variant: "inline" });
     expect(inline.base()).toContain("group/inline-field");
     expect(inline.fieldGroup()).toContain("border-transparent");
+    expect(inline.fieldGroup()).toContain("focus-visible:border-ring");
+    expect(inline.fieldGroup()).not.toContain("group-focus-within/inline-field:border-ring");
+    expect(inline.fieldGroup()).not.toContain("has-focus-visible:border-ring");
+    expect(cn(fieldBox(), inline.fieldGroup())).toContain("focus-visible:border-ring");
     expect(inline.fieldGroup()).toContain("group-data-[invalid]/inline-field:border-error");
     expect(inline.fieldGroup()).not.toContain("destructive");
   });

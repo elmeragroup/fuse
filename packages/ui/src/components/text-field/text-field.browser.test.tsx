@@ -168,6 +168,40 @@ describe("TextField", () => {
   });
 });
 
+describe("TextField inline focus chrome", () => {
+  it("paints the ring-coloured border on :focus-visible only", async () => {
+    renderThemed(
+      <>
+        <button type="button">Before</button>
+        <TextField label="Inline" variant="inline" />
+      </>
+    );
+    const previous = page.getByRole("button", { name: "Before", exact: true }).element();
+    const input = textboxNamed("Inline");
+    if (!(previous instanceof HTMLElement)) {
+      throw new Error("expected before");
+    }
+
+    // Browser suites load styles.css without themes.css, so `--ring` is otherwise
+    // unset and `border-color: var(--ring)` would be ignored as invalid.
+    input.style.setProperty("--ring", "rgb(255, 0, 0)");
+    expect(getComputedStyle(input).borderColor).not.toBe("rgb(255, 0, 0)");
+
+    previous.focus();
+    await userEvent.keyboard("{Tab}");
+    expect(input.matches(":focus-visible")).toBe(true);
+    await vi.waitFor(() => {
+      expect(getComputedStyle(input).borderColor).toBe("rgb(255, 0, 0)");
+    });
+
+    await userEvent.click(previous);
+    expect(input.matches(":focus-visible")).toBe(false);
+    await vi.waitFor(() => {
+      expect(getComputedStyle(input).borderColor).not.toBe("rgb(255, 0, 0)");
+    });
+  });
+});
+
 describe("TextField density metrics", () => {
   it("pins the inner input to the signed md control rung at both densities", () => {
     const { rerender } = renderThemed(<TextField label="Meter" />);

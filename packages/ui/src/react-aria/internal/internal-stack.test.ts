@@ -141,6 +141,7 @@ describe("the shared overlay class vocabulary", () => {
     }
     expect(source("modal.tsx")).toContain("overlaySizeClasses");
     expect(source("modal.tsx")).not.toContain("--container-sm");
+    expect(source("modal.tsx")).not.toContain("transition-[max-width]");
   });
 
   it("borrows the backdrop scrim instead of restating it (dialog.md §5)", () => {

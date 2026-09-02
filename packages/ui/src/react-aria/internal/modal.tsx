@@ -28,7 +28,7 @@ const modalVariants = tv({
       overlayLayer
     ),
     base: cn(
-      "group/modal max-h-full w-full overflow-hidden rounded-xl bg-popover bg-clip-padding text-left align-middle text-popover-foreground ring-1 ring-foreground/10 transition-[max-width]",
+      "group/modal max-h-full w-full overflow-hidden rounded-xl bg-popover bg-clip-padding text-left align-middle text-popover-foreground ring-1 ring-foreground/10",
       overlayLayer
     ),
   },

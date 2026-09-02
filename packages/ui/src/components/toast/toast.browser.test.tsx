@@ -388,6 +388,24 @@ describe("Toast chrome", () => {
   });
 });
 
+describe("Toast motion", () => {
+  it("transitions transform and opacity only, at or under 300 ms", async () => {
+    const { manager } = renderToast();
+    manager.add({ title: "Saved", timeout: 0 });
+    const root = await waitForToast("Saved");
+    const style = getComputedStyle(root);
+    const properties = style.transitionProperty.split(",").map((part) => part.trim());
+    expect(properties).not.toContain("height");
+    expect(properties).toEqual(expect.arrayContaining(["transform", "opacity"]));
+    for (const duration of style.transitionDuration.split(",")) {
+      const trimmed = duration.trim();
+      const ms = trimmed.endsWith("ms") ? Number.parseFloat(trimmed) : Number.parseFloat(trimmed) * 1000;
+      expect(ms).toBeGreaterThanOrEqual(150);
+      expect(ms).toBeLessThanOrEqual(300);
+    }
+  });
+});
+
 describe("Toast overlay containment", () => {
   it("portals the viewport into the enclosing ThemeScope instead of the document body", async () => {
     const { host, manager } = renderToast();

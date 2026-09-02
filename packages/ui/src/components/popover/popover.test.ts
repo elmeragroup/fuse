@@ -24,6 +24,7 @@ describe("popover source contract", () => {
     expect(source).toContain("before:border-border");
     expect(source).toContain("sqrt(2)");
     expect(source).not.toContain("react-aria/internal/popover");
+    expect(source).not.toContain("outline-hidden");
   });
 
   it("keeps the lifted popup metrics, elevation, and animation timing", () => {
