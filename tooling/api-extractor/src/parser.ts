@@ -1,4 +1,5 @@
 import type { BackendExtractionSession, BackendModuleDraft } from "./backend/contracts.ts";
+import { applyTypeOnlyStarFilter } from "./backend/type-only-star-filter.ts";
 import type { ExtractorOptions } from "./options.ts";
 import { resolveModule } from "./parse/resolver.ts";
 import type { ResolvedModule } from "./parse/resolver.ts";
@@ -45,17 +46,14 @@ export function resolveModuleDraft(
 }
 
 /**
- * Compiler-owned module resolution used by declaration re-export policy.
- *
- * KEPT despite duplicating the backend walk's group-aware
- * `applyTypeOnlyStarFilter`: this is the BACKEND-NEUTRAL half of that policy —
- * it runs on any adapter's drafts through the public seam, and its behavior is
- * pinned (`extractor.test.ts` "keeps the public extraction seam
- * backend-neutral" and "classifies raw module-resolution failures as
- * contextual BackendError"; `boundary.test.ts` "runs parser policy against a
- * replacement backend with no compiler dependency"). The TS7 walk applies the
- * stronger group-aware filter BEFORE descriptor expansion; this flatter pass
- * remains the contract every replacement backend sees.
+ * Resolves the draft's type-only star sources through the adapter's own module
+ * resolution and delegates the filter itself to the backend-owned
+ * `applyTypeOnlyStarFilter`. The TS7 walk has already applied that filter
+ * before descriptor expansion, so this pass is a no-op for it; a replacement
+ * backend that hands over unfiltered drafts through the public seam still gets
+ * the same policy (`extractor.test.ts` "keeps the public extraction seam
+ * backend-neutral"; `boundary.test.ts` "runs parser policy against a
+ * replacement backend with no compiler dependency").
  */
 function filterModuleDraft(
   session: BackendExtractionSession,
@@ -67,14 +65,5 @@ function filterModuleDraft(
       .map((specifier) => session.resolveModule(specifier, filePath)?.filePath)
       .filter((path): path is string => path !== undefined)
   );
-  const filtered = {
-    ...draft,
-    exports: draft.exports.filter((entry) => {
-      if (entry.declarationSourcePath === undefined || !typeOnlySources.has(entry.declarationSourcePath)) {
-        return true;
-      }
-      return entry.pureType === true || entry.explicitValueReExport === true;
-    }),
-  };
-  return filtered;
+  return { ...draft, exports: applyTypeOnlyStarFilter(draft.exports, typeOnlySources) };
 }

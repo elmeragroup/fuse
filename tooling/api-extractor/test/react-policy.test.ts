@@ -169,4 +169,25 @@ describe("parser React identity policy", () => {
 
     expect(result.provenance.filter((entry) => entry.path.includes("callbackOnly"))).toHaveLength(0);
   });
+
+  it("does not rename a non-React `bivarianceHack` callback to React.RefCallback", async () => {
+    // React declares `RefCallback<T>` as an indexed access into a
+    // `{ bivarianceHack(instance): void }` literal, so the checker names the
+    // callback after the method. Only React's own declaration earns the rename.
+    // The alias is dropped only once `undefined` joins the union, so the
+    // optional prop is where the method-named callback surfaces as a member.
+    const result = await extractLookalikes();
+    expect(result.warnings).toEqual([]);
+    const entry = exportEntry(result, "LookalikeRefProps");
+    if (entry.type.kind !== "object") throw new Error(`expected an object, got ${entry.type.kind}`);
+    const ref = entry.type.properties.find((property) => property.name === "optionalRef")?.type;
+    if (ref?.kind !== "union") throw new Error(`expected a union, got ${ref?.kind}`);
+    const names = ref.types.map((member) =>
+      member.kind === "external"
+        ? { name: member.typeName.name, namespaces: member.typeName.namespaces }
+        : member.kind
+    );
+    expect(names).toContainEqual({ name: "bivarianceHack", namespaces: undefined });
+    expect(names).not.toContainEqual({ name: "RefCallback", namespaces: ["React"] });
+  });
 });

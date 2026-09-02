@@ -10,11 +10,11 @@
  */
 
 import { runIfMain } from "./cli.ts";
+import { assertNodeMajor } from "./files.ts";
 import type { TimingPlan } from "./fixture-catalog.ts";
 import { runExternalSelectionTiming } from "./timing/external-selection.ts";
 import { runIssue02Timing } from "./timing/issue02.ts";
 import { runIssue14Timing } from "./timing/issue14.ts";
-import { assertTimingNodeVersion } from "./timing/shared.ts";
 
 type TimingMode = "--check" | "--check-portability" | "--write";
 type TimingInvocation = { readonly plan: TimingPlan; readonly mode: TimingMode };
@@ -47,7 +47,7 @@ function parseArguments(arguments_: readonly string[]): TimingInvocation {
 }
 
 async function main(): Promise<void> {
-  assertTimingNodeVersion();
+  assertNodeMajor();
   const { plan, mode } = parseArguments(process.argv.slice(2));
   switch (plan) {
     case "issue02":

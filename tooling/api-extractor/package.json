@@ -31,11 +31,9 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@effect/platform-node": "catalog:",
     "effect": "catalog:"
   },
   "devDependencies": {
-    "@effect/vitest": "catalog:",
     "@elmeragroup/typescript-config": "workspace:*",
     "@types/node": "catalog:",
     "@types/react": "catalog:",

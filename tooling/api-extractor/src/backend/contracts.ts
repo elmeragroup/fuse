@@ -1,3 +1,4 @@
+import type { IntrinsicName } from "../model.ts";
 import type { ExtractWarning, TypeFlagName } from "../warnings.ts";
 
 declare const backendHandleBrand: unique symbol;
@@ -387,18 +388,22 @@ export type BackendWarningFact = ExtractWarning extends infer Warning
     : never
   : never;
 
-export type BackendIntrinsicName =
-  | "any"
-  | "bigint"
-  | "boolean"
-  | "never"
-  | "null"
-  | "number"
-  | "string"
-  | "symbol"
-  | "undefined"
-  | "unknown"
-  | "void";
+/** The backend reports the same intrinsic vocabulary the model publishes. */
+export type BackendIntrinsicName = IntrinsicName;
+
+/**
+ * Whether a name is one of TypeScript's internal `__`-prefixed symbol names,
+ * which never describe a public API name.
+ *
+ * The one prefix rule for both the compiler-free resolver modules and the
+ * backend module walk. Deliberately NOT the backend fact reader's closed
+ * allowlist (`internalSymbolNames` in `ts7/facts.ts`, which also admits
+ * "VoidOrUndefinedOnly" — no `__` prefix): unifying either direction would
+ * change which names are refused, so the two policies stay apart on purpose.
+ */
+export function isInternalSymbolName(name: string): boolean {
+  return name.startsWith("__");
+}
 
 export type BackendDocumentation = {
   readonly description?: string;
@@ -465,3 +470,22 @@ export type BackendTiming = {
   };
   readonly recentRequests: readonly BackendTimingRequest[];
 };
+
+/** The timing a backend reports when it collected none. */
+export function disabledTiming(): BackendTiming {
+  return {
+    enabled: false,
+    totals: {
+      requestCount: 0,
+      roundTripMs: 0,
+      bytesSent: 0,
+      bytesReceived: 0,
+      serverTimeMs: 0,
+      transportOverheadMs: 0,
+      nodesMaterialized: 0,
+      sourceFilesFetched: 0,
+      nodesFetched: 0,
+    },
+    recentRequests: [],
+  };
+}

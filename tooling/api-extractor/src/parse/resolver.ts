@@ -3,11 +3,9 @@
 /* oxlint-disable anti-slop/require-safety-comment-for-type-assertion -- the fallback flag tuple is package-owned. */
 
 import type {
-  BackendCompilerOperations,
   BackendExportDraft,
   BackendNodeHandle,
   BackendNodeReference,
-  BackendTypeNodeHandle,
   BackendExtractionSession,
   BackendSymbolHandle,
   BackendTypeHandle,
@@ -15,6 +13,7 @@ import type {
   BackendTypeFacts,
 } from "../backend/contracts.ts";
 import type { BackendModuleDraft } from "../backend/contracts.ts";
+import { isInternalSymbolName } from "../backend/contracts.ts";
 import type { ExportNode, ModuleNode, SemanticType, TypeName } from "../model.ts";
 import { defaultExtractorOptions } from "../options.ts";
 import type { ExtractorOptions } from "../options.ts";
@@ -28,7 +27,7 @@ import { componentNode } from "./component.ts";
 import { authoredUndefinedUnionSyntax, intersectionNode, unionNode } from "./compound.ts";
 import { arrayNode, tupleNode } from "./container.ts";
 import type { ResolverContext } from "./contracts.ts";
-import { isInternalSymbolName, warningLocation } from "./contracts.ts";
+import { warningLocation } from "./contracts.ts";
 import { externalPolicy } from "./external-policy.ts";
 import type { ExternalPolicyDecision } from "./external-policy.ts";
 import { normalizeExternalTypeSelection } from "./external-type-selection.ts";
@@ -50,6 +49,7 @@ import {
   componentPropSemanticPathFromProvenancePath,
   exportSemanticPath,
 } from "./semantic-paths.ts";
+import { applySubstitutions } from "./substitutions.ts";
 import { namedTypeArguments } from "./type-name.ts";
 import {
   authoredExtractOverIndexLike,
@@ -125,9 +125,7 @@ function resolveExport(entry: BackendExportDraft, base: Context): ExportNode {
   const sourceNode =
     declarationFacts?.kind === "function" || declarationFacts?.kind === "functionLike"
       ? undefined
-      : declaration === undefined
-        ? undefined
-        : typeNodeFromDeclaration(base.operations, declaration);
+      : declarationFacts?.type;
   const declared =
     declarationFacts?.kind === "typeAlias" ||
     declarationFacts?.kind === "interface" ||
@@ -285,9 +283,7 @@ function typeNode(
 ): SemanticType {
   context.operations.setErrorContext(context.symbolStack);
   if (type === undefined) return unsupported(context, undefined, symbol, sourceNode);
-  const originalFacts = context.operations.typeFacts(type);
-  const substituted =
-    originalFacts.symbol === undefined ? type : (context.substitutions.get(originalFacts.symbol) ?? type);
+  const substituted = applySubstitutions(type, context.substitutions, context.operations) ?? type;
   const facts = context.operations.typeFacts(substituted);
   if (facts.isError === true) return unsupported(context, substituted, symbol, sourceNode);
   if (context.active.has(substituted)) return shallowType(substituted, sourceNode, context);
@@ -312,7 +308,7 @@ function typeNodeUnsafe(
     if (substituted !== undefined) return substituted;
   }
   const typeNameValue = typeNameFor(type, sourceNode, context);
-  if (facts.isTypeParameter === true) return typeParameterNode(type, typeNameValue, context);
+  if (facts.isTypeParameter === true) return occurrenceTypeParameter(type, context, typeNode);
   // Authored `keyof` syntax is reconstructed before broad shape resolvers can
   // report only the checker's reduced result — upstream runs its operator
   // resolver first for exactly this reason.
@@ -733,16 +729,10 @@ function typeNameFor(
   // node's spelling (a bare `State` inside a library signature carries none,
   // while the instantiated project interface it resolves to lives in a
   // namespace). Re-asking without the node reads the semantic branch.
-  const semanticNameFacts =
-    rawAuthoredSymbol !== undefined && authoredSymbol === undefined
-      ? context.operations.typeNameFacts(type, undefined)
-      : undefined;
   const namespaces =
     rawAuthoredSymbol !== undefined && authoredSymbol === undefined
-      ? (semanticNameFacts?.namespaces ?? [])
-      : semanticNameFacts !== undefined && semanticNameFacts.namespaces.length > 0
-        ? semanticNameFacts.namespaces
-        : nameFacts.namespaces;
+      ? (context.operations.typeNameFacts(type, undefined)?.namespaces ?? [])
+      : nameFacts.namespaces;
   const authoredArguments = authoredSymbol === undefined ? undefined : nameFacts.authoredArguments;
   const authoredUsesDifferentSymbol =
     authoredSymbol !== undefined && facts.aliasSymbol !== undefined && authoredSymbol !== facts.aliasSymbol;
@@ -777,14 +767,6 @@ function typeNameFor(
   };
 }
 
-function typeParameterNode(
-  type: BackendTypeHandle,
-  _typeNameValue: TypeName | undefined,
-  context: Context
-): SemanticType {
-  return occurrenceTypeParameter(type, context, typeNode);
-}
-
 /**
  * Probes a substitution's base type and then its constraint, the way upstream's
  * `resolveSubstitutionFallback` does.
@@ -812,12 +794,4 @@ function substitutionFallback(
     return resolved;
   }
   return undefined;
-}
-
-function typeNodeFromDeclaration(
-  operations: BackendCompilerOperations,
-  declaration: BackendNodeHandle
-): BackendTypeNodeHandle | undefined {
-  const info = operations.nodeFacts(declaration);
-  return info.type;
 }

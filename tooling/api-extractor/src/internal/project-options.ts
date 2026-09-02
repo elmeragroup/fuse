@@ -1,6 +1,7 @@
 import { Context } from "effect";
 import type { Effect } from "effect";
 
+import type { BackendTiming } from "../backend/contracts.ts";
 import type { BackendError } from "../errors.ts";
 import type { ExtractError, FileNotInProgramError } from "../errors.ts";
 import type { ExtractionResult } from "../extractor.ts";
@@ -17,28 +18,8 @@ export type InternalOpenProjectOptions = OpenProjectOptions & {
 
 export type InternalTimedExtraction = {
   readonly result: ExtractionResult;
-  readonly timing: {
-    readonly enabled: boolean;
-    readonly totals: {
-      readonly requestCount: number;
-      readonly roundTripMs: number;
-      readonly bytesSent: number;
-      readonly bytesReceived: number;
-      readonly serverTimeMs: number;
-      readonly transportOverheadMs: number;
-      readonly nodesMaterialized: number;
-      readonly sourceFilesFetched: number;
-      readonly nodesFetched: number;
-    };
-    readonly recentRequests: readonly {
-      readonly method: string;
-      readonly roundTripMs: number;
-      readonly bytesSent: number;
-      readonly bytesReceived: number;
-      readonly serverTimeMs?: number;
-      readonly transportOverheadMs?: number;
-    }[];
-  };
+  /** The backend's own timing shape; the evidence seam adds nothing to it. */
+  readonly timing: BackendTiming;
 };
 
 export type InternalTimingMethod = (

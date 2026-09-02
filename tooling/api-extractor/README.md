@@ -59,9 +59,14 @@ state into opaque handles and primitive facts. `src/parser.ts` and `src/parse/**
 policy: recursion, aliases, generics, containers, mapped types, callables, classes, modules,
 external types, warnings, and React component recognition.
 
+The type-only star re-export filter is one backend-owned, compiler-free function
+(`src/backend/type-only-star-filter.ts`): the ts7 walk applies it before descriptor expansion and
+`src/parser.ts` delegates to the same function for any replacement backend's drafts. _(Amended
+2026-09-02.)_
+
 The public model, warnings, errors, provenance, options, and service contain no compiler handles.
-`src/parse/**` and `src/canonical/**` import no Effect module either; `test/boundary.test.ts` pins
-both rules.
+`src/parse/**` and `src/canonical/**` import no Effect module, including through value-import
+graphs; `test/boundary.test.ts` pins both the compiler boundary and that Effect-free walk.
 Each `extractModule` call gets an isolated synchronous extraction session, so recursion state and
 warning collection cannot leak between calls. Output ordering and canonicalization are
 deterministic for the pinned toolchain.
@@ -98,6 +103,7 @@ and 19 with a reviewed TypeScript 7 divergence. Their evidence files are:
 - `output.json` is immutable upstream evidence from
   `michaldudak/typescript-api-extractor@e145350`. No local command may rewrite or alias it.
 - `output.tsgo.json` and `ts7-oracle.json` record an explicitly reviewed TypeScript 7 divergence.
+  A fixture that still matches `output.json` does not keep a duplicate `output.tsgo.json`.
 - `warnings.tsgo.json` records reviewed recoverable warnings, including empty warning sets where the
   absence itself is evidence.
 - `issue-14-conformance.json` is the generated report that binds fixture input, selected oracle,
@@ -208,7 +214,9 @@ git -C ../../.ref/effect checkout --detach effect@4.0.0-rc.111
 ```
 
 The Effect reference resolves to commit `648f566dd259898e7697c7fcb796183ccbc474ab`. Runtime
-dependencies remain pinned to the same Effect RC tuple in `pnpm-workspace.yaml`.
+`effect` remains pinned to that RC in `pnpm-workspace.yaml`. Timing evidence gates on Node
+major 24 and records the exact patch as an observation, so any `>=24.13.0 <25` runtime can
+run the package tests.
 
 The semantic model and resolver boundary are original workspace code informed by the upstream
 extractor. Any future source port must retain the relevant MIT attribution in `NOTICE`. Package code

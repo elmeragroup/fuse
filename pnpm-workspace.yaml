@@ -8,8 +8,6 @@ catalog:
   "@changesets/cli": 2.29.7
   "@arethetypeswrong/core": 0.18.5
   "@base-ui/react": 1.6.0
-  "@effect/platform-node": 4.0.0-rc.111
-  "@effect/vitest": 4.0.0-rc.111
   "@internationalized/date": 3.12.3
   "@internationalized/string": 3.2.10
   "@phosphor-icons/react": 2.1.10
@@ -65,6 +63,3 @@ minimumReleaseAge: 4320
 
 minimumReleaseAgeExclude:
   - effect@4.0.0-rc.111
-  - "@effect/vitest@4.0.0-rc.111"
-  - "@effect/platform-node@4.0.0-rc.111"
-  - "@effect/platform-node-shared@4.0.0-rc.111"

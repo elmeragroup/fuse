@@ -5,7 +5,7 @@ import type { SemanticType, TypeName } from "../model.ts";
 import { unwrapAuthoredNode } from "./authored-node.ts";
 import type { ResolveSemanticType, ResolverContext } from "./contracts.ts";
 import type { Substitutions } from "./substitutions.ts";
-import { bindAliasParameters } from "./substitutions.ts";
+import { applySubstitutions, bindAliasParameters } from "./substitutions.ts";
 
 type Context = ResolverContext;
 
@@ -23,17 +23,11 @@ type TupleElementExpansion = {
   readonly substitutions?: Substitutions;
 };
 
-/** Combines two optional binding scopes into one. */
-function mergeSubstitutions(
-  left: Substitutions | undefined,
-  right: Substitutions | undefined
-): Substitutions | undefined {
-  if (left === undefined) return right;
-  if (right === undefined) return left;
-  const merged = new Map(left);
-  for (const [symbol, type] of right) merged.set(symbol, type);
-  return merged;
-}
+/** The tuple an authored rest element spreads, with the bindings its element nodes are read under. */
+type TupleSource = {
+  readonly body: BackendNodeReference;
+  readonly substitutions?: Substitutions;
+};
 
 /**
  * Resolves an array container.
@@ -94,13 +88,9 @@ export function tupleNode(
       // A donated element node written in terms of a spread alias's own
       // parameters resolves to its bound argument; every other node keeps the
       // semantic element the checker already instantiated.
-      if (scoped.substitutions.size > 0) {
-        const nodeType = context.operations.typeAtNode(node);
-        const symbol = nodeType === undefined ? undefined : context.operations.typeFacts(nodeType).symbol;
-        const bound = symbol === undefined ? undefined : scoped.substitutions.get(symbol);
-        if (bound !== undefined) return resolve(bound, node, undefined, scoped);
-      }
-      return resolve(element, node, undefined, scoped);
+      const nodeType = context.operations.typeAtNode(node);
+      const bound = applySubstitutions(nodeType, scoped.substitutions, context.operations);
+      return resolve(bound === nodeType ? element : bound, node, undefined, scoped);
     }),
     ...(context.operations.isReadonlyType(type) ? { isReadonly: true as const } : {}),
     ...(typeNameValue === undefined ? {} : { typeName: typeNameValue }),
@@ -222,14 +212,18 @@ function expandedTupleElement(
   isRest: boolean,
   width: number,
   context: Context,
-  visited: VisitedTupleSources,
-  inherited?: Substitutions
+  visited: VisitedTupleSources
 ): readonly (BackendNodeReference | undefined)[] {
   if (!isRest) return [child];
   const source = finiteTupleSource(child, context, visited);
   if (source === undefined) return openRestArrayElements(child, width, context);
-  const scoped = mergeSubstitutions(inherited, source.substitutions);
-  const nested = tupleElementPlan(source.body, width, context, new Set([...visited, source.body]), scoped);
+  const nested = tupleElementPlan(
+    source.body,
+    width,
+    context,
+    new Set([...visited, source.body]),
+    source.substitutions
+  );
   if (nested !== undefined) return nested.nodes;
   return openRestArrayElements(child, width, context);
 }
@@ -287,14 +281,12 @@ function finiteRestWidth(
 function finiteTupleSource(
   child: BackendNodeReference,
   context: Context,
-  visited: VisitedTupleSources,
-  inherited?: Substitutions
-): { readonly body: BackendNodeReference; readonly substitutions?: Substitutions } | undefined {
+  visited: VisitedTupleSources
+): TupleSource | undefined {
   const node = unwrapAuthoredNode(child, context, isContainerWrapper);
   if (node === undefined || visited.has(node)) return undefined;
   const facts = context.operations.nodeFacts(node);
-  if (facts.kind === "tuple")
-    return { body: node, ...(inherited === undefined ? {} : { substitutions: inherited }) };
+  if (facts.kind === "tuple") return { body: node };
   if (facts.kind !== "typeReference") return undefined;
   const symbol = facts.typeName?.authoredSymbol;
   const authoredArguments = facts.typeName?.authoredArguments;
@@ -311,7 +303,7 @@ function finiteTupleSource(
     unwrapAuthoredNode(declarationFacts.type, context, isContainerWrapper) ?? declarationFacts.type;
   if (context.operations.nodeKind(body) !== "tuple") return undefined;
   if (authoredArguments === undefined) {
-    return finiteTupleSource(body, context, new Set([...visited, node]), inherited);
+    return finiteTupleSource(body, context, new Set([...visited, node]));
   }
   // A generic instantiation: bind the declaration's parameters to the written
   // arguments so its element nodes describe this spread.
@@ -320,13 +312,9 @@ function finiteTupleSource(
     return argument === undefined ? undefined : context.operations.typeAtNode(argument);
   });
   if (bindings === undefined) {
-    return finiteTupleSource(body, context, new Set([...visited, node]), inherited);
+    return finiteTupleSource(body, context, new Set([...visited, node]));
   }
-  const merged = mergeSubstitutions(inherited, bindings);
-  return {
-    body,
-    ...(merged === undefined ? {} : { substitutions: merged }),
-  };
+  return { body, substitutions: bindings };
 }
 
 /**

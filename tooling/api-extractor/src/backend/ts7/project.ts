@@ -8,6 +8,7 @@ import { BackendError, ConfigError, safeCause } from "../../errors.ts";
 import type { InternalOpenProjectOptions } from "../../internal/project-options.ts";
 import type { ProjectFileSystem } from "../../options.ts";
 import type { BackendExtractionOptions, BackendProject, BackendTiming } from "../contracts.ts";
+import { disabledTiming } from "../contracts.ts";
 import { createPathIdentity } from "./path-identity.ts";
 import type { PathIdentity } from "./path-identity.ts";
 import { TsgoExtractionSession } from "./session.ts";
@@ -123,24 +124,6 @@ function normalizeTiming(info: ReturnType<API["getTimingInfo"]>): BackendTiming 
         ? {}
         : { transportOverheadMs: request.transportOverheadMs }),
     })),
-  };
-}
-
-function disabledTiming(): BackendTiming {
-  return {
-    enabled: false,
-    totals: {
-      requestCount: 0,
-      roundTripMs: 0,
-      bytesSent: 0,
-      bytesReceived: 0,
-      serverTimeMs: 0,
-      transportOverheadMs: 0,
-      nodesMaterialized: 0,
-      sourceFilesFetched: 0,
-      nodesFetched: 0,
-    },
-    recentRequests: [],
   };
 }
 

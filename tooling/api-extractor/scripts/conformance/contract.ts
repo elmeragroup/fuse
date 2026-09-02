@@ -1,10 +1,6 @@
-import { requiredNodeVersion } from "../files.ts";
-
 /** Stable identity strings shared by the Issue 14 evidence producers and validators. */
 export const issue14ConformanceCommand = "node scripts/conformance/report.ts --check" as const;
-export const issue14TimingCommand =
-  `fnm exec --using ${requiredNodeVersion} -- node scripts/timing.ts --plan issue14 --check` as const;
-export const issue14NodeVersion = requiredNodeVersion;
+export const issue14TimingCommand = "node scripts/timing.ts --plan issue14 --check" as const;
 export const issue14CompilerVersion = "typescript@7.0.2" as const;
 export const issue14TimingStableContract = "semantic-counters-exact" as const;
 export const issue14TimingWallClockContract = "observational" as const;

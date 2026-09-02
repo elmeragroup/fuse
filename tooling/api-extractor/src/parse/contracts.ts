@@ -60,17 +60,3 @@ export type ResolveSemanticType = (
   symbol: BackendSymbolHandle | undefined,
   context: ResolverContext
 ) => SemanticType;
-
-/**
- * Whether a name is one of TypeScript's internal `__`-prefixed symbol names,
- * which never describe a public API name.
- *
- * Policy owner for the compiler-free resolver modules (`resolver.ts`,
- * `object-resolver.ts`). Deliberately NOT the backend fact reader's closed
- * allowlist (`internalSymbolNames` in `backend/ts7/facts.ts`, which also
- * admits "VoidOrUndefinedOnly" — no `__` prefix): unifying either direction
- * would change which names are refused, so the layers stay apart on purpose.
- */
-export function isInternalSymbolName(name: string): boolean {
-  return name.startsWith("__");
-}

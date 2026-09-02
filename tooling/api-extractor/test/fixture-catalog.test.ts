@@ -1,3 +1,5 @@
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { readIssue14ConformanceReport } from "../scripts/conformance/report.ts";
@@ -503,4 +505,32 @@ describe("fixture evidence catalog", () => {
       );
     }
   );
+
+  it("pairs every output.tsgo.json with a reviewed ts7-oracle.json reason", () => {
+    const fixtureRoot = resolve(import.meta.dirname, "fixtures");
+    const duplicates: string[] = [];
+    const unpaired: string[] = [];
+    for (const entry of readdirSync(fixtureRoot, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue;
+      const directory = join(fixtureRoot, entry.name);
+      const selectedPath = join(directory, "output.tsgo.json");
+      if (!existsSync(selectedPath)) continue;
+      if (!existsSync(join(directory, "ts7-oracle.json"))) unpaired.push(entry.name);
+      const upstreamPath = join(directory, "output.json");
+      if (
+        existsSync(upstreamPath) &&
+        JSON.stringify(JSON.parse(readFileSync(upstreamPath, "utf8"))) ===
+          JSON.stringify(JSON.parse(readFileSync(selectedPath, "utf8")))
+      ) {
+        duplicates.push(entry.name);
+      }
+    }
+    expect(unpaired).toEqual([]);
+    expect(duplicates).toEqual([]);
+    expect(
+      fixtureEvidenceCatalog
+        .filter((record) => record.oracle.selectedFile === "output.tsgo.json")
+        .every((record) => record.oracle.divergenceRecord === "ts7-oracle.json")
+    ).toBe(true);
+  });
 });
