@@ -93,7 +93,9 @@
     "anti-slop/no-module-mocking": "error",
     "anti-slop/require-safety-comment-for-type-assertion": "warn",
     "anti-slop/no-runtime-typeof": "warn",
-    "anti-slop/no-shape-in-symbol-names": "warn"
+    "anti-slop/no-shape-in-symbol-names": "warn",
+    "anti-slop/no-slop-comments": ["warn", { "ticketPattern": "ELM-\\d+" }],
+    "anti-slop/no-narration-comments": "warn"
   },
   "env": {
     "builtin": true
