@@ -28,17 +28,19 @@ export type TypeArgument = {
   readonly equalToDefault: boolean;
 };
 
-export type DocumentationTag = {
-  readonly name: string;
-  readonly value?: string;
-};
+const DocumentationTagSchema = Schema.Struct({
+  name: Schema.String,
+  value: Schema.optionalKey(Schema.String),
+});
+export type DocumentationTag = typeof DocumentationTagSchema.Type;
 
-export type Documentation = {
-  readonly description?: string;
-  readonly defaultValue?: string;
-  readonly visibility?: "public" | "private" | "internal";
-  readonly tags: readonly DocumentationTag[];
-};
+const DocumentationSchema = Schema.Struct({
+  description: Schema.optionalKey(Schema.String),
+  defaultValue: Schema.optionalKey(Schema.String),
+  visibility: Schema.optionalKey(Schema.Literals(["public", "private", "internal"] as const)),
+  tags: Schema.Array(DocumentationTagSchema),
+});
+export type Documentation = typeof DocumentationSchema.Type;
 
 export type IntrinsicNode = {
   readonly kind: "intrinsic";
@@ -211,20 +213,6 @@ export type SemanticType =
   | TypeQueryNode
   | UnionNode;
 
-export type ExportNode = {
-  readonly name: string;
-  readonly type: SemanticType;
-  readonly documentation?: Documentation;
-  readonly reexportedFrom?: string;
-  readonly extendsTypes?: readonly { readonly name: string; readonly resolvedName?: string }[];
-};
-
-export type ModuleNode = {
-  readonly name: string;
-  readonly exports: readonly ExportNode[];
-  readonly imports?: readonly string[];
-};
-
 /**
  * Recursively correlates the model graph with the type-operator output mode,
  * mirroring upstream's `ParserOutput`: a preserved operator may appear at any
@@ -270,18 +258,6 @@ export type SyntaxOnlyModuleNode = SyntaxOnlyOutput<ModuleNode>;
 
 /** Extracted module shape whose preserved operators all carry resolved payloads. */
 export type ResolvedModuleNode = ResolvedOutput<ModuleNode>;
-
-const DocumentationTagSchema = Schema.Struct({
-  name: Schema.String,
-  value: Schema.optionalKey(Schema.String),
-});
-
-const DocumentationSchema = Schema.Struct({
-  description: Schema.optionalKey(Schema.String),
-  defaultValue: Schema.optionalKey(Schema.String),
-  visibility: Schema.optionalKey(Schema.Literals(["public", "private", "internal"] as const)),
-  tags: Schema.Array(DocumentationTagSchema),
-});
 
 const TypeNameSchema: Schema.Codec<TypeName> = Schema.Struct({
   name: Schema.String,
@@ -497,11 +473,14 @@ const ExportNodeSchema = Schema.Struct({
   ),
 });
 
+export type ExportNode = typeof ExportNodeSchema.Type;
+
 export const ModuleNodeSchema = Schema.Struct({
   name: Schema.String,
   exports: Schema.Array(ExportNodeSchema),
   imports: Schema.optionalKey(Schema.Array(Schema.String)),
 });
+export type ModuleNode = typeof ModuleNodeSchema.Type;
 
 export const ExtractionResultSchema = Schema.Struct({
   module: ModuleNodeSchema,

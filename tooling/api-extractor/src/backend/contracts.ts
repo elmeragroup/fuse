@@ -1,9 +1,4 @@
-import type {
-  OmittedIndexSignatureReason,
-  TypeFlagName,
-  UncertainComponentRecognitionReason,
-  UnresolvedReExportReason,
-} from "../warnings.ts";
+import type { ExtractWarning, TypeFlagName } from "../warnings.ts";
 
 declare const backendHandleBrand: unique symbol;
 
@@ -359,100 +354,16 @@ export type BackendCompilerOperations = {
   readonly typeToString: (type: BackendTypeHandle) => string;
 };
 
-export type BackendWarningFact =
-  | {
-      readonly code: "unsupported-type-fallback";
-      readonly filePath: string;
-      readonly line: number;
-      readonly column: number;
-      readonly parsedSymbolStack: readonly string[];
-      readonly typeFlags: readonly TypeFlagName[];
-      readonly typeText: string;
-      readonly sourceText?: string;
-    }
-  | {
-      readonly code: "missing-enum-declaration";
-      readonly filePath: string;
-      readonly line: number;
-      readonly column: number;
-      readonly parsedSymbolStack: readonly string[];
-      readonly enumName: string;
-      readonly memberName?: string;
-    }
-  | {
-      readonly code: "omitted-index-signature";
-      readonly filePath: string;
-      readonly line: number;
-      readonly column: number;
-      readonly parsedSymbolStack: readonly string[];
-      readonly reason: OmittedIndexSignatureReason;
-      readonly keyTypes: readonly string[];
-    }
-  | {
-      /** A non-class shape's construct signatures, which the model cannot carry. */
-      readonly code: "unrepresented-construct-signatures";
-      readonly filePath: string;
-      readonly line: number;
-      readonly column: number;
-      readonly parsedSymbolStack: readonly string[];
-      /** Structural path of the construct-signature slot that was omitted. */
-      readonly structuralPath: readonly string[];
-      readonly signatureCount: number;
-    }
-  | {
-      /** Named members dropped because a callable shape is reported as a function. */
-      readonly code: "omitted-callable-members";
-      readonly filePath: string;
-      readonly line: number;
-      readonly column: number;
-      readonly parsedSymbolStack: readonly string[];
-      /** Structural path of the callable whose members were omitted. */
-      readonly structuralPath: readonly string[];
-      readonly memberNames: readonly string[];
-    }
-  | {
-      /**
-       * An `export default` expression the checker could not resolve to a
-       * symbol, so the export is skipped. Upstream emits the same condition
-       * (`missing-default-export-symbol`).
-       */
-      readonly code: "missing-default-export-symbol";
-      readonly filePath: string;
-      readonly line: number;
-      readonly column: number;
-      readonly parsedSymbolStack: readonly string[];
-      readonly sourceText: string;
-    }
-  | {
-      /**
-       * A re-export whose target could not be followed. `missing-target` is an
-       * alias with no resolvable destination; `cycle` is an alias or barrel
-       * chain that returned to its starting namespace. Upstream silently drops
-       * such exports; the warning keeps the omission inspectable.
-       */
-      readonly code: "unresolved-re-export";
-      readonly reason: UnresolvedReExportReason;
-      readonly filePath: string;
-      readonly line: number;
-      readonly column: number;
-      readonly parsedSymbolStack: readonly string[];
-      readonly name: string;
-    }
-  | {
-      /**
-       * A capitalized export whose union holds some component-like arms and at
-       * least one that is not. Raised by the compiler-free component
-       * transform: the export keeps its resolved kind, and the warning records
-       * why the heuristic did not confirm a component.
-       */
-      readonly code: "uncertain-component-recognition";
-      readonly reason: UncertainComponentRecognitionReason;
-      readonly filePath: string;
-      readonly line: number;
-      readonly column: number;
-      readonly parsedSymbolStack: readonly string[];
-      readonly name: string;
-    };
+/**
+ * A warning as the backend and resolver record it: every structured field of
+ * the public `ExtractWarning`, minus the rendered `message`, which
+ * `parse/fallback.ts` adds once at the package boundary.
+ */
+export type BackendWarningFact = ExtractWarning extends infer Warning
+  ? Warning extends { readonly code: string }
+    ? Omit<Warning, "message">
+    : never
+  : never;
 
 export type BackendIntrinsicName =
   | "any"
