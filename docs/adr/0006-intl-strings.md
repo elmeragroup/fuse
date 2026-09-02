@@ -1,6 +1,6 @@
 # 0006 — Built-in localized strings via @internationalized/string dictionaries
 
-Date: 2026-08-18. Status: accepted.
+Date: 2026-08-18. Status: accepted; amended 2026-09-02 — `useLocalizedStrings` caches formatters per dictionary identity and locale.
 
 ## Context
 
@@ -24,3 +24,7 @@ Adopt **the runtime, not the machinery**. String-bearing components own a co-loc
 - All shipped locales are in every consumer bundle. Accepted at ≤ ~10 locales; past that, move to per-locale modules kept separate through the build + resolver-level subsetting (react-aria's model). The public API is unchanged by that switch.
 - `SupportedLocale` is the exact four-value public input union, so normal typed use selects a shipped module directly. The dictionary's `en-US` fallback remains defensive runtime behavior for untyped JavaScript input, not an additional supported-locale negotiation contract.
 - Tests: one dictionary-default render test per shipped locale per string-bearing component, plus prop-override tests; the `SupportedLocale` union is covered by public-API type tests.
+
+## Amendment 2026-09-02 — formatter cache
+
+`useLocalizedStrings` caches one `LocalizedStringFormatter` per dictionary identity (`WeakMap` keyed by the dictionary object) and locale, so chips, toasts, and pagination edges share an instance instead of allocating one per mount. Same dictionary and locale return the same formatter instance; a different locale or dictionary yields a distinct one. No public API change — locale still comes only from the provider and explicit string props still override the dictionary.
