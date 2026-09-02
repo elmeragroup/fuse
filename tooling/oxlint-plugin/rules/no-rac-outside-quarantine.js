@@ -34,7 +34,7 @@ function isForbiddenModule(specifier) {
 }
 
 /**
- * @param {import("estree").Literal | import("estree").TemplateLiteral | null | undefined} source
+ * @param {import("estree").Node | null | undefined} source
  * @returns {string | null}
  */
 function specifierFromSource(source) {
@@ -85,9 +85,7 @@ export default defineRule({
         reportIfForbidden(node, specifierFromSource(node.source));
       },
       ImportExpression(node) {
-        if (node.source.type === "Literal" && typeof node.source.value === "string") {
-          reportIfForbidden(node, node.source.value);
-        }
+        reportIfForbidden(node, specifierFromSource(node.source));
       },
     };
   },

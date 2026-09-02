@@ -1,8 +1,7 @@
-import { RuleTester } from "oxlint/plugins-dev";
-
+import { createRuleTester } from "../shared/rule-tester.ts";
 import { noNarrationCommentsRule } from "./no-narration-comments.ts";
 
-const tester = new RuleTester({ languageOptions: { parserOptions: { lang: "ts" } } });
+const tester = createRuleTester();
 
 tester.run("anti-slop/no-narration-comments", noNarrationCommentsRule, {
   valid: [

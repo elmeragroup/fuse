@@ -1,12 +1,7 @@
-import { RuleTester } from "oxlint/plugins-dev";
-import { describe, it } from "vitest";
-
+import { createRuleTester } from "../rule-tester.js";
 import facadeReexportGrammar from "./facade-reexport-grammar.js";
 
-RuleTester.describe = describe;
-RuleTester.it = it;
-
-const tester = new RuleTester({ languageOptions: { parserOptions: { lang: "ts" } } });
+const tester = createRuleTester();
 const error = { messageId: "grammar" };
 
 tester.run("elmera/facade-reexport-grammar", facadeReexportGrammar, {

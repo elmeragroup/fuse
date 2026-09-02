@@ -13,6 +13,7 @@
     "lint:fix": "oxlint --fix .",
     "test": "turbo run test",
     "test:browser": "turbo run test:browser",
+    "test:repo-policy": "vitest run --config test/vitest.config.mjs",
     "test:types": "turbo run test:types",
     "type-check": "turbo run type-check"
   },
@@ -29,7 +30,8 @@
     "oxlint-tsgolint": "catalog:",
     "plop": "catalog:",
     "turbo": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "engines": {
     "node": ">=24.13.0 <25"

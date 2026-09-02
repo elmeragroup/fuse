@@ -311,6 +311,19 @@ function classTokens(str) {
 }
 
 /**
+ * Class tokens from a tv/cn/record arm, excluding `data-[size=…]` tokens
+ * which are reported from the literal/template visitors instead.
+ *
+ * @param {import("estree").Node | null | undefined} node
+ * @returns {string[]}
+ */
+function recipeTokens(node) {
+  return extractStrings(node)
+    .flatMap(classTokens)
+    .filter((token) => !isDataSizeToken(token));
+}
+
+/**
  * @param {import("estree").Node | null | undefined} node
  * @param {string} name
  */
@@ -412,20 +425,11 @@ export default defineRule({
     }
 
     /**
-     * @param {import("estree").Node} node
-     */
-    function tokensOf(node) {
-      return extractStrings(node)
-        .flatMap(classTokens)
-        .filter((token) => !isDataSizeToken(token));
-    }
-
-    /**
      * @param {import("estree").CallExpression} node
      */
     function reportCnLiterals(node) {
       if (isInsideNamedCall(node, "tv")) return;
-      const tokens = tokensOf(node);
+      const tokens = recipeTokens(node);
       if (!fileHasControlH && !tokensHaveControlHeightPin(tokens)) return;
       reportTokens(node, tokens, checkTypeForTokens(tokens));
     }
@@ -438,7 +442,7 @@ export default defineRule({
       if (slots?.type !== "ObjectExpression") return;
       for (const prop of slots.properties) {
         if (prop.type !== "Property") continue;
-        const tokens = tokensOf(prop.value);
+        const tokens = recipeTokens(prop.value);
         if (!fileHasControlH && !tokensHaveControlHeightPin(tokens) && !tokensHaveControlVar(tokens)) {
           continue;
         }
@@ -457,7 +461,7 @@ export default defineRule({
       const groups = arms.map((arm) => ({
         key: arm.key,
         node: arm.value,
-        tokens: tokensOf(arm.value),
+        tokens: recipeTokens(arm.value),
       }));
       const allTokens = groups.flatMap((group) => group.tokens);
       if (
@@ -508,7 +512,7 @@ export default defineRule({
             if (prop.type !== "Property") continue;
             const sizeKey = propertyName(prop);
             if (sizeKey === null) continue;
-            const tokens = tokensOf(prop.value);
+            const tokens = recipeTokens(prop.value);
             const isControlBox = tokens.some(isControlBoxHeightClass);
             // Decorative/layout size axes (no pinned control height) are not density rungs.
             if (!isControlBox) continue;
@@ -526,7 +530,7 @@ export default defineRule({
           if (base) {
             groups.push({
               node: base,
-              tokens: tokensOf(base),
+              tokens: recipeTokens(base),
             });
           }
           const box = variants?.type === "ObjectExpression" ? objectPropValue(variants, "box") : null;
@@ -535,7 +539,7 @@ export default defineRule({
               if (arm.type !== "Property") continue;
               groups.push({
                 node: arm.value,
-                tokens: tokensOf(arm.value),
+                tokens: recipeTokens(arm.value),
               });
             }
           }
