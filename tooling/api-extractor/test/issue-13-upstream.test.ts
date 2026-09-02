@@ -1,4 +1,4 @@
-import { Effect, Schema } from "effect";
+import { Schema } from "effect";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -13,23 +13,16 @@ import {
 } from "../scripts/fixture-evidence.ts";
 import { referenceAvailable, upstreamFixtureRoot } from "../scripts/reference.ts";
 import { classifySourceFile, isExternalSourceFile } from "../src/backend/ts7/file-ownership.ts";
-import { ProjectExtractor } from "../src/index.ts";
 import type { ExtractionResult, ExtractorOptions } from "../src/index.ts";
 import type { ExternalTypeNode } from "../src/model.ts";
 import { defaultExtractorOptions } from "../src/options.ts";
+import { extractFixture } from "./support/extract.ts";
 
 const fixtureRoot = resolve(import.meta.dirname, "fixtures");
 const tsconfigPath = resolve(fixtureRoot, "issue-13-tsconfig.json");
 
 function runExtraction(fixture: string, file: string, options?: ExtractorOptions): Promise<ExtractionResult> {
-  return Effect.runPromise(
-    Effect.scoped(
-      Effect.gen(function* () {
-        const extractor = yield* ProjectExtractor;
-        return yield* extractor.extractModule(resolve(fixtureRoot, fixture, file), options);
-      }).pipe(Effect.provide(ProjectExtractor.live({ tsconfigPath })))
-    )
-  );
+  return extractFixture({ tsconfigPath }, resolve(fixtureRoot, fixture, file), options);
 }
 
 function oracleFile(definition: (typeof issue13ExternalFixtures)[number]): string {

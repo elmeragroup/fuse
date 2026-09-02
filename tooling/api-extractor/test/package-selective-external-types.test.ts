@@ -1,11 +1,12 @@
-import { Effect, Schema } from "effect";
+import { Schema } from "effect";
 import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { ExtractionResultSchema, ProjectExtractor } from "../src/index.ts";
+import { ExtractionResultSchema } from "../src/index.ts";
 import type { ComponentNode, ExtractionResult, ExtractorOptions } from "../src/index.ts";
+import { extractFixture } from "./support/extract.ts";
 
 const fixtureRoot = resolve(import.meta.dirname, "fixtures/package-selective-external-types");
 const inputPath = resolve(fixtureRoot, "input.ts");
@@ -14,23 +15,15 @@ const unknownOwnerPackagePath = resolve(fixtureRoot, "node_modules/unknown-owner
 const unknownOwnerDeclarationPath = resolve(fixtureRoot, "external-types/unknown-owner/index.d.ts");
 
 function runExtraction(options?: ExtractorOptions): Promise<ExtractionResult> {
-  return Effect.runPromise(
-    Effect.scoped(
-      Effect.gen(function* () {
-        const extractor = yield* ProjectExtractor;
-        return yield* extractor.extractModule(inputPath, options);
-      }).pipe(
-        Effect.provide(
-          ProjectExtractor.live({
-            tsconfigPath,
-            fileSystem: {
-              realpath: (path) =>
-                path === unknownOwnerPackagePath ? unknownOwnerDeclarationPath : undefined,
-            },
-          })
-        )
-      )
-    )
+  return extractFixture(
+    {
+      tsconfigPath,
+      fileSystem: {
+        realpath: (path) => (path === unknownOwnerPackagePath ? unknownOwnerDeclarationPath : undefined),
+      },
+    },
+    inputPath,
+    options
   );
 }
 
@@ -97,14 +90,7 @@ describe("package-selective external-type expansion", () => {
       );
 
       const extract = (options?: ExtractorOptions) =>
-        Effect.runPromise(
-          Effect.scoped(
-            Effect.gen(function* () {
-              const extractor = yield* ProjectExtractor;
-              return yield* extractor.extractModule(input, options);
-            }).pipe(Effect.provide(ProjectExtractor.live({ cwd: workspaceRoot, tsconfigPath: tsconfig })))
-          )
-        );
+        extractFixture({ cwd: workspaceRoot, tsconfigPath: tsconfig }, input, options);
       const defaultResult = await extract();
       const expandedResult = await extract({ includeExternalTypes: true });
       const defaultPublicExport = defaultResult.module.exports.find((entry) => entry.name === "PublicShape");

@@ -1,4 +1,4 @@
-import { Effect, Schema } from "effect";
+import { Schema } from "effect";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -9,21 +9,14 @@ import {
   readFixtureOracle,
 } from "../scripts/fixture-evidence.ts";
 import { referenceAvailable, upstreamFixtureRoot } from "../scripts/reference.ts";
-import { ProjectExtractor } from "../src/index.ts";
 import type { ExtractionResult } from "../src/index.ts";
+import { extractFixture } from "./support/extract.ts";
 
 const fixtureRoot = resolve(import.meta.dirname, "fixtures");
 const tsconfigPath = resolve(fixtureRoot, "issue-08-tsconfig.json");
 
 function runExtraction(fixture: string, file: string): Promise<ExtractionResult> {
-  return Effect.runPromise(
-    Effect.scoped(
-      Effect.gen(function* () {
-        const extractor = yield* ProjectExtractor;
-        return yield* extractor.extractModule(resolve(fixtureRoot, fixture, file));
-      }).pipe(Effect.provide(ProjectExtractor.live({ tsconfigPath })))
-    )
-  );
+  return extractFixture({ tsconfigPath }, resolve(fixtureRoot, fixture, file));
 }
 
 describe("Issue 08 ported upstream mapped-type fixtures", () => {

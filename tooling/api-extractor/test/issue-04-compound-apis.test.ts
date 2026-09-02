@@ -4,20 +4,14 @@ import { describe, expect, it } from "vitest";
 
 import { ExtractionResultSchema, ProjectExtractor } from "../src/index.ts";
 import type { ExtractionResult, PropertyNode, SemanticType } from "../src/index.ts";
+import { extractFixture } from "./support/extract.ts";
 
 const fixtureDirectory = resolve(import.meta.dirname, "fixtures/issue-04-canonical");
 const tsconfigPath = resolve(fixtureDirectory, "tsconfig.json");
 const inputPath = resolve(fixtureDirectory, "input.ts");
 
 function runExtraction(): Promise<ExtractionResult> {
-  return Effect.runPromise(
-    Effect.scoped(
-      Effect.gen(function* () {
-        const extractor = yield* ProjectExtractor;
-        return yield* extractor.extractModule(inputPath);
-      }).pipe(Effect.provide(ProjectExtractor.live({ tsconfigPath })))
-    )
-  );
+  return extractFixture({ tsconfigPath }, inputPath);
 }
 
 function runTwiceInOneProject(): Promise<readonly [ExtractionResult, ExtractionResult]> {

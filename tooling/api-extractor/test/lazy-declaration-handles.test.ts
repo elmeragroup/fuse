@@ -1,4 +1,3 @@
-import { Effect } from "effect";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -13,8 +12,8 @@ import type {
   BackendSymbolOrigin,
 } from "../src/backend/contracts.ts";
 import { openTsgoProject } from "../src/backend/ts7/project.ts";
-import { ProjectExtractor } from "../src/index.ts";
 import { resolveModuleDraft } from "../src/parser.ts";
+import { extractFixture } from "./support/extract.ts";
 
 const fixtureDirectory = resolve(import.meta.dirname, "fixtures/backend-lazy-declarations");
 const tsconfigPath = resolve(fixtureDirectory, "tsconfig.json");
@@ -85,14 +84,7 @@ function expectFrozenDataRecord(value: FrozenDataRecord): void {
 
 describe("lazy TypeScript declaration handles", () => {
   it("preserves the exact public model while rejected global declarations stay lazy", async () => {
-    const result = await Effect.runPromise(
-      Effect.scoped(
-        Effect.gen(function* () {
-          const extractor = yield* ProjectExtractor;
-          return yield* extractor.extractModule(inputPath);
-        }).pipe(Effect.provide(ProjectExtractor.live({ tsconfigPath })))
-      )
-    );
+    const result = await extractFixture({ tsconfigPath }, inputPath);
 
     expect(result.module.exports).toEqual([
       {

@@ -1,23 +1,16 @@
-import { Effect } from "effect";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { ProjectExtractor } from "../src/index.ts";
 import type { ExtractionResult, ProvenanceEntry } from "../src/index.ts";
 import type { ObjectNode, SemanticType } from "../src/model.ts";
+import { extractFixture } from "./support/extract.ts";
 
 const fixtureDirectory = resolve(import.meta.dirname, "fixtures/issue-08-review");
 
 async function extract(file: string): Promise<ExtractionResult> {
-  return Effect.runPromise(
-    Effect.scoped(
-      Effect.gen(function* () {
-        const extractor = yield* ProjectExtractor;
-        return yield* extractor.extractModule(resolve(fixtureDirectory, file));
-      }).pipe(
-        Effect.provide(ProjectExtractor.live({ tsconfigPath: resolve(fixtureDirectory, "tsconfig.json") }))
-      )
-    )
+  return extractFixture(
+    { tsconfigPath: resolve(fixtureDirectory, "tsconfig.json") },
+    resolve(fixtureDirectory, file)
   );
 }
 

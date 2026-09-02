@@ -27,6 +27,7 @@ import {
 import { issue14TypecheckCommand } from "../scripts/issue-14-contract.ts";
 import { ExtractError, ProjectExtractor } from "../src/index.ts";
 import { createTemporaryRoot, fixtureRoot } from "./issue-14-fixtures.ts";
+import { extractFixture } from "./support/extract.ts";
 
 describe("Issue 14 conformance report", () => {
   it("decodes one disposition for all 116 fixtures with no failures", () => {
@@ -185,24 +186,16 @@ describe("Issue 14 conformance report", () => {
 
   it("uses the public ProjectFileSystem seam for the unchanged upstream import", async () => {
     const accesses: string[] = [];
-    const result = await Effect.runPromise(
-      Effect.scoped(
-        Effect.gen(function* () {
-          const extractor = yield* ProjectExtractor;
-          return yield* extractor.extractModule(resolve(fixtureRoot, "module-imports-only/input.ts"));
-        }).pipe(
-          Effect.provide(
-            ProjectExtractor.live({
-              tsconfigPath: resolve(fixtureRoot, "issue-14-tsconfig.json"),
-              fileSystem: createFixtureFileSystem((access) => {
-                if (access.virtual && access.path === moduleImportsOnlyDependency) {
-                  accesses.push(access.operation);
-                }
-              }),
-            })
-          )
-        )
-      )
+    const result = await extractFixture(
+      {
+        tsconfigPath: resolve(fixtureRoot, "issue-14-tsconfig.json"),
+        fileSystem: createFixtureFileSystem((access) => {
+          if (access.virtual && access.path === moduleImportsOnlyDependency) {
+            accesses.push(access.operation);
+          }
+        }),
+      },
+      resolve(fixtureRoot, "module-imports-only/input.ts")
     );
     expect(result.module.imports).toContain("../../../src/models/export");
     expect(accesses).toContain("fileExists");

@@ -1,27 +1,21 @@
-import { Effect, Schema } from "effect";
+import { Schema } from "effect";
 import { resolve } from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { ProjectExtractor } from "../src/index.ts";
 import type { ExtractionResult } from "../src/index.ts";
 import { ModuleNodeSchema } from "../src/model.ts";
 import type { ExportNode, PropertyNode, SemanticType } from "../src/model.ts";
 import { ProvenanceSchema } from "../src/provenance.ts";
+import { extractFixture } from "./support/extract.ts";
 
 const fixtureDirectory = resolve(import.meta.dirname, "fixtures/issue-05-containers");
 
 let result: ExtractionResult;
 
 beforeAll(async () => {
-  result = await Effect.runPromise(
-    Effect.scoped(
-      Effect.gen(function* () {
-        const extractor = yield* ProjectExtractor;
-        return yield* extractor.extractModule(resolve(fixtureDirectory, "input.ts"));
-      }).pipe(
-        Effect.provide(ProjectExtractor.live({ tsconfigPath: resolve(fixtureDirectory, "tsconfig.json") }))
-      )
-    )
+  result = await extractFixture(
+    { tsconfigPath: resolve(fixtureDirectory, "tsconfig.json") },
+    resolve(fixtureDirectory, "input.ts")
   );
 });
 

@@ -1,24 +1,17 @@
-import { Effect, Schema } from "effect";
+import { Schema } from "effect";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { readFixtureOracle } from "../scripts/fixture-evidence.ts";
-import { ProjectExtractor } from "../src/index.ts";
 import { warningMessage } from "../src/parse/fallback.ts";
 import { ExtractWarningSchema } from "../src/warnings.ts";
+import { extractFixture } from "./support/extract.ts";
 
 const fixtureRoot = resolve(import.meta.dirname, "fixtures");
 const tsconfigPath = resolve(fixtureRoot, "issue-11-review", "tsconfig.json");
 
 async function extractReviewModule() {
-  return Effect.runPromise(
-    Effect.scoped(
-      Effect.gen(function* () {
-        const extractor = yield* ProjectExtractor;
-        return yield* extractor.extractModule(resolve(fixtureRoot, "issue-11-review", "input.tsx"));
-      }).pipe(Effect.provide(ProjectExtractor.live({ tsconfigPath })))
-    )
-  );
+  return extractFixture({ tsconfigPath }, resolve(fixtureRoot, "issue-11-review", "input.tsx"));
 }
 
 function exportType(module: Awaited<ReturnType<typeof extractReviewModule>>["module"], name: string) {
@@ -150,15 +143,9 @@ describe("Issue 11 review findings: component recognition boundaries", () => {
 
   it("classifies lookalike return types as ordinary functions with their callable surface intact", async () => {
     const tsconfig = resolve(fixtureRoot, "issue-11-tsconfig.json");
-    const result = await Effect.runPromise(
-      Effect.scoped(
-        Effect.gen(function* () {
-          const extractor = yield* ProjectExtractor;
-          return yield* extractor.extractModule(
-            resolve(fixtureRoot, "react-component-return-types", "input.tsx")
-          );
-        }).pipe(Effect.provide(ProjectExtractor.live({ tsconfigPath: tsconfig })))
-      )
+    const result = await extractFixture(
+      { tsconfigPath: tsconfig },
+      resolve(fixtureRoot, "react-component-return-types", "input.tsx")
     );
     expect(result.module).toEqual(readFixtureOracle("react-component-return-types", "output.json"));
     for (const lookalike of ["LocalElementType", "DomElementType"]) {

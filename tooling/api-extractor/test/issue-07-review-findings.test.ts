@@ -1,23 +1,16 @@
-import { Effect } from "effect";
 /* oxlint-disable typescript/prefer-optional-chain -- narrowing guards double as type predicates for the semantic union. */
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { ProjectExtractor } from "../src/index.ts";
 import type { SemanticType } from "../src/model.ts";
+import { extractFixture } from "./support/extract.ts";
 
 const fixtureDirectory = resolve(import.meta.dirname, "fixtures/issue-07-review");
 
 function extract(file: string) {
-  return Effect.runPromise(
-    Effect.scoped(
-      Effect.gen(function* () {
-        const extractor = yield* ProjectExtractor;
-        return yield* extractor.extractModule(resolve(fixtureDirectory, file));
-      }).pipe(
-        Effect.provide(ProjectExtractor.live({ tsconfigPath: resolve(fixtureDirectory, "tsconfig.json") }))
-      )
-    )
+  return extractFixture(
+    { tsconfigPath: resolve(fixtureDirectory, "tsconfig.json") },
+    resolve(fixtureDirectory, file)
   );
 }
 

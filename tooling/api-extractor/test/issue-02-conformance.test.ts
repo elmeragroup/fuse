@@ -1,4 +1,3 @@
-import { Effect } from "effect";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -9,21 +8,14 @@ import {
   issue02SupplementalFixtures,
   issue02TimingFixtures,
 } from "../scripts/fixture-evidence.ts";
-import { ProjectExtractor } from "../src/index.ts";
 import type { ExtractionResult } from "../src/index.ts";
+import { extractFixture } from "./support/extract.ts";
 
 const fixtureDirectory = resolve(import.meta.dirname, "fixtures");
 const tsconfigPath = resolve(fixtureDirectory, "issue-02-tsconfig.json");
 
 function runExtraction(filePath: string): Promise<ExtractionResult> {
-  return Effect.runPromise(
-    Effect.scoped(
-      Effect.gen(function* () {
-        const extractor = yield* ProjectExtractor;
-        return yield* extractor.extractModule(filePath);
-      }).pipe(Effect.provide(ProjectExtractor.live({ tsconfigPath })))
-    )
-  );
+  return extractFixture({ tsconfigPath }, filePath);
 }
 
 describe("Issue 02 ProjectExtractor conformance", () => {

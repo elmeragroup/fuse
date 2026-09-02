@@ -1,9 +1,10 @@
-import { Effect, Schema } from "effect";
+import { Schema } from "effect";
 import { isAbsolute, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { ExtractionResultSchema, ProjectExtractor, ProvenanceSchema } from "../src/index.ts";
+import { ExtractionResultSchema, ProvenanceSchema } from "../src/index.ts";
 import type { ExtractionResult, ExtractorOptions, ShouldResolveObjectData } from "../src/index.ts";
+import { extractFixture } from "./support/extract.ts";
 
 const fixtureDirectory = resolve(import.meta.dirname, "fixtures/issue-03-object-apis");
 const tsconfigPath = resolve(fixtureDirectory, "tsconfig.json");
@@ -16,36 +17,15 @@ const baseUiTsconfigPath = resolve(import.meta.dirname, "fixtures/issue-02-tscon
 const baseUiInputPath = resolve(baseUiFixtureDirectory, "input.tsx");
 
 function runExtraction(options?: ExtractorOptions): Promise<ExtractionResult> {
-  return Effect.runPromise(
-    Effect.scoped(
-      Effect.gen(function* () {
-        const extractor = yield* ProjectExtractor;
-        return yield* extractor.extractModule(inputPath, options);
-      }).pipe(Effect.provide(ProjectExtractor.live({ tsconfigPath })))
-    )
-  );
+  return extractFixture({ tsconfigPath }, inputPath, options);
 }
 
 function runReviewExtraction(options?: ExtractorOptions): Promise<ExtractionResult> {
-  return Effect.runPromise(
-    Effect.scoped(
-      Effect.gen(function* () {
-        const extractor = yield* ProjectExtractor;
-        return yield* extractor.extractModule(reviewInputPath, options);
-      }).pipe(Effect.provide(ProjectExtractor.live({ tsconfigPath: reviewTsconfigPath })))
-    )
-  );
+  return extractFixture({ tsconfigPath: reviewTsconfigPath }, reviewInputPath, options);
 }
 
 function runBaseUiExtraction(): Promise<ExtractionResult> {
-  return Effect.runPromise(
-    Effect.scoped(
-      Effect.gen(function* () {
-        const extractor = yield* ProjectExtractor;
-        return yield* extractor.extractModule(baseUiInputPath);
-      }).pipe(Effect.provide(ProjectExtractor.live({ tsconfigPath: baseUiTsconfigPath })))
-    )
-  );
+  return extractFixture({ tsconfigPath: baseUiTsconfigPath }, baseUiInputPath);
 }
 
 describe("Issue 03 object APIs, documentation, enums, and provenance", () => {
@@ -359,20 +339,9 @@ describe("Issue 03 object APIs, documentation, enums, and provenance", () => {
 
   it("keeps declaration provenance case-preserving and rooted at an explicit repository cwd", async () => {
     const mixedRoot = resolve(reviewFixtureDirectory, "MixedRepo");
-    const result = await Effect.runPromise(
-      Effect.scoped(
-        Effect.gen(function* () {
-          const extractor = yield* ProjectExtractor;
-          return yield* extractor.extractModule(resolve(mixedRoot, "packages/UI/src/Widget.ts"));
-        }).pipe(
-          Effect.provide(
-            ProjectExtractor.live({
-              tsconfigPath: resolve(mixedRoot, "tsconfig.json"),
-              cwd: mixedRoot,
-            })
-          )
-        )
-      )
+    const result = await extractFixture(
+      { tsconfigPath: resolve(mixedRoot, "tsconfig.json"), cwd: mixedRoot },
+      resolve(mixedRoot, "packages/UI/src/Widget.ts")
     );
     expect(result.provenance).toEqual(
       expect.arrayContaining([expect.objectContaining({ declarationPaths: ["packages/UI/src/Widget.ts"] })])
@@ -387,13 +356,9 @@ describe("Issue 03 object APIs, documentation, enums, and provenance", () => {
 
   it("uses the resolved default cwd for nested-tsconfig provenance roots", async () => {
     const mixedRoot = resolve(reviewFixtureDirectory, "MixedRepo");
-    const result = await Effect.runPromise(
-      Effect.scoped(
-        Effect.gen(function* () {
-          const extractor = yield* ProjectExtractor;
-          return yield* extractor.extractModule(resolve(mixedRoot, "packages/UI/src/Widget.ts"));
-        }).pipe(Effect.provide(ProjectExtractor.live({ tsconfigPath: resolve(mixedRoot, "tsconfig.json") })))
-      )
+    const result = await extractFixture(
+      { tsconfigPath: resolve(mixedRoot, "tsconfig.json") },
+      resolve(mixedRoot, "packages/UI/src/Widget.ts")
     );
     expect(result.provenance).toEqual(
       expect.arrayContaining([

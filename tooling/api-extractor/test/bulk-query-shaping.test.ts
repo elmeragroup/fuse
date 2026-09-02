@@ -1,4 +1,3 @@
-import { Effect } from "effect";
 import { existsSync, readFileSync, readdirSync, realpathSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -11,8 +10,8 @@ import type {
   BackendTypeHandle,
 } from "../src/backend/contracts.ts";
 import { openTsgoProject } from "../src/backend/ts7/project.ts";
-import { ProjectExtractor } from "../src/index.ts";
 import type { ProjectFileSystem } from "../src/options.ts";
+import { extractFixture } from "./support/extract.ts";
 
 const fixtureDirectory = resolve(import.meta.dirname, "fixtures");
 const objectDirectory = resolve(fixtureDirectory, "issue-03-object-apis");
@@ -165,20 +164,9 @@ describe("point-shaped backend queries", () => {
   });
 
   it("extracts through ProjectExtractor on a virtual filesystem", async () => {
-    const result = await Effect.runPromise(
-      Effect.scoped(
-        Effect.gen(function* () {
-          const extractor = yield* ProjectExtractor;
-          return yield* extractor.extractModule(objectInputPath);
-        }).pipe(
-          Effect.provide(
-            ProjectExtractor.live({
-              tsconfigPath: objectTsconfigPath,
-              fileSystem: diskFileSystem(),
-            })
-          )
-        )
-      )
+    const result = await extractFixture(
+      { tsconfigPath: objectTsconfigPath, fileSystem: diskFileSystem() },
+      objectInputPath
     );
     const options = result.module.exports.find((entry) => entry.name === "Options");
     expect(options?.type).toMatchObject({ kind: "object" });

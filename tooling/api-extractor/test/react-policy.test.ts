@@ -1,12 +1,11 @@
-import { Effect } from "effect";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import type { BackendModuleOrigin } from "../src/backend/contracts.ts";
-import { ProjectExtractor } from "../src/index.ts";
 import type { ExtractorOptions, ExtractionResult, SemanticType } from "../src/index.ts";
 import type { ParserSymbolOrigin } from "../src/parse/react-policy.ts";
 import { isReactWrapperType } from "../src/parse/react-policy.ts";
+import { extractFixture } from "./support/extract.ts";
 
 const lookalikeFixtureRoot = resolve(import.meta.dirname, "fixtures/react-policy-non-react-dependency");
 const lookalikeInput = resolve(lookalikeFixtureRoot, "input.ts");
@@ -15,14 +14,7 @@ const lookalikeTsconfig = resolve(lookalikeFixtureRoot, "tsconfig.json");
 type LookalikeOptions = ExtractorOptions;
 
 function extractLookalikes(options: LookalikeOptions = {}): Promise<ExtractionResult> {
-  return Effect.runPromise(
-    Effect.scoped(
-      Effect.gen(function* () {
-        const extractor = yield* ProjectExtractor;
-        return yield* extractor.extractModule(lookalikeInput, options);
-      }).pipe(Effect.provide(ProjectExtractor.live({ tsconfigPath: lookalikeTsconfig })))
-    )
-  );
+  return extractFixture({ tsconfigPath: lookalikeTsconfig }, lookalikeInput, options);
 }
 
 const dependencyDeclaration =

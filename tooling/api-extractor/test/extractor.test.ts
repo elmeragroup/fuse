@@ -25,6 +25,7 @@ import {
 } from "../src/index.ts";
 import type { ExtractionResult } from "../src/index.ts";
 import type { ExtractorOptions } from "../src/options.ts";
+import { extractFixture } from "./support/extract.ts";
 
 const fixtureDirectory = resolve(import.meta.dirname, "fixtures/basic");
 const tsconfigPath = resolve(fixtureDirectory, "tsconfig.json");
@@ -53,13 +54,7 @@ function runExtraction(
   options: { readonly tsconfigPath: string } = { tsconfigPath },
   extractorOptions?: ExtractorOptions
 ): Promise<ExtractionResult> {
-  const program = Effect.scoped(
-    Effect.gen(function* () {
-      const extractor = yield* ProjectExtractor;
-      return yield* extractor.extractModule(filePath, extractorOptions);
-    }).pipe(Effect.provide(ProjectExtractor.live(options)))
-  );
-  return Effect.runPromise(program);
+  return extractFixture(options, filePath, extractorOptions);
 }
 
 function runWithBackend(

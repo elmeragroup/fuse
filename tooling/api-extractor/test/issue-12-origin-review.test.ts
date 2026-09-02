@@ -1,9 +1,8 @@
-import { Effect } from "effect";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { ProjectExtractor } from "../src/index.ts";
 import type { ComponentNode } from "../src/model.ts";
+import { extractFixture } from "./support/extract.ts";
 
 const fixtureRoot = resolve(import.meta.dirname, "fixtures/issue-12-origin-review");
 const inputPath = resolve(fixtureRoot, "input.tsx");
@@ -24,14 +23,7 @@ const sameOriginStarBarrelPath = resolve(sameOriginStarFixtureRoot, "barrel.ts")
 const sameOriginStarTsconfigPath = resolve(sameOriginStarFixtureRoot, "tsconfig.json");
 
 function runExtraction(sourcePath: string = inputPath, projectTsconfigPath: string = tsconfigPath) {
-  return Effect.runPromise(
-    Effect.scoped(
-      Effect.gen(function* () {
-        const extractor = yield* ProjectExtractor;
-        return yield* extractor.extractModule(sourcePath);
-      }).pipe(Effect.provide(ProjectExtractor.live({ tsconfigPath: projectTsconfigPath })))
-    )
-  );
+  return extractFixture({ tsconfigPath: projectTsconfigPath }, sourcePath);
 }
 
 function component(result: Awaited<ReturnType<typeof runExtraction>>, name: string): ComponentNode {

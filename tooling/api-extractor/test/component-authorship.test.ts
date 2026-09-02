@@ -1,4 +1,3 @@
-import { Effect } from "effect";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -8,11 +7,11 @@ import type {
   BackendTypeNodeHandle,
 } from "../src/backend/contracts.ts";
 import { openTsgoProject } from "../src/backend/ts7/project.ts";
-import { ProjectExtractor } from "../src/index.ts";
 import { defaultExtractorOptions } from "../src/options.ts";
 import { recoverAuthoredComponent } from "../src/parse/component-authorship.ts";
 import type { ResolverContext } from "../src/parse/contracts.ts";
 import { normalizeExternalTypeSelection } from "../src/parse/external-type-selection.ts";
+import { extractFixture } from "./support/extract.ts";
 
 const fixtureDirectory = resolve(import.meta.dirname, "fixtures/component-authorship");
 const tsconfigPath = resolve(fixtureDirectory, "tsconfig.json");
@@ -74,14 +73,7 @@ function propsTypeText(
 
 describe("component authorship signature zip", () => {
   it("keeps each wrapper overload's first parameter when an earlier signature has no declaration", async () => {
-    const extracted = await Effect.runPromise(
-      Effect.scoped(
-        Effect.gen(function* () {
-          const extractor = yield* ProjectExtractor;
-          return yield* extractor.extractModule(inputPath);
-        }).pipe(Effect.provide(ProjectExtractor.live({ tsconfigPath })))
-      )
-    );
+    const extracted = await extractFixture({ tsconfigPath }, inputPath);
     const component = extracted.module.exports.find((entry) => entry.name === "TripleWrapped")?.type;
     expect(component).toMatchObject({
       kind: "component",
