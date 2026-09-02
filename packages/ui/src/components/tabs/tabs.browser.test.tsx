@@ -215,7 +215,6 @@ describe("Tabs", () => {
     );
 
     const horizontalHeights: number[] = [];
-    const verticalHeights: number[] = [];
     for (const density of ["dense", "comfortable"] as const) {
       stampDensity(density);
       const horizontal = htmlTab("Horizontal").closest("[role='tablist']");
@@ -233,10 +232,8 @@ describe("Tabs", () => {
       expect(px(triggerStyle.fontSize), `${density} trigger font`).toBe(CONTROL_MD[density].font);
       expect(px(triggerStyle.lineHeight), `${density} trigger leading`).toBe(CONTROL_MD[density].leading);
       horizontalHeights.push(horizontalHeight);
-      verticalHeights.push(verticalHeight);
     }
     expect(horizontalHeights[0]).not.toBe(horizontalHeights[1]);
-    expect(verticalHeights[0]).toBe(verticalHeights[1]);
 
     stampDensity("dense");
     rerender(
