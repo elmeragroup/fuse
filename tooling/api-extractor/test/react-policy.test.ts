@@ -151,7 +151,7 @@ describe("parser React identity policy", () => {
       const entry = exportEntry(result, exportName);
       // Mutation-sensitive public contract: these four dependency-owned
       // wrapper calls resolve to components from their public callable return
-      // type and the declared dependency props. If wrapper identity regresses
+      // types and the declared dependency props. If wrapper identity regresses
       // to a name-only `isReactWrapperCall`, authored callback recovery would
       // replace `declared` with `callbackOnly`; these model/provenance checks
       // would then fail without inspecting that internal predicate.

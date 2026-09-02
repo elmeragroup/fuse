@@ -88,8 +88,8 @@ export function occurrenceTypeParameter(
   const info = declaredInfo(type, context);
   const node = info?.node;
   // Upstream's occurrence resolver (`resolveTypeParameterType`) has no
-  // fallback name: it reads the symbol's declared name and bails out when the
-  // type carries no symbol. This seam cannot bail mid-resolution, so `"T"`
+  // fallback name: it reads the symbol's declared name and bails out when
+  // the type carries no symbol. This seam cannot bail mid-resolution, so `"T"`
   // stands in — unreachable in practice, because a checker type parameter
   // always reports its declared name through its symbol.
   const name = info?.name ?? "T";

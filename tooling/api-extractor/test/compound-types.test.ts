@@ -158,7 +158,7 @@ describe("Issue 04 compound type extraction through extractModule", () => {
     if (value.kind !== "intersection") return;
     expect(value.typeName?.name).toBe("Pair");
     // `Pair<Left, Right>` has two structural members. Reading the reference's
-    // type arguments as member syntax would name them `Left` and `Right`.
+    // arguments as member syntax would name them `Left` and `Right`.
     expect(
       value.types.map((member) => [
         memberName(member),

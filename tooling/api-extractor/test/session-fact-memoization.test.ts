@@ -32,8 +32,8 @@ describe("TypeScript 7 session fact memoization", () => {
       const firstType = first.compiler.typeOfSymbol(firstSymbol, false);
       if (firstType === undefined) throw new Error("Missing type for the first extraction");
 
-      // typeToString is a checker round trip; typeFacts is served from the
-      // type record the session already holds.
+      // typeToString is a checker round trip; typeFacts is served from
+      // the type record the session already holds.
       const firstBefore = requestCount(project);
       const firstText = first.compiler.typeToString(firstType);
       const firstAfterLoad = requestCount(project);

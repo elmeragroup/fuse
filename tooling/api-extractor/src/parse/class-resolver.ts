@@ -149,8 +149,8 @@ function extractMembers(
       context.operations.propertyType(member) ?? context.operations.typeOfSymbol(member, false);
     const signatures = memberType === undefined ? [] : context.operations.signaturesOfType(memberType);
     // Upstream classifies a member as a method from either declaration kind —
-    // MethodDeclaration or MethodSignature — so a signature merged in from an
-    // interface stays a method instead of collapsing into a function-typed
+    // MethodDeclaration or MethodSignature — so a signature merged in from
+    // an interface stays a method instead of collapsing into a function-typed
     // property.
     if (
       (declarationFacts.kind === "method" || declarationFacts.kind === "methodSignature") &&

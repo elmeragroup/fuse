@@ -230,7 +230,7 @@ describe("generic substitutions and aliases", () => {
 
   it("preserves concrete keyof arguments on the alias while its instances flatten", async () => {
     // Since Issue 09's operator-first reconstruction, an authored `keyof Obj`
-    // type argument keeps the operator expression with its reduced key set on
+    // argument keeps the operator expression with its reduced key set on
     // `resolvedType` (upstream replays authored keyof syntax wherever it is
     // written). The INSTANTIATED members that consume the argument still
     // resolve to the flattened union — both facts, never one instead of the

@@ -430,8 +430,8 @@ function typeNodeUnsafe(
   const signatures = context.operations.signaturesOfType(type);
   if (signatures.length > 0) {
     recordOmittedCallableMembers(type, signatures, context);
-    // A callable-first shape may also declare construct signatures, which the
-    // function node returned below cannot carry. Only a class would have been
+    // A callable-first shape may also declare construct signatures, which
+    // the function node returned below cannot carry. Only a class would have been
     // resolved through them, so any other shape's construct side is reported
     // here rather than vanishing silently.
     const constructs = context.operations.constructSignaturesOfType(type);
@@ -739,9 +739,8 @@ function typeNameFor(
   // A parameterless alias of a container has no type arguments at all. Its
   // checker type is still a type *reference* — to the tuple or array target —
   // whose type arguments are its ELEMENTS, so reading them here would publish
-  // `Pair<string, number>` for `type Pair = [string, number]`. Upstream guards
-  // the same way (`getTypeArguments`, common.ts: `if (type.aliasSymbol &&
-  // !type.aliasTypeArguments) typeArguments = []`).
+  // `Pair<string, number>` for `type Pair = [string, number]`. Upstream's
+  // `getTypeArguments` (common.ts) guards the same way.
   const aliasWithoutArguments = facts.aliasSymbol !== undefined && facts.aliasTypeArguments === undefined;
   const args = authoredUsesDifferentSymbol
     ? (authoredArguments ?? [])
