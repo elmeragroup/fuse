@@ -87,7 +87,7 @@ Consumers should branch on `code` and structured fields, not parse `message` tex
 
 ## Fixture evidence
 
-`scripts/fixture-catalog.ts` is the canonical fixture inventory. Its 124 records describe inputs,
+`scripts/fixture-catalog.ts` is the canonical fixture inventory. Its 125 records describe inputs,
 oracle ownership, warning evidence, issue membership, type-check strategy, timing membership, and
 package execution. Scripts and tests derive their ordered views from that catalog; do not add a
 second fixture list.

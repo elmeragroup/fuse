@@ -202,12 +202,17 @@ export function resolveObjectNode(
   // always, a dependency-owned one only when its package was selected. A
   // headless library's `ComponentProps<E> = ElementProps<E> & { render?: … }`
   // reaches a consumer's props as exactly such a member; declining it would
-  // silently drop `render` from every component built on that library.
-  const hasExpandableCandidate = properties.some(
-    (property) =>
-      context.operations.symbolFacts(property).declarations.length === 0 ||
+  // silently drop `render` from every component built on that library. An
+  // unselected `render` still counts: its type is a named union rendered as
+  // external references, not an object that needs expansion.
+  const hasExpandableCandidate = properties.some((property) => {
+    const info = context.operations.symbolFacts(property);
+    return (
+      info.name === "render" ||
+      info.declarations.length === 0 ||
       externalTypeSelectionAllowsSymbol(property, context.operations, context.externalTypes)
-  );
+    );
+  });
   const objectSymbol = facts.symbol === undefined ? undefined : context.operations.symbolFacts(facts.symbol);
   const isReadonlyObject =
     properties.length > 0 &&
@@ -506,7 +511,12 @@ function propertyEligible(
   // Ownership/package selection is a cheap declaration-path fact. Consult it
   // before any declaration node is materialized; a declined dependency
   // property must not pay for its modifier/kind subtree merely to be dropped.
-  if (!externalTypeSelectionAllowsSymbol(property, context.operations, context.externalTypes)) return false;
+  // `render` is the exception: dropping it from an unselected mixin object
+  // falls the whole `{ render?: ComponentRenderFn | ReactElement }` shape
+  // back to `any`.
+  if (!externalTypeSelectionAllowsSymbol(property, context.operations, context.externalTypes)) {
+    return info.name === "render";
+  }
   // A class instance reached as an object must not contribute its methods:
   // they belong to the class model, not to an object's property list. Upstream
   // whitelists the declaration kinds an object property may be written as

@@ -116,18 +116,17 @@ describe("component props mixed in from a dependency-owned intersection member",
     expect(new Set(paths).size).toBe(paths.length);
   });
 
-  it("reports the anonymous mixin member as unsupported when the package is not selected", async () => {
+  it("renders the unselected mixin's render-prop union as external references", async () => {
     const result = await extractFixture({ tsconfigPath }, inputPath);
     const props = widget(result).props;
+    const render = props.find((property) => property.name === "render");
+    if (render?.type.kind !== "union") throw new Error("Expected render to be a union");
 
-    // The member has no name an external reference could carry, so the
-    // extractor keeps the structured warning instead of inventing a shape.
-    // The project-keyed `size` prop does not depend on the selection.
-    expect(props.map((property) => property.name)).toEqual(["level", "size"]);
-    expect(result.warnings.length).toBeGreaterThan(0);
-    for (const warning of result.warnings) {
-      expect(warning.code).toBe("unsupported-type-fallback");
-      expect(warning.message).toContain("render?:");
-    }
+    expect(props.map((property) => property.name)).toEqual(["render", "size", "level"]);
+    expect(render.optional).toBe(true);
+    expect(
+      render.type.types.map((member) => (member.kind === "external" ? member.typeName.name : member.kind))
+    ).toEqual(["ReactElement", "RenderFn", "intrinsic"]);
+    expect(result.warnings.filter((warning) => warning.code === "unsupported-type-fallback")).toEqual([]);
   });
 });
