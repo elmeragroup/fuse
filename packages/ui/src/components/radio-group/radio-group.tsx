@@ -145,6 +145,7 @@ export function RadioGroup({
           required={isRequired}
           name={name}
           aria-busy={isPending ? true : undefined}
+          // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- radio-group.md §4: option stack gap is layout, not a control rung
           className={cn(
             orientation === "horizontal" ? "flex flex-wrap gap-4" : "flex flex-col gap-2",
             className

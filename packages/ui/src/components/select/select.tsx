@@ -41,6 +41,7 @@ function SelectTrigger({
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
       data-size={size}
+      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- select.md §4: value-slot gap is content layout, not a control rung
       className={cn(
         selfFocusRing,
         // oxlint-disable-next-line elmera/no-local-focus-ring -- select.md §7: native outline off; ring comes from the shared adapter
@@ -156,6 +157,7 @@ function SelectItem({
   return (
     <SelectPrimitive.Item
       data-slot="select-item"
+      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- select.md §4: option padding is menu layout, not a control rung
       className={cn(
         // oxlint-disable-next-line elmera/no-local-focus-ring -- select.md §7: option highlight face, not native outline
         "text-sm relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 outline-hidden select-none focus:bg-accent focus:text-accent-foreground focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
@@ -188,6 +190,7 @@ function SelectLabel({
   return (
     <SelectPrimitive.GroupLabel
       data-slot="select-label"
+      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- select.md §4: group label padding is menu layout, not a control rung
       className={cn("text-xs px-2 py-1.5 text-muted-foreground", className)}
       {...props}
     />

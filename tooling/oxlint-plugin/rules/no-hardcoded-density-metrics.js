@@ -345,19 +345,6 @@ function checkTypeForTokens(tokens) {
 }
 
 /**
- * Inspect cn()/slot/record groups that sit beside a height pin, or that are
- * themselves a control-box height ladder, once the file mentions `--control-h-`.
- * @param {string[]} tokens
- * @param {boolean} fileHasControlH
- */
-function shouldInspectBesidePin(tokens, fileHasControlH) {
-  if (tokensHaveControlHeightPin(tokens)) return true;
-  const hasHeight = tokens.some(isControlBoxHeightClass);
-  const hasControlVar = tokensHaveControlVar(tokens);
-  return fileHasControlH && (hasHeight || hasControlVar);
-}
-
-/**
  * @param {import("estree").ObjectExpression} obj
  * @returns {Array<{ key: string; value: import("estree").Node }> | null}
  */
@@ -439,7 +426,7 @@ export default defineRule({
     function reportCnLiterals(node) {
       if (isInsideNamedCall(node, "tv")) return;
       const tokens = tokensOf(node);
-      if (!tokensHaveControlHeightPin(tokens)) return;
+      if (!fileHasControlH && !tokensHaveControlHeightPin(tokens)) return;
       reportTokens(node, tokens, checkTypeForTokens(tokens));
     }
 
@@ -452,7 +439,7 @@ export default defineRule({
       for (const prop of slots.properties) {
         if (prop.type !== "Property") continue;
         const tokens = tokensOf(prop.value);
-        if (!shouldInspectBesidePin(tokens, fileHasControlH) && !tokensHaveControlVar(tokens)) {
+        if (!fileHasControlH && !tokensHaveControlHeightPin(tokens) && !tokensHaveControlVar(tokens)) {
           continue;
         }
         reportTokens(prop.value, tokens, checkTypeForTokens(tokens));
@@ -473,8 +460,13 @@ export default defineRule({
         tokens: tokensOf(arm.value),
       }));
       const allTokens = groups.flatMap((group) => group.tokens);
-      const isControlBox = allTokens.some(isControlBoxHeightClass);
-      if (!isControlBox && !shouldInspectBesidePin(allTokens, fileHasControlH)) return;
+      if (
+        !fileHasControlH &&
+        !tokensHaveControlHeightPin(allTokens) &&
+        !allTokens.some(isControlBoxHeightClass)
+      ) {
+        return;
+      }
       for (const group of groups) {
         reportTokens(group.node, group.tokens, isMdLgRung(group.key));
       }

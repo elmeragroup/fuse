@@ -166,15 +166,8 @@ export const recipe = tv({
 `,
     },
     {
-      name: "cn height literal is quiet when that call does not pin --control-h-",
-      code: `export const pin = "h-(--control-h-md)";
-export const chrome = cn("flex h-8 w-full px-2");
-`,
-    },
-    {
-      name: "cn layout gap is quiet even when another string pins --control-h-",
-      code: `export const pin = "h-(--control-h-md)";
-export const layout = cn("flex flex-col gap-1");
+      name: "cn height literal is quiet when the file does not pin --control-h-",
+      code: `export const chrome = cn("flex h-8 w-full px-2");
 `,
     },
     {
@@ -295,14 +288,31 @@ export const recipe = tv({
       errors: [error],
     },
     {
-      name: "cn string beside a --control-h- pin flags hardcoded height",
+      name: "cn string in the same call as a --control-h- pin flags hardcoded height",
       code: `export const popup = cn("*:data-[slot=input-group]:h-8 min-h-(--control-h-md)");
+`,
+      errors: [error],
+    },
+    {
+      name: "S9: cn popup height literal is flagged when the file pins --control-h- elsewhere",
+      code: `export const pin = "h-(--control-h-md)";
+export const popup = cn("*:data-[slot=input-group]:h-8");
 `,
       errors: [error],
     },
     {
       name: "cn string beside a --control-h- pin flags hardcoded inline padding",
       code: `export const chips = cn("flex min-h-(--control-h-md) px-2");
+`,
+      errors: [error],
+    },
+    {
+      name: "S9: date-field slot padding is flagged when the file pins --control-h-",
+      code: `import { tv } from "tailwind-variants";
+/** field box pins h-(--control-h-md) */
+export const recipe = tv({
+  slots: { input: "text-sm block min-w-[150px] px-2 py-1.5" },
+});
 `,
       errors: [error],
     },

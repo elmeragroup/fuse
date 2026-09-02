@@ -261,6 +261,7 @@ function ComboboxItem({
   return (
     <ComboboxPrimitive.Item
       data-slot="combobox-item"
+      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- combobox.md §6: option padding is menu layout, not a control rung
       className={cn(
         // oxlint-disable-next-line elmera/no-local-focus-ring -- combobox.md §7: option highlight face, not native outline
         "text-sm relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 outline-hidden select-none data-highlighted:bg-accent data-highlighted:text-accent-foreground data-highlighted:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
@@ -292,6 +293,7 @@ function ComboboxLabel({
   return (
     <ComboboxPrimitive.GroupLabel
       data-slot="combobox-label"
+      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- combobox.md §6: group label padding is menu layout, not a control rung
       className={cn("text-xs px-2 py-1.5 text-muted-foreground", className)}
       {...props}
     />
@@ -425,6 +427,7 @@ function ComboboxChip({
   return (
     <ComboboxPrimitive.Chip
       data-slot="combobox-chip"
+      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- combobox.md §6: chip chrome is compact token, not a control rung
       className={cn(
         "text-xs font-medium flex h-[calc(--spacing(5.5))] w-fit items-center justify-center gap-1 rounded-sm bg-muted px-1.5 whitespace-nowrap text-foreground has-disabled:pointer-events-none has-disabled:cursor-not-allowed has-disabled:opacity-50 has-data-[slot=combobox-chip-remove]:pr-0",
         className
