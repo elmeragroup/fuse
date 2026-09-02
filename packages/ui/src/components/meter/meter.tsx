@@ -45,14 +45,18 @@ export type MeterProps = {
   className?: string;
 } & Omit<ComponentProps<typeof MeterPrimitive.Root>, "value" | "min" | "max" | "className" | "locale">;
 
+/**
+ * Status icon in the value span. Derived from `level`, never from the raw
+ * percentage, so the icon and the fill color always cross the 80% boundary
+ * together: exactly 80% is `LOW` and shows no icon in `default` mode
+ * (meter.md §3/§4, §8.8).
+ */
 function MeterIcon({
-  percentage,
   mode,
   level,
   warningName,
   successName,
 }: {
-  percentage: number;
   mode: MeterMode;
   level: MeterLevel;
   warningName: string;
@@ -60,7 +64,7 @@ function MeterIcon({
 }): ReactElement | null {
   const { icon } = meterVariants({ mode, level });
 
-  if (mode === METER_CONSTANTS.MODES.DEFAULT && percentage < 80) {
+  if (mode === METER_CONSTANTS.MODES.DEFAULT && level === METER_CONSTANTS.LEVELS.LOW) {
     return null;
   }
 
@@ -121,13 +125,7 @@ export function Meter({
           {label}
         </MeterPrimitive.Label>
         <span data-slot="meter-value" className={cn(labelValue(), "tabular-nums")}>
-          <MeterIcon
-            percentage={percentage}
-            mode={mode}
-            level={level}
-            warningName={warningName}
-            successName={successName}
-          />{" "}
+          <MeterIcon mode={mode} level={level} warningName={warningName} successName={successName} />{" "}
           {valueLabel ?? <MeterPrimitive.Value />}
         </span>
       </div>

@@ -118,6 +118,22 @@ describe("Meter", () => {
     expect(page.getByLabelText("Success").query()).toBeNull();
   });
 
+  it("treats exactly 80% as LOW for both the fill and the icon (meter.md §3/§4 ruling)", () => {
+    const { unmount: unmountBoundary } = renderMeter(<Meter label="Boundary" value={80} />);
+    expect(slot("meter-bar-fill").className.split(/\s+/)).toContain("bg-success");
+    expect(page.getByLabelText("Warning").query()).toBeNull();
+    unmountBoundary();
+
+    const { unmount: unmountAbove } = renderMeter(<Meter label="Above" value={81} />);
+    expect(slot("meter-bar-fill").className.split(/\s+/)).toContain("bg-warning");
+    expect(page.getByLabelText("Warning").element()).toBeTruthy();
+    unmountAbove();
+
+    renderMeter(<Meter label="Scaled" value={96} maxValue={120} />);
+    expect(slot("meter-bar-fill").className.split(/\s+/)).toContain("bg-success");
+    expect(page.getByLabelText("Warning").query()).toBeNull();
+  });
+
   it("shows CheckCircle at FULL in success-only-when-full and Warning otherwise", () => {
     const { unmount: unmountFull } = renderMeter(
       <Meter label="Full" value={100} mode="success-only-when-full" />

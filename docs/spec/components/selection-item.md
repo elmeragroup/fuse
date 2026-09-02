@@ -36,7 +36,7 @@ Six parts. `Shell` renders a `Field.Item` containing a full-width `Field.Label` 
 
 All parts accept `className` (merged via `cn`).
 
-**SelectionItem.Shell**
+**SelectionItem.Shell** — `Omit<ComponentProps<typeof Field.Item>, "className" | "children">` pass-through (`render`, `id`, `aria-*`, `data-*`, event handlers land on the `Field.Item` root; `className` is a plain string, never the Base UI state callback) plus: _(Amended 2026-09-02, §8.7.)_
 
 | Prop              | Type               | Default      | Notes                                                                                                                                                                                                 |
 | ----------------- | ------------------ | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -95,6 +95,7 @@ Renders `null` when `Children.toArray(children).length === 0`.
 4. **`aria-invalid:aria-checked:border-primary`-style state overrides live on the controls, not the shell** — unchanged here; noted because the shell relies on the control emitting base-ui state attributes for the control-slot-scoped `has-[[data-slot=selection-item-control]_[data-checked]]:` selectors.
 5. **`child.type` reflection partitioning KEPT (documented fragility)** — SubSections are detected by identity comparison `child.type === SelectionItemSubSection` on **direct** children only. Wrapping a SubSection in another component, a Fragment, or an HOC hides it from the filter and it renders _inside_ the label (clicks toggle the control). This is deliberate ref behavior (wrappers would defeat the outside-the-label guarantee) and is kept as-is; the constraint must be documented in JSDoc and docs.
 6. **`-mt-px` border-collapse hack KEPT on the connected stack** — vertical, default, and outside-private-group items collapse borders with `not-first:border-t-0`; a checked non-first item repaints its top border in `primary` by pulling itself up one pixel (`has-[[data-slot=selection-item-control]_[data-checked]]:not-first:-mt-px has-[[data-slot=selection-item-control]_[data-checked]]:not-first:border-t`) instead of a z-index lift. Fragile against margin overrides via `className`; kept and documented on that stack. Horizontal item groups do **not** collapse vertical borders or apply the checked negative margin. The ref's descendant-wide `has-data-checked:` is **not** kept — checked selectors are scoped to the private control slot so a checked interactive control inside SubSection cannot repaint an otherwise unchecked shell.
+7. **Shell pass-through is wider than the five named props** — `SelectionItemShellProps` spreads every `Field.Item` prop except `className` and `children` onto the root, so consumers can attach `id`, `aria-describedby`, `data-*`, handlers, or `render` without a wrapper, the same shape `Field.Item`, `Tabs.*`, and `RadioGroupItem` document. _(Ruled 2026-09-02, pending owner confirmation: widen the §3 table to the shipped type rather than narrow the type, which would be a breaking change for a documented base-ui pass-through pattern.)_
 
 ## 9 Test requirements
 
@@ -106,6 +107,7 @@ Renders `null` when `Children.toArray(children).length === 0`.
 - `controlPosition="end"` renders the control after the row children; sub-section spacer width matches the control slot in both positions (layout assertion in browser test).
 - `isDisabled` shell with a disabled control: row click does not toggle; surface has disabled styling state.
 - Checked state reflects on the shell from the **control slot only** (`data-checked` on the plugged-in control drives border/surface — assert via control's `aria-checked` plus shell attributes, role queries only). An unchecked shell containing a separately checked interactive control inside SubSection retains unchecked surface/top-border state; selecting the shell's own control still paints checked state.
+- Type test: `SelectionItem.Shell` accepts the `Field.Item` pass-through surface (`render`, `id`, `aria-*`, `data-*`, handlers) and rejects a function `className` (§8.7).
 - Connected stacking (first/last rounding, `not-first:border-t-0`, checked `-mt-px`) applies outside the private group and inside a vertical group. A horizontal private group renders individually rounded full-border cards with no vertical border collapse and no checked negative margin. The private group remains unpublished.
 
 ## 10 Demo requirements

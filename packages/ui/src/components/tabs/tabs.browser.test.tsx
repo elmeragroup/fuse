@@ -120,6 +120,38 @@ describe("Tabs", () => {
     expect(htmlTab("Account").getAttribute("aria-selected")).toBe("true");
   });
 
+  it("lets activateOnFocus={false} opt out: arrows move focus, Enter or Space activates", async () => {
+    renderThemed(
+      <Tabs.Root defaultValue="account">
+        <Tabs.List activateOnFocus={false}>
+          <Tabs.Trigger value="account">Account</Tabs.Trigger>
+          <Tabs.Trigger value="password">Password</Tabs.Trigger>
+        </Tabs.List>
+        <Tabs.Content value="account">Account panel</Tabs.Content>
+        <Tabs.Content value="password">Password panel</Tabs.Content>
+      </Tabs.Root>
+    );
+
+    htmlTab("Account").focus();
+    await userEvent.keyboard("{ArrowRight}");
+    expect(document.activeElement).toBe(htmlTab("Password"));
+    expect(htmlTab("Account").getAttribute("aria-selected")).toBe("true");
+    expect(htmlTab("Password").getAttribute("aria-selected")).toBe("false");
+    await expect.element(page.getByRole("tabpanel", { name: "Account", exact: true })).toBeInTheDocument();
+
+    await userEvent.keyboard("{Enter}");
+    expect(htmlTab("Password").getAttribute("aria-selected")).toBe("true");
+    await expect.element(page.getByRole("tabpanel", { name: "Password", exact: true })).toBeInTheDocument();
+
+    await userEvent.keyboard("{ArrowLeft}");
+    expect(document.activeElement).toBe(htmlTab("Account"));
+    expect(htmlTab("Password").getAttribute("aria-selected")).toBe("true");
+
+    await userEvent.keyboard(" ");
+    expect(htmlTab("Account").getAttribute("aria-selected")).toBe("true");
+    await expect.element(page.getByRole("tabpanel", { name: "Account", exact: true })).toBeInTheDocument();
+  });
+
   it("stamps vertical orientation on Root and navigates with ArrowUp/ArrowDown", async () => {
     renderThemed(<AccountPassword orientation="vertical" />);
 

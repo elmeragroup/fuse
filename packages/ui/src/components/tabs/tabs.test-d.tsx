@@ -31,6 +31,9 @@ test("parts take the primitive passthrough surface, list variant, and no as prop
   expectTypeOf<Parameters<typeof Tabs.List>[0]["variant"]>().toEqualTypeOf<"default" | "line" | undefined>();
   expectTypeOf<Parameters<typeof Tabs.Root>[0]>().not.toHaveProperty("as");
   expectTypeOf<Parameters<typeof Tabs.Trigger>[0]>().not.toHaveProperty("as");
+  expectTypeOf<Parameters<typeof Tabs.List>[0]["activateOnFocus"]>().toEqualTypeOf<boolean | undefined>();
+  expectTypeOf<Parameters<typeof Tabs.List>[0]["loopFocus"]>().toEqualTypeOf<boolean | undefined>();
+  expectTypeOf<Parameters<typeof Tabs.List>[0]>().not.toHaveProperty("loop");
 
   const _tree = (
     <Tabs.Root defaultValue="account" orientation="horizontal" onValueChange={() => undefined}>

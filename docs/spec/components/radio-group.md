@@ -64,7 +64,7 @@
 | `controlPosition`        | `"start" \| "end"` | `"start"`    | forwarded to `SelectionItem.Shell` (new axis, selection-item.md §8.2) |
 | `className` / `children` | —                  | —            | children partitioned by the shell                                     |
 
-**RadioIconButton** (`RadioIconButtonProps`) — `value: string` (required), `"aria-label": string` (required; mechanically icon-only, accessibility.md §3), `isDisabled?`, `className?`, `children?` (the icon), and:
+**RadioIconButton** (`RadioIconButtonProps`) — `Omit<ComponentProps<RadioPrimitive.Root>, "value" | "disabled" | "className" | "children" | "aria-label">` pass-through (`readOnly`, `required`, `render`, `id`, `aria-*`, `data-*`, handlers; `className` is a plain string) plus `value: string` (required), `"aria-label": string` (required; mechanically icon-only, accessibility.md §3), `isDisabled?`, `className?`, `children?` (the icon), and: _(Amended 2026-09-02, §8.12.)_
 
 | Prop   | Type                                                          | Default  | Notes                                                                                                                                                                                                                                                                                 |
 | ------ | ------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -117,6 +117,7 @@
 9. **`onChange` `String(next)` coercion KEPT; null-mapping BUGFIXED** — the ref's `value ?? undefined` mapping switches Base UI from controlled to uncontrolled when a controlled string value is cleared. Pass `null` through so the `string | null` controlled face tolerates cleared form state without a warning.
 10. **`errorMessage` widened `string` → `ReactNode`** — the group follows the library-wide labeled-composite contract; `FieldError` already accepts node children.
 11. **Item-group `orientation` is effective on the stacked list** — the inherited axis is forwarded to the private SelectionItem list so vertical stays a connected `flex-col gap-0` stack and horizontal is the actual item list `flex-row flex-wrap gap-4` with individually rounded cards, not merely the outer primitive around one child.
+12. **`RadioIconButton` pass-through is wider than the named props** — the type spreads every `Radio.Root` prop except the composite-owned `value`/`disabled`/`className`/`children`/`aria-label` onto the radio root; `Radio` and `RadioItem` stay closed (`RadioProps`/`RadioItemProps` have no pass-through). _(Ruled 2026-09-02, pending owner confirmation: widen the §3 text to the shipped type rather than narrow it; narrowing would break consumers attaching `id`/`aria-describedby`/`readOnly` to a segmented icon radio.)_
 
 ## 9 Test requirements
 
@@ -131,6 +132,7 @@ Role/label-based queries only.
 - `Radio`: label click selects; disabled row is skipped by arrow navigation.
 - `RadioItem`: row click selects; SubSection click does not change selection (isolation smoke test); `controlPosition="end"` renders trailing control.
 - `RadioItemGroup`: `orientation` switches the actual item list via computed direction, not class names (`flex-col gap-0` connected stack vs `flex-row flex-wrap gap-4`). Horizontal item-group shells are individually rounded with full borders and no checked negative margin; vertical item groups keep direct-sibling `list`/`listitem` semantics.
+- Type test: `RadioIconButtonProps` carries the `Radio.Root` pass-through surface (`render`, `readOnly`, `required`, `id`, `aria-*`) while `RadioProps` / `RadioItemProps` stay closed (§8.12).
 - `RadioIconButton`: selectable via click and keyboard within a group; each `size` renders (browser layout assertion); accessible name required in test fixtures.
 
 ## 10 Demo requirements
