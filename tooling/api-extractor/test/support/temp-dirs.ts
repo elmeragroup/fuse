@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, mkdtempSync, readdirSync, realpathSync } from "n
 import { tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 
-export const fixtureRoot = resolve(import.meta.dirname, "fixtures");
+export const fixtureRoot = resolve(import.meta.dirname, "../fixtures");
 const packageRoot = resolve(fixtureRoot, "../..");
 const ignoredTemporaryDirectory = resolve(packageRoot, "node_modules/.cache");
 export const canonicalTemporaryDirectory = realpathSync(tmpdir());

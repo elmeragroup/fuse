@@ -41,7 +41,7 @@ function provenanceFor(result: ExtractionResult, path: readonly string[]): Prove
   return entry;
 }
 
-describe("Issue 08 mapped-type resolution", () => {
+describe("mapped-type resolution", () => {
   it("resolves filtered and conditionally remapped keys on plain objects", async () => {
     const result = await extract("mapped-remaps.ts");
     // An `as never` clause filters every key away.

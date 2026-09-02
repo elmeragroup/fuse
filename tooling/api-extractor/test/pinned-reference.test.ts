@@ -12,7 +12,7 @@ import {
   auditPinnedReference,
   validatePinnedFixturePathUniverse,
 } from "../scripts/reference.ts";
-import { createTemporaryRoot, fixtureRoot } from "./issue-14-fixtures.ts";
+import { createTemporaryRoot, fixtureRoot } from "./support/temp-dirs.ts";
 
 describe("Issue 14 pinned reference", () => {
   it("keeps copied input and output.json bytes equal to the optional pinned reference", () => {

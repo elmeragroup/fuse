@@ -26,8 +26,8 @@ import {
 } from "../scripts/issue-14-conformance.ts";
 import { issue14TypecheckCommand } from "../scripts/issue-14-contract.ts";
 import { ExtractError, ProjectExtractor } from "../src/index.ts";
-import { createTemporaryRoot, fixtureRoot } from "./issue-14-fixtures.ts";
 import { extractFixture } from "./support/extract.ts";
+import { createTemporaryRoot, fixtureRoot } from "./support/temp-dirs.ts";
 
 describe("Issue 14 conformance report", () => {
   it("decodes one disposition for all 116 fixtures with no failures", () => {

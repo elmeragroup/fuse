@@ -29,7 +29,7 @@ function expectKind<K extends SemanticType["kind"]>(
   return type as Extract<SemanticType, { kind: K }>;
 }
 
-describe("Issue 07 generic substitutions and aliases", () => {
+describe("generic substitutions and aliases", () => {
   it("represents class, method, call-signature, and alias parameters with constraints and defaults", async () => {
     const result = await extract("generic-class.ts");
     const repository = expectKind(exportType(result.module, "Repository"), "class");
