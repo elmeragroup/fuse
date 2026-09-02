@@ -499,6 +499,14 @@ describe("DateRangePicker density metrics", () => {
     for (const density of ["dense", "comfortable"] as const) {
       stampDensity(density);
       expect(px(getComputedStyle(groupNamed("Meter")).height)).toBe(CONTROL_MD[density].height);
+      const row = segment("month, Start Date").parentElement;
+      if (!(row instanceof HTMLElement)) {
+        throw new Error("expected the start DateInput");
+      }
+      const inputStyle = getComputedStyle(row);
+      expect(px(inputStyle.paddingInlineStart)).toBe(CONTROL_MD[density].px);
+      expect(px(inputStyle.fontSize)).toBe(CONTROL_MD[density].font);
+      expect(px(inputStyle.lineHeight)).toBe(CONTROL_MD[density].leading);
     }
 
     stampDensity("dense");

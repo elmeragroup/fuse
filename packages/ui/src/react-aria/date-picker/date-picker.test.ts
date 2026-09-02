@@ -125,8 +125,7 @@ describe("date-picker source contract", () => {
       expect(text).not.toContain("comfortable:");
     }
     expect(datePickerVariants.variantKeys).toEqual(["isReadOnly", "hasPresets"]);
-    // The field box's rung is `fieldGroupVariants`' business, so nothing here reads one.
-    expect(everyEmittedClass()).not.toContain("--control-");
+    expect(everyEmittedClass()).not.toContain("--control-h-");
   });
 
   it("never uses primitive gray/white or destructive vocabulary", () => {
@@ -161,6 +160,12 @@ describe("datePickerVariants", () => {
     expect(slots.group()).toContain("w-auto");
     expect(slots.input()).toContain("flex-1");
     expect(slots.input()).toContain("min-w-[150px]");
+    expect(slots.input()).toContain("px-(--control-px-md)");
+    expect(slots.input()).toContain("[font-size:var(--control-text)]");
+    expect(slots.input()).toContain("[line-height:var(--control-leading)]");
+    expect(slots.input()).not.toContain("py-");
+    expect(slots.input()).not.toContain("text-sm");
+    expect(slots.input()).not.toContain("px-2");
   });
 
   it("strips the styled Dialog's padding in both of its forms (§4)", () => {

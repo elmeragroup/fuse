@@ -41,7 +41,7 @@ AriaDateField                       (RAC DateField, flex flex-col gap-1)
 
 ## 4 Variants
 
-`dateFieldVariants` — slotted tv recipe in `styles/date-field.ts`, **module-private** (not exported from the package). Slots: `base` (column), `input` (segment row), `segment`. Variant axes on `segment` (driven by RAC render props): `isPlaceholder`, `isDisabled`, `isFocused`. No size axis. `DateInput` additionally runs private `fieldGroupVariants` (shared field-box recipe pinning the `md` rung: `h-(--control-h-md) rounded-lg border bg-card`, invalid/disabled/read-only borders) with the `input` slot class as `class`; that recipe composes `focusRing({ target: "state", isFocusVisible })` from `DateInputRenderProps` and contains no separate focus ring.
+`dateFieldVariants` — slotted tv recipe in `styles/date-field.ts`, **module-private** (not exported from the package). Slots: `base` (column), `input` (segment row: `px-(--control-px-md)` plus the control type pair, no `py-*`), `segment`. Variant axes on `segment` (driven by RAC render props): `isPlaceholder`, `isDisabled`, `isFocused`. No size axis. `DateInput` additionally runs private `fieldGroupVariants` (shared field-box recipe pinning the `md` rung: `h-(--control-h-md) rounded-lg border bg-card`, invalid/disabled/read-only borders) with the `input` slot class as `class`; that recipe composes `focusRing({ target: "state", isFocusVisible })` from `DateInputRenderProps` and contains no separate focus ring.
 
 ## 5 Consumed tokens
 
@@ -68,7 +68,7 @@ AriaDateField                       (RAC DateField, flex flex-col gap-1)
 5. **Interim-only regular dependency:** RAC state modifiers in classes come from `tailwindcss-react-aria-components`; it uninstalls with this cluster.
 6. **Focus unified:** private `fieldGroupVariants` replaces the ref's outline recipe/border tint with the canonical state-driven `focusRing`; segment highlight remains an internal-position indicator, not a substitute for the field ring.
 7. **Field surface aligned:** private RAC `fieldGroupVariants` uses `bg-card`, not the reference's `bg-background`, so SearchField and both date pickers follow the library-wide input-surface rule in [conventions](conventions.md).
-8. **Density retokenization:** `fieldGroupVariants` `h-9` pins `--control-h-md` without a `size` axis.
+8. **Density retokenization:** `fieldGroupVariants` `h-9` pins `--control-h-md` without a `size` axis. The `input` slot reads `--control-px-md` and the control type pair (`[font-size:var(--control-text)] [line-height:var(--control-leading)]`); `py-*` is omitted because height is pinned. _(Amended 2026-09-02.)_
 
 ## 9 Test requirements
 
@@ -77,7 +77,7 @@ AriaDateField                       (RAC DateField, flex flex-col gap-1)
 - `shouldForceLeadingZeros`: day/month render `07`, not `7`, by default.
 - `onChange` fires with a `DateValue` (not an event); `minValue`/`maxValue` violations set `data-invalid` and render `errorMessage` (both string and `(v) => string` forms).
 - `isDisabled`/`isReadOnly`: segments unreachable vs. focusable-but-inert; `name` submits the ISO string in a form.
-- Dual-density: DateInput / `fieldGroupVariants` height matches the signed `md` rung at `dense` and `comfortable`.
+- Dual-density: DateInput / `fieldGroupVariants` height, inline padding, font-size, and line-height match the signed `md` rung at `dense` and `comfortable`.
 
 ## 10 Demo requirements
 

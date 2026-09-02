@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { discoverEntries } from "../../../scripts/entries";
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
+import { dateFieldVariants } from "../../styles/date-field";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const packageRoot = join(here, "../../..");
@@ -35,11 +36,21 @@ describe("date-field source contract", () => {
     for (const text of [source, recipe]) {
       expect(text).not.toContain("data-slot");
       expect(text).not.toContain("h-9");
-      expect(text).not.toContain("size:");
+      expect(text).not.toMatch(/\bsize:\s*\{/);
       expect(text).not.toContain("data-density");
       expect(text).not.toContain("dense:");
       expect(text).not.toContain("comfortable:");
     }
+  });
+
+  it("reads the md padding and control type pair on the DateInput slot, with no py-*", () => {
+    const input = dateFieldVariants().input();
+    expect(input).toContain("px-(--control-px-md)");
+    expect(input).toContain("[font-size:var(--control-text)]");
+    expect(input).toContain("[line-height:var(--control-leading)]");
+    expect(input).not.toContain("py-");
+    expect(input).not.toContain("text-sm");
+    expect(input).not.toContain("px-2");
   });
 
   it("never uses primitive gray/white or destructive vocabulary", () => {

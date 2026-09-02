@@ -19,9 +19,10 @@ import { tv } from "tailwind-variants";
  *    grid would otherwise sit flush against the popover border.
  *
  * The single axis is `isReadOnly` (§4): `bg-muted` on the field box and the trigger
- * icon. There is deliberately no `size` axis — `fieldGroupVariants` already pins the
- * `md` control rung for the whole field family (conventions.md ruling 2), so this recipe
- * reads no `--control-*` variable and restates no box metric.
+ * icon. There is deliberately no `size` axis — `fieldGroupVariants` already pins
+ * `h-(--control-h-md)` for the whole field family (conventions.md ruling 2). The `input`
+ * slot reads `--control-px-md` and the control type pair so the segmented rows match
+ * Input at both densities; `py-*` stays off the height-pinned box.
  */
 export const dateRangePickerVariants = tv({
   slots: {
@@ -33,7 +34,7 @@ export const dateRangePickerVariants = tv({
      * One public DateInput inside the field box. The end row adds `flex-1` at the call
      * site so the trailing gap belongs to the end date, not to the separator (§2/§4).
      */
-    input: "text-sm px-2 py-1.5",
+    input: "px-(--control-px-md) [font-size:var(--control-text)] [line-height:var(--control-leading)]",
     /**
      * The en-dash between the two rows: decorative, `aria-hidden`, and the only slot
      * with a colour of its own. §8.4 renames the reference's two primitive grays (the
