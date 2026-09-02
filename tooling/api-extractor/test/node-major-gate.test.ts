@@ -6,7 +6,6 @@ import { describe, expect, it } from "vitest";
 import { issue14TimingCommand } from "../scripts/conformance/contract.ts";
 import { assertNodeMajor, issue02TimingCommand, requiredNodeMajor } from "../scripts/files.ts";
 import { assertTimingReportInvariants, Issue14TimingReportSchema } from "../scripts/timing/issue14.ts";
-import { assertTimingNodeVersion } from "../scripts/timing/shared.ts";
 
 const issue14ReportPath = resolve(import.meta.dirname, "fixtures/issue-14-timing.json");
 
@@ -15,10 +14,8 @@ describe("Node-major timing gate", () => {
     expect(requiredNodeMajor).toBe(24);
     expect(() => assertNodeMajor("24.13.0")).not.toThrow();
     expect(() => assertNodeMajor("24.14.0")).not.toThrow();
-    expect(() => assertTimingNodeVersion("24.14.0")).not.toThrow();
     expect(() => assertNodeMajor("23.11.0")).toThrow(/Node 24\.x/u);
     expect(() => assertNodeMajor("25.0.0")).toThrow(/Node 24\.x/u);
-    expect(() => assertTimingNodeVersion("25.0.0")).toThrow(/Node 24\.x/u);
   });
 
   it("keeps timing command identity free of fnm and the Node patch", () => {

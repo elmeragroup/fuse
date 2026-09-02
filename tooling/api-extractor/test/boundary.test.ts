@@ -101,6 +101,57 @@ describe("compiler boundary", () => {
     expect(effectImportViolations(entries)).toEqual([]);
   });
 
+  it("classifies each import statement on its own, not by an earlier `import type`", () => {
+    // One `import type` used to mark every LATER specifier in the file
+    // type-only, which hid real value imports: nearly every `src/parse/**`
+    // file opens with an `import type`.
+    expect(
+      scanValueModuleSpecifiers('import type { A } from "./a.ts";\nimport { Data } from "effect";\n')
+    ).toEqual(["effect"]);
+    expect(
+      scanValueModuleSpecifiers('import type { A } from "./a.ts";\nconst d = require("effect");\n')
+    ).toEqual(["effect"]);
+    expect(
+      scanValueModuleSpecifiers('import type { A } from "./a.ts";\nconst d = import("effect");\n')
+    ).toEqual(["effect"]);
+    expect(
+      scanValueModuleSpecifiers('import type { A } from "./a.ts";\nexport type { B } from "./b.ts";\n')
+    ).toEqual([]);
+    expect(
+      scanValueModuleSpecifiers('import { type A, type B } from "./a.ts";\nimport { Data } from "effect";\n')
+    ).toEqual(["effect"]);
+    expect(
+      scanValueModuleSpecifiers('import type {\n  A,\n} from "./a.ts";\nimport { Data } from "effect";\n')
+    ).toEqual(["effect"]);
+  });
+
+  it("reports a transitive Effect import reached through a file that opens with `import type`", () => {
+    const directory = mkdtempSync(join(tmpdir(), "api-extractor-effect-anchored-"));
+    try {
+      const parseDirectory = join(directory, "src/parse");
+      mkdirSync(parseDirectory, { recursive: true });
+      const leafPath = join(parseDirectory, "leaf.ts");
+      const helperPath = join(directory, "src/errors.ts");
+      writeFileSync(
+        leafPath,
+        'import type { Model } from "../model.ts";\nimport { fail } from "../errors.ts";\nexport const leaf: Model = fail;\n'
+      );
+      writeFileSync(
+        helperPath,
+        'import type { Cause } from "./cause.ts";\nimport { Data } from "effect";\nexport const fail = Data;\n'
+      );
+
+      expect(effectImportViolations([leafPath])).toEqual([
+        {
+          path: helperPath,
+          reason: "Effect import effect",
+        },
+      ]);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
   it("fails on a transitive Effect import from parse", () => {
     const directory = mkdtempSync(join(tmpdir(), "api-extractor-effect-boundary-"));
     try {

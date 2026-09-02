@@ -4,7 +4,6 @@ import { InternalProjectExtractorTiming, timedProjectExtractorLayer } from "../.
 import type { TimedExtraction } from "../../src/internal/timing.ts";
 import type { ExtractorOptions } from "../../src/options.ts";
 import { checkBoundary } from "../check-boundary.ts";
-import { assertNodeMajor } from "../files.ts";
 
 export type BoundaryStatuses = {
   readonly backendLeakage: "clear" | "triggered";
@@ -35,8 +34,4 @@ export function timedExtraction(
       }).pipe(Effect.provide(timedProjectExtractorLayer({ tsconfigPath })))
     )
   );
-}
-
-export function assertTimingNodeVersion(version: string = process.versions.node): void {
-  assertNodeMajor(version);
 }

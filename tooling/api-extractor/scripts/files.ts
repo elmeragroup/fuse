@@ -26,6 +26,19 @@ export function assertNodeMajor(version: string = process.versions.node): void {
 
 export const issue02TimingCommand = "node scripts/timing.ts --plan issue02 --check" as const;
 
+/**
+ * Every command identity an Issue 02 timing artifact may carry.
+ *
+ * The stored baseline is immutable evidence recorded before the Node-major
+ * gate landed, so it still names the `fnm exec` invocation the run used then.
+ * A live report must use the current, runtime-independent identity; both are
+ * checked against this closed list so neither can drift silently.
+ */
+export const knownIssue02TimingCommands: readonly string[] = [
+  issue02TimingCommand,
+  "fnm exec --using 24.13.0 -- node scripts/timing.ts --plan issue02 --check",
+];
+
 /** The installed version of a dependency, read from its package.json. */
 export function packageVersion(packageName: string): string {
   const require = createRequire(import.meta.url);

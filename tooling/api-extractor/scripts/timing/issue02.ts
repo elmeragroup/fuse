@@ -1,7 +1,7 @@
 import { join } from "node:path";
 
 import { writeArtifactBatchOrThrow } from "../artifact-batch-writer.ts";
-import { assertNodeMajor, issue02TimingCommand } from "../files.ts";
+import { assertNodeMajor, issue02TimingCommand, knownIssue02TimingCommands } from "../files.ts";
 import {
   assertBytesReceivedBudget,
   assertFetchedToMaterializedRatioBudget,
@@ -179,6 +179,9 @@ function checkStoredReport(stored: TimingReport, measured: TimingReport, goNoGo:
   checkLiveSamples(measured);
   if (measured.command !== issue02TimingCommand) {
     throw new Error("The live Issue 02 timing command identity is stale.");
+  }
+  if (!knownIssue02TimingCommands.includes(stored.command)) {
+    throw new Error("The stored Issue 02 timing command identity is unrecognized: " + stored.command);
   }
   assertNodeMajor(stored.runtime.node);
   assertNodeMajor(measured.runtime.node);

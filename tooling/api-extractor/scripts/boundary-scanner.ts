@@ -141,8 +141,30 @@ export function scanModuleSpecifiers(source: string): readonly string[] {
   return [...new Set(matches)];
 }
 
-function isTypeOnlySpecifierContext(before: string): boolean {
-  if (/(?:^|[\s;{(])(?:import|export)\s+type\b[\s\S]*$/u.test(before)) return true;
+/**
+ * The slice of `before` that belongs to the import or export statement whose
+ * specifier is being classified.
+ *
+ * Anchoring matters: testing the whole prefix would let ONE earlier
+ * `import type` mark every later import in the file type-only, which hides a
+ * real value import (nearly every `src/parse/**` file opens with an
+ * `import type`). The statement starts after the last terminator, and at the
+ * last `import`/`export` keyword within it — a bare `require(...)` or dynamic
+ * `import(...)` therefore never inherits a preceding statement's `type`.
+ */
+function currentStatement(before: string): string {
+  const afterTerminator = before.slice(before.lastIndexOf(";") + 1);
+  let start = -1;
+  for (const match of afterTerminator.matchAll(/(?:^|[\s{(=,])((?:import|export)\b)/gu)) {
+    const keyword = match[1];
+    if (keyword !== undefined) start = match.index + match[0].length - keyword.length;
+  }
+  return (start === -1 ? afterTerminator : afterTerminator.slice(start)).trimStart();
+}
+
+function isTypeOnlySpecifierContext(beforeSpecifier: string): boolean {
+  const before = currentStatement(beforeSpecifier);
+  if (/^(?:import|export)\s+type\b/u.test(before)) return true;
   const inline = /\{([^}]*)\}\s*$/u.exec(before)?.[1];
   if (inline === undefined) return false;
   const bindings = inline
