@@ -72,6 +72,11 @@ export type PopoverInfoButtonProps = DistributiveOmit<ButtonProps, "children" | 
      * enclosing `ThemeScope` element.
      */
     container?: HTMLElement | RefObject<HTMLElement | null>;
+    /**
+     * Max-width of the popover content. `sm`–`7xl` map to `max-w-sm`–`max-w-7xl`;
+     * `"default"` is `max-w-md`.
+     */
+    contentSize?: VariantProps<typeof popoverInfoButtonStyles>["contentSize"];
   };
 
 /**

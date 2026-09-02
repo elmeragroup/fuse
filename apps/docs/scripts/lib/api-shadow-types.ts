@@ -45,6 +45,18 @@ export type ProblemShadowDifference = {
   readonly effect?: ShadowProblem;
 };
 
+/** A reviewed API difference stored in the shadow snapshot. */
+export type ReviewedApiShadowDifference = ApiShadowDifference & {
+  /** One-line explanation of why this measured difference is accepted. */
+  readonly reason: string;
+};
+
+/** A reviewed problem-log difference stored in the shadow snapshot. */
+export type ReviewedProblemShadowDifference = ProblemShadowDifference & {
+  /** One-line explanation of why this measured difference is accepted. */
+  readonly reason: string;
+};
+
 /** Provenance facts retained for review but deliberately absent from ApiProp. */
 export type ShadowPropEvidence = {
   readonly name: string;
@@ -80,6 +92,13 @@ export type DocsShadowComponentResult = {
  * is stale, and either fails the shadow suite.
  */
 export type DocsShadowSnapshot = {
+  readonly summary: DocsShadowSummary;
+  readonly apiDifferences: readonly ReviewedApiShadowDifference[];
+  readonly problemDifferences: readonly ReviewedProblemShadowDifference[];
+};
+
+/** Measured differences only, before a reviewer attaches a `reason` per entry. */
+export type DocsShadowMeasuredSnapshot = {
   readonly summary: DocsShadowSummary;
   readonly apiDifferences: readonly ApiShadowDifference[];
   readonly problemDifferences: readonly ProblemShadowDifference[];

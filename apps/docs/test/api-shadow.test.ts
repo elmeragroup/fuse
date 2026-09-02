@@ -1,13 +1,13 @@
-import fs from "node:fs";
-import { syncBuiltinESMExports } from "node:module";
-import { afterAll, beforeAll, describe, expect, test, vi } from "vitest";
+import { beforeAll, describe, expect, test } from "vitest";
 
 import { effectOrigin } from "../scripts/lib/api-effect-adapter.ts";
 import {
+  assertReviewedReasons,
   compareParts,
   docsShadowInventory,
   inputCapturesEqual,
   readShadowSnapshot,
+  refusingDocsWriter,
   reviewAgainstSnapshot,
   runDocsShadowComparison,
   snapshotOf,
@@ -16,20 +16,9 @@ import type { DocsShadowReport } from "../scripts/lib/api-shadow.ts";
 import { componentSlugs } from "../scripts/lib/components.ts";
 import type { ApiPart, ApiProp } from "../src/lib/docs-model.ts";
 
-// The shadow run is validation only: every synchronous write through node:fs
-// fails the run, so a writer sneaking into either side fails the suite.
 const refusedWrites: string[] = [];
-const writeSpies = (["writeFileSync", "appendFileSync", "rmSync", "unlinkSync"] as const).map((name) =>
-  vi.spyOn(fs, name).mockImplementation(() => {
-    refusedWrites.push(name);
-    throw new Error(`docs shadow run must not write (${name})`);
-  })
-);
-syncBuiltinESMExports();
-
-afterAll(() => {
-  for (const spy of writeSpies) spy.mockRestore();
-  syncBuiltinESMExports();
+const shadowWriter = refusingDocsWriter((operation) => {
+  refusedWrites.push(operation);
 });
 
 let report: DocsShadowReport;
@@ -58,7 +47,7 @@ function testPart(name: string, propNames: readonly string[] = []): ApiPart {
 }
 
 beforeAll(async () => {
-  report = await runDocsShadowComparison();
+  report = await runDocsShadowComparison({ writer: shadowWriter });
 }, 120_000);
 
 describe("docs API shadow", () => {
@@ -250,11 +239,33 @@ describe("docs API shadow", () => {
     expect(button?.forwardedCount).toBeGreaterThan(0);
   });
 
+  test("rejects a snapshot entry without a reason, naming the entry", () => {
+    const snapshot = readShadowSnapshot();
+    const first = snapshot.apiDifferences[0];
+    if (first === undefined) throw new Error("the reviewed snapshot has no API differences");
+    expect(() =>
+      assertReviewedReasons({
+        ...snapshot,
+        apiDifferences: [
+          {
+            component: first.component,
+            path: first.path,
+            current: first.current,
+            effect: first.effect,
+            reason: "",
+          },
+          ...snapshot.apiDifferences.slice(1),
+        ],
+      })
+    ).toThrow(`snapshot entry missing reason: api|${first.component}|${first.path}`);
+  });
+
   test("never writes during a run and surfaces an injected side failure", async () => {
     expect(refusedWrites).toEqual([]);
     const injected = new Error("injected shadow extraction failure");
     await expect(
       runDocsShadowComparison({
+        writer: shadowWriter,
         effectSide: () => {
           throw injected;
         },

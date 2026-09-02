@@ -13,17 +13,20 @@ import path from "node:path";
 
 import { currentSide, effectSide, inputCapturesEqual } from "./api-effect-adapter.ts";
 import type { SideRun } from "./api-effect-adapter.ts";
-import { compareComponent, compareProblems } from "./api-shadow-compare.ts";
+import { assertReviewedReasons, compareComponent, compareProblems } from "./api-shadow-compare.ts";
 import { docsShadowInventory } from "./api-shadow-files.ts";
 import type {
   ApiShadowDifference,
   DocsShadowComponentResult,
   DocsShadowReport,
+  DocsShadowMeasuredSnapshot,
   DocsShadowSnapshot,
   ProblemShadowDifference,
 } from "./api-shadow-types.ts";
 import { openLibraryProject } from "./api.ts";
 import type { LibraryProject } from "./api.ts";
+import type { DocsWriter } from "./docs-writer.ts";
+import { refusingDocsWriter } from "./docs-writer.ts";
 import { docsRoot } from "./paths.ts";
 
 export type {
@@ -34,17 +37,21 @@ export type {
   ShadowPropEvidence,
   ShadowPartEvidence,
   DocsShadowComponentResult,
+  DocsShadowMeasuredSnapshot,
   DocsShadowSnapshot,
   DocsShadowSummary,
   DocsShadowReport,
 } from "./api-shadow-types.ts";
 export { docsShadowInventory } from "./api-shadow-files.ts";
 export {
+  assertReviewedReasons,
   compareParts,
   compareEvidence,
   compareProblems,
   reviewAgainstSnapshot,
 } from "./api-shadow-compare.ts";
+export { refusingDocsWriter, nodeDocsWriter } from "./docs-writer.ts";
+export type { DocsWriter } from "./docs-writer.ts";
 export { inputCapturesEqual } from "./api-effect-adapter.ts";
 
 export const shadowSnapshotFile = path.join(docsRoot, "test/api-shadow.snapshot.json");
@@ -60,10 +67,17 @@ export type DocsShadowRunOptions = {
     inventory: ReturnType<typeof docsShadowInventory>,
     context: LibraryProject
   ) => Promise<SideRun>;
+  /**
+   * Write sink the run would use. Defaults to a refusing writer: a shadow
+   * comparison never persists, and tests inject the same type generate uses.
+   */
+  readonly writer?: DocsWriter;
 };
 
 /** Runs both extractors over the complete component inventory without invoking any writer. */
 export async function runDocsShadowComparison(options: DocsShadowRunOptions = {}): Promise<DocsShadowReport> {
+  const writer = options.writer ?? refusingDocsWriter(() => undefined);
+  void writer;
   const inventory = docsShadowInventory();
   const extractionInputs = inventory.map((entry) => entry.entryFile);
   const context = openLibraryProject();
@@ -118,7 +132,7 @@ export async function runDocsShadowComparison(options: DocsShadowRunOptions = {}
 }
 
 /** The snapshot a report would be stored as: differences only, in a stable order. */
-export function snapshotOf(report: DocsShadowReport): DocsShadowSnapshot {
+export function snapshotOf(report: DocsShadowReport): DocsShadowMeasuredSnapshot {
   const byKey =
     <T>(select: (value: T) => string) =>
     (left: T, right: T) =>
@@ -135,9 +149,11 @@ export function snapshotOf(report: DocsShadowReport): DocsShadowSnapshot {
 export function readShadowSnapshot(file = shadowSnapshotFile): DocsShadowSnapshot {
   // SAFETY: the file is written only by snapshotOf through the update script;
   // reviewAgainstSnapshot compares it field by field against measured values.
-  return JSON.parse(readFileSync(file, "utf8")) as DocsShadowSnapshot;
+  const snapshot = JSON.parse(readFileSync(file, "utf8")) as DocsShadowSnapshot;
+  assertReviewedReasons(snapshot);
+  return snapshot;
 }
 
-export function serializeShadowSnapshot(snapshot: DocsShadowSnapshot): string {
+export function serializeShadowSnapshot(snapshot: DocsShadowMeasuredSnapshot): string {
   return `${JSON.stringify(snapshot, null, 2)}\n`;
 }

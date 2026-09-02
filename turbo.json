@@ -30,6 +30,9 @@
     "test:types": {
       "dependsOn": ["build"]
     },
+    "test:shadow": {
+      "dependsOn": ["build"]
+    },
     "pack": {
       "dependsOn": ["build"],
       "outputs": [".artifacts/**"]
@@ -54,7 +57,8 @@
         "test:types",
         "build",
         "package:check",
-        "size-limit"
+        "size-limit",
+        "docs#test:shadow"
       ]
     }
   }
