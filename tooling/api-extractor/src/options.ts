@@ -22,6 +22,12 @@ export type ExtractorOptions = {
   /**
    * Expands no external types by default, every external type when `true`, or
    * only dependency declarations owned by an exact package name in the list.
+   *
+   * The two non-`true` forms apply different quantifiers, on purpose: `false`
+   * summarizes a symbol as soon as ANY of its declarations is external
+   * (upstream's `isSymbolExternal`), while a package list expands a symbol only
+   * when EVERY declaration is project-owned or owned by a listed package, so a
+   * symbol merged from a listed and an unlisted dependency stays summarized.
    */
   readonly includeExternalTypes?: boolean | readonly string[];
 };
