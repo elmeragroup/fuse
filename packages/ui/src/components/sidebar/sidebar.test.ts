@@ -285,6 +285,7 @@ describe("sidebar source contract", () => {
       expect(readFileSync(join(srcRoot, entry), "utf8"), entry).not.toContain("use-is-mobile");
     }
     expect(hookSource).toContain("(max-width: ${MOBILE_BREAKPOINT - 1}px)");
-    expect(hookSource).toContain("Boolean(isMobile)");
+    expect(hookSource).toContain("useSyncExternalStore");
+    expect(hookSource).toContain(".matches");
   });
 });

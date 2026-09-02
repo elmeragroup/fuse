@@ -94,7 +94,7 @@ Throws `"useSidebar must be used within a SidebarProvider."` outside the provide
 
 ### Private `useIsMobile()`
 
-Package-private implementation detail: `matchMedia("(max-width: 767px)")` against a 768px breakpoint; state starts `undefined` and is coerced with `Boolean(...)`, so SSR and first client render report `false`. It is imported only by Sidebar source and is absent from every public entry.
+Package-private implementation detail: `useSyncExternalStore` over `matchMedia("(max-width: 767px)")` against a 768px breakpoint. The snapshot is `mql.matches`; the server snapshot is `false`, so SSR and hydration report desktop until the client MQL is read. It is imported only by Sidebar source and is absent from every public entry. _(Amended 2026-09-02.)_
 
 ## 3 Props
 
@@ -228,7 +228,7 @@ State attributes: Root — `data-state="expanded|collapsed"`, `data-variant`, `d
 9. **Renames (flat → namespace)**, one entry each: `SidebarProvider`→`Sidebar.Provider`, `Sidebar`→`Sidebar.Root`, `SidebarTrigger`→`Sidebar.Trigger`, `SidebarRail`→`Sidebar.Rail`, `SidebarInset`→`Sidebar.Inset`, `SidebarInput`→`Sidebar.Input`, `SidebarHeader`→`Sidebar.Header`, `SidebarFooter`→`Sidebar.Footer`, `SidebarSeparator`→`Sidebar.Separator`, `SidebarContent`→`Sidebar.Content`, `SidebarGroup`→`Sidebar.Group`, `SidebarGroupLabel`→`Sidebar.GroupLabel`, `SidebarGroupAction`→`Sidebar.GroupAction`, `SidebarGroupContent`→`Sidebar.GroupContent`, `SidebarMenu`→`Sidebar.Menu`, `SidebarMenuItem`→`Sidebar.MenuItem`, `SidebarMenuButton`→`Sidebar.MenuButton`, `SidebarMenuAction`→`Sidebar.MenuAction`, `SidebarMenuBadge`→`Sidebar.MenuBadge`, `SidebarMenuSkeleton`→`Sidebar.MenuSkeleton`, `SidebarMenuSub`→`Sidebar.MenuSub`, `SidebarMenuSubItem`→`Sidebar.MenuSubItem`, `SidebarMenuSubButton`→`Sidebar.MenuSubButton`, `SidebarIcon`→`Sidebar.Icon`. `useSidebar` keeps its name.
 10. **Icons → Phosphor**: lucide `PanelLeftIcon` → Phosphor **`SidebarSimple`** — the closest Phosphor glyph to PanelLeft (a plain frame with a left-panel divider; Phosphor's `Sidebar` adds content lines inside the panel), and its name doesn't collide with the `Sidebar` namespace export.
 11. **Helper privacy and strings:** `useIsMobile` is no longer public. Toggle/mobile-sheet copy comes from provider-locale keys with a `labels` override object.
-12. **Mobile detection behavior kept, helper private:** 768px breakpoint (`max-width: 767px` MQL), `undefined`-then-`Boolean` state so SSR/first paint is `false`; observable through `useSidebar().isMobile`, not a `useIsMobile` export.
+12. **Mobile detection via `useSyncExternalStore`** (2026-09-02): 768px breakpoint (`max-width: 767px` MQL), snapshot is `mql.matches`, server snapshot is `false`; observable through `useSidebar().isMobile`, not a `useIsMobile` export. Replaces the ref's `undefined`-then-`Boolean` state/effect mirror and `window.innerWidth` comparison.
 13. **Focus rings unified:** ref `ring-sidebar-ring` literals are replaced by canonical `focusRing`; Sidebar has no focus-color exception.
 14. **Density exemption:** menu-button `h-8`/`h-7`/`h-12` and `Sidebar.Input` `h-8` stay shell-local; they are not remapped onto `--control-*`.
 15. **`Sidebar.Input` composes the library `Input`** (2026-09-02): the shared field-box `focusRing` ships with the control; `data-slot="sidebar-input"` is spread after the inner `input` slot so it wins; `h-8` still overrides the field-box height (the §8.14 exemption).

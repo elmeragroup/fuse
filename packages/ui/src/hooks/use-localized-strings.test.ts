@@ -1,5 +1,7 @@
 import { createElement } from "react";
 
+import { LocalizedStringDictionary } from "@internationalized/string";
+import type { LocalizedStringFormatter } from "@internationalized/string";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -9,6 +11,10 @@ import { describe, expect, it } from "vitest";
 import { discoverEntries } from "../../scripts/entries";
 import { SUPPORTED_LOCALES, withLocale } from "../../test/locale-matrix";
 import { fixtureDictionary } from "./intl-fixture";
+import { enUS } from "./intl-fixture/en-US";
+import { fiFI } from "./intl-fixture/fi-FI";
+import { nbNO } from "./intl-fixture/nb-NO";
+import { svSE } from "./intl-fixture/sv-SE";
 import { useLocalizedStrings } from "./use-localized-strings";
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "../..");
@@ -37,6 +43,30 @@ function RemoveProbe() {
   return strings.format("removeItem", { item: "Save" });
 }
 
+function DualProbe() {
+  const first = useLocalizedStrings(fixtureDictionary);
+  const second = useLocalizedStrings(fixtureDictionary);
+  return first === second ? "shared" : "allocated";
+}
+
+const otherDictionary = new LocalizedStringDictionary({
+  "en-US": enUS,
+  "fi-FI": fiFI,
+  "nb-NO": nbNO,
+  "sv-SE": svSE,
+});
+
+function CaptureProbe({
+  dictionary,
+  onFormatter,
+}: {
+  dictionary: typeof fixtureDictionary;
+  onFormatter: (formatter: LocalizedStringFormatter) => void;
+}) {
+  onFormatter(useLocalizedStrings(dictionary));
+  return null;
+}
+
 describe("useLocalizedStrings", () => {
   it("resolves the fixture dictionary in all four locales via the locale-matrix helper", () => {
     for (const locale of SUPPORTED_LOCALES) {
@@ -48,6 +78,65 @@ describe("useLocalizedStrings", () => {
   it("lets an explicit string prop override the dictionary", () => {
     expect(renderToString(withLocale("nb-NO", createElement(Probe, { override: "Custom" })))).toBe("Custom");
     expect(renderToString(withLocale("en-US", createElement(Probe, { override: "Custom" })))).toBe("Custom");
+  });
+
+  it("returns the same formatter instance for the same dictionary and locale", () => {
+    for (const locale of SUPPORTED_LOCALES) {
+      expect(renderToString(withLocale(locale, createElement(DualProbe)))).toBe("shared");
+    }
+
+    const firstLocale: LocalizedStringFormatter[] = [];
+    renderToString(
+      withLocale(
+        "en-US",
+        createElement(CaptureProbe, {
+          dictionary: fixtureDictionary,
+          onFormatter: (formatter) => {
+            firstLocale.push(formatter);
+          },
+        })
+      )
+    );
+    renderToString(
+      withLocale(
+        "en-US",
+        createElement(CaptureProbe, {
+          dictionary: fixtureDictionary,
+          onFormatter: (formatter) => {
+            firstLocale.push(formatter);
+          },
+        })
+      )
+    );
+    expect(firstLocale[0]).toBe(firstLocale[1]);
+
+    const otherLocale: LocalizedStringFormatter[] = [];
+    renderToString(
+      withLocale(
+        "nb-NO",
+        createElement(CaptureProbe, {
+          dictionary: fixtureDictionary,
+          onFormatter: (formatter) => {
+            otherLocale.push(formatter);
+          },
+        })
+      )
+    );
+    expect(otherLocale[0]).not.toBe(firstLocale[0]);
+
+    const otherDict: LocalizedStringFormatter[] = [];
+    renderToString(
+      withLocale(
+        "en-US",
+        createElement(CaptureProbe, {
+          dictionary: otherDictionary,
+          onFormatter: (formatter) => {
+            otherDict.push(formatter);
+          },
+        })
+      )
+    );
+    expect(otherDict[0]).not.toBe(firstLocale[0]);
   });
 
   it("starts with the use client directive", () => {
