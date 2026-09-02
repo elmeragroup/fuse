@@ -129,7 +129,7 @@ The generator mechanically enforces the ten-section spec template's file convent
 
 ## 7 Testing strategy
 
-Vitest only. **Two co-located projects** declared in `packages/ui/vitest.config.ts` — no `VITEST_ENV` switch:
+Vitest only. **Two co-located projects** declared in `packages/ui/vitest.config.ts` — no `VITEST_ENV` switch — plus the root repo-policy project (§7.6) _(amended 2026-09-02)_:
 
 ### 7.1 `unit` project
 
@@ -169,7 +169,7 @@ Merge-workflow shape and workspace lint-script contracts live in the root `test/
 
 ## 8 CI gates
 
-- **Merge workflow** (required on every PR, and on push to `main`) runs three ordered stages: (1) root `oxfmt --check`; (2) turbo `ci:checks`, which fans out to type-check, oxlint (all three plugins), unit tests (including theme/CSS/contrast snapshots), browser tests, type tests, build, one `pnpm pack`, package-shape checks, `size-limit`, `docs#test:shadow`, and the root repo-policy tests; (3) changeset presence. The changeset stage runs only on `pull_request`, fails a PR without a changeset file unless GitHub applies the **`no-changeset`** label (matched as a whole label name, not a substring), and skips Version-Packages PRs whose head branch is `changeset-release/*` so the release PR is not blocked for consuming its own changesets. The root `pnpm ci:checks` script covers stages 1–2 for local reproduction; the label-aware stage is necessarily a workflow check.
+- **Merge workflow** (required on every PR, and on push to `main`) runs three ordered stages: (1) root `oxfmt --check`; (2) turbo `ci:checks`, which fans out to type-check, oxlint (all three plugins), unit tests (including theme/CSS/contrast snapshots), browser tests, type tests, build, one `pnpm pack`, package-shape checks, `size-limit`, `docs#test:shadow`, and the root repo-policy tests; (3) changeset presence. The changeset stage runs only on `pull_request`, fails a PR without a changeset file unless GitHub applies the **`no-changeset`** label (matched as a whole label name, not a substring), and skips Version-Packages PRs whose head branch is `changeset-release/*` so the release PR is not blocked for consuming its own changesets. The root `pnpm ci:checks` script covers stages 1–2 for local reproduction; the label-aware stage is necessarily a workflow check. _(amended 2026-09-02)_
 - The `pack` task is the single producer: `package:check` and `size-limit` consume its exact tarball rather than measuring raw source facades or repacking independently. `.artifacts/` is ignored; its tarball may be turbo-cached for the run but is never committed.
 - **Publish gate:** [release §5](release.md#5-publish-time-gates) is the single exhaustive table. The release workflow reuses the exact packed artifact described above and must not maintain a second gate list in this chapter.
 - Visual regression is **roadmap, not v1**: the plain-`.tsx` demo pipeline keeps VR-target readiness designed in — the VR suite will glob the **docs-app** demo directories (`apps/docs/src/app/(docs)/components/*/demos/`, per [docs-site](docs-site.md) §6, the base-ui precedent); tool candidate Playwright + Argos joins the publish gate when the roadmap lands it.
