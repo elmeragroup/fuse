@@ -21,6 +21,15 @@ const CONTROL_SM = {
   comfortable: 36,
 } as const;
 
+function tokenPx(host: HTMLElement, name: `--${string}`): number {
+  const probe = document.createElement("span");
+  probe.style.width = `var(${name})`;
+  host.append(probe);
+  const value = px(getComputedStyle(probe).width);
+  probe.remove();
+  return value;
+}
+
 function comboboxNamed(name?: string): HTMLElement {
   const locator =
     name === undefined ? page.getByRole("combobox") : page.getByRole("combobox", { name, exact: true });
@@ -300,8 +309,21 @@ describe("Select", () => {
 
     for (const density of ["dense", "comfortable"] as const) {
       stampDensity(density);
-      expect(px(getComputedStyle(comboboxNamed("Default meter")).height)).toBe(CONTROL_MD[density].height);
-      expect(px(getComputedStyle(comboboxNamed("Small meter")).height)).toBe(CONTROL_SM[density]);
+      const defEl = comboboxNamed("Default meter");
+      const def = getComputedStyle(defEl);
+      expect(px(def.height)).toBe(tokenPx(defEl, "--control-h-md"));
+      expect(px(def.paddingInlineStart)).toBe(tokenPx(defEl, "--control-px-md"));
+      expect(px(def.gap)).toBe(tokenPx(defEl, "--control-gap-md"));
+      expect(px(def.fontSize)).toBe(tokenPx(defEl, "--control-text"));
+      expect(px(def.lineHeight)).toBe(tokenPx(defEl, "--control-leading"));
+      expect(px(def.height)).toBe(CONTROL_MD[density].height);
+
+      const smEl = comboboxNamed("Small meter");
+      const sm = getComputedStyle(smEl);
+      expect(px(sm.height)).toBe(tokenPx(smEl, "--control-h-sm"));
+      expect(px(sm.paddingInlineStart)).toBe(tokenPx(smEl, "--control-px-sm"));
+      expect(px(sm.gap)).toBe(tokenPx(smEl, "--control-gap-sm"));
+      expect(px(sm.height)).toBe(CONTROL_SM[density]);
     }
 
     stampDensity("dense");

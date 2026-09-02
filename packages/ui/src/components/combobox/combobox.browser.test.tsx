@@ -10,7 +10,7 @@ import {
   expectNoFocusRing,
 } from "../../../test/assert-focus-ring";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
-import { renderThemed } from "../../../test/themed-browser-render";
+import { px, renderThemed, stampDensity } from "../../../test/themed-browser-render";
 import { Field } from "../field/field";
 import { InputGroup } from "../input-group/input-group";
 import { Combobox, useComboboxAnchor } from "./combobox";
@@ -581,5 +581,33 @@ describe("Combobox", () => {
     await userEvent.click(buttonNamed("Copy"));
     expect(buttonNamed("Copy").matches(":focus-visible")).toBe(false);
     expectNoFocusRing(inputGroupRoot(), "mouse focus on an addon button must not paint the group ring");
+  });
+
+  it("pins a popup-embedded InputGroup to the sm control height at both densities", () => {
+    renderCombobox(
+      <Combobox.Root items={[...FRUITS]} defaultOpen>
+        <Combobox.Input aria-label="Fruit" showTrigger={false} />
+        <Combobox.Content>
+          <Combobox.Input showTrigger={false} aria-label="Filter fruit" />
+          <Combobox.List>
+            <Combobox.Item value="Apple">Apple</Combobox.Item>
+          </Combobox.List>
+        </Combobox.Content>
+      </Combobox.Root>
+    );
+    const filter = comboboxNamed("Filter fruit");
+    const group = filter.closest('[role="group"]');
+    if (!(group instanceof HTMLElement)) {
+      throw new Error("expected the popup InputGroup");
+    }
+    for (const density of ["dense", "comfortable"] as const) {
+      stampDensity(density);
+      const probe = document.createElement("span");
+      probe.style.width = "var(--control-h-sm)";
+      group.append(probe);
+      const rung = px(getComputedStyle(probe).width);
+      probe.remove();
+      expect(px(getComputedStyle(group).height), density).toBe(rung);
+    }
   });
 });

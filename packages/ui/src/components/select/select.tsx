@@ -43,7 +43,7 @@ function SelectTrigger({
       data-size={size}
       className={cn(
         selfFocusRing,
-        "group/select-trigger text-sm shadow-xs flex w-fit items-center justify-between gap-1.5 rounded-md border border-input bg-card py-2 pr-2 pl-2.5 whitespace-nowrap transition-[color,box-shadow] outline-none select-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-error aria-invalid:ring-3 aria-invalid:ring-error/20 data-placeholder:text-muted-foreground data-[size=default]:h-(--control-h-md) data-[size=sm]:h-(--control-h-sm) *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "group/select-trigger shadow-xs data-[size=sm]:text-sm flex w-fit items-center justify-between rounded-md border border-input bg-card whitespace-nowrap transition-[color,box-shadow] outline-none select-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-error aria-invalid:ring-3 aria-invalid:ring-error/20 data-placeholder:text-muted-foreground data-[size=default]:h-(--control-h-md) data-[size=default]:gap-(--control-gap-md) data-[size=default]:px-(--control-px-md) data-[size=default]:[font-size:var(--control-text)] data-[size=default]:[line-height:var(--control-leading)] data-[size=sm]:h-(--control-h-sm) data-[size=sm]:gap-(--control-gap-sm) data-[size=sm]:px-(--control-px-sm) *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className
       )}
       {...props}>

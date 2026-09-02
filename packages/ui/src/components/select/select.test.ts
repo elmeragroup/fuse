@@ -29,8 +29,17 @@ describe("select source contract", () => {
   it("reads density rungs on the trigger size axis and uses bg-card", () => {
     expect(source).toContain('size = "default"');
     expect(source).toContain("data-[size=default]:h-(--control-h-md)");
+    expect(source).toContain("data-[size=default]:px-(--control-px-md)");
+    expect(source).toContain("data-[size=default]:gap-(--control-gap-md)");
+    expect(source).toContain("data-[size=default]:[font-size:var(--control-text)]");
+    expect(source).toContain("data-[size=default]:[line-height:var(--control-leading)]");
     expect(source).toContain("data-[size=sm]:h-(--control-h-sm)");
+    expect(source).toContain("data-[size=sm]:px-(--control-px-sm)");
+    expect(source).toContain("data-[size=sm]:gap-(--control-gap-sm)");
+    expect(source).toContain("data-[size=sm]:text-sm");
     expect(source).not.toMatch(/data-\[size=(?:default|sm)\]:h-\d/);
+    expect(source).not.toContain("py-2");
+    expect(source).not.toContain("pl-2.5");
     expect(source).toContain("bg-card");
     // oxlint-disable-next-line elmera/no-primitive-colors -- source-grep of the forbidden class, not a recipe
     expect(source).not.toContain("bg-white");
