@@ -32,6 +32,11 @@ function TabsRoot({
   );
 }
 
+/**
+ * Tab strip. `activateOnFocus` defaults to `true` (the pinned Base UI default is
+ * `false`): arrow keys move focus and activate in one step per tabs.md §7, with
+ * `activateOnFocus={false}` as the manual-activation opt-out (tabs.md §3/§8.8).
+ */
 function TabsList({
   className,
   variant = "default",

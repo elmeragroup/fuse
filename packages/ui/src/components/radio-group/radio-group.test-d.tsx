@@ -202,3 +202,27 @@ test("the elements take the spec props and reject invalid combinations", () => {
     <RadioGroup defaultValue={null} />
   );
 });
+
+test("RadioIconButton passes Radio.Root props through except the composite-owned keys (radio-group.md §3/§8.12)", () => {
+  expectTypeOf<RadioIconButtonProps>().toHaveProperty("render");
+  expectTypeOf<RadioIconButtonProps>().toHaveProperty("readOnly");
+  expectTypeOf<RadioIconButtonProps>().toHaveProperty("required");
+  expectTypeOf<RadioIconButtonProps>().toHaveProperty("id");
+  expectTypeOf<RadioIconButtonProps>().toHaveProperty("aria-describedby");
+  expectTypeOf<RadioIconButtonProps["className"]>().toEqualTypeOf<string | undefined>();
+  expectTypeOf<RadioIconButtonProps["children"]>().toEqualTypeOf<ReactNode | undefined>();
+  expectTypeOf<RadioProps>().not.toHaveProperty("render");
+  expectTypeOf<RadioProps>().not.toHaveProperty("id");
+  expectTypeOf<RadioItemProps>().not.toHaveProperty("render");
+  expectTypeOf<RadioItemProps>().not.toHaveProperty("id");
+
+  const _passThrough = (
+    <RadioIconButton value="grid" aria-label="Grid" id="view-grid" aria-describedby="view-help" readOnly>
+      <svg />
+    </RadioIconButton>
+  );
+  const _stringClassNameOnly = (
+    // @ts-expect-error RadioIconButton merges a string className; the state callback stays on RadioGroupItem
+    <RadioIconButton value="grid" aria-label="Grid" className={() => "x"} />
+  );
+});

@@ -64,7 +64,7 @@ Full mode × level color matrix (`barFill` / `labelValue`), base level styles + 
 
 \* falls through to the base level styles — the ref defines no `EXCEEDED_MAX_VALUE` compound for `inverted`/`success-only-when-full` (ref-faithful; arguably surprising for `inverted`, kept as-is).
 
-Icon logic (`MeterIcon`): `default` mode → named `Warning` when percentage ≥ 80, else nothing; `success-only-when-full` → named `CheckCircle` at `FULL`, `Warning` otherwise; **`inverted` and `neutral` → always `null`** (kept, documented — `inverted` gets colors but never an icon).
+Icon logic (`MeterIcon`): derived from the resolved `level`, never from the raw percentage. `default` mode → named `Warning` at every level above `LOW` (`MEDIUM`, `FULL`, `EXCEEDED_MAX_VALUE`, i.e. percentage > 80), nothing at `LOW` (exactly 80 shows no icon); `success-only-when-full` → named `CheckCircle` at `FULL`, `Warning` otherwise; **`inverted` and `neutral` → always `null`** (kept, documented — `inverted` gets colors but never an icon). _(Amended 2026-09-02, §8.8.)_
 
 Fixed styling: track `h-1.5 rounded-full bg-muted` with transparent inset outline (forced-colors affordance); fill `transition-all forced-colors:bg-[Highlight]`; value span `text-sm tabular-nums`; label `text-sm font-medium`.
 
@@ -87,7 +87,7 @@ Fixed styling: track `h-1.5 rounded-full bg-muted` with transparent inset outlin
 - base-ui `Meter.Root` renders `role="meter"` with `aria-valuenow`/`aria-valuemin`/`aria-valuemax` and `aria-valuetext` (customizable via `format`/`getAriaValueText` pass-through).
 - `Meter.Label` is auto-associated with the root (`aria-labelledby`).
 - Read-only — no keyboard interaction surface.
-- Icons carry localized accessible names (`meter.warning`, `meter.success`) with explicit prop overrides; level color is never the sole signal in `default`/`success-only-when-full` because the icon accompanies the ≥80% states. Forced-colors mode gets `bg-[Highlight]` on the fill.
+- Icons carry localized accessible names (`meter.warning`, `meter.success`) with explicit prop overrides; level color is never the sole signal in `default`/`success-only-when-full` because the icon accompanies every level above `LOW` (>80%). Forced-colors mode gets `bg-[Highlight]` on the fill.
 
 ## 8 Divergence from reference
 
@@ -98,6 +98,7 @@ Fixed styling: track `h-1.5 rounded-full bg-muted` with transparent inset outlin
 5. **Naming caution restated**: mode `"inverted"` ≠ the dropped `inverted:` Tailwind variant from the ref's theme system. The mode survives unchanged; the Tailwind variant does not exist in this library.
 6. Hardcoded English icon labels become provider-locale dictionary defaults with `warningLabel`/`successLabel` overrides.
 7. **Locale is provider-only:** the primitive's component-level `locale` prop is omitted from `MeterProps`; `useElmeraGroupUi().locale` drives both number formatting and the icon-label dictionary.
+8. **One 80% boundary for fill and icon** — the ref's `MeterIcon` tested `percentage >= 80` while `getMeterLevel` tested `> 80`, so a meter at exactly 80% painted a `LOW` (success) fill under a `Warning` icon. The icon now derives from `level`: exactly 80 is `LOW` with no icon; the first `Warning` appears with the first `MEDIUM` fill. _(Ruled 2026-09-02, pending owner confirmation: `> 80` for both, matching the §9 `getMeterLevel` boundary test rather than moving the level to `≥ 80`.)_
 
 No API divergence — `MeterProps` is identical to the ref.
 
@@ -108,6 +109,7 @@ No API divergence — `MeterProps` is identical to the ref.
 - **`getMeterLevel` unit tests** (thresholds): percentage ≤ 80 → `LOW`; 80 < p < 100 → `MEDIUM` (boundary: exactly 80 is `LOW`); p === 100 → `FULL`; `value > maxValue` with explicit `maxValue` → `EXCEEDED_MAX_VALUE`; no explicit `maxValue` → never `EXCEEDED_MAX_VALUE`; `max <= min` → percentage 0 → `LOW`.
 - Mode × level classes: spot-check each column of the §4 matrix via the emitted `data-slot="meter-bar-fill"` element's classes.
 - Icon behavior under an `ElmeraGroupUiProvider locale="en-US"`: `default` at 79% → no icon; at 85% → Warning (`getByLabelText("Warning")`); `success-only-when-full` at 100% → CheckCircle (`getByLabelText("Success")`); `inverted`/`neutral` → no icon at any value.
+- **Boundary (browser, by role/label)**: `default` at exactly 80% renders the `LOW` fill and no icon; at 81% the `MEDIUM` fill and the Warning icon appear together; a scaled `value={96} maxValue={120}` (80%) is likewise icon-free.
 - Warning/success labels render in all four locales; explicit overrides win.
 - All five `data-slot` attributes present.
 

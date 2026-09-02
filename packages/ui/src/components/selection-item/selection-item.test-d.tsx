@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 import { expectTypeOf, test } from "vitest";
 
 import type { SelectionItem as RootSelectionItem } from "@elmeragroup/ui";
@@ -70,4 +72,30 @@ test("Shell takes the spec surface and no polymorphic as prop", () => {
   );
   // @ts-expect-error polymorphism is never an as prop
   const _noAs = <SelectionItem.Shell dataSlot="checkbox-item" control={<span />} as="section" />;
+});
+
+test("Shell passes Field.Item props through except className and children (selection-item.md §3/§8.7)", () => {
+  type ShellProps = Parameters<typeof SelectionItem.Shell>[0];
+  expectTypeOf<ShellProps>().toHaveProperty("render");
+  expectTypeOf<ShellProps>().toHaveProperty("id");
+  expectTypeOf<ShellProps>().toHaveProperty("onClick");
+  expectTypeOf<ShellProps>().toHaveProperty("aria-describedby");
+  expectTypeOf<ShellProps["className"]>().toEqualTypeOf<string | undefined>();
+  expectTypeOf<ShellProps["children"]>().toEqualTypeOf<ReactNode | undefined>();
+
+  const _passThrough = (
+    <SelectionItem.Shell
+      dataSlot="checkbox-item"
+      control={<span />}
+      id="plan-fixed"
+      aria-describedby="plan-help"
+      data-testid="fixed"
+      onClick={() => undefined}>
+      Fixed
+    </SelectionItem.Shell>
+  );
+  const _stringClassNameOnly = (
+    // @ts-expect-error the shell merges a string className; the Base UI state callback stays on controls
+    <SelectionItem.Shell dataSlot="checkbox-item" control={<span />} className={() => "x"} />
+  );
 });

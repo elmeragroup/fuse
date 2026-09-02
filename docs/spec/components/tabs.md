@@ -43,12 +43,13 @@ Root establishes the `group/tabs` Tailwind group scope; List establishes `group/
 
 ### Tabs.List
 
-`ComponentProps<typeof TabsPrimitive.List> & VariantProps<typeof tabsListVariants>` — pass-through includes `loop`, `render`.
+`ComponentProps<typeof TabsPrimitive.List> & VariantProps<typeof tabsListVariants>` — pass-through includes `loopFocus`, `render`. _(Amended 2026-09-02: the primitive prop is `loopFocus`, not `loop`.)_
 
-| Prop        | Type                  | Default     | Notes                                                |
-| ----------- | --------------------- | ----------- | ---------------------------------------------------- |
-| `variant`   | `"default" \| "line"` | `"default"` | emitted as `data-variant`; fed to `tabsListVariants` |
-| `className` | `string`              | —           | merged via `cn`                                      |
+| Prop              | Type                  | Default     | Notes                                                                                                                                                                   |
+| ----------------- | --------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `variant`         | `"default" \| "line"` | `"default"` | emitted as `data-variant`; fed to `tabsListVariants`                                                                                                                    |
+| `activateOnFocus` | `boolean`             | `true`      | library default; the pinned base-ui default is `false`. `true` makes arrow keys move **and** activate (§7); `false` opts into manual activation with Enter/Space (§8.8) |
+| `className`       | `string`              | —           | merged via `cn`                                                                                                                                                         |
 
 ### Tabs.Trigger
 
@@ -96,12 +97,14 @@ Trigger styling is plain classes (no recipe): active tab gets `data-active:bg-ba
 5. **KEPT: `tabsListVariants` stays public** — exported from the package as in the ref.
 6. **Panel focus fixed:** the ref's unconditional `outline-none` on `Tabs.Content` is removed and the shared self-focus recipe is composed. The pinned base-ui primitive sets the open panel to `tabIndex={0}`, so suppressing its outline without replacement violated the cluster focus contract.
 7. **Density retokenization:** horizontal list `h-9` pins `--control-h-md`. Vertical `h-fit` is unchanged.
+8. **`activateOnFocus` defaults to `true`** — the pinned base-ui `Tabs.List` defaults to `false` (arrows move focus, Enter/Space activates). The library flips the default so the §7 keyboard contract (one tab stop, arrows move and activate) holds without every consumer passing the prop; `activateOnFocus={false}` remains the documented opt-out. _(Ruled 2026-09-02, pending owner confirmation: keep `true`, the behaviour §7/§9 already described, rather than revert to the primitive default.)_
 
 ## 9 Test requirements
 
 - Role queries only: `getByRole("tablist")`, `getByRole("tab", { selected })`, `getByRole("tabpanel")`.
 - Clicking a tab activates it: `aria-selected="true"`, matching panel visible, previous panel hidden.
-- **Arrow-key activation**: focus the tablist, ArrowRight moves to and activates the next tab (base-ui activate-on-focus), ArrowLeft back; Home/End reach first/last.
+- **Arrow-key activation**: focus the tablist, ArrowRight moves to and activates the next tab (library default `activateOnFocus`, §3), ArrowLeft back; Home/End reach first/last.
+- **Manual-activation opt-out**: with `activateOnFocus={false}` ArrowRight moves focus without changing `aria-selected` or the visible panel; Enter or Space activates the focused tab.
 - **Orientation**: `orientation="vertical"` → `data-orientation="vertical"` on Root, ↑/↓ drive navigation instead of ←/→.
 - Disabled trigger can receive roving keyboard focus but does not activate; click likewise cannot activate it.
 - Tabbing from the active trigger reaches the open `tabpanel`; keyboard focus on that panel renders the shared focus ring.
