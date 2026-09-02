@@ -3,9 +3,8 @@
  *
  * The accordion is the page's only client component, and it needs two things from the view
  * layer: the shape of a row and the string a missing default renders as. Both live here, in a
- * module with no runtime imports at all, so importing them cannot drag the server-only
- * highlighter (`sugar-high`, imported by `api-view.ts`) onto the client graph. `api-view.ts`
- * builds these rows on the server; this module only says what they look like.
+ * module with no runtime imports at all. `api-view.ts` builds these rows on the server; this
+ * module only says what they look like.
  */
 
 /** What a missing default renders as (docs-site.md §8). */
@@ -22,8 +21,8 @@ export type ApiPropView = {
    * when it collapsed the printed type, otherwise the printed type itself.
    */
   closedType: string;
-  /** The full printed signature, highlighted for the expanded panel. */
-  signatureHtml: string;
+  /** The full printed signature; the expanded panel highlights it through `DocsCodeBlock`. */
+  signature: string;
   /** The default as written, or `null` when there is none — the row then shows an em-dash. */
   defaultValue: string | null;
   /** JSDoc description, or the recipe-axis stand-in. Markdown-ish: may contain code spans. */

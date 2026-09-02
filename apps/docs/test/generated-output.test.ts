@@ -871,11 +871,12 @@ describe("generated markdown endpoints", () => {
       const markdown = endpoint(entry.slug);
       expect(markdown, entry.slug).toContain("## API reference");
       for (const part of api(entry.slug).parts) {
-        expect(markdown, part.name).toContain(`### ${part.name}`);
+        // Per-part RSC rides on the heading, matching the HTML page's indicator (§8).
+        expect(markdown, part.name).toContain(`### ${part.name} · RSC: ${part.rsc}`);
         // Either the part's own props as a table, or the line that says it has none —
         // a part that forwards everything is documented as such, not silently skipped.
         expect(
-          markdown.includes("| Prop | Type | Default | Required | RSC | Description |") ||
+          markdown.includes("| Prop | Type | Default | Required | Description |") ||
             markdown.includes("No own props"),
           part.name
         ).toBe(true);

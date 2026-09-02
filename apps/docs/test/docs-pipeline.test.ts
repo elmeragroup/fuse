@@ -282,11 +282,14 @@ describe("markdown endpoint rendering", () => {
     tokens: [{ name: "--primary", isColor: true }],
   };
 
-  it("carries the demo source, the RSC column and the tokens list", () => {
+  it("carries the demo source, RSC per part on the heading, and the tokens list", () => {
     const markdown = renderComponentMarkdown(component);
     expect(markdown).toContain("export function WidgetBasic() {}");
-    expect(markdown).toContain("| Prop | Type | Default | Required | RSC | Description |");
-    expect(markdown).toContain("| `label` | `string` | — | yes | client | Visible text. |");
+    // RSC is a per-part fact (docs-site.md §8): a badge on the part heading, not a column.
+    expect(markdown).toContain("### Widget · RSC: client");
+    expect(markdown).toContain("| Prop | Type | Default | Required | Description |");
+    expect(markdown).not.toContain("| RSC |");
+    expect(markdown).toContain("| `label` | `string` | — | yes | Visible text. |");
     expect(markdown).toContain("Plus 3 forwarded props from `@types/react`.");
     expect(markdown).toContain("- `--primary` (colour)");
   });

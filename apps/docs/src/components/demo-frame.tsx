@@ -30,7 +30,8 @@ const classNames = {
  * An async server component, so the source region comes from a read of the demo file
  * during prerendering rather than from generated data threaded through the page (§6).
  * Only the stage and meta row need the preview theme, and they are the client half
- * (`DemoStage`); the shell and the highlighted source stay on the server.
+ * (`DemoStage`); the shell and the source region — highlighted by the shared
+ * `DocsCodeBlock` from the same file the stage renders — stay on the server.
  */
 export async function DemoFrame({ slug, id, title, file, children }: DemoFrameProps): Promise<ReactElement> {
   const demo = await readDemoSource(slug, file);
@@ -40,10 +41,7 @@ export async function DemoFrame({ slug, id, title, file, children }: DemoFramePr
       <DocsSectionHeading id={id}>{title}</DocsSectionHeading>
       <div className={classNames.card}>
         <DemoStage sourcePath={demo.sourcePath}>{children}</DemoStage>
-        <DocsCodeBlock variant="embedded" data-demo-source>
-          {/* Highlighted from the same file the stage above renders. */}
-          <code dangerouslySetInnerHTML={{ __html: demo.highlighted }} />
-        </DocsCodeBlock>
+        <DocsCodeBlock variant="embedded" data-demo-source source={demo.source} />
       </div>
     </section>
   );

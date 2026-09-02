@@ -20,6 +20,7 @@ import type { CSSProperties, MouseEvent, ReactElement } from "react";
 import type { ApiPropView } from "../lib/api-row";
 import { NO_DEFAULT } from "../lib/api-row";
 import { ApiRows } from "./api-rows";
+import { DocsCodeBlock } from "./docs-code-block";
 import { InlineCode } from "./inline-code";
 
 export type ApiPropRowsProps = {
@@ -28,35 +29,27 @@ export type ApiPropRowsProps = {
   props: readonly ApiPropView[];
 };
 
+type ApiPropRowProps = {
+  prop: ApiPropView;
+  /** Forced open because the page's hash names this row. */
+  open: boolean;
+  /** The reader closed the row the hash had opened; the group stops forcing it. */
+  onClose: () => void;
+};
+
 /**
- * A `details` row that opens itself when the page's hash names it.
- *
- * Chrome opens a `details` whose descendant matches the hash on its own; Safari and Firefox
- * do not, so the row watches the hash and opens itself. `open` stays uncontrolled-ish — it is
- * forced only while the hash matches, and the native toggle owns it otherwise — so a reader
- * can still close a row they arrived at through its link.
+ * One `details` row. `open` is forced only while the hash names the row, and the native
+ * toggle owns it otherwise — so a reader can still close a row they arrived at through its
+ * link.
  */
-function ApiPropRow({ prop }: { prop: ApiPropView }): ReactElement {
-  const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    function openOnHash(): void {
-      if (window.location.hash.slice(1) === prop.id) {
-        setOpen(true);
-      }
-    }
-    openOnHash();
-    window.addEventListener("hashchange", openOnHash);
-    return () => {
-      window.removeEventListener("hashchange", openOnHash);
-    };
-  }, [prop.id]);
-
+function ApiPropRow({ prop, open, onClose }: ApiPropRowProps): ReactElement {
   return (
     <ApiRows.Row
       open={open || undefined}
       onToggle={(event) => {
-        setOpen(event.currentTarget.open);
+        if (open && !event.currentTarget.open) {
+          onClose();
+        }
       }}>
       <ApiRows.Summary
         id={prop.id}
@@ -114,10 +107,8 @@ function ApiPropRow({ prop }: { prop: ApiPropView }): ReactElement {
           <ApiRows.PanelItem>
             <ApiRows.Term>Type</ApiRows.Term>
             <ApiRows.Definition>
-              <ApiRows.Signature>
-                {/* The full printed signature the closed row may have collapsed to one word. */}
-                <code dangerouslySetInnerHTML={{ __html: prop.signatureHtml }} />
-              </ApiRows.Signature>
+              {/* The full printed signature the closed row may have collapsed to one word. */}
+              <DocsCodeBlock variant="signature" source={prop.signature} />
             </ApiRows.Definition>
           </ApiRows.PanelItem>
           <ApiRows.PanelItem>
@@ -136,7 +127,31 @@ function ApiPropRow({ prop }: { prop: ApiPropView }): ReactElement {
   );
 }
 
+/** The row id the page's hash names, or `null` when it names nothing. */
+function hashRowId(): string | null {
+  const id = window.location.hash.slice(1);
+  return id === "" ? null : id;
+}
+
 export function ApiPropRows({ partName, props }: ApiPropRowsProps): ReactElement {
+  // Chrome opens a `details` whose descendant the hash targets on its own; Safari and
+  // Firefox do not, so the group watches the hash and opens the named row. The group holds
+  // that one id and registers one `hashchange` listener for all of its rows — a long API
+  // page mounts hundreds of rows, and a listener per row is that many callbacks the
+  // browser walks on every in-page navigation.
+  const [openId, setOpenId] = useState<string | null>(null);
+
+  useEffect(() => {
+    function openFromHash(): void {
+      setOpenId(hashRowId());
+    }
+    openFromHash();
+    window.addEventListener("hashchange", openFromHash);
+    return () => {
+      window.removeEventListener("hashchange", openFromHash);
+    };
+  }, []);
+
   return (
     <ApiRows.Root
       // The rows are a `div` grid, not a table, and the header row is decorative — so the
@@ -157,7 +172,14 @@ export function ApiPropRows({ partName, props }: ApiPropRowsProps): ReactElement
         <ApiRows.ChevronCell />
       </ApiRows.Header>
       {props.map((prop) => (
-        <ApiPropRow key={prop.name} prop={prop} />
+        <ApiPropRow
+          key={prop.name}
+          prop={prop}
+          open={openId === prop.id}
+          onClose={() => {
+            setOpenId(null);
+          }}
+        />
       ))}
     </ApiRows.Root>
   );

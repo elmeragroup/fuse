@@ -102,7 +102,10 @@ describe("component page anatomy (docs-site.md §3.4)", () => {
     const markdown = await fetchText("/components/button.md");
     expect(markdown.startsWith("# Button")).toBe(true);
     expect(markdown).toContain("- RSC: client");
-    expect(markdown).toContain("### Button");
+    // RSC status per part, as a heading badge — never a per-prop column (docs-site.md §8).
+    expect(markdown).toContain("### Button · RSC: client");
+    expect(markdown).toContain("| Prop | Type | Default | Required | Description |");
+    expect(markdown).not.toContain("| RSC |");
   });
 
   it("keeps the docs chrome light-only — brand colour stays inside demo stages", async () => {

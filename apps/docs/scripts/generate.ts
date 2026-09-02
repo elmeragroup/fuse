@@ -111,7 +111,7 @@ function pruneStale(directory: string): void {
  *
  * The read is still here because this pass is where a page's demo *inventory* is checked:
  * a named file that does not exist, and a demo file no page renders, both fail generation.
- * The `"use client"` directive is *authored in the demo file* —
+ * The `"use client"` directive is *authored in the demo file* (docs-site.md §6) —
  * namespace compounds (`Dialog.Root`, `ScrollArea.Bar`) are plain objects exported from
  * client modules, and a server component only ever sees an opaque client *reference* for
  * such an export, so member access on it resolves to `undefined`. A consumer writes the

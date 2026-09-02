@@ -64,8 +64,8 @@ describe("reference row presentation (docs-site.md §8)", () => {
     const part = await partView("button", "Button");
     const onIntent = part.props.find((prop) => prop.name === "onIntent");
     expect(onIntent?.closedType).toBe("function");
-    expect(onIntent?.signatureHtml).toContain("void");
-    expect(onIntent?.signatureHtml).toContain("sh__token");
+    // The panel gets the printed signature as text; `DocsCodeBlock` highlights it.
+    expect(onIntent?.signature).toBe("(() => void) | undefined");
   });
 
   it("keeps the printed type in the closed row when it is short enough to read", async () => {

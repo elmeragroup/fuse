@@ -6,12 +6,11 @@
  * is no extraction step and no registry between the two, so the code a reader copies is
  * byte-for-byte the code that produced the stage above it.
  *
- * Server-only: the read happens while the page is prerendered, so the highlighted markup
- * is part of the static HTML and no demo source is shipped as client data.
+ * Server-only: the read happens while the page is prerendered, so the source region is part
+ * of the static HTML and no demo source is shipped as client data.
  */
 
 import { readFile } from "node:fs/promises";
-import { highlight } from "sugar-high";
 
 import { componentRouteFile } from "./component-route-files";
 import { normalizeDemoSource } from "./docs-model";
@@ -19,10 +18,8 @@ import { normalizeDemoSource } from "./docs-model";
 export type DemoSource = {
   /** Repo-relative path of the authored demo file, as printed in the frame's meta row. */
   sourcePath: string;
-  /** Verbatim demo source, trailing whitespace trimmed. */
+  /** Verbatim demo source, trailing whitespace trimmed; `DocsCodeBlock` highlights it. */
   source: string;
-  /** Syntax-highlighted HTML of `source` (sugar-high — the single highlighter, §8). */
-  highlighted: string;
 };
 
 /**
@@ -45,5 +42,5 @@ export async function readDemoSource(slug: string, file: string): Promise<DemoSo
     );
   }
   const source = normalizeDemoSource(raw);
-  return { sourcePath: location.repoPath, source, highlighted: highlight(source) };
+  return { sourcePath: location.repoPath, source };
 }
