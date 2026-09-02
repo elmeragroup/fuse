@@ -3,7 +3,7 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { assertFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
-import { renderThemed } from "../../../test/themed-browser-render";
+import { px, renderThemed, stampDensity } from "../../../test/themed-browser-render";
 import { ToggleGroup } from "./toggle-group";
 
 function groupNamed(name: string): HTMLElement {
@@ -193,6 +193,23 @@ describe("ToggleGroup", () => {
     expect(item.getAttribute("data-variant")).toBe("default");
     expect(item.className.split(/\s+/)).toContain("h-(--control-h-md)");
     expect(item.className.split(/\s+/)).toContain("bg-transparent");
+  });
+
+  it("reads segmented-control padding from the pinned icon-edge rung at both densities", () => {
+    renderThemed(
+      <ToggleGroup.Root aria-label="Align" spacing={0} size="default">
+        <ToggleGroup.Item value="left">Left</ToggleGroup.Item>
+        <ToggleGroup.Item value="right">Right</ToggleGroup.Item>
+      </ToggleGroup.Root>
+    );
+
+    const iconPx = { dense: 8, comfortable: 12 } as const;
+    for (const density of ["dense", "comfortable"] as const) {
+      stampDensity(density);
+      const style = getComputedStyle(buttonNamed("Left"));
+      expect(px(style.paddingInlineStart), `${density} segmented px`).toBe(iconPx[density]);
+      expect(px(style.height), `${density} segmented height`).toBe(density === "dense" ? 36 : 44);
+    }
   });
 
   it("paints the shared ring on keyboard focus-visible and not on mouse focus, at both densities", async () => {

@@ -64,7 +64,7 @@ Root establishes the `group/tabs` Tailwind group scope; List establishes `group/
 
 - Base: `group/tabs-list inline-flex w-fit items-center justify-center rounded-lg p-[3px] text-muted-foreground group-data-horizontal/tabs:h-(--control-h-md) group-data-vertical/tabs:h-fit group-data-vertical/tabs:flex-col data-[variant=line]:rounded-none`
 
-**Density mapping.** Horizontal Tabs.List is a single-height field box pinning the `md` rung (`group-data-horizontal/tabs:h-(--control-h-md)`). Vertical lists stay `h-fit` (content-sized, not a control box). `p-[3px]` is optical track padding, not `--control-px-*`. No `size` axis and no `dense:` / `comfortable:` variants.
+**Density mapping.** Horizontal Tabs.List is a single-height field box pinning the `md` rung (`group-data-horizontal/tabs:h-(--control-h-md)`). Vertical lists stay `h-fit` (content-sized, not a control box). `p-[3px]` is optical track padding, not `--control-px-*`. Triggers fill that height (`h-[calc(100%-1px)]`) and read the `md` rung for inline padding, icon-edge padding, gap, and the control-type pair; `py-*` is not set. No `size` axis and no `dense:` / `comfortable:` variants. _(Amended 2026-09-02: trigger padding/type tokenized; `p-[3px]` remains the documented list exemption.)_
 
 - Axis `variant`: `default` → `bg-muted` (filled pill list); `line` → `gap-1 bg-transparent` (underline style). Default: `default`.
 

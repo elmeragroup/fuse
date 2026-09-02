@@ -227,6 +227,11 @@ describe("Tabs", () => {
       const verticalHeight = px(getComputedStyle(vertical).height);
       expect(horizontalHeight, `${density} horizontal`).toBe(CONTROL_MD[density].height);
       expect(verticalHeight, `${density} vertical`).not.toBe(CONTROL_MD[density].height);
+      const trigger = htmlTab("Horizontal");
+      const triggerStyle = getComputedStyle(trigger);
+      expect(px(triggerStyle.paddingInlineStart), `${density} trigger px`).toBe(CONTROL_MD[density].px);
+      expect(px(triggerStyle.fontSize), `${density} trigger font`).toBe(CONTROL_MD[density].font);
+      expect(px(triggerStyle.lineHeight), `${density} trigger leading`).toBe(CONTROL_MD[density].leading);
       horizontalHeights.push(horizontalHeight);
       verticalHeights.push(verticalHeight);
     }

@@ -66,13 +66,15 @@
 
 **RadioIconButton** (`RadioIconButtonProps`) — `value: string` (required), `"aria-label": string` (required; mechanically icon-only, accessibility.md §3), `isDisabled?`, `className?`, `children?` (the icon), and:
 
-| Prop   | Type                                                          | Default  | Notes                                                                                                                                                                                   |
-| ------ | ------------------------------------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `size` | `"icon" \| "icon-xxs" \| "icon-xs" \| "icon-sm" \| "icon-lg"` | `"icon"` | size map: `icon-xxs` size-6/svg-3, `icon-xs` size-7/svg-3.5, `icon-sm` size-8/svg-4, `icon` size-9/svg-4, `icon-lg` size-10/svg-5 (svg sizes apply only to `svg:not([class*='size-'])`) |
+| Prop   | Type                                                          | Default  | Notes                                                                                                                                                                                                                                                                                 |
+| ------ | ------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `size` | `"icon" \| "icon-xxs" \| "icon-xs" \| "icon-sm" \| "icon-lg"` | `"icon"` | maps onto control-height rungs like Button icon sizes: `icon-xxs`/`icon-xs` → `--control-h-xs` (svg-3 / svg-3.5), `icon-sm` → `--control-h-sm` (svg-4), `icon` → `--control-h-md` (svg-4), `icon-lg` → `--control-h-lg` (svg-5). Svg sizes apply only to `svg:not([class*='size-'])`. |
 
 ## 4 Variants
 
 - No tv recipes in this file: `orientation` is a plain conditional; `RadioItemGroup` applies that same axis to the stacked-card list (not merely the outer primitive around one child). `RadioIconButton` sizes live in a plain `Record` map (`iconButtonSizes`), module-private. `RadioItem` inherits `itemVariants` (outline) through the shell.
+
+**Density mapping** _(amended 2026-09-02)_: `RadioIconButton` sizes read `size-(--control-h-*)` like Button's icon sizes. `icon-xxs` and `icon-xs` share the `xs` height and differ only by glyph size. No `dense:` / `comfortable:` variants.
 
 ## 5 Consumed tokens
 

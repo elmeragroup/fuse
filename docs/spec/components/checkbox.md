@@ -63,6 +63,8 @@
 
 No tv recipes in this file; all styling is inline class strings. `CheckboxGroup`'s `orientation` is a plain conditional, not a recipe axis. `CheckboxItemGroup` applies that same axis to the stacked-card list (not merely the outer primitive around one child). `CheckboxItem` inherits `itemVariants` (outline) through the shell.
 
+**Radius** _(amended 2026-09-02)_: the 16px box uses `rounded-[min(var(--radius-md),4px)]` — `--radius-md` with a 4px optical cap so a large-radius theme cannot over-round a 16px control (same clamp pattern as Button `xs`). The painted box is not a density rung; `size-4` stays.
+
 ## 5 Consumed tokens
 
 - `card` — checkbox resting surface (`bg-card`; §8.3).

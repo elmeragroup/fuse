@@ -12,18 +12,23 @@ import {
   listitemHosts,
   radiusToken,
 } from "../../../test/assert-selection-item-group-layout";
-import { renderThemed } from "../../../test/themed-browser-render";
+import { px, renderThemed, stampDensity } from "../../../test/themed-browser-render";
 import { Radio, RadioGroup, RadioGroupItem, RadioIconButton, RadioItem, RadioItemGroup } from "./radio-group";
 
 const ICON_SIZES = ["icon-xxs", "icon-xs", "icon-sm", "icon", "icon-lg"] as const;
 
-const ICON_BOX_PX = {
-  "icon-xxs": 24,
-  "icon-xs": 28,
-  "icon-sm": 32,
-  icon: 36,
-  "icon-lg": 40,
-} as const satisfies Record<(typeof ICON_SIZES)[number], number>;
+const ICON_TO_RUNG = {
+  "icon-xxs": "xs",
+  "icon-xs": "xs",
+  "icon-sm": "sm",
+  icon: "md",
+  "icon-lg": "lg",
+} as const satisfies Record<(typeof ICON_SIZES)[number], "xs" | "sm" | "md" | "lg">;
+
+const ICON_BOX = {
+  dense: { xs: 24, sm: 32, md: 36, lg: 40 },
+  comfortable: { xs: 32, sm: 36, md: 44, lg: 48 },
+} as const;
 
 const ICON_SVG_PX = {
   "icon-xxs": 12,
@@ -530,16 +535,20 @@ describe("RadioIconButton", () => {
       </RadioGroup>
     );
 
-    for (const size of ICON_SIZES) {
-      const button = radioNamed(size);
-      expect(Number.parseFloat(getComputedStyle(button).width)).toBe(ICON_BOX_PX[size]);
-      expect(Number.parseFloat(getComputedStyle(button).height)).toBe(ICON_BOX_PX[size]);
-      const svg = button.querySelector("svg");
-      if (!(svg instanceof SVGElement)) {
-        throw new Error(`expected an svg in ${size}`);
+    for (const density of ["dense", "comfortable"] as const) {
+      stampDensity(density);
+      for (const size of ICON_SIZES) {
+        const button = radioNamed(size);
+        const box = ICON_BOX[density][ICON_TO_RUNG[size]];
+        expect(px(getComputedStyle(button).width), `${density} ${size} width`).toBe(box);
+        expect(px(getComputedStyle(button).height), `${density} ${size} height`).toBe(box);
+        const svg = button.querySelector("svg");
+        if (!(svg instanceof SVGElement)) {
+          throw new Error(`expected an svg in ${size}`);
+        }
+        expect(Number.parseFloat(getComputedStyle(svg).width)).toBe(ICON_SVG_PX[size]);
+        expect(Number.parseFloat(getComputedStyle(svg).height)).toBe(ICON_SVG_PX[size]);
       }
-      expect(Number.parseFloat(getComputedStyle(svg).width)).toBe(ICON_SVG_PX[size]);
-      expect(Number.parseFloat(getComputedStyle(svg).height)).toBe(ICON_SVG_PX[size]);
     }
   });
 

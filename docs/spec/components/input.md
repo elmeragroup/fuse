@@ -43,6 +43,8 @@ None public. Shared chrome lives in the package-private `fieldBox` `tv` recipe (
 
 No `size` axis. The field box pins the `md` rung per [conventions](conventions.md) ruling 2 inside `fieldBox`. Input adds only host deltas: `min-w-0`, `file:` chrome, `disabled:pointer-events-none`. Do not also set `py-*` once height is pinned. Radius via the `rounded-md` scale derived from `--radius`; never hardcoded.
 
+**`file:h-7` exemption** _(amended 2026-09-02)_: the native file-selector button is UA chrome inside the md field box. `h-7` (1.75rem) is optical — no control-height rung is 1.75rem (`xs` is 1.5rem, `sm` is 2rem) — so the literal stays documented rather than retargeting with density.
+
 **Density mapping.** Single-height field box → `md` rung. Dense computed metrics match the ref's `h-9 px-2.5` box; comfortable is the signed `ui.css` column. No `dense:` / `comfortable:` variants.
 
 ## 5 Consumed tokens
