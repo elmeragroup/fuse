@@ -208,6 +208,6 @@ describe("Wave 4 gate: zero public surface", () => {
     const catalog = readFileSync(join(packageRoot, "../../pnpm-workspace.yaml"), "utf8");
     expect(catalog).toContain("react-aria-components: 1.19.0");
     expect(catalog).toContain("react-aria: 3.50.0");
-    expect(catalog).toContain('"@internationalized/date": ^3.12.2');
+    expect(catalog).toContain('"@internationalized/date": 3.12.3');
   });
 });

@@ -254,10 +254,10 @@ export type RadioIconButtonProps = Omit<
   /** Forwards `disabled` to the radio root. */
   isDisabled?: boolean;
   /**
-   * Decorative size map, not a density rung: `icon-xxs` size-6/svg-3, `icon-xs`
-   * size-7/svg-3.5, `icon-sm` size-8/svg-4, `icon` size-9/svg-4, `icon-lg`
-   * size-10/svg-5. Svg sizes apply only to `svg:not([class*='size-'])`. Default
-   * `"icon"`.
+   * Icon-button size mapped onto the control-height rungs like Button: `icon-xxs`
+   * and `icon-xs` share `--control-h-xs` (svg-3 / svg-3.5), `icon-sm` `--control-h-sm`
+   * (svg-4), `icon` `--control-h-md` (svg-4), `icon-lg` `--control-h-lg` (svg-5).
+   * Svg sizes apply only to `svg:not([class*='size-'])`. Default `"icon"`.
    */
   size?: "icon" | "icon-xxs" | "icon-xs" | "icon-sm" | "icon-lg";
   /** Extra classes, merged via `cn`. */
@@ -272,11 +272,11 @@ export type RadioIconButtonProps = Omit<
 };
 
 const iconButtonSizes = {
-  "icon-xxs": "size-6 [&_svg:not([class*='size-'])]:size-3",
-  "icon-xs": "size-7 [&_svg:not([class*='size-'])]:size-3.5",
-  "icon-sm": "size-8 [&_svg:not([class*='size-'])]:size-4",
-  icon: "size-9 [&_svg:not([class*='size-'])]:size-4",
-  "icon-lg": "size-10 [&_svg:not([class*='size-'])]:size-5",
+  "icon-xxs": "size-(--control-h-xs) [&_svg:not([class*='size-'])]:size-3",
+  "icon-xs": "size-(--control-h-xs) [&_svg:not([class*='size-'])]:size-3.5",
+  "icon-sm": "size-(--control-h-sm) [&_svg:not([class*='size-'])]:size-4",
+  icon: "size-(--control-h-md) [&_svg:not([class*='size-'])]:size-4",
+  "icon-lg": "size-(--control-h-lg) [&_svg:not([class*='size-'])]:size-5",
 } as const satisfies Record<NonNullable<RadioIconButtonProps["size"]>, string>;
 
 /**

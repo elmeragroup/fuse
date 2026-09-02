@@ -25,8 +25,8 @@ catalogs:
       specifier: 4.0.0-rc.111
       version: 4.0.0-rc.111
     '@internationalized/date':
-      specifier: 3.12.2
-      version: 3.12.2
+      specifier: 3.12.3
+      version: 3.12.3
     '@internationalized/string':
       specifier: 3.2.10
       version: 3.2.10
@@ -208,7 +208,7 @@ importers:
         version: link:../../packages/ui
       '@internationalized/date':
         specifier: 'catalog:'
-        version: 3.12.2
+        version: 3.12.3
       '@next/mdx':
         specifier: 'catalog:'
         version: 16.3.1(@mdx-js/loader@3.1.1(supports-color@7.2.0))
@@ -355,7 +355,7 @@ importers:
         version: 1.6.0(@types/react@19.2.17)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       '@internationalized/date':
         specifier: 'catalog:'
-        version: 3.12.2
+        version: 3.12.3
       '@internationalized/string':
         specifier: 'catalog:'
         version: 3.2.10
@@ -876,9 +876,6 @@ packages:
   '@inquirer/figures@1.0.15':
     resolution: {integrity: sha512-t2IEY+unGHOzAaVM5Xx6DEWKeXlDDcNPeDyUpsRc6CUhBfU3VQOEl+Vssh7VNp1dR8MdUJBWhuObjXCsVpjN5g==}
     engines: {node: '>=18'}
-
-  '@internationalized/date@3.12.2':
-    resolution: {integrity: sha512-FY1Y+H64NDs+HAF6omlnWxm3mEpfgaCSWtL5l551ZZfImA+kGjPFgrnJrGjH6lfmLL0g8Z/mBu1R3kufeCp6Jw==}
 
   '@internationalized/date@3.12.3':
     resolution: {integrity: sha512-fuLX+3ZKLsxI73y8b01EG/WjHb6gE6weCqlfawPO27kBWGMh9G1yH6Csv1uU7/cac9H2GHmOMt6CjmuQ1aia4Q==}
@@ -4563,10 +4560,6 @@ snapshots:
       '@types/node': 25.9.5
 
   '@inquirer/figures@1.0.15': {}
-
-  '@internationalized/date@3.12.2':
-    dependencies:
-      '@swc/helpers': 0.5.23
 
   '@internationalized/date@3.12.3':
     dependencies:
