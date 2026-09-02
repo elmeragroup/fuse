@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import type { ReactElement } from "react";
 
 import { readComponentApi } from "../lib/api-source";
@@ -17,6 +18,7 @@ const classNames = {
   partHeading:
     "m-0 scroll-mt-[calc(var(--spacing-docs-header)_+_1rem)] text-[1rem] font-semibold [&_code]:font-docs-mono [&_code]:text-[13px]",
   partNote: "mt-[0.6rem] text-[0.78rem] text-docs-sub",
+  propGroupHeading: "mt-[1.2rem] mb-[0.55rem] text-[0.78rem] font-medium tracking-[0.01em] text-docs-sub",
 } as const;
 
 /**
@@ -49,10 +51,18 @@ export async function ApiReference({ slug }: ApiReferenceProps): Promise<ReactEl
               {part.rscLabel}
             </DocsRscBadge>
           </div>
-          {part.props.length === 0 ? (
+          {part.propGroups.length === 0 ? (
             <p className={classNames.partNote}>Every prop is forwarded to the underlying part.</p>
           ) : (
-            <ApiPropRows partName={part.name} props={part.props} />
+            part.propGroups.map((group) => (
+              <Fragment key={group.key}>
+                {group.label === null ? null : <h4 className={classNames.propGroupHeading}>{group.label}</h4>}
+                <ApiPropRows
+                  partName={group.label === null ? `${part.name} props` : `${part.name} ${group.label}`}
+                  props={group.props}
+                />
+              </Fragment>
+            ))
           )}
           {part.forwardedCount > 0 ? (
             <p className={classNames.partNote}>

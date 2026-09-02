@@ -22,8 +22,14 @@ export type RscStatus = "client" | "server";
  * - `declared` — written in `packages/ui` source, so it carries JSDoc and is gated on it.
  * - `recipe-axis` — synthesised by `VariantProps` over a library `tv` recipe. It has no
  *   declaration site to hang JSDoc on; its printed type *is* the documentation.
+ * - `{ packageName }` — inherited from the named dependency and documented from that
+ *   dependency's declaration. Dependency identity lets consumers present inherited props
+ *   separately without making package policy part of the extractor's semantic model.
  */
-export type ApiPropOrigin = "declared" | "recipe-axis";
+export type ApiPropOrigin = "declared" | "recipe-axis" | { readonly packageName: string };
+
+/** Dependency deliberately selected for production API-reference enrichment. */
+export const BASE_UI_PACKAGE_NAME = "@base-ui/react";
 
 /** One public prop row of a generated API table. */
 export type ApiProp = {
@@ -38,7 +44,7 @@ export type ApiProp = {
    * shows `type` either way.
    */
   shortType: string | null;
-  /** Destructuring default from the part's implementation, or `null` when there is none. */
+  /** Wrapper destructuring default, then dependency JSDoc default, or `null` when neither exists. */
   defaultValue: string | null;
   /**
    * JSDoc description. Generation fails when a `declared` prop leaves this empty
@@ -323,4 +329,39 @@ export function propDescription(prop: ApiProp): string {
     return prop.description;
   }
   return prop.origin === "recipe-axis" ? "Recipe axis." : "";
+}
+
+/** The dependency that owns a prop, or `null` for library-authored and recipe props. */
+export function dependencyPackageName(origin: ApiPropOrigin): string | null {
+  return origin === "declared" || origin === "recipe-axis" ? null : origin.packageName;
+}
+
+/** One source group shared by the HTML and Markdown API-reference consumers. */
+export type ApiPropGroup = {
+  key: string;
+  label: string | null;
+  props: readonly ApiProp[];
+};
+
+function dependencyPropGroupLabel(packageName: string): string {
+  return packageName === BASE_UI_PACKAGE_NAME ? "Base UI primitive props" : `${packageName} props`;
+}
+
+/** Keeps library props first, then one stable group per selected dependency. */
+export function groupApiProps(props: readonly ApiProp[]): readonly ApiPropGroup[] {
+  const groups = new Map<string, { label: string | null; props: ApiProp[] }>();
+  for (const prop of props) {
+    const packageName = dependencyPackageName(prop.origin);
+    const key = packageName ?? "library";
+    const existing = groups.get(key);
+    if (existing === undefined) {
+      groups.set(key, {
+        label: packageName === null ? null : dependencyPropGroupLabel(packageName),
+        props: [prop],
+      });
+    } else {
+      existing.props.push(prop);
+    }
+  }
+  return [...groups].map(([key, group]) => ({ key, ...group }));
 }

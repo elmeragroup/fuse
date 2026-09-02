@@ -30,6 +30,33 @@ describe("committed api.json read at render time (docs-site.md §8)", () => {
     );
     await expect(readComponentApi("no-such-component")).rejects.toThrow(API_REGEN_COMMAND);
   });
+
+  it("includes selected Base UI primitive props without exposing React or DOM props", async () => {
+    const api = await readComponentApi("button");
+    const button = api.parts.find((part) => part.name === "Button");
+    if (button === undefined) throw new Error("button has no Button API part");
+
+    expect(button.props).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          name: "focusableWhenDisabled",
+          origin: { packageName: "@base-ui/react" },
+          defaultValue: "false",
+          description: "Whether the button should be focusable when disabled.",
+        }),
+        expect.objectContaining({
+          name: "nativeButton",
+          origin: { packageName: "@base-ui/react" },
+          defaultValue: "true",
+        }),
+        expect.objectContaining({ name: "render", origin: { packageName: "@base-ui/react" } }),
+        expect.objectContaining({ name: "style", origin: { packageName: "@base-ui/react" } }),
+      ])
+    );
+    expect(button.props.map((prop) => prop.name)).not.toEqual(
+      expect.arrayContaining(["children", "onClick", "ref"])
+    );
+  });
 });
 
 describe("reference row presentation (docs-site.md §8)", () => {

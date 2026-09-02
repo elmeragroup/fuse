@@ -52,6 +52,7 @@
     ".scratch",
     "tooling/oxlint-anti-slop/**",
     "**/__snapshots__/**",
+    "tooling/api-extractor/test/fixtures/**",
     "pnpm-lock.yaml",
     "*.lock",
     "*.log",

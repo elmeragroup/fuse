@@ -11,13 +11,14 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
+import { componentPartPropFacts, openLibraryProject } from "../scripts/lib/api.ts";
 import { resolveComponentPaths } from "../scripts/lib/components.ts";
 import { parseComponentPage } from "../scripts/lib/page-source.ts";
 import type { ComponentPageSource } from "../scripts/lib/page-source.ts";
 import { repoRelative } from "../scripts/lib/paths.ts";
 import { COMPONENT_PAGES } from "../src/generated/component-pages";
 import type { ComponentApiArtifact, ComponentPageEntry } from "../src/lib/docs-model";
-import { normalizeDemoSource } from "../src/lib/docs-model";
+import { dependencyPackageName, normalizeDemoSource } from "../src/lib/docs-model";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const docsRoot = join(here, "..");
@@ -139,6 +140,12 @@ describe("component page manifest", () => {
       // and it has to name exactly the parts the committed artifact describes.
       expect(entry.partNames.length, entry.slug).toBeGreaterThan(0);
       expect(entry.partNames, entry.slug).toEqual(api(entry.slug).parts.map((part) => part.name));
+    }
+  });
+
+  it("renders the matching API reference from every authored component page", () => {
+    for (const entry of COMPONENT_PAGES) {
+      expect(authoredPage(entry.slug).text, entry.slug).toContain(`<ApiReference slug="${entry.slug}" />`);
     }
   });
 
@@ -563,6 +570,47 @@ describe("committed api.json", () => {
     }
   });
 
+  it("publishes only dependency props that carry dependency-authored documentation", () => {
+    for (const entry of COMPONENT_PAGES) {
+      for (const part of api(entry.slug).parts) {
+        for (const prop of part.props) {
+          const packageName = dependencyPackageName(prop.origin);
+          if (packageName !== null) {
+            expect(packageName).toBe("@base-ui/react");
+            expect(prop.description, `${part.name}.${prop.name}`).not.toBe("");
+          }
+        }
+      }
+    }
+  });
+
+  it("publishes dependency props only on checker-backed parts that accept them", () => {
+    const context = openLibraryProject();
+    try {
+      for (const entry of COMPONENT_PAGES) {
+        const paths = resolveComponentPaths(entry.slug);
+        const acceptedByPart = componentPartPropFacts(context, {
+          entryFile: paths.entryFile,
+          exportNames: paths.apiExportNames,
+        });
+        for (const part of api(entry.slug).parts) {
+          const accepted = acceptedByPart.get(part.name);
+          for (const prop of part.props) {
+            if (dependencyPackageName(prop.origin) !== null) {
+              expect(accepted, part.name).toBeDefined();
+              const fact = accepted?.get(prop.name);
+              expect(fact, `${part.name}.${prop.name}`).toBeDefined();
+              expect(prop.type, `${part.name}.${prop.name}`).toBe(fact?.type);
+              expect(prop.required, `${part.name}.${prop.name}`).toBe(fact?.required);
+            }
+          }
+        }
+      }
+    } finally {
+      context.close();
+    }
+  });
+
   it("resolves the compound parts of a namespace component", () => {
     expect(api("accordion").parts.map((part) => part.name)).toEqual([
       "Accordion.Root",
@@ -805,11 +853,19 @@ describe("committed api.json", () => {
     expect(checkboxCard?.props.find((prop) => prop.name === "render")).toBeUndefined();
     expect(checkboxCard?.props.find((prop) => prop.name === "disabled")).toBeUndefined();
     expect(checkboxCard?.props.find((prop) => prop.name === "className")).toBeUndefined();
-    expect(checkboxCard?.forwardedCount).toBe(285);
+    expect(checkboxCard?.forwardedCount).toBe(271);
   });
 });
 
 describe("generated markdown endpoints", () => {
+  it("groups selected Base UI primitive props without expanding React props", () => {
+    const markdown = endpoint("button");
+
+    expect(markdown).toContain("#### Base UI primitive props");
+    expect(markdown).toContain("| `focusableWhenDisabled` | `boolean \\| undefined` | `false`");
+    expect(markdown).not.toContain("| `onClick` |");
+  });
+
   it("carries every part of the committed API, and the tokens section", () => {
     for (const entry of COMPONENT_PAGES) {
       const markdown = endpoint(entry.slug);

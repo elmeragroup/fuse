@@ -117,6 +117,7 @@
     "**/node_modules/**",
     ".ref/**",
     ".scratch/**",
+    "tooling/api-extractor/test/fixtures/**",
     "packages/ui/scripts/*.mjs",
     ".agent/**",
     ".agents/**",

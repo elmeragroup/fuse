@@ -15,7 +15,7 @@ import { highlight } from "sugar-high";
 
 import type { ApiPropView } from "./api-row";
 import type { ApiPart, ApiProp, RscStatus } from "./docs-model";
-import { propDescription } from "./docs-model";
+import { groupApiProps, propDescription } from "./docs-model";
 import { apiPartAnchor, apiPropAnchor } from "./nav";
 
 /** One compound part's reference block. */
@@ -29,6 +29,14 @@ export type ApiPartView = {
   /** Packages whose props this part forwards. */
   forwardedFrom: readonly string[];
   forwardedCount: number;
+  props: readonly ApiPropView[];
+  propGroups: readonly ApiPropGroupView[];
+};
+
+/** One visually distinct source group inside a part's prop reference. */
+export type ApiPropGroupView = {
+  key: string;
+  label: string | null;
   props: readonly ApiPropView[];
 };
 
@@ -67,7 +75,16 @@ function toPropView(partName: string, prop: ApiProp): ApiPropView {
   };
 }
 
+function toPropGroups(part: ApiPart): readonly ApiPropGroupView[] {
+  return groupApiProps(part.props).map((group) => ({
+    key: group.key,
+    label: group.label,
+    props: group.props.map((prop) => toPropView(part.name, prop)),
+  }));
+}
+
 export function toPartView(part: ApiPart): ApiPartView {
+  const propGroups = toPropGroups(part);
   return {
     name: part.name,
     anchor: apiPartAnchor(part.name),
@@ -75,6 +92,7 @@ export function toPartView(part: ApiPart): ApiPartView {
     rscLabel: rscLabel(part.rsc),
     forwardedFrom: part.forwardedFrom,
     forwardedCount: part.forwardedCount,
-    props: part.props.map((prop) => toPropView(part.name, prop)),
+    props: propGroups.flatMap((group) => group.props),
+    propGroups,
   };
 }

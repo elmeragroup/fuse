@@ -26,11 +26,11 @@ const STALE = `Run \`${API_REGEN_COMMAND}\` and commit the updated api.json file
 describe("committed api.json", () => {
   // The long timeout is the regeneration itself: it opens a full TypeScript program over
   // packages/ui and re-derives every component's API through the checker.
-  it("matches a fresh regeneration from the library's types and JSDoc", { timeout: 180_000 }, () => {
+  it("matches a fresh regeneration from the library's types and JSDoc", { timeout: 180_000 }, async () => {
     const slugs = componentSlugs();
     expect(slugs.length).toBeGreaterThan(0);
 
-    const regenerated = regenerateApiArtifacts();
+    const regenerated = await regenerateApiArtifacts();
     // The missing-JSDoc and unresolvable-type invariants are the same ones that fail the
     // docs build; a drift run must not be the place they first go unnoticed.
     expect(regenerated.problems).toEqual([]);

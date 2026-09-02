@@ -14,6 +14,7 @@
 
 import type { ApiPart, ApiProp, ComponentApiArtifact } from "../../src/lib/docs-model.ts";
 import { API_REGEN_COMMAND } from "../../src/lib/docs-model.ts";
+import { includeBaseUiPrimitiveProps } from "./api-external.ts";
 import { describeComponentApi, openLibraryProject } from "./api.ts";
 import { componentSlugs, resolveComponentPaths } from "./components.ts";
 import { ProblemLog } from "./errors.ts";
@@ -70,11 +71,12 @@ export type RegeneratedApi = {
  * *same* serialisation the generation pass writes with, so a difference can only mean
  * the committed artifact is stale (or was hand-edited).
  */
-export function regenerateApiArtifacts(): RegeneratedApi {
+export async function regenerateApiArtifacts(): Promise<RegeneratedApi> {
   const problems = new ProblemLog();
+  const current: { readonly slug: string; readonly parts: readonly ApiPart[] }[] = [];
   const context = openLibraryProject();
+  let enriched: ReadonlyMap<string, readonly ApiPart[]>;
   try {
-    const texts = new Map<string, string>();
     for (const slug of componentSlugs()) {
       const paths = resolveComponentPaths(slug);
       const parts = describeComponentApi(
@@ -82,10 +84,15 @@ export function regenerateApiArtifacts(): RegeneratedApi {
         { entryFile: paths.entryFile, exportNames: paths.apiExportNames },
         problems
       );
-      texts.set(slug, serializeApiArtifact(buildApiArtifact(slug, parts)));
+      current.push({ slug, parts });
     }
-    return { texts, problems: problems.problems };
+    enriched = await includeBaseUiPrimitiveProps(current, context);
   } finally {
     context.close();
   }
+  const texts = new Map<string, string>();
+  for (const { slug } of current) {
+    texts.set(slug, serializeApiArtifact(buildApiArtifact(slug, enriched.get(slug) ?? [])));
+  }
+  return { texts, problems: problems.problems };
 }

@@ -28,8 +28,9 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, wri
 import path from "node:path";
 
 import { normalizeDemoSource } from "../src/lib/docs-model.ts";
-import type { DocsComponent, DocsDemo, ThemeCatalog } from "../src/lib/docs-model.ts";
+import type { ApiPart, DocsComponent, DocsDemo, ThemeCatalog } from "../src/lib/docs-model.ts";
 import { API_REGEN_COMMAND, buildApiArtifact, serializeApiArtifact } from "./lib/api-artifact.ts";
+import { includeBaseUiPrimitiveProps } from "./lib/api-external.ts";
 import { describeComponentApi, openLibraryProject } from "./lib/api.ts";
 import type { LibraryProject } from "./lib/api.ts";
 import { componentSlugs, resolveComponentPaths } from "./lib/components.ts";
@@ -301,42 +302,51 @@ function emitLlmsTxt(components: readonly DocsComponent[]): void {
   writeFile(llmsTxtFile, renderLlmsTxt(components));
 }
 
-function main(): void {
+async function main(): Promise<void> {
   assertDocsUiCssExports(uiRoot);
   const problems = new ProblemLog();
   const colors = readColorTokenMapFromFile(path.join(uiSrc, "styles/ui.css"));
   const context = openLibraryProject();
+  let currentComponents: readonly DocsComponent[];
+  let partsBySlug: ReadonlyMap<string, readonly ApiPart[]>;
   try {
-    const components = componentSlugs().map((slug) => buildComponent(context, slug, problems, colors));
+    currentComponents = componentSlugs().map((slug) => buildComponent(context, slug, problems, colors));
     verifyStaticRoutes(problems);
-    const sizes = readBundleSizes(sizeBudgetsFile, problems);
     problems.throwIfFailed();
-    emitComponentPages(components);
-    emitApiArtifacts(components);
-    emitBundleSizes(sizes);
-    emitTokenReference(colors);
-    const catalog = buildThemeCatalog();
-    emitThemeCatalog(catalog);
-    emitFigmaThemeCatalog(catalog);
-    emitMarkdownEndpoints(components);
-    emitSearchIndex(components);
-    emitLlmsTxt(components);
-    pruneStale(generatedDir);
-    pruneStale(markdownOutDir);
-    process.stdout.write(
-      `docs: generated ${String(components.length)} component pages, ${String(
-        components.reduce((total, component) => total + component.demos.length, 0)
-      )} demos, ${String(
-        components.reduce((total, component) => total + component.parts.length, 0)
-      )} API tables\n`
-    );
+    partsBySlug = await includeBaseUiPrimitiveProps(currentComponents, context);
   } finally {
     context.close();
   }
+  const sizes = readBundleSizes(sizeBudgetsFile, problems);
+  problems.throwIfFailed();
+
+  const components = currentComponents.map((component) => ({
+    ...component,
+    parts: partsBySlug.get(component.slug) ?? component.parts,
+  }));
+  emitComponentPages(components);
+  emitApiArtifacts(components);
+  emitBundleSizes(sizes);
+  emitTokenReference(colors);
+  const catalog = buildThemeCatalog();
+  emitThemeCatalog(catalog);
+  emitFigmaThemeCatalog(catalog);
+  emitMarkdownEndpoints(components);
+  emitSearchIndex(components);
+  emitLlmsTxt(components);
+  pruneStale(generatedDir);
+  pruneStale(markdownOutDir);
+  process.stdout.write(
+    `docs: generated ${String(components.length)} component pages, ${String(
+      components.reduce((total, component) => total + component.demos.length, 0)
+    )} demos, ${String(
+      components.reduce((total, component) => total + component.parts.length, 0)
+    )} API tables\n`
+  );
 }
 
 try {
-  main();
+  await main();
 } catch (error) {
   process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
   process.exitCode = 1;

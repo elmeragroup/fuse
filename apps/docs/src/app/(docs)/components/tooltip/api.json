@@ -9,7 +9,7 @@
       "forwardedFrom": [
         "@base-ui/react"
       ],
-      "forwardedCount": 3,
+      "forwardedCount": 1,
       "props": [
         {
           "name": "delay",
@@ -18,6 +18,28 @@
           "shortType": null,
           "defaultValue": "0",
           "description": "Shared open delay for every tooltip in this group, in milliseconds. Instant by default — the ref overrides base-ui's 600ms. Tooltips in this group also share skip-delay hand-off: after one opens, moving to a neighbor skips the wait.",
+          "required": false
+        },
+        {
+          "name": "closeDelay",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "How long to wait before closing a tooltip. Specified in milliseconds.",
+          "required": false
+        },
+        {
+          "name": "timeout",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": "400",
+          "description": "Another tooltip will open instantly if the previous tooltip is closed within this timeout. Specified in milliseconds.",
           "required": false
         }
       ]
@@ -29,7 +51,7 @@
       "forwardedFrom": [
         "@base-ui/react"
       ],
-      "forwardedCount": 12,
+      "forwardedCount": 0,
       "props": [
         {
           "name": "delay",
@@ -38,6 +60,138 @@
           "shortType": null,
           "defaultValue": null,
           "description": "When set, wraps this Root in a nested scoped Provider with that delay. That tooltip then forms its own provider group: it no longer participates in the outer Provider's shared delay or skip-delay hand-off.",
+          "required": false
+        },
+        {
+          "name": "actionsRef",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "RefObject<TooltipRootActions | null> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "A ref to imperative actions. - `unmount`: Unmounts the tooltip popup. - `close`: Closes the tooltip imperatively when called.",
+          "required": false
+        },
+        {
+          "name": "children",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "PayloadChildRenderFunction<unknown> | ReactNode",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The content of the tooltip. This can be a regular React node or a render function that receives the `payload` of the active trigger.",
+          "required": false
+        },
+        {
+          "name": "defaultOpen",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the tooltip is initially open. To render a controlled tooltip, use the `open` prop instead.",
+          "required": false
+        },
+        {
+          "name": "defaultTriggerId",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | null | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "ID of the trigger that the tooltip is associated with. This is useful in conjunction with the `defaultOpen` prop to create an initially open tooltip.",
+          "required": false
+        },
+        {
+          "name": "disabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the tooltip is disabled.",
+          "required": false
+        },
+        {
+          "name": "disableHoverablePopup",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the tooltip contents can be hovered without closing the tooltip.",
+          "required": false
+        },
+        {
+          "name": "handle",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "TooltipHandle<unknown> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "A handle to associate the tooltip with a trigger. If specified, allows external triggers to control the tooltip's open state. Can be created with the Tooltip.createHandle() method.",
+          "required": false
+        },
+        {
+          "name": "onOpenChange",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((open: boolean, eventDetails: TooltipRootChangeEventDetails) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Event handler called when the tooltip is opened or closed.",
+          "required": false
+        },
+        {
+          "name": "onOpenChangeComplete",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((open: boolean) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Event handler called after any animations complete when the tooltip is opened or closed.",
+          "required": false
+        },
+        {
+          "name": "open",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Whether the tooltip is currently open.",
+          "required": false
+        },
+        {
+          "name": "trackCursorAxis",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "\"both\" | \"none\" | \"x\" | \"y\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "'none'",
+          "description": "Determines which axis the tooltip should track the cursor on.",
+          "required": false
+        },
+        {
+          "name": "triggerId",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | null | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "ID of the trigger that the tooltip is associated with. This is useful in conjunction with the `open` prop to create a controlled tooltip. There's no need to specify this prop when the tooltip is uncontrolled (that is, when the `open` prop is not set).",
           "required": false
         }
       ]
@@ -50,8 +204,108 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 293,
-      "props": []
+      "forwardedCount": 284,
+      "props": [
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: TooltipTriggerState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "closeDelay",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": "0",
+          "description": "How long to wait before closing the tooltip. Specified in milliseconds.",
+          "required": false
+        },
+        {
+          "name": "closeOnClick",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Whether the tooltip should close when this trigger is clicked.",
+          "required": false
+        },
+        {
+          "name": "delay",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": "600",
+          "description": "How long to wait before opening the tooltip. Specified in milliseconds.",
+          "required": false
+        },
+        {
+          "name": "disabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "If `true`, the tooltip will not open when interacting with this trigger. Note that this doesn't apply the `disabled` attribute to the trigger element. If you want to disable the trigger element itself, you can pass the `disabled` prop to the trigger element via the `render` prop.",
+          "required": false
+        },
+        {
+          "name": "handle",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "TooltipHandle<unknown> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "A handle to associate the trigger with a tooltip.",
+          "required": false
+        },
+        {
+          "name": "payload",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "unknown",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "A payload to pass to the tooltip when it is opened.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, TooltipTriggerState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: TooltipTriggerState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
     },
     {
       "name": "Tooltip.Content",
@@ -61,7 +315,7 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 278,
+      "forwardedCount": 275,
       "props": [
         {
           "name": "align",
@@ -106,6 +360,39 @@
           "shortType": "Union",
           "defaultValue": "4",
           "description": "Distance from the trigger, in pixels.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: TooltipPopupState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, TooltipPopupState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: TooltipPopupState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
           "required": false
         }
       ]
