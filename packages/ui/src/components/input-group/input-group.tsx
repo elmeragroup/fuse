@@ -131,6 +131,7 @@ function InputGroupText({ className, ...props }: InputGroupTextProps): ReactElem
       // §8.2 divergence: the reference omits the slot, which breaks the
       // ButtonGroup `[data-slot]` child-selector contract.
       data-slot="input-group-text"
+      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- input-group.md §4: addon text gap is chrome, not a control rung
       className={cn(
         "text-sm flex items-center gap-2 text-muted-foreground [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4",
         className

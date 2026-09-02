@@ -35,9 +35,13 @@ const modalVariants = tv({
   variants: {
     position: {
       default: { base: "" },
+      // oxlint-disable-next-line elmera/no-local-focus-ring -- dialog.md §7: sheet edge; focusable descendants own the adapter
       right: { base: "fixed inset-y-0 right-0 w-full rounded-r-none outline-hidden" },
+      // oxlint-disable-next-line elmera/no-local-focus-ring -- dialog.md §7: sheet edge; focusable descendants own the adapter
       left: { base: "fixed inset-y-0 left-0 w-full rounded-l-none outline-hidden" },
+      // oxlint-disable-next-line elmera/no-local-focus-ring -- dialog.md §7: sheet edge; focusable descendants own the adapter
       top: { base: "fixed inset-x-0 top-0 h-96 w-full rounded-t-none outline-hidden" },
+      // oxlint-disable-next-line elmera/no-local-focus-ring -- dialog.md §7: sheet edge; focusable descendants own the adapter
       bottom: { base: "fixed inset-x-0 bottom-0 h-96 w-full rounded-b-none outline-hidden" },
     },
     // The same 13-value axis the public Dialog renders (dialog.md §4), landed on this

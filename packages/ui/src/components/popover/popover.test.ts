@@ -24,6 +24,7 @@ describe("popover source contract", () => {
     expect(source).toContain("before:border-border");
     expect(source).toContain("sqrt(2)");
     expect(source).not.toContain("react-aria/internal/popover");
+    // oxlint-disable-next-line elmera/no-local-focus-ring -- source-grep of the forbidden class, not a recipe
     expect(source).not.toContain("outline-hidden");
   });
 

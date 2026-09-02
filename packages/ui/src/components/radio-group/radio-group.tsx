@@ -29,6 +29,7 @@ export function RadioGroupItem({
       data-slot="radio-group-item"
       className={(state) =>
         cn(
+          // oxlint-disable-next-line elmera/no-local-focus-ring -- radio-group.md §7: native outline off; ring comes from the shared adapter
           "group/radio-group-item peer relative flex aspect-square size-4 shrink-0 rounded-full border border-input transition-[color,box-shadow] outline-none after:absolute after:-inset-x-3 after:-inset-y-2 after:content-[''] disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-error aria-invalid:ring-3 aria-invalid:ring-error/20 aria-invalid:aria-checked:border-primary data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground",
           selfFocusRing,
           className instanceof Function ? className(state) : className
@@ -144,6 +145,7 @@ export function RadioGroup({
           required={isRequired}
           name={name}
           aria-busy={isPending ? true : undefined}
+          // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- radio-group.md §4: option stack gap is layout, not a control rung
           className={cn(
             orientation === "horizontal" ? "flex flex-wrap gap-4" : "flex flex-col gap-2",
             className
@@ -297,6 +299,7 @@ export function RadioIconButton({
       value={value}
       disabled={isDisabled}
       className={cn(
+        // oxlint-disable-next-line elmera/no-local-focus-ring -- radio-group.md §7: native outline off; ring comes from the shared adapter
         "ease-out inline-flex shrink-0 items-center justify-center rounded-lg border border-input bg-card text-foreground transition-[color,background-color,box-shadow,scale] duration-150 outline-none hover:bg-muted active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-50 data-invalid:border-error data-checked:border-primary data-checked:bg-muted",
         iconButtonSizes[size],
         selfFocusRing,

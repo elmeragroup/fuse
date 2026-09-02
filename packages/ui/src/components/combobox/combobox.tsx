@@ -261,7 +261,9 @@ function ComboboxItem({
   return (
     <ComboboxPrimitive.Item
       data-slot="combobox-item"
+      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- combobox.md §6: option padding is menu layout, not a control rung
       className={cn(
+        // oxlint-disable-next-line elmera/no-local-focus-ring -- combobox.md §7: option highlight face, not native outline
         "text-sm relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 outline-hidden select-none data-highlighted:bg-accent data-highlighted:text-accent-foreground data-highlighted:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className
       )}
@@ -291,6 +293,7 @@ function ComboboxLabel({
   return (
     <ComboboxPrimitive.GroupLabel
       data-slot="combobox-label"
+      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- combobox.md §6: group label padding is menu layout, not a control rung
       className={cn("text-xs px-2 py-1.5 text-muted-foreground", className)}
       {...props}
     />
@@ -355,6 +358,7 @@ function ComboboxChipsIndexed({
     <ComboboxChipIndexContext.Provider value={indexApi}>
       <ComboboxPrimitive.Chips
         data-slot="combobox-chips"
+        // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- combobox.md §6: chip wrap gap and compact chip padding are layout, not a control rung
         className={cn(
           "text-sm shadow-xs flex min-h-(--control-h-md) flex-wrap items-center gap-1.5 rounded-md border border-input bg-transparent bg-clip-padding px-(--control-px-md) py-1.5 transition-[color,box-shadow] has-aria-invalid:border-error has-aria-invalid:ring-3 has-aria-invalid:ring-error/20 has-data-[slot=combobox-chip]:px-1.5",
           withinFocusRing.root(),
@@ -423,6 +427,7 @@ function ComboboxChip({
   return (
     <ComboboxPrimitive.Chip
       data-slot="combobox-chip"
+      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- combobox.md §6: chip chrome is compact token, not a control rung
       className={cn(
         "text-xs font-medium flex h-[calc(--spacing(5.5))] w-fit items-center justify-center gap-1 rounded-sm bg-muted px-1.5 whitespace-nowrap text-foreground has-disabled:pointer-events-none has-disabled:cursor-not-allowed has-disabled:opacity-50 has-data-[slot=combobox-chip-remove]:pr-0",
         className
@@ -479,6 +484,7 @@ function ComboboxChipsInput({
     <ComboboxPrimitive.Input
       data-slot="combobox-chip-input"
       data-focus-ring-control=""
+      // oxlint-disable-next-line elmera/no-local-focus-ring -- combobox.md §7 / input-group.md §8: within-adapter control outline
       className={cn("min-w-16 flex-1 outline-none", withinFocusRing.control(), className)}
       {...props}
     />

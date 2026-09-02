@@ -1,6 +1,5 @@
 import { defineRule } from "@oxlint/plugins";
 
-const COMPONENTS = new Set(["Button", "ToggleButton"]);
 const ICON_SIZE_PREFIX = "icon";
 const TEXT_CONTENT_NAMES = new Set(["Span", "Text", "ItemTitle", "Title"]);
 
@@ -93,9 +92,9 @@ export default defineRule({
     return {
       /** @param {import("estree").JSXOpeningElement} node */
       JSXOpeningElement(node) {
-        const name = node.name.type === "JSXIdentifier" ? node.name.name : null;
+        const name = getElementName(node.name);
 
-        if (!name || !COMPONENTS.has(name)) return;
+        if (name === null || !name.endsWith("Button")) return;
 
         if (!isIconVariant(node) && !isIconSize(node)) return;
 
@@ -119,7 +118,8 @@ export default defineRule({
   meta: {
     type: "problem",
     docs: {
-      description: "Require aria-label on icon-only Button and ToggleButton components",
+      description:
+        "Require aria-label on icon-only *Button JSX (any name ending in Button, including InputGroup.Button) whose size starts with icon",
     },
     schema: [],
     messages: {

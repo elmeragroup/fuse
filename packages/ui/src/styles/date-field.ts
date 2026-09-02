@@ -17,10 +17,12 @@ import { tv } from "tailwind-variants";
  */
 export const dateFieldVariants = tv({
   slots: {
+    // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- date-field.md §4: label/input stack gap is layout, not a control rung
     base: "flex flex-col gap-1",
     input:
       "block min-w-[150px] px-(--control-px-md) [font-size:var(--control-text)] [line-height:var(--control-leading)]",
     segment:
+      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- date-field.md §4: type-literal segments carry no inline padding
       "inline rounded-xs p-0.5 text-foreground caret-transparent outline outline-0 forced-color-adjust-none forced-colors:text-[ButtonText] type-literal:px-0",
   },
   variants: {

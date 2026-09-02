@@ -295,6 +295,7 @@ export function PhoneNumberField({
                         <Combobox.Item
                           key={country.code}
                           value={country}
+                          // oxlint-disable-next-line elmera/no-local-focus-ring -- phone-number-field.md §7: option highlight face, not native outline
                           className="text-sm relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 outline-hidden select-none data-highlighted:bg-accent data-highlighted:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0">
                           <Combobox.ItemIndicator
                             render={

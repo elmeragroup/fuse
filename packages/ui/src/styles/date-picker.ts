@@ -20,6 +20,7 @@ import { tv } from "tailwind-variants";
 export const datePickerVariants = tv({
   slots: {
     /** The RAC DatePicker root: label, field box, help text and popover in a column. */
+    // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- date-picker.md §4: label/field stack gap is layout, not a control rung
     base: "group flex flex-col gap-1",
     /** The private FieldGroup around the segments and the trigger. */
     group: "w-auto min-w-[180px]",

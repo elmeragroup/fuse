@@ -165,6 +165,45 @@ export const recipe = tv({
 });
 `,
     },
+    {
+      name: "cn height literal is quiet when the file does not pin --control-h-",
+      code: `export const chrome = cn("flex h-8 w-full px-2");
+`,
+    },
+    {
+      name: "tv slot layout gap is quiet when the file does not pin --control-h-",
+      code: `import { tv } from "tailwind-variants";
+export const recipe = tv({
+  slots: { base: "flex flex-col gap-1", card: "p-4" },
+});
+`,
+    },
+    {
+      name: "tv slot beside a pin may read control variables",
+      code: `import { tv } from "tailwind-variants";
+/** field box pins h-(--control-h-md) */
+export const recipe = tv({
+  slots: {
+    input: "px-(--control-px-md) [font-size:var(--control-text)] [line-height:var(--control-leading)]",
+  },
+});
+`,
+    },
+    {
+      name: "Button-size-keyed record may read control height variables",
+      code: `const iconButtonSizes = {
+  "icon-xs": "size-(--control-h-xs)",
+  "icon-sm": "size-(--control-h-sm)",
+  icon: "size-(--control-h-md)",
+  "icon-lg": "size-(--control-h-lg)",
+};
+`,
+    },
+    {
+      name: "non-size-keyed record with literal height is not a density ladder",
+      code: `const media = { image: "size-10 rounded-sm", video: "size-16" };
+`,
+    },
   ],
   invalid: [
     {
@@ -247,6 +286,55 @@ export const recipe = tv({
 });
 `,
       errors: [error],
+    },
+    {
+      name: "cn string in the same call as a --control-h- pin flags hardcoded height",
+      code: `export const popup = cn("*:data-[slot=input-group]:h-8 min-h-(--control-h-md)");
+`,
+      errors: [error],
+    },
+    {
+      name: "S9: cn popup height literal is flagged when the file pins --control-h- elsewhere",
+      code: `export const pin = "h-(--control-h-md)";
+export const popup = cn("*:data-[slot=input-group]:h-8");
+`,
+      errors: [error],
+    },
+    {
+      name: "cn string beside a --control-h- pin flags hardcoded inline padding",
+      code: `export const chips = cn("flex min-h-(--control-h-md) px-2");
+`,
+      errors: [error],
+    },
+    {
+      name: "S9: date-field slot padding is flagged when the file pins --control-h-",
+      code: `import { tv } from "tailwind-variants";
+/** field box pins h-(--control-h-md) */
+export const recipe = tv({
+  slots: { input: "text-sm block min-w-[150px] px-2 py-1.5" },
+});
+`,
+      errors: [error],
+    },
+    {
+      name: "tv slot padding is flagged when the slot sits beside a --control-* pin",
+      code: `import { tv } from "tailwind-variants";
+/** field box pins h-(--control-h-md) */
+export const recipe = tv({
+  slots: { input: "px-2 [font-size:var(--control-text)]" },
+});
+`,
+      errors: [error],
+    },
+    {
+      name: "Button-size-keyed record flags a literal square ladder",
+      code: `const iconButtonSizes = {
+  "icon-xs": "size-6",
+  "icon-sm": "size-8",
+  icon: "size-9",
+};
+`,
+      errors: [error, error, error],
     },
   ],
 });

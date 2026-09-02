@@ -59,6 +59,7 @@ describe("link source contract", () => {
 
   it("spells no focus class of its own — the shared recipe owns every one", () => {
     expect(recipe).not.toMatch(/\bring-/);
+    // oxlint-disable-next-line elmera/no-local-focus-ring -- source-grep of the forbidden class, not a recipe
     expect(recipe).not.toContain("outline-none");
     expect(recipe).not.toContain("focus-visible:");
     expect(source).not.toMatch(/\bring-/);

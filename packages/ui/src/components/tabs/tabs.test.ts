@@ -91,11 +91,13 @@ describe("tabs source contract", () => {
     expect(source).toContain("data-orientation={orientation}");
     expect(source).toContain("orientation={orientation}");
     expect(source).toContain('focusRing({ target: "self" })');
+    // oxlint-disable-next-line elmera/no-local-focus-ring -- source-grep of the forbidden class, not a recipe
     expect(source).not.toContain("outline-none");
     expect(variantsSource).toContain("h-(--control-h-md)");
     expect(variantsSource).not.toContain("h-9");
     const contentMarker = 'data-slot="tabs-content"';
     const contentSlice = source.slice(source.indexOf(contentMarker));
+    // oxlint-disable-next-line elmera/no-local-focus-ring -- source-grep of the forbidden class, not a recipe
     expect(contentSlice).not.toContain("outline-none");
   });
 

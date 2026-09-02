@@ -85,11 +85,13 @@ export function CheckboxCard({
     <FieldPrimitive.Item>
       <Card.Root className={checkboxCardStyles({ variant, isDisabled })}>
         <Card.Content className="flex items-center justify-between gap-3 px-4 py-3">
+          {/* oxlint-disable-next-line elmera/no-local-focus-ring -- checkbox-card.md §7: label is not the focus target; the checkbox owns the adapter */}
           <FieldPrimitive.Label className="group flex grow cursor-pointer items-center gap-3 bg-clip-padding outline-hidden has-disabled:cursor-not-allowed">
             <CheckboxPrimitive.Root
               value={value}
               disabled={isDisabled}
               className={cn(
+                // oxlint-disable-next-line elmera/no-local-focus-ring -- checkbox-card.md §7: native outline off; ring comes from the shared adapter
                 "flex shrink-0 items-center rounded-full text-foreground outline-hidden select-none",
                 selfFocusRing
               )}

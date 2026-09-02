@@ -103,6 +103,7 @@ export function NumberField({
     defaultValue !== undefined ? value : value == null || Number.isNaN(value) ? null : value;
 
   return (
+    // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- number-field.md §4: label/control stack gap is layout, not a control rung
     <Field.Root invalid={isInvalid} disabled={isDisabled} className={cn("gap-1", className)}>
       {label || isPending || isSuccess ? (
         <div className="flex items-center justify-between">

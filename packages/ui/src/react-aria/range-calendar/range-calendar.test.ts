@@ -150,6 +150,7 @@ describe("rangeCalendarVariants", () => {
   it("paints the shared state ring on the pill only while focus is visible", () => {
     expect(rangeCalendarVariants({ isFocusVisible: true }).cell()).toContain("ring-ring");
     expect(rangeCalendarVariants({ isFocusVisible: false }).cell()).not.toContain("ring-ring");
+    // oxlint-disable-next-line elmera/no-local-focus-ring -- source-grep of the shared recipe's class, not a recipe
     expect(rangeCalendarVariants({ isFocusVisible: false }).cell()).toContain("outline-none");
   });
 
