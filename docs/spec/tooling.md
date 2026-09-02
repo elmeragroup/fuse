@@ -16,11 +16,12 @@ apps/playground/              # scratch consumer app (dev + manual QA)
 tooling/typescript/           # @elmeragroup/typescript-config — shared tsconfig bases
 tooling/oxlint-plugin/        # @elmeragroup/oxlint-plugin — elmera/* custom rules
 tooling/oxlint-anti-slop/     # @elmeragroup/oxlint-plugin-anti-slop — vendored anti-slop (§5.3)
+tooling/api-extractor/        # @elmeragroup/api-extractor — Effect-native TypeScript API extraction (docs dependency rows; ADR 0007)
 ```
 
 - Everything under `tooling/*` and `apps/*` is `"private": true`; `packages/ui` is the sole publish target ([release](release.md)).
 - `pnpm-workspace.yaml` globs: `packages/*`, `apps/*`, `tooling/*`.
-- Tests and intl dictionaries for the **library** are **co-located inside `packages/ui`**. Component **demos live in the docs app** — `apps/docs/src/app/(docs)/components/<slug>/demos/` per [docs-site](docs-site.md) §6: they are docs/VR/AI source material, never published package code _(amended 2026-08-24 — ticket 74b; demos previously co-located in `packages/ui`)_. Component tests do not live in consuming apps (explicit break from the internal ref, which kept all component tests app-side). The two specified **host first-paint proofs** live in `apps/docs/test` and `apps/static-theme/test` because they must inspect production HTML before React; that exception is not permission to move library tests into apps. Those apps' `test` tasks `dependsOn: ["build"]`. They are not the release packed-consumer fixtures in §7.5.
+- Tests and intl dictionaries for the **library** are **co-located inside `packages/ui`**. Component **demos live in the docs app** — `apps/docs/src/app/(docs)/components/<slug>/demos/` per [docs-site](docs-site.md) §6: they are docs/VR/AI source material, never published package code _(amended 2026-08-24 — ruling 74b, 2026-08-24: demos moved out of `packages/ui` into the docs app)_. Component tests do not live in consuming apps (explicit break from the internal ref, which kept all component tests app-side). The two specified **host first-paint proofs** live in `apps/docs/test` and `apps/static-theme/test` because they must inspect production HTML before React; that exception is not permission to move library tests into apps. Those apps' `test` tasks `dependsOn: ["build"]`. They are not the release packed-consumer fixtures in §7.5.
 
 ## 2 Package manager & supply chain
 
@@ -119,7 +120,7 @@ It does **not** ban `p-*` / `h-*` / `gap-*` across the package. Type-scale axes 
 
 1. `packages/ui/src/components/<name>/<name>.tsx` — component skeleton with tv recipe stub conforming to `enforce-variant-standard`.
 2. Co-located `<name>.test.ts` (unit) and `<name>.browser.test.tsx` (browser) stubs with role-based query scaffolding.
-3. A plain-`.tsx` demo stub in the docs app (`apps/docs/src/app/(docs)/components/<name>/demos/`) per [docs-site](docs-site.md) §6 _(amended 2026-08-24 — ticket 74b)_.
+3. A plain-`.tsx` demo stub in the docs app (`apps/docs/src/app/(docs)/components/<name>/demos/`) per [docs-site](docs-site.md) §6 _(amended 2026-08-24 — ruling 74b, 2026-08-24: plop writes demos next to the hand-authored `page.mdx`, not under `packages/ui`)_.
 4. A hand-authored `page.mdx` stub at `apps/docs/src/app/(docs)/components/<name>/page.mdx` importing the demo and rendering the generated API reference ([docs-site](docs-site.md) §1 authoring model).
 5. A source entry file named according to the canonical manifest. After adding it, run `pnpm --filter @elmeragroup/ui generate:exports` and commit the generated `package.json#exports` and root barrel. The package build still rewrites the publish manifest under `dist`; the scaffold never edits `package.json#exports` directly.
 

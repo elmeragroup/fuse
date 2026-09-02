@@ -37,7 +37,7 @@ The complete, enumerated list of published entries — the single source of trut
 
 Rules:
 
-1. **Bare component path = the winning base-ui tier.** `@elmeragroup/ui/select` is always the canonical component ([conventions](components/conventions.md)). The re-homed typography components (`heading`, `text`, `span`) live at bare paths — they left the quarantine (ticket 024).
+1. **Bare component path = the winning base-ui tier.** `@elmeragroup/ui/select` is always the canonical component ([conventions](components/conventions.md)). The re-homed typography components (`heading`, `text`, `span`) live at bare paths — they left the quarantine (wayfinder ticket 024).
 2. **`react-aria/` quarantine.** The eleven public interim entries — date-picker, date-range-picker, date-field, calendar, range-calendar, search-field, grid-list, link, focusable, file-trigger, and ui-providers — are reachable **only** under `@elmeragroup/ui/react-aria/<name>`. `UiProviders` is a public transition convenience that composes the permanent theme provider with RAC `I18nProvider`/`RouterProvider`; it dies with the tier. Each entry carries the migrate-to-base-ui marker in its spec. `react-aria-components`, `react-aria`, and `@internationalized/date` may be imported only from source modules in the private RAC subtree or these `react-aria/` entry facades (lintable; [performance](performance.md) §5).
 3. **Barrel scope is fixed**: the 56 bare components + theme. The eleven interim RAC components remain subpath-only so the quarantine is real; icons and illustrations are likewise subpath-only so per-icon tree-shaking never depends on barrel-shaking. Do not add either group to the barrel.
 4. **No default exports** anywhere; named exports only.
@@ -144,7 +144,7 @@ Rules:
 - **React is the only unconditional peer consumers must already have.** Chart consumers also install the optional `recharts` peer; raw-source CSS consumers install the optional Tailwind peer. Standalone-CSS consumers need neither. Implementation libraries (base-ui, RAC, Phosphor, intl runtimes) are regular dependencies — never peers — so consumers do no bookkeeping for our internals and version skew is impossible.
 - Optional-peer discipline: nothing outside `chart` may import `recharts`; the import is lintable and the entry is budgeted excluding recharts ([performance](performance.md) §2).
 - Pinned deps (`@base-ui/react`, `react-aria-components`, `react-aria`, `@phosphor-icons/react`) are bumped in dedicated PRs with the contract test suite as the gate — never by broad range resolution.
-- No dependency on any framework (Next, React Router, TanStack) anywhere in the package — the theme entry is framework-agnostic by design (ticket 006: single `/theme` entry, no `next/` export).
+- No dependency on any framework (Next, React Router, TanStack) anywhere in the package — the theme entry is framework-agnostic by design (wayfinder ticket 006: single `/theme` entry, no `next/` export).
 
 ## 6a Flag assets
 
