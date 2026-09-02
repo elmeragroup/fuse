@@ -256,7 +256,7 @@ describe("compiler boundary", () => {
       documentationOfParameter: () => undefined,
       typeOfSymbol: () => undefined,
       typeAtNode: () => undefined,
-      typeFacts: () => ({ typeText: "unknown", flags: ["Unknown"], intrinsic: "unknown" }),
+      typeFacts: () => ({ flags: ["Unknown"], intrinsic: "unknown" }),
       symbolFacts: (symbol) => ({
         name: symbol === valueSymbol ? "Value" : "RuntimeValue",
         flags: [],
@@ -336,13 +336,10 @@ describe("compiler boundary", () => {
         symbol === widgetSymbol ? widgetType : symbol === propsSymbol ? propsType : undefined,
       typeAtNode: () => undefined,
       typeFacts: (type) => {
-        if (type === valueType) return { typeText: "string", flags: ["String"], intrinsic: "string" };
-        if (type === reactType)
-          return { typeText: "ReactElement", flags: ["Object"], isObject: true, symbol: reactSymbol };
-        if (type === propsType)
-          return { typeText: "Props", flags: ["Object"], isObject: true, symbol: propsSymbol };
+        if (type === valueType) return { flags: ["String"], intrinsic: "string" };
+        if (type === reactType) return { flags: ["Object"], isObject: true, symbol: reactSymbol };
+        if (type === propsType) return { flags: ["Object"], isObject: true, symbol: propsSymbol };
         return {
-          typeText: "(props: Props) => ReactElement",
           flags: ["Object"],
           isObject: true,
           symbol: widgetSymbol,

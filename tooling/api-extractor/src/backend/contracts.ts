@@ -50,7 +50,6 @@ type BackendCalleeFacts = {
 
 /** A normalized compiler observation. It has no semantic model values. */
 export type BackendTypeFacts = {
-  readonly typeText: string;
   readonly flags: readonly TypeFlagName[];
   readonly intrinsic?: BackendIntrinsicName;
   readonly literal?: string | number | boolean;
@@ -59,7 +58,6 @@ export type BackendTypeFacts = {
   readonly isUnion?: boolean;
   readonly isIntersection?: boolean;
   readonly isTuple?: boolean;
-  readonly isArray?: boolean;
   readonly isObject?: boolean;
   readonly isEnum?: boolean;
   readonly symbol?: BackendSymbolHandle;

@@ -25,15 +25,15 @@ export function declarationOwnership(
 
 /** Classifies a declaration handle's path without resolving its AST subtree. */
 export function declarationOwnershipOfPath(
-  session: TsgoFactsSession,
+  session: Pick<TsgoFactsSession, "ownershipOfPath">,
   filePath: string
 ): BackendDeclarationOwnership {
-  return sourceFileOwnership(filePath, session.sourceFileMetadata(filePath));
+  return session.ownershipOfPath(filePath);
 }
 
 /** Whether a raw compiler declaration belongs outside the extracted project. */
 export function isExternalDeclaration(
-  session: TsgoFactsSession,
+  session: Pick<TsgoFactsSession, "ownershipOfPath">,
   declaration: { readonly path: string; readonly resolve: () => Node | undefined }
 ): boolean {
   return isExternalOwnership(declarationOwnershipOfPath(session, declaration.path));
@@ -45,7 +45,7 @@ export function isExternalDeclaration(
  * callers cannot accidentally reintroduce a source-path probe.
  */
 export function isTypeScriptLibraryDeclaration(
-  session: TsgoFactsSession,
+  session: Pick<TsgoFactsSession, "ownershipOfPath">,
   declaration: { readonly path: string; readonly resolve: () => Node | undefined }
 ): boolean {
   const ownership = declarationOwnershipOfPath(session, declaration.path);
@@ -69,7 +69,7 @@ export type CompilerSourceFileMetadata = {
  * `classifySourceFile`; an explicit record is authoritative, including two
  * `false` flags for a project file whose path resembles TypeScript's library.
  */
-function sourceFileOwnership(
+export function sourceFileOwnership(
   filePath: string,
   metadata?: CompilerSourceFileMetadata
 ): BackendDeclarationOwnership {

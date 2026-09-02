@@ -60,7 +60,7 @@ describe("fixture evidence catalog", () => {
           plan: "issue02",
           order: 3,
           maxFetchedToMaterializedRatio: 140,
-          maxRequestCount: 569,
+          maxRequestCount: 433,
           maxBytesReceived: 3200000,
         },
         { plan: "issue14", order: 3 },
@@ -109,7 +109,7 @@ describe("fixture evidence catalog", () => {
         oracleFile: "output.tsgo.json",
         warningOracle: "warnings.tsgo.json",
         maxFetchedToMaterializedRatio: 140,
-        maxRequestCount: 569,
+        maxRequestCount: 433,
         maxBytesReceived: 3200000,
       },
     ]);
@@ -280,28 +280,28 @@ describe("fixture evidence catalog", () => {
       {
         fixture: "alias-with-explicit-type-args",
         maxFetchedToMaterializedRatio: 1.2,
-        maxRequestCount: 175,
+        maxRequestCount: 148,
         maxBytesReceived: 33303,
         bytesReceivedPathLengthHeadroom: issue02BytesReceivedPathLengthHeadroom,
       },
       {
         fixture: "mapped-alias-two-hop",
         maxFetchedToMaterializedRatio: 1.2,
-        maxRequestCount: 114,
+        maxRequestCount: 83,
         maxBytesReceived: 22577,
         bytesReceivedPathLengthHeadroom: issue02BytesReceivedPathLengthHeadroom,
       },
       {
         fixture: "module-dts-declarations-and-reexports",
-        maxFetchedToMaterializedRatio: 116,
-        maxRequestCount: 237,
+        maxFetchedToMaterializedRatio: 120,
+        maxRequestCount: 187,
         maxBytesReceived: 980000,
         bytesReceivedPathLengthHeadroom: undefined,
       },
       {
         fixture: "base-ui-component",
         maxFetchedToMaterializedRatio: 140,
-        maxRequestCount: 569,
+        maxRequestCount: 433,
         maxBytesReceived: 3200000,
         bytesReceivedPathLengthHeadroom: undefined,
       },
@@ -338,7 +338,7 @@ describe("fixture evidence catalog", () => {
       {
         fixture: "package-selective-external-types",
         file: "input.ts",
-        maxRequestCount: 415,
+        maxRequestCount: 310,
       },
     ]);
     const fixture = externalSelectionTimingFixtures[0];
@@ -357,7 +357,7 @@ describe("fixture evidence catalog", () => {
         requestCount: fixture.maxRequestCount + 1,
         maxRequestCount: fixture.maxRequestCount,
       })
-    ).toThrow(/budget exceeded.*416 > 415/u);
+    ).toThrow(/budget exceeded.*311 > 310/u);
   });
 
   it("catalogs the backend lazy-declaration fixture as seam-only evidence", () => {

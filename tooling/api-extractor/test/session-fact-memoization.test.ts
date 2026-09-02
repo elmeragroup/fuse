@@ -32,17 +32,21 @@ describe("TypeScript 7 session fact memoization", () => {
       const firstType = first.compiler.typeOfSymbol(firstSymbol, false);
       if (firstType === undefined) throw new Error("Missing type for the first extraction");
 
+      // typeToString is a checker round trip; typeFacts is served from the
+      // type record the session already holds.
       const firstBefore = requestCount(project);
-      const firstFacts = first.compiler.typeFacts(firstType);
+      const firstText = first.compiler.typeToString(firstType);
       const firstAfterLoad = requestCount(project);
-      const firstAgain = first.compiler.typeFacts(firstType);
+      const firstAgain = first.compiler.typeToString(firstType);
       const firstAfterRepeat = requestCount(project);
+      const firstFacts = first.compiler.typeFacts(firstType);
 
       expect(firstAfterLoad - firstBefore).toBeGreaterThan(0);
       expect(firstAfterRepeat).toBe(firstAfterLoad);
-      expect(JSON.stringify(firstAgain)).toBe(JSON.stringify(firstFacts));
+      expect(firstAgain).toBe(firstText);
       expect(Object.isFrozen(firstFacts)).toBe(true);
       expect(Object.isFrozen(firstFacts.flags)).toBe(true);
+      expect(Object.isFrozen(first.compiler.typeFacts(firstType))).toBe(true);
       first.close();
 
       const second = project.openExtraction();
@@ -51,14 +55,15 @@ describe("TypeScript 7 session fact memoization", () => {
       if (secondType === undefined) throw new Error("Missing type for the second extraction");
 
       const secondBefore = requestCount(project);
-      const secondFacts = second.compiler.typeFacts(secondType);
+      const secondText = second.compiler.typeToString(secondType);
       const secondAfterLoad = requestCount(project);
-      const secondAgain = second.compiler.typeFacts(secondType);
+      const secondAgain = second.compiler.typeToString(secondType);
       const secondAfterRepeat = requestCount(project);
+      const secondFacts = second.compiler.typeFacts(secondType);
 
       expect(secondAfterLoad - secondBefore).toBe(firstAfterLoad - firstBefore);
       expect(secondAfterRepeat).toBe(secondAfterLoad);
-      expect(JSON.stringify(secondAgain)).toBe(JSON.stringify(secondFacts));
+      expect(secondAgain).toBe(secondText);
       expect(JSON.stringify(secondFacts)).toBe(JSON.stringify(firstFacts));
       second.close();
     } finally {

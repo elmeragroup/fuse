@@ -349,9 +349,23 @@ export function declarationPathsFor(info: {
  * declaration paths instead of keeping the two origins distinguishable — do not
  * add a static/instance discriminator to the grammar without a reviewed change.
  */
+const provenanceIndexes = new WeakMap<ProvenanceEntry[], Map<string, number>>();
+
+function provenanceIndex(entries: ProvenanceEntry[]): Map<string, number> {
+  const existing = provenanceIndexes.get(entries);
+  if (existing !== undefined) return existing;
+  const index = new Map(entries.map((entry, position) => [JSON.stringify(entry.path), position] as const));
+  provenanceIndexes.set(entries, index);
+  return index;
+}
+
 export function recordProvenance(context: Context, entry: ProvenanceEntry): void {
-  const existing = context.provenance.find((candidate) => samePath(candidate.path, entry.path));
-  if (existing === undefined) {
+  const index = provenanceIndex(context.provenance);
+  const key = JSON.stringify(entry.path);
+  const position = index.get(key);
+  const existing = position === undefined ? undefined : context.provenance[position];
+  if (existing === undefined || position === undefined) {
+    index.set(key, context.provenance.length);
     context.provenance.push(entry);
     return;
   }
@@ -366,16 +380,11 @@ export function recordProvenance(context: Context, entry: ProvenanceEntry): void
   if (defaultInitializer !== undefined) Object.assign(merged, { defaultInitializer });
   const reexportChain = existing.reexportChain ?? entry.reexportChain;
   if (reexportChain !== undefined) Object.assign(merged, { reexportChain });
-  const index = context.provenance.indexOf(existing);
-  context.provenance[index] = merged;
+  context.provenance[position] = merged;
 }
 
 export function canonicalizeProvenance(entries: readonly ProvenanceEntry[]): readonly ProvenanceEntry[] {
   return [...entries].sort((left, right) => comparePaths(left.path, right.path));
-}
-
-function samePath(left: readonly string[], right: readonly string[]): boolean {
-  return left.length === right.length && left.every((segment, index) => segment === right[index]);
 }
 
 function comparePaths(left: readonly string[], right: readonly string[]): number {

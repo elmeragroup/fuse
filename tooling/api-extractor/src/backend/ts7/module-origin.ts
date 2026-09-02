@@ -141,7 +141,7 @@ function moduleOriginOfExpressionUnsafe(
     }
     break;
   }
-  const symbol = session.checker.getSymbolAtLocation(root);
+  const symbol = session.rawSymbolAt(root);
   const fullPath = [...memberPath.reverse(), ...suffixPath];
   return symbol === undefined || session.checker.isUnknownSymbol(symbol)
     ? missingOrigin()
@@ -257,7 +257,7 @@ function moduleOriginFromSource(
   memberPath: readonly string[]
 ): OriginResolution {
   const sourcePackageName = packageName(source.specifier);
-  const moduleSymbol = session.checker.getSymbolAtLocation(source.node);
+  const moduleSymbol = session.rawSymbolAt(source.node);
   const direct = {
     moduleSpecifier: source.specifier,
     ...(sourcePackageName === undefined ? {} : { packageName: sourcePackageName }),
@@ -304,7 +304,7 @@ function exportAssignmentOriginOfModule(
     if (sourceFile === undefined) continue;
     for (const statement of sourceFile.statements) {
       if (!isExportAssignment(statement) || !statement.isExportEquals) continue;
-      const target = session.checker.getSymbolAtLocation(statement.expression);
+      const target = session.rawSymbolAt(statement.expression);
       if (target === undefined || session.checker.isUnknownSymbol(target)) continue;
       const origin = moduleOriginOfSymbolUnsafe(session, target, seen, memberPath);
       candidates.push(origin);
@@ -338,7 +338,7 @@ function starReExportOrigin(
       continue;
     for (const statement of sourceFile.statements) {
       if (!isStarExport(statement, undefined)) continue;
-      const forwardedModule = session.checker.getSymbolAtLocation(statement.moduleSpecifier);
+      const forwardedModule = session.rawSymbolAt(statement.moduleSpecifier);
       if (forwardedModule === undefined) continue;
       const forwardedMember = session.checker.getMemberInModuleExports(forwardedModule, memberName);
       if (forwardedMember === undefined) continue;
@@ -359,7 +359,7 @@ function localExportOrigin(
   if (initializerOrigin.status !== "missing") return initializerOrigin;
   if (!isExportSpecifier(declaration)) return missingOrigin();
   const localName = declaration.propertyName ?? declaration.name;
-  const local = session.checker.getSymbolAtLocation(localName);
+  const local = session.rawSymbolAt(localName);
   if (local !== undefined && local !== symbol)
     return moduleOriginOfSymbolUnsafe(session, local, seen, memberPath);
 

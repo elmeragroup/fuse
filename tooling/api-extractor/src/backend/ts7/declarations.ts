@@ -2,9 +2,6 @@ import type { Node } from "typescript/unstable/ast";
 import { SyntaxKind } from "typescript/unstable/ast";
 import type { Project } from "typescript/unstable/sync";
 
-import type { CompilerSourceFileMetadata } from "./file-ownership.ts";
-import { isExternalSourceFile } from "./file-ownership.ts";
-
 export type CompilerDeclaration = {
   readonly index: number;
   readonly path: string;
@@ -13,7 +10,7 @@ export type CompilerDeclaration = {
 };
 
 type OwnedDeclarationSession = {
-  readonly sourceFileMetadata: (path: string) => CompilerSourceFileMetadata | undefined;
+  readonly isExternalPath: (path: string) => boolean;
   readonly resolveDeclaration: (declaration: CompilerDeclaration) => Node | undefined;
 };
 
@@ -22,12 +19,7 @@ export function resolveOwnedDeclaration(
   session: OwnedDeclarationSession,
   declaration: CompilerDeclaration | undefined
 ): Node | undefined {
-  if (
-    declaration === undefined ||
-    isExternalSourceFile(declaration.path, session.sourceFileMetadata(declaration.path))
-  ) {
-    return undefined;
-  }
+  if (declaration === undefined || session.isExternalPath(declaration.path)) return undefined;
   return session.resolveDeclaration(declaration);
 }
 

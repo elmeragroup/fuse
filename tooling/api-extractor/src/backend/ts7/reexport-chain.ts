@@ -137,7 +137,7 @@ function forwardedSymbol(session: TsgoModuleSession, symbol: TsSymbol): TsSymbol
   // The module-specifier node belongs to the already materialized forwarding
   // source file. Its checker symbol exposes the target module exports without
   // resolving the target source file (which may be an excluded dependency).
-  const moduleSymbol = session.checker.getSymbolAtLocation(forwarding.moduleNode);
+  const moduleSymbol = session.symbolAt(forwarding.moduleNode);
   if (moduleSymbol === undefined || session.checker.isUnknownSymbol(moduleSymbol)) return undefined;
   for (const member of exportsOf(session, moduleSymbol)) {
     if (member.name === forwarding.exportedName) return member;

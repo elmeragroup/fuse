@@ -161,7 +161,7 @@ export const fixtureEvidenceCatalog = [
         plan: "issue02",
         order: 0,
         maxFetchedToMaterializedRatio: 1.2,
-        maxRequestCount: 175,
+        maxRequestCount: 148,
         maxBytesReceived: 33303,
         bytesReceivedPathLengthHeadroom: issue02BytesReceivedPathLengthHeadroom,
       },
@@ -186,7 +186,7 @@ export const fixtureEvidenceCatalog = [
         plan: "issue02",
         order: 3,
         maxFetchedToMaterializedRatio: 140,
-        maxRequestCount: 569,
+        maxRequestCount: 433,
         maxBytesReceived: 3200000,
       },
       { plan: "issue14", order: 3 },
@@ -390,7 +390,7 @@ export const fixtureEvidenceCatalog = [
         plan: "issue02",
         order: 1,
         maxFetchedToMaterializedRatio: 1.2,
-        maxRequestCount: 114,
+        maxRequestCount: 83,
         maxBytesReceived: 22577,
         bytesReceivedPathLengthHeadroom: issue02BytesReceivedPathLengthHeadroom,
       },
@@ -421,8 +421,8 @@ export const fixtureEvidenceCatalog = [
       {
         plan: "issue02",
         order: 2,
-        maxFetchedToMaterializedRatio: 116,
-        maxRequestCount: 237,
+        maxFetchedToMaterializedRatio: 120,
+        maxRequestCount: 187,
         maxBytesReceived: 980000,
       },
       { plan: "issue14", order: 2 },
@@ -524,7 +524,7 @@ export const fixtureEvidenceCatalog = [
   }),
   fixture("package-selective-external-types", "input.ts", ["13"], "not-applicable", {
     conformance: false,
-    timing: [{ plan: "externalSelection", order: 0, maxRequestCount: 415 }],
+    timing: [{ plan: "externalSelection", order: 0, maxRequestCount: 310 }],
     typecheck: "not-applicable",
     metadata: {
       packageTypechecks: [

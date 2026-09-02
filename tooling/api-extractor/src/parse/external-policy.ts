@@ -145,7 +145,6 @@ function isBuiltInContainer(input: ExternalPolicyInput, facts: BackendTypeFacts)
       ? undefined
       : input.context.operations.typeNameFacts(input.type, input.sourceNode)?.builtInArray;
   const isContainer =
-    facts.isArray === true ||
     facts.isTuple === true ||
     input.context.operations.isArrayType(input.type) ||
     authoredBuiltInArray !== undefined;

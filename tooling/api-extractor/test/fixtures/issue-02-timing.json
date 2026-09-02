@@ -23,7 +23,7 @@
       "fetchedToMaterializedRatio": 1.127906976744186,
       "budget": {
         "maxFetchedToMaterializedRatio": 1.2,
-        "maxRequestCount": 175,
+        "maxRequestCount": 148,
         "maxBytesReceived": 33303,
         "bytesReceivedPathLengthHeadroom": 32768
       }
@@ -45,7 +45,7 @@
       "fetchedToMaterializedRatio": 1.109375,
       "budget": {
         "maxFetchedToMaterializedRatio": 1.2,
-        "maxRequestCount": 114,
+        "maxRequestCount": 83,
         "maxBytesReceived": 22577,
         "bytesReceivedPathLengthHeadroom": 32768
       }
@@ -66,8 +66,8 @@
       },
       "fetchedToMaterializedRatio": 156.3181818181818,
       "budget": {
-        "maxFetchedToMaterializedRatio": 116,
-        "maxRequestCount": 237,
+        "maxFetchedToMaterializedRatio": 120,
+        "maxRequestCount": 187,
         "maxBytesReceived": 980000
       }
     },
@@ -88,7 +88,7 @@
       "fetchedToMaterializedRatio": 162.6738382099828,
       "budget": {
         "maxFetchedToMaterializedRatio": 140,
-        "maxRequestCount": 569,
+        "maxRequestCount": 433,
         "maxBytesReceived": 3200000
       }
     }

@@ -32,7 +32,6 @@ import type {
 import { declarationModifiers } from "./class-facts.ts";
 import type { CompilerDeclaration } from "./declarations.ts";
 import { resolveOwnedDeclaration, valueOrFirstDeclarationHandle } from "./declarations.ts";
-import type { CompilerSourceFileMetadata } from "./file-ownership.ts";
 import { exportsOf, orderedContainerExports } from "./module-ordering.ts";
 import { aliasedSymbol, resolveModule } from "./module-resolution.ts";
 import { repositoryRelativePath } from "./path-identity.ts";
@@ -46,9 +45,13 @@ export type TsgoModuleSession = {
   readonly rootDirectory: string;
   readonly cwd: string;
   readonly ensureOpen: (operation: string) => void;
-  readonly sourceFileMetadata: (path: string) => CompilerSourceFileMetadata | undefined;
+  readonly isExternalPath: (path: string) => boolean;
   readonly sourceFile: (filePath: string) => SourceFile | undefined;
   readonly resolveDeclaration: (declaration: CompilerDeclaration) => Node | undefined;
+  /** The checker symbol at a node, memoized per session. */
+  readonly symbolAt: (node: Node) => TsSymbol | undefined;
+  /** A module or namespace symbol's exports, memoized per session. */
+  readonly moduleExports: (container: TsSymbol) => readonly TsSymbol[];
   readonly symbolHandle: (symbol: TsSymbol) => BackendSymbolHandle;
   readonly documentationOfSymbol: (symbol: BackendSymbolHandle) => BackendDocumentation | undefined;
   readonly heritageTypes: (
@@ -89,7 +92,7 @@ export function readModule(session: TsgoModuleSession, filePath: string): Backen
       filePath: absoluteFilePath,
       message: `File is not part of the TypeScript project: ${absoluteFilePath}`,
     });
-  const moduleSymbol = session.checker.getSymbolAtLocation(source);
+  const moduleSymbol = session.symbolAt(source);
   if (moduleSymbol === undefined) {
     throw new FileNotInProgramError({
       filePath: absoluteFilePath,
@@ -231,7 +234,7 @@ function recordAmbiguousStarWarnings(
     // The specifier node is already materialized with this source file. Its
     // checker symbol lists target exports without fetching an excluded
     // declaration file (the same pattern `forwardedSymbol` uses).
-    const resolvedModule = session.checker.getSymbolAtLocation(statement.moduleSpecifier);
+    const resolvedModule = session.symbolAt(statement.moduleSpecifier);
     if (resolvedModule === undefined || session.checker.isUnknownSymbol(resolvedModule)) continue;
     for (const member of exportsOf(session, resolvedModule)) {
       if (explicitNames.has(member.name)) continue;
@@ -354,7 +357,7 @@ function defaultExportNameSymbol(
   if (!modifiers.some((modifier) => modifier.kind === SyntaxKind.DefaultKeyword)) return undefined;
   const name = (declaration as Node & { readonly name?: Node }).name;
   if (name === undefined) return undefined;
-  const symbol = session.checker.getSymbolAtLocation(name);
+  const symbol = session.symbolAt(name);
   return symbol === undefined || session.checker.isUnknownSymbol(symbol) ? undefined : symbol;
 }
 
@@ -395,7 +398,7 @@ function appendNamespaceMembers(
       ? orderedContainerExports(scope.session, ns, containerFile)
       : scope.source !== undefined
         ? orderedContainerExports(scope.session, ns, scope.source)
-        : [...scope.session.checker.getExportsOfModule(ns)];
+        : scope.session.moduleExports(ns);
   for (const member of members) {
     appendDescriptors(
       {
@@ -418,7 +421,7 @@ function appendDefaultExport(scope: DescriptorScope, assignment: Node, out: Back
   // slot, but every materialized assignment carries one.
   const expression = (assignment as { expression?: Node }).expression;
   if (expression === undefined) return;
-  const exported = scope.session.checker.getSymbolAtLocation(expression);
+  const exported = scope.session.symbolAt(expression);
   if (exported === undefined || scope.session.checker.isUnknownSymbol(exported)) {
     scope.warnings.push({
       code: "missing-default-export-symbol",
@@ -489,7 +492,7 @@ function documentationSourceSymbol(session: TsgoModuleSession, symbol: TsSymbol,
     if (resolved === undefined || !isExportSpecifier(resolved)) continue;
     if (enclosingExportDeclaration(resolved)?.moduleSpecifier !== undefined) return target;
     const nameNode = (resolved as Node & { readonly propertyName?: Node }).propertyName ?? resolved.name;
-    const local = session.checker.getSymbolAtLocation(nameNode);
+    const local = session.symbolAt(nameNode);
     if (local !== undefined && !session.checker.isUnknownSymbol(local)) return local;
   }
   return target;
@@ -501,7 +504,7 @@ function mergedNamespaceSymbols(session: TsgoModuleSession, symbol: TsSymbol): r
   for (const declaration of symbol.declarations) {
     const resolved = resolveOwnedDeclaration(session, declaration);
     if (resolved === undefined || !isModuleDeclaration(resolved)) continue;
-    const named = session.checker.getSymbolAtLocation(resolved.name);
+    const named = session.symbolAt(resolved.name);
     if (named !== undefined && !namespaces.includes(named)) namespaces.push(named);
   }
   return namespaces;

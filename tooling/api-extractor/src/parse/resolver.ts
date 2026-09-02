@@ -426,7 +426,7 @@ function typeNodeUnsafe(
   if (facts.indexTarget !== undefined || facts.flags.includes("IndexedAccess")) {
     return baseConstraintOrAny(type, typeNameValue, context);
   }
-  if (facts.isArray === true || context.operations.isArrayType(type))
+  if (context.operations.isArrayType(type))
     return arrayNode(type, sourceNode, typeNameValue, context, typeNode);
   if (facts.isTuple === true) return tupleNode(type, sourceNode, typeNameValue, context, typeNode);
   const signatures = context.operations.signaturesOfType(type);
@@ -619,7 +619,7 @@ function shallowType(
     };
   // An array keeps an element type in the model, so the cut supplies the
   // wildcard `any` rather than omitting the field.
-  if (facts.isArray === true || context.operations.isArrayType(type))
+  if (context.operations.isArrayType(type))
     return {
       kind: "array",
       elementType: { kind: "intrinsic", intrinsic: "any" },

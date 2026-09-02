@@ -1,12 +1,9 @@
 /* oxlint-disable anti-slop/require-safety-comment-for-type-assertion -- RemoteSourceFile index lookup is the NodeHandle.resolve implementation. */
 
 import type { Node, SourceFile } from "typescript/unstable/ast";
-import type { Program, Project } from "typescript/unstable/sync";
+import type { Project } from "typescript/unstable/sync";
 
 import type { CompilerDeclaration } from "./declarations.ts";
-import { isExternalSourceFile } from "./file-ownership.ts";
-
-type SourceFileMetadata = ReturnType<Program["getSourceFileMetadata"]>;
 
 type SourceFileTree = SourceFile & {
   readonly getOrCreateNodeAtIndex: (index: number) => Node;
@@ -21,18 +18,18 @@ type SourceFileTree = SourceFile & {
 export class SessionFileTrees {
   private readonly trees = new Map<string, SourceFileTree>();
   private readonly project: Project;
-  private readonly sourceFileMetadata: (path: string) => SourceFileMetadata;
+  private readonly isExternalPath: (path: string) => boolean;
 
-  constructor(project: Project, sourceFileMetadata: (path: string) => SourceFileMetadata) {
+  constructor(project: Project, isExternalPath: (path: string) => boolean) {
     this.project = project;
-    this.sourceFileMetadata = sourceFileMetadata;
+    this.isExternalPath = isExternalPath;
   }
 
   /** Whole-module reads stay inside project ownership; excluded files are never read as modules. */
   sourceFile(filePath: string): SourceFile | undefined {
     const existing = this.trees.get(filePath);
     if (existing !== undefined) return existing;
-    if (isExternalSourceFile(filePath, this.sourceFileMetadata(filePath))) return undefined;
+    if (this.isExternalPath(filePath)) return undefined;
     const sourceFile = this.project.program.getSourceFile(filePath);
     if (sourceFile === undefined) return undefined;
     return this.remember(sourceFile);

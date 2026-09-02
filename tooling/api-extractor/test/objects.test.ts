@@ -422,8 +422,8 @@ function synthesizedCompiler(): BackendCompilerOperations {
     typeAtNode: () => undefined,
     typeFacts: (type) =>
       type === synthesizedType
-        ? { typeText: "Synthesized", flags: ["Object"], isObject: true, symbol: synthesizedSymbol }
-        : { typeText: "number", flags: ["Number"], intrinsic: "number" },
+        ? { flags: ["Object"], isObject: true, symbol: synthesizedSymbol }
+        : { flags: ["Number"], intrinsic: "number" },
     symbolFacts: (symbol) =>
       symbol === synthesizedSymbol
         ? { name: "Synthesized", flags: [], declarationPaths: [], declarations: [] }
@@ -500,8 +500,8 @@ describe("synthesized properties and missing enums through a replacement backend
       typeOfSymbol: (symbol) => (symbol === missingEnumSymbol ? missingEnumType : undefined),
       typeFacts: (type) =>
         type === missingEnumType
-          ? { typeText: "MissingMode", flags: ["Enum"], isEnum: true, symbol: missingEnumSymbol }
-          : { typeText: "number", flags: ["Number"], intrinsic: "number" },
+          ? { flags: ["Enum"], isEnum: true, symbol: missingEnumSymbol }
+          : { flags: ["Number"], intrinsic: "number" },
       symbolFacts: (symbol) =>
         symbol === missingEnumSymbol
           ? { name: "MissingMode", flags: [], declarationPaths: [], declarations: [] }

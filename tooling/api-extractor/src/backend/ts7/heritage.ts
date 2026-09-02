@@ -6,15 +6,15 @@ import {
   isTypeAliasDeclaration,
   isTypeReferenceNode,
 } from "typescript/unstable/ast/is";
-import type { Checker, Type } from "typescript/unstable/sync";
+import type { Checker, Symbol as TsSymbol, Type } from "typescript/unstable/sync";
 
 import type { CompilerDeclaration } from "./declarations.ts";
 import { resolveOwnedDeclaration } from "./declarations.ts";
-import type { CompilerSourceFileMetadata } from "./file-ownership.ts";
 
 export type TsgoHeritageSession = {
   readonly checker: Checker;
-  readonly sourceFileMetadata: (path: string) => CompilerSourceFileMetadata | undefined;
+  readonly isExternalPath: (path: string) => boolean;
+  readonly symbolAt: (node: Node) => TsSymbol | undefined;
   readonly resolveDeclaration: (declaration: CompilerDeclaration) => Node | undefined;
 };
 
@@ -104,7 +104,7 @@ function underlyingSymbolName(
     isTypeAliasDeclaration(aliasDeclaration) &&
     isTypeReferenceNode(aliasDeclaration.type)
   ) {
-    const targetSymbol = session.checker.getSymbolAtLocation(aliasDeclaration.type.typeName);
+    const targetSymbol = session.symbolAt(aliasDeclaration.type.typeName);
     if (targetSymbol !== undefined && !isInternalSymbolName(targetSymbol.name) && targetSymbol !== symbol) {
       const targetDeclaration = resolveOwnedDeclaration(session, targetSymbol.declarations[0]);
       if (targetDeclaration !== undefined && isTypeAliasDeclaration(targetDeclaration)) {

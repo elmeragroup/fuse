@@ -95,7 +95,7 @@ export function unsupported(
     code: "unsupported-type-fallback" as const,
     ...warningLocation(context, locationNode),
     typeFlags: facts?.flags ?? fallbackFlags,
-    typeText: facts?.typeText ?? "<missing type>",
+    typeText: type === undefined ? "<missing type>" : context.operations.typeToString(type),
   };
   const sourceText = sourceNode === undefined ? undefined : context.operations.nodeFacts(sourceNode).text;
   if (sourceText !== undefined) warning.sourceText = sourceText;

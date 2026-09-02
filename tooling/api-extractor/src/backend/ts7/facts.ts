@@ -33,6 +33,7 @@ import { typeFlagNames } from "../../warnings.ts";
 import type { TypeFlagName } from "../../warnings.ts";
 import type {
   BackendCompilerOperations,
+  BackendDeclarationOwnership,
   BackendDocumentation,
   BackendEnumFacts,
   BackendEnumMemberFacts,
@@ -83,6 +84,10 @@ export type TsgoFactsSession = {
   readonly typeNodeHandle: (node: TypeNode) => BackendTypeNodeHandle;
   readonly nodeReference: (node: Node) => BackendNodeReference;
   readonly symbolAt: (node: Node) => BackendSymbolHandle | undefined;
+  /** The checker symbol at a node, memoized per session; `symbolAt` is its handle form. */
+  readonly rawSymbolAt: (node: Node) => TsSymbol | undefined;
+  /** Session-memoized ownership classification of one source-file path. */
+  readonly ownershipOfPath: (path: string) => BackendDeclarationOwnership;
   readonly resolveNode: (node: {
     readonly index: number;
     readonly path: string;
@@ -219,9 +224,7 @@ function typeFacts(session: TsgoFactsSession, handle: BackendTypeHandle): Backen
   const symbol = type.getSymbol();
   const aliasSymbol = type.getAliasSymbol();
   const intrinsic = isIntrinsic(type.flags);
-  const typeText = session.checker.typeToString(type);
   return {
-    typeText,
     flags: typeFlagNamesOf(type.flags),
     ...(intrinsic === undefined ? {} : { intrinsic }),
     ...(type.isErrorType() ? { isError: true } : {}),
@@ -230,10 +233,11 @@ function typeFacts(session: TsgoFactsSession, handle: BackendTypeHandle): Backen
     ...(type.isIntersectionType() ? { isIntersection: true } : {}),
     ...(type.isIndexType() ? { indexTarget: session.typeHandle(type.getTarget()) } : {}),
     ...(tupleTarget(type) === undefined ? {} : { isTuple: true }),
-    ...(session.checker.isArrayType(type) ? { isArray: true } : {}),
+    // `typeToString` is a checker round trip, so it is asked only for the one
+    // flag combination whose answer depends on it: the `object` keyword.
     ...(type.isIntersectionType() ||
     (type.flags & TypeFlags.Object) !== 0 ||
-    ((type.flags & TypeFlags.NonPrimitive) !== 0 && typeText === "object")
+    ((type.flags & TypeFlags.NonPrimitive) !== 0 && session.checker.typeToString(type) === "object")
       ? { isObject: true }
       : {}),
     ...((type.flags & TypeFlags.EnumLike) !== 0 ? { isEnum: true } : {}),
@@ -316,26 +320,22 @@ function enumFacts(
       warnings.push(enumWarning(session, symbol, member.name));
     }
     if (typeof inferredValue !== "string" && typeof inferredValue !== "number") continue;
+    const memberDocumentation = documentationOf(session.symbolHandle(member));
     members.push({
       name: member.name,
       value: inferredValue,
       symbol: session.symbolHandle(member),
       ...(declaration === undefined ? {} : { declaration: session.nodeHandle(declaration) }),
-      ...(session.checker.getDocumentationCommentOfSymbol(member).trim() === "" &&
-      session.checker.getJsDocTagsOfSymbol(member).length === 0
-        ? {}
-        : { documentation: documentationOf(session.symbolHandle(member)) }),
+      ...(memberDocumentation === undefined ? {} : { documentation: memberDocumentation }),
     });
   }
+  const documentation = documentationOf(session.symbolHandle(symbol));
   return {
     name: symbol.name,
     namespaces: symbolNamespaces(session, symbol),
     members,
     ...(warnings.length === 0 ? {} : { warnings }),
-    ...(session.checker.getDocumentationCommentOfSymbol(symbol).trim() === "" &&
-    session.checker.getJsDocTagsOfSymbol(symbol).length === 0
-      ? {}
-      : { documentation: documentationOf(session.symbolHandle(symbol)) }),
+    ...(documentation === undefined ? {} : { documentation }),
   };
 }
 

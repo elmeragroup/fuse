@@ -71,6 +71,12 @@ export class NodeHandleInterner {
     return handle;
   }
 
+  /** Drops every retained remote node; the registry already made the handles unusable. */
+  clear(): void {
+    this.nodeHandles.clear();
+    this.nodeIdentityHandles.clear();
+  }
+
   rememberResolvedNode(node: Node, handle: BackendNodeHandle): void {
     const existing = this.nodeHandles.get(node);
     if (existing !== undefined) return;

@@ -16,8 +16,10 @@ import type {
 } from "typescript/unstable/sync";
 
 import { BackendError } from "../../errors.ts";
+import { isExternalOwnership } from "../contracts.ts";
 import type {
   BackendCompilerOperations,
+  BackendDeclarationOwnership,
   BackendModuleDraft,
   BackendNodeReference,
   BackendExtractionSession,
@@ -29,6 +31,7 @@ import type {
 import { HandleRegistry } from "../handles.ts";
 import { createSessionFacts } from "./facts.ts";
 import type { TsgoFactsSession, TsgoSessionFacts } from "./facts.ts";
+import { sourceFileOwnership } from "./file-ownership.ts";
 import { SessionFileTrees } from "./file-trees.ts";
 import type { TsgoHeritageSession } from "./heritage.ts";
 import { resolveModule } from "./module-resolution.ts";
@@ -50,7 +53,9 @@ export class TsgoExtractionSession implements BackendExtractionSession {
   private readonly registry = new HandleRegistry();
   private readonly nodeInterner: NodeHandleInterner;
   private readonly symbolHandles = new Map<TsSymbol, BackendSymbolHandle>();
-  private readonly symbolsAtNodes = new Map<Node, BackendSymbolHandle | null>();
+  private readonly symbolsAtNodes = new Map<Node, TsSymbol | null>();
+  private readonly moduleExportsBySymbol = new Map<TsSymbol, readonly TsSymbol[]>();
+  private readonly ownershipByPath = new Map<string, BackendDeclarationOwnership>();
   private readonly typeHandles = new Map<Type, BackendTypeHandle>();
   private readonly declarationPaths = new Map<string, string>();
   private readonly typeNodeHandles = new Map<TypeNode, BackendTypeNodeHandle>();
@@ -81,7 +86,7 @@ export class TsgoExtractionSession implements BackendExtractionSession {
     this.cwd = cwd;
     this.pathIdentity = pathIdentity;
     this.onClose = onClose;
-    this.fileTrees = new SessionFileTrees(this.project, (path) => this.sourceFileMetadata(path));
+    this.fileTrees = new SessionFileTrees(this.project, (path) => this.isExternalPath(path));
     this.nodeInterner = new NodeHandleInterner(
       this.registry,
       (path) => this.internedSourceFileName(path),
@@ -115,6 +120,8 @@ export class TsgoExtractionSession implements BackendExtractionSession {
       typeNodeHandle: (node) => this.typeNodeHandle(node),
       nodeReference: (node) => this.nodeReference(node),
       symbolAt: (node) => this.symbolAt(node),
+      rawSymbolAt: (node) => this.rawSymbolAt(node),
+      ownershipOfPath: (path) => this.ownershipOfPath(path),
       resolveNode: (node) => this.fileTrees.resolve(node),
       nodePath: (node) => this.nodeRecord(node, "nodePath").path,
       compilerKind: (node) => this.nodeRecord(node, "nodeKind").kind,
@@ -124,7 +131,8 @@ export class TsgoExtractionSession implements BackendExtractionSession {
   private heritageContext(): TsgoHeritageSession {
     return {
       checker: this.checker,
-      sourceFileMetadata: (path) => this.sourceFileMetadata(path),
+      isExternalPath: (path) => this.isExternalPath(path),
+      symbolAt: (node) => this.rawSymbolAt(node),
       resolveDeclaration: (declaration) => this.fileTrees.resolve(declaration),
     };
   }
@@ -136,9 +144,11 @@ export class TsgoExtractionSession implements BackendExtractionSession {
       rootDirectory: this.rootDirectory,
       cwd: this.cwd,
       ensureOpen: (operation) => this.ensureOpen(operation),
-      sourceFileMetadata: (path) => this.sourceFileMetadata(path),
+      isExternalPath: (path) => this.isExternalPath(path),
       sourceFile: (path) => this.fileTrees.sourceFile(path),
       resolveDeclaration: (declaration) => this.fileTrees.resolve(declaration),
+      symbolAt: (node) => this.rawSymbolAt(node),
+      moduleExports: (container) => this.moduleExports(container),
       symbolHandle: (symbol) => this.symbolHandle(symbol),
       documentationOfSymbol: (symbol) => this.compiler.documentationOfSymbol(symbol),
       heritageTypes: (declaration) =>
@@ -164,9 +174,12 @@ export class TsgoExtractionSession implements BackendExtractionSession {
     this.fileTrees.clear();
     this.facts.clear();
     this.registry.clear();
+    this.nodeInterner.clear();
     this.sourceFileMetadataCache.clear();
     this.symbolHandles.clear();
     this.symbolsAtNodes.clear();
+    this.moduleExportsBySymbol.clear();
+    this.ownershipByPath.clear();
     this.typeHandles.clear();
     this.declarationPaths.clear();
     this.typeNodeHandles.clear();
@@ -276,13 +289,27 @@ export class TsgoExtractionSession implements BackendExtractionSession {
   private signatureHandle(signature: Signature): BackendSignatureHandle {
     return intern(this.signatureHandles, signature, () => this.registry.create("signature", signature));
   }
-  private symbolAt(node: Node): BackendSymbolHandle | undefined {
+  private rawSymbolAt(node: Node): TsSymbol | undefined {
     const cached = this.symbolsAtNodes.get(node);
     if (cached !== undefined) return cached ?? undefined;
     const symbol = this.checker.getSymbolAtLocation(node);
-    const handle = symbol === undefined ? undefined : this.symbolHandle(symbol);
-    this.symbolsAtNodes.set(node, handle ?? null);
-    return handle;
+    this.symbolsAtNodes.set(node, symbol ?? null);
+    return symbol;
+  }
+  private symbolAt(node: Node): BackendSymbolHandle | undefined {
+    const symbol = this.rawSymbolAt(node);
+    return symbol === undefined ? undefined : this.symbolHandle(symbol);
+  }
+  private moduleExports(container: TsSymbol): readonly TsSymbol[] {
+    return intern(this.moduleExportsBySymbol, container, () => [
+      ...this.checker.getExportsOfModule(container),
+    ]);
+  }
+  private ownershipOfPath(path: string): BackendDeclarationOwnership {
+    return intern(this.ownershipByPath, path, () => sourceFileOwnership(path, this.sourceFileMetadata(path)));
+  }
+  private isExternalPath(path: string): boolean {
+    return isExternalOwnership(this.ownershipOfPath(path));
   }
 }
 

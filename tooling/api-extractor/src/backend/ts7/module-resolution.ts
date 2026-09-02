@@ -53,7 +53,7 @@ export function resolveModule(
           ? moduleStatement.moduleSpecifier
           : undefined;
   if (moduleNode === undefined) return undefined;
-  const moduleSymbol = session.checker.getSymbolAtLocation(moduleNode);
+  const moduleSymbol = session.symbolAt(moduleNode);
   if (moduleSymbol === undefined || session.checker.isUnknownSymbol(moduleSymbol)) return undefined;
   const symbols = [
     moduleSymbol,

@@ -4,12 +4,12 @@
 /* oxlint-disable anti-slop/no-unknown-parameters -- primitive narrowing is the adapter's normalized-fact seam. */
 
 import type { Node } from "typescript/unstable/ast";
-import { isParameterDeclaration } from "typescript/unstable/ast/is";
+import { SyntaxKind } from "typescript/unstable/ast";
 
 import type { BackendDocumentation, BackendNodeReference, BackendSymbolHandle } from "../contracts.ts";
 import { authoredSymbolName } from "./class-facts.ts";
 import type { TsgoFactsSession } from "./facts.ts";
-import { isExternalSourceFile } from "./file-ownership.ts";
+import { isExternalDeclaration } from "./file-ownership.ts";
 
 /**
  * Documentation normalization for the whole adapter.
@@ -116,10 +116,12 @@ export function documentationOfSymbol(
   handle: BackendSymbolHandle
 ): BackendDocumentation | undefined {
   const symbol = session.symbol(handle, "documentationOfSymbol");
-  const resolvedDeclarations = symbol.declarations
-    .filter((candidate) => !isExternalSourceFile(candidate.path, session.sourceFileMetadata(candidate.path)))
-    .map((candidate) => session.resolveNode(candidate))
-    .filter((candidate): candidate is Node => candidate !== undefined);
+  // Declaration count and kind are on the handles; only the first owned
+  // declaration's node is ever read, for its authored JSDoc block.
+  const ownedDeclarations = symbol.declarations.filter(
+    (candidate) => !isExternalDeclaration(session, candidate)
+  );
+  const firstOwned = ownedDeclarations[0];
   // A symbol declared several times (an overloaded function, for example)
   // aggregates every declaration's comment in the checker response. Upstream
   // reads only the first declaration's authored block, so the same source is
@@ -128,8 +130,8 @@ export function documentationOfSymbol(
   // reporting nothing once a symbol has several declarations, resolution falls
   // through to the checker aggregate below and keeps whatever information it
   // does hold.
-  if (resolvedDeclarations.length > 1) {
-    const first = resolvedDeclarations.at(0);
+  if (ownedDeclarations.length > 1 && firstOwned !== undefined) {
+    const first = session.resolveNode(firstOwned);
     const firstDocumentation = first === undefined ? undefined : documentationFromNode(first);
     if (firstDocumentation !== undefined) return firstDocumentation;
   }
@@ -150,20 +152,13 @@ export function documentationOfSymbol(
     });
   if (description === "" && tags.length === 0 && visibility === undefined && defaultTag?.text === undefined)
     return undefined;
-  const declaration = resolvedDeclarations[0];
-  const parameterTagOnly =
-    declaration !== undefined && isParameterDeclaration(declaration) && description === "";
+  const isParameter = firstOwned?.kind === SyntaxKind.Parameter;
   return {
     ...(description === ""
-      ? parameterTagOnly
+      ? isParameter
         ? { description: "" }
         : {}
-      : {
-          description:
-            declaration !== undefined && isParameterDeclaration(declaration)
-              ? normalizeParameterSummary(description)
-              : description,
-        }),
+      : { description: isParameter ? normalizeParameterSummary(description) : description }),
     ...(defaultTag?.text === undefined ? {} : { defaultValue: String(defaultTag.text) }),
     ...(visibility === undefined ? {} : { visibility }),
     tags,

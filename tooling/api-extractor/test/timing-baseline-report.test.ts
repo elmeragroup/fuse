@@ -134,10 +134,10 @@ describe("Issue 02 compiler timing boundary", () => {
 
     // The stored sample predates the live request/ratio ceilings and is kept
     // as historical evidence. Its semantic observations remain valid even
-    // when the current budget would reject them.
+    // though both current budgets would reject them.
     expect(() => assertFetchedToMaterializedRatioEvidence(baselineSample)).not.toThrow();
     expect(() => assertFetchedToMaterializedRatioBudget(baselineSample)).toThrow(/budget exceeded/u);
-    expect(() => assertRequestCountBudget(baselineSample)).not.toThrow();
+    expect(() => assertRequestCountBudget(baselineSample)).toThrow(/budget exceeded/u);
   });
 
   it("keeps an over-budget ratio reportable for write mode and rejects it in check mode", () => {

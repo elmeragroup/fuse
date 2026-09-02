@@ -60,11 +60,7 @@ type StarContribution = { readonly position: number; readonly names: ReadonlySet
  * every caller goes through this one normalization point.
  */
 export function exportsOf(session: TsgoModuleSession, containerSymbol: TsSymbol): readonly TsSymbol[] {
-  const symbols: TsSymbol[] = [];
-  for (const symbol of session.checker.getExportsOfModule(containerSymbol)) {
-    symbols.push(symbol);
-  }
-  return symbols;
+  return session.moduleExports(containerSymbol);
 }
 
 /**
@@ -79,10 +75,10 @@ function starContributionOrder(session: TsgoModuleSession, source: SourceFile): 
     // The authored module-specifier node already carries the checker symbol.
     // Looking the resolved path up again would fetch the entire dependency
     // source file solely to enumerate names for ordering.
-    const moduleSymbol = session.checker.getSymbolAtLocation(statement.moduleSpecifier);
+    const moduleSymbol = session.symbolAt(statement.moduleSpecifier);
     const names = new Set<string>();
     if (moduleSymbol !== undefined) {
-      for (const member of session.checker.getExportsOfModule(moduleSymbol)) names.add(member.name);
+      for (const member of session.moduleExports(moduleSymbol)) names.add(member.name);
     }
     contributions.push({ position: statement.getStart(source), names });
   }
