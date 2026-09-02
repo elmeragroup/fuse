@@ -15,14 +15,7 @@ import { currentSide, effectSide, inputCapturesEqual } from "./api-effect-adapte
 import type { SideRun } from "./api-effect-adapter.ts";
 import { assertReviewedReasons, compareComponent, compareProblems } from "./api-shadow-compare.ts";
 import { docsShadowInventory } from "./api-shadow-files.ts";
-import type {
-  ApiShadowDifference,
-  DocsShadowComponentResult,
-  DocsShadowReport,
-  DocsShadowMeasuredSnapshot,
-  DocsShadowSnapshot,
-  ProblemShadowDifference,
-} from "./api-shadow-types.ts";
+import type { DocsShadowComponentResult, DocsShadowReport, DocsShadowSnapshot } from "./api-shadow-types.ts";
 import { openLibraryProject } from "./api.ts";
 import type { LibraryProject } from "./api.ts";
 import type { DocsWriter } from "./docs-writer.ts";
@@ -68,16 +61,18 @@ export type DocsShadowRunOptions = {
     context: LibraryProject
   ) => Promise<SideRun>;
   /**
-   * Write sink the run would use. Defaults to a refusing writer: a shadow
-   * comparison never persists, and tests inject the same type generate uses.
+   * Write sink snapshot persistence uses. Defaults to a refusing writer: a
+   * comparison never persists unless `persistSnapshot` is set, and tests inject
+   * the same type generate uses.
    */
   readonly writer?: DocsWriter;
+  /** When true, merge reviewed reasons and write the snapshot through `writer`. */
+  readonly persistSnapshot?: boolean;
 };
 
 /** Runs both extractors over the complete component inventory without invoking any writer. */
 export async function runDocsShadowComparison(options: DocsShadowRunOptions = {}): Promise<DocsShadowReport> {
   const writer = options.writer ?? refusingDocsWriter(() => undefined);
-  void writer;
   const inventory = docsShadowInventory();
   const extractionInputs = inventory.map((entry) => entry.entryFile);
   const context = openLibraryProject();
@@ -107,7 +102,7 @@ export async function runDocsShadowComparison(options: DocsShadowRunOptions = {}
   const problemDifferences = compareProblems(currentProblems, effectProblems);
   const propCount = (parts: readonly { readonly props: readonly unknown[] }[]) =>
     parts.reduce((sum, part) => sum + part.props.length, 0);
-  return {
+  const report: DocsShadowReport = {
     inventory,
     extractionInputs,
     currentInputs: currentRun.inputs.map((input) => input.entryFile),
@@ -129,31 +124,71 @@ export async function runDocsShadowComparison(options: DocsShadowRunOptions = {}
       problemDifferenceCount: problemDifferences.length,
     },
   };
+  if (options.persistSnapshot === true) persistShadowReport(report, writer);
+  return report;
 }
 
 /** The snapshot a report would be stored as: differences only, in a stable order. */
-export function snapshotOf(report: DocsShadowReport): DocsShadowMeasuredSnapshot {
+export function snapshotOf(report: DocsShadowReport, reviewed?: DocsShadowSnapshot): DocsShadowSnapshot {
   const byKey =
     <T>(select: (value: T) => string) =>
     (left: T, right: T) =>
       select(left).localeCompare(select(right));
-  const apiDifferences: readonly ApiShadowDifference[] = [...report.apiDifferences].sort(
-    byKey((difference) => `${difference.component}|${difference.path}`)
+  const apiReasons = new Map(
+    (reviewed?.apiDifferences ?? []).map((difference) => [
+      `${difference.component}|${difference.path}`,
+      difference.reason,
+    ])
   );
-  const problemDifferences: readonly ProblemShadowDifference[] = [...report.problemDifferences].sort(
-    byKey((difference) => `${difference.component}|${difference.key}`)
+  const problemReasons = new Map(
+    (reviewed?.problemDifferences ?? []).map((difference) => [
+      `${difference.component}|${difference.key}`,
+      difference.reason,
+    ])
   );
+  const apiDifferences = [...report.apiDifferences]
+    .sort(byKey((difference) => `${difference.component}|${difference.path}`))
+    .map((difference) => ({
+      ...difference,
+      reason: apiReasons.get(`${difference.component}|${difference.path}`) ?? "",
+    }));
+  const problemDifferences = [...report.problemDifferences]
+    .sort(byKey((difference) => `${difference.component}|${difference.key}`))
+    .map((difference) => ({
+      ...difference,
+      reason: problemReasons.get(`${difference.component}|${difference.key}`) ?? "",
+    }));
   return { summary: report.summary, apiDifferences, problemDifferences };
 }
 
+/** Merge reviewed reasons, require one per entry, then write through `writer`. */
+export function persistShadowReport(
+  report: DocsShadowReport,
+  writer: DocsWriter,
+  reviewed: DocsShadowSnapshot = readShadowSnapshot()
+): void {
+  const next = snapshotOf(report, reviewed);
+  assertReviewedReasons(next);
+  writeShadowSnapshot(next, writer);
+}
+
+/** Persists a reviewed snapshot through the generator writer. */
+export function writeShadowSnapshot(
+  snapshot: DocsShadowSnapshot,
+  writer: DocsWriter,
+  file = shadowSnapshotFile
+): void {
+  writer.writeFile(file, serializeShadowSnapshot(snapshot));
+}
+
 export function readShadowSnapshot(file = shadowSnapshotFile): DocsShadowSnapshot {
-  // SAFETY: the file is written only by snapshotOf through the update script;
-  // reviewAgainstSnapshot compares it field by field against measured values.
+  // SAFETY: the file is written only by writeShadowSnapshot through the update
+  // script; reviewAgainstSnapshot compares it field by field against measured values.
   const snapshot = JSON.parse(readFileSync(file, "utf8")) as DocsShadowSnapshot;
   assertReviewedReasons(snapshot);
   return snapshot;
 }
 
-export function serializeShadowSnapshot(snapshot: DocsShadowMeasuredSnapshot): string {
+export function serializeShadowSnapshot(snapshot: DocsShadowSnapshot): string {
   return `${JSON.stringify(snapshot, null, 2)}\n`;
 }
