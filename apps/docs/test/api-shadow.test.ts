@@ -48,6 +48,31 @@ function testPart(name: string, propNames: readonly string[] = []): ApiPart {
   };
 }
 
+const racShadowSlugs = new Set([
+  "calendar",
+  "date-field",
+  "date-picker",
+  "date-range-picker",
+  "grid-list",
+  "link",
+  "range-calendar",
+  "search-field",
+]);
+
+function partNameFromPath(path: string): string {
+  const rest = path.replace(/^(?:parts|evidence)\./u, "");
+  const cut = rest.search(/\.props\.|\.propOrder/u);
+  return cut === -1 ? (rest.split(".")[0] ?? rest) : rest.slice(0, cut);
+}
+
+function propOrderIndex(path: string): string | undefined {
+  return /\.propOrder\[(\d+)\]/u.exec(path)?.[1];
+}
+
+function isWholeRenderPath(path: string): boolean {
+  return path.endsWith(".props.render");
+}
+
 beforeAll(async () => {
   report = await runDocsShadowComparison({ writer: shadowWriter });
 }, 120_000);
@@ -92,7 +117,6 @@ describe("docs API shadow", () => {
       (difference) => difference.reason
     );
     expect(reasons.every((reason) => reason.trim() !== "")).toBe(true);
-    expect(new Set(reasons).size).toBeGreaterThan(1);
     expect(reasons.every((reason) => !reason.includes("reviewed in the 57-component snapshot"))).toBe(true);
     expect(snapshotOf(report, snapshot)).toEqual(snapshot);
     expect(report.apiDifferences).toHaveLength(report.summary.apiDifferenceCount);
@@ -103,6 +127,48 @@ describe("docs API shadow", () => {
           difference.path !== "parts" && difference.path !== "evidence" && !difference.path.endsWith(".props")
       )
     ).toBe(true);
+  });
+
+  test("reviewed reasons name the part or the keys that moved", () => {
+    const snapshot = readShadowSnapshot();
+    const apiReasonCounts = new Map<string, number>();
+    for (const difference of snapshot.apiDifferences) {
+      const part = partNameFromPath(difference.path);
+      expect(difference.reason, difference.path).toContain(difference.component);
+      expect(difference.reason, difference.path).toContain(part);
+      expect(difference.reason).not.toContain("Type printer disagreement");
+      expect(difference.reason).not.toContain("adds `render` (or drops");
+      const order = propOrderIndex(difference.path);
+      if (order !== undefined) {
+        const matched = /propOrder\[(\d+)\]: checker (.+) vs Effect (.+)\.$/u.exec(difference.reason);
+        expect(matched?.[1], difference.path).toBe(order);
+        expect(matched?.[2], difference.path).toBe(difference.current ?? "omitted");
+        expect(matched?.[3], difference.path).toBe(difference.effect ?? "omitted");
+      }
+      if (isWholeRenderPath(difference.path)) {
+        if (racShadowSlugs.has(difference.component)) {
+          expect(difference.reason, difference.path).toMatch(/RAC|DOMRenderFunction/u);
+          expect(difference.reason, difference.path).not.toContain("Base UI");
+          expect(difference.reason, difference.path).not.toContain("ComponentRenderFn");
+        } else if (difference.effect !== undefined) {
+          expect(difference.reason, difference.path).toContain("Base UI");
+        }
+      }
+      apiReasonCounts.set(difference.reason, (apiReasonCounts.get(difference.reason) ?? 0) + 1);
+    }
+    expect(
+      [...apiReasonCounts]
+        .filter(([, count]) => count > 2)
+        .map(([reason, count]) => `${String(count)}× ${reason}`)
+    ).toEqual([]);
+    for (const difference of snapshot.problemDifferences) {
+      expect(difference.reason, difference.key).toContain(difference.component);
+      const problem = difference.effect ?? difference.current;
+      if (problem?.code === "unsupported-type-fallback") {
+        expect(difference.reason).toContain("`any`");
+        expect(difference.reason).toMatch(/\{|METER_CONSTANTS|Toast namespace|PopoverHandle/u);
+      }
+    }
   });
 
   test("reports both unexplained and stale differences against a snapshot", () => {
