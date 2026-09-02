@@ -221,3 +221,62 @@ describe("component recognition boundaries", () => {
     }
   });
 });
+
+describe("object-of-components module values", () => {
+  const componentObjectTsconfig = resolve(fixtureRoot, "component-object", "tsconfig.json");
+
+  async function extractComponentObject(): Promise<ExtractionResult> {
+    return extractFixture(
+      { tsconfigPath: componentObjectTsconfig },
+      resolve(fixtureRoot, "component-object", "input.tsx")
+    );
+  }
+
+  it("describes a module value whose every member is a component as an object of components", async () => {
+    const result = await extractComponentObject();
+    const menu = result.module.exports.find((entry) => entry.name === "Menu");
+    if (menu?.type.kind !== "object")
+      throw new Error(`Menu is ${menu?.type.kind ?? "missing"}, not an object`);
+    expect(menu.type.properties.map((property) => property.name)).toEqual(["Root", "Item"]);
+    const [root, item] = menu.type.properties;
+    expect(root?.type).toMatchObject({
+      kind: "component",
+      typeName: { name: "MenuRoot" },
+      props: [
+        { name: "open", optional: true },
+        { name: "children", optional: true },
+      ],
+    });
+    expect(item?.type).toMatchObject({
+      kind: "component",
+      typeName: { name: "MenuItem" },
+      props: [
+        { name: "value", optional: false, type: { kind: "intrinsic", intrinsic: "string" } },
+        { name: "disabled", optional: true },
+      ],
+    });
+    expect(root?.type.kind === "component" ? root.type.props[0]?.documentation : undefined).toMatchObject({
+      description: "Whether the menu starts open.",
+    });
+    expect(result.warnings.filter((warning) => warning.parsedSymbolStack.includes("Menu"))).toEqual([]);
+  });
+
+  it("records provenance for the members and their props", async () => {
+    const result = await extractComponentObject();
+    const paths = result.provenance.map((entry) => entry.path.join("/"));
+    expect(paths).toContain("Menu/properties/Root");
+    expect(paths).toContain("Menu/properties/Item");
+    expect(paths).toContain("Menu/properties/Item/props/value");
+    const disabled = result.provenance.find(
+      (entry) => entry.path.join("/") === "Menu/properties/Item/props/disabled"
+    );
+    expect(disabled?.defaultInitializer).toBe("false");
+  });
+
+  it("keeps the upstream fallback for a module value that is not only components", async () => {
+    const result = await extractComponentObject();
+    const mixed = result.module.exports.find((entry) => entry.name === "mixed");
+    expect(mixed?.type).toEqual({ kind: "intrinsic", intrinsic: "any" });
+    expect(result.warnings.map((warning) => warning.code)).toEqual(["unsupported-type-fallback"]);
+  });
+});

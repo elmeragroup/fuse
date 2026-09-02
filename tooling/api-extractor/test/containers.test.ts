@@ -451,7 +451,7 @@ describe("container review regressions", () => {
 
   it("resolves a keyof to its key set, not to its operand", () => {
     // Upstream's `resolveTypeOperatorResult` resolves the KEY SET: a generic
-    // `keyof Target` has none, so its base constraint stands in and the reviewResult
+    // `keyof Target` has none, so its base constraint stands in and the result
     // says so. The upstream fixture `unresolved-indexed-access-fallback` pins
     // exactly this union and `resolutionKind`.
     expect(reviewExportedType(reviewResult, "Keys")).toEqual({

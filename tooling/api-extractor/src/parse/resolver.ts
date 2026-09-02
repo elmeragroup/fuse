@@ -23,6 +23,7 @@ import type { ExtractWarning } from "../warnings.ts";
 import { authoredContainsPreservableKeyof } from "./authored-node.ts";
 import { resolveClassNode } from "./class-resolver.ts";
 import { recoverAuthoredComponent } from "./component-authorship.ts";
+import { componentObjectNode } from "./component-object.ts";
 import { componentNode } from "./component.ts";
 import { authoredUndefinedUnionSyntax, intersectionNode, unionNode } from "./compound.ts";
 import { arrayNode, tupleNode } from "./container.ts";
@@ -459,6 +460,13 @@ function typeNodeUnsafe(
   if (facts.isObject === true) {
     const mapped = mappedObjectNode(type, sourceNode, typeNameValue, context, typeNode);
     if (mapped !== undefined) return mapped;
+    // A module value made only of components (`export const Menu = { Root,
+    // Item }`) is described by its members instead of taking the anonymous
+    // module-value fallback below.
+    if (typeNameValue === undefined && sourceNode === undefined) {
+      const componentObject = componentObjectNode(type, context, typeNode);
+      if (componentObject !== undefined) return componentObject;
+    }
     const object = resolveObjectNode(type, typeNameValue, sourceNode, context, typeNode);
     if (object !== undefined) return object;
     // A compiler-internal aggregate arm — an anonymous, symbol-less shape with

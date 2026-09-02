@@ -539,6 +539,7 @@ export const fixtureEvidenceCatalog = [
       packageTypechecks: [
         { order: 20, project: "test/fixtures/issue-11-tsconfig.json" },
         { order: 21, project: "test/fixtures/issue-11-review/tsconfig.json" },
+        { order: 32, project: "test/fixtures/component-object/tsconfig.json" },
       ],
     },
   }),

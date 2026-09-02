@@ -200,9 +200,9 @@ describe("fixture evidence catalog", () => {
         "base-ui-component",
       ],
       packageTypechecks: {
-        count: 32,
+        count: 33,
         first: "test/fixtures/issue-02-tsconfig.json",
-        last: "test/fixtures/backend-lazy-declarations/tsconfig.json",
+        last: "test/fixtures/component-object/tsconfig.json",
       },
     });
   });
