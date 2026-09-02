@@ -40,7 +40,7 @@ No controlled/uncontrolled opinion — native semantics. Polymorphism not applic
 
 None public. Shared chrome comes from the package-private `fieldBox` recipe (same surface as Input). Textarea adds only content-sized deltas: `flex`, `field-sizing-content`, `h-auto` (overrides the recipe's pinned md height), `min-h-16`, `py-2`. Nothing exported.
 
-No `size` axis. Inline padding and control type pin the `md` rung per [conventions](conventions.md) ruling 2 via `fieldBox`.
+No `size` axis. Inline padding and control type pin the `md` rung per [conventions](conventions.md) ruling 2, 2026-08-21, via `fieldBox`.
 
 **Density mapping / `min-h` ruling.** Textarea is content-sized (`field-sizing-content`) with a `min-h-16` floor. That floor is **not** a control-box height and does **not** retarget with density — it stays 4rem at both stamps so a multi-line field cannot collapse to a single Button row. Inline padding reads `--control-px-md`; type reads the control-type pair. `py-2` is block padding for a multi-line field (not a pinned single-height box) and stays. No `dense:` / `comfortable:` variants.
 

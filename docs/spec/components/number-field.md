@@ -60,7 +60,7 @@ Field.Root                              (base-ui Field.Root, gap-1)
 
 ## 4 Variants
 
-No component-specific tv recipe and **no size axis**. The field box pins the `md` rung per [conventions](conventions.md) ruling 2: `h-(--control-h-md)` plus `--control-px-md` / control-type where those families appear, and composes shared `focusRing({ target: "within" })`. A module-private `stepperButton` class string is shared by Increment/Decrement. Nothing exported.
+No component-specific tv recipe and **no size axis**. The field box pins the `md` rung per [conventions](conventions.md) ruling 2, 2026-08-21: `h-(--control-h-md)` plus `--control-px-md` / control-type where those families appear, and composes shared `focusRing({ target: "within" })`. A module-private `stepperButton` class string is shared by Increment/Decrement. Nothing exported.
 
 **Density mapping.** Single-height field box → `md` rung. Dense computed height matches the ref's `h-9`; comfortable is the signed `ui.css` column. No `dense:` / `comfortable:` variants.
 

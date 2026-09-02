@@ -41,7 +41,7 @@ No `value`-massaging, no controlled/uncontrolled opinion — native semantics. P
 
 None public. Shared chrome lives in the package-private `fieldBox` `tv` recipe (`styles/field-box.ts`) — card fill, input border, md height/padding/type, placeholder, disabled fill/opacity, invalid border + ring, self focus ring, one transition list. Nothing exported. (The exported borrow recipe for the text-input _look_ is `textFieldVariants` at the labeled-composite tier, not here.)
 
-No `size` axis. The field box pins the `md` rung per [conventions](conventions.md) ruling 2 inside `fieldBox`. Input adds only host deltas: `min-w-0`, `file:` chrome, `disabled:pointer-events-none`. Do not also set `py-*` once height is pinned. Radius via the `rounded-md` scale derived from `--radius`; never hardcoded.
+No `size` axis. The field box pins the `md` rung per [conventions](conventions.md) ruling 2, 2026-08-21, inside `fieldBox`. Input adds only host deltas: `min-w-0`, `file:` chrome, `disabled:pointer-events-none`. Do not also set `py-*` once height is pinned. Radius via the `rounded-md` scale derived from `--radius`; never hardcoded.
 
 **`file:h-7` exemption** _(amended 2026-09-02)_: the native file-selector button is UA chrome inside the md field box. `h-7` (1.75rem) is optical — no control-height rung is 1.75rem (`xs` is 1.5rem, `sm` is 2rem) — so the literal stays documented rather than retargeting with density.
 
