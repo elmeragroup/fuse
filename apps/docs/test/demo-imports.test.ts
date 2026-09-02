@@ -20,7 +20,13 @@ const CARVE_OUTS = new Map<string, readonly string[]>([
   ["scroll-area/demos/scroll-area-composed.tsx", ["@base-ui/react/scroll-area"]],
 ]);
 
-const IMPORT_SPECIFIER = /^import\s[^;]*?\sfrom\s+["']([^"']+)["']/gmu;
+/**
+ * Every specifier a demo module can name: `import … from`, a side-effect `import "x"`,
+ * `export … from`, and dynamic `import("x")`. A carve-out lock that only saw the first
+ * form would wave the others through.
+ */
+const IMPORT_SPECIFIER =
+  /(?:\b(?:import|export)\s[^;]*?\sfrom\s+|^\s*import\s+|\bimport\s*\(\s*)["']([^"']+)["']/gmu;
 
 function demoFiles(): string[] {
   const files: string[] = [];

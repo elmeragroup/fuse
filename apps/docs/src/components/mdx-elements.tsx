@@ -1,4 +1,4 @@
-import { Children, createElement, isValidElement } from "react";
+import { Children, cloneElement, createElement, isValidElement } from "react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 import { slugifyHeading } from "../lib/slug";
@@ -80,9 +80,14 @@ export function MdxCode({ className, children, ...rest }: ComponentProps<"code">
 }
 
 /**
- * MDX wraps every fence in a `pre` around the `code`; `DocsCodeBlock` renders that `pre`
- * itself, so the wrapper contributes nothing and passes its children through.
+ * MDX wraps every fence in a `pre` around the `code`, and `MdxCode` already renders that
+ * `pre` itself through `DocsCodeBlock`. Wrapping again would nest two `pre` elements, so
+ * this passes the children through — carrying any attributes MDX put on the outer `pre`
+ * down to the block, rather than dropping them.
  */
-export function MdxPre({ children }: ComponentProps<"pre">): ReactElement {
-  return <>{children}</>;
+export function MdxPre({ children, ...rest }: ComponentProps<"pre">): ReactElement {
+  if (isValidElement<ComponentProps<"pre">>(children)) {
+    return cloneElement(children, { ...rest, ...children.props });
+  }
+  return <DocsCodeBlock {...rest} source={plainText(children)} />;
 }

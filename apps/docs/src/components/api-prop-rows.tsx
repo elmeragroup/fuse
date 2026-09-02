@@ -20,7 +20,6 @@ import type { CSSProperties, MouseEvent, ReactElement } from "react";
 import type { ApiPropView } from "../lib/api-row";
 import { NO_DEFAULT } from "../lib/api-row";
 import { ApiRows } from "./api-rows";
-import { DocsCodeBlock } from "./docs-code-block";
 import { InlineCode } from "./inline-code";
 
 export type ApiPropRowsProps = {
@@ -107,8 +106,12 @@ function ApiPropRow({ prop, open, onClose }: ApiPropRowProps): ReactElement {
           <ApiRows.PanelItem>
             <ApiRows.Term>Type</ApiRows.Term>
             <ApiRows.Definition>
-              {/* The full printed signature the closed row may have collapsed to one word. */}
-              <DocsCodeBlock variant="signature" source={prop.signature} />
+              {/*
+                The full printed signature the closed row may have collapsed to one word —
+                highlighted on the server and handed down as a finished element, so this
+                client module never imports the highlighter (`api-row.ts`).
+              */}
+              {prop.signature}
             </ApiRows.Definition>
           </ApiRows.PanelItem>
           <ApiRows.PanelItem>

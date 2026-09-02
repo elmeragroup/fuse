@@ -3,14 +3,23 @@
  *
  * The accordion is the page's only client component, and it needs two things from the view
  * layer: the shape of a row and the string a missing default renders as. Both live here, in a
- * module with no runtime imports at all. `api-view.ts` builds these rows on the server; this
- * module only says what they look like.
+ * module whose only import is React's element type, so importing them cannot drag the
+ * server-only highlighter (`sugar-high`, reached through `DocsCodeBlock`) onto the client
+ * graph. `api-view.tsx` builds these rows on the server; this module only says what they
+ * look like.
+ *
+ * A row's full type signature is therefore a *rendered element*, not a string the client
+ * would have to highlight: the server highlights it once during prerender through the one
+ * docs code renderer and hands the finished element down as a prop. The accordion stays a
+ * rendering of ready values, and no prop signature is highlighted at hydration.
  */
+
+import type { ReactElement } from "react";
 
 /** What a missing default renders as (docs-site.md §8). */
 export const NO_DEFAULT = "—";
 
-/** One expandable prop row, entirely as strings. */
+/** One expandable prop row: ready strings, plus the server-rendered signature block. */
 export type ApiPropView = {
   name: string;
   /** Anchor id of the row's `summary`; a hash pointing at it opens the row. */
@@ -21,8 +30,11 @@ export type ApiPropView = {
    * when it collapsed the printed type, otherwise the printed type itself.
    */
   closedType: string;
-  /** The full printed signature; the expanded panel highlights it through `DocsCodeBlock`. */
-  signature: string;
+  /**
+   * The full printed signature, already rendered on the server through `DocsCodeBlock`.
+   * The panel places this element; it never highlights anything itself.
+   */
+  signature: ReactElement;
   /** The default as written, or `null` when there is none — the row then shows an em-dash. */
   defaultValue: string | null;
   /** JSDoc description, or the recipe-axis stand-in. Markdown-ish: may contain code spans. */
