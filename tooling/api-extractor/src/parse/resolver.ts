@@ -389,6 +389,16 @@ function typeNodeUnsafe(
       ...(typeNameValue === undefined ? {} : { typeName: typeNameValue }),
     };
   }
+  // Template-literal types are not checker literals (`isLiteralType` is false).
+  // Store the checker's printed form so a union of them stays a union of
+  // template-literal strings in source order instead of falling back to `any`.
+  if (facts.flags.includes("TemplateLiteral")) {
+    return {
+      kind: "literal",
+      value: context.operations.typeToString(type),
+      ...(typeNameValue === undefined ? {} : { typeName: typeNameValue }),
+    };
+  }
   // Deferred conditionals follow upstream's dispatch order: a built-in
   // `Extract` over an index-like check type resolves through the checker's
   // base constraint (`Extract<keyof T, string>` is `string`); any other

@@ -490,39 +490,33 @@ describe("ProjectExtractor", () => {
     }
   });
 
-  it("preserves the upstream unsupported warning contract and source text", async () => {
+  it("renders a template-literal type as a template-literal string, not any", async () => {
     const result = await extractFixture({ tsconfigPath }, unsupportedTemplatePath);
 
-    expect(result.module.exports[0]?.type).toEqual({ kind: "intrinsic", intrinsic: "any" });
-    expect(result.warnings).toEqual([
-      {
-        code: "unsupported-type-fallback",
-        message: `Could not extract type "\`prefix-\${string}\`" at "${unsupportedTemplatePath}:1:24". The extractor used any. Review this API or add support for this type.`,
-        filePath: unsupportedTemplatePath,
-        line: 1,
-        column: 24,
-        parsedSymbolStack: [unsupportedTemplatePath, "Template"],
-        typeFlags: ["TemplateLiteral"],
-        typeText: "`prefix-${string}`",
-        sourceText: "`prefix-${string}`",
-      },
-    ]);
+    expect(result.module.exports[0]).toEqual({
+      name: "Template",
+      type: { kind: "literal", value: "`prefix-${string}`" },
+    });
+    expect(result.warnings).toEqual([]);
   });
 
-  it("preserves upstream symbol stacks for nested parameter and return warnings", async () => {
+  it("renders template-literal parameter and return types without falling back", async () => {
     const result = await extractFixture({ tsconfigPath }, unsupportedSignaturesPath);
 
-    expect(result.warnings).toEqual([
-      expect.objectContaining({
-        code: "unsupported-type-fallback",
-        parsedSymbolStack: [unsupportedSignaturesPath, "unsupportedParameter", "parameter: value"],
-        sourceText: "`param-${string}`",
-      }),
-      expect.objectContaining({
-        code: "unsupported-type-fallback",
-        parsedSymbolStack: [unsupportedSignaturesPath, "unsupportedReturn"],
-        sourceText: "`return-${string}`",
-      }),
-    ]);
+    expect(result.warnings).toEqual([]);
+    const parameter = result.module.exports.find((entry) => entry.name === "unsupportedParameter");
+    const returned = result.module.exports.find((entry) => entry.name === "unsupportedReturn");
+    expect(parameter?.type).toMatchObject({
+      kind: "function",
+      callSignatures: [
+        {
+          parameters: [{ name: "value", type: { kind: "literal", value: "`param-${string}`" } }],
+        },
+      ],
+    });
+    expect(returned?.type).toMatchObject({
+      kind: "function",
+      callSignatures: [{ returnValueType: { kind: "literal", value: "`return-${string}`" } }],
+    });
   });
 });
