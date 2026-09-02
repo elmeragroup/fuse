@@ -94,10 +94,11 @@
  *   toast         42293  (first calibration, ceiling 63440)
  *   sidebar       82549  (first calibration, ceiling 123824 — the shell packs Sheet, Tooltip, Button, Separator, Skeleton and the dictionary)
  *   themes.css     2274
- *   styles.css    23685  (Sidebar shell utilities — peer/group state selectors, gap/container transitions, skeleton
- *                  width cycle — on top of the ToggleGroup and Toast growth; under the standing 25265 ceiling from
- *                  Table recalibration, so recorded, not loosened. Do not spell a flagged class in this
- *                  file: Tailwind's source detection scans it and would emit the utility again.)
+ *   styles.css    23491  (2026-09-02, ticket 22: the wrapper imports `tailwindcss/utilities.css` with
+ *                  `source(none)`, so the sheet describes the emitted dist JavaScript alone and the utilities that
+ *                  only tests and other src-only files spelled dropped out. 23685 → 23491; a shrink is
+ *                  not a recalibration trigger, so the ceiling is tightened by exactly the 194 bytes
+ *                  lost — 25265 → 25071 — keeping the 2026-08-25 headroom.)
  */
 import { FLAG_RAW_CEILING_BYTES } from "./flag-payload";
 
@@ -211,7 +212,7 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = [
 
 export const CSS_BUDGETS: readonly CssBudget[] = [
   { name: "themes.css", file: "themes.css", ceilingGzip: 3424 },
-  { name: "styles.css", file: "styles.css", ceilingGzip: 25265 },
+  { name: "styles.css", file: "styles.css", ceilingGzip: 25071 },
 ];
 
 export const FLAG_RAW_BUDGETS: readonly FlagRawBudget[] = [

@@ -112,9 +112,10 @@ describe("theme contract", () => {
       "utf8"
     );
     expect(wrapper).toContain('@import "tailwindcss/theme.css"');
-    expect(wrapper).toContain('@import "tailwindcss/utilities.css"');
+    expect(wrapper).toContain('@import "tailwindcss/utilities.css" source(none)');
     expect(wrapper).not.toContain("preflight");
     expect(wrapper).toContain('@source "../dist/**/*.js"');
+    expect(wrapper).not.toContain("@source not");
   });
 });
 

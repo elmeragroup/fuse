@@ -1,9 +1,8 @@
 /**
  * Package-private class vocabulary shared by every overlay family — the public base-ui
  * Dialog/Sheet and the interim RAC Modal/Dialog alike. Nothing here is exported through
- * `package.json#exports`; it lives outside `src/react-aria/**` on purpose so the
- * standalone stylesheet's `@source not "../src/react-aria/**"` exclusion keeps
- * describing only the published JS (architecture.md §5).
+ * `package.json#exports`; it reaches the standalone stylesheet only through the emitted
+ * dist modules that import it, which are that sheet's only source (architecture.md §5).
  */
 
 /**

@@ -291,7 +291,7 @@ The raw entry's selector/utility lift source is `.ref/OrderModuleInternalWeb/pac
 }
 ```
 
-The standalone-CSS build uses a build-only wrapper that imports `tailwindcss/theme.css` and `tailwindcss/utilities.css` (never `tailwindcss/preflight.css`), imports this raw entry, and points `@source` at the emitted `dist/**/*.js` graph. That wrapper is compiler input only; the output is the published `styles.css`. Raw-source consumers instead use the recipe in [architecture](architecture.md) §5.
+The standalone-CSS build uses a build-only wrapper that imports `tailwindcss/theme.css` and `tailwindcss/utilities.css` with `source(none)` (never `tailwindcss/preflight.css`), imports this raw entry, and names `dist/**/*.js` as its **only** `@source`. Source detection is off on purpose: with it on, Tailwind also scans the working tree, so a class spelled only in a test or an unshipped module lands in the published sheet. The wrapper carries exactly one `@source` line and no `@source not` exclusions — nothing under `src/` is scanned, so nothing under `src/` has to be excluded. _(Amended 2026-09-02, architecture §5.)_ That wrapper is compiler input only; the output is the published `styles.css`. Raw-source consumers instead use the recipe in [architecture](architecture.md) §5.
 
 ### 3.5 Scoped subtrees and portals
 
