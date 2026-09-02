@@ -1,21 +1,7 @@
-import { Effect, Schema } from "effect";
-import { readFileSync } from "node:fs";
-import { createRequire } from "node:module";
+import { Schema } from "effect";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 
-import { InternalProjectExtractorTiming, timedProjectExtractorLayer } from "../src/internal/timing.ts";
-import type { TimedExtraction } from "../src/internal/timing.ts";
-import { writeArtifactBatchOrThrow } from "./artifact-batch-command.ts";
-import { checkBoundary } from "./check-boundary.ts";
-import {
-  assertFixtureOracle,
-  fixtureDirectory,
-  fixtureInputPath,
-  issue14TimingFixtures,
-  readTimingReport,
-} from "./fixture-evidence.ts";
-import type { TimingReport } from "./fixture-evidence.ts";
+import { writeArtifactBatchOrThrow } from "../artifact-batch-writer.ts";
 import {
   issue14BackendLeakageEvidence,
   issue14CompilerVersion,
@@ -27,7 +13,19 @@ import {
   issue14TimingStableContract,
   issue14TimingWallClockContract,
   issue14TimingWallClockRationale,
-} from "./issue-14-contract.ts";
+} from "../conformance/contract.ts";
+import {
+  assertFixtureOracle,
+  decodeJson,
+  fixtureDirectory,
+  fixtureInputPath,
+  issue14TimingFixtures,
+  packageVersion,
+  readTimingReport,
+} from "../fixture-evidence.ts";
+import type { TimingReport } from "../fixture-evidence.ts";
+import { boundaryStatuses, timedExtraction } from "./shared.ts";
+import type { BoundaryStatuses } from "./shared.ts";
 
 const reportPath = join(fixtureDirectory, "issue-14-timing.json");
 const baselinePath = join(fixtureDirectory, "issue-02-timing.json");
@@ -143,17 +141,6 @@ export type TimingCommandOutput = Schema.Schema.Type<typeof TimingCommandOutputS
 export type TimingTotals = Schema.Schema.Type<typeof NumberTotalsSchema>;
 export type TimingCheckMode = "enforce-live-budget" | "verify-checkout-portability";
 export type SemanticDecision = "go" | "no-go";
-type BoundaryStatuses = {
-  readonly backendLeakage: "clear" | "triggered";
-  readonly durableContractLeakage: "clear" | "triggered";
-};
-
-function packageVersion(packageName: string): string {
-  const require = createRequire(import.meta.url);
-  // SAFETY: package.json is a required dependency metadata file and its only consumed field is version.
-  const metadata = require(packageName + "/package.json") as { readonly version: string };
-  return metadata.version;
-}
 
 function currentRuntimeIdentity(): Issue14TimingReport["runtime"] {
   if (
@@ -209,26 +196,6 @@ export function subtractTotals(current: TimingTotals, baseline: TimingTotals): T
     sourceFilesFetched: current.sourceFilesFetched - baseline.sourceFilesFetched,
     nodesFetched: current.nodesFetched - baseline.nodesFetched,
   };
-}
-
-function boundaryStatuses(): BoundaryStatuses {
-  try {
-    checkBoundary();
-    return { backendLeakage: "clear", durableContractLeakage: "clear" } satisfies BoundaryStatuses;
-  } catch {
-    return { backendLeakage: "triggered", durableContractLeakage: "triggered" } satisfies BoundaryStatuses;
-  }
-}
-
-function timedExtraction(inputPath: string): Promise<TimedExtraction> {
-  return Effect.runPromise(
-    Effect.scoped(
-      Effect.gen(function* () {
-        const timing = yield* InternalProjectExtractorTiming;
-        return yield* timing.extractModule(inputPath);
-      }).pipe(Effect.provide(timedProjectExtractorLayer({ tsconfigPath: configPath })))
-    )
-  );
 }
 
 function assertBaselineIdentity(baseline: TimingReport): void {
@@ -492,7 +459,7 @@ async function measure(): Promise<Issue14TimingReport> {
     if (baselineSample === undefined) {
       throw new Error(`Missing Issue 02 baseline sample: ${definition.fixture}`);
     }
-    const extraction = await timedExtraction(fixtureInputPath(definition));
+    const extraction = await timedExtraction(configPath, fixtureInputPath(definition));
     assertFixtureOracle(definition, extraction.result);
     const measured = extraction.timing.totals;
     const sample = {
@@ -638,31 +605,8 @@ export function timingCommandOutput(
       };
 }
 
-function timingCheckMode(arguments_: readonly string[]): TimingCheckMode | "write" {
-  if (arguments_.some((argument) => argument.endsWith("output.json"))) {
-    throw new Error("Issue 14 timing regeneration refuses to target the immutable output.json oracle.");
-  }
-  if (arguments_.length === 0) return "enforce-live-budget";
-  if (arguments_.length !== 1) {
-    throw new Error("Use exactly one of --check, --check-portability, or --write.");
-  }
-  switch (arguments_[0]) {
-    case "--check":
-      return "enforce-live-budget";
-    case "--check-portability":
-      return "verify-checkout-portability";
-    case "--write":
-      return "write";
-    default:
-      throw new Error("Use exactly one of --check, --check-portability, or --write.");
-  }
-}
-
-async function main(): Promise<void> {
-  if (process.versions.node !== "24.13.0") {
-    throw new Error(`Issue 14 timing evidence requires Node 24.13.0, got ${process.versions.node}`);
-  }
-  const mode = timingCheckMode(process.argv.slice(2));
+/** Measures the live Issue 14 report; `write` stores it, either check mode compares it with the stored evidence. */
+export async function runIssue14Timing(mode: TimingCheckMode | "write"): Promise<void> {
   const measured = await measure();
   if (mode === "write") {
     await writeArtifactBatchOrThrow(
@@ -680,12 +624,8 @@ async function main(): Promise<void> {
     );
     return;
   }
-  const stored = decodeReport(
-    Schema.decodeUnknownSync(Schema.Json)(JSON.parse(readFileSync(reportPath, "utf8")))
-  );
+  const stored = decodeReport(decodeJson(reportPath));
   const semanticDecision = assertStoredTimingReport(stored, measured, mode);
   const output = timingCommandOutput(measured, mode, semanticDecision);
   console.log(JSON.stringify(Schema.encodeSync(TimingCommandOutputSchema)(output), null, 2));
 }
-
-if (process.argv[1] === fileURLToPath(import.meta.url)) await main();

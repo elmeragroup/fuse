@@ -6,12 +6,7 @@ import { cpSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import {
-  assertTs7DivergenceEvidence,
-  differenceDigest,
-  issue14FixtureManifest,
-} from "../scripts/fixture-evidence.ts";
-import { createFixtureFileSystem, moduleImportsOnlyDependency } from "../scripts/fixture-filesystem.ts";
+import { issue14TypecheckCommand } from "../scripts/conformance/contract.ts";
 import {
   assertConformanceReportInvariants,
   assertStoredReport,
@@ -23,8 +18,13 @@ import {
   readIssue14ConformanceReport,
   summarizeFixtureRun,
   writeAdditionalTs7Evidence,
-} from "../scripts/issue-14-conformance.ts";
-import { issue14TypecheckCommand } from "../scripts/issue-14-contract.ts";
+} from "../scripts/conformance/report.ts";
+import {
+  assertTs7DivergenceEvidence,
+  differenceDigest,
+  issue14FixtureManifest,
+} from "../scripts/fixture-evidence.ts";
+import { createFixtureFileSystem, moduleImportsOnlyDependency } from "../scripts/fixture-filesystem.ts";
 import { ExtractError, ProjectExtractor } from "../src/index.ts";
 import { extractFixture } from "./support/extract.ts";
 import { createTemporaryRoot, fixtureRoot } from "./support/temp-dirs.ts";

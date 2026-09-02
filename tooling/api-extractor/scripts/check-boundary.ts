@@ -1,8 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, relative, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join, resolve } from "node:path";
 
 import {
   declarationBoundaryViolations,
@@ -10,6 +9,8 @@ import {
   publicDeclarationGraph,
   sourceBoundaryViolations,
 } from "./boundary-scanner.ts";
+import { runIfMain } from "./cli.ts";
+import { posixRelative } from "./files.ts";
 
 const packageDirectory = resolve(import.meta.dirname, "..");
 const sourceDirectory = join(packageDirectory, "src");
@@ -41,7 +42,7 @@ function declarationFiles(directory: string): readonly string[] {
 
 function declarationSet(directory: string): readonly string[] {
   return declarationFiles(directory)
-    .map((path) => relative(directory, path).replaceAll("\\", "/"))
+    .map((path) => posixRelative(directory, path))
     .sort();
 }
 
@@ -141,7 +142,7 @@ export function checkBoundary(): BoundaryCheckResult {
   };
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+await runIfMain(import.meta.url, () => {
   const result = checkBoundary();
   console.log(JSON.stringify({ ...result, status: "clear" }));
-}
+});

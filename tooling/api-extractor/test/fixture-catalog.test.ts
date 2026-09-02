@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { readIssue14ConformanceReport } from "../scripts/conformance/report.ts";
 import {
   fixtureEvidenceCatalog,
   issue02BytesReceivedPathLengthHeadroom,
@@ -36,7 +37,6 @@ import {
   issue12ReactFixtures,
   issue13ExternalFixtures,
 } from "../scripts/fixture-views.ts";
-import { readIssue14ConformanceReport } from "../scripts/issue-14-conformance.ts";
 
 describe("fixture evidence catalog", () => {
   it("derives conformance evidence from the representative fixture record", () => {

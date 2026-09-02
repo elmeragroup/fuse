@@ -1,7 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 
+import { runIfMain } from "./cli.ts";
 import { packageFixtureTypecheckPlan } from "./fixture-plans.ts";
 
 const packageDirectory = resolve(import.meta.dirname, "..");
@@ -23,6 +23,6 @@ export function typecheckFixtureProjects(): number {
   return packageFixtureTypecheckPlan.length;
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+await runIfMain(import.meta.url, () => {
   console.log(JSON.stringify({ projects: typecheckFixtureProjects(), status: "pass" }));
-}
+});

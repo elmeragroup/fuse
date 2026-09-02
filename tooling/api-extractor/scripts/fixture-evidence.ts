@@ -3,7 +3,7 @@ import { Schema } from "effect";
 /* oxlint-disable typescript/no-unsafe-argument -- JSON.parse values are decoded by Schema.Json immediately. */
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { relative, resolve } from "node:path";
+import { resolve } from "node:path";
 
 import type { ExtractionResult } from "../src/extractor.ts";
 import { ModuleNodeSchema } from "../src/model.ts";
@@ -13,7 +13,10 @@ import type { ExtractWarning } from "../src/warnings.ts";
 import { issue14TypeScript7Compiler } from "./fixture-catalog.ts";
 
 export const fixtureDirectory = resolve(import.meta.dirname, "../test/fixtures");
-const packageDirectory = resolve(import.meta.dirname, "..");
+export const packageDirectory = resolve(import.meta.dirname, "..");
+
+export { decodeJson, packageVersion, posixRelative, sha256File } from "./files.ts";
+import { decodeJson, posixRelative } from "./files.ts";
 
 export * from "./fixture-catalog.ts";
 export * from "./fixture-plans.ts";
@@ -342,10 +345,6 @@ function isJsonObject(value: Schema.Json): value is Schema.JsonObject {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function decodedJson(path: string): Schema.Json {
-  return Schema.decodeUnknownSync(Schema.Json)(JSON.parse(readFileSync(path, "utf8")));
-}
-
 export function decodeTimingReport(value: Schema.Json): TimingReport {
   return Schema.decodeUnknownSync(TimingReportSchema)(value);
 }
@@ -362,11 +361,11 @@ export function validateGoNoGoFixtureMatrix(matrix: GoNoGoArtifact["fixtureMatri
 }
 
 export function readTimingReport(path: string): TimingReport {
-  return decodeTimingReport(decodedJson(path));
+  return decodeTimingReport(decodeJson(path));
 }
 
 export function readGoNoGoArtifact(path: string): GoNoGoArtifact {
-  return decodeGoNoGoArtifact(decodedJson(path));
+  return decodeGoNoGoArtifact(decodeJson(path));
 }
 
 export function fixtureInputPath(definition: TimingFixture | Issue02SupplementalFixture): string {
@@ -375,13 +374,13 @@ export function fixtureInputPath(definition: TimingFixture | Issue02Supplemental
 
 export function readModuleOracle(definition: TimingFixture): ModuleNode {
   return Schema.decodeUnknownSync(ModuleNodeSchema)(
-    decodedJson(fixtureFile(definition.fixture, definition.oracleFile))
+    decodeJson(fixtureFile(definition.fixture, definition.oracleFile))
   );
 }
 
 export function readWarningOracle(definition: TimingFixture): readonly ExtractWarning[] {
   return Schema.decodeUnknownSync(Schema.Array(ExtractWarningSchema))(
-    decodedJson(fixtureFile(definition.fixture, definition.warningOracle))
+    decodeJson(fixtureFile(definition.fixture, definition.warningOracle))
   );
 }
 
@@ -392,7 +391,7 @@ export function stableWarningPath(filePath: string): string {
   if (normalized.includes("/node_modules/") && libIndex >= 0) {
     return `node_modules/typescript/lib/${normalized.slice(libIndex + libMarker.length)}`;
   }
-  const workspaceRelative = relative(packageDirectory, filePath).replaceAll("\\", "/");
+  const workspaceRelative = posixRelative(packageDirectory, filePath);
   return workspaceRelative.startsWith("../") ? "external/" + workspaceRelative : workspaceRelative;
 }
 
@@ -461,14 +460,14 @@ export function differenceDigest(paths: readonly string[]): string {
 
 function readReactDivergenceArtifact(fixtureRoot = fixtureDirectory): ReactDivergenceArtifact {
   return Schema.decodeUnknownSync(ReactDivergenceArtifactSchema)(
-    decodedJson(fixtureFile("base-ui-component", "ts7-oracle.json", fixtureRoot))
+    decodeJson(fixtureFile("base-ui-component", "ts7-oracle.json", fixtureRoot))
   );
 }
 
 export function assertReactDivergenceEvidence(fixtureRoot = fixtureDirectory): void {
   const artifact = readReactDivergenceArtifact(fixtureRoot);
-  const upstream = decodedJson(fixtureFile("base-ui-component", "output.json", fixtureRoot));
-  const ts7 = decodedJson(fixtureFile("base-ui-component", "output.tsgo.json", fixtureRoot));
+  const upstream = decodeJson(fixtureFile("base-ui-component", "output.json", fixtureRoot));
+  const ts7 = decodeJson(fixtureFile("base-ui-component", "output.tsgo.json", fixtureRoot));
   const paths = canonicalDifferencePaths(upstream, ts7);
   if (paths.length === 0 || artifact.divergence.differenceCount === 0) {
     throw new Error("The React TS7 divergence must retain a nonzero upstream difference.");
@@ -497,14 +496,14 @@ export function assertReactDivergenceEvidence(fixtureRoot = fixtureDirectory): v
  */
 export function assertTs7DivergenceEvidence(fixture: string, fixtureRoot = fixtureDirectory): void {
   const artifact = Schema.decodeUnknownSync(Ts7DivergenceArtifactSchema)(
-    decodedJson(fixtureFile(fixture, "ts7-oracle.json", fixtureRoot))
+    decodeJson(fixtureFile(fixture, "ts7-oracle.json", fixtureRoot))
   );
   if (artifact.fixture !== fixture) {
     throw new Error(`The TS7 divergence record names a different fixture: ${fixture}`);
   }
   const paths = canonicalDifferencePaths(
-    decodedJson(fixtureFile(fixture, "output.json", fixtureRoot)),
-    decodedJson(fixtureFile(fixture, "output.tsgo.json", fixtureRoot))
+    decodeJson(fixtureFile(fixture, "output.json", fixtureRoot)),
+    decodeJson(fixtureFile(fixture, "output.tsgo.json", fixtureRoot))
   );
   if (
     artifact.divergence.differenceCount !== paths.length ||
@@ -530,7 +529,7 @@ export function assertTs7DivergenceEvidence(fixture: string, fixtureRoot = fixtu
 }
 
 export function readFixtureOracle(fixture: string, oracleFile: string): ModuleNode {
-  return Schema.decodeUnknownSync(ModuleNodeSchema)(decodedJson(fixtureFile(fixture, oracleFile)));
+  return Schema.decodeUnknownSync(ModuleNodeSchema)(decodeJson(fixtureFile(fixture, oracleFile)));
 }
 
 export function assertStableWarningOracle(definition: TimingFixture): void {

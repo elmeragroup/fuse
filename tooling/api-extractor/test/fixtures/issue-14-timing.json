@@ -1,6 +1,6 @@
 {
   "issue": "14-full-conformance",
-  "command": "fnm exec --using 24.13.0 -- node scripts/issue-14-timing.ts --check",
+  "command": "fnm exec --using 24.13.0 -- node scripts/timing.ts --plan issue14 --check",
   "runtime": {
     "node": "24.13.0",
     "compiler": "typescript@7.0.2"
@@ -41,22 +41,22 @@
       },
       "measured": {
         "requestCount": 148,
-        "roundTripMs": 75.25032599999926,
+        "roundTripMs": 224.9462090000004,
         "bytesSent": 28059,
         "bytesReceived": 63679,
-        "serverTimeMs": 66.11554599999992,
-        "transportOverheadMs": 9.134779999999338,
+        "serverTimeMs": 200.57920700000017,
+        "transportOverheadMs": 24.36700200000024,
         "nodesMaterialized": 92,
         "sourceFilesFetched": 1,
         "nodesFetched": 97
       },
       "delta": {
         "requestCount": -27,
-        "roundTripMs": 37.19115299999899,
+        "roundTripMs": 186.88703600000014,
         "bytesSent": -4342,
         "bytesReceived": 30376,
-        "serverTimeMs": 41.73420899999995,
-        "transportOverheadMs": -4.543056000000956,
+        "serverTimeMs": 176.1978700000002,
+        "transportOverheadMs": 10.689165999999947,
         "nodesMaterialized": 6,
         "sourceFilesFetched": 0,
         "nodesFetched": 0
@@ -78,22 +78,22 @@
       },
       "measured": {
         "requestCount": 83,
-        "roundTripMs": 62.5622479999999,
+        "roundTripMs": 53.89608199999998,
         "bytesSent": 17940,
         "bytesReceived": 51948,
-        "serverTimeMs": 51.94704000000002,
-        "transportOverheadMs": 10.615207999999875,
+        "serverTimeMs": 46.80504099999997,
+        "transportOverheadMs": 7.091041000000011,
         "nodesMaterialized": 68,
         "sourceFilesFetched": 1,
         "nodesFetched": 71
       },
       "delta": {
         "requestCount": -31,
-        "roundTripMs": 34.22550899999919,
+        "roundTripMs": 25.559342999999274,
         "bytesSent": -4992,
         "bytesReceived": 29371,
-        "serverTimeMs": 31.232707000000048,
-        "transportOverheadMs": 2.992801999999145,
+        "serverTimeMs": 26.090707999999992,
+        "transportOverheadMs": -0.5313650000007186,
         "nodesMaterialized": 4,
         "sourceFilesFetched": 0,
         "nodesFetched": 0
@@ -115,22 +115,22 @@
       },
       "measured": {
         "requestCount": 187,
-        "roundTripMs": 61.65717700000016,
+        "roundTripMs": 59.83308199999999,
         "bytesSent": 35414,
         "bytesReceived": 970022,
-        "serverTimeMs": 51.67716599999999,
-        "transportOverheadMs": 9.980011000000168,
+        "serverTimeMs": 51.14386900000003,
+        "transportOverheadMs": 8.68921299999996,
         "nodesMaterialized": 152,
         "sourceFilesFetched": 3,
         "nodesFetched": 17853
       },
       "delta": {
         "requestCount": -53,
-        "roundTripMs": 27.45981300000011,
+        "roundTripMs": 25.63571799999994,
         "bytesSent": -8549,
         "bytesReceived": 25711,
-        "serverTimeMs": 27.031490999999995,
-        "transportOverheadMs": 0.4283220000001151,
+        "serverTimeMs": 26.498194000000034,
+        "transportOverheadMs": -0.8624760000000933,
         "nodesMaterialized": -2,
         "sourceFilesFetched": -6,
         "nodesFetched": -6220
@@ -152,22 +152,22 @@
       },
       "measured": {
         "requestCount": 433,
-        "roundTripMs": 95.56912999999912,
+        "roundTripMs": 87.89412100000345,
         "bytesSent": 84193,
         "bytesReceived": 2962328,
-        "serverTimeMs": 76.97059099999989,
-        "transportOverheadMs": 18.598538999999235,
+        "serverTimeMs": 73.81577099999996,
+        "transportOverheadMs": 14.078350000003496,
         "nodesMaterialized": 306,
         "sourceFilesFetched": 4,
         "nodesFetched": 40904
       },
       "delta": {
         "requestCount": -135,
-        "roundTripMs": 16.489791999999113,
+        "roundTripMs": 8.814783000003445,
         "bytesSent": -22513,
         "bytesReceived": -8290513,
-        "serverTimeMs": 19.628551999999907,
-        "transportOverheadMs": -3.1387600000007936,
+        "serverTimeMs": 16.473731999999977,
+        "transportOverheadMs": -7.658948999996532,
         "nodesMaterialized": -856,
         "sourceFilesFetched": -1,
         "nodesFetched": -148123
@@ -188,22 +188,22 @@
     },
     "measured": {
       "requestCount": 851,
-      "roundTripMs": 295.03888099999847,
+      "roundTripMs": 426.56949400000383,
       "bytesSent": 165606,
       "bytesReceived": 4047977,
-      "serverTimeMs": 246.71034299999985,
-      "transportOverheadMs": 48.328537999998616,
+      "serverTimeMs": 372.3438880000001,
+      "transportOverheadMs": 54.22560600000371,
       "nodesMaterialized": 618,
       "sourceFilesFetched": 9,
       "nodesFetched": 58925
     },
     "delta": {
       "requestCount": -246,
-      "roundTripMs": 115.36626699999744,
+      "roundTripMs": 246.8968800000028,
       "bytesSent": -40396,
       "bytesReceived": -8205055,
-      "serverTimeMs": 119.62695899999991,
-      "transportOverheadMs": -4.260692000002493,
+      "serverTimeMs": 245.26050400000017,
+      "transportOverheadMs": 1.636376000002599,
       "nodesMaterialized": -848,
       "sourceFilesFetched": -7,
       "nodesFetched": -154343
@@ -222,8 +222,8 @@
       "status": "not-triggered",
       "threshold": "aggregate roundTripMs <= 1000",
       "baselineAggregateRoundTripMs": 179.67261400000103,
-      "measuredAggregateRoundTripMs": 295.03888099999847,
-      "deltaAggregateRoundTripMs": 115.36626699999744,
+      "measuredAggregateRoundTripMs": 426.56949400000383,
+      "deltaAggregateRoundTripMs": 246.8968800000028,
       "maxAggregateRoundTripMs": 1000,
       "evidence": "each fixture runs in a fresh public-seam timing session like the Issue 02 baseline; semantic counters are exact, wall-clock and transport byte fields are observational, and both live and stored aggregates are checked against 1000ms"
     }

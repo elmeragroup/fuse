@@ -1,6 +1,6 @@
 {
   "issue": "14-full-conformance",
-  "command": "node scripts/issue-14-conformance.ts --check",
+  "command": "node scripts/conformance/report.ts --check",
   "upstream": {
     "repository": "michaldudak/typescript-api-extractor",
     "commit": "e14535030957e29ce6e5d870e4ab71740175a0d4",
@@ -28,7 +28,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture alias-with-explicit-type-args --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture alias-with-explicit-type-args --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -55,7 +55,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture base-ui-component --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture base-ui-component --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -83,7 +83,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture class-members-visibility-and-signatures --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture class-members-visibility-and-signatures --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -143,7 +143,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture class-method-generic-signatures --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture class-method-generic-signatures --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -169,7 +169,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture class-method-overload-signatures --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture class-method-overload-signatures --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -195,7 +195,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture class-private-members-type-alias-filtering --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture class-private-members-type-alias-filtering --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -221,7 +221,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture distributive-conditional-intersection-expansion --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture distributive-conditional-intersection-expansion --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -247,7 +247,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture enum-members-values-and-docs --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture enum-members-values-and-docs --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -273,7 +273,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture external-conditional-type-resolution --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture external-conditional-type-resolution --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -299,7 +299,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture external-mapped-type-name-preservation --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture external-mapped-type-name-preservation --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -325,7 +325,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture external-union-type-name-preservation --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture external-union-type-name-preservation --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -370,7 +370,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture function-callable-intersection-extra-properties --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture function-callable-intersection-extra-properties --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -396,7 +396,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture function-declaration-expression-arrow --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture function-declaration-expression-arrow --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -422,7 +422,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture function-parameters-optional-and-defaults --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture function-parameters-optional-and-defaults --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -448,7 +448,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture generic-argument-alias-resolution --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture generic-argument-alias-resolution --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -474,7 +474,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture generic-callback-alias-constraint-deduplication --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture generic-callback-alias-constraint-deduplication --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -500,7 +500,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture generic-callback-alias-renamed-typeparams --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture generic-callback-alias-renamed-typeparams --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -526,7 +526,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture generic-callback-alias-vs-inline-deduplication --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture generic-callback-alias-vs-inline-deduplication --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -552,7 +552,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture generic-callback-constraint-property-keys --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture generic-callback-constraint-property-keys --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -578,7 +578,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture generic-callback-default-deduplication --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture generic-callback-default-deduplication --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -604,7 +604,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture generic-callback-index-signature-deduplication --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture generic-callback-index-signature-deduplication --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -630,7 +630,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture generic-callback-nested-shadow-deduplication --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture generic-callback-nested-shadow-deduplication --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -656,7 +656,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture generic-callback-typeparam-vs-typename-collision --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture generic-callback-typeparam-vs-typename-collision --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -684,7 +684,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture generic-constraint-tostring-collapse --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture generic-constraint-tostring-collapse --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -710,7 +710,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture generic-default-argument-resolution --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture generic-default-argument-resolution --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -736,7 +736,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture generic-function-and-interface-resolution --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture generic-function-and-interface-resolution --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -762,7 +762,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture generic-props-namespace-specialization --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture generic-props-namespace-specialization --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -789,7 +789,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture interface-extends-basic-resolution --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture interface-extends-basic-resolution --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -833,7 +833,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture interface-extends-namespace-and-omit-resolution --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture interface-extends-namespace-and-omit-resolution --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -860,7 +860,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture interface-merged-default-and-aliased-exports --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture interface-merged-default-and-aliased-exports --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -886,7 +886,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture interface-method-generic-signatures --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture interface-method-generic-signatures --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -912,7 +912,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture intersection-order-deduplication --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture intersection-order-deduplication --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -938,7 +938,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture jsdoc-comments-and-overloads --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture jsdoc-comments-and-overloads --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -964,7 +964,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture jsdoc-extra-tags-preservation --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture jsdoc-extra-tags-preservation --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -990,7 +990,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture large-nested-union-any-order --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture large-nested-union-any-order --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -1016,7 +1016,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture mapped-alias-finite-key --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture mapped-alias-finite-key --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -1042,7 +1042,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture mapped-alias-nested-mapped-value --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture mapped-alias-nested-mapped-value --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -1068,7 +1068,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture mapped-alias-nested-value --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture mapped-alias-nested-value --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -1094,7 +1094,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture mapped-alias-two-hop --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture mapped-alias-two-hop --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -1121,7 +1121,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture mapped-tuple-rest-synthetic-key --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture mapped-tuple-rest-synthetic-key --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -1147,7 +1147,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture mapped-type-builtin-utility-resolution --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture mapped-type-builtin-utility-resolution --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -1173,7 +1173,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture mapped-type-optional-aliased-unknown --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture mapped-type-optional-aliased-unknown --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -1199,7 +1199,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture mapped-type-prettify-intersection-resolution --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture mapped-type-prettify-intersection-resolution --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -1226,7 +1226,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture merged-interface-signature-typeparams --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture merged-interface-signature-typeparams --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -1252,7 +1252,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture module-dts-declarations-and-reexports --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture module-dts-declarations-and-reexports --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -1279,7 +1279,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture module-export-forms --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture module-export-forms --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -1306,7 +1306,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "virtual-upstream-dependency",
-        "command": "node scripts/issue-14-typecheck.ts --fixture module-imports-only --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture module-imports-only --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -1332,7 +1332,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture module-reexport-imported-class-type --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture module-reexport-imported-class-type --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -1358,7 +1358,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture module-reexports-aliased-source-tracking --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture module-reexports-aliased-source-tracking --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -1384,7 +1384,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture module-reexports-basic --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture module-reexports-basic --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -1410,7 +1410,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture module-reexports-parts-namespace --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture module-reexports-parts-namespace --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -1437,7 +1437,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture namespace-callback-alias-resolution --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture namespace-callback-alias-resolution --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -1463,7 +1463,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture namespace-export-resolution --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture namespace-export-resolution --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -1490,7 +1490,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture namespace-nested-alias-resolution --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture namespace-nested-alias-resolution --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -1516,7 +1516,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture nested-function-union-any-deduplication --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture nested-function-union-any-deduplication --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -1542,7 +1542,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture object-property-count-limit-scope --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture object-property-count-limit-scope --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -1568,7 +1568,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture react-component-function-declaration --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture react-component-function-declaration --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -1594,7 +1594,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture react-component-function-overloads --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture react-component-function-overloads --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -1620,7 +1620,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture react-component-function-variable --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture react-component-function-variable --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -1646,7 +1646,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture react-component-generic-function-overloads --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture react-component-generic-function-overloads --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -1672,7 +1672,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture react-component-overload-any-callback-deduplication --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture react-component-overload-any-callback-deduplication --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -1716,7 +1716,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture react-component-render-callback-props --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture react-component-render-callback-props --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -1743,7 +1743,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture react-component-return-types --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture react-component-return-types --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -1769,7 +1769,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture react-component-union-variants --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture react-component-union-variants --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -1811,7 +1811,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture react-event-handlers --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture react-event-handlers --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -1837,7 +1837,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture react-forward-ref-component --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture react-forward-ref-component --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -1864,7 +1864,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture react-forward-ref-union-props --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture react-forward-ref-union-props --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -1892,7 +1892,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture react-hook-arrow-function --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture react-hook-arrow-function --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -1918,7 +1918,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture react-hook-function-declaration --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture react-hook-function-declaration --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -1944,7 +1944,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture react-hook-function-expression --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture react-hook-function-expression --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -1970,7 +1970,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture react-hook-multiple-parameters --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture react-hook-multiple-parameters --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -1996,7 +1996,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture react-hook-overload-signatures --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture react-hook-overload-signatures --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -2022,7 +2022,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture react-memo-component --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture react-memo-component --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -2049,7 +2049,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture react-mui-overridable-component --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture react-mui-overridable-component --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -2206,7 +2206,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture react-props-callback-types --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture react-props-callback-types --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -2232,7 +2232,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture react-props-literal-types --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture react-props-literal-types --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -2258,7 +2258,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture react-props-optional-types --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture react-props-optional-types --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -2284,7 +2284,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture react-refs --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture react-refs --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -2311,7 +2311,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture readonly-array-mapped-alias-wrapped --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture readonly-array-mapped-alias-wrapped --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -2337,7 +2337,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture readonly-array-mapped-type --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture readonly-array-mapped-type --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -2363,7 +2363,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture readonly-array-mapped-type-any-value --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture readonly-array-mapped-type-any-value --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -2389,7 +2389,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture readonly-array-mapped-type-as-clause --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture readonly-array-mapped-type-as-clause --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -2415,7 +2415,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture readonly-array-mapped-type-key-no-default --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture readonly-array-mapped-type-key-no-default --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -2441,7 +2441,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture readonly-array-mapped-type-literal-key --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture readonly-array-mapped-type-literal-key --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -2467,7 +2467,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture readonly-array-mapped-type-non-optional --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture readonly-array-mapped-type-non-optional --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -2493,7 +2493,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture readonly-array-mapped-type-number-key --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture readonly-array-mapped-type-number-key --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -2519,7 +2519,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture readonly-array-mapped-type-plus-optional --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture readonly-array-mapped-type-plus-optional --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -2545,7 +2545,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture readonly-array-mapped-type-strip-optional --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture readonly-array-mapped-type-strip-optional --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -2571,7 +2571,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture readonly-array-mapped-type-template-literal-constraint --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture readonly-array-mapped-type-template-literal-constraint --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -2597,7 +2597,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture readonly-array-mapped-type-union-default --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture readonly-array-mapped-type-union-default --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -2623,7 +2623,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture readonly-array-mapped-type-value-no-default --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture readonly-array-mapped-type-value-no-default --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -2649,7 +2649,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture readonly-array-mapped-type-with-concrete-props --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture readonly-array-mapped-type-with-concrete-props --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -2675,7 +2675,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture symbol-double-underscore-name-preservation --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture symbol-double-underscore-name-preservation --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -2719,7 +2719,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture type-alias-basic-resolution --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture type-alias-basic-resolution --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -2746,7 +2746,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture type-alias-export-preservation --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture type-alias-export-preservation --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -2772,7 +2772,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture type-alias-generic-argument-resolution --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture type-alias-generic-argument-resolution --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -2798,7 +2798,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture type-alias-union-member-resolution --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture type-alias-union-member-resolution --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -2824,7 +2824,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture type-array-syntax-resolution --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture type-array-syntax-resolution --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -2850,7 +2850,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture type-conditional-return-and-props --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture type-conditional-return-and-props --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -2876,7 +2876,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture type-cycle-recursive-resolution --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture type-cycle-recursive-resolution --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -2902,7 +2902,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture type-extract-utility-resolution --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture type-extract-utility-resolution --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -2928,7 +2928,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture type-index-signature-resolution --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture type-index-signature-resolution --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -2954,7 +2954,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture type-indexed-access-union-resolution --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture type-indexed-access-union-resolution --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -2980,7 +2980,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture type-intersection-resolution --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture type-intersection-resolution --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -3006,7 +3006,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture type-intrinsic-props-resolution --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture type-intrinsic-props-resolution --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -3032,7 +3032,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture type-literal-union-resolution --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture type-literal-union-resolution --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -3059,7 +3059,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture type-never-resolution --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture type-never-resolution --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -3085,7 +3085,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture type-object-shape-resolution --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture type-object-shape-resolution --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -3111,7 +3111,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture type-record-resolution --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture type-record-resolution --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -3137,7 +3137,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture type-reference-vs-inline-resolution --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture type-reference-vs-inline-resolution --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -3163,7 +3163,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture type-tuple-resolution --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture type-tuple-resolution --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -3189,7 +3189,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture type-union-object-props-resolution --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture type-union-object-props-resolution --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -3215,7 +3215,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture type-utility-types-resolution --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture type-utility-types-resolution --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -3241,7 +3241,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture union-any-wildcard-order --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture union-any-wildcard-order --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -3267,7 +3267,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture union-never-reduction --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture union-never-reduction --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },
@@ -3293,7 +3293,7 @@
       "typecheck": {
         "status": "pass",
         "strategy": "direct-input",
-        "command": "node scripts/issue-14-typecheck.ts --fixture unresolved-indexed-access-fallback --pretty false",
+        "command": "node scripts/conformance/typecheck.ts --fixture unresolved-indexed-access-fallback --pretty false",
         "diagnosticCount": 0,
         "diagnostics": []
       },

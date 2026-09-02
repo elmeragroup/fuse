@@ -2,8 +2,8 @@ import { cpSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
+import { failedFixtureIndices } from "../scripts/conformance/report.ts";
 import { issue14FixtureManifest } from "../scripts/fixture-evidence.ts";
-import { failedFixtureIndices } from "../scripts/issue-14-conformance.ts";
 import {
   pinnedFixturePathUniverse,
   pinnedUpstream,

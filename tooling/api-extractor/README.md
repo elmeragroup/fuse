@@ -90,7 +90,8 @@ oracle ownership, warning evidence, issue membership, type-check strategy, timin
 package execution. Scripts and tests derive their ordered views from that catalog; do not add a
 second fixture list.
 
-The full conformance view contains 116 copied upstream fixtures:
+The full conformance view contains 116 fixtures ported from upstream: 97 whose oracle is unchanged
+and 19 with a reviewed TypeScript 7 divergence. Their evidence files are:
 
 - `output.json` is immutable upstream evidence from
   `michaldudak/typescript-api-extractor@e145350`. No local command may rewrite or alias it.
@@ -115,10 +116,10 @@ pnpm run report:conformance
 pnpm run report:warnings
 
 # Refresh selected warning fixtures only.
-node scripts/issue-14-conformance.ts --write-warnings <fixture-name> ...
+node scripts/conformance/report.ts --write-warnings <fixture-name> ...
 
 # Refresh a selected, pre-classified TypeScript 7 module divergence.
-node scripts/issue-14-conformance.ts --write-ts7 <fixture-name> ...
+node scripts/conformance/report.ts --write-ts7 <fixture-name> ...
 ```
 
 Every write command requires the appropriate reviewed evidence and uses
@@ -136,8 +137,8 @@ The ignored reference checkout must be clean, at the pinned commit, and have the
 universe. To inspect it without writing evidence:
 
 ```sh
-node scripts/issue-14-conformance.ts --audit-reference
-node scripts/issue-14-conformance.ts --audit-reference --reference-required
+node scripts/conformance/report.ts --audit-reference
+node scripts/conformance/report.ts --audit-reference --reference-required
 ```
 
 ## Local checks
@@ -148,40 +149,30 @@ Run the complete package gate before opening a review:
 pnpm run check:all
 ```
 
-The component commands are useful while iterating:
-
-```sh
-pnpm run format:check
-pnpm run lint
-pnpm run build
-pnpm run type-check
-pnpm run test
-pnpm run check:catalog
-pnpm run check:boundary
-pnpm run test:fixtures
-pnpm run test:conformance
-pnpm run test:timing
-pnpm run test:timing:issue14
-pnpm run test:timing:external-selection
-```
+`check:all` is `format:check`, `lint`, `build`, `type-check`, `test` and then `ci:checks`, the
+evidence half (catalog, boundary, fixture type-checks, conformance and the three timing plans). The
+individual commands are listed in `package.json`; run the one that covers what you changed while
+iterating.
 
 When a change can affect the docs API shadow, also run from the repository root:
 
 ```sh
 pnpm --filter docs test:shadow
-pnpm --filter docs build
+pnpm --filter docs generate
 ```
 
-Timing reports are evidence, not benchmarks. Deterministic counters must match exactly;
-scheduler-sensitive durations and byte observations must stay finite and non-negative, and the
-recorded aggregate stop condition must pass. Issue 02 check mode also enforces per-fixture
-request-count and bytes-received ceilings so a dense walk cannot trade one for a megabyte dump.
-Refresh timing only after reviewing the semantic output and the reason for a timing change:
+The shadow compares the current docs generator with this extractor over every component page and
+stores the reviewed difference set in `apps/docs/test/api-shadow.snapshot.json`. After a deliberate
+change on either side, review the differences and run `pnpm --filter docs shadow:update`.
 
-```sh
-pnpm run report:timing
-pnpm run report:timing:issue14
-```
+Timing reports are evidence, not benchmarks. `scripts/timing.ts --plan <issue02|issue14|externalSelection>`
+runs one plan. Deterministic counters must match exactly; scheduler-sensitive durations and byte
+observations must stay finite and non-negative, and the recorded aggregate stop condition must pass.
+The Issue 02 plan also enforces per-fixture request-count and bytes-received ceilings from the
+catalog so a dense walk cannot trade one for a megabyte dump. `test/fixtures/issue-02-timing.json`
+is the immutable pre-optimization baseline the Issue 14 plan measures against; only its ceiling
+metadata moves with the catalog. Refresh the Issue 14 report (`report:timing:issue14`) only after
+reviewing the semantic output and the reason for a timing change.
 
 ## Common maintenance
 

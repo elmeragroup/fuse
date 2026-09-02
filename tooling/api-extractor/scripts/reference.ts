@@ -1,7 +1,9 @@
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, lstatSync, readdirSync, readFileSync, realpathSync } from "node:fs";
-import { join, relative, resolve } from "node:path";
+import { existsSync, lstatSync, readdirSync, realpathSync } from "node:fs";
+import { join, resolve } from "node:path";
+
+import { posixRelative, sha256File } from "./files.ts";
 
 /** The only accepted upstream identity for copied fixture evidence. */
 export const pinnedUpstream = {
@@ -59,14 +61,6 @@ function filesRecursively(root: string): readonly string[] {
     else if (lstatSync(path).isFile()) result.push(path);
   }
   return result.sort();
-}
-
-function sha256(path: string): string {
-  return createHash("sha256").update(readFileSync(path)).digest("hex");
-}
-
-function normalizedRelative(root: string, path: string): string {
-  return relative(root, path).replaceAll("\\", "/");
 }
 
 function pathUniverseDigest(paths: readonly string[]): string {
@@ -151,7 +145,7 @@ function assertCleanPinnedCheckout(referenceRoot: string): void {
 
 function assertPhysicalPathUniverse(referenceFixtureRoot: string): readonly string[] {
   const paths = filesRecursively(referenceFixtureRoot)
-    .map((path) => normalizedRelative(referenceFixtureRoot, path))
+    .map((path) => posixRelative(referenceFixtureRoot, path))
     .sort();
   try {
     validatePinnedFixturePathUniverse(paths);
@@ -207,7 +201,7 @@ export function auditPinnedReference(
   const referenceRelativePaths = assertPhysicalPathUniverse(referenceFixtureRoot);
   const referenceFiles = referenceRelativePaths.map((path) => join(referenceFixtureRoot, path));
   const referenceByRelative = new Map(
-    referenceFiles.map((path) => [normalizedRelative(referenceFixtureRoot, path), path])
+    referenceFiles.map((path) => [posixRelative(referenceFixtureRoot, path), path])
   );
   const referenceFixtureNames = new Set(referenceRelativePaths.map((path) => path.split("/")[0]));
   if (referenceFixtureNames.size !== 116) {
@@ -216,7 +210,7 @@ export function auditPinnedReference(
     );
   }
   const localFiles = filesRecursively(localRoot).filter((path) => {
-    const relativePath = normalizedRelative(localRoot, path);
+    const relativePath = posixRelative(localRoot, path);
     const fixtureName = relativePath.split("/")[0];
     return (
       fixtureName !== undefined &&
@@ -224,11 +218,11 @@ export function auditPinnedReference(
       !isGeneratedFixtureFile(relativePath)
     );
   });
-  const localByRelative = new Map(localFiles.map((path) => [normalizedRelative(localRoot, path), path]));
+  const localByRelative = new Map(localFiles.map((path) => [posixRelative(localRoot, path), path]));
   for (const [path, referencePath] of referenceByRelative) {
     const localPath = localByRelative.get(path);
     if (localPath === undefined) throw new Error(`Copied upstream file is missing: ${path}`);
-    if (sha256(localPath) !== sha256(referencePath)) {
+    if (sha256File(localPath) !== sha256File(referencePath)) {
       throw new Error(`Copied upstream file bytes changed: ${path}`);
     }
   }

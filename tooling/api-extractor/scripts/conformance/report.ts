@@ -3,40 +3,43 @@
 import { Cause, Effect, Exit, Schema } from "effect";
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { createRequire } from "node:module";
-import { join, relative, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join, resolve } from "node:path";
 
-import { ExtractWarningSchema, ProjectExtractor } from "../src/index.ts";
-import type { ExtractWarning } from "../src/index.ts";
-import { writeArtifactBatchOrThrow } from "./artifact-batch-command.ts";
-import type { ArtifactBatchItem } from "./artifact-batch-writer.ts";
-import { fixtureEvidenceCatalog } from "./fixture-catalog.ts";
+import { ExtractWarningSchema, ProjectExtractor } from "../../src/index.ts";
+import type { ExtractWarning } from "../../src/index.ts";
+import { writeArtifactBatchOrThrow } from "../artifact-batch-writer.ts";
+import type { ArtifactBatchItem } from "../artifact-batch-writer.ts";
+import { runIfMain } from "../cli.ts";
+import { fixtureEvidenceCatalog } from "../fixture-catalog.ts";
 import {
   assertTs7DivergenceEvidence,
   canonicalDifferencePaths,
   differenceDigest,
   issue14FixtureManifest,
   issue14TypeScript7Compiler,
+  decodeJson,
   normalizeWarnings,
-} from "./fixture-evidence.ts";
-import type { Issue14Fixture } from "./fixture-evidence.ts";
-import { createFixtureFileSystem } from "./fixture-filesystem.ts";
-import { deriveWarningEvidencePlan } from "./fixture-views.ts";
+  packageVersion,
+  posixRelative,
+  sha256File,
+} from "../fixture-evidence.ts";
+import type { Issue14Fixture } from "../fixture-evidence.ts";
+import { createFixtureFileSystem } from "../fixture-filesystem.ts";
+import { deriveWarningEvidencePlan } from "../fixture-views.ts";
+import { auditPinnedReference, pinnedFixturePathUniverse, pinnedUpstream } from "../reference.ts";
+import { issue14ConformanceCommand, issue14SelectedOracleFile } from "./contract.ts";
 import {
   assertConformanceDecoded,
   assertReferenceEvidence,
   assertStoredReport,
   assertStoredReportDecoded,
   summarizeFixtureRun,
-} from "./issue-14-conformance-invariants.ts";
-import type { ConformanceInvariantOptions } from "./issue-14-conformance-invariants.ts";
-import { issue14ConformanceCommand, issue14SelectedOracleFile } from "./issue-14-contract.ts";
-import { typecheckFixture } from "./issue-14-typecheck.ts";
-import type { TypecheckResult } from "./issue-14-typecheck.ts";
-import { auditPinnedReference, pinnedFixturePathUniverse, pinnedUpstream } from "./reference.ts";
+} from "./invariants.ts";
+import type { ConformanceInvariantOptions } from "./invariants.ts";
+import { typecheckFixture } from "./typecheck.ts";
+import type { TypecheckResult } from "./typecheck.ts";
 
-const packageDirectory = resolve(import.meta.dirname, "..");
+const packageDirectory = resolve(import.meta.dirname, "../..");
 const fixtureDirectory = join(packageDirectory, "test/fixtures");
 const configPath = join(fixtureDirectory, "issue-14-tsconfig.json");
 const reportPath = join(fixtureDirectory, "issue-14-conformance.json");
@@ -47,9 +50,8 @@ async function writeEvidenceBatch(artifacts: readonly ArtifactBatchItem[]): Prom
   await writeArtifactBatchOrThrow({ outputRoot: fixtureDirectory, artifacts }, "Issue 14 evidence write");
 }
 
-export { issue14ConformanceCommand } from "./issue-14-contract.ts";
-export { assertStoredReport } from "./issue-14-conformance-invariants.ts";
-export { summarizeFixtureRun } from "./issue-14-conformance-invariants.ts";
+export { issue14ConformanceCommand } from "./contract.ts";
+export { assertStoredReport, summarizeFixtureRun } from "./invariants.ts";
 
 type AdditionalTs7Evidence = {
   readonly code: string;
@@ -229,13 +231,6 @@ export type FixtureExtractionValue = {
  */
 export type FixtureExtraction = (inputPath: string) => Effect.Effect<FixtureExtractionValue, unknown>;
 
-function packageVersion(packageName: string): string {
-  const require = createRequire(import.meta.url);
-  // SAFETY: package.json is a required dependency metadata file and its only consumed field is version.
-  const metadata = require(packageName + "/package.json") as { readonly version: string };
-  return metadata.version;
-}
-
 function assertCompilerIdentity(): void {
   const actual = "typescript@" + packageVersion("typescript");
   if (actual !== issue14TypeScript7Compiler) {
@@ -243,20 +238,12 @@ function assertCompilerIdentity(): void {
   }
 }
 
-function sha256(path: string): string {
-  return createHash("sha256").update(readFileSync(path)).digest("hex");
-}
-
 function relativeFixturePath(path: string): string {
-  return relative(fixtureDirectory, path).replaceAll("\\", "/");
+  return posixRelative(fixtureDirectory, path);
 }
 
 function manifestSha256(): string {
   return createHash("sha256").update(JSON.stringify(issue14FixtureManifest), "utf8").digest("hex");
-}
-
-function decodeJson(path: string): Schema.Json {
-  return Schema.decodeUnknownSync(Schema.Json)(JSON.parse(readFileSync(path, "utf8")));
 }
 
 function existingJsonIndent(path: string): string | number {
@@ -289,7 +276,7 @@ function failedExtraction(definition: Issue14Fixture, error: string): Extraction
   return {
     status: "failed",
     oracleFile,
-    selectedOracleSha256: sha256(selectedOraclePath),
+    selectedOracleSha256: sha256File(selectedOraclePath),
     differenceCount: 0,
     differenceDigest: differenceDigest([]),
     upstreamDifferenceCount: 0,
@@ -332,7 +319,7 @@ function compareFixtureExtraction(
       return {
         status: "failed",
         oracleFile,
-        selectedOracleSha256: sha256(selectedOraclePath),
+        selectedOracleSha256: sha256File(selectedOraclePath),
         differenceCount: differences.length,
         differenceDigest: differenceDigest(differences),
         upstreamDifferenceCount: upstreamDifferences.length,
@@ -353,7 +340,7 @@ function compareFixtureExtraction(
     return {
       status: differences.length === 0 ? "match" : "failed",
       oracleFile,
-      selectedOracleSha256: sha256(selectedOraclePath),
+      selectedOracleSha256: sha256File(selectedOraclePath),
       differenceCount: differences.length,
       differenceDigest: differenceDigest(differences),
       upstreamDifferenceCount: upstreamDifferences.length,
@@ -687,8 +674,8 @@ function reportFrom(
       fixture: definition.fixture,
       input: definition.file,
       disposition: definition.disposition,
-      inputSha256: sha256(inputPath),
-      upstreamOracleSha256: sha256(join(fixtureDirectory, definition.fixture, "output.json")),
+      inputSha256: sha256File(inputPath),
+      upstreamOracleSha256: sha256File(join(fixtureDirectory, definition.fixture, "output.json")),
       typecheck,
       extraction,
     };
@@ -814,6 +801,4 @@ async function main(): Promise<void> {
   );
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  await main();
-}
+await runIfMain(import.meta.url, main);

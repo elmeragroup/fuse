@@ -12,8 +12,8 @@ import {
   timingToleranceMs,
   TimingCommandOutputSchema,
   timingCommandOutput,
-} from "../scripts/issue-14-timing.ts";
-import type { Issue14TimingReport } from "../scripts/issue-14-timing.ts";
+} from "../scripts/timing/issue14.ts";
+import type { Issue14TimingReport } from "../scripts/timing/issue14.ts";
 
 const reportPath = resolve(import.meta.dirname, "fixtures/issue-14-timing.json");
 

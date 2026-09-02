@@ -1,7 +1,7 @@
 /** Stable identity strings shared by the Issue 14 evidence producers and validators. */
-export const issue14ConformanceCommand = "node scripts/issue-14-conformance.ts --check" as const;
+export const issue14ConformanceCommand = "node scripts/conformance/report.ts --check" as const;
 export const issue14TimingCommand =
-  "fnm exec --using 24.13.0 -- node scripts/issue-14-timing.ts --check" as const;
+  "fnm exec --using 24.13.0 -- node scripts/timing.ts --plan issue14 --check" as const;
 export const issue14NodeVersion = "24.13.0" as const;
 export const issue14CompilerVersion = "typescript@7.0.2" as const;
 export const issue14TimingStableContract = "semantic-counters-exact" as const;
@@ -24,5 +24,5 @@ export function issue14SelectedOracleFile(definition: Issue14Fixture): "output.j
 // compiler argv used to execute it. Re-exporting keeps all evidence consumers
 // on that single owner without making the contract module another source of
 // command drift.
-export { issue14TypecheckCommand, issue14TypecheckStrategy } from "./issue-14-typecheck.ts";
-import type { Issue14Fixture } from "./fixture-views.ts";
+export { issue14TypecheckCommand, issue14TypecheckStrategy } from "./typecheck.ts";
+import type { Issue14Fixture } from "../fixture-views.ts";

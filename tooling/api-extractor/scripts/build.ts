@@ -1,7 +1,8 @@
 import { spawnSync } from "node:child_process";
 import { rmSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+
+import { runIfMain } from "./cli.ts";
 
 export function cleanPackageDist(distDirectory: string): void {
   rmSync(distDirectory, { recursive: true, force: true });
@@ -22,4 +23,4 @@ function buildPackage(): void {
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) buildPackage();
+await runIfMain(import.meta.url, buildPackage);

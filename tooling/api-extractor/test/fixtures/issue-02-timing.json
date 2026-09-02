@@ -1,6 +1,6 @@
 {
   "issue": "02-prove-compiler-boundary",
-  "command": "fnm exec --using 24.13.0 -- node scripts/issue-02-timing.ts --check",
+  "command": "fnm exec --using 24.13.0 -- node scripts/timing.ts --plan issue02 --check",
   "runtime": {
     "node": "24.13.0",
     "compiler": "typescript@7.0.2"

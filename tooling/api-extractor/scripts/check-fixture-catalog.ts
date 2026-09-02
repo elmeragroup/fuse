@@ -1,5 +1,4 @@
-import { fileURLToPath } from "node:url";
-
+import { runIfMain } from "./cli.ts";
 import { fixtureEvidenceCatalog, validateFixtureEvidenceCatalog } from "./fixture-catalog.ts";
 import { packageFixtureExecutionPlan, packageFixtureTypecheckPlan } from "./fixture-plans.ts";
 
@@ -17,6 +16,6 @@ export function checkFixtureCatalog() {
   };
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+await runIfMain(import.meta.url, () => {
   console.log(JSON.stringify({ ...checkFixtureCatalog(), status: "pass" }));
-}
+});

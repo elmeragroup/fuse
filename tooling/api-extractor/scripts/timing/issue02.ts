@@ -1,11 +1,6 @@
-import { Effect } from "effect";
-import { createRequire } from "node:module";
 import { join } from "node:path";
 
-import { InternalProjectExtractorTiming, timedProjectExtractorLayer } from "../src/internal/timing.ts";
-import type { TimedExtraction } from "../src/internal/timing.ts";
-import { writeArtifactBatchOrThrow } from "./artifact-batch-command.ts";
-import { checkBoundary } from "./check-boundary.ts";
+import { writeArtifactBatchOrThrow } from "../artifact-batch-writer.ts";
 import {
   assertBytesReceivedBudget,
   assertFetchedToMaterializedRatioBudget,
@@ -20,16 +15,13 @@ import {
   issue02SupplementalFixtures,
   issue02TimingBudget,
   issue02TimingFixtures,
+  packageVersion,
   readGoNoGoArtifact,
   readTimingReport,
   validateGoNoGoFixtureMatrix,
-} from "./fixture-evidence.ts";
-import type { GoNoGoArtifact, TimingReport } from "./fixture-evidence.ts";
-
-type BoundaryStatuses = {
-  readonly backendLeakage: "clear" | "triggered";
-  readonly durableContractLeakage: "clear" | "triggered";
-};
+} from "../fixture-evidence.ts";
+import type { GoNoGoArtifact, TimingReport } from "../fixture-evidence.ts";
+import { boundaryStatuses, timedExtraction } from "./shared.ts";
 
 const reportPath = join(fixtureDirectory, "issue-02-timing.json");
 const goNoGoPath = join(fixtureDirectory, "issue-02-go-no-go.json");
@@ -50,36 +42,9 @@ const stopConditionEvidence = {
     "aggregate roundTripMs is measured across all four sequential boundary fixtures and compared with the 1000ms stop threshold",
 } as const;
 
-function packageVersion(packageName: string): string {
-  const require = createRequire(import.meta.url);
-  // SAFETY: package.json is loaded from the installed dependency's package boundary.
-  const metadata = require(packageName + "/package.json") as { readonly version: string };
-  return metadata.version;
-}
-
-function boundaryStatuses(): BoundaryStatuses {
-  try {
-    checkBoundary();
-    return { backendLeakage: "clear", durableContractLeakage: "clear" };
-  } catch {
-    return { backendLeakage: "triggered", durableContractLeakage: "triggered" };
-  }
-}
-
-function timedExtraction(inputPath: string): Promise<TimedExtraction> {
-  return Effect.runPromise(
-    Effect.scoped(
-      Effect.gen(function* () {
-        const timing = yield* InternalProjectExtractorTiming;
-        return yield* timing.extractModule(inputPath);
-      }).pipe(Effect.provide(timedProjectExtractorLayer({ tsconfigPath })))
-    )
-  );
-}
-
 async function verifySupplementalFixtures(): Promise<void> {
   for (const definition of issue02SupplementalFixtures) {
-    const extraction = await timedExtraction(fixtureInputPath(definition));
+    const extraction = await timedExtraction(tsconfigPath, fixtureInputPath(definition));
     assertSupplementalFixture(definition, extraction.result);
   }
 }
@@ -89,7 +54,7 @@ async function collectSamples(): Promise<TimingReport["samples"]> {
   // intentionally a separate, immutable baseline consumed by Issue 14.
   const result: Array<TimingReport["samples"][number]> = [];
   for (const definition of issue02TimingFixtures) {
-    const extraction = await timedExtraction(fixtureInputPath(definition));
+    const extraction = await timedExtraction(tsconfigPath, fixtureInputPath(definition));
     assertFixtureOracle(definition, extraction.result);
     result.push({
       fixture: definition.fixture,
@@ -117,7 +82,7 @@ function reportFrom(samples: TimingReport["samples"]): TimingReport {
   const ipcStatus = measuredAggregateRoundTripMs <= maxAggregateRoundTripMs ? "not-triggered" : "triggered";
   return {
     issue: "02-prove-compiler-boundary",
-    command: "fnm exec --using 24.13.0 -- node scripts/issue-02-timing.ts --check",
+    command: "fnm exec --using 24.13.0 -- node scripts/timing.ts --plan issue02 --check",
     runtime: {
       node: process.versions.node,
       compiler: "typescript@" + packageVersion("typescript"),
@@ -298,25 +263,25 @@ function checkStoredReport(stored: TimingReport, measured: TimingReport, goNoGo:
   checkGoNoGoArtifact(goNoGo, measured);
 }
 
-if (process.versions.node !== "24.13.0") {
-  throw new Error("Issue 02 timing evidence requires Node 24.13.0, got " + process.versions.node);
-}
-const measured = reportFrom(await collectSamples());
-if (process.argv.includes("--write")) {
-  await writeArtifactBatchOrThrow(
-    {
-      outputRoot: fixtureDirectory,
-      artifacts: [
-        {
-          destination: "issue-02-timing.json",
-          content: `${JSON.stringify(measured, null, 2)}\n`,
-          evidence: "generated",
-        },
-      ],
-    },
-    "Issue 02 timing artifact write"
-  );
-} else {
+/** Measures the live Issue 02 report; `--write` stores it, `--check` compares it with the stored evidence. */
+export async function runIssue02Timing(mode: "check" | "write"): Promise<void> {
+  const measured = reportFrom(await collectSamples());
+  if (mode === "write") {
+    await writeArtifactBatchOrThrow(
+      {
+        outputRoot: fixtureDirectory,
+        artifacts: [
+          {
+            destination: "issue-02-timing.json",
+            content: `${JSON.stringify(measured, null, 2)}\n`,
+            evidence: "generated",
+          },
+        ],
+      },
+      "Issue 02 timing artifact write"
+    );
+    return;
+  }
   const stored = readTimingReport(reportPath);
   const goNoGo = readGoNoGoArtifact(goNoGoPath);
   checkStoredReport(stored, measured, goNoGo);

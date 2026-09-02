@@ -8,12 +8,12 @@ import { describe, expect, it } from "vitest";
 import {
   LiveBudgetTimingCommandOutputSchema,
   PortabilityTimingCommandOutputSchema,
-} from "../scripts/issue-14-timing.ts";
+} from "../scripts/timing/issue14.ts";
 
 const packageDirectory = resolve(import.meta.dirname, "..");
 const repositoryDirectory = resolve(packageDirectory, "../..");
-const packageRelativeScript = "scripts/issue-14-timing.ts";
-const repositoryRelativeScript = "tooling/api-extractor/scripts/issue-14-timing.ts";
+const packageRelativeScript = "scripts/timing.ts";
+const repositoryRelativeScript = "tooling/api-extractor/scripts/timing.ts";
 const childCommandTimeoutMs = 15_000;
 const relocatedCheckoutTestTimeoutMs = childCommandTimeoutMs * 3 + 15_000;
 
@@ -26,7 +26,7 @@ function runTimingCommand(
   script: string,
   mode: "--check" | "--check-portability"
 ): TimingCommandJson {
-  const result = spawnSync(process.execPath, [script, mode], {
+  const result = spawnSync(process.execPath, [script, "--plan", "issue14", mode], {
     cwd,
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
@@ -45,12 +45,16 @@ function runPortabilityTimingCommand(cwd: string, script: string): PortabilityTi
 
 describe("timing command portability", () => {
   it("keeps the portability check distinct from the live budget check", () => {
-    const result = spawnSync(process.execPath, [packageRelativeScript, "--check", "--check-portability"], {
-      cwd: packageDirectory,
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "pipe"],
-      timeout: childCommandTimeoutMs,
-    });
+    const result = spawnSync(
+      process.execPath,
+      [packageRelativeScript, "--plan", "issue14", "--check", "--check-portability"],
+      {
+        cwd: packageDirectory,
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "pipe"],
+        timeout: childCommandTimeoutMs,
+      }
+    );
 
     expect(result.error, result.stderr).toBeUndefined();
     expect(result.status).toBe(1);

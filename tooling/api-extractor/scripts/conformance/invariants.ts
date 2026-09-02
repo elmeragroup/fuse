@@ -3,7 +3,7 @@
 
 import { Schema } from "effect";
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 
 import {
@@ -11,28 +11,22 @@ import {
   canonicalDifferencePaths,
   differenceDigest,
   fixtureDirectory,
-} from "./fixture-evidence.ts";
-import { issue14FixtureManifest } from "./fixture-views.ts";
-import type { Issue14Fixture } from "./fixture-views.ts";
-import type { Issue14ConformanceReport } from "./issue-14-conformance.ts";
+  decodeJson,
+  sha256File,
+} from "../fixture-evidence.ts";
+import { issue14FixtureManifest } from "../fixture-views.ts";
+import type { Issue14Fixture } from "../fixture-views.ts";
+import { pinnedFixturePathUniverse, pinnedUpstream, skippedPathUniverseSha256 } from "../reference.ts";
 import {
   issue14ConformanceCommand,
   issue14SelectedOracleFile,
   issue14TypecheckCommand,
   issue14TypecheckStrategy,
-} from "./issue-14-contract.ts";
-import { pinnedFixturePathUniverse, pinnedUpstream, skippedPathUniverseSha256 } from "./reference.ts";
+} from "./contract.ts";
+import type { Issue14ConformanceReport } from "./report.ts";
 
 const expectedFixtureCount = 116;
 const emptyDifferenceDigest = differenceDigest([]);
-
-function sha256(path: string): string {
-  return createHash("sha256").update(readFileSync(path)).digest("hex");
-}
-
-function decodeJson(path: string): Schema.Json {
-  return Schema.decodeUnknownSync(Schema.Json)(JSON.parse(readFileSync(path, "utf8")));
-}
 
 function warningOraclePathAt(fixtureRoot: string, fixture: string): string | undefined {
   const path = join(fixtureRoot, fixture, "warnings.tsgo.json");
@@ -162,9 +156,9 @@ function assertFixtureRecord(
     record.fixture !== definition.fixture ||
     record.input !== definition.file ||
     record.disposition !== definition.disposition ||
-    record.inputSha256 !== sha256(inputPath) ||
-    record.upstreamOracleSha256 !== sha256(upstreamPath) ||
-    record.extraction.selectedOracleSha256 !== sha256(selectedOraclePath)
+    record.inputSha256 !== sha256File(inputPath) ||
+    record.upstreamOracleSha256 !== sha256File(upstreamPath) ||
+    record.extraction.selectedOracleSha256 !== sha256File(selectedOraclePath)
   ) {
     throw new Error(`Issue 14 persisted fixture identity or hash is stale at index ${index}.`);
   }

@@ -1,18 +1,18 @@
 import { spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
-import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 
-import { issue14TypecheckPlan } from "./fixture-plans.ts";
-import { issue14FixtureManifest } from "./fixture-views.ts";
-import type { Issue14Fixture } from "./fixture-views.ts";
+import { runIfMain } from "../cli.ts";
+import { packageVersion } from "../fixture-evidence.ts";
+import { issue14TypecheckPlan } from "../fixture-plans.ts";
+import { issue14FixtureManifest } from "../fixture-views.ts";
+import type { Issue14Fixture } from "../fixture-views.ts";
 
-const packageDirectory = resolve(import.meta.dirname, "..");
+const packageDirectory = resolve(import.meta.dirname, "../..");
 const fixtureDirectory = join(packageDirectory, "test/fixtures");
 const compilerScript = resolve(packageDirectory, "node_modules/typescript/bin/tsc");
-const typecheckCommandPrefix = "node scripts/issue-14-typecheck.ts" as const;
+const typecheckCommandPrefix = "node scripts/conformance/typecheck.ts" as const;
 const typecheckCompilerOptions = [
   "--ignoreConfig",
   "--noEmit",
@@ -102,13 +102,6 @@ export function typecheckFixture(definition: Issue14Fixture): TypecheckResult {
     : runTsc(definition, inputPath, packageDirectory);
 }
 
-function packageVersion(packageName: string): string {
-  const require = createRequire(import.meta.url);
-  // SAFETY: package.json is a required dependency metadata file and its only consumed field is version.
-  const metadata = require(packageName + "/package.json") as { readonly version: string };
-  return metadata.version;
-}
-
 function cliFixture(): Issue14Fixture {
   const fixtureName = process.argv[process.argv.indexOf("--fixture") + 1];
   const definition = issue14FixtureManifest.find((candidate) => candidate.fixture === fixtureName);
@@ -128,4 +121,4 @@ function main(): void {
   if (result.status !== "pass") process.exitCode = 1;
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) main();
+await runIfMain(import.meta.url, main);
