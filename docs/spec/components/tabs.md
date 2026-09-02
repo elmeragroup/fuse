@@ -43,7 +43,7 @@ Root establishes the `group/tabs` Tailwind group scope; List establishes `group/
 
 ### Tabs.List
 
-`ComponentProps<typeof TabsPrimitive.List> & VariantProps<typeof tabsListVariants>` — pass-through includes `loopFocus`, `render`. _(Amended 2026-09-02: the primitive prop is `loopFocus`, not `loop`.)_
+`ComponentProps<typeof TabsPrimitive.List> & VariantProps<typeof tabsListVariants>` — pass-through includes `loopFocus`, `render`. _(Amended 2026-09-02, §8.8: the primitive prop is `loopFocus`, not `loop`.)_
 
 | Prop              | Type                  | Default     | Notes                                                                                                                                                                   |
 | ----------------- | --------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

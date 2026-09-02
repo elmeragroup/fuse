@@ -87,7 +87,7 @@ Fixed styling: track `h-1.5 rounded-full bg-muted` with transparent inset outlin
 - base-ui `Meter.Root` renders `role="meter"` with `aria-valuenow`/`aria-valuemin`/`aria-valuemax` and `aria-valuetext` (customizable via `format`/`getAriaValueText` pass-through).
 - `Meter.Label` is auto-associated with the root (`aria-labelledby`).
 - Read-only — no keyboard interaction surface.
-- Icons carry localized accessible names (`meter.warning`, `meter.success`) with explicit prop overrides; level color is never the sole signal in `default`/`success-only-when-full` because the icon accompanies every level above `LOW` (>80%). Forced-colors mode gets `bg-[Highlight]` on the fill.
+- Icons carry localized accessible names (`meter.warning`, `meter.success`) with explicit prop overrides; level color is never the sole signal in `default`/`success-only-when-full` because the icon accompanies every level above `LOW` (>80%). Forced-colors mode gets `bg-[Highlight]` on the fill. _(Amended 2026-09-02, §8.8: was `≥80%`, restated against the single level boundary.)_
 
 ## 8 Divergence from reference
 
@@ -109,7 +109,7 @@ No API divergence — `MeterProps` is identical to the ref.
 - **`getMeterLevel` unit tests** (thresholds): percentage ≤ 80 → `LOW`; 80 < p < 100 → `MEDIUM` (boundary: exactly 80 is `LOW`); p === 100 → `FULL`; `value > maxValue` with explicit `maxValue` → `EXCEEDED_MAX_VALUE`; no explicit `maxValue` → never `EXCEEDED_MAX_VALUE`; `max <= min` → percentage 0 → `LOW`.
 - Mode × level classes: spot-check each column of the §4 matrix via the emitted `data-slot="meter-bar-fill"` element's classes.
 - Icon behavior under an `ElmeraGroupUiProvider locale="en-US"`: `default` at 79% → no icon; at 85% → Warning (`getByLabelText("Warning")`); `success-only-when-full` at 100% → CheckCircle (`getByLabelText("Success")`); `inverted`/`neutral` → no icon at any value.
-- **Boundary (browser, by role/label)**: `default` at exactly 80% renders the `LOW` fill and no icon; at 81% the `MEDIUM` fill and the Warning icon appear together; a scaled `value={96} maxValue={120}` (80%) is likewise icon-free.
+- **Boundary (browser)**: icon presence by accessible name, fill through the same sanctioned `data-slot="meter-bar-fill"` class audit as the §4 matrix bullet above. `default` at exactly 80% renders the `LOW` fill and no Warning icon; at 81% the `MEDIUM` fill and the Warning icon appear together; a scaled `value={96} maxValue={120}` (80%) is likewise icon-free.
 - Warning/success labels render in all four locales; explicit overrides win.
 - All five `data-slot` attributes present.
 

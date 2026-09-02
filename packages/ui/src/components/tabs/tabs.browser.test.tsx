@@ -142,6 +142,14 @@ describe("Tabs", () => {
     await userEvent.keyboard("{Enter}");
     expect(htmlTab("Password").getAttribute("aria-selected")).toBe("true");
     await expect.element(page.getByRole("tabpanel", { name: "Password", exact: true })).toBeInTheDocument();
+
+    await userEvent.keyboard("{ArrowLeft}");
+    expect(document.activeElement).toBe(htmlTab("Account"));
+    expect(htmlTab("Password").getAttribute("aria-selected")).toBe("true");
+
+    await userEvent.keyboard(" ");
+    expect(htmlTab("Account").getAttribute("aria-selected")).toBe("true");
+    await expect.element(page.getByRole("tabpanel", { name: "Account", exact: true })).toBeInTheDocument();
   });
 
   it("stamps vertical orientation on Root and navigates with ArrowUp/ArrowDown", async () => {
