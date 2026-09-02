@@ -9,6 +9,7 @@ import { isParameterDeclaration } from "typescript/unstable/ast/is";
 import type { BackendDocumentation, BackendNodeReference, BackendSymbolHandle } from "../contracts.ts";
 import { authoredSymbolName } from "./class-facts.ts";
 import type { TsgoFactsSession } from "./facts.ts";
+import { isExternalSourceFile } from "./file-ownership.ts";
 
 /**
  * Documentation normalization for the whole adapter.
@@ -116,6 +117,7 @@ export function documentationOfSymbol(
 ): BackendDocumentation | undefined {
   const symbol = session.symbol(handle, "documentationOfSymbol");
   const resolvedDeclarations = symbol.declarations
+    .filter((candidate) => !isExternalSourceFile(candidate.path, session.sourceFileMetadata(candidate.path)))
     .map((candidate) => session.resolveNode(candidate))
     .filter((candidate): candidate is Node => candidate !== undefined);
   // A symbol declared several times (an overloaded function, for example)

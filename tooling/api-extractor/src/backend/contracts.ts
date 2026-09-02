@@ -114,16 +114,22 @@ export type BackendEnumFacts = {
 
 export type BackendSymbolFacts = {
   readonly name: string;
-  /** Alias-resolved identity; parser policy may compare this to a known API. */
-  readonly identity?: BackendSymbolIdentity;
-  /** Authored import/re-export origin, when the symbol has one. */
-  readonly moduleOrigin?: BackendModuleOrigin;
   readonly flags: readonly BackendSymbolFlag[];
   readonly declarationPaths: readonly string[];
   /** Repository-relative declaration paths for durable provenance output. */
   readonly repositoryRelativeDeclarationPaths?: readonly string[];
   readonly declarations: readonly BackendNodeHandle[];
   readonly valueDeclaration?: BackendNodeHandle;
+};
+
+/**
+ * Alias-resolved identity and authored import origin. Separate from
+ * `symbolFacts` so ordinary member loops do not pay `getAliasedSymbol` or
+ * origin resolution.
+ */
+export type BackendSymbolOrigin = {
+  readonly identity: BackendSymbolIdentity;
+  readonly moduleOrigin?: BackendModuleOrigin;
 };
 
 /**
@@ -295,9 +301,26 @@ export type BackendCompilerOperations = {
   readonly typeAtNode: (node: BackendNodeReference) => BackendTypeHandle | undefined;
   readonly typeFacts: (type: BackendTypeHandle) => BackendTypeFacts;
   readonly symbolFacts: (symbol: BackendSymbolHandle) => BackendSymbolFacts;
+  /**
+   * Alias-resolved identity and authored import origin. Ordinary `symbolFacts`
+   * reads must not pay `getAliasedSymbol` or origin resolution for this.
+   */
+  readonly symbolOrigin: (symbol: BackendSymbolHandle) => BackendSymbolOrigin;
+  /**
+   * Cheap parent-flags bit for object visibility. Not a `symbolFacts` field:
+   * ordinary symbol reads must not pay `getParent()` for this gate, and the
+   * record does not advertise the bit independently of identity or origin.
+   */
+  readonly declaringParentIsClass: (symbol: BackendSymbolHandle) => boolean;
   readonly documentationOfSymbol?: (symbol: BackendSymbolHandle) => BackendDocumentation | undefined;
   readonly enumFacts?: (type: BackendTypeHandle) => BackendEnumFacts | undefined;
   readonly nodeFacts: (node: BackendNodeReference) => BackendNodeFacts;
+  /**
+   * Declaration or type-node kind, always equal to `nodeFacts(node).kind`.
+   * Answered from the handle's compiler kind without resolving the AST, except
+   * for import-type handles, whose `typeof` form needs the resolved node.
+   */
+  readonly nodeKind: (node: BackendNodeReference) => BackendNodeFacts["kind"];
   readonly typeNameFacts: (
     type: BackendTypeHandle,
     sourceNode: BackendNodeReference | undefined

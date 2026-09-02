@@ -101,7 +101,7 @@ export function externalPolicy(input: ExternalPolicyInput): ExternalPolicyDecisi
     resolvedName !== undefined &&
     !isInternalSymbolName(resolvedName) &&
     resolvedInfo?.declarations.some(
-      (declaration) => context.operations.nodeFacts(declaration).kind === "interface"
+      (declaration) => context.operations.nodeKind(declaration) === "interface"
     ) === true;
   const rootDescriptorSurface = facts.symbol === undefined || resolvedIsExternalInterface;
   if (
@@ -165,5 +165,5 @@ export function isAllowedBuiltInExternal(type: BackendTypeHandle, context: Resol
   ) {
     return true;
   }
-  return isReactWrapperType(info) && isExternalSymbol(symbol, context);
+  return isReactWrapperType(context.operations.symbolOrigin(symbol)) && isExternalSymbol(symbol, context);
 }

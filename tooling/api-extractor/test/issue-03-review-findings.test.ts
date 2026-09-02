@@ -36,7 +36,15 @@ function synthesizedCompiler(): BackendCompilerOperations {
       symbol === synthesizedSymbol
         ? { name: "Synthesized", flags: [], declarationPaths: [], declarations: [] }
         : { name: "generated", flags: [], declarationPaths: [], declarations: [] },
+    symbolOrigin: (symbol) => ({
+      identity: {
+        name: symbol === synthesizedSymbol ? "Synthesized" : "generated",
+        namespaces: [],
+      },
+    }),
+    declaringParentIsClass: () => false,
     nodeFacts: () => ({ kind: "unknown", text: "", filePath: fakeInputPath, line: 1, column: 1 }),
+    nodeKind: () => "unknown",
     typeNameFacts: (type) => (type === synthesizedType ? { name: "Synthesized", namespaces: [] } : undefined),
     signaturesOfType: () => [],
     signatureFacts: () => ({ parameters: [], typeParameters: [] }),

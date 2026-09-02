@@ -309,7 +309,7 @@ function finiteTupleSource(
     return undefined;
   const body =
     unwrapAuthoredNode(declarationFacts.type, context, isContainerWrapper) ?? declarationFacts.type;
-  if (context.operations.nodeFacts(body).kind !== "tuple") return undefined;
+  if (context.operations.nodeKind(body) !== "tuple") return undefined;
   if (authoredArguments === undefined) {
     return finiteTupleSource(body, context, new Set([...visited, node]), inherited);
   }

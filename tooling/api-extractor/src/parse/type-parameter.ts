@@ -141,7 +141,7 @@ function declaredInfo(
       ? undefined
       : context.operations.nodeFacts(ownerDeclaration).typeParameters?.[index];
   const declaration =
-    owned !== undefined && context.operations.nodeFacts(owned).kind === "typeParameter"
+    owned !== undefined && context.operations.nodeKind(owned) === "typeParameter"
       ? owned
       : info?.declarations[0];
   return {

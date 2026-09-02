@@ -165,35 +165,7 @@ export function resolveObjectNode(
   const facts = context.operations.typeFacts(type);
   if (facts.isObject !== true) return undefined;
   const candidateProperties = context.operations.propertiesOfType(type);
-  // Apply structural/external policy before object resolution is asked for a
-  // decision. The inclusion callback is deliberately deferred until after
-  // shouldResolveObject so propertyCount describes the eligible shape.
   const properties = propertiesOfType(candidateProperties, type, context);
-  const hasLocalCandidate = properties.some(
-    (property) =>
-      context.operations.symbolFacts(property).declarations.length === 0 ||
-      !isExternalSymbol(property, context)
-  );
-  const indexSignature = selectIndexSignature(type, context);
-  const objectSymbol = facts.symbol === undefined ? undefined : context.operations.symbolFacts(facts.symbol);
-  const isReadonlyObject =
-    properties.length > 0 &&
-    properties.every((property) => {
-      const info = context.operations.symbolFacts(property);
-      const declarations = symbolDeclarations(info);
-      return (
-        declarations.length > 0 &&
-        declarations.every(
-          (declaration) =>
-            context.operations.nodeFacts(declaration).declarationFlags?.includes("readonly") === true
-        )
-      );
-    });
-  const hasAuthoredObjectSyntax =
-    sourceNode !== undefined &&
-    (context.operations.nodeFacts(sourceNode).kind === "intersection" ||
-      context.operations.nodeFacts(sourceNode).text === "object" ||
-      context.operations.nodeFacts(sourceNode).text.startsWith("{"));
   const resolveData = {
     name: typeNameValue?.name ?? "",
     propertyCount: properties.length,
@@ -211,6 +183,54 @@ export function resolveObjectNode(
     );
   }
   const shouldResolve = callbackDecision ?? defaultObjectResolution(resolveData);
+
+  // A named or authored object always has an exact shell to return when its
+  // expansion is declined. Keep every other fact read below this gate so the
+  // callback/default decision remains the first expensive parser-side work.
+  // A named type already supplies the anchor. Avoid even reading its authored
+  // node on the declined path; an anonymous shape is the only case where the
+  // syntax fact participates in classification.
+  const hasAuthoredObjectSyntax = typeNameValue === undefined && authoredObjectSyntax(sourceNode, context);
+  const isNamedOrAnchored = typeNameValue !== undefined || hasAuthoredObjectSyntax;
+  if (shouldResolve === false && isNamedOrAnchored) {
+    recordUnrepresentedConstructSignatures(type, context);
+    const indexSignature = selectIndexSignature(type, context);
+    return objectResult(
+      [],
+      typeNameValue,
+      indexSignature === undefined
+        ? undefined
+        : indexSignatureNode(indexSignature, type, context, resolveType)
+    );
+  }
+
+  // Class-origin modifier facts were paid for pre-gate because they are
+  // required for the exact public propertyCount; non-class members remain
+  // lazy.
+  const hasLocalCandidate = properties.some(
+    (property) =>
+      context.operations.symbolFacts(property).declarations.length === 0 ||
+      !isExternalSymbol(property, context)
+  );
+  const objectSymbol = facts.symbol === undefined ? undefined : context.operations.symbolFacts(facts.symbol);
+  const isReadonlyObject =
+    properties.length > 0 &&
+    properties.every((property) => {
+      const info = context.operations.symbolFacts(property);
+      const declarations = symbolDeclarations(info);
+      return (
+        declarations.length > 0 &&
+        declarations.every(
+          (declaration) =>
+            context.operations.nodeFacts(declaration).declarationFlags?.includes("readonly") === true
+        )
+      );
+    });
+  // The index-signature view is needed to decide whether an anonymous shape
+  // has an exact semantic anchor, and is part of every object result that
+  // survives that classification. It is therefore the one post-gate shape
+  // fact read for both expanded and declined anonymous objects.
+  const indexSignature = selectIndexSignature(type, context);
   // Each predicate records a different reason an anonymous object has no
   // anchor in the model. The compiler-internal predicate adds to the module
   // value one only while resolving a member of an authored intersection:
@@ -245,26 +265,23 @@ export function resolveObjectNode(
     // has no stable semantic shape to return. Preserve callback failures while
     // avoiding a shallow object node for the default depth/count fallback.
     if (shouldResolve !== false) {
-      for (const property of properties) includeProperty(property, type, context);
+      for (const property of properties) includeProperty(property, context);
     }
     return undefined;
   }
   recordUnrepresentedConstructSignatures(type, context);
   if (shouldResolve === false) {
-    const result = {
-      kind: "object" as const,
-      properties: [],
-    };
-    if (typeNameValue !== undefined) Object.assign(result, { typeName: typeNameValue });
-    if (indexSignature !== undefined)
-      Object.assign(result, {
-        indexSignature: indexSignatureNode(indexSignature, type, context, resolveType),
-      });
-    return result;
+    return objectResult(
+      [],
+      typeNameValue,
+      indexSignature === undefined
+        ? undefined
+        : indexSignatureNode(indexSignature, type, context, resolveType)
+    );
   }
   // Preserve inclusion callback failures for anonymous authored values while
   // keeping the required resolution-before-inclusion order.
-  const includedProperties = properties.filter((property) => includeProperty(property, type, context));
+  const includedProperties = properties.filter((property) => includeProperty(property, context));
   // Anonymous module-level values have no authored API shape to anchor. Keep
   // the upstream fallback contract for those values; an anonymous object is
   // resolvable when it is explicitly authored in a type node or is nested
@@ -274,11 +291,12 @@ export function resolveObjectNode(
     const propertyType =
       context.operations.propertyType(property) ?? context.operations.typeOfSymbol(property, false);
     const docs = context.operations.documentationOfSymbol?.(property);
-    const declarationFacts = symbolDeclarations(info);
-    const readonly = declarationFacts.some((declaration) =>
-      context.operations.nodeFacts(declaration).declarationFlags?.includes("readonly")
+    const declarationHandles = symbolDeclarations(info);
+    const readonly = declarationHandles.some(
+      (declaration) =>
+        context.operations.nodeFacts(declaration).declarationFlags?.includes("readonly") === true
     );
-    const declarationInitializer = declarationFacts
+    const declarationInitializer = declarationHandles
       .map((declaration) => context.operations.nodeFacts(declaration).initializerText)
       .find((value): value is string => value !== undefined);
     const initializer =
@@ -307,21 +325,16 @@ export function resolveObjectNode(
       }),
       optional:
         info.flags.includes("optional") ||
-        declarationFacts.some((declaration) => context.operations.nodeFacts(declaration).optional === true),
+        declarationHandles.some((declaration) => context.operations.nodeFacts(declaration).optional === true),
     };
     if (docs !== undefined) Object.assign(result, { documentation: docs });
     return result satisfies PropertyNode;
   });
-  const result = {
-    kind: "object" as const,
-    properties: resolvedProperties,
-  };
-  if (typeNameValue !== undefined) Object.assign(result, { typeName: typeNameValue });
-  if (indexSignature !== undefined)
-    Object.assign(result, {
-      indexSignature: indexSignatureNode(indexSignature, type, context, resolveType),
-    });
-  return result;
+  return objectResult(
+    resolvedProperties,
+    typeNameValue,
+    indexSignature === undefined ? undefined : indexSignatureNode(indexSignature, type, context, resolveType)
+  );
 }
 
 /**
@@ -418,18 +431,27 @@ function propertiesOfType(
   const seen = new Set<string>();
   return all.filter((property) => {
     const info = context.operations.symbolFacts(property);
-    if (seen.has(info.name) || !propertyEligible(property, ownerType, context)) return false;
+    if (seen.has(info.name) || !propertyEligible(property, ownerType, context)) {
+      return false;
+    }
     seen.add(info.name);
     return true;
   });
 }
 
-function includeProperty(
-  property: BackendSymbolHandle,
-  ownerType: BackendTypeHandle,
-  context: Context
-): boolean {
-  if (!propertyEligible(property, ownerType, context)) return false;
+function authoredObjectSyntax(sourceNode: BackendNodeReference | undefined, context: Context): boolean {
+  if (sourceNode === undefined) return false;
+  const facts = context.operations.nodeFacts(sourceNode);
+  return facts.kind === "intersection" || facts.text === "object" || facts.text.startsWith("{");
+}
+
+function includeProperty(property: BackendSymbolHandle, context: Context): boolean {
+  // `propertiesOfType` has already applied the structural and ownership
+  // eligibility policy. Read the interned symbol name and depth directly here
+  // so the caller's inclusion predicate runs before any per-property type,
+  // documentation, or declaration reads. Keeping this as a separate phase
+  // preserves the historical callback count and order: ineligible properties
+  // never reach this function, and `seen` remains owned by `propertiesOfType`.
   const info = context.operations.symbolFacts(property);
   try {
     return context.options.shouldInclude?.({ name: info.name, depth: context.active.size + 1 }) ?? true;
@@ -461,6 +483,10 @@ function propertyEligible(
       externalTypeSelectionAllowsSymbol(ownerSymbol, context.operations, context.externalTypes)
     );
   }
+  // Ownership/package selection is a cheap declaration-path fact. Consult it
+  // before any declaration node is materialized; a declined dependency
+  // property must not pay for its modifier/kind subtree merely to be dropped.
+  if (!externalTypeSelectionAllowsSymbol(property, context.operations, context.externalTypes)) return false;
   // A class instance reached as an object must not contribute its methods:
   // they belong to the class model, not to an object's property list. Upstream
   // whitelists the declaration kinds an object property may be written as
@@ -469,24 +495,26 @@ function propertyEligible(
   const primaryDeclaration = info.valueDeclaration ?? declarations[0];
   if (
     primaryDeclaration !== undefined &&
-    !objectMemberDeclarationKinds.has(context.operations.nodeFacts(primaryDeclaration).kind)
+    !objectMemberDeclarationKinds.has(context.operations.nodeKind(primaryDeclaration))
   )
     return false;
-  if (
-    declarations.some((declaration) =>
-      context.operations.nodeFacts(declaration).declarationFlags?.includes("static")
+  if (context.operations.declaringParentIsClass(property)) {
+    if (
+      declarations.some((declaration) =>
+        context.operations.nodeFacts(declaration).declarationFlags?.includes("static")
+      )
     )
-  )
-    return false;
-  if (
-    declarations.some((declaration) =>
-      context.operations
-        .nodeFacts(declaration)
-        .declarationFlags?.some((flag) => flag === "private" || flag === "protected")
+      return false;
+    if (
+      declarations.some((declaration) =>
+        context.operations
+          .nodeFacts(declaration)
+          .declarationFlags?.some((flag) => flag === "private" || flag === "protected")
+      )
     )
-  )
-    return false;
-  return externalTypeSelectionAllowsSymbol(property, context.operations, context.externalTypes);
+      return false;
+  }
+  return true;
 }
 
 /** Declaration kinds an object-typed shape may report its members from. */
@@ -689,6 +717,19 @@ function normalizedBindingDefaults(
 ): ReadonlyMap<string, string> | undefined {
   if (node?.bindingDefaults === undefined || node.bindingDefaults.length === 0) return undefined;
   return new Map(node.bindingDefaults.map((entry) => [entry.name, entry.initializerText]));
+}
+
+function objectResult(
+  properties: readonly PropertyNode[],
+  typeName: TypeName | undefined,
+  indexSignature: IndexSignatureNode | undefined
+): Extract<SemanticType, { kind: "object" }> {
+  if (typeName !== undefined && indexSignature !== undefined) {
+    return { kind: "object", properties, typeName, indexSignature };
+  }
+  if (typeName !== undefined) return { kind: "object", properties, typeName };
+  if (indexSignature !== undefined) return { kind: "object", properties, indexSignature };
+  return { kind: "object", properties };
 }
 
 export function propertyTypeNode(

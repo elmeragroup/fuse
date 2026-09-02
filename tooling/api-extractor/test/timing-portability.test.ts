@@ -5,65 +5,102 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
+import {
+  LiveBudgetTimingCommandOutputSchema,
+  PortabilityTimingCommandOutputSchema,
+} from "../scripts/issue-14-timing.ts";
+
 const packageDirectory = resolve(import.meta.dirname, "..");
 const repositoryDirectory = resolve(packageDirectory, "../..");
 const packageRelativeScript = "scripts/issue-14-timing.ts";
 const repositoryRelativeScript = "tooling/api-extractor/scripts/issue-14-timing.ts";
+const childCommandTimeoutMs = 15_000;
+const relocatedCheckoutTestTimeoutMs = childCommandTimeoutMs * 3 + 15_000;
 
-const TimingCommandOutputSchema = Schema.Struct({
-  decision: Schema.Literals(["go", "no-go"] as const),
-  aggregate: Schema.Struct({
-    measured: Schema.Struct({
-      bytesSent: Schema.Number,
-      bytesReceived: Schema.Number,
-    }),
-  }),
-});
+type PortabilityTimingCommandOutput = Schema.Schema.Type<typeof PortabilityTimingCommandOutputSchema>;
+const TimingCommandJsonSchema = Schema.Record(Schema.String, Schema.Json);
+type TimingCommandJson = Schema.Schema.Type<typeof TimingCommandJsonSchema>;
 
-type TimingCommandOutput = Schema.Schema.Type<typeof TimingCommandOutputSchema>;
-
-function runTimingCommand(cwd: string, script: string): TimingCommandOutput {
-  const result = spawnSync(process.execPath, [script, "--check"], {
+function runTimingCommand(
+  cwd: string,
+  script: string,
+  mode: "--check" | "--check-portability"
+): TimingCommandJson {
+  const result = spawnSync(process.execPath, [script, mode], {
     cwd,
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
-    timeout: 15_000,
+    timeout: childCommandTimeoutMs,
   });
   expect(result.error, result.stderr).toBeUndefined();
   expect(result.status, result.stderr).toBe(0);
-  return Schema.decodeUnknownSync(TimingCommandOutputSchema)(JSON.parse(result.stdout));
+  return Schema.decodeUnknownSync(TimingCommandJsonSchema)(JSON.parse(result.stdout));
+}
+
+function runPortabilityTimingCommand(cwd: string, script: string): PortabilityTimingCommandOutput {
+  const output = runTimingCommand(cwd, script, "--check-portability");
+  expect(output).not.toHaveProperty("decision");
+  return Schema.decodeUnknownSync(PortabilityTimingCommandOutputSchema)(output);
 }
 
 describe("timing command portability", () => {
-  it("reaches the same semantic decision from the package, repository, and a relocated checkout", () => {
-    const packageRun = runTimingCommand(packageDirectory, packageRelativeScript);
-    const repositoryRun = runTimingCommand(repositoryDirectory, repositoryRelativeScript);
-    const relocatedRepository = mkdtempSync(
-      join(tmpdir(), "api-extractor-relocated-checkout-with-a-different-path-length-")
-    );
-    const relocatedPackage = join(relocatedRepository, "tooling/api-extractor");
+  it("keeps the portability check distinct from the live budget check", () => {
+    const result = spawnSync(process.execPath, [packageRelativeScript, "--check", "--check-portability"], {
+      cwd: packageDirectory,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+      timeout: childCommandTimeoutMs,
+    });
 
-    try {
-      cpSync(packageDirectory, relocatedPackage, {
-        recursive: true,
-        filter: (source) => source !== join(packageDirectory, "node_modules"),
-      });
-      symlinkSync(join(packageDirectory, "node_modules"), join(relocatedPackage, "node_modules"), "junction");
-      const relocatedRun = runTimingCommand(relocatedRepository, repositoryRelativeScript);
+    expect(result.error, result.stderr).toBeUndefined();
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("Use exactly one of --check, --check-portability, or --write.");
 
-      expect([packageRun.decision, repositoryRun.decision, relocatedRun.decision]).toEqual([
-        "go",
-        "go",
-        "go",
-      ]);
-      for (const run of [packageRun, repositoryRun, relocatedRun]) {
-        expect(Number.isFinite(run.aggregate.measured.bytesSent)).toBe(true);
-        expect(Number.isFinite(run.aggregate.measured.bytesReceived)).toBe(true);
-        expect(run.aggregate.measured.bytesSent).toBeGreaterThanOrEqual(0);
-        expect(run.aggregate.measured.bytesReceived).toBeGreaterThanOrEqual(0);
-      }
-    } finally {
-      rmSync(relocatedRepository, { recursive: true, force: true });
-    }
+    const liveBudgetOutput = runTimingCommand(packageDirectory, packageRelativeScript, "--check");
+    expect(liveBudgetOutput).not.toHaveProperty("mode");
+    expect(liveBudgetOutput).not.toHaveProperty("semanticDecision");
+    expect(() =>
+      Schema.decodeUnknownSync(LiveBudgetTimingCommandOutputSchema)(liveBudgetOutput)
+    ).not.toThrow();
   });
+
+  it(
+    "reaches the same semantic decision from the package, repository, and a relocated checkout",
+    { timeout: relocatedCheckoutTestTimeoutMs },
+    () => {
+      const packageRun = runPortabilityTimingCommand(packageDirectory, packageRelativeScript);
+      const repositoryRun = runPortabilityTimingCommand(repositoryDirectory, repositoryRelativeScript);
+      const relocatedRepository = mkdtempSync(
+        join(tmpdir(), "api-extractor-relocated-checkout-with-a-different-path-length-")
+      );
+      const relocatedPackage = join(relocatedRepository, "tooling/api-extractor");
+
+      try {
+        cpSync(packageDirectory, relocatedPackage, {
+          recursive: true,
+          filter: (source) => source !== join(packageDirectory, "node_modules"),
+        });
+        symlinkSync(
+          join(packageDirectory, "node_modules"),
+          join(relocatedPackage, "node_modules"),
+          "junction"
+        );
+        const relocatedRun = runPortabilityTimingCommand(relocatedRepository, repositoryRelativeScript);
+
+        expect([
+          packageRun.semanticDecision,
+          repositoryRun.semanticDecision,
+          relocatedRun.semanticDecision,
+        ]).toEqual(["go", "go", "go"]);
+        for (const run of [packageRun, repositoryRun, relocatedRun]) {
+          expect(Number.isFinite(run.aggregate.measured.bytesSent)).toBe(true);
+          expect(Number.isFinite(run.aggregate.measured.bytesReceived)).toBe(true);
+          expect(run.aggregate.measured.bytesSent).toBeGreaterThanOrEqual(0);
+          expect(run.aggregate.measured.bytesReceived).toBeGreaterThanOrEqual(0);
+        }
+      } finally {
+        rmSync(relocatedRepository, { recursive: true, force: true });
+      }
+    }
+  );
 });

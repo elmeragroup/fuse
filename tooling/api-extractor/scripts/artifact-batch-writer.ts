@@ -88,6 +88,7 @@ type Backup = {
 
 export type ArtifactBatchWriterTestControls = {
   readonly maximumDurationMs?: number;
+  readonly maximumRecoveryDurationMs?: number;
   readonly beforeArtifactWrite?: (artifact: {
     readonly index: number;
     readonly destination: string;
@@ -665,6 +666,7 @@ async function writeBatch(
   controls: ArtifactBatchWriterTestControls
 ): Promise<ArtifactBatchResult> {
   const maximumDurationMs = controls.maximumDurationMs ?? defaultMaximumDurationMs;
+  const maximumRecoveryDurationMs = controls.maximumRecoveryDurationMs ?? defaultMaximumDurationMs;
   const deadline = Date.now() + maximumDurationMs;
   const runFileSystem = makeFileSystemRunner(controls, deadline);
   let cleanupFileSystem = runFileSystem;
@@ -775,7 +777,7 @@ async function writeBatch(
         temporaryState: "not-removed",
       });
     }
-    cleanupDeadline = Date.now() + maximumDurationMs;
+    cleanupDeadline = Date.now() + maximumRecoveryDurationMs;
     cleanupFileSystem = makeFileSystemRunner(controls, cleanupDeadline);
     try {
       const originalState = await rollbackBatch(

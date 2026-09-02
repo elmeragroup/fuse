@@ -12,7 +12,7 @@ import {
   readFixtureOracle,
 } from "../scripts/fixture-evidence.ts";
 import { referenceAvailable, upstreamFixtureRoot } from "../scripts/reference.ts";
-import { classifySourceFile } from "../src/backend/ts7/file-ownership.ts";
+import { classifySourceFile, isExternalSourceFile } from "../src/backend/ts7/file-ownership.ts";
 import { ProjectExtractor } from "../src/index.ts";
 import type { ExtractionResult, ExtractorOptions } from "../src/index.ts";
 import type { ExternalTypeNode } from "../src/model.ts";
@@ -153,6 +153,29 @@ describe("Issue 13 backend ownership classification", () => {
   ] as const)("combines compiler metadata for $0", (_label, filePath, expected, metadata) => {
     expect(classifySourceFile(filePath, metadata)).toEqual(expected);
   });
+
+  it.each([
+    [
+      "explicit project metadata overrides a TypeScript-shaped path",
+      "/repo/src/typescript/lib/lib.dom.d.ts",
+      { isFromExternalLibrary: false, isDefaultLibrary: false },
+      false,
+    ],
+    [
+      "absent metadata keeps the TypeScript-shaped path fallback",
+      "/repo/src/typescript/lib/lib.dom.d.ts",
+      undefined,
+      true,
+    ],
+    [
+      "explicit external metadata remains external",
+      "/repo/src/typescript/lib/lib.dom.d.ts",
+      { isFromExternalLibrary: true, isDefaultLibrary: false },
+      true,
+    ],
+  ] as const)("uses $0", (_label, filePath, metadata, expected) => {
+    expect(isExternalSourceFile(filePath, metadata)).toBe(expected);
+  });
 });
 
 describe("Issue 13 ported external-type policy fixtures", () => {
@@ -268,8 +291,12 @@ describe("Issue 13 external-type ownership policy in both modes", () => {
     expect(exports.get("ProjectArray")?.type).toMatchObject({
       kind: "object",
       typeName: { name: "Array" },
-      properties: [{ name: "projectMarker" }],
+      properties: [{ name: "baseMarker" }, { name: "projectMarker" }],
     });
+    expect(exports.get("ProjectArray")?.documentation).toMatchObject({
+      description: "The workspace-owned Array declaration is not TypeScript's built-in Array.",
+    });
+    expect(exports.get("ProjectArray")?.extendsTypes).toEqual([{ name: "ProjectArrayBase" }]);
     expect(exports.get("ProjectReadonlyArray")?.type).toMatchObject({
       kind: "object",
       typeName: { name: "ReadonlyArray" },
@@ -299,6 +326,68 @@ describe("Issue 13 external-type ownership policy in both modes", () => {
         }),
       ])
     );
+  });
+
+  it("does not apply an enclosing project namespace to a top-level concrete argument", async () => {
+    const result = await runExtraction("issue-13-review", "input.ts");
+    const entry = result.module.exports.find(
+      (candidate) => candidate.name === "ProjectNamespaceSubstitution"
+    );
+    expect(entry?.type).toMatchObject({
+      kind: "object",
+      typeName: { name: "ProjectNamespaceSubstitution" },
+      properties: [
+        {
+          name: "wrapped",
+          type: {
+            typeName: { name: "OuterAlias" },
+            properties: [
+              {
+                name: "value",
+                type: {
+                  typeName: { name: "Local" },
+                },
+              },
+            ],
+          },
+        },
+      ],
+    });
+    const wrapped = entry?.type.kind === "object" ? entry.type.properties[0]?.type : undefined;
+    if (wrapped?.kind !== "object") throw new Error("Expected the project generic object to resolve");
+    const local = wrapped.properties.find((property) => property.name === "value")?.type;
+    expect(local).toMatchObject({ kind: "object", typeName: { name: "Local" } });
+    expect(local?.kind === "object" ? local.typeName?.namespaces : undefined).toBeUndefined();
+  });
+
+  it("preserves a project namespace through a local holder into an external ref argument", async () => {
+    const result = await runExtraction("issue-13-review", "input.ts");
+    const entry = result.module.exports.find(
+      (candidate) => candidate.name === "ProjectNestedNamespaceSubstitution"
+    );
+    expect(entry?.type).toMatchObject({
+      kind: "object",
+      properties: [
+        {
+          name: "ref",
+          type: {
+            kind: "external",
+            typeName: {
+              name: "Ref",
+              namespaces: ["React"],
+              typeArguments: [
+                {
+                  type: {
+                    kind: "object",
+                    typeName: { name: "Local", namespaces: ["Outer"] },
+                  },
+                },
+              ],
+            },
+          },
+        },
+      ],
+    });
   });
 
   it("pins dependency-owned bare interface and value roots as anonymous empty objects", async () => {

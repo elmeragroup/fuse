@@ -228,9 +228,7 @@ function isReadOnlyMember(
   context: Context
 ): boolean {
   if (primaryDeclarationFacts.declarationFlags?.includes("readonly") === true) return true;
-  const kinds = new Set(
-    info.declarations.map((declaration) => context.operations.nodeFacts(declaration).kind)
-  );
+  const kinds = new Set(info.declarations.map((declaration) => context.operations.nodeKind(declaration)));
   return kinds.has("getAccessor") && !kinds.has("setAccessor");
 }
 
@@ -247,9 +245,8 @@ function declaredClassTypeParameters(
   const symbol = context.operations.typeFacts(type).symbol;
   if (symbol === undefined) return undefined;
   for (const declaration of context.operations.symbolFacts(symbol).declarations) {
-    const declarationFacts = context.operations.nodeFacts(declaration);
-    if (declarationFacts.kind !== "class") continue;
-    const parameters = declarationFacts.typeParameters ?? [];
+    if (context.operations.nodeKind(declaration) !== "class") continue;
+    const parameters = context.operations.nodeFacts(declaration).typeParameters ?? [];
     return parameters.map((parameter) => ({
       name: context.operations.nodeFacts(parameter).name ?? "T",
     }));

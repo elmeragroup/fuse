@@ -2,7 +2,7 @@ import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { packageFixtureTypecheckPlan } from "./fixture-catalog.ts";
+import { packageFixtureTypecheckPlan } from "./fixture-plans.ts";
 
 const packageDirectory = resolve(import.meta.dirname, "..");
 const compilerScript = resolve(packageDirectory, "node_modules/typescript/bin/tsc");

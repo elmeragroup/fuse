@@ -16,3 +16,33 @@ export type ProjectExtractUse = import("./src/typescript/lib/lib.dom.js").Extrac
   keyof { value: string; other: boolean },
   string
 >;
+
+// A project-owned generic is intentionally shaped like the checker-generated
+// namespace substitution used by external library references. Its concrete
+// argument is declared at the top level, so the argument must not inherit
+// Outer's namespace merely because the enclosing alias does.
+namespace Outer {
+  export interface Box<T> {
+    value: T;
+  }
+
+  export interface Local {
+    marker: string;
+  }
+}
+
+interface Local {
+  marker: string;
+}
+
+type OuterAlias<T> = Outer.Box<T>;
+
+export type ProjectNamespaceSubstitution = {
+  wrapped: OuterAlias<Local>;
+};
+
+interface Holder<T> {
+  ref: import("issue-13-root-dependency").React.Ref<T>;
+}
+
+export type ProjectNestedNamespaceSubstitution = Holder<Outer.Local>;

@@ -11,56 +11,31 @@
 import type { InterfaceDeclaration, Node, TypeNode } from "typescript/unstable/ast";
 import { SyntaxKind } from "typescript/unstable/ast";
 import {
-  isArrayTypeNode,
-  isCallExpression,
-  isBindingElement,
-  isClassExpression,
-  isGetAccessorDeclaration,
-  isMethodDeclaration,
-  isMethodSignatureDeclaration,
-  isNamedTupleMember,
-  isOptionalTypeNode,
-  isRestTypeNode,
-  isSetAccessorDeclaration,
-  isShorthandPropertyAssignment,
-  isTupleTypeNode,
-  isClassDeclaration,
-  isEnumDeclaration,
   isEnumMember,
-  isFunctionDeclaration,
-  isFunctionLikeDeclaration,
   isIdentifier,
   isIndexSignatureDeclaration,
   isInterfaceDeclaration,
-  isIntersectionTypeNode,
-  isImportTypeNode,
-  isMappedTypeNode,
-  isObjectBindingPattern,
-  isParameterDeclaration,
-  isParenthesizedTypeNode,
-  isPropertyDeclaration,
-  isPropertyAssignment,
-  isPropertySignatureDeclaration,
   isQualifiedName,
-  isTypeAliasDeclaration,
-  isTypeOperatorNode,
-  isTypeParameterDeclaration,
-  isTypeQueryNode,
   isTypeReferenceNode,
   isTypeNode,
-  isUnionTypeNode,
-  isVariableDeclaration,
 } from "typescript/unstable/ast/is";
 import { SignatureKind, SymbolFlags, TypeFlags } from "typescript/unstable/sync";
-import type { Checker, Program, Signature, Symbol as TsSymbol, Type } from "typescript/unstable/sync";
+import type {
+  Checker,
+  NodeHandle,
+  Program,
+  Signature,
+  Symbol as TsSymbol,
+  Type,
+} from "typescript/unstable/sync";
 
 import type { TypeFlagName } from "../../warnings.ts";
 import type {
   BackendCompilerOperations,
+  BackendDocumentation,
   BackendEnumFacts,
   BackendEnumMemberFacts,
   BackendIndexSignatureFacts,
-  BackendNodeFacts,
   BackendNodeHandle,
   BackendNodeReference,
   BackendSignatureFacts,
@@ -72,20 +47,24 @@ import type {
   BackendTypeNameFacts,
   BackendWarningFact,
 } from "../contracts.ts";
-import { callExpressionFacts } from "./call-facts.ts";
-import { constructSignaturesOfType, declarationModifiers } from "./class-facts.ts";
+import { constructSignaturesOfType } from "./class-facts.ts";
+import { valueOrFirstDeclarationHandle } from "./declarations.ts";
 import { documentationOfNode, documentationOfParameter, documentationOfSymbol } from "./documentation.ts";
 import {
   declarationOwnership,
   isExternalDeclaration,
   isTypeScriptLibraryDeclaration,
 } from "./file-ownership.ts";
-import { valueOrFirstDeclaration } from "./module.ts";
-import { symbolFacts, symbolNamespaces } from "./symbol-facts.ts";
+import { extendsTypes } from "./heritage.ts";
+import type { TsgoHeritageSession } from "./heritage.ts";
+import { nodeFacts, nodeKindOfHandle } from "./node-facts.ts";
+import { SessionFactCache } from "./session-fact-cache.ts";
+import { declaringParentIsClass, symbolFacts, symbolNamespaces, symbolOrigin } from "./symbol-facts.ts";
 
 export type TsgoFactsSession = {
   readonly checker: Checker;
   readonly program: Program;
+  readonly sourceFileMetadata: (path: string) => ReturnType<Program["getSourceFileMetadata"]>;
   readonly rootDirectory: string;
   readonly ensureOpen: (operation: string) => void;
   readonly symbol: (handle: BackendSymbolHandle, operation: string) => TsSymbol;
@@ -96,11 +75,19 @@ export type TsgoFactsSession = {
   readonly typeHandle: (type: Type) => BackendTypeHandle;
   readonly typeHandlesFor: (types: readonly Type[]) => readonly BackendTypeHandle[];
   readonly nodeHandle: (node: Node) => BackendNodeHandle;
+  readonly declarationHandle: (declaration: NodeHandle) => BackendNodeHandle;
+  readonly declarationPath: (declaration: NodeHandle) => string;
   readonly signatureHandle: (signature: Signature) => BackendSignatureHandle;
   readonly typeNodeHandle: (node: TypeNode) => BackendTypeNodeHandle;
   readonly nodeReference: (node: Node) => BackendNodeReference;
   readonly symbolAt: (node: Node) => BackendSymbolHandle | undefined;
-  readonly resolveNode: (node: { readonly resolve: () => Node | undefined }) => Node | undefined;
+  readonly resolveNode: (node: {
+    readonly index: number;
+    readonly path: string;
+    readonly resolve: () => Node | undefined;
+  }) => Node | undefined;
+  readonly nodePath: (node: BackendNodeReference) => string;
+  readonly compilerKind: (node: BackendNodeReference) => Node["kind"];
 };
 
 const typeFlagDisplayOrder: readonly [TypeFlags, TypeFlagName][] = [
@@ -135,92 +122,76 @@ const typeFlagDisplayOrder: readonly [TypeFlags, TypeFlagName][] = [
   [TypeFlags.Intersection, "Intersection"],
 ];
 
-/**
- * Memoizes one normalized fact reader for the lifetime of a single extraction.
- *
- * The cache is keyed by the handle *object*, never by its numeric id: the
- * session interns one frozen handle per compiler entity, so object identity is
- * canonical within an extraction while ids restart at 1 in every registry. A
- * handle from another extraction therefore always misses the cache and reaches
- * the registry's session check instead of silently reading this session's facts
- * for a different entity. Every cached reader is a pure function of the
- * compiler snapshot behind that registry, so a repeated read is guaranteed to
- * observe the same facts.
- *
- * The closed-session guard is checked before the cache, because the guard the
- * underlying reader runs is only reached on a miss: a handle read once before
- * `close()` must fail afterwards exactly like every other operation.
- */
-function memoizedByHandle<Handle extends object, Result>(
-  session: TsgoFactsSession,
-  operation: string,
-  read: (handle: Handle) => Result
-): (handle: Handle) => Result {
-  const cache = new WeakMap<Handle, Result>();
-  return (handle) => {
-    session.ensureOpen(operation);
-    const cached = cache.get(handle);
-    if (cached !== undefined || cache.has(handle)) return cached as Result;
-    const result = read(handle);
-    cache.set(handle, result);
-    return result;
-  };
-}
+export type TsgoSessionFacts = {
+  readonly operations: BackendCompilerOperations;
+  readonly heritageTypes: (
+    declaration: BackendNodeHandle
+  ) => readonly { readonly name: string; readonly resolvedName?: string }[] | undefined;
+  readonly clear: () => void;
+};
 
-export function createCompilerOperations(session: TsgoFactsSession): BackendCompilerOperations {
-  return {
-    typeOfSymbol: (symbol, declared) => typeOfSymbol(session, symbol, declared),
-    typeAtNode: memoizedByHandle(session, "typeAtNode", (node: BackendNodeReference) =>
-      typeAtNode(session, node)
+export function createSessionFacts(
+  session: TsgoFactsSession,
+  heritage: TsgoHeritageSession
+): TsgoSessionFacts {
+  const cache = new SessionFactCache(session);
+  const symbolOriginRead = cache.byHandle("symbolOrigin", (symbol: BackendSymbolHandle) =>
+    symbolOrigin(session, symbol)
+  );
+  const documentationOfSymbolRead = cache.byHandle("documentationOfSymbol", (symbol: BackendSymbolHandle) =>
+    documentationOfSymbol(session, symbol)
+  );
+  const operations: BackendCompilerOperations = {
+    typeOfSymbol: cache.byHandlePair("typeOfSymbol", (symbol, declared) =>
+      typeOfSymbol(session, symbol, declared)
     ),
-    typeFacts: memoizedByHandle(session, "typeFacts", (type: BackendTypeHandle) => typeFacts(session, type)),
-    declarationOwnership: (node) => declarationOwnership(session, node),
-    symbolFacts: memoizedByHandle(session, "symbolFacts", (symbol: BackendSymbolHandle) =>
-      symbolFacts(session, symbol)
+    typeAtNode: cache.byHandle("typeAtNode", (node) => typeAtNode(session, node)),
+    typeFacts: cache.byHandle("typeFacts", (type) => typeFacts(session, type)),
+    declarationOwnership: cache.byHandle("declarationOwnership", (node) =>
+      declarationOwnership(session, node)
     ),
-    documentationOfSymbol: (symbol) => documentationOfSymbol(session, symbol),
-    enumFacts: memoizedByHandle(session, "enumFacts", (type: BackendTypeHandle) => enumFacts(session, type)),
-    nodeFacts: memoizedByHandle(session, "nodeFacts", (node: BackendNodeReference) =>
-      nodeFacts(session, node)
+    symbolFacts: cache.byHandle("symbolFacts", (symbol) => symbolFacts(session, symbol)),
+    symbolOrigin: symbolOriginRead,
+    declaringParentIsClass: cache.byHandle("symbolFacts.declaringParentIsClass", (symbol) =>
+      declaringParentIsClass(session, symbol)
     ),
-    typeNameFacts: (type, sourceNode) => typeNameFacts(session, type, sourceNode),
-    signaturesOfType: memoizedByHandle(session, "signaturesOfType", (type: BackendTypeHandle) =>
-      signaturesOfType(session, type)
+    documentationOfSymbol: documentationOfSymbolRead,
+    // Enum facts carry authored warning records and must run for every read site.
+    enumFacts: (type) => enumFacts(session, type, documentationOfSymbolRead),
+    nodeFacts: cache.byHandle("nodeFacts", (node) =>
+      nodeFacts(session, node, (source) => typeNameFromNode(session, source), symbolOriginRead)
     ),
-    constructSignaturesOfType: memoizedByHandle(
-      session,
-      "constructSignaturesOfType",
-      (type: BackendTypeHandle) => constructSignaturesOfType(session, type)
+    nodeKind: cache.byHandle("nodeKind", (node) => nodeKindOfHandle(session, node)),
+    typeNameFacts: cache.byHandlePair("typeNameFacts", (type, sourceNode) =>
+      typeNameFacts(session, type, sourceNode)
     ),
-    signatureFacts: memoizedByHandle(session, "signatureFacts", (signature: BackendSignatureHandle) =>
-      signatureFacts(session, signature)
+    signaturesOfType: cache.byHandle("signaturesOfType", (type) => signaturesOfType(session, type)),
+    constructSignaturesOfType: cache.byHandle("constructSignaturesOfType", (type) =>
+      constructSignaturesOfType(session, type)
     ),
-    documentationOfNode: (node: BackendNodeReference) => documentationOfNode(session, node),
-    documentationOfParameter: (
-      parameter: BackendSymbolHandle,
-      ownerDeclaration: BackendNodeReference | undefined
-    ) => documentationOfParameter(session, parameter, ownerDeclaration),
-    propertiesOfType: memoizedByHandle(session, "propertiesOfType", (type: BackendTypeHandle) =>
-      propertiesOfType(session, type)
+    signatureFacts: cache.byHandle("signatureFacts", (signature) => signatureFacts(session, signature)),
+    documentationOfNode: cache.byHandle("documentationOfNode", (node) => documentationOfNode(session, node)),
+    documentationOfParameter: cache.byHandlePair("documentationOfParameter", (parameter, ownerDeclaration) =>
+      documentationOfParameter(session, parameter, ownerDeclaration)
     ),
-    propertyType: memoizedByHandle(session, "propertyType", (property: BackendSymbolHandle) =>
-      propertyType(session, property)
-    ),
-    indexSignaturesOfType: memoizedByHandle(session, "indexSignaturesOfType", (type: BackendTypeHandle) =>
+    propertiesOfType: cache.byHandle("propertiesOfType", (type) => propertiesOfType(session, type)),
+    propertyType: cache.byHandle("propertyType", (property) => propertyType(session, property)),
+    indexSignaturesOfType: cache.byHandle("indexSignaturesOfType", (type) =>
       indexSignaturesOfType(session, type)
     ),
-    baseConstraintOfType: memoizedByHandle(session, "baseConstraintOfType", (type: BackendTypeHandle) =>
+    baseConstraintOfType: cache.byHandle("baseConstraintOfType", (type) =>
       baseConstraintOfType(session, type)
     ),
-    isArrayType: memoizedByHandle(session, "isArrayType", (type: BackendTypeHandle) =>
-      isArrayType(session, type)
+    isArrayType: cache.byHandle("isArrayType", (type) => isArrayType(session, type)),
+    isReadonlyType: cache.byHandle("isReadonlyType", (type) => isReadonlyType(session, type)),
+    typeToString: cache.byHandle("typeToString", (type) => typeToString(session, type)),
+  };
+  return {
+    operations,
+    heritageTypes: cache.byHandle("heritageTypes", (declaration) =>
+      extendsTypes(heritage, session.node(declaration, "heritageTypes"))
     ),
-    isReadonlyType: memoizedByHandle(session, "isReadonlyType", (type: BackendTypeHandle) =>
-      isReadonlyType(session, type)
-    ),
-    typeToString: memoizedByHandle(session, "typeToString", (type: BackendTypeHandle) =>
-      typeToString(session, type)
-    ),
+    clear: cache.clear,
   };
 }
 
@@ -240,15 +211,20 @@ function typeOfSymbol(
 ): BackendTypeHandle | undefined {
   const raw = session.symbol(handle, "typeOfSymbol");
   const target = (raw.flags & SymbolFlags.Alias) !== 0 ? session.checker.getAliasedSymbol(raw) : raw;
-  const declaration = valueOrFirstDeclaration(target);
+  const declarationHandle = valueOrFirstDeclarationHandle(target);
+  const declaration =
+    declarationHandle?.kind === SyntaxKind.VariableDeclaration &&
+    !isTypeScriptLibraryDeclaration(session, declarationHandle)
+      ? session.resolveNode(declarationHandle)
+      : undefined;
   const type =
-    declaration !== undefined && isVariableDeclaration(declaration)
+    declaration !== undefined
       ? session.checker.getTypeAtLocation(declaration)
       : declared &&
-          declaration !== undefined &&
-          (isTypeAliasDeclaration(declaration) ||
-            isInterfaceDeclaration(declaration) ||
-            isEnumDeclaration(declaration))
+          declarationHandle !== undefined &&
+          (declarationHandle.kind === SyntaxKind.TypeAliasDeclaration ||
+            declarationHandle.kind === SyntaxKind.InterfaceDeclaration ||
+            declarationHandle.kind === SyntaxKind.EnumDeclaration)
         ? session.checker.getDeclaredTypeOfSymbol(target)
         : session.checker.getTypeOfSymbol(target);
   return type === undefined ? undefined : session.typeHandle(type);
@@ -335,7 +311,11 @@ function tupleTarget(type: Type): Type | undefined {
   return target.isTupleType() ? target : undefined;
 }
 
-function enumFacts(session: TsgoFactsSession, handle: BackendTypeHandle): BackendEnumFacts | undefined {
+function enumFacts(
+  session: TsgoFactsSession,
+  handle: BackendTypeHandle,
+  documentationOf: (symbol: BackendSymbolHandle) => BackendDocumentation | undefined
+): BackendEnumFacts | undefined {
   const type = session.type(handle, "enumFacts");
   if ((type.flags & TypeFlags.EnumLike) === 0) return undefined;
   const initial = type.getAliasSymbol() ?? type.getSymbol();
@@ -369,18 +349,18 @@ function enumFacts(session: TsgoFactsSession, handle: BackendTypeHandle): Backen
       ...(session.checker.getDocumentationCommentOfSymbol(member).trim() === "" &&
       session.checker.getJsDocTagsOfSymbol(member).length === 0
         ? {}
-        : { documentation: documentationOfSymbol(session, session.symbolHandle(member)) }),
+        : { documentation: documentationOf(session.symbolHandle(member)) }),
     });
   }
   return {
     name: symbol.name,
-    namespaces: symbolNamespaces(symbol),
+    namespaces: symbolNamespaces(session, symbol),
     members,
     ...(warnings.length === 0 ? {} : { warnings }),
     ...(session.checker.getDocumentationCommentOfSymbol(symbol).trim() === "" &&
     session.checker.getJsDocTagsOfSymbol(symbol).length === 0
       ? {}
-      : { documentation: documentationOfSymbol(session, session.symbolHandle(symbol)) }),
+      : { documentation: documentationOf(session.symbolHandle(symbol)) }),
   };
 }
 
@@ -402,190 +382,6 @@ function enumWarning(session: TsgoFactsSession, symbol: TsSymbol, memberName: st
   };
 }
 
-function bindingDefaults(
-  name: Node | undefined
-): readonly { readonly name: string; readonly initializerText: string }[] {
-  if (name === undefined || !isObjectBindingPattern(name)) return [];
-  return name.elements.flatMap((element) => {
-    if (
-      !isBindingElement(element) ||
-      element.initializer === undefined ||
-      element.name === undefined ||
-      !isIdentifier(element.name)
-    )
-      return [];
-    const propertyName = element.propertyName;
-    if (propertyName !== undefined && !isIdentifier(propertyName)) return [];
-    return [
-      {
-        name: propertyName?.text ?? element.name.text,
-        initializerText: element.initializer.getText().trim(),
-      },
-    ];
-  });
-}
-
-function nodeFacts(session: TsgoFactsSession, handle: BackendNodeReference): BackendNodeFacts {
-  const node = session.node(handle, "nodeFacts");
-  const sourceFile = node.getSourceFile();
-  const start = node.getStart(sourceFile);
-  const position = sourceFile.getLineAndCharacterOfPosition(start);
-  const base: BackendNodeFacts = {
-    kind: nodeKind(node),
-    text: node.getText().replaceAll(/\s+/gu, " ").trim(),
-    filePath: sourceFile.fileName,
-    line: position.line + 1,
-    column: position.character + 1,
-  };
-  const type = sourceNodeType(node);
-  const result: BackendNodeFacts = {
-    ...base,
-    ...(type === undefined ? {} : { type: session.typeNodeHandle(type) }),
-  };
-  if (isTypeReferenceNode(node)) {
-    return {
-      ...result,
-      typeName: typeNameFromNode(session, node),
-      children: node.typeArguments?.map((child) => session.typeNodeHandle(child)),
-    };
-  }
-  if (isTypeQueryNode(node)) return { ...result, expressionName: node.exprName.getText() };
-  if (isImportTypeNode(node) && node.isTypeOf)
-    return { ...result, expressionName: typeQueryExpressionName(node, sourceFile) };
-  if (isUnionTypeNode(node) || isIntersectionTypeNode(node))
-    return { ...result, children: node.types.map((child) => session.typeNodeHandle(child)) };
-  if (isTypeOperatorNode(node))
-    return {
-      ...result,
-      operator:
-        node.operator === SyntaxKind.KeyOfKeyword
-          ? "keyof"
-          : node.operator === SyntaxKind.ReadonlyKeyword
-            ? "readonly"
-            : undefined,
-      children: [session.typeNodeHandle(node.type)],
-    };
-  if (isParenthesizedTypeNode(node)) return { ...result, children: [session.typeNodeHandle(node.type)] };
-  if (isArrayTypeNode(node)) return { ...result, children: [session.typeNodeHandle(node.elementType)] };
-  // Named and optional wrappers are transparent for element resolution: only the
-  // innermost node names a type. A rest wrapper is reported separately, because
-  // the node it wraps describes several semantic elements rather than one.
-  if (isTupleTypeNode(node))
-    return {
-      ...result,
-      children: node.elements.map((element) => session.typeNodeHandle(unwrapTupleElement(element))),
-      restElements: node.elements.map((element) => isRestTupleElement(element)),
-    };
-  if (isMappedTypeNode(node))
-    return {
-      ...result,
-      keyName: node.typeParameter.name.text,
-      constraint:
-        node.typeParameter.constraint === undefined
-          ? undefined
-          : session.typeNodeHandle(node.typeParameter.constraint),
-      mappedValueType: node.type === undefined ? undefined : session.typeNodeHandle(node.type),
-      mappedNameType: node.nameType === undefined ? undefined : session.typeNodeHandle(node.nameType),
-      mappedOptional: node.questionToken !== undefined && node.questionToken.kind !== SyntaxKind.MinusToken,
-    };
-  if (
-    isTypeAliasDeclaration(node) ||
-    isInterfaceDeclaration(node) ||
-    isClassDeclaration(node) ||
-    isFunctionLikeDeclaration(node)
-  ) {
-    return {
-      ...result,
-      typeParameters: node.typeParameters?.map((parameter) => session.nodeHandle(parameter)),
-      parameters: isFunctionLikeDeclaration(node)
-        ? node.parameters.map((parameter) => session.nodeHandle(parameter))
-        : undefined,
-      returnType:
-        isFunctionLikeDeclaration(node) && node.type !== undefined
-          ? session.typeNodeHandle(node.type)
-          : undefined,
-      heritageTypes:
-        isInterfaceDeclaration(node) || isClassDeclaration(node)
-          ? node.heritageClauses?.flatMap((clause) =>
-              clause.types.map((typeNode) => session.nodeReference(typeNode))
-            )
-          : undefined,
-      // Method visibility lives here too: class extraction filters inherited
-      // members by the `private`/`protected` modifiers on their declaration.
-      declarationFlags: modifierFlags(node),
-    };
-  }
-  if (isTypeParameterDeclaration(node))
-    return {
-      ...result,
-      name: node.name.text,
-      constraint: node.constraint === undefined ? undefined : session.typeNodeHandle(node.constraint),
-      defaultType: node.defaultType === undefined ? undefined : session.typeNodeHandle(node.defaultType),
-      typeName: { name: node.name.text, namespaces: [], authoredSymbol: session.symbolAt(node.name) },
-    };
-  if (
-    isParameterDeclaration(node) ||
-    isPropertyDeclaration(node) ||
-    isPropertySignatureDeclaration(node) ||
-    isPropertyAssignment(node) ||
-    isVariableDeclaration(node)
-  )
-    return {
-      ...result,
-      name: isIdentifier(node.name) ? node.name.text : undefined,
-      initializerText: node.initializer?.getText().trim(),
-      initializer: node.initializer === undefined ? undefined : session.nodeHandle(node.initializer),
-      optional: "questionToken" in node && node.questionToken !== undefined,
-      declarationFlags: modifierFlags(node),
-      ...(isParameterDeclaration(node)
-        ? {
-            bindingDefaults: bindingDefaults(node.name),
-          }
-        : {}),
-    };
-  if (isCallExpression(node)) return { ...result, ...callExpressionFacts(session, node) };
-  if (isIndexSignatureDeclaration(node))
-    return {
-      ...result,
-      keyName:
-        node.parameters[0] && isIdentifier(node.parameters[0].name)
-          ? node.parameters[0].name.text
-          : undefined,
-    };
-  return result;
-}
-
-/**
- * Reads the authored expression of a `typeof` type query.
- *
- * A plain query stores its entity name. A `typeof import(…)` node reaches this
- * seam as an import-type node, and the `typeof` keyword and the `import`
- * expression are separate AST tokens even when trivia sits between them — so
- * the authored text is sliced from the `import` keyword rather than stripped
- * from the front of the whole node's text.
- */
-function typeQueryExpressionName(node: Node, sourceFile: ReturnType<Node["getSourceFile"]>): string {
-  if (isTypeQueryNode(node)) {
-    return node.exprName.getText();
-  }
-  const text = node.getText(sourceFile);
-  const importTokenIndex = text.search(/\bimport\b/u);
-  return importTokenIndex === -1 ? text.trimStart() : text.slice(importTokenIndex).trimStart();
-}
-
-/** Whether an authored tuple element spreads its type across several positions. */
-function isRestTupleElement(element: TypeNode): boolean {
-  if (isNamedTupleMember(element)) return element.dotDotDotToken !== undefined;
-  return isRestTypeNode(element) || (isOptionalTypeNode(element) && isRestTypeNode(element.type));
-}
-
-/** Strips named, optional, and rest wrappers from authored tuple element syntax. */
-function unwrapTupleElement(element: TypeNode): TypeNode {
-  let current: TypeNode = isNamedTupleMember(element) ? element.type : element;
-  while (isOptionalTypeNode(current) || isRestTypeNode(current)) current = current.type;
-  return current;
-}
-
 function typeNameFromNode(session: TsgoFactsSession, node: TypeNode): BackendTypeNameFacts {
   const typeReference = node as TypeNode & {
     readonly typeName: Node;
@@ -600,7 +396,7 @@ function typeNameFromNode(session: TsgoFactsSession, node: TypeNode): BackendTyp
   // (`Nested.Foo` inside `namespace Root` reports ["Root", "Nested"]); the
   // written qualifier only fills in when the chain has nothing to say, which
   // mirrors upstream's `getFullName` namespace selection.
-  const chain = authoredRawSymbol === undefined ? [] : symbolNamespaces(authoredRawSymbol);
+  const chain = authoredRawSymbol === undefined ? [] : symbolNamespaces(session, authoredRawSymbol);
   const namespaces = chain.length > 0 ? chain : qualified;
   const builtInArray = builtInArrayReferenceName(session, authoredRawSymbol);
   return {
@@ -667,7 +463,7 @@ function typeNameFacts(
   const type = session.type(handle, "typeNameFacts");
   const symbol = type.getAliasSymbol() ?? type.getSymbol();
   if (symbol === undefined || internalSymbolNames.has(symbol.name)) return undefined;
-  return { name: symbol.name, namespaces: symbolNamespaces(symbol) };
+  return { name: symbol.name, namespaces: symbolNamespaces(session, symbol) };
 }
 
 function signaturesOfType(
@@ -683,13 +479,13 @@ function signaturesOfType(
 function signatureFacts(session: TsgoFactsSession, handle: BackendSignatureHandle): BackendSignatureFacts {
   const signature = session.signature(handle, "signatureFacts");
   const returnType = session.checker.getReturnTypeOfSignature(signature);
-  const declaration =
-    signature.declaration === undefined ? undefined : session.resolveNode(signature.declaration);
   return {
     parameters: signature.getParameters().map((parameter) => session.symbolHandle(parameter)),
     ...(returnType === undefined ? {} : { returnType: session.typeHandle(returnType) }),
     typeParameters: signature.getTypeParameters().map((parameter) => session.typeHandle(parameter)),
-    ...(declaration === undefined ? {} : { declaration: session.nodeHandle(declaration) }),
+    ...(signature.declaration === undefined
+      ? {}
+      : { declaration: session.declarationHandle(signature.declaration) }),
   };
 }
 
@@ -705,9 +501,18 @@ function propertiesOfType(
     seen.add(property.name);
     ordered.push(property);
   };
+  // Upstream prepends direct interface heritage properties in the authored
+  // `extends` clause order, then appends the owner's checker properties. Keep
+  // that narrow interface-only read: calling `getBaseTypes()` for every type
+  // perturbs class member order on TypeScript 7, while resolving an external
+  // declaration here would defeat the lazy ownership gate. Declaration kind
+  // and path are available without materializing the declaration body, so only
+  // project-owned interfaces are resolved for their authored heritage syntax.
   const declaration = type
     .getSymbol()
-    ?.declarations.map((candidate) => candidate.resolve())
+    ?.declarations.filter((candidate) => candidate.kind === SyntaxKind.InterfaceDeclaration)
+    .filter((candidate) => !isExternalDeclaration(session, candidate))
+    .map((candidate) => session.resolveNode(candidate))
     .find(
       (candidate): candidate is InterfaceDeclaration =>
         candidate !== undefined && isInterfaceDeclaration(candidate)
@@ -750,7 +555,7 @@ function indexSignaturesOfType(
 ): readonly BackendIndexSignatureFacts[] {
   const type = session.type(handle, "indexSignaturesOfType");
   return session.checker.getIndexInfosOfType(type).map((info) => {
-    const declaration = session.resolveNode(info.declaration ?? { resolve: () => undefined });
+    const declaration = info.declaration === undefined ? undefined : session.resolveNode(info.declaration);
     return {
       keyType: indexKeyType(info.keyType.flags),
       valueType: session.typeHandle(info.valueType),
@@ -813,21 +618,6 @@ function typeToString(session: TsgoFactsSession, handle: BackendTypeHandle): str
   return session.checker.typeToString(session.type(handle, "typeToString"));
 }
 
-function sourceNodeType(node: Node | undefined): TypeNode | undefined {
-  if (node === undefined) return undefined;
-  if (isTypeNode(node)) return node;
-  if (isTypeAliasDeclaration(node)) return node.type;
-  if (
-    isParameterDeclaration(node) ||
-    isPropertyDeclaration(node) ||
-    isPropertySignatureDeclaration(node) ||
-    isVariableDeclaration(node) ||
-    isFunctionLikeDeclaration(node)
-  )
-    return node.type;
-  return undefined;
-}
-
 function typeFlagNames(flags: TypeFlags): readonly TypeFlagName[] {
   const names = typeFlagDisplayOrder.filter(([flag]) => (flags & flag) === flag).map(([, name]) => name);
   return names.length === 0 ? ["Other"] : names;
@@ -850,59 +640,6 @@ function isIntrinsic(flags: TypeFlags): BackendTypeFacts["intrinsic"] {
   if ((flags & TypeFlags.ESSymbolLike) !== 0) return "symbol";
   if ((flags & TypeFlags.Never) !== 0) return "never";
   return undefined;
-}
-
-function nodeKind(node: Node): BackendNodeFacts["kind"] {
-  if (isTypeAliasDeclaration(node)) return "typeAlias";
-  if (isInterfaceDeclaration(node)) return "interface";
-  if (isClassDeclaration(node)) return "class";
-  if (isClassExpression(node)) return "classExpression";
-  if (isEnumDeclaration(node)) return "enum";
-  if (isEnumMember(node)) return "enumMember";
-  if (isFunctionDeclaration(node)) return "function";
-  // Member declaration kinds are reported precisely because object and class
-  // extraction classify members by the declaration they were written as.
-  if (isMethodDeclaration(node)) return "method";
-  if (isMethodSignatureDeclaration(node)) return "methodSignature";
-  if (isGetAccessorDeclaration(node)) return "getAccessor";
-  if (isSetAccessorDeclaration(node)) return "setAccessor";
-  if (isTypeReferenceNode(node)) return "typeReference";
-  // A `typeof` query — including its `typeof import(…)` spelling — is reported
-  // before the generic type-node fallback so the resolver can preserve the
-  // authored expression instead of the value's type.
-  if (isTypeQueryNode(node)) return "typeQuery";
-  if (isImportTypeNode(node) && node.isTypeOf) return "typeQuery";
-  if (isUnionTypeNode(node)) return "union";
-  if (isIntersectionTypeNode(node)) return "intersection";
-  if (isTypeOperatorNode(node)) return "typeOperator";
-  if (isArrayTypeNode(node)) return "array";
-  if (isTupleTypeNode(node)) return "tuple";
-  if (isMappedTypeNode(node)) return "mapped";
-  if (isParenthesizedTypeNode(node)) return "parenthesized";
-  if (isTypeParameterDeclaration(node)) return "typeParameter";
-  if (isParameterDeclaration(node)) return "parameter";
-  if (isPropertyDeclaration(node) || isPropertySignatureDeclaration(node) || isPropertyAssignment(node))
-    return "property";
-  if (isShorthandPropertyAssignment(node)) return "property";
-  if (isVariableDeclaration(node)) return "variable";
-  if (isCallExpression(node)) return "callExpression";
-  if (isFunctionLikeDeclaration(node)) return "functionLike";
-  if (isIndexSignatureDeclaration(node)) return "indexSignature";
-  return isTypeNode(node) ? "type" : "unknown";
-}
-
-function modifierFlags(node: Node): readonly ("readonly" | "private" | "protected" | "static")[] {
-  return declarationModifiers(node).flatMap((modifier) =>
-    modifier.kind === SyntaxKind.ReadonlyKeyword
-      ? (["readonly"] as const)
-      : modifier.kind === SyntaxKind.PrivateKeyword
-        ? (["private"] as const)
-        : modifier.kind === SyntaxKind.ProtectedKeyword
-          ? (["protected"] as const)
-          : modifier.kind === SyntaxKind.StaticKeyword
-            ? (["static"] as const)
-            : []
-  );
 }
 
 function rightmostName(node: Node): string | undefined {

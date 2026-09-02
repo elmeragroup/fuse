@@ -1,45 +1,27 @@
 /* oxlint-disable anti-slop/no-conditional-empty-object-spread -- optional origin facts preserve the backend contract. */
 
-import type { Node } from "typescript/unstable/ast";
 import { SyntaxKind } from "typescript/unstable/ast";
+import type { Node } from "typescript/unstable/ast";
 import { isIdentifier, isModuleDeclaration } from "typescript/unstable/ast/is";
 import { SymbolFlags } from "typescript/unstable/sync";
 import type { Symbol as TsSymbol } from "typescript/unstable/sync";
 
-import type { BackendSymbolFacts, BackendSymbolHandle } from "../contracts.ts";
+import type { BackendSymbolFacts, BackendSymbolHandle, BackendSymbolOrigin } from "../contracts.ts";
 import { authoredSymbolName } from "./class-facts.ts";
 import type { TsgoFactsSession } from "./facts.ts";
+import { classifySourceFile, isExternalDeclaration, isExternalOwnership } from "./file-ownership.ts";
 import { moduleOriginOfSymbol } from "./module-origin.ts";
-import { repositoryRelativePath } from "./paths.ts";
+import { repositoryRelativePath } from "./path-identity.ts";
 
 /** Reads one symbol's normalized, alias-resolved facts. */
 export function symbolFacts(session: TsgoFactsSession, handle: BackendSymbolHandle): BackendSymbolFacts {
   const symbol = session.symbol(handle, "symbolFacts");
-  const target = (symbol.flags & SymbolFlags.Alias) !== 0 ? session.checker.getAliasedSymbol(symbol) : symbol;
   const repoPath = (path: string): string => repositoryRelativePath(session.rootDirectory, path);
-  const declarations = symbol.declarations.flatMap((declaration) => {
-    const resolved = session.resolveNode(declaration);
-    return resolved === undefined ? [] : [session.nodeHandle(resolved)];
-  });
-  const resolvedValueDeclaration =
-    symbol.valueDeclaration === undefined ? undefined : session.resolveNode(symbol.valueDeclaration);
   const valueDeclaration =
-    resolvedValueDeclaration === undefined ? undefined : session.nodeHandle(resolvedValueDeclaration);
-  const sourcePaths = symbol.declarations.map(
-    (declaration) => session.resolveNode(declaration)?.getSourceFile().fileName ?? declaration.path
-  );
-  // Direct dependency declarations (for example React's `FC` interface) do
-  // not carry an authored import node. The shared origin resolver derives
-  // their package identity from ownership, while aliases still follow their
-  // explicit import/re-export chain.
-  const moduleOrigin = moduleOriginOfSymbol(session, symbol);
-  const result: BackendSymbolFacts = {
+    symbol.valueDeclaration === undefined ? undefined : session.declarationHandle(symbol.valueDeclaration);
+  const sourcePaths = symbol.declarations.map((declaration) => session.declarationPath(declaration));
+  return {
     name: authoredSymbolName(symbol.name),
-    identity: {
-      name: authoredSymbolName(target.name),
-      namespaces: symbolNamespaces(target),
-    },
-    ...(moduleOrigin === undefined ? {} : { moduleOrigin }),
     flags: [
       ...((symbol.flags & SymbolFlags.Alias) !== 0 ? (["alias"] as const) : []),
       ...((symbol.flags & SymbolFlags.Class) !== 0 ? (["class"] as const) : []),
@@ -47,21 +29,95 @@ export function symbolFacts(session: TsgoFactsSession, handle: BackendSymbolHand
       ...((symbol.flags & SymbolFlags.Optional) !== 0 ? (["optional"] as const) : []),
     ],
     declarationPaths: sourcePaths,
-    declarations,
+    declarations: symbol.declarations.map((declaration) => session.declarationHandle(declaration)),
     repositoryRelativeDeclarationPaths: sourcePaths.map(repoPath),
+    ...(valueDeclaration === undefined ? {} : { valueDeclaration }),
   };
-  return valueDeclaration === undefined ? result : { ...result, valueDeclaration };
 }
 
-/** Returns enclosing namespace/module names for a compiler symbol. */
-export function symbolNamespaces(symbol: TsSymbol): string[] {
-  const declaration = symbol.declarations[0]?.resolve();
-  if (declaration === undefined) return [];
+/**
+ * Alias-resolved identity and authored import origin. Ordinary `symbolFacts`
+ * reads do not pay for this.
+ */
+export function symbolOrigin(session: TsgoFactsSession, handle: BackendSymbolHandle): BackendSymbolOrigin {
+  const symbol = session.symbol(handle, "symbolOrigin");
+  const target = (symbol.flags & SymbolFlags.Alias) !== 0 ? session.checker.getAliasedSymbol(symbol) : symbol;
+  const identity = {
+    name: authoredSymbolName(target.name),
+    namespaces: symbolNamespaces(session, target),
+  };
+  const moduleOrigin = moduleOriginOfSymbol(session, symbol);
+  return moduleOrigin === undefined ? { identity } : { identity, moduleOrigin };
+}
+
+/**
+ * Determines whether a member was declared by a class without resolving any
+ * declaration node. The TS7 symbol response carries the declaring parent id;
+ * `getParent()` fetches only that symbol record, whose class bit is enough for
+ * the parser's visibility gate.
+ */
+export function declaringParentIsClass(session: TsgoFactsSession, handle: BackendSymbolHandle): boolean {
+  return parentSymbolIsClass(session, session.symbol(handle, "symbolFacts.declaringParentIsClass"));
+}
+
+function parentSymbolIsClass(session: TsgoFactsSession, symbol: TsSymbol): boolean {
+  session.ensureOpen("symbolFacts.declaringParentIsClass");
+  const parent = symbol.getParent();
+  return parent !== undefined && (parent.flags & SymbolFlags.Class) !== 0;
+}
+
+/** Returns enclosing authored namespace/module names for a compiler symbol. */
+export function symbolNamespaces(session: TsgoFactsSession, symbol: TsSymbol): string[] {
+  if ((symbol.flags & SymbolFlags.Alias) === 0) {
+    const localDeclaration = symbol.declarations.find(
+      (declaration) =>
+        !isExternalOwnership(classifySourceFile(declaration.path)) &&
+        !isExternalDeclaration(session, declaration)
+    );
+    const localNamespaces = declarationNamespaces(
+      localDeclaration === undefined ? undefined : session.resolveNode(localDeclaration)
+    );
+    if (localNamespaces !== undefined) return localNamespaces;
+  }
+
   const result: string[] = [];
-  let parent: Node = declaration.parent;
-  while (parent.kind !== SyntaxKind.SourceFile) {
-    if (isModuleDeclaration(parent) && isIdentifier(parent.name)) result.unshift(parent.name.text);
-    parent = parent.parent;
+  const seen = new Set<number>();
+  let parent = symbol.getParent();
+  while (parent !== undefined && !seen.has(parent.id)) {
+    seen.add(parent.id);
+    const name = parent.name;
+    if (
+      (parent.flags & SymbolFlags.Namespace) !== 0 &&
+      parent.declarations.length > 0 &&
+      !name.startsWith("__") &&
+      !((name.startsWith('"') && name.endsWith('"')) || (name.startsWith("'") && name.endsWith("'")))
+    ) {
+      result.unshift(name);
+    }
+    parent = parent.getParent();
+  }
+  return result;
+}
+
+/**
+ * Recovers a non-alias symbol's authored namespace chain from a project-owned
+ * declaration's AST.
+ *
+ * A compiler symbol for a top-level declaration in an external module has a
+ * quoted external-module symbol as its parent. Asking that parent for its own
+ * parent is semantically useless for namespace output, but it is still a
+ * remote checker request. Project-owned declarations are resolved locally, so
+ * their AST ancestry provides the same namespace facts without traversing the
+ * symbol graph. String-literal module names are intentionally ignored: they
+ * represent external-module containers, not authored namespace segments.
+ */
+function declarationNamespaces(declaration: Node | undefined): string[] | undefined {
+  if (declaration === undefined) return undefined;
+  const result: string[] = [];
+  let current: Node = declaration.parent;
+  while (current.kind !== SyntaxKind.SourceFile) {
+    if (isModuleDeclaration(current) && isIdentifier(current.name)) result.unshift(current.name.text);
+    current = current.parent;
   }
   return result;
 }

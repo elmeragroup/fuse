@@ -15,6 +15,8 @@ import { describe, expect, it } from "vitest";
 import { writeArtifactBatchOrThrow } from "../scripts/artifact-batch-command.ts";
 import { makeArtifactBatchWriterForTest, writeArtifactBatch } from "../scripts/artifact-batch-writer.ts";
 
+const faultInjectionDeadlineMs = 250;
+
 function transactionEntries(root: string): readonly string[] {
   return readdirSync(root).filter((entry) => entry.startsWith(".artifact-batch-"));
 }
@@ -94,7 +96,7 @@ describe("artifact batch writer", () => {
     try {
       let lockStalled = false;
       const writeWithUncertainLock = makeArtifactBatchWriterForTest({
-        maximumDurationMs: 50,
+        maximumDurationMs: faultInjectionDeadlineMs,
         runFileSystemOperation: ({ kind, path, run }) => {
           if (!lockStalled && kind === "make-directory" && path.endsWith(".artifact-batch-lock")) {
             lockStalled = true;
@@ -430,7 +432,7 @@ describe("artifact batch writer", () => {
     try {
       writeFileSync(join(root, "report.json"), "original report\n");
       const writeThatStalls = makeArtifactBatchWriterForTest({
-        maximumDurationMs: 50,
+        maximumDurationMs: faultInjectionDeadlineMs,
         beforeArtifactWrite: () => new Promise<void>(() => undefined),
       });
       const startedAt = Date.now();
@@ -466,7 +468,7 @@ describe("artifact batch writer", () => {
       writeFileSync(join(root, "report.json"), "original report\n");
       let renameStalled = false;
       const writeWithStalledRename = makeArtifactBatchWriterForTest({
-        maximumDurationMs: 50,
+        maximumDurationMs: faultInjectionDeadlineMs,
         runFileSystemOperation: ({ kind, path, run }) => {
           if (!renameStalled && kind === "rename" && path.endsWith("report.json")) {
             renameStalled = true;
@@ -502,13 +504,59 @@ describe("artifact batch writer", () => {
     }
   });
 
+  it("keeps recovery independent from a short primary-operation deadline", async () => {
+    const root = mkdtempSync(join(tmpdir(), "api-extractor-artifact-recovery-deadline-"));
+    try {
+      writeFileSync(join(root, "report.json"), "original report\n");
+      let renameStalled = false;
+      const writeWithStalledRename = makeArtifactBatchWriterForTest({
+        maximumDurationMs: faultInjectionDeadlineMs,
+        beforeTemporaryCleanup: ({ kind }) =>
+          kind === "transaction"
+            ? new Promise<void>((resolve) => {
+                setTimeout(resolve, faultInjectionDeadlineMs / 2);
+              })
+            : undefined,
+        runFileSystemOperation: ({ kind, path, run }) => {
+          if (!renameStalled && kind === "rename" && path.endsWith("report.json")) {
+            renameStalled = true;
+            return new Promise<never>(() => undefined);
+          }
+          return run();
+        },
+      });
+
+      const result = await writeWithStalledRename({
+        outputRoot: root,
+        artifacts: [{ destination: "report.json", content: "replacement\n", evidence: "reviewed" }],
+      });
+
+      expect(result).toEqual({
+        status: "failure",
+        error: {
+          category: "interrupted",
+          message: "The artifact batch did not complete within its allowed time.",
+          destination: "report.json",
+          recovery: {
+            originalState: "restored",
+            temporaryState: "removed",
+          },
+        },
+      });
+      expect(readFileSync(join(root, "report.json"), "utf8")).toBe("original report\n");
+      expect(transactionEntries(root)).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   it("does not claim restoration when a timed-out mutation may still complete", async () => {
     const root = mkdtempSync(join(tmpdir(), "api-extractor-artifact-uncertain-timeout-"));
     try {
       writeFileSync(join(root, "report.json"), "original report\n");
       let renameStalled = false;
       const writeWithUncertainRename = makeArtifactBatchWriterForTest({
-        maximumDurationMs: 50,
+        maximumDurationMs: faultInjectionDeadlineMs,
         runFileSystemOperation: ({ kind, path, run }) => {
           if (!renameStalled && kind === "rename" && path.endsWith("report.json")) {
             renameStalled = true;
@@ -550,7 +598,7 @@ describe("artifact batch writer", () => {
       writeFileSync(join(root, "second.json"), "second original\n");
       let rollbackRemoveStalled = false;
       const writeWithUncertainRollback = makeArtifactBatchWriterForTest({
-        maximumDurationMs: 50,
+        maximumRecoveryDurationMs: 50,
         beforeArtifactWrite: ({ index }) => {
           if (index === 1) throw new Error("synthetic second write failure");
         },

@@ -8,7 +8,15 @@ import {
 } from "typescript/unstable/ast/is";
 import type { Checker, Type } from "typescript/unstable/sync";
 
-import type { TsgoModuleSession } from "./module.ts";
+import type { CompilerDeclaration } from "./declarations.ts";
+import { resolveOwnedDeclaration } from "./declarations.ts";
+import type { CompilerSourceFileMetadata } from "./file-ownership.ts";
+
+export type TsgoHeritageSession = {
+  readonly checker: Checker;
+  readonly sourceFileMetadata: (path: string) => CompilerSourceFileMetadata | undefined;
+  readonly resolveDeclaration: (declaration: CompilerDeclaration) => Node | undefined;
+};
 
 /**
  * Heritage metadata for exported interfaces and classes.
@@ -29,7 +37,7 @@ const heritageUtilityTypes = new Set(["Omit", "Pick", "Partial", "Required", "Re
  * resolving each base to its underlying symbol through alias chains.
  */
 export function extendsTypes(
-  session: TsgoModuleSession,
+  session: TsgoHeritageSession,
   declaration: Node | undefined
 ): readonly { readonly name: string; readonly resolvedName?: string }[] | undefined {
   if (declaration === undefined || (!isInterfaceDeclaration(declaration) && !isClassDeclaration(declaration)))
@@ -53,7 +61,7 @@ export function extendsTypes(
                 : firstArgument.getText(),
             };
       const type = session.checker.getTypeAtLocation(firstArgument ?? typeExpr);
-      const resolvedName = underlyingSymbolName(type, session.checker);
+      const resolvedName = underlyingSymbolName(type, session);
       if (resolvedName !== undefined && resolvedName !== info.name && !isInternalSymbolName(resolvedName)) {
         info.resolvedName = resolvedName;
       }
@@ -76,22 +84,35 @@ const maxHeritageAliasHops = 8;
  * Resolves the underlying symbol name for a heritage type, following generic
  * alias chains (`type Props<T> = DialogProps<T>` names DialogProps).
  */
-function underlyingSymbolName(type: Type | undefined, checker: Checker, hops = 0): string | undefined {
+function underlyingSymbolName(
+  type: Type | undefined,
+  session: TsgoHeritageSession,
+  hops = 0
+): string | undefined {
   if (type === undefined) return undefined;
   const symbol = type.getAliasSymbol() ?? type.getSymbol();
   if (symbol === undefined) return undefined;
   if (hops >= maxHeritageAliasHops) return symbol.name;
-  const aliasDeclaration = symbol.declarations[0]?.resolve();
+  const aliasHandle = symbol.declarations[0];
+  // Alias names are already available from the checker symbol. Only inspect
+  // the authored type syntax for project-owned aliases, where the source file
+  // is in the extraction surface; resolving a dependency alias here would
+  // defeat the external-selection gate that follows in the parser.
+  const aliasDeclaration = resolveOwnedDeclaration(session, aliasHandle);
   if (
     aliasDeclaration !== undefined &&
     isTypeAliasDeclaration(aliasDeclaration) &&
     isTypeReferenceNode(aliasDeclaration.type)
   ) {
-    const targetSymbol = checker.getSymbolAtLocation(aliasDeclaration.type.typeName);
+    const targetSymbol = session.checker.getSymbolAtLocation(aliasDeclaration.type.typeName);
     if (targetSymbol !== undefined && !isInternalSymbolName(targetSymbol.name) && targetSymbol !== symbol) {
-      const targetDeclaration = targetSymbol.declarations[0]?.resolve();
+      const targetDeclaration = resolveOwnedDeclaration(session, targetSymbol.declarations[0]);
       if (targetDeclaration !== undefined && isTypeAliasDeclaration(targetDeclaration)) {
-        const deeper = underlyingSymbolName(checker.getDeclaredTypeOfSymbol(targetSymbol), checker, hops + 1);
+        const deeper = underlyingSymbolName(
+          session.checker.getDeclaredTypeOfSymbol(targetSymbol),
+          session,
+          hops + 1
+        );
         if (deeper !== undefined && deeper !== targetSymbol.name) return deeper;
       }
       return targetSymbol.name;

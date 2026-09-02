@@ -1,5 +1,4 @@
 import { resolve } from "node:path";
-import type { Node } from "typescript/unstable/ast";
 import { isExportDeclaration, isImportDeclaration, isStringLiteral } from "typescript/unstable/ast/is";
 import { SymbolFlags } from "typescript/unstable/sync";
 import type { Checker, Symbol as TsSymbol } from "typescript/unstable/sync";
@@ -32,7 +31,7 @@ export function resolveModule(
 ): BackendResolvedModule | undefined {
   session.ensureOpen("resolveModule");
   const absoluteContaining = resolve(session.cwd, containingFile);
-  const source = session.project.program.getSourceFile(absoluteContaining);
+  const source = session.sourceFile(absoluteContaining);
   if (source === undefined) return undefined;
   const moduleStatement = source.statements.find((statement) => {
     if (isImportDeclaration(statement)) {
@@ -64,15 +63,15 @@ export function resolveModule(
         )
       : []),
   ];
-  const declarations = symbols.flatMap((symbol) =>
-    symbol.declarations
-      .map((candidate) => candidate.resolve())
-      .filter((candidate): candidate is Node => candidate !== undefined)
+  // NodeHandle paths already identify the declaration source file. Resolving
+  // one just to ask for `getSourceFile().isDeclarationFile` fetches an entire
+  // dependency subtree before the parser has applied external-type policy.
+  // Prefer declaration-file paths (the same preference the old AST sort had),
+  // then retain the compiler's declaration order as the fallback.
+  const declarationPaths = symbols.flatMap((symbol) =>
+    symbol.declarations.map((candidate) => candidate.path)
   );
-  const declaration = declarations
-    .map((candidate) => candidate.getSourceFile())
-    .sort((left, right) => Number(right.isDeclarationFile) - Number(left.isDeclarationFile))[0];
-  const resolvedFilePath = declaration?.fileName;
+  const resolvedFilePath = declarationPaths.find((path) => path.endsWith(".d.ts")) ?? declarationPaths[0];
   return resolvedFilePath === undefined ? undefined : { filePath: resolve(session.cwd, resolvedFilePath) };
 }
 

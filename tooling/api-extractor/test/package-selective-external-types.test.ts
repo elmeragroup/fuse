@@ -1,5 +1,7 @@
 import { Effect, Schema } from "effect";
-import { resolve } from "node:path";
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { ExtractionResultSchema, ProjectExtractor } from "../src/index.ts";
@@ -45,6 +47,91 @@ function stableResult(result: ExtractionResult): string {
 }
 
 describe("package-selective external-type expansion", () => {
+  it("preserves symlinked workspace ownership and provenance with preserveSymlinks", async () => {
+    const temporaryWorkspace = mkdtempSync(join(tmpdir(), "api-extractor-preserve-symlinks-"));
+    const workspaceRoot = temporaryWorkspace;
+    const consumerDirectory = join(workspaceRoot, "consumer");
+    const dependencyDirectory = join(workspaceRoot, "workspace-dependency");
+    const dependencyLink = join(consumerDirectory, "node_modules", "@fixture", "workspace-dependency");
+    const input = join(consumerDirectory, "input.ts");
+    const tsconfig = join(consumerDirectory, "tsconfig.json");
+
+    try {
+      mkdirSync(dependencyDirectory, { recursive: true });
+      mkdirSync(join(consumerDirectory, "node_modules", "@fixture"), { recursive: true });
+      writeFileSync(
+        join(dependencyDirectory, "package.json"),
+        JSON.stringify({
+          name: "@fixture/workspace-dependency",
+          version: "1.0.0",
+          types: "./index.d.ts",
+        })
+      );
+      writeFileSync(
+        join(dependencyDirectory, "index.d.ts"),
+        "export interface WorkspaceShape { externalLabel: string; }\n"
+      );
+      symlinkSync(dependencyDirectory, dependencyLink, process.platform === "win32" ? "junction" : "dir");
+      writeFileSync(
+        input,
+        [
+          'import type { WorkspaceShape } from "@fixture/workspace-dependency";',
+          "export interface PublicShape extends WorkspaceShape { localLabel: string; }",
+          "",
+        ].join("\n")
+      );
+      writeFileSync(
+        tsconfig,
+        JSON.stringify({
+          compilerOptions: {
+            module: "ESNext",
+            moduleResolution: "Bundler",
+            noEmit: true,
+            preserveSymlinks: true,
+            rootDir: ".",
+            strict: true,
+            target: "ES2022",
+          },
+          // Both identities are registered. The imported symlink must still
+          // keep its external-library metadata instead of becoming this root.
+          include: ["input.ts", "../workspace-dependency/index.d.ts"],
+        })
+      );
+
+      const extract = (options?: ExtractorOptions) =>
+        Effect.runPromise(
+          Effect.scoped(
+            Effect.gen(function* () {
+              const extractor = yield* ProjectExtractor;
+              return yield* extractor.extractModule(input, options);
+            }).pipe(Effect.provide(ProjectExtractor.live({ cwd: workspaceRoot, tsconfigPath: tsconfig })))
+          )
+        );
+      const defaultResult = await extract();
+      const expandedResult = await extract({ includeExternalTypes: true });
+      const defaultPublicExport = defaultResult.module.exports.find((entry) => entry.name === "PublicShape");
+      const expandedPublicExport = expandedResult.module.exports.find(
+        (entry) => entry.name === "PublicShape"
+      );
+      if (defaultPublicExport?.type.kind !== "object" || expandedPublicExport?.type.kind !== "object") {
+        throw new Error("Expected PublicShape object exports");
+      }
+
+      expect(defaultPublicExport.type.properties.map((property) => property.name)).toEqual(["localLabel"]);
+      expect(expandedPublicExport.type.properties.map((property) => property.name)).toEqual([
+        "externalLabel",
+        "localLabel",
+      ]);
+      expect(expandedResult.provenance).toContainEqual({
+        path: ["PublicShape", "properties", "externalLabel"],
+        declarationPaths: ["consumer/node_modules/@fixture/workspace-dependency/index.d.ts"],
+        synthesized: false,
+      });
+    } finally {
+      rmSync(temporaryWorkspace, { recursive: true, force: true });
+    }
+  });
+
   it("expands ordinary props from exactly the selected scoped dependency", async () => {
     const result = await runExtraction({ includeExternalTypes: ["@fixture/selected"] });
     const props = new Map(primitiveComponent(result).props.map((property) => [property.name, property]));

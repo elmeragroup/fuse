@@ -1,4 +1,4 @@
-import type { BackendModuleOrigin, BackendSymbolFacts, BackendSymbolIdentity } from "../backend/contracts.ts";
+import type { BackendModuleOrigin, BackendSymbolIdentity } from "../backend/contracts.ts";
 
 /** The small set of React declarations whose public identity affects parsing. */
 const reactWrapperNames = new Set([
@@ -46,7 +46,7 @@ export function isReactWrapperCall(facts: ParserSymbolOrigin | undefined): boole
   return reactWrapperCallNames.has(facts.identity.name) && isReactApiSymbol(facts, facts.identity.name);
 }
 
-/** Applies the same identity/origin policy to a normalized backend symbol. */
-export function isReactWrapperType(symbol: BackendSymbolFacts): boolean {
-  return isReactApiSymbol(symbol, reactWrapperNames);
+/** Applies the same identity/origin policy to a normalized backend origin. */
+export function isReactWrapperType(origin: ParserSymbolOrigin): boolean {
+  return isReactApiSymbol(origin, reactWrapperNames);
 }

@@ -1,11 +1,7 @@
 import { fileURLToPath } from "node:url";
 
-import {
-  fixtureEvidenceCatalog,
-  packageFixtureExecutionPlan,
-  packageFixtureTypecheckPlan,
-  validateFixtureEvidenceCatalog,
-} from "./fixture-catalog.ts";
+import { fixtureEvidenceCatalog, validateFixtureEvidenceCatalog } from "./fixture-catalog.ts";
+import { packageFixtureExecutionPlan, packageFixtureTypecheckPlan } from "./fixture-plans.ts";
 
 export function checkFixtureCatalog() {
   validateFixtureEvidenceCatalog(fixtureEvidenceCatalog);

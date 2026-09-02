@@ -5,13 +5,85 @@ import { describe, expect, it } from "vitest";
 
 import {
   assertSemanticTotalsEqual,
+  assertStoredTimingReport,
   assertTimingReportInvariants,
   Issue14TimingReportSchema,
   subtractTotals,
+  timingToleranceMs,
+  TimingCommandOutputSchema,
+  timingCommandOutput,
 } from "../scripts/issue-14-timing.ts";
 import type { Issue14TimingReport } from "../scripts/issue-14-timing.ts";
 
 const reportPath = resolve(import.meta.dirname, "fixtures/issue-14-timing.json");
+
+const timingFields = ["roundTripMs", "serverTimeMs", "transportOverheadMs"] as const;
+const integerFields = [
+  "requestCount",
+  "bytesSent",
+  "bytesReceived",
+  "nodesMaterialized",
+  "sourceFilesFetched",
+  "nodesFetched",
+] as const;
+
+function expectTimingTotalsEqual(
+  actual: Issue14TimingReport["aggregate"]["measured"],
+  expected: Issue14TimingReport["aggregate"]["measured"]
+): void {
+  for (const field of integerFields) expect(actual[field], field).toBe(expected[field]);
+  for (const field of timingFields) {
+    expect(Math.abs(actual[field] - expected[field]), field).toBeLessThanOrEqual(timingToleranceMs);
+  }
+}
+
+function withOverBudgetLiveTiming(report: Issue14TimingReport): Issue14TimingReport {
+  const overBudget = structuredClone(report);
+  const sample = overBudget.samples[0];
+  if (sample === undefined) throw new Error("Missing representative timing sample.");
+  const addedRoundTripMs =
+    overBudget.stopConditions.unacceptableIpcGrowth.maxAggregateRoundTripMs -
+    overBudget.aggregate.measured.roundTripMs +
+    1;
+
+  Reflect.set(sample.measured, "roundTripMs", sample.measured.roundTripMs + addedRoundTripMs);
+  Reflect.set(sample.measured, "transportOverheadMs", sample.measured.transportOverheadMs + addedRoundTripMs);
+  Reflect.set(sample.delta, "roundTripMs", sample.delta.roundTripMs + addedRoundTripMs);
+  Reflect.set(sample.delta, "transportOverheadMs", sample.delta.transportOverheadMs + addedRoundTripMs);
+  Reflect.set(
+    overBudget.aggregate.measured,
+    "roundTripMs",
+    overBudget.aggregate.measured.roundTripMs + addedRoundTripMs
+  );
+  Reflect.set(
+    overBudget.aggregate.measured,
+    "transportOverheadMs",
+    overBudget.aggregate.measured.transportOverheadMs + addedRoundTripMs
+  );
+  Reflect.set(
+    overBudget.aggregate.delta,
+    "roundTripMs",
+    overBudget.aggregate.delta.roundTripMs + addedRoundTripMs
+  );
+  Reflect.set(
+    overBudget.aggregate.delta,
+    "transportOverheadMs",
+    overBudget.aggregate.delta.transportOverheadMs + addedRoundTripMs
+  );
+  Reflect.set(
+    overBudget.stopConditions.unacceptableIpcGrowth,
+    "measuredAggregateRoundTripMs",
+    overBudget.stopConditions.unacceptableIpcGrowth.measuredAggregateRoundTripMs + addedRoundTripMs
+  );
+  Reflect.set(
+    overBudget.stopConditions.unacceptableIpcGrowth,
+    "deltaAggregateRoundTripMs",
+    overBudget.stopConditions.unacceptableIpcGrowth.deltaAggregateRoundTripMs + addedRoundTripMs
+  );
+  Reflect.set(overBudget.stopConditions.unacceptableIpcGrowth, "status", "triggered");
+  Reflect.set(overBudget, "decision", "no-go");
+  return overBudget;
+}
 
 describe("Issue 14 second IPC timing artifact", () => {
   it("decodes the baseline, four samples, deltas, and go decision", () => {
@@ -28,9 +100,12 @@ describe("Issue 14 second IPC timing artifact", () => {
     expect(report.decision).toBe("go");
     expect(report.stopConditions.unacceptableIpcGrowth.status).toBe("not-triggered");
     expect(report.aggregate.measured.roundTripMs).toBeLessThanOrEqual(1000);
-    expect(report.aggregate.delta.roundTripMs).toBe(
-      report.aggregate.measured.roundTripMs - report.aggregate.baseline.roundTripMs
-    );
+    expect(
+      Math.abs(
+        report.aggregate.delta.roundTripMs -
+          (report.aggregate.measured.roundTripMs - report.aggregate.baseline.roundTripMs)
+      )
+    ).toBeLessThanOrEqual(timingToleranceMs);
     expect(report.measurement.stableContract).toBe("semantic-counters-exact");
     expect(report.measurement.wallClockContract).toBe("observational");
     assertTimingReportInvariants(report);
@@ -38,9 +113,46 @@ describe("Issue 14 second IPC timing artifact", () => {
       expect(sample.measured.requestCount).toBeGreaterThan(0);
       expect(sample.measured.bytesSent).toBeGreaterThan(0);
       expect(sample.measured.bytesReceived).toBeGreaterThan(0);
-      expect(sample.delta.roundTripMs).toBe(sample.measured.roundTripMs - sample.baseline.roundTripMs);
-      expect(sample.delta).toEqual(subtractTotals(sample.measured, sample.baseline));
+      expectTimingTotalsEqual(sample.delta, subtractTotals(sample.measured, sample.baseline));
     }
+  });
+
+  it("accepts observational arithmetic drift just inside the production tolerance", () => {
+    const report = Schema.decodeUnknownSync(Issue14TimingReportSchema)(
+      JSON.parse(readFileSync(reportPath, "utf8"))
+    );
+    const nearTolerance = structuredClone(report);
+    const sample = nearTolerance.samples[0];
+    if (sample === undefined) throw new Error("Missing representative timing sample.");
+    const acceptedDrift = timingToleranceMs * 0.999;
+    Reflect.set(sample.delta, "roundTripMs", sample.delta.roundTripMs + acceptedDrift);
+    Reflect.set(
+      nearTolerance.aggregate.delta,
+      "roundTripMs",
+      nearTolerance.aggregate.delta.roundTripMs + acceptedDrift
+    );
+    Reflect.set(
+      nearTolerance.stopConditions.unacceptableIpcGrowth,
+      "measuredAggregateRoundTripMs",
+      nearTolerance.stopConditions.unacceptableIpcGrowth.measuredAggregateRoundTripMs + acceptedDrift
+    );
+
+    expect(
+      Math.abs(sample.delta.roundTripMs - (sample.measured.roundTripMs - sample.baseline.roundTripMs))
+    ).toBeLessThanOrEqual(timingToleranceMs);
+    expect(
+      Math.abs(
+        nearTolerance.aggregate.delta.roundTripMs -
+          (nearTolerance.aggregate.measured.roundTripMs - nearTolerance.aggregate.baseline.roundTripMs)
+      )
+    ).toBeLessThanOrEqual(timingToleranceMs);
+    expect(
+      Math.abs(
+        nearTolerance.aggregate.delta.roundTripMs -
+          nearTolerance.samples.reduce((total, entry) => total + entry.delta.roundTripMs, 0)
+      )
+    ).toBeLessThanOrEqual(timingToleranceMs);
+    expect(() => assertTimingReportInvariants(nearTolerance)).not.toThrow();
   });
 
   it("keeps semantic counters and arithmetic mutation-sensitive", () => {
@@ -56,6 +168,12 @@ describe("Issue 14 second IPC timing artifact", () => {
       ),
     };
     expect(() => assertTimingReportInvariants(mutated)).toThrow(/arithmetic|aggregate|counter/u);
+
+    const fractionalMutation = structuredClone(report);
+    const sample = fractionalMutation.samples[0];
+    if (sample === undefined) throw new Error("Missing representative timing sample.");
+    Reflect.set(sample.delta, "requestCount", sample.delta.requestCount + timingToleranceMs / 2);
+    expect(() => assertTimingReportInvariants(fractionalMutation)).toThrow(/requestCount/u);
   });
 
   it("treats transport byte counts as validated observations", () => {
@@ -85,6 +203,48 @@ describe("Issue 14 second IPC timing artifact", () => {
     if (invalidSample === undefined) throw new Error("Missing representative timing sample.");
     Reflect.set(invalidSample.measured, "bytesReceived", -1);
     expect(() => assertTimingReportInvariants(invalidObservation)).toThrow(/bytesReceived/u);
+  });
+
+  it("keeps checkout portability separate from live budget enforcement", () => {
+    const stored = Schema.decodeUnknownSync(Issue14TimingReportSchema)(
+      JSON.parse(readFileSync(reportPath, "utf8"))
+    );
+    const overBudgetLiveMeasurement = withOverBudgetLiveTiming(stored);
+    assertTimingReportInvariants(overBudgetLiveMeasurement);
+
+    const semanticDecision = assertStoredTimingReport(
+      stored,
+      overBudgetLiveMeasurement,
+      "verify-checkout-portability"
+    );
+    const portabilityOutput = timingCommandOutput(
+      overBudgetLiveMeasurement,
+      "verify-checkout-portability",
+      semanticDecision
+    );
+    expect(portabilityOutput).toMatchObject({ mode: "portability", semanticDecision: "go" });
+    expect(portabilityOutput).not.toHaveProperty("decision");
+    expect(() => assertStoredTimingReport(stored, overBudgetLiveMeasurement, "enforce-live-budget")).toThrow(
+      /IPC stop condition/u
+    );
+  });
+
+  it("rejects command output that mixes live and portability decisions", () => {
+    const report = Schema.decodeUnknownSync(Issue14TimingReportSchema)(
+      JSON.parse(readFileSync(reportPath, "utf8"))
+    );
+    const liveOutput = timingCommandOutput(report, "enforce-live-budget", "go");
+    const portabilityOutput = timingCommandOutput(report, "verify-checkout-portability", "go");
+
+    expect(() => Schema.decodeUnknownSync(TimingCommandOutputSchema)(liveOutput)).not.toThrow();
+    expect(() => Schema.decodeUnknownSync(TimingCommandOutputSchema)(portabilityOutput)).not.toThrow();
+    expect(() =>
+      Schema.decodeUnknownSync(TimingCommandOutputSchema)({
+        ...liveOutput,
+        mode: "portability",
+        semanticDecision: "go",
+      })
+    ).toThrow();
   });
 
   it("pins the standalone timing identity and stop-condition evidence", () => {

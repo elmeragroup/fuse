@@ -11,7 +11,7 @@ import { ExtractWarningSchema, ProjectExtractor } from "../src/index.ts";
 import type { ExtractWarning } from "../src/index.ts";
 import { writeArtifactBatchOrThrow } from "./artifact-batch-command.ts";
 import type { ArtifactBatchItem } from "./artifact-batch-writer.ts";
-import { deriveWarningEvidencePlan, fixtureEvidenceCatalog } from "./fixture-catalog.ts";
+import { fixtureEvidenceCatalog } from "./fixture-catalog.ts";
 import {
   assertTs7DivergenceEvidence,
   canonicalDifferencePaths,
@@ -22,6 +22,7 @@ import {
 } from "./fixture-evidence.ts";
 import type { Issue14Fixture } from "./fixture-evidence.ts";
 import { createFixtureFileSystem } from "./fixture-filesystem.ts";
+import { deriveWarningEvidencePlan } from "./fixture-views.ts";
 import {
   assertConformanceDecoded,
   assertReferenceEvidence,

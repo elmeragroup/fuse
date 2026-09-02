@@ -5,10 +5,10 @@ import type { Node, SourceFile } from "typescript/unstable/ast";
 import { isExportDeclaration, isExportSpecifier, isStringLiteral } from "typescript/unstable/ast/is";
 import type { Symbol as TsSymbol } from "typescript/unstable/sync";
 
+import { resolveOwnedDeclaration } from "./declarations.ts";
 import { exportsOf } from "./module-ordering.ts";
-import { resolveModule } from "./module-resolution.ts";
 import type { DescriptorScope, TsgoModuleSession } from "./module.ts";
-import { repositoryRelativePath } from "./paths.ts";
+import { repositoryRelativePath } from "./path-identity.ts";
 
 /**
  * Re-export chain walking for the module surface.
@@ -32,6 +32,8 @@ type ForwardingReExport = {
   readonly file: SourceFile;
   readonly exportedName: string;
   readonly moduleSpecifier: string;
+  /** The authored string-literal node resolves its module symbol directly. */
+  readonly moduleNode: Node;
 };
 
 /**
@@ -46,7 +48,7 @@ type ForwardingReExport = {
 export function extendChain(scope: DescriptorScope, symbol: TsSymbol): readonly string[] {
   const hop = repositoryRelativePath(
     scope.session.rootDirectory,
-    forwardingReExport(symbol)?.file.fileName ?? scope.filePath
+    forwardingReExport(scope.session, symbol)?.file.fileName ?? scope.filePath
   );
   return scope.chain[scope.chain.length - 1] === hop ? scope.chain : [...scope.chain, hop];
 }
@@ -79,7 +81,7 @@ export function followedChain(
     const next = forwardedSymbol(session, current);
     if (next === undefined || visited.has(next)) break;
     visited.add(next);
-    const forwarding = forwardingReExport(next);
+    const forwarding = forwardingReExport(session, next);
     if (forwarding === undefined) break;
     const candidate = repositoryRelativePath(session.rootDirectory, forwarding.file.fileName);
     if (chain[chain.length - 1] !== candidate) chain = [...chain, candidate];
@@ -93,9 +95,12 @@ export function followedChain(
  * its declarations contain one (`export { x } from '…'`, including renamed
  * and type-only forms).
  */
-function forwardingReExport(symbol: TsSymbol): ForwardingReExport | undefined {
+function forwardingReExport(session: TsgoModuleSession, symbol: TsSymbol): ForwardingReExport | undefined {
   for (const declaration of symbol.declarations) {
-    const resolved = declaration.resolve();
+    // A dependency barrel's export-specifier declaration is not needed to
+    // reject its package at the parser boundary. Resolving it would fetch the
+    // complete external declaration file before that policy runs.
+    const resolved = resolveOwnedDeclaration(session, declaration);
     if (resolved === undefined || !isExportSpecifier(resolved)) continue;
     // SAFETY: remote specifier nodes materialize with a parent chain whose
     // tail can be absent at runtime even though the shared node typing admits
@@ -119,6 +124,7 @@ function forwardingReExport(symbol: TsSymbol): ForwardingReExport | undefined {
       file: resolved.getSourceFile(),
       exportedName: specifier.propertyName?.text ?? specifier.name.text,
       moduleSpecifier: owner.moduleSpecifier.text,
+      moduleNode: owner.moduleSpecifier,
     };
   }
   return undefined;
@@ -129,12 +135,12 @@ function forwardingReExport(symbol: TsSymbol): ForwardingReExport | undefined {
  * module that the statement names, without collapsing further aliases.
  */
 function forwardedSymbol(session: TsgoModuleSession, symbol: TsSymbol): TsSymbol | undefined {
-  const forwarding = forwardingReExport(symbol);
+  const forwarding = forwardingReExport(session, symbol);
   if (forwarding === undefined) return undefined;
-  const resolvedFile = resolveModule(session, forwarding.moduleSpecifier, forwarding.file.fileName)?.filePath;
-  if (resolvedFile === undefined) return undefined;
-  const source = session.project.program.getSourceFile(resolvedFile);
-  const moduleSymbol = source === undefined ? undefined : session.checker.getSymbolAtLocation(source);
+  // The module-specifier node belongs to the already materialized forwarding
+  // source file. Its checker symbol exposes the target module exports without
+  // resolving the target source file (which may be an excluded dependency).
+  const moduleSymbol = session.checker.getSymbolAtLocation(forwarding.moduleNode);
   if (moduleSymbol === undefined || session.checker.isUnknownSymbol(moduleSymbol)) return undefined;
   for (const member of exportsOf(session, moduleSymbol)) {
     if (member.name === forwarding.exportedName) return member;

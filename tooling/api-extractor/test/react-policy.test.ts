@@ -2,9 +2,10 @@ import { Effect } from "effect";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import type { BackendModuleOrigin, BackendSymbolFacts } from "../src/backend/contracts.ts";
+import type { BackendModuleOrigin } from "../src/backend/contracts.ts";
 import { ProjectExtractor } from "../src/index.ts";
 import type { ExtractorOptions, ExtractionResult, SemanticType } from "../src/index.ts";
+import type { ParserSymbolOrigin } from "../src/parse/react-policy.ts";
 import { isReactWrapperType } from "../src/parse/react-policy.ts";
 
 const lookalikeFixtureRoot = resolve(import.meta.dirname, "fixtures/react-policy-non-react-dependency");
@@ -76,14 +77,10 @@ function expectInputProvenance(result: ExtractionResult, path: readonly string[]
   expect(entry?.declarationPaths).toEqual([inputDeclaration]);
 }
 
-function symbolFacts(name: string, moduleOrigin: BackendModuleOrigin): BackendSymbolFacts {
+function symbolOrigin(name: string, moduleOrigin: BackendModuleOrigin): ParserSymbolOrigin {
   return {
-    name,
     identity: { name, namespaces: ["React"] },
     moduleOrigin,
-    flags: [],
-    declarationPaths: [],
-    declarations: [],
   };
 }
 
@@ -97,7 +94,7 @@ describe("parser React identity policy", () => {
   ])("does not trust the React wrapper name from a non-React dependency (%s)", (name) => {
     expect(
       isReactWrapperType(
-        symbolFacts(name, {
+        symbolOrigin(name, {
           moduleSpecifier: "not-react",
           packageName: "not-react",
           external: true,
@@ -109,7 +106,7 @@ describe("parser React identity policy", () => {
   it("accepts a canonical React wrapper origin", () => {
     expect(
       isReactWrapperType(
-        symbolFacts("FC", {
+        symbolOrigin("FC", {
           moduleSpecifier: "react",
           packageName: "react",
           external: true,

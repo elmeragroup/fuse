@@ -6,10 +6,15 @@ import {
   InternalProjectExtractorTiming,
   timedProjectExtractorLayer,
 } from "../src/internal/timing.ts";
+import { assertRequestCountCeiling, externalSelectionTimingFixtures } from "./fixture-evidence.ts";
 
 const maxRoundTripMs = 1_000;
-const fixtureRoot = resolve(import.meta.dirname, "../test/fixtures/package-selective-external-types");
-const inputPath = resolve(fixtureRoot, "input.ts");
+const [fixtureDefinition, ...unexpectedFixtures] = externalSelectionTimingFixtures;
+if (fixtureDefinition === undefined || unexpectedFixtures.length > 0) {
+  throw new Error("Expected one catalog-owned external-selection timing fixture.");
+}
+const fixtureRoot = resolve(import.meta.dirname, "../test/fixtures", fixtureDefinition.fixture);
+const inputPath = resolve(fixtureRoot, fixtureDefinition.file);
 const tsconfigPath = resolve(fixtureRoot, "tsconfig.json");
 
 if (process.argv[2] !== "--check") {
@@ -44,19 +49,28 @@ const actionType = props.get("onAction")?.type;
 if (actionType?.kind !== "union" || actionType.types[0]?.kind !== "external") {
   throw new Error("Selective expansion entered the React or DOM graph.");
 }
-if (!extraction.timing.enabled || extraction.timing.totals.roundTripMs > maxRoundTripMs) {
+if (!extraction.timing.enabled) {
+  throw new Error("Selective-expansion timing evidence is disabled.");
+}
+if (extraction.timing.totals.roundTripMs > maxRoundTripMs) {
   throw new Error(
     `Selective expansion exceeded the ${maxRoundTripMs}ms round-trip limit: ${extraction.timing.totals.roundTripMs}ms.`
   );
 }
+assertRequestCountCeiling({
+  fixture: fixtureDefinition.fixture,
+  requestCount: extraction.timing.totals.requestCount,
+  maxRequestCount: fixtureDefinition.maxRequestCount,
+});
 
 console.log(
   JSON.stringify({
-    fixture: "package-selective-external-types",
+    fixture: fixtureDefinition.fixture,
     selectedPackage: "@fixture/selected",
     roundTripMs: extraction.timing.totals.roundTripMs,
     maxRoundTripMs,
     requestCount: extraction.timing.totals.requestCount,
+    maxRequestCount: fixtureDefinition.maxRequestCount,
     props: [...props.keys()],
   })
 );

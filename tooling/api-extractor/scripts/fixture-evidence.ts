@@ -16,9 +16,12 @@ export const fixtureDirectory = resolve(import.meta.dirname, "../test/fixtures")
 const packageDirectory = resolve(import.meta.dirname, "..");
 
 export * from "./fixture-catalog.ts";
+export * from "./fixture-plans.ts";
+export * from "./fixture-views.ts";
 
-import { issue02GoNoGoFixtures } from "./fixture-catalog.ts";
-import type { Issue02SupplementalFixture, Issue02TimingFixture } from "./fixture-catalog.ts";
+import type { TimingFixture } from "./fixture-plans.ts";
+import { issue02GoNoGoFixtures } from "./fixture-views.ts";
+import type { Issue02SupplementalFixture } from "./fixture-views.ts";
 
 const TimingTotalsSchema = Schema.Struct({
   requestCount: Schema.Number,
@@ -41,6 +44,13 @@ const TimingReportSampleSchema = Schema.Struct({
   fixture: Schema.String,
   enabled: Schema.Boolean,
   totals: TimingTotalsSchema,
+  fetchedToMaterializedRatio: Schema.Number,
+  budget: Schema.Struct({
+    maxFetchedToMaterializedRatio: Schema.Number,
+    maxRequestCount: Schema.Number,
+    maxBytesReceived: Schema.Number,
+    bytesReceivedPathLengthHeadroom: Schema.optionalKey(Schema.Number),
+  }),
 });
 
 const TimingStopConditionEvidenceSchema = Schema.Struct({
@@ -162,6 +172,118 @@ export const GoNoGoArtifactSchema = Schema.Struct({
 export type TimingReport = Schema.Schema.Type<typeof TimingReportSchema>;
 export type GoNoGoArtifact = Schema.Schema.Type<typeof GoNoGoArtifactSchema>;
 
+type NodeTimingCounters = {
+  readonly nodesFetched: number;
+  readonly nodesMaterialized: number;
+};
+
+export function fetchedToMaterializedRatio(counters: NodeTimingCounters): number {
+  if (
+    !Number.isFinite(counters.nodesFetched) ||
+    !Number.isFinite(counters.nodesMaterialized) ||
+    counters.nodesFetched < 0 ||
+    counters.nodesMaterialized <= 0
+  ) {
+    throw new Error(
+      "Fetched-to-materialized ratio requires finite node counters and a positive denominator."
+    );
+  }
+  return counters.nodesFetched / counters.nodesMaterialized;
+}
+
+export function assertFetchedToMaterializedRatioEvidence(sample: TimingReport["samples"][number]): void {
+  const expectedRatio = fetchedToMaterializedRatio(sample.totals);
+  const reportedRatio = sample.fetchedToMaterializedRatio;
+  const maxRatio = sample.budget.maxFetchedToMaterializedRatio;
+  if (!Number.isFinite(reportedRatio) || reportedRatio !== expectedRatio) {
+    throw new Error(`Fetched-to-materialized ratio evidence is stale for ${sample.fixture}.`);
+  }
+  if (!Number.isFinite(maxRatio) || maxRatio <= 0) {
+    throw new Error(`Fetched-to-materialized ratio budget is invalid for ${sample.fixture}.`);
+  }
+  if (!Number.isSafeInteger(sample.budget.maxRequestCount) || sample.budget.maxRequestCount <= 0) {
+    throw new Error(`Request-count budget is invalid for ${sample.fixture}.`);
+  }
+  if (!Number.isSafeInteger(sample.budget.maxBytesReceived) || sample.budget.maxBytesReceived <= 0) {
+    throw new Error(`Bytes-received budget is invalid for ${sample.fixture}.`);
+  }
+  const pathLengthHeadroom = sample.budget.bytesReceivedPathLengthHeadroom;
+  if (
+    pathLengthHeadroom !== undefined &&
+    (!Number.isSafeInteger(pathLengthHeadroom) || pathLengthHeadroom <= 0)
+  ) {
+    throw new Error(`Bytes-received path-length headroom is invalid for ${sample.fixture}.`);
+  }
+}
+
+export function assertFetchedToMaterializedRatioBudget(sample: TimingReport["samples"][number]): void {
+  assertFetchedToMaterializedRatioEvidence(sample);
+  const reportedRatio = sample.fetchedToMaterializedRatio;
+  const maxRatio = sample.budget.maxFetchedToMaterializedRatio;
+  if (reportedRatio > maxRatio) {
+    throw new Error(
+      `Fetched-to-materialized ratio budget exceeded for ${sample.fixture}: ${reportedRatio} > ${maxRatio}.`
+    );
+  }
+}
+
+export function assertRequestCountBudget(sample: TimingReport["samples"][number]): void {
+  assertRequestCountCeiling({
+    fixture: sample.fixture,
+    requestCount: sample.totals.requestCount,
+    maxRequestCount: sample.budget.maxRequestCount,
+  });
+}
+
+export function bytesReceivedCeiling(budget: {
+  readonly maxBytesReceived: number;
+  readonly bytesReceivedPathLengthHeadroom?: number;
+}): number {
+  return budget.maxBytesReceived + (budget.bytesReceivedPathLengthHeadroom ?? 0);
+}
+
+export function assertBytesReceivedBudget(sample: TimingReport["samples"][number]): void {
+  assertBytesReceivedCeiling({
+    fixture: sample.fixture,
+    bytesReceived: sample.totals.bytesReceived,
+    maxBytesReceived: bytesReceivedCeiling(sample.budget),
+  });
+}
+
+export function assertRequestCountCeiling(evidence: {
+  readonly fixture: string;
+  readonly requestCount: number;
+  readonly maxRequestCount: number;
+}): void {
+  const { fixture, requestCount, maxRequestCount } = evidence;
+  if (!Number.isSafeInteger(requestCount) || requestCount <= 0) {
+    throw new Error(`Request-count evidence is invalid for ${fixture}.`);
+  }
+  if (!Number.isSafeInteger(maxRequestCount) || maxRequestCount <= 0) {
+    throw new Error(`Request-count budget is invalid for ${fixture}.`);
+  }
+  if (requestCount > maxRequestCount) {
+    throw new Error(`Request-count budget exceeded for ${fixture}: ${requestCount} > ${maxRequestCount}.`);
+  }
+}
+
+export function assertBytesReceivedCeiling(evidence: {
+  readonly fixture: string;
+  readonly bytesReceived: number;
+  readonly maxBytesReceived: number;
+}): void {
+  const { fixture, bytesReceived, maxBytesReceived } = evidence;
+  if (!Number.isSafeInteger(bytesReceived) || bytesReceived < 0) {
+    throw new Error(`Bytes-received evidence is invalid for ${fixture}.`);
+  }
+  if (!Number.isSafeInteger(maxBytesReceived) || maxBytesReceived <= 0) {
+    throw new Error(`Bytes-received budget is invalid for ${fixture}.`);
+  }
+  if (bytesReceived > maxBytesReceived) {
+    throw new Error(`Bytes-received budget exceeded for ${fixture}: ${bytesReceived} > ${maxBytesReceived}.`);
+  }
+}
+
 type ReactDivergenceArtifact = {
   readonly fixture: "base-ui-component";
   readonly compiler: typeof issue14TypeScript7Compiler;
@@ -247,17 +369,17 @@ export function readGoNoGoArtifact(path: string): GoNoGoArtifact {
   return decodeGoNoGoArtifact(decodedJson(path));
 }
 
-export function fixtureInputPath(definition: Issue02TimingFixture | Issue02SupplementalFixture): string {
+export function fixtureInputPath(definition: TimingFixture | Issue02SupplementalFixture): string {
   return fixtureFile(definition.fixture, definition.file);
 }
 
-export function readModuleOracle(definition: Issue02TimingFixture): ModuleNode {
+export function readModuleOracle(definition: TimingFixture): ModuleNode {
   return Schema.decodeUnknownSync(ModuleNodeSchema)(
     decodedJson(fixtureFile(definition.fixture, definition.oracleFile))
   );
 }
 
-export function readWarningOracle(definition: Issue02TimingFixture): readonly ExtractWarning[] {
+export function readWarningOracle(definition: TimingFixture): readonly ExtractWarning[] {
   return Schema.decodeUnknownSync(Schema.Array(ExtractWarningSchema))(
     decodedJson(fixtureFile(definition.fixture, definition.warningOracle))
   );
@@ -411,7 +533,7 @@ export function readFixtureOracle(fixture: string, oracleFile: string): ModuleNo
   return Schema.decodeUnknownSync(ModuleNodeSchema)(decodedJson(fixtureFile(fixture, oracleFile)));
 }
 
-export function assertStableWarningOracle(definition: Issue02TimingFixture): void {
+export function assertStableWarningOracle(definition: TimingFixture): void {
   const source = readFileSync(fixtureFile(definition.fixture, definition.warningOracle), "utf8");
   if (
     /(?:^|["':\s(])\/(?:[^"'\s]|\\.)+/u.test(source) ||
@@ -422,7 +544,7 @@ export function assertStableWarningOracle(definition: Issue02TimingFixture): voi
   }
 }
 
-export function assertFixtureOracle(definition: Issue02TimingFixture, result: ExtractionResult): void {
+export function assertFixtureOracle(definition: TimingFixture, result: ExtractionResult): void {
   if (definition.fixture === "base-ui-component") assertReactDivergenceEvidence();
   if (JSON.stringify(result.module) !== JSON.stringify(readModuleOracle(definition))) {
     throw new Error(`The live fixture no longer matches its reviewed oracle: ${definition.fixture}`);

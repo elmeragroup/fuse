@@ -201,7 +201,7 @@ function flattenAuthoredIntersection(
 ): readonly BackendNodeReference[] | undefined {
   if (sourceNode === undefined) return undefined;
   const node = unwrapAuthoredNode(sourceNode, context) ?? sourceNode;
-  if (context.operations.nodeFacts(node).kind !== "intersection") return undefined;
+  if (context.operations.nodeKind(node) !== "intersection") return undefined;
   return (context.operations.nodeFacts(node).children ?? []).flatMap((child) => {
     const unwrapped = unwrapAuthoredNode(child, context) ?? child;
     return flattenAuthoredIntersection(unwrapped, context) ?? [unwrapped];
@@ -357,7 +357,7 @@ function authoredUnionMembers(
 ): AuthoredUnion {
   const direct =
     sourceNode === undefined ? undefined : (unwrapAuthoredNode(sourceNode, context) ?? sourceNode);
-  if (direct !== undefined && context.operations.nodeFacts(direct).kind === "union")
+  if (direct !== undefined && context.operations.nodeKind(direct) === "union")
     return { nodes: flattenAuthoredUnion(direct, context) };
   const alias = aliasUnionBody(type, sourceNode, context);
   if (alias === undefined) return { nodes: [] };
@@ -395,7 +395,7 @@ function aliasUnionDeclaration(
     const facts = context.operations.nodeFacts(declaration);
     if (facts.kind !== "typeAlias" || facts.type === undefined) continue;
     const body = unwrapAuthoredNode(facts.type, context) ?? facts.type;
-    if (context.operations.nodeFacts(body).kind === "union") return { declaration, body };
+    if (context.operations.nodeKind(body) === "union") return { declaration, body };
   }
   return undefined;
 }
@@ -425,7 +425,7 @@ function aliasTypeParameterSubstitutions(
 function flattenAuthoredUnion(node: BackendNodeReference, context: Context): readonly BackendNodeReference[] {
   return (context.operations.nodeFacts(node).children ?? []).flatMap((child) => {
     const unwrapped = unwrapAuthoredNode(child, context) ?? child;
-    return context.operations.nodeFacts(unwrapped).kind === "union"
+    return context.operations.nodeKind(unwrapped) === "union"
       ? flattenAuthoredUnion(unwrapped, context)
       : [unwrapped];
   });

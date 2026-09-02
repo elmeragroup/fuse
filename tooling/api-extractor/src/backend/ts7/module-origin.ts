@@ -27,9 +27,9 @@ import {
 import { SymbolFlags } from "typescript/unstable/sync";
 import type { Symbol as TsSymbol } from "typescript/unstable/sync";
 
-import type { BackendModuleOrigin } from "../contracts.ts";
+import type { BackendDeclarationOwnership, BackendModuleOrigin } from "../contracts.ts";
 import type { TsgoFactsSession } from "./facts.ts";
-import { classifySourceFile } from "./file-ownership.ts";
+import { classifySourceFile, declarationOwnershipOfPath } from "./file-ownership.ts";
 import { aliasedSymbol } from "./module-resolution.ts";
 import { sameUltimateSymbol } from "./ultimate-symbol.ts";
 
@@ -192,7 +192,12 @@ function moduleOriginOfSymbolUnsafe(
 
   const candidates: OriginResolution[] = [];
   for (const declarationHandle of symbol.declarations) {
-    const declaration = declarationHandle.resolve();
+    const unmaterializedOrigin = declarationOriginWithoutMaterialization(session, declarationHandle);
+    if (unmaterializedOrigin !== undefined) {
+      candidates.push(resolvedOrigin(unmaterializedOrigin, symbol));
+      continue;
+    }
+    const declaration = session.resolveNode(declarationHandle);
     if (declaration === undefined) continue;
     const source = moduleSource(declaration);
     const candidate =
@@ -311,7 +316,7 @@ function exportAssignmentOriginOfModule(
 ): OriginResolution {
   const candidates: OriginResolution[] = [];
   for (const declarationHandle of moduleSymbol.declarations) {
-    const sourceFile = declarationHandle.resolve()?.getSourceFile();
+    const sourceFile = session.resolveNode(declarationHandle)?.getSourceFile();
     if (sourceFile === undefined) continue;
     for (const statement of sourceFile.statements) {
       if (!isExportAssignment(statement) || !statement.isExportEquals) continue;
@@ -334,14 +339,18 @@ function starReExportOrigin(
   if (memberName === undefined) return missingOrigin();
   const candidates: OriginResolution[] = [];
   for (const declarationHandle of moduleSymbol.declarations) {
-    const declaration = declarationHandle.resolve();
+    const declaration = session.resolveNode(declarationHandle);
     const sourceFile = declaration?.getSourceFile();
     if (sourceFile === undefined) continue;
     // A named export in this container wins over every star contribution. If
     // the checker selected a star symbol despite a local conflict, the syntax
     // walk below still sees both stars and can conservatively reject it.
     const selected = session.checker.getMemberInModuleExports(moduleSymbol, memberName);
-    if (selected?.declarations.some((candidate) => candidate.resolve()?.getSourceFile() === sourceFile))
+    if (
+      selected?.declarations.some(
+        (candidate) => session.resolveNode(candidate)?.getSourceFile() === sourceFile
+      )
+    )
       continue;
     for (const statement of sourceFile.statements) {
       if (
@@ -465,13 +474,8 @@ function localInitializerOrigin(
 
 function moduleIsExternal(session: TsgoFactsSession, symbol: TsSymbol): boolean {
   return symbol.declarations.some((declaration) => {
-    const node = declaration.resolve();
-    if (node === undefined) return false;
-    const sourceFile = node.getSourceFile();
-    return (
-      session.program.isSourceFileFromExternalLibrary(sourceFile) ||
-      session.program.isSourceFileDefaultLibrary(sourceFile)
-    );
+    const metadata = session.sourceFileMetadata(declaration.path);
+    return metadata?.isFromExternalLibrary === true || metadata?.isDefaultLibrary === true;
   });
 }
 
@@ -483,9 +487,11 @@ function moduleIsExternal(session: TsgoFactsSession, symbol: TsSymbol): boolean 
  */
 function declarationOrigin(session: TsgoFactsSession, declaration: Node): BackendModuleOrigin | undefined {
   const sourceFile = declaration.getSourceFile();
-  const externalLibrary = session.program.isSourceFileFromExternalLibrary(sourceFile);
-  const defaultLibrary = session.program.isSourceFileDefaultLibrary(sourceFile);
-  const ownership = classifySourceFile(sourceFile.fileName, { externalLibrary, defaultLibrary });
+  const ownership = declarationOwnershipOfPath(session, sourceFile.fileName);
+  return moduleOriginFromOwnership(ownership);
+}
+
+function moduleOriginFromOwnership(ownership: BackendDeclarationOwnership): BackendModuleOrigin | undefined {
   if (ownership.kind === "project") return undefined;
   if (ownership.kind === "typescript") {
     return {
@@ -504,6 +510,34 @@ function declarationOrigin(session: TsgoFactsSession, declaration: Node): Backen
     packageName: publicName,
     external: true,
   };
+}
+
+/**
+ * Default-library files have no authored imports to inspect. Interfaces and
+ * type aliases also cannot carry an initializer or be import/export
+ * specifiers, so their external owner is enough to determine the same origin
+ * without fetching the declaration's source-file subtree.
+ */
+function declarationOriginWithoutMaterialization(
+  session: TsgoFactsSession,
+  declaration: { readonly kind: Node["kind"]; readonly path: string }
+): BackendModuleOrigin | undefined {
+  const pathOwnership = classifySourceFile(declaration.path);
+  const pathIsStandardLibrary =
+    pathOwnership.kind === "typescript" && pathOwnership.library === "standard-library";
+  const declarationHasNoAuthoredSource =
+    declaration.kind === SyntaxKind.InterfaceDeclaration ||
+    declaration.kind === SyntaxKind.TypeAliasDeclaration;
+  if (!pathIsStandardLibrary && !declarationHasNoAuthoredSource) {
+    return undefined;
+  }
+  const ownership = declarationOwnershipOfPath(session, declaration.path);
+  if (pathIsStandardLibrary) {
+    return ownership.kind === "typescript" && ownership.library === "standard-library"
+      ? moduleOriginFromOwnership(ownership)
+      : undefined;
+  }
+  return ownership.kind === "project" ? undefined : moduleOriginFromOwnership(ownership);
 }
 
 function packageName(specifier: string): string | undefined {

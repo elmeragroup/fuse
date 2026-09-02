@@ -302,6 +302,34 @@ describe("Issue 03 object APIs, documentation, enums, and provenance", () => {
     });
   });
 
+  it("counts only public members of wide class aliases before applying default object resolution", async () => {
+    const resolveCalls: ShouldResolveObjectData[] = [];
+    const result = await runReviewExtraction({
+      shouldResolveObject: (data) => {
+        if (data.name === "ThatClass" || data.name === "PublicDerived") resolveCalls.push(data);
+        return undefined;
+      },
+    });
+
+    expect(resolveCalls).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: "ThatClass", propertyCount: 1 }),
+        expect.objectContaining({ name: "PublicDerived", propertyCount: 2 }),
+      ])
+    );
+
+    const direct = result.module.exports.find((entry) => entry.name === "DirectAlias");
+    const derived = result.module.exports.find((entry) => entry.name === "DerivedAlias");
+    expect(direct?.type).toMatchObject({
+      kind: "object",
+      properties: [{ name: "open" }],
+    });
+    expect(derived?.type).toMatchObject({
+      kind: "object",
+      properties: [{ name: "open" }, { name: "own" }],
+    });
+  });
+
   it("maps component props and destructuring defaults onto final semantic provenance paths", async () => {
     const result = await runReviewExtraction();
     const button = result.module.exports.find((entry) => entry.name === "Button");

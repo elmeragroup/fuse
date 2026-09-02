@@ -1,16 +1,28 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  deriveConformancePlan,
-  deriveIssueMembershipPlan,
+  fixtureEvidenceCatalog,
+  issue02BytesReceivedPathLengthHeadroom,
+  validateFixtureEvidenceCatalog,
+} from "../scripts/fixture-catalog.ts";
+import type { FixtureEvidenceRecord } from "../scripts/fixture-catalog.ts";
+import { assertRequestCountCeiling } from "../scripts/fixture-evidence.ts";
+import {
   derivePackageExecutionPlan,
+  derivePackageTypecheckPlan,
   deriveTimingPlan,
   deriveTypecheckPlan,
+  externalSelectionTimingFixtures,
+  issue02TimingFixtures,
+  issue14TimingFixtures,
+  packageFixtureTypecheckPlan,
+} from "../scripts/fixture-plans.ts";
+import {
+  deriveConformancePlan,
+  deriveIssueMembershipPlan,
   deriveWarningEvidencePlan,
-  fixtureEvidenceCatalog,
   issue02GoNoGoFixtures,
   issue02SupplementalFixtures,
-  issue02TimingFixtures,
   issue03UpstreamFixtures,
   issue04CanonicalizationFixtures,
   issue05ContainerFixtures,
@@ -23,11 +35,7 @@ import {
   issue12ReactFixtureAudit,
   issue12ReactFixtures,
   issue13ExternalFixtures,
-  issue14TimingFixtures,
-  packageFixtureTypecheckPlan,
-  validateFixtureEvidenceCatalog,
-} from "../scripts/fixture-catalog.ts";
-import type { FixtureEvidenceRecord } from "../scripts/fixture-catalog.ts";
+} from "../scripts/fixture-views.ts";
 import { readIssue14ConformanceReport } from "../scripts/issue-14-conformance.ts";
 
 describe("fixture evidence catalog", () => {
@@ -47,7 +55,16 @@ describe("fixture evidence catalog", () => {
         disposition: "reviewed-ts7",
       },
       typecheck: { strategy: "direct-input" },
-      timing: ["issue02", "issue14"],
+      timing: [
+        {
+          plan: "issue02",
+          order: 3,
+          maxFetchedToMaterializedRatio: 140,
+          maxRequestCount: 569,
+          maxBytesReceived: 3200000,
+        },
+        { plan: "issue14", order: 3 },
+      ],
       warnings: { oracleFile: "warnings.tsgo.json", codes: [] },
       oracle: {
         disposition: "reviewed-divergence",
@@ -91,6 +108,9 @@ describe("fixture evidence catalog", () => {
         file: "input.tsx",
         oracleFile: "output.tsgo.json",
         warningOracle: "warnings.tsgo.json",
+        maxFetchedToMaterializedRatio: 140,
+        maxRequestCount: 569,
+        maxBytesReceived: 3200000,
       },
     ]);
     expect(derivePackageExecutionPlan([fixture])).toEqual([
@@ -180,9 +200,9 @@ describe("fixture evidence catalog", () => {
         "base-ui-component",
       ],
       packageTypechecks: {
-        count: 31,
+        count: 32,
         first: "test/fixtures/issue-02-tsconfig.json",
-        last: "test/fixtures/package-selective-external-types/tsconfig.json",
+        last: "test/fixtures/backend-lazy-declarations/tsconfig.json",
       },
     });
   });
@@ -238,4 +258,248 @@ describe("fixture evidence catalog", () => {
       /stable fixture-identity ordering/u
     );
   });
+
+  it("owns Issue 02 ratio budgets with timing membership", () => {
+    expect(
+      issue02TimingFixtures.map(
+        ({
+          fixture,
+          maxFetchedToMaterializedRatio,
+          maxRequestCount,
+          maxBytesReceived,
+          bytesReceivedPathLengthHeadroom,
+        }) => ({
+          fixture,
+          maxFetchedToMaterializedRatio,
+          maxRequestCount,
+          maxBytesReceived,
+          bytesReceivedPathLengthHeadroom,
+        })
+      )
+    ).toEqual([
+      {
+        fixture: "alias-with-explicit-type-args",
+        maxFetchedToMaterializedRatio: 1.2,
+        maxRequestCount: 175,
+        maxBytesReceived: 33303,
+        bytesReceivedPathLengthHeadroom: issue02BytesReceivedPathLengthHeadroom,
+      },
+      {
+        fixture: "mapped-alias-two-hop",
+        maxFetchedToMaterializedRatio: 1.2,
+        maxRequestCount: 114,
+        maxBytesReceived: 22577,
+        bytesReceivedPathLengthHeadroom: issue02BytesReceivedPathLengthHeadroom,
+      },
+      {
+        fixture: "module-dts-declarations-and-reexports",
+        maxFetchedToMaterializedRatio: 116,
+        maxRequestCount: 237,
+        maxBytesReceived: 980000,
+        bytesReceivedPathLengthHeadroom: undefined,
+      },
+      {
+        fixture: "base-ui-component",
+        maxFetchedToMaterializedRatio: 140,
+        maxRequestCount: 569,
+        maxBytesReceived: 3200000,
+        bytesReceivedPathLengthHeadroom: undefined,
+      },
+    ]);
+    for (const fixture of issue02TimingFixtures) {
+      const ceiling = fixture.maxBytesReceived + (fixture.bytesReceivedPathLengthHeadroom ?? 0);
+      expect(ceiling).toBeGreaterThanOrEqual(fixture.maxBytesReceived);
+      if (fixture.bytesReceivedPathLengthHeadroom !== undefined) {
+        expect(ceiling).toBeLessThan(1_000_000);
+      }
+    }
+
+    const fixture = fixtureEvidenceCatalog.find((record) => record.id === "alias-with-explicit-type-args");
+    if (fixture === undefined) throw new Error("Missing representative timing fixture");
+    const invalidPathLengthHeadroom: FixtureEvidenceRecord = {
+      ...fixture,
+      timing: fixture.timing.map((entry) =>
+        entry.plan === "issue02" ? { ...entry, bytesReceivedPathLengthHeadroom: 0 } : entry
+      ),
+    };
+    expect(() => deriveTimingPlan([invalidPathLengthHeadroom], "issue02")).toThrow(
+      /path-length headroom metadata/u
+    );
+
+    const duplicatePlan: FixtureEvidenceRecord = {
+      ...fixture,
+      timing: [...fixture.timing, ...fixture.timing],
+    };
+    expect(() => validateFixtureEvidenceCatalog([duplicatePlan])).toThrow(/duplicate timing plans/u);
+  });
+
+  it("owns and enforces the selective external-type request plateau", () => {
+    expect(externalSelectionTimingFixtures).toEqual([
+      {
+        fixture: "package-selective-external-types",
+        file: "input.ts",
+        maxRequestCount: 415,
+      },
+    ]);
+    const fixture = externalSelectionTimingFixtures[0];
+    if (fixture === undefined) throw new Error("Missing external-selection timing fixture");
+
+    expect(() =>
+      assertRequestCountCeiling({
+        fixture: fixture.fixture,
+        requestCount: fixture.maxRequestCount,
+        maxRequestCount: fixture.maxRequestCount,
+      })
+    ).not.toThrow();
+    expect(() =>
+      assertRequestCountCeiling({
+        fixture: fixture.fixture,
+        requestCount: fixture.maxRequestCount + 1,
+        maxRequestCount: fixture.maxRequestCount,
+      })
+    ).toThrow(/budget exceeded.*416 > 415/u);
+  });
+
+  it("catalogs the backend lazy-declaration fixture as seam-only evidence", () => {
+    const fixture = fixtureEvidenceCatalog.find((record) => record.id === "backend-lazy-declarations");
+    if (fixture === undefined) throw new Error("Missing backend lazy-declaration fixture");
+    expect(fixture).toMatchObject({
+      input: { id: "backend-lazy-declarations/input.ts", file: "input.ts" },
+      issues: ["02"],
+      conformance: false,
+      typecheck: { strategy: "not-applicable" },
+      timing: [],
+      warnings: { oracleFile: null, codes: [] },
+      oracle: {
+        disposition: "not-applicable",
+        upstreamFile: null,
+        selectedFile: null,
+        divergenceRecord: null,
+      },
+      evidence: {
+        id: "backend-lazy-declarations/regression",
+        origin: "local-regression",
+        metadata: {
+          packageTypechecks: [
+            { order: 31, project: "test/fixtures/backend-lazy-declarations/tsconfig.json" },
+          ],
+        },
+      },
+    });
+
+    const inventedOracle: FixtureEvidenceRecord = {
+      ...fixture,
+      oracle: { ...fixture.oracle, selectedFile: "output.json" },
+    };
+    expect(() => validateFixtureEvidenceCatalog([inventedOracle])).toThrow(/seam-only evidence/u);
+  });
+
+  it("accepts multiple distinct package type-check projects for seam-only evidence", () => {
+    const fixture = fixtureEvidenceCatalog.find((record) => record.id === "backend-lazy-declarations");
+    if (fixture === undefined) throw new Error("Missing backend lazy-declaration fixture");
+    const withMultipleTypechecks: FixtureEvidenceRecord = {
+      ...fixture,
+      evidence: {
+        ...fixture.evidence,
+        metadata: {
+          ...fixture.evidence.metadata,
+          packageTypechecks: [
+            { order: 32, project: "test/fixtures/issue-03-object-apis/tsconfig.json" },
+            { order: 31, project: "test/fixtures/backend-lazy-declarations/tsconfig.json" },
+          ],
+        },
+      },
+    };
+
+    expect(derivePackageTypecheckPlan([withMultipleTypechecks])).toEqual([
+      {
+        fixture: "backend-lazy-declarations",
+        project: "test/fixtures/backend-lazy-declarations/tsconfig.json",
+      },
+      {
+        fixture: "backend-lazy-declarations",
+        project: "test/fixtures/issue-03-object-apis/tsconfig.json",
+      },
+    ]);
+
+    const withDuplicateOrder: FixtureEvidenceRecord = {
+      ...withMultipleTypechecks,
+      evidence: {
+        ...withMultipleTypechecks.evidence,
+        metadata: {
+          ...withMultipleTypechecks.evidence.metadata,
+          packageTypechecks: [
+            { order: 31, project: "test/fixtures/backend-lazy-declarations/tsconfig.json" },
+            { order: 31, project: "test/fixtures/issue-03-object-apis/tsconfig.json" },
+          ],
+        },
+      },
+    };
+    expect(() => derivePackageTypecheckPlan([withDuplicateOrder])).toThrow(/unique non-negative ordering/u);
+  });
+
+  it.each([
+    { label: "missing", packageTypechecks: undefined },
+    { label: "empty", packageTypechecks: [] },
+  ] as const)(
+    "rejects $label package type-check coverage for seam-only evidence",
+    ({ packageTypechecks }) => {
+      const fixture = fixtureEvidenceCatalog.find((record) => record.id === "backend-lazy-declarations");
+      if (fixture === undefined) throw new Error("Missing backend lazy-declaration fixture");
+      const withoutTypecheckCoverage: FixtureEvidenceRecord = {
+        ...fixture,
+        evidence: {
+          ...fixture.evidence,
+          metadata: { ...fixture.evidence.metadata, packageTypechecks },
+        },
+      };
+
+      expect(() => validateFixtureEvidenceCatalog([withoutTypecheckCoverage])).toThrow(/seam-only evidence/u);
+    }
+  );
+
+  it.each(["backend-lazy-declarations", "package-selective-external-types"])(
+    "rejects a fabricated regression evidence identity for seam-only fixture %s",
+    (fixtureId) => {
+      const fixture = fixtureEvidenceCatalog.find((record) => record.id === fixtureId);
+      if (fixture === undefined) throw new Error(`Missing seam-only fixture ${fixtureId}`);
+      const fabricatedEvidence: FixtureEvidenceRecord = {
+        ...fixture,
+        evidence: { ...fixture.evidence, id: `${fixture.id}/fabricated` },
+      };
+
+      expect(() => validateFixtureEvidenceCatalog([fabricatedEvidence])).toThrow(
+        /invalid regression evidence identity/u
+      );
+    }
+  );
+
+  it.each(["backend-lazy-declarations", "package-selective-external-types"])(
+    "rejects missing issue membership for seam-only fixture %s",
+    (fixtureId) => {
+      const fixture = fixtureEvidenceCatalog.find((record) => record.id === fixtureId);
+      if (fixture === undefined) throw new Error(`Missing seam-only fixture ${fixtureId}`);
+      const missingIssueMembership: FixtureEvidenceRecord = { ...fixture, issues: [] };
+
+      expect(() => validateFixtureEvidenceCatalog([missingIssueMembership])).toThrow(
+        /missing issue membership/u
+      );
+    }
+  );
+
+  it.each(["backend-lazy-declarations", "package-selective-external-types"])(
+    "rejects a fixture-directory escape in seam-only input metadata for %s",
+    (fixtureId) => {
+      const fixture = fixtureEvidenceCatalog.find((record) => record.id === fixtureId);
+      if (fixture === undefined) throw new Error(`Missing seam-only fixture ${fixtureId}`);
+      const escapedInput: FixtureEvidenceRecord = {
+        ...fixture,
+        input: { id: `${fixture.id}/../input.ts`, file: "../input.ts" },
+      };
+
+      expect(() => validateFixtureEvidenceCatalog([escapedInput])).toThrow(
+        /invalid fixture-local input file/u
+      );
+    }
+  );
 });

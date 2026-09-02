@@ -1,5 +1,4 @@
 export const issue14TypeScript7Compiler = "typescript@7.0.2" as const;
-
 export type FixtureIssue =
   | "02"
   | "03"
@@ -15,10 +14,10 @@ export type FixtureIssue =
   | "13"
   | "14";
 
-export type OracleDisposition = "immutable-upstream" | "reviewed-divergence" | "generated";
+export type OracleDisposition = "immutable-upstream" | "reviewed-divergence" | "generated" | "not-applicable";
 export type ConformanceDisposition = "unchanged" | "reviewed-ts7";
 export type TypecheckStrategy = "direct-input" | "virtual-upstream-dependency" | "not-applicable";
-export type TimingPlan = "issue02" | "issue14";
+export type TimingPlan = "externalSelection" | "issue02" | "issue14";
 export type IssueFixtureOracle = "immutable-upstream" | "reviewed-ts7";
 
 type IssueViewMetadata = {
@@ -35,10 +34,25 @@ type GoNoGoEvidence = {
   readonly warningOracle?: string;
 };
 
+export type TimingMetadata =
+  | {
+      readonly plan: "issue02";
+      readonly order: number;
+      readonly maxFetchedToMaterializedRatio: number;
+      readonly maxRequestCount: number;
+      readonly maxBytesReceived: number;
+      readonly bytesReceivedPathLengthHeadroom?: number;
+    }
+  | { readonly plan: "issue14"; readonly order: number }
+  | { readonly plan: "externalSelection"; readonly order: number; readonly maxRequestCount: number };
+
+export type Issue02TimingMetadata = Extract<TimingMetadata, { readonly plan: "issue02" }>;
+export type Issue14TimingMetadata = Extract<TimingMetadata, { readonly plan: "issue14" }>;
+export type ExternalSelectionTimingMetadata = Extract<TimingMetadata, { readonly plan: "externalSelection" }>;
+
 type FixtureViewMetadata = {
   readonly issueViews?: Partial<Record<FixtureIssue, IssueViewMetadata>>;
   readonly warningOrder?: Partial<Record<"12" | "13", number>>;
-  readonly timingOrder?: Partial<Record<TimingPlan, number>>;
   readonly expectedExports?: readonly string[];
   readonly goNoGo?: GoNoGoEvidence;
   readonly reactAudit?: {
@@ -67,7 +81,7 @@ export type FixtureEvidenceRecord = {
   readonly typecheck: {
     readonly strategy: TypecheckStrategy;
   };
-  readonly timing: readonly TimingPlan[];
+  readonly timing: readonly TimingMetadata[];
   readonly warnings: {
     readonly oracleFile: "warnings.tsgo.json" | null;
     readonly codes: readonly string[];
@@ -88,7 +102,7 @@ export type FixtureEvidenceRecord = {
 
 type FixtureOptions = {
   readonly conformance?: boolean;
-  readonly timing?: readonly TimingPlan[];
+  readonly timing?: readonly TimingMetadata[];
   readonly typecheck?: TypecheckStrategy;
   readonly warnings?: {
     readonly oracleFile: "warnings.tsgo.json";
@@ -104,7 +118,8 @@ function fixture(
   disposition: OracleDisposition,
   options: FixtureOptions = {}
 ): FixtureEvidenceRecord {
-  const participatesInConformance = options.conformance ?? disposition !== "generated";
+  const hasOracle = disposition === "immutable-upstream" || disposition === "reviewed-divergence";
+  const participatesInConformance = options.conformance ?? hasOracle;
   const evidenceId = `${id}/${participatesInConformance ? "conformance" : "regression"}`;
   const conformanceDisposition = disposition === "reviewed-divergence" ? "reviewed-ts7" : "unchanged";
   return {
@@ -119,39 +134,65 @@ function fixture(
     warnings: options.warnings ?? { oracleFile: null, codes: [] },
     oracle: {
       disposition,
-      upstreamFile: disposition === "generated" ? null : "output.json",
-      selectedFile:
-        disposition === "generated"
-          ? null
-          : disposition === "reviewed-divergence"
-            ? "output.tsgo.json"
-            : "output.json",
+      upstreamFile: hasOracle ? "output.json" : null,
+      selectedFile: !hasOracle
+        ? null
+        : disposition === "reviewed-divergence"
+          ? "output.tsgo.json"
+          : "output.json",
       divergenceRecord: disposition === "reviewed-divergence" ? "ts7-oracle.json" : null,
     },
     evidence: {
       id: evidenceId,
-      origin: disposition === "generated" ? "local-regression" : "pinned-upstream",
+      origin: hasOracle ? "pinned-upstream" : "local-regression",
       compiler: issue14TypeScript7Compiler,
       metadata: options.metadata ?? {},
     },
   };
 }
 
+/** Path-length slack for small Issue 02 bytes-received budgets. */
+export const issue02BytesReceivedPathLengthHeadroom = 32_768;
+
 export const fixtureEvidenceCatalog = [
   fixture("alias-with-explicit-type-args", "input.ts", ["02", "14"], "immutable-upstream", {
-    timing: ["issue02", "issue14"],
+    timing: [
+      {
+        plan: "issue02",
+        order: 0,
+        maxFetchedToMaterializedRatio: 1.2,
+        maxRequestCount: 175,
+        maxBytesReceived: 33303,
+        bytesReceivedPathLengthHeadroom: issue02BytesReceivedPathLengthHeadroom,
+      },
+      { plan: "issue14", order: 0 },
+    ],
     warnings: { oracleFile: "warnings.tsgo.json", codes: [] },
     metadata: {
-      timingOrder: { issue02: 0, issue14: 0 },
       goNoGo: { order: 0, oracle: "immutable-upstream", status: "pass" },
       packageTypechecks: [{ order: 0, project: "test/fixtures/issue-02-tsconfig.json" }],
     },
   }),
+  fixture("backend-lazy-declarations", "input.ts", ["02"], "not-applicable", {
+    conformance: false,
+    typecheck: "not-applicable",
+    metadata: {
+      packageTypechecks: [{ order: 31, project: "test/fixtures/backend-lazy-declarations/tsconfig.json" }],
+    },
+  }),
   fixture("base-ui-component", "input.tsx", ["02", "12", "14"], "reviewed-divergence", {
-    timing: ["issue02", "issue14"],
+    timing: [
+      {
+        plan: "issue02",
+        order: 3,
+        maxFetchedToMaterializedRatio: 140,
+        maxRequestCount: 569,
+        maxBytesReceived: 3200000,
+      },
+      { plan: "issue14", order: 3 },
+    ],
     warnings: { oracleFile: "warnings.tsgo.json", codes: [] },
     metadata: {
-      timingOrder: { issue02: 3, issue14: 3 },
       goNoGo: {
         order: 6,
         oracle: "reviewed-ts7-exact",
@@ -216,10 +257,7 @@ export const fixtureEvidenceCatalog = [
   fixture("external-conditional-type-resolution", "input.ts", ["13", "14"], "immutable-upstream", {
     metadata: {
       issueViews: { "13": { order: 0, group: "externalConditional" } },
-      packageTypechecks: [
-        { order: 29, project: "test/fixtures/issue-13-tsconfig.json" },
-        { order: 30, project: "test/fixtures/package-selective-external-types/tsconfig.json" },
-      ],
+      packageTypechecks: [{ order: 29, project: "test/fixtures/issue-13-tsconfig.json" }],
     },
   }),
   fixture("external-mapped-type-name-preservation", "input.ts", ["08", "14"], "immutable-upstream", {
@@ -347,10 +385,19 @@ export const fixtureEvidenceCatalog = [
     metadata: { issueViews: { "05": { order: 8, group: "mappedKey" } } },
   }),
   fixture("mapped-alias-two-hop", "input.ts", ["02", "14"], "immutable-upstream", {
-    timing: ["issue02", "issue14"],
+    timing: [
+      {
+        plan: "issue02",
+        order: 1,
+        maxFetchedToMaterializedRatio: 1.2,
+        maxRequestCount: 114,
+        maxBytesReceived: 22577,
+        bytesReceivedPathLengthHeadroom: issue02BytesReceivedPathLengthHeadroom,
+      },
+      { plan: "issue14", order: 1 },
+    ],
     warnings: { oracleFile: "warnings.tsgo.json", codes: [] },
     metadata: {
-      timingOrder: { issue02: 1, issue14: 1 },
       goNoGo: { order: 1, oracle: "immutable-upstream", status: "pass" },
     },
   }),
@@ -370,10 +417,18 @@ export const fixtureEvidenceCatalog = [
     metadata: { issueViews: { "06": { order: 7, group: "overload" } } },
   }),
   fixture("module-dts-declarations-and-reexports", "input.d.ts", ["02", "14"], "immutable-upstream", {
-    timing: ["issue02", "issue14"],
+    timing: [
+      {
+        plan: "issue02",
+        order: 2,
+        maxFetchedToMaterializedRatio: 116,
+        maxRequestCount: 237,
+        maxBytesReceived: 980000,
+      },
+      { plan: "issue14", order: 2 },
+    ],
     warnings: { oracleFile: "warnings.tsgo.json", codes: [] },
     metadata: {
-      timingOrder: { issue02: 2, issue14: 2 },
       goNoGo: {
         order: 2,
         oracle: "immutable-upstream",
@@ -466,6 +521,16 @@ export const fixtureEvidenceCatalog = [
   }),
   fixture("object-property-count-limit-scope", "input.tsx", ["03", "14"], "immutable-upstream", {
     metadata: { issueViews: { "03": { order: 3 } } },
+  }),
+  fixture("package-selective-external-types", "input.ts", ["13"], "not-applicable", {
+    conformance: false,
+    timing: [{ plan: "externalSelection", order: 0, maxRequestCount: 415 }],
+    typecheck: "not-applicable",
+    metadata: {
+      packageTypechecks: [
+        { order: 30, project: "test/fixtures/package-selective-external-types/tsconfig.json" },
+      ],
+    },
   }),
   fixture("react-component-function-declaration", "input.tsx", ["11", "12", "14"], "immutable-upstream", {
     metadata: {
@@ -767,6 +832,66 @@ export const fixtureEvidenceCatalog = [
 function sorted(values: readonly string[]): boolean {
   return values.every((value, index) => index === 0 || (values[index - 1] ?? "") < value);
 }
+function isFixtureLocalFile(file: string): boolean {
+  return file.length > 0 && file !== "." && file !== ".." && !file.includes("/") && !file.includes("\\");
+}
+function validateIssue02TimingMetadata(fixtureId: string, metadata: Issue02TimingMetadata): void {
+  const invalid =
+    !Number.isFinite(metadata.maxFetchedToMaterializedRatio) || metadata.maxFetchedToMaterializedRatio <= 0
+      ? "timing ratio"
+      : !Number.isSafeInteger(metadata.maxRequestCount) || metadata.maxRequestCount <= 0
+        ? "request-count"
+        : !Number.isSafeInteger(metadata.maxBytesReceived) || metadata.maxBytesReceived <= 0
+          ? "bytes-received"
+          : metadata.bytesReceivedPathLengthHeadroom !== undefined &&
+              (!Number.isSafeInteger(metadata.bytesReceivedPathLengthHeadroom) ||
+                metadata.bytesReceivedPathLengthHeadroom <= 0)
+            ? "path-length headroom"
+            : undefined;
+  if (invalid !== undefined)
+    throw new Error(`Fixture ${fixtureId} has invalid Issue 02 ${invalid} metadata.`);
+}
+
+function validateNonConformanceRecord(record: FixtureEvidenceRecord): void {
+  if (
+    record.issues.includes("14") ||
+    (record.oracle.disposition !== "generated" && record.oracle.disposition !== "not-applicable")
+  ) {
+    throw new Error(`Fixture ${record.id} has an incompatible non-conformance classification.`);
+  }
+  if (record.oracle.disposition === "not-applicable") validateSeamOnlyRecord(record);
+}
+
+/**
+ * A seam-only record has no oracle: it is only evidence that a backend seam
+ * still type-checks and, at most, one external-selection timing budget.
+ */
+function validateSeamOnlyRecord(record: FixtureEvidenceRecord): void {
+  const { warnings, oracle, evidence, typecheck, timing } = record;
+  const { metadata } = evidence;
+  const onlyExternalSelectionTiming =
+    timing.length === 0 || (timing.length === 1 && timing[0]?.plan === "externalSelection");
+  const hasNoOracle =
+    warnings.oracleFile === null &&
+    warnings.codes.length === 0 &&
+    oracle.upstreamFile === null &&
+    oracle.selectedFile === null &&
+    oracle.divergenceRecord === null;
+  const hasNoViewMetadata =
+    metadata.issueViews === undefined &&
+    metadata.warningOrder === undefined &&
+    metadata.expectedExports === undefined &&
+    metadata.goNoGo === undefined &&
+    metadata.reactAudit === undefined;
+  const valid =
+    hasNoOracle &&
+    hasNoViewMetadata &&
+    evidence.origin === "local-regression" &&
+    typecheck.strategy === "not-applicable" &&
+    onlyExternalSelectionTiming &&
+    (metadata.packageTypechecks?.length ?? 0) > 0;
+  if (!valid) throw new Error(`Fixture ${record.id} has incompatible seam-only evidence metadata.`);
+}
 
 export function validateFixtureEvidenceCatalog(catalog: readonly FixtureEvidenceRecord[]): void {
   const fixtureIds = catalog.map((record) => record.id);
@@ -784,8 +909,18 @@ export function validateFixtureEvidenceCatalog(catalog: readonly FixtureEvidence
 
   const knownEvidence = new Set(evidenceIds);
   for (const record of catalog) {
+    if (!isFixtureLocalFile(record.input.file)) {
+      throw new Error(`Fixture ${record.id} has an invalid fixture-local input file.`);
+    }
     if (record.input.id !== `${record.id}/${record.input.file}`) {
       throw new Error(`Fixture ${record.id} has a stale input identity.`);
+    }
+    const evidenceKind = record.conformance === false ? "regression" : "conformance";
+    if (record.evidence.id !== `${record.id}/${evidenceKind}`) {
+      throw new Error(`Fixture ${record.id} has an invalid ${evidenceKind} evidence identity.`);
+    }
+    if (record.issues.length === 0) {
+      throw new Error(`Fixture ${record.id} is missing issue membership.`);
     }
     if (!sorted(record.issues) || new Set(record.issues).size !== record.issues.length) {
       throw new Error(`Fixture ${record.id} has unstable or duplicate issue memberships.`);
@@ -799,10 +934,17 @@ export function validateFixtureEvidenceCatalog(catalog: readonly FixtureEvidence
         throw new Error(`Fixture ${record.id} has an invalid issue-view order.`);
       }
     }
-    for (const [plan, order] of Object.entries(record.evidence.metadata.timingOrder ?? {})) {
-      // SAFETY: timingOrder is typed as a partial record whose keys are TimingPlan literals.
-      if (!record.timing.includes(plan as TimingPlan) || !Number.isSafeInteger(order) || order < 0) {
-        throw new Error(`Fixture ${record.id} has incompatible timing metadata.`);
+    const timingPlans = record.timing.map((entry) => entry.plan);
+    if (new Set(timingPlans).size !== timingPlans.length) {
+      throw new Error(`Fixture ${record.id} has duplicate timing plans.`);
+    }
+    for (const entry of record.timing) {
+      if (!Number.isSafeInteger(entry.order) || entry.order < 0) {
+        throw new Error(`Fixture ${record.id} has invalid ${entry.plan} timing order metadata.`);
+      }
+      if (entry.plan === "issue02") validateIssue02TimingMetadata(record.id, entry);
+      if (entry.plan === "externalSelection" && entry.maxRequestCount <= 0) {
+        throw new Error(`Fixture ${record.id} has invalid external-selection timing metadata.`);
       }
     }
     if (record.evidence.metadata.expectedExports !== undefined && !record.issues.includes("02")) {
@@ -820,9 +962,7 @@ export function validateFixtureEvidenceCatalog(catalog: readonly FixtureEvidence
       }
     }
     if (record.conformance === false) {
-      if (record.issues.includes("14") || record.oracle.disposition !== "generated") {
-        throw new Error(`Fixture ${record.id} has an incompatible non-conformance classification.`);
-      }
+      validateNonConformanceRecord(record);
       continue;
     }
     if (!knownEvidence.has(record.conformance.evidenceId)) {
@@ -849,365 +989,3 @@ export function validateFixtureEvidenceCatalog(catalog: readonly FixtureEvidence
     }
   }
 }
-
-export type ConformanceFixture = {
-  readonly fixture: string;
-  readonly file: string;
-  readonly disposition: ConformanceDisposition;
-};
-
-export function deriveConformancePlan(
-  catalog: readonly FixtureEvidenceRecord[]
-): readonly ConformanceFixture[] {
-  validateFixtureEvidenceCatalog(catalog);
-  return catalog.flatMap((record) =>
-    record.conformance === false
-      ? []
-      : [
-          {
-            fixture: record.id,
-            file: record.input.file,
-            disposition: record.conformance.disposition,
-          },
-        ]
-  );
-}
-
-export const issue14FixtureManifest = deriveConformancePlan(fixtureEvidenceCatalog);
-export type Issue14Fixture = (typeof issue14FixtureManifest)[number];
-
-function issueOracle(record: FixtureEvidenceRecord): IssueFixtureOracle {
-  return record.oracle.disposition === "reviewed-divergence" ? "reviewed-ts7" : "immutable-upstream";
-}
-
-function orderedView<T extends { readonly order: number }>(
-  values: readonly T[],
-  label: string
-): readonly T[] {
-  const result = [...values].sort((left, right) => left.order - right.order);
-  if (
-    result.some((entry) => !Number.isSafeInteger(entry.order) || entry.order < 0) ||
-    new Set(result.map((entry) => entry.order)).size !== result.length
-  ) {
-    throw new Error(`${label} must have unique non-negative ordering.`);
-  }
-  return result;
-}
-
-type IssueViewRecord = {
-  readonly fixture: string;
-  readonly file: string;
-  readonly oracle: IssueFixtureOracle;
-  readonly group: string | undefined;
-  readonly order: number;
-};
-
-export function deriveIssueMembershipPlan(
-  catalog: readonly FixtureEvidenceRecord[],
-  issue: FixtureIssue
-): readonly {
-  readonly fixture: string;
-  readonly input: string;
-  readonly evidenceId: string;
-}[] {
-  validateFixtureEvidenceCatalog(catalog);
-  return catalog.flatMap((record) =>
-    record.issues.includes(issue)
-      ? [{ fixture: record.id, input: record.input.file, evidenceId: record.evidence.id }]
-      : []
-  );
-}
-
-function deriveOrderedIssueView(
-  catalog: readonly FixtureEvidenceRecord[],
-  issue: FixtureIssue
-): readonly IssueViewRecord[] {
-  validateFixtureEvidenceCatalog(catalog);
-  return orderedView(
-    catalog.flatMap((record) => {
-      const metadata = record.evidence.metadata.issueViews?.[issue];
-      return metadata === undefined
-        ? []
-        : [
-            {
-              fixture: record.id,
-              file: record.input.file,
-              oracle: issueOracle(record),
-              group: metadata.group,
-              order: metadata.order,
-            },
-          ];
-    }),
-    `Issue ${issue} fixture view`
-  );
-}
-
-function requiredGroup(record: IssueViewRecord, issue: FixtureIssue): string {
-  if (record.group === undefined) throw new Error(`Issue ${issue} fixture ${record.fixture} needs a group.`);
-  return record.group;
-}
-
-export const issue03UpstreamFixtures = deriveOrderedIssueView(fixtureEvidenceCatalog, "03").map(
-  ({ fixture, file }) => ({ fixture, file })
-);
-export type Issue03UpstreamFixture = (typeof issue03UpstreamFixtures)[number];
-
-export const issue04CanonicalizationFixtures = deriveOrderedIssueView(fixtureEvidenceCatalog, "04").map(
-  ({ fixture, file, oracle }) => ({ fixture, file, oracle })
-);
-export type Issue04Fixture = (typeof issue04CanonicalizationFixtures)[number];
-
-export const issue05ContainerFixtures = deriveOrderedIssueView(fixtureEvidenceCatalog, "05").map(
-  (record) => ({ fixture: record.fixture, file: record.file, container: requiredGroup(record, "05") })
-);
-export type Issue05Fixture = (typeof issue05ContainerFixtures)[number];
-
-export const issue06CallableFixtures = deriveOrderedIssueView(fixtureEvidenceCatalog, "06").map((record) => ({
-  fixture: record.fixture,
-  file: record.file,
-  family: requiredGroup(record, "06"),
-}));
-export type Issue06Fixture = (typeof issue06CallableFixtures)[number];
-
-function issueFamilyFixtures(issue: FixtureIssue): readonly {
-  readonly fixture: string;
-  readonly file: string;
-  readonly oracle: IssueFixtureOracle;
-  readonly family: string;
-}[] {
-  return deriveOrderedIssueView(fixtureEvidenceCatalog, issue).map((record) => ({
-    fixture: record.fixture,
-    file: record.file,
-    oracle: record.oracle,
-    family: requiredGroup(record, issue),
-  }));
-}
-
-export const issue07GenericFixtures = issueFamilyFixtures("07");
-export type Issue07Fixture = (typeof issue07GenericFixtures)[number];
-export const issue08MappedFixtures = issueFamilyFixtures("08");
-export type Issue08Fixture = (typeof issue08MappedFixtures)[number];
-export const issue09TypeOperatorFixtures = issueFamilyFixtures("09");
-export type Issue09Fixture = (typeof issue09TypeOperatorFixtures)[number];
-export const issue10ModuleSurfaceFixtures = issueFamilyFixtures("10");
-export type Issue10Fixture = (typeof issue10ModuleSurfaceFixtures)[number];
-
-export const issue11ReactFixtures = deriveOrderedIssueView(fixtureEvidenceCatalog, "11").map((record) => ({
-  fixture: record.fixture,
-  file: record.file,
-  family: requiredGroup(record, "11"),
-}));
-export type Issue11Fixture = (typeof issue11ReactFixtures)[number];
-
-export const issue12ReactFixtures = issueFamilyFixtures("12").map((record) => ({
-  ...record,
-  warningOracle: "warnings.tsgo.json" as const,
-}));
-export type Issue12Fixture = (typeof issue12ReactFixtures)[number];
-
-export const issue13ExternalFixtures = issueFamilyFixtures("13");
-export type Issue13Fixture = (typeof issue13ExternalFixtures)[number];
-
-export function deriveWarningPlan(
-  catalog: readonly FixtureEvidenceRecord[],
-  issue: "12" | "13"
-): readonly {
-  readonly fixture: string;
-  readonly oracleFile: "warnings.tsgo.json" | null;
-  readonly codes: readonly string[];
-}[] {
-  return orderedView(
-    deriveOrderedIssueView(catalog, issue).map((view) => {
-      const record = catalog.find((candidate) => candidate.id === view.fixture);
-      if (record === undefined) throw new Error(`Missing warning fixture ${view.fixture}.`);
-      return {
-        fixture: record.id,
-        oracleFile: record.warnings.oracleFile,
-        codes: record.warnings.codes,
-        order: record.evidence.metadata.warningOrder?.[issue] ?? view.order,
-      };
-    }),
-    `Issue ${issue} warning plan`
-  ).map(({ fixture, oracleFile, codes }) => ({ fixture, oracleFile, codes }));
-}
-
-export function deriveWarningEvidencePlan(catalog: readonly FixtureEvidenceRecord[]): readonly {
-  readonly fixture: string;
-  readonly oracleFile: "warnings.tsgo.json";
-  readonly codes: readonly string[];
-}[] {
-  validateFixtureEvidenceCatalog(catalog);
-  return catalog.flatMap((record) =>
-    record.warnings.oracleFile === null
-      ? []
-      : [{ fixture: record.id, oracleFile: record.warnings.oracleFile, codes: record.warnings.codes }]
-  );
-}
-
-function warningRecord(
-  plan: readonly { readonly fixture: string; readonly codes: readonly string[] }[]
-): Readonly<Record<string, readonly string[]>> {
-  return Object.fromEntries(plan.map((entry) => [entry.fixture, entry.codes]));
-}
-
-export const issue12ExpectedWarnings = warningRecord(deriveWarningPlan(fixtureEvidenceCatalog, "12"));
-export const issue13ExpectedWarnings = warningRecord(deriveWarningPlan(fixtureEvidenceCatalog, "13"));
-
-export function expectedWarningCodes(
-  plan: Readonly<Record<string, readonly string[]>>,
-  fixture: string
-): readonly string[] {
-  const codes = plan[fixture];
-  if (codes === undefined) throw new Error(`Missing warning evidence for fixture ${fixture}.`);
-  return codes;
-}
-
-export const issue12ReactFixtureAudit = orderedView(
-  fixtureEvidenceCatalog.flatMap((record) => {
-    const audit = record.evidence.metadata.reactAudit;
-    return audit === undefined
-      ? []
-      : [
-          {
-            fixture: record.id,
-            file: record.input.file,
-            owner: audit.owner,
-            oracle: issueOracle(record),
-            order: audit.order,
-          },
-        ];
-  }),
-  "Issue 12 React fixture audit"
-).map(({ fixture, file, owner, oracle }) => ({ fixture, file, owner, oracle }));
-export type Issue12ReactFixtureAuditEntry = (typeof issue12ReactFixtureAudit)[number];
-
-export type Issue02TimingFixture = {
-  readonly fixture: string;
-  readonly file: string;
-  readonly oracleFile: "output.json" | "output.tsgo.json";
-  readonly warningOracle: "warnings.tsgo.json";
-};
-
-export function deriveTimingPlan(
-  catalog: readonly FixtureEvidenceRecord[],
-  plan: TimingPlan
-): readonly Issue02TimingFixture[] {
-  validateFixtureEvidenceCatalog(catalog);
-  return orderedView(
-    catalog.flatMap((record) => {
-      if (!record.timing.includes(plan)) return [];
-      const order = record.evidence.metadata.timingOrder?.[plan];
-      if (order === undefined) throw new Error(`Fixture ${record.id} is missing ${plan} timing order.`);
-      if (record.oracle.selectedFile === null || record.warnings.oracleFile === null) {
-        throw new Error(`Fixture ${record.id} has incomplete ${plan} timing evidence.`);
-      }
-      return [
-        {
-          fixture: record.id,
-          file: record.input.file,
-          oracleFile: record.oracle.selectedFile,
-          warningOracle: record.warnings.oracleFile,
-          order,
-        },
-      ];
-    }),
-    `${plan} timing plan`
-  ).map(({ fixture, file, oracleFile, warningOracle }) => ({
-    fixture,
-    file,
-    oracleFile,
-    warningOracle,
-  }));
-}
-
-export const issue02TimingFixtures = deriveTimingPlan(fixtureEvidenceCatalog, "issue02");
-export const issue14TimingFixtures = deriveTimingPlan(fixtureEvidenceCatalog, "issue14");
-
-export type Issue02SupplementalFixture = {
-  readonly fixture: string;
-  readonly file: string;
-  readonly expectedExports: readonly string[];
-};
-
-export const issue02SupplementalFixtures: readonly Issue02SupplementalFixture[] =
-  fixtureEvidenceCatalog.flatMap((record) =>
-    record.evidence.metadata.expectedExports === undefined
-      ? []
-      : [
-          {
-            fixture: record.id,
-            file: record.input.file,
-            expectedExports: record.evidence.metadata.expectedExports,
-          },
-        ]
-  );
-
-export const issue02GoNoGoFixtures = orderedView(
-  fixtureEvidenceCatalog.flatMap((record) => {
-    const evidence = record.evidence.metadata.goNoGo;
-    return evidence === undefined ? [] : [{ fixture: record.id, ...evidence }];
-  }),
-  "Issue 02 go/no-go fixture view"
-).map(({ order: _order, ...entry }) => entry);
-export type Issue02GoNoGoFixture = (typeof issue02GoNoGoFixtures)[number];
-
-export function deriveTypecheckPlan(catalog: readonly FixtureEvidenceRecord[]): readonly {
-  readonly fixture: string;
-  readonly file: string;
-  readonly strategy: Exclude<TypecheckStrategy, "not-applicable">;
-}[] {
-  validateFixtureEvidenceCatalog(catalog);
-  return catalog.flatMap((record) => {
-    if (record.conformance === false) return [];
-    if (record.typecheck.strategy === "not-applicable") {
-      throw new Error(`Conformance fixture ${record.id} is missing its type-check strategy.`);
-    }
-    return [{ fixture: record.id, file: record.input.file, strategy: record.typecheck.strategy }];
-  });
-}
-
-export const issue14TypecheckPlan = deriveTypecheckPlan(fixtureEvidenceCatalog);
-
-export function derivePackageTypecheckPlan(catalog: readonly FixtureEvidenceRecord[]): readonly {
-  readonly fixture: string;
-  readonly project: string;
-}[] {
-  validateFixtureEvidenceCatalog(catalog);
-  return orderedView(
-    catalog.flatMap((record) =>
-      (record.evidence.metadata.packageTypechecks ?? []).map((entry) => ({
-        fixture: record.id,
-        project: entry.project,
-        order: entry.order,
-      }))
-    ),
-    "Package fixture type-check plan"
-  ).map(({ fixture, project }) => ({ fixture, project }));
-}
-
-export const packageFixtureTypecheckPlan = derivePackageTypecheckPlan(fixtureEvidenceCatalog);
-
-export function derivePackageExecutionPlan(catalog: readonly FixtureEvidenceRecord[]): readonly {
-  readonly fixture: string;
-  readonly input: string;
-  readonly issues: readonly FixtureIssue[];
-  readonly conformance: boolean;
-  readonly typecheck: TypecheckStrategy;
-  readonly timing: readonly TimingPlan[];
-  readonly warningEvidence: boolean;
-  readonly typecheckProjects: readonly string[];
-}[] {
-  validateFixtureEvidenceCatalog(catalog);
-  return catalog.map((record) => ({
-    fixture: record.id,
-    input: record.input.file,
-    issues: record.issues,
-    conformance: record.conformance !== false,
-    typecheck: record.typecheck.strategy,
-    timing: record.timing,
-    warningEvidence: record.warnings.oracleFile !== null || record.warnings.codes.length > 0,
-    typecheckProjects: (record.evidence.metadata.packageTypechecks ?? []).map((entry) => entry.project),
-  }));
-}
-
-export const packageFixtureExecutionPlan = derivePackageExecutionPlan(fixtureEvidenceCatalog);

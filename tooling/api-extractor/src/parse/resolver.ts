@@ -15,7 +15,7 @@ import type {
   BackendTypeFacts,
 } from "../backend/contracts.ts";
 import type { BackendModuleDraft } from "../backend/contracts.ts";
-import type { ExportNode, ModuleNode, SemanticType, TypeArgument, TypeName } from "../model.ts";
+import type { ExportNode, ModuleNode, SemanticType, TypeName } from "../model.ts";
 import { defaultExtractorOptions } from "../options.ts";
 import type { ExtractorOptions } from "../options.ts";
 import type { ProvenanceEntry } from "../provenance.ts";
@@ -49,6 +49,7 @@ import {
   componentPropSemanticPathFromProvenancePath,
   exportSemanticPath,
 } from "./semantic-paths.ts";
+import { namedTypeArguments } from "./type-name.ts";
 import {
   authoredExtractOverIndexLike,
   authoredKeyofNode,
@@ -530,7 +531,7 @@ function isClassType(type: BackendTypeHandle, context: Context): boolean {
   const info = context.operations.symbolFacts(symbol);
   if (info.flags.includes("class")) return true;
   return info.declarations.some((declaration) => {
-    const kind = context.operations.nodeFacts(declaration).kind;
+    const kind = context.operations.nodeKind(declaration);
     return kind === "class" || kind === "classExpression";
   });
 }
@@ -728,9 +729,11 @@ function typeNameFor(
       ? context.operations.typeNameFacts(type, undefined)
       : undefined;
   const namespaces =
-    semanticNameFacts !== undefined && semanticNameFacts.namespaces.length > 0
-      ? semanticNameFacts.namespaces
-      : nameFacts.namespaces;
+    rawAuthoredSymbol !== undefined && authoredSymbol === undefined
+      ? (semanticNameFacts?.namespaces ?? [])
+      : semanticNameFacts !== undefined && semanticNameFacts.namespaces.length > 0
+        ? semanticNameFacts.namespaces
+        : nameFacts.namespaces;
   const authoredArguments = authoredSymbol === undefined ? undefined : nameFacts.authoredArguments;
   const authoredUsesDifferentSymbol =
     authoredSymbol !== undefined && facts.aliasSymbol !== undefined && authoredSymbol !== facts.aliasSymbol;
@@ -750,39 +753,20 @@ function typeNameFor(
       : facts.isTypeReference === true
         ? (facts.typeArguments ?? [])
         : (facts.aliasTypeArguments ?? []);
-  const typeArguments = args.map(
-    (argument, index) =>
-      ({
-        type: typeNode(argument, nameFacts.authoredArguments?.[index], undefined, context),
-        equalToDefault: argumentMatchesDefault(argument, index, symbol, context),
-      }) satisfies TypeArgument
-  );
+  const named = namedTypeArguments({
+    args,
+    nameFacts,
+    namespaces,
+    sourceNode,
+    symbol,
+    context,
+    resolveType: typeNode,
+  });
   return {
     name,
-    ...(namespaces.length === 0 ? {} : { namespaces }),
-    ...(typeArguments.length === 0 ? {} : { typeArguments }),
+    ...(named.namespaces.length === 0 ? {} : { namespaces: named.namespaces }),
+    ...(named.typeArguments.length === 0 ? {} : { typeArguments: named.typeArguments }),
   };
-}
-
-function argumentMatchesDefault(
-  argument: BackendTypeHandle,
-  index: number,
-  symbol: BackendSymbolHandle | undefined,
-  context: Context
-): boolean {
-  if (context.operations.typeFacts(argument).isTypeParameter === true || symbol === undefined) return false;
-  const declaration = context.operations.symbolFacts(symbol).declarations[0];
-  if (declaration === undefined) return false;
-  const info = context.operations.nodeFacts(declaration);
-  const parameter = info.typeParameters?.[index];
-  if (parameter === undefined) return false;
-  const parameterInfo = context.operations.nodeFacts(parameter);
-  if (parameterInfo.defaultType === undefined) return false;
-  const defaultType = context.operations.typeAtNode(parameterInfo.defaultType);
-  return (
-    defaultType !== undefined &&
-    context.operations.typeToString(defaultType) === context.operations.typeToString(argument)
-  );
 }
 
 function typeParameterNode(

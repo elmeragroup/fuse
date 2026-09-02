@@ -257,7 +257,12 @@ describe("compiler boundary", () => {
         declarationPaths: ["/virtual/source.d.ts"],
         declarations: [],
       }),
+      symbolOrigin: (symbol) => ({
+        identity: { name: symbol === valueSymbol ? "Value" : "RuntimeValue", namespaces: [] },
+      }),
+      declaringParentIsClass: () => false,
       nodeFacts: () => ({ kind: "unknown", text: "", filePath: "/virtual/source.d.ts", line: 1, column: 1 }),
+      nodeKind: () => "unknown",
       typeNameFacts: () => undefined,
       signaturesOfType: () => [] as readonly BackendSignatureHandle[],
       signatureFacts: () => ({ parameters: [], returnType: {} as BackendTypeHandle, typeParameters: [] }),
@@ -355,6 +360,20 @@ describe("compiler boundary", () => {
           };
         return { name: "Widget", flags: [], declarationPaths: ["/virtual/input.tsx"], declarations: [] };
       },
+      symbolOrigin: (symbol) => ({
+        identity: {
+          name:
+            symbol === propsSymbol
+              ? "Props"
+              : symbol === valueSymbol
+                ? "value"
+                : symbol === reactSymbol
+                  ? "ReactElement"
+                  : "Widget",
+          namespaces: [],
+        },
+      }),
+      declaringParentIsClass: () => false,
       nodeFacts: (node) => {
         if (node === propsNode)
           return {
@@ -379,6 +398,11 @@ describe("compiler boundary", () => {
           line: 1,
           column: 1,
         };
+      },
+      nodeKind: (node) => {
+        if (node === propsNode) return "interface";
+        if (node === valueNode) return "property";
+        return "interface";
       },
       typeNameFacts: (type) =>
         type === reactType

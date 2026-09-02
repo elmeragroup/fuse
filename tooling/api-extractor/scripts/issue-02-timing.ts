@@ -11,12 +11,18 @@ import type { TimedExtraction } from "../src/internal/timing.ts";
 import { writeArtifactBatchOrThrow } from "./artifact-batch-command.ts";
 import { checkBoundary } from "./check-boundary.ts";
 import {
+  assertBytesReceivedBudget,
+  assertFetchedToMaterializedRatioBudget,
+  assertFetchedToMaterializedRatioEvidence,
   assertFixtureOracle,
   assertReactDivergenceEvidence,
+  assertRequestCountBudget,
   assertSupplementalFixture,
+  fetchedToMaterializedRatio,
   fixtureDirectory,
   fixtureInputPath,
   issue02SupplementalFixtures,
+  issue02TimingBudget,
   issue02TimingFixtures,
   readGoNoGoArtifact,
   readTimingReport,
@@ -83,6 +89,8 @@ async function verifySupplementalFixtures(): Promise<void> {
 }
 
 async function collectSamples(): Promise<TimingReport["samples"]> {
+  // This function measures the live budget decision. The checked-in report is
+  // intentionally a separate, immutable baseline consumed by Issue 14.
   const result: Array<TimingReport["samples"][number]> = [];
   for (const definition of issue02TimingFixtures) {
     const extraction = await timedExtraction(fixtureInputPath(definition));
@@ -91,6 +99,8 @@ async function collectSamples(): Promise<TimingReport["samples"]> {
       fixture: definition.fixture,
       enabled: extraction.timing.enabled,
       totals: extraction.timing.totals,
+      fetchedToMaterializedRatio: fetchedToMaterializedRatio(extraction.timing.totals),
+      budget: issue02TimingBudget(definition),
     });
   }
   await verifySupplementalFixtures();
@@ -98,6 +108,11 @@ async function collectSamples(): Promise<TimingReport["samples"]> {
 }
 
 function reportFrom(samples: TimingReport["samples"]): TimingReport {
+  for (const sample of samples) {
+    assertFetchedToMaterializedRatioEvidence(sample);
+    assertRequestCountBudget(sample);
+    assertBytesReceivedBudget(sample);
+  }
   const { backendLeakage: backend, durableContractLeakage: durable } = boundaryStatuses();
   const measuredAggregateRoundTripMs = samples.reduce(
     (total, sample) => total + sample.totals.roundTripMs,
@@ -242,7 +257,22 @@ function checkStoredReport(stored: TimingReport, measured: TimingReport, goNoGo:
   if (stored.decision !== expectedStoredDecision) {
     throw new Error("The checked-in Issue 02 timing decision does not match its stop conditions.");
   }
+  const measuredByFixture = new Map(measured.samples.map((sample) => [sample.fixture, sample]));
   for (const sample of stored.samples) {
+    // Issue 02's checked-in samples are an immutable pre-optimization
+    // baseline. Validate their recorded ratio and budget metadata, but do not
+    // enforce today's live ceilings against those historical totals.
+    assertFetchedToMaterializedRatioEvidence(sample);
+    const measuredSample = measuredByFixture.get(sample.fixture);
+    if (
+      measuredSample === undefined ||
+      sample.budget.maxFetchedToMaterializedRatio !== measuredSample.budget.maxFetchedToMaterializedRatio ||
+      sample.budget.maxRequestCount !== measuredSample.budget.maxRequestCount ||
+      sample.budget.maxBytesReceived !== measuredSample.budget.maxBytesReceived ||
+      sample.budget.bytesReceivedPathLengthHeadroom !== measuredSample.budget.bytesReceivedPathLengthHeadroom
+    ) {
+      throw new Error(`The Issue 02 timing budget is stale for ${sample.fixture}.`);
+    }
     if (
       sample.enabled !== true ||
       sample.totals.requestCount <= 0 ||
@@ -255,6 +285,11 @@ function checkStoredReport(stored: TimingReport, measured: TimingReport, goNoGo:
     }
   }
   for (const sample of measured.samples) {
+    // Only the fresh measurement is a live budget decision. Issue 14 consumes
+    // the same measurement as its exact semantic-counter contract.
+    assertFetchedToMaterializedRatioBudget(sample);
+    assertRequestCountBudget(sample);
+    assertBytesReceivedBudget(sample);
     if (
       !sample.enabled ||
       sample.totals.requestCount <= 0 ||
@@ -299,6 +334,10 @@ if (process.argv.includes("--write")) {
           roundTripMs: sample.totals.roundTripMs,
           bytesSent: sample.totals.bytesSent,
           bytesReceived: sample.totals.bytesReceived,
+          fetchedToMaterializedRatio: sample.fetchedToMaterializedRatio,
+          maxFetchedToMaterializedRatio: sample.budget.maxFetchedToMaterializedRatio,
+          maxRequestCount: sample.budget.maxRequestCount,
+          maxBytesReceived: sample.budget.maxBytesReceived,
         })),
       },
       null,

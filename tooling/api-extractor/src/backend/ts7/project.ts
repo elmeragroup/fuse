@@ -8,6 +8,8 @@ import { BackendError, ConfigError, safeCause } from "../../errors.ts";
 import type { InternalOpenProjectOptions } from "../../internal/project-options.ts";
 import type { ProjectFileSystem } from "../../options.ts";
 import type { BackendProject, BackendTiming } from "../contracts.ts";
+import { createPathIdentity } from "./path-identity.ts";
+import type { PathIdentity } from "./path-identity.ts";
 import { TsgoExtractionSession } from "./session.ts";
 
 type OpenedProject = { readonly api: API; readonly project: Project };
@@ -143,6 +145,7 @@ class TsgoProject implements BackendProject {
   private readonly projectRoot: string;
   private readonly provenanceRoot: string;
   private readonly cwd: string;
+  private readonly pathIdentity: PathIdentity;
   private readonly timingEnabled: boolean;
 
   constructor(
@@ -150,7 +153,8 @@ class TsgoProject implements BackendProject {
     tsconfigPath: string,
     cwd: string,
     provenanceRoot: string,
-    timingEnabled: boolean
+    timingEnabled: boolean,
+    realpath: ((path: string) => string | undefined) | undefined
   ) {
     this.opened = opened;
     this.projectRoot = dirname(tsconfigPath);
@@ -161,6 +165,11 @@ class TsgoProject implements BackendProject {
     );
     this.cwd = cwd;
     this.timingEnabled = timingEnabled;
+    this.pathIdentity = createPathIdentity({
+      platform: process.platform,
+      provenanceRoot,
+      virtualRealpath: realpath,
+    });
   }
 
   openExtraction(): TsgoExtractionSession {
@@ -171,13 +180,21 @@ class TsgoProject implements BackendProject {
       });
     }
     const sessions = this.sessions;
+    const api = this.opened.api;
     const session = new TsgoExtractionSession(
       this.opened.project,
       this.rootDirectory,
       this.projectRoot,
       this.provenanceRoot,
       this.cwd,
-      (closedSession) => sessions.delete(closedSession)
+      this.pathIdentity,
+      (closedSession) => {
+        sessions.delete(closedSession);
+        // The compiler SourceFileCache is project/snapshot-scoped. Session
+        // trees are dropped in session.close; clearing here makes the next
+        // extraction pay for those files again.
+        api.clearSourceFileCache();
+      }
     );
     this.sessions.add(session);
     return session;
@@ -207,5 +224,12 @@ class TsgoProject implements BackendProject {
 export function openTsgoProject(options: InternalOpenProjectOptions): BackendProject {
   const cwd = resolve(options.cwd ?? process.cwd());
   const tsconfigPath = resolve(cwd, options.tsconfigPath);
-  return new TsgoProject(createApi(options), tsconfigPath, cwd, cwd, options.collectTiming === true);
+  return new TsgoProject(
+    createApi(options),
+    tsconfigPath,
+    cwd,
+    cwd,
+    options.collectTiming === true,
+    options.fileSystem?.realpath
+  );
 }

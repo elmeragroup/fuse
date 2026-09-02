@@ -11,16 +11,12 @@ import {
   isExportAssignment,
   isExportDeclaration,
   isExportSpecifier,
-  isEnumDeclaration,
   isFunctionDeclaration,
   isImportDeclaration,
-  isInterfaceDeclaration,
   isModuleDeclaration,
   isNamedExports,
   isNamespaceExport,
   isStringLiteral,
-  isTypeAliasDeclaration,
-  isVariableDeclaration,
 } from "typescript/unstable/ast/is";
 import { SymbolFlags } from "typescript/unstable/sync";
 import type { Checker, Project, Symbol as TsSymbol } from "typescript/unstable/sync";
@@ -34,10 +30,12 @@ import type {
   BackendWarningFact,
 } from "../contracts.ts";
 import { declarationModifiers } from "./class-facts.ts";
-import { extendsTypes } from "./heritage.ts";
+import type { CompilerDeclaration } from "./declarations.ts";
+import { resolveOwnedDeclaration, valueOrFirstDeclarationHandle } from "./declarations.ts";
+import type { CompilerSourceFileMetadata } from "./file-ownership.ts";
 import { exportsOf, orderedContainerExports } from "./module-ordering.ts";
 import { aliasedSymbol, resolveModule } from "./module-resolution.ts";
-import { repositoryRelativePath } from "./paths.ts";
+import { repositoryRelativePath } from "./path-identity.ts";
 import { extendChain, followedChain } from "./reexport-chain.ts";
 import { sameUltimateSymbol, ultimateSymbol } from "./ultimate-symbol.ts";
 
@@ -47,8 +45,15 @@ export type TsgoModuleSession = {
   readonly rootDirectory: string;
   readonly cwd: string;
   readonly ensureOpen: (operation: string) => void;
+  readonly sourceFileMetadata: (path: string) => CompilerSourceFileMetadata | undefined;
+  readonly sourceFile: (filePath: string) => SourceFile | undefined;
+  readonly resolveDeclaration: (declaration: CompilerDeclaration) => Node | undefined;
   readonly symbolHandle: (symbol: TsSymbol) => BackendSymbolHandle;
   readonly documentationOfSymbol: (symbol: BackendSymbolHandle) => BackendDocumentation | undefined;
+  readonly heritageTypes: (
+    declaration: Node | undefined
+  ) => readonly { readonly name: string; readonly resolvedName?: string }[] | undefined;
+  readonly sameSourceFile: (left: string, right: string) => boolean;
 };
 
 /**
@@ -77,7 +82,7 @@ export type DescriptorScope = {
 export function readModule(session: TsgoModuleSession, filePath: string): BackendModuleDraft {
   session.ensureOpen("readModule");
   const absoluteFilePath = resolvePath(session.cwd, filePath);
-  const source = session.project.program.getSourceFile(absoluteFilePath);
+  const source = session.sourceFile(absoluteFilePath);
   if (source === undefined)
     throw new FileNotInProgramError({
       filePath: absoluteFilePath,
@@ -215,13 +220,12 @@ function recordAmbiguousStarWarnings(
   );
   // An explicitly declared export shadows any star contribution of the same
   // name, so only names the module itself does not declare can be ambiguous.
+  // Path identity is enough; resolving the handle would fetch the declaration
+  // file of a star contribution before parser policy has asked for a node.
   const explicitNames = new Set(
     exportsOf(session, moduleSymbol)
       .filter((symbol) =>
-        symbol.declarations.some((declaration) => {
-          const resolved = declaration.resolve();
-          return resolved !== undefined && resolved.getSourceFile() === source;
-        })
+        symbol.declarations.some((declaration) => session.sameSourceFile(declaration.path, source.fileName))
       )
       .map((symbol) => symbol.name)
   );
@@ -237,11 +241,12 @@ function recordAmbiguousStarWarnings(
     }
     const resolvedFile = resolveModule(session, statement.moduleSpecifier.text, filePath)?.filePath;
     if (resolvedFile === undefined) continue;
-    const resolvedSource = session.project.program.getSourceFile(resolvedFile);
-    const resolvedModule =
-      resolvedSource === undefined ? undefined : session.checker.getSymbolAtLocation(resolvedSource);
-    if (resolvedModule === undefined) continue;
-    for (const member of session.checker.getExportsOfModule(resolvedModule)) {
+    // The specifier node is already materialized with this source file. Its
+    // checker symbol lists target exports without fetching an excluded
+    // declaration file (the same pattern `forwardedSymbol` uses).
+    const resolvedModule = session.checker.getSymbolAtLocation(statement.moduleSpecifier);
+    if (resolvedModule === undefined || session.checker.isUnknownSymbol(resolvedModule)) continue;
+    for (const member of exportsOf(session, resolvedModule)) {
       if (explicitNames.has(member.name)) continue;
       const branches = branchesByName.get(member.name) ?? new Map<string, TsSymbol>();
       // A repeated star target cannot introduce a second declaration. Keep
@@ -300,7 +305,7 @@ function appendDescriptors(
   out: BackendExportDraft[],
   visitedNamespaces: ReadonlySet<TsSymbol>
 ): void {
-  const first = firstResolvedDeclaration(scope.symbol);
+  const first = firstResolvedDeclaration(scope.session, scope.symbol);
   if (first !== undefined && isModuleDeclaration(first)) {
     appendNamespaceMembers(scope, out, visitedNamespaces);
     return;
@@ -326,8 +331,8 @@ function appendDescriptors(
     return;
   }
   const defaultNamedTarget = defaultExportNameSymbol(scope.session, first);
-  const target = defaultNamedTarget ?? exportTarget(scope.session.checker, scope.symbol);
-  const specifierReExport = isModuleReExportSpecifier(scope.symbol);
+  const target = defaultNamedTarget ?? exportTarget(scope.session, scope.symbol);
+  const specifierReExport = isModuleReExportSpecifier(scope.session, scope.symbol);
   const chain = specifierReExport ? followedChain(scope.session, scope, scope.symbol) : scope.chain;
   out.push(exportDescriptor(scope, target, chain));
   // A re-exported value can carry a namespace merged onto its ORIGINAL
@@ -398,7 +403,7 @@ function appendNamespaceMembers(
   // A namespace flattens with its own container's authored order. For a
   // re-exported module (`export * as NS`) the target's first declaration is
   // the source file itself, which is exactly the container file.
-  const firstResolved = ns.declarations[0]?.resolve();
+  const firstResolved = resolveOwnedDeclaration(scope.session, ns.declarations[0]);
   const containerFile = firstResolved === undefined ? undefined : firstResolved.getSourceFile();
   const members =
     containerFile !== undefined
@@ -451,24 +456,32 @@ function exportDescriptor(
   chain: readonly string[]
 ): BackendExportDraft {
   const session = scope.session;
-  const declaration = valueOrFirstDeclaration(target);
-  const inheritedTypes = extendsTypes(session, declaration);
+  const declarationHandle = valueOrFirstDeclarationHandle(target);
+  // Declaration paths and syntax kinds are available on the native handle.
+  // Resolve the node only for project-owned declarations, where the module
+  // walk itself may need authored heritage details. External declarations are
+  // later subject to parser package selection and must not fetch their source
+  // subtree during draft discovery.
+  const declaration = resolveOwnedDeclaration(session, declarationHandle);
+  const inheritedTypes = session.heritageTypes(declaration);
   const docs = session.documentationOfSymbol(
     session.symbolHandle(documentationSourceSymbol(session, scope.symbol, target))
   );
   const reexportedFrom =
-    isModuleReExportSpecifier(scope.symbol) && target.name !== scope.publicName ? target.name : undefined;
+    isModuleReExportSpecifier(session, scope.symbol) && target.name !== scope.publicName
+      ? target.name
+      : undefined;
   return {
     name: joinPublicName(scope.parentNamespaces, scope.publicName),
     symbol: session.symbolHandle(target),
     symbolStack: scope.symbolStack,
     ...(docs === undefined ? {} : { documentation: docs }),
-    declarationSourcePath: declaration?.getSourceFile().fileName,
+    ...(declarationHandle === undefined ? {} : { declarationSourcePath: declarationHandle.path }),
     pureType: isPureType(target),
     explicitValueReExport:
       scope.source === undefined
         ? false
-        : explicitValueReExport(scope.symbol, scope.source, scope.publicName),
+        : explicitValueReExport(session, scope.symbol, scope.source, scope.publicName),
     ...(reexportedFrom === undefined ? {} : { reexportedFrom }),
     ...(chain.length === 0 ? {} : { reexportChain: chain }),
     ...(inheritedTypes === undefined ? {} : { extendsTypes: inheritedTypes }),
@@ -491,7 +504,7 @@ function joinPublicName(parentNamespaces: readonly string[], name: string): stri
  */
 function documentationSourceSymbol(session: TsgoModuleSession, symbol: TsSymbol, target: TsSymbol): TsSymbol {
   for (const declaration of symbol.declarations) {
-    const resolved = declaration.resolve();
+    const resolved = resolveOwnedDeclaration(session, declaration);
     if (resolved === undefined || !isExportSpecifier(resolved)) continue;
     // SAFETY: remote specifier nodes materialize with a parent chain whose
     // tail can be absent at runtime even though the shared `Node` typing
@@ -510,7 +523,7 @@ function documentationSourceSymbol(session: TsgoModuleSession, symbol: TsSymbol,
 function mergedNamespaceSymbols(session: TsgoModuleSession, symbol: TsSymbol): readonly TsSymbol[] {
   const namespaces: TsSymbol[] = [];
   for (const declaration of symbol.declarations) {
-    const resolved = declaration.resolve();
+    const resolved = resolveOwnedDeclaration(session, declaration);
     if (resolved === undefined || !isModuleDeclaration(resolved)) continue;
     const named = session.checker.getSymbolAtLocation(resolved.name);
     if (named !== undefined && !namespaces.includes(named)) namespaces.push(named);
@@ -521,7 +534,7 @@ function mergedNamespaceSymbols(session: TsgoModuleSession, symbol: TsSymbol): r
 /** Resolves the namespace symbol a module declaration declares, when it has one. */
 function namespaceSymbolOf(session: TsgoModuleSession, symbol: TsSymbol): TsSymbol | undefined {
   for (const declaration of symbol.declarations) {
-    const resolved = declaration.resolve();
+    const resolved = resolveOwnedDeclaration(session, declaration);
     if (resolved === undefined || !isModuleDeclaration(resolved)) continue;
     const named = session.checker.getSymbolAtLocation(resolved.name);
     if (named !== undefined) return named;
@@ -541,40 +554,27 @@ function starExportSpecifiers(source: SourceFile, typeOnly: boolean): readonly s
   );
 }
 
-function firstResolvedDeclaration(symbol: TsSymbol): Node | undefined {
-  return symbol.declarations[0]?.resolve() ?? undefined;
+function firstResolvedDeclaration(session: TsgoModuleSession, symbol: TsSymbol): Node | undefined {
+  return resolveOwnedDeclaration(session, symbol.declarations[0]);
 }
 
-export function valueOrFirstDeclaration(symbol: TsSymbol): Node | undefined {
-  const value = symbol.declarations
-    .map((declaration) => declaration.resolve())
-    .find(
-      (declaration) =>
-        declaration !== undefined &&
-        (isVariableDeclaration(declaration) ||
-          isFunctionDeclaration(declaration) ||
-          isClassDeclaration(declaration))
-    );
-  return value ?? symbol.valueDeclaration?.resolve() ?? symbol.declarations[0]?.resolve();
-}
-
-function exportTarget(checker: Checker, symbol: TsSymbol): TsSymbol {
-  const declaration = symbol.declarations[0]?.resolve();
+function exportTarget(session: TsgoModuleSession, symbol: TsSymbol): TsSymbol {
+  const declaration = resolveOwnedDeclaration(session, symbol.declarations[0]);
   if (
     (symbol.flags & SymbolFlags.Alias) === 0 &&
     (declaration === undefined || !isExportSpecifier(declaration))
   )
     return symbol;
-  return aliasedSymbol(checker, symbol) ?? symbol;
+  return aliasedSymbol(session.checker, symbol) ?? symbol;
 }
 
 /**
  * Whether any declaration of the symbol is an export specifier re-exported
  * from another module (`export { x } from './other'`).
  */
-function isModuleReExportSpecifier(symbol: TsSymbol): boolean {
+function isModuleReExportSpecifier(session: TsgoModuleSession, symbol: TsSymbol): boolean {
   return symbol.declarations.some((declaration) => {
-    const resolved = declaration.resolve();
+    const resolved = resolveOwnedDeclaration(session, declaration);
     if (resolved === undefined || !isExportSpecifier(resolved)) return false;
     let current = resolved.parent;
     while (current !== undefined && !isExportDeclaration(current)) current = current.parent;
@@ -604,10 +604,15 @@ function recordUnresolvedReExport(scope: DescriptorScope, reason: "cycle" | "mis
   });
 }
 
-function explicitValueReExport(symbol: TsSymbol, source: SourceFile, publicName: string): boolean {
+function explicitValueReExport(
+  session: TsgoModuleSession,
+  symbol: TsSymbol,
+  source: SourceFile,
+  publicName: string
+): boolean {
   if (
     symbol.declarations.some((declaration) => {
-      const resolved = declaration.resolve();
+      const resolved = resolveOwnedDeclaration(session, declaration);
       if (resolved === undefined || !isExportSpecifier(resolved)) return false;
       // SAFETY: as in `documentationSourceSymbol`, the shared typing claims a
       // non-optional parent chain while remote nodes can end it early.
@@ -650,15 +655,14 @@ function explicitValueReExport(symbol: TsSymbol, source: SourceFile, publicName:
 }
 
 function isPureType(symbol: TsSymbol): boolean {
-  const declarations = symbol.declarations.map((declaration) => declaration.resolve()).filter(Boolean);
+  const declarations = symbol.declarations;
   return (
     declarations.length > 0 &&
     declarations.every(
       (declaration) =>
-        declaration !== undefined &&
-        (isInterfaceDeclaration(declaration) ||
-          isTypeAliasDeclaration(declaration) ||
-          isEnumDeclaration(declaration))
+        declaration.kind === SyntaxKind.InterfaceDeclaration ||
+        declaration.kind === SyntaxKind.TypeAliasDeclaration ||
+        declaration.kind === SyntaxKind.EnumDeclaration
     )
   );
 }

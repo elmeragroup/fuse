@@ -37,6 +37,7 @@ const reportPath = join(fixtureDirectory, "issue-14-timing.json");
 const baselinePath = join(fixtureDirectory, "issue-02-timing.json");
 const configPath = join(fixtureDirectory, "issue-14-tsconfig.json");
 export const maxAggregateRoundTripMs = 1_000;
+export const timingToleranceMs = 0.001;
 /**
  * IPC wall-clock counters are scheduler-sensitive. Keep the durable timing
  * contract explicit: semantic counters must match exactly, while wall clock
@@ -118,8 +119,34 @@ export const Issue14TimingReportSchema = Schema.Struct({
   decision: Schema.Literals(["go", "no-go"] as const),
 });
 
+export const LiveBudgetTimingCommandOutputSchema = Schema.Struct({
+  issue: Issue14TimingReportSchema.fields.issue,
+  decision: Schema.Literals(["go", "no-go"] as const),
+  mode: Schema.optionalKey(Schema.Never),
+  semanticDecision: Schema.optionalKey(Schema.Never),
+  baseline: Issue14TimingReportSchema.fields.baseline,
+  aggregate: Issue14TimingReportSchema.fields.aggregate,
+});
+
+export const PortabilityTimingCommandOutputSchema = Schema.Struct({
+  issue: Issue14TimingReportSchema.fields.issue,
+  mode: Schema.Literal("portability"),
+  semanticDecision: Schema.Literals(["go", "no-go"] as const),
+  decision: Schema.optionalKey(Schema.Never),
+  baseline: Issue14TimingReportSchema.fields.baseline,
+  aggregate: Issue14TimingReportSchema.fields.aggregate,
+});
+
+export const TimingCommandOutputSchema = Schema.Union([
+  LiveBudgetTimingCommandOutputSchema,
+  PortabilityTimingCommandOutputSchema,
+]);
+
 export type Issue14TimingReport = Schema.Schema.Type<typeof Issue14TimingReportSchema>;
+export type TimingCommandOutput = Schema.Schema.Type<typeof TimingCommandOutputSchema>;
 export type TimingTotals = Schema.Schema.Type<typeof NumberTotalsSchema>;
+export type TimingCheckMode = "enforce-live-budget" | "verify-checkout-portability";
+export type SemanticDecision = "go" | "no-go";
 type BoundaryStatuses = {
   readonly backendLeakage: "clear" | "triggered";
   readonly durableContractLeakage: "clear" | "triggered";
@@ -235,7 +262,7 @@ function assertTotalsFinite(label: string, totals: TimingTotals, allowNegative =
       );
     }
   }
-  if (Math.abs(totals.roundTripMs - totals.serverTimeMs - totals.transportOverheadMs) > 0.001) {
+  if (Math.abs(totals.roundTripMs - totals.serverTimeMs - totals.transportOverheadMs) > timingToleranceMs) {
     throw new Error(`Timing decomposition is stale for ${label}.`);
   }
 }
@@ -285,8 +312,13 @@ export function assertSemanticTotalsEqual(
 }
 
 function assertArithmetic(label: string, actual: TimingTotals, expected: TimingTotals): void {
-  for (const field of [...integerFields, ...timingFields]) {
-    if (Math.abs(actual[field] - expected[field]) > 0.001) {
+  for (const field of integerFields) {
+    if (actual[field] !== expected[field]) {
+      throw new Error(`Timing arithmetic is stale for ${label}.${field}.`);
+    }
+  }
+  for (const field of timingFields) {
+    if (Math.abs(actual[field] - expected[field]) > timingToleranceMs) {
       throw new Error(`Timing arithmetic is stale for ${label}.${field}.`);
     }
   }
@@ -361,9 +393,14 @@ function assertCommonReportInvariants(report: Issue14TimingReport): void {
   );
   assertArithmetic("baseline.aggregate", report.baseline.aggregate, baseline);
   if (
-    report.stopConditions.unacceptableIpcGrowth.baselineAggregateRoundTripMs !== baseline.roundTripMs ||
-    report.stopConditions.unacceptableIpcGrowth.measuredAggregateRoundTripMs !== measured.roundTripMs ||
-    report.stopConditions.unacceptableIpcGrowth.deltaAggregateRoundTripMs !== delta.roundTripMs ||
+    Math.abs(
+      report.stopConditions.unacceptableIpcGrowth.baselineAggregateRoundTripMs - baseline.roundTripMs
+    ) > timingToleranceMs ||
+    Math.abs(
+      report.stopConditions.unacceptableIpcGrowth.measuredAggregateRoundTripMs - measured.roundTripMs
+    ) > timingToleranceMs ||
+    Math.abs(report.stopConditions.unacceptableIpcGrowth.deltaAggregateRoundTripMs - delta.roundTripMs) >
+      timingToleranceMs ||
     report.stopConditions.unacceptableIpcGrowth.maxAggregateRoundTripMs !== maxAggregateRoundTripMs
   ) {
     throw new Error("Issue 14 timing stop-condition arithmetic is stale.");
@@ -479,21 +516,34 @@ function decodeReport(value: Schema.Json): Issue14TimingReport {
   return Schema.decodeUnknownSync(Issue14TimingReportSchema)(value);
 }
 
-function assertStored(stored: Issue14TimingReport, measured: Issue14TimingReport): void {
+export function assertStoredTimingReport(
+  stored: Issue14TimingReport,
+  measured: Issue14TimingReport,
+  mode: TimingCheckMode
+): SemanticDecision {
+  assertCommonReportInvariants(stored);
+  assertCommonReportInvariants(measured);
   if (
     stored.stopConditions.backendLeakage.status !== measured.stopConditions.backendLeakage.status ||
     stored.stopConditions.durableContractLeakage.status !==
       measured.stopConditions.durableContractLeakage.status ||
-    stored.stopConditions.unacceptableIpcGrowth.status !==
-      measured.stopConditions.unacceptableIpcGrowth.status ||
-    stored.decision !== measured.decision ||
     stored.decision !== "go"
   ) {
-    throw new Error("Issue 14 timing stop-condition status or decision is stale.");
+    throw new Error("Issue 14 timing boundary status or stored decision is stale.");
   }
-  assertCommonReportInvariants(stored);
-  assertCommonReportInvariants(measured);
+  if (
+    mode === "enforce-live-budget" &&
+    (stored.stopConditions.unacceptableIpcGrowth.status !==
+      measured.stopConditions.unacceptableIpcGrowth.status ||
+      measured.decision !== "go")
+  ) {
+    throw new Error("Issue 14 IPC stop condition is triggered.");
+  }
 
+  // Issue 02 is an immutable pre-optimization observation set. Issue 14
+  // compares its baseline fields with that artifact, then owns exact current
+  // semantic counters from `measured`; live budget enforcement stays in the
+  // fresh Issue 02 measurement and is not made circular with the baseline.
   const currentBaseline = readTimingReport(baselinePath);
   assertBaselineIdentity(currentBaseline);
   const currentBaselineByFixture = new Map(currentBaseline.samples.map((sample) => [sample.fixture, sample]));
@@ -503,14 +553,14 @@ function assertStored(stored: Issue14TimingReport, measured: Issue14TimingReport
     stored.baseline.aggregate,
     "current Issue 02 baseline aggregate",
     expectedBaselineAggregate,
-    0.001
+    timingToleranceMs
   );
   assertTotalsEqual(
     "stored aggregate baseline",
     stored.aggregate.baseline,
     "current Issue 02 baseline aggregate",
     expectedBaselineAggregate,
-    0.001
+    timingToleranceMs
   );
   for (let index = 0; index < stored.samples.length; index += 1) {
     const storedSample = stored.samples[index];
@@ -527,7 +577,7 @@ function assertStored(stored: Issue14TimingReport, measured: Issue14TimingReport
       storedSample.baseline,
       `${storedSample.fixture} current Issue 02 baseline`,
       baselineSample.totals,
-      0.001
+      timingToleranceMs
     );
     assertSemanticTotalsEqual(
       `${storedSample.fixture} stored measured`,
@@ -562,10 +612,53 @@ function assertStored(stored: Issue14TimingReport, measured: Issue14TimingReport
     true
   );
   if (
-    stored.aggregate.measured.roundTripMs > maxAggregateRoundTripMs ||
-    measured.aggregate.measured.roundTripMs > maxAggregateRoundTripMs
+    mode === "enforce-live-budget" &&
+    (stored.aggregate.measured.roundTripMs > maxAggregateRoundTripMs ||
+      measured.aggregate.measured.roundTripMs > maxAggregateRoundTripMs)
   ) {
     throw new Error("Issue 14 IPC stop condition is triggered.");
+  }
+  return "go";
+}
+
+export function timingCommandOutput(
+  measured: Issue14TimingReport,
+  mode: TimingCheckMode,
+  semanticDecision: SemanticDecision
+): TimingCommandOutput {
+  return mode === "verify-checkout-portability"
+    ? {
+        issue: measured.issue,
+        mode: "portability",
+        semanticDecision,
+        baseline: measured.baseline,
+        aggregate: measured.aggregate,
+      }
+    : {
+        issue: measured.issue,
+        decision: measured.decision,
+        baseline: measured.baseline,
+        aggregate: measured.aggregate,
+      };
+}
+
+function timingCheckMode(arguments_: readonly string[]): TimingCheckMode | "write" {
+  if (arguments_.some((argument) => argument.endsWith("output.json"))) {
+    throw new Error("Issue 14 timing regeneration refuses to target the immutable output.json oracle.");
+  }
+  if (arguments_.length === 0) return "enforce-live-budget";
+  if (arguments_.length !== 1) {
+    throw new Error("Use exactly one of --check, --check-portability, or --write.");
+  }
+  switch (arguments_[0]) {
+    case "--check":
+      return "enforce-live-budget";
+    case "--check-portability":
+      return "verify-checkout-portability";
+    case "--write":
+      return "write";
+    default:
+      throw new Error("Use exactly one of --check, --check-portability, or --write.");
   }
 }
 
@@ -573,12 +666,9 @@ async function main(): Promise<void> {
   if (process.versions.node !== "24.13.0") {
     throw new Error(`Issue 14 timing evidence requires Node 24.13.0, got ${process.versions.node}`);
   }
-  if (process.argv.some((argument) => argument.endsWith("output.json"))) {
-    throw new Error("Issue 14 timing regeneration refuses to target the immutable output.json oracle.");
-  }
-  const writeReport = process.argv.includes("--write");
+  const mode = timingCheckMode(process.argv.slice(2));
   const measured = await measure();
-  if (writeReport) {
+  if (mode === "write") {
     await writeArtifactBatchOrThrow(
       {
         outputRoot: fixtureDirectory,
@@ -597,19 +687,9 @@ async function main(): Promise<void> {
   const stored = decodeReport(
     Schema.decodeUnknownSync(Schema.Json)(JSON.parse(readFileSync(reportPath, "utf8")))
   );
-  assertStored(stored, measured);
-  console.log(
-    JSON.stringify(
-      {
-        issue: measured.issue,
-        decision: measured.decision,
-        baseline: measured.baseline,
-        aggregate: measured.aggregate,
-      },
-      null,
-      2
-    )
-  );
+  const semanticDecision = assertStoredTimingReport(stored, measured, mode);
+  const output = timingCommandOutput(measured, mode, semanticDecision);
+  console.log(JSON.stringify(Schema.encodeSync(TimingCommandOutputSchema)(output), null, 2));
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) await main();

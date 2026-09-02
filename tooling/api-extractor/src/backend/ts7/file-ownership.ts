@@ -19,22 +19,23 @@ export function declarationOwnership(
   session: TsgoFactsSession,
   handle: BackendNodeReference
 ): BackendDeclarationOwnership {
-  const node = session.node(handle, "declarationOwnership");
-  const sourceFile = node.getSourceFile();
-  const externalLibrary = session.program.isSourceFileFromExternalLibrary(sourceFile);
-  const defaultLibrary = session.program.isSourceFileDefaultLibrary(sourceFile);
-  return classifySourceFile(sourceFile.fileName, { externalLibrary, defaultLibrary });
+  return declarationOwnershipOfPath(session, session.nodePath(handle));
+}
+
+/** Classifies a declaration handle's path without resolving its AST subtree. */
+export function declarationOwnershipOfPath(
+  session: TsgoFactsSession,
+  filePath: string
+): BackendDeclarationOwnership {
+  return sourceFileOwnership(filePath, session.sourceFileMetadata(filePath));
 }
 
 /** Whether a raw compiler declaration belongs outside the extracted project. */
 export function isExternalDeclaration(
   session: TsgoFactsSession,
-  declaration: { readonly resolve: () => Node | undefined }
+  declaration: { readonly path: string; readonly resolve: () => Node | undefined }
 ): boolean {
-  const node = session.resolveNode(declaration);
-  return (
-    node !== undefined && isExternalOwnership(declarationOwnership(session, session.nodeReference(node)))
-  );
+  return isExternalOwnership(declarationOwnershipOfPath(session, declaration.path));
 }
 
 /**
@@ -44,11 +45,9 @@ export function isExternalDeclaration(
  */
 export function isTypeScriptLibraryDeclaration(
   session: TsgoFactsSession,
-  declaration: { readonly resolve: () => Node | undefined }
+  declaration: { readonly path: string; readonly resolve: () => Node | undefined }
 ): boolean {
-  const node = session.resolveNode(declaration);
-  if (node === undefined) return false;
-  const ownership = declarationOwnership(session, session.nodeReference(node));
+  const ownership = declarationOwnershipOfPath(session, declaration.path);
   return ownership.kind === "typescript" && ownership.library === "standard-library";
 }
 
@@ -56,6 +55,38 @@ export type SourceFileOwnershipMetadata = {
   readonly externalLibrary: boolean;
   readonly defaultLibrary: boolean;
 };
+
+/** The compiler metadata needed to resolve ownership without materializing a node. */
+export type CompilerSourceFileMetadata = {
+  readonly isFromExternalLibrary: boolean;
+  readonly isDefaultLibrary: boolean;
+};
+
+/**
+ * Classifies a source file with the compiler's optional ownership metadata.
+ * An absent metadata record deliberately keeps the path fallback in
+ * `classifySourceFile`; an explicit record is authoritative, including two
+ * `false` flags for a project file whose path resembles TypeScript's library.
+ */
+export function sourceFileOwnership(
+  filePath: string,
+  metadata?: CompilerSourceFileMetadata
+): BackendDeclarationOwnership {
+  return classifySourceFile(
+    filePath,
+    metadata === undefined
+      ? undefined
+      : {
+          externalLibrary: metadata.isFromExternalLibrary,
+          defaultLibrary: metadata.isDefaultLibrary,
+        }
+  );
+}
+
+/** Whether a source file is outside the extracted project. */
+export function isExternalSourceFile(filePath: string, metadata?: CompilerSourceFileMetadata): boolean {
+  return isExternalOwnership(sourceFileOwnership(filePath, metadata));
+}
 
 /**
  * Classifies one source-file path into the ownership facts the contract

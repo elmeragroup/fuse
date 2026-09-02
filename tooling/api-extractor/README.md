@@ -69,6 +69,12 @@ Each `extractModule` call gets an isolated synchronous extraction session, so re
 warning collection cannot leak between calls. Output ordering and canonicalization are
 deterministic for the pinned toolchain.
 
+The ts7 adapter decides dense versus sparse file navigation from session-known facts: a module
+read of that file is underway, or at least two live handles of that file exist
+(`DENSE_LIVE_HANDLE_THRESHOLD` in `src/backend/ts7/file-trees.ts`). Files excluded by ownership
+never bulk-fetch. Materialized trees are session-owned and dropped at close. Parser and public
+options never see this choice.
+
 Some compiler shapes cannot fit the public model. The extractor keeps working and reports one of
 these structured warning codes:
 
@@ -85,7 +91,7 @@ Consumers should branch on `code` and structured fields, not parse `message` tex
 
 ## Fixture evidence
 
-`scripts/fixture-catalog.ts` is the canonical fixture inventory. Its 119 records describe inputs,
+`scripts/fixture-catalog.ts` is the canonical fixture inventory. Its 121 records describe inputs,
 oracle ownership, warning evidence, issue membership, type-check strategy, timing membership, and
 package execution. Scripts and tests derive their ordered views from that catalog; do not add a
 second fixture list.
@@ -174,8 +180,9 @@ pnpm --filter docs build
 
 Timing reports are evidence, not benchmarks. Deterministic counters must match exactly;
 scheduler-sensitive durations and byte observations must stay finite and non-negative, and the
-recorded aggregate stop condition must pass. Refresh timing only after reviewing the semantic
-output and the reason for a timing change:
+recorded aggregate stop condition must pass. Issue 02 check mode also enforces per-fixture
+request-count and bytes-received ceilings so a dense walk cannot trade one for a megabyte dump.
+Refresh timing only after reviewing the semantic output and the reason for a timing change:
 
 ```sh
 pnpm run report:timing

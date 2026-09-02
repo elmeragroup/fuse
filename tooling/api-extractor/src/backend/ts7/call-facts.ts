@@ -3,10 +3,9 @@
 import type { CallExpression, Node } from "typescript/unstable/ast";
 import { isElementAccessExpression, isStringLiteral } from "typescript/unstable/ast/is";
 
-import type { BackendNodeFacts } from "../contracts.ts";
+import type { BackendNodeFacts, BackendSymbolHandle, BackendSymbolOrigin } from "../contracts.ts";
 import type { TsgoFactsSession } from "./facts.ts";
-import { moduleOriginResolutionOfExpression, moduleOriginResolutionOfSymbol } from "./module-origin.ts";
-import { symbolFacts } from "./symbol-facts.ts";
+import { moduleOriginResolutionOfExpression } from "./module-origin.ts";
 
 /**
  * Normalizes the generic relation exposed by a call expression. The parser
@@ -15,7 +14,8 @@ import { symbolFacts } from "./symbol-facts.ts";
  */
 export function callExpressionFacts(
   session: TsgoFactsSession,
-  node: CallExpression
+  node: CallExpression,
+  originOf: (symbol: BackendSymbolHandle) => BackendSymbolOrigin
 ): Pick<BackendNodeFacts, "arguments" | "callee" | "calleeFacts"> {
   const calleeSymbol = calleeSymbolAt(session, node.expression);
   const result = {
@@ -23,7 +23,7 @@ export function callExpressionFacts(
     callee: session.nodeHandle(node.expression),
   };
   if (calleeSymbol === undefined) return result;
-  const facts = symbolFacts(session, calleeSymbol);
+  const origin = originOf(calleeSymbol);
   // Expression syntax can recover a namespace root that the property symbol
   // no longer carries. Only a genuinely missing expression relation may fall
   // back to the symbol relation; an ambiguous expression must stay ambiguous
@@ -33,20 +33,14 @@ export function callExpressionFacts(
     expressionOrigin.status === "resolved"
       ? expressionOrigin.origin
       : expressionOrigin.status === "missing"
-        ? (() => {
-            const symbolOrigin = moduleOriginResolutionOfSymbol(
-              session,
-              session.symbol(calleeSymbol, "callExpressionFacts")
-            );
-            return symbolOrigin.status === "resolved" ? symbolOrigin.origin : undefined;
-          })()
+        ? origin.moduleOrigin
         : undefined;
   return {
     ...result,
     calleeFacts: {
       symbol: calleeSymbol,
       ...(moduleOrigin === undefined ? {} : { moduleOrigin }),
-      ...(facts.identity === undefined ? {} : { identity: facts.identity }),
+      identity: origin.identity,
     },
   };
 }

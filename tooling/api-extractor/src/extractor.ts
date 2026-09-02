@@ -348,6 +348,10 @@ function guardedExtractionSession(
     typeAtNode: guard("typeAtNode", (node) => compiler.typeAtNode(node)),
     typeFacts: guard("typeFacts", (type) => compiler.typeFacts(type)),
     symbolFacts: guard("symbolFacts", (symbol) => compiler.symbolFacts(symbol)),
+    symbolOrigin: guard("symbolOrigin", (symbol) => compiler.symbolOrigin(symbol)),
+    declaringParentIsClass: guard("declaringParentIsClass", (symbol) =>
+      compiler.declaringParentIsClass(symbol)
+    ),
     ...(compiler.documentationOfSymbol === undefined
       ? {}
       : {
@@ -361,6 +365,7 @@ function guardedExtractionSession(
           enumFacts: guard("enumFacts", (type) => compiler.enumFacts?.(type)),
         }),
     nodeFacts: guard("nodeFacts", (node) => compiler.nodeFacts(node)),
+    nodeKind: guard("nodeKind", (node) => compiler.nodeKind(node)),
     typeNameFacts: guard("typeNameFacts", (type, sourceNode) => compiler.typeNameFacts(type, sourceNode)),
     signaturesOfType: guard("signaturesOfType", (type) => compiler.signaturesOfType(type)),
     ...(constructSignaturesOfType === undefined

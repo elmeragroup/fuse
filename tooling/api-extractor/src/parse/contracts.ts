@@ -33,6 +33,8 @@ export type ResolverContext = {
   readonly authoredIntersectionMember: boolean;
   /** Defaults authored in an object-binding parameter, keyed by public property name. */
   readonly bindingDefaults?: ReadonlyMap<string, string>;
+  /** Namespaces inherited only while descending into checker-generated type arguments. */
+  readonly generatedTypeArgumentNamespaces?: readonly string[];
 };
 
 export type ResolveSemanticType = (

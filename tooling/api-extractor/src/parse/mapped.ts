@@ -111,7 +111,7 @@ function mappedDeclaration(
   for (const alias of [facts.aliasSymbol, authoredAlias]) {
     const aliasDeclaration =
       alias === undefined ? undefined : context.operations.symbolFacts(alias).declarations[0];
-    if (aliasDeclaration === undefined || context.operations.nodeFacts(aliasDeclaration).kind !== "typeAlias")
+    if (aliasDeclaration === undefined || context.operations.nodeKind(aliasDeclaration) !== "typeAlias")
       continue;
     const viaAlias = followAliasToMappedDeclaration(
       aliasDeclaration,
@@ -127,7 +127,7 @@ function mappedDeclaration(
       ? undefined
       : context.operations
           .symbolFacts(symbol)
-          .declarations.find((declaration) => context.operations.nodeFacts(declaration).kind === "mapped");
+          .declarations.find((declaration) => context.operations.nodeKind(declaration) === "mapped");
   return direct === undefined ? undefined : { node: direct, substitutions: context.substitutions };
 }
 
