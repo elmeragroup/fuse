@@ -1,8 +1,7 @@
-import { RuleTester } from "oxlint/plugins-dev";
-
+import { createRuleTester } from "../shared/rule-tester.ts";
 import { requireSafetyCommentForTypeAssertionRule } from "./require-safety-comment-for-type-assertion.ts";
 
-const tester = new RuleTester({ languageOptions: { parserOptions: { lang: "ts" } } });
+const tester = createRuleTester();
 const error = { messageId: "missingSafetyComment" };
 
 tester.run(

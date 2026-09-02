@@ -1,15 +1,11 @@
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { RuleTester } from "oxlint/plugins-dev";
-import { describe, it } from "vitest";
 
+import { createRuleTester } from "../rule-tester.js";
 import noHardcodedDensityMetrics from "./no-hardcoded-density-metrics.js";
 
-RuleTester.describe = describe;
-RuleTester.it = it;
-
-const tester = new RuleTester({ languageOptions: { parserOptions: { lang: "ts" } } });
+const tester = createRuleTester();
 const error = { messageId: "hardcodedMetric" };
 
 const buttonVariantsSource = readFileSync(

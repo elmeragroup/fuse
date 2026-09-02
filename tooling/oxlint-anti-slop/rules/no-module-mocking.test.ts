@@ -1,8 +1,7 @@
-import { RuleTester } from "oxlint/plugins-dev";
-
+import { createRuleTester } from "../shared/rule-tester.ts";
 import { noModuleMockingRule } from "./no-module-mocking.ts";
 
-const tester = new RuleTester({ languageOptions: { parserOptions: { lang: "ts" } } });
+const tester = createRuleTester();
 const error = { messageId: "moduleMock" };
 
 tester.run("anti-slop/no-module-mocking", noModuleMockingRule, {

@@ -1,14 +1,7 @@
-import { RuleTester } from "oxlint/plugins-dev";
-import { describe, it } from "vitest";
-
+import { createRuleTester } from "../rule-tester.js";
 import requireIconButtonLabel from "./require-icon-button-label.js";
 
-RuleTester.describe = describe;
-RuleTester.it = it;
-
-const tester = new RuleTester({
-  languageOptions: { parserOptions: { lang: "tsx" } },
-});
+const tester = createRuleTester("tsx");
 const error = { messageId: "missingAriaLabel" };
 
 tester.run("elmera/require-icon-button-label", requireIconButtonLabel, {

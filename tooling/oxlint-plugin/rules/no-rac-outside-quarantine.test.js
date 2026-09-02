@@ -1,12 +1,7 @@
-import { RuleTester } from "oxlint/plugins-dev";
-import { describe, it } from "vitest";
-
+import { createRuleTester } from "../rule-tester.js";
 import noRacOutsideQuarantine from "./no-rac-outside-quarantine.js";
 
-RuleTester.describe = describe;
-RuleTester.it = it;
-
-const tester = new RuleTester({ languageOptions: { parserOptions: { lang: "ts" } } });
+const tester = createRuleTester();
 const error = { messageId: "quarantined" };
 
 tester.run("elmera/no-rac-outside-quarantine", noRacOutsideQuarantine, {
@@ -39,6 +34,24 @@ tester.run("elmera/no-rac-outside-quarantine", noRacOutsideQuarantine, {
       name: "scoped @react-aria inside quarantine",
       filename: "packages/ui/src/react-aria/focusable.ts",
       code: `import { useFocusable } from "@react-aria/focus";
+`,
+    },
+    {
+      name: "dynamic import inside quarantine",
+      filename: "packages/ui/src/react-aria/calendar.ts",
+      code: `const load = () => import("react-aria-components");
+`,
+    },
+    {
+      name: "dynamic import of an allowed module in components",
+      filename: "packages/ui/src/components/button/button.tsx",
+      code: `const load = () => import("@base-ui/react/button");
+`,
+    },
+    {
+      name: "computed dynamic import is not a specifier",
+      filename: "packages/ui/src/components/select/select.tsx",
+      code: `const load = (path) => import(path);
 `,
     },
   ],
@@ -75,6 +88,13 @@ tester.run("elmera/no-rac-outside-quarantine", noRacOutsideQuarantine, {
       name: "scoped @react-stately from components",
       filename: "packages/ui/src/components/select/select.tsx",
       code: `import { useSelectState } from "@react-stately/select";
+`,
+      errors: [error],
+    },
+    {
+      name: "dynamic import of react-aria-components from components",
+      filename: "packages/ui/src/components/select/select.tsx",
+      code: `const load = () => import("react-aria-components");
 `,
       errors: [error],
     },

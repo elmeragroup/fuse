@@ -1,8 +1,7 @@
-import { RuleTester } from "oxlint/plugins-dev";
-
+import { createRuleTester } from "../shared/rule-tester.ts";
 import { noObjectParametersRule } from "./no-object-parameters.ts";
 
-const tester = new RuleTester({ languageOptions: { parserOptions: { lang: "ts" } } });
+const tester = createRuleTester();
 const error = { messageId: "objectParameter" };
 
 tester.run("anti-slop/no-object-parameters", noObjectParametersRule, {

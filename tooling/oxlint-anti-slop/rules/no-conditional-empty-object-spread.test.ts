@@ -1,8 +1,7 @@
-import { RuleTester } from "oxlint/plugins-dev";
-
+import { createRuleTester } from "../shared/rule-tester.ts";
 import { noConditionalEmptyObjectSpreadRule } from "./no-conditional-empty-object-spread.ts";
 
-const tester = new RuleTester({ languageOptions: { parserOptions: { lang: "tsx" } } });
+const tester = createRuleTester("tsx");
 const error = { messageId: "avoid" };
 
 if (noConditionalEmptyObjectSpreadRule.meta?.fixable !== undefined) {

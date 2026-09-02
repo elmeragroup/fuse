@@ -1,6 +1,6 @@
 import { defineRule } from "@oxlint/plugins";
 
-import type { ESTree, SourceCode } from "@oxlint/plugins";
+import type { ESTree, Options, SourceCode } from "@oxlint/plugins";
 
 import {
   commentRemovalRange,
@@ -140,17 +140,12 @@ function groupAdjacentLineComments(
 
 const defaultTicketPattern = "[A-Z][A-Z0-9]*-\\d+";
 
-function ticketPatternOf(options: Readonly<unknown[]>): RegExp {
-  const option = options[0];
-  const source =
-    typeof option === "object" &&
-    option !== null &&
-    !Array.isArray(option) &&
-    "ticketPattern" in option &&
-    typeof option.ticketPattern === "string"
-      ? option.ticketPattern
-      : defaultTicketPattern;
-  return new RegExp(`\\b(?:${source})\\b`, "u");
+type TicketPatternOption = { ticketPattern: string };
+
+function ticketPatternOf(options: Readonly<Options>): RegExp {
+  // SAFETY: `meta.defaultOptions` and the schema `default` always supply `ticketPattern`.
+  const option = options[0] as TicketPatternOption;
+  return new RegExp(`\\b(?:${option.ticketPattern})\\b`, "u");
 }
 
 type SlopMessageId = "bannerComment" | "commentedOutCode" | "panicComment" | "todoWithoutLink";
@@ -179,7 +174,7 @@ export const noSlopCommentsRule = defineRule({
       {
         type: "object",
         properties: {
-          ticketPattern: { type: "string" },
+          ticketPattern: { type: "string", default: defaultTicketPattern },
         },
         additionalProperties: false,
       },

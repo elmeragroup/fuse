@@ -1,8 +1,7 @@
-import { RuleTester } from "oxlint/plugins-dev";
-
+import { createRuleTester } from "../shared/rule-tester.ts";
 import { noSlopCommentsRule } from "./no-slop-comments.ts";
 
-const tester = new RuleTester({ languageOptions: { parserOptions: { lang: "ts" } } });
+const tester = createRuleTester();
 
 tester.run("anti-slop/no-slop-comments", noSlopCommentsRule, {
   valid: [
@@ -12,6 +11,11 @@ tester.run("anti-slop/no-slop-comments", noSlopCommentsRule, {
     {
       name: "default ticketPattern accepts any Jira-style key",
       code: "// TODO(OPS-42): migrate once the v2 endpoint ships.\nconst a = 1;",
+    },
+    {
+      name: "empty options object still uses the schema default ticketPattern",
+      code: "// TODO(OPS-42): migrate once the v2 endpoint ships.\nconst a = 1;",
+      options: [{}],
     },
     {
       name: "configured ticketPattern accepts the repo key",

@@ -10,6 +10,9 @@
       "dependsOn": ["@elmeragroup/ui#build", "docs#generate"],
       "inputs": ["$TURBO_DEFAULT$", "tooling/oxlint-plugin/**", "tooling/oxlint-anti-slop/**"]
     },
+    "//#test:repo-policy": {
+      "inputs": ["test/**", ".github/workflows/**", "package.json", ".oxlintrc.json", "turbo.json"]
+    },
     "build": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**", ".next/**"]
@@ -51,6 +54,7 @@
     "ci:checks": {
       "dependsOn": [
         "//#lint",
+        "//#test:repo-policy",
         "type-check",
         "test",
         "test:browser",

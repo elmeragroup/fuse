@@ -1,14 +1,7 @@
-import { RuleTester } from "oxlint/plugins-dev";
-import { describe, it } from "vitest";
-
+import { createRuleTester } from "../rule-tester.js";
 import noLocalFocusRing from "./no-local-focus-ring.js";
 
-RuleTester.describe = describe;
-RuleTester.it = it;
-
-const tester = new RuleTester({
-  languageOptions: { parserOptions: { lang: "tsx" } },
-});
+const tester = createRuleTester("tsx");
 const error = { messageId: "localFocusRing" };
 const adapter = "packages/ui/src/styles/utils.ts";
 const component = "packages/ui/src/components/button/button.tsx";
