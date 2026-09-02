@@ -55,6 +55,7 @@ describe("size-limit harness", () => {
       "input-group",
       "textarea",
       "flags",
+      "sidebar",
       "toast",
       "phone-number-field",
       "popover-info-button",
@@ -174,6 +175,9 @@ describe("size-limit harness", () => {
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "sheet")?.ceilingGzip).toBe(
       ceilingFromMeasured(57208)
+    );
+    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "sidebar")?.ceilingGzip).toBe(
+      ceilingFromMeasured(82549)
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "text-field")?.ceilingGzip).toBe(
       ceilingFromMeasured(33462)

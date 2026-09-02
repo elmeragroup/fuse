@@ -45,6 +45,7 @@ export * from "./selection-item";
 export * from "./separator";
 export * from "./sheet";
 export * from "./show";
+export * from "./sidebar";
 export * from "./skeleton";
 export * from "./span";
 export * from "./switch";

@@ -231,6 +231,10 @@
       "types": "./src/show.ts",
       "import": "./src/show.ts"
     },
+    "./sidebar": {
+      "types": "./src/sidebar.ts",
+      "import": "./src/sidebar.ts"
+    },
     "./skeleton": {
       "types": "./src/skeleton.ts",
       "import": "./src/skeleton.ts"

@@ -73,6 +73,7 @@ describe("exports map", () => {
       "separator",
       "sheet",
       "show",
+      "sidebar",
       "skeleton",
       "span",
       "switch",
@@ -595,6 +596,21 @@ describe("exports map", () => {
     const combobox = discovered.jsEntries.find((entry) => entry.subpath === "combobox");
     expect(combobox?.inRootBarrel).toBe(true);
     expect(combobox?.runtimeExports).toEqual(["Combobox", "useComboboxAnchor"]);
+  });
+
+  it("publishes Sidebar, useSidebar and the six constants from /sidebar and the root barrel", () => {
+    const sidebar = discovered.jsEntries.find((entry) => entry.subpath === "sidebar");
+    expect(sidebar?.inRootBarrel).toBe(true);
+    expect(sidebar?.runtimeExports).toEqual([
+      "SIDEBAR_COOKIE_MAX_AGE",
+      "SIDEBAR_COOKIE_NAME",
+      "SIDEBAR_KEYBOARD_SHORTCUT",
+      "SIDEBAR_WIDTH",
+      "SIDEBAR_WIDTH_ICON",
+      "SIDEBAR_WIDTH_MOBILE",
+      "Sidebar",
+      "useSidebar",
+    ]);
   });
 
   it("publishes Toast from /toast and the root barrel", () => {

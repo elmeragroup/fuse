@@ -30,8 +30,16 @@ describe("Phosphor adapters", () => {
   });
 
   it("does not re-export icons from the root barrel", () => {
-    const rootKeys = new Set(Object.keys(Root));
-    expect(byName.some((name) => rootKeys.has(name))).toBe(false);
+    const rootEntries = new Map(Object.entries(Root));
+    // `Sidebar` is both a Phosphor glyph and the Appendix A component namespace the barrel
+    // must publish; the barrel value has to be the component, never the icon adapter.
+    const homonyms = byName.filter((name) => rootEntries.has(name));
+    expect(homonyms).toEqual(["Sidebar"]);
+    const iconEntries = new Map(Object.entries(Icons));
+    for (const name of homonyms) {
+      expect(rootEntries.get(name), name).not.toBe(iconEntries.get(name));
+    }
+    expect(Root.Sidebar).toHaveProperty("Provider");
     expect(Root).not.toHaveProperty("Icon");
     expect(Root).not.toHaveProperty("BrandLogo");
   });
