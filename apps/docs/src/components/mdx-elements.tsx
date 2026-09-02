@@ -1,7 +1,5 @@
-import { Children, createElement, isValidElement } from "react";
+import { Children, cloneElement, createElement, isValidElement } from "react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
-
-import { highlight } from "sugar-high";
 
 import { slugifyHeading } from "../lib/slug";
 import { DocsCodeBlock } from "./docs-code-block";
@@ -10,8 +8,8 @@ import { DocsInlineCode } from "./docs-inline-code";
 /**
  * The element overrides `@next/mdx` applies to every authored `page.mdx`
  * (`mdx-components.tsx`). They exist for two reasons only: heading anchors, so the
- * QuickNav TOC and the rendered page agree on ids without a rehype plugin, and code
- * highlighting through sugar-high — the single highlighter the docs use (docs-site.md §8).
+ * QuickNav TOC and the rendered page agree on ids without a rehype plugin, and fenced code
+ * rendered through `DocsCodeBlock` — the one highlighted code renderer (docs-site.md §8).
  */
 
 const HEADING_LEVELS = [2, 3, 4] as const;
@@ -59,8 +57,10 @@ const LANGUAGE_CLASS = "language-";
 
 /**
  * Inline code stays a plain element. A fenced block — which MDX marks with a
- * `language-*` class and hands over as one string — is highlighted with sugar-high, the
- * same highlighter the demo frames render their source with.
+ * `language-*` class and hands over as one string — becomes a `DocsCodeBlock`, the same
+ * renderer the demo frames show their source with. MDX ends a fence's text with the
+ * newline before the closing backticks; stripping it keeps the block from ending on an
+ * empty line.
  */
 export function MdxCode({ className, children, ...rest }: ComponentProps<"code">): ReactElement {
   if (!(className ?? "").includes(LANGUAGE_CLASS)) {
@@ -71,14 +71,23 @@ export function MdxCode({ className, children, ...rest }: ComponentProps<"code">
     );
   }
   return (
-    <code
+    <DocsCodeBlock
+      variant="standalone"
       className={className}
-      {...rest}
-      dangerouslySetInnerHTML={{ __html: highlight(plainText(children).replace(/\n+$/, "")) }}
+      source={plainText(children).replace(/\n+$/, "")}
     />
   );
 }
 
-export function MdxPre({ className, ...rest }: ComponentProps<"pre">): ReactElement {
-  return <DocsCodeBlock variant="standalone" className={className} {...rest} />;
+/**
+ * MDX wraps every fence in a `pre` around the `code`, and `MdxCode` already renders that
+ * `pre` itself through `DocsCodeBlock`. Wrapping again would nest two `pre` elements, so
+ * this passes the children through — carrying any attributes MDX put on the outer `pre`
+ * down to the block, rather than dropping them.
+ */
+export function MdxPre({ children, ...rest }: ComponentProps<"pre">): ReactElement {
+  if (isValidElement<ComponentProps<"pre">>(children)) {
+    return cloneElement(children, { ...rest, ...children.props });
+  }
+  return <DocsCodeBlock {...rest} source={plainText(children)} />;
 }

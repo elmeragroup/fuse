@@ -27,9 +27,9 @@ const classNames = {
  *
  * An async server component reading the page's committed `api.json` — the same seam the demo
  * frame uses for demo sources. Everything except the row mechanics is decided here, on the
- * server: the artifact read, the short-type collapse, the highlighted signatures and the
- * em-dashes are all in the prerendered HTML, so the client half is the `details` behaviour
- * and nothing else.
+ * server: the artifact read, the short-type collapse and the em-dashes are all in the
+ * prerendered HTML, so the client half is the `details` behaviour plus the shared
+ * `DocsCodeBlock` that highlights a panel's full signature.
  *
  * RSC status is a per-part fact, so it sits next to the part heading rather than repeating
  * down a column (§8, performance.md §3).

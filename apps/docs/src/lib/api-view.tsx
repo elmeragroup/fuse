@@ -4,15 +4,15 @@
  * The presentation contract asks each row three questions the artifact does not answer
  * literally: what one line stands in for the type while the row is closed, what a missing
  * default looks like, and what a screen reader hears from a single `summary`. Answering them
- * here keeps the accordion a rendering of ready strings — which is what lets the accordion be
- * the page's only client component while the highlighter, the artifact read and the em-dash
- * all stay on the server. This module is server-side for that reason: it imports the
- * highlighter, so the row's shape and the em-dash itself live in `api-row.ts`, which the
- * client component can import without reaching `sugar-high`.
+ * here keeps the accordion a rendering of ready values — which is what lets the accordion be
+ * the page's only client component while the artifact read, the em-dash and the syntax
+ * highlighting all stay on the server. The full signature is rendered here through the one
+ * docs code renderer (`DocsCodeBlock`, the same component demo source and MDX fences use)
+ * and handed to the accordion as a finished element, so `sugar-high` never reaches the
+ * client graph and no signature is highlighted at hydration.
  */
 
-import { highlight } from "sugar-high";
-
+import { DocsCodeBlock } from "../components/docs-code-block";
 import type { ApiPropView } from "./api-row";
 import type { ApiPart, ApiProp, RscStatus } from "./docs-model";
 import { groupApiProps, propDescription } from "./docs-model";
@@ -68,7 +68,7 @@ function toPropView(partName: string, prop: ApiProp): ApiPropView {
     id: apiPropAnchor(partName, prop.name),
     required: prop.required,
     closedType,
-    signatureHtml: highlight(prop.type),
+    signature: <DocsCodeBlock variant="signature" source={prop.type} />,
     defaultValue: prop.defaultValue,
     description: propDescription(prop),
     label: propLabel(prop, closedType),

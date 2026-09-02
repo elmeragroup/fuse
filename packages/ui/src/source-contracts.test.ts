@@ -181,6 +181,14 @@ describe("RSC classification", () => {
   it.each(CLIENT_HOOKS)("%s is a client hook", (file) => {
     expectRsc(file, "client");
   });
+
+  // Why not a lint rule: "does this module own client state?" is a judgment the spec
+  // table answers per module, not a syntactic pattern. The shared overlay close button
+  // renders a Button and holds nothing, and both consumers (Dialog, Sheet) are already
+  // client modules, so a directive here would only widen the client graph.
+  it("leaves the shared overlay close button directive-free — it owns no state", () => {
+    expectRsc("components/overlay/overlay-close-button.tsx", "server");
+  });
 });
 
 describe("no .ref/ in package source", () => {

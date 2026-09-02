@@ -1,5 +1,3 @@
-"use client";
-
 import type { ReactElement, ReactNode } from "react";
 
 import { ElmeraGroupUiProvider } from "@elmeragroup/ui/theme";

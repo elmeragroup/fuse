@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { DocsCodeBlock } from "../src/components/docs-code-block";
 import { NO_DEFAULT } from "../src/lib/api-row";
 import { readComponentApi } from "../src/lib/api-source";
 import type { ApiPartView } from "../src/lib/api-view";
@@ -64,8 +65,13 @@ describe("reference row presentation (docs-site.md §8)", () => {
     const part = await partView("button", "Button");
     const onIntent = part.props.find((prop) => prop.name === "onIntent");
     expect(onIntent?.closedType).toBe("function");
-    expect(onIntent?.signatureHtml).toContain("void");
-    expect(onIntent?.signatureHtml).toContain("sh__token");
+    // The panel gets a finished element: the server highlighted the printed signature
+    // through DocsCodeBlock, so the client module never reaches the highlighter.
+    expect(onIntent?.signature.type).toBe(DocsCodeBlock);
+    expect(onIntent?.signature.props).toMatchObject({
+      variant: "signature",
+      source: "(() => void) | undefined",
+    });
   });
 
   it("keeps the printed type in the closed row when it is short enough to read", async () => {

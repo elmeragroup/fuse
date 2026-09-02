@@ -25,7 +25,7 @@ React 19 · base-ui primitives · Tailwind v4 · tv (tailwind-variants) · Phosp
 | [release.md](release.md)             | Changesets flow, channels, npm Trusted Publishing, org-setup prerequisites                                                                      |
 | [roadmap.md](roadmap.md)             | Deferred work with triggers: react-aria→base-ui migration, dark mode, VR, new brands/locales                                                    |
 
-Hard-to-reverse trade-offs are recorded as ADRs in [../adr/](../adr/) (0001 token contract · 0002 theme attributes · 0003 controlled brand / host first-paint · 0004 Phosphor · 0005 package architecture · 0006 intl strings · 0007 docs API extraction pipeline · 0008 tests assert behaviour, not source spelling). The spec documents are normative; ADRs carry the why.
+Hard-to-reverse trade-offs are recorded as ADRs in [../adr/](../adr/) (0001 token contract · 0002 theme attributes · 0003 controlled brand / host first-paint · 0004 Phosphor · 0005 package architecture · 0006 intl strings · 0007 docs API extraction pipeline · 0008 tests assert behaviour, not source spelling · 0009 docs client boundaries). The spec documents are normative; ADRs carry the why.
 
 ## How to implement from this spec
 

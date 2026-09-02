@@ -23,22 +23,24 @@ function escapeCell(value: string): string {
   return value.replace(/\|/g, "\\|").replace(/\n+/g, " ");
 }
 
+/**
+ * One compound part. RSC status is a per-part fact, so it rides on the heading as a badge
+ * — the markdown twin of the HTML page's part-header indicator (docs-site.md §8) — and
+ * the prop table does not repeat it down a column.
+ */
 function renderPart(part: ApiPart): string {
-  const lines: string[] = [`### ${part.name}`, "", `Source: \`${part.sourcePath}\``, ""];
+  const lines: string[] = [`### ${part.name} · RSC: ${part.rsc}`, "", `Source: \`${part.sourcePath}\``, ""];
   if (part.props.length === 0) {
     lines.push("No own props — every prop is forwarded.", "");
   } else {
     for (const group of groupApiProps(part.props)) {
       if (group.label !== null) lines.push(`#### ${group.label}`, "");
-      lines.push(
-        "| Prop | Type | Default | Required | RSC | Description |",
-        "| --- | --- | --- | --- | --- | --- |"
-      );
+      lines.push("| Prop | Type | Default | Required | Description |", "| --- | --- | --- | --- | --- |");
       for (const prop of group.props) {
         lines.push(
           `| \`${prop.name}\` | \`${escapeCell(prop.type)}\` | ${
             prop.defaultValue === null ? "—" : `\`${escapeCell(prop.defaultValue)}\``
-          } | ${prop.required ? "yes" : "no"} | ${part.rsc} | ${escapeCell(propDescription(prop))} |`
+          } | ${prop.required ? "yes" : "no"} | ${escapeCell(propDescription(prop))} |`
         );
       }
       lines.push("");

@@ -1,5 +1,9 @@
 "use client";
 
+// Owns a client boundary rather than state: it dots into `Dialog.Root`, a member of a
+// namespace compound exported from a client module, which a server component only sees
+// as an opaque client reference (docs-site.md §6).
+
 import type { ReactElement } from "react";
 
 import { Badge } from "@elmeragroup/ui/badge";

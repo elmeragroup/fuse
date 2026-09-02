@@ -21,8 +21,6 @@ const apiRows = tv({
     term: "font-medium text-docs-sub text-[0.72rem] tracking-[0.02em] min-[34rem]:col-start-1 min-[34rem]:px-[0.8rem] min-[34rem]:text-right",
     definition:
       "text-docs-body [&_code]:border-docs-line [&_code]:bg-docs-soft [&_code]:font-docs-mono mt-[0.15rem] min-w-0 leading-[1.6] min-[34rem]:col-start-2 min-[34rem]:col-end-[-1] min-[34rem]:m-0 min-[34rem]:pr-[0.8rem] [&_code]:rounded-[4px] [&_code]:border [&_code]:px-[0.35em] [&_code]:py-[0.1em] [&_code]:text-[11.5px]",
-    signature:
-      "border-docs-line bg-docs-soft [&_code]:font-docs-mono m-0 overflow-x-auto rounded-[6px] border px-[0.6rem] py-2 [&_code]:border-0 [&_code]:p-0 [&_code]:text-[11.5px] [&_code]:leading-[1.6] [&_code]:wrap-anywhere [&_code]:whitespace-pre-wrap [&_code]:[background:none]",
     chevronCell:
       "text-docs-sub ml-auto flex items-center overflow-visible px-[0.8rem] py-2 min-[34rem]:ml-0 min-[34rem]:justify-center",
     chevron: "[transition:rotate_120ms_ease] group-open:rotate-180 motion-reduce:transition-none",
@@ -63,7 +61,6 @@ export type ApiRowsPanelListProps = ComponentProps<"dl">;
 export type ApiRowsPanelItemProps = ComponentProps<"div">;
 export type ApiRowsTermProps = ComponentProps<"dt">;
 export type ApiRowsDefinitionProps = ComponentProps<"dd">;
-export type ApiRowsSignatureProps = ComponentProps<"pre">;
 export type ApiRowsChevronCellProps = ComponentProps<"span">;
 export type ApiRowsChevronProps = SVGProps<SVGSVGElement>;
 export type ApiRowsRequiredProps = ComponentProps<"sup">;
@@ -125,11 +122,6 @@ function ApiRowsDefinition({ className, ...props }: ApiRowsDefinitionProps): Rea
   return <dd className={definition({ className })} {...props} />;
 }
 
-function ApiRowsSignature({ className, ...props }: ApiRowsSignatureProps): ReactElement {
-  const { signature } = apiRows();
-  return <pre className={signature({ className })} {...props} />;
-}
-
 function ApiRowsChevronCell({ className, ...props }: ApiRowsChevronCellProps): ReactElement {
   const { chevronCell } = apiRows();
   return <span className={chevronCell({ className })} {...props} />;
@@ -170,7 +162,6 @@ ApiRowsPanelList.displayName = "ApiRows.PanelList";
 ApiRowsPanelItem.displayName = "ApiRows.PanelItem";
 ApiRowsTerm.displayName = "ApiRows.Term";
 ApiRowsDefinition.displayName = "ApiRows.Definition";
-ApiRowsSignature.displayName = "ApiRows.Signature";
 ApiRowsChevronCell.displayName = "ApiRows.ChevronCell";
 ApiRowsChevron.displayName = "ApiRows.Chevron";
 ApiRowsRequired.displayName = "ApiRows.Required";
@@ -189,7 +180,6 @@ export const ApiRows = {
   PanelItem: ApiRowsPanelItem,
   Term: ApiRowsTerm,
   Definition: ApiRowsDefinition,
-  Signature: ApiRowsSignature,
   ChevronCell: ApiRowsChevronCell,
   Chevron: ApiRowsChevron,
   Required: ApiRowsRequired,
