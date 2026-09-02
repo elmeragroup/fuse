@@ -633,10 +633,7 @@ export async function effectSide(
         const results: ExtractionResult[] = [];
         for (const entry of inventory) {
           results.push(
-            yield* extractor.extractModule(entry.entryFile, {
-              typeOperatorOutput: "resolved",
-              ...options,
-            })
+            yield* extractor.extractModule(entry.entryFile, options)
           );
         }
         return results;

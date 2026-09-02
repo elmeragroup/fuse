@@ -32,9 +32,6 @@ function expectKeyOperator(type: SemanticType, label: string) {
     throw new Error(`${label} is a ${type.kind}, not a preserved keyof`);
   }
   const { resolvedType } = type;
-  if (resolvedType === undefined) {
-    throw new Error(`${label} carries no resolved key set`);
-  }
   if (type.resolutionKind !== "exact") {
     throw new Error(`${label} resolved as ${type.resolutionKind}, not exact`);
   }

@@ -42,8 +42,7 @@ export function containsAny(type: SemanticType): boolean {
   if (type.kind === "union" || type.kind === "intersection" || type.kind === "tuple")
     return type.types.some(containsAny);
   if (type.kind === "array") return containsAny(type.elementType);
-  if (type.kind === "typeOperator")
-    return containsAny(type.type) || (type.resolvedType !== undefined && containsAny(type.resolvedType));
+  if (type.kind === "typeOperator") return containsAny(type.type) || containsAny(type.resolvedType);
   if (type.kind === "object")
     return (
       type.properties.some((property) => containsAny(property.type)) ||
@@ -135,9 +134,7 @@ function areEquivalent(
     // only the resolution provenance and the operand can differ today.
     if (left.resolutionKind !== right.resolutionKind || !areEquivalent(left.type, right.type, false, renames))
       return false;
-    return left.resolvedType !== undefined && right.resolvedType !== undefined
-      ? areEquivalent(left.resolvedType, right.resolvedType, false, renames)
-      : left.resolvedType === right.resolvedType;
+    return areEquivalent(left.resolvedType, right.resolvedType, false, renames);
   }
 
   if (left.kind === "external" && right.kind === "external")

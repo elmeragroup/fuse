@@ -168,7 +168,7 @@ function collectSemanticTypePaths(type: SemanticType, path: SemanticPath, paths:
   if (type.kind === "tuple") for (const member of type.types) collectSemanticTypePaths(member, path, paths);
   if (type.kind === "typeOperator") {
     collectSemanticTypePaths(type.type, path, paths);
-    if (type.resolvedType !== undefined) collectSemanticTypePaths(type.resolvedType, path, paths);
+    collectSemanticTypePaths(type.resolvedType, path, paths);
   }
 }
 

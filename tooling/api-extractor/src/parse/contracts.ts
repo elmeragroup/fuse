@@ -21,8 +21,7 @@ export type ResolverContext = {
   /** Selects the final collection shape for properties at the current node. */
   readonly provenancePropertyContainer: "object" | "componentProps";
   readonly symbolStack: readonly string[];
-  readonly options: Required<Pick<ExtractorOptions, "typeOperatorOutput">> &
-    Pick<ExtractorOptions, "shouldInclude" | "shouldResolveObject">;
+  readonly options: Pick<ExtractorOptions, "shouldInclude" | "shouldResolveObject">;
   readonly externalTypes: ExternalTypeSelection;
   readonly substitutions: ReadonlyMap<BackendSymbolHandle, BackendTypeHandle>;
   readonly active: ReadonlySet<BackendTypeHandle>;

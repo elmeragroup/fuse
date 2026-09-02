@@ -46,7 +46,13 @@ function callback(parameterType: SemanticType): SemanticType {
 }
 
 function keyofOperator(operand: SemanticType): SemanticType {
-  return { kind: "typeOperator", operator: "keyof", type: operand };
+  return {
+    kind: "typeOperator",
+    operator: "keyof",
+    type: operand,
+    resolvedType: { kind: "intrinsic", intrinsic: "string" },
+    resolutionKind: "exact",
+  };
 }
 
 /** Every permutation of a member list, used to state order-independence laws. */

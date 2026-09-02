@@ -1,6 +1,5 @@
 import { Schema } from "effect";
 
-import type { TypeOperatorOutputMode } from "./options.ts";
 import { ProvenanceEntrySchema } from "./provenance.ts";
 import { ExtractWarningSchema } from "./warnings.ts";
 
@@ -127,8 +126,9 @@ export type TypeOperatorNode = {
   readonly typeName?: TypeName;
   readonly operator: "keyof";
   readonly type: SemanticType;
-  readonly resolvedType?: SemanticType;
-  readonly resolutionKind?: TypeOperatorResolutionKind;
+  /** The checker's key set for the operand; `type` keeps the authored expression. */
+  readonly resolvedType: SemanticType;
+  readonly resolutionKind: TypeOperatorResolutionKind;
 };
 
 export type LiteralNode = {
@@ -212,52 +212,6 @@ export type SemanticType =
   | TypeParameterNode
   | TypeQueryNode
   | UnionNode;
-
-/**
- * Recursively correlates the model graph with the type-operator output mode,
- * mirroring upstream's `ParserOutput`: a preserved operator may appear at any
- * nesting (properties, signatures, tuple elements, alias type arguments), so a
- * literal `"syntaxOnly"` call must expose a module whose operators carry no
- * `resolvedType` payload for a consumer to mistake for a resolved key set —
- * and a `"resolved"` module must require every payload, so a syntax-only
- * result cannot be assigned to the resolved view (upstream's own assignment
- * error). The operator's `typeName` recurses too, because alias type
- * arguments nest operators just as property and signature positions do.
- */
-type ModeCorrelatedOutput<T, TMode extends TypeOperatorOutputMode> = T extends {
-  readonly kind: "typeOperator";
-  readonly typeName?: TypeName | undefined;
-  readonly type: infer Operand;
-}
-  ? Omit<T, "typeName" | "type" | "resolvedType" | "resolutionKind"> & {
-      readonly typeName: ModeCorrelatedOutput<T["typeName"], TMode>;
-      readonly type: ModeCorrelatedOutput<Operand, TMode>;
-    } & (TMode extends "resolved"
-        ? {
-            readonly resolvedType: SemanticType;
-            readonly resolutionKind: TypeOperatorResolutionKind;
-          }
-        : {
-            readonly resolvedType?: never;
-            readonly resolutionKind?: never;
-          })
-  : T extends readonly (infer Item)[]
-    ? readonly ModeCorrelatedOutput<Item, TMode>[]
-    : T extends object
-      ? { readonly [Key in keyof T]: ModeCorrelatedOutput<T[Key], TMode> }
-      : T;
-
-/** Extracted model shape whose preserved operators carry no resolved payloads. */
-export type SyntaxOnlyOutput<T> = ModeCorrelatedOutput<T, "syntaxOnly">;
-
-/** Extracted model shape whose preserved operators all carry their resolved payloads. */
-export type ResolvedOutput<T> = ModeCorrelatedOutput<T, "resolved">;
-
-/** Extracted module shape returned by syntax-only type-operator output. */
-export type SyntaxOnlyModuleNode = SyntaxOnlyOutput<ModuleNode>;
-
-/** Extracted module shape whose preserved operators all carry resolved payloads. */
-export type ResolvedModuleNode = ResolvedOutput<ModuleNode>;
 
 const TypeNameSchema: Schema.Codec<TypeName> = Schema.Struct({
   name: Schema.String,
@@ -367,8 +321,8 @@ const TypeOperatorNodeSchema: Schema.Codec<TypeOperatorNode> = Schema.Struct({
   typeName: Schema.optionalKey(TypeNameSchema),
   operator: Schema.Literal("keyof"),
   type: Schema.suspend((): Schema.Codec<SemanticType> => SemanticTypeSchema),
-  resolvedType: Schema.optionalKey(Schema.suspend((): Schema.Codec<SemanticType> => SemanticTypeSchema)),
-  resolutionKind: Schema.optionalKey(Schema.Literals(["exact", "baseConstraint", "fallback"] as const)),
+  resolvedType: Schema.suspend((): Schema.Codec<SemanticType> => SemanticTypeSchema),
+  resolutionKind: Schema.Literals(["exact", "baseConstraint", "fallback"] as const),
 });
 
 const LiteralNodeSchema: Schema.Codec<LiteralNode> = Schema.Struct({

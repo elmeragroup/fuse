@@ -1,9 +1,3 @@
-/** Output policy for the checker-resolved payload of preserved type operators. */
-export type TypeOperatorOutputMode = "resolved" | "syntaxOnly";
-
-/** Backwards-compatible alias for the package's original option name. */
-export type TypeOperatorOutput = TypeOperatorOutputMode;
-
 /** Data supplied before an object property is included in the semantic model. */
 export type ShouldIncludeData = {
   name: string;
@@ -30,15 +24,13 @@ export type ExtractorOptions = {
    * only dependency declarations owned by an exact package name in the list.
    */
   readonly includeExternalTypes?: boolean | readonly string[];
-  readonly typeOperatorOutput?: TypeOperatorOutputMode;
 };
 
 export const defaultExtractorOptions: Required<
-  Pick<ExtractorOptions, "shouldResolveObject" | "includeExternalTypes" | "typeOperatorOutput">
+  Pick<ExtractorOptions, "shouldResolveObject" | "includeExternalTypes">
 > = {
   shouldResolveObject: (data) => (data.propertyDepth === 0 || data.propertyCount <= 50) && data.depth <= 10,
   includeExternalTypes: false,
-  typeOperatorOutput: "resolved",
 };
 
 export type ProjectFileSystemEntries = {

@@ -9,9 +9,6 @@ import type { ClassMethod, ClassProperty, SemanticType } from "../src/model.ts";
 const fixtureDirectory = resolve(import.meta.dirname, "fixtures/issue-06-review");
 
 function extract(options: ExtractorOptions = {}, file = "input.ts"): Promise<ExtractionResult> {
-  // SAFETY: no caller overrides `typeOperatorOutput`, so every extraction here
-  // runs in the default resolved mode whose preserved operators all carry
-  // their resolved payloads.
   return Effect.runPromise(
     Effect.scoped(
       Effect.gen(function* () {
@@ -21,7 +18,7 @@ function extract(options: ExtractorOptions = {}, file = "input.ts"): Promise<Ext
         Effect.provide(ProjectExtractor.live({ tsconfigPath: resolve(fixtureDirectory, "tsconfig.json") }))
       )
     )
-  ) as Promise<ExtractionResult>;
+  );
 }
 
 let result: ExtractionResult;

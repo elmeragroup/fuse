@@ -13,9 +13,7 @@ const tsconfigPath = resolve(fixtureRoot, "tsconfig.json");
 const unknownOwnerPackagePath = resolve(fixtureRoot, "node_modules/unknown-owner/index.d.ts");
 const unknownOwnerDeclarationPath = resolve(fixtureRoot, "external-types/unknown-owner/index.d.ts");
 
-function runExtraction(
-  options?: ExtractorOptions & { readonly typeOperatorOutput?: "resolved" }
-): Promise<ExtractionResult> {
+function runExtraction(options?: ExtractorOptions): Promise<ExtractionResult> {
   return Effect.runPromise(
     Effect.scoped(
       Effect.gen(function* () {

@@ -4,11 +4,7 @@ import { resolve } from "node:path";
 import { describe, expect, expectTypeOf, it } from "vitest";
 
 import { ProjectExtractor as PackageProjectExtractor } from "@elmeragroup/api-extractor";
-import type {
-  ExtractionResult,
-  ProjectExtractorService,
-  SyntaxOnlyExtractionResult,
-} from "@elmeragroup/api-extractor";
+import type { ExtractionResult, ProjectExtractorService } from "@elmeragroup/api-extractor";
 
 import { ProjectExtractor as SourceProjectExtractor } from "../src/index.ts";
 import type { BackendError, ExtractError, FileNotInProgramError } from "../src/index.ts";
@@ -20,11 +16,8 @@ const inputPath = resolve(fixtureDirectory, "input.ts");
 
 type ExtractModuleError = EffectError<ReturnType<ProjectExtractorService["extractModule"]>>;
 type ExtractModuleEffect = ReturnType<ProjectExtractorService["extractModule"]>;
-// The indexed access resolves to the service's LAST overload — the dynamic-mode
-// one — whose success channel is the union of both correlated result views.
-type ExtractionResultSyntaxView = SyntaxOnlyExtractionResult;
 type ExpectedExtractModuleEffect = Effect.Effect<
-  ExtractionResult | ExtractionResultSyntaxView,
+  ExtractionResult,
   BackendError | FileNotInProgramError | ExtractError,
   never
 >;

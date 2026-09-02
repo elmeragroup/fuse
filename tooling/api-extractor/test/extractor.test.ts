@@ -59,10 +59,7 @@ function runExtraction(
       return yield* extractor.extractModule(filePath, extractorOptions);
     }).pipe(Effect.provide(ProjectExtractor.live(options)))
   );
-  // SAFETY: no caller in this suite overrides `typeOperatorOutput`, so every
-  // extraction runs in the default resolved mode whose preserved operators
-  // all carry their resolved payloads.
-  return Effect.runPromise(program) as Promise<ExtractionResult>;
+  return Effect.runPromise(program);
 }
 
 function runWithBackend(
@@ -93,10 +90,7 @@ function runWithBackend(
       return yield* extractor.extractModule(filePath, extractorOptions);
     }).pipe(Effect.provide(extractorLayer))
   );
-  // SAFETY: no caller in this suite overrides `typeOperatorOutput`, so every
-  // extraction runs in the default resolved mode whose preserved operators
-  // all carry their resolved payloads.
-  return Effect.runPromise(program) as Promise<ExtractionResult>;
+  return Effect.runPromise(program);
 }
 
 const fakeSymbol = {} as BackendSymbolHandle;

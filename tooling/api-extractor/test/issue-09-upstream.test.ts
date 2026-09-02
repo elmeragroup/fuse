@@ -1,7 +1,7 @@
 import { Effect, Schema } from "effect";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { beforeAll, describe, expect, expectTypeOf, it } from "vitest";
+import { describe, expect, expectTypeOf, it } from "vitest";
 
 import {
   assertTs7DivergenceEvidence,
@@ -11,26 +11,13 @@ import {
 } from "../scripts/fixture-evidence.ts";
 import { referenceAvailable, upstreamFixtureRoot } from "../scripts/reference.ts";
 import { ProjectExtractor } from "../src/index.ts";
-import type {
-  BackendError,
-  ExtractionResult,
-  ExtractError,
-  ExtractorOptions,
-  FileNotInProgramError,
-  ProjectExtractorService,
-  SyntaxOnlyExtractionResult,
-  SyntaxOnlyModuleNode,
-} from "../src/index.ts";
+import type { ExtractionResult, ExtractorOptions } from "../src/index.ts";
 import type { SemanticType, TypeOperatorResolutionKind } from "../src/model.ts";
 
 const fixtureRoot = resolve(import.meta.dirname, "fixtures");
 const tsconfigPath = resolve(fixtureRoot, "issue-09-tsconfig.json");
 
-function runExtraction(
-  fixture: string,
-  file: string,
-  options?: ExtractorOptions
-): Promise<ExtractionResult | SyntaxOnlyExtractionResult> {
+function runExtraction(fixture: string, file: string, options?: ExtractorOptions): Promise<ExtractionResult> {
   return Effect.runPromise(
     Effect.scoped(
       Effect.gen(function* () {
@@ -132,60 +119,16 @@ describe("Issue 09 type-operator output modes", () => {
     expect(operator?.resolvedType).toBeDefined();
   });
 
-  it("strips every resolved payload in syntaxOnly mode while keeping the operators", async () => {
-    // SAFETY: the literal syntaxOnly call returns the payload-free view.
-    const result = (await runExtraction("type-literal-union-resolution", "input.ts", {
-      typeOperatorOutput: "syntaxOnly",
-    })) as SyntaxOnlyExtractionResult;
+  it("attaches a resolved key set to every preserved operator", async () => {
+    const result = await runExtraction("type-literal-union-resolution", "input.ts");
     const serialized = JSON.stringify(result.module);
-    // The same module still contains preserved operators…
     expect(serialized).toContain('"typeOperator"');
-    // …and no resolved payloads anywhere inside them, at any nesting.
-    expect(serialized).not.toContain("resolvedType");
-    expect(serialized).not.toContain("resolutionKind");
+    expect(serialized.split('"typeOperator"').length).toBe(serialized.split('"resolutionKind"').length);
   });
 });
 
-let correlatedService: ProjectExtractorService;
-
-beforeAll(async () => {
-  correlatedService = await Effect.runPromise(
-    Effect.scoped(
-      Effect.gen(function* () {
-        return yield* ProjectExtractor;
-      }).pipe(Effect.provide(ProjectExtractor.live({ tsconfigPath })))
-    )
-  );
-});
-
-describe("Issue 09 output mode is correlated with the returned model type", () => {
-  it("a literal syntaxOnly call exposes only payload-free operators", () => {
-    const effect = correlatedService.extractModule("input.ts", { typeOperatorOutput: "syntaxOnly" });
-    expectTypeOf(effect).toExtend<
-      Effect.Effect<SyntaxOnlyExtractionResult, BackendError | FileNotInProgramError | ExtractError>
-    >();
-    // The correlation guarantee, as upstream's ParserOutput encodes it: every
-    // preserved operator in a syntaxOnly module reports its payload slots as
-    // `undefined | never`, so a resolved key set cannot be read out of
-    // syntax-preserving output.
-    type Operator = SyntaxOnlyModuleNode["exports"][number]["type"] extends infer Member
-      ? Member extends { readonly kind: "typeOperator" }
-        ? Member
-        : never
-      : never;
-    expectTypeOf<NonNullable<Operator["resolvedType"]>>().toEqualTypeOf<never>();
-    expectTypeOf<Operator["resolutionKind"]>().toEqualTypeOf<undefined>();
-  });
-
-  it("a syntax-only result cannot be assigned to the resolved view", () => {
-    // Upstream's parser entry points reject this assignment (TS2322) because
-    // ParserOutput's resolved branch requires every operator payload; the
-    // ported ResolvedModuleNode mirrors that branch, so the two views are
-    // exclusive at the assignment level too — not only at payload reads.
-    expectTypeOf<SyntaxOnlyExtractionResult>().not.toExtend<ExtractionResult>();
-  });
-
-  it("a resolved module requires a key set on every preserved operator", () => {
+describe("Issue 09 type operators in the model type", () => {
+  it("a module requires a key set on every preserved operator", () => {
     type Operator = ExtractionResult["module"]["exports"][number]["type"] extends infer Member
       ? Member extends { readonly kind: "typeOperator" }
         ? Member
@@ -193,27 +136,5 @@ describe("Issue 09 output mode is correlated with the returned model type", () =
       : never;
     expectTypeOf<Operator["resolvedType"]>().toEqualTypeOf<SemanticType>();
     expectTypeOf<Operator["resolutionKind"]>().toEqualTypeOf<TypeOperatorResolutionKind>();
-  });
-
-  it("default and literal resolved calls keep the fully resolved model", () => {
-    const effect = correlatedService.extractModule("input.ts");
-    expectTypeOf(effect).toExtend<
-      Effect.Effect<ExtractionResult, BackendError | FileNotInProgramError | ExtractError>
-    >();
-    const resolved = correlatedService.extractModule("input.ts", { typeOperatorOutput: "resolved" });
-    expectTypeOf(resolved).toExtend<
-      Effect.Effect<ExtractionResult, BackendError | FileNotInProgramError | ExtractError>
-    >();
-  });
-
-  it("a dynamically-typed option returns the union so consumers must narrow", () => {
-    const dynamic: ExtractorOptions = {};
-    const effect = correlatedService.extractModule("input.ts", dynamic);
-    expectTypeOf(effect).toExtend<
-      Effect.Effect<
-        ExtractionResult | SyntaxOnlyExtractionResult,
-        BackendError | FileNotInProgramError | ExtractError
-      >
-    >();
   });
 });

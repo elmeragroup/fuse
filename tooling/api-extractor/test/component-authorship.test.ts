@@ -28,7 +28,6 @@ function authorshipContext(operations: BackendCompilerOperations): ResolverConte
     provenancePropertyContainer: "object",
     symbolStack: ["TripleWrapped"],
     options: {
-      typeOperatorOutput: "resolved",
       shouldResolveObject: defaultExtractorOptions.shouldResolveObject,
     },
     externalTypes: normalizeExternalTypeSelection(false),

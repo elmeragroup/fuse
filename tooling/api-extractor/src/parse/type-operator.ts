@@ -286,15 +286,15 @@ function keyofNode(
     resolve: ResolveSemanticType;
   }
 ): SemanticType {
-  const result: SemanticType = {
+  const resolved = keyofResult(type, context, excludeUndefinedFromResult, resolve);
+  return {
     kind: "typeOperator",
     operator: "keyof",
     type: operand,
     ...(typeNameValue === undefined ? {} : { typeName: typeNameValue }),
+    resolvedType: resolved.type,
+    resolutionKind: resolved.resolutionKind,
   };
-  if (context.options.typeOperatorOutput !== "resolved") return result;
-  const resolved = keyofResult(type, context, excludeUndefinedFromResult, resolve);
-  return { ...result, resolvedType: resolved.type, resolutionKind: resolved.resolutionKind };
 }
 
 /** A `keyof` result and how faithfully the checker could describe it. */

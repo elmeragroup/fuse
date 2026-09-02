@@ -12,17 +12,14 @@ const lookalikeFixtureRoot = resolve(import.meta.dirname, "fixtures/react-policy
 const lookalikeInput = resolve(lookalikeFixtureRoot, "input.ts");
 const lookalikeTsconfig = resolve(lookalikeFixtureRoot, "tsconfig.json");
 
-type LookalikeOptions = Omit<ExtractorOptions, "typeOperatorOutput">;
+type LookalikeOptions = ExtractorOptions;
 
 function extractLookalikes(options: LookalikeOptions = {}): Promise<ExtractionResult> {
   return Effect.runPromise(
     Effect.scoped(
       Effect.gen(function* () {
         const extractor = yield* ProjectExtractor;
-        return yield* extractor.extractModule(lookalikeInput, {
-          ...options,
-          typeOperatorOutput: "resolved",
-        });
+        return yield* extractor.extractModule(lookalikeInput, options);
       }).pipe(Effect.provide(ProjectExtractor.live({ tsconfigPath: lookalikeTsconfig })))
     )
   );

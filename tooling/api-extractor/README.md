@@ -21,10 +21,7 @@ const inputPath = resolve("src/index.ts");
 
 const extraction = Effect.gen(function* () {
   const extractor = yield* ProjectExtractor;
-  return yield* extractor.extractModule(inputPath, {
-    includeExternalTypes: false,
-    typeOperatorOutput: "resolved",
-  });
+  return yield* extractor.extractModule(inputPath, { includeExternalTypes: false });
 }).pipe(Effect.provide(ProjectExtractor.live({ tsconfigPath })));
 
 const result = await Effect.runPromise(Effect.scoped(extraction));
@@ -36,9 +33,8 @@ file in the same project rather than opening one project per file.
 
 `extractModule` returns:
 
-- `module`: the semantic API model. The default `resolved` mode includes resolved payloads for type
-  operators. `syntaxOnly` preserves operator syntax without those payloads and returns a separately
-  typed result.
+- `module`: the semantic API model. Preserved type operators carry both the authored operand and
+  the checker's resolved key set.
 - `warnings`: recoverable losses. A warning has a stable `code`, location, and code-specific fields;
   `message` explains what failed, what the extractor did, and what a maintainer can do next.
 - `provenance`: repository-relative declaration and re-export paths for model nodes.
@@ -53,7 +49,6 @@ losses use `warnings`; the extractor never logs them automatically.
 - `shouldInclude` can omit individual object properties.
 - `shouldResolveObject` can stop expansion of large or deep object shapes. The default expands root
   objects, objects with at most 50 properties, and paths no deeper than 10 type-resolution steps.
-- `typeOperatorOutput` selects `resolved` or `syntaxOnly` output.
 - `ProjectExtractor.live` also accepts `cwd` and a `ProjectFileSystem`. The filesystem seam supports
   virtual fixture inputs without exposing compiler internals.
 

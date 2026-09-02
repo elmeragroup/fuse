@@ -11,16 +11,12 @@ import {
 } from "../scripts/fixture-evidence.ts";
 import { referenceAvailable, upstreamFixtureRoot } from "../scripts/reference.ts";
 import { ProjectExtractor } from "../src/index.ts";
-import type { ExtractionResult, ExtractorOptions, SyntaxOnlyExtractionResult } from "../src/index.ts";
+import type { ExtractionResult, ExtractorOptions } from "../src/index.ts";
 
 const fixtureRoot = resolve(import.meta.dirname, "fixtures");
 const tsconfigPath = resolve(fixtureRoot, "issue-10-tsconfig.json");
 
-function runExtraction(
-  fixture: string,
-  file: string,
-  options?: ExtractorOptions
-): Promise<ExtractionResult | SyntaxOnlyExtractionResult> {
+function runExtraction(fixture: string, file: string, options?: ExtractorOptions): Promise<ExtractionResult> {
   return Effect.runPromise(
     Effect.scoped(
       Effect.gen(function* () {

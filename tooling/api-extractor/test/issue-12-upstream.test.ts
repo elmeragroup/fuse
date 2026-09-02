@@ -24,11 +24,7 @@ import { ExtractWarningSchema } from "../src/warnings.ts";
 const fixtureRoot = resolve(import.meta.dirname, "fixtures");
 const tsconfigPath = resolve(fixtureRoot, "issue-12-tsconfig.json");
 
-function runExtraction(
-  fixture: string,
-  file: string,
-  options?: ExtractorOptions & { readonly typeOperatorOutput?: "resolved" }
-): Promise<ExtractionResult> {
+function runExtraction(fixture: string, file: string, options?: ExtractorOptions): Promise<ExtractionResult> {
   return Effect.runPromise(
     Effect.scoped(
       Effect.gen(function* () {

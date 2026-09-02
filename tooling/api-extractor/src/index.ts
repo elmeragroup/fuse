@@ -1,9 +1,4 @@
-export {
-  ProjectExtractor,
-  type ExtractionResult,
-  type ProjectExtractorService,
-  type SyntaxOnlyExtractionResult,
-} from "./extractor.ts";
+export { ProjectExtractor, type ExtractionResult, type ProjectExtractorService } from "./extractor.ts";
 export { BackendError, ConfigError, ExtractError, FileNotInProgramError } from "./errors.ts";
 export {
   ExtractionResultSchema,
@@ -32,10 +27,6 @@ export {
   type ParameterNode,
   type PropertyNode,
   type SemanticType,
-  type SyntaxOnlyOutput,
-  type SyntaxOnlyModuleNode,
-  type ResolvedOutput,
-  type ResolvedModuleNode,
   type TupleNode,
   type TypeArgument,
   type TypeOperatorNode,
@@ -53,8 +44,6 @@ export {
   type ProjectFileSystemEntries,
   type ShouldIncludeData,
   type ShouldResolveObjectData,
-  type TypeOperatorOutput,
-  type TypeOperatorOutputMode,
 } from "./options.ts";
 export { ProvenanceEntrySchema, ProvenanceSchema, type ProvenanceEntry } from "./provenance.ts";
 export {
