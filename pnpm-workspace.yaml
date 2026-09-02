@@ -10,7 +10,7 @@ catalog:
   "@base-ui/react": 1.6.0
   "@effect/platform-node": 4.0.0-rc.111
   "@effect/vitest": 4.0.0-rc.111
-  "@internationalized/date": ^3.12.2
+  "@internationalized/date": 3.12.2
   "@internationalized/string": 3.2.10
   "@phosphor-icons/react": 2.1.10
   "@mdx-js/loader": 3.1.1
