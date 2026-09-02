@@ -134,7 +134,7 @@ Normative chapter for `@elmeragroup/ui`. Sources: A11y & performance guideline c
 
 ## 6 Runtime practices
 
-- Animations touch **`transform` and `opacity` only** by default. Reviewed v1 exceptions are: Accordion/Collapsible panel height driven by the primitive's measured CSS variable; Sidebar shell width during its 200 ms expand/collapse transition; and Item's content-reveal grid track. Each exception is enumerated in its component spec and disabled by the central reduced-motion rule. New layout-property animation requires a spec amendment and measurement.
+- Animations touch **`transform` and `opacity` only** by default. Reviewed v1 exceptions are: Accordion/Collapsible panel height driven by the primitive's measured CSS variable; Sidebar shell **width** during its 200 ms expand/collapse transition (not the offcanvas `left`/`right` offset, Rail position, or GroupLabel margin — those snap; [sidebar](components/sidebar.md) §8.19); and Item's content-reveal grid track. Each exception is enumerated in its component spec and disabled by the central reduced-motion rule. New layout-property animation requires a spec amendment and measurement. _(Amended 2026-09-02.)_
 - Context values are **memoized** (`ElmeraGroupUiProvider` already does); no context provider re-renders its subtree on unrelated prop churn.
 - No per-frame CSS-variable writes on shared ancestors (inherited-var recalc storms); transient interaction state writes `style.transform` on the element itself.
 - Tooltips/popovers reuse base-ui's shared positioning; components never install their own scroll/resize listeners.

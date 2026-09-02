@@ -19,7 +19,7 @@ import {
   Sidebar,
   useSidebar,
 } from "./sidebar";
-import { sidebarMenuButtonVariants } from "./sidebar-variants";
+import { sidebarMenuButtonVariants, sidebarMenuSubButtonVariants } from "./sidebar-variants";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const source = readFileSync(join(here, "sidebar.tsx"), "utf8");
@@ -185,6 +185,18 @@ describe("sidebarMenuButtonVariants", () => {
     expect(sidebarMenuButtonVariants({ variant: "outline" })).toContain(
       "hover:shadow-[0_0_0_1px_var(--sidebar-accent)]"
     );
+    expect(defaults).toContain("transition-[color,background-color,box-shadow]");
+    expect(defaults).not.toContain("transition-[width,height,padding,color,background-color,box-shadow]");
+  });
+
+  it("puts MenuSubButton's size axis on the control ladder", () => {
+    expect(sidebarMenuSubButtonVariants()).toContain("h-(--control-h-md)");
+    expect(sidebarMenuSubButtonVariants()).toContain("[font-size:var(--control-text)]");
+    expect(sidebarMenuSubButtonVariants()).toContain("[line-height:var(--control-leading)]");
+    expect(sidebarMenuSubButtonVariants({ size: "sm" })).toContain("h-(--control-h-sm)");
+    expect(sidebarMenuSubButtonVariants({ size: "sm" })).toContain("text-sm");
+    expect(sidebarMenuSubButtonVariants()).not.toContain("h-7");
+    expect(sidebarMenuSubButtonVariants()).not.toContain("data-[size=");
   });
 
   it("uses no raw palette, dark, density, ring-literal, or legacy data-sidebar selectors", () => {
@@ -224,7 +236,6 @@ describe("sidebar source contract", () => {
     expect(source).toContain("SidebarSimple");
     expect(source).toContain("useLocalizedStrings");
     expect(source).toContain("useIsMobile");
-    expect(source).toContain('from "@base-ui/react/input"');
     expect(source).toContain("showCloseButton={false}");
     expect(source).toContain("SIDEBAR_WIDTH_MOBILE");
     expect(source).toContain("event.preventDefault()");
@@ -256,6 +267,7 @@ describe("sidebar source contract", () => {
     expect(facade).not.toContain('"use client"');
     expect(facade).not.toContain("useIsMobile");
     expect(facade).not.toContain("sidebarMenuButtonVariants");
+    expect(facade).not.toContain("sidebarMenuSubButtonVariants");
     expect(facade).toContain("Sidebar,");
     expect(facade).toContain("useSidebar,");
     for (const name of [

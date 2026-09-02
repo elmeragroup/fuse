@@ -2,17 +2,42 @@ import type { ReactNode } from "react";
 import { useEffect, useRef } from "react";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { page, userEvent } from "vitest/browser";
+import { cdp, page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
+import {
+  assertFocusRingOnKeyboardAbsentOnMouse,
+  assertKeyboardFocusRingAtBothDensities,
+} from "../../../test/assert-focus-ring";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
-import { px, renderThemed, stampDensity } from "../../../test/themed-browser-render";
+import {
+  CONTROL_MD,
+  px,
+  renderThemed,
+  stampDensity,
+  textboxNamed,
+} from "../../../test/themed-browser-render";
 import { Sidebar, useSidebar } from "./sidebar";
 import type { SidebarContextValue, SidebarProviderProps, SidebarRootProps } from "./sidebar";
 
 const DESKTOP = { width: 1024, height: 768 } as const;
 const MOBILE = { width: 500, height: 800 } as const;
+const CONTROL_SM = { dense: 32, comfortable: 36 } as const;
+
+type ReducedMotionCdp = {
+  send: (
+    method: "Emulation.setEmulatedMedia",
+    params: { features: { name: "prefers-reduced-motion"; value: "reduce" | "no-preference" }[] }
+  ) => Promise<void>;
+};
+
+async function emulateReducedMotion(value: "reduce" | "no-preference"): Promise<void> {
+  // SAFETY: vitest types CDPSession as {}; Playwright's session implements send.
+  const session: ReducedMotionCdp = cdp() as ReducedMotionCdp;
+  await session.send("Emulation.setEmulatedMedia", {
+    features: [{ name: "prefers-reduced-motion", value }],
+  });
+}
 
 const TOGGLE_COPY = {
   "nb-NO": "Vis eller skjul sidepanelet",
@@ -74,6 +99,7 @@ beforeEach(async () => {
 afterEach(async () => {
   document.cookie = "sidebar:state=; path=/; max-age=0";
   await page.viewport(DESKTOP.width, DESKTOP.height);
+  await emulateReducedMotion("no-preference");
 });
 
 function element(locator: ReturnType<typeof page.getByRole>): HTMLElement {
@@ -107,10 +133,9 @@ function triggerNamed(name: string): HTMLElement {
 }
 
 function railNamed(name: string): HTMLButtonElement {
-  const buttons = page.getByRole("button", { name, exact: true }).elements();
-  const rail = buttons.find((button) => button.getAttribute("data-slot") === "sidebar-rail");
+  const rail = page.getByTitle(name, { exact: true }).element();
   if (!(rail instanceof HTMLButtonElement)) {
-    throw new Error(`expected a sidebar rail named ${name}`);
+    throw new Error(`expected a sidebar rail titled ${name}`);
   }
   return rail;
 }
@@ -223,6 +248,8 @@ describe("Sidebar toggle paths", () => {
     const rail = railNamed("Toggle sidebar");
     expect(rail.getAttribute("title")).toBe("Toggle sidebar");
     expect(rail.tabIndex).toBe(-1);
+    expect(rail.getAttribute("aria-hidden")).toBe("true");
+    expect(page.getByRole("button", { name: "Toggle sidebar", exact: true }).elements()).toHaveLength(1);
 
     await userEvent.click(rail);
     expect(sidebarRoot().getAttribute("data-state")).toBe("collapsed");
@@ -392,6 +419,85 @@ describe("Sidebar density exemption", () => {
     }
     expect(heights.dense).toEqual([32, 28, 48, 32]);
     expect(heights.comfortable).toEqual(heights.dense);
+  });
+});
+
+describe("Sidebar.Input focus ring", () => {
+  it("paints the shared ring on keyboard focus-visible at both densities", async () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <Sidebar.Provider>
+          <Sidebar.Root>
+            <Sidebar.Header>
+              <button type="button">Before</button>
+              <Sidebar.Input aria-label="Search" />
+            </Sidebar.Header>
+          </Sidebar.Root>
+        </Sidebar.Provider>
+      )
+    );
+    await assertKeyboardFocusRingAtBothDensities(buttonNamed("Before"), textboxNamed("Search"));
+  });
+});
+
+describe("Sidebar group and menu action targets", () => {
+  it("keeps a bounding box of at least 24px at a desktop viewport", () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <Sidebar.Provider>
+          <Sidebar.Root>
+            <Sidebar.Group>
+              <Sidebar.GroupLabel>Funnel</Sidebar.GroupLabel>
+              <Sidebar.GroupAction aria-label="Add">+</Sidebar.GroupAction>
+              <Sidebar.GroupContent>
+                <Sidebar.Menu>
+                  <Sidebar.MenuItem>
+                    <Sidebar.MenuButton>Orders</Sidebar.MenuButton>
+                    <Sidebar.MenuAction aria-label="More">+</Sidebar.MenuAction>
+                  </Sidebar.MenuItem>
+                </Sidebar.Menu>
+              </Sidebar.GroupContent>
+            </Sidebar.Group>
+          </Sidebar.Root>
+        </Sidebar.Provider>
+      )
+    );
+    for (const name of ["Add", "More"] as const) {
+      const box = buttonNamed(name).getBoundingClientRect();
+      expect(box.width, name).toBeGreaterThanOrEqual(24);
+      expect(box.height, name).toBeGreaterThanOrEqual(24);
+    }
+  });
+});
+
+describe("Sidebar sanctioned motion", () => {
+  it("animates only shell width, and strips that property under prefers-reduced-motion", async () => {
+    renderThemed(<Frame />);
+    const gap = bySlot("sidebar-gap");
+    const container = bySlot("sidebar-container");
+    expect(
+      getComputedStyle(gap)
+        .transitionProperty.split(",")
+        .map((part) => part.trim())
+    ).toEqual(["width"]);
+    expect(
+      getComputedStyle(container)
+        .transitionProperty.split(",")
+        .map((part) => part.trim())
+    ).toEqual(["width"]);
+    expect(getComputedStyle(gap).transitionDuration).toBe("0.2s");
+    expect(getComputedStyle(container).transitionDuration).toBe("0.2s");
+
+    await emulateReducedMotion("reduce");
+    expect(window.matchMedia("(prefers-reduced-motion: reduce)").matches).toBe(true);
+    for (const element of [gap, container]) {
+      const properties = getComputedStyle(element).transitionProperty;
+      expect(properties, element.getAttribute("data-slot") ?? "shell").not.toMatch(
+        /\b(?:width|left|right)\b/
+      );
+    }
   });
 });
 
@@ -697,9 +803,41 @@ describe("Sidebar.MenuSubButton", () => {
     const closed = element(page.getByRole("link", { name: "Closed", exact: true }));
     expect(closed.getAttribute("data-size")).toBe("sm");
     expect(closed.hasAttribute("data-active")).toBe(false);
-    expect(px(getComputedStyle(closed).fontSize)).toBeLessThan(px(getComputedStyle(open).fontSize));
     expect(bySlot("sidebar-menu-sub").tagName).toBe("UL");
     expect(bySlot("sidebar-menu-sub-item").tagName).toBe("LI");
+  });
+
+  it("reads the signed sm/md control rungs at both density stamps", () => {
+    const heights: Record<string, number[]> = {};
+    for (const density of ["dense", "comfortable"] as const) {
+      stampDensity(density);
+      const { unmount } = renderThemed(
+        <Frame>
+          <Sidebar.MenuItem>
+            <Sidebar.MenuButton>Orders</Sidebar.MenuButton>
+            <Sidebar.MenuSub>
+              <Sidebar.MenuSubItem>
+                <Sidebar.MenuSubButton href="/orders/open">
+                  <span>Open</span>
+                </Sidebar.MenuSubButton>
+              </Sidebar.MenuSubItem>
+              <Sidebar.MenuSubItem>
+                <Sidebar.MenuSubButton href="/orders/closed" size="sm">
+                  <span>Closed</span>
+                </Sidebar.MenuSubButton>
+              </Sidebar.MenuSubItem>
+            </Sidebar.MenuSub>
+          </Sidebar.MenuItem>
+        </Frame>
+      );
+      heights[density] = [
+        px(getComputedStyle(element(page.getByRole("link", { name: "Open", exact: true }))).height),
+        px(getComputedStyle(element(page.getByRole("link", { name: "Closed", exact: true }))).height),
+      ];
+      unmount();
+    }
+    expect(heights.dense).toEqual([CONTROL_MD.dense.height, CONTROL_SM.dense]);
+    expect(heights.comfortable).toEqual([CONTROL_MD.comfortable.height, CONTROL_SM.comfortable]);
   });
 });
 
@@ -756,6 +894,7 @@ describe("Sidebar data-slot audit", () => {
     expect(document.querySelectorAll("[data-sidebar]")).toHaveLength(0);
     expect(bySlot("sidebar-separator").getAttribute("role")).toBe("separator");
     expect(document.querySelectorAll('[data-slot="separator"]')).toHaveLength(0);
+    expect(document.querySelectorAll('[data-slot="input"]')).toHaveLength(0);
     expect(bySlot("sidebar-inset").tagName).toBe("MAIN");
     expect(bySlot("sidebar-menu").tagName).toBe("UL");
     expect(bySlot("sidebar-menu-item").tagName).toBe("LI");

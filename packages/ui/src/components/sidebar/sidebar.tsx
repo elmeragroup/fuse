@@ -3,7 +3,6 @@
 import type { ComponentProps, CSSProperties, Dispatch, ReactElement, SetStateAction } from "react";
 import { createContext, use, useCallback, useEffect, useMemo, useState } from "react";
 
-import { Input as InputPrimitive } from "@base-ui/react/input";
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 import type { VariantProps } from "tailwind-variants";
@@ -15,6 +14,7 @@ import { cn } from "../../styles/cn";
 import { focusRing } from "../../styles/utils";
 import { Button } from "../button/button";
 import type { ButtonProps } from "../button/button";
+import { Input } from "../input/input";
 import { Separator } from "../separator/separator";
 import type { SeparatorProps } from "../separator/separator";
 import { Sheet } from "../sheet/sheet";
@@ -22,7 +22,7 @@ import { Skeleton } from "../skeleton/skeleton";
 import { Tooltip } from "../tooltip/tooltip";
 import type { TooltipContentProps } from "../tooltip/tooltip";
 import { sidebarStrings } from "./intl";
-import { sidebarMenuButtonVariants } from "./sidebar-variants";
+import { sidebarMenuButtonVariants, sidebarMenuSubButtonVariants } from "./sidebar-variants";
 
 /** Resolved once at module scope — the recipe does the same (no per-render work). */
 const selfFocusRing = focusRing({ target: "self" }).root();
@@ -132,8 +132,7 @@ function SidebarProvider({
   const open = openProp ?? internalOpen;
   const setOpen = useCallback(
     (value: boolean | ((value: boolean) => boolean)) => {
-      // Updater-or-boolean is the setter contract (sidebar.md §8.3); the branch is the contract itself.
-      // oxlint-disable-next-line anti-slop/no-runtime-typeof
+      // oxlint-disable-next-line anti-slop/no-runtime-typeof -- updater-or-boolean is the setter contract (sidebar.md §8.3)
       const openState = typeof value === "function" ? value(open) : value;
 
       if (setOpenProp) {
@@ -308,7 +307,7 @@ function SidebarRoot({
         data-slot="sidebar-container"
         data-side={side}
         className={cn(
-          "md:flex fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear data-[side=left]:left-0 data-[side=left]:group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)] data-[side=right]:right-0 data-[side=right]:group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
+          "md:flex fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[width] duration-200 ease-linear data-[side=left]:left-0 data-[side=left]:group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)] data-[side=right]:right-0 data-[side=right]:group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
           variant === "floating" || variant === "inset"
             ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]"
             : "group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l",
@@ -363,12 +362,12 @@ function SidebarRail({ className, ...props }: SidebarRailProps): ReactElement {
     <button
       type="button"
       data-slot="sidebar-rail"
-      aria-label={labels.toggle}
+      aria-hidden
       tabIndex={-1}
       onClick={value.toggleSidebar}
       title={labels.toggle}
       className={cn(
-        "sm:flex absolute inset-y-0 z-20 hidden w-4 transition-[left,right] ease-linear group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:start-1/2 after:w-[2px] after:transition-colors hover:after:bg-sidebar-border ltr:-translate-x-1/2 rtl:-translate-x-1/2",
+        "sm:flex absolute inset-y-0 z-20 hidden w-4 group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:start-1/2 after:w-[2px] after:transition-colors hover:after:bg-sidebar-border ltr:-translate-x-1/2 rtl:-translate-x-1/2",
         "in-data-[side=left]:cursor-w-resize in-data-[side=right]:cursor-e-resize",
         "[[data-side=left][data-state=collapsed]_&]:cursor-e-resize [[data-side=right][data-state=collapsed]_&]:cursor-w-resize",
         "group-data-[collapsible=offcanvas]:translate-x-0 group-data-[collapsible=offcanvas]:after:left-full hover:group-data-[collapsible=offcanvas]:bg-sidebar",
@@ -399,12 +398,14 @@ function SidebarInset({ className, ...props }: SidebarInsetProps): ReactElement 
 /**
  * Typed as `ComponentProps<"input">` (string `className`) rather than the base-ui Input's
  * props, whose `className` can be a render-prop function `cn` cannot merge (sidebar.md §2).
+ * Composes the library Input so the shared `focusRing` ships with the field box; `h-8` is
+ * the shell-local density exemption (sidebar.md §4/§8.14).
  */
 export type SidebarInputProps = ComponentProps<"input">;
 
 function SidebarInput({ className, ...props }: SidebarInputProps): ReactElement {
   return (
-    <InputPrimitive
+    <Input
       data-slot="sidebar-input"
       className={cn("h-8 w-full bg-background shadow-none", className)}
       {...props}
@@ -471,7 +472,7 @@ function SidebarGroupLabel({ className, render, ...props }: SidebarGroupLabelPro
     props: mergeProps<"div">(
       {
         className: cn(
-          "text-xs font-medium flex h-8 shrink-0 items-center rounded-md px-2 text-sidebar-foreground/70 transition-[margin,opacity] duration-200 ease-linear group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0 [&>svg]:size-4 [&>svg]:shrink-0",
+          "text-xs font-medium flex h-8 shrink-0 items-center rounded-md px-2 text-sidebar-foreground/70 transition-opacity duration-200 ease-linear group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0 [&>svg]:size-4 [&>svg]:shrink-0",
           selfFocusRing,
           className
         ),
@@ -491,7 +492,7 @@ function SidebarGroupAction({ className, render, ...props }: SidebarGroupActionP
     props: mergeProps<"button">(
       {
         className: cn(
-          "md:after:hidden absolute top-3.5 right-3 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-sidebar-foreground transition-transform group-data-[collapsible=icon]:hidden after:absolute after:-inset-2 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground [&>svg]:size-4 [&>svg]:shrink-0",
+          "absolute top-3.5 right-3 flex size-6 items-center justify-center rounded-md p-0 text-sidebar-foreground transition-transform group-data-[collapsible=icon]:hidden after:absolute after:-inset-2 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground [&>svg]:size-4 [&>svg]:shrink-0",
           selfFocusRing,
           className
         ),
@@ -566,8 +567,7 @@ function SidebarMenuButton({
     return button;
   }
 
-  // String shorthand for `{ children }` is the documented tooltip contract (sidebar.md §3).
-  // oxlint-disable-next-line anti-slop/no-runtime-typeof
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- string tooltip shorthand is the documented contract (sidebar.md §3)
   const contentProps: TooltipContentProps = typeof tooltip === "string" ? { children: tooltip } : tooltip;
 
   return (
@@ -603,7 +603,7 @@ function SidebarMenuAction({
     props: mergeProps<"button">(
       {
         className: cn(
-          "md:after:hidden absolute top-1.5 right-1 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-sidebar-foreground transition-transform group-data-[collapsible=icon]:hidden peer-hover/menu-button:text-sidebar-accent-foreground peer-data-[size=default]/menu-button:top-1.5 peer-data-[size=lg]/menu-button:top-2.5 peer-data-[size=sm]/menu-button:top-1 after:absolute after:-inset-2 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground [&>svg]:size-4 [&>svg]:shrink-0",
+          "absolute top-1.5 right-1 flex size-6 items-center justify-center rounded-md p-0 text-sidebar-foreground transition-transform group-data-[collapsible=icon]:hidden peer-hover/menu-button:text-sidebar-accent-foreground peer-data-[size=default]/menu-button:top-1.5 peer-data-[size=lg]/menu-button:top-2.5 peer-data-[size=sm]/menu-button:top-1 after:absolute after:-inset-2 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground [&>svg]:size-4 [&>svg]:shrink-0",
           selfFocusRing,
           showOnHover &&
             "md:opacity-0 group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 peer-data-active/menu-button:text-sidebar-accent-foreground aria-expanded:opacity-100",
@@ -694,7 +694,8 @@ function SidebarMenuSubItem({ className, ...props }: SidebarMenuSubItemProps): R
 
 export type SidebarMenuSubButtonProps = useRender.ComponentProps<"a"> & {
   /**
-   * Row size, emitted as `data-size`; `md` reads `text-sm`, `sm` reads `text-xs`.
+   * Row size, emitted as `data-size`. `md` pins the md control rung and the control-type
+   * pair; `sm` pins the sm rung with size-owned `text-sm`.
    * @default "md"
    */
   size?: "sm" | "md";
@@ -716,11 +717,7 @@ function SidebarMenuSubButton({
     defaultTagName: "a",
     props: mergeProps<"a">(
       {
-        className: cn(
-          "data-[size=md]:text-sm data-[size=sm]:text-xs flex h-7 min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2 text-sidebar-foreground transition-colors group-data-[collapsible=icon]:hidden hover:bg-sidebar-accent hover:text-sidebar-accent-foreground active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-active:bg-sidebar-accent data-active:text-sidebar-accent-foreground [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-sidebar-accent-foreground",
-          selfFocusRing,
-          className
-        ),
+        className: cn(sidebarMenuSubButtonVariants({ size }), className),
       },
       props
     ),
