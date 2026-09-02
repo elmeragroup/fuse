@@ -104,15 +104,10 @@ export class TsgoExtractionSession implements BackendExtractionSession {
     this.cwd = cwd;
     this.pathIdentity = pathIdentity;
     this.onClose = new DetachableCloseCallback(onClose);
-    this.fileTrees = new SessionFileTrees(
-      this.project,
-      (path) => this.sourceFileMetadata(path),
-      (left, right) => this.pathIdentity.sameSourceFile(left, right)
-    );
+    this.fileTrees = new SessionFileTrees(this.project, (path) => this.sourceFileMetadata(path));
     this.nodeInterner = new NodeHandleInterner(
       this.registry,
       (path) => this.internedSourceFileName(path),
-      (path) => this.fileTrees.rememberLiveHandle(path),
       (declaration) => this.fileTrees.resolve(declaration)
     );
     this.facts = createSessionFacts(this.factsContext(), this.heritageContext());
@@ -178,9 +173,7 @@ export class TsgoExtractionSession implements BackendExtractionSession {
   }
 
   readModule(filePath: string): BackendModuleDraft {
-    const absoluteFilePath = resolve(this.cwd, filePath);
-    this.currentFilePath = absoluteFilePath;
-    this.fileTrees.setCurrentFile(absoluteFilePath);
+    this.currentFilePath = resolve(this.cwd, filePath);
     return readModule(this.moduleContext(), filePath);
   }
 

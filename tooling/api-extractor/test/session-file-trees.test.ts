@@ -64,7 +64,7 @@ function diskFileSystem(): ProjectFileSystem {
 }
 
 describe("TypeScript 7 session-owned file trees", () => {
-  it("drops materialized trees at close so the next extraction pays for the file again", () => {
+  it("keeps the project source-file cache across sessions so a second extraction fetches nothing new", () => {
     const project = openTsgoProject({ tsconfigPath: basicTsconfigPath, collectTiming: true });
     try {
       const first = project.openExtraction();
@@ -84,7 +84,7 @@ describe("TypeScript 7 session-owned file trees", () => {
       const secondBodies = walkExportBodies(second, basicInputPath);
       const secondAfterWalk = sourceFileTotals(project);
       expect(secondBodies).toBe(firstBodies);
-      expect(secondAfterWalk.sourceFilesFetched).toBeGreaterThan(beforeSecond.sourceFilesFetched);
+      expect(secondAfterWalk.sourceFilesFetched).toBe(beforeSecond.sourceFilesFetched);
       second.close();
     } finally {
       project.close();

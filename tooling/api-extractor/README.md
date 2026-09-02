@@ -69,11 +69,10 @@ Each `extractModule` call gets an isolated synchronous extraction session, so re
 warning collection cannot leak between calls. Output ordering and canonicalization are
 deterministic for the pinned toolchain.
 
-The ts7 adapter decides dense versus sparse file navigation from session-known facts: a module
-read of that file is underway, or at least two live handles of that file exist
-(`DENSE_LIVE_HANDLE_THRESHOLD` in `src/backend/ts7/file-trees.ts`). Files excluded by ownership
-never bulk-fetch. Materialized trees are session-owned and dropped at close. Parser and public
-options never see this choice.
+The ts7 adapter fetches each source file at most once per extraction session and keeps the
+materialized tree for later node lookups; the compiler's project-scoped source-file cache keeps
+shared library and dependency files across sessions. Files excluded by ownership are never read
+as modules. Parser and public options never see this.
 
 Some compiler shapes cannot fit the public model. The extractor keeps working and reports one of
 these structured warning codes:

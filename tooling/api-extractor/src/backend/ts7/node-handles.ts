@@ -23,18 +23,15 @@ export class NodeHandleInterner {
   private readonly nodeIdentityHandles = new Map<string, BackendNodeHandle>();
   private readonly registry: HandleRegistry;
   private readonly internPath: (path: string) => string;
-  private readonly rememberLiveHandle: (path: string) => void;
   private readonly resolveDeclaration: (declaration: NodeHandle) => Node | undefined;
 
   constructor(
     registry: HandleRegistry,
     internPath: (path: string) => string,
-    rememberLiveHandle: (path: string) => void,
     resolveDeclaration: (declaration: NodeHandle) => Node | undefined
   ) {
     this.registry = registry;
     this.internPath = internPath;
-    this.rememberLiveHandle = rememberLiveHandle;
     this.resolveDeclaration = resolveDeclaration;
   }
 
@@ -64,7 +61,6 @@ export class NodeHandleInterner {
     const identity = compilerNodeIdentity(declaration.path, declaration.index, declaration.kind);
     const existing = this.nodeIdentityHandles.get(identity);
     if (existing !== undefined) return existing;
-    this.rememberLiveHandle(declaration.path);
     const handle = this.registry.create("node", {
       deferred: true,
       kind: declaration.kind,

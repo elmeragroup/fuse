@@ -180,7 +180,6 @@ class TsgoProject implements BackendProject {
       });
     }
     const sessions = this.sessions;
-    const api = this.opened.api;
     const session = new TsgoExtractionSession(
       this.opened.project,
       this.rootDirectory,
@@ -188,13 +187,7 @@ class TsgoProject implements BackendProject {
       this.provenanceRoot,
       this.cwd,
       this.pathIdentity,
-      (closedSession) => {
-        sessions.delete(closedSession);
-        // The compiler SourceFileCache is project/snapshot-scoped. Session
-        // trees are dropped in session.close; clearing here makes the next
-        // extraction pay for those files again.
-        api.clearSourceFileCache();
-      }
+      (closedSession) => sessions.delete(closedSession)
     );
     this.sessions.add(session);
     return session;
@@ -217,6 +210,8 @@ class TsgoProject implements BackendProject {
     this.closed = true;
     for (const session of this.sessions) session.close();
     this.sessions.clear();
+    // api.close() also drops the project-scoped SourceFileCache, so shared
+    // lib and dependency files are fetched once per project, not per session.
     this.opened.api.close();
   }
 }
