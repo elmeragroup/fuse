@@ -592,7 +592,7 @@
           "type": "\"md\" | \"sm\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"md\"",
-          "description": "Row size, emitted as `data-size`; `md` reads `text-sm`, `sm` reads `text-xs`.",
+          "description": "Row size, emitted as `data-size`. `md` pins the md control rung and the control-type pair; `sm` pins the sm rung with size-owned `text-sm`.",
           "required": false
         },
         {

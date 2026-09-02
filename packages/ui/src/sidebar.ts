@@ -1,8 +1,8 @@
 // Source entry facade for `@elmeragroup/ui/sidebar` (Appendix A). Pure re-export file:
 // explicit named re-exports only — no `export *`, no local declarations, no directives.
 // The exports/barrel generators discover this file; never hand-edit package.json#exports
-// or src/index.ts. The menu-button recipe stays module-private (sidebar.md §4); the
-// viewport probe hook is package-private (sidebar.md §1).
+// or src/index.ts. The menu-button and menu-sub-button recipes stay module-private
+// (sidebar.md §4); the viewport probe hook is package-private (sidebar.md §1).
 export {
   SIDEBAR_COOKIE_MAX_AGE,
   SIDEBAR_COOKIE_NAME,
