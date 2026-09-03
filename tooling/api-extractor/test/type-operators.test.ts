@@ -5,7 +5,7 @@ import type { ExtractionResult } from "../src/index.ts";
 import type { SemanticType, TypeOperatorResolutionKind } from "../src/model.ts";
 import { extractFixture, fixtureRoot } from "./support/extract.ts";
 
-const tsconfigPath = resolve(fixtureRoot, "issue-09-tsconfig.json");
+const tsconfigPath = resolve(fixtureRoot, "type-operators-tsconfig.json");
 
 describe("type operators on the ported upstream fixtures", () => {
   it("preserves the authored operator beside its resolved key set", async () => {
@@ -54,7 +54,7 @@ describe("type operators in the model type", () => {
   });
 });
 
-const fixtureDirectory = resolve(import.meta.dirname, "fixtures/issue-09-review");
+const fixtureDirectory = resolve(import.meta.dirname, "fixtures/type-operator-keyof-and-unique-symbols");
 
 async function extract(file: string): Promise<ExtractionResult> {
   return extractFixture(

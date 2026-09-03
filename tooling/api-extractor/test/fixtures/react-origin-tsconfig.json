@@ -10,7 +10,7 @@
 		"skipLibCheck": false
 	},
 	"include": [
-		"issue-12-review/input.tsx",
+		"react-wrapper-provenance/input.tsx",
 		"base-ui-component/input.tsx",
 		"react-forward-ref-component/input.tsx",
 		"react-forward-ref-union-props/input.tsx",

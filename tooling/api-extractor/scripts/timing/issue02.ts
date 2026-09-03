@@ -25,9 +25,9 @@ import {
 import type { GoNoGoArtifact, TimingReport } from "../fixture-evidence.ts";
 import { boundaryStatuses, timedExtraction } from "./shared.ts";
 
-const reportPath = join(fixtureDirectory, "issue-02-timing.json");
+const reportPath = join(fixtureDirectory, "timing-boundary.json");
 const goNoGoPath = join(fixtureDirectory, "issue-02-go-no-go.json");
-const tsconfigPath = join(fixtureDirectory, "issue-02-tsconfig.json");
+const tsconfigPath = join(fixtureDirectory, "timing-boundary-tsconfig.json");
 /** The go/no-go artifact names the deterministic IPC gate; wall-clock fields are recorded observations only. */
 const issue02IpcThreshold = "each fixture's requestCount and bytesReceived <= its catalog ceiling";
 const expectedFixtureOrder = issue02TimingFixtures.map((fixture) => fixture.fixture);
@@ -255,7 +255,7 @@ export async function runIssue02Timing(mode: "check" | "write"): Promise<void> {
         outputRoot: fixtureDirectory,
         artifacts: [
           {
-            destination: "issue-02-timing.json",
+            destination: "timing-boundary.json",
             content: `${JSON.stringify(measured, null, 2)}\n`,
             evidence: "generated",
           },

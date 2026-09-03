@@ -71,21 +71,21 @@ function normalize(
 const suites: readonly UpstreamSuite[] = [
   {
     label: "Issue 03 object APIs",
-    tsconfig: "issue-03-tsconfig.json",
+    tsconfig: "object-api-tsconfig.json",
     fixtures: normalize(issue03UpstreamFixtures),
     totals: { total: 5, reviewedDivergences: 0 },
     recoverableWarnings: "none",
   },
   {
     label: "Issue 04 unions and intersections",
-    tsconfig: "issue-04-tsconfig.json",
+    tsconfig: "canonicalization-tsconfig.json",
     fixtures: normalize(issue04CanonicalizationFixtures),
     totals: { total: 12, reviewedDivergences: 1 },
     recoverableWarnings: "none",
   },
   {
     label: "Issue 05 containers",
-    tsconfig: "issue-05-tsconfig.json",
+    tsconfig: "containers-tsconfig.json",
     fixtures: normalize(issue05ContainerFixtures),
     families: ["array", "indexSignature", "mappedKey", "readonlyArray", "record", "recursive", "tuple"],
     totals: { total: 25, reviewedDivergences: 0 },
@@ -93,7 +93,7 @@ const suites: readonly UpstreamSuite[] = [
   },
   {
     label: "Issue 06 classes and callables",
-    tsconfig: "issue-06-tsconfig.json",
+    tsconfig: "classes-and-callables-tsconfig.json",
     fixtures: normalize(issue06CallableFixtures),
     families: ["callable", "class", "method", "overload"],
     totals: { total: 9, reviewedDivergences: 0 },
@@ -101,7 +101,7 @@ const suites: readonly UpstreamSuite[] = [
   },
   {
     label: "Issue 07 generics and aliases",
-    tsconfig: "issue-07-tsconfig.json",
+    tsconfig: "generics-tsconfig.json",
     fixtures: normalize(issue07GenericFixtures),
     families: [
       "alias",
@@ -118,7 +118,7 @@ const suites: readonly UpstreamSuite[] = [
   },
   {
     label: "Issue 08 mapped types",
-    tsconfig: "issue-08-tsconfig.json",
+    tsconfig: "mapped-types-tsconfig.json",
     fixtures: normalize(issue08MappedFixtures),
     families: ["external", "modifiers", "openDomain"],
     totals: { total: 3, reviewedDivergences: 0 },
@@ -126,7 +126,7 @@ const suites: readonly UpstreamSuite[] = [
   },
   {
     label: "Issue 09 type operators",
-    tsconfig: "issue-09-tsconfig.json",
+    tsconfig: "type-operators-tsconfig.json",
     fixtures: normalize(issue09TypeOperatorFixtures),
     families: ["alias", "conditional", "indexedAccess", "keyof"],
     totals: { total: 5, reviewedDivergences: 1 },
@@ -134,7 +134,7 @@ const suites: readonly UpstreamSuite[] = [
   },
   {
     label: "Issue 10 module surface",
-    tsconfig: "issue-10-tsconfig.json",
+    tsconfig: "module-surface-tsconfig.json",
     fixtures: normalize(issue10ModuleSurfaceFixtures),
     families: ["mergedDeclarations", "namespaces", "reexports"],
     totals: { total: 5, reviewedDivergences: 1 },
@@ -142,7 +142,7 @@ const suites: readonly UpstreamSuite[] = [
   },
   {
     label: "Issue 11 React components",
-    tsconfig: "issue-11-tsconfig.json",
+    tsconfig: "react-recognition-tsconfig.json",
     fixtures: normalize(issue11ReactFixtures),
     families: ["componentOverloads", "declaration", "hooks", "props", "returnTypes", "variable"],
     totals: { total: 10, reviewedDivergences: 0 },
@@ -150,7 +150,7 @@ const suites: readonly UpstreamSuite[] = [
   },
   {
     label: "Issue 12 wrapped React components",
-    tsconfig: "issue-12-tsconfig.json",
+    tsconfig: "react-origin-tsconfig.json",
     fixtures: normalize(issue12ReactFixtures),
     totals: {
       total: 4,
@@ -160,7 +160,7 @@ const suites: readonly UpstreamSuite[] = [
   },
   {
     label: "Issue 13 external types",
-    tsconfig: "issue-13-tsconfig.json",
+    tsconfig: "external-types-tsconfig.json",
     fixtures: normalize(issue13ExternalFixtures),
     families: [
       "componentUnions",

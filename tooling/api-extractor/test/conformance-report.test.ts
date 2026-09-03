@@ -188,7 +188,7 @@ describe("Issue 14 conformance report", () => {
     const accesses: string[] = [];
     const result = await extractFixture(
       {
-        tsconfigPath: resolve(fixtureRoot, "issue-14-tsconfig.json"),
+        tsconfigPath: resolve(fixtureRoot, "conformance-tsconfig.json"),
         fileSystem: createFixtureFileSystem((access) => {
           if (access.virtual && access.path === moduleImportsOnlyDependency) {
             accesses.push(access.operation);
@@ -229,7 +229,7 @@ describe("Issue 14 conformance report", () => {
         }).pipe(
           Effect.provide(
             ProjectExtractor.live({
-              tsconfigPath: resolve(fixtureRoot, "issue-14-tsconfig.json"),
+              tsconfigPath: resolve(fixtureRoot, "conformance-tsconfig.json"),
               fileSystem: createFixtureFileSystem(),
             })
           )

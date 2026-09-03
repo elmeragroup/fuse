@@ -16,7 +16,7 @@ import {
 } from "../scripts/timing/issue14.ts";
 import type { Issue14TimingReport } from "../scripts/timing/issue14.ts";
 
-const reportPath = resolve(import.meta.dirname, "fixtures/issue-14-timing.json");
+const reportPath = resolve(import.meta.dirname, "fixtures/timing-conformance.json");
 
 const timingFields = ["roundTripMs", "serverTimeMs", "transportOverheadMs"] as const;
 const integerFields = [

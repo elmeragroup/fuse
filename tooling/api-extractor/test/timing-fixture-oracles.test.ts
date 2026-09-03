@@ -11,7 +11,7 @@ import {
 import { extractFixture } from "./support/extract.ts";
 
 const fixtureDirectory = resolve(import.meta.dirname, "fixtures");
-const tsconfigPath = resolve(fixtureDirectory, "issue-02-tsconfig.json");
+const tsconfigPath = resolve(fixtureDirectory, "timing-boundary-tsconfig.json");
 
 describe("Issue 02 ProjectExtractor conformance", () => {
   it.each(issue02TimingFixtures.slice(0, 3))(

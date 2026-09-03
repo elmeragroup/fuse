@@ -5,7 +5,7 @@ import type { ExtractionResult, ProvenanceEntry } from "../src/index.ts";
 import type { ObjectNode, SemanticType } from "../src/model.ts";
 import { extractFixture } from "./support/extract.ts";
 
-const fixtureDirectory = resolve(import.meta.dirname, "fixtures/issue-08-review");
+const fixtureDirectory = resolve(import.meta.dirname, "fixtures/mapped-type-remaps");
 
 async function extract(file: string): Promise<ExtractionResult> {
   return extractFixture(

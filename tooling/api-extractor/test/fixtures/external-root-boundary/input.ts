@@ -4,8 +4,8 @@
  * interface/value roots intentionally remain anonymous empty objects under the
  * current TypeScript 7 policy.
  */
-export type { BareInterface } from "issue-13-root-dependency";
-export { bareValue } from "issue-13-root-dependency";
+export type { BareInterface } from "external-root-dependency";
+export { bareValue } from "external-root-dependency";
 
 export type { Array as ProjectArray } from "./src/typescript/lib/lib.dom.js";
 export type { ReadonlyArray as ProjectReadonlyArray } from "./src/@typescript/tsc/lib/lib.es2022.js";
@@ -42,7 +42,7 @@ export type ProjectNamespaceSubstitution = {
 };
 
 interface Holder<T> {
-  ref: import("issue-13-root-dependency").React.Ref<T>;
+  ref: import("external-root-dependency").React.Ref<T>;
 }
 
 export type ProjectNestedNamespaceSubstitution = Holder<Outer.Local>;

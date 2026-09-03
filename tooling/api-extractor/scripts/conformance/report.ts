@@ -42,8 +42,8 @@ import type { TypecheckResult } from "./typecheck.ts";
 
 const packageDirectory = resolve(import.meta.dirname, "../..");
 const fixtureDirectory = join(packageDirectory, "test/fixtures");
-const configPath = join(fixtureDirectory, "issue-14-tsconfig.json");
-const reportPath = join(fixtureDirectory, "issue-14-conformance.json");
+const configPath = join(fixtureDirectory, "conformance-tsconfig.json");
+const reportPath = join(fixtureDirectory, "conformance.json");
 const upstreamCommit = pinnedUpstream.commit;
 const expectedFixtureCount = 116;
 
@@ -655,7 +655,7 @@ export async function refreshWarningEvidence(
     };
   });
   artifacts.push({
-    destination: "issue-14-conformance.json",
+    destination: "conformance.json",
     content: `${JSON.stringify(measured, null, 2)}\n`,
     evidence: "generated",
   });
@@ -782,7 +782,7 @@ async function main(): Promise<void> {
     assertReferenceEvidence(measured.referenceCheck, true);
     await writeEvidenceBatch([
       {
-        destination: "issue-14-conformance.json",
+        destination: "conformance.json",
         content: `${JSON.stringify(measured, null, 2)}\n`,
         evidence: "generated",
       },

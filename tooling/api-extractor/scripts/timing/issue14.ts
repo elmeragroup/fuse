@@ -29,9 +29,9 @@ import type { TimingReport } from "../fixture-evidence.ts";
 import { boundaryStatuses, timedExtraction } from "./shared.ts";
 import type { BoundaryStatuses } from "./shared.ts";
 
-const reportPath = join(fixtureDirectory, "issue-14-timing.json");
-const baselinePath = join(fixtureDirectory, "issue-02-timing.json");
-const configPath = join(fixtureDirectory, "issue-14-tsconfig.json");
+const reportPath = join(fixtureDirectory, "timing-conformance.json");
+const baselinePath = join(fixtureDirectory, "timing-boundary.json");
+const configPath = join(fixtureDirectory, "conformance-tsconfig.json");
 export const timingToleranceMs = 0.001;
 /**
  * IPC wall-clock counters are scheduler-sensitive. Keep the durable timing
@@ -78,7 +78,7 @@ export const Issue14TimingReportSchema = Schema.Struct({
     compiler: Schema.Literal(issue14CompilerVersion),
   }),
   baseline: Schema.Struct({
-    report: Schema.Literal("test/fixtures/issue-02-timing.json"),
+    report: Schema.Literal("test/fixtures/timing-boundary.json"),
     aggregate: NumberTotalsSchema,
   }),
   measurement: Schema.Struct({
@@ -434,7 +434,7 @@ function reportFrom(
     command: issue14TimingCommand,
     runtime: currentRuntimeIdentity(),
     baseline: {
-      report: "test/fixtures/issue-02-timing.json" as const,
+      report: "test/fixtures/timing-boundary.json" as const,
       aggregate: baselineAggregate,
     },
     measurement: {
@@ -643,7 +643,7 @@ export async function runIssue14Timing(mode: TimingCheckMode | "write"): Promise
         outputRoot: fixtureDirectory,
         artifacts: [
           {
-            destination: "issue-14-timing.json",
+            destination: "timing-conformance.json",
             content: `${JSON.stringify(measured, null, 2)}\n`,
             evidence: "generated",
           },

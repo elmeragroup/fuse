@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import type { SemanticType } from "../src/model.ts";
 import { extractFixture } from "./support/extract.ts";
 
-const fixtureDirectory = resolve(import.meta.dirname, "fixtures/issue-07-review");
+const fixtureDirectory = resolve(import.meta.dirname, "fixtures/generic-substitution-scope");
 
 function extract(file: string) {
   return extractFixture(

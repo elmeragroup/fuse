@@ -175,7 +175,7 @@ export const fixtureEvidenceCatalog = [
     warnings: { oracleFile: "warnings.tsgo.json", codes: [] },
     metadata: {
       goNoGo: { order: 0, oracle: "immutable-upstream", status: "pass" },
-      packageTypechecks: [{ order: 0, project: "test/fixtures/issue-02-tsconfig.json" }],
+      packageTypechecks: [{ order: 0, project: "test/fixtures/timing-boundary-tsconfig.json" }],
     },
   }),
   fixture("backend-lazy-declarations", "input.ts", ["02"], "not-applicable", {
@@ -207,12 +207,12 @@ export const fixtureEvidenceCatalog = [
       },
       reactAudit: { order: 22, owner: "issue12" },
       packageTypechecks: [
-        { order: 22, project: "test/fixtures/issue-12-tsconfig.json" },
-        { order: 23, project: "test/fixtures/issue-12-origin-review/tsconfig.json" },
-        { order: 24, project: "test/fixtures/issue-12-origin-review/import-equals/tsconfig.json" },
-        { order: 25, project: "test/fixtures/issue-12-origin-review/ambiguous-star/tsconfig.json" },
-        { order: 26, project: "test/fixtures/issue-12-origin-review/angle-assertion/tsconfig.json" },
-        { order: 27, project: "test/fixtures/issue-12-origin-review/same-origin-star/tsconfig.json" },
+        { order: 22, project: "test/fixtures/react-origin-tsconfig.json" },
+        { order: 23, project: "test/fixtures/react-module-origin-forms/tsconfig.json" },
+        { order: 24, project: "test/fixtures/react-module-origin-forms/import-equals/tsconfig.json" },
+        { order: 25, project: "test/fixtures/react-module-origin-forms/ambiguous-star/tsconfig.json" },
+        { order: 26, project: "test/fixtures/react-module-origin-forms/angle-assertion/tsconfig.json" },
+        { order: 27, project: "test/fixtures/react-module-origin-forms/same-origin-star/tsconfig.json" },
         { order: 28, project: "test/fixtures/react-policy-non-react-dependency/tsconfig.json" },
       ],
     },
@@ -225,8 +225,8 @@ export const fixtureEvidenceCatalog = [
     metadata: {
       issueViews: { "06": { order: 0, group: "class" } },
       packageTypechecks: [
-        { order: 10, project: "test/fixtures/issue-06-tsconfig.json" },
-        { order: 11, project: "test/fixtures/issue-06-review/tsconfig.json" },
+        { order: 10, project: "test/fixtures/classes-and-callables-tsconfig.json" },
+        { order: 11, project: "test/fixtures/class-and-callable-members/tsconfig.json" },
       ],
     },
   }),
@@ -259,8 +259,8 @@ export const fixtureEvidenceCatalog = [
     metadata: {
       issueViews: { "04": { order: 0 } },
       packageTypechecks: [
-        { order: 5, project: "test/fixtures/issue-04-tsconfig.json" },
-        { order: 6, project: "test/fixtures/issue-04-canonical/tsconfig.json" },
+        { order: 5, project: "test/fixtures/canonicalization-tsconfig.json" },
+        { order: 6, project: "test/fixtures/canonical-cycles-and-ordering/tsconfig.json" },
       ],
     },
   }),
@@ -268,25 +268,25 @@ export const fixtureEvidenceCatalog = [
     metadata: {
       issueViews: { "03": { order: 1 } },
       packageTypechecks: [
-        { order: 1, project: "test/fixtures/issue-03-tsconfig.json" },
-        { order: 2, project: "test/fixtures/issue-03-object-apis/tsconfig.json" },
-        { order: 3, project: "test/fixtures/issue-03-review/tsconfig.json" },
-        { order: 4, project: "test/fixtures/issue-03-review/MixedRepo/tsconfig.json" },
+        { order: 1, project: "test/fixtures/object-api-tsconfig.json" },
+        { order: 2, project: "test/fixtures/object-api-documentation/tsconfig.json" },
+        { order: 3, project: "test/fixtures/mixed-repo-provenance/tsconfig.json" },
+        { order: 4, project: "test/fixtures/mixed-repo-provenance/MixedRepo/tsconfig.json" },
       ],
     },
   }),
   fixture("external-conditional-type-resolution", "input.ts", ["13", "14"], "immutable-upstream", {
     metadata: {
       issueViews: { "13": { order: 0, group: "externalConditional" } },
-      packageTypechecks: [{ order: 29, project: "test/fixtures/issue-13-tsconfig.json" }],
+      packageTypechecks: [{ order: 29, project: "test/fixtures/external-types-tsconfig.json" }],
     },
   }),
   fixture("external-mapped-type-name-preservation", "input.ts", ["08", "14"], "immutable-upstream", {
     metadata: {
       issueViews: { "08": { order: 0, group: "external" } },
       packageTypechecks: [
-        { order: 14, project: "test/fixtures/issue-08-tsconfig.json" },
-        { order: 15, project: "test/fixtures/issue-08-review/tsconfig.json" },
+        { order: 14, project: "test/fixtures/mapped-types-tsconfig.json" },
+        { order: 15, project: "test/fixtures/mapped-type-remaps/tsconfig.json" },
       ],
     },
   }),
@@ -313,8 +313,8 @@ export const fixtureEvidenceCatalog = [
     metadata: {
       issueViews: { "07": { order: 0, group: "alias" } },
       packageTypechecks: [
-        { order: 12, project: "test/fixtures/issue-07-tsconfig.json" },
-        { order: 13, project: "test/fixtures/issue-07-review/tsconfig.json" },
+        { order: 12, project: "test/fixtures/generics-tsconfig.json" },
+        { order: 13, project: "test/fixtures/generic-substitution-scope/tsconfig.json" },
       ],
     },
   }),
@@ -376,8 +376,8 @@ export const fixtureEvidenceCatalog = [
     metadata: {
       issueViews: { "10": { order: 0, group: "mergedDeclarations" } },
       packageTypechecks: [
-        { order: 18, project: "test/fixtures/issue-10-tsconfig.json" },
-        { order: 19, project: "test/fixtures/issue-10-review/tsconfig.json" },
+        { order: 18, project: "test/fixtures/module-surface-tsconfig.json" },
+        { order: 19, project: "test/fixtures/module-surface-reexport-shapes/tsconfig.json" },
       ],
     },
   }),
@@ -558,8 +558,8 @@ export const fixtureEvidenceCatalog = [
       issueViews: { "11": { order: 0, group: "declaration" } },
       reactAudit: { order: 0, owner: "issue11" },
       packageTypechecks: [
-        { order: 20, project: "test/fixtures/issue-11-tsconfig.json" },
-        { order: 21, project: "test/fixtures/issue-11-review/tsconfig.json" },
+        { order: 20, project: "test/fixtures/react-recognition-tsconfig.json" },
+        { order: 21, project: "test/fixtures/react-recognition-boundary/tsconfig.json" },
       ],
     },
   }),
@@ -787,8 +787,8 @@ export const fixtureEvidenceCatalog = [
     metadata: {
       issueViews: { "09": { order: 0, group: "alias" } },
       packageTypechecks: [
-        { order: 16, project: "test/fixtures/issue-09-tsconfig.json" },
-        { order: 17, project: "test/fixtures/issue-09-review/tsconfig.json" },
+        { order: 16, project: "test/fixtures/type-operators-tsconfig.json" },
+        { order: 17, project: "test/fixtures/type-operator-keyof-and-unique-symbols/tsconfig.json" },
       ],
     },
   }),
@@ -802,9 +802,9 @@ export const fixtureEvidenceCatalog = [
     metadata: {
       issueViews: { "05": { order: 0, group: "array" } },
       packageTypechecks: [
-        { order: 7, project: "test/fixtures/issue-05-tsconfig.json" },
-        { order: 8, project: "test/fixtures/issue-05-containers/tsconfig.json" },
-        { order: 9, project: "test/fixtures/issue-05-review/tsconfig.json" },
+        { order: 7, project: "test/fixtures/containers-tsconfig.json" },
+        { order: 8, project: "test/fixtures/container-kinds-and-tuples/tsconfig.json" },
+        { order: 9, project: "test/fixtures/container-open-rest-and-shadowing/tsconfig.json" },
       ],
     },
   }),

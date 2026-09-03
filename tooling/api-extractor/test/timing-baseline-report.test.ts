@@ -22,8 +22,8 @@ import { ProjectExtractor } from "../src/index.ts";
 import { InternalProjectExtractorTiming, timedProjectExtractorLayer } from "../src/internal/timing.ts";
 
 const fixtureDirectory = resolve(import.meta.dirname, "fixtures");
-const tsconfigPath = resolve(fixtureDirectory, "issue-02-tsconfig.json");
-const timingReportPath = resolve(fixtureDirectory, "issue-02-timing.json");
+const tsconfigPath = resolve(fixtureDirectory, "timing-boundary-tsconfig.json");
+const timingReportPath = resolve(fixtureDirectory, "timing-boundary.json");
 const goNoGoPath = resolve(fixtureDirectory, "issue-02-go-no-go.json");
 
 describe("Issue 02 compiler timing boundary", () => {

@@ -125,12 +125,12 @@ describe("fixture evidence catalog", () => {
         timing: ["issue02", "issue14"],
         warningEvidence: true,
         typecheckProjects: [
-          "test/fixtures/issue-12-tsconfig.json",
-          "test/fixtures/issue-12-origin-review/tsconfig.json",
-          "test/fixtures/issue-12-origin-review/import-equals/tsconfig.json",
-          "test/fixtures/issue-12-origin-review/ambiguous-star/tsconfig.json",
-          "test/fixtures/issue-12-origin-review/angle-assertion/tsconfig.json",
-          "test/fixtures/issue-12-origin-review/same-origin-star/tsconfig.json",
+          "test/fixtures/react-origin-tsconfig.json",
+          "test/fixtures/react-module-origin-forms/tsconfig.json",
+          "test/fixtures/react-module-origin-forms/import-equals/tsconfig.json",
+          "test/fixtures/react-module-origin-forms/ambiguous-star/tsconfig.json",
+          "test/fixtures/react-module-origin-forms/angle-assertion/tsconfig.json",
+          "test/fixtures/react-module-origin-forms/same-origin-star/tsconfig.json",
           "test/fixtures/react-policy-non-react-dependency/tsconfig.json",
         ],
       },
@@ -203,7 +203,7 @@ describe("fixture evidence catalog", () => {
       ],
       packageTypechecks: {
         count: 36,
-        first: "test/fixtures/issue-02-tsconfig.json",
+        first: "test/fixtures/timing-boundary-tsconfig.json",
         last: "test/fixtures/render-prop-union/tsconfig.json",
       },
     });
@@ -407,7 +407,7 @@ describe("fixture evidence catalog", () => {
         metadata: {
           ...fixture.evidence.metadata,
           packageTypechecks: [
-            { order: 32, project: "test/fixtures/issue-03-object-apis/tsconfig.json" },
+            { order: 32, project: "test/fixtures/object-api-documentation/tsconfig.json" },
             { order: 31, project: "test/fixtures/backend-lazy-declarations/tsconfig.json" },
           ],
         },
@@ -421,7 +421,7 @@ describe("fixture evidence catalog", () => {
       },
       {
         fixture: "backend-lazy-declarations",
-        project: "test/fixtures/issue-03-object-apis/tsconfig.json",
+        project: "test/fixtures/object-api-documentation/tsconfig.json",
       },
     ]);
 
@@ -433,7 +433,7 @@ describe("fixture evidence catalog", () => {
           ...withMultipleTypechecks.evidence.metadata,
           packageTypechecks: [
             { order: 31, project: "test/fixtures/backend-lazy-declarations/tsconfig.json" },
-            { order: 31, project: "test/fixtures/issue-03-object-apis/tsconfig.json" },
+            { order: 31, project: "test/fixtures/object-api-documentation/tsconfig.json" },
           ],
         },
       },

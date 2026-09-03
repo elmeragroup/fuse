@@ -6,7 +6,7 @@
     "compiler": "typescript@7.0.2"
   },
   "baseline": {
-    "report": "test/fixtures/issue-02-timing.json",
+    "report": "test/fixtures/timing-boundary.json",
     "aggregate": {
       "requestCount": 1097,
       "roundTripMs": 179.67261400000103,

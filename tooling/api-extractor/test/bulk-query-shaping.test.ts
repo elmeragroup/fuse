@@ -14,10 +14,10 @@ import type { ProjectFileSystem } from "../src/options.ts";
 import { extractFixture } from "./support/extract.ts";
 
 const fixtureDirectory = resolve(import.meta.dirname, "fixtures");
-const objectDirectory = resolve(fixtureDirectory, "issue-03-object-apis");
+const objectDirectory = resolve(fixtureDirectory, "object-api-documentation");
 const objectTsconfigPath = resolve(objectDirectory, "tsconfig.json");
 const objectInputPath = resolve(objectDirectory, "input.ts");
-const enumTsconfigPath = resolve(fixtureDirectory, "issue-03-tsconfig.json");
+const enumTsconfigPath = resolve(fixtureDirectory, "object-api-tsconfig.json");
 const enumInputPath = resolve(fixtureDirectory, "enum-members-values-and-docs/input.ts");
 const packageDirectory = resolve(fixtureDirectory, "package-selective-external-types");
 const packageTsconfigPath = resolve(packageDirectory, "tsconfig.json");

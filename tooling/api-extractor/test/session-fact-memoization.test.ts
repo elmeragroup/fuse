@@ -8,7 +8,7 @@ const fixtureDirectory = resolve(import.meta.dirname, "fixtures");
 const basicDirectory = resolve(fixtureDirectory, "basic");
 const basicTsconfigPath = resolve(basicDirectory, "tsconfig.json");
 const basicInputPath = resolve(basicDirectory, "input.ts");
-const enumTsconfigPath = resolve(fixtureDirectory, "issue-03-tsconfig.json");
+const enumTsconfigPath = resolve(fixtureDirectory, "object-api-tsconfig.json");
 const enumInputPath = resolve(fixtureDirectory, "enum-members-values-and-docs/input.ts");
 
 function requestCount(project: BackendProject): number {

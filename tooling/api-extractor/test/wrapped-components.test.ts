@@ -16,7 +16,7 @@ import { ProvenanceEntrySchema } from "../src/provenance.ts";
 import { ExtractWarningSchema } from "../src/warnings.ts";
 import { extractFixture, fixtureRoot } from "./support/extract.ts";
 
-const tsconfigPath = resolve(fixtureRoot, "issue-12-tsconfig.json");
+const tsconfigPath = resolve(fixtureRoot, "react-origin-tsconfig.json");
 
 function readJson(fixture: string, file: string): Schema.Json {
   return Schema.decodeUnknownSync(Schema.Json)(
@@ -222,7 +222,7 @@ describe("wrapped and compound component representation", () => {
   it("supports nested wrappers and namespace compound members at the public seam", async () => {
     const result = await extractFixture(
       { tsconfigPath },
-      resolve(fixtureRoot, "issue-12-review", "input.tsx")
+      resolve(fixtureRoot, "react-wrapper-provenance", "input.tsx")
     );
     const nested = component(result, "NestedWrapped");
     expect(nested.typeName).toMatchObject({ name: "NamedExoticComponent", namespaces: ["React"] });
@@ -276,7 +276,7 @@ describe("wrapped and compound component representation", () => {
   it("follows only React wrappers and never imports arbitrary callback or comparator props", async () => {
     const result = await extractFixture(
       { tsconfigPath },
-      resolve(fixtureRoot, "issue-12-review", "input.tsx")
+      resolve(fixtureRoot, "react-wrapper-provenance", "input.tsx")
     );
 
     expect(component(result, "ArbitraryWrapped").props.map((entry) => entry.name)).toEqual(["resolvedOnly"]);
@@ -298,7 +298,7 @@ describe("wrapped and compound component representation", () => {
   it("derives overloaded wrapper props from public signatures only", async () => {
     const result = await extractFixture(
       { tsconfigPath },
-      resolve(fixtureRoot, "issue-12-review", "input.tsx")
+      resolve(fixtureRoot, "react-wrapper-provenance", "input.tsx")
     );
 
     expect(component(result, "ImplementationLeakWrapped").props.map((entry) => entry.name)).toEqual([

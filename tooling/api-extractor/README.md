@@ -114,7 +114,7 @@ and 19 with a reviewed TypeScript 7 divergence. Their evidence files are:
   A fixture that still matches `output.json` does not keep a duplicate `output.tsgo.json`.
 - `warnings.tsgo.json` records reviewed recoverable warnings, including empty warning sets where the
   absence itself is evidence.
-- `issue-14-conformance.json` is the generated report that binds fixture input, selected oracle,
+- `conformance.json` is the generated report that binds fixture input, selected oracle,
   warning, type-check, and pinned-reference evidence.
 
 Use these workflows from `tooling/api-extractor`:
@@ -186,7 +186,7 @@ runs one plan. Deterministic counters must match exactly and scheduler-sensitive
 recorded observations that only need to stay finite and non-negative; no check depends on
 milliseconds. The IPC stop condition is decided by request count and bytes received against the
 catalog ceilings: per fixture in the Issue 02 and external-selection plans, and summed over the four
-fixtures in the Issue 14 plan, so a dense walk cannot trade one for a megabyte dump. `test/fixtures/issue-02-timing.json`
+fixtures in the Issue 14 plan, so a dense walk cannot trade one for a megabyte dump. `test/fixtures/timing-boundary.json`
 is the immutable pre-optimization baseline the Issue 14 plan measures against; only its ceiling
 metadata moves with the catalog. Refresh the Issue 14 report (`report:timing:issue14`) only after
 reviewing the semantic output and the reason for a timing change.
