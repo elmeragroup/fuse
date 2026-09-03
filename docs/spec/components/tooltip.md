@@ -10,12 +10,12 @@
 
 ## 2 Anatomy
 
-| Part               | Base                          | Notes                                                                                                                            |
-| ------------------ | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `Tooltip.Provider` | `TooltipPrimitive.Provider`   | app/section-level grouping: shared `delay` (our default `0`) and skip-delay hand-off between neighboring tooltips; no DOM        |
-| `Tooltip.Root`     | `TooltipPrimitive.Root`       | open-state owner, no DOM; per-tooltip `delay` prop wraps a scoped Provider (§8)                                                  |
-| `Tooltip.Trigger`  | `TooltipPrimitive.Trigger`    | bare re-export; hover/focus anchor                                                                                               |
-| `Tooltip.Content`  | `Portal > Positioner > Popup` | inverted pill (`bg-foreground text-background`, `text-xs`, `max-w-xs`); always renders `TooltipPrimitive.Arrow` after `children` |
+| Part               | Base                          | Notes                                                                                                                                     |
+| ------------------ | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `Tooltip.Provider` | `TooltipPrimitive.Provider`   | app/section-level grouping: shared `delay` (our default `0`) and skip-delay hand-off between neighboring tooltips; no DOM                 |
+| `Tooltip.Root`     | `TooltipPrimitive.Root`       | open-state owner, no DOM; per-tooltip `delay` prop wraps a scoped Provider (§8)                                                           |
+| `Tooltip.Trigger`  | `TooltipPrimitive.Trigger`    | hover/focus anchor; stamps `data-slot`, composes the self-focus ring, and carries the `aria-describedby` pointing at the popup (§7, §8.9) |
+| `Tooltip.Content`  | `Portal > Positioner > Popup` | inverted pill (`bg-foreground text-background`, `text-xs`, `max-w-xs`); always renders `TooltipPrimitive.Arrow` after `children`          |
 
 ```tsx
 <Tooltip.Provider>
@@ -51,13 +51,13 @@ All rendering parts take `className` (merged via `cn`) and forward the rest of t
 
 **Tooltip.Content** — `ComponentProps<TooltipPrimitive.Popup>` plus `Pick<ComponentProps<TooltipPrimitive.Positioner>, "align" | "alignOffset" | "side" | "sideOffset">` (destructured and forwarded to the internal Positioner) plus:
 
-| Prop          | Type                                    | Default                      | Notes                                                                |
-| ------------- | --------------------------------------- | ---------------------------- | -------------------------------------------------------------------- |
-| `align`       | Positioner `align`                      | `"center"`                   |                                                                      |
-| `alignOffset` | `number`                                | `0`                          |                                                                      |
-| `side`        | Positioner `side`                       | `"top"`                      | tooltips open upward by default (vs Popover/DropdownMenu `"bottom"`) |
-| `sideOffset`  | `number`                                | `4`                          |                                                                      |
-| `container`   | `HTMLElement \| RefObject<HTMLElement>` | nearest `ThemeScope` element | forwarded to the internal `TooltipPrimitive.Portal` (§8)             |
+| Prop          | Type                                            | Default                      | Notes                                                                |
+| ------------- | ----------------------------------------------- | ---------------------------- | -------------------------------------------------------------------- |
+| `align`       | Positioner `align`                              | `"center"`                   |                                                                      |
+| `alignOffset` | `number`                                        | `0`                          |                                                                      |
+| `side`        | Positioner `side`                               | `"top"`                      | tooltips open upward by default (vs Popover/DropdownMenu `"bottom"`) |
+| `sideOffset`  | `number`                                        | `4`                          |                                                                      |
+| `container`   | `HTMLElement \| RefObject<HTMLElement \| null>` | nearest `ThemeScope` element | forwarded to the internal `TooltipPrimitive.Portal` (§8)             |
 
 ## 4 Variants
 
@@ -82,7 +82,7 @@ No component-specific `tv` recipe and no variant axes — single inverted style 
 
 ## 7 Accessibility
 
-- Base-ui wires `aria-describedby` from trigger to popup; the popup content is descriptive only (never put interactive controls in a tooltip).
+- The trigger's `aria-describedby` is **wired by this component, not by base-ui**: `Tooltip.Root` mints one `useId` per tooltip and publishes it on a package-private context; `Tooltip.Trigger` reads it as `aria-describedby` and `Tooltip.Content` stamps the same value as the popup's `id` plus an explicit `role="tooltip"` (§8.9). Base-ui 1.6.0 wires neither, so removing either half silently drops the description. The popup content is descriptive only (never put interactive controls in a tooltip).
 - Opens on pointer hover (after the effective provider `delay`) and on keyboard focus of the trigger (focus-open is instant); closes on hover/focus leaving, and immediately on Escape.
 - Grouping: within one `Tooltip.Provider`, moving between triggers inside the skip-delay window opens the next tooltip without re-waiting the delay.
 - The tooltip never receives focus; `hoverable` (base-ui default) keeps it open while the pointer is over the popup.
@@ -98,6 +98,7 @@ No component-specific `tv` recipe and no variant axes — single inverted style 
 6. **Arrow show-behavior deliberately not unified with Popover**: Tooltip keeps its _always-rendered_ `bg-foreground fill-foreground` token-inverted arrow (already token-clean in the ref); Popover keeps opt-in `showArrow` default `false`. Documented as an intentional family difference, not a divergence to fix.
 7. **`z-50` deduped**: the ref sets `isolate z-50` on the Positioner _and_ `z-50` on the Popup (plus `z-50` on the Arrow, which becomes redundant): kept once on the outermost layer (Positioner) per the flat z-strategy — every overlay gets exactly one `z-50` at its outermost portalled element.
 8. **Focus unified:** Trigger composes the canonical self-focus adapter, including when rendered without a Button target.
+9. **`aria-describedby` and `role="tooltip"` are hand-rolled** (2026-09-03): §2 called Trigger a bare re-export and §7 credited base-ui with the description wiring. Base-ui 1.6.0 does neither, so Root mints a `useId`, a private context carries it, Trigger sets `aria-describedby` and Popup sets the matching `id` and `role="tooltip"`. Kept as compensation for the primitive; the three halves are one mechanism and are locked by the §9 name/description test.
 
 Kept faithfully: Provider `delay` default `0`; inverted `bg-foreground text-background` pill with `text-xs max-w-xs px-3 py-1.5`; the full arrow placement class set incl. `rounded-[2px]` and `translate-y-[calc(-50%-2px)]`; no shadow/ring on the popup (tooltips fly frameless); `side="top"` default.
 

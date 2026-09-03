@@ -53,14 +53,14 @@ All rendering parts take `className` (merged via `cn`) and forward the rest of t
 
 **Select.Content** — `ComponentProps<SelectPrimitive.Popup>` plus positioner props (destructured and forwarded to `SelectPrimitive.Positioner`) plus the conventions' overlay `container`:
 
-| Prop                   | Type                                    | Default                      | Notes                                                                            |
-| ---------------------- | --------------------------------------- | ---------------------------- | -------------------------------------------------------------------------------- |
-| `side`                 | Positioner `side`                       | `"bottom"`                   |                                                                                  |
-| `sideOffset`           | `number`                                | `4`                          |                                                                                  |
-| `align`                | Positioner `align`                      | `"center"`                   |                                                                                  |
-| `alignOffset`          | `number`                                | `0`                          |                                                                                  |
-| `alignItemWithTrigger` | `boolean`                               | `true`                       | macOS-style: selected item overlays the trigger; emitted as `data-align-trigger` |
-| `container`            | `HTMLElement \| RefObject<HTMLElement>` | nearest `ThemeScope` element | portal target (§8)                                                               |
+| Prop                   | Type                                            | Default                      | Notes                                                                            |
+| ---------------------- | ----------------------------------------------- | ---------------------------- | -------------------------------------------------------------------------------- |
+| `side`                 | Positioner `side`                               | `"bottom"`                   |                                                                                  |
+| `sideOffset`           | `number`                                        | `4`                          |                                                                                  |
+| `align`                | Positioner `align`                              | `"center"`                   |                                                                                  |
+| `alignOffset`          | `number`                                        | `0`                          |                                                                                  |
+| `alignItemWithTrigger` | `boolean`                                       | `true`                       | macOS-style: selected item overlays the trigger; emitted as `data-align-trigger` |
+| `container`            | `HTMLElement \| RefObject<HTMLElement \| null>` | nearest `ThemeScope` element | portal target (§8)                                                               |
 
 `children` are wrapped in `SelectPrimitive.List` between the two scroll buttons.
 

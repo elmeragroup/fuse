@@ -39,6 +39,12 @@ is decoration: React Aria names the rows on the segments themselves ("month, Sta
 Date" / "month, End Date"), so nothing is announced twice. Wrap locale-dependent
 usage in `UiProviders` from `@elmeragroup/ui/react-aria/ui-providers`.
 
+Values are `@internationalized/date` objects — `CalendarDate` and friends — not
+`Date`. That package is a direct install for consumers (`pnpm add
+@internationalized/date`): the demos below import it by name, and the copy shipped
+inside `@elmeragroup/ui` is an implementation detail of the quarantined tier, not a
+re-export.
+
 `onChange` reports whole ranges only, so typing one row and stopping reports
 nothing. In the calendar the first click anchors the range and the second commits
 it and closes the popover; Escape cancels an in-progress selection, dismisses the

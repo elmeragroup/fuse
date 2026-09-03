@@ -29,7 +29,7 @@ The pending/success indicator crossfades via the shared `iconCrossfadeTransition
 
 ## 3 Props
 
-`TextFieldProps` = the table below `& Omit<ComponentProps<"input">, "value" | "defaultValue" | "onChange" | "name" | "className">` — all remaining native input props (`type`, `inputMode`, `maxLength`, `autoComplete`, `aria-*`, …) spread onto the inner Input.
+`TextFieldProps` = the table below `& Omit<ComponentProps<"input">, "value" | "defaultValue" | "onChange" | "name" | "className" | "disabled" | "readOnly" | "required">` — all remaining native input props (`type`, `inputMode`, `maxLength`, `autoComplete`, `aria-*`, …) spread onto the inner Input. The three state keys are omitted on top of the retyped four because the composite owns them through `isDisabled`/`isReadOnly`/`isRequired`, which also drive `Field.Root`; a native twin would let the field chrome and the control disagree. _(Amended 2026-09-03 — the omit list shipped wider than §3 recorded.)_
 
 | Prop           | Type                      | Default | Notes                                                                                                                                                                                        |
 | -------------- | ------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

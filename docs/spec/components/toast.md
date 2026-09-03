@@ -43,9 +43,9 @@ toastManager.add({ type: "success", title: "Saved", description: "Changes stored
 
 **Toast.Viewport** — `ComponentProps<ToastPrimitive.Viewport>` plus:
 
-| Prop        | Type                                    | Default                      | Notes                                                         |
-| ----------- | --------------------------------------- | ---------------------------- | ------------------------------------------------------------- |
-| `container` | `HTMLElement \| RefObject<HTMLElement>` | nearest `ThemeScope` element | forwarded to `ToastPrimitive.Portal` (overlay convention, §8) |
+| Prop        | Type                                            | Default                      | Notes                                                         |
+| ----------- | ----------------------------------------------- | ---------------------------- | ------------------------------------------------------------- |
+| `container` | `HTMLElement \| RefObject<HTMLElement \| null>` | nearest `ThemeScope` element | forwarded to `ToastPrimitive.Portal` (overlay convention, §8) |
 
 **Manager `add`/`update` options** — base-ui's `ToastManagerAddOptions` shape (`id`, `title`, `description`, `type`, `timeout`, `priority: "low" | "high"`, `actionProps`, `data`, `onClose`, `onRemove`). Our wrapper narrows `type` to the styled statuses: `"error" | "info" | "success" | "warning" | "loading"` (unset → neutral). Explicit `priority` always wins; otherwise the package-private manager adapter supplies `"high"` when the resulting type is `"error"` and `"low"` for every other type. An update that omits both `type` and `priority` preserves the existing priority; an update that changes `type` and omits `priority` derives the new default. Both `Toast.useToastManager()` and `Toast.createToastManager()` expose the adapted methods, so in-tree and module-scope calls cannot drift. `add` returns a `toastId`; re-adding an existing `id` updates in place (base-ui upsert, `updateKey` increments). `close(toastId?)` closes one or — with no id — all toasts.
 

@@ -38,6 +38,12 @@ and the next open lands on the selected date's month again (or the current month
 when there is no value). Wrap locale-dependent usage in `UiProviders` from
 `@elmeragroup/ui/react-aria/ui-providers`.
 
+Values are `@internationalized/date` objects — `CalendarDate` and friends — not
+`Date`. That package is a direct install for consumers (`pnpm add
+@internationalized/date`): the demos below import it by name, and the copy shipped
+inside `@elmeragroup/ui` is an implementation detail of the quarantined tier, not a
+re-export.
+
 Escape closes the popover without a change and returns focus to the trigger;
 choosing a day commits it and closes. A read-only picker keeps its popover shut
 and fills the field with the muted surface.

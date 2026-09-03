@@ -36,6 +36,12 @@ surface: standalone it renders borderless, and the picker dialog supplies the
 chrome. Wrap locale-dependent usage in `UiProviders` from
 `@elmeragroup/ui/react-aria/ui-providers`.
 
+Values are `@internationalized/date` objects — `CalendarDate` and friends — not
+`Date`. That package is a direct install for consumers (`pnpm add
+@internationalized/date`): the demos below import it by name, and the copy shipped
+inside `@elmeragroup/ui` is an implementation detail of the quarantined tier, not a
+re-export.
+
 Keyboard range selection anchors on Enter or Space, extends while the arrow keys
 move the focused day, and commits on the second Enter or Space. Escape cancels an
 in-progress selection and restores the previous range.

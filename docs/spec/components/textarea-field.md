@@ -29,7 +29,7 @@ Label row renders when `label` is set or `maxLength` is set, including `maxLengt
 
 ## 3 Props
 
-`Omit<ComponentProps<typeof Textarea>, "value" | "defaultValue" | "onChange">` re-typed plus the composite face:
+`Omit<ComponentProps<typeof Textarea>, "value" | "defaultValue" | "onChange" | "disabled" | "required" | "className">` re-typed plus the composite face — `disabled` and `required` are omitted because `isDisabled`/`isRequired` own them (they also drive `Field.Root`), and `className` because the composite's own `className` targets the inner `Textarea`: _(Amended 2026-09-03 — the omit list shipped wider than §3 recorded.)_
 
 | Prop           | Type                       | Default | Notes                                                                   |
 | -------------- | -------------------------- | ------- | ----------------------------------------------------------------------- |

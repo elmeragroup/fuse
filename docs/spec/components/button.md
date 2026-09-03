@@ -14,12 +14,18 @@ Single part. Wraps `@base-ui/react/button` (`ButtonPrimitive`), which supplies n
 
 ## 3. Props
 
-`ButtonProps = Omit<ComponentProps<typeof ButtonPrimitive>, "className"> & VariantProps<typeof buttonVariants> & { … }`
+`ButtonProps` is a **union of two branches** over one shared surface, `Omit<ComponentProps<typeof ButtonPrimitive>, "className"> & Omit<VariantProps<typeof buttonVariants>, "size"> & { … }`:
+
+- **label branch** — `size?: LabelButtonSize` (`default`, `xs`, `sm`, `lg`), no label requirement;
+- **icon-only branch** — `size: IconButtonSize` (`Extract<ButtonSize, "icon" | \`icon-…\`>`: `icon`, `icon-xs`, `icon-sm`, `icon-lg`, `icon-inline`) **plus a required `aria-label: string`**.
+
+An `icon*` size without `aria-label` is a compile error; that is the mechanical half of the [accessibility](../accessibility.md) §3 icon-only rule. Consumers that re-wrap Button and own the name themselves distribute the `Omit` over both branches (`PopoverInfoButton` does).
 
 | Prop                 | Type                     | Default     | Notes                                                                                                                                                                                                                                                       |
 | -------------------- | ------------------------ | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `variant`            | see §4                   | `"default"` | Recipe axis.                                                                                                                                                                                                                                                |
-| `size`               | see §4                   | `"default"` | Recipe axis.                                                                                                                                                                                                                                                |
+| `size`               | see §4                   | `"default"` | Recipe axis. An `icon*` value selects the icon-only branch above and makes `aria-label` required.                                                                                                                                                           |
+| `aria-label`         | `string`                 | —           | **Required** on the icon-only branch (`size` starts with `icon`); optional elsewhere as an ordinary ARIA pass-through.                                                                                                                                      |
 | `className`          | `string`                 | —           | Merged last via `cn`.                                                                                                                                                                                                                                       |
 | `disabled`           | `boolean`                | `false`     | Base-ui naming (primitive tier). Effective disabled is `disabled \|\| isPending`.                                                                                                                                                                           |
 | `isVisuallyDisabled` | `boolean`                | `false`     | Adds `opacity-70` and calls `event.preventDefault()` in `onMouseDown` (suppresses focus-on-press) while the button **stays interactive** — click, keyboard, and focus-visible all still work. For "looks disabled but explains itself on activation" flows. |
@@ -94,7 +100,8 @@ Sizes `default`, `xs`, `sm`, `icon-xs`, `icon-sm` add `in-data-[slot=button-grou
 2. **`dark:` variants removed** (ref has `dark:bg-input/30`, `dark:aria-invalid:…`, etc.) — forbidden by `no-tailwind-dark-variant`; dark values live behind `[data-theme="dark"]` tokens.
 3. **Kept deliberately:** `isVisuallyDisabled`, `isPending`, `onIntent`/`predictionZoneSize`, tinted (non-solid) `destructive`/`success` variants, radius clamps, public `buttonVariants`.
 4. No namespace conversion — Button is a single component; no flat-export renames.
-5. **Density retokenization:** size-axis height, inline padding, icon-edge padding, gap, and `md`/`lg` type read `--control-*` implementation variables instead of the ref's literal `h-9` / `px-2.5` / `text-sm` ladder. Dense computed metrics match the ref; comfortable is the new column. `sm` sets `text-sm` itself. `icon-inline` stays density-independent.
+5. **Icon-only `aria-label` is type-enforced** (2026-09-03): `ButtonProps` ships as a two-branch union instead of the ref's flat intersection, so an `icon*` size cannot compile without `aria-label` ([accessibility](../accessibility.md) §3). §3 documented the flat intersection until this date; the union has shipped since the component landed, and the text is corrected to it, not the type relaxed.
+6. **Density retokenization:** size-axis height, inline padding, icon-edge padding, gap, and `md`/`lg` type read `--control-*` implementation variables instead of the ref's literal `h-9` / `px-2.5` / `text-sm` ladder. Dense computed metrics match the ref; comfortable is the new column. `sm` sets `text-sm` itself. `icon-inline` stays density-independent.
 
 ## 9. Test requirements
 
