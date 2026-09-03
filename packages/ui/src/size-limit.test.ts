@@ -135,7 +135,7 @@ describe("size-limit harness", () => {
       ceilingFromMeasured(17324)
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "heading")?.ceilingGzip).toBe(
-      ceilingFromMeasured(17289)
+      ceilingFromMeasured(17289) - 10
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "text")?.ceilingGzip).toBe(
       ceilingFromMeasured(17279)
@@ -171,7 +171,7 @@ describe("size-limit harness", () => {
       ceilingFromMeasured(8701)
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "timeline-list")?.ceilingGzip).toBe(
-      ceilingFromMeasured(23555)
+      ceilingFromMeasured(23555) - 3
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "sheet")?.ceilingGzip).toBe(
       ceilingFromMeasured(57208)
@@ -249,7 +249,7 @@ describe("size-limit harness", () => {
       ceilingFromMeasured(40198)
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "checkbox-card")?.ceilingGzip).toBe(
-      ceilingFromMeasured(30194)
+      ceilingFromMeasured(30194) - 6
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "react-aria/ui-providers")?.ceilingGzip).toBe(
       ceilingFromMeasured(1987)
@@ -258,17 +258,17 @@ describe("size-limit harness", () => {
       ceilingFromMeasured(70066)
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "react-aria/calendar")?.ceilingGzip).toBe(
-      ceilingFromMeasured(61023)
+      ceilingFromMeasured(61023) - 24
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "react-aria/range-calendar")?.ceilingGzip).toBe(
-      ceilingFromMeasured(62330)
+      ceilingFromMeasured(62330) - 2
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "react-aria/date-picker")?.ceilingGzip).toBe(
-      ceilingFromMeasured(105312)
+      ceilingFromMeasured(105312) - 662
     );
     expect(
       JS_ENTRY_BUDGETS.find((budget) => budget.name === "react-aria/date-range-picker")?.ceilingGzip
-    ).toBe(ceilingFromMeasured(104800));
+    ).toBe(ceilingFromMeasured(104800) - 648);
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "react-aria/link")?.ceilingGzip).toBe(
       ceilingFromMeasured(31234)
     );
@@ -286,9 +286,10 @@ describe("size-limit harness", () => {
     );
     // styles.css recalibrated 2026-08-25: Table in-frame utilities exceeded 15860, then
     // tightened 2026-09-02 by the gzip bytes `source(none)` removed from the sheet
-    // (ticket 22) rather than banking them as slack.
+    // (ticket 22) rather than banking them as slack, and again 2026-09-03 by the bytes
+    // the shared overlay/field spine took out of it (spec 08 phase-B re-measure).
     expect(CSS_BUDGETS.find((budget) => budget.name === "styles.css")?.ceilingGzip).toBe(
-      ceilingFromMeasured(16843) - (23685 - 23491)
+      ceilingFromMeasured(16843) - (23685 - 23491) - (23491 - 22995)
     );
   });
 

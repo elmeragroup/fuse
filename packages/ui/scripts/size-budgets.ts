@@ -26,7 +26,7 @@
  * ratchet above; the root barrel `.` and `styles.css` are the two shared/aggregate rows
  * and neither grew past its ceiling either). Earlier measurement rounds live in git.
  *
- * Current measurements (gzip bytes, 2026-09-03):
+ * Current measurements (gzip bytes, 2026-09-03). Earlier measurement rounds live in git.
  *   .                            233882
  *   theme                          6172
  *   badge                         15658

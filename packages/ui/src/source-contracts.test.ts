@@ -460,6 +460,12 @@ describe("superseded local forms", () => {
       expect(source, file).not.toContain(gone);
       expect(source, file).toContain("is-text-node");
     }
-    expect(ownedBy("internal/is-text-node.ts", "[object String]")).toEqual([]);
+    // The `Object.prototype.toString.call(v) === "[object String]"` spelling evaded the
+    // anti-slop rule rather than answering it; no source file spells it any more.
+    expect(
+      nonTestSources()
+        .filter((file) => readFileSync(file, "utf8").includes("[object String]"))
+        .map((file) => relative(SRC_ROOT, file))
+    ).toEqual([]);
   }, 30_000);
 });
