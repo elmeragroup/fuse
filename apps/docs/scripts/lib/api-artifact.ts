@@ -15,8 +15,8 @@
 import type { ApiPart, ApiProp, ComponentApiArtifact } from "../../src/lib/docs-model.ts";
 import { API_REGEN_COMMAND } from "../../src/lib/docs-model.ts";
 import { includeBaseUiPrimitiveProps } from "./api-external.ts";
-import { describeComponentApi, openLibraryProject } from "./api.ts";
-import { componentSlugs, resolveComponentPaths } from "./components.ts";
+import { extractLibraryApi, openLibraryProject } from "./api.ts";
+import { docsApiInventory } from "./docs-inspection.ts";
 import { ProblemLog } from "./errors.ts";
 
 export { API_REGEN_COMMAND };
@@ -73,25 +73,20 @@ export type RegeneratedApi = {
  */
 export async function regenerateApiArtifacts(): Promise<RegeneratedApi> {
   const problems = new ProblemLog();
-  const current: { readonly slug: string; readonly parts: readonly ApiPart[] }[] = [];
+  const inventory = docsApiInventory();
   const context = openLibraryProject();
   let enriched: ReadonlyMap<string, readonly ApiPart[]>;
   try {
-    for (const slug of componentSlugs()) {
-      const paths = resolveComponentPaths(slug);
-      const parts = describeComponentApi(
-        context,
-        { entryFile: paths.entryFile, exportNames: paths.apiExportNames },
-        problems
-      );
-      current.push({ slug, parts });
-    }
-    enriched = await includeBaseUiPrimitiveProps(current, context);
+    enriched = await includeBaseUiPrimitiveProps(
+      inventory,
+      extractLibraryApi(context, inventory, problems),
+      context
+    );
   } finally {
     context.close();
   }
   const texts = new Map<string, string>();
-  for (const { slug } of current) {
+  for (const { slug } of inventory) {
     texts.set(slug, serializeApiArtifact(buildApiArtifact(slug, enriched.get(slug) ?? [])));
   }
   return { texts, problems: problems.problems };

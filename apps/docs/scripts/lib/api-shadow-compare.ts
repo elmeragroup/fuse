@@ -9,7 +9,7 @@
 /* oxlint-disable anti-slop/no-runtime-typeof -- recursive canonicalization must distinguish primitive model values. */
 /* oxlint-disable anti-slop/no-known-value-widening -- named-record views are the comparator's canonical boundary. */
 
-import type { ApiPart } from "../../src/lib/docs-model.ts";
+import type { ApiPart, ApiProp } from "../../src/lib/docs-model.ts";
 import type {
   ApiShadowDifference,
   DocsShadowComponentResult,
@@ -19,6 +19,7 @@ import type {
   ReviewedProblemShadowDifference,
   ShadowPartEvidence,
   ShadowProblem,
+  ShadowPropEvidence,
 } from "./api-shadow-types.ts";
 
 type ProblemDifferenceDraft = {
@@ -218,102 +219,114 @@ function compareNamedOrder<T extends { name: string }>(
   }
 }
 
-function visiblePart(part: ApiPart) {
-  return {
+/**
+ * One collection the shadow compares: how a member and its props are projected
+ * into the canonical record, and the labels a duplicate name is reported under.
+ * The consumer-visible API parts and the provenance evidence sidecar are two
+ * views of the same comparison, not two comparison algorithms.
+ */
+export type NamedCollectionView<T extends NamedWithProps<P>, P extends NamedValue, M, Q> = {
+  /** Path root every difference in this collection is reported under. */
+  readonly prefix: string;
+  readonly label: string;
+  readonly propLabel: string;
+  readonly member: (value: T) => M;
+  readonly prop: (value: P) => Q;
+};
+
+type NamedValue = { readonly name: string };
+type NamedWithProps<P extends NamedValue> = NamedValue & { readonly props: readonly P[] };
+
+/**
+ * Compares two name-keyed collections of members that each own name-keyed props:
+ * every leaf value by canonical path, the relative order of the members present on
+ * both sides, and the relative order of each common member's common props.
+ */
+export function compareNamedCollection<T extends NamedWithProps<P>, P extends NamedValue, M, Q>(
+  component: string,
+  current: readonly T[],
+  effect: readonly T[],
+  view: NamedCollectionView<T, P, M, Q>
+): readonly ApiShadowDifference[] {
+  const differences: ApiShadowDifference[] = [];
+  const project = (value: T) => ({
+    ...view.member(value),
+    props: namedRecords(value.props, view.prop, view.propLabel),
+  });
+  compareJson(
+    namedRecords(current, project, view.label),
+    namedRecords(effect, project, view.label),
+    view.prefix,
+    component,
+    differences
+  );
+  compareNamedOrder(component, current, effect, view.prefix, view.label, differences);
+  const effectByName = new Map(effect.map((member) => [member.name, member] as const));
+  for (const member of [...current].sort((left, right) => left.name.localeCompare(right.name))) {
+    const other = effectByName.get(member.name);
+    if (other === undefined) continue;
+    compareNamedOrder(
+      component,
+      member.props,
+      other.props,
+      `${view.prefix}.${member.name}.props`,
+      view.propLabel,
+      differences
+    );
+  }
+  return differences;
+}
+
+/** The consumer-visible API model: the fields a reader of the docs table can see. */
+export const apiPartsView: NamedCollectionView<
+  ApiPart,
+  ApiProp,
+  Omit<ApiPart, "props" | "shortType">,
+  Omit<ApiProp, "shortType">
+> = {
+  prefix: "parts",
+  label: "part",
+  propLabel: "prop",
+  member: (part) => ({
     name: part.name,
     rsc: part.rsc,
     sourcePath: part.sourcePath,
-    props: namedRecords(
-      part.props,
-      (prop) => ({
-        name: prop.name,
-        origin: prop.origin,
-        type: prop.type,
-        defaultValue: prop.defaultValue,
-        description: prop.description,
-        required: prop.required,
-      }),
-      "prop"
-    ),
     forwardedFrom: part.forwardedFrom,
     forwardedCount: part.forwardedCount,
-  };
-}
+  }),
+  prop: (prop) => ({
+    name: prop.name,
+    origin: prop.origin,
+    type: prop.type,
+    defaultValue: prop.defaultValue,
+    description: prop.description,
+    required: prop.required,
+  }),
+};
 
-export function compareParts(
-  component: string,
-  current: readonly ApiPart[],
-  effect: readonly ApiPart[]
-): readonly ApiShadowDifference[] {
-  const differences: ApiShadowDifference[] = [];
-  const currentNamed = namedRecords(current, visiblePart, "part");
-  const effectNamed = namedRecords(effect, visiblePart, "part");
-  const currentByName = new Map(current.map((part) => [part.name, part] as const));
-  const effectByName = new Map(effect.map((part) => [part.name, part] as const));
-  compareJson(currentNamed, effectNamed, "parts", component, differences);
-  compareNamedOrder(component, current, effect, "parts", "part", differences);
-  for (const name of [...currentByName.keys()].sort((left, right) => left.localeCompare(right))) {
-    const currentPart = currentByName.get(name);
-    const effectPart = effectByName.get(name);
-    if (currentPart === undefined || effectPart === undefined) continue;
-    compareNamedOrder(
-      component,
-      currentPart.props,
-      effectPart.props,
-      `parts.${name}.props`,
-      "prop",
-      differences
-    );
-  }
-  return differences;
-}
-
-export function compareEvidence(
-  component: string,
-  current: readonly ShadowPartEvidence[],
-  effect: readonly ShadowPartEvidence[]
-): readonly ApiShadowDifference[] {
-  const differences: ApiShadowDifference[] = [];
-  const currentNamed = namedRecords(
-    current,
-    (part) => ({
-      ...part,
-      props: namedRecords(part.props, (prop) => prop, "evidence prop"),
-    }),
-    "evidence part"
-  );
-  const effectNamed = namedRecords(
-    effect,
-    (part) => ({
-      ...part,
-      props: namedRecords(part.props, (prop) => prop, "evidence prop"),
-    }),
-    "evidence part"
-  );
-  const currentByName = new Map(current.map((part) => [part.name, part] as const));
-  const effectByName = new Map(effect.map((part) => [part.name, part] as const));
-  compareJson(currentNamed, effectNamed, "evidence", component, differences);
-  compareNamedOrder(component, current, effect, "evidence", "evidence part", differences);
-  for (const name of [...currentByName.keys()].sort((left, right) => left.localeCompare(right))) {
-    const currentPart = currentByName.get(name);
-    const effectPart = effectByName.get(name);
-    if (currentPart === undefined || effectPart === undefined) continue;
-    compareNamedOrder(
-      component,
-      currentPart.props,
-      effectPart.props,
-      `evidence.${name}.props`,
-      "evidence prop",
-      differences
-    );
-  }
-  return differences;
-}
+/** The provenance sidecar: declaration facts kept for review, not for the table. */
+export const partEvidenceView: NamedCollectionView<
+  ShadowPartEvidence,
+  ShadowPropEvidence,
+  ShadowPartEvidence,
+  ShadowPropEvidence
+> = {
+  prefix: "evidence",
+  label: "evidence part",
+  propLabel: "evidence prop",
+  member: (part) => part,
+  prop: (prop) => prop,
+};
 
 export function compareComponent(entry: DocsShadowComponentResult): readonly ApiShadowDifference[] {
   return [
-    ...compareParts(entry.inventory.slug, entry.current, entry.effect),
-    ...compareEvidence(entry.inventory.slug, entry.currentEvidence, entry.effectEvidence),
+    ...compareNamedCollection(entry.inventory.slug, entry.current, entry.effect, apiPartsView),
+    ...compareNamedCollection(
+      entry.inventory.slug,
+      entry.currentEvidence,
+      entry.effectEvidence,
+      partEvidenceView
+    ),
   ];
 }
 

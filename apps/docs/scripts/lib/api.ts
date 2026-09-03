@@ -175,7 +175,10 @@ export function readPartSource(context: LibraryProject, signature: Signature): P
  * A symbol declared in several union branches reports each branch's JSDoc in turn.
  * Identical paragraphs are the same sentence repeated, not two facts.
  */
-function dedupeDocumentation(documentation: string): string {
+export function dedupeDocumentation(documentation: string | undefined): string {
+  if (documentation === undefined) {
+    return "";
+  }
   const seen = new Set<string>();
   const kept: string[] = [];
   for (const paragraph of documentation.split(/\n{2,}|\n/)) {
@@ -260,10 +263,14 @@ export type PartForwarded = {
 
 const emptyForwarded: PartForwarded = { count: 0, from: [] };
 
-function forwardedOfPropsType(checker: Checker, propsType: Type): PartForwarded {
+/**
+ * Counts props the part accepts that are neither library-declared nor recipe
+ * axes — the same omitted set the published table drops.
+ */
+function forwardedOfProps(properties: Iterable<TsSymbol>): PartForwarded {
   const from = new Set<string>();
   let count = 0;
-  for (const property of checker.getPropertiesOfType(propsType)) {
+  for (const property of properties) {
     if (!isForwardedProp(property)) continue;
     count += 1;
     for (const declaration of property.declarations) {
@@ -274,29 +281,30 @@ function forwardedOfPropsType(checker: Checker, propsType: Type): PartForwarded 
   return { count, from: [...from].sort((left, right) => left.localeCompare(right)) };
 }
 
-/**
- * Counts props the part accepts that are neither library-declared nor recipe
- * axes — the same omitted set `describePart` drops from the table.
- */
-export function inspectPartForwarded(context: LibraryProject, part: PartRequest): PartForwarded {
-  const signature = callSignature(context.checker, part.type);
-  const parameter = signature?.getParameters()[0];
-  if (parameter === undefined) return emptyForwarded;
-  const propsType = context.checker.getTypeOfSymbol(parameter);
-  if (propsType === undefined || propsType.isErrorType()) return emptyForwarded;
-  return forwardedOfPropsType(context.checker, propsType);
-}
-
 function addProblem(problems: ProblemLog | undefined, message: string): void {
   problems?.add(message);
 }
 
+export type ComponentApiRequest = {
+  /** Absolute path of the public entry module, e.g. `packages/ui/src/button.ts`. */
+  entryFile: string;
+  /**
+   * Facade value exports to walk, in display order. Callers pass this explicitly
+   * (`resolveComponentPaths(...).apiExportNames`) — the generator does not sweep
+   * the entry for namespace-shaped companions.
+   */
+  exportNames: readonly string[];
+};
+
+/** One component of the docs inventory: its slug plus the entry surface to walk. */
+export type LibraryApiRequest = ComponentApiRequest & { readonly slug: string };
+
 /**
- * Resolves the checker-backed part requests for one public component.  Both the
- * production API tables and the shadow evidence reader use this one traversal,
- * so member ordering and unsupported namespace handling cannot drift.
+ * Resolves the checker-backed part requests for one public component.  This is
+ * the *only* walk of a component's entry: `extractComponentApi` calls it once and
+ * every downstream fact is read from the parts it returns.
  */
-export function componentPartRequests(
+function componentPartRequests(
   context: LibraryProject,
   request: ComponentApiRequest,
   problems?: ProblemLog
@@ -342,114 +350,84 @@ export function componentPartRequests(
   return parts;
 }
 
-/**
- * Returns source facts for every checker-backed part, including AST-derived
- * destructuring defaults.  This is intentionally writer-free and is also used
- * when the Effect result is adapted for the docs shadow comparison.
- */
-export function componentPartSources(
-  context: LibraryProject,
-  request: ComponentApiRequest
-): ReadonlyMap<string, PartSource> {
-  const sources = new Map<string, PartSource>();
-  for (const part of componentPartRequests(context, request)) {
-    const signature = callSignature(context.checker, part.type);
-    if (signature === null) continue;
-    const source = readPartSource(context, signature);
-    if (source !== null) sources.set(part.name, source);
-  }
-  return sources;
-}
-
 /** Checker-owned facts for one public prop, including props omitted as forwarded. */
 export type CurrentPartPropFact = {
   readonly type: string | null;
   readonly required: boolean;
 };
 
-/** Every public prop accepted by each checker-backed part, including forwarded props. */
-export function componentPartPropFacts(
+/**
+ * Prints one accepted prop's checker facts.
+ *
+ * Printing a type is the single most expensive checker call in the pass, so it is
+ * done per prop a consumer actually asks about — the dependency-enrichment merge
+ * asks for the handful of Base UI props it selects, not for all ~300 React and DOM
+ * props every part forwards.
+ */
+export function readPartPropFact(
   context: LibraryProject,
-  request: ComponentApiRequest
-): ReadonlyMap<string, ReadonlyMap<string, CurrentPartPropFact>> {
-  const factsByPart = new Map<string, ReadonlyMap<string, CurrentPartPropFact>>();
-  for (const part of componentPartRequests(context, request)) {
-    const signature = callSignature(context.checker, part.type);
-    const parameter = signature?.getParameters()[0];
-    if (parameter === undefined) {
-      factsByPart.set(part.name, new Map());
-      continue;
-    }
-    const propsType = context.checker.getTypeOfSymbol(parameter);
-    if (propsType === undefined || propsType.isErrorType()) {
-      factsByPart.set(part.name, new Map());
-      continue;
-    }
-    factsByPart.set(
-      part.name,
-      new Map(
-        context.checker.getPropertiesOfType(propsType).map((property) => [
-          property.name,
-          {
-            type: printType(context.checker, context.checker.getTypeOfSymbol(property)),
-            required: !isOptional(property),
-          },
-        ])
-      )
-    );
+  part: LibraryPartApi,
+  propName: string
+): CurrentPartPropFact | undefined {
+  const property = part.props.get(propName);
+  if (property === undefined) {
+    return undefined;
   }
-  return factsByPart;
-}
-
-/** Extracts current checker evidence for only the props the docs table publishes. */
-export function inspectCurrentPartEvidence(
-  context: LibraryProject,
-  part: PartRequest,
-  visiblePropNames: ReadonlySet<string>
-): CurrentPartEvidence {
-  const signature = callSignature(context.checker, part.type);
-  const declarationPaths = signature?.declaration === undefined ? [] : [signature.declaration.path];
-  const parameter = signature?.getParameters()[0];
-  if (parameter === undefined) {
-    return { name: part.name, declarationPaths, synthesized: false, propOrder: [], props: [] };
-  }
-  const propsType = context.checker.getTypeOfSymbol(parameter);
-  if (propsType === undefined || propsType.isErrorType()) {
-    return { name: part.name, declarationPaths, synthesized: false, propOrder: [], props: [] };
-  }
-  const props = context.checker
-    .getPropertiesOfType(propsType)
-    .filter((property) => visiblePropNames.has(property.name))
-    .map((property) => ({
-      name: property.name,
-      declarationPaths: property.declarations.map((declaration) => declaration.path),
-      synthesized: property.declarations.length === 0,
-    }));
   return {
-    name: part.name,
-    declarationPaths,
-    synthesized: false,
-    propOrder: props.map((property) => property.name),
-    props: [...props].sort((left, right) => left.name.localeCompare(right.name)),
+    type: printType(context.checker, context.checker.getTypeOfSymbol(property)),
+    required: !isOptional(property),
   };
 }
 
-function describePart(context: LibraryProject, request: PartRequest, problems: ProblemLog): ApiPart | null {
+/**
+ * Every checker fact one part of a component yields, read from a single traversal:
+ * the published table row set, the implementation source, the forwarded-prop
+ * summary, and the accepted prop symbols the enrichment merge and the shadow
+ * evidence reader look props up in.
+ */
+export type LibraryPartApi = {
+  /** Display name, e.g. `Dialog.Content`. */
+  readonly name: string;
+  /** Declaring file of the part's call signature, when it has one. */
+  readonly declarationPaths: readonly string[];
+  readonly source: PartSource | null;
+  readonly forwarded: PartForwarded;
+  /** Every prop the part accepts, in checker order, forwarded ones included. */
+  readonly props: ReadonlyMap<string, TsSymbol>;
+  /** The published rows, or `null` when the part could not be described. */
+  readonly part: ApiPart | null;
+};
+
+/** One component's API model: the published parts plus the facts behind them. */
+export type ComponentApi = {
+  readonly slug: string;
+  /** The parts the docs publish, in walk order. */
+  readonly parts: readonly ApiPart[];
+  /** One entry per traversed part, described or not. */
+  readonly partApis: readonly LibraryPartApi[];
+};
+
+function describePart(
+  context: LibraryProject,
+  request: PartRequest,
+  signature: Signature | null,
+  source: PartSource | null,
+  hasPropsParameter: boolean,
+  propsResolved: boolean,
+  props: ReadonlyMap<string, TsSymbol>,
+  forwarded: PartForwarded,
+  problems: ProblemLog
+): ApiPart | null {
   const { checker } = context;
-  const signature = callSignature(checker, request.type);
   if (signature === null) {
     problems.add(`${request.name}: no call signature — it does not look like a component`);
     return null;
   }
-  const source = readPartSource(context, signature);
   if (source === null) {
     problems.add(`${request.name}: could not resolve the declaring source file`);
     return null;
   }
-
-  const parameters = signature.getParameters();
-  const propsSymbol = parameters[0];
-  if (propsSymbol === undefined) {
+  if (!hasPropsParameter) {
     return {
       name: request.name,
       rsc: source.rsc,
@@ -459,16 +437,13 @@ function describePart(context: LibraryProject, request: PartRequest, problems: P
       forwardedCount: 0,
     };
   }
-  const propsType = checker.getTypeOfSymbol(propsSymbol);
-  if (propsType === undefined || propsType.isErrorType()) {
+  if (!propsResolved) {
     problems.add(`${request.name}: props type is unresolvable`);
     return null;
   }
 
-  const props: ApiProp[] = [];
-  const forwardedInfo = forwardedOfPropsType(checker, propsType);
-
-  for (const property of checker.getPropertiesOfType(propsType)) {
+  const rows: ApiProp[] = [];
+  for (const property of props.values()) {
     // A prop with no declaration at all is synthesised by `VariantProps` over a library
     // `tv` recipe: there is no declaration site to hang JSDoc on, so its printed union
     // is the documentation and the JSDoc gate does not apply.
@@ -489,7 +464,7 @@ function describePart(context: LibraryProject, request: PartRequest, problems: P
       );
       continue;
     }
-    props.push({
+    rows.push({
       name: property.name,
       origin: isRecipeAxis ? "recipe-axis" : "declared",
       type: printed,
@@ -500,47 +475,111 @@ function describePart(context: LibraryProject, request: PartRequest, problems: P
     });
   }
 
-  props.sort((left, right) => left.name.localeCompare(right.name));
+  rows.sort((left, right) => left.name.localeCompare(right.name));
 
   return {
     name: request.name,
     rsc: source.rsc,
     sourcePath: source.sourcePath,
-    props,
-    forwardedFrom: forwardedInfo.from,
-    forwardedCount: forwardedInfo.count,
+    props: rows,
+    forwardedFrom: forwarded.from,
+    forwardedCount: forwarded.count,
   };
 }
 
-export type ComponentApiRequest = {
-  /** Absolute path of the public entry module, e.g. `packages/ui/src/button.ts`. */
-  entryFile: string;
-  /**
-   * Facade value exports to walk, in display order. Callers pass this explicitly
-   * (`resolveComponentPaths(...).apiExportNames`) — the generator does not sweep
-   * the entry for namespace-shaped companions.
-   */
-  exportNames: readonly string[];
-};
+/** Reads every fact one part yields, resolving its props type exactly once. */
+function extractPart(context: LibraryProject, request: PartRequest, problems: ProblemLog): LibraryPartApi {
+  const { checker } = context;
+  const signature = callSignature(checker, request.type);
+  const source = signature === null ? null : readPartSource(context, signature);
+  const declarationPaths = signature?.declaration === undefined ? [] : [signature.declaration.path];
+  const parameter = signature?.getParameters()[0];
+  const declared = parameter === undefined ? undefined : checker.getTypeOfSymbol(parameter);
+  const propsType = declared === undefined || declared.isErrorType() ? null : declared;
+  const props = new Map<string, TsSymbol>();
+  if (propsType !== null) {
+    for (const property of checker.getPropertiesOfType(propsType)) {
+      props.set(property.name, property);
+    }
+  }
+  const forwarded = props.size === 0 ? emptyForwarded : forwardedOfProps(props.values());
+  return {
+    name: request.name,
+    declarationPaths,
+    source,
+    forwarded,
+    props,
+    part: describePart(
+      context,
+      request,
+      signature,
+      source,
+      parameter !== undefined,
+      propsType !== null,
+      props,
+      forwarded,
+      problems
+    ),
+  };
+}
 
 /**
  * Resolves one component's public surface from an explicit list of export names:
  * a single part for a callable, or one part per member for a namespace compound
  * (`Dialog.Root`, `Dialog.Content`, …). Companions (`VerticalTable` next to `Table`)
  * are included only when the caller names them.
+ *
+ * The entry is walked once and every fact — rows, implementation source, RSC
+ * status, forwarded summary, accepted prop symbols — is read from that one walk.
  */
-export function describeComponentApi(
+export function extractComponentApi(
   context: LibraryProject,
-  request: ComponentApiRequest,
+  request: LibraryApiRequest,
   problems: ProblemLog
-): readonly ApiPart[] {
-  const requests = componentPartRequests(context, request, problems);
-  const parts: ApiPart[] = [];
-  for (const partRequest of requests) {
-    const part = describePart(context, partRequest, problems);
-    if (part !== null) {
-      parts.push(part);
-    }
-  }
-  return parts;
+): ComponentApi {
+  const componentRequest = { entryFile: request.entryFile, exportNames: request.exportNames };
+  const partApis = componentPartRequests(context, componentRequest, problems).map((part) =>
+    extractPart(context, part, problems)
+  );
+  return {
+    slug: request.slug,
+    parts: partApis.flatMap((entry) => (entry.part === null ? [] : [entry.part])),
+    partApis,
+  };
+}
+
+/**
+ * The one owner of the component API model (docs-site.md §8).
+ *
+ * The generation pass, the `api.json` regenerator behind the drift check, and the
+ * shadow comparison all read the model from here, so they cannot disagree about
+ * part inventory, ordering, or any checker fact.
+ */
+export function extractLibraryApi(
+  context: LibraryProject,
+  components: readonly LibraryApiRequest[],
+  problems: ProblemLog
+): readonly ComponentApi[] {
+  return components.map((component) => extractComponentApi(context, component, problems));
+}
+
+/** Extracts current checker evidence for only the props the docs table publishes. */
+export function inspectCurrentPartEvidence(
+  part: LibraryPartApi,
+  visiblePropNames: ReadonlySet<string>
+): CurrentPartEvidence {
+  const props = [...part.props.values()]
+    .filter((property) => visiblePropNames.has(property.name))
+    .map((property) => ({
+      name: property.name,
+      declarationPaths: property.declarations.map((declaration) => declaration.path),
+      synthesized: property.declarations.length === 0,
+    }));
+  return {
+    name: part.name,
+    declarationPaths: part.declarationPaths,
+    synthesized: false,
+    propOrder: props.map((property) => property.name),
+    props: [...props].sort((left, right) => left.name.localeCompare(right.name)),
+  };
 }

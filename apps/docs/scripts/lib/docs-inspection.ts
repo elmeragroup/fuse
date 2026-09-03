@@ -2,8 +2,9 @@
  * Writer-free inspection of the docs inputs.
  *
  * The production generator and the shadow comparison consume the same route inventory,
- * component path resolver, page reader, route policy, and size report. The helpers here
- * mirror the generator's remaining demo validation without importing its writer entrypoint.
+ * component path resolver, page reader, route policy, and size report. This module is the
+ * *only* owner of demo and route validation: the generator imports these helpers rather
+ * than keeping a second copy, so a check added here also applies to the shadow run.
  */
 
 import { existsSync, readdirSync, readFileSync } from "node:fs";
@@ -11,6 +12,7 @@ import path from "node:path";
 
 import { normalizeDemoSource } from "../../src/lib/docs-model.ts";
 import type { DocsDemo } from "../../src/lib/docs-model.ts";
+import type { DocsApiComponent } from "./api-shadow-types.ts";
 import { componentSlugs, resolveComponentPaths } from "./components.ts";
 import type { ComponentPaths } from "./components.ts";
 import type { ProblemLog } from "./errors.ts";
@@ -22,6 +24,12 @@ import { readBundleSizes } from "./sizes.ts";
 import type { BundleSizeReport } from "./sizes.ts";
 import { assertDocsUiCssExports } from "./workspace-css.ts";
 
+/** A slug with its resolved inputs — what the API inventory is built from. */
+export type ResolvedComponent = {
+  readonly slug: string;
+  readonly paths: ComponentPaths;
+};
+
 export type ComponentInspection = {
   readonly slug: string;
   readonly page: ComponentPageSource;
@@ -31,6 +39,33 @@ export type ComponentInspection = {
 /** Reads the exact route inventory consumed by the production generator. */
 export function componentInspections(): readonly ComponentInspection[] {
   return componentSlugs().map(inspectComponent);
+}
+
+/**
+ * The one API inventory: exactly the route-local component pages the production
+ * generator writes for, in production order. The generator, the `api.json`
+ * regenerator and the shadow comparison all extract from this list.
+ */
+export function docsApiInventory(
+  components: readonly ResolvedComponent[] = componentSlugs().map((slug) => ({
+    slug,
+    paths: resolveComponentPaths(slug),
+  }))
+): readonly DocsApiComponent[] {
+  const seen = new Set<string>();
+  return components.map(({ slug, paths }) => {
+    if (seen.has(slug)) {
+      throw new Error(`docs API inventory contains duplicate component "${slug}"`);
+    }
+    seen.add(slug);
+    return {
+      slug,
+      entryFile: paths.entryFile,
+      exportName: paths.exportName,
+      exportNames: paths.apiExportNames,
+      sourceFile: paths.sourceFile,
+    };
+  });
 }
 
 /** Resolves and parses one route-local component page without writing artifacts. */

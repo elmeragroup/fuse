@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { SemanticType } from "@elmeragroup/api-extractor";
 
 import { renderableExportParts } from "../scripts/lib/api-effect-adapter.ts";
-import { describeComponentApi, openLibraryProject } from "../scripts/lib/api.ts";
+import { extractLibraryApi, openLibraryProject } from "../scripts/lib/api.ts";
 import { resolveComponentPaths } from "../scripts/lib/components.ts";
 import { ProblemLog } from "../scripts/lib/errors.ts";
 
@@ -67,16 +67,12 @@ describe("library JSDoc required by the docs API tables", () => {
     const context = openLibraryProject();
     try {
       const problems = new ProblemLog();
-      const sidebar = resolveComponentPaths("sidebar");
-      const popoverInfoButton = resolveComponentPaths("popover-info-button");
-      describeComponentApi(
+      extractLibraryApi(
         context,
-        { entryFile: sidebar.entryFile, exportNames: sidebar.apiExportNames },
-        problems
-      );
-      describeComponentApi(
-        context,
-        { entryFile: popoverInfoButton.entryFile, exportNames: popoverInfoButton.apiExportNames },
+        ["sidebar", "popover-info-button"].map((slug) => {
+          const paths = resolveComponentPaths(slug);
+          return { slug, entryFile: paths.entryFile, exportNames: paths.apiExportNames };
+        }),
         problems
       );
       expect(
