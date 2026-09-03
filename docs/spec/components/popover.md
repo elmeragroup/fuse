@@ -58,7 +58,7 @@ All rendering parts take `className` (merged via `cn`) and forward the rest of t
 
 ## 4 Variants
 
-No component-specific `tv` recipe and no variant axes — Content styling is inline; Trigger and the Popup both compose shared `focusRing({ target: "self" })`. `showArrow` is a boolean render toggle, not a styling variant.
+No component-specific `tv` recipe and no variant axes — Content styling is composed from the shared overlay class constants plus popup-specific extras; Trigger and the Popup both compose the shared self-target focus ring. `showArrow` is a boolean render toggle, not a styling variant.
 
 ## 5 Consumed tokens
 
@@ -94,6 +94,8 @@ No component-specific `tv` recipe and no variant axes — Content styling is inl
 3. **Arrow tokenized (LOCKED ruling)**: the ref arrow hardcodes `before:bg-white` plus `dark:before:border-white dark:before:bg-neutral-950` — raw palette colors, the family's worst `no-primitive-colors` violation, and mismatched with the token-driven `bg-popover` popup it decorates. Re-expressed as `before:bg-popover before:border-border` so the arrow always matches its popup across all 20 themes; the `sqrt(2)` clip-window geometry is kept verbatim. All `dark:` classes dropped per conventions. `showArrow` stays default `false`. Deliberately _not_ unified with Tooltip's always-rendered arrow — the two components' differing arrow show-behavior is intentional (see tooltip.md §8).
 4. **`z-50` deduped**: the ref sets `isolate z-50` on the Positioner _and_ `z-50` on the Popup; kept on the outermost layer (Positioner) only. Flat z-strategy: every overlay gets exactly one `z-50` at its outermost portalled element.
 5. **Focus unified:** Trigger and the Popup compose the canonical self-focus adapter, including when the Trigger is rendered without a Button target. The Popup does not use `outline-hidden`. _(Amended 2026-09-02.)_
+
+6. **Shared overlay spine adopted (tracer)**: `Popover.Content` composes the package-private overlay primitives instead of restating them — `useResolvedPortalContainer` for the §7.4 portal-target resolution, `OverlayPositionerProps`/`OverlayContainerProps` for the `align`/`alignOffset`/`side`/`sideOffset`/`container` block, and `overlayPositionerClass` / `overlayPopupSurfaceClass` / `overlayPopupMotionClass` / `selfFocusRingClass` for the classes. The rendered class set, the prop names, their documented defaults, and the DOM are unchanged; Popover is the first consumer of the spine the remaining overlays adopt next. _(Amended 2026-09-03.)_
 
 Kept faithfully: `w-72 p-4 gap-4` popup dimensions; `shadow-md` + `ring-1 ring-foreground/10` elevation; `duration-100` animation timing and the full slide/fade/zoom class set; `Header` as a plain unstyled-primitive div; `showArrow` default `false`; Title/Description typography.
 

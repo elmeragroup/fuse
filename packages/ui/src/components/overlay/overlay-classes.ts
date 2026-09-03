@@ -49,3 +49,51 @@ export const overlayTitleClass = "text-base font-medium font-heading leading-non
 
 /** Dialog footer action row (dialog.md §2), shared with the interim tier's footer slot. */
 export const overlayFooterClass = "sm:flex-row sm:justify-end flex flex-col-reverse gap-2";
+
+/**
+ * The positioner face of every anchored overlay: one stacking context and the single
+ * overlay layer (popover.md §8.4). Site-specific extras — DropdownMenu's `outline-none`,
+ * for one — are passed as the extra `cn` argument. Interpolates {@link overlayLayer}
+ * rather than restating the layer class, which this module spells exactly once.
+ */
+export const overlayPositionerClass = `isolate ${overlayLayer}`;
+
+/**
+ * The popup surface shared by the anchored popup family (popover.md §5): tokenized fill
+ * and text, the hairline ring, and the `md` elevation/radius rung. Overlays that sit on
+ * a different rung override it through `cn` — Select's `rounded-lg`, Dialog's
+ * `rounded-xl shadow-lg` — rather than restating the fill and ring.
+ */
+export const overlayPopupSurfaceClass =
+  "shadow-md rounded-md bg-popover text-popover-foreground ring-1 ring-foreground/10";
+
+/**
+ * The open/close motion set every anchored popup animates with (popover.md §6): the
+ * transform origin base-ui publishes, the 100ms rung, the per-side slide-in, and the
+ * fade/zoom pair on `data-open`/`data-closed`. Declared once so a fix to one popup's
+ * timing cannot leave the other six behind.
+ */
+export const overlayPopupMotionClass =
+  "origin-(--transform-origin) duration-100 data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95";
+
+/**
+ * The geometry, disabled face, and icon sizing an option row shares across Select,
+ * Combobox, and DropdownMenu. The *highlight* face is deliberately not here: base-ui
+ * publishes it as `focus:` on menu items and `data-highlighted:` on listbox options, so
+ * each family passes its own as the extra `cn` argument, along with its horizontal
+ * padding (`px-2` for menus, `pr-8 pl-2` for indicator-bearing options).
+ */
+export const menuItemClass =
+  // oxlint-disable-next-line elmera/no-hardcoded-density-metrics, elmera/no-local-focus-ring -- select.md §4: option padding is menu layout, not a control rung; select.md §7: `outline-hidden` only clears the UA outline under the highlight face, the ring still comes from the shared adapter
+  "text-sm relative flex cursor-default items-center gap-2 rounded-sm py-1.5 outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4";
+
+/** The trailing check slot on a selectable option row, positioned once for all three menu families. */
+export const menuItemIndicatorClass = "pointer-events-none absolute right-2 flex items-center justify-center";
+
+/** The hairline rule between option groups, shared by Select, Combobox, and DropdownMenu. */
+export const menuSeparatorClass = "-mx-1 my-1 h-px bg-border";
+
+/** The muted caption above an option group, shared by Select, Combobox, and DropdownMenu. */
+export const menuGroupLabelClass =
+  // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- select.md §4: group label padding is menu layout, not a control rung
+  "text-xs px-2 py-1.5 text-muted-foreground";

@@ -99,7 +99,7 @@ const CLIENT_ISLANDS: ReadonlyArray<readonly [string, readonly string[]]> = [
   ["description-list", ["components/description-list/description-list-heading.tsx"]],
 ];
 
-const CLIENT_HOOKS = ["hooks/use-localized-strings.ts"] as const;
+const CLIENT_HOOKS = ["hooks/use-localized-strings.ts", "theme/use-resolved-portal-container.ts"] as const;
 
 function readSrc(relativePath: string): string {
   return readFileSync(join(SRC_ROOT, relativePath), "utf8");
