@@ -5,10 +5,16 @@ import type { ReactNode } from "react";
  *
  * Several components take a `ReactNode` that renders intact but gets extra treatment
  * when it is text — Checkbox's `describedBy` note, ConfirmButton's announcement chain,
- * GridList's string children, Toast's shorthand description. This is intended to become
- * the one place that asks the question; the five local spellings (two of which evaded
- * the lint rule through `Object.prototype.toString`) are replaced as each component
- * migrates.
+ * GridList's string children. This is the one place that asks the question of a
+ * `ReactNode`, replacing the local spellings as each component migrates.
+ *
+ * It does **not** own every "is this a string" check in the package. Toast's manager
+ * adapter narrows `string | ToastManagerUpdateOptions`, and an options object is not a
+ * `ReactNode`, so `isShorthandDescription` (`toast.tsx`) cannot call this and keeps its
+ * own `typeof` with a named disable; the same goes for the `promise()` factory arm,
+ * which no shared guard narrows. Those two were the `Object.prototype.toString`
+ * spellings that evaded the lint rule, and they are honest `typeof` checks now — not
+ * callers of this helper.
  */
 export function isTextNode(node: ReactNode): node is string {
   // oxlint-disable-next-line anti-slop/no-runtime-typeof -- consumer-owned ReactNode I/O: the string arm is a documented public contract, not an internal type guess

@@ -11,8 +11,12 @@ import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { cn } from "../../styles/cn";
 import { selfFocusRingClass } from "../../styles/utils";
 import { useResolvedPortalContainer } from "../../theme/use-resolved-portal-container";
-import { overlayLayer, overlayPopupFillClass, overlayScrimClass } from "../overlay/overlay-classes";
-import type { OverlaySize } from "../overlay/overlay-classes";
+import {
+  overlayLayer,
+  overlayPopupFillClass,
+  overlayScrimClass,
+  overlaySheetWidthClasses,
+} from "../overlay/overlay-classes";
 import { overlayCornerCloseButton } from "../overlay/overlay-close-button";
 import type { OverlayContainerProps } from "../overlay/overlay-props";
 import { sheetStrings } from "./intl";
@@ -32,29 +36,6 @@ type SheetSide = keyof typeof SIDE_TO_SWIPE_DIRECTION;
 
 const SheetSideContext = createContext<SheetSide>("right");
 
-/**
- * The panel width axis (sheet.md §4), one CSS variable per rung. The two side selectors
- * that consume it live once in the recipe base, so a rung is a single declaration rather
- * than a `data-[side=left]:sm:` / `data-[side=right]:sm:` pair; `satisfies` pins the axis
- * to the shared 13-value overlay scale so Sheet and Dialog cannot drift apart.
- */
-const sheetWidthClasses = {
-  sm: "[--sheet-width:min(var(--container-sm),90%)]",
-  md: "[--sheet-width:min(var(--container-md),90%)]",
-  lg: "[--sheet-width:min(var(--container-lg),90%)]",
-  xl: "[--sheet-width:min(var(--container-xl),90%)]",
-  "2xl": "[--sheet-width:min(var(--container-2xl),90%)]",
-  "3xl": "[--sheet-width:min(var(--container-3xl),90%)]",
-  "4xl": "[--sheet-width:min(var(--container-4xl),90%)]",
-  "5xl": "[--sheet-width:min(var(--container-5xl),90%)]",
-  "6xl": "[--sheet-width:min(var(--container-6xl),90%)]",
-  "7xl": "[--sheet-width:min(var(--container-7xl),90%)]",
-  // No --container-8xl+ variables exist; the pixel caps stay literal (dialog.md §4).
-  "8xl": "[--sheet-width:min(1366px,90%)]",
-  "9xl": "[--sheet-width:min(1536px,90%)]",
-  "10xl": "[--sheet-width:min(1920px,90%)]",
-} satisfies Record<OverlaySize, string>;
-
 const sheetContentVariants = tv({
   base: cn(
     overlayPopupFillClass,
@@ -66,7 +47,7 @@ const sheetContentVariants = tv({
   variants: {
     // Gated to the left/right sides at `sm:` by the base selectors above; top/bottom
     // panels are `h-auto` and full width, so the axis is inert for them.
-    size: sheetWidthClasses,
+    size: overlaySheetWidthClasses,
   },
   defaultVariants: {
     size: "md",

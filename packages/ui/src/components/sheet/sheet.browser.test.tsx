@@ -15,6 +15,15 @@ function readToken(name: string): string {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }
 
+/**
+ * The block a `position: fixed` percentage resolves against — the initial containing
+ * block, which excludes any classic scrollbar. `window.innerWidth` includes it, so it is
+ * off by the scrollbar width on the rungs where `90%` is the smaller half of the `min()`.
+ */
+function initialContainingBlockWidth(): number {
+  return document.documentElement.clientWidth;
+}
+
 /** The panel's content box — `max-width` caps that box, and the side border is outside it. */
 function contentWidth(element: HTMLElement): number {
   const style = getComputedStyle(element);
@@ -236,7 +245,7 @@ describe("Sheet", () => {
     expect(dialog.querySelector("[data-slot=sheet-description]")).not.toBeNull();
   });
 
-  it("resolves the size axis to the side-gated used max-width", async () => {
+  it("resolves the size axis to the side-gated used max-width on both gated sides", async () => {
     // Asserts the used value the panel is actually capped at, not the class spelling:
     // the axis moves through `--sheet-width`, so a rung is only correct if the two
     // side-gated `max-w-(--sheet-width)` consumers resolve it (sheet.md §4, §8.11).
@@ -247,23 +256,39 @@ describe("Sheet", () => {
     ] as const;
 
     await page.viewport(1024, 768);
-    for (const { size, cap } of cases) {
-      const { unmount } = renderThemed(withLocale("en-US", <BasicSheet size={size} />));
-      const dialog = await openSheet();
-      expect(contentWidth(dialog), `size=${String(size)}`).toBeCloseTo(
-        Math.min(cap(), window.innerWidth * 0.9),
-        0
-      );
-      unmount();
+    for (const side of ["right", "left"] as const) {
+      for (const { size, cap } of cases) {
+        const { unmount } = renderThemed(withLocale("en-US", <BasicSheet side={side} size={size} />));
+        const dialog = await openSheet();
+        expect(contentWidth(dialog), `${side}/${String(size)}`).toBeCloseTo(
+          Math.min(cap(), initialContainingBlockWidth() * 0.9),
+          0
+        );
+        unmount();
+      }
     }
   });
 
   it("leaves the size axis inert on the top and bottom sides", async () => {
     await page.viewport(1024, 768);
-    const { unmount } = renderThemed(withLocale("en-US", <BasicSheet side="top" size="sm" />));
+    for (const side of ["top", "bottom"] as const) {
+      const { unmount } = renderThemed(withLocale("en-US", <BasicSheet side={side} size="sm" />));
+      const dialog = await openSheet();
+      expect(getComputedStyle(dialog).maxWidth, side).toBe("none");
+      unmount();
+    }
+  });
+
+  it("leaves the size axis inert below the sm breakpoint, where the panel is full-width", async () => {
+    // The `sm:` half of the gate: `size` only caps a left/right panel once the viewport
+    // is wide enough, and `w-full` owns the width below that (sheet.md §4).
+    await page.viewport(500, 768);
+    const { unmount } = renderThemed(withLocale("en-US", <BasicSheet side="right" size="sm" />));
     const dialog = await openSheet();
     expect(getComputedStyle(dialog).maxWidth).toBe("none");
+    expect(contentWidth(dialog)).toBeCloseTo(initialContainingBlockWidth(), 0);
     unmount();
+    await page.viewport(1024, 768);
   });
 
   it("portals into the enclosing ThemeScope instead of the document body", async () => {
