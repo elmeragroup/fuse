@@ -1,7 +1,7 @@
 import { tv } from "tailwind-variants";
 
 import { cn } from "./cn";
-import { focusRing } from "./utils";
+import { stateFocusRingClass, stateFocusRingVisibleClass } from "./utils";
 
 /**
  * The day-cell recipe (calendar.md §4/§5). Flattened rather than a slot on
@@ -17,11 +17,11 @@ export const cellVariants = tv({
   // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- calendar.md §4/§5 decorative day-cell circle, not a control-box rung
   base: cn(
     "text-sm flex size-9 cursor-default items-center justify-center rounded-full forced-color-adjust-none",
-    focusRing({ target: "state" }).root()
+    stateFocusRingClass
   ),
   variants: {
     isFocusVisible: {
-      true: focusRing({ target: "state", isFocusVisible: true }).root(),
+      true: stateFocusRingVisibleClass,
       false: "",
     },
     isSelected: {

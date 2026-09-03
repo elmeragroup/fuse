@@ -1,7 +1,7 @@
 import { tv } from "tailwind-variants";
 
 import { cn } from "./cn";
-import { focusRing } from "./utils";
+import { stateFocusRingClass, stateFocusRingVisibleClass } from "./utils";
 
 /**
  * GridList's recipe (grid-list.md §4). Package-private — no entry re-exports it, and
@@ -20,8 +20,9 @@ export const gridListVariants = tv({
 
 /**
  * Module-private item recipe (grid-list.md §4). Composes
- * `focusRing({ target: "state", isFocusVisible })` from RAC's render props so
- * `styles/utils` stays the only module that spells a focus class.
+ * the resolved `state` focus-ring constants from `styles/utils` — RAC hands
+ * `isFocusVisible` in as a render prop and this recipe turns it into a variant arm — so
+ * `styles/utils` stays the only module that spells or resolves a focus class.
  *
  * Row padding and gap are not a control-box rung (conventions.md §Density ladder),
  * so they stay the reference's literals and read no `--control-*` variable.
@@ -29,11 +30,11 @@ export const gridListVariants = tv({
 export const itemStyles = tv({
   base: cn(
     "text-sm relative flex cursor-default gap-3 border-t border-transparent px-1.5 py-1 -outline-offset-2 select-none first:rounded-t-lg first:border-t-0 last:mb-0 last:rounded-b-lg",
-    focusRing({ target: "state" }).root()
+    stateFocusRingClass
   ),
   variants: {
     isFocusVisible: {
-      true: focusRing({ target: "state", isFocusVisible: true }).root(),
+      true: stateFocusRingVisibleClass,
       false: "",
     },
     isSelected: {

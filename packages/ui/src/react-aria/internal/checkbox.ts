@@ -1,6 +1,6 @@
 import { tv } from "tailwind-variants";
 
-import { focusRing } from "../../styles/utils";
+import { stateFocusRingClass, stateFocusRingVisibleClass } from "../../styles/utils";
 
 /**
  * Private checkbox chrome for the interim tier — the RAC `GridList` selection cell is
@@ -16,7 +16,7 @@ import { focusRing } from "../../styles/utils";
 export const checkboxVariants = tv({
   slots: {
     base: "group text-sm flex gap-2 text-inherit transition",
-    box: `flex size-4.5 shrink-0 items-center justify-center rounded-xs border transition-colors ${focusRing({ target: "state" }).root()}`,
+    box: `flex size-4.5 shrink-0 items-center justify-center rounded-xs border transition-colors ${stateFocusRingClass}`,
     icon: "size-4 text-primary-foreground forced-colors:text-[HighlightText]",
   },
   variants: {
@@ -46,7 +46,7 @@ export const checkboxVariants = tv({
     },
     isFocusVisible: {
       true: {
-        box: focusRing({ target: "state", isFocusVisible: true }).root(),
+        box: stateFocusRingVisibleClass,
       },
       false: {},
     },

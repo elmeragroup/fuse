@@ -27,42 +27,42 @@
  * and neither grew past its ceiling either). Earlier measurement rounds live in git.
  *
  * Current measurements (gzip bytes, 2026-09-03). Earlier measurement rounds live in git.
- *   .                            233882
+ *   .                            233896
  *   theme                          6172
  *   badge                         15658
- *   button                        25238
+ *   button                        25248
  *   card                          15954  (shrank 9 across phase B; ceiling tightened by exactly that, 23946 → 23937)
- *   dialog                        45319
- *   popover                       56876
- *   scroll-area                   28548
+ *   dialog                        45332
+ *   popover                       56880
+ *   scroll-area                   28555
  *   illustrations                 11046
  *   separator                     10524
  *   field                         30277
- *   item                          24134
- *   input                         25103
- *   input-group                   27992  (shrank 15 across phase B; ceiling tightened by exactly that, 42017 → 42002)
- *   textarea                      21344
+ *   item                          24143
+ *   input                         25114
+ *   input-group                   28003  (shrank 15 across phase B; ceiling tightened by exactly that, 42017 → 42002)
+ *   textarea                      21354
  *   flags                          1388
- *   sidebar                       82836
- *   toast                         42375
- *   phone-number-field           118103
- *   popover-info-button           60602
- *   combobox                      73496
- *   toggle-group                  29080
- *   checkbox-card                 30188  (shrank 6 across phase B; ceiling tightened by exactly that, 45291 → 45285)
- *   radio-group                   40394
- *   checkbox                      37214
- *   selection-item                32004
- *   switch                        26562
+ *   sidebar                       82845
+ *   toast                         42392
+ *   phone-number-field           118120
+ *   popover-info-button           60611
+ *   combobox                      73510
+ *   toggle-group                  29089
+ *   checkbox-card                 30198  (shrank 6 across phase B; ceiling tightened by exactly that, 45291 → 45285)
+ *   radio-group                   40401
+ *   checkbox                      37222
+ *   selection-item                32013
+ *   switch                        26569
  *   button-group                  17587
- *   accordion                     30202
+ *   accordion                     30211
  *   description-list              10715
  *   emoji                          2442
  *   avatar                        12463
- *   alert-dialog                  47715
- *   dropdown-menu                 68268
- *   collapsible                   27265
- *   select                        64079
+ *   alert-dialog                  47735
+ *   dropdown-menu                 68278
+ *   collapsible                   27276
+ *   select                        64087
  *   show                            148
  *   loader                        16748
  *   empty                         21356
@@ -70,33 +70,33 @@
  *   code                          11756
  *   span                          17324
  *   timeline-list                 23552  (shrank 3 across phase B; ceiling tightened by exactly that, 35333 → 35330)
- *   sheet                         57256
- *   text-field                    33683
- *   tooltip                       51157
+ *   sheet                         57266
+ *   text-field                    33692
+ *   tooltip                       51165
  *   heading                       17319  (shrank 10 across phase B; ceiling tightened by exactly that, 25934 → 25924)
  *   text                          17315
- *   toggle                        25531
+ *   toggle                        25540
  *   skeleton                       8701
- *   number-field                  40997
+ *   number-field                  41008
  *   meter                         27773
- *   tabs                          25822
- *   confirm-button                25653
+ *   tabs                          25832
+ *   confirm-button                25662
  *   table                         11932
- *   textarea-field                32924
- *   pagination                    19416
- *   breadcrumb                    25342
- *   alert                         30609
+ *   textarea-field                32934
+ *   pagination                    19425
+ *   breadcrumb                    25352
+ *   alert                         30619
  *   react-aria/ui-providers        1987
- *   react-aria/date-field         70226
- *   react-aria/calendar           61208  (shrank 24 across phase B; ceiling tightened by exactly that, 91535 → 91511)
- *   react-aria/range-calendar     62415  (shrank 2 across phase B; ceiling tightened by exactly that, 93495 → 93493)
- *   react-aria/date-picker       104650  (shrank 662 across phase B; ceiling tightened by exactly that, 157968 → 157306)
+ *   react-aria/date-field         70232
+ *   react-aria/calendar           61203  (shrank 29 across phase B; ceiling tightened by exactly that, 91535 → 91506)
+ *   react-aria/range-calendar     62393  (shrank 24 across phase B; ceiling tightened by exactly that, 93495 → 93471)
+ *   react-aria/date-picker       104626  (shrank 686 across phase B; ceiling tightened by exactly that, 157968 → 157282)
  *   react-aria/date-range-picker 104152  (shrank 648 across phase B; ceiling tightened by exactly that, 157200 → 156552)
- *   react-aria/link               31273
- *   react-aria/search-field       41777
- *   react-aria/grid-list          68844
+ *   react-aria/link               31282
+ *   react-aria/search-field       41782
+ *   react-aria/grid-list          68846
  *   react-aria/focusable           3642
- *   react-aria/file-trigger       36493
+ *   react-aria/file-trigger       36501
  *   icons/Check                     818
  *   themes.css                     2274
  *   styles.css                    22995  (shrank 496 across phase B; ceiling tightened by exactly that, 25071 → 24575)
@@ -192,9 +192,9 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = [
   { name: "alert", entryFile: "alert.js", ceilingGzip: 45885 },
   { name: "react-aria/ui-providers", entryFile: "react-aria/ui-providers.js", ceilingGzip: 2981 },
   { name: "react-aria/date-field", entryFile: "react-aria/date-field.js", ceilingGzip: 105099 },
-  { name: "react-aria/calendar", entryFile: "react-aria/calendar.js", ceilingGzip: 91511 },
-  { name: "react-aria/range-calendar", entryFile: "react-aria/range-calendar.js", ceilingGzip: 93493 },
-  { name: "react-aria/date-picker", entryFile: "react-aria/date-picker.js", ceilingGzip: 157306 },
+  { name: "react-aria/calendar", entryFile: "react-aria/calendar.js", ceilingGzip: 91506 },
+  { name: "react-aria/range-calendar", entryFile: "react-aria/range-calendar.js", ceilingGzip: 93471 },
+  { name: "react-aria/date-picker", entryFile: "react-aria/date-picker.js", ceilingGzip: 157282 },
   {
     name: "react-aria/date-range-picker",
     entryFile: "react-aria/date-range-picker.js",

@@ -399,19 +399,53 @@ describe("superseded local forms", () => {
   // five owners; this is the ban on the private copies growing back (2026-09-03).
   const nonTestSources = (): string[] => walkSourceFiles(SRC_ROOT);
 
+  /** Line-comment and block-comment lines dropped, so prose citing a spelling is not a copy of it. */
+  function codeOnly(source: string): string {
+    return source
+      .split("\n")
+      .filter((line) => {
+        const trimmed = line.trimStart();
+        return !trimmed.startsWith("*") && !trimmed.startsWith("//") && !trimmed.startsWith("/*");
+      })
+      .join("\n");
+  }
+
   function ownedBy(owner: string, needle: string): string[] {
     const ownerPath = join(SRC_ROOT, owner);
     return nonTestSources()
-      .filter((file) => file !== ownerPath && readFileSync(file, "utf8").includes(needle))
+      .filter((file) => file !== ownerPath && codeOnly(readFileSync(file, "utf8")).includes(needle))
       .map((file) => relative(SRC_ROOT, file));
   }
 
-  it("resolves the self and within focus rings only in styles/utils.ts", () => {
-    expect(ownedBy("styles/utils.ts", 'focusRing({ target: "self" })')).toEqual([]);
-    expect(ownedBy("styles/utils.ts", 'focusRing({ target: "within" })')).toEqual([]);
+  it("resolves every fixed focus-ring rung only in styles/utils.ts", () => {
+    // All three targets. The one call that is not a constant — `react-aria/link`, which
+    // passes a live `isFocusVisible` from a RAC render prop — is the single exemption,
+    // and naming it here is what stops a second one appearing quietly.
+    for (const needle of [
+      'focusRing({ target: "self" })',
+      'focusRing({ target: "within" })',
+      'focusRing({ target: "state" })',
+      'focusRing({ target: "state", isFocusVisible: true })',
+    ]) {
+      expect(ownedBy("styles/utils.ts", needle), needle).toEqual([]);
+    }
+    expect(
+      nonTestSources()
+        .filter((file) =>
+          /focusRing\(\{[^}]*isFocusVisible[^:}]*\}\)/u.test(codeOnly(readFileSync(file, "utf8")))
+        )
+        .map((file) => relative(SRC_ROOT, file))
+    ).toEqual(["react-aria/link/link.tsx"]);
     const utils = readSrc("styles/utils.ts");
     expect(utils).toContain('export const selfFocusRingClass = focusRing({ target: "self" }).root();');
     expect(utils).toContain('export const withinFocusRingClass = focusRing({ target: "within" }).root();');
+    expect(utils).toContain(
+      'export const withinFocusRingControlClass = focusRing({ target: "within" }).control();'
+    );
+    expect(utils).toContain('export const stateFocusRingClass = focusRing({ target: "state" }).root();');
+    expect(utils).toContain(
+      'export const stateFocusRingVisibleClass = focusRing({ target: "state", isFocusVisible: true }).root();'
+    );
   }, 30_000);
 
   it("reads the ThemeScope portal container only through useResolvedPortalContainer", () => {
@@ -424,9 +458,10 @@ describe("superseded local forms", () => {
     ).toEqual([]);
   }, 30_000);
 
-  it("spells the popup motion and surface classes only in overlay-classes.ts", () => {
+  it("spells the popup motion, fill and surface classes only in overlay-classes.ts", () => {
     for (const needle of [
       "origin-(--transform-origin)",
+      "bg-popover text-popover-foreground",
       "shadow-md ring-1 ring-foreground/10",
       "pointer-events-none absolute right-2 flex items-center justify-center",
       "-mx-1 my-1 h-px bg-border",
@@ -464,7 +499,7 @@ describe("superseded local forms", () => {
     // anti-slop rule rather than answering it; no source file spells it any more.
     expect(
       nonTestSources()
-        .filter((file) => readFileSync(file, "utf8").includes("[object String]"))
+        .filter((file) => codeOnly(readFileSync(file, "utf8")).includes("[object String]"))
         .map((file) => relative(SRC_ROOT, file))
     ).toEqual([]);
   }, 30_000);

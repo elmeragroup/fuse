@@ -140,6 +140,14 @@ describe("size-limit harness", () => {
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "text")?.ceilingGzip).toBe(
       ceilingFromMeasured(17279)
     );
+    // card and input-group were tightened 2026-09-03 by the bytes the shared overlay/field
+    // spine took out of them (spec 08 phase-B re-measure), like the eight rows below.
+    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "card")?.ceilingGzip).toBe(
+      ceilingFromMeasured(15964) - 9
+    );
+    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "input-group")?.ceilingGzip).toBe(
+      ceilingFromMeasured(28011) - 15
+    );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "popover")?.ceilingGzip).toBe(
       ceilingFromMeasured(56865)
     );
@@ -258,13 +266,13 @@ describe("size-limit harness", () => {
       ceilingFromMeasured(70066)
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "react-aria/calendar")?.ceilingGzip).toBe(
-      ceilingFromMeasured(61023) - 24
+      ceilingFromMeasured(61023) - 29
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "react-aria/range-calendar")?.ceilingGzip).toBe(
-      ceilingFromMeasured(62330) - 2
+      ceilingFromMeasured(62330) - 24
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "react-aria/date-picker")?.ceilingGzip).toBe(
-      ceilingFromMeasured(105312) - 662
+      ceilingFromMeasured(105312) - 686
     );
     expect(
       JS_ENTRY_BUDGETS.find((budget) => budget.name === "react-aria/date-range-picker")?.ceilingGzip

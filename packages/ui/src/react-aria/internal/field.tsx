@@ -14,7 +14,7 @@ import { tv } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
 import { fieldBoxChromeClass } from "../../styles/field-box";
-import { focusRing } from "../../styles/utils";
+import { stateFocusRingClass, stateFocusRingVisibleClass } from "../../styles/utils";
 import { composeTailwindRenderProps } from "./utils";
 
 /**
@@ -26,7 +26,8 @@ import { composeTailwindRenderProps } from "./utils";
  * `md` rung (`h-(--control-h-md)`) without growing a `size` axis, so a comfortable
  * DateField box matches a comfortable Button. date-picker.md §8.10 records the swap
  * from the reference's literal `h-9`; §8.9 records `bg-card` replacing `bg-background`.
- * The focus ring is the shared `focusRing({ target: "state", isFocusVisible })` recipe,
+ * The focus ring is the resolved `state` pair from `styles/utils`
+ * (`stateFocusRingClass` plus `stateFocusRingVisibleClass` on the `isFocusVisible` arm),
  * never a local outline.
  *
  * The *chrome* — elevation, radius, border, fill, transition — is not spelled here: it
@@ -42,11 +43,11 @@ export const fieldGroupVariants = tv({
   base: cn(
     fieldBoxChromeClass,
     "group flex h-(--control-h-md) items-center overflow-hidden text-foreground",
-    focusRing({ target: "state" }).root()
+    stateFocusRingClass
   ),
   variants: {
     isFocusVisible: {
-      true: focusRing({ target: "state", isFocusVisible: true }).root(),
+      true: stateFocusRingVisibleClass,
       false: "",
     },
     isFocusWithin: {
