@@ -1,5 +1,3 @@
-/* oxlint-disable anti-slop/no-conditional-empty-object-spread -- optional origin facts preserve the backend contract. */
-
 import type { CallExpression, Node } from "typescript/unstable/ast";
 import { isElementAccessExpression, isStringLiteral } from "typescript/unstable/ast/is";
 
@@ -39,6 +37,7 @@ export function callExpressionFacts(
     ...result,
     calleeFacts: {
       symbol: calleeSymbol,
+      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional origin facts preserve the backend contract.
       ...(moduleOrigin === undefined ? {} : { moduleOrigin }),
       identity: origin.identity,
     },

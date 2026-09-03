@@ -25,7 +25,7 @@ This hybrid superseded the earlier AST-extraction plan (ruling 74b, 2026-08-24: 
 - **Warning union 3→8.** Recoverable losses are the eight structured codes listed in the package README (`unsupported-type-fallback`, `missing-enum-declaration`, `missing-default-export-symbol`, `omitted-index-signature`, `unrepresented-construct-signatures`, `omitted-callable-members`, `unresolved-re-export`, `uncertain-component-recognition`). Consumers branch on `code`, not `message` text.
 - **Timing evidence is boundary-only.** Live timing is captured for the four sequential public-seam boundary fixtures (Issue 02 / Issue 14 / external-selection plans). `roundTripMs` is an observation; stop conditions are request count and bytes received against catalog ceilings. The public `ProjectExtractor` layer does not accept a timing switch.
 - **`dist/` build.** `scripts/build.ts` emits `dist/` via `tsc` as a local check (`pnpm run build` / `check:all`). The package stays private; workspace consumers import `src/` through `"exports"`. There is no published distribution.
-- **Lint overrides.** `tooling.md` §4 permits oxlintrc overrides only for the two oxlint plugin packages. The extractor does not add a file-glob override. Demonstrated incompatibilities (unstable TypeScript 7 AST typing, optional model fields that preserve upstream JSON) use next-to-the-code `oxlint-disable` headers with a reason; they are not a path-wide exemption.
+- **Lint overrides.** `tooling.md` §4 permits oxlintrc overrides only for the two oxlint plugin packages. The extractor does not add a file-glob override. Demonstrated incompatibilities (unstable TypeScript 7 AST typing, optional model fields that preserve upstream JSON) use next-to-the-code `oxlint-disable` headers with a reason; they are not a path-wide exemption. _(Reaffirmed 2026-09-03 — see “Exceptions at their use sites” below.)_
 
 Normative pipeline: [docs-site](../spec/docs-site.md) §8. Package inventory: [tooling](../spec/tooling.md) §1.
 
@@ -57,6 +57,32 @@ longer split on `|` — 115 shadow entries had union members hoisted out of a ne
 `React.ReactElement<…>` type argument and now render the type the extractor produced.
 The snapshot was refreshed with `pnpm run shadow:update`; every reviewed key and its
 reason survived unchanged.
+
+### Exceptions at their use sites (2026-09-03)
+
+The bullet above was honoured in the letter and broken in the spirit: instead of a path-wide
+override the package carried 60 file-wide `/* oxlint-disable … */` directives across 37 files.
+A whole-file exemption is broader than the override it avoids, and it hides which line needed
+it — 26 of those rule-instances, including every `typescript/no-unsafe-*` header in
+`backend/ts7/module.ts`, `module-ordering.ts` and `reexport-chain.ts`, had stopped exempting
+anything at all.
+
+The decision itself stands and is now implemented: `.oxlintrc.json` grants this package no
+override. Every exception is an `oxlint-disable-next-line` on the line it governs, naming one
+rule and why that rule cannot hold there (148 of them, 108 for the model's absent-key JSON
+encoding), or the `SAFETY:` comment the rule was asking for rather than a disable (39).
+
+A scoped override for `src/backend/ts7/**` was drafted first, following spec 09's
+implementation decision, and rejected on the evidence. The `typescript/no-unsafe-*` family that
+decision named is no longer violated anywhere in that directory, so exempting it would exempt
+nothing; and the two `anti-slop` rules the raw-compiler seam genuinely trips are tripped on ten
+lines in four of that directory's twenty-three files, which ten next-line disables cover exactly.
+An override would have bought a forward exemption for nineteen files with no demonstrated need,
+which is the shape wayfinder ticket 028 forbade.
+
+`test/extractor-lint-exceptions.test.mjs` in the root repo-policy project holds all three
+properties: no file-wide header, no reasonless next-line disable, no override matching the
+package path. Normative text: [tooling](../spec/tooling.md) §4.
 
 ## Alternatives rejected
 

@@ -1,5 +1,3 @@
-/* oxlint-disable anti-slop/no-conditional-empty-object-spread -- optional native FS hooks are normalized. */
-
 import { dirname, resolve } from "node:path";
 import { API } from "typescript/unstable/sync";
 import type { Project } from "typescript/unstable/sync";
@@ -119,7 +117,9 @@ function normalizeTiming(info: ReturnType<API["getTimingInfo"]>): BackendTiming 
       roundTripMs: request.roundTripMs,
       bytesSent: request.bytesSent,
       bytesReceived: request.bytesReceived,
+      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional native FS hooks are normalized.
       ...(request.serverTimeMs === undefined ? {} : { serverTimeMs: request.serverTimeMs }),
+      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional native FS hooks are normalized.
       ...(request.transportOverheadMs === undefined
         ? {}
         : { transportOverheadMs: request.transportOverheadMs }),

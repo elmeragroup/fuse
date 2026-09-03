@@ -1,7 +1,3 @@
-/* oxlint-disable anti-slop/no-conditional-empty-object-spread -- Optional model fields preserve the upstream encoding. */
-/* oxlint-disable anti-slop/no-runtime-typeof -- semantic model literals are narrowed at the resolver seam. */
-/* oxlint-disable anti-slop/require-safety-comment-for-type-assertion -- the fallback flag tuple is package-owned. */
-
 import type {
   BackendExportDraft,
   BackendNodeHandle,
@@ -98,6 +94,7 @@ export function resolveModule(
   const module: ModuleNode = {
     name: draft.name,
     exports,
+    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
     ...(draft.imports === undefined ? {} : { imports: draft.imports }),
   };
   const semanticPaths = collectSemanticPaths(module);
@@ -118,6 +115,7 @@ function resolveExport(entry: BackendExportDraft, base: Context): ExportNode {
   const rootProvenance: ProvenanceEntry = {
     path: semanticPath,
     ...declarationProvenance(symbolFacts, base),
+    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
     ...(entry.reexportChain === undefined ? {} : { reexportChain: entry.reexportChain }),
   };
   const declaration = primaryDeclaration(symbolFacts);
@@ -156,6 +154,7 @@ function resolveExport(entry: BackendExportDraft, base: Context): ExportNode {
       provenancePropertyContainer: "componentProps",
       propertyDepth: 0,
       symbolStack,
+      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
       ...(authored.bindingDefaults === undefined ? {} : { bindingDefaults: authored.bindingDefaults }),
     })
   );
@@ -194,8 +193,11 @@ function resolveExport(entry: BackendExportDraft, base: Context): ExportNode {
   const output: ExportNode = {
     name: entry.name,
     type: resolvedOutputType,
+    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
     ...(entry.documentation === undefined ? {} : { documentation: entry.documentation }),
+    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
     ...(entry.reexportedFrom === undefined ? {} : { reexportedFrom: entry.reexportedFrom }),
+    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
     ...(entry.extendsTypes === undefined ? {} : { extendsTypes: entry.extendsTypes }),
   };
   return output;
@@ -215,6 +217,8 @@ function publicExportName(type: SemanticType, entry: BackendExportDraft): Semant
   if (!("typeName" in type)) return type;
   const parentNamespaces = (entry.symbolStack ?? [entry.name]).slice(0, -1);
   const ownName = entry.name.slice(entry.name.lastIndexOf(".") + 1);
+  // SAFETY: the `"typeName" in type` guard above established the property; this assertion only
+  // names its type, and every read below handles the undefined case.
   const typeName = (type as { typeName?: TypeName | undefined }).typeName;
   if (parentNamespaces.length === 0) {
     // Top-level exports keep the resolved name unless it is internal.
@@ -226,6 +230,7 @@ function publicExportName(type: SemanticType, entry: BackendExportDraft): Semant
     typeName: {
       name: ownName,
       namespaces: [...parentNamespaces],
+      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
       ...(typeName?.typeArguments === undefined ? {} : { typeArguments: typeName.typeArguments }),
     },
   };
@@ -359,6 +364,7 @@ function typeNodeUnsafe(
     return {
       kind: "intrinsic",
       intrinsic: facts.intrinsic,
+      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
       ...(typeNameValue === undefined ? {} : { typeName: typeNameValue }),
     };
   }
@@ -375,6 +381,7 @@ function typeNodeUnsafe(
     return {
       kind: "object",
       properties: [],
+      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
       ...(typeNameValue === undefined ? {} : { typeName: typeNameValue }),
     };
   }
@@ -382,6 +389,7 @@ function typeNodeUnsafe(
     return {
       kind: "literal",
       value: literalValue(facts.literal),
+      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
       ...(typeNameValue === undefined ? {} : { typeName: typeNameValue }),
     };
   }
@@ -392,6 +400,7 @@ function typeNodeUnsafe(
     return {
       kind: "literal",
       value: context.operations.typeToString(type),
+      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
       ...(typeNameValue === undefined ? {} : { typeName: typeNameValue }),
     };
   }
@@ -449,6 +458,7 @@ function typeNodeUnsafe(
       callSignatures: signatures.map((signature, index) =>
         resolveSignatureNode(signature, context, index, typeNode)
       ),
+      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
       ...(typeNameValue === undefined ? {} : { typeName: typeNameValue }),
     };
   }
@@ -523,6 +533,7 @@ function baseConstraintOrAny(
   return {
     kind: "intrinsic",
     intrinsic: "any",
+    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
     ...(typeNameValue === undefined ? {} : { typeName: typeNameValue }),
   };
 }
@@ -559,6 +570,7 @@ function recordMissingEnumWarning(
     code: "missing-enum-declaration",
     ...warningLocation(context, symbolFacts?.declarations[0]),
     enumName: typeNameValue?.name ?? symbolFacts?.name ?? "enum",
+    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
     ...(memberName === undefined ? {} : { memberName }),
   });
 }
@@ -590,12 +602,14 @@ function shallowType(
     return {
       kind: "intrinsic",
       intrinsic: facts.intrinsic,
+      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
       ...(name === undefined ? {} : { typeName: name }),
     };
   if (facts.literal !== undefined) {
     return {
       kind: "literal",
       value: literalValue(facts.literal),
+      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
       ...(name === undefined ? {} : { typeName: name }),
     };
   }
@@ -613,12 +627,14 @@ function shallowType(
   }
   if (externalDecision.kind === "anonymous-root") return { kind: "object", properties: [] };
   if (facts.isUnion === true)
+    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
     return { kind: "union", types: [], ...(name === undefined ? {} : { typeName: name }) };
   if (facts.isIntersection === true)
     return {
       kind: "intersection",
       types: [],
       properties: [],
+      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
       ...(name === undefined ? {} : { typeName: name }),
     };
   // An array keeps an element type in the model, so the cut supplies the
@@ -627,16 +643,21 @@ function shallowType(
     return {
       kind: "array",
       elementType: { kind: "intrinsic", intrinsic: "any" },
+      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
       ...(context.operations.isReadonlyType(type) ? { isReadonly: true as const } : {}),
+      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
       ...(name === undefined ? {} : { typeName: name }),
     };
   if (facts.isTuple === true)
     return {
       kind: "tuple",
       types: [],
+      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
       ...(context.operations.isReadonlyType(type) ? { isReadonly: true as const } : {}),
+      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
       ...(name === undefined ? {} : { typeName: name }),
     };
+  // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
   return { kind: "object", properties: [], ...(name === undefined ? {} : { typeName: name }) };
 }
 
@@ -651,7 +672,9 @@ function shallowType(
  * without authored syntax.
  */
 function literalValue(value: string | number | boolean): string | number | boolean {
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- semantic model literals are narrowed at the resolver seam.
   if (typeof value === "string") return JSON.stringify(value);
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- semantic model literals are narrowed at the resolver seam.
   if (typeof value === "boolean") return String(value);
   return value;
 }
@@ -762,7 +785,9 @@ function typeNameFor(
   });
   return {
     name,
+    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
     ...(named.namespaces.length === 0 ? {} : { namespaces: named.namespaces }),
+    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
     ...(named.typeArguments.length === 0 ? {} : { typeArguments: named.typeArguments }),
   };
 }

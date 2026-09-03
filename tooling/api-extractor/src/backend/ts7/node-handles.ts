@@ -1,6 +1,3 @@
-/* oxlint-disable anti-slop/require-safety-comment-for-type-assertion -- assertions adapt the undocumented RemoteNode id encoding. */
-/* oxlint-disable anti-slop/no-runtime-typeof -- the undocumented RemoteNode id is narrowed at this intern seam. */
-
 import type { Node } from "typescript/unstable/ast";
 import type { NodeHandle } from "typescript/unstable/sync";
 
@@ -101,6 +98,7 @@ function nativeNodeIdentity(
   // Structural narrowing keeps that unstable detail inside this adapter and
   // lets synthetic nodes fall back to object-reference interning.
   const id = (node as Node & { readonly id?: unknown }).id;
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- the undocumented RemoteNode id is narrowed at this intern seam.
   if (typeof id !== "string") return undefined;
   const firstSeparator = id.indexOf(".");
   const secondSeparator = id.indexOf(".", firstSeparator + 1);

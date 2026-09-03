@@ -1,5 +1,3 @@
-/* oxlint-disable anti-slop/no-conditional-empty-object-spread -- optional origin facts preserve the backend contract. */
-
 import { SyntaxKind } from "typescript/unstable/ast";
 import type { Node } from "typescript/unstable/ast";
 import { isIdentifier, isModuleDeclaration } from "typescript/unstable/ast/is";
@@ -32,6 +30,7 @@ export function symbolFacts(session: TsgoFactsSession, handle: BackendSymbolHand
     declarationPaths: sourcePaths,
     declarations: symbol.declarations.map((declaration) => session.declarationHandle(declaration)),
     repositoryRelativeDeclarationPaths: sourcePaths.map(repoPath),
+    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional origin facts preserve the backend contract.
     ...(valueDeclaration === undefined ? {} : { valueDeclaration }),
   };
 }

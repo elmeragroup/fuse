@@ -1,4 +1,3 @@
-/* oxlint-disable typescript/prefer-optional-chain -- narrowing guards double as type predicates for the semantic union. */
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -55,6 +54,7 @@ describe("generic substitutions and aliases", () => {
     const wrapper = expectKind(exportType(result.module, "useWrapper"), "function");
     const parameter = wrapper.callSignatures[0]?.parameters[0]?.type;
     expect(parameter?.kind).toBe("object");
+    // oxlint-disable-next-line typescript/prefer-optional-chain -- the narrowing guard doubles as a type predicate for the semantic union.
     if (parameter === undefined || parameter.kind !== "object") return;
     const byName = new Map(parameter.properties.map((property) => [property.name, property.type] as const));
 
@@ -72,6 +72,7 @@ describe("generic substitutions and aliases", () => {
     };
     expect(byName.get("direct")).toEqual(source);
     const callback = byName.get("callback");
+    // oxlint-disable-next-line typescript/prefer-optional-chain -- the narrowing guard doubles as a type predicate for the semantic union.
     if (callback !== undefined && callback.kind === "function")
       expect(callback.callSignatures[0]?.returnValueType).toEqual(source);
     expect(byName.get("container")).toEqual({ kind: "array", elementType: source });
@@ -86,6 +87,7 @@ describe("generic substitutions and aliases", () => {
       );
     const returns = byName.get("returns");
     expect(
+      // oxlint-disable-next-line typescript/prefer-optional-chain -- the narrowing guard doubles as a type predicate for the semantic union.
       returns && returns.kind === "function" ? returns.callSignatures[0]?.returnValueType : undefined
     ).toEqual(source);
   });
@@ -153,10 +155,12 @@ describe("generic substitutions and aliases", () => {
       // describing the substituted value.
       let current: SemanticType | undefined = holder;
       let depth = 0;
+      // oxlint-disable-next-line typescript/prefer-optional-chain -- the narrowing guard doubles as a type predicate for the semantic union.
       while (current !== undefined && current.kind === "object" && depth < 12) {
         const next: SemanticType | undefined = current.properties.find(
           (property) => property.name === "next"
         )?.type;
+        // oxlint-disable-next-line typescript/prefer-optional-chain -- the narrowing guard doubles as a type predicate for the semantic union.
         current = next !== undefined && next.kind === "object" ? next : undefined;
         depth += 1;
       }

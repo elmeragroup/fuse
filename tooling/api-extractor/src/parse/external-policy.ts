@@ -1,5 +1,3 @@
-/* oxlint-disable anti-slop/no-conditional-empty-object-spread -- optional model names preserve the contract. */
-
 import type {
   BackendNodeReference,
   BackendSymbolHandle,
@@ -121,7 +119,9 @@ export function externalPolicy(input: ExternalPolicyInput): ExternalPolicyDecisi
       kind: "external-reference",
       typeName: {
         name: resolvedName,
+        // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model names preserve the contract.
         ...(value.namespaces === undefined ? {} : { namespaces: value.namespaces }),
+        // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model names preserve the contract.
         ...(value.typeArguments === undefined ? {} : { typeArguments: value.typeArguments }),
       },
     };

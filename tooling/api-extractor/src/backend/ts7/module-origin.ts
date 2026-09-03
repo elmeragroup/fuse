@@ -1,6 +1,3 @@
-/* oxlint-disable anti-slop/no-conditional-empty-object-spread -- optional origin facts preserve the backend contract. */
-/* oxlint-disable typescript/no-unnecessary-condition -- remote AST parents can end before the shared type says they do. */
-
 import type { Node } from "typescript/unstable/ast";
 import { SyntaxKind } from "typescript/unstable/ast";
 import {
@@ -193,6 +190,7 @@ function moduleOriginOfSymbolUnsafe(
 
 function moduleSource(node: Node): ModuleSource | undefined {
   let current: Node | undefined = node;
+  // oxlint-disable-next-line typescript/no-unnecessary-condition -- remote AST parents can end before the shared type says they do.
   while (current !== undefined && current.kind !== SyntaxKind.SourceFile) {
     if (isImportEqualsDeclaration(current)) {
       const moduleReference = current.moduleReference;
@@ -211,6 +209,7 @@ function moduleSource(node: Node): ModuleSource | undefined {
       return {
         specifier: current.moduleSpecifier.text,
         node: current.moduleSpecifier,
+        // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional origin facts preserve the backend contract.
         ...(importedName === undefined ? {} : { importedName }),
       };
     }
@@ -226,6 +225,7 @@ function moduleSource(node: Node): ModuleSource | undefined {
       return {
         specifier: moduleSpecifier.text,
         node: moduleSpecifier,
+        // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional origin facts preserve the backend contract.
         ...(importedName === undefined ? {} : { importedName }),
       };
     }
@@ -244,6 +244,7 @@ function originFromSpecifier(
 ): OriginResolution {
   return moduleOriginFromSource(
     session,
+    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional origin facts preserve the backend contract.
     { specifier: node.text, node, ...(importedName === undefined ? {} : { importedName }) },
     seen,
     memberPath
@@ -260,6 +261,7 @@ function moduleOriginFromSource(
   const moduleSymbol = session.rawSymbolAt(source.node);
   const direct = {
     moduleSpecifier: source.specifier,
+    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional origin facts preserve the backend contract.
     ...(sourcePackageName === undefined ? {} : { packageName: sourcePackageName }),
     external: moduleSymbol === undefined ? false : moduleIsExternal(session, moduleSymbol),
   } satisfies BackendModuleOrigin;

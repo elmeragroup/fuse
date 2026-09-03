@@ -1,5 +1,3 @@
-/* oxlint-disable anti-slop/no-conditional-empty-object-spread -- Optional model fields preserve the upstream encoding. */
-
 import type { BackendNodeFacts, BackendNodeReference, BackendTypeHandle } from "../backend/contracts.ts";
 import type { SemanticType, TypeName } from "../model.ts";
 import { unwrapAuthoredNode } from "./authored-node.ts";
@@ -53,7 +51,9 @@ export function arrayNode(
   return {
     kind: "array",
     elementType: resolve(elementType, containerElementNode(sourceNode, context), undefined, context),
+    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
     ...(context.operations.isReadonlyType(type) ? { isReadonly: true as const } : {}),
+    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
     ...(aliasName === undefined || aliasName === ""
       ? {}
       : { typeName: { ...typeNameValue, name: aliasName } }),
@@ -92,7 +92,9 @@ export function tupleNode(
       const bound = applySubstitutions(nodeType, scoped.substitutions, context.operations);
       return resolve(bound === nodeType ? element : bound, node, undefined, scoped);
     }),
+    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
     ...(context.operations.isReadonlyType(type) ? { isReadonly: true as const } : {}),
+    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
     ...(typeNameValue === undefined ? {} : { typeName: typeNameValue }),
   };
 }
@@ -187,6 +189,7 @@ function tupleElementPlan(
   const nodes = children.flatMap((child, index) =>
     expandedTupleElement(child, restPositions[index] === true, widths[index] ?? 0, context, visited)
   );
+  // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
   return { nodes, ...(inherited === undefined ? {} : { substitutions: inherited }) };
 }
 

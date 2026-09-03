@@ -1,5 +1,3 @@
-/* oxlint-disable anti-slop/no-conditional-empty-object-spread -- report fields are normalized. */
-
 import { Cause, Effect, Exit, Schema } from "effect";
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
@@ -279,6 +277,7 @@ function failedExtraction(definition: ConformanceFixture, error: string): Extrac
     upstreamDifferenceCount: 0,
     upstreamDifferenceDigest: differenceDigest([]),
     ...warningEvidence([]),
+    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- report fields are normalized.
     ...(definition.disposition === "reviewed-ts7"
       ? {
           divergenceRecord: relativeFixturePath(
@@ -322,7 +321,9 @@ function compareFixtureExtraction(
         upstreamDifferenceCount: upstreamDifferences.length,
         upstreamDifferenceDigest: differenceDigest(upstreamDifferences),
         ...warningEvidence(result.warnings),
+        // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- report fields are normalized.
         ...(warningPath === undefined ? {} : { warningOracle: relativeFixturePath(warningPath) }),
+        // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- report fields are normalized.
         ...(definition.disposition === "reviewed-ts7"
           ? {
               divergenceRecord: relativeFixturePath(
@@ -343,7 +344,9 @@ function compareFixtureExtraction(
       upstreamDifferenceCount: upstreamDifferences.length,
       upstreamDifferenceDigest: differenceDigest(upstreamDifferences),
       ...warningEvidence(result.warnings),
+      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- report fields are normalized.
       ...(warningPath === undefined ? {} : { warningOracle: relativeFixturePath(warningPath) }),
+      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- report fields are normalized.
       ...(definition.disposition === "reviewed-ts7"
         ? {
             divergenceRecord: relativeFixturePath(
@@ -351,6 +354,7 @@ function compareFixtureExtraction(
             ),
           }
         : {}),
+      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- report fields are normalized.
       ...(differences.length === 0 ? {} : { error: "extraction output does not match selected oracle" }),
     };
   } catch (error) {

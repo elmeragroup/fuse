@@ -1,8 +1,3 @@
-/* oxlint-disable anti-slop/no-conditional-empty-object-spread -- normalized optional facts preserve the public encoding. */
-/* oxlint-disable anti-slop/no-runtime-typeof -- literal values are narrowed from compiler facts. */
-/* oxlint-disable anti-slop/require-safety-comment-for-type-assertion -- assertions adapt the unstable compiler graph into opaque handles. */
-/* oxlint-disable anti-slop/no-unknown-parameters -- primitive narrowing is the adapter's normalized-fact seam. */
-
 import { resolve } from "node:path";
 import type { Node, TypeNode } from "typescript/unstable/ast";
 import { isTypeNode } from "typescript/unstable/ast/is";
@@ -215,7 +210,9 @@ export class TsgoExtractionSession implements BackendExtractionSession {
   private context(operation: string) {
     return {
       operation,
+      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized optional facts preserve the public encoding.
       ...(this.currentFilePath === undefined ? {} : { filePath: this.currentFilePath }),
+      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized optional facts preserve the public encoding.
       ...(this.symbolStack.length === 0 ? {} : { symbolStack: [...this.symbolStack] }),
     };
   }

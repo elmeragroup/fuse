@@ -1,5 +1,3 @@
-/* oxlint-disable anti-slop/require-safety-comment-for-type-assertion -- RemoteSourceFile index lookup is the NodeHandle.resolve implementation. */
-
 import type { Node, SourceFile } from "typescript/unstable/ast";
 import type { Project } from "typescript/unstable/sync";
 

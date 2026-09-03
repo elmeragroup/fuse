@@ -1,6 +1,3 @@
-/* oxlint-disable typescript/no-unsafe-assignment, typescript/no-unsafe-call, typescript/no-unsafe-member-access, typescript/no-unsafe-return, typescript/no-unsafe-argument -- the native checker enumeration is only loosely typed; every fact leaving this file is normalized before it crosses the backend contract. */
-/* oxlint-disable typescript/no-unnecessary-condition, typescript/prefer-optional-chain -- remote AST parents can end earlier at runtime than the shared node typing admits, so guards stay explicit. */
-
 import { SyntaxKind } from "typescript/unstable/ast";
 import type { SourceFile } from "typescript/unstable/ast";
 import type { Symbol as TsSymbol } from "typescript/unstable/sync";

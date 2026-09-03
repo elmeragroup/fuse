@@ -70,6 +70,7 @@ Format checking (`oxfmt --check`) runs as a root script, not a per-package turbo
   ```
 
 - Overrides carve the two plugin source dirs (`tooling/oxlint-plugin/**`, `tooling/oxlint-anti-slop/**`) out of the type-unsafe rules, exactly as the internal ref does for its rule sources.
+- No other override exists, and `tooling/api-extractor` deliberately takes none: the extractor's exceptions are all at their use sites — an `oxlint-disable-next-line` naming one rule and the reason it cannot hold on that line, or the `SAFETY:` comment a rule asks for instead of a disable. File-wide `oxlint-disable` headers are forbidden in that package; the root repo-policy project (§7.6) fails on a returning header, on a reasonless next-line disable, and on any `.oxlintrc.json` override matching that path. _(Added 2026-09-03 — [ADR 0007](../adr/0007-docs-api-extraction-pipeline.md), “Lint overrides”: the package's 60 file-wide header directives across 37 files are gone; it now carries 148 next-line disables and 39 `SAFETY:` comments and no override.)_
 
 ## 5 Custom lint guardrails
 

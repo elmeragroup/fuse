@@ -1,8 +1,3 @@
-/* oxlint-disable anti-slop/no-conditional-empty-object-spread -- normalized optional module facts preserve the contract. */
-/* oxlint-disable anti-slop/require-safety-comment-for-type-assertion -- assertions adapt unstable AST facts where noted inline. */
-/* oxlint-disable typescript/no-unsafe-assignment, typescript/no-unsafe-call, typescript/no-unsafe-member-access, typescript/no-unsafe-return, typescript/no-unsafe-argument -- the native checker enumeration is only loosely typed; every fact leaving this file is normalized before it crosses the backend contract. */
-/* oxlint-disable typescript/no-unnecessary-condition, typescript/prefer-optional-chain -- remote AST parents can end earlier at runtime than the shared node typing admits, so guards stay explicit. */
-
 import { resolve } from "node:path";
 import type { Node, SourceFile } from "typescript/unstable/ast";
 import { SyntaxKind } from "typescript/unstable/ast";
@@ -155,8 +150,11 @@ export function readModule(session: TsgoModuleSession, filePath: string): Backen
   return {
     name: moduleName(session.rootDirectory, absoluteFilePath),
     exports: applyTypeOnlyStarFilter(exports, typeOnlyFiles),
+    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized optional module facts preserve the contract.
     ...(imports.length === 0 ? {} : { imports }),
+    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized optional module facts preserve the contract.
     ...(typeOnlyStarExports.length === 0 ? {} : { typeOnlyStarExports }),
+    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized optional module facts preserve the contract.
     ...(warnings.length === 0 ? {} : { warnings }),
   };
 }
@@ -322,6 +320,9 @@ function defaultExportNameSymbol(
   // that every function/class declaration materializes with at runtime.
   const modifiers = declarationModifiers(declaration);
   if (!modifiers.some((modifier) => modifier.kind === SyntaxKind.DefaultKeyword)) return undefined;
+  // SAFETY: the shared declaration typing omits the `name` slot. A default export may be
+  // anonymous (`export default class {}`), so the read stays optional and the next line returns
+  // on absence rather than assuming a name.
   const name = (declaration as Node & { readonly name?: Node }).name;
   if (name === undefined) return undefined;
   const symbol = session.symbolAt(name);
@@ -426,15 +427,20 @@ function exportDescriptor(
     name: joinPublicName(scope.parentNamespaces, scope.publicName),
     symbol: session.symbolHandle(target),
     symbolStack: scope.symbolStack,
+    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized optional module facts preserve the contract.
     ...(docs === undefined ? {} : { documentation: docs }),
+    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized optional module facts preserve the contract.
     ...(declarationHandle === undefined ? {} : { declarationSourcePath: declarationHandle.path }),
     pureType: isPureType(target),
     explicitValueReExport:
       scope.source === undefined
         ? false
         : explicitValueReExport(session, scope.symbol, scope.source, scope.publicName),
+    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized optional module facts preserve the contract.
     ...(reexportedFrom === undefined ? {} : { reexportedFrom }),
+    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized optional module facts preserve the contract.
     ...(chain.length === 0 ? {} : { reexportChain: chain }),
+    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized optional module facts preserve the contract.
     ...(inheritedTypes === undefined ? {} : { extendsTypes: inheritedTypes }),
   };
 }
@@ -458,6 +464,8 @@ function documentationSourceSymbol(session: TsgoModuleSession, symbol: TsSymbol,
     const resolved = resolveOwnedDeclaration(session, declaration);
     if (resolved === undefined || !isExportSpecifier(resolved)) continue;
     if (enclosingExportDeclaration(resolved)?.moduleSpecifier !== undefined) return target;
+    // SAFETY: `resolved` is an export specifier (checked above), so `propertyName` is the optional
+    // `x as y` half of it; the fallback reads the specifier's own name.
     const nameNode = (resolved as Node & { readonly propertyName?: Node }).propertyName ?? resolved.name;
     const local = session.symbolAt(nameNode);
     if (local !== undefined && !session.checker.isUnknownSymbol(local)) return local;

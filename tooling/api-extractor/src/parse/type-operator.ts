@@ -1,5 +1,3 @@
-/* oxlint-disable anti-slop/no-conditional-empty-object-spread -- Optional operator fields preserve the upstream encoding. */
-
 import type {
   BackendNodeReference,
   BackendSymbolHandle,
@@ -140,6 +138,7 @@ function resolveTypeOperatorOperand(
       kind: "object",
       typeName: resolved.typeName,
       properties: [],
+      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional operator fields preserve the upstream encoding.
       ...(resolved.indexSignature === undefined ? {} : { indexSignature: resolved.indexSignature }),
     };
   }
@@ -291,6 +290,7 @@ function keyofNode(
     kind: "typeOperator",
     operator: "keyof",
     type: operand,
+    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional operator fields preserve the upstream encoding.
     ...(typeNameValue === undefined ? {} : { typeName: typeNameValue }),
     resolvedType: resolved.type,
     resolutionKind: resolved.resolutionKind,
