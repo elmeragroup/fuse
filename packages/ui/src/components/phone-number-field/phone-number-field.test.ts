@@ -1,14 +1,17 @@
 import { LocalizedStringFormatter } from "@internationalized/string";
+import { getCountries as getMetadataCountries } from "libphonenumber-js/core";
 import type { MetadataJson } from "libphonenumber-js/core";
 import { describe, expect, it } from "vitest";
 
 import { SUPPORTED_LOCALES } from "../../../test/locale-matrix";
+import {
+  EMPTY_PICKER_ERROR_MESSAGE,
+  EXCLUDED_PRODUCT_COUNTRY_CODES,
+  FLAG_GAP_COUNTRY_CODES,
+} from "../../../test/phone-picker-contract";
 import { flagAssets } from "../../flags";
 import { phoneNumberFieldStrings } from "./intl";
 import {
-  EMPTY_PICKER_ERROR,
-  PRODUCT_EXCLUDED_COUNTRY_CODES,
-  UNRESOLVED_LIBPHONENUMBER_FLAG_GAP,
   cleanPhoneInput,
   defaultMetadata,
   getCountries,
@@ -60,20 +63,24 @@ describe("phone-number-field dictionary", () => {
 });
 
 describe("phone-number-field picker set", () => {
-  it("never includes AC, BQ, EH, TA or the 28 excluded product countries", () => {
-    const countries = getCountries();
-    const codes = countries.map((country) => country.code);
+  it("is exactly libphonenumber's countries, minus the flag gap, minus the product exclusions", () => {
+    const codes = getCountries().map((country) => country.code);
+    // Derived from libphonenumber and the flag manifest directly, so this is a two-way
+    // guard: a code wrongly added to the engine's exclusion set disappears from `codes`
+    // while staying in `expected`, and a code wrongly kept shows up the other way round.
+    // Counting the test's own literal instead would only restate it (ADR 0008).
+    const expected = getMetadataCountries(defaultMetadata).filter(
+      (code) =>
+        Object.hasOwn(flagAssets, code) &&
+        !EXCLUDED_PRODUCT_COUNTRY_CODES.some((excluded) => excluded === code)
+    );
+    expect(codes).toEqual(expected);
     expect(codes).toContain("NO");
     expect(codes).toContain("SE");
     expect(codes).toContain("FI");
-    for (const code of UNRESOLVED_LIBPHONENUMBER_FLAG_GAP) {
+    for (const code of FLAG_GAP_COUNTRY_CODES) {
       expect(codes, code).not.toContain(code);
-    }
-    for (const code of PRODUCT_EXCLUDED_COUNTRY_CODES) {
-      expect(codes, code).not.toContain(code);
-    }
-    for (const country of countries) {
-      expect(Object.hasOwn(flagAssets, country.code), country.code).toBe(true);
+      expect(Object.hasOwn(flagAssets, code), code).toBe(false);
     }
   });
 
@@ -86,7 +93,7 @@ describe("phone-number-field picker set", () => {
     // SAFETY: empty countries/calling-codes is a valid MetadataJson shape for the empty-picker case.
     const empty = { country_calling_codes: {}, countries: {} } as MetadataJson;
     expect(getCountries(empty)).toEqual([]);
-    expect(() => requirePickerCountries([])).toThrow(EMPTY_PICKER_ERROR);
+    expect(() => requirePickerCountries([])).toThrow(EMPTY_PICKER_ERROR_MESSAGE);
   });
 
   it("falls back from an unresolved default to NO, then the first picker country", () => {
@@ -110,46 +117,35 @@ describe("phone-number-field picker set", () => {
       return;
     }
 
-    const sweden = processInputWithDetection("+46701234567", norway, countries, true, false, defaultMetadata);
+    const detect = (input: string, autoDetectCountry = true) =>
+      processInputWithDetection({
+        input,
+        currentCountry: norway,
+        countries,
+        autoDetectCountry,
+        international: false,
+        metadata: defaultMetadata,
+      });
+
+    const sweden = detect("+46701234567");
     expect(sweden.country.code).toBe("SE");
     expect(sweden.digits).toBe("701234567");
 
-    const ituPrefix = processInputWithDetection(
-      "0046701234567",
-      norway,
-      countries,
-      true,
-      false,
-      defaultMetadata
-    );
+    const ituPrefix = detect("0046701234567");
     expect(ituPrefix.country.code).toBe("SE");
     expect(ituPrefix.digits).toBe("701234567");
 
-    const sameCountryItu = processInputWithDetection(
-      "004741234567",
-      norway,
-      countries,
-      true,
-      false,
-      defaultMetadata
-    );
+    const sameCountryItu = detect("004741234567");
     expect(sameCountryItu.country.code).toBe("NO");
     expect(sameCountryItu.digits).toBe("41234567");
 
-    const unchanged = processInputWithDetection(
-      "+46701234567",
-      norway,
-      countries,
-      false,
-      false,
-      defaultMetadata
-    );
+    const unchanged = detect("+46701234567", false);
     expect(unchanged.country.code).toBe("NO");
     expect(unchanged.digits).toBe("+46701234567");
 
-    const ac = processInputWithDetection("+24712345", norway, countries, true, false, defaultMetadata);
+    const ac = detect("+24712345");
     expect(ac.country.code).toBe("NO");
     expect(ac.digits).toBe("12345");
-    expect(UNRESOLVED_LIBPHONENUMBER_FLAG_GAP).not.toContain(ac.country.code);
+    expect(FLAG_GAP_COUNTRY_CODES).not.toContain(ac.country.code);
   });
 });

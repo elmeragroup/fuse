@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useEffectEvent, useMemo, useState } from "react";
+import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import type { ClipboardEvent } from "react";
 
 import type { CountryCode, MetadataJson } from "libphonenumber-js/core";
@@ -14,7 +14,13 @@ import {
   resolvePhoneFieldValues,
   resolveSelectedCountry,
 } from "../phone-engine";
-import type { PhoneCountryCode, PhoneNumberCountry, PhoneNumberFormat } from "../phone-engine";
+import type {
+  PhoneCountryCode,
+  PhoneFieldValues,
+  PhoneNumberCountry,
+  PhoneNumberFormat,
+  ProcessedPhoneInput,
+} from "../phone-engine";
 
 export type UsePhoneNumberFieldStateOptions = {
   value?: string;
@@ -49,6 +55,14 @@ function decodeFieldValue(value: string): string {
   }
 }
 
+function resolveDisplayNames(locale: string): Intl.DisplayNames {
+  try {
+    return new Intl.DisplayNames([locale], { type: "region" });
+  } catch {
+    return new Intl.DisplayNames(["en-US"], { type: "region" });
+  }
+}
+
 export function usePhoneNumberFieldState({
   value = "",
   onChange,
@@ -68,51 +82,106 @@ export function usePhoneNumberFieldState({
     [countries, defaultCountryCode]
   );
 
-  const [phoneState, setPhoneState] = useState<{ digits: string; country: PhoneNumberCountry }>({
+  const cachedMetadataRef = useRef<MetadataJson | null>(null);
+
+  const [phoneState, setPhoneState] = useState<ProcessedPhoneInput>({
     digits: "",
     country: initialCountry,
   });
   const { digits, country: selectedCountry } = phoneState;
 
-  const outputFrom = useCallback(
-    (nextDigits: string, countryCode: CountryCode) =>
-      resolvePhoneFieldValues(nextDigits, countryCode, metadata, outputFormat, international, formatOnType)
-        .outputValue,
+  /**
+   * `applyState` needs the output value to emit and the render below needs the same pair,
+   * so one parse serves both (phone-number-field.md §8.16). The memo lives in a ref rather
+   * than a `useMemo`: React may drop a `useMemo` at any time, and here that would silently
+   * double the parse count instead of failing, so the cache is held where nothing evicts it
+   * and every input it depends on is part of the key.
+   */
+  const valuesCacheRef = useRef<{ key: string; values: PhoneFieldValues } | null>(null);
+  const resolveValues = useCallback(
+    (input: ProcessedPhoneInput): PhoneFieldValues => {
+      const key = JSON.stringify([
+        input.country.code,
+        input.digits,
+        outputFormat,
+        international,
+        formatOnType,
+      ]);
+      const cached = valuesCacheRef.current;
+      // The metadata document is compared by identity; it is a prop, not a value to hash.
+      if (cached?.key === key && cachedMetadataRef.current === metadata) {
+        return cached.values;
+      }
+      const values = resolvePhoneFieldValues({
+        digits: input.digits,
+        country: input.country.code,
+        metadata,
+        outputFormat,
+        international,
+        formatOnType,
+      });
+      valuesCacheRef.current = { key, values };
+      cachedMetadataRef.current = metadata;
+      return values;
+    },
     [metadata, outputFormat, international, formatOnType]
   );
 
-  const commit = useCallback(
-    (next: { digits: string; country: PhoneNumberCountry }) => {
+  // The value this hook last handed to `onChange`. A controlled parent echoing it straight
+  // back is the common case, and re-processing it parses the same string a second time.
+  const lastEmittedRef = useRef<string | null>(null);
+  // The `international`/`metadata` pair the sync effect last ran on, so a change to either
+  // still re-syncs even when `value` is the string the hook itself last emitted.
+  const lastSyncRef = useRef<{ international: boolean; metadata: MetadataJson } | null>(null);
+
+  /**
+   * The single state application: country-change notification, the state write, and the
+   * optional `onChange` emit. `commit` (emitting) and `syncValue` (not emitting) were the
+   * same three steps written twice.
+   */
+  const applyState = useCallback(
+    (next: ProcessedPhoneInput, { emitChange }: { emitChange: boolean }) => {
       if (next.country.code !== selectedCountry.code) {
         onCountryChange?.(next.country);
       }
       setPhoneState(next);
-      onChange?.(outputFrom(next.digits, next.country.code));
+      if (emitChange) {
+        const output = resolveValues(next).outputValue;
+        lastEmittedRef.current = output;
+        onChange?.(output);
+      }
     },
-    [selectedCountry.code, onCountryChange, onChange, outputFrom]
+    [selectedCountry.code, onCountryChange, onChange, resolveValues]
   );
 
   const syncValue = useEffectEvent(
     (nextValue: string, nextInternational: boolean, nextMetadata: MetadataJson) => {
+      const lastSync = lastSyncRef.current;
+      if (
+        nextValue === lastEmittedRef.current &&
+        lastSync?.international === nextInternational &&
+        lastSync.metadata === nextMetadata
+      ) {
+        return;
+      }
+      lastSyncRef.current = { international: nextInternational, metadata: nextMetadata };
+
       if (!nextValue) {
-        setPhoneState((prev) => ({ ...prev, digits: "" }));
+        applyState({ digits: "", country: selectedCountry }, { emitChange: false });
         return;
       }
 
-      const decodedValue = decodeFieldValue(nextValue);
-      const detected = processInputWithDetection(
-        decodedValue,
-        selectedCountry,
-        countries,
-        autoDetectCountry,
-        nextInternational,
-        nextMetadata
+      applyState(
+        processInputWithDetection({
+          input: decodeFieldValue(nextValue),
+          currentCountry: selectedCountry,
+          countries,
+          autoDetectCountry,
+          international: nextInternational,
+          metadata: nextMetadata,
+        }),
+        { emitChange: false }
       );
-
-      if (detected.country.code !== selectedCountry.code) {
-        onCountryChange?.(detected.country);
-      }
-      setPhoneState(detected);
     }
   );
 
@@ -122,18 +191,19 @@ export function usePhoneNumberFieldState({
 
   const handleInputChange = useCallback(
     (newValue: string) => {
-      commit(
-        processInputWithDetection(
-          cleanPhoneInput(newValue),
-          selectedCountry,
+      applyState(
+        processInputWithDetection({
+          input: cleanPhoneInput(newValue),
+          currentCountry: selectedCountry,
           countries,
           autoDetectCountry,
           international,
-          metadata
-        )
+          metadata,
+        }),
+        { emitChange: true }
       );
     },
-    [commit, selectedCountry, countries, autoDetectCountry, international, metadata]
+    [applyState, selectedCountry, countries, autoDetectCountry, international, metadata]
   );
 
   const selectCountry = useCallback(
@@ -145,13 +215,12 @@ export function usePhoneNumberFieldState({
       if (!nextCountry) {
         return;
       }
-      if (!preserveOnCountryChange) {
-        commit({ digits: "", country: nextCountry });
-        return;
-      }
-      commit({ digits, country: nextCountry });
+      applyState(
+        { digits: preserveOnCountryChange ? digits : "", country: nextCountry },
+        { emitChange: true }
+      );
     },
-    [selectedCountry.code, countries, preserveOnCountryChange, commit, digits]
+    [selectedCountry.code, countries, preserveOnCountryChange, applyState, digits]
   );
 
   const handlePaste = useCallback(
@@ -162,31 +231,22 @@ export function usePhoneNumberFieldState({
     [handleInputChange]
   );
 
-  const formatterCountryName = useMemo(() => {
-    try {
-      return new Intl.DisplayNames([locale], { type: "region" });
-    } catch {
-      return new Intl.DisplayNames(["en-US"], { type: "region" });
+  /**
+   * `Intl.DisplayNames.of` ran once per picker row per render, and the picker is ~230 rows.
+   * The names for the whole picker set are resolved once per (locale, country set) instead;
+   * a code outside that set still falls through to the formatter.
+   */
+  const getCountryName = useMemo(() => {
+    const displayNames = resolveDisplayNames(locale);
+    const names = new Map<CountryCode, string>();
+    for (const country of countries) {
+      names.set(country.code, displayNames.of(country.code) ?? country.code);
     }
-  }, [locale]);
+    return (countryCode: CountryCode): string =>
+      names.get(countryCode) ?? displayNames.of(countryCode) ?? countryCode;
+  }, [countries, locale]);
 
-  const getCountryName = useCallback(
-    (countryCode: CountryCode) => formatterCountryName.of(countryCode) ?? countryCode,
-    [formatterCountryName]
-  );
-
-  const { displayValue, outputValue } = useMemo(
-    () =>
-      resolvePhoneFieldValues(
-        digits,
-        selectedCountry.code,
-        metadata,
-        outputFormat,
-        international,
-        formatOnType
-      ),
-    [digits, selectedCountry.code, metadata, outputFormat, international, formatOnType]
-  );
+  const { displayValue, outputValue } = resolveValues(phoneState);
 
   return {
     displayValue,

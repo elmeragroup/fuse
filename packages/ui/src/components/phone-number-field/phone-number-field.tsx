@@ -5,28 +5,25 @@ import type { ComponentProps, ReactElement, ReactNode, RefObject } from "react";
 
 // Subpath import (`@base-ui/react/combobox`) type-checks but crashes at runtime with a
 // null React context. Keep the package-root import until upstream fixes it
-// (phone-number-field.md §8).
-import { Combobox } from "@base-ui/react";
+// (phone-number-field.md §8.1). Root, Trigger, and the popup's search Input are the raw
+// primitives; the popup surface itself is the library Combobox (§8.15).
+import { Combobox as ComboboxPrimitive } from "@base-ui/react";
 import type { CountryCode, MetadataJson } from "libphonenumber-js/core";
 
 import type { FlagAssetCode } from "../../flags";
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
-import { Check } from "../../icons/generated/check";
 import { MagnifyingGlass } from "../../icons/generated/magnifying-glass";
 import { cn } from "../../styles/cn";
-import { focusRing } from "../../styles/utils";
+import { selfFocusRingClass } from "../../styles/utils";
 import { useElmeraGroupUi } from "../../theme/elmera-group-ui";
-import { useThemeScopeContainer } from "../../theme/theme-scope-container";
+import { Combobox } from "../combobox/combobox";
 import { Field } from "../field/field";
 import { InputGroup } from "../input-group/input-group";
-import { overlayLayer } from "../overlay/overlay-classes";
 import { textFieldVariants } from "../text-field/text-field-variants";
 import { Flag } from "./flag";
 import { usePhoneNumberFieldState } from "./hooks/use-phone-number-field-state";
 import { phoneNumberFieldStrings } from "./intl";
 import type { PhoneNumberCountry } from "./phone-engine";
-
-const triggerFocusRing = focusRing({ target: "self" }).root();
 
 export type PhoneNumberFieldProps = {
   /** Controlled outer value; URI-decoded on sync (may arrive from URL params). */
@@ -137,9 +134,11 @@ export type PhoneNumberFieldProps = {
 };
 
 /**
- * Labeled phone composite over Field + InputGroup plus direct `@base-ui/react`
- * Combobox primitives (phone-number-field.md §2/§7). Client — it owns input and
- * country state, effects, callbacks, focus restoration, and `Intl.DisplayNames`.
+ * Labeled phone composite over Field + InputGroup. The country popup is the library
+ * `Combobox.Content/List/Item/Empty`; Root, the flag Trigger, and the popup's search
+ * Input stay raw `@base-ui/react` primitives (phone-number-field.md §2/§7/§8.15).
+ * Client — it owns input and country state, effects, callbacks, focus restoration, and
+ * `Intl.DisplayNames`.
  */
 export function PhoneNumberField({
   label,
@@ -177,7 +176,6 @@ export function PhoneNumberField({
   const resolvedSearchCountriesLabel = searchCountriesLabel ?? strings.format("searchCountries");
   const resolvedNoCountriesFoundText = noCountriesFoundText ?? strings.format("noCountries");
   const { locale } = useElmeraGroupUi();
-  const resolvedContainer = useThemeScopeContainer(container);
 
   const {
     base,
@@ -217,7 +215,7 @@ export function PhoneNumberField({
       ) : null}
       <div className={containerStyles()}>
         <InputGroup.Root ref={inputGroupRef} aria-invalid={isInvalid || undefined}>
-          <Combobox.Root
+          <ComboboxPrimitive.Root
             items={phone.countries}
             value={phone.selectedCountry}
             onValueChange={(next) => {
@@ -230,8 +228,10 @@ export function PhoneNumberField({
             disabled={isDisabled}
             readOnly={isReadOnly}
             autoComplete={autoComplete}
-            // Detach the country Combobox from the host form so its selected
-            // country code cannot collide with `${name}-display-value`.
+            // Detach the country Combobox from the host form so base-ui's own hidden
+            // country input never reaches FormData beside `${name}` and
+            // `${name}-display-value`. The id names no rendered form on purpose
+            // (phone-number-field.md §8.17).
             form="elmera-ui-phone-country-unbound"
             locale={locale}>
             <InputGroup.Addon className="text-foreground" align="inline-start">
@@ -239,12 +239,12 @@ export function PhoneNumberField({
                   getByRole("button", {name}) contract the browser tests freeze; aria-labelledby is
                   cleared so the surrounding Field's label doesn't bleed onto it and aria-label wins.
                   Don't "simplify" either without updating the browser tests. */}
-              <Combobox.Trigger
+              <ComboboxPrimitive.Trigger
                 role="button"
                 aria-label={resolvedSelectCountryLabel}
                 aria-labelledby={undefined}
                 className={cn(
-                  triggerFocusRing,
+                  selfFocusRingClass,
                   "rounded flex min-h-5.5 shrink-0 items-center px-1 transition-[color,background-color,scale] duration-150",
                   isDisabled || isReadOnly
                     ? "cursor-default"
@@ -256,68 +256,47 @@ export function PhoneNumberField({
                     {phone.selectedCountry.dialCode}
                   </span>
                 </div>
-              </Combobox.Trigger>
+              </ComboboxPrimitive.Trigger>
             </InputGroup.Addon>
-            {resolvedContainer === null ? null : (
-              <Combobox.Portal container={resolvedContainer}>
-                <Combobox.Positioner
-                  anchor={inputGroupRef}
-                  side="bottom"
-                  align="start"
-                  sideOffset={6}
-                  className={cn("isolate", overlayLayer)}>
-                  <Combobox.Popup
-                    aria-label={resolvedSelectCountryLabel}
-                    className="shadow-md w-(--anchor-width) max-w-72 origin-(--transform-origin) rounded-md bg-popover p-2 text-popover-foreground ring-1 ring-foreground/10 duration-100 data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95">
-                    <InputGroup.Root className="mb-2">
-                      <InputGroup.Addon align="inline-start">
-                        <MagnifyingGlass className="size-4 text-muted-foreground" />
-                      </InputGroup.Addon>
-                      <Combobox.Input
-                        render={
-                          <InputGroup.Input
-                            aria-label={resolvedSearchCountriesLabel}
-                            autoComplete="one-time-code"
-                            name=""
-                          />
-                        }
-                        aria-label={resolvedSearchCountriesLabel}
-                        aria-autocomplete="none"
-                        autoComplete="one-time-code"
-                        aria-haspopup="false"
-                      />
-                    </InputGroup.Root>
-                    <Combobox.Empty className="text-sm w-full justify-center px-2 text-center text-muted-foreground data-empty:flex">
-                      {resolvedNoCountriesFoundText}
-                    </Combobox.Empty>
-                    <Combobox.List className="no-scrollbar max-h-[min(300px,calc(var(--available-height)-2.75rem))] scroll-py-1 overflow-y-auto overscroll-contain p-1">
-                      {(country: PhoneNumberCountry) => (
-                        <Combobox.Item
-                          key={country.code}
-                          value={country}
-                          // oxlint-disable-next-line elmera/no-local-focus-ring -- phone-number-field.md §7: option highlight face, not native outline
-                          className="text-sm relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 outline-hidden select-none data-highlighted:bg-accent data-highlighted:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0">
-                          <Combobox.ItemIndicator
-                            render={
-                              <span className="pointer-events-none absolute right-2 flex size-4 items-center justify-center" />
-                            }>
-                            <Check className="pointer-events-none size-4" />
-                          </Combobox.ItemIndicator>
-                          <div className="flex items-center gap-2">
-                            <Flag country={country.code} />
-                            <span className="text-sm leading-tight tabular-nums">{country.dialCode}</span>
-                            <span className="text-sm leading-tight max-w-32 truncate text-ellipsis">
-                              {phone.getCountryName(country.code)}
-                            </span>
-                          </div>
-                        </Combobox.Item>
-                      )}
-                    </Combobox.List>
-                  </Combobox.Popup>
-                </Combobox.Positioner>
-              </Combobox.Portal>
-            )}
-          </Combobox.Root>
+            <Combobox.Content
+              anchor={inputGroupRef}
+              container={container}
+              aria-label={resolvedSelectCountryLabel}>
+              <InputGroup.Root>
+                <InputGroup.Addon align="inline-start">
+                  <MagnifyingGlass className="size-4 text-muted-foreground" />
+                </InputGroup.Addon>
+                <ComboboxPrimitive.Input
+                  render={
+                    <InputGroup.Input
+                      aria-label={resolvedSearchCountriesLabel}
+                      autoComplete="one-time-code"
+                      // An empty name keeps the search box out of autofill heuristics and
+                      // out of any FormData: a nameless control is never submitted
+                      // (phone-number-field.md §8.17).
+                      name=""
+                    />
+                  }
+                  aria-label={resolvedSearchCountriesLabel}
+                  aria-autocomplete="none"
+                  autoComplete="one-time-code"
+                  aria-haspopup="false"
+                />
+              </InputGroup.Root>
+              <Combobox.Empty>{resolvedNoCountriesFoundText}</Combobox.Empty>
+              <Combobox.List>
+                {(country: PhoneNumberCountry) => (
+                  <Combobox.Item key={country.code} value={country}>
+                    <Flag country={country.code} />
+                    <span className="text-sm leading-tight tabular-nums">{country.dialCode}</span>
+                    <span className="text-sm leading-tight max-w-32 truncate text-ellipsis">
+                      {phone.getCountryName(country.code)}
+                    </span>
+                  </Combobox.Item>
+                )}
+              </Combobox.List>
+            </Combobox.Content>
+          </ComboboxPrimitive.Root>
           <InputGroup.Input
             ref={numberInputRef}
             readOnly={isReadOnly}
