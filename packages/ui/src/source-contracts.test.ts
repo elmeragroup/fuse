@@ -189,6 +189,13 @@ describe("RSC classification", () => {
   it("leaves the shared overlay close button directive-free — it owns no state", () => {
     expectRsc("components/overlay/overlay-close-button.tsx", "server");
   });
+
+  // Why not a lint rule: same judgment as the close button above. FieldFrame holds no
+  // state either, and its three consumers (TextField, NumberField, TextareaField) are
+  // client modules already, so a directive would only widen the client graph.
+  it("leaves the shared field frame directive-free — it owns no state", () => {
+    expectRsc("components/field/field-frame.tsx", "server");
+  });
 });
 
 describe("no .ref/ in package source", () => {
@@ -252,6 +259,24 @@ describe("field", () => {
       ...classTokens(vertical),
     ];
     expect(classTokens(responsive).toSorted()).toEqual(derived.toSorted());
+  });
+
+  // Why not a lint rule: "render your label row through the shared frame" is an
+  // ownership decision spec 08 makes for these three files, not a syntactic class of
+  // mistakes. A rule banning Field.Label anywhere would break Field's own demos and
+  // every composite outside this list.
+  it.each([
+    "components/text-field/text-field.tsx",
+    "components/number-field/number-field.tsx",
+    "components/textarea-field/textarea-field.tsx",
+  ])("%s renders no label, description, or error markup of its own", (file) => {
+    const source = readSrc(file);
+    expect(source).toContain("FieldFrame");
+    // JSX openers only: the prop docs still name the parts the frame renders, and the
+    // docs generator publishes that text.
+    for (const part of ["<Field.Label", "<Field.Description", "<Field.Error", "<Field.Root"]) {
+      expect(source, part).not.toContain(part);
+    }
   });
 });
 

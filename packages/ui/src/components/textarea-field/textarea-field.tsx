@@ -5,6 +5,7 @@ import type { ChangeEvent, ComponentProps, ReactElement, ReactNode } from "react
 
 import { cn } from "../../styles/cn";
 import { Field } from "../field/field";
+import { FieldFrame } from "../field/field-frame";
 import { Textarea } from "../textarea/textarea";
 
 export type TextareaFieldProps = {
@@ -67,17 +68,20 @@ export function TextareaField({
   }
 
   return (
-    <Field.Root invalid={isInvalid} disabled={isDisabled}>
-      {label || maxLength !== undefined ? (
-        <div className="flex items-center justify-between gap-2">
-          {label ? <Field.Label>{label}</Field.Label> : null}
-          {maxLength !== undefined ? (
-            <span className="text-xs text-muted-foreground">
-              {currentLength}/{maxLength}
-            </span>
-          ) : null}
-        </div>
-      ) : null}
+    <FieldFrame
+      invalid={isInvalid}
+      disabled={isDisabled}
+      label={label}
+      labelRowClassName="gap-2"
+      status={
+        maxLength === undefined ? undefined : (
+          <span className="text-xs text-muted-foreground">
+            {currentLength}/{maxLength}
+          </span>
+        )
+      }
+      description={description}
+      errorMessage={errorMessage}>
       <Field.Control
         render={
           <Textarea
@@ -92,9 +96,7 @@ export function TextareaField({
           />
         }
       />
-      {description ? <Field.Description>{description}</Field.Description> : null}
-      <Field.Error>{errorMessage}</Field.Error>
-    </Field.Root>
+    </FieldFrame>
   );
 }
 

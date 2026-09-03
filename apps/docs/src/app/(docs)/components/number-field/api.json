@@ -141,7 +141,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Shows a check in the label row. Both pending and success may render side by side.",
+          "description": "Shows a check in the label row and wins the crossfade over `isPending`.",
           "required": false
         },
         {

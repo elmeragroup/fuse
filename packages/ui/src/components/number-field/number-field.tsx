@@ -6,12 +6,10 @@ import { NumberField as NumberFieldPrimitive } from "@base-ui/react/number-field
 
 import { CaretDown } from "../../icons/generated/caret-down";
 import { CaretUp } from "../../icons/generated/caret-up";
-import { Check } from "../../icons/generated/check";
-import { SpinnerGap } from "../../icons/generated/spinner-gap";
 import { cn } from "../../styles/cn";
-import { focusRing } from "../../styles/utils";
+import { withinFocusRingClass, withinFocusRingControlClass } from "../../styles/utils";
 import { useElmeraGroupUi } from "../../theme/elmera-group-ui";
-import { Field } from "../field/field";
+import { FieldFrame } from "../field/field-frame";
 
 export type NumberFieldProps = {
   /** Visible label, rendered as `Field.Label`. */
@@ -22,7 +20,7 @@ export type NumberFieldProps = {
   errorMessage?: ReactNode;
   /** Shows a spinner in the label row. Forces that row to exist even without `label`. */
   isPending?: boolean;
-  /** Shows a check in the label row. Both pending and success may render side by side. */
+  /** Shows a check in the label row and wins the crossfade over `isPending`. */
   isSuccess?: boolean;
   /** Forwards `invalid` to `Field.Root` and `aria-invalid` to the group. */
   isInvalid?: boolean;
@@ -102,16 +100,19 @@ export function NumberField({
   const controlledValue =
     defaultValue !== undefined ? value : value == null || Number.isNaN(value) ? null : value;
 
+  // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- number-field.md §4: label/control stack gap is layout, not a control rung
+  const rootClassName = cn("gap-1", className);
+
   return (
-    // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- number-field.md §4: label/control stack gap is layout, not a control rung
-    <Field.Root invalid={isInvalid} disabled={isDisabled} className={cn("gap-1", className)}>
-      {label || isPending || isSuccess ? (
-        <div className="flex items-center justify-between">
-          {label ? <Field.Label>{label}</Field.Label> : null}
-          {isPending ? <SpinnerGap aria-hidden className="animate-spin size-3" /> : null}
-          {isSuccess ? <Check aria-hidden className="size-3.5" /> : null}
-        </div>
-      ) : null}
+    <FieldFrame
+      className={rootClassName}
+      invalid={isInvalid}
+      disabled={isDisabled}
+      label={label}
+      isPending={isPending}
+      isSuccess={isSuccess}
+      description={description}
+      errorMessage={errorMessage}>
       <NumberFieldPrimitive.Root
         name={name}
         value={controlledValue}
@@ -130,7 +131,7 @@ export function NumberField({
           aria-invalid={isInvalid || undefined}
           className={cn(
             "shadow-xs flex h-(--control-h-md) w-full min-w-0 items-center overflow-hidden rounded-md border border-input bg-card transition-[color,box-shadow] aria-invalid:border-error aria-invalid:ring-3 aria-invalid:ring-error/20",
-            focusRing({ target: "within" }).root(),
+            withinFocusRingClass,
             {
               "bg-muted": isDisabled || isReadOnly,
             }
@@ -141,7 +142,7 @@ export function NumberField({
             data-focus-ring-control=""
             className={cn(
               "h-full w-full min-w-0 flex-1 bg-transparent px-(--control-px-md) [font-size:var(--control-text)] [line-height:var(--control-leading)] tabular-nums",
-              focusRing({ target: "within" }).control()
+              withinFocusRingControlClass
             )}
           />
           {denomination ? (
@@ -157,9 +158,7 @@ export function NumberField({
           </div>
         </NumberFieldPrimitive.Group>
       </NumberFieldPrimitive.Root>
-      {description ? <Field.Description>{description}</Field.Description> : null}
-      <Field.Error>{errorMessage}</Field.Error>
-    </Field.Root>
+    </FieldFrame>
   );
 }
 

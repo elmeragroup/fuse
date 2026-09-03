@@ -3,12 +3,9 @@
 import { useEffect, useState } from "react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 
-import { Check } from "../../icons/generated/check";
-import { SpinnerGap } from "../../icons/generated/spinner-gap";
 import { cn } from "../../styles/cn";
-import { iconCrossfadeHidden, iconCrossfadeShown, iconCrossfadeTransition } from "../../styles/utils";
 import { isThemeDevelopment } from "../../theme/validate-theme";
-import { Field } from "../field/field";
+import { FieldFrame } from "../field/field-frame";
 import { Input } from "../input/input";
 import { textFieldVariants } from "./text-field-variants";
 
@@ -139,61 +136,40 @@ export function TextField({
   const resolvedDefaultValue = filter === "numeric" ? undefined : (defaultValue ?? undefined);
 
   return (
-    <Field.Root invalid={isInvalid} disabled={isDisabled} className={cn(base(), className)}>
-      {label || isPending || isSuccess ? (
-        <div className={labelContainer()}>
-          {label ? <Field.Label className={labelStyles()}>{label}</Field.Label> : null}
-          {isPending || isSuccess ? (
-            <div className="relative size-3.5">
-              <SpinnerGap
-                aria-hidden
-                className={cn(
-                  "animate-spin absolute inset-0 m-auto size-3",
-                  iconCrossfadeTransition,
-                  isSuccess ? iconCrossfadeHidden : iconCrossfadeShown
-                )}
-              />
-              <Check
-                aria-hidden
-                className={cn(
-                  "absolute inset-0 m-auto size-3.5",
-                  iconCrossfadeTransition,
-                  isSuccess ? iconCrossfadeShown : iconCrossfadeHidden
-                )}
-              />
-            </div>
-          ) : null}
-        </div>
-      ) : null}
-      <div className={container()}>
-        <div className="relative">
-          <Input
-            name={name}
-            value={resolvedValue}
-            defaultValue={resolvedDefaultValue}
-            onChange={(event) => {
-              handleChange(event.currentTarget.value);
-            }}
-            placeholder={placeholder}
-            inputMode={inputMode ?? (filter === "numeric" ? "numeric" : undefined)}
-            // fieldGroup's default would override the input's w-full.
-            className={cn(input(), variant ? fieldGroup() : null)}
-            {...props}
-            readOnly={isReadOnly}
-            required={isRequired}
-            hidden={hidden}
-            disabled={isDisabled}
-          />
-          {icon ? <div className={iconContainer()}>{icon}</div> : null}
-        </div>
-        {description ? (
-          <Field.Description className={cn(descriptionStyles(), "text-pretty")}>
-            {description}
-          </Field.Description>
-        ) : null}
+    <FieldFrame
+      className={cn(base(), className)}
+      invalid={isInvalid}
+      disabled={isDisabled}
+      label={label}
+      labelRowClassName={labelContainer()}
+      labelClassName={labelStyles()}
+      isPending={isPending}
+      isSuccess={isSuccess}
+      contentClassName={container()}
+      description={description}
+      descriptionClassName={cn(descriptionStyles(), "text-pretty")}
+      errorMessage={errorMessage}>
+      <div className="relative">
+        <Input
+          name={name}
+          value={resolvedValue}
+          defaultValue={resolvedDefaultValue}
+          onChange={(event) => {
+            handleChange(event.currentTarget.value);
+          }}
+          placeholder={placeholder}
+          inputMode={inputMode ?? (filter === "numeric" ? "numeric" : undefined)}
+          // fieldGroup's default would override the input's w-full.
+          className={cn(input(), variant ? fieldGroup() : null)}
+          {...props}
+          readOnly={isReadOnly}
+          required={isRequired}
+          hidden={hidden}
+          disabled={isDisabled}
+        />
+        {icon ? <div className={iconContainer()}>{icon}</div> : null}
       </div>
-      <Field.Error>{errorMessage}</Field.Error>
-    </Field.Root>
+    </FieldFrame>
   );
 }
 
