@@ -1,9 +1,15 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-const componentsRoot = join(dirname(fileURLToPath(import.meta.url)), "components");
+const sourceRoot = dirname(fileURLToPath(import.meta.url));
+
+/**
+ * Both test tiers: the base-ui components and the quarantined react-aria interim tier, which is
+ * held to the same test standards (tooling §7.2, amended 2026-09-03).
+ */
+const suiteRoots = ["components", "react-aria"].map((tier) => join(sourceRoot, tier));
 
 function walk(directory: string): string[] {
   const files: string[] = [];
@@ -20,9 +26,31 @@ function walk(directory: string): string[] {
   return files;
 }
 
+/**
+ * Helpers whose local re-declaration is still being unwound, suite by suite, by the batch tickets
+ * that adopt the shared exports. New copies are a failure; the recorded ones are a worklist.
+ */
+const MIGRATING_HELPERS = [
+  { helper: "headingNamed", pattern: /function headingNamed\b/ },
+  { helper: "cssVarColor", pattern: /function cssVarColor\b/ },
+  { helper: "roleNamed", pattern: /function roleNamed\b/ },
+] as const;
+
+const KNOWN_LOCAL_HELPER_COPIES = [
+  "components/alert/alert.browser.test.tsx headingNamed",
+  "components/checkbox-card/checkbox-card.browser.test.tsx cssVarColor",
+  "components/checkbox/checkbox.browser.test.tsx cssVarColor",
+  "components/checkbox/checkbox.browser.test.tsx headingNamed",
+  "components/description-list/description-list.browser.test.tsx headingNamed",
+  "components/heading/heading.browser.test.tsx headingNamed",
+  "components/radio-group/radio-group.browser.test.tsx cssVarColor",
+  "components/radio-group/radio-group.browser.test.tsx headingNamed",
+  "components/timeline-list/timeline-list.browser.test.tsx headingNamed",
+];
+
 describe("themed browser-test harness", () => {
-  it("is the only ThemeScope / density / CONTROL_MD surface the component suites use", () => {
-    const files = walk(componentsRoot);
+  it("is the only ThemeScope / density / CONTROL_MD surface the component and react-aria suites use", () => {
+    const files = suiteRoots.flatMap((root) => walk(root));
     expect(files.length).toBeGreaterThan(0);
 
     for (const file of files) {
@@ -34,5 +62,25 @@ describe("themed browser-test harness", () => {
       expect(source, file).not.toMatch(/function px\(/);
       expect(source, file).not.toMatch(/function textboxNamed\b/);
     }
+  });
+
+  it("grows no new local copy of roleNamed / headingNamed / cssVarColor", () => {
+    const findings = suiteRoots
+      .flatMap((root) => walk(root))
+      .flatMap((file) => {
+        const source = readFileSync(file, "utf8");
+        const path = relative(sourceRoot, file);
+        return MIGRATING_HELPERS.filter(({ pattern }) => pattern.test(source)).map(
+          ({ helper }) => `${path} ${helper}`
+        );
+      })
+      .sort();
+
+    // Subset, not equality: the batch tickets delete these copies without editing this list.
+    expect(findings.filter((finding) => !KNOWN_LOCAL_HELPER_COPIES.includes(finding))).toEqual([]);
+  });
+
+  it("records that the react-aria tier already has no local helper copies", () => {
+    expect(KNOWN_LOCAL_HELPER_COPIES.filter((finding) => finding.startsWith("react-aria/"))).toEqual([]);
   });
 });
