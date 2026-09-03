@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { SUPPORTED_LOCALES } from "../../../../test/locale-matrix";
-import { overlayCloseStrings } from "./index";
+import { SUPPORTED_LOCALES } from "../../../test/locale-matrix";
+import { overlayCloseStrings } from "./intl";
 
 const CLOSE_COPY = {
   "nb-NO": "Lukk",
