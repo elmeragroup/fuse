@@ -1,32 +1,93 @@
 "use client";
 
-import type { ComponentProps, ReactElement, RefObject } from "react";
+import type { ComponentProps, ReactElement } from "react";
 
 import { Menu as MenuPrimitive } from "@base-ui/react/menu";
 
 import { CaretRight } from "../../icons/generated/caret-right";
 import { Check } from "../../icons/generated/check";
 import { cn } from "../../styles/cn";
-import { focusRing } from "../../styles/utils";
-import { useThemeScopeContainer } from "../../theme/theme-scope-container";
-import { overlayLayer } from "../overlay/overlay-classes";
-
-/** Resolved once at module scope — the recipe below does the same (no per-render work). */
-const selfFocusRing = focusRing({ target: "self" }).root();
+import { selfFocusRingClass } from "../../styles/utils";
+import { useResolvedPortalContainer } from "../../theme/use-resolved-portal-container";
+import {
+  menuGroupLabelClass,
+  menuItemClass,
+  menuItemIndicatorClass,
+  menuSeparatorClass,
+  overlayPopupDurationClass,
+  overlayPopupMotionClass,
+  overlayPopupSurfaceClass,
+  overlayPositionerClass,
+} from "../overlay/overlay-classes";
+import type { OverlayContainerProps, OverlayPositionerProps } from "../overlay/overlay-props";
 
 /**
  * Shared item face (dropdown-menu.md §4). Module-private — Item, LinkItem, CheckboxItem,
- * RadioItem, and SubTrigger compose it; it is not a public recipe.
+ * RadioItem, and SubTrigger compose it; it is not a public recipe. The geometry, disabled
+ * face, and icon sizing come from `menuItemClass`; the highlight face is this family's,
+ * because base-ui spells it `focus:` on menu items.
  */
 const dropdownMenuItemClassName = cn(
-  selfFocusRing,
+  selfFocusRingClass,
+  menuItemClass,
   // oxlint-disable-next-line elmera/no-local-focus-ring -- dropdown-menu.md §7: highlight face, not native outline; ring comes from the shared adapter
-  "group/dropdown-menu-item text-sm relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-inset:pl-8 data-[variant=destructive]:text-error data-[variant=destructive]:focus:bg-error/10 data-[variant=destructive]:focus:text-error data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 data-[variant=destructive]:*:[svg]:text-error"
+  "group/dropdown-menu-item px-2 focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-inset:pl-8 data-[variant=destructive]:text-error data-[variant=destructive]:focus:bg-error/10 data-[variant=destructive]:focus:text-error data-[variant=destructive]:*:[svg]:text-error"
 );
 
-/** Open/close animation set shared by Content and SubContent (dropdown-menu.md §6/§8). */
-const popupMotionClassName =
-  "origin-(--transform-origin) duration-100 data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95";
+/**
+ * The one menu popup (dropdown-menu.md §8.3). Content and SubContent are the same
+ * `Portal > Positioner > Popup` with different defaults, a different `data-slot`, and a
+ * different popup-chrome extra; §8.3's ruling — that SubContent never renders through
+ * Content, and each popup carries a single class string — is what this shape enforces,
+ * rather than the ref's double-wrap. Both callers resolve their own positioner defaults
+ * so their published `@default` tags stay theirs.
+ */
+function DropdownMenuPopup({
+  className,
+  popupClassName,
+  dataSlot,
+  align,
+  alignOffset,
+  side,
+  sideOffset,
+  container,
+  ...props
+}: ComponentProps<typeof MenuPrimitive.Popup> &
+  Pick<ComponentProps<typeof MenuPrimitive.Positioner>, "align" | "alignOffset" | "side" | "sideOffset"> &
+  OverlayContainerProps & {
+    popupClassName: string;
+    dataSlot: "dropdown-menu-content" | "dropdown-menu-sub-content";
+  }): ReactElement | null {
+  const resolvedContainer = useResolvedPortalContainer(container);
+
+  if (resolvedContainer === null) {
+    return null;
+  }
+
+  return (
+    <MenuPrimitive.Portal data-slot="dropdown-menu-portal" container={resolvedContainer}>
+      <MenuPrimitive.Positioner
+        // oxlint-disable-next-line elmera/no-local-focus-ring -- dropdown-menu.md §7: positioner is not a focus target
+        className={cn(overlayPositionerClass, "outline-none")}
+        align={align}
+        alignOffset={alignOffset}
+        side={side}
+        sideOffset={sideOffset}>
+        <MenuPrimitive.Popup
+          data-slot={dataSlot}
+          className={cn(
+            overlayPopupSurfaceClass,
+            overlayPopupMotionClass,
+            overlayPopupDurationClass,
+            popupClassName,
+            className
+          )}
+          {...props}
+        />
+      </MenuPrimitive.Positioner>
+    </MenuPrimitive.Portal>
+  );
+}
 
 function DropdownMenuRoot(props: ComponentProps<typeof MenuPrimitive.Root>): ReactElement {
   return <MenuPrimitive.Root data-slot="dropdown-menu" {...props} />;
@@ -39,7 +100,7 @@ function DropdownMenuTrigger({
   return (
     <MenuPrimitive.Trigger
       data-slot="dropdown-menu-trigger"
-      className={cn(selfFocusRing, className)}
+      className={cn(selfFocusRingClass, className)}
       {...props}
     />
   );
@@ -49,6 +110,12 @@ function DropdownMenuPortal(props: ComponentProps<typeof MenuPrimitive.Portal>):
   return <MenuPrimitive.Portal data-slot="dropdown-menu-portal" {...props} />;
 }
 
+/**
+ * `align` is redeclared ahead of the shared block because menus default to `"start"`
+ * where Popover defaults to `"center"`; overlay-props.ts requires the Omit-and-redeclare
+ * so the docs table publishes this family's default. Declaring it first keeps
+ * `DropdownMenu.Content.propOrder` exactly as it was (popover.tsx).
+ */
 export type DropdownMenuContentProps = ComponentProps<typeof MenuPrimitive.Popup> & {
   /**
    * How the popup aligns to the trigger on the cross axis. Menus lead from the trigger
@@ -56,67 +123,31 @@ export type DropdownMenuContentProps = ComponentProps<typeof MenuPrimitive.Popup
    * @default "start"
    */
   align?: ComponentProps<typeof MenuPrimitive.Positioner>["align"];
-  /**
-   * Offset along the alignment axis, in pixels.
-   * @default 0
-   */
-  alignOffset?: ComponentProps<typeof MenuPrimitive.Positioner>["alignOffset"];
-  /**
-   * Which side of the trigger the popup is placed on.
-   * @default "bottom"
-   */
-  side?: ComponentProps<typeof MenuPrimitive.Positioner>["side"];
-  /**
-   * Distance from the trigger, in pixels.
-   * @default 4
-   */
-  sideOffset?: ComponentProps<typeof MenuPrimitive.Positioner>["sideOffset"];
-  /**
-   * Portal target for the popup. Defaults to the nearest enclosing `ThemeScope`
-   * element, so an overlay never escapes the theme that opened it.
-   */
-  container?: HTMLElement | RefObject<HTMLElement | null>;
-};
+} & Omit<OverlayPositionerProps<ComponentProps<typeof MenuPrimitive.Positioner>>, "align"> &
+  OverlayContainerProps;
+
+/** Popup chrome specific to the root menu; the surface and motion are shared. */
+const dropdownMenuContentClassName =
+  // oxlint-disable-next-line elmera/no-local-focus-ring -- dropdown-menu.md §7: popup chrome; items own the adapter
+  "max-h-(--available-height) min-w-32 overflow-x-hidden overflow-y-auto p-1 outline-none data-closed:overflow-hidden";
 
 function DropdownMenuContent({
-  className,
   align = "start",
   alignOffset = 0,
   side = "bottom",
   sideOffset = 4,
-  container,
   ...props
 }: DropdownMenuContentProps): ReactElement | null {
-  const resolvedContainer = useThemeScopeContainer(container);
-
-  // theming.md §7.4: an explicit ref or an enclosing ThemeScope whose element is not
-  // attached yet means wait — never a brief escape to the document body. Only an absent
-  // scope (`undefined`) leaves the primitive default in place.
-  if (resolvedContainer === null) {
-    return null;
-  }
-
   return (
-    <MenuPrimitive.Portal data-slot="dropdown-menu-portal" container={resolvedContainer}>
-      <MenuPrimitive.Positioner
-        // oxlint-disable-next-line elmera/no-local-focus-ring -- dropdown-menu.md §7: positioner is not a focus target
-        className={cn("isolate outline-none", overlayLayer)}
-        align={align}
-        alignOffset={alignOffset}
-        side={side}
-        sideOffset={sideOffset}>
-        <MenuPrimitive.Popup
-          data-slot="dropdown-menu-content"
-          className={cn(
-            // oxlint-disable-next-line elmera/no-local-focus-ring -- dropdown-menu.md §7: popup chrome; items own the adapter
-            "shadow-md max-h-(--available-height) min-w-32 overflow-x-hidden overflow-y-auto rounded-md bg-popover p-1 text-popover-foreground ring-1 ring-foreground/10 outline-none data-closed:overflow-hidden",
-            popupMotionClassName,
-            className
-          )}
-          {...props}
-        />
-      </MenuPrimitive.Positioner>
-    </MenuPrimitive.Portal>
+    <DropdownMenuPopup
+      dataSlot="dropdown-menu-content"
+      popupClassName={dropdownMenuContentClassName}
+      align={align}
+      alignOffset={alignOffset}
+      side={side}
+      sideOffset={sideOffset}
+      {...props}
+    />
   );
 }
 
@@ -136,7 +167,7 @@ function DropdownMenuLabel({ className, inset, ...props }: DropdownMenuLabelProp
     <MenuPrimitive.GroupLabel
       data-slot="dropdown-menu-label"
       data-inset={inset ? true : undefined}
-      className={cn("text-xs font-medium px-2 py-1.5 text-muted-foreground data-inset:pl-8", className)}
+      className={cn(menuGroupLabelClass, "font-medium data-inset:pl-8", className)}
       {...props}
     />
   );
@@ -206,9 +237,7 @@ function DropdownMenuCheckboxItem({
       className={cn(dropdownMenuItemClassName, "pr-8", className)}
       checked={checked}
       {...props}>
-      <span
-        className="pointer-events-none absolute right-2 flex items-center justify-center"
-        data-slot="dropdown-menu-checkbox-item-indicator">
+      <span className={menuItemIndicatorClass} data-slot="dropdown-menu-checkbox-item-indicator">
         <MenuPrimitive.CheckboxItemIndicator>
           <Check />
         </MenuPrimitive.CheckboxItemIndicator>
@@ -241,9 +270,7 @@ function DropdownMenuRadioItem({
       data-inset={inset ? true : undefined}
       className={cn(dropdownMenuItemClassName, "pr-8", className)}
       {...props}>
-      <span
-        className="pointer-events-none absolute right-2 flex items-center justify-center"
-        data-slot="dropdown-menu-radio-item-indicator">
+      <span className={menuItemIndicatorClass} data-slot="dropdown-menu-radio-item-indicator">
         <MenuPrimitive.RadioItemIndicator>
           <Check />
         </MenuPrimitive.RadioItemIndicator>
@@ -260,7 +287,7 @@ function DropdownMenuSeparator({
   return (
     <MenuPrimitive.Separator
       data-slot="dropdown-menu-separator"
-      className={cn("-mx-1 my-1 h-px bg-border", className)}
+      className={cn(menuSeparatorClass, className)}
       {...props}
     />
   );
@@ -312,6 +339,11 @@ function DropdownMenuSubTrigger({
   );
 }
 
+/**
+ * All four positioner defaults are the submenu's own (`start / -3 / right / 0`,
+ * dropdown-menu.md §8), so none of the shared `@default` tags apply and the block stays
+ * declared here; only `container` comes from the shared type.
+ */
 export type DropdownMenuSubContentProps = ComponentProps<typeof MenuPrimitive.Popup> & {
   /**
    * How the popup aligns to its SubTrigger on the cross axis.
@@ -334,51 +366,28 @@ export type DropdownMenuSubContentProps = ComponentProps<typeof MenuPrimitive.Po
    * @default 0
    */
   sideOffset?: ComponentProps<typeof MenuPrimitive.Positioner>["sideOffset"];
-  /**
-   * Portal target for the submenu. Defaults to the nearest enclosing `ThemeScope`
-   * element, so an overlay never escapes the theme that opened it.
-   */
-  container?: HTMLElement | RefObject<HTMLElement | null>;
-};
+} & OverlayContainerProps;
+
+/** Popup chrome specific to a submenu; the surface and motion are shared. */
+const dropdownMenuSubContentClassName = "w-auto min-w-[96px] p-1 shadow-lg";
 
 function DropdownMenuSubContent({
-  className,
   align = "start",
   alignOffset = -3,
   side = "right",
   sideOffset = 0,
-  container,
   ...props
 }: DropdownMenuSubContentProps): ReactElement | null {
-  const resolvedContainer = useThemeScopeContainer(container);
-
-  // theming.md §7.4: an explicit ref or an enclosing ThemeScope whose element is not
-  // attached yet means wait — never a brief escape to the document body. Only an absent
-  // scope (`undefined`) leaves the primitive default in place.
-  if (resolvedContainer === null) {
-    return null;
-  }
-
   return (
-    <MenuPrimitive.Portal data-slot="dropdown-menu-portal" container={resolvedContainer}>
-      <MenuPrimitive.Positioner
-        // oxlint-disable-next-line elmera/no-local-focus-ring -- dropdown-menu.md §7: positioner is not a focus target
-        className={cn("isolate outline-none", overlayLayer)}
-        align={align}
-        alignOffset={alignOffset}
-        side={side}
-        sideOffset={sideOffset}>
-        <MenuPrimitive.Popup
-          data-slot="dropdown-menu-sub-content"
-          className={cn(
-            "shadow-lg w-auto min-w-[96px] rounded-md bg-popover p-1 text-popover-foreground ring-1 ring-foreground/10",
-            popupMotionClassName,
-            className
-          )}
-          {...props}
-        />
-      </MenuPrimitive.Positioner>
-    </MenuPrimitive.Portal>
+    <DropdownMenuPopup
+      dataSlot="dropdown-menu-sub-content"
+      popupClassName={dropdownMenuSubContentClassName}
+      align={align}
+      alignOffset={alignOffset}
+      side={side}
+      sideOffset={sideOffset}
+      {...props}
+    />
   );
 }
 

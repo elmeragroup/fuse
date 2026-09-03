@@ -12,17 +12,25 @@ import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { CaretDown } from "../../icons/generated/caret-down";
 import { Check } from "../../icons/generated/check";
 import { X } from "../../icons/generated/x";
+import { isTextValueNode } from "../../internal/is-text-node";
 import { cn } from "../../styles/cn";
-import { focusRing } from "../../styles/utils";
+import { withinFocusRingClass, withinFocusRingControlClass } from "../../styles/utils";
 import { useElmeraGroupUi } from "../../theme/elmera-group-ui";
-import { useThemeScopeContainer } from "../../theme/theme-scope-container";
+import { useResolvedPortalContainer } from "../../theme/use-resolved-portal-container";
 import { Button } from "../button/button";
 import { InputGroup } from "../input-group/input-group";
-import { overlayLayer } from "../overlay/overlay-classes";
+import {
+  menuGroupLabelClass,
+  menuItemClass,
+  menuItemIndicatorClass,
+  menuSeparatorClass,
+  overlayPopupDurationClass,
+  overlayPopupMotionClass,
+  overlayPopupSurfaceClass,
+  overlayPositionerClass,
+} from "../overlay/overlay-classes";
+import type { OverlayContainerProps, OverlayPositionerProps } from "../overlay/overlay-props";
 import { comboboxStrings } from "./intl";
-
-/** Resolved once at module scope — the recipe below does the same (no per-render work). */
-const withinFocusRing = focusRing({ target: "within" });
 
 type ComboboxItemLabelFn = (itemValue: ReactNode) => string;
 
@@ -165,38 +173,39 @@ function ComboboxInput({
   );
 }
 
-export type ComboboxContentProps = ComponentProps<typeof ComboboxPrimitive.Popup> & {
-  /**
-   * Which side of the trigger the popup is placed on.
-   * @default "bottom"
-   */
-  side?: ComponentProps<typeof ComboboxPrimitive.Positioner>["side"];
-  /**
-   * Distance from the trigger, in pixels.
-   * @default 6
-   */
-  sideOffset?: ComponentProps<typeof ComboboxPrimitive.Positioner>["sideOffset"];
-  /**
-   * How the popup aligns to the trigger on the cross axis.
-   * @default "start"
-   */
-  align?: ComponentProps<typeof ComboboxPrimitive.Positioner>["align"];
-  /**
-   * Offset along the alignment axis, in pixels.
-   * @default 0
-   */
-  alignOffset?: ComponentProps<typeof ComboboxPrimitive.Positioner>["alignOffset"];
-  /**
-   * Element, ref, or virtual element to position against. Pass `useComboboxAnchor()`'s
-   * ref; also flips `data-chips` on the popup.
-   */
-  anchor?: ComponentProps<typeof ComboboxPrimitive.Positioner>["anchor"];
-  /**
-   * Portal target for the popup. Defaults to the nearest enclosing `ThemeScope`
-   * element, so an overlay never escapes the theme that opened it.
-   */
-  container?: HTMLElement | RefObject<HTMLElement | null>;
-};
+/**
+ * The shared positioner block, generic over Combobox's own positioner props.
+ * `side` and `alignOffset` take the shared declarations verbatim; `sideOffset` (6) and
+ * `align` (`"start"`) differ from Popover's defaults, so they are redeclared here with
+ * their own `@default` tags, as overlay-props.ts requires.
+ */
+type ComboboxPositionerProps = OverlayPositionerProps<ComponentProps<typeof ComboboxPrimitive.Positioner>>;
+
+/**
+ * The four positioner props are interleaved rather than grouped: the docs API pipeline
+ * derives `Combobox.Content.propOrder` from declaration order (popover.tsx), so the
+ * published order `side, sideOffset, align, alignOffset, anchor, container` is kept
+ * exactly as it was, with `OverlayContainerProps` last.
+ */
+export type ComboboxContentProps = ComponentProps<typeof ComboboxPrimitive.Popup> &
+  Pick<ComboboxPositionerProps, "side"> & {
+    /**
+     * Distance from the trigger, in pixels.
+     * @default 6
+     */
+    sideOffset?: ComponentProps<typeof ComboboxPrimitive.Positioner>["sideOffset"];
+    /**
+     * How the popup aligns to the trigger on the cross axis.
+     * @default "start"
+     */
+    align?: ComponentProps<typeof ComboboxPrimitive.Positioner>["align"];
+  } & Pick<ComboboxPositionerProps, "alignOffset"> & {
+    /**
+     * Element, ref, or virtual element to position against. Pass `useComboboxAnchor()`'s
+     * ref; also flips `data-chips` on the popup.
+     */
+    anchor?: ComponentProps<typeof ComboboxPrimitive.Positioner>["anchor"];
+  } & OverlayContainerProps;
 
 function ComboboxContent({
   className,
@@ -208,11 +217,8 @@ function ComboboxContent({
   container,
   ...props
 }: ComboboxContentProps): ReactElement | null {
-  const resolvedContainer = useThemeScopeContainer(container);
+  const resolvedContainer = useResolvedPortalContainer(container);
 
-  // theming.md §7.4: an explicit ref or an enclosing ThemeScope whose element is not
-  // attached yet means wait — never a brief escape to the document body. Only an absent
-  // scope (`undefined`) leaves the primitive default in place.
   if (resolvedContainer === null) {
     return null;
   }
@@ -225,12 +231,15 @@ function ComboboxContent({
         align={align}
         alignOffset={alignOffset}
         anchor={anchor}
-        className={cn("isolate", overlayLayer)}>
+        className={overlayPositionerClass}>
         <ComboboxPrimitive.Popup
           data-slot="combobox-content"
           data-chips={anchor ? "true" : "false"}
           className={cn(
-            "group/combobox-content shadow-md relative max-h-(--available-height) w-(--anchor-width) max-w-(--available-width) min-w-[calc(var(--anchor-width)+--spacing(7))] origin-(--transform-origin) overflow-hidden rounded-md bg-popover text-popover-foreground ring-1 ring-foreground/10 duration-100 data-[chips=true]:min-w-(--anchor-width) data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 *:data-[slot=input-group]:m-1 *:data-[slot=input-group]:mb-0 *:data-[slot=input-group]:h-(--control-h-sm) *:data-[slot=input-group]:border-input/30 *:data-[slot=input-group]:bg-input/30 *:data-[slot=input-group]:shadow-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+            overlayPopupSurfaceClass,
+            overlayPopupMotionClass,
+            overlayPopupDurationClass,
+            "group/combobox-content relative max-h-(--available-height) w-(--anchor-width) max-w-(--available-width) min-w-[calc(var(--anchor-width)+--spacing(7))] overflow-hidden data-[chips=true]:min-w-(--anchor-width) *:data-[slot=input-group]:m-1 *:data-[slot=input-group]:mb-0 *:data-[slot=input-group]:h-(--control-h-sm) *:data-[slot=input-group]:border-input/30 *:data-[slot=input-group]:bg-input/30 *:data-[slot=input-group]:shadow-none",
             className
           )}
           {...props}
@@ -263,16 +272,14 @@ function ComboboxItem({
       data-slot="combobox-item"
       // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- combobox.md §6: option padding is menu layout, not a control rung
       className={cn(
-        // oxlint-disable-next-line elmera/no-local-focus-ring -- combobox.md §7: option highlight face, not native outline
-        "text-sm relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 outline-hidden select-none data-highlighted:bg-accent data-highlighted:text-accent-foreground data-highlighted:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        menuItemClass,
+        // oxlint-disable-next-line elmera/no-local-focus-ring -- combobox.md §7: the highlight face menuItemClass leaves to the family; base-ui spells it `data-highlighted:` on listbox options
+        "w-full pr-8 pl-2 data-highlighted:bg-accent data-highlighted:text-accent-foreground data-highlighted:**:text-accent-foreground",
         className
       )}
       {...props}>
       {children}
-      <ComboboxPrimitive.ItemIndicator
-        render={
-          <span className="pointer-events-none absolute right-2 flex size-4 items-center justify-center" />
-        }>
+      <ComboboxPrimitive.ItemIndicator render={<span className={cn(menuItemIndicatorClass, "size-4")} />}>
         <Check className="pointer-events-none" />
       </ComboboxPrimitive.ItemIndicator>
     </ComboboxPrimitive.Item>
@@ -293,8 +300,7 @@ function ComboboxLabel({
   return (
     <ComboboxPrimitive.GroupLabel
       data-slot="combobox-label"
-      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- combobox.md §6: group label padding is menu layout, not a control rung
-      className={cn("text-xs px-2 py-1.5 text-muted-foreground", className)}
+      className={cn(menuGroupLabelClass, className)}
       {...props}
     />
   );
@@ -330,7 +336,7 @@ function ComboboxSeparator({
   return (
     <ComboboxPrimitive.Separator
       data-slot="combobox-separator"
-      className={cn("-mx-1 my-1 h-px bg-border", className)}
+      className={cn(menuSeparatorClass, className)}
       {...props}
     />
   );
@@ -361,7 +367,7 @@ function ComboboxChipsIndexed({
         // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- combobox.md §6: chip wrap gap and compact chip padding are layout, not a control rung
         className={cn(
           "text-sm shadow-xs flex min-h-(--control-h-md) flex-wrap items-center gap-1.5 rounded-md border border-input bg-transparent bg-clip-padding px-(--control-px-md) py-1.5 transition-[color,box-shadow] has-aria-invalid:border-error has-aria-invalid:ring-3 has-aria-invalid:ring-error/20 has-data-[slot=combobox-chip]:px-1.5",
-          withinFocusRing.root(),
+          withinFocusRingClass,
           className
         )}
         {...props}
@@ -384,13 +390,8 @@ export type ComboboxChipProps = ComponentProps<typeof ComboboxPrimitive.Chip> & 
   removeLabel?: string;
 };
 
-function isChipText(value: ReactNode): value is string | number {
-  const tag = Object.prototype.toString.call(value);
-  return tag === "[object String]" || tag === "[object Number]";
-}
-
 function chipItemName(children: ReactNode): string {
-  if (!isChipText(children)) {
+  if (!isTextValueNode(children)) {
     return "";
   }
   return children.toString().trim();
@@ -485,7 +486,7 @@ function ComboboxChipsInput({
       data-slot="combobox-chip-input"
       data-focus-ring-control=""
       // oxlint-disable-next-line elmera/no-local-focus-ring -- combobox.md §7 / input-group.md §8: within-adapter control outline
-      className={cn("min-w-16 flex-1 outline-none", withinFocusRing.control(), className)}
+      className={cn("min-w-16 flex-1 outline-none", withinFocusRingControlClass, className)}
       {...props}
     />
   );

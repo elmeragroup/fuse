@@ -70,7 +70,7 @@ All rendering parts take `className` (merged via `cn`) and forward the rest of t
 
 ## 4 Variants
 
-No `tv` recipe — the trigger's `size` axis is a hand-rolled `data-size` attribute styled via `data-[size=…]` height/padding/gap/type tokens; kept without a recipe export (no borrow pattern). `elmera/no-hardcoded-density-metrics` covers these `data-[size=…]` class strings. All other styling is inline per part.
+No `tv` recipe — the trigger's `size` axis is a hand-rolled `data-size` attribute styled via `data-[size=…]` height/padding/gap/type tokens; kept without a recipe export (no borrow pattern). `elmera/no-hardcoded-density-metrics` covers these `data-[size=…]` class strings. Content, Item, Label, and Separator compose the shared overlay/menu class constants plus Select-specific extras; the trigger and the remaining parts stay inline. _(Amended 2026-09-03; see §8.10.)_
 
 **Density mapping.** Select Trigger `size` selects a shared density rung per [conventions](conventions.md). No `dense:` / `comfortable:` variants. Height is pinned, so there is no `py-*`. _(Amended 2026-09-02.)_
 
@@ -129,6 +129,8 @@ No `tv` recipe — the trigger's `size` axis is a hand-rolled `data-size` attrib
 7. **Duplicated `isolate z-50` deduped**: the ref puts `isolate z-50` on both Positioner and Popup; kept on the Positioner only (minor divergence, no stacking-context behavior change — the Positioner already isolates).
 8. **Icons → Phosphor**: `CheckIcon`→`Check` (item indicator), `ChevronDownIcon`→`CaretDown` (trigger icon + scroll-down), `ChevronUpIcon`→`CaretUp` (scroll-up).
 9. **Density retokenization:** Trigger `data-[size=default]:h-9` / `data-[size=sm]:h-8` become `--control-h-md` / `--control-h-sm`. Padding, gap, and type at `default` read `--control-px-md` / `--control-gap-md` / the control-type pair; `sm` reads the `sm` rungs with `text-sm`. `py-*` is omitted beside the pinned height. Dense computed height matches the ref; comfortable is the signed `ui.css` column. _(Amended 2026-09-02.)_
+
+10. **Shared overlay spine adopted:** `Select.Content` composes `useResolvedPortalContainer`, `OverlayPositionerProps`/`OverlayContainerProps`, and `overlayPositionerClass` / `overlayPopupSurfaceClass` / `overlayPopupMotionClass` / `overlayPopupDurationClass`; `Select.Item`, `Select.Label`, and `Select.Separator` compose `menuItemClass` / `menuItemIndicatorClass` / `menuGroupLabelClass` / `menuSeparatorClass`; the trigger composes `selfFocusRingClass`. Select's four positioner defaults are the shared block's, so the shared `@default` tags publish unchanged. The extras that stay Select's are the `rounded-lg` radius rung, `data-[align-trigger=true]:animate-none`, the popup geometry, the option's `w-full pr-8 pl-2` and its `focus:` highlight face (base-ui spells the highlight `focus:` on Select items, so `menuItemClass` deliberately excludes it), the indicator's `size-4`, and the separator's `pointer-events-none`. Emitted class set, prop names, documented defaults, and DOM are unchanged. _(Amended 2026-09-03.)_
 
 Kept faithfully: `data-size` sm|default trigger axis; `alignItemWithTrigger` default `true` and its `data-[align-trigger=true]:animate-none` consequence; auto-rendered scroll buttons inside Content; the rotating trigger caret keyed off `data-popup-open`; the Value child-selector styling from the trigger; `min-w-36` popup floor; item's `*:[span]:last:` layout selectors.
 

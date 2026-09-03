@@ -7,7 +7,7 @@
     "effectPropCount": 617,
     "currentProblemCount": 0,
     "effectProblemCount": 85,
-    "apiDifferenceCount": 1103,
+    "apiDifferenceCount": 1106,
     "problemDifferenceCount": 85
   },
   "apiDifferences": [
@@ -1694,6 +1694,12 @@
     },
     {
       "component": "combobox",
+      "path": "evidence.Combobox.Content.props.align.declarationPaths[1]",
+      "effect": "packages/ui/src/components/overlay/overlay-props.ts",
+      "reason": "combobox Combobox.Content.align declarationPaths[1]: Combobox.Content redeclares `align` (default `\"start\"`) because the shared `OverlayPositionerProps` `@default` tags are Popover's, and subtracts the key with `Omit`/`Pick`. The checker lists only the local declaration; the Effect adapter keeps `overlay-props.ts` as a second one, because it does not drop declarations of keys a `Pick`/`Omit` removes. Docs-only: the published table reads the checker row."
+    },
+    {
+      "component": "combobox",
       "path": "evidence.Combobox.Content.props.render",
       "effect": {
         "name": "render",
@@ -1704,6 +1710,12 @@
         "synthesized": false
       },
       "reason": "combobox Combobox.Content.render: Effect lists Base UI `render` (`ComponentRenderFn | ReactElement`); checker omits it from library rows."
+    },
+    {
+      "component": "combobox",
+      "path": "evidence.Combobox.Content.props.sideOffset.declarationPaths[1]",
+      "effect": "packages/ui/src/components/overlay/overlay-props.ts",
+      "reason": "combobox Combobox.Content.sideOffset declarationPaths[1]: Combobox.Content redeclares `sideOffset` (default `6`) because the shared `OverlayPositionerProps` `@default` tags are Popover's, and subtracts the key with `Omit`/`Pick`. The checker lists only the local declaration; the Effect adapter keeps `overlay-props.ts` as a second one, because it does not drop declarations of keys a `Pick`/`Omit` removes. Docs-only: the published table reads the checker row."
     },
     {
       "component": "combobox",
@@ -3100,6 +3112,12 @@
       "path": "evidence.DropdownMenu.Content.propOrder[5]",
       "effect": "sideOffset",
       "reason": "dropdown-menu DropdownMenu.Content evidence propOrder[5]: checker omitted vs Effect sideOffset."
+    },
+    {
+      "component": "dropdown-menu",
+      "path": "evidence.DropdownMenu.Content.props.align.declarationPaths[1]",
+      "effect": "packages/ui/src/components/overlay/overlay-props.ts",
+      "reason": "dropdown-menu DropdownMenu.Content.align declarationPaths[1]: DropdownMenu.Content redeclares `align` (default `\"start\"`) because the shared `OverlayPositionerProps` `@default` tags are Popover's, and subtracts the key with `Omit`/`Pick`. The checker lists only the local declaration; the Effect adapter keeps `overlay-props.ts` as a second one, because it does not drop declarations of keys a `Pick`/`Omit` removes. Docs-only: the published table reads the checker row."
     },
     {
       "component": "dropdown-menu",
