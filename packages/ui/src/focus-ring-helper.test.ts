@@ -3,7 +3,10 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-const componentsRoot = join(dirname(fileURLToPath(import.meta.url)), "components");
+const sourceRoot = dirname(fileURLToPath(import.meta.url));
+
+/** Components plus the quarantined react-aria interim tier (tooling §7.2, amended 2026-09-03). */
+const suiteRoots = ["components", "react-aria"].map((tier) => join(sourceRoot, tier));
 
 function walk(directory: string): string[] {
   const files: string[] = [];
@@ -21,10 +24,10 @@ function walk(directory: string): string[] {
 }
 
 describe("assert-focus-ring helper", () => {
-  it("is the only component-test reference to --tw-ring-shadow", () => {
-    const hits = walk(componentsRoot).filter((file) =>
-      readFileSync(file, "utf8").includes("--tw-ring-shadow")
-    );
+  it("is the only component- or react-aria-test reference to --tw-ring-shadow", () => {
+    const hits = suiteRoots
+      .flatMap((root) => walk(root))
+      .filter((file) => readFileSync(file, "utf8").includes("--tw-ring-shadow"));
     expect(hits).toEqual([]);
   });
 });
