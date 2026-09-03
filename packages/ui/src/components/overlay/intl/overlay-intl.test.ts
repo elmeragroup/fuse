@@ -13,17 +13,13 @@ const CLOSE_COPY = {
 describe("overlay close dictionary", () => {
   it("carries the locked close copy in all four locales", () => {
     for (const locale of SUPPORTED_LOCALES) {
-      expect(overlayCloseStrings.getStringForLocale("close", locale), locale).toBe(
-        CLOSE_COPY[locale]
-      );
+      expect(overlayCloseStrings.getStringForLocale("close", locale), locale).toBe(CLOSE_COPY[locale]);
     }
   });
 
   it("carries no key beyond the one row accessibility.md §4.1 assigns to the overlay family", () => {
     for (const locale of SUPPORTED_LOCALES) {
-      expect(Object.keys(overlayCloseStrings.getStringsForLocale(locale)), locale).toEqual([
-        "close",
-      ]);
+      expect(Object.keys(overlayCloseStrings.getStringsForLocale(locale)), locale).toEqual(["close"]);
     }
   });
 });

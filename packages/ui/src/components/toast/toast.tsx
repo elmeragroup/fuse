@@ -22,9 +22,9 @@ import { cn } from "../../styles/cn";
 import { selfFocusRingClass } from "../../styles/utils";
 import { useResolvedPortalContainer } from "../../theme/use-resolved-portal-container";
 import { Button } from "../button/button";
+import { overlayCloseStrings } from "../overlay/intl";
 import { overlayLayer } from "../overlay/overlay-classes";
 import type { OverlayContainerProps } from "../overlay/overlay-props";
-import { overlayCloseStrings } from "../overlay/intl";
 import { toastVariants } from "./toast-variants";
 
 export type ToastStatus = "error" | "info" | "success" | "warning" | "loading";

@@ -11,6 +11,7 @@ import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { cn } from "../../styles/cn";
 import { selfFocusRingClass } from "../../styles/utils";
 import { useResolvedPortalContainer } from "../../theme/use-resolved-portal-container";
+import { overlayCloseStrings } from "../overlay/intl";
 import {
   overlayLayer,
   overlayPopupFillClass,
@@ -19,7 +20,6 @@ import {
 } from "../overlay/overlay-classes";
 import { overlayCornerCloseButton } from "../overlay/overlay-close-button";
 import type { OverlayContainerProps } from "../overlay/overlay-props";
-import { overlayCloseStrings } from "../overlay/intl";
 
 /**
  * `side` → primitive `swipeDirection`. Swiping toward the anchored edge dismisses;
