@@ -32,6 +32,11 @@ function fieldRootFrom(name: string): HTMLElement {
   return root;
 }
 
+/** The label-row status glyphs: every icon in the field that is not a stepper button's. */
+function statusSvgs(name: string): SVGElement[] {
+  return [...fieldRootFrom(name).querySelectorAll("svg")].filter((svg) => svg.closest("button") === null);
+}
+
 function groupFrom(name: string): HTMLElement {
   const group = textboxNamed(name).parentElement;
   if (!(group instanceof HTMLElement)) {
@@ -244,21 +249,30 @@ describe("NumberField", () => {
     expect(submitted).toEqual(["6"]);
   });
 
-  it("renders pending and success icons in the label row without a label", () => {
+  it("crossfades the pending and success faces in the label row, success winning", () => {
     renderField(
       <>
         <NumberField aria-label="Pending" isPending />
-        <NumberField aria-label="Done" isSuccess />
-        <NumberField aria-label="Both" isPending isSuccess />
+        <NumberField aria-label="Done" isPending isSuccess />
       </>
     );
+
+    // number-field.md §8.7 (2026-09-03): the two faces crossfade like TextField's
+    // instead of stacking side by side, so both are always in the DOM and exactly one
+    // is opaque.
     expect(fieldRootFrom("Pending").querySelector("[data-slot=field-label]")).toBeNull();
-    const pendingSvgs = [...fieldRootFrom("Pending").querySelectorAll("svg")];
-    expect(pendingSvgs.some((svg) => svg.classList.contains("animate-spin"))).toBe(true);
-    expect(fieldRootFrom("Done").querySelectorAll("svg").length).toBeGreaterThan(0);
-    expect(fieldRootFrom("Both").querySelectorAll("svg").length).toBeGreaterThan(
-      fieldRootFrom("Done").querySelectorAll("svg").length
-    );
+
+    const pendingSvgs = statusSvgs("Pending");
+    expect(pendingSvgs).toHaveLength(2);
+    const pendingShown = pendingSvgs.filter((svg) => getComputedStyle(svg).opacity === "1");
+    expect(pendingShown).toHaveLength(1);
+    expect(pendingShown[0]?.classList.contains("animate-spin")).toBe(true);
+
+    const doneSvgs = statusSvgs("Done");
+    expect(doneSvgs).toHaveLength(2);
+    const doneShown = doneSvgs.filter((svg) => getComputedStyle(svg).opacity === "1");
+    expect(doneShown).toHaveLength(1);
+    expect(doneShown[0]?.classList.contains("animate-spin")).toBe(false);
   });
 
   it("paints the within ring on the group for keyboard focus, at both densities", async () => {

@@ -78,6 +78,7 @@ Directly: `muted-foreground` (character counter text). Everything else via compo
 4. **`errorMessage` widened `string` → `ReactNode`** — unified composite convention (never `string`).
 5. **Internal `bg-white` override → `bg-card`** — the ref re-tinted the transparent Textarea with `cn("bg-white", className)`; with Textarea now `bg-card` by default this override collapses, and any residual tint uses the token.
 6. Compound internals referenced in namespace style (`Field.Root` etc.) per the field spec's renames — no additional public renames here.
+7. **Label row, description and error move to the shared frame (2026-09-03, field.md §8.9):** the §2 composition is rendered by the package-private `FieldFrame`; the character counter is passed to it as the label row's status face, which is what forces the row to exist when `maxLength` is set without a `label` (including `maxLength={0}`). `Field.Control render={<Textarea/>}` stays here — the frame owns the label row, not the control. Emitted markup and class sets are unchanged.
 
 ## 9 Test requirements
 

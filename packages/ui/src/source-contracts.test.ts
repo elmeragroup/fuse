@@ -189,6 +189,13 @@ describe("RSC classification", () => {
   it("leaves the shared overlay close button directive-free — it owns no state", () => {
     expectRsc("components/overlay/overlay-close-button.tsx", "server");
   });
+
+  // Why not a lint rule: same judgment as the close button above. FieldFrame holds no
+  // state either, and its three consumers (TextField, NumberField, TextareaField) are
+  // client modules already, so a directive would only widen the client graph.
+  it("leaves the shared field frame directive-free — it owns no state", () => {
+    expectRsc("components/field/field-frame.tsx", "server");
+  });
 });
 
 describe("no .ref/ in package source", () => {
@@ -252,6 +259,28 @@ describe("field", () => {
       ...classTokens(vertical),
     ];
     expect(classTokens(responsive).toSorted()).toEqual(derived.toSorted());
+  });
+});
+
+describe("field composites", () => {
+  // Why not a lint rule: a one-off do-not-reintroduce ban (ADR 0008). These three
+  // composites each rebuilt the label row, description and error before the shared
+  // frame took ownership (field.md §8.9); the ban keeps that markup from growing back
+  // here. It is not a repo-wide API ban — Field's own demos and every composite outside
+  // this list render these parts directly, and the frame itself must. What the parts do
+  // once rendered is asserted behaviourally by each composite's browser suite and by
+  // `field-frame.browser.test.tsx`.
+  it.each([
+    "components/text-field/text-field.tsx",
+    "components/number-field/number-field.tsx",
+    "components/textarea-field/textarea-field.tsx",
+  ])("%s renders no label, description, or error markup of its own", (file) => {
+    const source = readSrc(file);
+    // JSX openers only: the prop docs still name the parts the frame renders, and the
+    // docs generator publishes that text.
+    for (const part of ["<Field.Label", "<Field.Description", "<Field.Error", "<Field.Root"]) {
+      expect(source, part).not.toContain(part);
+    }
   });
 });
 
