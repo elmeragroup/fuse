@@ -26,16 +26,14 @@ export function DescriptionListHeading({
 }: DescriptionListHeadingProps): ReactElement {
   return useRender({
     defaultTagName: "h2",
-    props: {
-      "data-slot": "description-list-heading",
-      ...mergeProps<"h2">(
-        {
-          className: cn("text-lg leading-snug font-medium font-heading text-inherit", className),
-        },
-        props
-      ),
-    },
+    props: mergeProps<"h2">(
+      {
+        className: cn("text-lg leading-snug font-medium font-heading text-inherit", className),
+      },
+      props
+    ),
     render,
+    state: { slot: "description-list-heading" },
   });
 }
 

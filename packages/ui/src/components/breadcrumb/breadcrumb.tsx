@@ -124,11 +124,7 @@ function BreadcrumbSeparator({ children, className, ...props }: BreadcrumbSepara
   );
 }
 
-function BreadcrumbEllipsis({ className, label, ...rest }: BreadcrumbEllipsisProps): ReactElement {
-  // SAFETY: Ellipsis omits children from the public type; leftover runtime keys must
-  // not replace the owned glyph and sr-only copy (breadcrumb.md §3).
-  const { children: _children, ...props } = rest as typeof rest & { children?: unknown };
-  void _children;
+function BreadcrumbEllipsis({ className, label, ...props }: BreadcrumbEllipsisProps): ReactElement {
   const strings = useLocalizedStrings(breadcrumbStrings);
 
   return (

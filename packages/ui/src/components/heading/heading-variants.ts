@@ -6,7 +6,6 @@
  *   `text-error` (heading.md §8.4) — no `destructive` class appears in library source.
  * - `size` is a type-scale axis, not a density control-box rung (conventions.md
  *   §Density metrics): it does not read `--control-*`.
- * - `prose: true` maps to an empty class string — a reserved hook kept from the ref.
  */
 import { tv } from "tailwind-variants";
 
@@ -31,9 +30,6 @@ export const headingVariants = tv({
       default: "font-medium",
       normal: "font-normal",
       "semi-bold": "font-semibold",
-    },
-    prose: {
-      true: "",
     },
     noMargin: {
       true: "mb-0",

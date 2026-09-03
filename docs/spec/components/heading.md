@@ -29,7 +29,6 @@ Internal composers in the ref (`card`, `table`, `description-list`, `timeline-li
 | `variant`   | see §4                                 | `"default"`       | tv axis                                                                                                                      |
 | `size`      | see §4                                 | auto from `level` | explicit `size` wins; else `1→"2xl"`, `2→"lg"`, else `"default"` (ref's `getSizeByHeadingLevel`, kept verbatim)              |
 | `font`      | `"default" \| "normal" \| "semi-bold"` | `"default"`       | weight axis (medium/normal/semibold)                                                                                         |
-| `prose`     | `boolean`                              | —                 | tv axis; ref maps `true` to an empty class string (kept — reserved hook)                                                     |
 | `noMargin`  | `boolean`                              | —                 | adds `mb-0`                                                                                                                  |
 | `uppercase` | `boolean`                              | —                 | adds `uppercase`                                                                                                             |
 | `align`     | `"left" \| "center" \| "right"`        | —                 | tv axis present in the recipe (undocumented in the ref component destructure but reachable via variant spread — kept public) |
@@ -48,7 +47,6 @@ Recipe: **`headingVariants`** — **PUBLIC** from `@elmeragroup/ui/heading`. Oth
 | `variant`   | `default` (`text-inherit`) · `foreground` · `primary` · `secondary` · `brand` · `muted` (`text-muted-foreground`) · `inherit` · `destructive` (8) | `default`                     |
 | `size`      | `default` (`text-base`) · `sm` · `lg` · `xl` · `2xl` · `3xl` · `4xl` · `5xl` (all `leading-snug`) · `6xl` (`leading-tight`) (9)                   | `default` (auto from `level`) |
 | `font`      | `default` (`font-medium`) · `normal` (`font-normal`) · `semi-bold` (`font-semibold`)                                                              | `default`                     |
-| `prose`     | `true` (empty string — reserved)                                                                                                                  | —                             |
 | `noMargin`  | `true` (`mb-0`)                                                                                                                                   | —                             |
 | `uppercase` | `true` (`uppercase`)                                                                                                                              | —                             |
 | `align`     | `left` · `center` · `right`                                                                                                                       | —                             |
@@ -82,6 +80,9 @@ Base: `font-heading text-foreground`. Note the base sets `text-foreground` while
 5. **`HeadingProps` name**: unchanged from ref (already unique) — recorded here because its siblings rename (text.md/span.md §8: the ref exports three colliding `TextProps`).
 6. **`align` axis surfaced**: present in the ref recipe but not in the component's destructured props; spec documents it as a first-class prop.
 7. **`data-slot="heading"` added**; `displayName` kept.
+8. **`prose` axis removed — a deliberate public removal** (ticket 44, 2026-09-03): the ref's reserved hook mapped `true` to an empty class string, so the prop and the axis were a no-op on every rendered heading. It was nonetheless public: it reached consumers through `HeadingProps` and `VariantProps<typeof headingVariants>`, and through `TimelineList.Title`, which extends this component's props. Both lose the key; no emitted class changes, and a repo-wide search across `packages/`, all three apps and every generated `api.json` finds no consumer that ever passed it.
+
+   The removal is recorded here because two normative statements pulled against each other and [spec README](../README.md) requires the contradiction to be fixed in the spec rather than settled quietly in code: the overlay/field spine's Implementation Decision 16 asks for dead variant axes including `heading.prose` to be "removed or consumed", while its Out of Scope section admits no public API change beyond additive exports. **Decision: remove.** The alternative considered was to consume the axis — give `prose: true` a real class and document a prose treatment — which was rejected because no such treatment is specified, designed, or requested, so consuming it would mean inventing product behaviour to keep a placeholder alive. A future prose treatment adds the axis back with a class to paint, as an additive change.
 
 ## 9 Test requirements
 

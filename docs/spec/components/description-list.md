@@ -73,6 +73,7 @@ None — no tv recipe, no variant axes. The mobile/desktop layout switch is the 
 4. **`data-slot` attributes added** — the ref emits none in this file; ours emit the §2 set per family convention so the parts are selectable/testable like every other component.
 5. **KEPT**: `Root` as a bare, class-free div (purely semantic — stated in §2, not "fixed"); the `min(50%,calc(var(--spacing)*80))` column arithmetic; the mobile-vs-`sm` border split between Term and Details.
 6. No `dark:` classes, no raw palette classes in the ref — nothing to clean.
+7. **`Heading` stamps `data-slot` through `useRender` state** (ticket 44, 2026-09-03): the part passed a literal `"data-slot"` key in the `props` object ahead of `mergeProps`; it now passes `state: { slot: "description-list-heading" }` like `Breadcrumb.Link` (§8.3 of [breadcrumb](breadcrumb.md)) and every other `useRender` part. The emitted attribute, its position in the tag and the merged classes are unchanged.
 
 ## 9 Test requirements
 

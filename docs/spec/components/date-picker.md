@@ -100,6 +100,8 @@ Via composed parts: `card` (FieldGroup, popover, and calendar surfaces) + `card-
 
 12. **Focused-month sync reads the picker state, not `props.value`:** the month is derived from the committed value on RAC's `DatePickerStateContext` (see §2), initialized on each open and re-synced on every value change, keeping the today-fallback — so an uncontrolled `defaultValue` picker also opens on the selected month. The reference's `props.value`-only sync left uncontrolled pickers on today's month with the selection off-screen.
 
+13. **The §8.12 sync is derive-with-reset, not an effect** (ticket 44, 2026-09-03): `PickerCalendar` compares the picker state's value against a `lastValue` state cell during render and moves the focused month there and then, instead of committing it from a `useEffect` after paint. The per-open `useState` initializer and the `compare` guard against an equal `CalendarDate` are unchanged, so the §9 focused-month scenarios — including a preset moving the value with the dialog open — behave as before, one render earlier.
+
 ## 9 Test requirements
 
 - Role/label queries: group by label, segments by `spinbutton`, trigger by `getByRole("button")`, popover content by `getByRole("dialog")`, days by `gridcell`.

@@ -49,15 +49,6 @@
           "required": false
         },
         {
-          "name": "prose",
-          "origin": "recipe-axis",
-          "type": "boolean | undefined",
-          "shortType": null,
-          "defaultValue": null,
-          "description": "",
-          "required": false
-        },
-        {
           "name": "size",
           "origin": "recipe-axis",
           "type": "\"2xl\" | \"3xl\" | \"4xl\" | \"5xl\" | \"6xl\" | \"default\" | \"lg\" | \"sm\" | \"xl\" | undefined",

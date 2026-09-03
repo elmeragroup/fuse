@@ -10,7 +10,8 @@ import { focusRing } from "../../styles/utils";
  * Reference `theme(colors.*)` lookups are retokenized onto role tokens, and the
  * reference's `destructive` vocabulary becomes `error` (conventions.md styling).
  * The box is a decorative glyph, not a control box, so it is outside the density
- * ladder and keeps its optical `size-4.5`.
+ * ladder and keeps its optical `size-4.5`. There is no `variant` axis: the one
+ * consumer renders `<Checkbox slot="selection" />` with no variant (grid-list.md §8.7).
  */
 export const checkboxVariants = tv({
   slots: {
@@ -19,12 +20,6 @@ export const checkboxVariants = tv({
     icon: "size-4 text-primary-foreground forced-colors:text-[HighlightText]",
   },
   variants: {
-    variant: {
-      success: {
-        box: "border-(--checkbox-color) bg-success [--checkbox-color:var(--success)] forced-colors:[--checkbox-color:Highlight]!",
-        icon: "text-success-foreground",
-      },
-    },
     isSelected: {
       true: {
         box: "border-(--checkbox-color) bg-(--checkbox-color) [--checkbox-color:var(--primary)] forced-colors:[--checkbox-color:Highlight]!",
@@ -56,22 +51,6 @@ export const checkboxVariants = tv({
       false: {},
     },
   },
-  compoundVariants: [
-    {
-      isSelected: true,
-      variant: "success",
-      class: {
-        box: "border-(--checkbox-color) bg-success [--checkbox-color:var(--success)]",
-      },
-    },
-    {
-      isSelected: false,
-      variant: "success",
-      class: {
-        box: "border-success bg-card [--checkbox-color:var(--success)]",
-      },
-    },
-  ],
   defaultVariants: {
     isSelected: false,
     isDisabled: false,

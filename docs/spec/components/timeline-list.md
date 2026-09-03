@@ -65,6 +65,7 @@ Each part emits its slot marker: `data-slot="timeline-list"`, `timeline-list-ite
 5. Fixes the erroneous `ListItemWithTimeline.displayName = "Card"` by using namespace display names.
 6. `date` accepts `Date` as well as string and has an explicit, environment-independent invalid-date `RangeError` contract.
 7. React 19 refs are ordinary props; no new `forwardRef` wrapper.
+8. **`Title` loses the inherited `prose` prop** (ticket 44, 2026-09-03): `TimelineListTitleProps` extends `Heading`, so removing the no-op `prose` axis from `headingVariants` narrows this part's public props too — the decision, its alternative, and the zero-consumer evidence are recorded in [heading](heading.md) §8.8. Nothing this part renders changes.
 
 ## 9 Test requirements
 

@@ -12,6 +12,32 @@ import { buttonVariants } from "../button/button-variants";
 import { paginationStrings } from "./intl";
 import { paginationVariants } from "./pagination-variants";
 
+/** Resolved once at module scope — the recipe is prop-independent here (no per-render work). */
+const { base, content, link, linkIcon, ellipsis, ellipsisIcon } = paginationVariants();
+
+/**
+ * The two edges differ by four values only, so `Pagination.Previous` and
+ * `Pagination.Next` are one component parameterised by direction (pagination.md §8.10).
+ */
+const EDGES = {
+  previous: {
+    slot: "pagination-previous",
+    Icon: CaretLeft,
+    labelKey: "goToPrevious",
+    textKey: "previous",
+    link: paginationVariants({ direction: "previous" }).link,
+  },
+  next: {
+    slot: "pagination-next",
+    Icon: CaretRight,
+    labelKey: "goToNext",
+    textKey: "next",
+    link: paginationVariants({ direction: "next" }).link,
+  },
+} as const;
+
+type PaginationDirection = keyof typeof EDGES;
+
 export type PaginationRootProps = ComponentProps<"nav"> & {
   /**
    * Landmark label. Defaults to the locale dictionary; an explicit `aria-label`
@@ -84,7 +110,6 @@ function PaginationRoot({
   ...props
 }: PaginationRootProps): ReactElement {
   const strings = useLocalizedStrings(paginationStrings);
-  const { base } = paginationVariants();
 
   return (
     <nav
@@ -98,8 +123,6 @@ function PaginationRoot({
 }
 
 function PaginationContent({ className, ...props }: PaginationContentProps): ReactElement {
-  const { content } = paginationVariants();
-
   return <ul data-slot="pagination-content" className={cn(content(), className)} {...props} />;
 }
 
@@ -108,8 +131,6 @@ function PaginationItem({ className, ...props }: PaginationItemProps): ReactElem
 }
 
 function PaginationLink({ className, isActive, size = "icon", ...props }: PaginationLinkProps): ReactElement {
-  const { link } = paginationVariants();
-
   return (
     <a
       data-slot="pagination-link"
@@ -120,85 +141,43 @@ function PaginationLink({ className, isActive, size = "icon", ...props }: Pagina
   );
 }
 
-function PaginationPrevious({
+function PaginationEdge({
+  direction,
   className,
   text,
   label,
   size = "default",
   "aria-label": ariaLabel,
-  ...rest
-}: PaginationPreviousProps): ReactElement {
-  // SAFETY: Previous omits children and isActive from the public type; leftover
-  // runtime keys must not reach Pagination.Link (pagination.md §3).
-  const {
-    children: _children,
-    isActive: _isActive,
-    ...props
-  } = rest as typeof rest & {
-    children?: unknown;
-    isActive?: unknown;
-  };
-  void _children;
-  void _isActive;
+  ...props
+}: PaginationPreviousProps & { direction: PaginationDirection }): ReactElement {
+  const edge = EDGES[direction];
   const strings = useLocalizedStrings(paginationStrings);
-  const { link, linkIcon } = paginationVariants({ direction: "previous" });
+  const caret = <edge.Icon className={linkIcon()} />;
+  const copy = <span>{text ?? strings.format(edge.textKey)}</span>;
 
   return (
     <PaginationLink
-      data-slot="pagination-previous"
+      data-slot={edge.slot}
       size={size}
-      aria-label={ariaLabel ?? label ?? strings.format("goToPrevious")}
-      className={cn(link(), className)}
+      aria-label={ariaLabel ?? label ?? strings.format(edge.labelKey)}
+      className={cn(edge.link(), className)}
       {...props}>
-      <CaretLeft className={linkIcon()} />
-      <span>{text ?? strings.format("previous")}</span>
+      {direction === "previous" ? caret : copy}
+      {direction === "previous" ? copy : caret}
     </PaginationLink>
   );
 }
 
-function PaginationNext({
-  className,
-  text,
-  label,
-  size = "default",
-  "aria-label": ariaLabel,
-  ...rest
-}: PaginationNextProps): ReactElement {
-  // SAFETY: Next omits children and isActive from the public type; leftover
-  // runtime keys must not reach Pagination.Link (pagination.md §3).
-  const {
-    children: _children,
-    isActive: _isActive,
-    ...props
-  } = rest as typeof rest & {
-    children?: unknown;
-    isActive?: unknown;
-  };
-  void _children;
-  void _isActive;
-  const strings = useLocalizedStrings(paginationStrings);
-  const { link, linkIcon } = paginationVariants({ direction: "next" });
-
-  return (
-    <PaginationLink
-      data-slot="pagination-next"
-      size={size}
-      aria-label={ariaLabel ?? label ?? strings.format("goToNext")}
-      className={cn(link(), className)}
-      {...props}>
-      <span>{text ?? strings.format("next")}</span>
-      <CaretRight className={linkIcon()} />
-    </PaginationLink>
-  );
+function PaginationPrevious({ size = "default", ...props }: PaginationPreviousProps): ReactElement {
+  return <PaginationEdge direction="previous" size={size} {...props} />;
 }
 
-function PaginationEllipsis({ className, label, ...rest }: PaginationEllipsisProps): ReactElement {
-  // SAFETY: Ellipsis omits children from the public type; leftover runtime keys must
-  // not replace the owned glyph and sr-only copy (pagination.md §3).
-  const { children: _children, ...props } = rest as typeof rest & { children?: unknown };
-  void _children;
+function PaginationNext({ size = "default", ...props }: PaginationNextProps): ReactElement {
+  return <PaginationEdge direction="next" size={size} {...props} />;
+}
+
+function PaginationEllipsis({ className, label, ...props }: PaginationEllipsisProps): ReactElement {
   const strings = useLocalizedStrings(paginationStrings);
-  const { ellipsis, ellipsisIcon } = paginationVariants();
 
   return (
     <span data-slot="pagination-ellipsis" className={cn(ellipsis(), className)} {...props}>

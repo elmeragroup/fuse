@@ -5,7 +5,7 @@ import type { ComponentProps, ReactElement } from "react";
 import { ScrollArea as ScrollAreaPrimitive } from "@base-ui/react/scroll-area";
 
 import { cn } from "../../styles/cn";
-import { focusRing } from "../../styles/utils";
+import { selfFocusRingClass } from "../../styles/utils";
 
 type ScrollAreaType = "auto" | "always" | "hover";
 
@@ -53,10 +53,7 @@ function ScrollAreaRoot({
       {...props}>
       <ScrollAreaPrimitive.Viewport
         data-slot="scroll-area-viewport"
-        className={cn(
-          "size-full rounded-[inherit] transition-[color,box-shadow]",
-          focusRing({ target: "self" }).root()
-        )}>
+        className={cn("size-full rounded-[inherit] transition-[color,box-shadow]", selfFocusRingClass)}>
         <ScrollAreaPrimitive.Content data-slot="scroll-area-content">{children}</ScrollAreaPrimitive.Content>
       </ScrollAreaPrimitive.Viewport>
       <ScrollAreaBar orientation={orientation} type={type} />

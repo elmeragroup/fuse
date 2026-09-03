@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactElement, ReactNode } from "react";
 import { useEffect, useRef } from "react";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -255,6 +255,66 @@ describe("Sidebar toggle paths", () => {
     expect(sidebarRoot().getAttribute("data-state")).toBe("collapsed");
     await userEvent.click(rail);
     expect(sidebarRoot().getAttribute("data-state")).toBe("expanded");
+  });
+});
+
+describe("Sidebar callback stability", () => {
+  it("keeps setOpen and toggleSidebar referentially stable across toggles", async () => {
+    const seen: SidebarContextValue[] = [];
+    renderThemed(<Frame probe={<ContextProbe onValue={(value) => seen.push(value)} />} />);
+
+    await userEvent.click(triggerNamed(TOGGLE_COPY["en-US"]));
+    await userEvent.click(triggerNamed(TOGGLE_COPY["en-US"]));
+
+    expect(seen.length, "three context values: mount plus two toggles").toBe(3);
+    expect(seen.map((value) => value.open)).toEqual([true, false, true]);
+    expect(new Set(seen.map((value) => value.setOpen)).size, "one setOpen identity").toBe(1);
+    expect(new Set(seen.map((value) => value.toggleSidebar)).size, "one toggleSidebar identity").toBe(1);
+  });
+
+  it("subscribes the cmd+B keydown listener once, not once per toggle", async () => {
+    const added = vi.spyOn(window, "addEventListener");
+    const removed = vi.spyOn(window, "removeEventListener");
+    try {
+      renderThemed(<Frame />);
+      const addedOnMount = added.mock.calls.filter(([type]) => type === "keydown").length;
+      expect(addedOnMount, "one keydown subscription on mount").toBe(1);
+
+      await userEvent.click(triggerNamed(TOGGLE_COPY["en-US"]));
+      await userEvent.click(triggerNamed(TOGGLE_COPY["en-US"]));
+
+      expect(added.mock.calls.filter(([type]) => type === "keydown").length).toBe(addedOnMount);
+      expect(removed.mock.calls.filter(([type]) => type === "keydown").length).toBe(0);
+    } finally {
+      added.mockRestore();
+      removed.mockRestore();
+    }
+  });
+
+  it("does not re-render a MenuButton when the rail toggles", async () => {
+    let renders = 0;
+    function CountedHost(props: ComponentProps<"button">): ReactElement {
+      renders += 1;
+      return <button type="button" {...props} />;
+    }
+
+    renderThemed(
+      <Frame>
+        <Sidebar.MenuItem>
+          <Sidebar.MenuButton render={<CountedHost />}>Plain</Sidebar.MenuButton>
+        </Sidebar.MenuItem>
+      </Frame>
+    );
+    const afterMount = renders;
+    expect(afterMount).toBeGreaterThan(0);
+
+    await userEvent.click(triggerNamed(TOGGLE_COPY["en-US"]));
+    expect(sidebarRoot().getAttribute("data-state"), "the rail really toggled").toBe("collapsed");
+    expect(renders, "menu button render count is unchanged by the toggle").toBe(afterMount);
+
+    await userEvent.click(triggerNamed(TOGGLE_COPY["en-US"]));
+    expect(sidebarRoot().getAttribute("data-state")).toBe("expanded");
+    expect(renders).toBe(afterMount);
   });
 });
 

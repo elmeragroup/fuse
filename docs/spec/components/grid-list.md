@@ -37,11 +37,11 @@ Both parts accept `className` (string or render-prop function, composed via `com
 ## 4 Variants
 
 - `itemStyles` — module-private tv, composes `focusRing({ target: "state", isFocusVisible })`; boolean axes `isSelected` (false: `hover:bg-muted`; true: `z-20 border bg-muted hover:bg-muted/80`) and `isDisabled` (`z-10 text-muted-foreground`)
-- Internal Checkbox uses `checkboxVariants` (shared slot recipe, private) with axes `variant("success")`, `isSelected`, `isDisabled`, `isInvalid`, `isFocusVisible`
+- Internal Checkbox uses `checkboxVariants` (shared slot recipe, private) with axes `isSelected`, `isDisabled`, `isInvalid`, `isFocusVisible`
 
 ## 5 Consumed tokens
 
-`bg-muted` (hover/selected rows), `text-muted-foreground` (disabled rows), `ring` + `background` (shared `focusRing`), `border` default token; checkbox slot: `bg-primary`/`border-primary` (selected), `bg-background`, `border` (`--border`), `text-primary-foreground` (icon), `bg-success`/`border-success`, `border-error` (invalid, renamed §8). Forced-colors system colors (`GrayText`, `Highlight`, `Mark`) kept.
+`bg-muted` (hover/selected rows), `text-muted-foreground` (disabled rows), `ring` + `background` (shared `focusRing`), `border` default token; checkbox slot: `bg-primary`/`border-primary` (selected), `bg-background`, `border` (`--border`), `text-primary-foreground` (icon), `border-error` (invalid, renamed §8). Forced-colors system colors (`GrayText`, `Highlight`, `Mark`) kept.
 
 ## 6 Data attributes
 
@@ -62,6 +62,8 @@ Both parts accept `className` (string or render-prop function, composed via `com
 4. **destructive → error**: checkbox invalid state `colors.destructive.DEFAULT` → `error` token. No `dark:`/`inverted:` variants present in this module.
 5. `empty:` plugin variants rewritten as explicit `data-[empty]:` (drops `tailwindcss-react-aria-components`).
 6. Family-wide: **list-box is RETIRED** — the dead internal copy is deleted; the external partner-list consumer migrates to `Item.Group`/`Item`; `DropdownListBox*` is absorbed by base-ui Select/Combobox. GridList records this here because it shares the facet-filter rewrite destiny: when the listbox/filter rewrite lands, this module goes with it.
+
+7. **Dead `variant: "success"` axis removed from `checkboxVariants`** (ticket 44, 2026-09-03): the axis and its two `isSelected` compounds came across from the ref, but this module's only `<Checkbox slot="selection" />` never passes a variant, so no rendered checkbox ever reached the arm. The axis, the compounds and the private wrapper's `variant?: "success"` prop are gone; the emitted classes for every selected/disabled/invalid/focus combination are unchanged.
 
 ## 9 Test requirements
 

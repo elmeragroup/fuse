@@ -3,11 +3,11 @@
     "componentCount": 66,
     "currentPartCount": 286,
     "effectPartCount": 286,
-    "currentPropCount": 503,
-    "effectPropCount": 617,
+    "currentPropCount": 501,
+    "effectPropCount": 615,
     "currentProblemCount": 0,
     "effectProblemCount": 85,
-    "apiDifferenceCount": 1110,
+    "apiDifferenceCount": 1106,
     "problemDifferenceCount": 85
   },
   "apiDifferences": [
@@ -4153,43 +4153,36 @@
     {
       "component": "heading",
       "path": "evidence.Heading.propOrder[3]",
-      "current": "prose",
+      "current": "size",
       "effect": "noMargin",
-      "reason": "heading Heading evidence propOrder[3]: checker prose vs Effect noMargin."
+      "reason": "heading Heading evidence propOrder[3]: checker size vs Effect noMargin."
     },
     {
       "component": "heading",
       "path": "evidence.Heading.propOrder[4]",
-      "current": "size",
-      "effect": "prose",
-      "reason": "heading Heading evidence propOrder[4]: checker size vs Effect prose."
+      "current": "uppercase",
+      "effect": "render",
+      "reason": "heading Heading evidence propOrder[4]: checker uppercase vs Effect render."
     },
     {
       "component": "heading",
       "path": "evidence.Heading.propOrder[5]",
-      "current": "uppercase",
-      "effect": "render",
-      "reason": "heading Heading evidence propOrder[5]: checker uppercase vs Effect render."
+      "current": "variant",
+      "effect": "size",
+      "reason": "heading Heading evidence propOrder[5]: checker variant vs Effect size."
     },
     {
       "component": "heading",
       "path": "evidence.Heading.propOrder[6]",
-      "current": "variant",
-      "effect": "size",
-      "reason": "heading Heading evidence propOrder[6]: checker variant vs Effect size."
+      "current": "level",
+      "effect": "uppercase",
+      "reason": "heading Heading evidence propOrder[6]: checker level vs Effect uppercase."
     },
     {
       "component": "heading",
       "path": "evidence.Heading.propOrder[7]",
-      "current": "level",
-      "effect": "uppercase",
-      "reason": "heading Heading evidence propOrder[7]: checker level vs Effect uppercase."
-    },
-    {
-      "component": "heading",
-      "path": "evidence.Heading.propOrder[8]",
       "effect": "variant",
-      "reason": "heading Heading evidence propOrder[8]: checker omitted vs Effect variant."
+      "reason": "heading Heading evidence propOrder[7]: checker omitted vs Effect variant."
     },
     {
       "component": "heading",
@@ -4250,26 +4243,6 @@
       "current": true,
       "effect": false,
       "reason": "heading Heading.noMargin synthesized: checker true vs Effect false from extractor provenance."
-    },
-    {
-      "component": "heading",
-      "path": "evidence.Heading.props.prose.declarationPaths[0]",
-      "effect": "packages/ui/src/components/heading/heading-variants.ts",
-      "reason": "heading Heading.prose declarationPaths: checker `omitted` vs Effect `packages/ui/src/components/heading/heading-variants.ts`."
-    },
-    {
-      "component": "heading",
-      "path": "evidence.Heading.props.prose.ownership",
-      "current": "synthesized",
-      "effect": "library",
-      "reason": "heading Heading.prose ownership: checker `synthesized` vs Effect `library` (recipe-axis synthesized vs library variants file)."
-    },
-    {
-      "component": "heading",
-      "path": "evidence.Heading.props.prose.synthesized",
-      "current": true,
-      "effect": false,
-      "reason": "heading Heading.prose synthesized: checker true vs Effect false from extractor provenance."
     },
     {
       "component": "heading",
@@ -8694,30 +8667,30 @@
     },
     {
       "component": "timeline-list",
-      "path": "evidence.TimelineList.Title.propOrder[4]",
+      "path": "evidence.TimelineList.Title.propOrder[3]",
       "current": "size",
       "effect": "render",
-      "reason": "timeline-list TimelineList.Title evidence propOrder[4]: checker size vs Effect render."
+      "reason": "timeline-list TimelineList.Title evidence propOrder[3]: checker size vs Effect render."
+    },
+    {
+      "component": "timeline-list",
+      "path": "evidence.TimelineList.Title.propOrder[4]",
+      "current": "uppercase",
+      "effect": "size",
+      "reason": "timeline-list TimelineList.Title evidence propOrder[4]: checker uppercase vs Effect size."
     },
     {
       "component": "timeline-list",
       "path": "evidence.TimelineList.Title.propOrder[5]",
-      "current": "uppercase",
-      "effect": "size",
-      "reason": "timeline-list TimelineList.Title evidence propOrder[5]: checker uppercase vs Effect size."
+      "current": "variant",
+      "effect": "uppercase",
+      "reason": "timeline-list TimelineList.Title evidence propOrder[5]: checker variant vs Effect uppercase."
     },
     {
       "component": "timeline-list",
       "path": "evidence.TimelineList.Title.propOrder[6]",
-      "current": "variant",
-      "effect": "uppercase",
-      "reason": "timeline-list TimelineList.Title evidence propOrder[6]: checker variant vs Effect uppercase."
-    },
-    {
-      "component": "timeline-list",
-      "path": "evidence.TimelineList.Title.propOrder[7]",
       "effect": "variant",
-      "reason": "timeline-list TimelineList.Title evidence propOrder[7]: checker omitted vs Effect variant."
+      "reason": "timeline-list TimelineList.Title evidence propOrder[6]: checker omitted vs Effect variant."
     },
     {
       "component": "timeline-list",
@@ -9529,36 +9502,36 @@
     },
     {
       "component": "card",
-      "key": "effect-extractor|card|unsupported-type-fallback|Could not extract type \"{ direction: { vertical: { base: string; cardHeader: string; cardTitle: string; cardDescription: string; cardContent: string; cardFooter: string; }; horizontal: { base: string; cardHeader: string; cardTitle: string; cardDescription: string; cardContent: string; cardFooter: string; }; }; }\" at \"<repo>/packages/ui/src/card.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/card.ts:1:1]#1",
+      "key": "effect-extractor|card|unsupported-type-fallback|Could not extract type \"{ direction: { vertical: { cardHeader: string; cardContent: string; cardFooter: string; }; horizontal: { base: string; cardHeader: string; cardTitle: string; }; }; }\" at \"<repo>/packages/ui/src/card.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/card.ts:1:1]#1",
       "effect": {
         "component": "card",
         "source": "effect-extractor",
         "code": "unsupported-type-fallback",
-        "message": "Could not extract type \"{ direction: { vertical: { base: string; cardHeader: string; cardTitle: string; cardDescription: string; cardContent: string; cardFooter: string; }; horizontal: { base: string; cardHeader: string; cardTitle: string; cardDescription: string; cardContent: string; cardFooter: string; }; }; }\" at \"<repo>/packages/ui/src/card.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/card.ts:1:1]"
+        "message": "Could not extract type \"{ direction: { vertical: { cardHeader: string; cardContent: string; cardFooter: string; }; horizontal: { base: string; cardHeader: string; cardTitle: string; }; }; }\" at \"<repo>/packages/ui/src/card.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/card.ts:1:1]"
       },
-      "reason": "card: Effect `unsupported-type-fallback` emits `any` for the tv variants-map object `{ direction: { vertical: { base: string; cardHeader: string; cardTitle: string; cardDescription: string; card…`."
+      "reason": "card: Effect `unsupported-type-fallback` emits `any` for the tv variants-map object `{ direction: { vertical: { cardHeader: string; cardContent: string; cardFooter: string; }; horizonta…`."
     },
     {
       "component": "card",
-      "key": "effect-extractor|card|unsupported-type-fallback|Could not extract type \"{ direction: { vertical: { base: string; cardHeader: string; cardTitle: string; cardDescription: string; cardContent: string; cardFooter: string; }; horizontal: { base: string; cardHeader: string; cardTitle: string; cardDescription: string; cardContent: string; cardFooter: string; }; }; }\" at \"<repo>/packages/ui/src/card.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/card.ts:1:1]#2",
+      "key": "effect-extractor|card|unsupported-type-fallback|Could not extract type \"{ direction: { vertical: { cardHeader: string; cardContent: string; cardFooter: string; }; horizontal: { base: string; cardHeader: string; cardTitle: string; }; }; }\" at \"<repo>/packages/ui/src/card.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/card.ts:1:1]#2",
       "effect": {
         "component": "card",
         "source": "effect-extractor",
         "code": "unsupported-type-fallback",
-        "message": "Could not extract type \"{ direction: { vertical: { base: string; cardHeader: string; cardTitle: string; cardDescription: string; cardContent: string; cardFooter: string; }; horizontal: { base: string; cardHeader: string; cardTitle: string; cardDescription: string; cardContent: string; cardFooter: string; }; }; }\" at \"<repo>/packages/ui/src/card.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/card.ts:1:1]"
+        "message": "Could not extract type \"{ direction: { vertical: { cardHeader: string; cardContent: string; cardFooter: string; }; horizontal: { base: string; cardHeader: string; cardTitle: string; }; }; }\" at \"<repo>/packages/ui/src/card.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/card.ts:1:1]"
       },
-      "reason": "card: Effect `unsupported-type-fallback` emits `any` for the tv variants-map object `{ direction: { vertical: { base: string; cardHeader: string; cardTitle: string; cardDescription: string; card…`."
+      "reason": "card: Effect `unsupported-type-fallback` emits `any` for the tv variants-map object `{ direction: { vertical: { cardHeader: string; cardContent: string; cardFooter: string; }; horizonta…`."
     },
     {
       "component": "card",
-      "key": "effect-extractor|card|unsupported-type-fallback|Could not extract type \"{ direction: { vertical: { base: string; cardHeader: string; cardTitle: string; cardDescription: string; cardContent: string; cardFooter: string; }; horizontal: { base: string; cardHeader: string; cardTitle: string; cardDescription: string; cardContent: string; cardFooter: string; }; }; }\" at \"<repo>/packages/ui/src/card.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/card.ts:1:1]#3",
+      "key": "effect-extractor|card|unsupported-type-fallback|Could not extract type \"{ direction: { vertical: { cardHeader: string; cardContent: string; cardFooter: string; }; horizontal: { base: string; cardHeader: string; cardTitle: string; }; }; }\" at \"<repo>/packages/ui/src/card.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/card.ts:1:1]#3",
       "effect": {
         "component": "card",
         "source": "effect-extractor",
         "code": "unsupported-type-fallback",
-        "message": "Could not extract type \"{ direction: { vertical: { base: string; cardHeader: string; cardTitle: string; cardDescription: string; cardContent: string; cardFooter: string; }; horizontal: { base: string; cardHeader: string; cardTitle: string; cardDescription: string; cardContent: string; cardFooter: string; }; }; }\" at \"<repo>/packages/ui/src/card.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/card.ts:1:1]"
+        "message": "Could not extract type \"{ direction: { vertical: { cardHeader: string; cardContent: string; cardFooter: string; }; horizontal: { base: string; cardHeader: string; cardTitle: string; }; }; }\" at \"<repo>/packages/ui/src/card.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/card.ts:1:1]"
       },
-      "reason": "card: Effect `unsupported-type-fallback` emits `any` for the tv variants-map object `{ direction: { vertical: { base: string; cardHeader: string; cardTitle: string; cardDescription: string; card…`."
+      "reason": "card: Effect `unsupported-type-fallback` emits `any` for the tv variants-map object `{ direction: { vertical: { cardHeader: string; cardContent: string; cardFooter: string; }; horizonta…`."
     },
     {
       "component": "checkbox-card",
@@ -9661,36 +9634,36 @@
     },
     {
       "component": "heading",
-      "key": "effect-extractor|heading|unsupported-type-fallback|Could not extract type \"{ variant: { readonly default: \"text-inherit\"; readonly foreground: \"text-foreground\"; readonly primary: \"text-primary\"; readonly secondary: \"text-secondary\"; readonly brand: \"text-brand\"; readonly muted: \"text-muted-foreground\"; readonly inherit: \"text-inherit\"; readonly destructive: \"text-error\"; }; ... 5 more ......\" at \"<repo>/packages/ui/src/heading.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/heading.ts:1:1]#1",
+      "key": "effect-extractor|heading|unsupported-type-fallback|Could not extract type \"{ variant: { readonly default: \"text-inherit\"; readonly foreground: \"text-foreground\"; readonly primary: \"text-primary\"; readonly secondary: \"text-secondary\"; readonly brand: \"text-brand\"; readonly muted: \"text-muted-foreground\"; readonly inherit: \"text-inherit\"; readonly destructive: \"text-error\"; }; ... 4 more ......\" at \"<repo>/packages/ui/src/heading.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/heading.ts:1:1]#1",
       "effect": {
         "component": "heading",
         "source": "effect-extractor",
         "code": "unsupported-type-fallback",
-        "message": "Could not extract type \"{ variant: { readonly default: \"text-inherit\"; readonly foreground: \"text-foreground\"; readonly primary: \"text-primary\"; readonly secondary: \"text-secondary\"; readonly brand: \"text-brand\"; readonly muted: \"text-muted-foreground\"; readonly inherit: \"text-inherit\"; readonly destructive: \"text-error\"; }; ... 5 more ......\" at \"<repo>/packages/ui/src/heading.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/heading.ts:1:1]"
+        "message": "Could not extract type \"{ variant: { readonly default: \"text-inherit\"; readonly foreground: \"text-foreground\"; readonly primary: \"text-primary\"; readonly secondary: \"text-secondary\"; readonly brand: \"text-brand\"; readonly muted: \"text-muted-foreground\"; readonly inherit: \"text-inherit\"; readonly destructive: \"text-error\"; }; ... 4 more ......\" at \"<repo>/packages/ui/src/heading.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/heading.ts:1:1]"
       },
-      "reason": "heading: Effect `unsupported-type-fallback` emits `any` for the tv variants-map object `{ variant: { readonly default: \"text-inherit\"; readonly foreground: \"text-foreground\"; readonly primary: \"tex…`."
+      "reason": "heading: Effect `unsupported-type-fallback` emits `any` for the tv variants-map object `{ variant: { readonly default: \"text-inherit\"; readonly foreground: \"text-foreground\"; readonly prim…`."
     },
     {
       "component": "heading",
-      "key": "effect-extractor|heading|unsupported-type-fallback|Could not extract type \"{ variant: { readonly default: \"text-inherit\"; readonly foreground: \"text-foreground\"; readonly primary: \"text-primary\"; readonly secondary: \"text-secondary\"; readonly brand: \"text-brand\"; readonly muted: \"text-muted-foreground\"; readonly inherit: \"text-inherit\"; readonly destructive: \"text-error\"; }; ... 5 more ......\" at \"<repo>/packages/ui/src/heading.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/heading.ts:1:1]#2",
+      "key": "effect-extractor|heading|unsupported-type-fallback|Could not extract type \"{ variant: { readonly default: \"text-inherit\"; readonly foreground: \"text-foreground\"; readonly primary: \"text-primary\"; readonly secondary: \"text-secondary\"; readonly brand: \"text-brand\"; readonly muted: \"text-muted-foreground\"; readonly inherit: \"text-inherit\"; readonly destructive: \"text-error\"; }; ... 4 more ......\" at \"<repo>/packages/ui/src/heading.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/heading.ts:1:1]#2",
       "effect": {
         "component": "heading",
         "source": "effect-extractor",
         "code": "unsupported-type-fallback",
-        "message": "Could not extract type \"{ variant: { readonly default: \"text-inherit\"; readonly foreground: \"text-foreground\"; readonly primary: \"text-primary\"; readonly secondary: \"text-secondary\"; readonly brand: \"text-brand\"; readonly muted: \"text-muted-foreground\"; readonly inherit: \"text-inherit\"; readonly destructive: \"text-error\"; }; ... 5 more ......\" at \"<repo>/packages/ui/src/heading.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/heading.ts:1:1]"
+        "message": "Could not extract type \"{ variant: { readonly default: \"text-inherit\"; readonly foreground: \"text-foreground\"; readonly primary: \"text-primary\"; readonly secondary: \"text-secondary\"; readonly brand: \"text-brand\"; readonly muted: \"text-muted-foreground\"; readonly inherit: \"text-inherit\"; readonly destructive: \"text-error\"; }; ... 4 more ......\" at \"<repo>/packages/ui/src/heading.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/heading.ts:1:1]"
       },
-      "reason": "heading: Effect `unsupported-type-fallback` emits `any` for the tv variants-map object `{ variant: { readonly default: \"text-inherit\"; readonly foreground: \"text-foreground\"; readonly primary: \"tex…`."
+      "reason": "heading: Effect `unsupported-type-fallback` emits `any` for the tv variants-map object `{ variant: { readonly default: \"text-inherit\"; readonly foreground: \"text-foreground\"; readonly prim…`."
     },
     {
       "component": "heading",
-      "key": "effect-extractor|heading|unsupported-type-fallback|Could not extract type \"{ variant: { readonly default: \"text-inherit\"; readonly foreground: \"text-foreground\"; readonly primary: \"text-primary\"; readonly secondary: \"text-secondary\"; readonly brand: \"text-brand\"; readonly muted: \"text-muted-foreground\"; readonly inherit: \"text-inherit\"; readonly destructive: \"text-error\"; }; ... 5 more ......\" at \"<repo>/packages/ui/src/heading.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/heading.ts:1:1]#3",
+      "key": "effect-extractor|heading|unsupported-type-fallback|Could not extract type \"{ variant: { readonly default: \"text-inherit\"; readonly foreground: \"text-foreground\"; readonly primary: \"text-primary\"; readonly secondary: \"text-secondary\"; readonly brand: \"text-brand\"; readonly muted: \"text-muted-foreground\"; readonly inherit: \"text-inherit\"; readonly destructive: \"text-error\"; }; ... 4 more ......\" at \"<repo>/packages/ui/src/heading.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/heading.ts:1:1]#3",
       "effect": {
         "component": "heading",
         "source": "effect-extractor",
         "code": "unsupported-type-fallback",
-        "message": "Could not extract type \"{ variant: { readonly default: \"text-inherit\"; readonly foreground: \"text-foreground\"; readonly primary: \"text-primary\"; readonly secondary: \"text-secondary\"; readonly brand: \"text-brand\"; readonly muted: \"text-muted-foreground\"; readonly inherit: \"text-inherit\"; readonly destructive: \"text-error\"; }; ... 5 more ......\" at \"<repo>/packages/ui/src/heading.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/heading.ts:1:1]"
+        "message": "Could not extract type \"{ variant: { readonly default: \"text-inherit\"; readonly foreground: \"text-foreground\"; readonly primary: \"text-primary\"; readonly secondary: \"text-secondary\"; readonly brand: \"text-brand\"; readonly muted: \"text-muted-foreground\"; readonly inherit: \"text-inherit\"; readonly destructive: \"text-error\"; }; ... 4 more ......\" at \"<repo>/packages/ui/src/heading.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/heading.ts:1:1]"
       },
-      "reason": "heading: Effect `unsupported-type-fallback` emits `any` for the tv variants-map object `{ variant: { readonly default: \"text-inherit\"; readonly foreground: \"text-foreground\"; readonly primary: \"tex…`."
+      "reason": "heading: Effect `unsupported-type-fallback` emits `any` for the tv variants-map object `{ variant: { readonly default: \"text-inherit\"; readonly foreground: \"text-foreground\"; readonly prim…`."
     },
     {
       "component": "input-group",
@@ -10167,12 +10140,12 @@
     },
     {
       "component": "toast",
-      "key": "effect-extractor|toast|unsupported-type-fallback|Could not extract type \"{ Provider: { ({ toastManager, ...props }: ToastProviderProps): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; ... 8 more ...; createToastManager: <Data extends object = object>() => CreateToastManagerReturnValue<...>; }\" at \"<repo>/packages/ui/src/components/toast/toast.tsx:425:14\". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/toast/toast.tsx:425:14]#1",
+      "key": "effect-extractor|toast|unsupported-type-fallback|Could not extract type \"{ Provider: { ({ toastManager, ...props }: ToastProviderProps): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; ... 8 more ...; createToastManager: <Data extends object = object>() => CreateToastManagerReturnValue<...>; }\" at \"<repo>/packages/ui/src/components/toast/toast.tsx:435:14\". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/toast/toast.tsx:435:14]#1",
       "effect": {
         "component": "toast",
         "source": "effect-extractor",
         "code": "unsupported-type-fallback",
-        "message": "Could not extract type \"{ Provider: { ({ toastManager, ...props }: ToastProviderProps): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; ... 8 more ...; createToastManager: <Data extends object = object>() => CreateToastManagerReturnValue<...>; }\" at \"<repo>/packages/ui/src/components/toast/toast.tsx:425:14\". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/toast/toast.tsx:425:14]"
+        "message": "Could not extract type \"{ Provider: { ({ toastManager, ...props }: ToastProviderProps): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; ... 8 more ...; createToastManager: <Data extends object = object>() => CreateToastManagerReturnValue<...>; }\" at \"<repo>/packages/ui/src/components/toast/toast.tsx:435:14\". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/toast/toast.tsx:435:14]"
       },
       "reason": "toast: Effect `unsupported-type-fallback` emits `any` for the Toast namespace object type `{ Provider, Viewport, … }`; adapter still maps checker member names into parts."
     },

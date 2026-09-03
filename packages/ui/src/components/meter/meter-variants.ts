@@ -2,10 +2,11 @@
  * Module-private recipe (meter.md §4). Not exported from the public entry —
  * there is no proven recipe-borrowing use. Status fill/text use the `error`
  * tokens (meter.md §8.3).
+ *
+ * One `tone` axis, four arms. The `mode` × `level` resolution lives in
+ * `METER_TONE_TABLE` (meter.md §8.9), so this recipe holds colors only.
  */
 import { tv } from "tailwind-variants";
-
-import { METER_CONSTANTS } from "./meter-constants";
 
 export const meterVariants = tv({
   base: "",
@@ -18,96 +19,26 @@ export const meterVariants = tv({
     barFill: "absolute top-0 left-0 h-full rounded-full transition-all forced-colors:bg-[Highlight]",
   },
   variants: {
-    mode: {
-      [METER_CONSTANTS.MODES.DEFAULT]: {},
-      [METER_CONSTANTS.MODES.INVERTED]: {},
-      [METER_CONSTANTS.MODES.SUCCESS_ONLY_WHEN_FULL]: {},
-      [METER_CONSTANTS.MODES.NEUTRAL]: {},
-    },
-    level: {
-      [METER_CONSTANTS.LEVELS.LOW]: {
+    tone: {
+      success: {
         barFill: "bg-success",
         labelValue: "text-success",
       },
-      [METER_CONSTANTS.LEVELS.MEDIUM]: {
+      warning: {
         barFill: "bg-warning",
         labelValue: "text-warning-foreground",
       },
-      [METER_CONSTANTS.LEVELS.FULL]: {
+      error: {
         barFill: "bg-error",
         labelValue: "text-error",
       },
-      [METER_CONSTANTS.LEVELS.EXCEEDED_MAX_VALUE]: {
-        barFill: "bg-error",
-        labelValue: "text-error",
-      },
-    },
-  },
-  compoundVariants: [
-    {
-      mode: METER_CONSTANTS.MODES.SUCCESS_ONLY_WHEN_FULL,
-      level: METER_CONSTANTS.LEVELS.LOW,
-      class: {
-        barFill: "bg-error",
-        labelValue: "text-error",
-      },
-    },
-    {
-      mode: METER_CONSTANTS.MODES.SUCCESS_ONLY_WHEN_FULL,
-      level: METER_CONSTANTS.LEVELS.MEDIUM,
-      class: {
-        barFill: "bg-error",
-        labelValue: "text-error",
-      },
-    },
-    {
-      mode: METER_CONSTANTS.MODES.SUCCESS_ONLY_WHEN_FULL,
-      level: METER_CONSTANTS.LEVELS.FULL,
-      class: {
-        barFill: "bg-success",
-        labelValue: "text-success",
-      },
-    },
-    {
-      mode: METER_CONSTANTS.MODES.INVERTED,
-      level: METER_CONSTANTS.LEVELS.LOW,
-      class: {
-        barFill: "bg-error",
-        labelValue: "text-error",
-      },
-    },
-    {
-      mode: METER_CONSTANTS.MODES.INVERTED,
-      level: METER_CONSTANTS.LEVELS.MEDIUM,
-      class: {
-        barFill: "bg-warning",
-        labelValue: "text-warning-foreground",
-      },
-    },
-    {
-      mode: METER_CONSTANTS.MODES.INVERTED,
-      level: METER_CONSTANTS.LEVELS.FULL,
-      class: {
-        barFill: "bg-success",
-        labelValue: "text-success",
-      },
-    },
-    {
-      mode: METER_CONSTANTS.MODES.NEUTRAL,
-      level: [
-        METER_CONSTANTS.LEVELS.LOW,
-        METER_CONSTANTS.LEVELS.MEDIUM,
-        METER_CONSTANTS.LEVELS.FULL,
-        METER_CONSTANTS.LEVELS.EXCEEDED_MAX_VALUE,
-      ],
-      class: {
+      neutral: {
         barFill: "bg-primary",
         labelValue: "text-foreground",
       },
     },
-  ],
+  },
   defaultVariants: {
-    mode: METER_CONSTANTS.MODES.DEFAULT,
-    level: METER_CONSTANTS.LEVELS.LOW,
+    tone: "success",
   },
 });

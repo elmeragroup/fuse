@@ -11,8 +11,9 @@ import { cn } from "../../styles/cn";
 import { useElmeraGroupUi } from "../../theme/elmera-group-ui";
 import { getMeterLevel, meterPercentage } from "./get-meter-level";
 import { meterStrings } from "./intl";
-import { METER_CONSTANTS } from "./meter-constants";
-import type { MeterLevel, MeterMode } from "./meter-constants";
+import type { MeterMode } from "./meter-constants";
+import { meterToneCell } from "./meter-tone";
+import type { MeterIconName } from "./meter-tone";
 import { meterVariants } from "./meter-variants";
 
 export type MeterProps = {
@@ -46,38 +47,28 @@ export type MeterProps = {
 } & Omit<ComponentProps<typeof MeterPrimitive.Root>, "value" | "min" | "max" | "className" | "locale">;
 
 /**
- * Status icon in the value span. Derived from `level`, never from the raw
- * percentage, so the icon and the fill color always cross the 80% boundary
- * together: exactly 80% is `LOW` and shows no icon in `default` mode
- * (meter.md §3/§4, §8.8).
+ * Status icon in the value span. The glyph comes from the same `METER_TONE_TABLE`
+ * cell as the fill color, never from the raw percentage, so the icon and the fill
+ * always cross the 80% boundary together: exactly 80% is `LOW` and shows no icon in
+ * `default` mode (meter.md §3/§4, §8.8, §8.9).
  */
 function MeterIcon({
-  mode,
-  level,
+  icon,
+  className,
   warningName,
   successName,
 }: {
-  mode: MeterMode;
-  level: MeterLevel;
+  icon: MeterIconName;
+  className: string;
   warningName: string;
   successName: string;
 }): ReactElement | null {
-  const { icon } = meterVariants({ mode, level });
-
-  if (mode === METER_CONSTANTS.MODES.DEFAULT && level === METER_CONSTANTS.LEVELS.LOW) {
-    return null;
+  if (icon === "warning") {
+    return <Warning aria-label={warningName} className={className} />;
   }
 
-  if (mode === METER_CONSTANTS.MODES.DEFAULT) {
-    return <Warning aria-label={warningName} className={icon()} />;
-  }
-
-  if (mode === METER_CONSTANTS.MODES.SUCCESS_ONLY_WHEN_FULL && level === METER_CONSTANTS.LEVELS.FULL) {
-    return <CheckCircle aria-label={successName} className={icon()} />;
-  }
-
-  if (mode === METER_CONSTANTS.MODES.SUCCESS_ONLY_WHEN_FULL) {
-    return <Warning aria-label={warningName} className={icon()} />;
+  if (icon === "success") {
+    return <CheckCircle aria-label={successName} className={className} />;
   }
 
   return null;
@@ -109,7 +100,8 @@ export function Meter({
   const warningName = warningLabel ?? strings.format("warning");
   const successName = successLabel ?? strings.format("success");
 
-  const { root, labelContainer, labelValue, bar, barFill } = meterVariants({ mode, level });
+  const { tone, icon: iconName } = meterToneCell(mode, level);
+  const { root, labelContainer, labelValue, icon, bar, barFill } = meterVariants({ tone });
 
   return (
     <MeterPrimitive.Root
@@ -125,7 +117,7 @@ export function Meter({
           {label}
         </MeterPrimitive.Label>
         <span data-slot="meter-value" className={cn(labelValue(), "tabular-nums")}>
-          <MeterIcon mode={mode} level={level} warningName={warningName} successName={successName} />{" "}
+          <MeterIcon icon={iconName} className={icon()} warningName={warningName} successName={successName} />{" "}
           {valueLabel ?? <MeterPrimitive.Value />}
         </span>
       </div>

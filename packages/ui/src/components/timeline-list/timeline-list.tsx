@@ -4,6 +4,9 @@ import { cn } from "../../styles/cn";
 import { Heading } from "../heading/heading";
 import { timelineListVariants } from "./timeline-list-variants";
 
+/** Resolved once at module scope — the recipe has no axes (no per-render work). */
+const { root, item, dot, title, time, description } = timelineListVariants();
+
 export type TimelineListRootProps = ComponentProps<"ol">;
 export type TimelineListItemProps = ComponentProps<"li">;
 export type TimelineListTitleProps = Omit<ComponentPropsWithoutRef<typeof Heading>, "noMargin">;
@@ -18,12 +21,10 @@ export type TimelineListTimeProps = Omit<ComponentProps<"time">, "dateTime"> & {
 export type TimelineListDescriptionProps = ComponentProps<"div">;
 
 function TimelineListRoot({ className, ...props }: TimelineListRootProps): ReactElement {
-  const { root } = timelineListVariants();
   return <ol data-slot="timeline-list" className={cn(root(), className)} {...props} />;
 }
 
 function TimelineListItem({ className, children, ...props }: TimelineListItemProps): ReactElement {
-  const { item, dot } = timelineListVariants();
   return (
     <li data-slot="timeline-list-item" className={cn(item(), className)} {...props}>
       <span data-slot="timeline-list-dot" aria-hidden="true" className={dot()} />
@@ -33,7 +34,6 @@ function TimelineListItem({ className, children, ...props }: TimelineListItemPro
 }
 
 function TimelineListTitle({ className, level = 3, ...props }: TimelineListTitleProps): ReactElement {
-  const { title } = timelineListVariants();
   return (
     <Heading
       data-slot="timeline-list-title"
@@ -54,7 +54,6 @@ function isoDateTime(date: string | Date): string {
 }
 
 function TimelineListTime({ children, className, date, ...props }: TimelineListTimeProps): ReactElement {
-  const { time } = timelineListVariants();
   return (
     <time
       data-slot="timeline-list-time"
@@ -67,7 +66,6 @@ function TimelineListTime({ children, className, date, ...props }: TimelineListT
 }
 
 function TimelineListDescription({ className, ...props }: TimelineListDescriptionProps): ReactElement {
-  const { description } = timelineListVariants();
   return <div data-slot="timeline-list-description" className={cn(description(), className)} {...props} />;
 }
 
