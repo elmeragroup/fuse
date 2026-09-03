@@ -162,8 +162,10 @@ export function RadioGroup({
  * outer group and to that list: vertical remains connected `flex-col gap-0`;
  * horizontal is `flex-row flex-wrap gap-4` with individually rounded cards.
  */
-export function RadioItemGroup(props: RadioGroupProps): ReactElement {
-  return renderSelectionItemCardGroup(RadioGroup, props);
+export function RadioItemGroup({ orientation = "vertical", ...props }: RadioGroupProps): ReactElement {
+  // The default is spelled here, not only inside the shared body, because the docs API
+  // extractor reads a part's documented defaults out of its own destructuring.
+  return renderSelectionItemCardGroup(RadioGroup, { ...props, orientation });
 }
 
 export type RadioProps = {

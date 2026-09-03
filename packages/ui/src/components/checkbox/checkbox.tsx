@@ -142,8 +142,10 @@ export function CheckboxGroup({
  * outer group and to that list: vertical remains connected `flex-col gap-0`;
  * horizontal is `flex-row flex-wrap gap-4` with individually rounded cards.
  */
-export function CheckboxItemGroup(props: CheckboxGroupProps): ReactElement {
-  return renderSelectionItemCardGroup(CheckboxGroup, props);
+export function CheckboxItemGroup({ orientation = "vertical", ...props }: CheckboxGroupProps): ReactElement {
+  // The default is spelled here, not only inside the shared body, because the docs API
+  // extractor reads a part's documented defaults out of its own destructuring.
+  return renderSelectionItemCardGroup(CheckboxGroup, { ...props, orientation });
 }
 
 export type CheckboxDescriptionProps = {

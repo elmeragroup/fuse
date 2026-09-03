@@ -476,7 +476,10 @@ describe("SelectionGroupFrame", () => {
     return list;
   }
 
-  function layout(element: HTMLElement): Record<string, string> {
+  /** The four computed properties the two orientation arms actually set. */
+  type GroupLayout = { display: string; flexDirection: string; flexWrap: string; gap: string };
+
+  function layout(element: HTMLElement): GroupLayout {
     const style = getComputedStyle(element);
     return {
       display: style.display,
@@ -486,9 +489,24 @@ describe("SelectionGroupFrame", () => {
     };
   }
 
-  const VERTICAL_GROUP = { display: "flex", flexDirection: "column", flexWrap: "nowrap", gap: "8px" };
-  const HORIZONTAL = { display: "flex", flexDirection: "row", flexWrap: "wrap", gap: "16px" };
-  const VERTICAL_LIST = { display: "flex", flexDirection: "column", flexWrap: "nowrap", gap: "0px" };
+  const VERTICAL_GROUP = {
+    display: "flex",
+    flexDirection: "column",
+    flexWrap: "nowrap",
+    gap: "8px",
+  } satisfies GroupLayout;
+  const HORIZONTAL = {
+    display: "flex",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: "16px",
+  } satisfies GroupLayout;
+  const VERTICAL_LIST = {
+    display: "flex",
+    flexDirection: "column",
+    flexWrap: "nowrap",
+    gap: "0px",
+  } satisfies GroupLayout;
 
   it("lays a checkbox group and a radio group out identically at each orientation", () => {
     renderThemed(

@@ -1386,8 +1386,8 @@
       "component": "checkbox",
       "path": "parts.CheckboxDescription.props.describedBy.type",
       "current": "ReactNode",
-      "effect": "React.ReactNode | undefined",
-      "reason": "checkbox CheckboxDescription.describedBy type: Effect expands alias `ReactNode` to `React.ReactNode | undefined`; checker keeps the alias."
+      "effect": "ReactNode | undefined",
+      "reason": "checkbox CheckboxDescription.describedBy type: Effect appends `| undefined` to optional `ReactNode`; checker omits the undefined member."
     },
     {
       "component": "checkbox",
