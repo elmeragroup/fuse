@@ -95,7 +95,7 @@ Runtime note (kept, §8): `showTrigger` and `showClear` are effectively mutually
 
 ## 4 Variants
 
-No `tv` recipes and no axes — all styling is inline per part; nothing exported (no borrow pattern). Button faces are borrowed from `InputGroup.Button` (ghost/icon-sm) and `Button` (ghost/icon-sm for chip remove).
+No `tv` recipes and no axes — Content, Item, Label, and Separator compose the shared overlay/menu class constants plus Combobox-specific extras, and the rest is inline per part; nothing exported (no borrow pattern). _(Amended 2026-09-03; see §8.11.)_ Button faces are borrowed from `InputGroup.Button` (ghost/icon-sm) and `Button` (ghost/icon-sm for chip remove).
 
 ## 5 Consumed tokens
 
@@ -150,6 +150,8 @@ No `tv` recipes and no axes — all styling is inline per part; nothing exported
 8. **Icons → Phosphor**: `CheckIcon`→`Check` (item indicator), `ChevronDownIcon`→`CaretDown` (trigger caret), `XIcon`→`X` (clear + chip remove).
 9. **Provider-owned locale and strings:** removes Root's public `locale`; Clear, Chip remove, Empty, and the Input caret Trigger use the co-located four-locale dictionary with optional copy overrides (`clearLabel` / `removeLabel` / Empty `children`). The caret name is dictionary `toggle` in all four locales. _(Amended 2026-09-02.)_
 10. **Chip `removeLabel` default uses children, then `itemToStringLabel(value)`:** Chip still exposes no `value` prop. The wrapper reads the selected value for this chip via `Combobox.Value` plus render-order index under `Combobox.Chips`, and Root's `itemToStringLabel`, without importing the banned `@base-ui/react/combobox` subpath. Default accessible name formats dictionary `removeItem` with string/number children; non-string children fall back to `itemToStringLabel(value)`; if neither yields text, the localized "Remove" string alone with no trailing space. _(Amended 2026-09-02.)_
+
+11. **Shared overlay spine adopted:** `Combobox.Content` composes `useResolvedPortalContainer`, `OverlayContainerProps`, and `overlayPositionerClass` / `overlayPopupSurfaceClass` / `overlayPopupMotionClass` / `overlayPopupDurationClass`; `Combobox.Item`, `Combobox.Label`, and `Combobox.Separator` compose `menuItemClass` / `menuItemIndicatorClass` / `menuGroupLabelClass` / `menuSeparatorClass`; Chips and ChipsInput compose `withinFocusRingClass` / `withinFocusRingControlClass`, and `isChipText` becomes the shared `isTextValueNode`. Only `side` and `alignOffset` take the shared `OverlayPositionerProps` declarations: `sideOffset` (6) and `align` (`"start"`) differ from the shared `@default` tags and are redeclared, interleaved so the published `propOrder` (`side, sideOffset, align, alignOffset, anchor, container`) does not move. The extras that stay Combobox's are the popup geometry and embedded-InputGroup selectors, the option's `w-full pr-8 pl-2` and its `data-highlighted:` highlight face (base-ui spells the listbox highlight `data-highlighted:`, so `menuItemClass` deliberately excludes it), and the indicator's `size-4`. Emitted class set, prop names, documented defaults, and DOM are unchanged. _(Amended 2026-09-03.)_
 
 Kept faithfully:
 

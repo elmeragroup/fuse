@@ -1,6 +1,6 @@
 "use client";
 
-import type { ComponentProps, ReactElement, RefObject } from "react";
+import type { ComponentProps, ReactElement } from "react";
 
 import { Select as SelectPrimitive } from "@base-ui/react/select";
 import type { SelectRoot as SelectRootType } from "@base-ui/react/select";
@@ -9,12 +9,19 @@ import { CaretDown } from "../../icons/generated/caret-down";
 import { CaretUp } from "../../icons/generated/caret-up";
 import { Check } from "../../icons/generated/check";
 import { cn } from "../../styles/cn";
-import { focusRing } from "../../styles/utils";
-import { useThemeScopeContainer } from "../../theme/theme-scope-container";
-import { overlayLayer } from "../overlay/overlay-classes";
-
-/** Resolved once at module scope — the recipe below does the same (no per-render work). */
-const selfFocusRing = focusRing({ target: "self" }).root();
+import { selfFocusRingClass } from "../../styles/utils";
+import { useResolvedPortalContainer } from "../../theme/use-resolved-portal-container";
+import {
+  menuGroupLabelClass,
+  menuItemClass,
+  menuItemIndicatorClass,
+  menuSeparatorClass,
+  overlayPopupDurationClass,
+  overlayPopupMotionClass,
+  overlayPopupSurfaceClass,
+  overlayPositionerClass,
+} from "../overlay/overlay-classes";
+import type { OverlayContainerProps, OverlayPositionerProps } from "../overlay/overlay-props";
 
 function SelectRoot<Value = unknown, Multiple extends boolean | undefined = false>(
   props: SelectRootType.Props<Value, Multiple>
@@ -43,7 +50,7 @@ function SelectTrigger({
       data-size={size}
       // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- select.md §4: value-slot gap is content layout, not a control rung
       className={cn(
-        selfFocusRing,
+        selfFocusRingClass,
         // oxlint-disable-next-line elmera/no-local-focus-ring -- select.md §7: native outline off; ring comes from the shared adapter
         "group/select-trigger shadow-xs data-[size=sm]:text-sm flex w-fit items-center justify-between rounded-md border border-input bg-card whitespace-nowrap transition-[color,box-shadow] outline-none select-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-error aria-invalid:ring-3 aria-invalid:ring-error/20 data-placeholder:text-muted-foreground data-[size=default]:h-(--control-h-md) data-[size=default]:gap-(--control-gap-md) data-[size=default]:px-(--control-px-md) data-[size=default]:[font-size:var(--control-text)] data-[size=default]:[line-height:var(--control-leading)] data-[size=sm]:h-(--control-h-sm) data-[size=sm]:gap-(--control-gap-sm) data-[size=sm]:px-(--control-px-sm) *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className
@@ -69,39 +76,21 @@ function SelectValue({ className, ...props }: ComponentProps<typeof SelectPrimit
   );
 }
 
-export type SelectContentProps = ComponentProps<typeof SelectPrimitive.Popup> & {
-  /**
-   * How the popup aligns to the trigger on the cross axis.
-   * @default "center"
-   */
-  align?: ComponentProps<typeof SelectPrimitive.Positioner>["align"];
-  /**
-   * Offset along the alignment axis, in pixels.
-   * @default 0
-   */
-  alignOffset?: ComponentProps<typeof SelectPrimitive.Positioner>["alignOffset"];
-  /**
-   * Which side of the trigger the popup is placed on.
-   * @default "bottom"
-   */
-  side?: ComponentProps<typeof SelectPrimitive.Positioner>["side"];
-  /**
-   * Distance from the trigger, in pixels.
-   * @default 4
-   */
-  sideOffset?: ComponentProps<typeof SelectPrimitive.Positioner>["sideOffset"];
-  /**
-   * macOS-style: the selected item overlays the trigger. Emitted as `data-align-trigger`.
-   * Entrance animation is suppressed while this is on, so the popup appears in place.
-   * @default true
-   */
-  alignItemWithTrigger?: ComponentProps<typeof SelectPrimitive.Positioner>["alignItemWithTrigger"];
-  /**
-   * Portal target for the popup. Defaults to the nearest enclosing `ThemeScope`
-   * element, so an overlay never escapes the theme that opened it.
-   */
-  container?: HTMLElement | RefObject<HTMLElement | null>;
-};
+/**
+ * `align`/`alignOffset`/`side`/`sideOffset` are the shared block: Select's runtime
+ * defaults are Popover's, so the shared `@default` tags publish correctly here
+ * (overlay-props.ts). `OverlayContainerProps` is intersected last so `container` keeps
+ * its published position in `Select.Content.propOrder` (popover.tsx).
+ */
+export type SelectContentProps = ComponentProps<typeof SelectPrimitive.Popup> &
+  OverlayPositionerProps<ComponentProps<typeof SelectPrimitive.Positioner>> & {
+    /**
+     * macOS-style: the selected item overlays the trigger. Emitted as `data-align-trigger`.
+     * Entrance animation is suppressed while this is on, so the popup appears in place.
+     * @default true
+     */
+    alignItemWithTrigger?: ComponentProps<typeof SelectPrimitive.Positioner>["alignItemWithTrigger"];
+  } & OverlayContainerProps;
 
 function SelectContent({
   className,
@@ -114,11 +103,8 @@ function SelectContent({
   container,
   ...props
 }: SelectContentProps): ReactElement | null {
-  const resolvedContainer = useThemeScopeContainer(container);
+  const resolvedContainer = useResolvedPortalContainer(container);
 
-  // theming.md §7.4: an explicit ref or an enclosing ThemeScope whose element is not
-  // attached yet means wait — never a brief escape to the document body. Only an absent
-  // scope (`undefined`) leaves the primitive default in place.
   if (resolvedContainer === null) {
     return null;
   }
@@ -131,12 +117,15 @@ function SelectContent({
         align={align}
         alignOffset={alignOffset}
         alignItemWithTrigger={alignItemWithTrigger}
-        className={cn("isolate", overlayLayer)}>
+        className={overlayPositionerClass}>
         <SelectPrimitive.Popup
           data-slot="select-content"
           data-align-trigger={alignItemWithTrigger ? "true" : "false"}
           className={cn(
-            "shadow-md relative max-h-(--available-height) w-(--anchor-width) min-w-36 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg bg-popover text-popover-foreground ring-1 ring-foreground/10 duration-100 data-[align-trigger=true]:animate-none data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+            overlayPopupSurfaceClass,
+            overlayPopupMotionClass,
+            overlayPopupDurationClass,
+            "relative max-h-(--available-height) w-(--anchor-width) min-w-36 overflow-x-hidden overflow-y-auto rounded-lg data-[align-trigger=true]:animate-none",
             className
           )}
           {...props}>
@@ -159,18 +148,16 @@ function SelectItem({
       data-slot="select-item"
       // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- select.md §4: option padding is menu layout, not a control rung
       className={cn(
-        // oxlint-disable-next-line elmera/no-local-focus-ring -- select.md §7: option highlight face, not native outline
-        "text-sm relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 outline-hidden select-none focus:bg-accent focus:text-accent-foreground focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
+        menuItemClass,
+        // oxlint-disable-next-line elmera/no-local-focus-ring -- select.md §7: the highlight face menuItemClass leaves to the family; base-ui spells it `focus:` on Select items
+        "w-full pr-8 pl-2 focus:bg-accent focus:text-accent-foreground focus:**:text-accent-foreground *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
         className
       )}
       {...props}>
       <SelectPrimitive.ItemText className="flex flex-1 shrink-0 gap-2 whitespace-nowrap">
         {children}
       </SelectPrimitive.ItemText>
-      <SelectPrimitive.ItemIndicator
-        render={
-          <span className="pointer-events-none absolute right-2 flex size-4 items-center justify-center" />
-        }>
+      <SelectPrimitive.ItemIndicator render={<span className={cn(menuItemIndicatorClass, "size-4")} />}>
         <Check className="pointer-events-none" />
       </SelectPrimitive.ItemIndicator>
     </SelectPrimitive.Item>
@@ -190,8 +177,7 @@ function SelectLabel({
   return (
     <SelectPrimitive.GroupLabel
       data-slot="select-label"
-      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- select.md §4: group label padding is menu layout, not a control rung
-      className={cn("text-xs px-2 py-1.5 text-muted-foreground", className)}
+      className={cn(menuGroupLabelClass, className)}
       {...props}
     />
   );
@@ -204,7 +190,7 @@ function SelectSeparator({
   return (
     <SelectPrimitive.Separator
       data-slot="select-separator"
-      className={cn("pointer-events-none -mx-1 my-1 h-px bg-border", className)}
+      className={cn(menuSeparatorClass, "pointer-events-none", className)}
       {...props}
     />
   );
