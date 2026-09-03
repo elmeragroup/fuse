@@ -35,7 +35,7 @@ FileTriggerPrimitive (RAC; renders a hidden <input type="file">, ref target)
 | `isDisabled`        | `boolean`                           | —           | applied to the visible Button                                 |
 | `size` / `variant`  | `buttonVariants` axes               | `size="sm"` | `variant` routed to the Button (ref bug fixed, §8)            |
 | `className`         | `string`                            | —           | merged onto the Button                                        |
-| `ref`               | `RefObject<HTMLInputElement>`       | —           | the hidden file input                                         |
+| `ref`               | `Ref<HTMLInputElement>`             | —           | the hidden file input                                         |
 | `children`          | `ReactNode`                         | —           | button label                                                  |
 
 ## 4 Variants

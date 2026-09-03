@@ -38,7 +38,7 @@ No controlled/uncontrolled opinion — native semantics. Polymorphism not applic
 
 ## 4 Variants
 
-None public. Shared chrome comes from the package-private `fieldBox` recipe (same surface as Input). Textarea adds only `flex field-sizing-content` on top of `fieldBox({ box: "content" })`; the `content` rung is what replaces the `control` rung's pinned `h-(--control-h-md)` with `min-h-16 py-2`. No `h-auto` is emitted — `field-box.test.ts` asserts its absence. Nothing exported. _(Amended 2026-09-03 — the height release moved into the shared recipe's `box` axis; the text still described a local `h-auto`.)_
+None public. Shared chrome comes from the package-private `fieldBox` recipe (same surface as Input). Textarea adds only `flex field-sizing-content` on top of `fieldBox({ box: "content" })`; the `content` rung is what replaces the `control` rung's pinned `h-(--control-h-md)` with `min-h-16 py-2`. No `h-auto` is emitted — `field-box.test.ts` asserts its absence. Nothing exported. _(Amended 2026-09-03 — §8.5: the height release moved into the shared recipe's `box` axis; the text still described a local `h-auto`.)_
 
 No `size` axis. Inline padding and control type pin the `md` rung per [conventions](conventions.md) ruling 2, 2026-08-21, via `fieldBox`.
 
@@ -72,6 +72,7 @@ No `size` axis. Inline padding and control type pin the `md` rung per [conventio
 2. **`dark:` variant classes dropped** (`dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40`) — dark axis lives in tokens.
 3. **`destructive` → `error`** token rename on the invalid border/ring classes.
 4. **Density retokenization:** `px-2.5` and `text-base md:text-sm` become `--control-px-md` and the control-type pair. `min-h-16` is an explicit content-floor exemption.
+5. **The height release lives in `fieldBox`, not here** (2026-09-03): the control's pinned `h-(--control-h-md)` is swapped for `min-h-16 py-2` by the shared recipe's `box: "content"` rung, so Textarea adds only `flex field-sizing-content` and emits no `h-auto` (`field-box.test.ts` asserts its absence). §4 described a local `h-auto` override that no longer exists.
 
 Kept as-is (not divergences): plain `<textarea>` rather than a base-ui control; `field-sizing-content` auto-grow; no exported recipe.
 
