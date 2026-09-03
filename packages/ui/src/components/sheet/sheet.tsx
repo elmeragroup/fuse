@@ -19,7 +19,7 @@ import {
 } from "../overlay/overlay-classes";
 import { overlayCornerCloseButton } from "../overlay/overlay-close-button";
 import type { OverlayContainerProps } from "../overlay/overlay-props";
-import { sheetStrings } from "./intl";
+import { overlayCloseStrings } from "../overlay/intl";
 
 /**
  * `side` → primitive `swipeDirection`. Swiping toward the anchored edge dismisses;
@@ -147,7 +147,7 @@ function SheetContent({
   ...props
 }: SheetContentProps): ReactElement | null {
   const side = use(SheetSideContext);
-  const strings = useLocalizedStrings(sheetStrings);
+  const strings = useLocalizedStrings(overlayCloseStrings);
   const resolvedContainer = useResolvedPortalContainer(container);
 
   if (resolvedContainer === null) {

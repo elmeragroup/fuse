@@ -24,7 +24,7 @@ import { useResolvedPortalContainer } from "../../theme/use-resolved-portal-cont
 import { Button } from "../button/button";
 import { overlayLayer } from "../overlay/overlay-classes";
 import type { OverlayContainerProps } from "../overlay/overlay-props";
-import { toastStrings } from "./intl";
+import { overlayCloseStrings } from "../overlay/intl";
 import { toastVariants } from "./toast-variants";
 
 export type ToastStatus = "error" | "info" | "success" | "warning" | "loading";
@@ -360,7 +360,7 @@ function hasVisibleChildren(children: ReactNode): boolean {
 }
 
 function ToastClose({ className, label, children, ...props }: ToastCloseProps): ReactElement {
-  const strings = useLocalizedStrings(toastStrings);
+  const strings = useLocalizedStrings(overlayCloseStrings);
   const resolvedLabel = label ?? strings.format("close");
   const visible = hasVisibleChildren(children);
   const closeButton = visible ? (
