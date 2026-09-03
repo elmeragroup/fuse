@@ -8,7 +8,7 @@ import { RadioGroup as RadioGroupPrimitive } from "@base-ui/react/radio-group";
 
 import { SpinnerGap } from "../../icons/generated/spinner-gap";
 import { cn } from "../../styles/cn";
-import { focusRing } from "../../styles/utils";
+import { selfFocusRingClass } from "../../styles/utils";
 import { Field } from "../field/field";
 import {
   renderSelectionItemCardGroup,
@@ -16,8 +16,6 @@ import {
   selectionGroupOrientationClass,
   SelectionItem,
 } from "../selection-item/selection-item";
-
-const selfFocusRing = focusRing({ target: "self" }).root();
 
 /**
  * Unlabeled 16px radio over the base-ui primitive (radio-group.md §2/§7). Client —
@@ -36,7 +34,7 @@ export function RadioGroupItem({
         cn(
           // oxlint-disable-next-line elmera/no-local-focus-ring -- radio-group.md §7: native outline off; ring comes from the shared adapter
           "group/radio-group-item peer relative flex aspect-square size-4 shrink-0 rounded-full border border-input transition-[color,box-shadow] outline-none after:absolute after:-inset-x-3 after:-inset-y-2 after:content-[''] disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-error aria-invalid:ring-3 aria-invalid:ring-error/20 aria-invalid:aria-checked:border-primary data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground",
-          selfFocusRing,
+          selfFocusRingClass,
           className instanceof Function ? className(state) : className
         )
       }
@@ -294,7 +292,7 @@ export function RadioIconButton({
         // oxlint-disable-next-line elmera/no-local-focus-ring -- radio-group.md §7: native outline off; ring comes from the shared adapter
         "ease-out inline-flex shrink-0 items-center justify-center rounded-lg border border-input bg-card text-foreground transition-[color,background-color,box-shadow,scale] duration-150 outline-none hover:bg-muted active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-50 data-invalid:border-error data-checked:border-primary data-checked:bg-muted",
         iconButtonSizes[size],
-        selfFocusRing,
+        selfFocusRingClass,
         className
       )}
       {...props}>

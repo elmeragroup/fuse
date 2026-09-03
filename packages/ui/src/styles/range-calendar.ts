@@ -1,6 +1,6 @@
 import { tv } from "tailwind-variants";
 
-import { focusRing } from "./utils";
+import { stateFocusRingClass, stateFocusRingVisibleClass } from "./utils";
 
 /**
  * RangeCalendar's slotted recipe (range-calendar.md §4). Package-private — no entry
@@ -40,10 +40,7 @@ export const rangeCalendarVariants = tv({
      * The full-size pill inside the band. Focus is the canonical RAC state adapter:
      * the band owns the tab stop, the pill paints the ring.
      */
-    cell: [
-      "flex size-full items-center justify-center rounded-full text-foreground",
-      focusRing({ target: "state" }).root(),
-    ],
+    cell: ["flex size-full items-center justify-center rounded-full text-foreground", stateFocusRingClass],
     error: "text-sm text-error",
   },
   variants: {
@@ -62,7 +59,7 @@ export const rangeCalendarVariants = tv({
       true: { cell: "text-muted-foreground" },
     },
     isFocusVisible: {
-      true: { cell: focusRing({ target: "state", isFocusVisible: true }).root() },
+      true: { cell: stateFocusRingVisibleClass },
       false: { cell: "" },
     },
   },

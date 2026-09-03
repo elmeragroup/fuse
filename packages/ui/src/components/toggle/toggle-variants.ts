@@ -1,13 +1,13 @@
 import { tv } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
-import { focusRing } from "../../styles/utils";
+import { selfFocusRingClass } from "../../styles/utils";
 
 // Runtime-free recipe so ToggleGroup.Item can borrow it without Toggle's client graph.
 export const toggleVariants = tv({
   base: cn(
     "group/toggle font-medium inline-flex items-center justify-center rounded-md whitespace-nowrap transition-[color,box-shadow,scale] hover:bg-muted hover:text-foreground active:scale-[0.96] disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-error aria-invalid:ring-error/20 aria-pressed:bg-muted data-pressed:bg-muted [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-    focusRing({ target: "self" }).root()
+    selfFocusRingClass
   ),
   variants: {
     variant: {

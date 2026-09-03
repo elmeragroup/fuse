@@ -64,6 +64,7 @@ Both parts accept `className` (string or render-prop function, composed via `com
 6. Family-wide: **list-box is RETIRED** — the dead internal copy is deleted; the external partner-list consumer migrates to `Item.Group`/`Item`; `DropdownListBox*` is absorbed by base-ui Select/Combobox. GridList records this here because it shares the facet-filter rewrite destiny: when the listbox/filter rewrite lands, this module goes with it.
 
 7. **Dead `variant: "success"` axis removed from `checkboxVariants`** (ticket 44, 2026-09-03): the axis and its two `isSelected` compounds came across from the ref, but this module's only `<Checkbox slot="selection" />` never passes a variant, so no rendered checkbox ever reached the arm. The axis, the compounds and the private wrapper's `variant?: "success"` prop are gone; the emitted classes for every selected/disabled/invalid/focus combination are unchanged.
+8. **The `textValue` derivation uses the shared helper** (2026-09-03): the local `stringChild` is gone and `GridListItem` derives `textValue` with `isTextNode(children)` from `internal/is-text-node` (conventions.md "One `isTextNode`"). Because RAC children are `ChildrenOrFunction<…>` — a node **or** a render function — that helper's parameter admits the function arm as a permanent `false`, which is what keeps one guard serving both tiers instead of a second spelling behind the quarantine boundary. Typeahead behaviour is unchanged (spec 08 finding S21).
 
 ## 9 Test requirements
 

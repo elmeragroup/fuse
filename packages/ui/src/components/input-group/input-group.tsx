@@ -5,7 +5,7 @@ import type { ComponentProps, ReactElement } from "react";
 import type { VariantProps } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
-import { focusRing } from "../../styles/utils";
+import { withinFocusRingClass, withinFocusRingControlClass } from "../../styles/utils";
 import { Button } from "../button/button";
 import { Input } from "../input/input";
 import { Textarea } from "../textarea/textarea";
@@ -55,7 +55,7 @@ export type InputGroupTextareaProps = ComponentProps<"textarea">;
  */
 const CONTROL_CHROME = cn(
   "flex-1 rounded-none border-0 bg-transparent shadow-none ring-0 disabled:bg-transparent aria-invalid:ring-0",
-  focusRing({ target: "within" }).control()
+  withinFocusRingControlClass
 );
 
 function InputGroupRoot({ className, ...props }: InputGroupRootProps): ReactElement {
@@ -72,7 +72,7 @@ function InputGroupRoot({ className, ...props }: InputGroupRootProps): ReactElem
         "has-[[data-slot][aria-invalid=true]]:border-error has-[[data-slot][aria-invalid=true]]:ring-3 has-[[data-slot][aria-invalid=true]]:ring-error/20",
         "has-[>[data-align=block-end]]:h-auto has-[>[data-align=block-end]]:flex-col has-[>[data-align=block-start]]:h-auto has-[>[data-align=block-start]]:flex-col has-[>textarea]:h-auto",
         "has-[>[data-align=block-end]]:[&>input]:pt-3 has-[>[data-align=block-start]]:[&>input]:pb-3 has-[>[data-align=inline-end]]:[&>input]:pr-1.5 has-[>[data-align=inline-start]]:[&>input]:pl-1.5",
-        focusRing({ target: "within" }).root(),
+        withinFocusRingClass,
         className
       )}
       {...props}

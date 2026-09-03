@@ -18,6 +18,7 @@ import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { Check } from "../../icons/generated/check";
 import { DotsSixVertical } from "../../icons/generated/dots-six-vertical";
 import { Minus } from "../../icons/generated/minus";
+import { isTextNode } from "../../internal/is-text-node";
 import { gridListVariants, itemStyles } from "../../styles/grid-list";
 import { Button } from "../internal/button";
 import { checkboxVariants } from "../internal/checkbox";
@@ -77,22 +78,13 @@ export function GridList<T extends object>({
  */
 export type GridListItemProps<T extends object = object> = AriaGridListItemProps<T>;
 
-/** Spec §3: only a string `children` auto-derives `textValue` for typeahead. */
-function stringChild(node: GridListItemProps["children"]): string | undefined {
-  // Consumer-owned ReactNode I/O: typeahead takes a string label only.
-  // oxlint-disable-next-line anti-slop/no-runtime-typeof
-  if (typeof node === "string") {
-    return node;
-  }
-  return undefined;
-}
-
 export function GridListItem<T extends object = object>({
   children,
   className,
   ...props
 }: GridListItemProps<T> & RefAttributes<HTMLDivElement>): ReactElement {
-  const textValue = stringChild(children);
+  // Spec §3: only a string `children` auto-derives `textValue` for typeahead.
+  const textValue = isTextNode(children) ? children : undefined;
   const strings = useLocalizedStrings(gridListStrings);
 
   return (

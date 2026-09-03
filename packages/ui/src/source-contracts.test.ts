@@ -390,3 +390,117 @@ describe("overlay layer", () => {
     expect(restating).toEqual([]);
   }, 30_000);
 });
+
+describe("superseded local forms", () => {
+  // Why not a lint rule: each of these is a "there is exactly one owner" count across
+  // the whole tree, and the owner is the one file that must be allowed to spell the
+  // thing. A rule banning the spelling would need a per-file exemption for precisely
+  // its owner and still could not assert the "exactly once" half. Spec 08 built the
+  // five owners; this is the ban on the private copies growing back (2026-09-03).
+  const nonTestSources = (): string[] => walkSourceFiles(SRC_ROOT);
+
+  /** Line-comment and block-comment lines dropped, so prose citing a spelling is not a copy of it. */
+  function codeOnly(source: string): string {
+    return source
+      .split("\n")
+      .filter((line) => {
+        const trimmed = line.trimStart();
+        return !trimmed.startsWith("*") && !trimmed.startsWith("//") && !trimmed.startsWith("/*");
+      })
+      .join("\n");
+  }
+
+  function ownedBy(owner: string, needle: string): string[] {
+    const ownerPath = join(SRC_ROOT, owner);
+    return nonTestSources()
+      .filter((file) => file !== ownerPath && codeOnly(readFileSync(file, "utf8")).includes(needle))
+      .map((file) => relative(SRC_ROOT, file));
+  }
+
+  it("resolves every fixed focus-ring rung only in styles/utils.ts", () => {
+    // All three targets. The one call that is not a constant — `react-aria/link`, which
+    // passes a live `isFocusVisible` from a RAC render prop — is the single exemption,
+    // and naming it here is what stops a second one appearing quietly.
+    for (const needle of [
+      'focusRing({ target: "self" })',
+      'focusRing({ target: "within" })',
+      'focusRing({ target: "state" })',
+      'focusRing({ target: "state", isFocusVisible: true })',
+    ]) {
+      expect(ownedBy("styles/utils.ts", needle), needle).toEqual([]);
+    }
+    expect(
+      nonTestSources()
+        .filter((file) =>
+          /focusRing\(\{[^}]*isFocusVisible[^:}]*\}\)/u.test(codeOnly(readFileSync(file, "utf8")))
+        )
+        .map((file) => relative(SRC_ROOT, file))
+    ).toEqual(["react-aria/link/link.tsx"]);
+    const utils = readSrc("styles/utils.ts");
+    expect(utils).toContain('export const selfFocusRingClass = focusRing({ target: "self" }).root();');
+    expect(utils).toContain('export const withinFocusRingClass = focusRing({ target: "within" }).root();');
+    expect(utils).toContain(
+      'export const withinFocusRingControlClass = focusRing({ target: "within" }).control();'
+    );
+    expect(utils).toContain('export const stateFocusRingClass = focusRing({ target: "state" }).root();');
+    expect(utils).toContain(
+      'export const stateFocusRingVisibleClass = focusRing({ target: "state", isFocusVisible: true }).root();'
+    );
+  }, 30_000);
+
+  it("reads the ThemeScope portal container only through useResolvedPortalContainer", () => {
+    // theme-scope-container.ts publishes the context and the hook; the resolver is its
+    // only caller, and every overlay goes through the resolver (theming.md §7.4).
+    expect(
+      ownedBy("theme/use-resolved-portal-container.ts", "useThemeScopeContainer(").filter(
+        (file) => file !== "theme/theme-scope-container.ts"
+      )
+    ).toEqual([]);
+  }, 30_000);
+
+  it("spells the popup motion, fill and surface classes only in overlay-classes.ts", () => {
+    for (const needle of [
+      "origin-(--transform-origin)",
+      "bg-popover text-popover-foreground",
+      "shadow-md ring-1 ring-foreground/10",
+      "pointer-events-none absolute right-2 flex items-center justify-center",
+      "-mx-1 my-1 h-px bg-border",
+    ]) {
+      expect(ownedBy("components/overlay/overlay-classes.ts", needle), needle).toEqual([]);
+    }
+  }, 30_000);
+
+  it("assembles every locale dictionary with createStringDictionary", () => {
+    const indexes = nonTestSources()
+      .map((file) => relative(SRC_ROOT, file))
+      .filter((file) => file.endsWith("intl/index.ts"));
+    expect(indexes.length).toBeGreaterThanOrEqual(12);
+    for (const file of indexes) {
+      const source = readSrc(file);
+      expect(source, file).toContain("createStringDictionary({ enUS, fiFI, nbNO, svSE })");
+      expect(source, file).not.toContain("LocalizedStringDictionary");
+    }
+  }, 30_000);
+
+  it("asks whether a ReactNode is text only through internal/is-text-node.ts", () => {
+    // The two survivors elsewhere are not this question: Toast's manager adapter and
+    // Sidebar's tooltip shorthand narrow `string | <object>` unions, and an options
+    // object is not a `ReactNode` (is-text-node.ts documents both).
+    for (const [file, gone] of [
+      ["components/checkbox/checkbox.tsx", "function stringDescribedBy"],
+      ["components/confirm-button/confirm-button.tsx", "function stringChild"],
+      ["react-aria/grid-list/grid-list.tsx", "function stringChild"],
+    ] as const) {
+      const source = readSrc(file);
+      expect(source, file).not.toContain(gone);
+      expect(source, file).toContain("is-text-node");
+    }
+    // The `Object.prototype.toString.call(v) === "[object String]"` spelling evaded the
+    // anti-slop rule rather than answering it; no source file spells it any more.
+    expect(
+      nonTestSources()
+        .filter((file) => codeOnly(readFileSync(file, "utf8")).includes("[object String]"))
+        .map((file) => relative(SRC_ROOT, file))
+    ).toEqual([]);
+  }, 30_000);
+});

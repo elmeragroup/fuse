@@ -9,10 +9,8 @@ import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { CaretRight } from "../../icons/generated/caret-right";
 import { DotsThree } from "../../icons/generated/dots-three";
 import { cn } from "../../styles/cn";
-import { focusRing } from "../../styles/utils";
+import { selfFocusRingClass } from "../../styles/utils";
 import { breadcrumbStrings } from "./intl";
-
-const selfFocusRing = focusRing({ target: "self" }).root();
 
 export type BreadcrumbRootProps = ComponentProps<"nav"> & {
   /**
@@ -87,7 +85,7 @@ function BreadcrumbLink({ className, render, ...props }: BreadcrumbLinkProps): R
     defaultTagName: "a",
     props: mergeProps<"a">(
       {
-        className: cn("transition-colors hover:text-foreground", selfFocusRing, className),
+        className: cn("transition-colors hover:text-foreground", selfFocusRingClass, className),
       },
       props
     ),

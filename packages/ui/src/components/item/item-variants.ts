@@ -1,12 +1,12 @@
 import { tv } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
-import { focusRing } from "../../styles/utils";
+import { selfFocusRingClass } from "../../styles/utils";
 
 export const itemVariants = tv({
   base: cn(
     "group/item text-sm flex w-full flex-wrap items-center rounded-md border transition-colors duration-100 [a]:transition-colors [a]:hover:bg-muted",
-    focusRing({ target: "self" }).root()
+    selfFocusRingClass
   ),
   variants: {
     variant: {

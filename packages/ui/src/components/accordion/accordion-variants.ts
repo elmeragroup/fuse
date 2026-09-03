@@ -9,7 +9,7 @@
 import { tv } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
-import { focusRing } from "../../styles/utils";
+import { selfFocusRingClass } from "../../styles/utils";
 
 export const accordionVariants = tv({
   slots: {
@@ -18,7 +18,7 @@ export const accordionVariants = tv({
     header: "flex",
     trigger: cn(
       "group/accordion-trigger font-medium flex flex-1 cursor-pointer items-center justify-between gap-2 hover:underline data-[panel-open]:pb-4",
-      focusRing({ target: "self" }).root()
+      selfFocusRingClass
     ),
     icon: "size-4 shrink-0 text-foreground transition-transform duration-200 group-data-[panel-open]/accordion-trigger:rotate-180",
     content:

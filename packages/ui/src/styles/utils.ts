@@ -38,10 +38,10 @@ export const focusRing = tv({
 });
 
 /**
- * The self-target focus ring, resolved once at module scope. Seventeen components each
- * hoist `focusRing({ target: "self" }).root()` into a private module constant of their
- * own; as they migrate they will import this instead, so the adapter is evaluated once
- * per process rather than once per module. Popover is the first to do so.
+ * The self-target focus ring, resolved once at module scope and imported by every
+ * consumer. Seventeen components used to hoist `focusRing({ target: "self" }).root()`
+ * into a private module constant of their own; none does now, so the adapter is
+ * evaluated once per process rather than once per module (spec 08, 2026-09-03).
  */
 export const selfFocusRingClass = focusRing({ target: "self" }).root();
 
@@ -57,6 +57,26 @@ export const withinFocusRingClass = focusRing({ target: "within" }).root();
  * ring so only the parent paints one. Pair with {@link withinFocusRingClass}.
  */
 export const withinFocusRingControlClass = focusRing({ target: "within" }).control();
+
+/**
+ * The state-target focus ring's resting face — `outline-none` alone, the half that does
+ * not depend on RAC's `isFocusVisible` render prop. Pair it with
+ * {@link stateFocusRingVisibleClass} on the recipe's `isFocusVisible: true` arm.
+ *
+ * The `state` target exists because the interim react-aria tier hangs the ring on a
+ * non-focusable wrapper (a `Group`, a calendar cell, a grid row) and is told about focus
+ * through a render prop rather than a `:focus-visible` selector. Its two *fixed* rungs
+ * are still constants, so they are resolved here like the other two targets. The one
+ * call that genuinely cannot be — `react-aria/link`, which passes a live
+ * `isFocusVisible` per render — keeps calling {@link focusRing} directly.
+ */
+export const stateFocusRingClass = focusRing({ target: "state" }).root();
+
+/**
+ * The state-target focus ring's keyboard-focused face, resolved once at module scope.
+ * Recipes put it on their `isFocusVisible: true` arm; see {@link stateFocusRingClass}.
+ */
+export const stateFocusRingVisibleClass = focusRing({ target: "state", isFocusVisible: true }).root();
 
 export const disabledHatch =
   "bg-[repeating-linear-gradient(45deg,transparent,transparent_8px,rgb(0_0_0/0.02)_8px,rgb(0_0_0/0.02)_16px)]";

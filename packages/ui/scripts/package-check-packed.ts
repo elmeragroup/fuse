@@ -14,7 +14,7 @@ import {
   parseProvenanceHashes,
 } from "./flag-assets";
 import { buildPublishExportMap, exportBindingsObject } from "./generate-exports";
-import type { ExportBinding, ExportCondition } from "./generate-exports";
+import type { ExportBinding } from "./generate-exports";
 import {
   emittedDirectiveFailure,
   packedBareEntryRacDeclarationFailure,
@@ -84,12 +84,20 @@ type PackedManifestRead = {
   packedText: string;
 };
 
-function isExportCondition(target: ExportBinding["target"]): target is ExportCondition {
-  return Object(target) === target;
-}
-
+/**
+ * The two arms of `ExportBinding["target"]` are a bare path string and a condition
+ * object, and nothing but the runtime tag separates them. Asked once, honestly, with a
+ * named disable — the `Object.prototype.toString.call(…) === "[object String]"` and
+ * `Object(target) === target` spellings that used to sit here evaded the rule rather
+ * than answering it (spec 08, S21). This is not the shared `isTextNode`: that helper
+ * narrows a consumer-supplied `ReactNode`, and an export condition is not one.
+ *
+ * One guard, not two: the condition arm is this predicate negated, which TypeScript
+ * narrows on its own, so a second function would only restate it.
+ */
 function isExportTargetPath(target: ExportBinding["target"]): target is string {
-  return Object.prototype.toString.call(target) === "[object String]";
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- generated-manifest I/O: the published export map's two arms are distinguished by their runtime tag alone
+  return typeof target === "string";
 }
 
 function packedManifest(extracted: string): PackedManifestRead {
@@ -111,7 +119,7 @@ export function checkPackedExports(extracted: string, discovered: DiscoveredEntr
 
   for (const binding of expectedBindings) {
     const target = binding.target;
-    if (isExportCondition(target)) {
+    if (!isExportTargetPath(target)) {
       const jsPath = join(extracted, target.import.replace(/^\.\//, ""));
       const dtsPath = join(extracted, target.types.replace(/^\.\//, ""));
       if (!existsSync(jsPath)) {
