@@ -26,7 +26,13 @@ import type {
   ShadowProblem,
   ShadowPropEvidence,
 } from "./api-shadow-types.ts";
-import { extractComponentApi, inspectCurrentPartEvidence, propOrigin, shortTypeOf } from "./api.ts";
+import {
+  dedupeDocumentation,
+  extractComponentApi,
+  inspectCurrentPartEvidence,
+  propOrigin,
+  shortTypeOf,
+} from "./api.ts";
 import type { ComponentApi, CurrentPartEvidence, PartForwarded, PartSource } from "./api.ts";
 import type { LibraryProject } from "./api.ts";
 import { inspectComponent, inspectComponentDemos, inspectGlobalDocs } from "./docs-inspection.ts";
@@ -100,19 +106,6 @@ function warningProblem(component: string, warning: ExtractWarning): ShadowProbl
 
 function currentProblem(component: string, message: string): ShadowProblem {
   return { component, source: "current-docs", code: "docs-problem", message: normalizeMessage(message) };
-}
-
-function dedupeDocumentation(documentation: string | undefined): string {
-  if (documentation === undefined) return "";
-  const seen = new Set<string>();
-  const kept: string[] = [];
-  for (const paragraph of documentation.split(/\n{2,}|\n/u)) {
-    const trimmed = paragraph.trim();
-    if (trimmed === "" || seen.has(trimmed)) continue;
-    seen.add(trimmed);
-    kept.push(trimmed);
-  }
-  return kept.join(" ");
 }
 
 function typeNameText(typeName: TypeName): string {

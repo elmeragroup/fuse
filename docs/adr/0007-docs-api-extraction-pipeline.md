@@ -40,10 +40,12 @@ only to discard almost all of them.
 
 `apps/docs/scripts/lib/api` now exposes `extractLibraryApi`, the one walk, returning the
 published parts beside the facts behind them (implementation source, RSC status,
-destructuring defaults, forwarded summary, accepted prop symbols). All three consumers
-call it; the Effect side borrows its sources and forwarded counts from the same model
-rather than recomputing them; a prop's type is printed when a consumer asks for that
-prop. `docs-inspection` is the single owner of demo and route validation, and the
+destructuring defaults, forwarded summary, accepted prop symbols). The generation pass and the
+`api.json` regenerator call it over the whole inventory; the shadow calls the
+per-component `extractComponentApi` it maps over, so that a diagnostic stays attributable
+to one component. The Effect side borrows its sources and forwarded counts from the same
+model rather than recomputing them, and a prop's type is printed when a consumer asks for
+that prop. `docs-inspection` is the single owner of demo and route validation, and the
 generator imports it. The shadow comparison runs one `compareNamedCollection` over two
 views (API parts, provenance evidence) instead of two copies of the same algorithm.
 

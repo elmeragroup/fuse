@@ -175,7 +175,10 @@ export function readPartSource(context: LibraryProject, signature: Signature): P
  * A symbol declared in several union branches reports each branch's JSDoc in turn.
  * Identical paragraphs are the same sentence repeated, not two facts.
  */
-function dedupeDocumentation(documentation: string): string {
+export function dedupeDocumentation(documentation: string | undefined): string {
+  if (documentation === undefined) {
+    return "";
+  }
   const seen = new Set<string>();
   const kept: string[] = [];
   for (const paragraph of documentation.split(/\n{2,}|\n/)) {
@@ -385,7 +388,6 @@ export function readPartPropFact(
 export type LibraryPartApi = {
   /** Display name, e.g. `Dialog.Content`. */
   readonly name: string;
-  readonly type: Type;
   /** Declaring file of the part's call signature, when it has one. */
   readonly declarationPaths: readonly string[];
   readonly source: PartSource | null;
@@ -399,7 +401,6 @@ export type LibraryPartApi = {
 /** One component's API model: the published parts plus the facts behind them. */
 export type ComponentApi = {
   readonly slug: string;
-  readonly request: ComponentApiRequest;
   /** The parts the docs publish, in walk order. */
   readonly parts: readonly ApiPart[];
   /** One entry per traversed part, described or not. */
@@ -493,10 +494,10 @@ function extractPart(context: LibraryProject, request: PartRequest, problems: Pr
   const source = signature === null ? null : readPartSource(context, signature);
   const declarationPaths = signature?.declaration === undefined ? [] : [signature.declaration.path];
   const parameter = signature?.getParameters()[0];
-  const propsType = parameter === undefined ? undefined : checker.getTypeOfSymbol(parameter);
-  const propsResolved = propsType !== undefined && !propsType.isErrorType();
+  const declared = parameter === undefined ? undefined : checker.getTypeOfSymbol(parameter);
+  const propsType = declared === undefined || declared.isErrorType() ? null : declared;
   const props = new Map<string, TsSymbol>();
-  if (propsType !== undefined && propsResolved) {
+  if (propsType !== null) {
     for (const property of checker.getPropertiesOfType(propsType)) {
       props.set(property.name, property);
     }
@@ -504,7 +505,6 @@ function extractPart(context: LibraryProject, request: PartRequest, problems: Pr
   const forwarded = props.size === 0 ? emptyForwarded : forwardedOfProps(props.values());
   return {
     name: request.name,
-    type: request.type,
     declarationPaths,
     source,
     forwarded,
@@ -515,7 +515,7 @@ function extractPart(context: LibraryProject, request: PartRequest, problems: Pr
       signature,
       source,
       parameter !== undefined,
-      propsResolved,
+      propsType !== null,
       props,
       forwarded,
       problems
@@ -543,7 +543,6 @@ export function extractComponentApi(
   );
   return {
     slug: request.slug,
-    request: componentRequest,
     parts: partApis.flatMap((entry) => (entry.part === null ? [] : [entry.part])),
     partApis,
   };
