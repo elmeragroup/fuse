@@ -37,6 +37,27 @@ export const focusRing = tv({
   },
 });
 
+/**
+ * The self-target focus ring, resolved once at module scope. Seventeen components each
+ * hoist `focusRing({ target: "self" }).root()` into a private module constant of their
+ * own; as they migrate they will import this instead, so the adapter is evaluated once
+ * per process rather than once per module. Popover is the first to do so.
+ */
+export const selfFocusRingClass = focusRing({ target: "self" }).root();
+
+/**
+ * The within-target focus ring root class, resolved once at module scope — the parent
+ * face that lights up when the element carrying `data-focus-ring-control` is
+ * keyboard-focused. Pair it with {@link withinFocusRingControlClass} on the control.
+ */
+export const withinFocusRingClass = focusRing({ target: "within" }).root();
+
+/**
+ * The control half of the within-target focus ring: it suppresses the control's own
+ * ring so only the parent paints one. Pair with {@link withinFocusRingClass}.
+ */
+export const withinFocusRingControlClass = focusRing({ target: "within" }).control();
+
 export const disabledHatch =
   "bg-[repeating-linear-gradient(45deg,transparent,transparent_8px,rgb(0_0_0/0.02)_8px,rgb(0_0_0/0.02)_16px)]";
 

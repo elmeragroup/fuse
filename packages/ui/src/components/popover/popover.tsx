@@ -1,16 +1,19 @@
 "use client";
 
-import type { ComponentProps, ReactElement, RefObject } from "react";
+import type { ComponentProps, ReactElement } from "react";
 
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 
 import { cn } from "../../styles/cn";
-import { focusRing } from "../../styles/utils";
-import { useThemeScopeContainer } from "../../theme/theme-scope-container";
-import { overlayLayer } from "../overlay/overlay-classes";
-
-/** Resolved once at module scope — the recipe below does the same (no per-render work). */
-const selfFocusRing = focusRing({ target: "self" }).root();
+import { selfFocusRingClass } from "../../styles/utils";
+import { useResolvedPortalContainer } from "../../theme/use-resolved-portal-container";
+import {
+  overlayPopupDurationClass,
+  overlayPopupMotionClass,
+  overlayPopupSurfaceClass,
+  overlayPositionerClass,
+} from "../overlay/overlay-classes";
+import type { OverlayContainerProps, OverlayPositionerProps } from "../overlay/overlay-props";
 
 function PopoverRoot(props: ComponentProps<typeof PopoverPrimitive.Root>): ReactElement {
   return <PopoverPrimitive.Root data-slot="popover" {...props} />;
@@ -23,43 +26,25 @@ function PopoverTrigger({
   return (
     <PopoverPrimitive.Trigger
       data-slot="popover-trigger"
-      className={cn(selfFocusRing, className)}
+      className={cn(selfFocusRingClass, className)}
       {...props}
     />
   );
 }
 
-export type PopoverContentProps = ComponentProps<typeof PopoverPrimitive.Popup> & {
-  /**
-   * How the popup aligns to the trigger on the cross axis.
-   * @default "center"
-   */
-  align?: ComponentProps<typeof PopoverPrimitive.Positioner>["align"];
-  /**
-   * Offset along the alignment axis, in pixels.
-   * @default 0
-   */
-  alignOffset?: ComponentProps<typeof PopoverPrimitive.Positioner>["alignOffset"];
-  /**
-   * Which side of the trigger the popup is placed on.
-   * @default "bottom"
-   */
-  side?: ComponentProps<typeof PopoverPrimitive.Positioner>["side"];
-  /**
-   * Distance from the trigger, in pixels.
-   * @default 4
-   */
-  sideOffset?: ComponentProps<typeof PopoverPrimitive.Positioner>["sideOffset"];
-  /**
-   * Renders the placement arrow after `children`. Off by default.
-   */
-  showArrow?: boolean;
-  /**
-   * Portal target for the popup. Defaults to the nearest enclosing `ThemeScope`
-   * element, so an overlay never escapes the theme that opened it.
-   */
-  container?: HTMLElement | RefObject<HTMLElement | null>;
-};
+/**
+ * `OverlayContainerProps` is intersected **last** on purpose: the docs API pipeline
+ * derives its prop order from the intersection order, and moving `container` ahead of
+ * `showArrow` changes `Popover.Content.propOrder[4]/[5]` and fails the docs shadow gate.
+ * Keep the order as written.
+ */
+export type PopoverContentProps = ComponentProps<typeof PopoverPrimitive.Popup> &
+  OverlayPositionerProps<ComponentProps<typeof PopoverPrimitive.Positioner>> & {
+    /**
+     * Renders the placement arrow after `children`. Off by default.
+     */
+    showArrow?: boolean;
+  } & OverlayContainerProps;
 
 function PopoverContent({
   className,
@@ -72,11 +57,8 @@ function PopoverContent({
   container,
   ...props
 }: PopoverContentProps): ReactElement | null {
-  const resolvedContainer = useThemeScopeContainer(container);
+  const resolvedContainer = useResolvedPortalContainer(container);
 
-  // theming.md §7.4: an explicit ref or an enclosing ThemeScope whose element is not
-  // attached yet means wait — never a brief escape to the document body. Only an absent
-  // scope (`undefined`) leaves the primitive default in place.
   if (resolvedContainer === null) {
     return null;
   }
@@ -88,12 +70,15 @@ function PopoverContent({
         alignOffset={alignOffset}
         side={side}
         sideOffset={sideOffset}
-        className={cn("isolate", overlayLayer)}>
+        className={overlayPositionerClass}>
         <PopoverPrimitive.Popup
           data-slot="popover-content"
           className={cn(
-            selfFocusRing,
-            "text-sm shadow-md flex w-72 origin-(--transform-origin) flex-col gap-4 rounded-md bg-popover p-4 text-popover-foreground ring-1 ring-foreground/10 duration-100 data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+            selfFocusRingClass,
+            overlayPopupSurfaceClass,
+            overlayPopupMotionClass,
+            overlayPopupDurationClass,
+            "text-sm flex w-72 flex-col gap-4 p-4",
             className
           )}
           {...props}>
