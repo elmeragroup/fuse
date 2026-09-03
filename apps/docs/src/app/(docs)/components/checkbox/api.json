@@ -576,7 +576,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Trailing note. A string renders as a muted `<small>`; a `ReactNode` renders intact. Visual-only — not wired to `aria-describedby`. Use Field description wiring when programmatic association is required.",
+          "description": "Trailing note. A string renders as a muted `<small>`; any other node renders intact. Visual-only — not wired to `aria-describedby`. Use Field description wiring when programmatic association is required.",
           "required": false
         }
       ]

@@ -191,8 +191,10 @@ describe("RSC classification", () => {
   });
 
   // Why not a lint rule: same judgment as the close button above. FieldFrame holds no
-  // state either, and its three consumers (TextField, NumberField, TextareaField) are
-  // client modules already, so a directive would only widen the client graph.
+  // state either, and its four consumers (TextField, NumberField, TextareaField,
+  // PhoneNumberField) are client modules already, so a directive would only widen the
+  // client graph. SelectionGroupFrame needs no entry: it lives in `selection-item.tsx`,
+  // which is a client module in its own right.
   it("leaves the shared field frame directive-free — it owns no state", () => {
     expectRsc("components/field/field-frame.tsx", "server");
   });
@@ -263,17 +265,22 @@ describe("field", () => {
 });
 
 describe("field composites", () => {
-  // Why not a lint rule: a one-off do-not-reintroduce ban (ADR 0008). These three
-  // composites each rebuilt the label row, description and error before the shared
-  // frame took ownership (field.md §8.9); the ban keeps that markup from growing back
-  // here. It is not a repo-wide API ban — Field's own demos and every composite outside
-  // this list render these parts directly, and the frame itself must. What the parts do
-  // once rendered is asserted behaviourally by each composite's browser suite and by
+  // Why not a lint rule: a one-off do-not-reintroduce ban (ADR 0008). Each of these
+  // composites rebuilt the label row, description and error before a shared frame took
+  // ownership — `FieldFrame` for the four labeled fields (field.md §8.9,
+  // phone-number-field.md §8.18), `SelectionGroupFrame` for the two selection groups
+  // (selection-item.md §8.8) — and the ban keeps that markup from growing back here. It
+  // is not a repo-wide API ban: Field's own demos and every composite outside this list
+  // render these parts directly, and the frames themselves must. What the parts do once
+  // rendered is asserted behaviourally by each composite's browser suite and by
   // `field-frame.browser.test.tsx`.
   it.each([
     "components/text-field/text-field.tsx",
     "components/number-field/number-field.tsx",
     "components/textarea-field/textarea-field.tsx",
+    "components/phone-number-field/phone-number-field.tsx",
+    "components/checkbox/checkbox.tsx",
+    "components/radio-group/radio-group.tsx",
   ])("%s renders no label, description, or error markup of its own", (file) => {
     const source = readSrc(file);
     // JSX openers only: the prop docs still name the parts the frame renders, and the
@@ -282,6 +289,17 @@ describe("field composites", () => {
       expect(source, part).not.toContain(part);
     }
   });
+
+  // The selection groups additionally own no fieldset skeleton of their own.
+  it.each(["components/checkbox/checkbox.tsx", "components/radio-group/radio-group.tsx"])(
+    "%s renders no fieldset or legend markup of its own",
+    (file) => {
+      const source = readSrc(file);
+      for (const part of ["<Field.Set", "<Field.Legend"]) {
+        expect(source, part).not.toContain(part);
+      }
+    }
+  );
 });
 
 describe("selection-item", () => {
