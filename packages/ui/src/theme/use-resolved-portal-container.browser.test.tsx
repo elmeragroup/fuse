@@ -79,7 +79,7 @@ describe("useResolvedPortalContainer", () => {
     expect(seen.at(-1)).toBe(target);
   });
 
-  it("re-resolves when a ref's element attaches on a later render", () => {
+  it("reports a ref's element on the render after it attaches", () => {
     function Host({ onResolve }: { onResolve: (resolved: Resolved) => void }): ReactNode {
       const ref = useRef<HTMLElement | null>(null);
       return (

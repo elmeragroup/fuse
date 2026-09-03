@@ -8,6 +8,7 @@ import { cn } from "../../styles/cn";
 import { selfFocusRingClass } from "../../styles/utils";
 import { useResolvedPortalContainer } from "../../theme/use-resolved-portal-container";
 import {
+  overlayPopupDurationClass,
   overlayPopupMotionClass,
   overlayPopupSurfaceClass,
   overlayPositionerClass,
@@ -31,6 +32,12 @@ function PopoverTrigger({
   );
 }
 
+/**
+ * `OverlayContainerProps` is intersected **last** on purpose: the docs API pipeline
+ * derives its prop order from the intersection order, and moving `container` ahead of
+ * `showArrow` changes `Popover.Content.propOrder[4]/[5]` and fails the docs shadow gate.
+ * Keep the order as written.
+ */
 export type PopoverContentProps = ComponentProps<typeof PopoverPrimitive.Popup> &
   OverlayPositionerProps<ComponentProps<typeof PopoverPrimitive.Positioner>> & {
     /**
@@ -70,6 +77,7 @@ function PopoverContent({
             selfFocusRingClass,
             overlayPopupSurfaceClass,
             overlayPopupMotionClass,
+            overlayPopupDurationClass,
             "text-sm flex w-72 flex-col gap-4 p-4",
             className
           )}

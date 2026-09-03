@@ -38,10 +38,10 @@ export const focusRing = tv({
 });
 
 /**
- * The self-target focus ring, resolved once at module scope. Seventeen components used
- * to hoist `focusRing({ target: "self" }).root()` into a private module constant; they
- * import this instead, so the adapter is evaluated once per process rather than once
- * per module.
+ * The self-target focus ring, resolved once at module scope. Seventeen components each
+ * hoist `focusRing({ target: "self" }).root()` into a private module constant of their
+ * own; as they migrate they will import this instead, so the adapter is evaluated once
+ * per process rather than once per module. Popover is the first to do so.
  */
 export const selfFocusRingClass = focusRing({ target: "self" }).root();
 
