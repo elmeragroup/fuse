@@ -7,7 +7,7 @@
     "effectPropCount": 617,
     "currentProblemCount": 0,
     "effectProblemCount": 85,
-    "apiDifferenceCount": 1106,
+    "apiDifferenceCount": 1110,
     "problemDifferenceCount": 85
   },
   "apiDifferences": [
@@ -7727,8 +7727,8 @@
       "component": "sidebar",
       "path": "parts.Sidebar.MenuButton.props.tooltip.type",
       "current": "string | TooltipContentProps | undefined",
-      "effect": "Omit<TooltipPopupProps, \"ref\"> & React.RefAttributes<HTMLDivElement> & { align?: \"center\" | \"end\" | \"start\" | undefined; alignOffset?: OffsetFunction | number | undefined; side?: \"bottom\" | \"inline-end\" | \"inline-start\" | \"left\" | \"right\" | \"top\" | undefined; sideOffset?: OffsetFunction | number | undefined; container?: HTMLElement | RefObject<HTMLElement | null> | undefined; } | string | undefined",
-      "reason": "sidebar Sidebar.MenuButton.tooltip type: checker keeps `string | TooltipContentProps`; Effect expands TooltipContentProps into TooltipPopupProps fields (`align`, `side`, `container`, …)."
+      "effect": "Omit<TooltipPopupProps, \"ref\"> & React.RefAttributes<HTMLDivElement> & Omit<OverlayPositionerProps<Omit<TooltipPositionerProps, \"ref\"> & React.RefAttributes<HTMLDivElement>>, \"side\" | \"sideOffset\"> & { side?: \"bottom\" | \"inline-end\" | \"inline-start\" | \"left\" | \"right\" | \"top\" | undefined; sideOffset?: OffsetFunction | number | undefined; } & OverlayContainerProps | string | undefined",
+      "reason": "sidebar Sidebar.MenuButton.tooltip type: checker keeps `string | TooltipContentProps`; Effect expands TooltipContentProps into its intersection members (`Omit<OverlayPositionerProps<…>, \"side\" | \"sideOffset\">`, the redeclared `side`/`sideOffset`, `OverlayContainerProps`)."
     },
     {
       "component": "sidebar",
@@ -8806,11 +8806,11 @@
       "path": "evidence.Toast.Viewport.props.container",
       "current": {
         "name": "container",
-        "declarationPaths": ["packages/ui/src/components/toast/toast.tsx"],
+        "declarationPaths": ["packages/ui/src/components/overlay/overlay-props.ts"],
         "ownership": "library",
         "synthesized": false
       },
-      "reason": "toast Toast.Viewport.container: checker lists Toast.`container`; Effect's namespace-object fallback to `any` (`{ Provider, Viewport, … }`) omits that member."
+      "reason": "toast Toast.Viewport.container evidence: checker now resolves `container` to `packages/ui/src/components/overlay/overlay-props.ts` (the shared `OverlayContainerProps`); Effect's namespace-object fallback to `any` (`{ Provider, Viewport, … }`) omits the member entirely."
     },
     {
       "component": "toast",
@@ -8846,7 +8846,7 @@
         "origin": "declared",
         "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
         "defaultValue": null,
-        "description": "Portal target for the viewport. Defaults to the nearest enclosing `ThemeScope` element, so toasts never escape the theme that opened them.",
+        "description": "Portal target for the popup. Defaults to the nearest enclosing `ThemeScope` element, so an overlay never escapes the theme that opened it.",
         "required": false
       },
       "reason": "toast Toast.Viewport.container: checker lists Toast.`container`; Effect's namespace-object fallback to `any` (`{ Provider, Viewport, … }`) omits that member."
@@ -9154,6 +9154,32 @@
         "synthesized": false
       },
       "reason": "tooltip Tooltip.Content.render: Effect lists Base UI `render` (`ComponentRenderFn | ReactElement`); checker omits it from library rows."
+    },
+    {
+      "component": "tooltip",
+      "path": "evidence.Tooltip.Content.props.side.declarationPaths[0]",
+      "current": "packages/ui/src/components/tooltip/tooltip.tsx",
+      "effect": "packages/ui/src/components/overlay/overlay-props.ts",
+      "reason": "tooltip Tooltip.Content.side declarationPaths: checker `packages/ui/src/components/tooltip/tooltip.tsx` vs Effect `packages/ui/src/components/overlay/overlay-props.ts`. Tooltip `Omit`s `side` from the shared positioner props and redeclares it with its own `@default \"top\"`; Effect reports the omitted-from source, the checker the redeclaration."
+    },
+    {
+      "component": "tooltip",
+      "path": "evidence.Tooltip.Content.props.side.declarationPaths[1]",
+      "effect": "packages/ui/src/components/tooltip/tooltip.tsx",
+      "reason": "tooltip Tooltip.Content.side declarationPaths: checker `omitted` vs Effect `packages/ui/src/components/tooltip/tooltip.tsx`. Effect lists the redeclaration as a second declaration site; the checker collapses the intersection to one."
+    },
+    {
+      "component": "tooltip",
+      "path": "evidence.Tooltip.Content.props.sideOffset.declarationPaths[0]",
+      "current": "packages/ui/src/components/tooltip/tooltip.tsx",
+      "effect": "packages/ui/src/components/overlay/overlay-props.ts",
+      "reason": "tooltip Tooltip.Content.sideOffset declarationPaths: checker `packages/ui/src/components/tooltip/tooltip.tsx` vs Effect `packages/ui/src/components/overlay/overlay-props.ts`. `sideOffset` is `Omit`ted and redeclared beside `side` to hold the published prop order; same two-site split as `side`."
+    },
+    {
+      "component": "tooltip",
+      "path": "evidence.Tooltip.Content.props.sideOffset.declarationPaths[1]",
+      "effect": "packages/ui/src/components/tooltip/tooltip.tsx",
+      "reason": "tooltip Tooltip.Content.sideOffset declarationPaths: checker `omitted` vs Effect `packages/ui/src/components/tooltip/tooltip.tsx`. Effect keeps the redeclaration as its own site; the checker reports a single one."
     },
     {
       "component": "tooltip",
@@ -10141,12 +10167,12 @@
     },
     {
       "component": "toast",
-      "key": "effect-extractor|toast|unsupported-type-fallback|Could not extract type \"{ Provider: { ({ toastManager, ...props }: ToastProviderProps): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; ... 8 more ...; createToastManager: <Data extends object = object>() => CreateToastManagerReturnValue<...>; }\" at \"<repo>/packages/ui/src/components/toast/toast.tsx:433:14\". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/toast/toast.tsx:433:14]#1",
+      "key": "effect-extractor|toast|unsupported-type-fallback|Could not extract type \"{ Provider: { ({ toastManager, ...props }: ToastProviderProps): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; ... 8 more ...; createToastManager: <Data extends object = object>() => CreateToastManagerReturnValue<...>; }\" at \"<repo>/packages/ui/src/components/toast/toast.tsx:425:14\". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/toast/toast.tsx:425:14]#1",
       "effect": {
         "component": "toast",
         "source": "effect-extractor",
         "code": "unsupported-type-fallback",
-        "message": "Could not extract type \"{ Provider: { ({ toastManager, ...props }: ToastProviderProps): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; ... 8 more ...; createToastManager: <Data extends object = object>() => CreateToastManagerReturnValue<...>; }\" at \"<repo>/packages/ui/src/components/toast/toast.tsx:433:14\". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/toast/toast.tsx:433:14]"
+        "message": "Could not extract type \"{ Provider: { ({ toastManager, ...props }: ToastProviderProps): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; ... 8 more ...; createToastManager: <Data extends object = object>() => CreateToastManagerReturnValue<...>; }\" at \"<repo>/packages/ui/src/components/toast/toast.tsx:425:14\". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/toast/toast.tsx:425:14]"
       },
       "reason": "toast: Effect `unsupported-type-fallback` emits `any` for the Toast namespace object type `{ Provider, Viewport, … }`; adapter still maps checker member names into parts."
     },
