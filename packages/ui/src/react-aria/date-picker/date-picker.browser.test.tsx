@@ -23,9 +23,8 @@ import {
   renderThemed,
   stampDensity,
 } from "../../../test/themed-browser-render";
+import { Dialog } from "../../components/dialog/dialog";
 import { ThemeScope } from "../../theme/theme-scope";
-import { Dialog as RacDialog } from "../internal/dialog";
-import { Modal } from "../internal/modal";
 import { UiProviders } from "../ui-providers/ui-providers";
 import { DatePicker, DatePickerPresetGroup, DatePickerPresetItem } from "./date-picker";
 
@@ -136,7 +135,7 @@ function presets(): ReactElement {
 /**
  * A controlled picker, for the cases that need the value driven from outside the
  * composite. The focused-month sync reads the picker state's committed value, so it
- * behaves the same here as on an uncontrolled `defaultValue` picker (§2/§8.11).
+ * behaves the same here as on an uncontrolled `defaultValue` picker (§2/§8.12).
  */
 function ControlledPicker(): ReactElement {
   const [value, setValue] = useState<CalendarDate | null>(july14);
@@ -210,7 +209,7 @@ describe("DatePicker", () => {
 
   it("reopens an uncontrolled picker on its defaultValue's month after paging away", async () => {
     // The sync reads the picker state's committed value, so `defaultValue` alone — with
-    // no `value` prop in sight — still lands the reopen on July (§8.11).
+    // no `value` prop in sight — still lands the reopen on July (§8.12).
     renderPicker(<DatePicker label="Invoice date" defaultValue={july14} />);
     await openPicker();
     expect(calendarGrid().getAttribute("aria-label")).toMatch(/July\s+2026/i);
@@ -347,8 +346,12 @@ describe("DatePicker", () => {
       throw new Error("expected the trigger glyph");
     }
 
+    // The FieldGroup's own `isReadOnly` axis paints the fill, exactly once. The glyph is
+    // deliberately untinted: `bg-muted` on the `<svg>` never belonged there and went with
+    // the picker recipe's duplicate arm (§8.11, 2026-09-03).
     expect(group.className.split(/\s+/)).toContain("bg-muted");
-    expect((glyph.getAttribute("class") ?? "").split(/\s+/)).toContain("bg-muted");
+    expect(group.getAttribute("data-readonly")).toBe("true");
+    expect((glyph.getAttribute("class") ?? "").split(/\s+/)).not.toContain("bg-muted");
     expect(trigger()).toBeDisabled();
 
     await userEvent.click(trigger(), { force: true });
@@ -507,14 +510,17 @@ describe("DatePicker overlay containment", () => {
     expect(dialog.closest("[data-explicit-container]")).not.toBeNull();
   });
 
-  it("keeps a host Modal open while the user works inside the picker's popover", async () => {
+  it("keeps a host Dialog open while the user works inside the picker's popover", async () => {
     const onOpenChange = vi.fn();
     renderPicker(
-      <Modal isDismissable isOpen onOpenChange={onOpenChange}>
-        <RacDialog closeButton={false} title="Order">
+      <Dialog.Root defaultOpen onOpenChange={onOpenChange}>
+        <Dialog.Content showCloseButton={false}>
+          <Dialog.Header>
+            <Dialog.Title>Order</Dialog.Title>
+          </Dialog.Header>
           <ControlledPicker />
-        </RacDialog>
-      </Modal>
+        </Dialog.Content>
+      </Dialog.Root>
     );
     await expect.element(page.getByRole("dialog", { name: "Order" })).toBeVisible();
     await userEvent.click(trigger());

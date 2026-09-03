@@ -13,6 +13,7 @@ import {
 import { tv } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
+import { fieldBoxChromeClass } from "../../styles/field-box";
 import { focusRing } from "../../styles/utils";
 import { composeTailwindRenderProps } from "./utils";
 
@@ -27,10 +28,20 @@ import { composeTailwindRenderProps } from "./utils";
  * from the reference's literal `h-9`; §8.9 records `bg-card` replacing `bg-background`.
  * The focus ring is the shared `focusRing({ target: "state", isFocusVisible })` recipe,
  * never a local outline.
+ *
+ * The *chrome* — elevation, radius, border, fill, transition — is not spelled here: it
+ * is `fieldBoxChromeClass`, the same constant the base-ui `fieldBox` composes, so a
+ * DateField or SearchField box matches an Input box in the same form (spec 08 user
+ * story 6; date-field.md §8.9, 2026-09-03). That amendment moved this tier off its own
+ * `rounded-lg` and shadowless surface onto Input's `rounded-md shadow-xs`. What stays
+ * local is what genuinely differs: the RAC `Group` is not focusable, so the focus
+ * adapter is `state` rather than `self`, and disabled/invalid arrive as render props
+ * rather than as `:disabled` / `aria-invalid` selectors.
  */
 export const fieldGroupVariants = tv({
   base: cn(
-    "group flex h-(--control-h-md) items-center overflow-hidden rounded-lg border border-input bg-card text-foreground transition-[color,border-color,box-shadow]",
+    fieldBoxChromeClass,
+    "group flex h-(--control-h-md) items-center overflow-hidden text-foreground",
     focusRing({ target: "state" }).root()
   ),
   variants: {

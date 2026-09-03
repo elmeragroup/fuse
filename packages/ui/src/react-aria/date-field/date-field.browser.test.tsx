@@ -7,6 +7,11 @@ import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+// `styles.css` declares `--radius-md` in terms of `--radius` and `bg-card` in terms of
+// `--card`, but defines neither; both live in `themes.css`. Without this second import
+// every radius and fill below would compute to `0px` / `transparent` on both sides and
+// the chrome-parity assertions would pass on nothing.
+import "../../../dist/themes.css";
 import { assertStateFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
 import { describedTextsFor } from "../../../test/rac-calendar-testing";
 import {
@@ -16,6 +21,7 @@ import {
   renderThemed,
   stampDensity,
 } from "../../../test/themed-browser-render";
+import { Input } from "../../components/input/input";
 import { ThemeScope } from "../../theme";
 import { UiProviders } from "../ui-providers/ui-providers";
 import { DateField, DateInput } from "./date-field";
@@ -346,5 +352,44 @@ describe("DateField hour granularity", () => {
     );
     await expect.element(page.getByRole("spinbutton", { name: "hour" })).toBeVisible();
     expect(spinbuttonsIn("Appointment").length).toBeGreaterThan(3);
+  });
+});
+
+describe("DateField field-box chrome", () => {
+  // spec 08 user story 6 / §8.9 (2026-09-03): DateField's box is Input's box, so a form
+  // that mixes the interim tier with the base-ui tier has one field chrome. The file
+  // imports `themes.css` alongside `styles.css` so all four computed comparisons resolve
+  // to real values rather than to two matching zeroes.
+  it("paints the same box as Input in the same form", () => {
+    renderField(
+      <>
+        <DateField label="Meter" defaultValue={july14} />
+        <Input aria-label="Reading" />
+      </>
+    );
+    const dateElement = groupNamed("Meter");
+    const inputElement = page.getByRole("textbox", { name: "Reading" }).element();
+    const dateBox = getComputedStyle(dateElement);
+    const inputBox = getComputedStyle(inputElement);
+
+    expect(dateBox.borderRadius).toBe(inputBox.borderRadius);
+    expect(dateBox.boxShadow).toBe(inputBox.boxShadow);
+    expect(dateBox.borderTopWidth).toBe(inputBox.borderTopWidth);
+    expect(dateBox.backgroundColor).toBe(inputBox.backgroundColor);
+
+    // Each rung is a real value, not two matching defaults: an unresolved `--radius` or
+    // `--card` would make the four equalities above vacuous.
+    expect(dateBox.boxShadow).not.toBe("none");
+    expect(px(dateBox.borderRadius)).toBeGreaterThan(0);
+    expect(px(dateBox.borderTopWidth)).toBeGreaterThan(0);
+    expect(dateBox.backgroundColor).not.toBe("rgba(0, 0, 0, 0)");
+
+    for (const rung of ["rounded-md", "shadow-xs"]) {
+      expect(dateElement.classList.contains(rung), `DateField lost ${rung}`).toBe(true);
+      expect(inputElement.classList.contains(rung), `Input lost ${rung}`).toBe(true);
+    }
+    // The interim tier's old rung is gone from both sides, not just from the one that moved.
+    expect(dateElement.classList.contains("rounded-lg")).toBe(false);
+    expect(inputElement.classList.contains("rounded-lg")).toBe(false);
   });
 });
