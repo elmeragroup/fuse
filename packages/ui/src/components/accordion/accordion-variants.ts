@@ -45,7 +45,7 @@ export const accordionVariants = tv({
       },
     },
     radius: {
-      none: {},
+      none: {}, // Not dead: the default and a published `radius` value (accordion.md §4).
       lg: { item: "overflow-hidden rounded-lg" },
       xl: { item: "overflow-hidden rounded-xl" },
     },
