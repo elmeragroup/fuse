@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
@@ -93,9 +93,53 @@ describe("Item", () => {
     if (!(previous instanceof HTMLElement) || !(link instanceof HTMLElement)) {
       throw new Error("expected links");
     }
-    await assertFocusRingOnKeyboardAbsentOnMouse(previous, link);
-    link.focus();
+    const initialHash = window.location.hash;
+    const setHash = (hash: string) => {
+      history.replaceState(null, "", `${window.location.pathname}${window.location.search}${hash}`);
+    };
+
+    try {
+      // The ring helper's mouse arm clicks the link, which already navigates to #order.
+      // Clearing the hash afterwards is what makes the Enter press below the only thing
+      // that can set it — otherwise the navigation assertion is true before the key press.
+      await assertFocusRingOnKeyboardAbsentOnMouse(previous, link);
+      setHash("");
+      expect(window.location.hash, "the Enter press must be the only navigation under test").toBe("");
+
+      link.focus();
+      await userEvent.keyboard("{Enter}");
+      await vi.waitFor(() => {
+        expect(window.location.hash, "Enter on a link-rendered item must navigate").toBe("#order");
+      });
+    } finally {
+      setHash(initialHash);
+    }
+  });
+
+  it("activates a button-rendered item from Enter and from Space", async () => {
+    const onActivate = vi.fn();
+    renderThemed(
+      <>
+        <button type="button">Before</button>
+        <Item.Root render={<button type="button" onClick={onActivate} />}>
+          <Item.Title>Activate</Item.Title>
+        </Item.Root>
+      </>
+    );
+
+    const previous = page.getByRole("button", { name: "Before", exact: true }).element();
+    if (!(previous instanceof HTMLElement)) {
+      throw new Error("expected the preceding button");
+    }
+    previous.focus();
+    await userEvent.keyboard("{Tab}");
+    const item = page.getByRole("button", { name: "Activate", exact: true }).element();
+    expect(document.activeElement, "the item must be reachable by Tab").toBe(item);
+
     await userEvent.keyboard("{Enter}");
-    expect(link.getAttribute("href")).toBe("#order");
+    expect(onActivate).toHaveBeenCalledTimes(1);
+
+    await userEvent.keyboard(" ");
+    expect(onActivate).toHaveBeenCalledTimes(2);
   });
 });

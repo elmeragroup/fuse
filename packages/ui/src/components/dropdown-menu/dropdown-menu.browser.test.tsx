@@ -47,6 +47,14 @@ function BasicMenu({ onOpenChange, extra }: { onOpenChange?: (open: boolean) => 
   );
 }
 
+function triggerButton(): HTMLElement {
+  const element = page.getByRole("button", { name: "Open", exact: true }).element();
+  if (!(element instanceof HTMLElement)) {
+    throw new Error("expected the menu trigger");
+  }
+  return element;
+}
+
 async function openWithClick(): Promise<HTMLElement> {
   await userEvent.click(page.getByRole("button", { name: "Open", exact: true }).element());
   return menuNamed();
@@ -78,6 +86,114 @@ describe("DropdownMenu", () => {
     renderThemed(<BasicMenu />);
     await openWithArrowDown();
     expect(document.activeElement).toBe(itemNamed("Profile"));
+  });
+
+  it("opens from Enter and from Space on the trigger, highlighting the first item", async () => {
+    renderThemed(<BasicMenu />);
+    const trigger = triggerButton();
+
+    trigger.focus();
+    await userEvent.keyboard("{Enter}");
+    await vi.waitFor(() => {
+      expect(page.getByRole("menu").query()).not.toBeNull();
+    });
+    expect(document.activeElement).toBe(itemNamed("Profile"));
+
+    await userEvent.keyboard("{Escape}");
+    await vi.waitFor(() => {
+      expect(page.getByRole("menu").query()).toBeNull();
+    });
+    expect(document.activeElement).toBe(trigger);
+
+    await userEvent.keyboard(" ");
+    await vi.waitFor(() => {
+      expect(page.getByRole("menu").query()).not.toBeNull();
+    });
+    expect(document.activeElement).toBe(itemNamed("Profile"));
+  });
+
+  it("opens to the last item from ArrowUp on the trigger", async () => {
+    renderThemed(<BasicMenu />);
+    triggerButton().focus();
+
+    await userEvent.keyboard("{ArrowUp}");
+    await vi.waitFor(() => {
+      expect(page.getByRole("menu").query()).not.toBeNull();
+    });
+    expect(document.activeElement).toBe(itemNamed("Logout"));
+  });
+
+  it("lets arrows reach a disabled item but refuses to activate it", async () => {
+    const onSettings = vi.fn();
+    renderThemed(
+      <DropdownMenu.Root>
+        <DropdownMenu.Trigger>Open</DropdownMenu.Trigger>
+        <DropdownMenu.Content>
+          <DropdownMenu.Item>Profile</DropdownMenu.Item>
+          <DropdownMenu.Item disabled onClick={onSettings}>
+            Settings
+          </DropdownMenu.Item>
+          <DropdownMenu.Item>Logout</DropdownMenu.Item>
+        </DropdownMenu.Content>
+      </DropdownMenu.Root>
+    );
+    await openWithArrowDown();
+    expect(document.activeElement).toBe(itemNamed("Profile"));
+
+    // dropdown-menu.md §7/§8.11: base-ui keeps a disabled item in the roving sequence so a
+    // screen-reader user hears that the option exists; it announces aria-disabled instead.
+    await userEvent.keyboard("{ArrowDown}");
+    const settings = itemNamed("Settings");
+    expect(document.activeElement).toBe(settings);
+    expect(settings.getAttribute("aria-disabled")).toBe("true");
+
+    await userEvent.keyboard("{Enter}");
+    expect(onSettings, "Enter on a disabled item must not activate it").not.toHaveBeenCalled();
+    expect(page.getByRole("menu").query(), "the menu must stay open").not.toBeNull();
+
+    await userEvent.keyboard(" ");
+    expect(onSettings).not.toHaveBeenCalled();
+    expect(page.getByRole("menu").query()).not.toBeNull();
+
+    await userEvent.keyboard("{ArrowDown}");
+    expect(document.activeElement).toBe(itemNamed("Logout"));
+  });
+
+  it("activates the highlighted item with Enter and with Space, closing the menu", async () => {
+    const onProfile = vi.fn();
+    const onLogout = vi.fn();
+    function ActivatableMenu() {
+      return (
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger>Open</DropdownMenu.Trigger>
+          <DropdownMenu.Content>
+            <DropdownMenu.Item onClick={onProfile}>Profile</DropdownMenu.Item>
+            <DropdownMenu.Item onClick={onLogout}>Logout</DropdownMenu.Item>
+          </DropdownMenu.Content>
+        </DropdownMenu.Root>
+      );
+    }
+    renderThemed(<ActivatableMenu />);
+
+    await openWithArrowDown();
+    expect(document.activeElement).toBe(itemNamed("Profile"));
+    await userEvent.keyboard("{Enter}");
+    await vi.waitFor(() => {
+      expect(page.getByRole("menu").query()).toBeNull();
+    });
+    expect(onProfile).toHaveBeenCalledTimes(1);
+    expect(onLogout).not.toHaveBeenCalled();
+    expect(document.activeElement).toBe(triggerButton());
+
+    await openWithArrowDown();
+    await userEvent.keyboard("{ArrowDown}");
+    expect(document.activeElement).toBe(itemNamed("Logout"));
+    await userEvent.keyboard(" ");
+    await vi.waitFor(() => {
+      expect(page.getByRole("menu").query()).toBeNull();
+    });
+    expect(onLogout).toHaveBeenCalledTimes(1);
+    expect(onProfile).toHaveBeenCalledTimes(1);
   });
 
   it("closes on Escape and returns focus to the trigger", async () => {

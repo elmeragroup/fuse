@@ -128,7 +128,7 @@ No component-specific `tv` recipe. Trigger composes the shared self-target focus
 - Keyboard: Enter/Space/ArrowDown on the trigger opens and highlights the first item (ArrowUp opens to the last); Arrow keys move highlight; typeahead jumps to matching items; Enter/Space activates; Escape closes the whole menu and returns focus to the trigger.
 - Submenus: ArrowRight on a SubTrigger opens its SubContent and moves highlight in; ArrowLeft closes the submenu and returns to the SubTrigger; hover opens after base-ui's intent delay.
 - CheckboxItem toggles and RadioItem selects on activation (menu closes per base-ui `closeOnClick` semantics); `LinkItem` navigates like a link and participates in menu keyboard flow.
-- `disabled` items are skipped by arrow navigation and dimmed via `data-disabled`. Per conventions, boolean aria uses `x || undefined`.
+- `disabled` items stay in the roving arrow sequence and expose `aria-disabled="true"`, but Enter, Space, and click never activate them and the menu stays open; they are dimmed via `data-disabled`. Per conventions, boolean aria uses `x || undefined`. _(Amended 2026-09-03; see §8.11.)_
 
 ## 8 Divergence from reference
 
@@ -144,6 +144,8 @@ No component-specific `tv` recipe. Trigger composes the shared self-target focus
 
 10. **Shared overlay spine adopted:** the unified popup composes `useResolvedPortalContainer`, `overlayPositionerClass` (+ `outline-none`), and `overlayPopupSurfaceClass` / `overlayPopupMotionClass` / `overlayPopupDurationClass`; `dropdownMenuItemClassName` composes `selfFocusRingClass` + `menuItemClass` plus this family's `focus:` highlight face and its `data-variant` arms; Label, Separator, and both item indicators compose `menuGroupLabelClass` / `menuSeparatorClass` / `menuItemIndicatorClass`. `DropdownMenu.Content` redeclares `align` ahead of `Omit<OverlayPositionerProps, "align">` because menus default to `"start"` where the shared tags say `"center"`, and declaring it first keeps the published `propOrder` unmoved; `SubContent`'s four defaults are all its own, so it keeps its own block and takes only `OverlayContainerProps`. The extras that stay this family's are Content's `max-h`/`min-w-32`/overflow/`outline-none`/`data-closed:overflow-hidden` and SubContent's `w-auto min-w-[96px] p-1 shadow-lg`. Emitted class sets for both popups, prop names, documented defaults, and DOM are unchanged; the one published-text change is `SubContent`'s `container` description, which becomes the shared one-place wording now that both parts take `OverlayContainerProps`. _(Amended 2026-09-03; reworded the same day to "Portal target for this overlay …", overlay-neutral, when Toast's viewport joined the eight consumers — toast.md §8.7.)_
 
+11. **Disabled items stay arrow-reachable (spec corrected, not code):** base-ui's `Menu.Root` hard-codes `disabledIndices: EMPTY_ARRAY` into its `useListNavigation`, so a `disabled` item keeps its place in the roving sequence and is announced as `aria-disabled` rather than vanishing from it — the APG-sanctioned "focusable but not activatable" reading, which lets a screen-reader user hear that the option exists and is unavailable. There is no prop to opt out short of forking the primitive, and skipping the item would be the worse a11y outcome, so §7 and §9 were reworded to the behaviour that ships instead of the reference's "skipped by arrow navigation". Activation is still refused: Enter, Space, and click fire no `onClick` and leave the menu open. _(Added 2026-09-03; the browser suite's "lets arrows reach a disabled item but refuses to activate it" scenario is the proof.)_
+
 Kept faithfully: `LinkItem` (Funnel addition, render-prop router links, shares the private `dropdownMenuItemClassName` with Item); `inset` props across Label/Item/CheckboxItem/RadioItem/SubTrigger; `max-h-(--available-height)` + `overflow-y-auto` with the `data-closed:overflow-hidden` scrollbar guard; the `group/dropdown-menu-item` → Shortcut focus-recolor hook; SubContent defaults `start/-3/right/0`; `dropdownMenuItemClassName` stays module-private (no recipe export).
 
 ## 9 Test requirements
@@ -151,7 +153,7 @@ Kept faithfully: `LinkItem` (Funnel addition, render-prop router links, shares t
 Role/label-based queries throughout; keyboard flows per §7:
 
 - Open/close: trigger click and ArrowDown open `getByRole("menu")`; Escape closes and returns focus to the trigger; activating an item closes the menu.
-- Arrow navigation: ArrowDown/ArrowUp cycle `menuitem`s; disabled items are skipped; Home/End per base-ui.
+- Arrow navigation: ArrowDown/ArrowUp cycle `menuitem`s; a disabled item is reached like any other but cannot be activated; Home/End per base-ui. _(Amended 2026-09-03; see §8.11.)_
 - Typeahead: typing a prefix while open highlights the matching item.
 - Submenu: ArrowRight on the SubTrigger opens the submenu (`data-popup-open` asserted) and focuses its first item; ArrowLeft closes back to the SubTrigger; Escape closes the entire tree.
 - CheckboxItem: `getByRole("menuitemcheckbox")` toggles `aria-checked`; `onCheckedChange` fires; indicator visibility follows checked state.

@@ -58,6 +58,40 @@ describe("Popover", () => {
       .toHaveAccessibleDescription("Set the dimensions for the layer.");
   });
 
+  it("opens from Enter and from Space on the trigger", async () => {
+    renderThemed(
+      <>
+        <button type="button">Before</button>
+        <BasicPopover />
+      </>
+    );
+    const trigger = page.getByRole("button", { name: "Details", exact: true }).element();
+    if (!(trigger instanceof HTMLElement)) {
+      throw new Error("expected the trigger");
+    }
+    expect(trigger.getAttribute("aria-haspopup")).toBe("dialog");
+    expect(page.getByRole("dialog").query()).toBeNull();
+
+    trigger.focus();
+    await userEvent.keyboard("{Enter}");
+    await vi.waitFor(() => {
+      expect(page.getByRole("dialog", { name: "Dimensions" }).query()).not.toBeNull();
+    });
+    expect(trigger.getAttribute("aria-expanded")).toBe("true");
+
+    await userEvent.keyboard("{Escape}");
+    await vi.waitFor(() => {
+      expect(page.getByRole("dialog").query()).toBeNull();
+    });
+    expect(document.activeElement).toBe(trigger);
+
+    await userEvent.keyboard(" ");
+    await vi.waitFor(() => {
+      expect(page.getByRole("dialog", { name: "Dimensions" }).query()).not.toBeNull();
+    });
+    expect(trigger.getAttribute("aria-expanded")).toBe("true");
+  });
+
   it("closes on Escape and returns focus to the trigger", async () => {
     renderThemed(<BasicPopover />);
     const trigger = page.getByRole("button", { name: "Details", exact: true }).element();
