@@ -6,9 +6,33 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
-import { renderThemed } from "../../../test/themed-browser-render";
+import { px, renderThemed } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme/theme-scope";
 import { Sheet } from "./sheet";
+
+/** Reads a theme token off the document root (`--container-*` are rem lengths). */
+function readToken(name: string): string {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+/**
+ * The block a `position: fixed` percentage resolves against — the initial containing
+ * block, which excludes any classic scrollbar. `window.innerWidth` includes it, so it is
+ * off by the scrollbar width on the rungs where `90%` is the smaller half of the `min()`.
+ */
+function initialContainingBlockWidth(): number {
+  return document.documentElement.clientWidth;
+}
+
+/** The panel's content box — `max-width` caps that box, and the side border is outside it. */
+function contentWidth(element: HTMLElement): number {
+  const style = getComputedStyle(element);
+  return element.getBoundingClientRect().width - px(style.borderLeftWidth) - px(style.borderRightWidth);
+}
+
+function remToPx(value: string): number {
+  return px(value) * px(getComputedStyle(document.documentElement).fontSize);
+}
 
 const CLOSE_COPY = {
   "nb-NO": "Lukk",
@@ -221,19 +245,50 @@ describe("Sheet", () => {
     expect(dialog.querySelector("[data-slot=sheet-description]")).not.toBeNull();
   });
 
-  it("maps the size axis onto the side-gated max-width classes", async () => {
+  it("resolves the size axis to the side-gated used max-width on both gated sides", async () => {
+    // Asserts the used value the panel is actually capped at, not the class spelling:
+    // the axis moves through `--sheet-width`, so a rung is only correct if the two
+    // side-gated `max-w-(--sheet-width)` consumers resolve it (sheet.md §4, §8.11).
     const cases = [
-      { size: undefined, expected: "data-[side=right]:sm:max-w-[min(var(--container-md),90%)]" },
-      { size: "sm", expected: "data-[side=right]:sm:max-w-[min(var(--container-sm),90%)]" },
-      { size: "10xl", expected: "data-[side=right]:sm:max-w-[min(1920px,90%)]" },
+      { size: undefined, cap: () => remToPx(readToken("--container-md")) },
+      { size: "sm", cap: () => remToPx(readToken("--container-sm")) },
+      { size: "10xl", cap: () => 1920 },
     ] as const;
 
-    for (const { size, expected } of cases) {
-      const { unmount } = renderThemed(withLocale("en-US", <BasicSheet size={size} />));
+    await page.viewport(1024, 768);
+    for (const side of ["right", "left"] as const) {
+      for (const { size, cap } of cases) {
+        const { unmount } = renderThemed(withLocale("en-US", <BasicSheet side={side} size={size} />));
+        const dialog = await openSheet();
+        expect(contentWidth(dialog), `${side}/${String(size)}`).toBeCloseTo(
+          Math.min(cap(), initialContainingBlockWidth() * 0.9),
+          0
+        );
+        unmount();
+      }
+    }
+  });
+
+  it("leaves the size axis inert on the top and bottom sides", async () => {
+    await page.viewport(1024, 768);
+    for (const side of ["top", "bottom"] as const) {
+      const { unmount } = renderThemed(withLocale("en-US", <BasicSheet side={side} size="sm" />));
       const dialog = await openSheet();
-      expect(dialog.className, expected).toContain(expected);
+      expect(getComputedStyle(dialog).maxWidth, side).toBe("none");
       unmount();
     }
+  });
+
+  it("leaves the size axis inert below the sm breakpoint, where the panel is full-width", async () => {
+    // The `sm:` half of the gate: `size` only caps a left/right panel once the viewport
+    // is wide enough, and `w-full` owns the width below that (sheet.md §4).
+    await page.viewport(500, 768);
+    const { unmount } = renderThemed(withLocale("en-US", <BasicSheet side="right" size="sm" />));
+    const dialog = await openSheet();
+    expect(getComputedStyle(dialog).maxWidth).toBe("none");
+    expect(contentWidth(dialog)).toBeCloseTo(initialContainingBlockWidth(), 0);
+    unmount();
+    await page.viewport(1024, 768);
   });
 
   it("portals into the enclosing ThemeScope instead of the document body", async () => {

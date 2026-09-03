@@ -1,6 +1,6 @@
 "use client";
 
-import type { ComponentProps, ReactElement, ReactNode, RefObject } from "react";
+import type { ComponentProps, ReactElement, ReactNode } from "react";
 import { createContext, use } from "react";
 
 import { Drawer as SheetPrimitive } from "@base-ui/react/drawer";
@@ -9,14 +9,17 @@ import type { VariantProps } from "tailwind-variants";
 
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { cn } from "../../styles/cn";
-import { focusRing } from "../../styles/utils";
-import { useThemeScopeContainer } from "../../theme/theme-scope-container";
-import { overlayLayer, overlayScrimClass } from "../overlay/overlay-classes";
+import { selfFocusRingClass } from "../../styles/utils";
+import { useResolvedPortalContainer } from "../../theme/use-resolved-portal-container";
+import {
+  overlayLayer,
+  overlayPopupFillClass,
+  overlayScrimClass,
+  overlaySheetWidthClasses,
+} from "../overlay/overlay-classes";
 import { overlayCornerCloseButton } from "../overlay/overlay-close-button";
+import type { OverlayContainerProps } from "../overlay/overlay-props";
 import { sheetStrings } from "./intl";
-
-/** Resolved once at module scope — the recipe below does the same (no per-render work). */
-const selfFocusRing = focusRing({ target: "self" }).root();
 
 /**
  * `side` → primitive `swipeDirection`. Swiping toward the anchored edge dismisses;
@@ -33,36 +36,18 @@ type SheetSide = keyof typeof SIDE_TO_SWIPE_DIRECTION;
 
 const SheetSideContext = createContext<SheetSide>("right");
 
-/**
- * One stacking level for Overlay and Viewport (sheet.md §8.6). Popup sits inside
- * Viewport, so it does not stamp a third overlay layer. The literal lives in overlay-classes.
- */
-const sheetLayer = overlayLayer;
-
 const sheetContentVariants = tv({
-  base: "text-sm shadow-lg ease-out pointer-events-auto fixed bg-popover bg-clip-padding text-popover-foreground transition-transform duration-200 data-ending-style:duration-[calc(var(--drawer-swipe-strength,1)*150ms)] data-ending-style:ease-[cubic-bezier(0.23,1,0.32,1)] data-swiping:transition-none data-[side=bottom]:inset-x-0 data-[side=bottom]:bottom-0 data-[side=bottom]:h-auto data-[side=bottom]:[transform:translateY(var(--drawer-swipe-movement-y,0px))] data-[side=bottom]:border-t data-[side=bottom]:data-ending-style:[transform:translateY(100%)] data-[side=bottom]:data-starting-style:[transform:translateY(100%)] data-[side=left]:inset-y-0 data-[side=left]:left-0 data-[side=left]:h-full data-[side=left]:w-full data-[side=left]:[transform:translateX(var(--drawer-swipe-movement-x,0px))] data-[side=left]:border-r data-[side=left]:data-ending-style:[transform:translateX(-100%)] data-[side=left]:data-starting-style:[transform:translateX(-100%)] data-[side=right]:inset-y-0 data-[side=right]:right-0 data-[side=right]:h-full data-[side=right]:w-full data-[side=right]:[transform:translateX(var(--drawer-swipe-movement-x,0px))] data-[side=right]:border-l data-[side=right]:data-ending-style:[transform:translateX(100%)] data-[side=right]:data-starting-style:[transform:translateX(100%)] data-[side=top]:inset-x-0 data-[side=top]:top-0 data-[side=top]:h-auto data-[side=top]:[transform:translateY(var(--drawer-swipe-movement-y,0px))] data-[side=top]:border-b data-[side=top]:data-ending-style:[transform:translateY(-100%)] data-[side=top]:data-starting-style:[transform:translateY(-100%)]",
+  base: cn(
+    overlayPopupFillClass,
+    // `--sheet-width` is set by the `size` axis below; these two selectors are the only
+    // consumers, and they appear once rather than once per rung (sheet.md §4).
+    "data-[side=left]:sm:max-w-(--sheet-width) data-[side=right]:sm:max-w-(--sheet-width)",
+    "text-sm shadow-lg ease-out pointer-events-auto fixed bg-clip-padding transition-transform duration-200 data-ending-style:duration-[calc(var(--drawer-swipe-strength,1)*150ms)] data-ending-style:ease-[cubic-bezier(0.23,1,0.32,1)] data-swiping:transition-none data-[side=bottom]:inset-x-0 data-[side=bottom]:bottom-0 data-[side=bottom]:h-auto data-[side=bottom]:[transform:translateY(var(--drawer-swipe-movement-y,0px))] data-[side=bottom]:border-t data-[side=bottom]:data-ending-style:[transform:translateY(100%)] data-[side=bottom]:data-starting-style:[transform:translateY(100%)] data-[side=left]:inset-y-0 data-[side=left]:left-0 data-[side=left]:h-full data-[side=left]:w-full data-[side=left]:[transform:translateX(var(--drawer-swipe-movement-x,0px))] data-[side=left]:border-r data-[side=left]:data-ending-style:[transform:translateX(-100%)] data-[side=left]:data-starting-style:[transform:translateX(-100%)] data-[side=right]:inset-y-0 data-[side=right]:right-0 data-[side=right]:h-full data-[side=right]:w-full data-[side=right]:[transform:translateX(var(--drawer-swipe-movement-x,0px))] data-[side=right]:border-l data-[side=right]:data-ending-style:[transform:translateX(100%)] data-[side=right]:data-starting-style:[transform:translateX(100%)] data-[side=top]:inset-x-0 data-[side=top]:top-0 data-[side=top]:h-auto data-[side=top]:[transform:translateY(var(--drawer-swipe-movement-y,0px))] data-[side=top]:border-b data-[side=top]:data-ending-style:[transform:translateY(-100%)] data-[side=top]:data-starting-style:[transform:translateY(-100%)]"
+  ),
   variants: {
-    size: {
-      sm: "data-[side=left]:sm:max-w-[min(var(--container-sm),90%)] data-[side=right]:sm:max-w-[min(var(--container-sm),90%)]",
-      md: "data-[side=left]:sm:max-w-[min(var(--container-md),90%)] data-[side=right]:sm:max-w-[min(var(--container-md),90%)]",
-      lg: "data-[side=left]:sm:max-w-[min(var(--container-lg),90%)] data-[side=right]:sm:max-w-[min(var(--container-lg),90%)]",
-      xl: "data-[side=left]:sm:max-w-[min(var(--container-xl),90%)] data-[side=right]:sm:max-w-[min(var(--container-xl),90%)]",
-      "2xl":
-        "data-[side=left]:sm:max-w-[min(var(--container-2xl),90%)] data-[side=right]:sm:max-w-[min(var(--container-2xl),90%)]",
-      "3xl":
-        "data-[side=left]:sm:max-w-[min(var(--container-3xl),90%)] data-[side=right]:sm:max-w-[min(var(--container-3xl),90%)]",
-      "4xl":
-        "data-[side=left]:sm:max-w-[min(var(--container-4xl),90%)] data-[side=right]:sm:max-w-[min(var(--container-4xl),90%)]",
-      "5xl":
-        "data-[side=left]:sm:max-w-[min(var(--container-5xl),90%)] data-[side=right]:sm:max-w-[min(var(--container-5xl),90%)]",
-      "6xl":
-        "data-[side=left]:sm:max-w-[min(var(--container-6xl),90%)] data-[side=right]:sm:max-w-[min(var(--container-6xl),90%)]",
-      "7xl":
-        "data-[side=left]:sm:max-w-[min(var(--container-7xl),90%)] data-[side=right]:sm:max-w-[min(var(--container-7xl),90%)]",
-      "8xl": "data-[side=left]:sm:max-w-[min(1366px,90%)] data-[side=right]:sm:max-w-[min(1366px,90%)]",
-      "9xl": "data-[side=left]:sm:max-w-[min(1536px,90%)] data-[side=right]:sm:max-w-[min(1536px,90%)]",
-      "10xl": "data-[side=left]:sm:max-w-[min(1920px,90%)] data-[side=right]:sm:max-w-[min(1920px,90%)]",
-    },
+    // Gated to the left/right sides at `sm:` by the base selectors above; top/bottom
+    // panels are `h-auto` and full width, so the axis is inert for them.
+    size: overlaySheetWidthClasses,
   },
   defaultVariants: {
     size: "md",
@@ -98,12 +83,18 @@ function SheetRoot({ side = "right", children, ...props }: SheetRootProps): Reac
 
 function SheetTrigger({ className, ...props }: ComponentProps<typeof SheetPrimitive.Trigger>): ReactElement {
   return (
-    <SheetPrimitive.Trigger data-slot="sheet-trigger" className={cn(selfFocusRing, className)} {...props} />
+    <SheetPrimitive.Trigger
+      data-slot="sheet-trigger"
+      className={cn(selfFocusRingClass, className)}
+      {...props}
+    />
   );
 }
 
 function SheetClose({ className, ...props }: ComponentProps<typeof SheetPrimitive.Close>): ReactElement {
-  return <SheetPrimitive.Close data-slot="sheet-close" className={cn(selfFocusRing, className)} {...props} />;
+  return (
+    <SheetPrimitive.Close data-slot="sheet-close" className={cn(selfFocusRingClass, className)} {...props} />
+  );
 }
 
 function SheetPortal(props: ComponentProps<typeof SheetPrimitive.Portal>): ReactElement {
@@ -117,7 +108,7 @@ function SheetOverlay({ className, ...props }: ComponentProps<typeof SheetPrimit
       className={cn(
         overlayScrimClass,
         "fixed inset-0 transition-opacity duration-150 data-ending-style:opacity-0 data-starting-style:opacity-0 data-swiping:transition-none",
-        sheetLayer,
+        overlayLayer,
         className
       )}
       {...props}
@@ -125,6 +116,12 @@ function SheetOverlay({ className, ...props }: ComponentProps<typeof SheetPrimit
   );
 }
 
+/**
+ * `OverlayContainerProps` is intersected **between** `showCloseButton` and `closeLabel`
+ * rather than appended: the docs API pipeline derives `Sheet.Content.propOrder` from the
+ * intersection order, and the shadow snapshot pins it as
+ * `size, showCloseButton, container, closeLabel`. Keep the order as written.
+ */
 export type SheetContentProps = ComponentProps<typeof SheetPrimitive.Popup> &
   VariantProps<typeof sheetContentVariants> & {
     /**
@@ -132,11 +129,7 @@ export type SheetContentProps = ComponentProps<typeof SheetPrimitive.Popup> &
      * helper (`Button variant="ghost" size="icon-sm"`) as a `Sheet.Close`.
      */
     showCloseButton?: boolean;
-    /**
-     * Portal target for the panel. Defaults to the nearest enclosing `ThemeScope`
-     * element, so an overlay never escapes the theme that opened it.
-     */
-    container?: HTMLElement | RefObject<HTMLElement | null>;
+  } & OverlayContainerProps & {
     /**
      * Accessible name for the built-in corner close button. Defaults to the locale
      * dictionary.
@@ -155,11 +148,8 @@ function SheetContent({
 }: SheetContentProps): ReactElement | null {
   const side = use(SheetSideContext);
   const strings = useLocalizedStrings(sheetStrings);
-  const resolvedContainer = useThemeScopeContainer(container);
+  const resolvedContainer = useResolvedPortalContainer(container);
 
-  // theming.md §7.4: an explicit ref or an enclosing ThemeScope whose element is not
-  // attached yet means wait — never a brief escape to the document body. Only an absent
-  // scope (`undefined`) leaves the primitive default in place.
   if (resolvedContainer === null) {
     return null;
   }
@@ -171,7 +161,9 @@ function SheetContent({
       <SheetOverlay />
       <SheetPrimitive.Viewport
         data-slot="sheet-viewport"
-        className={cn("pointer-events-none fixed inset-0", sheetLayer)}>
+        // One stacking level for Overlay and Viewport (sheet.md §8.6): Popup sits inside
+        // Viewport, so it does not stamp a third overlay layer.
+        className={cn("pointer-events-none fixed inset-0", overlayLayer)}>
         <SheetPrimitive.Popup
           data-slot="sheet-content"
           data-side={side}

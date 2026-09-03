@@ -7,31 +7,24 @@ import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { Info } from "../../icons/generated/info";
 import { WarningOctagon } from "../../icons/generated/warning-octagon";
-import { cn } from "../../styles/cn";
-import { focusRing } from "../../styles/utils";
 import { Button } from "../button/button";
 import type { DialogContentProps } from "../dialog/dialog";
 import { Dialog } from "../dialog/dialog";
 import { alertDialogStrings } from "./intl";
 
-/** Resolved once at module scope — the recipe below does the same (no per-render work). */
-const selfFocusRing = focusRing({ target: "self" }).root();
-
+/**
+ * AlertDialog is Dialog machinery with `role="alertdialog"` (alert-dialog.md §8.2), so
+ * Root and Trigger render through the public Dialog parts rather than reaching for the
+ * primitive again — the self-focus ring and every other Dialog behaviour come with them.
+ * Each restamps its own `data-slot`: Dialog's parts write theirs before spreading the
+ * rest, so the value passed here wins.
+ */
 function AlertDialogRoot(props: ComponentProps<typeof DialogPrimitive.Root>): ReactElement {
-  return <DialogPrimitive.Root data-slot="alert-dialog" {...props} />;
+  return <Dialog.Root data-slot="alert-dialog" {...props} />;
 }
 
-function AlertDialogTrigger({
-  className,
-  ...props
-}: ComponentProps<typeof DialogPrimitive.Trigger>): ReactElement {
-  return (
-    <DialogPrimitive.Trigger
-      data-slot="alert-dialog-trigger"
-      className={cn(selfFocusRing, className)}
-      {...props}
-    />
-  );
+function AlertDialogTrigger(props: ComponentProps<typeof DialogPrimitive.Trigger>): ReactElement {
+  return <Dialog.Trigger data-slot="alert-dialog-trigger" {...props} />;
 }
 
 export type AlertDialogContentProps = Omit<DialogContentProps, "showCloseButton" | "children"> & {

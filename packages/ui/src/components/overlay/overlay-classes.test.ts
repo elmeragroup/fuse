@@ -13,6 +13,8 @@ import {
   overlayPopupMotionClass,
   overlayPopupSurfaceClass,
   overlayPositionerClass,
+  overlaySheetWidthClasses,
+  overlaySizeClasses,
 } from "./overlay-classes";
 
 function tokens(value: string): Set<string> {
@@ -144,5 +146,31 @@ describe("menu part classes", () => {
     expect(tokens(menuSeparatorClass)).toContain("bg-border");
     expect(tokens(menuSeparatorClass)).toContain("h-px");
     expect(tokens(menuGroupLabelClass)).toContain("text-muted-foreground");
+  });
+});
+
+describe("overlaySheetWidthClasses", () => {
+  /**
+   * The guard `satisfies Record<OverlaySize, string>` cannot give: it pins the keys of
+   * the two width tables, not their values. Sheet's rungs restate the cap because
+   * Tailwind only emits a utility whose candidate appears literally in source, so this
+   * derives the expected spelling from the `max-width` table and fails on any drift.
+   */
+  it("caps every rung at exactly the value overlaySizeClasses caps it at", () => {
+    const asCustomProperty = Object.fromEntries(
+      Object.entries(overlaySizeClasses).map(([rung, utility]) => {
+        const cap = /^max-w-\[(?<cap>.+)\]$/u.exec(utility)?.groups?.cap;
+        if (cap === undefined) {
+          throw new Error(`overlaySizeClasses.${rung} is not an arbitrary max-width: ${utility}`);
+        }
+        return [rung, `[--sheet-width:${cap}]`];
+      })
+    );
+
+    expect(overlaySheetWidthClasses).toEqual(asCustomProperty);
+  });
+
+  it("covers the whole axis and nothing else", () => {
+    expect(Object.keys(overlaySheetWidthClasses)).toEqual(Object.keys(overlaySizeClasses));
   });
 });

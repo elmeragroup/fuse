@@ -1,17 +1,15 @@
 "use client";
 
 import { createContext, use, useId } from "react";
-import type { ComponentProps, ReactElement, RefObject } from "react";
+import type { ComponentProps, ReactElement } from "react";
 
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
 
 import { cn } from "../../styles/cn";
-import { focusRing } from "../../styles/utils";
-import { useThemeScopeContainer } from "../../theme/theme-scope-container";
-import { overlayLayer } from "../overlay/overlay-classes";
-
-/** Resolved once at module scope — the recipe below does the same (no per-render work). */
-const selfFocusRing = focusRing({ target: "self" }).root();
+import { selfFocusRingClass } from "../../styles/utils";
+import { useResolvedPortalContainer } from "../../theme/use-resolved-portal-container";
+import { overlayPopupMotionClass, overlayPositionerClass } from "../overlay/overlay-classes";
+import type { OverlayContainerProps, OverlayPositionerProps } from "../overlay/overlay-props";
 
 /** Shared popup id so the trigger's `aria-describedby` points at the tooltip (tooltip.md §7). */
 const TooltipDescriptionContext = createContext<string | null>(null);
@@ -64,39 +62,37 @@ function TooltipTrigger({
     <TooltipPrimitive.Trigger
       data-slot="tooltip-trigger"
       aria-describedby={tooltipId ?? undefined}
-      className={cn(selfFocusRing, className)}
+      className={cn(selfFocusRingClass, className)}
       {...props}
     />
   );
 }
 
-export type TooltipContentProps = ComponentProps<typeof TooltipPrimitive.Popup> & {
-  /**
-   * How the popup aligns to the trigger on the cross axis.
-   * @default "center"
-   */
-  align?: ComponentProps<typeof TooltipPrimitive.Positioner>["align"];
-  /**
-   * Offset along the alignment axis, in pixels.
-   * @default 0
-   */
-  alignOffset?: ComponentProps<typeof TooltipPrimitive.Positioner>["alignOffset"];
-  /**
-   * Which side of the trigger the popup is placed on. Tooltips open upward by default.
-   * @default "top"
-   */
-  side?: ComponentProps<typeof TooltipPrimitive.Positioner>["side"];
-  /**
-   * Distance from the trigger, in pixels.
-   * @default 4
-   */
-  sideOffset?: ComponentProps<typeof TooltipPrimitive.Positioner>["sideOffset"];
-  /**
-   * Portal target for the popup. Defaults to the nearest enclosing `ThemeScope`
-   * element, so an overlay never escapes the theme that opened it.
-   */
-  container?: HTMLElement | RefObject<HTMLElement | null>;
-};
+/**
+ * Tooltip takes the shared positioner block but redeclares `side` and `sideOffset`.
+ *
+ * `side` must be redeclared because the shared `@default` tags are Popover's: Tooltip
+ * destructures `side = "top"` below, and the docs generator publishes the tag verbatim,
+ * so inheriting Popover's `"bottom"` would ship a wrong public prop table. `sideOffset`
+ * is redeclared alongside it — same default, same words — only to keep the pair in
+ * declaration order: the docs API pipeline derives `Tooltip.Content.propOrder` from the
+ * intersection order and the shadow snapshot pins it as
+ * `align, alignOffset, side, sideOffset, container`. Re-read the tags whenever the
+ * destructuring below changes; there is no gate on the pair.
+ */
+export type TooltipContentProps = ComponentProps<typeof TooltipPrimitive.Popup> &
+  Omit<OverlayPositionerProps<ComponentProps<typeof TooltipPrimitive.Positioner>>, "side" | "sideOffset"> & {
+    /**
+     * Which side of the trigger the popup is placed on. Tooltips open upward by default.
+     * @default "top"
+     */
+    side?: ComponentProps<typeof TooltipPrimitive.Positioner>["side"];
+    /**
+     * Distance from the trigger, in pixels.
+     * @default 4
+     */
+    sideOffset?: ComponentProps<typeof TooltipPrimitive.Positioner>["sideOffset"];
+  } & OverlayContainerProps;
 
 function TooltipContent({
   className,
@@ -109,11 +105,8 @@ function TooltipContent({
   ...props
 }: TooltipContentProps): ReactElement | null {
   const tooltipId = use(TooltipDescriptionContext);
-  const resolvedContainer = useThemeScopeContainer(container);
+  const resolvedContainer = useResolvedPortalContainer(container);
 
-  // theming.md §7.4: an explicit ref or an enclosing ThemeScope whose element is not
-  // attached yet means wait — never a brief escape to the document body. Only an absent
-  // scope (`undefined`) leaves the primitive default in place.
   if (resolvedContainer === null) {
     return null;
   }
@@ -125,13 +118,18 @@ function TooltipContent({
         alignOffset={alignOffset}
         side={side}
         sideOffset={sideOffset}
-        className={cn("isolate", overlayLayer)}>
+        className={overlayPositionerClass}>
         <TooltipPrimitive.Popup
           data-slot="tooltip-content"
           id={tooltipId ?? undefined}
           role="tooltip"
+          // Tooltip takes the shared motion set but neither the composed popup surface
+          // nor the timing rung: it inverts the fill and flies frameless (tooltip.md §8),
+          // and `ring-0` could not subtract the surface's `ring-foreground/10` — width and
+          // colour are separate tailwind-merge conflict groups. Untimed is deliberate.
           className={cn(
-            "max-w-xs text-xs inline-flex w-fit origin-(--transform-origin) items-center gap-1.5 rounded-md bg-foreground px-3 py-1.5 text-pretty text-background data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+            overlayPopupMotionClass,
+            "max-w-xs text-xs inline-flex w-fit items-center gap-1.5 rounded-md bg-foreground px-3 py-1.5 text-pretty text-background",
             className
           )}
           {...props}>

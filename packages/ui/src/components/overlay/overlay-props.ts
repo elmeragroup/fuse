@@ -3,13 +3,20 @@ import type { RefObject } from "react";
 /**
  * The portal-target prop every overlay carries (theming.md §7.4). Declared once so the
  * default — the nearest enclosing `ThemeScope` element — is documented in one place.
- * Popover is the first consumer; the remaining eleven overlays still spell the prop
- * locally and adopt this type as they are migrated.
+ *
+ * Consumed by Popover, Dialog, Sheet, Tooltip, Toast, Select, Combobox and DropdownMenu;
+ * AlertDialog inherits it through `DialogContentProps`. What is left is the interim
+ * react-aria tier (`react-aria/internal/popover.tsx`, `internal/modal.tsx`, which spec 08
+ * deletes) and PhoneNumberField's country popup.
+ *
+ * The prop's own sentence is deliberately overlay-neutral: the eight consumers portal a
+ * popup, a modal, a side panel and a toast viewport, and the docs generator publishes
+ * this text verbatim into all eight public prop tables.
  */
 export type OverlayContainerProps = {
   /**
-   * Portal target for the popup. Defaults to the nearest enclosing `ThemeScope`
-   * element, so an overlay never escapes the theme that opened it.
+   * Portal target for this overlay. Defaults to the nearest enclosing `ThemeScope`
+   * element, so it never escapes the theme that opened it.
    */
   container?: HTMLElement | RefObject<HTMLElement | null>;
 };

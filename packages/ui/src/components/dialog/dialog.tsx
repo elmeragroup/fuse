@@ -1,6 +1,6 @@
 "use client";
 
-import type { ComponentProps, ReactElement, RefObject } from "react";
+import type { ComponentProps, ReactElement } from "react";
 
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { tv } from "tailwind-variants";
@@ -8,26 +8,31 @@ import type { VariantProps } from "tailwind-variants";
 
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { cn } from "../../styles/cn";
-import { focusRing } from "../../styles/utils";
-import { useThemeScopeContainer } from "../../theme/theme-scope-container";
+import { selfFocusRingClass } from "../../styles/utils";
+import { useResolvedPortalContainer } from "../../theme/use-resolved-portal-container";
 import {
   overlayFooterClass,
   overlayLayer,
+  overlayPopupSurfaceClass,
   overlayScrimClass,
   overlaySizeClasses,
   overlayTitleClass,
 } from "../overlay/overlay-classes";
 import { overlayCornerCloseButton, overlayFooterCloseButton } from "../overlay/overlay-close-button";
+import type { OverlayContainerProps } from "../overlay/overlay-props";
 import { dialogStrings } from "./intl";
 
-/** Resolved once at module scope — the recipe below does the same (no per-render work). */
-const selfFocusRing = focusRing({ target: "self" }).root();
-
 const dialogContentVariants = tv({
+  // The shared popup surface supplies the fill, the ring, and a radius rung; Dialog
+  // raises the elevation to `shadow-lg` and the radius to `rounded-xl` through the
+  // later `cn` argument (dialog.md §4). The keyframe set stays local: Dialog is not an
+  // anchored popup, so it takes neither the transform origin nor the per-side slide-ins
+  // that `overlayPopupMotionClass` carries, and its `duration-100` rides with them.
   base: cn(
-    "text-sm shadow-lg fixed top-1/2 left-1/2 grid max-h-[calc(100%-2rem)] w-full -translate-x-1/2 -translate-y-1/2 gap-6 overflow-y-auto rounded-xl bg-popover p-6 text-popover-foreground ring-1 ring-foreground/10 duration-100 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+    overlayPopupSurfaceClass,
+    "text-sm shadow-lg fixed top-1/2 left-1/2 grid max-h-[calc(100%-2rem)] w-full -translate-x-1/2 -translate-y-1/2 gap-6 overflow-y-auto rounded-xl p-6 duration-100 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
     overlayLayer,
-    selfFocusRing
+    selfFocusRingClass
   ),
   variants: {
     // The 13-value axis is shared with the interim RAC Modal (dialog.md §4).
@@ -47,7 +52,11 @@ function DialogTrigger({
   ...props
 }: ComponentProps<typeof DialogPrimitive.Trigger>): ReactElement {
   return (
-    <DialogPrimitive.Trigger data-slot="dialog-trigger" className={cn(selfFocusRing, className)} {...props} />
+    <DialogPrimitive.Trigger
+      data-slot="dialog-trigger"
+      className={cn(selfFocusRingClass, className)}
+      {...props}
+    />
   );
 }
 
@@ -57,7 +66,11 @@ function DialogPortal(props: ComponentProps<typeof DialogPrimitive.Portal>): Rea
 
 function DialogClose({ className, ...props }: ComponentProps<typeof DialogPrimitive.Close>): ReactElement {
   return (
-    <DialogPrimitive.Close data-slot="dialog-close" className={cn(selfFocusRing, className)} {...props} />
+    <DialogPrimitive.Close
+      data-slot="dialog-close"
+      className={cn(selfFocusRingClass, className)}
+      {...props}
+    />
   );
 }
 
@@ -79,6 +92,12 @@ function DialogOverlay({
   );
 }
 
+/**
+ * `OverlayContainerProps` is intersected **between** `showCloseButton` and `closeLabel`
+ * rather than appended: the docs API pipeline derives `Dialog.Content.propOrder` from
+ * the intersection order, and the shadow snapshot pins it as
+ * `size, showCloseButton, container, closeLabel`. Keep the order as written.
+ */
 export type DialogContentProps = ComponentProps<typeof DialogPrimitive.Popup> &
   VariantProps<typeof dialogContentVariants> & {
     /**
@@ -86,11 +105,7 @@ export type DialogContentProps = ComponentProps<typeof DialogPrimitive.Popup> &
      * ghost icon button in the popup's top-right corner.
      */
     showCloseButton?: boolean;
-    /**
-     * Portal target for the popup. Defaults to the nearest enclosing `ThemeScope`
-     * element, so an overlay never escapes the theme that opened it.
-     */
-    container?: HTMLElement | RefObject<HTMLElement | null>;
+  } & OverlayContainerProps & {
     /**
      * Accessible name for the built-in corner close button. Defaults to the locale
      * dictionary.
@@ -108,11 +123,8 @@ function DialogContent({
   ...props
 }: DialogContentProps): ReactElement | null {
   const strings = useLocalizedStrings(dialogStrings);
-  const resolvedContainer = useThemeScopeContainer(container);
+  const resolvedContainer = useResolvedPortalContainer(container);
 
-  // theming.md §7.4: an explicit ref or an enclosing ThemeScope whose element is not
-  // attached yet means wait — never a brief escape to the document body. Only an absent
-  // scope (`undefined`) leaves the primitive default in place.
   if (resolvedContainer === null) {
     return null;
   }
