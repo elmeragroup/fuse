@@ -38,7 +38,7 @@ No controlled/uncontrolled opinion — native semantics. Polymorphism not applic
 
 ## 4 Variants
 
-None public. Shared chrome comes from the package-private `fieldBox` recipe (same surface as Input). Textarea adds only content-sized deltas: `flex`, `field-sizing-content`, `h-auto` (overrides the recipe's pinned md height), `min-h-16`, `py-2`. Nothing exported.
+None public. Shared chrome comes from the package-private `fieldBox` recipe (same surface as Input). Textarea adds only `flex field-sizing-content` on top of `fieldBox({ box: "content" })`; the `content` rung is what replaces the `control` rung's pinned `h-(--control-h-md)` with `min-h-16 py-2`. No `h-auto` is emitted — `field-box.test.ts` asserts its absence. Nothing exported. _(Amended 2026-09-03 — the height release moved into the shared recipe's `box` axis; the text still described a local `h-auto`.)_
 
 No `size` axis. Inline padding and control type pin the `md` rung per [conventions](conventions.md) ruling 2, 2026-08-21, via `fieldBox`.
 

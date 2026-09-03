@@ -44,14 +44,14 @@ All rendering parts take `className` (merged via `cn`) and forward the rest of t
 
 **Popover.Content** — `ComponentProps<PopoverPrimitive.Popup>` plus `Pick<ComponentProps<PopoverPrimitive.Positioner>, "align" | "alignOffset" | "side" | "sideOffset">` (destructured and forwarded to the internal Positioner) plus:
 
-| Prop          | Type                                    | Default                      | Notes                                                    |
-| ------------- | --------------------------------------- | ---------------------------- | -------------------------------------------------------- |
-| `align`       | Positioner `align`                      | `"center"`                   |                                                          |
-| `alignOffset` | `number`                                | `0`                          |                                                          |
-| `side`        | Positioner `side`                       | `"bottom"`                   |                                                          |
-| `sideOffset`  | `number`                                | `4`                          |                                                          |
-| `showArrow`   | `boolean`                               | `false`                      | renders `PopoverPrimitive.Arrow` after `children`        |
-| `container`   | `HTMLElement \| RefObject<HTMLElement>` | nearest `ThemeScope` element | forwarded to the internal `PopoverPrimitive.Portal` (§8) |
+| Prop          | Type                                            | Default                      | Notes                                                    |
+| ------------- | ----------------------------------------------- | ---------------------------- | -------------------------------------------------------- |
+| `align`       | Positioner `align`                              | `"center"`                   |                                                          |
+| `alignOffset` | `number`                                        | `0`                          |                                                          |
+| `side`        | Positioner `side`                               | `"bottom"`                   |                                                          |
+| `sideOffset`  | `number`                                        | `4`                          |                                                          |
+| `showArrow`   | `boolean`                                       | `false`                      | renders `PopoverPrimitive.Arrow` after `children`        |
+| `container`   | `HTMLElement \| RefObject<HTMLElement \| null>` | nearest `ThemeScope` element | forwarded to the internal `PopoverPrimitive.Portal` (§8) |
 
 **Popover.Header** — `ComponentProps<"div">`.
 **Popover.Title** / **Popover.Description** — their base-ui part's props verbatim.

@@ -38,7 +38,7 @@ Composes the same private internals as DatePicker (styled Dialog, Modal, RAC But
 | `isReadOnly`              | `boolean`                                           | `false`              | Destructured to drive the `isReadOnly` tv variant (ruled addition — parity with DatePicker)    |
 | `shouldForceLeadingZeros` | `boolean`                                           | **`true`**           | **Ruled addition** — the ref omits it here while DatePicker/DateField default it true; aligned |
 | `className`               | RAC className                                       | —                    | Composed onto `base` slot                                                                      |
-| `container`               | `HTMLElement \| RefObject<HTMLElement>`             | nearest `ThemeScope` | forwarded to private Popover; explicit value wins                                              |
+| `container`               | `HTMLElement \| RefObject<HTMLElement \| null>`     | nearest `ThemeScope` | forwarded to private Popover; explicit value wins                                              |
 
 No `presetGroup` (DatePicker-only; DatePickerStateContext has no range counterpart in this tier).
 

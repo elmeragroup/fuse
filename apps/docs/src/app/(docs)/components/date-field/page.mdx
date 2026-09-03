@@ -32,6 +32,12 @@ is optional `label` / `description`, `errorMessage` as a `ReactNode` or
 does not accept `children` — and keeps `slot` for start/end range pickers. Wrap
 locale-dependent usage in `UiProviders` from `@elmeragroup/ui/react-aria/ui-providers`.
 
+Values are `@internationalized/date` objects — `CalendarDate` and friends — not
+`Date`. That package is a direct install for consumers (`pnpm add
+@internationalized/date`): the demos below import it by name, and the copy shipped
+inside `@elmeragroup/ui` is an implementation detail of the quarantined tier, not a
+re-export.
+
 </Prose>
 
 <Demo slug="date-field" id="basic" title="Basic" file="date-field-basic.tsx">

@@ -91,7 +91,7 @@ Via borrowed `buttonVariants`: `background`, `accent`, `accent-foreground`, `inp
 ## 8 Divergence from reference (FULL CLEANUP — user-ruled)
 
 1. **Rename: flat → namespace** — ref exports `Pagination`, `PaginationContent`, `PaginationItem`, `PaginationLink`, `PaginationPrevious`, `PaginationNext`, `PaginationEllipsis`; ours are `Pagination.Root/.Content/.Item/.Link/.Previous/.Next/.Ellipsis`.
-2. **`forwardRef` dropped** — ref wraps `Content` and `Item` in `React.forwardRef` (and only those two); React 19 makes `ref` a plain prop, so all parts are plain functions. `displayName` assignments dropped with it.
+2. **`forwardRef` dropped** — ref wraps `Content` and `Item` in `React.forwardRef` (and only those two); React 19 makes `ref` a plain prop, so all parts are plain functions. `displayName` is **kept** on all seven parts (`Pagination.Root` … `Pagination.Ellipsis`), per the namespace convention. _(Amended 2026-09-03 — the entry claimed the displayNames went with `forwardRef`; they ship.)_
 3. **react-aria `Span` → plain `<span>`** — ref renders `Previous`/`Next` text and the whole `Ellipsis` through the RAC `Span` wrapper; replaced with native spans, removing a React Aria dependency from this family.
 4. **Dead tv slots removed** — the ref recipe's `item: ""` and `button: ""` slots are empty strings invoked for nothing; deleted from the recipe (Item is unstyled; Link uses `buttonVariants` + `link` slot).
 5. **`data-slot` attributes ADDED** — the ref emits none (the family's odd one out); ours adds the full §2 set per family convention.

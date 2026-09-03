@@ -1,5 +1,6 @@
 "use client";
 
+import { Checkbox } from "@elmeragroup/ui/checkbox";
 import { Field } from "@elmeragroup/ui/field";
 
 export function FieldSetDemo() {
@@ -8,14 +9,16 @@ export function FieldSetDemo() {
       <Field.Legend>Notifications</Field.Legend>
       <Field.Root>
         <Field.Item>
-          <label>
-            <input type="checkbox" /> Email
-          </label>
+          <Field.Label className="flex items-center gap-2">
+            <Checkbox defaultChecked />
+            Email
+          </Field.Label>
         </Field.Item>
         <Field.Item>
-          <label>
-            <input type="checkbox" /> SMS
-          </label>
+          <Field.Label className="flex items-center gap-2">
+            <Checkbox />
+            SMS
+          </Field.Label>
         </Field.Item>
       </Field.Root>
     </Field.Set>

@@ -50,7 +50,7 @@ AriaDateField                       (RAC DateField, flex flex-col gap-1)
 ## 6 Data attributes
 
 - **Emitted:** RAC's own state attributes on each part — `data-invalid`, `data-disabled`, `data-readonly`, `data-required` on the field root; `data-focus-within`, `data-invalid` on DateInput; `data-placeholder`, `data-focused`, `data-type` on segments. No custom `data-slot` attributes in the ref; the port adds none.
-- **Consumed:** styling flows through tv render-prop variants, not `data-*` Tailwind selectors, except the plugin-provided RAC modifiers (see §8 devDependency note).
+- **Consumed:** styling flows through tv render-prop variants, not `data-*` Tailwind selectors, except the plugin-provided RAC modifiers (see §8.5 — `tailwindcss-react-aria-components` is a **regular** dependency of the package, scoped to this cluster, not a devDependency). _(Amended 2026-09-03 — the pointer said devDependency; the manifest ships it under `dependencies`.)_
 
 ## 7 Accessibility
 

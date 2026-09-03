@@ -61,23 +61,23 @@ All rendering parts take `className` (merged via `cn`) and forward the rest of t
 
 **DropdownMenu.Content** — `ComponentProps<MenuPrimitive.Popup>` plus `Pick<ComponentProps<MenuPrimitive.Positioner>, "align" | "alignOffset" | "side" | "sideOffset">` plus:
 
-| Prop          | Type                                    | Default                      | Notes                                                            |
-| ------------- | --------------------------------------- | ---------------------------- | ---------------------------------------------------------------- |
-| `align`       | Positioner `align`                      | `"start"`                    | menus lead from the trigger edge (vs Popover/Tooltip `"center"`) |
-| `alignOffset` | `number`                                | `0`                          |                                                                  |
-| `side`        | Positioner `side`                       | `"bottom"`                   |                                                                  |
-| `sideOffset`  | `number`                                | `4`                          |                                                                  |
-| `container`   | `HTMLElement \| RefObject<HTMLElement>` | nearest `ThemeScope` element | forwarded to the internal `MenuPrimitive.Portal` (§8)            |
+| Prop          | Type                                            | Default                      | Notes                                                            |
+| ------------- | ----------------------------------------------- | ---------------------------- | ---------------------------------------------------------------- |
+| `align`       | Positioner `align`                              | `"start"`                    | menus lead from the trigger edge (vs Popover/Tooltip `"center"`) |
+| `alignOffset` | `number`                                        | `0`                          |                                                                  |
+| `side`        | Positioner `side`                               | `"bottom"`                   |                                                                  |
+| `sideOffset`  | `number`                                        | `4`                          |                                                                  |
+| `container`   | `HTMLElement \| RefObject<HTMLElement \| null>` | nearest `ThemeScope` element | forwarded to the internal `MenuPrimitive.Portal` (§8)            |
 
 **DropdownMenu.SubContent** — same surface as Content but with sub-specific defaults and its own thin popup (§8):
 
-| Prop          | Type                                    | Default                      | Notes                                                 |
-| ------------- | --------------------------------------- | ---------------------------- | ----------------------------------------------------- |
-| `align`       | Positioner `align`                      | `"start"`                    |                                                       |
-| `alignOffset` | `number`                                | `-3`                         | tucks the submenu's first item level with its trigger |
-| `side`        | Positioner `side`                       | `"right"`                    |                                                       |
-| `sideOffset`  | `number`                                | `0`                          | flush against the parent menu                         |
-| `container`   | `HTMLElement \| RefObject<HTMLElement>` | nearest `ThemeScope` element | forwarded to its own Portal (§8)                      |
+| Prop          | Type                                            | Default                      | Notes                                                 |
+| ------------- | ----------------------------------------------- | ---------------------------- | ----------------------------------------------------- |
+| `align`       | Positioner `align`                              | `"start"`                    |                                                       |
+| `alignOffset` | `number`                                        | `-3`                         | tucks the submenu's first item level with its trigger |
+| `side`        | Positioner `side`                               | `"right"`                    |                                                       |
+| `sideOffset`  | `number`                                        | `0`                          | flush against the parent menu                         |
+| `container`   | `HTMLElement \| RefObject<HTMLElement \| null>` | nearest `ThemeScope` element | forwarded to its own Portal (§8)                      |
 
 **DropdownMenu.Item** — `ComponentProps<MenuPrimitive.Item>` plus:
 

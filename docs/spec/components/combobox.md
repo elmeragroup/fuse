@@ -73,14 +73,14 @@ Runtime note (kept, §8): `showTrigger` and `showClear` are effectively mutually
 
 **Combobox.Content** — `ComponentProps<ComboboxPrimitive.Popup>` plus positioner props (forwarded to `ComboboxPrimitive.Positioner`) plus the conventions' overlay `container`:
 
-| Prop          | Type                                      | Default                      | Notes                                                          |
-| ------------- | ----------------------------------------- | ---------------------------- | -------------------------------------------------------------- |
-| `side`        | Positioner `side`                         | `"bottom"`                   |                                                                |
-| `sideOffset`  | `number`                                  | `6`                          | (Select uses 4 — faithful to each ref)                         |
-| `align`       | Positioner `align`                        | `"start"`                    |                                                                |
-| `alignOffset` | `number`                                  | `0`                          |                                                                |
-| `anchor`      | Positioner `anchor` (element/ref/virtual) | —                            | pass `useComboboxAnchor()`'s ref; also flips `data-chips` (§6) |
-| `container`   | `HTMLElement \| RefObject<HTMLElement>`   | nearest `ThemeScope` element | portal target (§8)                                             |
+| Prop          | Type                                            | Default                      | Notes                                                          |
+| ------------- | ----------------------------------------------- | ---------------------------- | -------------------------------------------------------------- |
+| `side`        | Positioner `side`                               | `"bottom"`                   |                                                                |
+| `sideOffset`  | `number`                                        | `6`                          | (Select uses 4 — faithful to each ref)                         |
+| `align`       | Positioner `align`                              | `"start"`                    |                                                                |
+| `alignOffset` | `number`                                        | `0`                          |                                                                |
+| `anchor`      | Positioner `anchor` (element/ref/virtual)       | —                            | pass `useComboboxAnchor()`'s ref; also flips `data-chips` (§6) |
+| `container`   | `HTMLElement \| RefObject<HTMLElement \| null>` | nearest `ThemeScope` element | portal target (§8)                                             |
 
 **Combobox.Chip** — `ComponentProps<ComboboxPrimitive.Chip>` plus:
 

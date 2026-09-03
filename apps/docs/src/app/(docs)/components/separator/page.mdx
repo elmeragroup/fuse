@@ -16,7 +16,8 @@ export const metadata = componentMetadata("separator");
 
 <Prose>
 
-A vertical separator needs a height from its container — it has no intrinsic size.
+A vertical separator uses `self-stretch`, so inside a flex row it takes the row height
+with no explicit height anywhere — the classic invisible-divider bug does not apply.
 
 </Prose>
 

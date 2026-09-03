@@ -62,14 +62,14 @@ Slot bases: `base: "relative"`, `icon: "block size-5 shrink-0 text-foreground"`,
 
 ## 6 Data attributes
 
-**Emitted** (via base-ui Item's `useRender` state serialization): `data-slot="item"` + `data-variant="outline"` + `data-size="sm"` on Root; `data-slot="item-media"`, `item-content`, `item-title`, `item-description`, `item-actions` on the respective parts. No alert-specific attributes; Alert's own variant is class-only.
+**Emitted** (via base-ui Item's `useRender` state serialization): `data-slot="item"` + `data-variant="outline"` + `data-size="sm"` on Root; `data-slot="item-media"`, `item-content`, `item-title`, `item-description`, `item-actions` on the respective parts. One alert-specific attribute: `Alert.Icon` stamps `data-slot="alert-icon"` on the glyph (the §9 icon assertion's hook). Alert's own `variant` stays class-only — it is not serialized to a data attribute.
 
 **Consumed**: Item's internal group scopes (`group/item`, `group-has-data-[slot=item-description]` media alignment) work unchanged.
 
 ## 7 Accessibility
 
 - `role="alert"` on Root — an assertive live region; content present at mount is announced when the element enters the DOM. For alerts that toggle visibility, mount/unmount the whole Root (don't hide with CSS).
-- The icon is decorative: `Alert.Icon` renders with `aria-hidden="true"` (Phosphor default when unlabeled); meaning is carried by Title/Description text.
+- The icon is decorative: `Alert.Icon` passes `aria-hidden="true"` itself, after the caller's props, so it cannot be spread away. Phosphor sets no `aria-hidden` of its own — its SSR base renders a bare `<svg>` and only adds a `<title>` when `alt` is given — so this attribute is the component's, not the icon library's. Meaning is carried by Title/Description text. _(Amended 2026-09-03 — the earlier text credited Phosphor with a decorative default that does not exist; removing the explicit attribute would regress the alert.)_
 - `Alert.Title` is a real heading (`h3` default, `level`-adjustable) so alerts slot into the page outline.
 - The action button is a standard focusable `Button` (`type="button"`); it lives inside the live region. `onAction` and `actionLabel` are required together; `actionLabel` is the accessible name and must be self-describing.
 - No keyboard behavior beyond the button's.

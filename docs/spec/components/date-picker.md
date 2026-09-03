@@ -50,7 +50,7 @@ AriaDatePicker                        (RAC DatePicker; base slot)
 | `isReadOnly`              | `boolean`                                           | `false`              | Destructured to drive the `isReadOnly` tv variant (`bg-muted` group/icon)                                         |
 | `shouldForceLeadingZeros` | `boolean`                                           | **`true`**           |                                                                                                                   |
 | `className`               | RAC className                                       | —                    | Composed onto `base` slot                                                                                         |
-| `container`               | `HTMLElement \| RefObject<HTMLElement>`             | nearest `ThemeScope` | forwarded to private Popover; explicit value wins                                                                 |
+| `container`               | `HTMLElement \| RefObject<HTMLElement \| null>`     | nearest `ThemeScope` | forwarded to private Popover; explicit value wins                                                                 |
 
 ### DatePickerPresetGroup
 
