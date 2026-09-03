@@ -22,8 +22,9 @@ describe("DemoStage comfortable density", () => {
   });
 
   it("the imported artifact exists after the ui build", () => {
-    // turbo.json gives every `test` task the `@elmeragroup/ui#build` dependency, so the
-    // artifact is guaranteed here; its absence is the regression this test is for.
+    // apps/docs/turbo.json shadows the root `test` task, so the guarantee is transitive:
+    // docs#test -> docs#build -> docs#generate -> ^build -> @elmeragroup/ui#build, through
+    // the workspace dependency in package.json. Its absence is the regression, not a skip.
     expect(existsSync(artifactPath), artifactPath).toBe(true);
     expect(readFileSync(artifactPath, "utf8")).toContain('.DemoStage[data-density="comfortable"]');
   });

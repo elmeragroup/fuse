@@ -104,8 +104,9 @@ describe("density CSS", () => {
   });
 
   it("reaches both stylesheet distribution modes", () => {
-    // turbo.json: the `test` task depends on `@elmeragroup/ui#build`, so both sheets are
-    // task-graph-guaranteed. A missing artifact is the failure, not a reason to skip.
+    // This package inherits the root `test` task, which names `@elmeragroup/ui#build`
+    // directly, so both sheets are task-graph-guaranteed. A missing artifact is the
+    // failure, not a reason to skip.
     expect(existsSync(compiledCssPath), compiledCssPath).toBe(true);
     expect(existsSync(packedRawCssPath), packedRawCssPath).toBe(true);
     const compiled = readFileSync(compiledCssPath, "utf8");
@@ -144,7 +145,7 @@ describe("DemoStage comfortable density artifact", () => {
   });
 
   it("is emitted next to themes.css", () => {
-    // Guaranteed by the `test` → `@elmeragroup/ui#build` edge in turbo.json.
+    // Guaranteed by the root `test` task's direct `@elmeragroup/ui#build` dependency.
     expect(existsSync(demoStageCssPath), demoStageCssPath).toBe(true);
     const emitted = readFileSync(demoStageCssPath, "utf8");
     expect(emitted).toBe(generateDemoStageComfortableCss(uiCss));

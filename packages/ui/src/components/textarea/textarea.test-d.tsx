@@ -13,7 +13,6 @@ test("Textarea ships from the textarea entry and the root barrel", () => {
 
 test("TextareaProps is the native textarea surface, with no recipe axis and no render prop", () => {
   expectTypeOf<TextareaProps>().toEqualTypeOf<ComponentProps<"textarea">>();
-  expectTypeOf<TextareaProps["maxLength"]>().toEqualTypeOf<number | undefined>();
 
   const _area = <Textarea aria-label="Notes" maxLength={200} rows={4} />;
 
