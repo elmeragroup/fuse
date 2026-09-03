@@ -25,7 +25,7 @@ This hybrid superseded the earlier AST-extraction plan (ruling 74b, 2026-08-24: 
 - **Warning union 3→8.** Recoverable losses are the eight structured codes listed in the package README (`unsupported-type-fallback`, `missing-enum-declaration`, `missing-default-export-symbol`, `omitted-index-signature`, `unrepresented-construct-signatures`, `omitted-callable-members`, `unresolved-re-export`, `uncertain-component-recognition`). Consumers branch on `code`, not `message` text.
 - **Timing evidence is boundary-only.** Live timing is captured for the four sequential public-seam boundary fixtures (Issue 02 / Issue 14 / external-selection plans). `roundTripMs` is an observation; stop conditions are request count and bytes received against catalog ceilings. The public `ProjectExtractor` layer does not accept a timing switch.
 - **`dist/` build.** `scripts/build.ts` emits `dist/` via `tsc` as a local check (`pnpm run build` / `check:all`). The package stays private; workspace consumers import `src/` through `"exports"`. There is no published distribution.
-- **Lint overrides.** `tooling.md` §4 permits oxlintrc overrides only for the two oxlint plugin packages. The extractor does not add a file-glob override. Demonstrated incompatibilities (unstable TypeScript 7 AST typing, optional model fields that preserve upstream JSON) use next-to-the-code `oxlint-disable` headers with a reason; they are not a path-wide exemption.
+- **Lint overrides.** `tooling.md` §4 permits oxlintrc overrides only for the two oxlint plugin packages. The extractor does not add a file-glob override. Demonstrated incompatibilities (unstable TypeScript 7 AST typing, optional model fields that preserve upstream JSON) use next-to-the-code `oxlint-disable` headers with a reason; they are not a path-wide exemption. _(Amended 2026-09-03 — see “One scoped lint override” below: the headers were file-wide, which is what this bullet was trying to avoid.)_
 
 Normative pipeline: [docs-site](../spec/docs-site.md) §8. Package inventory: [tooling](../spec/tooling.md) §1.
 
@@ -57,6 +57,30 @@ longer split on `|` — 115 shadow entries had union members hoisted out of a ne
 `React.ReactElement<…>` type argument and now render the type the extractor produced.
 The snapshot was refreshed with `pnpm run shadow:update`; every reviewed key and its
 reason survived unchanged.
+
+### One scoped lint override (2026-09-03)
+
+The "no path-wide exemption" bullet above was honoured by writing 37 file-wide
+`/* oxlint-disable … */` headers instead — a whole-file exemption per file, which is
+broader than a path-wide override and invisible at the call site. Three of those headers
+had already stopped exempting anything.
+
+`.oxlintrc.json` now carries exactly one extractor override:
+`tooling/api-extractor/src/backend/ts7/**` turns off `anti-slop/no-runtime-typeof` and
+`anti-slop/no-unknown-parameters`, with the reason written as a comment beside it. That
+directory is the sole reader of TypeScript 7's unstable native API; facts arrive there as
+untyped primitives and the `typeof` narrowing the two rules ban is the normalization that
+lets anything cross the backend contract. The `typescript/no-unsafe-*` family that spec 09
+expected to need this carve-out is **not** in the override: after the parse-layer and
+memoization work, no file in that directory violates it, so exempting it would exempt
+nothing.
+
+Every other exception is at its use site: 137 `oxlint-disable-next-line` comments, each
+naming one rule and the reason it cannot apply there, and 39 assertions that grew the
+`SAFETY:` comment the rule was asking for rather than a disable. No file in the package
+carries a file-wide header, and `test/extractor-lint-exceptions.test.mjs` in the root
+repo-policy project fails if one comes back, if a next-line disable has no `--` reason, or
+if a second extractor override appears. Normative text: [tooling](../spec/tooling.md) §4.
 
 ## Alternatives rejected
 

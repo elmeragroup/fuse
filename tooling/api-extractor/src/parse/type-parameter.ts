@@ -1,5 +1,3 @@
-/* oxlint-disable anti-slop/no-conditional-empty-object-spread -- Optional model fields preserve the upstream encoding. */
-
 import type {
   BackendNodeFacts,
   BackendNodeHandle,
@@ -145,7 +143,9 @@ function declaredInfo(
       ? owned
       : info?.declarations[0];
   return {
+    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
     ...(info?.name === undefined ? {} : { name: info.name }),
+    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
     ...(declaration === undefined ? {} : { node: context.operations.nodeFacts(declaration) }),
   };
 }

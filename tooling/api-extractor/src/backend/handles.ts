@@ -1,8 +1,6 @@
 import { BackendError } from "../errors.ts";
 import type { BackendHandle } from "./contracts.ts";
 
-/* oxlint-disable anti-slop/no-runtime-typeof -- opaque handles need a runtime shape guard. */
-
 type HandleKind = BackendHandle<string>["kind"];
 
 type HandleContext = {
@@ -81,11 +79,14 @@ function diagnosticFields(context: HandleContext): HandleContextFields {
 }
 function isRecord(value: BackendHandle<string> | null | undefined): value is BackendHandle<string> {
   return (
+    // oxlint-disable-next-line anti-slop/no-runtime-typeof -- an opaque handle needs a runtime shape guard.
     typeof value === "object" &&
     value !== null &&
+    // oxlint-disable-next-line anti-slop/no-runtime-typeof -- an opaque handle needs a runtime shape guard.
     typeof value.kind === "string" &&
     Number.isInteger(value.id) &&
     value.id > 0 &&
+    // oxlint-disable-next-line anti-slop/no-runtime-typeof -- an opaque handle needs a runtime shape guard.
     typeof value.session === "symbol"
   );
 }

@@ -1,6 +1,4 @@
 import { Schema } from "effect";
-/* oxlint-disable anti-slop/no-runtime-typeof -- Schema.Json is decoded before recursive comparison. */
-/* oxlint-disable typescript/no-unsafe-argument -- JSON.parse values are decoded by Schema.Json immediately. */
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -257,6 +255,7 @@ function fixtureFile(fixture: string, file: string, fixtureRoot = fixtureDirecto
 }
 
 function isJsonObject(value: Schema.Json): value is Schema.JsonObject {
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- Schema.Json is decoded before recursive comparison.
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
@@ -311,9 +310,11 @@ export function normalizeWarnings(warnings: readonly ExtractWarning[]): readonly
 
 function leafPaths(value: Schema.Json | undefined, path: string): readonly string[] {
   if (value === undefined) return [];
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- Schema.Json is decoded before recursive comparison.
   if (value === null || typeof value !== "object") return [path];
   if (Array.isArray(value)) {
     if (value.length === 0) return [`${path}/@length`];
+    // oxlint-disable-next-line typescript/no-unsafe-argument -- JSON.parse values are decoded by Schema.Json immediately.
     return value.flatMap((entry, index) => leafPaths(entry, `${path}/${index}`));
   }
   if (!isJsonObject(value)) return [path];
@@ -330,6 +331,7 @@ function differencePaths(
   if (left === undefined || right === undefined) {
     return left === right ? [] : [...leafPaths(left, path), ...leafPaths(right, path)];
   }
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- Schema.Json is decoded before recursive comparison.
   if (typeof left !== typeof right || left === null || right === null || typeof left !== "object") {
     return Object.is(left, right) ? [] : [path];
   }
@@ -337,6 +339,7 @@ function differencePaths(
     if (!Array.isArray(right)) return [...leafPaths(left, path), ...leafPaths(right, path)];
     const result: string[] = left.length === right.length ? [] : [`${path}/@length`];
     for (let index = 0; index < Math.max(left.length, right.length); index += 1) {
+      // oxlint-disable-next-line typescript/no-unsafe-argument -- JSON.parse values are decoded by Schema.Json immediately.
       result.push(...differencePaths(left[index], right[index], `${path}/${index}`));
     }
     return result;

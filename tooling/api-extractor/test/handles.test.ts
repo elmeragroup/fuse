@@ -1,5 +1,3 @@
-/* oxlint-disable anti-slop/require-safety-comment-for-type-assertion -- adversarial handles are opaque test values. */
-
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -20,6 +18,7 @@ const context = {
 describe("HandleRegistry", () => {
   it("rejects a missing handle with operation breadcrumbs", () => {
     const registry = new HandleRegistry();
+    // SAFETY: adversarial handles are opaque test values.
     const missing = {
       kind: "symbol",
       id: 999,

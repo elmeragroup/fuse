@@ -1,6 +1,3 @@
-/* oxlint-disable anti-slop/no-runtime-typeof -- persisted JSON is decoded before comparison. */
-/* oxlint-disable typescript/no-unsafe-argument -- JSON values are decoded by Schema at the boundary. */
-
 import { Schema } from "effect";
 import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";

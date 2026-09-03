@@ -1,5 +1,3 @@
-/* oxlint-disable anti-slop/no-conditional-empty-object-spread -- optional fields preserve model JSON. */
-
 import { Context, Effect, Layer, Schema } from "effect";
 
 import type {
@@ -161,6 +159,7 @@ function classifyThrown(cause: unknown, context: ThrownContext): ExtractionError
     cause: safeCause(cause),
     operation: context.operation,
     filePath: context.filePath,
+    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional fields preserve model JSON.
     ...(symbolStack.length === 0 ? {} : { symbolStack: [...symbolStack] }),
   });
 }

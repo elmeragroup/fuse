@@ -1,5 +1,3 @@
-/* oxlint-disable anti-slop/require-safety-comment-for-type-assertion -- backend handles are intentionally opaque sentinels here. */
-
 import { describe, expect, it } from "vitest";
 
 import type {
@@ -11,11 +9,17 @@ import { applySubstitutions } from "../src/parse/substitutions.ts";
 
 // Handles are opaque to the parse layer; the helper compares them by identity
 // alone, so a distinct empty object is a faithful stand-in for each one.
+// SAFETY: backend handles are intentionally opaque sentinels here.
 const parameterSymbol = {} as BackendSymbolHandle;
+// SAFETY: backend handles are intentionally opaque sentinels here.
 const otherSymbol = {} as BackendSymbolHandle;
+// SAFETY: backend handles are intentionally opaque sentinels here.
 const parameterType = {} as BackendTypeHandle;
+// SAFETY: backend handles are intentionally opaque sentinels here.
 const argumentType = {} as BackendTypeHandle;
+// SAFETY: backend handles are intentionally opaque sentinels here.
 const containerType = {} as BackendTypeHandle;
+// SAFETY: backend handles are intentionally opaque sentinels here.
 const anonymousType = {} as BackendTypeHandle;
 
 const symbolsByType = new Map<BackendTypeHandle, BackendSymbolHandle>([

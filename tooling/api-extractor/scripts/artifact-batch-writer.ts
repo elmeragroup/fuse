@@ -2,8 +2,6 @@ import { randomUUID } from "node:crypto";
 import { lstat, mkdir, readdir, realpath, rename, rm, rmdir, stat, writeFile } from "node:fs/promises";
 import { basename, dirname, isAbsolute, join, normalize, relative, resolve, sep } from "node:path";
 
-/* oxlint-disable anti-slop/no-unknown-parameters -- filesystem and test-hook failures are normalized at the module boundary. */
-
 /**
  * This writer protects ordinary local and CI runs from malformed paths,
  * symlink escapes, overlapping writers, and ordinary filesystem failures. It
@@ -161,6 +159,7 @@ function failure(error: ArtifactBatchError, recovery?: ArtifactBatchRecovery): A
   return { status: "failure", error: { ...context, recovery } };
 }
 
+// oxlint-disable-next-line anti-slop/no-unknown-parameters -- a thrown value is unknown until it is normalized here.
 function asBatchError(error: unknown, category: ArtifactBatchFailureCategory): ArtifactBatchError {
   if (error instanceof ArtifactBatchError) return error;
   const message =
@@ -170,6 +169,7 @@ function asBatchError(error: unknown, category: ArtifactBatchFailureCategory): A
   return new ArtifactBatchError(category, message);
 }
 
+// oxlint-disable-next-line anti-slop/no-unknown-parameters -- a thrown value is unknown until it is normalized here.
 function rethrowUncertainTimeout(error: unknown): void {
   if (error instanceof ArtifactBatchError && error.mayCompleteAfterTimeout) throw error;
 }

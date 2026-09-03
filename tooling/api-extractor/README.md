@@ -165,6 +165,24 @@ node scripts/conformance/report.ts --audit-reference
 node scripts/conformance/report.ts --audit-reference --reference-required
 ```
 
+## Lint exceptions
+
+This package has exactly one path-wide lint exemption, and it lives in the repository's
+`.oxlintrc.json` with its reason written beside it: `src/backend/ts7/**` turns off
+`anti-slop/no-runtime-typeof` and `anti-slop/no-unknown-parameters`. That directory is the only
+reader of TypeScript 7's unstable native API, where facts arrive as untyped primitives and the
+`typeof` narrowing those rules ban is the normalization every backend fact passes through.
+
+Everywhere else, an exception is an `oxlint-disable-next-line` on the line it applies to, naming
+one rule and why that rule cannot hold there — most often that an absent key, not an `undefined`
+value, is what the model's JSON encoding means, which is what the byte-compared oracles record. An
+assertion that a rule wants justified gets the `SAFETY:` comment it asks for instead of a disable.
+
+Do not add a file-wide `/* oxlint-disable … */` header: `test/extractor-lint-exceptions.test.mjs`
+in the repository's root `test/` project fails on one, on a next-line disable with no `--` reason,
+and on a second override for this package. When a disable stops exempting anything, delete it
+rather than carrying it. _(Amended 2026-09-03.)_
+
 ## Local checks
 
 Run the complete package gate before opening a review:

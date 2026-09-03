@@ -1,5 +1,3 @@
-/* oxlint-disable anti-slop/no-runtime-typeof -- normalized compiler facts are deep-frozen before caching. */
-
 type Cached<Result> = { readonly value: Result };
 
 type FactCacheSession = {

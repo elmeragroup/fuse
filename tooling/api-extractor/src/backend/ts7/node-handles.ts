@@ -1,6 +1,3 @@
-/* oxlint-disable anti-slop/require-safety-comment-for-type-assertion -- assertions adapt the undocumented RemoteNode id encoding. */
-/* oxlint-disable anti-slop/no-runtime-typeof -- the undocumented RemoteNode id is narrowed at this intern seam. */
-
 import type { Node } from "typescript/unstable/ast";
 import type { NodeHandle } from "typescript/unstable/sync";
 

@@ -71,3 +71,53 @@ export function asRecordArray(value, label) {
   }
   return value.map((entry, index) => asRecord(entry, `${label}[${String(index)}]`));
 }
+
+/**
+ * Strip `//` and block comments from JSONC text without touching comment-like characters
+ * inside strings. `.oxlintrc.json` is JSONC: oxlint reads comments there, `JSON.parse` cannot.
+ *
+ * @param {string} source
+ * @returns {string}
+ */
+function stripJsonComments(source) {
+  let output = "";
+  let index = 0;
+  while (index < source.length) {
+    const character = source[index];
+    if (character === '"') {
+      let end = index + 1;
+      while (end < source.length && source[end] !== '"') {
+        end += source[end] === "\\" ? 2 : 1;
+      }
+      output += source.slice(index, end + 1);
+      index = end + 1;
+      continue;
+    }
+    if (character === "/" && source[index + 1] === "/") {
+      const end = source.indexOf("\n", index);
+      index = end === -1 ? source.length : end;
+      continue;
+    }
+    if (character === "/" && source[index + 1] === "*") {
+      const end = source.indexOf("*/", index + 2);
+      index = end === -1 ? source.length : end + 2;
+      continue;
+    }
+    output += character;
+    index += 1;
+  }
+  return output;
+}
+
+/**
+ * @param {string} path
+ * @returns {Record<string, unknown>}
+ */
+export function readJsoncObject(path) {
+  // SAFETY: JSON.parse is untyped; the object guard below is the contract.
+  const parsed = /** @type {unknown} */ (JSON.parse(stripJsonComments(readFileSync(path, "utf8"))));
+  if (!isPlainObject(parsed)) {
+    throw new Error(`${path} is not a JSON object`);
+  }
+  return parsed;
+}

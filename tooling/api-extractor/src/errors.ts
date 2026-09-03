@@ -1,6 +1,3 @@
-/* oxlint-disable anti-slop/no-runtime-typeof -- safe-cause normalization narrows untrusted thrown values. */
-/* oxlint-disable anti-slop/require-safety-comment-for-type-assertion -- the object branch only reads optional diagnostic fields. */
-
 import { Schema } from "effect";
 
 /**
@@ -10,24 +7,30 @@ import { Schema } from "effect";
  */
 export function safeCause(cause: unknown): string {
   try {
+    // oxlint-disable-next-line anti-slop/no-runtime-typeof -- safe-cause normalization narrows untrusted thrown values.
     if (typeof cause === "string") return cause;
     if (cause === null) return "null";
     if (cause === undefined) return "undefined";
+    // oxlint-disable-next-line anti-slop/no-runtime-typeof -- safe-cause normalization narrows untrusted thrown values.
     if (typeof cause === "number" || typeof cause === "boolean" || typeof cause === "bigint") {
       return String(cause);
     }
     if (cause instanceof Error) {
       const code =
+        // oxlint-disable-next-line anti-slop/no-runtime-typeof -- safe-cause normalization narrows untrusted thrown values.
         "code" in cause && (typeof cause.code === "string" || typeof cause.code === "number")
           ? ` [${cause.code}]`
           : "";
       return `${cause.name}: ${cause.message}${code}`;
     }
+    // oxlint-disable-next-line anti-slop/no-runtime-typeof -- safe-cause normalization narrows untrusted thrown values.
     if (typeof cause === "object") {
       // SAFETY: this branch only reads two optional primitive diagnostic fields;
       // the object itself never crosses a durable package boundary.
       const value = cause as { readonly _tag?: unknown; readonly message?: unknown };
+      // oxlint-disable-next-line anti-slop/no-runtime-typeof -- safe-cause normalization narrows untrusted thrown values.
       const tag = typeof value._tag === "string" ? value._tag : "BackendFailure";
+      // oxlint-disable-next-line anti-slop/no-runtime-typeof -- safe-cause normalization narrows untrusted thrown values.
       const message = typeof value.message === "string" ? value.message : "Compiler operation failed";
       return `${tag}: ${message}`;
     }

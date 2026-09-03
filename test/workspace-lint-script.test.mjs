@@ -3,7 +3,14 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-import { asRecord, asRecordArray, asString, isString, readJsonObject } from "./json-object.mjs";
+import {
+  asRecord,
+  asRecordArray,
+  asString,
+  isString,
+  readJsoncObject,
+  readJsonObject,
+} from "./json-object.mjs";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -38,7 +45,7 @@ describe("workspace lint script", () => {
   });
 
   it("keeps the previously warning-level rules enabled", () => {
-    const parsed = readJsonObject(join(repoRoot, ".oxlintrc.json"));
+    const parsed = readJsoncObject(join(repoRoot, ".oxlintrc.json"));
     const rules = asRecord(parsed.rules, "rules");
     expect(parsed.plugins).toEqual(["typescript", "oxc", "import", "unicorn"]);
     expect(rules["unicorn/filename-case"]).toEqual([

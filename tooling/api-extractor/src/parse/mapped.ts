@@ -1,5 +1,3 @@
-/* oxlint-disable anti-slop/no-conditional-empty-object-spread -- Optional model fields preserve the upstream encoding. */
-
 import type { BackendNodeHandle, BackendNodeReference, BackendTypeHandle } from "../backend/contracts.ts";
 import type { SemanticType, TypeName } from "../model.ts";
 import { authoredContainsPreservableKeyof } from "./authored-node.ts";
@@ -74,8 +72,10 @@ export function mappedObjectNode(
       // mapped declaration, so `Record`'s internal `P` would become public here.
       // The upstream oracle for `type-object-shape-resolution` is the recorded
       // evidence for that difference.
+      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
       ...(mapped.keyName === undefined || mapped.keyNameFromLibrary ? {} : { keyName: mapped.keyName }),
     },
+    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
     ...(typeNameValue === undefined ? {} : { typeName: typeNameValue }),
   };
 }

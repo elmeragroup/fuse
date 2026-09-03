@@ -70,6 +70,7 @@ Format checking (`oxfmt --check`) runs as a root script, not a per-package turbo
   ```
 
 - Overrides carve the two plugin source dirs (`tooling/oxlint-plugin/**`, `tooling/oxlint-anti-slop/**`) out of the type-unsafe rules, exactly as the internal ref does for its rule sources.
+- A third override carves `tooling/api-extractor/src/backend/ts7/**` — the only directory that reads TypeScript 7's unstable native compiler API — out of `anti-slop/no-runtime-typeof` and `anti-slop/no-unknown-parameters`, the two rules that forbid exactly the primitive narrowing that seam exists to do. Its reason is a comment in `.oxlintrc.json`; the file is JSONC and oxlint reads it as such. That override is the only path-wide exemption outside the two plugin dirs. Everywhere else in `tooling/api-extractor` an exception is an `oxlint-disable-next-line` naming one rule and its reason, or a `SAFETY:` comment that satisfies the rule instead; file-wide `oxlint-disable` headers are forbidden in that package and the root repo-policy project (§7.6) fails on one. _(Added 2026-09-03 — [ADR 0007](../adr/0007-docs-api-extraction-pipeline.md), “Lint overrides”, amended the same day: 37 file-wide headers became one scoped override, 137 next-line disables and 39 `SAFETY:` comments.)_
 
 ## 5 Custom lint guardrails
 

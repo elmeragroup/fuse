@@ -1,5 +1,3 @@
-/* oxlint-disable anti-slop/no-conditional-empty-object-spread -- Optional model fields preserve the upstream encoding. */
-
 import type { BackendNodeReference, BackendSymbolHandle, BackendTypeHandle } from "../backend/contracts.ts";
 import { intersectionType, unionType } from "../canonical/canonicalize.ts";
 import type { SemanticType, TypeName } from "../model.ts";
@@ -150,6 +148,7 @@ export function intersectionNode(
       callSignatures: signatures.map((signature, index) =>
         resolveSignatureNode(signature, context, index, resolve)
       ),
+      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
       ...(typeNameValue === undefined ? {} : { typeName: typeNameValue }),
     };
   }
@@ -371,6 +370,7 @@ function authoredUnionMembers(
   if (alias === undefined) return { nodes: [] };
   return {
     nodes: flattenAuthoredUnion(alias.body, context),
+    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
     ...(alias.substitutions === undefined ? {} : { substitutions: alias.substitutions }),
   };
 }
@@ -389,6 +389,7 @@ function aliasUnionBody(
     const substitutions = aliasTypeParameterSubstitutions(declaration.declaration, type, sourceNode, context);
     return {
       body: declaration.body,
+      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
       ...(substitutions === undefined ? {} : { substitutions }),
     };
   }

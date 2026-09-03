@@ -1,5 +1,3 @@
-/* oxlint-disable anti-slop/no-conditional-empty-object-spread -- optional type names preserve model JSON. */
-
 import { canonicalizeUnionMembers, unionType } from "../canonical/canonicalize.ts";
 import type { FunctionNode, PropertyNode, SemanticType, TypeName } from "../model.ts";
 
@@ -101,6 +99,7 @@ export function componentNode(
           ? { ...property, type: addUndefined(property.type), optional: true }
           : property
       ),
+      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional type names preserve model JSON.
       ...(typeName === undefined ? {} : { typeName }),
     },
     recognition: { outcome: "transformed" },

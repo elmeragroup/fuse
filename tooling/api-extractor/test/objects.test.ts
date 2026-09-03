@@ -1,5 +1,3 @@
-/* oxlint-disable anti-slop/require-safety-comment-for-type-assertion -- fake backend identities are opaque seam sentinels. */
-
 import { Schema, Effect, Layer } from "effect";
 import { isAbsolute, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -423,11 +421,17 @@ describe("Issue 03 object APIs, documentation, enums, and provenance", () => {
 const fakeTsconfigPath = resolve(import.meta.dirname, "fixtures/object-api-documentation/tsconfig.json");
 const fakeInputPath = resolve(import.meta.dirname, "fixtures/object-api-documentation/input.ts");
 
+// SAFETY: fake backend identities are opaque seam sentinels.
 const synthesizedSymbol = {} as BackendSymbolHandle;
+// SAFETY: fake backend identities are opaque seam sentinels.
 const generatedSymbol = {} as BackendSymbolHandle;
+// SAFETY: fake backend identities are opaque seam sentinels.
 const synthesizedType = {} as BackendTypeHandle;
+// SAFETY: fake backend identities are opaque seam sentinels.
 const generatedType = {} as BackendTypeHandle;
+// SAFETY: fake backend identities are opaque seam sentinels.
 const missingEnumSymbol = {} as BackendSymbolHandle;
+// SAFETY: fake backend identities are opaque seam sentinels.
 const missingEnumType = {} as BackendTypeHandle;
 
 function synthesizedCompiler(): BackendCompilerOperations {

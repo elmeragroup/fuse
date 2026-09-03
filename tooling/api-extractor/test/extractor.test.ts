@@ -1,5 +1,3 @@
-/* oxlint-disable anti-slop/require-safety-comment-for-type-assertion -- fake backend identities are opaque test handles. */
-
 import { Cause, Effect, Layer, Option, Schema } from "effect";
 import { resolve } from "node:path";
 import { describe, expect, it, vi } from "vitest";
@@ -80,7 +78,9 @@ function runWithBackend(
   return Effect.runPromise(program);
 }
 
+// SAFETY: fake backend identities are opaque test handles.
 const fakeSymbol = {} as BackendSymbolHandle;
+// SAFETY: fake backend identities are opaque test handles.
 const fakeType = {} as BackendTypeHandle;
 
 function backendModule(): BackendModuleDraft {
@@ -111,6 +111,7 @@ const testCompiler: BackendCompilerOperations = {
   nodeFacts: () => ({ kind: "unknown", text: "", filePath: "", line: 1, column: 1 }),
   nodeKind: () => "unknown",
   typeNameFacts: () => undefined,
+  // SAFETY: fake backend identities are opaque test handles.
   signaturesOfType: () => [] as readonly BackendSignatureHandle[],
   signatureFacts: () => ({ parameters: [], returnType: fakeType, typeParameters: [] }),
   declarationOwnership: () => ({ kind: "project" }),
@@ -452,6 +453,7 @@ describe("ProjectExtractor", () => {
       throw new Error("Expected resolver policy failure");
     } catch (cause) {
       expect(cause).toBeInstanceOf(ExtractError);
+      // SAFETY: fake backend identities are opaque test handles.
       const error = cause as ExtractError;
       expect(error.filePath).toBe(unsupportedPath);
       expect(error.symbolStack).toEqual([unsupportedPath, "value"]);

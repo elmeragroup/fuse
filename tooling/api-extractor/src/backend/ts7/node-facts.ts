@@ -1,6 +1,3 @@
-/* oxlint-disable anti-slop/no-conditional-empty-object-spread -- optional node facts preserve exact key absence. */
-/* oxlint-disable anti-slop/no-runtime-typeof -- compiler nodes are narrowed at the adapter seam. */
-
 import type { Node, TypeNode } from "typescript/unstable/ast";
 import { SyntaxKind } from "typescript/unstable/ast";
 import {
@@ -300,6 +297,7 @@ export function nodeFacts(
       initializer: node.initializer === undefined ? undefined : session.nodeHandle(node.initializer),
       optional: "questionToken" in node && node.questionToken !== undefined,
       declarationFlags: modifierFlags(node),
+      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional node facts preserve exact key absence.
       ...(isParameterDeclaration(node) ? { bindingDefaults: bindingDefaults(node.name) } : {}),
     };
     return propertyFacts;

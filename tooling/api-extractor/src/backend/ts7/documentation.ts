@@ -1,8 +1,3 @@
-/* oxlint-disable anti-slop/no-runtime-typeof -- JSDoc trivia is narrowed at the compiler boundary. */
-/* oxlint-disable anti-slop/require-safety-comment-for-type-assertion -- assertions adapt unstable AST facts. */
-/* oxlint-disable anti-slop/no-conditional-empty-object-spread -- normalized optional facts preserve the public encoding. */
-/* oxlint-disable anti-slop/no-unknown-parameters -- primitive narrowing is the adapter's normalized-fact seam. */
-
 import type { Node } from "typescript/unstable/ast";
 import { SyntaxKind } from "typescript/unstable/ast";
 
@@ -57,8 +52,11 @@ function documentationFromNode(node: Node): BackendDocumentation | undefined {
   )
     return undefined;
   return {
+    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized optional facts preserve the public encoding.
     ...(description === undefined ? {} : { description }),
+    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized optional facts preserve the public encoding.
     ...(defaultValueTag === undefined ? {} : { defaultValue: jsDocText(defaultValueTag.comment) ?? "" }),
+    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized optional facts preserve the public encoding.
     ...(visibility === undefined ? {} : { visibility }),
     tags,
   };
@@ -159,7 +157,9 @@ export function documentationOfSymbol(
         ? { description: "" }
         : {}
       : { description: isParameter ? normalizeParameterSummary(description) : description }),
+    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized optional facts preserve the public encoding.
     ...(defaultTag?.text === undefined ? {} : { defaultValue: String(defaultTag.text) }),
+    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized optional facts preserve the public encoding.
     ...(visibility === undefined ? {} : { visibility }),
     tags,
   };
@@ -224,6 +224,8 @@ function jsDocBlocks(node: Node): readonly JsDocBlock[] {
   // SAFETY: every declaration node exposes its JSDoc children under `jsDoc`;
   // the adapter reads only the array shape and defers the rest to the readers.
   const blocks = (node as Node & { readonly jsDoc?: unknown }).jsDoc;
+  // SAFETY: `blocks` came from the read above and `Array.isArray` establishes the array shape;
+  // element shape is deferred to the block readers.
   return Array.isArray(blocks) ? (blocks as readonly JsDocBlock[]) : [];
 }
 
@@ -231,6 +233,7 @@ function readIdentifierText(value: unknown): string | undefined {
   if (typeof value === "string") return value;
   // SAFETY: identifier nodes expose their spelling as `text`.
   if (typeof (value as { text?: unknown } | undefined)?.text === "string") {
+    // SAFETY: the `typeof` guard on the line above established `text` as a string.
     return (value as { text: string }).text;
   }
   return undefined;

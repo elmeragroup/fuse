@@ -1,6 +1,3 @@
-/* oxlint-disable anti-slop/require-safety-comment-for-type-assertion -- replacement graph identities are intentionally opaque sentinels. */
-/* oxlint-disable typescript/no-unsafe-assignment -- the fake backend deliberately uses opaque test handles. */
-
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -253,6 +250,7 @@ describe("compiler boundary", () => {
       join(directory, "two.d.ts"),
     ]);
     expect(declarationBoundaryViolations(graph[2] ?? "", readFileSync(graph[2] ?? "", "utf8"))).toEqual(
+      // oxlint-disable-next-line typescript/no-unsafe-assignment -- the fake backend deliberately uses opaque test handles.
       expect.arrayContaining([expect.objectContaining({ reason: expect.stringContaining("imports") })])
     );
   });
@@ -333,12 +331,15 @@ describe("compiler boundary", () => {
 
     expect(violations).toEqual(
       expect.arrayContaining([
+        // oxlint-disable-next-line typescript/no-unsafe-assignment -- the fake backend deliberately uses opaque test handles.
         expect.objectContaining({ reason: expect.stringContaining("public declaration") }),
       ])
     );
     expect(importViolations).toEqual(
       expect.arrayContaining([
+        // oxlint-disable-next-line typescript/no-unsafe-assignment -- the fake backend deliberately uses opaque test handles.
         expect.objectContaining({ reason: expect.stringContaining("imports") }),
+        // oxlint-disable-next-line typescript/no-unsafe-assignment -- the fake backend deliberately uses opaque test handles.
         expect.objectContaining({ reason: expect.stringContaining("BackendModuleDraft") }),
       ])
     );
@@ -354,7 +355,9 @@ describe("compiler boundary", () => {
   });
 
   it("runs parser policy against a replacement backend with no compiler dependency", () => {
+    // SAFETY: replacement graph identities are intentionally opaque sentinels.
     const valueSymbol = {} as BackendSymbolHandle;
+    // SAFETY: replacement graph identities are intentionally opaque sentinels.
     const runtimeSymbol = {} as BackendSymbolHandle;
     const compiler: BackendCompilerOperations = {
       setErrorContext: () => undefined,
@@ -379,7 +382,9 @@ describe("compiler boundary", () => {
       nodeFacts: () => ({ kind: "unknown", text: "", filePath: "/virtual/source.d.ts", line: 1, column: 1 }),
       nodeKind: () => "unknown",
       typeNameFacts: () => undefined,
+      // SAFETY: replacement graph identities are intentionally opaque sentinels.
       signaturesOfType: () => [] as readonly BackendSignatureHandle[],
+      // SAFETY: replacement graph identities are intentionally opaque sentinels.
       signatureFacts: () => ({ parameters: [], returnType: {} as BackendTypeHandle, typeParameters: [] }),
       declarationOwnership: () => ({ kind: "project" }),
       propertiesOfType: () => [],
@@ -422,17 +427,29 @@ describe("compiler boundary", () => {
   });
 
   it("resolves an opaque replacement type graph through the real resolver", () => {
+    // SAFETY: replacement graph identities are intentionally opaque sentinels.
     const widgetSymbol = {} as BackendSymbolHandle;
+    // SAFETY: replacement graph identities are intentionally opaque sentinels.
     const propsSymbol = {} as BackendSymbolHandle;
+    // SAFETY: replacement graph identities are intentionally opaque sentinels.
     const valueSymbol = {} as BackendSymbolHandle;
+    // SAFETY: replacement graph identities are intentionally opaque sentinels.
     const reactSymbol = {} as BackendSymbolHandle;
+    // SAFETY: replacement graph identities are intentionally opaque sentinels.
     const widgetType = {} as BackendTypeHandle;
+    // SAFETY: replacement graph identities are intentionally opaque sentinels.
     const propsType = {} as BackendTypeHandle;
+    // SAFETY: replacement graph identities are intentionally opaque sentinels.
     const valueType = {} as BackendTypeHandle;
+    // SAFETY: replacement graph identities are intentionally opaque sentinels.
     const reactType = {} as BackendTypeHandle;
+    // SAFETY: replacement graph identities are intentionally opaque sentinels.
     const signature = {} as BackendSignatureHandle;
+    // SAFETY: replacement graph identities are intentionally opaque sentinels.
     const propsNode = {} as BackendNodeHandle;
+    // SAFETY: replacement graph identities are intentionally opaque sentinels.
     const valueNode = {} as BackendNodeHandle;
+    // SAFETY: replacement graph identities are intentionally opaque sentinels.
     const reactNode = {} as BackendNodeHandle;
     const compiler: BackendCompilerOperations = {
       setErrorContext: () => undefined,

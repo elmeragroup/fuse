@@ -1,5 +1,3 @@
-/* oxlint-disable anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding. */
-
 import type {
   BackendNodeFacts,
   BackendDocumentation,
@@ -77,6 +75,7 @@ export function resolveClassNode(
   extractMembers(type, true, properties, methods, classPath, context, resolveType);
   const result: ClassNode = {
     kind: "class",
+    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
     ...(typeNameValue === undefined ? {} : { typeName: typeNameValue }),
     constructSignatures,
     properties,
@@ -163,6 +162,7 @@ function extractMembers(
     recordProvenance(context, {
       path: objectPropertySemanticPath(classPath, info.name),
       ...declarationProvenance(info, context),
+      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
       ...(readonly ? { readonly: true } : {}),
     });
     const property: ClassProperty = {
@@ -179,6 +179,7 @@ function extractMembers(
           propertyDepth: context.propertyDepth + 1,
         }
       ),
+      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
       ...(docs === undefined ? {} : { documentation: docs }),
       // Deliberately wider than upstream's authored `?` check: the checker's
       // `Optional` flag is accepted too, so checker-synthesized optionality
@@ -204,6 +205,7 @@ function resolveClassMethod(
   recordProvenance(context, { path: memberPath, ...declarationProvenance(info, context) });
   const method: ClassMethod = {
     name: info.name,
+    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
     ...(docs === undefined ? {} : { documentation: docs }),
     isStatic,
     callSignatures: signatures.map((signature, index) =>
