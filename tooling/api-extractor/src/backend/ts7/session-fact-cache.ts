@@ -71,11 +71,22 @@ function freezeFact<Result>(value: Result): Result {
   return deepFreezeFact(value, new WeakSet());
 }
 
+/**
+ * A frozen record ends the walk.
+ *
+ * Every frozen object the cache can reach was frozen by this function or by
+ * the handle registry, whose handles hold only primitives and the session
+ * symbol. Descending into one again would re-walk the shared sub-records of
+ * every later fact — the cost the gate removes — without a member left to
+ * freeze. The two records this function is asked to freeze twice, a repeated
+ * fact and a handle, are exactly the ones it can now skip.
+ */
 function deepFreezeFact<Result>(value: Result, seen: WeakSet<object>): Result {
   if (value === null || typeof value !== "object" || seen.has(value)) return value;
+  if (Object.isFrozen(value)) return value;
   seen.add(value);
   for (const descriptor of Object.values(Object.getOwnPropertyDescriptors(value))) {
     if ("value" in descriptor) deepFreezeFact(descriptor.value, seen);
   }
-  return Object.isFrozen(value) ? value : Object.freeze(value);
+  return Object.freeze(value);
 }

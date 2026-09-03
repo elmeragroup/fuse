@@ -5,6 +5,7 @@ import { SyntaxKind } from "typescript/unstable/ast";
 import type { SourceFile } from "typescript/unstable/ast";
 import type { Symbol as TsSymbol } from "typescript/unstable/sync";
 
+import { memoizeSubjectFact } from "./module-walk-memo.ts";
 import type { TsgoModuleSession } from "./module.ts";
 import { isStarExport } from "./syntax.ts";
 
@@ -31,16 +32,11 @@ export function orderedContainerExports(
 ): readonly TsSymbol[] {
   const rawSymbols = exportsOf(session, containerSymbol);
   const contributions = starContributionOrder(session, containerFile);
+  const positions = authoredExportPositions(containerFile);
   const ordered = rawSymbols.map((symbol, index) => ({
     symbol,
     index,
-    ...introductionKey(
-      session,
-      symbol,
-      containerFile,
-      contributions,
-      declaresLocalValue(session, symbol, containerFile)
-    ),
+    ...introductionKey(symbol, localDeclaration(session, symbol, containerFile), contributions, positions),
   }));
   ordered.sort((left, right) => {
     if (left.rank !== right.rank) return left.rank - right.rank;
@@ -86,16 +82,28 @@ function starContributionOrder(session: TsgoModuleSession, source: SourceFile): 
 }
 
 /**
- * Whether the symbol declares a VALUE directly in this module — a variable,
- * function, class, or a default export. These are exactly the exports
- * upstream reports before every re-export and declared type; an
+ * The symbol's own declaration inside this module, when it has one.
+ *
+ * Both halves of the ranking rule ask this question, so the walk resolves it
+ * once per export: `symbol.declarations` is a native seam read, not a local
+ * array.
+ */
+function localDeclaration(
+  session: TsgoModuleSession,
+  symbol: TsSymbol,
+  source: SourceFile
+): { readonly kind: number } | undefined {
+  return symbol.declarations.find((candidate) => session.sameSourceFile(candidate.path, source.fileName));
+}
+
+/**
+ * Whether the declaration is a VALUE declared directly in this module — a
+ * variable, function, class, or a default export. These are exactly the
+ * exports upstream reports before every re-export and declared type; an
  * `export * as Name` alias is NOT one even though TypeScript flags it as an
  * alias to a module full of values.
  */
-function declaresLocalValue(session: TsgoModuleSession, symbol: TsSymbol, source: SourceFile): boolean {
-  const declaration = symbol.declarations.find((candidate) =>
-    session.sameSourceFile(candidate.path, source.fileName)
-  );
+function declaresLocalValue(declaration: { readonly kind: number } | undefined): boolean {
   if (declaration === undefined) return false;
   return (
     declaration.kind === SyntaxKind.VariableDeclaration ||
@@ -118,24 +126,19 @@ type IntroductionKey = { readonly rank: number; readonly position: number };
  * order; star-contributed names rank last, ordered by their star statement.
  */
 function introductionKey(
-  session: TsgoModuleSession,
   symbol: TsSymbol,
-  source: SourceFile,
+  declaration: { readonly kind: number } | undefined,
   contributions: readonly StarContribution[],
-  locallyDeclaredValue: boolean
+  positions: ReadonlyMap<string, number>
 ): IntroductionKey {
   const key = (rank: number, position: number): IntroductionKey => ({ rank, position });
-  if (locallyDeclaredValue) return key(0, -1);
-  const declaration = symbol.declarations.find((candidate) =>
-    session.sameSourceFile(candidate.path, source.fileName)
-  );
+  if (declaresLocalValue(declaration)) return key(0, -1);
   if (declaration !== undefined) {
     // A declaration's authored position is only needed for ordering. Avoid a
     // second source-file lookup (NodeHandle paths may differ in casing from
-    // the already opened SourceFile) by locating the matching authored
-    // statement in that source's local tree.
-    const position = authoredPosition(source, symbol.name);
-    return key(1, position);
+    // the already opened SourceFile) by reading the container's authored
+    // statement positions, built once for the whole container.
+    return key(1, positions.get(symbol.name) ?? Number.MAX_SAFE_INTEGER);
   }
   for (const contribution of contributions) {
     if (contribution.names.has(symbol.name)) return key(2, contribution.position);
@@ -144,7 +147,66 @@ function introductionKey(
   return key(3, Number.MAX_SAFE_INTEGER);
 }
 
-function authoredPosition(source: SourceFile, name: string): number {
+/** What one authored statement contributes to its container's introduction order. */
+export type AuthoredIntroduction = {
+  /** The statement's start offset in its container. */
+  readonly position: number;
+  /** `export * as Name from '…'` carries the introduced name on the clause. */
+  readonly clauseName?: string;
+  /** `export { a, b } from '…'` introduces one name per element. */
+  readonly clauseElementNames?: readonly string[];
+  /** A declaration statement introduces its own name. */
+  readonly declaredName?: string;
+};
+
+/**
+ * Every authored name of a container mapped to the position of the statement
+ * that introduces it.
+ *
+ * Scanning the statement list per export made ordering O(exports ×
+ * statements); one pass builds the whole answer. Explicit export clauses are
+ * the symbol's authored introduction and win over declaration names: an alias
+ * symbol's declaration points at its target, a namespace export carries its
+ * name on the clause itself, and a direct declaration can precede its later
+ * explicit export clause. The first statement wins within each of the two
+ * groups, which is what the two ordered scans returned.
+ */
+export function authoredPositionsOf(
+  introductions: Iterable<AuthoredIntroduction>
+): ReadonlyMap<string, number> {
+  const clausePositions = new Map<string, number>();
+  const declarationPositions = new Map<string, number>();
+  const introduce = (names: Map<string, number>, name: string | undefined, position: number): void => {
+    if (name === undefined || names.has(name)) return;
+    names.set(name, position);
+  };
+  for (const introduction of introductions) {
+    introduce(clausePositions, introduction.clauseName, introduction.position);
+    for (const element of introduction.clauseElementNames ?? []) {
+      introduce(clausePositions, element, introduction.position);
+    }
+    introduce(declarationPositions, introduction.declaredName, introduction.position);
+  }
+  for (const [name, position] of declarationPositions) {
+    introduce(clausePositions, name, position);
+  }
+  return clausePositions;
+}
+
+/** The authored introductions of one container, built once per source file. */
+const authoredExportPositions = memoizeSubjectFact((source: SourceFile) =>
+  authoredPositionsOf(authoredIntroductions(source))
+);
+
+/** The introduction record while one statement is being read. */
+type MutableAuthoredIntroduction = {
+  position: number;
+  clauseName?: string;
+  clauseElementNames?: readonly string[];
+  declaredName?: string;
+};
+
+function* authoredIntroductions(source: SourceFile): Generator<AuthoredIntroduction> {
   for (const statement of source.statements) {
     // SAFETY: these optional fields mirror runtime AST members that may be present on authored statements; this widening only reads them without changing the node.
     const candidate = statement as typeof statement & {
@@ -154,24 +216,17 @@ function authoredPosition(source: SourceFile, name: string): number {
         readonly elements?: readonly { readonly name?: { readonly text?: string } }[];
       };
     };
-    // Explicit export clauses are the symbol's authored introduction. Check
-    // them before declaration names: an alias symbol's declaration points at
-    // its target, and a namespace export has its name on the clause itself.
-    if (candidate.exportClause?.name?.text === name) return statement.getStart(source);
-    if (candidate.exportClause?.elements?.some((element) => element.name?.text === name)) {
-      return statement.getStart(source);
+    const introduction: MutableAuthoredIntroduction = { position: statement.getStart(source) };
+    const clauseName = candidate.exportClause?.name?.text;
+    if (clauseName !== undefined) introduction.clauseName = clauseName;
+    const elements = candidate.exportClause?.elements;
+    if (elements !== undefined) {
+      introduction.clauseElementNames = elements.flatMap((element) =>
+        element.name?.text === undefined ? [] : [element.name.text]
+      );
     }
+    const declaredName = candidate.name?.text;
+    if (declaredName !== undefined) introduction.declaredName = declaredName;
+    yield introduction;
   }
-  // A direct declaration with the same name can precede its later explicit
-  // export clause. Scan declarations only after every explicit clause so a
-  // direct alias is ordered by its export statement rather than its target's
-  // declaration position.
-  for (const statement of source.statements) {
-    // SAFETY: this optional field mirrors the runtime AST member that may be present on authored statements; this widening only reads it without changing the node.
-    const candidate = statement as typeof statement & {
-      readonly name?: { readonly text?: string };
-    };
-    if (candidate.name?.text === name) return statement.getStart(source);
-  }
-  return Number.MAX_SAFE_INTEGER;
 }

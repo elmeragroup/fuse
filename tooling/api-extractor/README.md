@@ -76,6 +76,14 @@ materialized tree for later node lookups; the compiler's project-scoped source-f
 shared library and dependency files across sessions. Files excluded by ownership are never read
 as modules. Parser and public options never see this.
 
+Hot paths that the walk would otherwise recompute are answered once. Path-name ownership is
+classified once per path for the session; a container's authored export positions are built once
+per source file instead of scanned per export; whether a symbol is a module re-export specifier
+and which statement forwards it are read once per `readModule` walk; and the fact cache stops
+deep-freezing at an already frozen record, which is where the registry's handles and every
+repeated fact end. None of this changes what is extracted, so IPC request counts and oracles are
+unchanged. _(Amended 2026-09-03.)_
+
 Some compiler shapes cannot fit the public model. The extractor keeps working and reports one of
 these structured warning codes:
 

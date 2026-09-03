@@ -10,7 +10,7 @@ import type { BackendSymbolFacts, BackendSymbolHandle, BackendSymbolOrigin } fro
 import { isExternalOwnership } from "../contracts.ts";
 import { authoredSymbolName } from "./class-facts.ts";
 import type { TsgoFactsSession } from "./facts.ts";
-import { classifySourceFile, isExternalDeclaration } from "./file-ownership.ts";
+import { isExternalDeclaration } from "./file-ownership.ts";
 import { moduleOriginOfSymbol } from "./module-origin.ts";
 import { repositoryRelativePath } from "./path-identity.ts";
 
@@ -72,7 +72,7 @@ export function symbolNamespaces(session: TsgoFactsSession, symbol: TsSymbol): s
   if ((symbol.flags & SymbolFlags.Alias) === 0) {
     const localDeclaration = symbol.declarations.find(
       (declaration) =>
-        !isExternalOwnership(classifySourceFile(declaration.path)) &&
+        !isExternalOwnership(session.ownershipFromPathName(declaration.path)) &&
         !isExternalDeclaration(session, declaration)
     );
     const localNamespaces = declarationNamespaces(

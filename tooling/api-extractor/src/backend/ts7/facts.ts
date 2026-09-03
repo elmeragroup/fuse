@@ -88,6 +88,13 @@ export type TsgoFactsSession = {
   readonly rawSymbolAt: (node: Node) => TsSymbol | undefined;
   /** Session-memoized ownership classification of one source-file path. */
   readonly ownershipOfPath: (path: string) => BackendDeclarationOwnership;
+  /**
+   * Session-memoized classification from the path name alone, without the
+   * compiler's per-file metadata. The pre-check before a metadata read and
+   * the standard-library path test ask this; every other owner question goes
+   * through `ownershipOfPath`.
+   */
+  readonly ownershipFromPathName: (path: string) => BackendDeclarationOwnership;
   readonly resolveNode: (node: {
     readonly index: number;
     readonly path: string;

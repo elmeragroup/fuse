@@ -32,7 +32,7 @@ import type {
 import { HandleRegistry } from "../handles.ts";
 import { createSessionFacts } from "./facts.ts";
 import type { TsgoFactsSession, TsgoSessionFacts } from "./facts.ts";
-import { sourceFileOwnership } from "./file-ownership.ts";
+import { PathNameOwnershipCache, sourceFileOwnership } from "./file-ownership.ts";
 import { SessionFileTrees } from "./file-trees.ts";
 import type { TsgoHeritageSession } from "./heritage.ts";
 import { resolveModule } from "./module-resolution.ts";
@@ -58,6 +58,7 @@ export class TsgoExtractionSession implements BackendExtractionSession {
   private readonly symbolsAtNodes = new Map<Node, TsSymbol | null>();
   private readonly moduleExportsBySymbol = new Map<TsSymbol, readonly TsSymbol[]>();
   private readonly ownershipByPath = new Map<string, BackendDeclarationOwnership>();
+  private readonly pathNameOwnership = new PathNameOwnershipCache();
   private readonly typeHandles = new Map<Type, BackendTypeHandle>();
   private readonly declarationPaths = new Map<string, string>();
   private readonly typeNodeHandles = new Map<TypeNode, BackendTypeNodeHandle>();
@@ -130,6 +131,7 @@ export class TsgoExtractionSession implements BackendExtractionSession {
       symbolAt: (node) => this.symbolAt(node),
       rawSymbolAt: (node) => this.rawSymbolAt(node),
       ownershipOfPath: (path) => this.ownershipOfPath(path),
+      ownershipFromPathName: (path) => this.pathNameOwnership.classify(path),
       resolveNode: (node) => this.fileTrees.resolveSelected(node),
       nodePath: (node) => this.nodeRecord(node, "nodePath").path,
       compilerKind: (node) => this.nodeRecord(node, "nodeKind").kind,
@@ -188,6 +190,7 @@ export class TsgoExtractionSession implements BackendExtractionSession {
     this.symbolsAtNodes.clear();
     this.moduleExportsBySymbol.clear();
     this.ownershipByPath.clear();
+    this.pathNameOwnership.clear();
     this.typeHandles.clear();
     this.declarationPaths.clear();
     this.typeNodeHandles.clear();
