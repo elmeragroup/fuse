@@ -127,6 +127,7 @@ Base notes:
 - `Item.Media variant="image"` emits `data-variant="image"` and never a `dark:` class.
 - `Item.Footer` mode transitions: `hidden` carries `pointer-events-none` + `0fr`; `visible` carries `starting:` classes; `data-mode` matches prop.
 - `itemVariants` unit: defaults resolve; public export exists from the package root.
+- Type tests (`*.test-d.tsx`, tooling §7.3): the namespace ships all ten parts from `@elmeragroup/ui/item` and the root barrel; `itemVariants` is public and carries the `variant` / `size` axes; `Item.Root` takes `useRender`'s `render` and never an `as` prop; `Item.Media` and `Item.Footer` reject off-axis values _(Added 2026-09-03 — [ADR 0008](../../adr/0008-tests-assert-behaviour-not-source-spelling.md).)_
 
 ## 10 Demo requirements
 

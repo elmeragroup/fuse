@@ -87,6 +87,7 @@ Own slots: `foreground` (separator — ref `text-gray-800`), `muted-foreground` 
 - `isReadOnly`: segments inert, `bg-muted` group, popover does not open; `startName`/`endName` submit ISO strings in a form.
 - Explicit and nearest-scope container behavior; nested ThemeScope retains its theme.
 - Dual-density: FieldGroup height and DateInput inline padding/type match the signed `md` rung at `dense` and `comfortable`; nested `data-density` does not rescope.
+- Shared focus-ring helper: keyboard focus on a start-row segment paints the `focusRing({ target: "state" })` ring on the FieldGroup and never a second ring on the segment; mouse focus paints none; both density stamps. _(Added 2026-09-03 — [ADR 0008](../../adr/0008-tests-assert-behaviour-not-source-spelling.md).)_
 
 ## 10 Demo requirements
 

@@ -117,6 +117,30 @@ describe("Input", () => {
     expect(px(getComputedStyle(textboxNamed("Meter")).height)).toBe(CONTROL_MD.dense.height);
   });
 
+  it("ignores a nested data-density stamp in both directions (input.md §9)", () => {
+    renderThemed(
+      <>
+        <Input aria-label="Root" />
+        <div data-density="comfortable">
+          <Input aria-label="Nested comfortable" />
+        </div>
+        <div data-density="dense">
+          <Input aria-label="Nested dense" />
+        </div>
+      </>
+    );
+
+    // Density is a document-root axis: `ui.css` keys the comfortable block on
+    // `:root[data-density="comfortable"]`, so a nested attribute rescopes nothing.
+    for (const density of ["dense", "comfortable"] as const) {
+      stampDensity(density);
+      const rung = CONTROL_MD[density].height;
+      expect(px(getComputedStyle(textboxNamed("Root")).height)).toBe(rung);
+      expect(px(getComputedStyle(textboxNamed("Nested comfortable")).height)).toBe(rung);
+      expect(px(getComputedStyle(textboxNamed("Nested dense")).height)).toBe(rung);
+    }
+  });
+
   it("paints the shared ring on keyboard focus-visible at both densities", async () => {
     renderThemed(
       <>

@@ -9,6 +9,7 @@ import type { Mock } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { assertStateFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
 import {
   anchorAndExtend,
   calendarGrid,
@@ -490,6 +491,22 @@ describe("DateRangePicker overlay containment", () => {
     expect(segment("day, End Date").textContent).toBe("06");
     expect(onOpenChange).not.toHaveBeenCalled();
     await expect.element(page.getByRole("dialog", { name: "Order" })).toBeVisible();
+  });
+
+  it("paints the shared state ring on the field group for keyboard focus at both densities", async () => {
+    renderPicker(
+      <>
+        <button type="button">Before</button>
+        <DateRangePicker label="Meter" defaultValue={julyWeek} />
+      </>
+    );
+    await expect.element(page.getByRole("spinbutton", { name: /month, Start Date/ })).toBeVisible();
+
+    await assertStateFocusRingAtBothDensities(
+      buttonNamed("Before"),
+      segment("month, Start Date"),
+      groupNamed("Meter")
+    );
   });
 });
 

@@ -84,6 +84,7 @@ Kept as-is (not divergences): plain `<textarea>` rather than a base-ui control; 
 - `disabled` excludes it from tab order; `aria-invalid` styling attribute reaches the DOM.
 - `maxLength` enforced natively (typing past the limit truncates).
 - Dual-density: at document `dense` and `comfortable`, inline padding and control type match the signed `md` rung; `min-h-16` is identical across stamps; nested `data-density` does not rescope. Shared focus-ring helper at both stamps.
+- Type tests (`*.test-d.tsx`, tooling §7.3): `TextareaProps` equals `ComponentProps<"textarea">` — no recipe axis and no `render` prop, since the `min-h` floor is not a control rung _(Added 2026-09-03 — [ADR 0008](../../adr/0008-tests-assert-behaviour-not-source-spelling.md).)_
 
 ## 10 Demo requirements
 

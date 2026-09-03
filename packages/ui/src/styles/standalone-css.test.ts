@@ -38,7 +38,10 @@ describe("standalone stylesheet source set (architecture.md §5)", () => {
     expect(wrapper).not.toContain("@source not");
   });
 
-  it.skipIf(!existsSync(compiledCssPath))("emits no utility spelled only in src-only files", () => {
+  it("emits no utility spelled only in src-only files", () => {
+    // This package has no turbo.json of its own, so it inherits the root `test` task and
+    // its direct `@elmeragroup/ui#build` dependency.
+    expect(existsSync(compiledCssPath), compiledCssPath).toBe(true);
     const emitted = selectorLines(readFileSync(compiledCssPath, "utf8"));
     expect(emitted.has(DIST_CLASS)).toBe(true);
     for (const className of SRC_ONLY_CLASSES) {

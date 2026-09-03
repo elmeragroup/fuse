@@ -103,17 +103,19 @@ describe("density CSS", () => {
     expect(css).not.toContain("data-density");
   });
 
-  it.skipIf(!existsSync(compiledCssPath) || !existsSync(packedRawCssPath))(
-    "reaches both stylesheet distribution modes",
-    () => {
-      const compiled = readFileSync(compiledCssPath, "utf8");
-      const packedRaw = readFileSync(packedRawCssPath, "utf8");
-      expect(compiled).toContain("--control-h-md");
-      expect(compiled).toContain(':root[data-density="comfortable"]');
-      expect(packedRaw).toContain("--control-h-md");
-      expect(packedRaw).toContain(':root[data-density="comfortable"]');
-    }
-  );
+  it("reaches both stylesheet distribution modes", () => {
+    // This package inherits the root `test` task, which names `@elmeragroup/ui#build`
+    // directly, so both sheets are task-graph-guaranteed. A missing artifact is the
+    // failure, not a reason to skip.
+    expect(existsSync(compiledCssPath), compiledCssPath).toBe(true);
+    expect(existsSync(packedRawCssPath), packedRawCssPath).toBe(true);
+    const compiled = readFileSync(compiledCssPath, "utf8");
+    const packedRaw = readFileSync(packedRawCssPath, "utf8");
+    expect(compiled).toContain("--control-h-md");
+    expect(compiled).toContain(':root[data-density="comfortable"]');
+    expect(packedRaw).toContain("--control-h-md");
+    expect(packedRaw).toContain(':root[data-density="comfortable"]');
+  });
 });
 
 function controlPairs(css: string, selector: string): string[] {
@@ -142,7 +144,9 @@ describe("DemoStage comfortable density artifact", () => {
     );
   });
 
-  it.skipIf(!existsSync(demoStageCssPath))("is emitted next to themes.css", () => {
+  it("is emitted next to themes.css", () => {
+    // Guaranteed by the root `test` task's direct `@elmeragroup/ui#build` dependency.
+    expect(existsSync(demoStageCssPath), demoStageCssPath).toBe(true);
     const emitted = readFileSync(demoStageCssPath, "utf8");
     expect(emitted).toBe(generateDemoStageComfortableCss(uiCss));
   });

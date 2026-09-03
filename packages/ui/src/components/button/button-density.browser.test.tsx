@@ -4,6 +4,7 @@ import { page } from "vitest/browser";
 import "../../../dist/styles.css";
 import {
   CONTROL_MD,
+  CONTROL_SM,
   fkasExternal,
   px,
   renderThemed,
@@ -16,13 +17,13 @@ import { Button } from "./button";
 const BOX = {
   dense: {
     xs: { height: 24, px: 8, icon: 6, gap: 4 },
-    sm: { height: 32, px: 10, icon: 6, gap: 4 },
+    sm: { height: CONTROL_SM.dense.height, px: CONTROL_SM.dense.px, icon: 6, gap: 4 },
     md: { height: CONTROL_MD.dense.height, px: CONTROL_MD.dense.px, icon: 8, gap: 6 },
     lg: { height: 40, px: 10, icon: 8, gap: 6 },
   },
   comfortable: {
     xs: { height: 32, px: 12, icon: 10, gap: 6 },
-    sm: { height: 36, px: 14, icon: 10, gap: 6 },
+    sm: { height: CONTROL_SM.comfortable.height, px: CONTROL_SM.comfortable.px, icon: 10, gap: 6 },
     md: { height: CONTROL_MD.comfortable.height, px: CONTROL_MD.comfortable.px, icon: 12, gap: 8 },
     lg: { height: 48, px: 14, icon: 12, gap: 8 },
   },

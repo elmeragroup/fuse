@@ -114,6 +114,7 @@ Polymorphism via base-ui `useRender` (`render` prop); never `as`.
 - Legend `variant` reflected as `data-variant`.
 - Separator: `data-content="true"` with children, `"false"` without.
 - Keyboard: Tab reaches the control; clicking the Label focuses the control (native label activation).
+- Type tests (`*.test-d.tsx`, tooling §7.3): the namespace ships all twelve parts from `@elmeragroup/ui/field` and the root barrel; `Field.Root` takes the three-value `orientation` axis and no size axis; `Field.Legend` takes `legend | label`; parts take `useRender`'s `render` and never an `as` prop _(Added 2026-09-03 — [ADR 0008](../../adr/0008-tests-assert-behaviour-not-source-spelling.md).)_
 
 ## 10 Demo requirements
 

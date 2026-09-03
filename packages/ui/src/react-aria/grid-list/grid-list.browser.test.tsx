@@ -5,9 +5,9 @@ import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
+import { assertFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
 import { SUPPORTED_LOCALES } from "../../../test/locale-matrix";
-import { renderThemed } from "../../../test/themed-browser-render";
+import { CONTROL_SM, px, renderThemed, roleNamed, stampDensity } from "../../../test/themed-browser-render";
 import { UiProviders } from "../ui-providers/ui-providers";
 import { GridList, GridListItem } from "./grid-list";
 
@@ -244,6 +244,24 @@ describe("GridList", () => {
     if (!(handle instanceof HTMLElement)) {
       throw new Error("expected the drag handle");
     }
-    await assertFocusRingOnKeyboardAbsentOnMouse(rowNamed("Oslo"), handle);
+    await assertFocusRingAtBothDensities(rowNamed("Oslo"), handle);
+  });
+
+  it("keeps the drag handle on the signed sm rung and row padding density-independent", () => {
+    renderList(<DraggableMeters />);
+    const handle = roleNamed("button", DRAG_COPY["en-US"]);
+    const rowPadding = new Set<string>();
+
+    for (const density of ["dense", "comfortable"] as const) {
+      stampDensity(density);
+      // The handle is the package-private RAC Button at `icon-sm` (grid-list.md §4).
+      expect(px(getComputedStyle(handle).height)).toBe(CONTROL_SM[density].height);
+      const row = getComputedStyle(rowNamed("Oslo"));
+      rowPadding.add(`${row.paddingBlockStart}/${row.paddingInlineStart}`);
+    }
+
+    // grid-list.md §4: row padding and gap are not a control-box rung, so they read no
+    // `--control-*` variable and stay identical across both stamps.
+    expect(rowPadding.size).toBe(1);
   });
 });

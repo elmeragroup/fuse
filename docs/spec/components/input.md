@@ -89,6 +89,7 @@ No API divergence — prop surface is identical to the ref.
 - Keyboard: type into the field and assert `onChange` fires with the native event; Tab focuses, typing edits (per §7 focus-visible behavior, assert ring class only via state, not snapshot).
 - Uncontrolled and controlled value both work (native semantics untouched).
 - Dual-density: at document `dense` and `comfortable`, computed height, inline padding, font-size, and line-height match the signed `md` rung; nested `data-density` and `ThemeScope` variant changes do not rescope metrics. Shared focus-ring helper: ring on `:focus-visible`, absent on mouse focus, both stamps.
+- Type tests (`*.test-d.tsx`, tooling §7.3): `InputProps` equals `ComponentProps<"input">` — no recipe axis and no `render` prop, since the md rung is pinned by the shared field box _(Added 2026-09-03 — [ADR 0008](../../adr/0008-tests-assert-behaviour-not-source-spelling.md).)_
 
 ## 10 Demo requirements
 

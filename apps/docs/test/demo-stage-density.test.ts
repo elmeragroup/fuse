@@ -21,7 +21,11 @@ describe("DemoStage comfortable density", () => {
     expect(config).not.toMatch(/elmera-demo-stage-density|DemoFrame\.css/);
   });
 
-  it.skipIf(!existsSync(artifactPath))("the imported artifact exists after the ui build", () => {
+  it("the imported artifact exists after the ui build", () => {
+    // apps/docs/turbo.json shadows the root `test` task, so the guarantee is transitive:
+    // docs#test -> docs#build -> docs#generate -> ^build -> @elmeragroup/ui#build, through
+    // the workspace dependency in package.json. Its absence is the regression, not a skip.
+    expect(existsSync(artifactPath), artifactPath).toBe(true);
     expect(readFileSync(artifactPath, "utf8")).toContain('.DemoStage[data-density="comfortable"]');
   });
 });

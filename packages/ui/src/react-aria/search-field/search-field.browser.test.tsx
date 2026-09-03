@@ -5,9 +5,10 @@ import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { assertStateFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
 import { describedTextsFor } from "../../../test/rac-calendar-testing";
-import { renderThemed } from "../../../test/themed-browser-render";
+import { CONTROL_MD, px, renderThemed, roleNamed, stampDensity } from "../../../test/themed-browser-render";
 import { UiProviders } from "../ui-providers/ui-providers";
 import { SearchField } from "./search-field";
 
@@ -27,11 +28,21 @@ function renderField(node: ReactNode) {
 }
 
 function searchboxNamed(name: string): HTMLElement {
-  const element = page.getByRole("searchbox", { name, exact: true }).element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error(`expected searchbox ${name}`);
+  return roleNamed("searchbox", name);
+}
+
+/**
+ * The private RAC `FieldGroup` wrapping the named searchbox. It carries `role="group"`
+ * but no accessible name of its own, so it is reached from the control it labels — it is
+ * the field box that pins the `md` rung and hosts the shared
+ * `focusRing({ target: "state" })` ring (search-field.md §9, react-aria/internal/field).
+ */
+function fieldGroupFor(name: string): HTMLElement {
+  const group = searchboxNamed(name).closest('[role="group"]');
+  if (!(group instanceof HTMLElement)) {
+    throw new Error(`expected the SearchField field group around ${name}`);
   }
-  return element;
+  return group;
 }
 
 function fieldRootFrom(name: string): HTMLElement {
@@ -42,7 +53,7 @@ function fieldRootFrom(name: string): HTMLElement {
   return root;
 }
 
-function clearButtonNamed(name: string | RegExp): HTMLElement {
+function clearButtonNamed(name: RegExp): HTMLElement {
   const element = page.getByRole("button", { name }).element();
   if (!(element instanceof HTMLElement)) {
     throw new Error(`expected clear button ${String(name)}`);
@@ -170,6 +181,42 @@ describe("SearchField", () => {
       );
       await expect.element(page.getByRole("button", { name: CLEAR_COPY[locale] })).toBeVisible();
       unmount();
+    }
+  });
+
+  it("paints the shared state ring on the field group for keyboard focus at both densities", async () => {
+    renderField(
+      <>
+        <button type="button">Before</button>
+        <SearchField label="Meter search" />
+      </>
+    );
+
+    await assertStateFocusRingAtBothDensities(
+      roleNamed("button", "Before"),
+      searchboxNamed("Meter search"),
+      fieldGroupFor("Meter search")
+    );
+  });
+
+  it("pins the field box to the signed md rung at both densities and ignores a nested stamp", () => {
+    renderField(
+      <>
+        <SearchField label="Root" />
+        <div data-density="comfortable">
+          <SearchField label="Nested" />
+        </div>
+      </>
+    );
+
+    // Density is a document-root axis: `ui.css` keys the comfortable block on
+    // `:root[data-density="comfortable"]`, so a nested attribute rescopes nothing
+    // (search-field.md §9).
+    for (const density of ["dense", "comfortable"] as const) {
+      stampDensity(density);
+      const rung = CONTROL_MD[density].height;
+      expect(px(getComputedStyle(fieldGroupFor("Root")).height)).toBe(rung);
+      expect(px(getComputedStyle(fieldGroupFor("Nested")).height)).toBe(rung);
     }
   });
 
