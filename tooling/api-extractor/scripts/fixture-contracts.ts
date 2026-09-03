@@ -7,13 +7,21 @@
  * own.
  */
 
-export const issue14TypeScript7Compiler = "typescript@7.0.2" as const;
+export const pinnedTypeScript7Compiler = "typescript@7.0.2" as const;
 
 export type OracleDisposition = "immutable-upstream" | "reviewed-divergence" | "generated" | "not-applicable";
 export type ConformanceDisposition = "unchanged" | "reviewed-ts7";
 export type TypecheckStrategy = "direct-input" | "virtual-upstream-dependency" | "not-applicable";
+/**
+ * The three timing plans, by their stored ids.
+ *
+ * `issue02` and `issue14` keep their ticket-era ids deliberately: the
+ * immutable baseline in `test/fixtures/timing-boundary.json` records the
+ * command that produced it, and that identity is part of the evidence. Every
+ * name around them says what the plan measures — the boundary plan and the
+ * conformance plan.
+ */
 export type TimingPlan = "externalSelection" | "issue02" | "issue14";
-export type IssueFixtureOracle = "immutable-upstream" | "reviewed-ts7";
 
 export type TimingMetadata =
   | {
@@ -32,8 +40,8 @@ export type TimingMetadata =
       readonly maxBytesReceived: number;
     };
 
-export type Issue02TimingMetadata = Extract<TimingMetadata, { readonly plan: "issue02" }>;
-export type Issue14TimingMetadata = Extract<TimingMetadata, { readonly plan: "issue14" }>;
+export type BoundaryTimingMetadata = Extract<TimingMetadata, { readonly plan: "issue02" }>;
+export type ConformanceTimingMetadata = Extract<TimingMetadata, { readonly plan: "issue14" }>;
 export type ExternalSelectionTimingMetadata = Extract<TimingMetadata, { readonly plan: "externalSelection" }>;
 
 export type FixtureEvidenceRecord = {
@@ -55,21 +63,21 @@ export type FixtureEvidenceRecord = {
   readonly evidence: {
     readonly id: string;
     readonly origin: "pinned-upstream" | "local-regression";
-    readonly compiler: typeof issue14TypeScript7Compiler;
+    readonly compiler: typeof pinnedTypeScript7Compiler;
   };
 };
 
-/** Path-length slack for small Issue 02 bytes-received budgets. */
-export const issue02BytesReceivedPathLengthHeadroom = 32_768;
+/** Path-length slack for the boundary plan's small bytes-received budgets. */
+export const boundaryBytesReceivedPathLengthHeadroom = 32_768;
 
-type Issue02Budget = Omit<Issue02TimingMetadata, "plan" | "order"> & { readonly fixture: string };
+type BoundaryBudget = Omit<BoundaryTimingMetadata, "plan" | "order"> & { readonly fixture: string };
 type ExternalSelectionBudget = Omit<ExternalSelectionTimingMetadata, "plan" | "order"> & {
   readonly fixture: string;
 };
 
 export type FixtureBudgets = {
   readonly timing: {
-    readonly issue02: readonly Issue02Budget[];
+    readonly boundary: readonly BoundaryBudget[];
     readonly externalSelection: readonly ExternalSelectionBudget[];
   };
   readonly virtualUpstreamDependency: readonly string[];

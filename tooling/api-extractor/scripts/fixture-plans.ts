@@ -1,17 +1,12 @@
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
 
-import {
-  fixtureBudgets,
-  fixtureEvidenceCatalog,
-  fixtureTreeRoot,
-  validateFixtureEvidenceCatalog,
-} from "./fixture-catalog.ts";
+import { fixtureBudgets, fixtureEvidenceCatalog, fixtureTreeRoot } from "./fixture-catalog.ts";
 import type {
   ConformanceDisposition,
   FixtureBudgets,
   FixtureEvidenceRecord,
-  Issue02TimingMetadata,
+  BoundaryTimingMetadata,
   TimingPlan,
   TypecheckStrategy,
 } from "./fixture-catalog.ts";
@@ -22,7 +17,8 @@ import type {
  * Every plan is a projection of the derived catalog: which fixtures a timing
  * plan measures and under which ceilings, which fixtures the conformance and
  * type-check runs cover, and which warning oracles are refreshed together.
- * Nothing here restates the fixture tree.
+ * Nothing here restates the fixture tree, and nothing here re-validates it:
+ * the catalog validates itself once when its module loads.
  */
 
 export type TimingFixture = {
@@ -32,14 +28,14 @@ export type TimingFixture = {
   readonly warningOracle: "warnings.tsgo.json";
 };
 
-export type Issue02TimingFixture = TimingFixture & {
+export type BoundaryTimingFixture = TimingFixture & {
   readonly maxFetchedToMaterializedRatio: number;
   readonly maxRequestCount: number;
   readonly maxBytesReceived: number;
   readonly bytesReceivedPathLengthHeadroom?: number;
 };
 
-export type Issue14TimingFixture = TimingFixture;
+export type ConformanceTimingFixture = TimingFixture;
 
 export type ExternalSelectionTimingFixture = {
   readonly fixture: string;
@@ -49,8 +45,8 @@ export type ExternalSelectionTimingFixture = {
 };
 
 type TimingPlanResult = {
-  readonly issue02: Issue02TimingFixture;
-  readonly issue14: Issue14TimingFixture;
+  readonly issue02: BoundaryTimingFixture;
+  readonly issue14: ConformanceTimingFixture;
   readonly externalSelection: ExternalSelectionTimingFixture;
 };
 
@@ -69,7 +65,7 @@ export function orderedView<T extends { readonly order: number }>(
   return result;
 }
 
-export function issue02TimingBudget(metadata: Issue02TimingMetadata) {
+export function boundaryTimingBudget(metadata: BoundaryTimingMetadata) {
   if (metadata.bytesReceivedPathLengthHeadroom === undefined) {
     return {
       maxFetchedToMaterializedRatio: metadata.maxFetchedToMaterializedRatio,
@@ -89,9 +85,8 @@ export function deriveTimingPlan<Plan extends TimingPlan>(
   catalog: readonly FixtureEvidenceRecord[],
   plan: Plan
 ): readonly TimingPlanResult[Plan][] {
-  validateFixtureEvidenceCatalog(catalog);
   const fixtures: Array<
-    (Issue02TimingFixture | Issue14TimingFixture | ExternalSelectionTimingFixture) & { order: number }
+    (BoundaryTimingFixture | ConformanceTimingFixture | ExternalSelectionTimingFixture) & { order: number }
   > = [];
   for (const record of catalog) {
     for (const entry of record.timing) {
@@ -115,7 +110,7 @@ export function deriveTimingPlan<Plan extends TimingPlan>(
           file: record.input.file,
           oracleFile: record.oracle.selectedFile,
           warningOracle: record.warnings.oracleFile,
-          ...issue02TimingBudget(entry),
+          ...boundaryTimingBudget(entry),
           order: entry.order,
         });
         continue;
@@ -136,8 +131,8 @@ export function deriveTimingPlan<Plan extends TimingPlan>(
   );
 }
 
-export const issue02TimingFixtures = deriveTimingPlan(fixtureEvidenceCatalog, "issue02");
-export const issue14TimingFixtures = deriveTimingPlan(fixtureEvidenceCatalog, "issue14");
+export const boundaryTimingFixtures = deriveTimingPlan(fixtureEvidenceCatalog, "issue02");
+export const conformanceTimingFixtures = deriveTimingPlan(fixtureEvidenceCatalog, "issue14");
 export const externalSelectionTimingFixtures = deriveTimingPlan(fixtureEvidenceCatalog, "externalSelection");
 
 export type ConformanceFixture = {
@@ -149,7 +144,6 @@ export type ConformanceFixture = {
 export function deriveConformancePlan(
   catalog: readonly FixtureEvidenceRecord[]
 ): readonly ConformanceFixture[] {
-  validateFixtureEvidenceCatalog(catalog);
   return catalog.flatMap((record) =>
     record.conformance === false
       ? []
@@ -157,15 +151,13 @@ export function deriveConformancePlan(
   );
 }
 
-export const issue14FixtureManifest = deriveConformancePlan(fixtureEvidenceCatalog);
-export type Issue14Fixture = (typeof issue14FixtureManifest)[number];
+export const conformanceFixtureManifest = deriveConformancePlan(fixtureEvidenceCatalog);
 
 export function deriveTypecheckPlan(catalog: readonly FixtureEvidenceRecord[]): readonly {
   readonly fixture: string;
   readonly file: string;
   readonly strategy: Exclude<TypecheckStrategy, "not-applicable">;
 }[] {
-  validateFixtureEvidenceCatalog(catalog);
   return catalog.flatMap((record) => {
     if (record.conformance === false) return [];
     if (record.typecheck.strategy === "not-applicable") {
@@ -175,7 +167,7 @@ export function deriveTypecheckPlan(catalog: readonly FixtureEvidenceRecord[]): 
   });
 }
 
-export const issue14TypecheckPlan = deriveTypecheckPlan(fixtureEvidenceCatalog);
+export const conformanceTypecheckPlan = deriveTypecheckPlan(fixtureEvidenceCatalog);
 
 /** Every type-checkable fixture project, in path order, minus the recorded exclusions. */
 export function deriveTypecheckProjects(root: string, budgets: FixtureBudgets): readonly string[] {
@@ -207,7 +199,6 @@ export function deriveWarningEvidencePlan(catalog: readonly FixtureEvidenceRecor
   readonly oracleFile: "warnings.tsgo.json";
   readonly codes: readonly string[];
 }[] {
-  validateFixtureEvidenceCatalog(catalog);
   return catalog.flatMap((record) =>
     record.warnings.oracleFile === null
       ? []
@@ -234,7 +225,7 @@ export function expectedWarningCodes(
   return codes;
 }
 
-export type Issue02SupplementalFixture = {
+export type SupplementalBoundaryFixture = {
   readonly fixture: string;
   readonly file: string;
   readonly expectedExports: readonly string[];
@@ -245,7 +236,7 @@ export type Issue02SupplementalFixture = {
  * oracle whose exported names are the assertion. The expectation is the
  * plan's, not the fixture tree's, so it is stated here.
  */
-export const issue02SupplementalFixtures: readonly Issue02SupplementalFixture[] = [
+export const boundarySupplementalFixtures: readonly SupplementalBoundaryFixture[] = [
   {
     fixture: "module-dts-type-star",
     file: "input.d.ts",
@@ -267,7 +258,6 @@ export function derivePackageExecutionPlan(catalog: readonly FixtureEvidenceReco
   readonly timing: readonly TimingPlan[];
   readonly warningEvidence: boolean;
 }[] {
-  validateFixtureEvidenceCatalog(catalog);
   return catalog.map((record) => ({
     fixture: record.id,
     input: record.input.file,

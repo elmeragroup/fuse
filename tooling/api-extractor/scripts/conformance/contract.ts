@@ -15,7 +15,9 @@ export const issue14IpcThreshold =
 export const issue14IpcEvidence =
   "each fixture runs in a fresh public-seam timing session like the Issue 02 baseline; semantic counters are exact, wall-clock fields are observational, and the live and stored aggregate request count and bytes received are checked against the catalog ceilings" as const;
 
-export function issue14SelectedOracleFile(definition: Issue14Fixture): "output.json" | "output.tsgo.json" {
+export function issue14SelectedOracleFile(
+  definition: ConformanceFixture
+): "output.json" | "output.tsgo.json" {
   return definition.disposition === "reviewed-ts7" ? "output.tsgo.json" : "output.json";
 }
 
@@ -24,4 +26,4 @@ export function issue14SelectedOracleFile(definition: Issue14Fixture): "output.j
 // on that single owner without making the contract module another source of
 // command drift.
 export { issue14TypecheckCommand, issue14TypecheckStrategy } from "./typecheck.ts";
-import type { Issue14Fixture } from "../fixture-plans.ts";
+import type { ConformanceFixture } from "../fixture-plans.ts";

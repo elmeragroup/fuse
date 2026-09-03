@@ -2,7 +2,7 @@
   "$comment": "Per-fixture facts the fixture tree cannot state. Everything else in the catalog is derived from disk: a directory with an input file is a fixture, output.json makes it a conformance fixture, output.tsgo.json makes that a reviewed TypeScript 7 divergence, ts7-oracle.json is the divergence record, and warnings.tsgo.json supplies the warning oracle and its code order.",
   "timing": {
     "$comment": "IPC ceilings for the boundary plan, in plan order. The conformance plan measures the same four fixtures in the same order.",
-    "issue02": [
+    "boundary": [
       {
         "fixture": "alias-with-explicit-type-args",
         "maxFetchedToMaterializedRatio": 1.2,

@@ -12,7 +12,7 @@ import {
   decodeTimingReport,
   fetchedToMaterializedRatio,
   fixtureInputPath,
-  issue02TimingFixtures,
+  boundaryTimingFixtures,
   readTimingReport,
 } from "../scripts/fixture-evidence.ts";
 import { ProjectExtractor } from "../src/index.ts";
@@ -170,7 +170,7 @@ describe("Issue 02 compiler timing boundary", () => {
     expect(bytesReceivedCeiling(sample.budget)).toBeLessThan(1_000_000);
   });
 
-  it.each(issue02TimingFixtures)(
+  it.each(boundaryTimingFixtures)(
     "reports normalized compiler IPC timing for $fixture through the public seam",
     async (definition) => {
       const inputPath = fixtureInputPath(definition);

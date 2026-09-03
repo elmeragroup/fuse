@@ -10,7 +10,7 @@ import { ModuleNodeSchema } from "../src/model.ts";
 import type { ModuleNode } from "../src/model.ts";
 import { ExtractWarningSchema } from "../src/warnings.ts";
 import type { ExtractWarning } from "../src/warnings.ts";
-import { issue14TypeScript7Compiler } from "./fixture-catalog.ts";
+import { pinnedTypeScript7Compiler } from "./fixture-catalog.ts";
 
 export const fixtureDirectory = resolve(import.meta.dirname, "../test/fixtures");
 export const packageDirectory = resolve(import.meta.dirname, "..");
@@ -22,7 +22,7 @@ export * from "./fixture-catalog.ts";
 export * from "./fixture-plans.ts";
 
 import type { TimingFixture } from "./fixture-plans.ts";
-import type { Issue02SupplementalFixture } from "./fixture-plans.ts";
+import type { SupplementalBoundaryFixture } from "./fixture-plans.ts";
 
 const TimingTotalsSchema = Schema.Struct({
   requestCount: Schema.Number,
@@ -204,7 +204,7 @@ export function assertBytesReceivedCeiling(evidence: {
 
 type ReactDivergenceArtifact = {
   readonly fixture: "base-ui-component";
-  readonly compiler: typeof issue14TypeScript7Compiler;
+  readonly compiler: typeof pinnedTypeScript7Compiler;
   readonly sourceOracle: "output.json";
   readonly comparison: "exact";
   readonly divergence: {
@@ -220,7 +220,7 @@ type ReactDivergenceArtifact = {
 
 const ReactDivergenceArtifactSchema = Schema.Struct({
   fixture: Schema.Literal("base-ui-component"),
-  compiler: Schema.Literal(issue14TypeScript7Compiler),
+  compiler: Schema.Literal(pinnedTypeScript7Compiler),
   sourceOracle: Schema.Literal("output.json"),
   comparison: Schema.Literal("exact"),
   divergence: Schema.Struct({
@@ -237,7 +237,7 @@ const ReactDivergenceArtifactSchema = Schema.Struct({
 
 const Ts7DivergenceArtifactSchema = Schema.Struct({
   fixture: Schema.String,
-  compiler: Schema.Literal(issue14TypeScript7Compiler),
+  compiler: Schema.Literal(pinnedTypeScript7Compiler),
   sourceOracle: Schema.Literal("output.json"),
   comparison: Schema.Literal("exact"),
   divergence: Schema.Struct({
@@ -268,7 +268,7 @@ export function readTimingReport(path: string): TimingReport {
   return decodeTimingReport(decodeJson(path));
 }
 
-export function fixtureInputPath(definition: TimingFixture | Issue02SupplementalFixture): string {
+export function fixtureInputPath(definition: TimingFixture | SupplementalBoundaryFixture): string {
   return fixtureFile(definition.fixture, definition.file);
 }
 
@@ -457,7 +457,7 @@ export function assertFixtureOracle(definition: TimingFixture, result: Extractio
 }
 
 export function assertSupplementalFixture(
-  definition: Issue02SupplementalFixture,
+  definition: SupplementalBoundaryFixture,
   result: ExtractionResult
 ): void {
   const names = result.module.exports.map((entry) => entry.name);

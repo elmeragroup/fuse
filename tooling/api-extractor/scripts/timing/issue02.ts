@@ -13,9 +13,9 @@ import {
   fetchedToMaterializedRatio,
   fixtureDirectory,
   fixtureInputPath,
-  issue02SupplementalFixtures,
-  issue02TimingBudget,
-  issue02TimingFixtures,
+  boundarySupplementalFixtures,
+  boundaryTimingBudget,
+  boundaryTimingFixtures,
   isWithinIpcBudget,
   packageVersion,
   readTimingReport,
@@ -25,7 +25,7 @@ import { boundaryStatuses, timedExtraction } from "./shared.ts";
 
 const reportPath = join(fixtureDirectory, "timing-boundary.json");
 const tsconfigPath = join(fixtureDirectory, "timing-boundary-tsconfig.json");
-const expectedFixtureOrder = issue02TimingFixtures.map((fixture) => fixture.fixture);
+const expectedFixtureOrder = boundaryTimingFixtures.map((fixture) => fixture.fixture);
 
 function isTransportByteObservation(value: number): boolean {
   return Number.isFinite(value) && value >= 0;
@@ -41,7 +41,7 @@ const stopConditionEvidence = {
 } as const;
 
 async function verifySupplementalFixtures(): Promise<void> {
-  for (const definition of issue02SupplementalFixtures) {
+  for (const definition of boundarySupplementalFixtures) {
     const extraction = await timedExtraction(tsconfigPath, fixtureInputPath(definition));
     assertSupplementalFixture(definition, extraction.result);
   }
@@ -51,7 +51,7 @@ async function collectSamples(): Promise<TimingReport["samples"]> {
   // This function measures the live budget decision. The checked-in report is
   // intentionally a separate, immutable baseline consumed by Issue 14.
   const result: Array<TimingReport["samples"][number]> = [];
-  for (const definition of issue02TimingFixtures) {
+  for (const definition of boundaryTimingFixtures) {
     const extraction = await timedExtraction(tsconfigPath, fixtureInputPath(definition));
     assertFixtureOracle(definition, extraction.result);
     result.push({
@@ -59,7 +59,7 @@ async function collectSamples(): Promise<TimingReport["samples"]> {
       enabled: extraction.timing.enabled,
       totals: extraction.timing.totals,
       fetchedToMaterializedRatio: fetchedToMaterializedRatio(extraction.timing.totals),
-      budget: issue02TimingBudget(definition),
+      budget: boundaryTimingBudget(definition),
     });
   }
   await verifySupplementalFixtures();

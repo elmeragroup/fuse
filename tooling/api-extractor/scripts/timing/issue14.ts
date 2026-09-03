@@ -20,8 +20,8 @@ import {
   decodeJson,
   fixtureDirectory,
   fixtureInputPath,
-  issue02TimingFixtures,
-  issue14TimingFixtures,
+  boundaryTimingFixtures,
+  conformanceTimingFixtures,
   packageVersion,
   readTimingReport,
 } from "../fixture-evidence.ts";
@@ -42,7 +42,7 @@ export const timingToleranceMs = 0.001;
  */
 export const wallClockContract = issue14TimingWallClockContract;
 export const wallClockContractRationale = issue14TimingWallClockRationale;
-const expectedFixtureOrder = issue14TimingFixtures.map((definition) => definition.fixture);
+const expectedFixtureOrder = conformanceTimingFixtures.map((definition) => definition.fixture);
 const timingFields = ["roundTripMs", "serverTimeMs", "transportOverheadMs"] as const;
 const semanticFields = ["requestCount", "nodesMaterialized", "sourceFilesFetched", "nodesFetched"] as const;
 const transportByteFields = ["bytesSent", "bytesReceived"] as const;
@@ -152,10 +152,10 @@ type IpcStatus = Issue14TimingReport["stopConditions"]["unacceptableIpcGrowth"][
 
 /** The Issue 14 IPC ceilings are the catalog's Issue 02 per-fixture ceilings summed over the four fixtures. */
 export function issue14IpcCeilings(): IpcCeilings {
-  const budgets = new Map(issue02TimingFixtures.map((definition) => [definition.fixture, definition]));
+  const budgets = new Map(boundaryTimingFixtures.map((definition) => [definition.fixture, definition]));
   let maxAggregateRequestCount = 0;
   let maxAggregateBytesReceived = 0;
-  for (const definition of issue14TimingFixtures) {
+  for (const definition of conformanceTimingFixtures) {
     const budget = budgets.get(definition.fixture);
     if (budget === undefined) {
       throw new Error(`Issue 14 timing fixture ${definition.fixture} has no catalog IPC ceiling.`);
@@ -490,7 +490,7 @@ async function measure(): Promise<Issue14TimingReport> {
   assertBaselineIdentity(baseline);
   const baselineSamples = new Map(baseline.samples.map((sample) => [sample.fixture, sample]));
   const samples: Array<Issue14TimingReport["samples"][number]> = [];
-  for (const definition of issue14TimingFixtures) {
+  for (const definition of conformanceTimingFixtures) {
     const baselineSample = baselineSamples.get(definition.fixture);
     if (baselineSample === undefined) {
       throw new Error(`Missing Issue 02 baseline sample: ${definition.fixture}`);

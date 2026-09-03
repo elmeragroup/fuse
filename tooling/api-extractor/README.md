@@ -108,7 +108,10 @@ divergence record, and `warnings.tsgo.json` supplies the warning oracle and its 
 type-checked through a virtual upstream dependency, the two locally generated oracles, and the
 projects the type-check plan skips. `scripts/fixture-plans.ts` projects the plans the gates run;
 suite grouping and order belong to the suite that asserts them (`test/support/fixture-suites.ts`).
-Do not add a second fixture list. _(Amended 2026-09-03.)_
+The catalog validates itself once, when its module loads; nothing downstream re-validates. Plans and
+records are named for what they measure — the boundary plan and the conformance plan — while the
+stored plan ids `issue02` and `issue14` stay as they are, because the immutable baseline records the
+command that produced it. Do not add a second fixture list. _(Amended 2026-09-03.)_
 
 The full conformance view contains 116 fixtures ported from upstream: 97 whose oracle is unchanged
 and 19 with a reviewed TypeScript 7 divergence. Their evidence files are:

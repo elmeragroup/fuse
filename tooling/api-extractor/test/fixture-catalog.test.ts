@@ -16,10 +16,10 @@ import {
   deriveConformancePlan,
   deriveTypecheckProjects,
   externalSelectionTimingFixtures,
-  issue02TimingFixtures,
-  issue14FixtureManifest,
-  issue14TimingFixtures,
-  issue14TypecheckPlan,
+  boundaryTimingFixtures,
+  conformanceFixtureManifest,
+  conformanceTimingFixtures,
+  conformanceTypecheckPlan,
   packageFixtureTypecheckPlan,
 } from "../scripts/fixture-plans.ts";
 import { createTemporaryRoot, fixtureRoot } from "./support/temp-dirs.ts";
@@ -31,7 +31,7 @@ afterAll(() => {
 });
 
 const emptyBudgets: FixtureBudgets = {
-  timing: { issue02: [], externalSelection: [] },
+  timing: { boundary: [], externalSelection: [] },
   virtualUpstreamDependency: [],
   locallyGeneratedOracles: [],
   excludedTypecheckProjects: [],
@@ -112,7 +112,7 @@ describe("fixture catalog derivation", () => {
   it("takes ceilings, virtual dependencies and local oracles from the budgets file", () => {
     const budgets: FixtureBudgets = {
       timing: {
-        issue02: [
+        boundary: [
           {
             fixture: "timed",
             maxFetchedToMaterializedRatio: 2,
@@ -212,8 +212,8 @@ describe("the package's own fixture catalog", () => {
         disposition: fixture.disposition,
       }))
     );
-    expect(issue14FixtureManifest).toHaveLength(116);
-    expect(issue14TypecheckPlan).toHaveLength(116);
+    expect(conformanceFixtureManifest).toHaveLength(116);
+    expect(conformanceTypecheckPlan).toHaveLength(116);
     expect(
       fixtureEvidenceCatalog.filter((record) => record.oracle.disposition === "reviewed-divergence")
     ).toHaveLength(19);
@@ -223,14 +223,14 @@ describe("the package's own fixture catalog", () => {
   });
 
   it("derives every timing plan from the recorded ceilings", () => {
-    const boundaryFixtures = fixtureBudgets.timing.issue02.map((entry) => entry.fixture);
-    expect(issue02TimingFixtures.map((entry) => entry.fixture)).toEqual(boundaryFixtures);
-    expect(issue14TimingFixtures.map((entry) => entry.fixture)).toEqual(boundaryFixtures);
+    const boundaryFixtures = fixtureBudgets.timing.boundary.map((entry) => entry.fixture);
+    expect(boundaryTimingFixtures.map((entry) => entry.fixture)).toEqual(boundaryFixtures);
+    expect(conformanceTimingFixtures.map((entry) => entry.fixture)).toEqual(boundaryFixtures);
     expect(externalSelectionTimingFixtures.map((entry) => entry.fixture)).toEqual(
       fixtureBudgets.timing.externalSelection.map((entry) => entry.fixture)
     );
-    for (const entry of issue02TimingFixtures) {
-      const budget = fixtureBudgets.timing.issue02.find((row) => row.fixture === entry.fixture);
+    for (const entry of boundaryTimingFixtures) {
+      const budget = fixtureBudgets.timing.boundary.find((row) => row.fixture === entry.fixture);
       expect(entry.maxRequestCount).toBe(budget?.maxRequestCount);
       expect(entry.maxBytesReceived).toBe(budget?.maxBytesReceived);
       expect(entry.maxFetchedToMaterializedRatio).toBe(budget?.maxFetchedToMaterializedRatio);

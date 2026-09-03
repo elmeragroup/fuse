@@ -5,9 +5,9 @@ import { dirname, join, resolve } from "node:path";
 
 import { runIfMain } from "../cli.ts";
 import { packageVersion } from "../fixture-evidence.ts";
-import { issue14TypecheckPlan } from "../fixture-plans.ts";
-import { issue14FixtureManifest } from "../fixture-plans.ts";
-import type { Issue14Fixture } from "../fixture-plans.ts";
+import { conformanceTypecheckPlan } from "../fixture-plans.ts";
+import { conformanceFixtureManifest } from "../fixture-plans.ts";
+import type { ConformanceFixture } from "../fixture-plans.ts";
 
 const packageDirectory = resolve(import.meta.dirname, "../..");
 const fixtureDirectory = join(packageDirectory, "test/fixtures");
@@ -40,15 +40,15 @@ export type TypecheckResult = {
 };
 
 export function issue14TypecheckStrategy(
-  definition: Issue14Fixture
+  definition: ConformanceFixture
 ): "direct-input" | "virtual-upstream-dependency" {
-  const entry = issue14TypecheckPlan.find((candidate) => candidate.fixture === definition.fixture);
+  const entry = conformanceTypecheckPlan.find((candidate) => candidate.fixture === definition.fixture);
   if (entry === undefined) throw new Error(`Missing type-check plan for ${definition.fixture}.`);
   return entry.strategy;
 }
 
 /** The exact package-relative command that the persisted evidence records. */
-export function issue14TypecheckCommand(definition: Issue14Fixture): string {
+export function issue14TypecheckCommand(definition: ConformanceFixture): string {
   return `${typecheckCommandPrefix} --fixture ${definition.fixture} --pretty false`;
 }
 
@@ -60,7 +60,7 @@ function diagnosticsFrom(output: string): readonly string[] {
     .map((line) => line.replaceAll(packageDirectory, "<package>"));
 }
 
-function runTsc(definition: Issue14Fixture, inputPath: string, cwd: string): TypecheckResult {
+function runTsc(definition: ConformanceFixture, inputPath: string, cwd: string): TypecheckResult {
   const result = spawnSync(process.execPath, [compilerScript, ...typecheckCompilerOptions, inputPath], {
     cwd,
     encoding: "utf8",
@@ -77,7 +77,7 @@ function runTsc(definition: Issue14Fixture, inputPath: string, cwd: string): Typ
   };
 }
 
-function typecheckWithVirtualDependency(definition: Issue14Fixture, inputPath: string): TypecheckResult {
+function typecheckWithVirtualDependency(definition: ConformanceFixture, inputPath: string): TypecheckResult {
   const temporaryRoot = mkdtempSync(join(tmpdir(), "api-extractor-issue14-typecheck-"));
   const stagedInput = join(temporaryRoot, "test/fixtures/module-imports-only/input.ts");
   const stagedDependency = join(temporaryRoot, "src/models/export.ts");
@@ -95,16 +95,16 @@ function typecheckWithVirtualDependency(definition: Issue14Fixture, inputPath: s
   }
 }
 
-export function typecheckFixture(definition: Issue14Fixture): TypecheckResult {
+export function typecheckFixture(definition: ConformanceFixture): TypecheckResult {
   const inputPath = join(fixtureDirectory, definition.fixture, definition.file);
   return issue14TypecheckStrategy(definition) === "virtual-upstream-dependency"
     ? typecheckWithVirtualDependency(definition, inputPath)
     : runTsc(definition, inputPath, packageDirectory);
 }
 
-function cliFixture(): Issue14Fixture {
+function cliFixture(): ConformanceFixture {
   const fixtureName = process.argv[process.argv.indexOf("--fixture") + 1];
-  const definition = issue14FixtureManifest.find((candidate) => candidate.fixture === fixtureName);
+  const definition = conformanceFixtureManifest.find((candidate) => candidate.fixture === fixtureName);
   if (definition === undefined) throw new Error(`Unknown Issue 14 fixture: ${fixtureName ?? "<missing>"}`);
   if (
     process.argv[process.argv.indexOf("--pretty") + 1] !== "false" ||

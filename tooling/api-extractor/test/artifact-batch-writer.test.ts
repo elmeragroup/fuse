@@ -169,51 +169,102 @@ describe("artifact batch writer", () => {
     }
   });
 
-  // Running as root defeats permission bits, so the real-permission rollback is skipped there.
-  const asUnprivilegedUser = process.getuid?.() !== 0;
+  /**
+   * Rollback is covered twice on purpose.
+   *
+   * The control-driven case below runs everywhere, including as root in a CI
+   * container, so the rollback contract is never left untested. The
+   * real-permission case can only run where permission bits decide anything;
+   * under root it asserts that it is not applicable instead of vanishing from
+   * the report.
+   */
+  const rootUser = process.getuid?.() === 0;
 
-  it.skipIf(!asUnprivilegedUser)(
-    "restores every original destination when a read-only file rejects a later write",
-    async () => {
-      const root = mkdtempSync(join(tmpdir(), "api-extractor-artifact-rollback-"));
-      const readOnlyDirectory = join(root, "sealed");
-      try {
-        writeFileSync(join(root, "first.json"), "first original\n");
-        mkdirSync(readOnlyDirectory);
-        writeFileSync(join(readOnlyDirectory, "second.json"), "second original\n");
-        // A read-only file in a read-only directory is the real failure the
-        // rollback path exists for: the batch commits its first artifact, the
-        // operating system refuses the second, and both originals come back.
-        chmodSync(join(readOnlyDirectory, "second.json"), 0o444);
-        chmodSync(readOnlyDirectory, 0o555);
+  it("restores every original destination when a later artifact cannot be written", async () => {
+    const root = mkdtempSync(join(tmpdir(), "api-extractor-artifact-rollback-"));
+    try {
+      writeFileSync(join(root, "first.json"), "first original\n");
+      writeFileSync(join(root, "second.json"), "second original\n");
+      const writeWithFailure = makeArtifactBatchWriterForTest({
+        beforeArtifactWrite: ({ index }) => {
+          if (index === 1) throw new Error("synthetic artifact write failure");
+        },
+      });
 
-        const result = await writeArtifactBatch({
-          outputRoot: root,
-          artifacts: [
-            { destination: "first.json", content: "first replacement\n", evidence: "generated" },
-            { destination: "sealed/second.json", content: "second replacement\n", evidence: "reviewed" },
-          ],
-        });
+      const result = await writeWithFailure({
+        outputRoot: root,
+        artifacts: [
+          { destination: "first.json", content: "first replacement\n", evidence: "generated" },
+          { destination: "second.json", content: "second replacement\n", evidence: "reviewed" },
+        ],
+      });
 
-        // The refusal comes from the operating system inside the transaction,
-        // so the batch reports a write failure without a single destination.
-        expect(result).toEqual({
-          status: "failure",
-          error: {
-            category: "write-failed",
-            message: "The artifact batch could not be fully written.",
-            recovery: { originalState: "restored", temporaryState: "removed" },
-          },
-        });
-        expect(readFileSync(join(root, "first.json"), "utf8")).toBe("first original\n");
-        expect(readFileSync(join(readOnlyDirectory, "second.json"), "utf8")).toBe("second original\n");
-        expect(transactionEntries(root)).toEqual([]);
-      } finally {
-        chmodSync(readOnlyDirectory, 0o755);
-        rmSync(root, { recursive: true, force: true });
-      }
+      // A failure raised at one artifact names that artifact.
+      expect(result).toEqual({
+        status: "failure",
+        error: {
+          category: "write-failed",
+          message: "synthetic artifact write failure",
+          destination: "second.json",
+          recovery: { originalState: "restored", temporaryState: "removed" },
+        },
+      });
+      expect(readFileSync(join(root, "first.json"), "utf8")).toBe("first original\n");
+      expect(readFileSync(join(root, "second.json"), "utf8")).toBe("second original\n");
+      expect(transactionEntries(root)).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
     }
-  );
+  });
+
+  it("restores every original destination when a read-only file rejects a later write", async () => {
+    if (rootUser) {
+      // Not applicable: root writes through a read-only file, so this
+      // environment cannot produce the refusal under test. The
+      // control-driven case above still covers rollback here.
+      expect(process.getuid?.()).toBe(0);
+      return;
+    }
+    const root = mkdtempSync(join(tmpdir(), "api-extractor-artifact-rollback-"));
+    const readOnlyDirectory = join(root, "sealed");
+    try {
+      writeFileSync(join(root, "first.json"), "first original\n");
+      mkdirSync(readOnlyDirectory);
+      writeFileSync(join(readOnlyDirectory, "second.json"), "second original\n");
+      // A read-only file in a read-only directory is the real failure the
+      // rollback path exists for: the batch commits its first artifact, the
+      // operating system refuses the second, and both originals come back.
+      chmodSync(join(readOnlyDirectory, "second.json"), 0o444);
+      chmodSync(readOnlyDirectory, 0o555);
+
+      const result = await writeArtifactBatch({
+        outputRoot: root,
+        artifacts: [
+          { destination: "first.json", content: "first replacement\n", evidence: "generated" },
+          { destination: "sealed/second.json", content: "second replacement\n", evidence: "reviewed" },
+        ],
+      });
+
+      // The refusal happens while the transaction stages and swaps files
+      // rather than at one artifact's own write, so the writer reports the
+      // batch-level message with no `destination`. The control-driven case
+      // above pins the per-artifact shape; this one pins the real one.
+      expect(result).toEqual({
+        status: "failure",
+        error: {
+          category: "write-failed",
+          message: "The artifact batch could not be fully written.",
+          recovery: { originalState: "restored", temporaryState: "removed" },
+        },
+      });
+      expect(readFileSync(join(root, "first.json"), "utf8")).toBe("first original\n");
+      expect(readFileSync(join(readOnlyDirectory, "second.json"), "utf8")).toBe("second original\n");
+      expect(transactionEntries(root)).toEqual([]);
+    } finally {
+      chmodSync(readOnlyDirectory, 0o755);
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
 
   it("rejects duplicate and file-directory destinations before staging", async () => {
     const root = mkdtempSync(join(tmpdir(), "api-extractor-artifact-conflict-"));

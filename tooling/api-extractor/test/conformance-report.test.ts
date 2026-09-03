@@ -22,7 +22,7 @@ import {
 import {
   assertTs7DivergenceEvidence,
   differenceDigest,
-  issue14FixtureManifest,
+  conformanceFixtureManifest,
 } from "../scripts/fixture-evidence.ts";
 import { createFixtureFileSystem, moduleImportsOnlyDependency } from "../scripts/fixture-filesystem.ts";
 import { ExtractError, ProjectExtractor } from "../src/index.ts";
@@ -46,14 +46,14 @@ describe("Issue 14 conformance report", () => {
     });
     expect(report.status).toBe("pass");
     expect(report.fixtures.map((entry) => entry.fixture)).toEqual(
-      issue14FixtureManifest.map((entry) => entry.fixture)
+      conformanceFixtureManifest.map((entry) => entry.fixture)
     );
     expect(report.fixtures.every((entry) => entry.extraction.status === "match")).toBe(true);
     expect(report.fixtures.every((entry) => entry.typecheck.status === "pass")).toBe(true);
   });
 
   it("requires explicit TS7 evidence for every reviewed divergence", () => {
-    const reviewed = issue14FixtureManifest.filter((entry) => entry.disposition === "reviewed-ts7");
+    const reviewed = conformanceFixtureManifest.filter((entry) => entry.disposition === "reviewed-ts7");
     expect(reviewed).toHaveLength(19);
     for (const definition of reviewed) {
       expect(() => assertTs7DivergenceEvidence(definition.fixture)).not.toThrow();
@@ -160,7 +160,7 @@ describe("Issue 14 conformance report", () => {
   });
 
   it("executes the persisted typecheck command for direct and virtual inputs", () => {
-    const definitions = issue14FixtureManifest.filter(
+    const definitions = conformanceFixtureManifest.filter(
       (definition) =>
         definition.fixture === "alias-with-explicit-type-args" || definition.fixture === "module-imports-only"
     );
@@ -203,7 +203,7 @@ describe("Issue 14 conformance report", () => {
   });
 
   it("continues after typed failures, defects, and callback throws with exact mixed totals", async () => {
-    const definitions = issue14FixtureManifest.slice(0, 4);
+    const definitions = conformanceFixtureManifest.slice(0, 4);
     const results = await Effect.runPromise(
       Effect.scoped(
         Effect.gen(function* () {

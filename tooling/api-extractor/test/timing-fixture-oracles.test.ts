@@ -5,8 +5,8 @@ import {
   assertFixtureOracle,
   assertSupplementalFixture,
   fixtureInputPath,
-  issue02SupplementalFixtures,
-  issue02TimingFixtures,
+  boundarySupplementalFixtures,
+  boundaryTimingFixtures,
 } from "../scripts/fixture-evidence.ts";
 import { extractFixture } from "./support/extract.ts";
 
@@ -14,7 +14,7 @@ const fixtureDirectory = resolve(import.meta.dirname, "fixtures");
 const tsconfigPath = resolve(fixtureDirectory, "timing-boundary-tsconfig.json");
 
 describe("Issue 02 ProjectExtractor conformance", () => {
-  it.each(issue02TimingFixtures.slice(0, 3))(
+  it.each(boundaryTimingFixtures.slice(0, 3))(
     "matches the immutable upstream oracle for $fixture",
     async (definition) => {
       assertFixtureOracle(definition, await extractFixture({ tsconfigPath }, fixtureInputPath(definition)));
@@ -22,13 +22,13 @@ describe("Issue 02 ProjectExtractor conformance", () => {
   );
 
   it("matches the complete reviewed TS7 component oracle and warning oracle", async () => {
-    const definition = issue02TimingFixtures[3];
+    const definition = boundaryTimingFixtures[3];
     if (definition === undefined) throw new Error("Missing reviewed Issue 02 timing fixture.");
     const result = await extractFixture({ tsconfigPath }, fixtureInputPath(definition));
     assertFixtureOracle(definition, result);
   });
 
-  it.each(issue02SupplementalFixtures)(
+  it.each(boundarySupplementalFixtures)(
     "preserves the public module-resolution seam for $fixture",
     async (definition) => {
       const result = await extractFixture({ tsconfigPath }, fixtureInputPath(definition));

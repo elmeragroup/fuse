@@ -74,12 +74,18 @@ function freezeFact<Result>(value: Result): Result {
 /**
  * A frozen record ends the walk.
  *
- * Every frozen object the cache can reach was frozen by this function or by
- * the handle registry, whose handles hold only primitives and the session
- * symbol. Descending into one again would re-walk the shared sub-records of
- * every later fact — the cost the gate removes — without a member left to
- * freeze. The two records this function is asked to freeze twice, a repeated
- * fact and a handle, are exactly the ones it can now skip.
+ * INVARIANT: every frozen object reachable from a cached fact is frozen all
+ * the way down. Only two places in `src/**` freeze anything — this function,
+ * which freezes a whole subgraph, and the handle registry, whose handles hold
+ * only primitives and the session symbol — so a frozen object never has an
+ * unfrozen child, and stopping here cannot leave one behind. Descending again
+ * would re-walk the shared sub-records of every later fact, which is the cost
+ * this short-circuit removes.
+ *
+ * A new `Object.freeze` in `src/**` breaks that invariant the moment it
+ * freezes a literal with mutable children. `test/session-fact-cache-freeze
+ * .test.ts` fails on any freeze site outside those two, so the invariant is
+ * re-argued rather than silently lost.
  */
 function deepFreezeFact<Result>(value: Result, seen: WeakSet<object>): Result {
   if (value === null || typeof value !== "object" || seen.has(value)) return value;

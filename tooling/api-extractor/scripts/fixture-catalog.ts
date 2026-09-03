@@ -9,7 +9,7 @@ import type {
   TimingMetadata,
   TypecheckStrategy,
 } from "./fixture-contracts.ts";
-import { issue14TypeScript7Compiler } from "./fixture-contracts.ts";
+import { pinnedTypeScript7Compiler } from "./fixture-contracts.ts";
 
 export * from "./fixture-contracts.ts";
 
@@ -31,7 +31,7 @@ const fixtureRoot = resolve(import.meta.dirname, "..", "test", "fixtures");
 
 const FixtureBudgetsSchema = Schema.Struct({
   timing: Schema.Struct({
-    issue02: Schema.Array(
+    boundary: Schema.Array(
       Schema.Struct({
         fixture: Schema.String,
         maxFetchedToMaterializedRatio: Schema.Number,
@@ -70,8 +70,8 @@ function warningCodes(path: string): readonly string[] {
 }
 
 function timingOf(budgets: FixtureBudgets, id: string): readonly TimingMetadata[] {
-  const order = budgets.timing.issue02.findIndex((entry) => entry.fixture === id);
-  const boundary = budgets.timing.issue02[order];
+  const order = budgets.timing.boundary.findIndex((entry) => entry.fixture === id);
+  const boundary = budgets.timing.boundary[order];
   if (boundary !== undefined) {
     const { fixture: _fixture, ...ceilings } = boundary;
     return [
@@ -141,7 +141,7 @@ export function deriveFixtureCatalog(
       evidence: {
         id: evidenceId,
         origin: upstream ? "pinned-upstream" : "local-regression",
-        compiler: issue14TypeScript7Compiler,
+        compiler: pinnedTypeScript7Compiler,
       },
     };
   });
@@ -191,4 +191,6 @@ export const fixtureTreeRoot = fixtureRoot;
 export const fixtureBudgets = readFixtureBudgets(fixtureRoot);
 export const fixtureEvidenceCatalog = deriveFixtureCatalog(fixtureRoot, fixtureBudgets);
 
+// The catalog validates itself once, here, when this module loads. Plans and
+// gates project it afterwards and never re-validate.
 validateFixtureEvidenceCatalog(fixtureEvidenceCatalog);

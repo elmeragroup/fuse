@@ -10,8 +10,12 @@
  * wasted work.
  *
  * Both memos key on compiler objects, which belong to one open session, and
- * hold them weakly: entries become unreachable when the walk that produced
- * them returns. Nothing is retained between walks or between sessions.
+ * hold every key weakly. `memoizeWalkFact` is additionally keyed by the walk,
+ * so one walk's answers are unreachable once it returns and are never reused
+ * by another walk or another session. `memoizeSubjectFact`'s map is
+ * module-global and does outlive a session, but only weakly: an entry stays
+ * reachable exactly as long as the compiler object it describes, and it is
+ * collected with that object once the session drops it.
  */
 
 /**
