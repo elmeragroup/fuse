@@ -16,6 +16,16 @@ export const CONTROL_MD = {
   comfortable: { height: 44, px: 14, font: 18, leading: 24 },
 } as const;
 
+/**
+ * Signed `sm` control-rung metrics (`--control-h-sm` / `--control-px-sm`). The rung the
+ * RAC tier's package-private Button defaults to — FileTrigger's visible button and the
+ * GridList drag handle — so those suites read it here rather than restating the numbers.
+ */
+export const CONTROL_SM = {
+  dense: { height: 32, px: 10 },
+  comfortable: { height: 36, px: 14 },
+} as const;
+
 afterEach(() => {
   document.documentElement.removeAttribute("data-density");
 });

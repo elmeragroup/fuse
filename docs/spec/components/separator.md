@@ -70,6 +70,7 @@ None — no tv recipe, no axes. Orientation is a prop mapped to data-attribute-d
 - Vertical separator inside a flex row with no explicit height has non-zero rendered height (the `self-stretch` regression guard vs the retired `h-full` version — browser test).
 - A wrapper passing `data-slot="custom"` via props wins over the baked-in value (spread-order guard for SidebarSeparator).
 - `className` merges after base classes (consumer `bg-x`-token override wins via `cn`).
+- Type tests (`*.test-d.tsx`, tooling §7.3): `SeparatorProps["orientation"]` is the two-value primitive axis and stays optional; the polymorphic escape is `useRender`'s `render`, never an `as` prop _(Added 2026-09-03 — [ADR 0008](../../adr/0008-tests-assert-behaviour-not-source-spelling.md).)_
 
 ## 10 Demo requirements
 

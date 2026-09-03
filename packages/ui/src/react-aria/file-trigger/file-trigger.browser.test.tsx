@@ -2,15 +2,12 @@ import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { renderThemed } from "../../../test/themed-browser-render";
+import { assertFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
+import { CONTROL_SM, px, renderThemed, roleNamed, stampDensity } from "../../../test/themed-browser-render";
 import { FileTrigger } from "./file-trigger";
 
 function buttonNamed(name: string): HTMLElement {
-  const element = page.getByRole("button", { name, exact: true }).element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error(`expected button ${name}`);
-  }
-  return element;
+  return roleNamed("button", name);
 }
 
 function fileInputFor(button: HTMLElement): HTMLInputElement {
@@ -133,6 +130,38 @@ describe("FileTrigger", () => {
     });
     expect(click).not.toHaveBeenCalled();
     expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it("paints the shared ring on keyboard focus-visible and not on mouse, at both densities", async () => {
+    renderThemed(
+      <>
+        <button type="button">Before</button>
+        <FileTrigger>Attach files</FileTrigger>
+      </>
+    );
+
+    await assertFocusRingAtBothDensities(buttonNamed("Before"), buttonNamed("Attach files"));
+  });
+
+  it("follows the signed sm rung at both densities and ignores a nested stamp", () => {
+    renderThemed(
+      <>
+        <FileTrigger>Root</FileTrigger>
+        <div data-density="comfortable">
+          <FileTrigger>Nested</FileTrigger>
+        </div>
+      </>
+    );
+
+    // The visible Button defaults to `size="sm"` (file-trigger.md §3). Density is a
+    // document-root axis: `ui.css` keys the comfortable block on
+    // `:root[data-density="comfortable"]`, so a nested attribute rescopes nothing.
+    for (const density of ["dense", "comfortable"] as const) {
+      stampDensity(density);
+      const rung = CONTROL_SM[density].height;
+      expect(px(getComputedStyle(buttonNamed("Root")).height)).toBe(rung);
+      expect(px(getComputedStyle(buttonNamed("Nested")).height)).toBe(rung);
+    }
   });
 
   it("lands variant and size classes on the button, not the hidden input", () => {

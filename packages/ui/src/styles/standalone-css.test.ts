@@ -38,7 +38,9 @@ describe("standalone stylesheet source set (architecture.md §5)", () => {
     expect(wrapper).not.toContain("@source not");
   });
 
-  it.skipIf(!existsSync(compiledCssPath))("emits no utility spelled only in src-only files", () => {
+  it("emits no utility spelled only in src-only files", () => {
+    // Guaranteed by the `test` → `@elmeragroup/ui#build` edge in turbo.json.
+    expect(existsSync(compiledCssPath), compiledCssPath).toBe(true);
     const emitted = selectorLines(readFileSync(compiledCssPath, "utf8"));
     expect(emitted.has(DIST_CLASS)).toBe(true);
     for (const className of SRC_ONLY_CLASSES) {

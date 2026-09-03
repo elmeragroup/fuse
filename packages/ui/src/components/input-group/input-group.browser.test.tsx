@@ -334,6 +334,36 @@ describe("InputGroup", () => {
     expect(px(getComputedStyle(rootAt()).height)).toBe(CONTROL_MD.dense.height);
   });
 
+  it("ignores a nested data-density stamp in both directions (input-group.md §9)", () => {
+    renderThemed(
+      <>
+        <InputGroup.Root>
+          <InputGroup.Input aria-label="Root" />
+        </InputGroup.Root>
+        <div data-density="comfortable">
+          <InputGroup.Root>
+            <InputGroup.Input aria-label="Nested comfortable" />
+          </InputGroup.Root>
+        </div>
+        <div data-density="dense">
+          <InputGroup.Root>
+            <InputGroup.Input aria-label="Nested dense" />
+          </InputGroup.Root>
+        </div>
+      </>
+    );
+
+    // Density is a document-root axis: `ui.css` keys the comfortable block on
+    // `:root[data-density="comfortable"]`, so a nested attribute rescopes nothing.
+    for (const density of ["dense", "comfortable"] as const) {
+      stampDensity(density);
+      const rung = CONTROL_MD[density].height;
+      expect(px(getComputedStyle(rootAt(0)).height)).toBe(rung);
+      expect(px(getComputedStyle(rootAt(1)).height)).toBe(rung);
+      expect(px(getComputedStyle(rootAt(2)).height)).toBe(rung);
+    }
+  });
+
   it("grows past the md rung for block rails and textarea controls", () => {
     renderThemed(
       <InputGroup.Root>

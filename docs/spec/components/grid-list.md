@@ -70,6 +70,7 @@ Both parts accept `className` (string or render-prop function, composed via `com
 - Arrow-key navigation moves focus between rows; typeahead focuses matching `textValue`
 - `disabledKeys` rows expose `aria-disabled` and refuse selection; `renderEmptyState` content centers when the collection is empty
 - Drag handle: with `dragAndDropHooks`, `getByRole("button", { name })` finds the handle in every locale; the shared focus-ring helper passes on keyboard focus and is absent on mouse focus
+- Dual-density: the drag handle follows the signed `sm` rung at both stamps, while row padding — not a control-box rung per §4 — is identical across them; the shared focus-ring helper runs at both stamps. _(Added 2026-09-03 — [ADR 0008](../../adr/0008-tests-assert-behaviour-not-source-spelling.md).)_
 
 ## 10 Demo requirements
 

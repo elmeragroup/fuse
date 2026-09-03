@@ -138,6 +138,7 @@ Role/label-based queries throughout; keyboard flows per §7:
 - `size`: `data-slot="dialog-content"` element carries the expected max-width class for a sample of values (`sm`, `md`, `10xl`).
 - `container`: popup renders inside the provided element / nearest ThemeScope, not `document.body`.
 - Non-dismissible dialog (`disablePointerDismissal` plus cancelling the `escape-key` reason in `onOpenChange`): Escape and backdrop click do not close.
+- Type tests (`*.test-d.tsx`, tooling §7.3): the namespace ships all ten parts from `@elmeragroup/ui/dialog` and the root barrel; `DialogContentProps["size"]` is exactly the 13-value overlay axis; `showCloseButton` / `closeLabel` are on both `Content` and `Footer`; parts take `useRender`'s `render` and never an `as` prop _(Added 2026-09-03 — [ADR 0008](../../adr/0008-tests-assert-behaviour-not-source-spelling.md).)_
 
 ## 10 Demo requirements
 
