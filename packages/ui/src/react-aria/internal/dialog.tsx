@@ -6,7 +6,7 @@ import type { ComponentProps, ReactElement, ReactNode } from "react";
 import { Dialog as AriaDialog, Heading, OverlayTriggerStateContext } from "react-aria-components";
 import { tv } from "tailwind-variants";
 
-import { dialogStrings } from "../../components/dialog/intl";
+import { overlayCloseStrings } from "../../components/overlay/intl";
 import { overlayTitleClass } from "../../components/overlay/overlay-classes";
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { X } from "../../icons/generated/x";
@@ -112,7 +112,7 @@ export function Dialog({
   title,
   ...props
 }: DialogProps): ReactElement {
-  const strings = useLocalizedStrings(dialogStrings);
+  const strings = useLocalizedStrings(overlayCloseStrings);
   const { base, closeButton: closeButtonClass, closeButtonIcon } = dialogVariants();
   const label = closeLabel ?? strings.format("close");
 

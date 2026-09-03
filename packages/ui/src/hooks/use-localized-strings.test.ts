@@ -1,6 +1,5 @@
 import { createElement } from "react";
 
-import { LocalizedStringDictionary } from "@internationalized/string";
 import type { LocalizedStringFormatter } from "@internationalized/string";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -9,6 +8,7 @@ import { describe, expect, it } from "vitest";
 
 import { discoverEntries } from "../../scripts/entries";
 import { SUPPORTED_LOCALES, withLocale } from "../../test/locale-matrix";
+import { createStringDictionary } from "./create-string-dictionary";
 import { fixtureDictionary } from "./intl-fixture";
 import { enUS } from "./intl-fixture/en-US";
 import { fiFI } from "./intl-fixture/fi-FI";
@@ -48,12 +48,9 @@ function DualProbe() {
   return first === second ? "shared" : "allocated";
 }
 
-const otherDictionary = new LocalizedStringDictionary({
-  "en-US": enUS,
-  "fi-FI": fiFI,
-  "nb-NO": nbNO,
-  "sv-SE": svSE,
-});
+// A second dictionary over the same rows: two `createStringDictionary` calls are two
+// objects, so this pins the cache to dictionary identity rather than to row content.
+const otherDictionary = createStringDictionary({ enUS, fiFI, nbNO, svSE });
 
 function CaptureProbe({
   dictionary,

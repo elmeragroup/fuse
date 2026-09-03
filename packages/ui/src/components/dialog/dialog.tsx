@@ -10,6 +10,7 @@ import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { cn } from "../../styles/cn";
 import { selfFocusRingClass } from "../../styles/utils";
 import { useResolvedPortalContainer } from "../../theme/use-resolved-portal-container";
+import { overlayCloseStrings } from "../overlay/intl";
 import {
   overlayFooterClass,
   overlayLayer,
@@ -20,7 +21,6 @@ import {
 } from "../overlay/overlay-classes";
 import { overlayCornerCloseButton, overlayFooterCloseButton } from "../overlay/overlay-close-button";
 import type { OverlayContainerProps } from "../overlay/overlay-props";
-import { dialogStrings } from "./intl";
 
 const dialogContentVariants = tv({
   // The shared popup surface supplies the fill, the ring, and a radius rung; Dialog
@@ -122,7 +122,7 @@ function DialogContent({
   closeLabel,
   ...props
 }: DialogContentProps): ReactElement | null {
-  const strings = useLocalizedStrings(dialogStrings);
+  const strings = useLocalizedStrings(overlayCloseStrings);
   const resolvedContainer = useResolvedPortalContainer(container);
 
   if (resolvedContainer === null) {
@@ -168,7 +168,7 @@ function DialogFooter({
   children,
   ...props
 }: DialogFooterProps): ReactElement {
-  const strings = useLocalizedStrings(dialogStrings);
+  const strings = useLocalizedStrings(overlayCloseStrings);
   const label = closeLabel ?? strings.format("close");
 
   return (

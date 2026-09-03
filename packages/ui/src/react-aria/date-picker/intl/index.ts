@@ -1,5 +1,4 @@
-import { LocalizedStringDictionary } from "@internationalized/string";
-
+import { createStringDictionary } from "../../../hooks/create-string-dictionary";
 import { enUS } from "./en-US";
 import { fiFI } from "./fi-FI";
 import { nbNO } from "./nb-NO";
@@ -10,9 +9,4 @@ import { svSE } from "./sv-SE";
  * accessibility.md §4.1 — the preset group's default accessible name. Preset item copy
  * is consumer-visible content and is never translated here (§4.1 closing rule).
  */
-export const datePickerStrings = new LocalizedStringDictionary({
-  "en-US": enUS,
-  "fi-FI": fiFI,
-  "nb-NO": nbNO,
-  "sv-SE": svSE,
-});
+export const datePickerStrings = createStringDictionary({ enUS, fiFI, nbNO, svSE });
