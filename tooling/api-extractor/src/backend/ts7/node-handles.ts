@@ -98,6 +98,7 @@ function nativeNodeIdentity(
   // Structural narrowing keeps that unstable detail inside this adapter and
   // lets synthetic nodes fall back to object-reference interning.
   const id = (node as Node & { readonly id?: unknown }).id;
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- the undocumented RemoteNode id is narrowed at this intern seam.
   if (typeof id !== "string") return undefined;
   const firstSeparator = id.indexOf(".");
   const secondSeparator = id.indexOf(".", firstSeparator + 1);

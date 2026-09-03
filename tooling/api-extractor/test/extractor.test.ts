@@ -453,7 +453,7 @@ describe("ProjectExtractor", () => {
       throw new Error("Expected resolver policy failure");
     } catch (cause) {
       expect(cause).toBeInstanceOf(ExtractError);
-      // SAFETY: fake backend identities are opaque test handles.
+      // SAFETY: the `toBeInstanceOf` assertion on the line above established the class.
       const error = cause as ExtractError;
       expect(error.filePath).toBe(unsupportedPath);
       expect(error.symbolStack).toEqual([unsupportedPath, "value"]);

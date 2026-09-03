@@ -320,8 +320,9 @@ function defaultExportNameSymbol(
   // that every function/class declaration materializes with at runtime.
   const modifiers = declarationModifiers(declaration);
   if (!modifiers.some((modifier) => modifier.kind === SyntaxKind.DefaultKeyword)) return undefined;
-  // SAFETY: `Array.isArray` above is not the guard here; a default-exported declaration always
-  // carries an optional `name` node, and the `undefined` case is handled on the next line.
+  // SAFETY: the shared declaration typing omits the `name` slot. A default export may be
+  // anonymous (`export default class {}`), so the read stays optional and the next line returns
+  // on absence rather than assuming a name.
   const name = (declaration as Node & { readonly name?: Node }).name;
   if (name === undefined) return undefined;
   const symbol = session.symbolAt(name);

@@ -86,6 +86,7 @@ function freezeFact<Result>(value: Result): Result {
  * re-argued rather than silently lost.
  */
 function deepFreezeFact<Result>(value: Result, seen: WeakSet<object>): Result {
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- normalized compiler facts are deep-frozen before caching.
   if (value === null || typeof value !== "object" || seen.has(value)) return value;
   if (Object.isFrozen(value)) return value;
   seen.add(value);

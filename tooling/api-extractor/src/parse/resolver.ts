@@ -217,7 +217,8 @@ function publicExportName(type: SemanticType, entry: BackendExportDraft): Semant
   if (!("typeName" in type)) return type;
   const parentNamespaces = (entry.symbolStack ?? [entry.name]).slice(0, -1);
   const ownName = entry.name.slice(entry.name.lastIndexOf(".") + 1);
-  // SAFETY: the fallback flag tuple is package-owned.
+  // SAFETY: the `"typeName" in type` guard above established the property; this assertion only
+  // names its type, and every read below handles the undefined case.
   const typeName = (type as { typeName?: TypeName | undefined }).typeName;
   if (parentNamespaces.length === 0) {
     // Top-level exports keep the resolved name unless it is internal.

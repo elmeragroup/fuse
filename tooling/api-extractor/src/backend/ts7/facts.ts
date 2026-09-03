@@ -334,10 +334,12 @@ function enumFacts(
       (memberType?.isLiteralType() === true && isLiteral(memberType.value) ? memberType.value : undefined);
     if (
       declaration === undefined ||
+      // oxlint-disable-next-line anti-slop/no-runtime-typeof -- literal values are narrowed at the compiler boundary.
       (typeof inferredValue !== "string" && typeof inferredValue !== "number")
     ) {
       warnings.push(enumWarning(session, symbol, member.name));
     }
+    // oxlint-disable-next-line anti-slop/no-runtime-typeof -- literal values are narrowed at the compiler boundary.
     if (typeof inferredValue !== "string" && typeof inferredValue !== "number") continue;
     const memberDocumentation = documentationOf(session.symbolHandle(member));
     members.push({
@@ -629,7 +631,9 @@ function typeFlagNamesOf(flags: TypeFlags): readonly TypeFlagName[] {
   return names.length === 0 ? ["Other"] : names;
 }
 
+// oxlint-disable-next-line anti-slop/no-unknown-parameters -- primitive narrowing is the adapter's normalized-fact seam.
 function isLiteral(value: unknown): value is string | number | boolean {
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- literal values are narrowed at the compiler boundary.
   return typeof value === "string" || typeof value === "number" || typeof value === "boolean";
 }
 

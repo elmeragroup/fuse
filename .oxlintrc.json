@@ -187,19 +187,6 @@
       }
     },
     {
-      // `src/backend/ts7/**` is the only directory that reads TypeScript 7's unstable native
-      // compiler API. Facts arrive there as untyped primitives on unnamed parameters and are
-      // narrowed at that seam before anything crosses the backend contract, so the two rules that
-      // ban exactly that narrowing cannot apply. Same carve-out shape as the two plugin
-      // source dirs; recorded in docs/spec/tooling.md section 4. Nothing outside this directory is
-      // exempt: every other extractor exception is a next-line disable with its own reason.
-      "files": ["tooling/api-extractor/src/backend/ts7/**"],
-      "rules": {
-        "anti-slop/no-runtime-typeof": "off",
-        "anti-slop/no-unknown-parameters": "off"
-      }
-    },
-    {
       "files": ["tooling/oxlint-anti-slop/**"],
       "rules": {
         "typescript/no-unsafe-assignment": "off",

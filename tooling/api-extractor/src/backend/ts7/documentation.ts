@@ -229,9 +229,12 @@ function jsDocBlocks(node: Node): readonly JsDocBlock[] {
   return Array.isArray(blocks) ? (blocks as readonly JsDocBlock[]) : [];
 }
 
+// oxlint-disable-next-line anti-slop/no-unknown-parameters -- primitive narrowing is the adapter's normalized-fact seam.
 function readIdentifierText(value: unknown): string | undefined {
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- JSDoc trivia is narrowed at the compiler boundary.
   if (typeof value === "string") return value;
   // SAFETY: identifier nodes expose their spelling as `text`.
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- JSDoc trivia is narrowed at the compiler boundary.
   if (typeof (value as { text?: unknown } | undefined)?.text === "string") {
     // SAFETY: the `typeof` guard on the line above established `text` as a string.
     return (value as { text: string }).text;
@@ -246,6 +249,7 @@ function readIdentifierText(value: unknown): string | undefined {
  */
 function jsDocText(comment: JsDocCommentParts | undefined): string | undefined {
   if (comment === undefined) return undefined;
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- JSDoc trivia is narrowed at the compiler boundary.
   const raw = typeof comment === "string" ? comment : comment.map((part) => part.getText()).join("");
   const normalized = normalizeJsDocBlock(raw);
   return normalized === "" ? undefined : normalized;
