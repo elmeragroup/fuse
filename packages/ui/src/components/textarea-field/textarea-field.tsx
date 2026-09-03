@@ -72,7 +72,7 @@ export function TextareaField({
       invalid={isInvalid}
       disabled={isDisabled}
       label={label}
-      labelRowClassName="gap-2"
+      classNames={{ labelRow: "gap-2" }}
       status={
         maxLength === undefined ? undefined : (
           <span className="text-xs text-muted-foreground">

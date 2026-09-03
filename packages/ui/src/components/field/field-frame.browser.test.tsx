@@ -92,7 +92,11 @@ describe("FieldFrame", () => {
 
   it("groups the control with the description when a content wrapper is asked for", () => {
     renderThemed(
-      <FieldFrame label="Email" description="Grouped." contentClassName="flex flex-row">
+      <FieldFrame
+        label="Email"
+        description="Grouped."
+        groupsControlWithDescription
+        classNames={{ content: "flex flex-row" }}>
         <Input />
       </FieldFrame>
     );
@@ -102,6 +106,28 @@ describe("FieldFrame", () => {
       throw new Error("expected a content wrapper");
     }
     expect(wrapper.contains(textboxNamed("Email"))).toBe(true);
+  });
+
+  it("wraps the control and the description without classes when asked for a bare wrapper", () => {
+    renderThemed(
+      <FieldFrame label="Email" description="Bare.">
+        <Input />
+      </FieldFrame>
+    );
+    const loose = page.getByText("Bare.").element().parentElement;
+    renderThemed(
+      <FieldFrame label="Postcode" description="Wrapped." groupsControlWithDescription>
+        <Input />
+      </FieldFrame>
+    );
+    const wrapper = page.getByText("Wrapped.").element().parentElement;
+    if (!(wrapper instanceof HTMLElement)) {
+      throw new Error("expected a content wrapper");
+    }
+    expect(loose).toBe(fieldRootFrom("Email"));
+    expect(wrapper).not.toBe(fieldRootFrom("Postcode"));
+    expect(wrapper.className).toBe("");
+    expect(wrapper.contains(textboxNamed("Postcode"))).toBe(true);
   });
 
   it("leaves the control and the description as siblings without a content wrapper", () => {

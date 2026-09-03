@@ -137,17 +137,20 @@ export function TextField({
 
   return (
     <FieldFrame
-      className={cn(base(), className)}
+      classNames={{
+        root: cn(base(), className),
+        labelRow: labelContainer(),
+        label: labelStyles(),
+        content: container(),
+        description: cn(descriptionStyles(), "text-pretty"),
+      }}
       invalid={isInvalid}
       disabled={isDisabled}
       label={label}
-      labelRowClassName={labelContainer()}
-      labelClassName={labelStyles()}
       isPending={isPending}
       isSuccess={isSuccess}
-      contentClassName={container()}
+      groupsControlWithDescription
       description={description}
-      descriptionClassName={cn(descriptionStyles(), "text-pretty")}
       errorMessage={errorMessage}>
       <div className="relative">
         <Input

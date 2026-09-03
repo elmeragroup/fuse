@@ -260,18 +260,22 @@ describe("field", () => {
     ];
     expect(classTokens(responsive).toSorted()).toEqual(derived.toSorted());
   });
+});
 
-  // Why not a lint rule: "render your label row through the shared frame" is an
-  // ownership decision spec 08 makes for these three files, not a syntactic class of
-  // mistakes. A rule banning Field.Label anywhere would break Field's own demos and
-  // every composite outside this list.
+describe("field composites", () => {
+  // Why not a lint rule: a one-off do-not-reintroduce ban (ADR 0008). These three
+  // composites each rebuilt the label row, description and error before the shared
+  // frame took ownership (field.md §8.9); the ban keeps that markup from growing back
+  // here. It is not a repo-wide API ban — Field's own demos and every composite outside
+  // this list render these parts directly, and the frame itself must. What the parts do
+  // once rendered is asserted behaviourally by each composite's browser suite and by
+  // `field-frame.browser.test.tsx`.
   it.each([
     "components/text-field/text-field.tsx",
     "components/number-field/number-field.tsx",
     "components/textarea-field/textarea-field.tsx",
   ])("%s renders no label, description, or error markup of its own", (file) => {
     const source = readSrc(file);
-    expect(source).toContain("FieldFrame");
     // JSX openers only: the prop docs still name the parts the frame renders, and the
     // docs generator publishes that text.
     for (const part of ["<Field.Label", "<Field.Description", "<Field.Error", "<Field.Root"]) {

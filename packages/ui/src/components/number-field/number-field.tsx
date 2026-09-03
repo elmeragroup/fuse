@@ -105,7 +105,7 @@ export function NumberField({
 
   return (
     <FieldFrame
-      className={rootClassName}
+      classNames={{ root: rootClassName }}
       invalid={isInvalid}
       disabled={isDisabled}
       label={label}
