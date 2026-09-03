@@ -2,9 +2,10 @@ import { beforeAll, describe, expect, test } from "vitest";
 
 import { effectOrigin } from "../scripts/lib/api-effect-adapter.ts";
 import {
+  apiPartsView,
   assertReviewedReasons,
-  compareParts,
-  docsShadowInventory,
+  compareNamedCollection,
+  docsApiInventory,
   inputCapturesEqual,
   readShadowSnapshot,
   refusingDocsWriter,
@@ -35,6 +36,11 @@ function testProp(name: string): ApiProp {
     description: "",
     required: false,
   };
+}
+
+/** The parts view of `compareNamedCollection` — the one comparison the shadow runs. */
+function compareApiParts(component: string, current: readonly ApiPart[], effect: readonly ApiPart[]) {
+  return compareNamedCollection(component, current, effect, apiPartsView);
 }
 
 function testPart(name: string, propNames: readonly string[] = []): ApiPart {
@@ -79,7 +85,7 @@ beforeAll(async () => {
 
 describe("docs API shadow", () => {
   test("uses the complete route inventory and identical public entry inputs", () => {
-    const inventory = docsShadowInventory();
+    const inventory = docsApiInventory();
     expect(inventory.map((entry) => entry.slug)).toEqual([...componentSlugs()]);
     expect(report.inventory).toEqual(inventory);
     expect(report.extractionInputs).toEqual(inventory.map((entry) => entry.entryFile));
@@ -194,13 +200,13 @@ describe("docs API shadow", () => {
       index === 0 ? { ...input, entrySha256: "1".repeat(64) } : input
     );
     expect(inputCapturesEqual(changedEntry, report.effectInputHashes)).toBe(false);
-    expect(compareParts("length-regression", report.components[0]?.current ?? [], [])).not.toContainEqual(
+    expect(compareApiParts("length-regression", report.components[0]?.current ?? [], [])).not.toContainEqual(
       expect.objectContaining({ path: "parts" })
     );
   });
 
   test("reports exact order changes for common parts and props", () => {
-    const differences = compareParts(
+    const differences = compareApiParts(
       "ordering",
       [testPart("A", ["a", "b"]), testPart("B")],
       [testPart("B"), testPart("A", ["b", "a"])]
@@ -213,7 +219,7 @@ describe("docs API shadow", () => {
     ]);
     expect(differences.every(({ path }) => !["parts", "parts.A.props"].includes(path))).toBe(true);
 
-    const missing = compareParts("missing", [testPart("A"), testPart("B")], [testPart("A")]);
+    const missing = compareApiParts("missing", [testPart("A"), testPart("B")], [testPart("A")]);
     expect(missing.map(({ path }) => path)).toEqual(["parts.B"]);
   });
 
@@ -225,7 +231,7 @@ describe("docs API shadow", () => {
       ...current,
       props: [{ ...firstProp, origin: "recipe-axis" as const }],
     };
-    expect(compareParts("origin-drift", [currentOriginDrift], [current])).toContainEqual({
+    expect(compareApiParts("origin-drift", [currentOriginDrift], [current])).toContainEqual({
       component: "origin-drift",
       path: "parts.A.props.x.origin",
       current: "recipe-axis",
@@ -247,10 +253,10 @@ describe("docs API shadow", () => {
   });
 
   test("rejects duplicate part and prop names instead of overwriting them", () => {
-    expect(() => compareParts("duplicate-parts", [testPart("A"), testPart("A")], [])).toThrow(
+    expect(() => compareApiParts("duplicate-parts", [testPart("A"), testPart("A")], [])).toThrow(
       'duplicate part name "A"'
     );
-    expect(() => compareParts("duplicate-props", [testPart("A", ["x", "x"])], [testPart("A")])).toThrow(
+    expect(() => compareApiParts("duplicate-props", [testPart("A", ["x", "x"])], [testPart("A")])).toThrow(
       'duplicate prop name "x"'
     );
   });

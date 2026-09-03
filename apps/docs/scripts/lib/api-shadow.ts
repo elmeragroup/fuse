@@ -11,13 +11,13 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
-import { currentSide, effectSide, inputCapturesEqual } from "./api-effect-adapter.ts";
-import type { SideRun } from "./api-effect-adapter.ts";
+import { currentSide, effectSide, extractDocsComponents, inputCapturesEqual } from "./api-effect-adapter.ts";
+import type { DocsComponentExtraction, SideRun } from "./api-effect-adapter.ts";
 import { assertReviewedReasons, compareComponent, compareProblems } from "./api-shadow-compare.ts";
-import { docsShadowInventory } from "./api-shadow-files.ts";
 import type { DocsShadowComponentResult, DocsShadowReport, DocsShadowSnapshot } from "./api-shadow-types.ts";
 import { openLibraryProject } from "./api.ts";
-import type { LibraryProject } from "./api.ts";
+import type { ComponentApi } from "./api.ts";
+import { docsApiInventory } from "./docs-inspection.ts";
 import type { DocsWriter } from "./docs-writer.ts";
 import { refusingDocsWriter } from "./docs-writer.ts";
 import { docsRoot } from "./paths.ts";
@@ -35,14 +35,16 @@ export type {
   DocsShadowSummary,
   DocsShadowReport,
 } from "./api-shadow-types.ts";
-export { docsShadowInventory } from "./api-shadow-files.ts";
+export { docsApiInventory } from "./docs-inspection.ts";
 export {
+  apiPartsView,
   assertReviewedReasons,
-  compareParts,
-  compareEvidence,
+  compareNamedCollection,
   compareProblems,
+  partEvidenceView,
   reviewAgainstSnapshot,
 } from "./api-shadow-compare.ts";
+export type { NamedCollectionView } from "./api-shadow-compare.ts";
 export { refusingDocsWriter, nodeDocsWriter } from "./docs-writer.ts";
 export type { DocsWriter } from "./docs-writer.ts";
 export { inputCapturesEqual } from "./api-effect-adapter.ts";
@@ -52,13 +54,13 @@ export const shadowSnapshotFile = path.join(docsRoot, "test/api-shadow.snapshot.
 export type DocsShadowRunOptions = {
   /** Test-only side injection used to prove a failing side surfaces as the run's failure. */
   readonly currentSide?: (
-    inventory: ReturnType<typeof docsShadowInventory>,
-    context: LibraryProject
+    inventory: ReturnType<typeof docsApiInventory>,
+    extraction: readonly DocsComponentExtraction[]
   ) => SideRun;
   /** Test-only side injection used to prove a failing side surfaces as the run's failure. */
   readonly effectSide?: (
-    inventory: ReturnType<typeof docsShadowInventory>,
-    context: LibraryProject
+    inventory: ReturnType<typeof docsApiInventory>,
+    model: readonly ComponentApi[]
   ) => Promise<SideRun>;
   /**
    * Write sink snapshot persistence uses. Defaults to a refusing writer: a
@@ -73,14 +75,18 @@ export type DocsShadowRunOptions = {
 /** Runs both extractors over the complete component inventory without invoking any writer. */
 export async function runDocsShadowComparison(options: DocsShadowRunOptions = {}): Promise<DocsShadowReport> {
   const writer = options.writer ?? refusingDocsWriter(() => undefined);
-  const inventory = docsShadowInventory();
+  const inventory = docsApiInventory();
   const extractionInputs = inventory.map((entry) => entry.entryFile);
   const context = openLibraryProject();
   let currentRun: SideRun;
   let effectRun: SideRun;
   try {
-    currentRun = (options.currentSide ?? currentSide)(inventory, context);
-    effectRun = await (options.effectSide ?? effectSide)(inventory, context);
+    // One `extractLibraryApi` model feeds both sides: the current view *is* that model,
+    // and the Effect view borrows its implementation sources and forwarded counts.
+    const extraction = extractDocsComponents(inventory, context);
+    const model = extraction.map((entry) => entry.api);
+    currentRun = (options.currentSide ?? currentSide)(inventory, extraction);
+    effectRun = await (options.effectSide ?? effectSide)(inventory, model);
   } finally {
     context.close();
   }

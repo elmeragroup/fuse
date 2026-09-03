@@ -26,16 +26,8 @@ import type {
   ShadowProblem,
   ShadowPropEvidence,
 } from "./api-shadow-types.ts";
-import {
-  componentPartRequests,
-  componentPartSources,
-  describeComponentApi,
-  inspectCurrentPartEvidence,
-  inspectPartForwarded,
-  propOrigin,
-  shortTypeOf,
-} from "./api.ts";
-import type { CurrentPartEvidence, PartForwarded, PartSource } from "./api.ts";
+import { extractComponentApi, inspectCurrentPartEvidence, propOrigin, shortTypeOf } from "./api.ts";
+import type { ComponentApi, CurrentPartEvidence, PartForwarded, PartSource } from "./api.ts";
 import type { LibraryProject } from "./api.ts";
 import { inspectComponent, inspectComponentDemos, inspectGlobalDocs } from "./docs-inspection.ts";
 import { ProblemLog } from "./errors.ts";
@@ -269,6 +261,20 @@ function unionBranchProperties(type: SemanticType): readonly (readonly SemanticP
   return type.types.map(propertiesOf);
 }
 
+/**
+ * The union members a declared type contributes, as extractor nodes.
+ *
+ * An anonymous union is flattened into its members so two declarations of the same
+ * prop merge member-wise; a *named* union stays one member, because that is exactly
+ * how the renderer prints it. Splitting a rendered type string on `|` would instead
+ * tear apart a function's union return type and re-wrap the pieces as fake external
+ * references, so the merge reads the nodes the extractor produced.
+ */
+function unionMembers(type: SemanticType): readonly SemanticType[] {
+  if (type.kind !== "union" || type.typeName !== undefined) return [type];
+  return type.types.flatMap(unionMembers);
+}
+
 function mergedProperties(types: readonly SemanticType[]): readonly SemanticProperty[] {
   const candidates = types.flatMap((type) => propertiesOf(type));
   const branchSets = types.flatMap((type) => unionBranchProperties(type));
@@ -281,15 +287,9 @@ function mergedProperties(types: readonly SemanticType[]): readonly SemanticProp
     const optionalByUnion =
       branchSets.length > 1 &&
       branchSets.some((branch) => !branch.some((candidate) => candidate.name === name));
-    const mergedType: SemanticType = {
-      kind: "union",
-      types: unique(
-        matches.flatMap((candidate) => renderSemanticType(candidate.type).split(/\s+\|\s+/u))
-      ).map((rendered) => ({
-        kind: "external",
-        typeName: { name: rendered },
-      })),
-    };
+    const members = matches.flatMap((candidate) => unionMembers(candidate.type));
+    const mergedType: SemanticType =
+      members.length === 1 && members[0] !== undefined ? members[0] : { kind: "union", types: members };
     merged.push({
       ...first,
       optional: first.optional || matches.some((candidate) => candidate.optional) || optionalByUnion,
@@ -626,26 +626,50 @@ function shadowCurrentEvidence(value: CurrentPartEvidence): ShadowPartEvidence {
   };
 }
 
-export function currentSide(inventory: readonly DocsShadowComponent[], context: LibraryProject): SideRun {
-  const inputs = captureInputs(inventory);
-  const results = inventory.map((entry) => {
+/** One component's checker model beside the problems its extraction and its page raised. */
+export type DocsComponentExtraction = {
+  readonly api: ComponentApi;
+  readonly problems: readonly string[];
+};
+
+/**
+ * Extracts the checker model for the whole inventory through `extractLibraryApi`,
+ * keeping one problem log per component so a diagnostic stays attributable.
+ * The current shadow side reads its parts and evidence from this model, and the
+ * Effect side reads its implementation sources and forwarded counts from it.
+ */
+export function extractDocsComponents(
+  inventory: readonly DocsApiComponent[],
+  context: LibraryProject
+): readonly DocsComponentExtraction[] {
+  return inventory.map((entry) => {
     const problems = new ProblemLog();
-    const request = { entryFile: entry.entryFile, exportNames: entry.exportNames };
     try {
       inspectComponentDemos(inspectComponent(entry.slug), problems);
     } catch (error) {
       problems.add(error instanceof Error ? error.message : String(error));
     }
-    const parts = describeComponentApi(context, request, problems);
+    const api = extractComponentApi(context, entry, problems);
+    return { api, problems: problems.problems };
+  });
+}
+
+export function currentSide(
+  inventory: readonly DocsShadowComponent[],
+  extraction: readonly DocsComponentExtraction[]
+): SideRun {
+  const inputs = captureInputs(inventory);
+  const results = extraction.map((entry) => {
+    const parts = entry.api.parts;
     return {
       parts,
-      evidence: componentPartRequests(context, request).map((part) => {
+      evidence: entry.api.partApis.map((part) => {
         const visible = parts.find((candidate) => candidate.name === part.name);
         return shadowCurrentEvidence(
-          inspectCurrentPartEvidence(context, part, new Set(visible?.props.map((prop) => prop.name) ?? []))
+          inspectCurrentPartEvidence(part, new Set(visible?.props.map((prop) => prop.name) ?? []))
         );
       }),
-      problems: problems.problems.map((message) => currentProblem(entry.slug, message)),
+      problems: entry.problems.map((message) => currentProblem(entry.api.slug, message)),
     };
   });
   const global = new ProblemLog();
@@ -690,22 +714,24 @@ async function extractInventory(
   throw failure instanceof Error ? failure : new Error(String(failure));
 }
 
+/** The checker facts the Effect view borrows: implementation sources and forwarded counts. */
+function canonicalFactsOf(component: ComponentApi): CanonicalComponentFacts {
+  return {
+    sources: new Map(
+      component.partApis.flatMap((part) => (part.source === null ? [] : [[part.name, part.source] as const]))
+    ),
+    forwarded: new Map(component.partApis.map((part) => [part.name, part.forwarded] as const)),
+  };
+}
+
 export async function effectSide(
   inventory: readonly DocsApiComponent[],
-  context: LibraryProject,
+  model: readonly ComponentApi[],
   options: EffectSideOptions = {}
 ): Promise<SideRun> {
   const inputs = captureInputs(inventory);
   const extraction = await extractInventory(inventory, options);
-  const canonical = new Map<string, CanonicalComponentFacts>();
-  for (const entry of inventory) {
-    const request = { entryFile: entry.entryFile, exportNames: entry.exportNames };
-    const sources = componentPartSources(context, request);
-    const forwarded = new Map(
-      componentPartRequests(context, request).map((part) => [part.name, inspectPartForwarded(context, part)])
-    );
-    canonical.set(entry.slug, { sources, forwarded });
-  }
+  const canonical = new Map(model.map((component) => [component.slug, canonicalFactsOf(component)]));
   const results = extraction.map((result, index) => {
     const entry = inventory[index];
     if (entry === undefined)

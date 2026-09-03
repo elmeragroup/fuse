@@ -29,6 +29,33 @@ This hybrid superseded the earlier AST-extraction plan (ruling 74b, 2026-08-24: 
 
 Normative pipeline: [docs-site](../spec/docs-site.md) §8. Package inventory: [tooling](../spec/tooling.md) §1.
 
+### One extraction seam (2026-09-03)
+
+The hybrid above shipped as three orchestrations that agreed by copy: the generation
+pass, the `api.json` regenerator behind the drift check, and the shadow run each walked
+a component's entry themselves, and the generator kept its own copy of the demo and
+route validation that `docs-inspection` already owned. Each generation therefore walked
+every component four times and printed the type of every forwarded React and DOM prop
+only to discard almost all of them.
+
+`apps/docs/scripts/lib/api` now exposes `extractLibraryApi`, the one walk, returning the
+published parts beside the facts behind them (implementation source, RSC status,
+destructuring defaults, forwarded summary, accepted prop symbols). All three consumers
+call it; the Effect side borrows its sources and forwarded counts from the same model
+rather than recomputing them; a prop's type is printed when a consumer asks for that
+prop. `docs-inspection` is the single owner of demo and route validation, and the
+generator imports it. The shadow comparison runs one `compareNamedCollection` over two
+views (API parts, provenance evidence) instead of two copies of the same algorithm.
+
+Nothing about the two-source decision changes: library rows still come from the checker
+walk, selected `@base-ui/react` rows still come from the extractor, and the committed
+`api.json` bytes are unchanged by the consolidation. One measured behaviour did change:
+the adapter merges a prop's declarations as extractor nodes, so a rendered type is no
+longer split on `|` — 115 shadow entries had union members hoisted out of a nested
+`React.ReactElement<…>` type argument and now render the type the extractor produced.
+The snapshot was refreshed with `pnpm run shadow:update`; every reviewed key and its
+reason survived unchanged.
+
 ## Alternatives rejected
 
 - **Keep the checker walk as the sole production path; extractor shadow-only.** Rejected because committed `api.json` artifacts already carry Base UI dependency props that HTML and markdown consumers render.

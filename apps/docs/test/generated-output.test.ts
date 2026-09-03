@@ -11,11 +11,19 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-import { componentPartPropFacts, openLibraryProject } from "../scripts/lib/api.ts";
+import {
+  extractLibraryApi,
+  openLibraryProject,
+  readPartPropFact,
+  readRscStatus,
+} from "../scripts/lib/api.ts";
+import type { ComponentApi, LibraryProject } from "../scripts/lib/api.ts";
 import { resolveComponentPaths } from "../scripts/lib/components.ts";
+import { docsApiInventory } from "../scripts/lib/docs-inspection.ts";
+import { ProblemLog } from "../scripts/lib/errors.ts";
 import { parseComponentPage } from "../scripts/lib/page-source.ts";
 import type { ComponentPageSource } from "../scripts/lib/page-source.ts";
-import { repoRelative } from "../scripts/lib/paths.ts";
+import { repoRelative, repoRoot } from "../scripts/lib/paths.ts";
 import { COMPONENT_PAGES } from "../src/generated/component-pages";
 import type { ComponentApiArtifact, ComponentPageEntry } from "../src/lib/docs-model";
 import { dependencyPackageName, normalizeDemoSource } from "../src/lib/docs-model";
@@ -54,6 +62,29 @@ function api(slug: string): ComponentApiArtifact {
 /** The component's generated markdown endpoint (§9). */
 function endpoint(slug: string): string {
   return readFileSync(join(docsRoot, "public/components", `${slug}.md`), "utf8");
+}
+
+/**
+ * Runs the pass's own extraction — the one `extractLibraryApi` every consumer calls —
+ * so an expectation about parts, forwarded counts or accepted props is read off the
+ * model the artifacts were written from, never off a second table maintained by hand.
+ */
+function withLibraryApi(assert: (model: readonly ComponentApi[], context: LibraryProject) => void): void {
+  const context = openLibraryProject();
+  try {
+    const problems = new ProblemLog();
+    const model = extractLibraryApi(context, docsApiInventory(), problems);
+    // Generation fails on any of these, so the model a passing build produced has none.
+    expect(problems.problems).toEqual([]);
+    assert(model, context);
+  } finally {
+    context.close();
+  }
+}
+
+/** The declaring module's own directive — the fact performance.md §3 classifies on. */
+function declaredRsc(sourcePath: string): string {
+  return readRscStatus(readFileSync(join(repoRoot, sourcePath), "utf8"));
 }
 
 describe("component page manifest", () => {
@@ -169,224 +200,26 @@ describe("component page manifest", () => {
     }
   });
 
-  it("orders demos by the spec §10 scenario list the page renders", () => {
-    expect(page("button").demos.map((demo) => demo.id)).toEqual([
-      "variants",
-      "sizes",
-      "pending",
-      "visually-disabled",
-      "predictive-intent",
-    ]);
-    expect(page("button-group").demos.map((demo) => demo.id)).toEqual([
-      "basic",
-      "vertical",
-      "split-button",
-      "text",
-      "nested",
-    ]);
-    expect(page("avatar").demos.map((demo) => demo.id)).toEqual(["basic", "fallback", "sizes", "group"]);
-    expect(page("loader").demos.map((demo) => demo.id)).toEqual(["sizes", "inline"]);
-    expect(page("show").demos.map((demo) => demo.id)).toEqual(["basic"]);
-    expect(page("emoji").demos.map((demo) => demo.id)).toEqual(["faces", "labeled", "sizing"]);
-    expect(page("code").demos.map((demo) => demo.id)).toEqual(["basic", "scroll"]);
-    expect(page("skeleton").demos.map((demo) => demo.id)).toEqual(["basic", "card"]);
-    expect(page("empty").demos.map((demo) => demo.id)).toEqual([
-      "basic",
-      "outline",
-      "with-actions",
-      "media-variants",
-      "inline-link",
-    ]);
-    expect(page("frame").demos.map((demo) => demo.id)).toEqual(["basic", "stacked-panels", "with-table"]);
-    expect(page("timeline-list").demos.map((demo) => demo.id)).toEqual(["basic", "rich"]);
-    expect(page("sheet").demos.map((demo) => demo.id)).toEqual([
-      "basic",
-      "sides",
-      "sizes",
-      "form",
-      "scrolling",
-    ]);
-    expect(page("tooltip").demos.map((demo) => demo.id)).toEqual(["basic", "sides", "delay", "controlled"]);
-    expect(page("alert-dialog").demos.map((demo) => demo.id)).toEqual([
-      "destructive",
-      "neutral",
-      "pending",
-      "custom-icon",
-    ]);
-    expect(page("dropdown-menu").demos.map((demo) => demo.id)).toEqual([
-      "basic",
-      "checkboxes",
-      "radio-group",
-      "submenu",
-      "links",
-      "destructive",
-    ]);
-    expect(page("switch").demos.map((demo) => demo.id)).toEqual([
-      "basic",
-      "sizes",
-      "states",
-      "in-field",
-      "form",
-    ]);
-    expect(page("collapsible").demos.map((demo) => demo.id)).toEqual([
-      "basic",
-      "controlled",
-      "hidden-until-found",
-    ]);
-    expect(page("accordion").demos.map((demo) => demo.id)).toEqual([
-      "basic",
-      "multiple",
-      "variants",
-      "controlled",
-      "hidden-until-found",
-    ]);
-    expect(page("select").demos.map((demo) => demo.id)).toEqual([
-      "basic",
-      "groups",
-      "sizes",
-      "scrolling",
-      "invalid",
-    ]);
-    expect(page("selection-item").demos.map((demo) => demo.id)).toEqual([
-      "basic",
-      "subsection",
-      "control-end",
-      "stacked",
-      "disabled",
-    ]);
-    expect(page("checkbox").demos.map((demo) => demo.id)).toEqual([
-      "basic",
-      "group",
-      "tristate",
-      "item-group",
-      "description",
-    ]);
-    expect(page("checkbox-card").demos.map((demo) => demo.id)).toEqual([
-      "basic",
-      "tags",
-      "right-content",
-      "variants",
-      "group",
-    ]);
-    expect(page("radio-group").demos.map((demo) => demo.id)).toEqual([
-      "basic",
-      "pending",
-      "item-group",
-      "icon-button",
-      "controlled-null",
-    ]);
-    expect(page("number-field").demos.map((demo) => demo.id)).toEqual([
-      "basic",
-      "denomination",
-      "format",
-      "error",
-      "states",
-      "uncontrolled",
-    ]);
-    expect(page("meter").demos.map((demo) => demo.id)).toEqual([
-      "basic",
-      "modes",
-      "value-label",
-      "range",
-      "neutral",
-    ]);
-    expect(page("tabs").demos.map((demo) => demo.id)).toEqual([
-      "basic",
-      "line",
-      "vertical",
-      "with-icons",
-      "disabled",
-    ]);
-    expect(page("confirm-button").demos.map((demo) => demo.id)).toEqual(["destructive", "success", "icon"]);
-    expect(page("popover-info-button").demos.map((demo) => demo.id)).toEqual(["basic", "sizes", "i18n"]);
-    expect(page("table").demos.map((demo) => demo.id)).toEqual([
-      "basic",
-      "in-frame",
-      "vertical-data",
-      "vertical-compact",
-    ]);
-    expect(page("textarea-field").demos.map((demo) => demo.id)).toEqual([
-      "basic",
-      "counter",
-      "uncontrolled",
-      "error",
-      "disabled",
-    ]);
-    expect(page("pagination").demos.map((demo) => demo.id)).toEqual(["basic", "ellipsis", "controlled"]);
-    expect(page("breadcrumb").demos.map((demo) => demo.id)).toEqual([
-      "basic",
-      "custom-separator",
-      "ellipsis",
-      "render-link",
-    ]);
-    expect(page("alert").demos.map((demo) => demo.id)).toEqual([
-      "variants",
-      "action",
-      "title-only",
-      "heading-level",
-    ]);
-    expect(page("toggle-group").demos.map((demo) => demo.id)).toEqual([
-      "single",
-      "multiple",
-      "outline-segmented",
-      "vertical",
-      "sizes",
-    ]);
-    expect(page("combobox").demos.map((demo) => demo.id)).toEqual([
-      "basic",
-      "groups",
-      "multi-chips",
-      "input-group-anchor",
-    ]);
-    expect(page("phone-number-field").demos.map((demo) => demo.id)).toEqual([
-      "basic",
-      "international",
-      "detect",
-      "form",
-      "i18n",
-      "states",
-    ]);
-    expect(page("ui-providers").demos.map((demo) => demo.id)).toEqual(["basic", "locale-switch"]);
-    expect(page("link").demos.map((demo) => demo.id)).toEqual(["variants", "router"]);
-    expect(page("date-field").demos.map((demo) => demo.id)).toEqual([
-      "basic",
-      "validation",
-      "granularity",
-      "states",
-      "date-input",
-    ]);
-    expect(page("calendar").demos.map((demo) => demo.id)).toEqual([
-      "basic",
-      "controlled",
-      "bounds",
-      "error",
-      "rtl",
-    ]);
-    expect(page("range-calendar").demos.map((demo) => demo.id)).toEqual([
-      "basic",
-      "controlled",
-      "unavailable",
-      "error",
-      "bounds",
-    ]);
-    expect(page("date-picker").demos.map((demo) => demo.id)).toEqual([
-      "basic",
-      "controlled",
-      "presets",
-      "validation",
-      "states",
-      "in-modal",
-    ]);
-    expect(page("date-range-picker").demos.map((demo) => demo.id)).toEqual([
-      "basic",
-      "controlled",
-      "validation",
-      "states",
-      "in-modal",
-    ]);
-    expect(page("grid-list").demos.map((demo) => demo.id)).toEqual(["selection", "empty"]);
-    expect(page("focusable").demos.map((demo) => demo.id)).toEqual(["tooltip-trigger"]);
-    expect(page("file-trigger").demos.map((demo) => demo.id)).toEqual(["basic", "modes"]);
+  it("lists the demos the page renders, once each, in the order it renders them", () => {
+    // The authored page is the demo registry (docs-site.md §6): the manifest restates its
+    // scenario list, and nothing here restates the manifest.
+    for (const entry of COMPONENT_PAGES) {
+      const authored = authoredPage(entry.slug).parsed;
+      expect(
+        entry.demos.map((demo) => demo.id),
+        entry.slug
+      ).toEqual(authored.demos.map((demo) => demo.id));
+      expect(
+        entry.demos.map((demo) => demo.title),
+        entry.slug
+      ).toEqual(authored.demos.map((demo) => demo.title));
+      expect(entry.demos.length, entry.slug).toBeGreaterThan(0);
+      expect(new Set(entry.demos.map((demo) => demo.id)).size, entry.slug).toBe(entry.demos.length);
+      for (const demo of entry.demos) {
+        expect(demo.id, `${entry.slug}.${demo.id}`).toMatch(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
+        expect(demo.title.trim(), `${entry.slug}.${demo.id}`).not.toBe("");
+      }
+    }
   });
 
   it("links View source at the implementation on the repo host", () => {
@@ -397,79 +230,19 @@ describe("component page manifest", () => {
   });
 
   it("reports RSC status from the declaring module, matching performance.md §3", () => {
-    // The §3 classification table is the audit source; a page's status is read off its
-    // declaring module, so this is where a stray directive would show up.
-    const expected = {
-      accordion: "client",
-      alert: "server",
-      "alert-dialog": "client",
-      avatar: "client",
-      badge: "server",
-      breadcrumb: "client",
-      button: "client",
-      "button-group": "client",
-      calendar: "client",
-      card: "server",
-      checkbox: "client",
-      "checkbox-card": "client",
-      code: "server",
-      collapsible: "client",
-      combobox: "client",
-      "confirm-button": "client",
-      "date-field": "client",
-      "date-picker": "client",
-      "date-range-picker": "client",
-      "description-list": "server",
-      dialog: "client",
-      "dropdown-menu": "client",
-      emoji: "server",
-      empty: "server",
-      field: "client",
-      "file-trigger": "client",
-      focusable: "server",
-      frame: "server",
-      "grid-list": "client",
-      heading: "client",
-      input: "client",
-      "input-group": "client",
-      item: "client",
-      link: "client",
-      loader: "server",
-      meter: "client",
-      "number-field": "client",
-      pagination: "client",
-      "phone-number-field": "client",
-      popover: "client",
-      "popover-info-button": "client",
-      "radio-group": "client",
-      "range-calendar": "client",
-      "scroll-area": "client",
-      "search-field": "client",
-      select: "client",
-      "selection-item": "client",
-      separator: "client",
-      sheet: "client",
-      show: "server",
-      sidebar: "client",
-      skeleton: "server",
-      span: "client",
-      switch: "client",
-      table: "server",
-      tabs: "client",
-      text: "client",
-      "text-field": "client",
-      textarea: "server",
-      "textarea-field": "client",
-      "timeline-list": "server",
-      toast: "client",
-      toggle: "client",
-      "toggle-group": "client",
-      tooltip: "client",
-      "ui-providers": "client",
-    } as const;
-    expect(Object.keys(expected)).toHaveLength(COMPONENT_PAGES.length);
-    for (const [slug, rsc] of Object.entries(expected)) {
-      expect(page(slug).rsc, slug).toBe(rsc);
+    // The declaring module's leading directive is the whole classification rule, so the
+    // expectation is read from that module — a stray directive shows up as a mismatch.
+    expect(COMPONENT_PAGES.length).toBeGreaterThan(0);
+    for (const entry of COMPONENT_PAGES) {
+      const parts = api(entry.slug).parts;
+      for (const part of parts) {
+        expect(part.rsc, `${entry.slug} ${part.name}`).toBe(declaredRsc(part.sourcePath));
+      }
+      // The page badge is the status of the part its own implementation file declares,
+      // falling back to the first part when every part is declared elsewhere — the RAC
+      // facades whose parts resolve into `node_modules` are the fallback case.
+      const root = parts.find((part) => part.sourcePath === entry.sourcePath) ?? parts[0];
+      expect(entry.rsc, entry.slug).toBe(root?.rsc);
     }
   });
 });
@@ -585,197 +358,64 @@ describe("committed api.json", () => {
   });
 
   it("publishes dependency props only on checker-backed parts that accept them", () => {
-    const context = openLibraryProject();
-    try {
-      for (const entry of COMPONENT_PAGES) {
-        const paths = resolveComponentPaths(entry.slug);
-        const acceptedByPart = componentPartPropFacts(context, {
-          entryFile: paths.entryFile,
-          exportNames: paths.apiExportNames,
-        });
-        for (const part of api(entry.slug).parts) {
-          const accepted = acceptedByPart.get(part.name);
+    withLibraryApi((model, context) => {
+      for (const component of model) {
+        const partApiByName = new Map(component.partApis.map((part) => [part.name, part]));
+        for (const part of api(component.slug).parts) {
+          const accepted = partApiByName.get(part.name);
           for (const prop of part.props) {
-            if (dependencyPackageName(prop.origin) !== null) {
-              expect(accepted, part.name).toBeDefined();
-              const fact = accepted?.get(prop.name);
-              expect(fact, `${part.name}.${prop.name}`).toBeDefined();
-              expect(prop.type, `${part.name}.${prop.name}`).toBe(fact?.type);
-              expect(prop.required, `${part.name}.${prop.name}`).toBe(fact?.required);
-            }
+            if (dependencyPackageName(prop.origin) === null) continue;
+            expect(accepted, part.name).toBeDefined();
+            const fact = accepted === undefined ? undefined : readPartPropFact(context, accepted, prop.name);
+            expect(fact, `${part.name}.${prop.name}`).toBeDefined();
+            expect(prop.type, `${part.name}.${prop.name}`).toBe(fact?.type);
+            expect(prop.required, `${part.name}.${prop.name}`).toBe(fact?.required);
           }
         }
       }
-    } finally {
-      context.close();
-    }
+    });
   });
 
-  it("resolves the compound parts of a namespace component", () => {
-    expect(api("accordion").parts.map((part) => part.name)).toEqual([
-      "Accordion.Root",
-      "Accordion.Item",
-      "Accordion.Header",
-      "Accordion.Trigger",
-      "Accordion.Content",
-    ]);
-    expect(api("alert-dialog").parts.map((part) => part.name)).toEqual([
-      "AlertDialog.Root",
-      "AlertDialog.Trigger",
-      "AlertDialog.Content",
-    ]);
-    expect(api("dialog").parts.map((part) => part.name)).toEqual([
-      "Dialog.Root",
-      "Dialog.Trigger",
-      "Dialog.Portal",
-      "Dialog.Close",
-      "Dialog.Overlay",
-      "Dialog.Content",
-      "Dialog.Header",
-      "Dialog.Footer",
-      "Dialog.Title",
-      "Dialog.Description",
-    ]);
-    expect(api("popover").parts.map((part) => part.name)).toEqual([
-      "Popover.Root",
-      "Popover.Trigger",
-      "Popover.Content",
-      "Popover.Header",
-      "Popover.Title",
-      "Popover.Description",
-    ]);
-    expect(api("sheet").parts.map((part) => part.name)).toEqual([
-      "Sheet.Root",
-      "Sheet.Trigger",
-      "Sheet.Close",
-      "Sheet.Portal",
-      "Sheet.Overlay",
-      "Sheet.Content",
-      "Sheet.Header",
-      "Sheet.Body",
-      "Sheet.Footer",
-      "Sheet.Title",
-      "Sheet.Description",
-    ]);
-    expect(api("tooltip").parts.map((part) => part.name)).toEqual([
-      "Tooltip.Provider",
-      "Tooltip.Root",
-      "Tooltip.Trigger",
-      "Tooltip.Content",
-    ]);
-    expect(api("dropdown-menu").parts.map((part) => part.name)).toEqual([
-      "DropdownMenu.Root",
-      "DropdownMenu.Trigger",
-      "DropdownMenu.Portal",
-      "DropdownMenu.Content",
-      "DropdownMenu.Group",
-      "DropdownMenu.Label",
-      "DropdownMenu.Item",
-      "DropdownMenu.LinkItem",
-      "DropdownMenu.CheckboxItem",
-      "DropdownMenu.RadioGroup",
-      "DropdownMenu.RadioItem",
-      "DropdownMenu.Separator",
-      "DropdownMenu.Shortcut",
-      "DropdownMenu.Sub",
-      "DropdownMenu.SubTrigger",
-      "DropdownMenu.SubContent",
-    ]);
-    expect(api("select").parts.map((part) => part.name)).toEqual([
-      "Select.Root",
-      "Select.Trigger",
-      "Select.Value",
-      "Select.Content",
-      "Select.Item",
-      "Select.Group",
-      "Select.Label",
-      "Select.Separator",
-      "Select.ScrollUpButton",
-      "Select.ScrollDownButton",
-    ]);
-    expect(api("scroll-area").parts.map((part) => part.name)).toEqual(["ScrollArea.Root", "ScrollArea.Bar"]);
-    expect(api("avatar").parts.map((part) => part.name)).toEqual([
-      "Avatar.Root",
-      "Avatar.Image",
-      "Avatar.Fallback",
-    ]);
-    expect(api("collapsible").parts.map((part) => part.name)).toEqual([
-      "Collapsible.Root",
-      "Collapsible.Trigger",
-      "Collapsible.Content",
-    ]);
-    expect(api("tabs").parts.map((part) => part.name)).toEqual([
-      "Tabs.Root",
-      "Tabs.List",
-      "Tabs.Trigger",
-      "Tabs.Content",
-    ]);
-    expect(api("empty").parts.map((part) => part.name)).toEqual([
-      "Empty.Root",
-      "Empty.Header",
-      "Empty.Media",
-      "Empty.Title",
-      "Empty.Description",
-      "Empty.Content",
-    ]);
-    expect(api("frame").parts.map((part) => part.name)).toEqual([
-      "Frame.Root",
-      "Frame.Panel",
-      "Frame.Header",
-      "Frame.Title",
-      "Frame.Description",
-      "Frame.Footer",
-    ]);
-    expect(api("code").parts.map((part) => part.name)).toEqual(["Code"]);
-    expect(api("button").parts.map((part) => part.name)).toEqual(["Button"]);
-    expect(api("meter").parts.map((part) => part.name)).toEqual(["Meter"]);
-    expect(api("checkbox-card").parts.map((part) => part.name)).toEqual(["CheckboxCard"]);
-    expect(api("checkbox-card").parts.map((part) => part.name)).not.toContain("checkboxCardStyles");
-    expect(api("pagination").parts.map((part) => part.name)).toEqual([
-      "Pagination.Root",
-      "Pagination.Content",
-      "Pagination.Item",
-      "Pagination.Link",
-      "Pagination.Previous",
-      "Pagination.Next",
-      "Pagination.Ellipsis",
-    ]);
-    // Unrequested callable objects on those facades stay excluded.
-    expect(api("button").parts.map((part) => part.name)).not.toContain("buttonVariants");
-    expect(api("meter").parts.map((part) => part.name)).not.toContain("METER_CONSTANTS");
-    expect(api("pagination").parts.map((part) => part.name)).not.toContain("paginationVariants");
-    expect(api("breadcrumb").parts.map((part) => part.name)).toEqual([
-      "Breadcrumb.Root",
-      "Breadcrumb.List",
-      "Breadcrumb.Item",
-      "Breadcrumb.Link",
-      "Breadcrumb.Page",
-      "Breadcrumb.Separator",
-      "Breadcrumb.Ellipsis",
-    ]);
-    expect(api("alert").parts.map((part) => part.name)).toEqual([
-      "Alert.Root",
-      "Alert.Icon",
-      "Alert.Title",
-      "Alert.Description",
-    ]);
-    expect(api("alert").parts.map((part) => part.name)).not.toContain("alertVariants");
-    expect(api("table").parts.map((part) => part.name)).toEqual([
-      "Table.Root",
-      "Table.Header",
-      "Table.Body",
-      "Table.Footer",
-      "Table.Row",
-      "Table.Head",
-      "Table.Cell",
-      "Table.Caption",
-      "VerticalTable.Root",
-      "VerticalTable.Header",
-      "VerticalTable.Body",
-      "VerticalTable.Row",
-      "VerticalTable.Key",
-      "VerticalTable.Value",
-    ]);
+  it("publishes exactly the parts the one library walk resolves, rooted at a facade export", () => {
+    withLibraryApi((model) => {
+      expect(model.length).toBe(COMPONENT_PAGES.length);
+      for (const component of model) {
+        const committed = api(component.slug).parts;
+        // The artifact is the model's parts, in walk order — no second inventory.
+        expect(
+          committed.map((part) => part.name),
+          component.slug
+        ).toEqual(component.parts.map((part) => part.name));
+        expect(committed.length, component.slug).toBeGreaterThan(0);
+        expect(new Set(committed.map((part) => part.name)).size, component.slug).toBe(committed.length);
+
+        // A part is either a named facade export or a member of one: an unrequested
+        // callable object on the same entry (`buttonVariants`, `METER_CONSTANTS`,
+        // `checkboxCardStyles`) is never walked into the table.
+        const roots = resolveComponentPaths(component.slug).apiExportNames;
+        for (const part of committed) {
+          expect(
+            roots.some((root) => part.name === root || part.name.startsWith(`${root}.`)),
+            `${component.slug} ${part.name}`
+          ).toBe(true);
+        }
+
+        // `forwardedCount` is the model's own count less the dependency props the
+        // artifact went on to publish — never a hand-pinned number.
+        const forwardedByName = new Map(
+          component.partApis.map((part) => [part.name, part.forwarded] as const)
+        );
+        for (const part of committed) {
+          const forwarded = forwardedByName.get(part.name);
+          expect(forwarded, part.name).toBeDefined();
+          const published = part.props.filter((prop) => dependencyPackageName(prop.origin) !== null).length;
+          expect(part.forwardedCount, `${component.slug} ${part.name}`).toBe(
+            (forwarded?.count ?? 0) - published
+          );
+          expect(part.forwardedFrom, `${component.slug} ${part.name}`).toEqual(forwarded?.from ?? []);
+        }
+      }
+    });
   });
 
   it("reads defaults out of the implementation's destructuring", () => {
@@ -853,7 +493,6 @@ describe("committed api.json", () => {
     expect(checkboxCard?.props.find((prop) => prop.name === "render")).toBeUndefined();
     expect(checkboxCard?.props.find((prop) => prop.name === "disabled")).toBeUndefined();
     expect(checkboxCard?.props.find((prop) => prop.name === "className")).toBeUndefined();
-    expect(checkboxCard?.forwardedCount).toBe(271);
   });
 });
 

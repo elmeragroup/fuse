@@ -121,7 +121,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, AccordionPanelState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, AccordionPanelState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -136,7 +136,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, AccordionHeaderState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, AccordionHeaderState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -151,7 +151,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, AccordionItemState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, AccordionItemState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -166,7 +166,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, AccordionRoot.State<Value>> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, AccordionRoot.State<Value>> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -181,7 +181,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, AccordionTriggerState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, AccordionTriggerState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -386,7 +386,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, DialogPopupState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, DialogPopupState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -422,7 +422,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, DialogTriggerState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, DialogTriggerState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -562,7 +562,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, AvatarFallbackState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, AvatarFallbackState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -577,7 +577,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, AvatarImageState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, AvatarImageState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -592,7 +592,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, AvatarRootState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, AvatarRootState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -666,7 +666,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, {  }> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, {  }> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -746,7 +746,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, SeparatorState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, SeparatorState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -761,7 +761,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, {  }> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, {  }> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -876,7 +876,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, ButtonState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, ButtonState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -1368,7 +1368,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, CheckboxRootState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, CheckboxRootState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -1517,7 +1517,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, CollapsiblePanelState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, CollapsiblePanelState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -1532,7 +1532,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, CollapsibleRootState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, CollapsibleRootState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -1547,7 +1547,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, CollapsibleTriggerState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, CollapsibleTriggerState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -1933,7 +1933,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, ComboboxChipState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, ComboboxChipState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -1948,7 +1948,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, ComboboxChipsState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, ComboboxChipsState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -1963,7 +1963,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, ComboboxInputState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, ComboboxInputState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -1978,7 +1978,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, ComboboxClearState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, ComboboxClearState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -2003,7 +2003,7 @@
       "component": "combobox",
       "path": "parts.Combobox.Content.props.anchor.type",
       "current": "Element | RefObject<Element | null> | VirtualElement | (() => Element | VirtualElement | null) | null | undefined",
-      "effect": "(() => Element | Element | React.RefObject<Element | VirtualElement | null | null) | null> | undefined",
+      "effect": "(() => Element | VirtualElement | null) | Element | React.RefObject<Element | null> | VirtualElement | null | undefined",
       "reason": "combobox Combobox.Content.anchor type: checker prints `Element | RefObject<Element | null> | VirtualElement | (() => …)`; Effect mis-prints the getter/ref union with duplicated Element members."
     },
     {
@@ -2014,7 +2014,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, ComboboxPopupState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, ComboboxPopupState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -2043,7 +2043,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, ComboboxEmptyState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, ComboboxEmptyState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -2058,7 +2058,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, ComboboxGroupState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, ComboboxGroupState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -2101,7 +2101,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, ComboboxInputState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, ComboboxInputState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -2116,7 +2116,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, ComboboxItemState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, ComboboxItemState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -2131,7 +2131,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, ComboboxGroupLabelState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, ComboboxGroupLabelState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -2146,7 +2146,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, ComboboxListState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, ComboboxListState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -2161,7 +2161,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, SeparatorState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, SeparatorState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -2176,7 +2176,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, ComboboxTriggerState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, ComboboxTriggerState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -2362,7 +2362,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, ButtonState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, ButtonState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -2745,7 +2745,7 @@
       "component": "description-list",
       "path": "parts.DescriptionList.Heading.props.render.type",
       "current": "RenderProp<Record<string, unknown>> | undefined",
-      "effect": "ComponentRenderFn<React.HTMLAttributes<any>, Record<string, unknown>> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+      "effect": "ComponentRenderFn<React.HTMLAttributes<any>, Record<string, unknown>> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
       "reason": "description-list DescriptionList.Heading.render type: checker prints library `RenderProp<…>`; Effect expands Base UI `ComponentRenderFn | ReactElement` (React HTMLAttributes members still contain `any`)."
     },
     {
@@ -2951,7 +2951,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, DialogCloseState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, DialogCloseState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -2966,7 +2966,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, DialogPopupState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, DialogPopupState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -2988,7 +2988,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, DialogDescriptionState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, DialogDescriptionState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -3003,7 +3003,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, DialogBackdropState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, DialogBackdropState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -3018,7 +3018,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, DialogPortalState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, DialogPortalState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -3033,7 +3033,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, DialogTitleState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, DialogTitleState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -3048,7 +3048,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, DialogTriggerState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, DialogTriggerState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -3359,7 +3359,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, MenuCheckboxItemState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, MenuCheckboxItemState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -3388,7 +3388,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, MenuPopupState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, MenuPopupState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -3417,7 +3417,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, MenuGroupState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, MenuGroupState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -3432,7 +3432,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, MenuItemState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, MenuItemState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -3447,7 +3447,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, MenuGroupLabelState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, MenuGroupLabelState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -3462,7 +3462,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, MenuLinkItemState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, MenuLinkItemState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -3477,7 +3477,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, MenuPortalState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, MenuPortalState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -3492,7 +3492,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, MenuRadioGroupState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, MenuRadioGroupState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -3507,7 +3507,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, MenuRadioItemState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, MenuRadioItemState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -3522,7 +3522,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, SeparatorState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, SeparatorState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -3551,7 +3551,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, MenuPopupState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, MenuPopupState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -3580,7 +3580,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, MenuSubmenuTriggerState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, MenuSubmenuTriggerState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -3595,7 +3595,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, MenuTriggerState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, MenuTriggerState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -3842,7 +3842,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, FieldControlState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, FieldControlState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -3857,7 +3857,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, FieldDescriptionState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, FieldDescriptionState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -3872,7 +3872,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, FieldErrorState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, FieldErrorState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -3887,7 +3887,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, FieldItemState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, FieldItemState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -3902,7 +3902,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, FieldLabelState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, FieldLabelState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -3917,7 +3917,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, FieldsetLegendState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, FieldsetLegendState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -3939,7 +3939,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, FieldRootState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, FieldRootState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -3961,7 +3961,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, FieldsetRootState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, FieldsetRootState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -4334,7 +4334,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, {  }> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, {  }> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -4477,7 +4477,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, ButtonState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, ButtonState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -4665,7 +4665,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, {  }> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, {  }> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -4680,7 +4680,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, SeparatorState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, SeparatorState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -4849,7 +4849,7 @@
         "origin": {
           "packageName": "react-aria-components"
         },
-        "type": "((props: React.DetailedHTMLProps<LinkWithRequiredHref, HTMLAnchorElement> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.DetailedHTMLProps<React.HTMLAttributes<HTMLSpanElement>, HTMLSpanElement>, renderProps: LinkRenderProps) => React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>)",
+        "type": "((props: React.DetailedHTMLProps<LinkWithRequiredHref, HTMLAnchorElement> | React.DetailedHTMLProps<React.HTMLAttributes<HTMLSpanElement>, HTMLSpanElement>, renderProps: LinkRenderProps) => React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }>) | undefined",
         "defaultValue": null,
         "description": "Overrides the default DOM element with a custom render function. This allows rendering existing components with built-in styles and behaviors such as router links, animation libraries, and pre-styled components. Note: You can check if `'href' in props` in order to tell whether to render an `<a>` element. Requirements: - You must render the expected element type (e.g. if `<a>` is expected, you cannot render a `<button>`). - Only a single root DOM element can be rendered (no fragments). - You must pass through props and ref to the underlying DOM element, merging with your own prop as appropriate.",
         "required": false
@@ -5000,7 +5000,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, MeterRootState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, MeterRootState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -5522,7 +5522,7 @@
       "component": "phone-number-field",
       "path": "parts.PhoneNumberField.props.onCountryChange.type",
       "current": "((country: { code: \"AD\" | \"AE\" | \"AF\" | \"AG\" | \"AI\" | \"AL\" | \"AM\" | \"AO\" | \"AR\" | \"AS\" | \"AT\" | \"AU\" | \"AW\" | \"AX\" | \"AZ\" | \"BA\" | \"BB\" | \"BD\" | \"BE\" | \"BF\" | \"BG\" | \"BH\" | \"BI\" | \"BJ\" | \"BL\" | \"BM\" | ... 214 more ... | \"ZW\"; dialCode: string; }) => void) | undefined",
-      "effect": "\"AE\" | \"AF\" | \"AG\" | \"AI\" | \"AL\" | \"AM\" | \"AO\" | \"AR\" | \"AS\" | \"AT\" | \"AU\" | \"AW\" | \"AX\" | \"AZ\" | \"BA\" | \"BB\" | \"BD\" | \"BE\" | \"BF\" | \"BG\" | \"BH\" | \"BI\" | \"BJ\" | \"BL\" | \"BM\" | \"BN\" | \"BO\" | \"BR\" | \"BS\" | \"BT\" | \"BW\" | \"BY\" | \"BZ\" | \"CA\" | \"CC\" | \"CD\" | \"CF\" | \"CG\" | \"CH\" | \"CI\" | \"CK\" | \"CL\" | \"CM\" | \"CN\" | \"CO\" | \"CR\" | \"CU\" | \"CV\" | \"CW\" | \"CX\" | \"CY\" | \"CZ\" | \"DE\" | \"DJ\" | \"DK\" | \"DM\" | \"DO\" | \"DZ\" | \"EC\" | \"EE\" | \"EG\" | \"ER\" | \"ES\" | \"ET\" | \"FI\" | \"FJ\" | \"FK\" | \"FM\" | \"FO\" | \"FR\" | \"GA\" | \"GB\" | \"GD\" | \"GE\" | \"GF\" | \"GG\" | \"GH\" | \"GI\" | \"GL\" | \"GM\" | \"GN\" | \"GP\" | \"GQ\" | \"GR\" | \"GT\" | \"GU\" | \"GW\" | \"GY\" | \"HK\" | \"HN\" | \"HR\" | \"HT\" | \"HU\" | \"ID\" | \"IE\" | \"IL\" | \"IM\" | \"IN\" | \"IO\" | \"IQ\" | \"IR\" | \"IS\" | \"IT\" | \"JE\" | \"JM\" | \"JO\" | \"JP\" | \"KE\" | \"KG\" | \"KH\" | \"KI\" | \"KM\" | \"KN\" | \"KP\" | \"KR\" | \"KW\" | \"KY\" | \"KZ\" | \"LA\" | \"LB\" | \"LC\" | \"LI\" | \"LK\" | \"LR\" | \"LS\" | \"LT\" | \"LU\" | \"LV\" | \"LY\" | \"MA\" | \"MC\" | \"MD\" | \"ME\" | \"MF\" | \"MG\" | \"MH\" | \"MK\" | \"ML\" | \"MM\" | \"MN\" | \"MO\" | \"MP\" | \"MQ\" | \"MR\" | \"MS\" | \"MT\" | \"MU\" | \"MV\" | \"MW\" | \"MX\" | \"MY\" | \"MZ\" | \"NA\" | \"NC\" | \"NE\" | \"NF\" | \"NG\" | \"NI\" | \"NL\" | \"NO\" | \"NP\" | \"NR\" | \"NU\" | \"NZ\" | \"OM\" | \"PA\" | \"PE\" | \"PF\" | \"PG\" | \"PH\" | \"PK\" | \"PL\" | \"PM\" | \"PR\" | \"PS\" | \"PT\" | \"PW\" | \"PY\" | \"QA\" | \"RE\" | \"RO\" | \"RS\" | \"RU\" | \"RW\" | \"SA\" | \"SB\" | \"SC\" | \"SD\" | \"SE\" | \"SG\" | \"SH\" | \"SI\" | \"SJ\" | \"SK\" | \"SL\" | \"SM\" | \"SN\" | \"SO\" | \"SR\" | \"SS\" | \"ST\" | \"SV\" | \"SX\" | \"SY\" | \"SZ\" | \"TC\" | \"TD\" | \"TG\" | \"TH\" | \"TJ\" | \"TK\" | \"TL\" | \"TM\" | \"TN\" | \"TO\" | \"TR\" | \"TT\" | \"TV\" | \"TW\" | \"TZ\" | \"UA\" | \"UG\" | \"US\" | \"UY\" | \"UZ\" | \"VA\" | \"VC\" | \"VE\" | \"VG\" | \"VI\" | \"VN\" | \"VU\" | \"WF\" | \"WS\" | \"XK\" | \"YE\" | \"YT\" | \"ZA\" | \"ZM\" | \"ZW\"; dialCode: string; }) => void) | ((country: { code: \"AD\" | undefined",
+      "effect": "((country: { code: \"AD\" | \"AE\" | \"AF\" | \"AG\" | \"AI\" | \"AL\" | \"AM\" | \"AO\" | \"AR\" | \"AS\" | \"AT\" | \"AU\" | \"AW\" | \"AX\" | \"AZ\" | \"BA\" | \"BB\" | \"BD\" | \"BE\" | \"BF\" | \"BG\" | \"BH\" | \"BI\" | \"BJ\" | \"BL\" | \"BM\" | \"BN\" | \"BO\" | \"BR\" | \"BS\" | \"BT\" | \"BW\" | \"BY\" | \"BZ\" | \"CA\" | \"CC\" | \"CD\" | \"CF\" | \"CG\" | \"CH\" | \"CI\" | \"CK\" | \"CL\" | \"CM\" | \"CN\" | \"CO\" | \"CR\" | \"CU\" | \"CV\" | \"CW\" | \"CX\" | \"CY\" | \"CZ\" | \"DE\" | \"DJ\" | \"DK\" | \"DM\" | \"DO\" | \"DZ\" | \"EC\" | \"EE\" | \"EG\" | \"ER\" | \"ES\" | \"ET\" | \"FI\" | \"FJ\" | \"FK\" | \"FM\" | \"FO\" | \"FR\" | \"GA\" | \"GB\" | \"GD\" | \"GE\" | \"GF\" | \"GG\" | \"GH\" | \"GI\" | \"GL\" | \"GM\" | \"GN\" | \"GP\" | \"GQ\" | \"GR\" | \"GT\" | \"GU\" | \"GW\" | \"GY\" | \"HK\" | \"HN\" | \"HR\" | \"HT\" | \"HU\" | \"ID\" | \"IE\" | \"IL\" | \"IM\" | \"IN\" | \"IO\" | \"IQ\" | \"IR\" | \"IS\" | \"IT\" | \"JE\" | \"JM\" | \"JO\" | \"JP\" | \"KE\" | \"KG\" | \"KH\" | \"KI\" | \"KM\" | \"KN\" | \"KP\" | \"KR\" | \"KW\" | \"KY\" | \"KZ\" | \"LA\" | \"LB\" | \"LC\" | \"LI\" | \"LK\" | \"LR\" | \"LS\" | \"LT\" | \"LU\" | \"LV\" | \"LY\" | \"MA\" | \"MC\" | \"MD\" | \"ME\" | \"MF\" | \"MG\" | \"MH\" | \"MK\" | \"ML\" | \"MM\" | \"MN\" | \"MO\" | \"MP\" | \"MQ\" | \"MR\" | \"MS\" | \"MT\" | \"MU\" | \"MV\" | \"MW\" | \"MX\" | \"MY\" | \"MZ\" | \"NA\" | \"NC\" | \"NE\" | \"NF\" | \"NG\" | \"NI\" | \"NL\" | \"NO\" | \"NP\" | \"NR\" | \"NU\" | \"NZ\" | \"OM\" | \"PA\" | \"PE\" | \"PF\" | \"PG\" | \"PH\" | \"PK\" | \"PL\" | \"PM\" | \"PR\" | \"PS\" | \"PT\" | \"PW\" | \"PY\" | \"QA\" | \"RE\" | \"RO\" | \"RS\" | \"RU\" | \"RW\" | \"SA\" | \"SB\" | \"SC\" | \"SD\" | \"SE\" | \"SG\" | \"SH\" | \"SI\" | \"SJ\" | \"SK\" | \"SL\" | \"SM\" | \"SN\" | \"SO\" | \"SR\" | \"SS\" | \"ST\" | \"SV\" | \"SX\" | \"SY\" | \"SZ\" | \"TC\" | \"TD\" | \"TG\" | \"TH\" | \"TJ\" | \"TK\" | \"TL\" | \"TM\" | \"TN\" | \"TO\" | \"TR\" | \"TT\" | \"TV\" | \"TW\" | \"TZ\" | \"UA\" | \"UG\" | \"US\" | \"UY\" | \"UZ\" | \"VA\" | \"VC\" | \"VE\" | \"VG\" | \"VI\" | \"VN\" | \"VU\" | \"WF\" | \"WS\" | \"XK\" | \"YE\" | \"YT\" | \"ZA\" | \"ZM\" | \"ZW\"; dialCode: string; }) => void) | undefined",
       "reason": "phone-number-field PhoneNumberField.onCountryChange type: checker prints `(country: { code: CountryCode; dialCode: string }) => void`; Effect splits that callback on `|` and emits a country-code string union plus a truncated handler."
     },
     {
@@ -5662,7 +5662,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, ButtonState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, ButtonState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -5795,7 +5795,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, PopoverPopupState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, PopoverPopupState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -5824,7 +5824,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, PopoverDescriptionState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, PopoverDescriptionState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -5839,7 +5839,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, PopoverTitleState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, PopoverTitleState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -5854,7 +5854,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, PopoverTriggerState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, PopoverTriggerState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -6245,7 +6245,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, RadioRootState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, RadioRootState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -6395,7 +6395,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, ScrollAreaScrollbarState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, ScrollAreaScrollbarState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -6410,7 +6410,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, ScrollAreaRootState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, ScrollAreaRootState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -6714,7 +6714,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, SelectPopupState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, SelectPopupState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -6743,7 +6743,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, SelectGroupState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, SelectGroupState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -6758,7 +6758,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, SelectItemState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, SelectItemState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -6773,7 +6773,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, SelectGroupLabelState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, SelectGroupLabelState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -6788,7 +6788,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, SelectScrollDownArrowState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, SelectScrollDownArrowState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -6803,7 +6803,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, SelectScrollUpArrowState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, SelectScrollUpArrowState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -6818,7 +6818,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, SeparatorState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, SeparatorState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -6833,7 +6833,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, SelectTriggerState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, SelectTriggerState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -6848,7 +6848,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, SelectValueState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, SelectValueState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -7006,7 +7006,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, FieldItemState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, FieldItemState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -7054,7 +7054,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, SeparatorState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, SeparatorState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -7207,7 +7207,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, DrawerPopupState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, DrawerPopupState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -7229,7 +7229,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, DrawerBackdropState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, DrawerBackdropState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -7244,7 +7244,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, DrawerPortalState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, DrawerPortalState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -7273,7 +7273,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, DrawerTriggerState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, DrawerTriggerState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -7653,7 +7653,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, {  }> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, {  }> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -7668,7 +7668,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, {  }> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, {  }> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -7683,7 +7683,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, {  }> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, {  }> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -7698,7 +7698,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, {  }> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, {  }> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -7709,7 +7709,7 @@
       "component": "sidebar",
       "path": "parts.Sidebar.MenuButton.props.tooltip.type",
       "current": "string | TooltipContentProps | undefined",
-      "effect": "\"end\" | \"inline-end\" | \"inline-start\" | \"left\" | \"right\" | \"start\" | \"top\" | Omit<TooltipPopupProps, \"ref\"> & React.RefAttributes<HTMLDivElement> & { align?: \"center\" | RefObject<HTMLElement | null> | number | string | undefined | undefined; alignOffset?: OffsetFunction | undefined; container?: HTMLElement | undefined; side?: \"bottom\" | undefined; sideOffset?: OffsetFunction | undefined; }",
+      "effect": "Omit<TooltipPopupProps, \"ref\"> & React.RefAttributes<HTMLDivElement> & { align?: \"center\" | \"end\" | \"start\" | undefined; alignOffset?: OffsetFunction | number | undefined; side?: \"bottom\" | \"inline-end\" | \"inline-start\" | \"left\" | \"right\" | \"top\" | undefined; sideOffset?: OffsetFunction | number | undefined; container?: HTMLElement | RefObject<HTMLElement | null> | undefined; } | string | undefined",
       "reason": "sidebar Sidebar.MenuButton.tooltip type: checker keeps `string | TooltipContentProps`; Effect expands TooltipContentProps into TooltipPopupProps fields (`align`, `side`, `container`, …)."
     },
     {
@@ -7720,7 +7720,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, {  }> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, {  }> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -7735,7 +7735,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, SeparatorState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, SeparatorState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -7757,7 +7757,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, ButtonState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, ButtonState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -7930,7 +7930,7 @@
       "component": "span",
       "path": "parts.Span.props.render.type",
       "current": "RenderProp<Record<string, unknown>> | undefined",
-      "effect": "ComponentRenderFn<React.HTMLAttributes<any>, Record<string, unknown>> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+      "effect": "ComponentRenderFn<React.HTMLAttributes<any>, Record<string, unknown>> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
       "reason": "span Span.render type: checker prints library `RenderProp<…>`; Effect expands Base UI `ComponentRenderFn | ReactElement` (React HTMLAttributes members still contain `any`)."
     },
     {
@@ -7967,7 +7967,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, SwitchRootState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, SwitchRootState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -8041,14 +8041,14 @@
       "component": "table",
       "path": "parts.VerticalTable.Header.props.render.type",
       "current": "RenderProp<Record<string, unknown>> | undefined",
-      "effect": "ComponentRenderFn<React.HTMLAttributes<any>, Record<string, unknown>> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+      "effect": "ComponentRenderFn<React.HTMLAttributes<any>, Record<string, unknown>> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
       "reason": "table VerticalTable.Header.render type: checker prints library `RenderProp<…>`; Effect expands Base UI `ComponentRenderFn | ReactElement` (React HTMLAttributes members still contain `any`)."
     },
     {
       "component": "table",
       "path": "parts.VerticalTable.Key.props.render.type",
       "current": "RenderProp<Record<string, unknown>> | undefined",
-      "effect": "ComponentRenderFn<React.HTMLAttributes<any>, Record<string, unknown>> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+      "effect": "ComponentRenderFn<React.HTMLAttributes<any>, Record<string, unknown>> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
       "reason": "table VerticalTable.Key.render type: checker prints library `RenderProp<…>`; Effect expands Base UI `ComponentRenderFn | ReactElement` (React HTMLAttributes members still contain `any`)."
     },
     {
@@ -8162,7 +8162,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, TabsPanelState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, TabsPanelState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -8177,7 +8177,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, TabsListState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, TabsListState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -8192,7 +8192,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, TabsRootState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, TabsRootState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -8207,7 +8207,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, TabsTabState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, TabsTabState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -8560,7 +8560,7 @@
       "component": "text",
       "path": "parts.Text.props.render.type",
       "current": "RenderProp<Record<string, unknown>> | undefined",
-      "effect": "ComponentRenderFn<React.HTMLAttributes<any>, Record<string, unknown>> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+      "effect": "ComponentRenderFn<React.HTMLAttributes<any>, Record<string, unknown>> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
       "reason": "text Text.render type: checker prints library `RenderProp<…>`; Effect expands Base UI `ComponentRenderFn | ReactElement` (React HTMLAttributes members still contain `any`)."
     },
     {
@@ -8736,7 +8736,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, {  }> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, {  }> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -8987,7 +8987,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, ToggleState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, ToggleState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -9002,7 +9002,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, ToggleGroupState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, ToggleGroupState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -9090,7 +9090,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, ToggleState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, ToggleState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -9178,7 +9178,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, TooltipPopupState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, TooltipPopupState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
@@ -9207,7 +9207,7 @@
         "origin": {
           "packageName": "@base-ui/react"
         },
-        "type": "ComponentRenderFn<HTMLProps, TooltipTriggerState> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined | undefined) | {  }>",
+        "type": "ComponentRenderFn<HTMLProps, TooltipTriggerState> | React.ReactElement<unknown, ((props: any) => Iterable<React.ReactNode, any, any> | Promise<AwaitedReactNode> | Promise<React.ReactNode> | React.ReactElement<unknown, > | React.ReactPortal | bigint | boolean | null | number | string | undefined) | string | {  }> | undefined",
         "defaultValue": null,
         "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
         "required": false
