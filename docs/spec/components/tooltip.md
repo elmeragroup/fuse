@@ -61,7 +61,7 @@ All rendering parts take `className` (merged via `cn`) and forward the rest of t
 
 ## 4 Variants
 
-No component-specific `tv` recipe and no variant axes — single inverted style inline on Content; Trigger composes shared `focusRing({ target: "self" })`.
+No component-specific `tv` recipe and no variant axes — the single inverted style is composed on Content from the shared popup **motion** set plus Tooltip's own inverted pill classes; Trigger composes the shared self-target focus ring. _(Amended 2026-09-03; §8.10.)_
 
 ## 5 Consumed tokens
 
@@ -99,6 +99,7 @@ No component-specific `tv` recipe and no variant axes — single inverted style 
 7. **`z-50` deduped**: the ref sets `isolate z-50` on the Positioner _and_ `z-50` on the Popup (plus `z-50` on the Arrow, which becomes redundant): kept once on the outermost layer (Positioner) per the flat z-strategy — every overlay gets exactly one `z-50` at its outermost portalled element.
 8. **Focus unified:** Trigger composes the canonical self-focus adapter, including when rendered without a Button target.
 9. **`aria-describedby` and `role="tooltip"` are hand-rolled** (2026-09-03): §2 called Trigger a bare re-export and §7 credited base-ui with the description wiring. Base-ui 1.6.0 does neither, so Root mints a `useId`, a private context carries it, Trigger sets `aria-describedby` and Popup sets the matching `id` and `role="tooltip"`. Kept as compensation for the primitive; the three halves are one mechanism and are locked by the §9 name/description test.
+10. **Shared overlay spine adopted, minus the surface and the timing rung**: `Tooltip.Content` composes `useResolvedPortalContainer` (theming.md §7.4), `OverlayContainerProps`, `OverlayPositionerProps`, `overlayPositionerClass`, `overlayPopupMotionClass` and `selfFocusRingClass`. It is deliberately **not** a consumer of the composed popup surface: it inverts the fill and flies frameless (the "Kept faithfully" line below: no shadow/ring, tooltips fly frameless), and it could not subtract the surface's ring afterwards — tailwind-merge treats ring width and ring colour as separate conflict groups, so `ring-0` would leave `ring-foreground/10` live and change the rendered set. It also takes the motion set **untimed**, without the shared `duration-100` rung the other popup families pair with it (§6). `side` and `sideOffset` are `Omit`ted from the shared positioner props and redeclared, because the shared `@default` tags are Popover's (`side="bottom"`) and the docs generator publishes them verbatim; Tooltip's `side` defaults to `"top"`. The rendered class set, prop names, documented defaults, and DOM are unchanged. _(Amended 2026-09-03.)_
 
 Kept faithfully: Provider `delay` default `0`; inverted `bg-foreground text-background` pill with `text-xs max-w-xs px-3 py-1.5`; the full arrow placement class set incl. `rounded-[2px]` and `translate-y-[calc(-50%-2px)]`; no shadow/ring on the popup (tooltips fly frameless); `side="top"` default.
 

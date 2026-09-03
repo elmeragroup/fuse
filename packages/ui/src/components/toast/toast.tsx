@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import type { ComponentProps, ReactElement, ReactNode, RefObject } from "react";
+import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 import { Toast as ToastPrimitive } from "@base-ui/react/toast";
 import type {
@@ -19,15 +19,13 @@ import { Warning } from "../../icons/generated/warning";
 import { WarningOctagon } from "../../icons/generated/warning-octagon";
 import { X } from "../../icons/generated/x";
 import { cn } from "../../styles/cn";
-import { focusRing } from "../../styles/utils";
-import { useThemeScopeContainer } from "../../theme/theme-scope-container";
+import { selfFocusRingClass } from "../../styles/utils";
+import { useResolvedPortalContainer } from "../../theme/use-resolved-portal-container";
 import { Button } from "../button/button";
 import { overlayLayer } from "../overlay/overlay-classes";
+import type { OverlayContainerProps } from "../overlay/overlay-props";
 import { toastStrings } from "./intl";
 import { toastVariants } from "./toast-variants";
-
-/** Resolved once at module scope — the recipe below does the same (no per-render work). */
-const selfFocusRing = focusRing({ target: "self" }).root();
 
 export type ToastStatus = "error" | "info" | "success" | "warning" | "loading";
 
@@ -216,11 +214,7 @@ function useToastManager<Data extends object = object>(): UseToastManagerReturnV
     () => ({
       // SAFETY: the hook manager is the primitive store face; wrapManagerMethods only
       // rebinds add/update/close/promise and keeps `toasts` from this closure.
-      ...wrapManagerMethods(
-        // SAFETY: the hook manager is the primitive store face; wrapManagerMethods
-        // only rebinds add/update/close/promise and keeps `toasts` from this closure.
-        manager as PrimitiveManager
-      ),
+      ...wrapManagerMethods(manager as PrimitiveManager),
       toasts: manager.toasts,
     }),
     [manager]
@@ -236,11 +230,7 @@ function useToastManager<Data extends object = object>(): UseToastManagerReturnV
 function createToastManager<Data extends object = object>(): CreateToastManagerReturnValue<Data> {
   // SAFETY: createToastManager is the primitive emit face; wrapManagerMethods only
   // rebinds add/update/close/promise and preserves the private subscribe channel.
-  return wrapManagerMethods(
-    // SAFETY: primitive createToastManager is the emit face; wrapManagerMethods
-    // rebinds methods only and preserves the private subscribe channel via spread.
-    ToastPrimitive.createToastManager<Data>() as PrimitiveManager
-  );
+  return wrapManagerMethods(ToastPrimitive.createToastManager<Data>() as PrimitiveManager);
 }
 
 export type ToastProviderProps = Omit<ComponentProps<typeof ToastPrimitive.Provider>, "toastManager"> & {
@@ -265,13 +255,7 @@ function ToastProvider({ toastManager, ...props }: ToastProviderProps): ReactEle
   );
 }
 
-export type ToastViewportProps = ComponentProps<typeof ToastPrimitive.Viewport> & {
-  /**
-   * Portal target for the viewport. Defaults to the nearest enclosing `ThemeScope`
-   * element, so toasts never escape the theme that opened them.
-   */
-  container?: HTMLElement | RefObject<HTMLElement | null>;
-};
+export type ToastViewportProps = ComponentProps<typeof ToastPrimitive.Viewport> & OverlayContainerProps;
 
 function ToastViewport({
   className,
@@ -279,11 +263,8 @@ function ToastViewport({
   children,
   ...props
 }: ToastViewportProps): ReactElement | null {
-  const resolvedContainer = useThemeScopeContainer(container);
+  const resolvedContainer = useResolvedPortalContainer(container);
 
-  // theming.md §7.4: an explicit ref or an enclosing ThemeScope whose element is not
-  // attached yet means wait — never a brief escape to the document body. Only an absent
-  // scope (`undefined`) leaves the primitive default in place.
   if (resolvedContainer === null) {
     return null;
   }
@@ -295,7 +276,7 @@ function ToastViewport({
         className={cn(
           "sm:right-8 sm:bottom-8 sm:w-[340px] fixed top-auto right-4 bottom-4 isolate mx-auto flex w-[calc(100%-2rem)]",
           overlayLayer,
-          selfFocusRing,
+          selfFocusRingClass,
           className
         )}
         {...props}>

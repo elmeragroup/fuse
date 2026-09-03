@@ -1,0 +1,5 @@
+---
+"@elmeragroup/ui": patch
+---
+
+Compose Dialog, Sheet, Tooltip, Toast and AlertDialog from the package-private overlay spine: `useResolvedPortalContainer`, `OverlayContainerProps`/`OverlayPositionerProps`, `overlayPopupSurfaceClass`/`overlayPopupFillClass`/`overlayPopupMotionClass`/`overlayPositionerClass` and `selfFocusRingClass`. AlertDialog's Root and Trigger now render through the public Dialog parts. Props, documented defaults and DOM are unchanged, and so are the rendered class sets — with one deliberate exception: Sheet's 13-rung width axis moves to one `--sheet-width` declaration per rung, consumed by the two side-gated `max-w-(--sheet-width)` selectors in the recipe base. The used width per rung, side and breakpoint is identical.

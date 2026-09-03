@@ -6,9 +6,24 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
-import { renderThemed } from "../../../test/themed-browser-render";
+import { px, renderThemed } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme/theme-scope";
 import { Sheet } from "./sheet";
+
+/** Reads a theme token off the document root (`--container-*` are rem lengths). */
+function readToken(name: string): string {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+/** The panel's content box — `max-width` caps that box, and the side border is outside it. */
+function contentWidth(element: HTMLElement): number {
+  const style = getComputedStyle(element);
+  return element.getBoundingClientRect().width - px(style.borderLeftWidth) - px(style.borderRightWidth);
+}
+
+function remToPx(value: string): number {
+  return px(value) * px(getComputedStyle(document.documentElement).fontSize);
+}
 
 const CLOSE_COPY = {
   "nb-NO": "Lukk",
@@ -221,19 +236,34 @@ describe("Sheet", () => {
     expect(dialog.querySelector("[data-slot=sheet-description]")).not.toBeNull();
   });
 
-  it("maps the size axis onto the side-gated max-width classes", async () => {
+  it("resolves the size axis to the side-gated used max-width", async () => {
+    // Asserts the used value the panel is actually capped at, not the class spelling:
+    // the axis moves through `--sheet-width`, so a rung is only correct if the two
+    // side-gated `max-w-(--sheet-width)` consumers resolve it (sheet.md §4, §8.11).
     const cases = [
-      { size: undefined, expected: "data-[side=right]:sm:max-w-[min(var(--container-md),90%)]" },
-      { size: "sm", expected: "data-[side=right]:sm:max-w-[min(var(--container-sm),90%)]" },
-      { size: "10xl", expected: "data-[side=right]:sm:max-w-[min(1920px,90%)]" },
+      { size: undefined, cap: () => remToPx(readToken("--container-md")) },
+      { size: "sm", cap: () => remToPx(readToken("--container-sm")) },
+      { size: "10xl", cap: () => 1920 },
     ] as const;
 
-    for (const { size, expected } of cases) {
+    await page.viewport(1024, 768);
+    for (const { size, cap } of cases) {
       const { unmount } = renderThemed(withLocale("en-US", <BasicSheet size={size} />));
       const dialog = await openSheet();
-      expect(dialog.className, expected).toContain(expected);
+      expect(contentWidth(dialog), `size=${String(size)}`).toBeCloseTo(
+        Math.min(cap(), window.innerWidth * 0.9),
+        0
+      );
       unmount();
     }
+  });
+
+  it("leaves the size axis inert on the top and bottom sides", async () => {
+    await page.viewport(1024, 768);
+    const { unmount } = renderThemed(withLocale("en-US", <BasicSheet side="top" size="sm" />));
+    const dialog = await openSheet();
+    expect(getComputedStyle(dialog).maxWidth).toBe("none");
+    unmount();
   });
 
   it("portals into the enclosing ThemeScope instead of the document body", async () => {

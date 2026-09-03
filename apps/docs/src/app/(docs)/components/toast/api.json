@@ -38,7 +38,7 @@
           "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Portal target for the viewport. Defaults to the nearest enclosing `ThemeScope` element, so toasts never escape the theme that opened them.",
+          "description": "Portal target for the popup. Defaults to the nearest enclosing `ThemeScope` element, so an overlay never escapes the theme that opened it.",
           "required": false
         }
       ]
