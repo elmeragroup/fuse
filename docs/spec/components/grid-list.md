@@ -63,7 +63,7 @@ Both parts accept `className` (string or render-prop function, composed via `com
 5. `empty:` plugin variants rewritten as explicit `data-[empty]:` (drops `tailwindcss-react-aria-components`).
 6. Family-wide: **list-box is RETIRED** — the dead internal copy is deleted; the external partner-list consumer migrates to `Item.Group`/`Item`; `DropdownListBox*` is absorbed by base-ui Select/Combobox. GridList records this here because it shares the facet-filter rewrite destiny: when the listbox/filter rewrite lands, this module goes with it.
 
-7. **Dead `variant: "success"` axis removed from `checkboxVariants`** (2026-09-03, ticket 44): the axis and its two `isSelected` compounds came across from the ref, but this module's only `<Checkbox slot="selection" />` never passes a variant, so no rendered checkbox ever reached the arm. The axis, the compounds and the private wrapper's `variant?: "success"` prop are gone; the emitted classes for every selected/disabled/invalid/focus combination are unchanged.
+7. **Dead `variant: "success"` axis removed from `checkboxVariants`** (ticket 44, 2026-09-03): the axis and its two `isSelected` compounds came across from the ref, but this module's only `<Checkbox slot="selection" />` never passes a variant, so no rendered checkbox ever reached the arm. The axis, the compounds and the private wrapper's `variant?: "success"` prop are gone; the emitted classes for every selected/disabled/invalid/focus combination are unchanged.
 
 ## 9 Test requirements
 

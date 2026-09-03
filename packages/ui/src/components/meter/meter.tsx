@@ -117,12 +117,7 @@ export function Meter({
           {label}
         </MeterPrimitive.Label>
         <span data-slot="meter-value" className={cn(labelValue(), "tabular-nums")}>
-          <MeterIcon
-            icon={iconName}
-            className={icon()}
-            warningName={warningName}
-            successName={successName}
-          />{" "}
+          <MeterIcon icon={iconName} className={icon()} warningName={warningName} successName={successName} />{" "}
           {valueLabel ?? <MeterPrimitive.Value />}
         </span>
       </div>

@@ -82,7 +82,7 @@ None — no tv recipe; all parts are single-look plain class strings. `Breadcrum
 6. Hardcoded English `"breadcrumb"`/`"More"` become provider-locale dictionary defaults with optional prop overrides.
 7. **Focus unified:** `Breadcrumb.Link` composes the canonical self-focus adapter.
 
-8. **The runtime `children` strip on `Breadcrumb.Ellipsis` is gone** (2026-09-03, ticket 44): `children` is omitted from `BreadcrumbEllipsisProps` at the type level, so the `rest as typeof rest & { children?: unknown }` cast and its SAFETY comment deleted a key no typed caller can pass. The owned glyph and sr-only copy are unchanged.
+8. **The runtime `children` strip on `Breadcrumb.Ellipsis` is gone** (ticket 44, 2026-09-03): `children` is omitted from `BreadcrumbEllipsisProps` at the type level, so the `rest as typeof rest & { children?: unknown }` cast and its SAFETY comment deleted a key no typed caller can pass. The owned glyph and sr-only copy are unchanged.
 
 ## 9 Test requirements
 

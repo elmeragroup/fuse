@@ -17,4 +17,7 @@ export const confirmButtonVariants = tv({
       success: "data-[armed=true]:bg-success data-[armed=true]:text-success-foreground",
     },
   },
+  // Required shape: elmera/enforce-variant-standard makes every recipe declare
+  // `defaultVariants`. An undefined variant adds nothing here.
+  defaultVariants: {},
 });

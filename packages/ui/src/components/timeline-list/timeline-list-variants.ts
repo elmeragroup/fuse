@@ -17,4 +17,8 @@ export const timelineListVariants = tv({
     time: "text-sm block text-foreground",
     description: "",
   },
+  // Required shape: elmera/enforce-variant-standard makes every recipe declare both
+  // objects. TimelineList has no axes.
+  variants: {},
+  defaultVariants: {},
 });

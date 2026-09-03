@@ -31,4 +31,7 @@ export const paginationVariants = tv({
       },
     },
   },
+  // Required shape: elmera/enforce-variant-standard makes every recipe declare
+  // `defaultVariants`. There is no default direction — Previous/Next pass the axis.
+  defaultVariants: {},
 });

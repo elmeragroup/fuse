@@ -13,7 +13,7 @@ const MODES = Object.values(METER_CONSTANTS.MODES);
 const LEVELS = Object.values(METER_CONSTANTS.LEVELS);
 
 /** meter.md §4: the whole published matrix, one row per mode × level. */
-const MATRIX: Record<MeterMode, Record<MeterLevel, { tone: MeterTone; icon: MeterIconName }>> = {
+const MATRIX = {
   default: {
     LOW: { tone: "success", icon: "none" },
     MEDIUM: { tone: "warning", icon: "warning" },
@@ -38,14 +38,14 @@ const MATRIX: Record<MeterMode, Record<MeterLevel, { tone: MeterTone; icon: Mete
     FULL: { tone: "neutral", icon: "none" },
     EXCEEDED_MAX_VALUE: { tone: "neutral", icon: "none" },
   },
-};
+} satisfies Record<MeterMode, Record<MeterLevel, { tone: MeterTone; icon: MeterIconName }>>;
 
-const TONE_CLASSES: Record<MeterTone, { barFill: string; labelValue: string }> = {
+const TONE_CLASSES = {
   success: { barFill: "bg-success", labelValue: "text-success" },
   warning: { barFill: "bg-warning", labelValue: "text-warning-foreground" },
   error: { barFill: "bg-error", labelValue: "text-error" },
   neutral: { barFill: "bg-primary", labelValue: "text-foreground" },
-};
+} satisfies Record<MeterTone, { barFill: string; labelValue: string }>;
 
 const WARNING_COPY = {
   "nb-NO": "Advarsel",

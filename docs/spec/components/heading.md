@@ -80,7 +80,7 @@ Base: `font-heading text-foreground`. Note the base sets `text-foreground` while
 5. **`HeadingProps` name**: unchanged from ref (already unique) — recorded here because its siblings rename (text.md/span.md §8: the ref exports three colliding `TextProps`).
 6. **`align` axis surfaced**: present in the ref recipe but not in the component's destructured props; spec documents it as a first-class prop.
 7. **`data-slot="heading"` added**; `displayName` kept.
-8. **`prose` axis removed** (2026-09-03, ticket 44): the ref's reserved hook mapped `true` to an empty class string, so the prop and the axis were a no-op on every rendered heading — nothing in the library, the docs app or the playground ever passed it. `HeadingProps` and `VariantProps<typeof headingVariants>` lose the key; no emitted class changes. A future prose treatment adds the axis back with a class to paint.
+8. **`prose` axis removed** (ticket 44, 2026-09-03): the ref's reserved hook mapped `true` to an empty class string, so the prop and the axis were a no-op on every rendered heading — nothing in the library, the docs app or the playground ever passed it. `HeadingProps` and `VariantProps<typeof headingVariants>` lose the key; no emitted class changes. A future prose treatment adds the axis back with a class to paint.
 
 ## 9 Test requirements
 

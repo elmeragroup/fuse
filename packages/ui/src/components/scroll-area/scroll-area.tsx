@@ -53,10 +53,7 @@ function ScrollAreaRoot({
       {...props}>
       <ScrollAreaPrimitive.Viewport
         data-slot="scroll-area-viewport"
-        className={cn(
-          "size-full rounded-[inherit] transition-[color,box-shadow]",
-          selfFocusRingClass
-        )}>
+        className={cn("size-full rounded-[inherit] transition-[color,box-shadow]", selfFocusRingClass)}>
         <ScrollAreaPrimitive.Content data-slot="scroll-area-content">{children}</ScrollAreaPrimitive.Content>
       </ScrollAreaPrimitive.Viewport>
       <ScrollAreaBar orientation={orientation} type={type} />

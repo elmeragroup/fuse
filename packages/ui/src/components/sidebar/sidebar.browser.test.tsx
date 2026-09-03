@@ -316,7 +316,6 @@ describe("Sidebar callback stability", () => {
     expect(sidebarRoot().getAttribute("data-state")).toBe("expanded");
     expect(renders).toBe(afterMount);
   });
-
 });
 
 describe("Sidebar locale copy", () => {
