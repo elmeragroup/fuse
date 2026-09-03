@@ -131,6 +131,36 @@ export function classifySourceFile(
   return { kind: "project" };
 }
 
+/**
+ * One extraction session's memo for `classifySourceFile`.
+ *
+ * Classification is a pure function of the path string, but the walk asks it
+ * for every declaration of every symbol and the same handful of paths recur
+ * for the whole session. Splitting and probing each path once per session
+ * keeps the cold classification off the hot loop; the session clears the memo
+ * when it closes, so nothing outlives the extraction.
+ *
+ * This is deliberately NOT the session's `ownershipOfPath`: that answer also
+ * consults the compiler's per-file metadata, which the path name alone cannot
+ * see. Callers that need the path-name question — the pre-check before a
+ * metadata read, and the standard-library path test — ask this one.
+ */
+export class PathNameOwnershipCache {
+  private readonly byPath = new Map<string, BackendDeclarationOwnership>();
+
+  classify(filePath: string): BackendDeclarationOwnership {
+    const cached = this.byPath.get(filePath);
+    if (cached !== undefined) return cached;
+    const ownership = classifySourceFile(filePath);
+    this.byPath.set(filePath, ownership);
+    return ownership;
+  }
+
+  clear(): void {
+    this.byPath.clear();
+  }
+}
+
 function packageNameFromPath(pathSegments: readonly string[]): string | undefined {
   // Use the innermost node_modules segment: pnpm and Yarn may place several
   // package stores in one path, while the last segment names the dependency

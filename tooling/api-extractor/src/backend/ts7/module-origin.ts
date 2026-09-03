@@ -29,7 +29,7 @@ import type { Symbol as TsSymbol } from "typescript/unstable/sync";
 
 import type { BackendDeclarationOwnership, BackendModuleOrigin } from "../contracts.ts";
 import type { TsgoFactsSession } from "./facts.ts";
-import { classifySourceFile, declarationOwnershipOfPath } from "./file-ownership.ts";
+import { declarationOwnershipOfPath } from "./file-ownership.ts";
 import { aliasedSymbol } from "./module-resolution.ts";
 import { isStarExport } from "./syntax.ts";
 import { sameUltimateSymbol } from "./ultimate-symbol.ts";
@@ -463,7 +463,7 @@ function declarationOriginWithoutMaterialization(
   session: TsgoFactsSession,
   declaration: { readonly kind: Node["kind"]; readonly path: string }
 ): BackendModuleOrigin | undefined {
-  const pathOwnership = classifySourceFile(declaration.path);
+  const pathOwnership = session.ownershipFromPathName(declaration.path);
   const pathIsStandardLibrary =
     pathOwnership.kind === "typescript" && pathOwnership.library === "standard-library";
   const declarationHasNoAuthoredSource =

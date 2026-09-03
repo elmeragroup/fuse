@@ -27,9 +27,9 @@ const genericFixtureDirectory = resolve(
   import.meta.dirname,
   "fixtures/generic-function-and-interface-resolution"
 );
-const genericTsconfigPath = resolve(import.meta.dirname, "fixtures/issue-07-tsconfig.json");
+const genericTsconfigPath = resolve(import.meta.dirname, "fixtures/generics-tsconfig.json");
 const genericInputPath = resolve(genericFixtureDirectory, "input.ts");
-const reviewFixtureDirectory = resolve(import.meta.dirname, "fixtures/issue-03-review");
+const reviewFixtureDirectory = resolve(import.meta.dirname, "fixtures/mixed-repo-provenance");
 const reviewTsconfigPath = resolve(reviewFixtureDirectory, "tsconfig.json");
 const reviewInputPath = resolve(reviewFixtureDirectory, "input.tsx");
 

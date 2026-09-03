@@ -15,17 +15,17 @@ import {
   assertTs7DivergenceEvidence,
   canonicalDifferencePaths,
   differenceDigest,
-  issue14FixtureManifest,
-  issue14TypeScript7Compiler,
+  conformanceFixtureManifest,
+  pinnedTypeScript7Compiler,
   decodeJson,
   normalizeWarnings,
   packageVersion,
   posixRelative,
   sha256File,
 } from "../fixture-evidence.ts";
-import type { Issue14Fixture } from "../fixture-evidence.ts";
+import type { ConformanceFixture } from "../fixture-evidence.ts";
 import { createFixtureFileSystem } from "../fixture-filesystem.ts";
-import { deriveWarningEvidencePlan } from "../fixture-views.ts";
+import { deriveWarningEvidencePlan } from "../fixture-plans.ts";
 import { auditPinnedReference, pinnedFixturePathUniverse, pinnedUpstream } from "../reference.ts";
 import { issue14ConformanceCommand, issue14SelectedOracleFile } from "./contract.ts";
 import {
@@ -42,8 +42,8 @@ import type { TypecheckResult } from "./typecheck.ts";
 
 const packageDirectory = resolve(import.meta.dirname, "../..");
 const fixtureDirectory = join(packageDirectory, "test/fixtures");
-const configPath = join(fixtureDirectory, "issue-14-tsconfig.json");
-const reportPath = join(fixtureDirectory, "issue-14-conformance.json");
+const configPath = join(fixtureDirectory, "conformance-tsconfig.json");
+const reportPath = join(fixtureDirectory, "conformance.json");
 const upstreamCommit = pinnedUpstream.commit;
 const expectedFixtureCount = 116;
 
@@ -234,8 +234,8 @@ export type FixtureExtraction = (inputPath: string) => Effect.Effect<FixtureExtr
 
 function assertCompilerIdentity(): void {
   const actual = "typescript@" + packageVersion("typescript");
-  if (actual !== issue14TypeScript7Compiler) {
-    throw new Error(`Issue 14 conformance requires ${issue14TypeScript7Compiler}; found ${actual}.`);
+  if (actual !== pinnedTypeScript7Compiler) {
+    throw new Error(`Issue 14 conformance requires ${pinnedTypeScript7Compiler}; found ${actual}.`);
   }
 }
 
@@ -267,7 +267,7 @@ function warningEvidence(warnings: readonly ExtractWarning[]): WarningEvidence {
   return { warningCount: warningDetails.length, warningDetails, warningDigest } satisfies WarningEvidence;
 }
 
-function failedExtraction(definition: Issue14Fixture, error: string): ExtractionResult {
+function failedExtraction(definition: ConformanceFixture, error: string): ExtractionResult {
   const oracleFile = issue14SelectedOracleFile(definition);
   const selectedOraclePath = join(fixtureDirectory, definition.fixture, oracleFile);
   return {
@@ -291,7 +291,7 @@ function failedExtraction(definition: Issue14Fixture, error: string): Extraction
 }
 
 function compareFixtureExtraction(
-  definition: Issue14Fixture,
+  definition: ConformanceFixture,
   result: FixtureExtractionValue,
   warningOverrides: ReadonlyMap<string, readonly Schema.Json[]> = new Map()
 ): ExtractionResult {
@@ -365,7 +365,7 @@ function compareFixtureExtraction(
  * and one bad fixture must not prevent later fixtures from running.
  */
 export function extractFixtureResults(
-  definitions: readonly Issue14Fixture[],
+  definitions: readonly ConformanceFixture[],
   extract: FixtureExtraction,
   warningOverrides: ReadonlyMap<string, readonly Schema.Json[]> = new Map()
 ): Effect.Effect<readonly ExtractionResult[], never> {
@@ -392,7 +392,7 @@ function extractAll(
   const effect = Effect.gen(function* () {
     const extractor = yield* ProjectExtractor;
     const extract: FixtureExtraction = (inputPath) => extractor.extractModule(inputPath);
-    return yield* extractFixtureResults(issue14FixtureManifest, extract, warningOverrides);
+    return yield* extractFixtureResults(conformanceFixtureManifest, extract, warningOverrides);
   }).pipe(
     Effect.provide(
       ProjectExtractor.live({
@@ -405,7 +405,7 @@ function extractAll(
 }
 
 function assertManifest(requireTs7Evidence = true): void {
-  const names = issue14FixtureManifest.map((entry) => entry.fixture);
+  const names = conformanceFixtureManifest.map((entry) => entry.fixture);
   if (names.length !== expectedFixtureCount) {
     throw new Error(`Issue 14 manifest must contain exactly ${expectedFixtureCount} fixtures.`);
   }
@@ -430,7 +430,7 @@ function assertManifest(requireTs7Evidence = true): void {
         `discovered ${discoveredNames.length}.`
     );
   }
-  for (const definition of issue14FixtureManifest) {
+  for (const definition of conformanceFixtureManifest) {
     const directory = join(fixtureDirectory, definition.fixture);
     if (!existsSync(join(directory, definition.file)) || !existsSync(join(directory, "output.json"))) {
       throw new Error(`Incomplete pinned fixture: ${definition.fixture}`);
@@ -464,7 +464,7 @@ export async function writeAdditionalTs7Evidence(
   if (names.length === 0) throw new Error("--write-ts7 requires one or more explicit fixture names.");
   assertManifest(false);
   const definitions = names.map((name) => {
-    const definition = issue14FixtureManifest.find((entry) => entry.fixture === name);
+    const definition = conformanceFixtureManifest.find((entry) => entry.fixture === name);
     if (definition?.disposition !== "reviewed-ts7") {
       throw new Error(`--write-ts7 accepts only reviewed Issue 14 fixtures: ${name}`);
     }
@@ -548,7 +548,7 @@ export async function writeAdditionalTs7Evidence(
 }
 
 type WarningEvidenceSelection = {
-  readonly definition: Issue14Fixture;
+  readonly definition: ConformanceFixture;
   readonly oracleFile: "warnings.tsgo.json";
   readonly codes: readonly string[];
 };
@@ -569,7 +569,7 @@ function selectWarningEvidence(names: readonly string[]): readonly WarningEviden
   }
   return selectedNames.map((name) => {
     const warning = plan.find((entry) => entry.fixture === name);
-    const definition = issue14FixtureManifest.find((entry) => entry.fixture === name);
+    const definition = conformanceFixtureManifest.find((entry) => entry.fixture === name);
     if (warning === undefined || definition === undefined) {
       throw new Error(`--write-warnings accepts only cataloged warning fixtures: ${name}`);
     }
@@ -637,7 +637,7 @@ export async function refreshWarningEvidence(
     throw new Error("--write-warnings requires a verified pinned upstream reference before extraction.");
   }
   const warningOverrides = await extractWarningEvidence(selections);
-  const typechecks = issue14FixtureManifest.map(typecheckFixture);
+  const typechecks = conformanceFixtureManifest.map(typecheckFixture);
   const extractions = await extractAll(warningOverrides);
   const measured = reportFrom(typechecks, extractions, referenceCheck);
   assertReferenceEvidence(measured.referenceCheck, true);
@@ -655,7 +655,7 @@ export async function refreshWarningEvidence(
     };
   });
   artifacts.push({
-    destination: "issue-14-conformance.json",
+    destination: "conformance.json",
     content: `${JSON.stringify(measured, null, 2)}\n`,
     evidence: "generated",
   });
@@ -667,7 +667,7 @@ function reportFrom(
   extractions: readonly ExtractionResult[],
   referenceCheck: ReturnType<typeof auditPinnedReference>
 ): Issue14ConformanceReport {
-  const fixtures = issue14FixtureManifest.map((definition, index) => {
+  const fixtures = conformanceFixtureManifest.map((definition, index) => {
     const inputPath = join(fixtureDirectory, definition.fixture, definition.file);
     const typecheck = typechecks[index];
     const extraction = extractions[index];
@@ -684,7 +684,7 @@ function reportFrom(
       extraction,
     };
   });
-  const summary = summarizeFixtureRun(issue14FixtureManifest, typechecks, extractions);
+  const summary = summarizeFixtureRun(conformanceFixtureManifest, typechecks, extractions);
   return {
     issue: "14-full-conformance",
     command: issue14ConformanceCommand,
@@ -775,14 +775,14 @@ async function main(): Promise<void> {
     console.log(JSON.stringify(referenceCheck, null, 2));
     return;
   }
-  const typechecks = issue14FixtureManifest.map(typecheckFixture);
+  const typechecks = conformanceFixtureManifest.map(typecheckFixture);
   const extractions = await extractAll();
   const measured = reportFrom(typechecks, extractions, referenceCheck);
   if (writeReport) {
     assertReferenceEvidence(measured.referenceCheck, true);
     await writeEvidenceBatch([
       {
-        destination: "issue-14-conformance.json",
+        destination: "conformance.json",
         content: `${JSON.stringify(measured, null, 2)}\n`,
         evidence: "generated",
       },

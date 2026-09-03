@@ -5,7 +5,7 @@ import type { ExtractionResult, ExtractorOptions } from "../src/index.ts";
 import type { ClassMethod, ClassProperty, SemanticType } from "../src/model.ts";
 import { extractFixture, fixtureRoot } from "./support/extract.ts";
 
-const tsconfigPath = resolve(fixtureRoot, "issue-06-tsconfig.json");
+const tsconfigPath = resolve(fixtureRoot, "classes-and-callables-tsconfig.json");
 
 describe("classes and callables on the ported upstream fixtures", () => {
   it("reports the construct signatures a non-class shape carries as structured warnings", async () => {
@@ -93,7 +93,7 @@ describe("classes and callables on the ported upstream fixtures", () => {
   });
 });
 
-const fixtureDirectory = resolve(import.meta.dirname, "fixtures/issue-06-review");
+const fixtureDirectory = resolve(import.meta.dirname, "fixtures/class-and-callable-members");
 
 function extract(options: ExtractorOptions = {}, file = "input.ts"): Promise<ExtractionResult> {
   return extractFixture(

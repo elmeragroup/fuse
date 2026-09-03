@@ -14,8 +14,8 @@ import {
   decodeJson,
   sha256File,
 } from "../fixture-evidence.ts";
-import { issue14FixtureManifest } from "../fixture-views.ts";
-import type { Issue14Fixture } from "../fixture-views.ts";
+import { conformanceFixtureManifest } from "../fixture-plans.ts";
+import type { ConformanceFixture } from "../fixture-plans.ts";
 import { pinnedFixturePathUniverse, pinnedUpstream, skippedPathUniverseSha256 } from "../reference.ts";
 import {
   issue14ConformanceCommand,
@@ -64,7 +64,7 @@ export type FixtureRunSummary = {
 
 /** Derive the complete status vector from one ordered fixture run. */
 export function summarizeFixtureRun(
-  definitions: readonly Issue14Fixture[],
+  definitions: readonly ConformanceFixture[],
   typechecks: readonly FixtureStatusRecord[],
   extractions: readonly FixtureStatusRecord[]
 ): FixtureRunSummary {
@@ -141,7 +141,7 @@ export function assertReferenceEvidence(
 
 function assertFixtureRecord(
   record: Issue14ConformanceReport["fixtures"][number],
-  definition: Issue14Fixture,
+  definition: ConformanceFixture,
   index: number,
   fixtureRoot: string
 ): void {
@@ -244,7 +244,7 @@ export function assertConformanceDecoded(
     throw new Error("Issue 14 fixture manifest digest is stale.");
   }
   assertReferenceEvidence(report.referenceCheck, false);
-  const manifestNames = issue14FixtureManifest.map((fixture) => fixture.fixture);
+  const manifestNames = conformanceFixtureManifest.map((fixture) => fixture.fixture);
   const names = report.fixtures.map((fixture) => fixture.fixture);
   if (
     report.fixtures.length !== expectedFixtureCount ||
@@ -255,7 +255,7 @@ export function assertConformanceDecoded(
   }
 
   const summary = summarizeFixtureRun(
-    issue14FixtureManifest,
+    conformanceFixtureManifest,
     report.fixtures.map((fixture) => fixture.typecheck),
     report.fixtures.map((fixture) => fixture.extraction)
   );
@@ -274,7 +274,7 @@ export function assertConformanceDecoded(
   }
   for (let index = 0; index < expectedFixtureCount; index += 1) {
     const record = report.fixtures[index];
-    const definition = issue14FixtureManifest[index];
+    const definition = conformanceFixtureManifest[index];
     if (record === undefined || definition === undefined) {
       throw new Error(`Issue 14 report is missing fixture index ${index}.`);
     }
@@ -287,7 +287,7 @@ export function assertConformanceDecoded(
 
 /** The stable identity of the fixture manifest every conformance report is bound to. */
 export function manifestSha256(): string {
-  return createHash("sha256").update(JSON.stringify(issue14FixtureManifest), "utf8").digest("hex");
+  return createHash("sha256").update(JSON.stringify(conformanceFixtureManifest), "utf8").digest("hex");
 }
 
 export function assertStoredReportDecoded(
@@ -330,7 +330,7 @@ export function assertStoredReport(
   if (stored.status !== "pass" || measured.status !== "pass") {
     throw new Error("Issue 14 conformance is not green.");
   }
-  for (let index = 0; index < issue14FixtureManifest.length; index += 1) {
+  for (let index = 0; index < conformanceFixtureManifest.length; index += 1) {
     const expected = measured.fixtures[index];
     const actual = stored.fixtures[index];
     if (

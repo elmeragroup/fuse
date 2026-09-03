@@ -71,11 +71,28 @@ function freezeFact<Result>(value: Result): Result {
   return deepFreezeFact(value, new WeakSet());
 }
 
+/**
+ * A frozen record ends the walk.
+ *
+ * INVARIANT: every frozen object reachable from a cached fact is frozen all
+ * the way down. Only two places in `src/**` freeze anything — this function,
+ * which freezes a whole subgraph, and the handle registry, whose handles hold
+ * only primitives and the session symbol — so a frozen object never has an
+ * unfrozen child, and stopping here cannot leave one behind. Descending again
+ * would re-walk the shared sub-records of every later fact, which is the cost
+ * this short-circuit removes.
+ *
+ * A new `Object.freeze` in `src/**` breaks that invariant the moment it
+ * freezes a literal with mutable children. `test/session-fact-cache-freeze
+ * .test.ts` fails on any freeze site outside those two, so the invariant is
+ * re-argued rather than silently lost.
+ */
 function deepFreezeFact<Result>(value: Result, seen: WeakSet<object>): Result {
   if (value === null || typeof value !== "object" || seen.has(value)) return value;
+  if (Object.isFrozen(value)) return value;
   seen.add(value);
   for (const descriptor of Object.values(Object.getOwnPropertyDescriptors(value))) {
     if ("value" in descriptor) deepFreezeFact(descriptor.value, seen);
   }
-  return Object.isFrozen(value) ? value : Object.freeze(value);
+  return Object.freeze(value);
 }

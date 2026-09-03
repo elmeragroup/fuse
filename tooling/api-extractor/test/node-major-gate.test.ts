@@ -7,7 +7,7 @@ import { issue14TimingCommand } from "../scripts/conformance/contract.ts";
 import { assertNodeMajor, issue02TimingCommand, requiredNodeMajor } from "../scripts/files.ts";
 import { assertTimingReportInvariants, Issue14TimingReportSchema } from "../scripts/timing/issue14.ts";
 
-const issue14ReportPath = resolve(import.meta.dirname, "fixtures/issue-14-timing.json");
+const issue14ReportPath = resolve(import.meta.dirname, "fixtures/timing-conformance.json");
 
 describe("Node-major timing gate", () => {
   it("accepts any Node 24 patch and rejects other majors", () => {

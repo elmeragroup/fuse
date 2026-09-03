@@ -24,9 +24,9 @@
     "type-alias-generic-argument-resolution/input.ts",
     "type-alias-basic-resolution/input.ts",
     "type-reference-vs-inline-resolution/input.ts",
-    "issue-07-review/keyof-arguments.ts",
-    "issue-07-review/generic-class.ts",
-    "issue-07-review/substitution-scope.ts",
-    "issue-07-review/spread-pairing.ts"
+    "generic-substitution-scope/keyof-arguments.ts",
+    "generic-substitution-scope/generic-class.ts",
+    "generic-substitution-scope/substitution-scope.ts",
+    "generic-substitution-scope/spread-pairing.ts"
   ]
 }

@@ -8,7 +8,7 @@ import type { ExportNode, PropertyNode, SemanticType } from "../src/model.ts";
 import { ProvenanceSchema } from "../src/provenance.ts";
 import { extractFixture } from "./support/extract.ts";
 
-const fixtureDirectory = resolve(import.meta.dirname, "fixtures/issue-05-containers");
+const fixtureDirectory = resolve(import.meta.dirname, "fixtures/container-kinds-and-tuples");
 
 let result: ExtractionResult;
 
@@ -229,7 +229,7 @@ describe("Issue 05 container extraction through the public seam", () => {
   });
 });
 
-const reviewFixtureDirectory = resolve(import.meta.dirname, "fixtures/issue-05-review");
+const reviewFixtureDirectory = resolve(import.meta.dirname, "fixtures/container-open-rest-and-shadowing");
 
 function extractReview(options: ExtractorOptions, file = "input.ts"): Promise<ExtractionResult> {
   return extractFixture(

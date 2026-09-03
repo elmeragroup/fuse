@@ -26,6 +26,6 @@
 		"react-hook-function-expression/input.ts",
 		"react-refs/input.tsx",
 		"module-reexports-parts-namespace/input.ts",
-		"issue-13-review/input.ts"
+		"external-root-boundary/input.ts"
 	]
 }

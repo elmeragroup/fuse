@@ -7,6 +7,7 @@ import type { Symbol as TsSymbol } from "typescript/unstable/sync";
 
 import { resolveOwnedDeclaration } from "./declarations.ts";
 import { exportsOf } from "./module-ordering.ts";
+import { memoizeWalkFact } from "./module-walk-memo.ts";
 import type { DescriptorScope, TsgoModuleSession } from "./module.ts";
 import { repositoryRelativePath } from "./path-identity.ts";
 import { enclosingExportDeclaration } from "./syntax.ts";
@@ -95,8 +96,20 @@ export function followedChain(
  * The re-export statement that forwards a symbol from another module, when
  * its declarations contain one (`export { x } from '…'`, including renamed
  * and type-only forms).
+ *
+ * A chain resolves each symbol's forwarding statement twice — once as the hop
+ * it steps to and once as the hop it steps from — so the answer, including an
+ * absent one, is memoized for the walk.
  */
-function forwardingReExport(session: TsgoModuleSession, symbol: TsSymbol): ForwardingReExport | undefined {
+const forwardingReExport = memoizeWalkFact(
+  (session: TsgoModuleSession, symbol: TsSymbol): ForwardingReExport | undefined =>
+    readForwardingReExport(session, symbol)
+);
+
+function readForwardingReExport(
+  session: TsgoModuleSession,
+  symbol: TsSymbol
+): ForwardingReExport | undefined {
   for (const declaration of symbol.declarations) {
     // A dependency barrel's export-specifier declaration is not needed to
     // reject its package at the parser boundary. Resolving it would fetch the

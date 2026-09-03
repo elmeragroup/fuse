@@ -1,26 +1,23 @@
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import {
-  expectedWarningCodes,
-  issue13ExpectedWarnings,
-  issue13ExternalFixtures,
-} from "../scripts/fixture-evidence.ts";
+import { expectedFixtureWarnings, expectedWarningCodes } from "../scripts/fixture-evidence.ts";
 import type { ExtractionResult } from "../src/index.ts";
 import type { ExternalTypeNode } from "../src/model.ts";
 import { defaultExtractorOptions } from "../src/options.ts";
 import { extractFixture, fixtureRoot } from "./support/extract.ts";
+import { externalTypeFixtures } from "./support/fixture-suites.ts";
 
-const tsconfigPath = resolve(fixtureRoot, "issue-13-tsconfig.json");
+const tsconfigPath = resolve(fixtureRoot, "external-types-tsconfig.json");
 
 describe("external-type warnings on the ported upstream fixtures", () => {
   it("emits exactly the warnings each reviewed record declares", async () => {
-    for (const definition of issue13ExternalFixtures) {
+    for (const definition of externalTypeFixtures) {
       const result = await extractFixture(
         { tsconfigPath },
         resolve(fixtureRoot, definition.fixture, definition.file)
       );
-      const expectedCodes = [...expectedWarningCodes(issue13ExpectedWarnings, definition.fixture)].sort();
+      const expectedCodes = [...expectedWarningCodes(expectedFixtureWarnings, definition.fixture)].sort();
       const actualCodes = result.warnings.map((warning) => warning.code).sort();
       expect(actualCodes).toEqual(expectedCodes);
     }
@@ -51,7 +48,7 @@ describe("external-type ownership policy in both modes", () => {
   it("keeps project-owned TypeScript-shaped declarations project-owned", async () => {
     const result = await extractFixture(
       { tsconfigPath },
-      resolve(fixtureRoot, "issue-13-review", "input.ts")
+      resolve(fixtureRoot, "external-root-boundary", "input.ts")
     );
     const exports = new Map(result.module.exports.map((entry) => [entry.name, entry]));
     expect(exports.get("ProjectArray")?.type).toMatchObject({
@@ -86,7 +83,7 @@ describe("external-type ownership policy in both modes", () => {
           path: ["ProjectArray"],
           declarations: [
             expect.objectContaining({
-              path: "test/fixtures/issue-13-review/src/typescript/lib/lib.dom.d.ts",
+              path: "test/fixtures/external-root-boundary/src/typescript/lib/lib.dom.d.ts",
             }),
           ],
         }),
@@ -94,7 +91,7 @@ describe("external-type ownership policy in both modes", () => {
           path: ["ProjectReadonlyArray"],
           declarations: [
             expect.objectContaining({
-              path: "test/fixtures/issue-13-review/src/@typescript/tsc/lib/lib.es2022.d.ts",
+              path: "test/fixtures/external-root-boundary/src/@typescript/tsc/lib/lib.es2022.d.ts",
             }),
           ],
         }),
@@ -105,7 +102,7 @@ describe("external-type ownership policy in both modes", () => {
   it("does not apply an enclosing project namespace to a top-level concrete argument", async () => {
     const result = await extractFixture(
       { tsconfigPath },
-      resolve(fixtureRoot, "issue-13-review", "input.ts")
+      resolve(fixtureRoot, "external-root-boundary", "input.ts")
     );
     const entry = result.module.exports.find(
       (candidate) => candidate.name === "ProjectNamespaceSubstitution"
@@ -140,7 +137,7 @@ describe("external-type ownership policy in both modes", () => {
   it("preserves a project namespace through a local holder into an external ref argument", async () => {
     const result = await extractFixture(
       { tsconfigPath },
-      resolve(fixtureRoot, "issue-13-review", "input.ts")
+      resolve(fixtureRoot, "external-root-boundary", "input.ts")
     );
     const entry = result.module.exports.find(
       (candidate) => candidate.name === "ProjectNestedNamespaceSubstitution"
@@ -173,7 +170,7 @@ describe("external-type ownership policy in both modes", () => {
   it("pins dependency-owned bare interface and value roots as anonymous empty objects", async () => {
     const result = await extractFixture(
       { tsconfigPath },
-      resolve(fixtureRoot, "issue-13-review", "input.ts")
+      resolve(fixtureRoot, "external-root-boundary", "input.ts")
     );
     const rootTypes = new Map(result.module.exports.map((entry) => [entry.name, entry.type]));
 

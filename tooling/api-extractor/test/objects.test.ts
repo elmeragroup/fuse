@@ -16,14 +16,14 @@ import { ExtractionResultSchema, ProvenanceSchema, ProjectExtractor } from "../s
 import type { ExtractionResult, ExtractorOptions, ShouldResolveObjectData } from "../src/index.ts";
 import { extractFixture } from "./support/extract.ts";
 
-const fixtureDirectory = resolve(import.meta.dirname, "fixtures/issue-03-object-apis");
+const fixtureDirectory = resolve(import.meta.dirname, "fixtures/object-api-documentation");
 const tsconfigPath = resolve(fixtureDirectory, "tsconfig.json");
 const inputPath = resolve(fixtureDirectory, "input.ts");
-const reviewFixtureDirectory = resolve(import.meta.dirname, "fixtures/issue-03-review");
+const reviewFixtureDirectory = resolve(import.meta.dirname, "fixtures/mixed-repo-provenance");
 const reviewTsconfigPath = resolve(reviewFixtureDirectory, "tsconfig.json");
 const reviewInputPath = resolve(reviewFixtureDirectory, "input.tsx");
 const baseUiFixtureDirectory = resolve(import.meta.dirname, "fixtures/base-ui-component");
-const baseUiTsconfigPath = resolve(import.meta.dirname, "fixtures/issue-02-tsconfig.json");
+const baseUiTsconfigPath = resolve(import.meta.dirname, "fixtures/timing-boundary-tsconfig.json");
 const baseUiInputPath = resolve(baseUiFixtureDirectory, "input.tsx");
 
 function runReviewExtraction(options?: ExtractorOptions): Promise<ExtractionResult> {
@@ -191,18 +191,24 @@ describe("Issue 03 object APIs, documentation, enums, and provenance", () => {
       expect.arrayContaining([
         expect.objectContaining({
           path: ["Options"],
-          declarations: [expect.objectContaining({ path: "test/fixtures/issue-03-object-apis/input.ts" })],
+          declarations: [
+            expect.objectContaining({ path: "test/fixtures/object-api-documentation/input.ts" }),
+          ],
           synthesized: false,
         }),
         expect.objectContaining({
           path: ["Options", "properties", "label"],
-          declarations: [expect.objectContaining({ path: "test/fixtures/issue-03-object-apis/input.ts" })],
+          declarations: [
+            expect.objectContaining({ path: "test/fixtures/object-api-documentation/input.ts" }),
+          ],
           synthesized: false,
           readonly: true,
         }),
         expect.objectContaining({
           path: ["use", "callSignatures", "0", "parameters", "options"],
-          declarations: [expect.objectContaining({ path: "test/fixtures/issue-03-object-apis/input.ts" })],
+          declarations: [
+            expect.objectContaining({ path: "test/fixtures/object-api-documentation/input.ts" }),
+          ],
           synthesized: false,
           defaultInitializer: "{ nested: { id: 1 }, format: String }",
         }),
@@ -381,7 +387,7 @@ describe("Issue 03 object APIs, documentation, enums, and provenance", () => {
         expect.objectContaining({
           declarations: [
             expect.objectContaining({
-              path: "test/fixtures/issue-03-review/MixedRepo/packages/UI/src/Widget.ts",
+              path: "test/fixtures/mixed-repo-provenance/MixedRepo/packages/UI/src/Widget.ts",
             }),
           ],
         }),
@@ -414,8 +420,8 @@ describe("Issue 03 object APIs, documentation, enums, and provenance", () => {
   });
 });
 
-const fakeTsconfigPath = resolve(import.meta.dirname, "fixtures/issue-03-object-apis/tsconfig.json");
-const fakeInputPath = resolve(import.meta.dirname, "fixtures/issue-03-object-apis/input.ts");
+const fakeTsconfigPath = resolve(import.meta.dirname, "fixtures/object-api-documentation/tsconfig.json");
+const fakeInputPath = resolve(import.meta.dirname, "fixtures/object-api-documentation/input.ts");
 
 const synthesizedSymbol = {} as BackendSymbolHandle;
 const generatedSymbol = {} as BackendSymbolHandle;

@@ -6,7 +6,7 @@ import { ExtractionResultSchema, ProjectExtractor } from "../src/index.ts";
 import type { ExtractionResult, PropertyNode, SemanticType } from "../src/index.ts";
 import { extractFixture } from "./support/extract.ts";
 
-const fixtureDirectory = resolve(import.meta.dirname, "fixtures/issue-04-canonical");
+const fixtureDirectory = resolve(import.meta.dirname, "fixtures/canonical-cycles-and-ordering");
 const tsconfigPath = resolve(fixtureDirectory, "tsconfig.json");
 const inputPath = resolve(fixtureDirectory, "input.ts");
 

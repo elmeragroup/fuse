@@ -35,6 +35,7 @@ import type { CompilerDeclaration } from "./declarations.ts";
 import { resolveOwnedDeclaration, valueOrFirstDeclarationHandle } from "./declarations.ts";
 import { exportsOf, orderedContainerExports } from "./module-ordering.ts";
 import { aliasedSymbol, resolveModule } from "./module-resolution.ts";
+import { memoizeWalkFact } from "./module-walk-memo.ts";
 import { repositoryRelativePath } from "./path-identity.ts";
 import { extendChain, followedChain } from "./reexport-chain.ts";
 import { authoredLocation, enclosingExportDeclaration, isStarExport } from "./syntax.ts";
@@ -500,8 +501,16 @@ function exportTarget(session: TsgoModuleSession, symbol: TsSymbol): TsSymbol {
 /**
  * Whether any declaration of the symbol is an export specifier re-exported
  * from another module (`export { x } from './other'`).
+ *
+ * The walk asks this twice for every re-export — once to decide whether a
+ * chain is recorded, once while building the descriptor — so the answer is
+ * memoized for the walk instead of reading `symbol.declarations` again.
  */
-function isModuleReExportSpecifier(session: TsgoModuleSession, symbol: TsSymbol): boolean {
+const isModuleReExportSpecifier = memoizeWalkFact((session: TsgoModuleSession, symbol: TsSymbol): boolean =>
+  readIsModuleReExportSpecifier(session, symbol)
+);
+
+function readIsModuleReExportSpecifier(session: TsgoModuleSession, symbol: TsSymbol): boolean {
   return symbol.declarations.some((declaration) => {
     const resolved = resolveOwnedDeclaration(session, declaration);
     if (resolved === undefined || !isExportSpecifier(resolved)) return false;

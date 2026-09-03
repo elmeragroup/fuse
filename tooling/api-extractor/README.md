@@ -76,6 +76,14 @@ materialized tree for later node lookups; the compiler's project-scoped source-f
 shared library and dependency files across sessions. Files excluded by ownership are never read
 as modules. Parser and public options never see this.
 
+Hot paths that the walk would otherwise recompute are answered once. Path-name ownership is
+classified once per path for the session; a container's authored export positions are built once
+per source file instead of scanned per export; whether a symbol is a module re-export specifier
+and which statement forwards it are read once per `readModule` walk; and the fact cache stops
+deep-freezing at an already frozen record, which is where the registry's handles and every
+repeated fact end. None of this changes what is extracted, so IPC request counts and oracles are
+unchanged. _(Amended 2026-09-03.)_
+
 Some compiler shapes cannot fit the public model. The extractor keeps working and reports one of
 these structured warning codes:
 
@@ -92,10 +100,18 @@ Consumers should branch on `code` and structured fields, not parse `message` tex
 
 ## Fixture evidence
 
-`scripts/fixture-catalog.ts` is the canonical fixture inventory. Its 125 records describe inputs,
-oracle ownership, warning evidence, issue membership, type-check strategy, timing membership, and
-package execution. Scripts and tests derive their ordered views from that catalog; do not add a
-second fixture list.
+`scripts/fixture-catalog.ts` derives the fixture inventory from `test/fixtures` itself: a directory
+holding an `input.*` file is a fixture, `output.json` makes it a conformance fixture,
+`output.tsgo.json` makes that a reviewed TypeScript 7 divergence, `ts7-oracle.json` is the
+divergence record, and `warnings.tsgo.json` supplies the warning oracle and its code order.
+`test/fixtures/fixtures.json` holds only what a filename cannot state: IPC ceilings, the fixture
+type-checked through a virtual upstream dependency, the two locally generated oracles, and the
+projects the type-check plan skips. `scripts/fixture-plans.ts` projects the plans the gates run;
+suite grouping and order belong to the suite that asserts them (`test/support/fixture-suites.ts`).
+The catalog validates itself once, when its module loads; nothing downstream re-validates. Plans and
+records are named for what they measure — the boundary plan and the conformance plan — while the
+stored plan ids `issue02` and `issue14` stay as they are, because the immutable baseline records the
+command that produced it. Do not add a second fixture list. _(Amended 2026-09-03.)_
 
 The full conformance view contains 116 fixtures ported from upstream: 97 whose oracle is unchanged
 and 19 with a reviewed TypeScript 7 divergence. Their evidence files are:
@@ -106,7 +122,7 @@ and 19 with a reviewed TypeScript 7 divergence. Their evidence files are:
   A fixture that still matches `output.json` does not keep a duplicate `output.tsgo.json`.
 - `warnings.tsgo.json` records reviewed recoverable warnings, including empty warning sets where the
   absence itself is evidence.
-- `issue-14-conformance.json` is the generated report that binds fixture input, selected oracle,
+- `conformance.json` is the generated report that binds fixture input, selected oracle,
   warning, type-check, and pinned-reference evidence.
 
 Use these workflows from `tooling/api-extractor`:
@@ -178,7 +194,7 @@ runs one plan. Deterministic counters must match exactly and scheduler-sensitive
 recorded observations that only need to stay finite and non-negative; no check depends on
 milliseconds. The IPC stop condition is decided by request count and bytes received against the
 catalog ceilings: per fixture in the Issue 02 and external-selection plans, and summed over the four
-fixtures in the Issue 14 plan, so a dense walk cannot trade one for a megabyte dump. `test/fixtures/issue-02-timing.json`
+fixtures in the Issue 14 plan, so a dense walk cannot trade one for a megabyte dump. `test/fixtures/timing-boundary.json`
 is the immutable pre-optimization baseline the Issue 14 plan measures against; only its ceiling
 metadata moves with the catalog. Refresh the Issue 14 report (`report:timing:issue14`) only after
 reviewing the semantic output and the reason for a timing change.
@@ -187,10 +203,11 @@ reviewing the semantic output and the reason for a timing change.
 
 When adding or porting a fixture:
 
-1. Add one record to `fixtureEvidenceCatalog` with its input, oracle, warning, issue, and execution
-   metadata.
-2. Preserve copied `output.json` bytes. Add reviewed TypeScript 7 evidence only when the catalog
-   declares a divergence and the reason record accounts for every changed path.
+1. Create its directory with an `input.*` file. The catalog derives the record; add a row to
+   `test/fixtures/fixtures.json` only for an IPC ceiling or one of the recorded exceptions, and a
+   row to `test/support/fixture-suites.ts` when a behaviour suite should cover it.
+2. Preserve copied `output.json` bytes. Add reviewed TypeScript 7 evidence only when the fixture
+   carries a `ts7-oracle.json` reason record that accounts for every changed path.
 3. Run `check:catalog`, `test:fixtures`, the focused semantic test, and `test:conformance`.
 4. Refresh only the reviewed artifact class that changed, then inspect the complete diff.
 

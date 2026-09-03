@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import type { ExtractionResult } from "../src/index.ts";
 import { extractFixture, fixtureRoot } from "./support/extract.ts";
 
-const tsconfigPath = resolve(fixtureRoot, "issue-10-tsconfig.json");
+const tsconfigPath = resolve(fixtureRoot, "module-surface-tsconfig.json");
 
 describe("re-export provenance and authored names", () => {
   it("records the original name of a renamed module re-export on the export node", async () => {
@@ -62,7 +62,7 @@ describe("re-export provenance and authored names", () => {
   });
 });
 
-const reviewFixtureRoot = resolve(import.meta.dirname, "fixtures/issue-10-review");
+const reviewFixtureRoot = resolve(import.meta.dirname, "fixtures/module-surface-reexport-shapes");
 const reviewTsconfigPath = resolve(reviewFixtureRoot, "tsconfig.json");
 
 function runReviewExtraction(fixture: string, file: string): Promise<ExtractionResult> {
@@ -115,8 +115,8 @@ describe("module-surface review regressions", () => {
       expect(entry).toBeDefined();
       if (entry === undefined) throw new Error(`missing provenance for ${name}`);
       expect(entry.reexportChain).toEqual([
-        "fixtures/issue-10-review/multi-hop/input.ts",
-        "fixtures/issue-10-review/multi-hop/middle.ts",
+        "fixtures/module-surface-reexport-shapes/multi-hop/input.ts",
+        "fixtures/module-surface-reexport-shapes/multi-hop/middle.ts",
       ]);
       expect(
         entry.declarations.map((declaration) => declaration.path).some((path) => path.endsWith("origin.ts"))

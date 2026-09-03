@@ -20,8 +20,8 @@ import {
   decodeJson,
   fixtureDirectory,
   fixtureInputPath,
-  issue02TimingFixtures,
-  issue14TimingFixtures,
+  boundaryTimingFixtures,
+  conformanceTimingFixtures,
   packageVersion,
   readTimingReport,
 } from "../fixture-evidence.ts";
@@ -29,9 +29,9 @@ import type { TimingReport } from "../fixture-evidence.ts";
 import { boundaryStatuses, timedExtraction } from "./shared.ts";
 import type { BoundaryStatuses } from "./shared.ts";
 
-const reportPath = join(fixtureDirectory, "issue-14-timing.json");
-const baselinePath = join(fixtureDirectory, "issue-02-timing.json");
-const configPath = join(fixtureDirectory, "issue-14-tsconfig.json");
+const reportPath = join(fixtureDirectory, "timing-conformance.json");
+const baselinePath = join(fixtureDirectory, "timing-boundary.json");
+const configPath = join(fixtureDirectory, "conformance-tsconfig.json");
 export const timingToleranceMs = 0.001;
 /**
  * IPC wall-clock counters are scheduler-sensitive. Keep the durable timing
@@ -42,7 +42,7 @@ export const timingToleranceMs = 0.001;
  */
 export const wallClockContract = issue14TimingWallClockContract;
 export const wallClockContractRationale = issue14TimingWallClockRationale;
-const expectedFixtureOrder = issue14TimingFixtures.map((definition) => definition.fixture);
+const expectedFixtureOrder = conformanceTimingFixtures.map((definition) => definition.fixture);
 const timingFields = ["roundTripMs", "serverTimeMs", "transportOverheadMs"] as const;
 const semanticFields = ["requestCount", "nodesMaterialized", "sourceFilesFetched", "nodesFetched"] as const;
 const transportByteFields = ["bytesSent", "bytesReceived"] as const;
@@ -78,7 +78,7 @@ export const Issue14TimingReportSchema = Schema.Struct({
     compiler: Schema.Literal(issue14CompilerVersion),
   }),
   baseline: Schema.Struct({
-    report: Schema.Literal("test/fixtures/issue-02-timing.json"),
+    report: Schema.Literal("test/fixtures/timing-boundary.json"),
     aggregate: NumberTotalsSchema,
   }),
   measurement: Schema.Struct({
@@ -152,10 +152,10 @@ type IpcStatus = Issue14TimingReport["stopConditions"]["unacceptableIpcGrowth"][
 
 /** The Issue 14 IPC ceilings are the catalog's Issue 02 per-fixture ceilings summed over the four fixtures. */
 export function issue14IpcCeilings(): IpcCeilings {
-  const budgets = new Map(issue02TimingFixtures.map((definition) => [definition.fixture, definition]));
+  const budgets = new Map(boundaryTimingFixtures.map((definition) => [definition.fixture, definition]));
   let maxAggregateRequestCount = 0;
   let maxAggregateBytesReceived = 0;
-  for (const definition of issue14TimingFixtures) {
+  for (const definition of conformanceTimingFixtures) {
     const budget = budgets.get(definition.fixture);
     if (budget === undefined) {
       throw new Error(`Issue 14 timing fixture ${definition.fixture} has no catalog IPC ceiling.`);
@@ -434,7 +434,7 @@ function reportFrom(
     command: issue14TimingCommand,
     runtime: currentRuntimeIdentity(),
     baseline: {
-      report: "test/fixtures/issue-02-timing.json" as const,
+      report: "test/fixtures/timing-boundary.json" as const,
       aggregate: baselineAggregate,
     },
     measurement: {
@@ -490,7 +490,7 @@ async function measure(): Promise<Issue14TimingReport> {
   assertBaselineIdentity(baseline);
   const baselineSamples = new Map(baseline.samples.map((sample) => [sample.fixture, sample]));
   const samples: Array<Issue14TimingReport["samples"][number]> = [];
-  for (const definition of issue14TimingFixtures) {
+  for (const definition of conformanceTimingFixtures) {
     const baselineSample = baselineSamples.get(definition.fixture);
     if (baselineSample === undefined) {
       throw new Error(`Missing Issue 02 baseline sample: ${definition.fixture}`);
@@ -643,7 +643,7 @@ export async function runIssue14Timing(mode: TimingCheckMode | "write"): Promise
         outputRoot: fixtureDirectory,
         artifacts: [
           {
-            destination: "issue-14-timing.json",
+            destination: "timing-conformance.json",
             content: `${JSON.stringify(measured, null, 2)}\n`,
             evidence: "generated",
           },

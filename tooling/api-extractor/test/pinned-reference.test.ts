@@ -3,7 +3,7 @@ import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { failedFixtureIndices } from "../scripts/conformance/report.ts";
-import { issue14FixtureManifest } from "../scripts/fixture-evidence.ts";
+import { conformanceFixtureManifest } from "../scripts/fixture-evidence.ts";
 import {
   pinnedFixturePathUniverse,
   pinnedUpstream,
@@ -17,7 +17,7 @@ import { createTemporaryRoot, fixtureRoot } from "./support/temp-dirs.ts";
 describe("Issue 14 pinned reference", () => {
   it("keeps copied input and output.json bytes equal to the optional pinned reference", () => {
     if (!referenceAvailable) return;
-    for (const definition of issue14FixtureManifest) {
+    for (const definition of conformanceFixtureManifest) {
       for (const file of [definition.file, "output.json"]) {
         expect(readFileSync(resolve(fixtureRoot, definition.fixture, file))).toEqual(
           readFileSync(resolve(upstreamFixtureRoot, definition.fixture, file))

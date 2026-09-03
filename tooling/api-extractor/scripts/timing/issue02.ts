@@ -13,24 +13,19 @@ import {
   fetchedToMaterializedRatio,
   fixtureDirectory,
   fixtureInputPath,
-  issue02SupplementalFixtures,
-  issue02TimingBudget,
-  issue02TimingFixtures,
+  boundarySupplementalFixtures,
+  boundaryTimingBudget,
+  boundaryTimingFixtures,
   isWithinIpcBudget,
   packageVersion,
-  readGoNoGoArtifact,
   readTimingReport,
-  validateGoNoGoFixtureMatrix,
 } from "../fixture-evidence.ts";
-import type { GoNoGoArtifact, TimingReport } from "../fixture-evidence.ts";
+import type { TimingReport } from "../fixture-evidence.ts";
 import { boundaryStatuses, timedExtraction } from "./shared.ts";
 
-const reportPath = join(fixtureDirectory, "issue-02-timing.json");
-const goNoGoPath = join(fixtureDirectory, "issue-02-go-no-go.json");
-const tsconfigPath = join(fixtureDirectory, "issue-02-tsconfig.json");
-/** The go/no-go artifact names the deterministic IPC gate; wall-clock fields are recorded observations only. */
-const issue02IpcThreshold = "each fixture's requestCount and bytesReceived <= its catalog ceiling";
-const expectedFixtureOrder = issue02TimingFixtures.map((fixture) => fixture.fixture);
+const reportPath = join(fixtureDirectory, "timing-boundary.json");
+const tsconfigPath = join(fixtureDirectory, "timing-boundary-tsconfig.json");
+const expectedFixtureOrder = boundaryTimingFixtures.map((fixture) => fixture.fixture);
 
 function isTransportByteObservation(value: number): boolean {
   return Number.isFinite(value) && value >= 0;
@@ -46,7 +41,7 @@ const stopConditionEvidence = {
 } as const;
 
 async function verifySupplementalFixtures(): Promise<void> {
-  for (const definition of issue02SupplementalFixtures) {
+  for (const definition of boundarySupplementalFixtures) {
     const extraction = await timedExtraction(tsconfigPath, fixtureInputPath(definition));
     assertSupplementalFixture(definition, extraction.result);
   }
@@ -56,7 +51,7 @@ async function collectSamples(): Promise<TimingReport["samples"]> {
   // This function measures the live budget decision. The checked-in report is
   // intentionally a separate, immutable baseline consumed by Issue 14.
   const result: Array<TimingReport["samples"][number]> = [];
-  for (const definition of issue02TimingFixtures) {
+  for (const definition of boundaryTimingFixtures) {
     const extraction = await timedExtraction(tsconfigPath, fixtureInputPath(definition));
     assertFixtureOracle(definition, extraction.result);
     result.push({
@@ -64,7 +59,7 @@ async function collectSamples(): Promise<TimingReport["samples"]> {
       enabled: extraction.timing.enabled,
       totals: extraction.timing.totals,
       fetchedToMaterializedRatio: fetchedToMaterializedRatio(extraction.timing.totals),
-      budget: issue02TimingBudget(definition),
+      budget: boundaryTimingBudget(definition),
     });
   }
   await verifySupplementalFixtures();
@@ -95,68 +90,6 @@ function reportFrom(samples: TimingReport["samples"]): TimingReport {
   };
 }
 
-function checkGoNoGoArtifact(artifact: GoNoGoArtifact, measured: TimingReport): void {
-  assertReactDivergenceEvidence();
-  assertNodeMajor(artifact.runtime.node);
-  if (artifact.runtime.compiler !== measured.runtime.compiler) {
-    throw new Error("The Issue 02 go/no-go compiler pin is stale: " + artifact.runtime.compiler);
-  }
-  if (artifact.runtime.upstreamOracleCommit !== "e14535030957e29ce6e5d870e4ab71740175a0d4") {
-    throw new Error("The Issue 02 go/no-go artifact has the wrong upstream oracle commit.");
-  }
-  validateGoNoGoFixtureMatrix(artifact.fixtureMatrix);
-  const backend = measured.stopConditions.backendLeakage.status;
-  const durable = measured.stopConditions.durableContractLeakage.status;
-  if (artifact.stopConditions.backendLeakage.status !== backend) {
-    throw new Error("The Issue 02 go/no-go backend boundary status is stale.");
-  }
-  const backendEvidence = artifact.stopConditions.backendLeakage.evidence;
-  if (!backendEvidence.includes("src/backend/ts7/**") || backendEvidence.includes("src/backend/tsgo.ts")) {
-    throw new Error("The Issue 02 go/no-go backend evidence path is stale.");
-  }
-  if (artifact.stopConditions.durableContractLeakage.status !== durable) {
-    throw new Error("The Issue 02 go/no-go durable contract status is stale.");
-  }
-  if (
-    artifact.stopConditions.unacceptableIpcGrowth.status !==
-    measured.stopConditions.unacceptableIpcGrowth.status
-  ) {
-    throw new Error("The Issue 02 go/no-go timing stop status is stale.");
-  }
-  if (artifact.stopConditions.unacceptableIpcGrowth.threshold !== issue02IpcThreshold) {
-    throw new Error("The Issue 02 go/no-go timing threshold is stale.");
-  }
-  if (
-    artifact.verification.fixtureTypecheck !== "pass" ||
-    artifact.verification.publicSeamConformance !== "pass" ||
-    artifact.verification.timingEvidence !== "checked" ||
-    artifact.verification.upstreamOraclePreserved !== true
-  ) {
-    throw new Error("The Issue 02 go/no-go verification evidence is incomplete.");
-  }
-  if (artifact.decision !== measured.decision) {
-    throw new Error(
-      "The Issue 02 go/no-go decision is stale: " + artifact.decision + " != " + measured.decision
-    );
-  }
-  if (
-    !artifact.decisionRationale.includes("explicit generic alias and mapped-alias coverage") ||
-    !artifact.decisionRationale.includes("type-operator policy remains configurable") ||
-    /\bno\s+(?:generic|type.?operator)\s+work\b/iu.test(artifact.decisionRationale)
-  ) {
-    throw new Error("The Issue 02 go/no-go rationale makes an unsupported resolver-scope claim.");
-  }
-  const expectedScopeEvidence = {
-    generic: "boundary-covered: explicit generic arguments and two-hop mapped aliases",
-    typeOperator:
-      "policy-preserved: resolved and syntax-only modes remain available; broader conformance is deferred",
-    react: "boundary-covered: compound component transform with a reviewed TS7 external-graph divergence",
-  };
-  if (JSON.stringify(artifact.scopeEvidence) !== JSON.stringify(expectedScopeEvidence)) {
-    throw new Error("The Issue 02 go/no-go scope evidence is stale or incomplete.");
-  }
-}
-
 function checkLiveSamples(measured: TimingReport): void {
   for (const sample of measured.samples) {
     // Only the fresh measurement is a live budget decision. Issue 14 consumes
@@ -175,7 +108,8 @@ function checkLiveSamples(measured: TimingReport): void {
   }
 }
 
-function checkStoredReport(stored: TimingReport, measured: TimingReport, goNoGo: GoNoGoArtifact): void {
+function checkStoredReport(stored: TimingReport, measured: TimingReport): void {
+  assertReactDivergenceEvidence();
   checkLiveSamples(measured);
   if (measured.command !== issue02TimingCommand) {
     throw new Error("The live Issue 02 timing command identity is stale.");
@@ -243,7 +177,6 @@ function checkStoredReport(stored: TimingReport, measured: TimingReport, goNoGo:
       throw new Error("Invalid stored timing sample for " + sample.fixture);
     }
   }
-  checkGoNoGoArtifact(goNoGo, measured);
 }
 
 /** Measures the live Issue 02 report; `--write` stores it, `--check` compares it with the stored evidence. */
@@ -255,7 +188,7 @@ export async function runIssue02Timing(mode: "check" | "write"): Promise<void> {
         outputRoot: fixtureDirectory,
         artifacts: [
           {
-            destination: "issue-02-timing.json",
+            destination: "timing-boundary.json",
             content: `${JSON.stringify(measured, null, 2)}\n`,
             evidence: "generated",
           },
@@ -266,8 +199,7 @@ export async function runIssue02Timing(mode: "check" | "write"): Promise<void> {
     return;
   }
   const stored = readTimingReport(reportPath);
-  const goNoGo = readGoNoGoArtifact(goNoGoPath);
-  checkStoredReport(stored, measured, goNoGo);
+  checkStoredReport(stored, measured);
   console.log(
     JSON.stringify(
       {

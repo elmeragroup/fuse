@@ -5,7 +5,7 @@ import type { ExtractionResult } from "../src/index.ts";
 import type { ComponentNode } from "../src/model.ts";
 import { extractFixture } from "./support/extract.ts";
 
-const fixtureRoot = resolve(import.meta.dirname, "fixtures/issue-12-origin-review");
+const fixtureRoot = resolve(import.meta.dirname, "fixtures/react-module-origin-forms");
 const inputPath = resolve(fixtureRoot, "input.tsx");
 const tsconfigPath = resolve(fixtureRoot, "tsconfig.json");
 const importEqualsFixtureRoot = resolve(fixtureRoot, "import-equals");

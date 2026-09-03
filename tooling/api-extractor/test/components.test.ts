@@ -8,7 +8,7 @@ import { warningMessage } from "../src/parse/fallback.ts";
 import { ExtractWarningSchema } from "../src/warnings.ts";
 import { extractFixture, fixtureRoot } from "./support/extract.ts";
 
-const tsconfigPath = resolve(fixtureRoot, "issue-11-tsconfig.json");
+const tsconfigPath = resolve(fixtureRoot, "react-recognition-tsconfig.json");
 
 describe("basic component representation", () => {
   it("reports components with only the upstream-compatible shape and squashed props", async () => {
@@ -75,12 +75,12 @@ describe("basic component representation", () => {
   });
 });
 
-const reviewTsconfigPath = resolve(fixtureRoot, "issue-11-review", "tsconfig.json");
+const reviewTsconfigPath = resolve(fixtureRoot, "react-recognition-boundary", "tsconfig.json");
 
 async function extractReviewModule() {
   return extractFixture(
     { tsconfigPath: reviewTsconfigPath },
-    resolve(fixtureRoot, "issue-11-review", "input.tsx")
+    resolve(fixtureRoot, "react-recognition-boundary", "input.tsx")
   );
 }
 
@@ -212,7 +212,7 @@ describe("component recognition boundaries", () => {
   });
 
   it("classifies lookalike return types as ordinary functions with their callable surface intact", async () => {
-    const tsconfig = resolve(fixtureRoot, "issue-11-tsconfig.json");
+    const tsconfig = resolve(fixtureRoot, "react-recognition-tsconfig.json");
     const result = await extractFixture(
       { tsconfigPath: tsconfig },
       resolve(fixtureRoot, "react-component-return-types", "input.tsx")
