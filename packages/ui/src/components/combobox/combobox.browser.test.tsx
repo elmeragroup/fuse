@@ -105,14 +105,11 @@ function buttonNamed(name: string): HTMLElement {
  * identified by the remove button it owns — an accessible name, not a slot (combobox.md §7).
  */
 function expectChipFocused(removeButtonName: string): void {
-  const active = document.activeElement;
-  if (!(active instanceof HTMLElement)) {
-    throw new Error("expected a focused element");
-  }
-  expect(
-    active.contains(buttonNamed(removeButtonName)),
-    `the chip owning ${removeButtonName} must hold focus`
-  ).toBe(true);
+  // Identity, not `contains`: any ancestor up to <body> contains the button, so a
+  // containment check would also pass if focus escaped the chip to its container.
+  expect(document.activeElement, `the chip owning ${removeButtonName} must hold focus`).toBe(
+    buttonNamed(removeButtonName).parentElement
+  );
 }
 
 function inputGroupRoot(): HTMLElement {
