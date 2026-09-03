@@ -11,7 +11,7 @@ import { useIsMobile } from "../../hooks/use-is-mobile";
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { SidebarSimple } from "../../icons/generated/sidebar-simple";
 import { cn } from "../../styles/cn";
-import { focusRing } from "../../styles/utils";
+import { selfFocusRingClass } from "../../styles/utils";
 import { Button } from "../button/button";
 import type { ButtonProps } from "../button/button";
 import { Input } from "../input/input";
@@ -23,9 +23,6 @@ import { Tooltip } from "../tooltip/tooltip";
 import type { TooltipContentProps } from "../tooltip/tooltip";
 import { sidebarStrings } from "./intl";
 import { sidebarMenuButtonVariants, sidebarMenuSubButtonVariants } from "./sidebar-variants";
-
-/** Resolved once at module scope — the recipe does the same (no per-render work). */
-const selfFocusRing = focusRing({ target: "self" }).root();
 
 /**
  * Cookie the open state persists to. HARD invariant (sidebar.md §2/§8.6): the funnel
@@ -484,7 +481,7 @@ function SidebarGroupLabel({ className, render, ...props }: SidebarGroupLabelPro
       {
         className: cn(
           "text-xs font-medium flex h-8 shrink-0 items-center rounded-md px-2 text-sidebar-foreground/70 transition-opacity duration-200 ease-linear group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0 [&>svg]:size-4 [&>svg]:shrink-0",
-          selfFocusRing,
+          selfFocusRingClass,
           className
         ),
       },
@@ -504,7 +501,7 @@ function SidebarGroupAction({ className, render, ...props }: SidebarGroupActionP
       {
         className: cn(
           "absolute top-3.5 right-3 flex size-6 items-center justify-center rounded-md p-0 text-sidebar-foreground transition-transform group-data-[collapsible=icon]:hidden after:absolute after:-inset-2 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground [&>svg]:size-4 [&>svg]:shrink-0",
-          selfFocusRing,
+          selfFocusRingClass,
           className
         ),
       },
@@ -627,7 +624,7 @@ function SidebarMenuAction({
       {
         className: cn(
           "absolute top-1.5 right-1 flex size-6 items-center justify-center rounded-md p-0 text-sidebar-foreground transition-transform group-data-[collapsible=icon]:hidden peer-hover/menu-button:text-sidebar-accent-foreground peer-data-[size=default]/menu-button:top-1.5 peer-data-[size=lg]/menu-button:top-2.5 peer-data-[size=sm]/menu-button:top-1 after:absolute after:-inset-2 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground [&>svg]:size-4 [&>svg]:shrink-0",
-          selfFocusRing,
+          selfFocusRingClass,
           showOnHover &&
             "md:opacity-0 group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 peer-data-active/menu-button:text-sidebar-accent-foreground aria-expanded:opacity-100",
           className

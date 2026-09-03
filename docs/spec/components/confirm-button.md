@@ -76,6 +76,7 @@ The underlying `variant` also passes to `Button` unchanged, so resting looks are
 3. **`confirmButtonVariants` stays private** (ref also keeps it private); the empty variant keys are kept and documented as type-alignment with Button's axis (§4).
 4. Otherwise verbatim: two-press flow, escape/blur disarm, announcement chain, `data-armed` idiom, base-ui Button host (ref already composes on `base-ui/button`).
 5. **The §8.1 reset is derive-with-reset, not an effect** (ticket 44, 2026-09-03): the armed flag is cleared during the render that first sees a new `disabled` value (compared against a `wasDisabled` state cell), rather than in a `useEffect` that commits a second render after paint. `isArmed = isArmedRaw && !disabled` still guards the intermediate render, so the observable behaviour — including the §9 disabled-reset regression — is unchanged.
+6. **The announcement chain's string guard is the shared helper** (2026-09-03): the local `stringChild` is gone and the chain reads `armedAriaLabel ?? (isTextNode(armedChildren) ? armedChildren : ariaLabel)` using `internal/is-text-node` (conventions.md "One `isTextNode`"). The resolved announcement is identical for every input, and the component carries no `anti-slop/no-runtime-typeof` disable of its own (spec 08 finding S21).
 
 ## 9 Test requirements
 

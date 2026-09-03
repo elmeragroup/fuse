@@ -3,6 +3,7 @@
 import type { ReactElement, ReactNode } from "react";
 import { useState } from "react";
 
+import { isTextNode } from "../../internal/is-text-node";
 import type { ButtonProps } from "../button/button";
 import { Button } from "../button/button";
 import { confirmButtonVariants } from "./confirm-button-variants";
@@ -61,7 +62,8 @@ export function ConfirmButton({
     }
   }
 
-  const announcement = armedAriaLabel ?? stringChild(armedChildren) ?? ariaLabel;
+  // Spec §3: only a string `armedChildren` participates in the announcement chain.
+  const announcement = armedAriaLabel ?? (isTextNode(armedChildren) ? armedChildren : ariaLabel);
   const resolvedAriaLabel = isArmed ? announcement : ariaLabel;
   const visibleChildren = isArmed && armedChildren !== undefined ? armedChildren : children;
 
@@ -103,13 +105,3 @@ export function ConfirmButton({
 }
 
 ConfirmButton.displayName = "ConfirmButton";
-
-/** Spec §3: only a string `armedChildren` participates in the announcement chain. */
-function stringChild(node: ReactNode): string | undefined {
-  // Consumer-owned ReactNode I/O: the announcement chain takes a string label only.
-  // oxlint-disable-next-line anti-slop/no-runtime-typeof
-  if (typeof node === "string") {
-    return node;
-  }
-  return undefined;
-}

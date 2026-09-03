@@ -5,10 +5,7 @@ import type { ComponentProps, ReactElement } from "react";
 import { Collapsible as CollapsiblePrimitive } from "@base-ui/react/collapsible";
 
 import { cn } from "../../styles/cn";
-import { focusRing } from "../../styles/utils";
-
-/** Resolved once at module scope — the recipe below does the same (no per-render work). */
-const selfFocusRing = focusRing({ target: "self" }).root();
+import { selfFocusRingClass } from "../../styles/utils";
 
 /**
  * Client single-disclosure primitive (collapsible.md §2/§7). Visually unstyled
@@ -25,7 +22,7 @@ function CollapsibleTrigger({
   return (
     <CollapsiblePrimitive.Trigger
       data-slot="collapsible-trigger"
-      className={cn(selfFocusRing, className)}
+      className={cn(selfFocusRingClass, className)}
       {...props}
     />
   );

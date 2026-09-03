@@ -1,13 +1,13 @@
 import { tv } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
-import { focusRing } from "../../styles/utils";
+import { selfFocusRingClass } from "../../styles/utils";
 
 // Runtime-free recipe so other components can borrow it without Button's client graph.
 export const buttonVariants = tv({
   base: cn(
     "group/button font-medium inline-flex shrink-0 items-center justify-center rounded-md border border-transparent bg-clip-padding whitespace-nowrap transition-[color,background-color,border-color,box-shadow,translate,opacity] select-none active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-error aria-invalid:ring-3 aria-invalid:ring-error/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-    focusRing({ target: "self" }).root()
+    selfFocusRingClass
   ),
   variants: {
     variant: {

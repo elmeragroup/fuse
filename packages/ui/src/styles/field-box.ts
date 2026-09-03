@@ -1,7 +1,7 @@
 import { tv } from "tailwind-variants";
 
 import { cn } from "./cn";
-import { focusRing } from "./utils";
+import { selfFocusRingClass } from "./utils";
 
 /**
  * The field box's *chrome* — the surface a reader recognises as "a field": elevation
@@ -33,7 +33,7 @@ export const fieldBox = tv({
   base: cn(
     fieldBoxChromeClass,
     "w-full px-(--control-px-md) [font-size:var(--control-text)] [line-height:var(--control-leading)] placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-error aria-invalid:ring-3 aria-invalid:ring-error/20",
-    focusRing({ target: "self" }).root()
+    selfFocusRingClass
   ),
   variants: {
     box: {

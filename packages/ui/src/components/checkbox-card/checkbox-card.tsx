@@ -11,15 +11,13 @@ import { CheckCircle } from "../../icons/generated/check-circle";
 import { Circle } from "../../icons/generated/circle";
 import { cn } from "../../styles/cn";
 import {
-  focusRing,
   iconCrossfadeHidden,
   iconCrossfadeShown,
   iconCrossfadeTransition,
+  selfFocusRingClass,
 } from "../../styles/utils";
 import { Badge } from "../badge/badge";
 import { Card } from "../card/card";
-
-const selfFocusRing = focusRing({ target: "self" }).root();
 
 const checkboxCardStyles = tv({
   base: "",
@@ -93,7 +91,7 @@ export function CheckboxCard({
               className={cn(
                 // oxlint-disable-next-line elmera/no-local-focus-ring -- checkbox-card.md §7: native outline off; ring comes from the shared adapter
                 "flex shrink-0 items-center rounded-full text-foreground outline-hidden select-none",
-                selfFocusRing
+                selfFocusRingClass
               )}
               render={(props, state) => (
                 <span {...props} className={cn(props.className, "relative inline-grid size-6")}>

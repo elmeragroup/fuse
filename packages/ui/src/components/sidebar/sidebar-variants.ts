@@ -1,9 +1,6 @@
 import { tv } from "tailwind-variants";
 
-import { focusRing } from "../../styles/utils";
-
-/** Resolved once at module scope — the recipe below does the same (no per-render work). */
-const selfFocusRing = focusRing({ target: "self" }).root();
+import { selfFocusRingClass } from "../../styles/utils";
 
 /**
  * `Sidebar.MenuButton` recipe (sidebar.md §4) — module-private, never a facade export.
@@ -19,7 +16,7 @@ const selfFocusRing = focusRing({ target: "self" }).root();
 export const sidebarMenuButtonVariants = tv({
   base: [
     "peer/menu-button group/menu-button text-sm data-active:font-medium flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left transition-[color,background-color,box-shadow] group-has-data-[slot=sidebar-menu-action]/menu-item:pr-8 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! hover:bg-sidebar-accent hover:text-sidebar-accent-foreground active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-open:hover:bg-sidebar-accent data-open:hover:text-sidebar-accent-foreground data-active:bg-sidebar-accent data-active:text-sidebar-accent-foreground [&_svg]:size-4 [&_svg]:shrink-0 [&>span:last-child]:truncate",
-    selfFocusRing,
+    selfFocusRingClass,
   ],
   variants: {
     variant: {
@@ -46,7 +43,7 @@ export const sidebarMenuButtonVariants = tv({
 export const sidebarMenuSubButtonVariants = tv({
   base: [
     "flex min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2 text-sidebar-foreground transition-colors group-data-[collapsible=icon]:hidden hover:bg-sidebar-accent hover:text-sidebar-accent-foreground active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-active:bg-sidebar-accent data-active:text-sidebar-accent-foreground [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-sidebar-accent-foreground",
-    selfFocusRing,
+    selfFocusRingClass,
   ],
   variants: {
     size: {

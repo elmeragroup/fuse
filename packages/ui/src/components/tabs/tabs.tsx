@@ -6,10 +6,8 @@ import { Tabs as TabsPrimitive } from "@base-ui/react/tabs";
 import type { VariantProps } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
-import { focusRing } from "../../styles/utils";
+import { selfFocusRingClass } from "../../styles/utils";
 import { tabsListVariants } from "./tabs-variants";
-
-const selfFocusRing = focusRing({ target: "self" }).root();
 
 /**
  * Client tabbed panel switcher over `@base-ui/react/tabs` (tabs.md §2/§7). Root
@@ -60,7 +58,7 @@ function TabsTrigger({ className, ...props }: ComponentProps<typeof TabsPrimitiv
       data-slot="tabs-trigger"
       className={cn(
         "font-medium ease-out group-data-[variant=default]/tabs-list:data-active:shadow-sm relative inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-(--control-gap-md) rounded-md border border-transparent px-(--control-px-md) [font-size:var(--control-text)] [line-height:var(--control-leading)] whitespace-nowrap text-foreground/60 transition-[color,background-color,border-color,box-shadow] duration-150 group-data-vertical/tabs:w-full group-data-vertical/tabs:justify-start hover:text-foreground disabled:pointer-events-none disabled:opacity-50 has-data-[icon=inline-end]:pr-(--control-px-icon-md) has-data-[icon=inline-start]:pl-(--control-px-icon-md) aria-disabled:pointer-events-none aria-disabled:opacity-50 group-data-[variant=line]/tabs-list:data-active:shadow-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-        selfFocusRing,
+        selfFocusRingClass,
         "group-data-[variant=line]/tabs-list:bg-transparent group-data-[variant=line]/tabs-list:data-active:bg-transparent",
         "data-active:bg-background data-active:text-foreground",
         "after:absolute after:bg-foreground after:opacity-0 after:transition-opacity group-data-horizontal/tabs:after:inset-x-0 group-data-horizontal/tabs:after:bottom-[-5px] group-data-horizontal/tabs:after:h-0.5 group-data-vertical/tabs:after:inset-y-0 group-data-vertical/tabs:after:-right-1 group-data-vertical/tabs:after:w-0.5 group-data-[variant=line]/tabs-list:data-active:after:opacity-100",
@@ -75,7 +73,7 @@ function TabsContent({ className, ...props }: ComponentProps<typeof TabsPrimitiv
   return (
     <TabsPrimitive.Panel
       data-slot="tabs-content"
-      className={cn("text-sm flex-1", selfFocusRing, className)}
+      className={cn("text-sm flex-1", selfFocusRingClass, className)}
       {...props}
     />
   );
