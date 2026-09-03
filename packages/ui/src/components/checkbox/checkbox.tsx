@@ -9,8 +9,12 @@ import { Check } from "../../icons/generated/check";
 import { Minus } from "../../icons/generated/minus";
 import { cn } from "../../styles/cn";
 import { focusRing } from "../../styles/utils";
-import { Field } from "../field/field";
-import { SelectionItem, SelectionItemGroup } from "../selection-item/selection-item";
+import {
+  renderSelectionItemCardGroup,
+  SelectionGroupFrame,
+  selectionGroupOrientationClass,
+  SelectionItem,
+} from "../selection-item/selection-item";
 
 const selfFocusRing = focusRing({ target: "self" }).root();
 
@@ -110,27 +114,25 @@ export function CheckboxGroup({
   children,
 }: CheckboxGroupProps): ReactElement {
   return (
-    <Field.Root name={name} invalid={isInvalid} disabled={isDisabled}>
-      <Field.Set>
-        {label ? <Field.Legend variant="label">{label}</Field.Legend> : null}
-        {description ? <Field.Description>{description}</Field.Description> : null}
-        <CheckboxGroupPrimitive
-          data-slot="checkbox-group"
-          id={id}
-          value={value}
-          defaultValue={defaultValue}
-          onValueChange={onChange}
-          allValues={allValues}
-          disabled={isDisabled}
-          className={cn(
-            orientation === "horizontal" ? "flex flex-wrap gap-4" : "flex flex-col gap-2",
-            className
-          )}>
-          {children}
-        </CheckboxGroupPrimitive>
-        {errorMessage ? <Field.Error>{errorMessage}</Field.Error> : null}
-      </Field.Set>
-    </Field.Root>
+    <SelectionGroupFrame
+      label={label}
+      description={description}
+      errorMessage={errorMessage}
+      name={name}
+      isInvalid={isInvalid}
+      isDisabled={isDisabled}>
+      <CheckboxGroupPrimitive
+        data-slot="checkbox-group"
+        id={id}
+        value={value}
+        defaultValue={defaultValue}
+        onValueChange={onChange}
+        allValues={allValues}
+        disabled={isDisabled}
+        className={cn(selectionGroupOrientationClass.group[orientation], className)}>
+        {children}
+      </CheckboxGroupPrimitive>
+    </SelectionGroupFrame>
   );
 }
 
@@ -140,33 +142,25 @@ export function CheckboxGroup({
  * outer group and to that list: vertical remains connected `flex-col gap-0`;
  * horizontal is `flex-row flex-wrap gap-4` with individually rounded cards.
  */
-export function CheckboxItemGroup({
-  children,
-  orientation = "vertical",
-  ...props
-}: CheckboxGroupProps): ReactElement {
-  return (
-    <CheckboxGroup orientation={orientation} {...props}>
-      <SelectionItemGroup orientation={orientation}>{children}</SelectionItemGroup>
-    </CheckboxGroup>
-  );
+export function CheckboxItemGroup(props: CheckboxGroupProps): ReactElement {
+  return renderSelectionItemCardGroup(CheckboxGroup, props);
 }
 
 export type CheckboxDescriptionProps = {
   /** Typically a `Checkbox`. */
   children?: ReactNode;
   /**
-   * Trailing note. A string renders as a muted `<small>`; a `ReactNode` renders
+   * Trailing note. A string renders as a muted `<small>`; any other node renders
    * intact. Visual-only — not wired to `aria-describedby`. Use Field description
    * wiring when programmatic association is required.
    */
-  describedBy?: string | ReactNode;
+  describedBy?: ReactNode;
 };
 
 /**
  * Spec §3: only a string `describedBy` becomes the muted `<small>` note.
  */
-function stringDescribedBy(value: string | ReactNode): string | undefined {
+function stringDescribedBy(value: ReactNode): string | undefined {
   // Consumer-owned ReactNode I/O: a string note is wrapped; a node renders intact.
   // oxlint-disable-next-line anti-slop/no-runtime-typeof
   if (typeof value === "string") {

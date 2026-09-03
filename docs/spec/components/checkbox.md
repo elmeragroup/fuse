@@ -57,7 +57,7 @@
 | `controlPosition`           | `"start" \| "end"` | `"start"` | forwarded to `SelectionItem.Shell` (new axis, see selection-item.md §8.2)                                                     |
 | `className` / `children`    | —                  | —         | children partitioned by the shell                                                                                             |
 
-**CheckboxDescription** — `{ children?: ReactNode; describedBy?: string | ReactNode }`. A string `describedBy` renders as `<small class="text-sm text-muted-foreground">`; a ReactNode renders as-is.
+**CheckboxDescription** — `{ children?: ReactNode; describedBy?: ReactNode }`. A string `describedBy` renders as `<small class="text-sm text-muted-foreground">`; any other node renders as-is.
 
 ## 4 Variants
 
@@ -103,6 +103,9 @@ No tv recipes in this file; all styling is inline class strings. `CheckboxGroup`
 8. **`CheckboxItem` gains `controlPosition` pass-through** — consequence of the new shell axis (selection-item.md §8.2).
 9. **`errorMessage` widened `string` → `ReactNode`** — the group follows the library-wide labeled-composite contract; `FieldError` already accepts node children.
 10. **Item-group `orientation` is effective on the stacked list** — the inherited axis is forwarded to the private SelectionItem list so vertical stays a connected `flex-col gap-0` stack and horizontal is the actual item list `flex-row flex-wrap gap-4` with individually rounded cards, not merely the outer primitive around one child.
+
+11. **Group skeleton and orientation map are shared, not copied** (2026-09-03): `CheckboxGroup` renders the package-private `SelectionGroupFrame` (selection-item.md §8.8) for its `Field.Root` → `Field.Set` → legend → description → error shape, and both its group layout and `CheckboxItemGroup`'s card-list layout come from the one `selectionGroupOrientationClass` map that `RadioGroup` also reads — the two families had three copies of the same two class strings between them (spec 08 finding S18). `CheckboxItemGroup`'s body is the shared `renderSelectionItemCardGroup(CheckboxGroup, props)`; its public signature is unchanged. The redundant `errorMessage ? … : null` guard is gone: `Field.Error` already returns null for falsy children. Rendered class sets are unchanged part for part, at both orientations and in the plain, card, disabled and invalid states; the parity is pinned by the selection-item browser suite comparing the two families' computed layout rather than by a class-string assertion.
+12. **`describedBy` is `ReactNode`, not `string | ReactNode`** (2026-09-03): the union was an identity — `string` is already a `ReactNode` — so it described a distinction the type never made. The runtime behaviour it was meant to signal is unchanged and is stated in §3 and in the JSDoc instead: only a string becomes the muted `<small>`.
 
 ## 9 Test requirements
 

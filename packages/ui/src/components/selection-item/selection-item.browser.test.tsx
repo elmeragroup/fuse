@@ -5,8 +5,9 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { disabledHatch } from "../../styles/utils";
-import { Checkbox as UiCheckbox } from "../checkbox/checkbox";
+import { Checkbox as UiCheckbox, CheckboxGroup, CheckboxItem, CheckboxItemGroup } from "../checkbox/checkbox";
 import { Field } from "../field/field";
+import { Radio, RadioGroup, RadioItem, RadioItemGroup } from "../radio-group/radio-group";
 import { SelectionItem } from "./selection-item";
 
 function checkboxNamed(name: string, checked?: boolean): HTMLElement {
@@ -439,5 +440,162 @@ describe("SelectionItem", () => {
     expect(document.activeElement).toBe(checkboxNamed("Fixed price"));
     await userEvent.keyboard(" ");
     expect(checkboxNamed("Fixed price", true).getAttribute("aria-checked")).toBe("true");
+  });
+});
+
+/**
+ * The shared fieldset skeleton and the one orientation map (checkbox.md §8.10,
+ * radio-group.md §8.11, selection-item.md §8.8). These assertions compare the two
+ * families against each other rather than against a class string, so the map cannot be
+ * forked back into two copies without one of the two moving and this failing.
+ */
+describe("SelectionGroupFrame", () => {
+  function radioNamed(name: string): HTMLElement {
+    const element = page.getByRole("radio", { name, exact: true }).element();
+    if (!(element instanceof HTMLElement)) {
+      throw new Error(`expected radio named ${name}`);
+    }
+    return element;
+  }
+
+  /** The group primitive a member sits in: the `Field.Set` child that contains it. */
+  function groupPrimitiveAround(member: HTMLElement): HTMLElement {
+    const set = member.closest("fieldset");
+    const primitive = [...(set?.children ?? [])].find((child) => child.contains(member));
+    if (!(primitive instanceof HTMLElement)) {
+      throw new Error("expected a group primitive under the fieldset");
+    }
+    return primitive;
+  }
+
+  function itemListAround(member: HTMLElement): HTMLElement {
+    const list = member.closest("[role=list]");
+    if (!(list instanceof HTMLElement)) {
+      throw new Error("expected the private item list");
+    }
+    return list;
+  }
+
+  function layout(element: HTMLElement): Record<string, string> {
+    const style = getComputedStyle(element);
+    return {
+      display: style.display,
+      flexDirection: style.flexDirection,
+      flexWrap: style.flexWrap,
+      gap: style.rowGap,
+    };
+  }
+
+  const VERTICAL_GROUP = { display: "flex", flexDirection: "column", flexWrap: "nowrap", gap: "8px" };
+  const HORIZONTAL = { display: "flex", flexDirection: "row", flexWrap: "wrap", gap: "16px" };
+  const VERTICAL_LIST = { display: "flex", flexDirection: "column", flexWrap: "nowrap", gap: "0px" };
+
+  it("lays a checkbox group and a radio group out identically at each orientation", () => {
+    renderThemed(
+      <>
+        <CheckboxGroup label="Checks vertical">
+          <CheckboxItem value="a">Check vertical</CheckboxItem>
+        </CheckboxGroup>
+        <RadioGroup label="Radios vertical">
+          <Radio value="a">Radio vertical</Radio>
+        </RadioGroup>
+        <CheckboxGroup label="Checks horizontal" orientation="horizontal">
+          <CheckboxItem value="a">Check horizontal</CheckboxItem>
+        </CheckboxGroup>
+        <RadioGroup label="Radios horizontal" orientation="horizontal">
+          <Radio value="a">Radio horizontal</Radio>
+        </RadioGroup>
+      </>
+    );
+
+    const checksVertical = layout(groupPrimitiveAround(checkboxNamed("Check vertical")));
+    const checksHorizontal = layout(groupPrimitiveAround(checkboxNamed("Check horizontal")));
+    expect(checksVertical).toEqual(layout(groupPrimitiveAround(radioNamed("Radio vertical"))));
+    expect(checksHorizontal).toEqual(layout(groupPrimitiveAround(radioNamed("Radio horizontal"))));
+    // Signed values, so an unstyled pair cannot pass by matching each other's defaults.
+    expect(checksVertical).toEqual(VERTICAL_GROUP);
+    expect(checksHorizontal).toEqual(HORIZONTAL);
+  });
+
+  it("lays a checkbox card list and a radio card list out identically at each orientation", () => {
+    renderThemed(
+      <>
+        <CheckboxItemGroup label="Check cards vertical">
+          <CheckboxItem value="a">
+            <RowTitle>Check card vertical</RowTitle>
+          </CheckboxItem>
+        </CheckboxItemGroup>
+        <RadioItemGroup label="Radio cards vertical">
+          <RadioItem value="a">
+            <RowTitle>Radio card vertical</RowTitle>
+          </RadioItem>
+        </RadioItemGroup>
+        <CheckboxItemGroup label="Check cards horizontal" orientation="horizontal">
+          <CheckboxItem value="a">
+            <RowTitle>Check card horizontal</RowTitle>
+          </CheckboxItem>
+        </CheckboxItemGroup>
+        <RadioItemGroup label="Radio cards horizontal" orientation="horizontal">
+          <RadioItem value="a">
+            <RowTitle>Radio card horizontal</RowTitle>
+          </RadioItem>
+        </RadioItemGroup>
+      </>
+    );
+
+    const checkVertical = layout(itemListAround(checkboxNamed("Check card vertical")));
+    const checkHorizontal = layout(itemListAround(checkboxNamed("Check card horizontal")));
+    expect(checkVertical).toEqual(layout(itemListAround(radioNamed("Radio card vertical"))));
+    expect(checkHorizontal).toEqual(layout(itemListAround(radioNamed("Radio card horizontal"))));
+    expect(checkVertical).toEqual(VERTICAL_LIST);
+    expect(checkHorizontal).toEqual(HORIZONTAL);
+    // The card list is nested in a group primitive that keeps the group orientation.
+    expect(layout(groupPrimitiveAround(checkboxNamed("Check card vertical")))).toEqual(VERTICAL_GROUP);
+    expect(layout(groupPrimitiveAround(radioNamed("Radio card horizontal")))).toEqual(HORIZONTAL);
+  });
+
+  it("gives every member control an accessible name in both the plain and card shapes", () => {
+    renderThemed(
+      <>
+        <CheckboxGroup label="Plain checks" description="Pick some" errorMessage="Check error">
+          <CheckboxItem value="a">Plain check</CheckboxItem>
+        </CheckboxGroup>
+        <CheckboxItemGroup label="Card checks" description="Pick some" errorMessage="Card check error">
+          <CheckboxItem value="a">
+            <RowTitle>Card check</RowTitle>
+          </CheckboxItem>
+        </CheckboxItemGroup>
+        <RadioGroup label="Plain radios" description="Pick one" errorMessage="Radio error">
+          <Radio value="a">Plain radio</Radio>
+        </RadioGroup>
+        <RadioItemGroup label="Card radios" description="Pick one" errorMessage="Card radio error">
+          <RadioItem value="a">
+            <RowTitle>Card radio</RowTitle>
+          </RadioItem>
+        </RadioItemGroup>
+      </>
+    );
+
+    // Every control is named, in the card shape too: the nested-root trap of field.md §7
+    // would leave these blank.
+    for (const name of ["Plain check", "Card check"]) {
+      expect(checkboxNamed(name)).toBeTruthy();
+    }
+    for (const name of ["Plain radio", "Card radio"]) {
+      expect(radioNamed(name)).toBeTruthy();
+    }
+    // The groups keep their legend name, and each frame renders exactly one alert.
+    for (const name of ["Plain checks", "Card checks"]) {
+      expect(page.getByRole("group", { name, exact: true }).elements().length).toBeGreaterThan(0);
+    }
+    for (const name of ["Plain radios", "Card radios"]) {
+      expect(page.getByRole("radiogroup", { name, exact: true }).element()).toBeTruthy();
+    }
+    expect(
+      page
+        .getByRole("alert")
+        .elements()
+        .map((element) => element.textContent)
+    ).toEqual(["Check error", "Card check error", "Radio error", "Card radio error"]);
   });
 });

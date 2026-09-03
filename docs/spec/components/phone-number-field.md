@@ -133,6 +133,10 @@ No own recipe. **Borrows the public `textFieldVariants`** slots `base`, `labelCo
 
 17. **The unbound `form` and the empty search `name`** (2026-09-03), previously shipped undocumented: `Combobox.Root` carries `form="elmera-ui-phone-country-unbound"`, an id that deliberately names no rendered form, so base-ui's own hidden country-code input is associated with nothing and cannot reach the host form's `FormData` beside `name` and `${name}-display-value` — the pair of §8.2 is the whole submitted surface. The popup's search input carries `name=""`: a control with no name is never submitted, and the empty name also keeps it out of browser autofill heuristics, which `autoComplete="one-time-code"` (§8.8) covers only for password managers. Both are load-bearing; neither may be tidied away unless the two-input contract of §8.2 changes first.
 
+18. **The field frame is `FieldFrame`, and the hidden input moved into it** (2026-09-03): the label row, the control/description wrapper, the description and the error come from the package-private `field/field-frame.tsx` (field.md §8.9) instead of a fourth hand-built copy; `textFieldVariants`' `base`/`labelContainer`/`label`/`container`/`description` slots are passed to it as class arguments exactly as TextField passes its own, so every rendered class set is unchanged part for part.
+
+    The frame has no slot after `Field.Error`, which is where the hidden submit input used to sit. Rather than widen the frame with a prop no other composite would use, the input moved into `children`, so it now renders inside the content wrapper after the field box and before the description. It is `type="hidden"`: it paints no box, takes no flex slot, and does not displace the description, which stays the wrapper's last child and keeps matching its `last:mt-0` rule. It is still `name={name}` carrying `outputValue` — the second half of §8.2's two-input submitted surface, pinned by the `FormData` test in §9.
+
 ## 9 Test requirements
 
 Role/label-based queries throughout; keyboard flows per §7:

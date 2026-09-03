@@ -10,7 +10,12 @@ import { SpinnerGap } from "../../icons/generated/spinner-gap";
 import { cn } from "../../styles/cn";
 import { focusRing } from "../../styles/utils";
 import { Field } from "../field/field";
-import { SelectionItem, SelectionItemGroup } from "../selection-item/selection-item";
+import {
+  renderSelectionItemCardGroup,
+  SelectionGroupFrame,
+  selectionGroupOrientationClass,
+  SelectionItem,
+} from "../selection-item/selection-item";
 
 const selfFocusRing = focusRing({ target: "self" }).root();
 
@@ -125,36 +130,29 @@ export function RadioGroup({
   children,
 }: RadioGroupProps): ReactElement {
   return (
-    <Field.Root invalid={isInvalid} disabled={isDisabled}>
-      <Field.Set>
-        {label || isPending ? (
-          <div className="flex items-center justify-between">
-            <Field.Legend variant="label">{label}</Field.Legend>
-            {isPending ? <SpinnerGap aria-hidden className="animate-spin size-3" /> : null}
-          </div>
-        ) : null}
-        {description ? <Field.Description>{description}</Field.Description> : null}
-        <RadioGroupPrimitive
-          data-slot="radio-group"
-          id={id}
-          value={value}
-          defaultValue={defaultValue}
-          onValueChange={onChange ? (next) => onChange(String(next)) : undefined}
-          disabled={isDisabled}
-          readOnly={isReadOnly}
-          required={isRequired}
-          name={name}
-          aria-busy={isPending ? true : undefined}
-          // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- radio-group.md §4: option stack gap is layout, not a control rung
-          className={cn(
-            orientation === "horizontal" ? "flex flex-wrap gap-4" : "flex flex-col gap-2",
-            className
-          )}>
-          {children}
-        </RadioGroupPrimitive>
-        {errorMessage ? <Field.Error>{errorMessage}</Field.Error> : null}
-      </Field.Set>
-    </Field.Root>
+    <SelectionGroupFrame
+      label={label}
+      description={description}
+      errorMessage={errorMessage}
+      isInvalid={isInvalid}
+      isDisabled={isDisabled}
+      groupsLegendWithStatus
+      status={isPending ? <SpinnerGap aria-hidden className="animate-spin size-3" /> : null}>
+      <RadioGroupPrimitive
+        data-slot="radio-group"
+        id={id}
+        value={value}
+        defaultValue={defaultValue}
+        onValueChange={onChange ? (next) => onChange(String(next)) : undefined}
+        disabled={isDisabled}
+        readOnly={isReadOnly}
+        required={isRequired}
+        name={name}
+        aria-busy={isPending ? true : undefined}
+        className={cn(selectionGroupOrientationClass.group[orientation], className)}>
+        {children}
+      </RadioGroupPrimitive>
+    </SelectionGroupFrame>
   );
 }
 
@@ -164,16 +162,8 @@ export function RadioGroup({
  * outer group and to that list: vertical remains connected `flex-col gap-0`;
  * horizontal is `flex-row flex-wrap gap-4` with individually rounded cards.
  */
-export function RadioItemGroup({
-  children,
-  orientation = "vertical",
-  ...props
-}: RadioGroupProps): ReactElement {
-  return (
-    <RadioGroup orientation={orientation} {...props}>
-      <SelectionItemGroup orientation={orientation}>{children}</SelectionItemGroup>
-    </RadioGroup>
-  );
+export function RadioItemGroup(props: RadioGroupProps): ReactElement {
+  return renderSelectionItemCardGroup(RadioGroup, props);
 }
 
 export type RadioProps = {
