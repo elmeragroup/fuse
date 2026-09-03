@@ -129,16 +129,27 @@ type PromiseStateInput<Value, Data extends object> =
   | ToastManagerUpdateOptions<Data>
   | ((result: Value) => string | ToastManagerUpdateOptions<Data>);
 
+/**
+ * The two guards below ask a runtime question about consumer input, and both used to
+ * spell it `Object.prototype.toString.call(…)` — an obfuscation that passed the lint
+ * rule without answering it. They are honest `typeof` checks with a named disable now.
+ *
+ * Neither can borrow the shared `isTextNode`/`isTextValueNode` helpers: those narrow a
+ * `ReactNode`, and these values are Toast's own manager unions — an options object is
+ * not a `ReactNode`, and no shared guard narrows a callable (spec 08 names none).
+ */
 function isShorthandDescription<Data extends object>(
   value: string | ToastManagerUpdateOptions<Data>
 ): value is string {
-  return Object.prototype.toString.call(value) === "[object String]";
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- consumer-owned union: the string shorthand for `description` is a documented public contract (toast.md §3), not an internal type guess
+  return typeof value === "string";
 }
 
 function isPromiseStateFactory<Value, Data extends object>(
   value: PromiseStateInput<Value, Data>
 ): value is (result: Value) => string | ToastManagerUpdateOptions<Data> {
-  return Object.prototype.toString.call(value) === "[object Function]";
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- consumer-owned union: `promise()` states are documented as a value or a factory over the settled value (toast.md §3), and the callable arm can only be told apart at runtime
+  return typeof value === "function";
 }
 
 function adaptResolvedPromiseState<Data extends object>(
