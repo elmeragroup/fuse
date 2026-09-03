@@ -135,7 +135,7 @@ function presets(): ReactElement {
 /**
  * A controlled picker, for the cases that need the value driven from outside the
  * composite. The focused-month sync reads the picker state's committed value, so it
- * behaves the same here as on an uncontrolled `defaultValue` picker (§2/§8.11).
+ * behaves the same here as on an uncontrolled `defaultValue` picker (§2/§8.12).
  */
 function ControlledPicker(): ReactElement {
   const [value, setValue] = useState<CalendarDate | null>(july14);
@@ -209,7 +209,7 @@ describe("DatePicker", () => {
 
   it("reopens an uncontrolled picker on its defaultValue's month after paging away", async () => {
     // The sync reads the picker state's committed value, so `defaultValue` alone — with
-    // no `value` prop in sight — still lands the reopen on July (§8.11).
+    // no `value` prop in sight — still lands the reopen on July (§8.12).
     renderPicker(<DatePicker label="Invoice date" defaultValue={july14} />);
     await openPicker();
     expect(calendarGrid().getAttribute("aria-label")).toMatch(/July\s+2026/i);
@@ -348,7 +348,7 @@ describe("DatePicker", () => {
 
     // The FieldGroup's own `isReadOnly` axis paints the fill, exactly once. The glyph is
     // deliberately untinted: `bg-muted` on the `<svg>` never belonged there and went with
-    // the picker recipe's duplicate arm (§8.12 / §8.13, 2026-09-03).
+    // the picker recipe's duplicate arm (§8.11, 2026-09-03).
     expect(group.className.split(/\s+/)).toContain("bg-muted");
     expect(group.getAttribute("data-readonly")).toBe("true");
     expect((glyph.getAttribute("class") ?? "").split(/\s+/)).not.toContain("bg-muted");

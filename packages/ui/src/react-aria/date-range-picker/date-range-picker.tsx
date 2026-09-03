@@ -61,9 +61,7 @@ export function DateRangePicker<T extends DateValue>({
   shouldForceLeadingZeros = true,
   ...props
 }: DateRangePickerProps<T>): ReactElement {
-  const { base, calendar, dialog, group, icon, input, separator } = pickerVariants({
-    range: true,
-  });
+  const { base, calendar, input, separator } = pickerVariants({ range: true });
 
   return (
     <AriaDateRangePicker
@@ -74,13 +72,11 @@ export function DateRangePicker<T extends DateValue>({
       <PickerShell
         container={container}
         description={description}
-        dialogClassName={dialog()}
         errorMessage={errorMessage}
-        groupClassName={group()}
-        iconClassName={icon()}
         isReadOnly={isReadOnly}
         label={label}
-        popover={<RangeCalendar className={calendar()} />}>
+        popover={<RangeCalendar className={calendar()} />}
+        range>
         <DateInput className={input()} slot="start" />
         {/* Decoration: RAC names the two rows "Start Date" / "End Date" on the segments
             themselves, so announcing the glyph would only repeat it (§7). */}

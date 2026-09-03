@@ -376,7 +376,7 @@ describe("DateRangePicker", () => {
 
     // The FieldGroup's own `isReadOnly` axis paints the fill, exactly once. The glyph is
     // deliberately untinted: `bg-muted` on the `<svg>` never belonged there and went with
-    // the picker recipe's duplicate arm (§8.12 / §8.13, 2026-09-03).
+    // the picker recipe's duplicate arm (§8.13, 2026-09-03).
     expect(group.className.split(/\s+/)).toContain("bg-muted");
     expect(group.getAttribute("data-readonly")).toBe("true");
     expect((glyph.getAttribute("class") ?? "").split(/\s+/)).not.toContain("bg-muted");

@@ -32,7 +32,7 @@ import { composeTailwindRenderProps } from "./utils";
  * The *chrome* — elevation, radius, border, fill, transition — is not spelled here: it
  * is `fieldBoxChromeClass`, the same constant the base-ui `fieldBox` composes, so a
  * DateField or SearchField box matches an Input box in the same form (spec 08 user
- * story 6; date-field.md §8.11, 2026-09-03). That amendment moved this tier off its own
+ * story 6; date-field.md §8.9, 2026-09-03). That amendment moved this tier off its own
  * `rounded-lg` and shadowless surface onto Input's `rounded-md shadow-xs`. What stays
  * local is what genuinely differs: the RAC `Group` is not focusable, so the focus
  * adapter is `state` rather than `self`, and disabled/invalid arrive as render props

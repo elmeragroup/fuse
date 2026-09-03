@@ -1,7 +1,8 @@
 /**
- * Package-private typography fragments shared by Heading and Text. Nothing here
- * is exported through `package.json#exports`; recipes stay public from their own
- * entries (`headingVariants` / `textVariants`).
+ * Package-private typography fragments shared by Heading, Text and the interim tier's
+ * Link. Nothing here is exported through `package.json#exports`; recipes stay public from
+ * their own entries (`headingVariants` / `textVariants`), and `linkVariants` is
+ * package-private like the rest of the quarantined tier.
  *
  * Size, font, weight, leading, prose, truncate, and descendant size selectors
  * stay on the recipes — those axes differ on purpose.

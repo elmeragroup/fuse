@@ -74,7 +74,7 @@ describe("pickerVariants shared slots", () => {
     expect(emitted).not.toContain("shadow-md");
   });
 
-  it("paints no read-only fill on any slot — FieldGroup owns it (§8.12, 2026-09-03)", () => {
+  it("paints no read-only fill on any slot — FieldGroup owns it (§8.11, 2026-09-03)", () => {
     // The fill used to be painted twice here — on `group` and again on `icon` — while
     // `fieldGroupVariants` carried an `isReadOnly` axis all along and DateField already
     // routed the state through it. PickerShell now hands `isReadOnly` to the FieldGroup and this recipe has

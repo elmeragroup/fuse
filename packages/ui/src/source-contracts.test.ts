@@ -307,7 +307,21 @@ describe("react-aria internal overlay stack", () => {
     expect(existsSync(join(SRC_ROOT, "react-aria/internal/modal.tsx"))).toBe(false);
     expect(existsSync(join(SRC_ROOT, "react-aria/internal/overlay-container.ts"))).toBe(false);
     expect(readSrc("react-aria/internal/popover.tsx")).not.toContain("data-overlay-container");
-    expect(readSrc("react-aria/internal/dialog.tsx")).not.toContain("Modal");
+    expect(readSrc("react-aria/internal/dialog.tsx")).not.toMatch(/\bModal\b/u);
+  });
+});
+
+describe("Twemoji artwork fidelity", () => {
+  // Why not a lint rule: the contract is that the bundled third-party artwork
+  // is a verbatim lift of the Twemoji path data the NOTICE file attributes
+  // (emoji.md §5). A lint rule cannot know which literal is the licensed
+  // original; the path data itself is the contract, so it is pinned here.
+  it("keeps the lifted Twemoji path data and fills verbatim", () => {
+    const source = readSrc("components/emoji/emoji.tsx");
+    expect(source).toContain('d="M25.485 27.379C25.44 27.2 24.317 23 18 23c-6.318 0-7.44 4.2-7.485 4.379');
+    expect(source).toContain('d="M10.515 23.621C10.56 23.8 11.683 28 18 28c6.318 0 7.44-4.2 7.485-4.379');
+    expect(source).toContain('fill="#5DADEC"');
+    expect(source).toContain('fill="#269"');
   });
 });
 

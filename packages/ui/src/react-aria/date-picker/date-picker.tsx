@@ -96,7 +96,7 @@ function isRenderableNode(node: ReactNode): boolean {
  * The month the grid shows is local state so paging never rewrites the value, and it is
  * derived from the RAC `DatePickerStateContext` rather than from `props.value` — that is
  * what makes the sync hold for an uncontrolled `defaultValue` picker as well as a
- * controlled one (§8.11), because `state.value` is the committed value in both modes.
+ * controlled one (§8.12), because `state.value` is the committed value in both modes.
  * Two triggers cover §2's stated effect: the popover unmounts its content on close, so
  * this component mounts once per open and the `useState` initializer *is* the per-open
  * resync, while the effect follows a value that changes with the dialog still open — a
@@ -127,7 +127,7 @@ export function DatePicker<T extends DateValue>({
   shouldForceLeadingZeros = true,
   ...props
 }: DatePickerProps<T>): ReactElement {
-  const { base, calendar, dialog, group, icon, input, pane } = pickerVariants({
+  const { base, calendar, input, pane } = pickerVariants({
     hasPresets: isRenderableNode(presetGroup),
   });
 
@@ -140,10 +140,7 @@ export function DatePicker<T extends DateValue>({
       <PickerShell
         container={container}
         description={description}
-        dialogClassName={dialog()}
         errorMessage={errorMessage}
-        groupClassName={group()}
-        iconClassName={icon()}
         isReadOnly={isReadOnly}
         label={label}
         popover={

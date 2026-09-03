@@ -6,8 +6,8 @@ import { tv } from "tailwind-variants";
  * here rather than beside the components because every RAC entry keeps its recipe in
  * `src/styles/` (range-calendar.md §8.2's locked ruling).
  *
- * **One recipe, not two** (spec 08 user story 5; date-picker.md §8.12 / date-range-picker.md
- * §8.6, 2026-09-03). `datePickerVariants` and `dateRangePickerVariants` were shape-matched
+ * **One recipe, not two** (spec 08 user story 5; date-picker.md §8.11 / date-range-picker.md
+ * §8.13, 2026-09-03). `datePickerVariants` and `dateRangePickerVariants` were shape-matched
  * by ruling and then maintained apart, with byte-identical `base`, `icon`, `dialog` and
  * `isReadOnly` arms; every difference between them is a consequence of one fact — whether
  * the field box holds one segment row or two — so that fact became the `range` axis and the
@@ -24,7 +24,7 @@ import { tv } from "tailwind-variants";
  * already routed the state through it. The fill is now painted once, by the FieldGroup, from the picker's own
  * `isReadOnly`. Dropping it from `icon` is a deliberate visual change: a background on the
  * `<svg>` glyph never belonged there and it is the one screenshot difference this
- * consolidation makes (date-picker.md §8.12, 2026-09-03).
+ * consolidation makes (date-picker.md §8.11, 2026-09-03).
  *
  * There is deliberately no `size` axis — `fieldGroupVariants` already pins
  * `h-(--control-h-md)` for the whole field family (conventions.md ruling 2). The `input`

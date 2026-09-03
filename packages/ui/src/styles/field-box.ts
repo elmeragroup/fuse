@@ -8,7 +8,7 @@ import { focusRing } from "./utils";
  * rung, radius rung, hairline border, fill, and the transition that animates all three.
  *
  * It is a standalone constant because two tiers paint it and they must not drift
- * (spec 08 user story 6; date-field.md §8.11, 2026-09-03): the base-ui tier through
+ * (spec 08 user story 6; date-field.md §8.9, 2026-09-03): the base-ui tier through
  * {@link fieldBox} below, and the interim react-aria tier through `fieldGroupVariants`
  * in `react-aria/internal/field.tsx`. Everything that is *not* chrome stays with its
  * tier — padding, the control-type pair, the focus adapter (`self` for a focusable

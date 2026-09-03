@@ -65,7 +65,7 @@ describe("fieldGroupVariants", () => {
 });
 
 describe("field-box chrome parity", () => {
-  // spec 08 user story 6 / date-field.md §8.11 (2026-09-03): the interim tier's field
+  // spec 08 user story 6 / date-field.md §8.9 (2026-09-03): the interim tier's field
   // box and the base-ui tier's are the same chrome, so a DateField, a SearchField and an
   // Input in one form read as one family. A `satisfies` cannot express this — it would
   // pin keys, not the rendered tokens — so the constant is asserted to survive twMerge

@@ -5,6 +5,7 @@ import type { ReactElement, ReactNode, RefObject } from "react";
 import type { ValidationResult } from "react-aria-components";
 
 import { CalendarBlank } from "../../icons/generated/calendar-blank";
+import { pickerVariants } from "../../styles/picker";
 import { Button } from "./button";
 import { Dialog } from "./dialog";
 import { Description, FieldError, FieldGroup, Label } from "./field";
@@ -46,12 +47,12 @@ export type PickerShellProps = {
   isReadOnly?: boolean;
   /** Portal target for the popover, forwarded to the private RAC `Popover`. */
   container?: HTMLElement | RefObject<HTMLElement | null>;
-  /** `pickerVariants().group()` — the field box's layout width. */
-  groupClassName: string;
-  /** `pickerVariants().icon()` — the trigger glyph. */
-  iconClassName: string;
-  /** `pickerVariants().dialog()` — the styled Dialog's padding override. */
-  dialogClassName: string;
+  /**
+   * The picker's `range` axis. The shell resolves its own three slots from
+   * `pickerVariants` rather than taking them as class strings: they always come from one
+   * recipe call with one axis, so the axis is the honest parameter.
+   */
+  range?: boolean;
   /** The segment row(s) inside the field box, ahead of the trigger. */
   children: ReactNode;
   /** The popover body: a Calendar, a RangeCalendar, or a preset pane beside one. */
@@ -62,28 +63,28 @@ export function PickerShell({
   children,
   container,
   description,
-  dialogClassName,
   errorMessage,
-  groupClassName,
-  iconClassName,
   isReadOnly,
   label,
   popover,
+  range,
 }: PickerShellProps): ReactElement {
+  const { dialog, group, icon } = pickerVariants({ range });
+
   return (
     <>
       {label ? <Label>{label}</Label> : null}
-      <FieldGroup className={groupClassName} isReadOnly={isReadOnly}>
+      <FieldGroup className={group()} isReadOnly={isReadOnly}>
         {children}
         {/* oxlint-disable-next-line elmera/require-icon-button-label -- date-picker.md §7 / date-range-picker.md §7: RAC's DatePicker and DateRangePicker fill this default Button slot and supply the trigger's localized accessible name ("Calendar"); a local label would shadow it. Asserted in both browser suites. */}
         <Button size="icon-sm" variant="ghost">
-          <CalendarBlank aria-hidden className={iconClassName} />
+          <CalendarBlank aria-hidden className={icon()} />
         </Button>
       </FieldGroup>
       {description ? <Description>{description}</Description> : null}
       <FieldError>{errorMessage}</FieldError>
       <Popover container={container} placement="bottom right">
-        <Dialog className={dialogClassName} closeButton={false}>
+        <Dialog className={dialog()} closeButton={false}>
           {popover}
         </Dialog>
       </Popover>

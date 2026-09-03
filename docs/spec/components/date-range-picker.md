@@ -52,7 +52,7 @@ Own slots: `foreground` (separator — ref `text-gray-800`), `muted-foreground` 
 
 ## 6 Data attributes
 
-- **Emitted:** RAC state attributes on root/group/inputs/cells (`data-open`, `data-invalid`, `data-disabled`, …). The separator relies on the root's `group` class + RAC `group-disabled:` modifier.
+- **Emitted:** RAC state attributes on root/group/inputs/cells (`data-open`, `data-invalid`, `data-disabled`, …), including `data-readonly` on the field group, which RAC stamps from the `isReadOnly` the FieldGroup now receives _(added 2026-09-03, §8.13)_. The separator relies on the root's `group` class + RAC `group-disabled:` modifier.
 - **Consumed:** nothing. _(Amended 2026-09-03, §8.13.)_ The popover used to stamp `data-overlay-container="popover"` for the private RAC `Modal`'s outside-interaction check; that modal was deleted with the seam. Full reasoning in date-picker §6 — this component is again the second beneficiary.
 
 ## 7 Accessibility
@@ -76,7 +76,7 @@ Own slots: `foreground` (separator — ref `text-gray-800`), `muted-foreground` 
 10. Adds `container` with nearest-ThemeScope default, matching DatePicker.
 11. Inherited RAC `fieldGroupVariants` uses `bg-card` instead of `bg-background`, aligning the range field box with the input-surface convention.
 12. **Density retokenization (2026-09-02):** the `input` slot reads `--control-px-md` and the control type pair; `py-*` is omitted because FieldGroup height is already pinned to `--control-h-md`.
-13. **One picker recipe, one picker shell, one read-only fill; the dead modal stack deleted.** _(Amended 2026-09-03; spec 08 "Overlay and field shared spine", user stories 5 and 10; the full entry is [date-picker](date-picker.md) §8.12 and is not restated here.)_ For this component it means: `dateRangePickerVariants` is gone and `pickerVariants({ range: true })` takes its place (§4); the assembly moves to `internal/picker-shell.tsx`; the recipe's `isReadOnly` axis is gone and `PickerShell` hands `isReadOnly` to the FieldGroup, so the trigger glyph loses the `bg-muted` it should never have carried while the field box keeps its fill; and the popover's overlay-container stamp goes with the modal that read it.
+13. **One picker recipe, one picker shell, one read-only fill; the dead modal stack deleted.** _(Amended 2026-09-03; spec 08 "Overlay and field shared spine", user stories 5 and 10; the full entry is [date-picker](date-picker.md) §8.11 and is not restated here.)_ For this component it means: `dateRangePickerVariants` is gone and `pickerVariants({ range: true })` takes its place (§4); the assembly moves to `internal/picker-shell.tsx`; the recipe's `isReadOnly` axis is gone and `PickerShell` hands `isReadOnly` to the FieldGroup, so the trigger glyph loses the `bg-muted` it should never have carried while the field box keeps its fill; and the popover's overlay-container stamp goes with the modal that read it.
 
 ## 9 Test requirements
 
