@@ -5,12 +5,13 @@ import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import "../../../dist/themes.css";
 import {
   assertWithinKeyboardFocusRingAtBothDensities,
   expectNoFocusRing,
 } from "../../../test/assert-focus-ring";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
-import { px, renderThemed, stampDensity } from "../../../test/themed-browser-render";
+import { cssVarColor, px, renderThemed, roleNamed, stampDensity } from "../../../test/themed-browser-render";
 import { Field } from "../field/field";
 import { InputGroup } from "../input-group/input-group";
 import { Combobox, useComboboxAnchor } from "./combobox";
@@ -99,6 +100,21 @@ function buttonNamed(name: string): HTMLElement {
   return element;
 }
 
+/**
+ * Chips are focusable `div`s with no role of their own (base-ui), so a focused chip is
+ * identified by the remove button it owns — an accessible name, not a slot (combobox.md §7).
+ */
+function expectChipFocused(removeButtonName: string): void {
+  const active = document.activeElement;
+  if (!(active instanceof HTMLElement)) {
+    throw new Error("expected a focused element");
+  }
+  expect(
+    active.contains(buttonNamed(removeButtonName)),
+    `the chip owning ${removeButtonName} must hold focus`
+  ).toBe(true);
+}
+
 function inputGroupRoot(): HTMLElement {
   const element = document.querySelector("[data-slot=input-group]");
   if (!(element instanceof HTMLElement)) {
@@ -175,6 +191,20 @@ describe("Combobox", () => {
     renderCombobox(<FruitCombobox />);
     await openWithArrowDown();
     expect(highlightedOption().textContent).toContain("Apple");
+  });
+
+  it("closes the popup on Escape and keeps focus on the input", async () => {
+    renderCombobox(<FruitCombobox />);
+    await openWithArrowDown();
+    expect(optionNamed("Apple")).toBeTruthy();
+
+    await userEvent.keyboard("{Escape}");
+    await vi.waitFor(() => {
+      expect(page.getByRole("listbox").query()).toBeNull();
+    });
+    expect(page.getByRole("option").query()).toBeNull();
+    expect(document.activeElement).toBe(comboboxNamed("Fruit"));
+    expect(comboboxNamed("Fruit").getAttribute("aria-expanded")).toBe("false");
   });
 
   it("filters options as the user types and shows Empty when nothing matches", async () => {
@@ -342,6 +372,50 @@ describe("Combobox", () => {
     expect(onValueChange.mock.calls.at(-1)?.[0]).toEqual([]);
   });
 
+  it("walks chips with Arrow keys and removes the focused chip with Delete", async () => {
+    const onValueChange = vi.fn();
+    renderCombobox(
+      <Combobox.Root
+        items={[...FRUITS]}
+        multiple
+        defaultValue={["Apple", "Banana"]}
+        onValueChange={onValueChange}>
+        <Combobox.Chips aria-label="Selected fruit">
+          <Combobox.Value>
+            {(value: string[]) =>
+              value.map((item) => (
+                <Combobox.Chip key={item} removeLabel={`Remove ${item}`}>
+                  {item}
+                </Combobox.Chip>
+              ))
+            }
+          </Combobox.Value>
+          <Combobox.ChipsInput aria-label="Fruit" />
+        </Combobox.Chips>
+      </Combobox.Root>
+    );
+
+    comboboxNamed("Fruit").focus();
+    await userEvent.keyboard("{ArrowLeft}");
+    expectChipFocused("Remove Banana");
+
+    await userEvent.keyboard("{ArrowLeft}");
+    expectChipFocused("Remove Apple");
+
+    await userEvent.keyboard("{ArrowRight}");
+    expectChipFocused("Remove Banana");
+
+    await userEvent.keyboard("{Delete}");
+    await vi.waitFor(() => {
+      expect(page.getByRole("button", { name: "Remove Banana", exact: true }).query()).toBeNull();
+    });
+    expect(onValueChange.mock.calls.at(-1)?.[0]).toEqual(["Apple"]);
+    expectChipFocused("Remove Apple");
+
+    await userEvent.keyboard("{ArrowRight}");
+    expect(document.activeElement).toBe(comboboxNamed("Fruit"));
+  });
+
   it("names the chip-remove button from itemToStringLabel for object items", () => {
     const fruits = [
       { id: "apple", label: "Apple" },
@@ -385,20 +459,38 @@ describe("Combobox", () => {
     expect(page.getByRole("button", { name: "Remove [object Object]", exact: true }).query()).toBeNull();
   });
 
-  it("surfaces aria-invalid on the Chips container", () => {
+  it("paints the error ring on the Chips container while aria-invalid", () => {
     renderCombobox(
-      <Combobox.Root items={[...FRUITS]} multiple defaultValue={["Apple"]}>
-        <Combobox.Chips aria-invalid aria-label="Selected fruit">
-          <Combobox.Chip>Apple</Combobox.Chip>
-          <Combobox.ChipsInput aria-label="Fruit" />
-        </Combobox.Chips>
-      </Combobox.Root>
+      <>
+        <Combobox.Root items={[...FRUITS]} multiple defaultValue={["Apple"]}>
+          <Combobox.Chips aria-label="Rejected fruit">
+            <Combobox.Chip>Apple</Combobox.Chip>
+            <Combobox.ChipsInput aria-invalid aria-label="Rejected" />
+          </Combobox.Chips>
+        </Combobox.Root>
+        <Combobox.Root items={[...FRUITS]} multiple defaultValue={["Apple"]}>
+          <Combobox.Chips aria-label="Accepted fruit">
+            <Combobox.Chip>Apple</Combobox.Chip>
+            <Combobox.ChipsInput aria-label="Accepted" />
+          </Combobox.Chips>
+        </Combobox.Root>
+      </>
     );
-    const chips = document.querySelector("[data-slot=combobox-chips]");
-    if (!(chips instanceof HTMLElement)) {
-      throw new Error("expected chips");
-    }
-    expect(chips.getAttribute("aria-invalid")).toBe("true");
+    // combobox.md §7: the chips container carries role="toolbar" once a chip is
+    // selected, so the invalid chrome is reachable by role and name.
+    const invalid = roleNamed("toolbar", "Rejected fruit");
+    const valid = roleNamed("toolbar", "Accepted fruit");
+    expect(comboboxNamed("Rejected").getAttribute("aria-invalid")).toBe("true");
+    expect(comboboxNamed("Accepted").getAttribute("aria-invalid")).toBeNull();
+
+    const errorColor = cssVarColor(invalid, "--error");
+    expect(getComputedStyle(invalid).borderTopColor).toBe(errorColor);
+    expect(getComputedStyle(valid).borderTopColor).toBe(cssVarColor(valid, "--input"));
+    expect(getComputedStyle(valid).borderTopColor).not.toBe(errorColor);
+    expect(
+      getComputedStyle(invalid).boxShadow,
+      "the invalid chips container also paints an error ring, not only the border"
+    ).not.toBe(getComputedStyle(valid).boxShadow);
   });
 
   it("sets data-chips=true and positions against a useComboboxAnchor ref", async () => {
