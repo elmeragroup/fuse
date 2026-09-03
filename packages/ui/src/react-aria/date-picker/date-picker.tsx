@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { use, useState } from "react";
 import type { ComponentProps, ReactElement, ReactNode, RefObject } from "react";
 
 import { getLocalTimeZone, toCalendarDate, today } from "@internationalized/date";
@@ -99,19 +99,24 @@ function isRenderableNode(node: ReactNode): boolean {
  * controlled one (§8.12), because `state.value` is the committed value in both modes.
  * Two triggers cover §2's stated effect: the popover unmounts its content on close, so
  * this component mounts once per open and the `useState` initializer *is* the per-open
- * resync, while the effect follows a value that changes with the dialog still open — a
- * preset pane lives inside the popover. The compare guard keeps that effect from
- * committing a fresh, equal `CalendarDate` on every mount.
+ * resync, while the derive-with-reset below follows a value that changes with the dialog
+ * still open — a preset pane lives inside the popover. It resyncs during the render that
+ * first sees the new value rather than in an effect after paint (§8.15), and the compare
+ * guard keeps a fresh, equal `CalendarDate` from committing anything.
  */
 function PickerCalendar({ className }: { className: string }): ReactElement {
   const state = use(DatePickerStateContext);
   const value = state?.value;
   const [focusedValue, setFocusedValue] = useState(() => focusedMonthFor(value));
+  const [lastValue, setLastValue] = useState(value);
 
-  useEffect(() => {
+  if (value !== lastValue) {
+    setLastValue(value);
     const month = focusedMonthFor(value);
-    setFocusedValue((current) => (current.compare(month) === 0 ? current : month));
-  }, [value]);
+    if (focusedValue.compare(month) !== 0) {
+      setFocusedValue(month);
+    }
+  }
 
   return <Calendar className={className} focusedValue={focusedValue} onFocusChange={setFocusedValue} />;
 }

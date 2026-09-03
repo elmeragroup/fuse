@@ -17,6 +17,4 @@ export const timelineListVariants = tv({
     time: "text-sm block text-foreground",
     description: "",
   },
-  variants: {},
-  defaultVariants: {},
 });

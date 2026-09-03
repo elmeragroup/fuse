@@ -75,6 +75,7 @@ The underlying `variant` also passes to `Button` unchanged, so resting looks are
 2. **Token renames (LOCKED)**: armed styles `destructive*`/`success*` classes → canonical `error*`/`success*` tokens (variant **values** unchanged).
 3. **`confirmButtonVariants` stays private** (ref also keeps it private); the empty variant keys are kept and documented as type-alignment with Button's axis (§4).
 4. Otherwise verbatim: two-press flow, escape/blur disarm, announcement chain, `data-armed` idiom, base-ui Button host (ref already composes on `base-ui/button`).
+5. **The §8.1 reset is derive-with-reset, not an effect** (2026-09-03, ticket 44): the armed flag is cleared during the render that first sees a new `disabled` value (compared against a `wasDisabled` state cell), rather than in a `useEffect` that commits a second render after paint. `isArmed = isArmedRaw && !disabled` still guards the intermediate render, so the observable behaviour — including the §9 disabled-reset regression — is unchanged.
 
 ## 9 Test requirements
 

@@ -28,21 +28,15 @@ import { gridListStrings } from "./intl";
  * Module-private RAC selection checkbox (grid-list.md §2). RAC GridList requires
  * `<Checkbox slot="selection">`; this wrapper is not exported.
  */
-function Checkbox({
-  children,
-  className,
-  isDisabled,
-  variant,
-  ...other
-}: CheckboxProps & { variant?: "success" }): ReactElement {
-  const { base, box, icon } = checkboxVariants({ variant });
+function Checkbox({ children, className, isDisabled, ...other }: CheckboxProps): ReactElement {
+  const { base, box, icon } = checkboxVariants();
 
   return (
     <AriaCheckbox
       isDisabled={isDisabled}
       {...other}
       className={composeRenderProps(className, (className, renderProps) =>
-        base({ ...renderProps, className, variant })
+        base({ ...renderProps, className })
       )}>
       {({ isSelected, isIndeterminate, ...renderProps }) => (
         <>

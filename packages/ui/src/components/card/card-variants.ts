@@ -20,10 +20,7 @@ export const cardVariants = tv({
   variants: {
     direction: {
       vertical: {
-        base: "",
         cardHeader: "p-6",
-        cardTitle: "",
-        cardDescription: "",
         cardContent: "p-6 pt-0",
         cardFooter: "p-6 pt-0",
       },
@@ -31,9 +28,6 @@ export const cardVariants = tv({
         base: "flex-row items-center space-x-6 p-6",
         cardHeader: "flex items-start justify-start space-y-1.5",
         cardTitle: "text-xl",
-        cardDescription: "",
-        cardContent: "",
-        cardFooter: "",
       },
     },
   },

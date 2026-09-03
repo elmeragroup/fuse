@@ -101,6 +101,8 @@ Via borrowed `buttonVariants`: `background`, `accent`, `accent-foreground`, `inp
 9. **KEPT: `isActive` → outline-vs-ghost mapping**, `size="icon"` default on Link, `size="default"` on Previous/Next, and the vestigial-looking `VariantProps<typeof paginationVariants>` intersections are simplified to the shapes in §3 (the ref sprinkles `VariantProps` on every part though only Previous/Next use the `direction` axis internally — trimmed to actual usage; `direction` is not a consumer-facing prop).
 10. **Client boundary added:** the plain reference was server-capable, but the provider-only locale ruling requires `useLocalizedStrings`; the component entry is therefore client. A locale prop is not added as a second source of truth.
 
+11. **`Previous`/`Next` are one parameterised edge, and the runtime `children`/`isActive` strip is gone** (2026-09-03, ticket 44): both edges render through a private `PaginationEdge({ direction, … })` that carries the slot name, caret icon, dictionary keys and the `direction` recipe arm, so a fix lands once; the public `Pagination.Previous` / `Pagination.Next` names, props, defaults (`size="default"`) and DOM are unchanged. The `rest as typeof rest & { children?: unknown }` casts that deleted `children`/`isActive` at runtime in `Previous`, `Next` and `Ellipsis` are deleted with their SAFETY comments: the props are already omitted at the type level, which is the whole contract (§3). The module-scope recipe calls replace the per-render `paginationVariants()` in every part.
+
 ## 9 Test requirements
 
 - Under `locale="en-US"`, role queries use `getByRole("navigation", { name: "Pagination" })`; page links use `getByRole("link", { name })`.

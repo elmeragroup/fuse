@@ -4,7 +4,48 @@ import { SUPPORTED_LOCALES } from "../../../test/locale-matrix";
 import { getMeterLevel, meterPercentage } from "./get-meter-level";
 import { meterStrings } from "./intl";
 import { METER_CONSTANTS } from "./meter-constants";
+import type { MeterLevel, MeterMode } from "./meter-constants";
+import { METER_TONE_TABLE, meterToneCell } from "./meter-tone";
+import type { MeterIconName, MeterTone } from "./meter-tone";
 import { meterVariants } from "./meter-variants";
+
+const MODES = Object.values(METER_CONSTANTS.MODES);
+const LEVELS = Object.values(METER_CONSTANTS.LEVELS);
+
+/** meter.md §4: the whole published matrix, one row per mode × level. */
+const MATRIX: Record<MeterMode, Record<MeterLevel, { tone: MeterTone; icon: MeterIconName }>> = {
+  default: {
+    LOW: { tone: "success", icon: "none" },
+    MEDIUM: { tone: "warning", icon: "warning" },
+    FULL: { tone: "error", icon: "warning" },
+    EXCEEDED_MAX_VALUE: { tone: "error", icon: "warning" },
+  },
+  inverted: {
+    LOW: { tone: "error", icon: "none" },
+    MEDIUM: { tone: "warning", icon: "none" },
+    FULL: { tone: "success", icon: "none" },
+    EXCEEDED_MAX_VALUE: { tone: "error", icon: "none" },
+  },
+  "success-only-when-full": {
+    LOW: { tone: "error", icon: "warning" },
+    MEDIUM: { tone: "error", icon: "warning" },
+    FULL: { tone: "success", icon: "success" },
+    EXCEEDED_MAX_VALUE: { tone: "error", icon: "warning" },
+  },
+  neutral: {
+    LOW: { tone: "neutral", icon: "none" },
+    MEDIUM: { tone: "neutral", icon: "none" },
+    FULL: { tone: "neutral", icon: "none" },
+    EXCEEDED_MAX_VALUE: { tone: "neutral", icon: "none" },
+  },
+};
+
+const TONE_CLASSES: Record<MeterTone, { barFill: string; labelValue: string }> = {
+  success: { barFill: "bg-success", labelValue: "text-success" },
+  warning: { barFill: "bg-warning", labelValue: "text-warning-foreground" },
+  error: { barFill: "bg-error", labelValue: "text-error" },
+  neutral: { barFill: "bg-primary", labelValue: "text-foreground" },
+};
 
 const WARNING_COPY = {
   "nb-NO": "Advarsel",
@@ -71,31 +112,48 @@ describe("meter dictionary", () => {
   });
 });
 
-describe("meterVariants color matrix", () => {
-  it("spot-checks each §4 column of barFill classes", () => {
-    const fill = (
-      mode: (typeof METER_CONSTANTS.MODES)[keyof typeof METER_CONSTANTS.MODES],
-      level: (typeof METER_CONSTANTS.LEVELS)[keyof typeof METER_CONSTANTS.LEVELS]
-    ) => meterVariants({ mode, level }).barFill();
+describe("METER_TONE_TABLE", () => {
+  it("carries one cell for every mode × level, so adding a mode is one row", () => {
+    expect(Object.keys(METER_TONE_TABLE).sort()).toEqual([...MODES].sort());
+    for (const mode of MODES) {
+      expect(Object.keys(METER_TONE_TABLE[mode]).sort(), mode).toEqual([...LEVELS].sort());
+    }
+  });
 
-    expect(fill("default", "LOW")).toContain("bg-success");
-    expect(fill("default", "MEDIUM")).toContain("bg-warning");
-    expect(fill("default", "FULL")).toContain("bg-error");
-    expect(fill("default", "EXCEEDED_MAX_VALUE")).toContain("bg-error");
+  it("resolves every §4 cell to the published tone and glyph", () => {
+    for (const mode of MODES) {
+      for (const level of LEVELS) {
+        expect(meterToneCell(mode, level), `${mode}/${level}`).toEqual(MATRIX[mode][level]);
+      }
+    }
+  });
 
-    expect(fill("inverted", "LOW")).toContain("bg-error");
-    expect(fill("inverted", "MEDIUM")).toContain("bg-warning");
-    expect(fill("inverted", "FULL")).toContain("bg-success");
-    expect(fill("inverted", "EXCEEDED_MAX_VALUE")).toContain("bg-error");
+  it("paints every §4 barFill and labelValue class through the tone axis", () => {
+    for (const mode of MODES) {
+      for (const level of LEVELS) {
+        const { tone } = meterToneCell(mode, level);
+        const slots = meterVariants({ tone });
+        expect(slots.barFill(), `${mode}/${level}`).toContain(TONE_CLASSES[tone].barFill);
+        expect(slots.labelValue(), `${mode}/${level}`).toContain(TONE_CLASSES[tone].labelValue);
+      }
+    }
+  });
 
-    expect(fill("success-only-when-full", "LOW")).toContain("bg-error");
-    expect(fill("success-only-when-full", "MEDIUM")).toContain("bg-error");
-    expect(fill("success-only-when-full", "FULL")).toContain("bg-success");
-    expect(fill("success-only-when-full", "EXCEEDED_MAX_VALUE")).toContain("bg-error");
+  it("moves the glyph and the fill across the > 80 boundary in the same cell (§8.8)", () => {
+    for (const mode of MODES) {
+      const atEighty = meterToneCell(mode, getMeterLevel(80, undefined, meterPercentage(80, 0, 100)));
+      const pastEighty = meterToneCell(mode, getMeterLevel(81, undefined, meterPercentage(81, 0, 100)));
+      expect(atEighty, mode).toBe(METER_TONE_TABLE[mode].LOW);
+      expect(pastEighty, mode).toBe(METER_TONE_TABLE[mode].MEDIUM);
+    }
+  });
 
-    expect(fill("neutral", "LOW")).toContain("bg-primary");
-    expect(fill("neutral", "MEDIUM")).toContain("bg-primary");
-    expect(fill("neutral", "FULL")).toContain("bg-primary");
-    expect(fill("neutral", "EXCEEDED_MAX_VALUE")).toContain("bg-primary");
+  it("never pairs a success fill with a warning glyph", () => {
+    for (const mode of MODES) {
+      for (const level of LEVELS) {
+        const cell = meterToneCell(mode, level);
+        expect(cell.tone === "success" && cell.icon === "warning", `${mode}/${level}`).toBe(false);
+      }
+    }
   });
 });

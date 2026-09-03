@@ -1,7 +1,7 @@
 "use client";
 
 import type { ComponentProps, CSSProperties, Dispatch, ReactElement, SetStateAction } from "react";
-import { createContext, use, useCallback, useEffect, useMemo, useState } from "react";
+import { createContext, use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
@@ -130,29 +130,34 @@ function SidebarProvider({
 
   const [internalOpen, setInternalOpen] = useState(defaultOpen);
   const open = openProp ?? internalOpen;
-  const setOpen = useCallback(
-    (value: boolean | ((value: boolean) => boolean)) => {
-      // oxlint-disable-next-line anti-slop/no-runtime-typeof -- updater-or-boolean is the setter contract (sidebar.md §8.3)
-      const openState = typeof value === "function" ? value(open) : value;
 
-      if (setOpenProp) {
-        setOpenProp(openState);
-      } else {
-        setInternalOpen(openState);
-      }
+  // Latest-render values the two callbacks read at call time (sidebar.md §8.21). They
+  // are what keeps `setOpen`/`toggleSidebar` referentially stable across a toggle, so
+  // the keydown listener is subscribed once and the context callbacks never change.
+  const latest = useRef({ open, isMobile, setOpenProp });
+  latest.current = { open, isMobile, setOpenProp };
 
-      document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
-    },
-    [setOpenProp, open]
-  );
+  const setOpen = useCallback((value: boolean | ((value: boolean) => boolean)) => {
+    // oxlint-disable-next-line anti-slop/no-runtime-typeof -- updater-or-boolean is the setter contract (sidebar.md §8.3)
+    const openState = typeof value === "function" ? value(latest.current.open) : value;
+    const onOpenChange = latest.current.setOpenProp;
+
+    if (onOpenChange) {
+      onOpenChange(openState);
+    } else {
+      setInternalOpen(openState);
+    }
+
+    document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
+  }, []);
 
   const toggleSidebar = useCallback(() => {
-    if (isMobile) {
+    if (latest.current.isMobile) {
       setOpenMobile((current) => !current);
       return;
     }
     setOpen((current) => !current);
-  }, [isMobile, setOpen]);
+  }, [setOpen]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -549,6 +554,24 @@ export type SidebarMenuButtonProps = useRender.ComponentProps<"button"> &
     tooltip?: string | TooltipContentProps;
   };
 
+/**
+ * The collapsed-rail tooltip. It — not `Sidebar.MenuButton` — is the context consumer,
+ * so a menu button without a `tooltip` does not re-render when the rail toggles
+ * (sidebar.md §8.21).
+ */
+function SidebarMenuButtonTooltip(contentProps: TooltipContentProps): ReactElement {
+  const { isMobile, state } = useSidebar();
+
+  return (
+    <Tooltip.Content
+      side="right"
+      align="center"
+      hidden={state !== "collapsed" || isMobile}
+      {...contentProps}
+    />
+  );
+}
+
 function SidebarMenuButton({
   render,
   isActive = false,
@@ -558,7 +581,6 @@ function SidebarMenuButton({
   className,
   ...props
 }: SidebarMenuButtonProps): ReactElement {
-  const { isMobile, state } = useSidebar();
   const button = useRender({
     defaultTagName: "button",
     props: mergeProps<"button">(
@@ -579,12 +601,7 @@ function SidebarMenuButton({
   return (
     <Tooltip.Root>
       {button}
-      <Tooltip.Content
-        side="right"
-        align="center"
-        hidden={state !== "collapsed" || isMobile}
-        {...contentProps}
-      />
+      <SidebarMenuButtonTooltip {...contentProps} />
     </Tooltip.Root>
   );
 }

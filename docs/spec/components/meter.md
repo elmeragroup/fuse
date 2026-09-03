@@ -47,13 +47,13 @@ Percentage math: `max > min ? clamp(((value - min) / (max - min)) * 100, 0, 100)
 
 ## 4 Variants
 
-Recipe: **`meterVariants`** (slots: `root`, `labelContainer`, `labelValue`, `icon`, `bar`, `barFill`) — **stays module-private**; no borrow pattern exists. Axes: `mode` × `level`, resolved internally — `level` is never a prop.
+Recipe: **`meterVariants`** (slots: `root`, `labelContainer`, `labelValue`, `icon`, `bar`, `barFill`) — **stays module-private**; no borrow pattern exists. One axis: `tone` (`success` | `warning` | `error` | `neutral`), resolved internally — neither `tone` nor `level` is a prop. `mode` × `level` resolves through the `METER_TONE_TABLE` lookup, which carries the tone **and** the glyph for each cell, so a new mode is one table row. _(Amended 2026-09-03, §8.9: was seven compound variants over `mode` × `level` plus an if-chain in `MeterIcon`; the emitted classes are unchanged.)_
 
 Modes (`METER_CONSTANTS.MODES`): `default` (full bar = error colors), `inverted` (full bar = success colors), `success-only-when-full` (full = success, everything else = error), `neutral` (primary bar at every level, no semantics, no icon).
 
 > **Note**: the mode value named `"inverted"` is a **mode name** describing flipped good/bad semantics. It is **unrelated** to the dropped `inverted:` custom Tailwind variant from the ref theme system (see input spec §8) — do not conflate them.
 
-Full mode × level color matrix (`barFill` / `labelValue`), base level styles + compoundVariants applied:
+Full mode × level color matrix (`barFill` / `labelValue`), as `METER_TONE_TABLE` resolves it:
 
 | Level                                   | `default`                                | `inverted`                               | `success-only-when-full`      | `neutral`                        |
 | --------------------------------------- | ---------------------------------------- | ---------------------------------------- | ----------------------------- | -------------------------------- |
@@ -62,9 +62,9 @@ Full mode × level color matrix (`barFill` / `labelValue`), base level styles + 
 | `FULL` (100%)                           | `bg-error` / `text-error`                | `bg-success` / `text-success`            | `bg-success` / `text-success` | `bg-primary` / `text-foreground` |
 | `EXCEEDED_MAX_VALUE` (value > maxValue) | `bg-error` / `text-error`                | `bg-error` / `text-error`*               | `bg-error` / `text-error`*    | `bg-primary` / `text-foreground` |
 
-\* falls through to the base level styles — the ref defines no `EXCEEDED_MAX_VALUE` compound for `inverted`/`success-only-when-full` (ref-faithful; arguably surprising for `inverted`, kept as-is).
+\* the ref defined no `EXCEEDED_MAX_VALUE` compound for `inverted`/`success-only-when-full`, so those cells fell through to the base `error` level styles; the table states them explicitly and paints the same classes (ref-faithful; arguably surprising for `inverted`, kept as-is).
 
-Icon logic (`MeterIcon`): derived from the resolved `level`, never from the raw percentage. `default` mode → named `Warning` at every level above `LOW` (`MEDIUM`, `FULL`, `EXCEEDED_MAX_VALUE`, i.e. percentage > 80), nothing at `LOW` (exactly 80 shows no icon); `success-only-when-full` → named `CheckCircle` at `FULL`, `Warning` otherwise; **`inverted` and `neutral` → always `null`** (kept, documented — `inverted` gets colors but never an icon). _(Amended 2026-09-02, §8.8.)_
+Icon logic (`MeterIcon`): read from the same `METER_TONE_TABLE` cell as the fill — derived from the resolved `level`, never from the raw percentage. `default` mode → named `Warning` at every level above `LOW` (`MEDIUM`, `FULL`, `EXCEEDED_MAX_VALUE`, i.e. percentage > 80), nothing at `LOW` (exactly 80 shows no icon); `success-only-when-full` → named `CheckCircle` at `FULL`, `Warning` otherwise; **`inverted` and `neutral` → always `null`** (kept, documented — `inverted` gets colors but never an icon). _(Amended 2026-09-02, §8.8.)_
 
 Fixed styling: track `h-1.5 rounded-full bg-muted` with transparent inset outline (forced-colors affordance); fill `transition-all forced-colors:bg-[Highlight]`; value span `text-sm tabular-nums`; label `text-sm font-medium`.
 
@@ -100,6 +100,8 @@ Fixed styling: track `h-1.5 rounded-full bg-muted` with transparent inset outlin
 7. **Locale is provider-only:** the primitive's component-level `locale` prop is omitted from `MeterProps`; `useElmeraGroupUi().locale` drives both number formatting and the icon-label dictionary.
 8. **One 80% boundary for fill and icon** — the ref's `MeterIcon` tested `percentage >= 80` while `getMeterLevel` tested `> 80`, so a meter at exactly 80% painted a `LOW` (success) fill under a `Warning` icon. The icon now derives from `level`: exactly 80 is `LOW` with no icon; the first `Warning` appears with the first `MEDIUM` fill. _(Ruled 2026-09-02, pending owner confirmation: `> 80` for both, matching the §9 `getMeterLevel` boundary test rather than moving the level to `≥ 80`.)_
 
+9. **`TONE[mode][level]` table** — the seven `compoundVariants` and the four-branch `MeterIcon` if-chain are replaced by one `METER_TONE_TABLE` (`meter-tone.ts`) whose cell is `{ tone, icon }`, plus a four-arm `tone` axis on the recipe. Fill color and glyph are read from the same cell, so §8.8's single boundary is structural rather than a convention two code paths have to keep. `METER_CONSTANTS` stays exported unchanged; the emitted classes and the rendered DOM are byte-identical to the compound-variant form. _(Amended 2026-09-03, ticket 44: the alternative not taken was keeping the compounds and deriving only the icon from the table.)_
+
 No API divergence — `MeterProps` is identical to the ref.
 
 ## 9 Test requirements
@@ -107,7 +109,8 @@ No API divergence — `MeterProps` is identical to the ref.
 - `getByRole("meter")` renders with `aria-valuenow`, `aria-valuemin` (default 0), `aria-valuemax` (default 100); `label` resolves as the accessible name.
 - `valueLabel` replaces the formatted value; default renders base-ui's formatted `Meter.Value`.
 - **`getMeterLevel` unit tests** (thresholds): percentage ≤ 80 → `LOW`; 80 < p < 100 → `MEDIUM` (boundary: exactly 80 is `LOW`); p === 100 → `FULL`; `value > maxValue` with explicit `maxValue` → `EXCEEDED_MAX_VALUE`; no explicit `maxValue` → never `EXCEEDED_MAX_VALUE`; `max <= min` → percentage 0 → `LOW`.
-- Mode × level classes: spot-check each column of the §4 matrix via the emitted `data-slot="meter-bar-fill"` element's classes.
+- Mode × level classes: the §4 matrix is asserted exhaustively as unit tests over `METER_TONE_TABLE` (every mode × level cell, its `barFill`/`labelValue` classes, and the completeness of the table), plus the browser audit of the emitted `data-slot="meter-bar-fill"` element's classes.
+- **Tone/glyph drift guard**: one test walks every mode and asserts that value 80 and value 81 resolve to the `LOW` and `MEDIUM` cells of the same table row, and that no cell pairs a `success` tone with a `warning` glyph (§8.8, §8.9).
 - Icon behavior under an `ElmeraGroupUiProvider locale="en-US"`: `default` at 79% → no icon; at 85% → Warning (`getByLabelText("Warning")`); `success-only-when-full` at 100% → CheckCircle (`getByLabelText("Success")`); `inverted`/`neutral` → no icon at any value.
 - **Boundary (browser)**: icon presence by accessible name, fill through the same sanctioned `data-slot="meter-bar-fill"` class audit as the §4 matrix bullet above. `default` at exactly 80% renders the `LOW` fill and no Warning icon; at 81% the `MEDIUM` fill and the Warning icon appear together; a scaled `value={96} maxValue={120}` (80%) is likewise icon-free.
 - Warning/success labels render in all four locales; explicit overrides win.

@@ -31,5 +31,4 @@ export const paginationVariants = tv({
       },
     },
   },
-  defaultVariants: {},
 });

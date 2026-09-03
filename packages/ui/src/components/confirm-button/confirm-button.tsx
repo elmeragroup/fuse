@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactElement, ReactNode } from "react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import type { ButtonProps } from "../button/button";
 import { Button } from "../button/button";
@@ -38,12 +38,17 @@ export function ConfirmButton({
   ...rest
 }: ConfirmButtonProps): ReactElement {
   const [isArmedRaw, setIsArmedRaw] = useState(false);
+  const [wasDisabled, setWasDisabled] = useState(disabled);
 
-  useEffect(() => {
-    if (disabled) {
+  // Derive-with-reset (confirm-button.md §8.5): disabling disarms during the same render
+  // that flips `disabled`, so re-enabling never restores a stale armed state and no extra
+  // effect-driven render commits.
+  if (disabled !== wasDisabled) {
+    setWasDisabled(disabled);
+    if (disabled && isArmedRaw) {
       setIsArmedRaw(false);
     }
-  }, [disabled]);
+  }
 
   const isArmed = isArmedRaw && !disabled;
 

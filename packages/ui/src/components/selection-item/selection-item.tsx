@@ -11,6 +11,9 @@ import { Field } from "../field/field";
 import { Item } from "../item/item";
 import { itemVariants } from "../item/item-variants";
 
+/** Resolved once at module scope — the shell always borrows the `outline` arm. */
+const outlineItemClass = itemVariants({ variant: "outline" });
+
 export type SelectionItemGroupOrientation = "vertical" | "horizontal";
 type SelectionItemGroupContextValue = false | SelectionItemGroupOrientation;
 
@@ -288,7 +291,7 @@ function SelectionItemShell({
       {...props}
       data-slot={dataSlot}
       className={cn(
-        itemVariants({ variant: "outline" }),
+        outlineItemClass,
         "grid items-stretch gap-0 gap-x-2.5 bg-background px-4 py-0 transition-colors has-[[data-slot=selection-item-control]_[data-checked]]:border-primary has-[[data-slot=selection-item-control]_[data-checked]]:bg-muted",
         controlAtEnd ? "grid-cols-[minmax(0,1fr)_auto]" : "grid-cols-[auto_minmax(0,1fr)]",
         connectedStack

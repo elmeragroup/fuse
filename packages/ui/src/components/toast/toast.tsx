@@ -27,6 +27,9 @@ import { overlayLayer } from "../overlay/overlay-classes";
 import type { OverlayContainerProps } from "../overlay/overlay-props";
 import { toastVariants } from "./toast-variants";
 
+/** Resolved once at module scope — these slots carry no status axis (no per-render work). */
+const { content, title, description } = toastVariants();
+
 export type ToastStatus = "error" | "info" | "success" | "warning" | "loading";
 
 type ToastPriority = "low" | "high";
@@ -89,6 +92,16 @@ const STATUS_ICONS = {
   warning: Warning,
   loading: SpinnerGap,
 };
+
+/** Resolved once per status at module scope — the axis is a closed six-value set. */
+const STATUS_SLOTS = {
+  neutral: toastVariants({ status: "neutral" }),
+  error: toastVariants({ status: "error" }),
+  info: toastVariants({ status: "info" }),
+  success: toastVariants({ status: "success" }),
+  warning: toastVariants({ status: "warning" }),
+  loading: toastVariants({ status: "loading" }),
+} satisfies Record<keyof typeof STATUS_ICONS, ReturnType<typeof toastVariants>>;
 
 function statusFromType(type: string | undefined): keyof typeof STATUS_ICONS {
   if (type === "error" || type === "info" || type === "success" || type === "warning" || type === "loading") {
@@ -299,7 +312,7 @@ function ToastViewport({
 
 function ToastRoot({ className, toast, ...props }: ComponentProps<typeof ToastPrimitive.Root>): ReactElement {
   const status = statusFromType(toast.type);
-  const { root } = toastVariants({ status });
+  const { root } = STATUS_SLOTS[status];
   return (
     <ToastPrimitive.Root
       data-slot="toast-root"
@@ -312,12 +325,10 @@ function ToastRoot({ className, toast, ...props }: ComponentProps<typeof ToastPr
 }
 
 function ToastContent({ className, ...props }: ComponentProps<typeof ToastPrimitive.Content>): ReactElement {
-  const { content } = toastVariants();
   return <ToastPrimitive.Content data-slot="toast-content" className={cn(content(), className)} {...props} />;
 }
 
 function ToastTitle({ className, ...props }: ComponentProps<typeof ToastPrimitive.Title>): ReactElement {
-  const { title } = toastVariants();
   return <ToastPrimitive.Title data-slot="toast-title" className={cn(title(), className)} {...props} />;
 }
 
@@ -325,7 +336,6 @@ function ToastDescription({
   className,
   ...props
 }: ComponentProps<typeof ToastPrimitive.Description>): ReactElement {
-  const { description } = toastVariants();
   return (
     <ToastPrimitive.Description
       data-slot="toast-description"
@@ -393,7 +403,7 @@ function ToastList(): ReactElement {
 
 function BuiltInToast({ toast }: { toast: ToastObject<object> }): ReactElement {
   const status = statusFromType(toast.type);
-  const { icon } = toastVariants({ status });
+  const { icon } = STATUS_SLOTS[status];
   const Glyph = STATUS_ICONS[status];
 
   return (

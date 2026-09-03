@@ -17,5 +17,4 @@ export const confirmButtonVariants = tv({
       success: "data-[armed=true]:bg-success data-[armed=true]:text-success-foreground",
     },
   },
-  defaultVariants: {},
 });
