@@ -19,28 +19,23 @@ import type {
 
 import { buttonVariants } from "../../components/button/button-variants";
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
-import { CalendarBlank } from "../../icons/generated/calendar-blank";
-import { datePickerVariants } from "../../styles/date-picker";
+import { pickerVariants } from "../../styles/picker";
 import { Calendar } from "../calendar/calendar";
 import { DateInput } from "../date-field/date-field";
-import { Button } from "../internal/button";
-import { Dialog } from "../internal/dialog";
-import { Description, FieldError, FieldGroup, Label } from "../internal/field";
-import { Popover } from "../internal/popover";
+import { PickerShell } from "../internal/picker-shell";
 import { composeTailwindRenderProps } from "../internal/utils";
 import { datePickerStrings } from "./intl";
 
 /**
  * Labeled date-picker composite over RAC `DatePicker` (date-picker.md §2/§3): the public
- * `DateInput` and `Calendar` joined by the package-private popover/dialog/button chrome.
- * Client — the interim react-aria cluster owns segment state, overlay state and the
- * focused-month sync below.
+ * `DateInput` and `Calendar`, handed to the package-private `PickerShell` that both date
+ * pickers wear. Client — the interim react-aria cluster owns segment state, overlay state
+ * and the focused-month sync below.
  *
- * The popover's dialog is the styled private `Dialog` with `closeButton={false}` and no
- * `title`, which is what gives §7's accessible name: an untitled styled Dialog renders no
- * heading, so the name `useDatePicker` publishes on RAC's `DialogContext` ("Calendar"
- * plus the field label) reaches the overlay unopposed. See `internal/dialog.tsx` for why
- * a rendered-but-empty heading would take that name instead.
+ * What is left here is what a *single-date* picker owns and a range picker does not: one
+ * segment row, the optional preset pane, and the focused-month sync. The label, field box,
+ * trigger, help text, popover and dialog — and the accessible-name reasoning behind an
+ * untitled dialog — live in `internal/picker-shell.tsx`.
  */
 export type DatePickerProps<T extends DateValue> = {
   /** Visible label, rendered as the private RAC `Label`. */
@@ -132,8 +127,7 @@ export function DatePicker<T extends DateValue>({
   shouldForceLeadingZeros = true,
   ...props
 }: DatePickerProps<T>): ReactElement {
-  const { base, calendar, dialog, group, icon, input, pane } = datePickerVariants({
-    isReadOnly,
+  const { base, calendar, dialog, group, icon, input, pane } = pickerVariants({
     hasPresets: isRenderableNode(presetGroup),
   });
 
@@ -143,24 +137,23 @@ export function DatePicker<T extends DateValue>({
       isReadOnly={isReadOnly}
       shouldForceLeadingZeros={shouldForceLeadingZeros}
       className={composeTailwindRenderProps(className, base())}>
-      {label ? <Label>{label}</Label> : null}
-      <FieldGroup className={group()}>
-        <DateInput className={input()} />
-        {/* oxlint-disable-next-line elmera/require-icon-button-label -- date-picker.md §7: RAC's DatePicker fills this default Button slot and supplies the trigger's localized accessible name ("Calendar"); a local label would shadow it. Asserted in the browser suite. */}
-        <Button size="icon-sm" variant="ghost">
-          <CalendarBlank aria-hidden className={icon()} />
-        </Button>
-      </FieldGroup>
-      {description ? <Description>{description}</Description> : null}
-      <FieldError>{errorMessage}</FieldError>
-      <Popover container={container} placement="bottom right">
-        <Dialog className={dialog()} closeButton={false}>
+      <PickerShell
+        container={container}
+        description={description}
+        dialogClassName={dialog()}
+        errorMessage={errorMessage}
+        groupClassName={group()}
+        iconClassName={icon()}
+        isReadOnly={isReadOnly}
+        label={label}
+        popover={
           <div className={pane()}>
             {presetGroup}
             <PickerCalendar className={calendar()} />
           </div>
-        </Dialog>
-      </Popover>
+        }>
+        <DateInput className={input()} />
+      </PickerShell>
     </AriaDatePicker>
   );
 }

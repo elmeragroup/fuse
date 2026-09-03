@@ -23,9 +23,8 @@ import {
   renderThemed,
   stampDensity,
 } from "../../../test/themed-browser-render";
+import { Dialog } from "../../components/dialog/dialog";
 import { ThemeScope } from "../../theme/theme-scope";
-import { Dialog as RacDialog } from "../internal/dialog";
-import { Modal } from "../internal/modal";
 import { UiProviders } from "../ui-providers/ui-providers";
 import { DatePicker, DatePickerPresetGroup, DatePickerPresetItem } from "./date-picker";
 
@@ -507,14 +506,17 @@ describe("DatePicker overlay containment", () => {
     expect(dialog.closest("[data-explicit-container]")).not.toBeNull();
   });
 
-  it("keeps a host Modal open while the user works inside the picker's popover", async () => {
+  it("keeps a host Dialog open while the user works inside the picker's popover", async () => {
     const onOpenChange = vi.fn();
     renderPicker(
-      <Modal isDismissable isOpen onOpenChange={onOpenChange}>
-        <RacDialog closeButton={false} title="Order">
+      <Dialog.Root defaultOpen onOpenChange={onOpenChange}>
+        <Dialog.Content showCloseButton={false}>
+          <Dialog.Header>
+            <Dialog.Title>Order</Dialog.Title>
+          </Dialog.Header>
           <ControlledPicker />
-        </RacDialog>
-      </Modal>
+        </Dialog.Content>
+      </Dialog.Root>
     );
     await expect.element(page.getByRole("dialog", { name: "Order" })).toBeVisible();
     await userEvent.click(trigger());

@@ -2,19 +2,13 @@
 
 import type { ReactElement, ReactNode, RefObject } from "react";
 
-import {
-  Popover as AriaPopover,
-  OverlayArrow,
-  DialogTrigger as PopoverTrigger,
-  composeRenderProps,
-} from "react-aria-components";
+import { Popover as AriaPopover, OverlayArrow, composeRenderProps } from "react-aria-components";
 import type { PopoverProps as AriaPopoverProps } from "react-aria-components";
 import { tv } from "tailwind-variants";
 
 import { overlayLayer } from "../../components/overlay/overlay-classes";
 import { cn } from "../../styles/cn";
-import { useThemeScopeContainer } from "../../theme/theme-scope-container";
-import { OVERLAY_CONTAINER_ATTR, OVERLAY_CONTAINER_POPOVER } from "./overlay-container";
+import { useResolvedPortalContainer } from "../../theme/use-resolved-portal-container";
 
 const popoverVariants = tv({
   slots: {
@@ -57,15 +51,15 @@ export type PopoverProps = Omit<AriaPopoverProps, "children" | "UNSTABLE_portalC
  * Popover was dropped from the public surface entirely, and the public popover is the
  * base-ui entry.
  *
- * Two contracts live here:
- *  - It stamps `OVERLAY_CONTAINER_ATTR` so the private Modal's
- *    `shouldCloseOnInteractOutside` can recognise its own popovers (§6 locked ruling).
- *    The stamp is spread after `{...props}` because it is a containment invariant, not
- *    a consumer-overridable slot.
- *  - It resolves the portal target explicit `container` → nearest `ThemeScope` → RAC
- *    default (theming.md §7.4), forwarding the result to RAC's portal-container prop.
- *    A resolved `null` means the target exists but is not attached yet: the content
- *    waits rather than briefly escaping to `document.body`.
+ * One contract lives here: it resolves the portal target explicit `container` →
+ * nearest `ThemeScope` → RAC default through the shared
+ * {@link useResolvedPortalContainer}, and forwards the result to RAC's portal-container
+ * prop (theming.md §7.4).
+ *
+ * It carries no overlay-container stamp. That stamp existed solely so the private RAC
+ * `Modal`'s `shouldCloseOnInteractOutside` could recognise its own popovers; the modal
+ * stack was deleted with spec 08 (date-picker.md §6, 2026-09-03), and the public base-ui
+ * `Dialog` that now hosts a picker tracks nesting through the React tree instead.
  */
 export function Popover({
   children,
@@ -75,7 +69,7 @@ export function Popover({
   showArrow = true,
   ...props
 }: PopoverProps): ReactElement | null {
-  const resolvedContainer = useThemeScopeContainer(container);
+  const resolvedContainer = useResolvedPortalContainer(container);
   const { arrow, arrowSvg } = popoverVariants();
 
   if (resolvedContainer === null) {
@@ -87,7 +81,6 @@ export function Popover({
       offset={offset}
       UNSTABLE_portalContainer={resolvedContainer}
       {...props}
-      {...{ [OVERLAY_CONTAINER_ATTR]: OVERLAY_CONTAINER_POPOVER }}
       className={composeRenderProps(className, (resolved: string | undefined, renderProps) =>
         cn(
           popoverVariants({
@@ -111,4 +104,4 @@ export function Popover({
 
 Popover.displayName = "ReactAriaInternal.Popover";
 
-export { PopoverTrigger, popoverVariants };
+export { popoverVariants };

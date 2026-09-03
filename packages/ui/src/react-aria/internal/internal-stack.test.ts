@@ -4,30 +4,13 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { buttonVariants } from "../../components/button/button-variants";
+import { fieldBox, fieldBoxChromeClass } from "../../styles/field-box";
 import { checkboxVariants } from "./checkbox";
 import { fieldGroupVariants } from "./field";
-import {
-  OVERLAY_CONTAINER_ATTR,
-  OVERLAY_CONTAINER_POPOVER,
-  OVERLAY_CONTAINER_POPOVER_SELECTOR,
-} from "./overlay-container";
 import { composeTailwindRenderProps } from "./utils";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const packageRoot = join(here, "../../..");
-
-describe("OVERLAY_CONTAINER_ATTR", () => {
-  it("locks the attribute/value pair from date-picker.md §6", () => {
-    expect(OVERLAY_CONTAINER_ATTR).toBe("data-overlay-container");
-    expect(OVERLAY_CONTAINER_POPOVER).toBe("popover");
-  });
-
-  it("derives the modal's closest() selector from the same pair", () => {
-    expect(OVERLAY_CONTAINER_POPOVER_SELECTOR).toBe(
-      `[${OVERLAY_CONTAINER_ATTR}="${OVERLAY_CONTAINER_POPOVER}"]`
-    );
-  });
-});
 
 type HoverState = { isHovered: boolean };
 
@@ -78,6 +61,31 @@ describe("fieldGroupVariants", () => {
   it("marks invalid and read-only state with role tokens", () => {
     expect(fieldGroupVariants({ isInvalid: true })).toContain("border-error");
     expect(fieldGroupVariants({ isReadOnly: true })).toContain("bg-muted");
+  });
+});
+
+describe("field-box chrome parity", () => {
+  // spec 08 user story 6 / date-field.md §8.11 (2026-09-03): the interim tier's field
+  // box and the base-ui tier's are the same chrome, so a DateField, a SearchField and an
+  // Input in one form read as one family. A `satisfies` cannot express this — it would
+  // pin keys, not the rendered tokens — so the constant is asserted to survive twMerge
+  // on both sides, and the absence of a competing rung is asserted separately.
+  const tokens = fieldBoxChromeClass.split(" ");
+
+  it("lands every shared chrome token on both tiers' computed output", () => {
+    const racBox = fieldGroupVariants().split(" ");
+    const baseUiBox = fieldBox({ box: "control" }).split(" ");
+    for (const token of tokens) {
+      expect(racBox, `interim tier lost ${token}`).toContain(token);
+      expect(baseUiBox, `base-ui tier lost ${token}`).toContain(token);
+    }
+  });
+
+  it("leaves neither tier a second radius or elevation rung to drift on", () => {
+    for (const rendered of [fieldGroupVariants(), fieldBox({ box: "control" })]) {
+      expect(rendered.match(/(?:^|\s)rounded-\S+/gu)).toHaveLength(1);
+      expect(rendered.match(/(?:^|\s)shadow-\S+/gu)).toHaveLength(1);
+    }
   });
 });
 

@@ -26,9 +26,8 @@ import {
   renderThemed,
   stampDensity,
 } from "../../../test/themed-browser-render";
+import { Dialog } from "../../components/dialog/dialog";
 import { ThemeScope } from "../../theme/theme-scope";
-import { Dialog as RacDialog } from "../internal/dialog";
-import { Modal } from "../internal/modal";
 import { UiProviders } from "../ui-providers/ui-providers";
 import { DateRangePicker } from "./date-range-picker";
 
@@ -455,18 +454,21 @@ describe("DateRangePicker overlay containment", () => {
     expect(dialog.closest("[data-explicit-container]")).not.toBeNull();
   });
 
-  it("keeps a host Modal open while the user picks both endpoints in the popover", async () => {
+  it("keeps a host Dialog open while the user picks both endpoints in the popover", async () => {
     const onOpenChange = vi.fn();
     function ControlledPicker(): ReactElement {
       const [value, setValue] = useState<{ start: CalendarDate; end: CalendarDate } | null>(julyWeek);
       return <DateRangePicker label="Delivery window" onChange={setValue} value={value} />;
     }
     renderPicker(
-      <Modal isDismissable isOpen onOpenChange={onOpenChange}>
-        <RacDialog closeButton={false} title="Order">
+      <Dialog.Root defaultOpen onOpenChange={onOpenChange}>
+        <Dialog.Content showCloseButton={false}>
+          <Dialog.Header>
+            <Dialog.Title>Order</Dialog.Title>
+          </Dialog.Header>
           <ControlledPicker />
-        </RacDialog>
-      </Modal>
+        </Dialog.Content>
+      </Dialog.Root>
     );
     await expect.element(page.getByRole("dialog", { name: "Order" })).toBeVisible();
     await userEvent.click(trigger());
@@ -478,7 +480,7 @@ describe("DateRangePicker overlay containment", () => {
     expect(onOpenChange).not.toHaveBeenCalled();
 
     // The anchoring click is the seam's real test: it lands in a portalled popover and
-    // must not read as an interaction outside the Modal (§6).
+    // must not read as an interaction outside the host dialog (§6).
     await userEvent.click(dayNumbered(3));
     await expect.element(page.getByRole("dialog", { name: /calendar/i })).toBeVisible();
     expect(onOpenChange).not.toHaveBeenCalled();

@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import type { ReactElement } from "react";
 
+import { DialogTrigger } from "react-aria-components";
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -9,11 +10,9 @@ import { renderThemed } from "../../../test/themed-browser-render";
 import { buttonVariants } from "../../components/button/button-variants";
 import { ThemeScope } from "../../theme/theme-scope";
 import { Button } from "./button";
-import { Dialog, DialogTrigger } from "./dialog";
+import { Dialog } from "./dialog";
 import { FieldGroup, Input, Label } from "./field";
-import { Modal, shouldCloseForInteraction } from "./modal";
-import { OVERLAY_CONTAINER_ATTR, OVERLAY_CONTAINER_POPOVER_SELECTOR } from "./overlay-container";
-import { Popover, PopoverTrigger } from "./popover";
+import { Popover } from "./popover";
 
 function recipeClasses(rendered: string): string[] {
   return rendered.split(/\s+/u).filter(Boolean);
@@ -85,14 +84,14 @@ describe("the internal field chrome", () => {
 
 function PopoverFixture({ container }: { container?: React.RefObject<HTMLElement | null> }): ReactElement {
   return (
-    <PopoverTrigger>
+    <DialogTrigger>
       <Button>Choose date</Button>
       <Popover container={container}>
         <Dialog closeButton={false} title="Calendar">
           <button type="button">Inside the popover</button>
         </Dialog>
       </Popover>
-    </PopoverTrigger>
+    </DialogTrigger>
   );
 }
 
@@ -106,13 +105,11 @@ async function openPopover(): Promise<HTMLElement> {
 }
 
 describe("the internal RAC Popover", () => {
-  it("stamps the overlay-container attribute the modal seam looks for", async () => {
+  it("carries no overlay-container stamp now the modal stack is gone (§6, 2026-09-03)", async () => {
     renderThemed(withLocale("en-US", <PopoverFixture />));
     const dialog = await openPopover();
-    const popover = dialog.closest(OVERLAY_CONTAINER_POPOVER_SELECTOR);
 
-    expect(popover).not.toBeNull();
-    expect(popover?.getAttribute(OVERLAY_CONTAINER_ATTR)).toBe("popover");
+    expect(dialog.closest("[data-overlay-container]")).toBeNull();
   });
 
   it("portals into the enclosing ThemeScope instead of the document body", async () => {
@@ -134,7 +131,6 @@ describe("the internal RAC Popover", () => {
     await userEvent.click(page.getByRole("button", { name: "Choose date" }).element());
 
     expect(page.getByRole("dialog").query()).toBeNull();
-    expect(document.querySelector(OVERLAY_CONTAINER_POPOVER_SELECTOR)).toBeNull();
   });
 
   it("does not escape a ThemeScope element that has not attached yet", async () => {
@@ -150,66 +146,6 @@ describe("the internal RAC Popover", () => {
 
     expect(dialog.closest("[data-theme-variant=external]")).not.toBeNull();
     expect([...document.body.children].includes(dialog)).toBe(false);
-  });
-});
-
-describe("the internal RAC Modal", () => {
-  it("keeps its host open when the interaction landed inside a private popover", async () => {
-    const onOpenChange = vi.fn();
-    renderThemed(
-      withLocale(
-        "en-US",
-        <Modal isDismissable isOpen onOpenChange={onOpenChange}>
-          <Dialog closeButton={false} title="Order">
-            <PopoverFixture />
-          </Dialog>
-        </Modal>
-      )
-    );
-
-    await userEvent.click(page.getByRole("button", { name: "Choose date" }).element());
-    await userEvent.click(page.getByRole("button", { name: "Inside the popover" }).element());
-
-    expect(onOpenChange).not.toHaveBeenCalled();
-  });
-
-  it("short-circuits before the caller's own predicate for popover interactions", async () => {
-    const shouldCloseOnInteractOutside = vi.fn(() => true);
-    renderThemed(
-      withLocale(
-        "en-US",
-        <Modal isDismissable isOpen shouldCloseOnInteractOutside={shouldCloseOnInteractOutside}>
-          <Dialog closeButton={false} title="Order">
-            <PopoverFixture />
-          </Dialog>
-        </Modal>
-      )
-    );
-
-    await userEvent.click(page.getByRole("button", { name: "Choose date" }).element());
-    await userEvent.click(page.getByRole("button", { name: "Inside the popover" }).element());
-
-    expect(shouldCloseOnInteractOutside).not.toHaveBeenCalled();
-  });
-
-  it("refuses to dismiss for anything inside a stamped popover, and delegates otherwise", () => {
-    const delegate = vi.fn(() => true);
-    const popover = document.createElement("div");
-    popover.setAttribute(OVERLAY_CONTAINER_ATTR, "popover");
-    const inside = document.createElement("button");
-    popover.append(inside);
-    const outside = document.createElement("button");
-
-    expect(shouldCloseForInteraction(inside, delegate)).toBe(false);
-    expect(delegate).not.toHaveBeenCalled();
-
-    expect(shouldCloseForInteraction(outside, delegate)).toBe(true);
-    expect(delegate).toHaveBeenCalledWith(outside);
-  });
-
-  it("dismisses by default when no caller predicate is supplied", () => {
-    const outside = document.createElement("button");
-    expect(shouldCloseForInteraction(outside, undefined)).toBe(true);
   });
 });
 

@@ -6,8 +6,9 @@ import type { RefObject } from "react";
  *
  * Consumed by Popover, Dialog, Sheet, Tooltip, Toast, Select, Combobox and DropdownMenu;
  * AlertDialog inherits it through `DialogContentProps`. What is left is the interim
- * react-aria tier (`react-aria/internal/popover.tsx`, `internal/modal.tsx`, which spec 08
- * deletes) and PhoneNumberField's country popup.
+ * react-aria tier's `react-aria/internal/popover.tsx` — the only RAC overlay still
+ * shipping, now that spec 08 deleted `internal/modal.tsx` — and PhoneNumberField's
+ * country popup.
  *
  * The prop's own sentence is deliberately overlay-neutral: the eight consumers portal a
  * popup, a modal, a side panel and a toast viewport, and the docs generator publishes

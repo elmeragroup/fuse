@@ -9,29 +9,22 @@ import type {
   ValidationResult,
 } from "react-aria-components";
 
-import { CalendarBlank } from "../../icons/generated/calendar-blank";
-import { dateRangePickerVariants } from "../../styles/date-range-picker";
+import { pickerVariants } from "../../styles/picker";
 import { DateInput } from "../date-field/date-field";
-import { Button } from "../internal/button";
-import { Dialog } from "../internal/dialog";
-import { Description, FieldError, FieldGroup, Label } from "../internal/field";
-import { Popover } from "../internal/popover";
+import { PickerShell } from "../internal/picker-shell";
 import { composeTailwindRenderProps } from "../internal/utils";
 import { RangeCalendar } from "../range-calendar/range-calendar";
 
 /**
  * Labeled date-range-picker composite over RAC `DateRangePicker` (date-range-picker.md
- * §2/§3): two public `DateInput` rows and the public `RangeCalendar`, joined by the
- * package-private popover/dialog/button chrome. Client — the interim react-aria cluster
- * owns segment state and overlay state.
+ * §2/§3): two public `DateInput` rows and the public `RangeCalendar`, handed to the same
+ * package-private `PickerShell` DatePicker wears (§8.2/§8.6). Client — the interim
+ * react-aria cluster owns segment state and overlay state.
  *
- * The dialog is the package-private styled `Dialog` with `closeButton={false}` (§8.2):
- * the reference reached for the raw RAC `Dialog` and so skipped the cluster's dialog
- * chrome entirely. It needs no `aria-labelledby` of its own — with no `title` the styled
- * Dialog renders no heading, so RAC's own `DialogContext` name ("Calendar" plus the field
- * label, published by `useDateRangePicker`) reaches the overlay unopposed. Unlike
- * DatePicker there is no focused-month sync — RAC's range state drives the grid's month
- * on its own, and the spec asks for no override.
+ * What is left here is what a *range* picker owns and a single-date picker does not: two
+ * segment rows and the en-dash between them. Unlike DatePicker there is no focused-month
+ * sync — RAC's range state drives the grid's month on its own, and the spec asks for no
+ * override.
  */
 export type DateRangePickerProps<T extends DateValue> = {
   /** Visible label, rendered as the private RAC `Label`. */
@@ -68,8 +61,8 @@ export function DateRangePicker<T extends DateValue>({
   shouldForceLeadingZeros = true,
   ...props
 }: DateRangePickerProps<T>): ReactElement {
-  const { base, calendar, dialog, group, icon, input, separator } = dateRangePickerVariants({
-    isReadOnly,
+  const { base, calendar, dialog, group, icon, input, separator } = pickerVariants({
+    range: true,
   });
 
   return (
@@ -78,8 +71,16 @@ export function DateRangePicker<T extends DateValue>({
       isReadOnly={isReadOnly}
       shouldForceLeadingZeros={shouldForceLeadingZeros}
       className={composeTailwindRenderProps(className, base())}>
-      {label ? <Label>{label}</Label> : null}
-      <FieldGroup className={group()}>
+      <PickerShell
+        container={container}
+        description={description}
+        dialogClassName={dialog()}
+        errorMessage={errorMessage}
+        groupClassName={group()}
+        iconClassName={icon()}
+        isReadOnly={isReadOnly}
+        label={label}
+        popover={<RangeCalendar className={calendar()} />}>
         <DateInput className={input()} slot="start" />
         {/* Decoration: RAC names the two rows "Start Date" / "End Date" on the segments
             themselves, so announcing the glyph would only repeat it (§7). */}
@@ -87,18 +88,7 @@ export function DateRangePicker<T extends DateValue>({
           –
         </span>
         <DateInput className={input({ class: "flex-1" })} slot="end" />
-        {/* oxlint-disable-next-line elmera/require-icon-button-label -- date-range-picker.md §7: RAC's DateRangePicker fills this default Button slot and supplies the trigger's localized accessible name ("Calendar"); a local label would shadow it. Asserted in the browser suite. */}
-        <Button size="icon-sm" variant="ghost">
-          <CalendarBlank aria-hidden className={icon()} />
-        </Button>
-      </FieldGroup>
-      {description ? <Description>{description}</Description> : null}
-      <FieldError>{errorMessage}</FieldError>
-      <Popover container={container} placement="bottom right">
-        <Dialog className={dialog()} closeButton={false}>
-          <RangeCalendar className={calendar()} />
-        </Dialog>
-      </Popover>
+      </PickerShell>
     </AriaDateRangePicker>
   );
 }

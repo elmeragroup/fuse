@@ -3,22 +3,15 @@
 import { use } from "react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 
-import {
-  Dialog as AriaDialog,
-  DialogTrigger as AriaDialogTrigger,
-  Heading,
-  OverlayTriggerStateContext,
-} from "react-aria-components";
+import { Dialog as AriaDialog, Heading, OverlayTriggerStateContext } from "react-aria-components";
 import { tv } from "tailwind-variants";
-import type { VariantProps } from "tailwind-variants";
 
 import { dialogStrings } from "../../components/dialog/intl";
-import { overlayFooterClass, overlayTitleClass } from "../../components/overlay/overlay-classes";
+import { overlayTitleClass } from "../../components/overlay/overlay-classes";
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { X } from "../../icons/generated/x";
 import { cn } from "../../styles/cn";
 import { Button } from "./button";
-import { Modal } from "./modal";
 
 /**
  * The interim tier's styled dialog chrome (date-picker.md §2): RAC Dialog plus the
@@ -34,66 +27,27 @@ const dialogVariants = tv({
     // oxlint-disable-next-line elmera/no-local-focus-ring -- dialog.md §7: dialog surface; focusable descendants own the adapter
     base: "relative max-h-[inherit] overflow-y-auto p-6 outline-none [[data-placement]>&]:p-4",
     header: "flex items-start justify-between gap-4",
-    // Heading and footer borrow the public Dialog's literals (dialog.md §2) so the
-    // interim tier cannot drift; the footer only adds its own top margin.
+    // The heading borrows the public Dialog's literal (dialog.md §2) so the interim tier
+    // cannot drift.
     heading: overlayTitleClass,
     content: "flex flex-col gap-4",
-    footer: cn(overlayFooterClass, "mt-6"),
     closeButton: "hit-area-1",
     closeButtonIcon: "size-4",
   },
-  variants: {
-    variant: {
-      bare: {
-        heading: "sr-only",
-        base: "p-0 [[data-placement]>&]:p-0",
-        closeButton: "absolute top-0 right-0 z-10 m-4",
-        content: "gap-0",
-      },
-    },
-  },
-  defaultVariants: {},
 });
 
-/**
- * Every part takes the same `variant` the composite takes, so the composite below can be
- * assembled from these parts instead of restating their markup and slot names.
- */
-type DialogPartVariant = VariantProps<typeof dialogVariants>;
-
-export function DialogHeader({
-  className,
-  variant,
-  ...props
-}: ComponentProps<"div"> & DialogPartVariant): ReactElement {
-  const { header } = dialogVariants({ variant });
+export function DialogHeader({ className, ...props }: ComponentProps<"div">): ReactElement {
+  const { header } = dialogVariants();
   return <div data-slot="dialog-header" className={cn(header(), className)} {...props} />;
 }
 
-export function DialogContent({
-  className,
-  variant,
-  ...props
-}: ComponentProps<"div"> & DialogPartVariant): ReactElement {
-  const { content } = dialogVariants({ variant });
+export function DialogContent({ className, ...props }: ComponentProps<"div">): ReactElement {
+  const { content } = dialogVariants();
   return <div data-slot="dialog-content" className={cn(content(), className)} {...props} />;
 }
 
-export function DialogFooter({
-  className,
-  variant,
-  ...props
-}: ComponentProps<"div"> & DialogPartVariant): ReactElement {
-  const { footer } = dialogVariants({ variant });
-  return <div data-slot="dialog-footer" className={cn(footer(), className)} {...props} />;
-}
-
-export function DialogHeading({
-  className,
-  variant,
-  ...props
-}: ComponentProps<typeof Heading> & DialogPartVariant): ReactElement {
-  const { heading } = dialogVariants({ variant });
+export function DialogHeading({ className, ...props }: ComponentProps<typeof Heading>): ReactElement {
+  const { heading } = dialogVariants();
   return <Heading slot="title" className={cn(heading(), className)} {...props} />;
 }
 
@@ -127,13 +81,12 @@ function DialogCloseButton({
   );
 }
 
-export type DialogProps = Omit<ComponentProps<typeof AriaDialog>, "children"> &
-  VariantProps<typeof dialogVariants> & {
-    children?: ReactNode;
-    title?: string;
-    closeButton?: boolean;
-    closeLabel?: string;
-  };
+export type DialogProps = Omit<ComponentProps<typeof AriaDialog>, "children"> & {
+  children?: ReactNode;
+  title?: string;
+  closeButton?: boolean;
+  closeLabel?: string;
+};
 
 /**
  * The styled dialog. The header row and the heading inside it are both conditional, and
@@ -157,19 +110,18 @@ export function Dialog({
   closeButton = true,
   closeLabel,
   title,
-  variant,
   ...props
 }: DialogProps): ReactElement {
   const strings = useLocalizedStrings(dialogStrings);
-  const { base, closeButton: closeButtonClass, closeButtonIcon } = dialogVariants({ variant });
+  const { base, closeButton: closeButtonClass, closeButtonIcon } = dialogVariants();
   const label = closeLabel ?? strings.format("close");
 
   return (
     <AriaDialog data-slot="dialog" {...props} className={cn(base(), className)}>
-      <DialogContent variant={variant}>
+      <DialogContent>
         {title !== undefined || closeButton ? (
-          <DialogHeader variant={variant}>
-            {title !== undefined ? <DialogHeading variant={variant}>{title}</DialogHeading> : null}
+          <DialogHeader>
+            {title !== undefined ? <DialogHeading>{title}</DialogHeading> : null}
             {closeButton ? (
               <DialogCloseButton
                 className={closeButtonClass()}
@@ -185,32 +137,9 @@ export function Dialog({
   );
 }
 
-export type DialogOverlayProps = ComponentProps<typeof Modal>;
-
-export function DialogOverlay({
-  isDismissable = true,
-  position = "default",
-  size = "lg",
-  ...props
-}: DialogOverlayProps): ReactElement | null {
-  return (
-    <Modal
-      data-slot="dialog-overlay"
-      isDismissable={isDismissable}
-      position={position}
-      size={size}
-      {...props}
-    />
-  );
-}
-
-export const DialogTrigger = AriaDialogTrigger;
-
 Dialog.displayName = "ReactAriaInternal.Dialog";
 DialogContent.displayName = "ReactAriaInternal.DialogContent";
-DialogFooter.displayName = "ReactAriaInternal.DialogFooter";
 DialogHeader.displayName = "ReactAriaInternal.DialogHeader";
 DialogHeading.displayName = "ReactAriaInternal.DialogHeading";
-DialogOverlay.displayName = "ReactAriaInternal.DialogOverlay";
 
 export { dialogVariants };

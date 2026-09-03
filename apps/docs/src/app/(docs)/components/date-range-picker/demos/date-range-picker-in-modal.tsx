@@ -9,12 +9,12 @@ import { UiProviders } from "@elmeragroup/ui/react-aria/ui-providers";
 
 /**
  * A range picker inside a dialog: the popover is a separate overlay layer, and clicking
- * the two endpoints inside it must never dismiss the dialog underneath. The public
- * base-ui `Dialog` gets that for free — its dismissal logic follows the React tree, so an
- * interaction in the portalled popover still counts as inside the dialog. The library's
- * private RAC `Modal` has no such tracking and leans on the cluster's overlay-container
- * attribute instead; that seam is covered by the DateRangePicker browser suite rather
- * than by this demo. Both overlays portal into the nearest `ThemeScope`, so the popover
+ * the two endpoints inside it must never dismiss the dialog underneath. The `Dialog` gets
+ * that for free — its dismissal logic follows the React tree, so an interaction in the
+ * portalled popover still counts as inside the dialog. That is why the picker cluster no
+ * longer carries an overlay-container attribute of its own (date-picker.md §6,
+ * 2026-09-03); the regression is pinned by the DateRangePicker browser suite, on this
+ * exact composition. Both overlays portal into the nearest `ThemeScope`, so the popover
  * keeps the dialog's theme.
  */
 export function DateRangePickerInModal() {

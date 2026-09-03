@@ -69,6 +69,7 @@ AriaDateField                       (RAC DateField, flex flex-col gap-1)
 6. **Focus unified:** private `fieldGroupVariants` replaces the ref's outline recipe/border tint with the canonical state-driven `focusRing`; segment highlight remains an internal-position indicator, not a substitute for the field ring.
 7. **Field surface aligned:** private RAC `fieldGroupVariants` uses `bg-card`, not the reference's `bg-background`, so SearchField and both date pickers follow the library-wide input-surface rule in [conventions](conventions.md).
 8. **Density retokenization:** `fieldGroupVariants` `h-9` pins `--control-h-md` without a `size` axis. The `input` slot reads `--control-px-md` and the control type pair (`[font-size:var(--control-text)] [line-height:var(--control-leading)]`); `py-*` is omitted because height is pinned. _(Amended 2026-09-02.)_
+9. **One field-box chrome across both tiers.** _(Amended 2026-09-03; spec 08 "Overlay and field shared spine", user story 6.)_ The library shipped two field-box chromes: `styles/field-box.ts` for Input and Textarea (`shadow-xs rounded-md`) and the interim tier's `fieldGroupVariants` for DateField, SearchField and both date pickers (`rounded-lg`, no shadow). A form that mixes an Input with a DateField showed two different boxes. The surface — elevation rung, radius rung, hairline border, fill, and the transition over all three — is now the single `fieldBoxChromeClass` constant that both recipes compose, so **the interim tier moves onto Input's `rounded-md shadow-xs`**. This is a deliberate rendered change and the only one this amendment makes; every other class on both boxes is unchanged. What stays per-tier is what genuinely differs: padding, the control-type pair, the focus adapter (`self` for a focusable control, `state` for RAC's non-focusable `Group`), and the disabled/invalid faces, which the two tiers express through different selectors. A `satisfies` would pin keys rather than rendered tokens, so the pair is guarded by tests instead: `internal-stack.test.ts` asserts every chrome token survives twMerge on both sides and that neither box carries a second radius or elevation rung, and `date-field.browser.test.tsx` asserts the two boxes' computed radius, shadow, border width and fill are equal in one rendered form.
 
 ## 9 Test requirements
 
@@ -78,6 +79,7 @@ AriaDateField                       (RAC DateField, flex flex-col gap-1)
 - `onChange` fires with a `DateValue` (not an event); `minValue`/`maxValue` violations set `data-invalid` and render `errorMessage` (both string and `(v) => string` forms).
 - `isDisabled`/`isReadOnly`: segments unreachable vs. focusable-but-inert; `name` submits the ISO string in a form.
 - Dual-density: DateInput / `fieldGroupVariants` height, inline padding, font-size, and line-height match the signed `md` rung at `dense` and `comfortable`.
+- Field-box chrome parity: a DateField and an `Input` rendered in one form have equal computed radius, shadow, border width and fill, and both carry the shared chrome rungs _(added 2026-09-03, §8.9)_.
 
 ## 10 Demo requirements
 

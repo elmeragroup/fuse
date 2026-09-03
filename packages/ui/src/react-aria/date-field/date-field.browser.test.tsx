@@ -16,6 +16,7 @@ import {
   renderThemed,
   stampDensity,
 } from "../../../test/themed-browser-render";
+import { Input } from "../../components/input/input";
 import { ThemeScope } from "../../theme";
 import { UiProviders } from "../ui-providers/ui-providers";
 import { DateField, DateInput } from "./date-field";
@@ -346,5 +347,39 @@ describe("DateField hour granularity", () => {
     );
     await expect.element(page.getByRole("spinbutton", { name: "hour" })).toBeVisible();
     expect(spinbuttonsIn("Appointment").length).toBeGreaterThan(3);
+  });
+});
+
+describe("DateField field-box chrome", () => {
+  // spec 08 user story 6 / §8.11 (2026-09-03): DateField's box is Input's box, so a form
+  // that mixes the interim tier with the base-ui tier has one field chrome. The computed
+  // comparison is the contract; the two class checks below are what make a radius match
+  // meaningful, because `--radius` is declared in `themes.css` (not the `styles.css` this
+  // suite loads) and every radius would otherwise resolve to 0 on both sides.
+  it("paints the same box as Input in the same form", () => {
+    renderField(
+      <>
+        <DateField label="Meter" defaultValue={july14} />
+        <Input aria-label="Reading" />
+      </>
+    );
+    const dateElement = groupNamed("Meter");
+    const inputElement = page.getByRole("textbox", { name: "Reading" }).element();
+    const dateBox = getComputedStyle(dateElement);
+    const inputBox = getComputedStyle(inputElement);
+
+    expect(dateBox.borderRadius).toBe(inputBox.borderRadius);
+    expect(dateBox.boxShadow).toBe(inputBox.boxShadow);
+    expect(dateBox.borderTopWidth).toBe(inputBox.borderTopWidth);
+    expect(dateBox.backgroundColor).toBe(inputBox.backgroundColor);
+
+    // The elevation rung is a real shadow, not two coincidental `none`s.
+    expect(dateBox.boxShadow).not.toBe("none");
+
+    for (const rung of ["rounded-md", "shadow-xs"]) {
+      expect(dateElement.classList.contains(rung), `DateField lost ${rung}`).toBe(true);
+      expect(inputElement.classList.contains(rung), `Input lost ${rung}`).toBe(true);
+    }
+    expect(dateElement.classList.contains("rounded-lg")).toBe(false);
   });
 });

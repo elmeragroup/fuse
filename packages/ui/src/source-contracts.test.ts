@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -297,31 +297,17 @@ describe("density host interface", () => {
   });
 });
 
-describe("react-aria overlay-container seam", () => {
-  // Why not a lint rule: date-picker.md §6 locks the attribute to one
-  // constant module; popover/modal must consume the constant rather than
-  // restating the DOM string. That is a two-file coupling, not a class of
-  // identifiers to ban package-wide.
-  it("leaves no hardcoded overlay-container DOM string on either side of the seam", () => {
-    expect(readSrc("react-aria/internal/popover.tsx")).toContain("OVERLAY_CONTAINER_ATTR");
-    expect(readSrc("react-aria/internal/popover.tsx")).toContain("OVERLAY_CONTAINER_POPOVER");
-    expect(readSrc("react-aria/internal/modal.tsx")).toContain("OVERLAY_CONTAINER_POPOVER_SELECTOR");
+describe("react-aria internal overlay stack", () => {
+  // Why not a lint rule: the invariant is the *absence* of two modules plus the
+  // absence of the attribute they coupled on. Spec 08 / date-picker.md §6
+  // (2026-09-03) deleted the private RAC Modal and the overlay-container stamp; a
+  // picker now sits inside the public base-ui Dialog, which tracks nesting through
+  // the React tree. This fails the moment either comes back by copy-paste.
+  it("ships no Modal and no overlay-container coupling", () => {
+    expect(existsSync(join(SRC_ROOT, "react-aria/internal/modal.tsx"))).toBe(false);
+    expect(existsSync(join(SRC_ROOT, "react-aria/internal/overlay-container.ts"))).toBe(false);
     expect(readSrc("react-aria/internal/popover.tsx")).not.toContain("data-overlay-container");
-    expect(readSrc("react-aria/internal/modal.tsx")).not.toContain("data-overlay-container");
-  });
-});
-
-describe("Twemoji artwork fidelity", () => {
-  // Why not a lint rule: the contract is that the bundled third-party artwork
-  // is a verbatim lift of the Twemoji path data the NOTICE file attributes
-  // (emoji.md §5). A lint rule cannot know which literal is the licensed
-  // original; the path data itself is the contract, so it is pinned here.
-  it("keeps the lifted Twemoji path data and fills verbatim", () => {
-    const source = readSrc("components/emoji/emoji.tsx");
-    expect(source).toContain('d="M25.485 27.379C25.44 27.2 24.317 23 18 23c-6.318 0-7.44 4.2-7.485 4.379');
-    expect(source).toContain('d="M10.515 23.621C10.56 23.8 11.683 28 18 28c6.318 0 7.44-4.2 7.485-4.379');
-    expect(source).toContain('fill="#5DADEC"');
-    expect(source).toContain('fill="#269"');
+    expect(readSrc("react-aria/internal/dialog.tsx")).not.toContain("Modal");
   });
 });
 
