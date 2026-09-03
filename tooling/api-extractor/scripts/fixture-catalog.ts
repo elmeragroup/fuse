@@ -25,15 +25,6 @@ type IssueViewMetadata = {
   readonly group?: string;
 };
 
-type GoNoGoEvidence = {
-  readonly order: number;
-  readonly oracle: "immutable-upstream" | "public-seam-regression" | "reviewed-ts7-exact";
-  readonly status: "pass";
-  readonly notes?: readonly string[];
-  readonly divergenceRecord?: string;
-  readonly warningOracle?: string;
-};
-
 export type TimingMetadata =
   | {
       readonly plan: "issue02";
@@ -59,7 +50,6 @@ type FixtureViewMetadata = {
   readonly issueViews?: Partial<Record<FixtureIssue, IssueViewMetadata>>;
   readonly warningOrder?: Partial<Record<"12" | "13", number>>;
   readonly expectedExports?: readonly string[];
-  readonly goNoGo?: GoNoGoEvidence;
   readonly reactAudit?: {
     readonly order: number;
     readonly owner: "issue11" | "issue12" | "issue13";
@@ -174,7 +164,6 @@ export const fixtureEvidenceCatalog = [
     ],
     warnings: { oracleFile: "warnings.tsgo.json", codes: [] },
     metadata: {
-      goNoGo: { order: 0, oracle: "immutable-upstream", status: "pass" },
       packageTypechecks: [{ order: 0, project: "test/fixtures/timing-boundary-tsconfig.json" }],
     },
   }),
@@ -198,13 +187,6 @@ export const fixtureEvidenceCatalog = [
     ],
     warnings: { oracleFile: "warnings.tsgo.json", codes: [] },
     metadata: {
-      goNoGo: {
-        order: 6,
-        oracle: "reviewed-ts7-exact",
-        status: "pass",
-        divergenceRecord: "test/fixtures/base-ui-component/ts7-oracle.json",
-        warningOracle: "test/fixtures/base-ui-component/warnings.tsgo.json",
-      },
       reactAudit: { order: 22, owner: "issue12" },
       packageTypechecks: [
         { order: 22, project: "test/fixtures/react-origin-tsconfig.json" },
@@ -418,9 +400,7 @@ export const fixtureEvidenceCatalog = [
       { plan: "issue14", order: 1 },
     ],
     warnings: { oracleFile: "warnings.tsgo.json", codes: [] },
-    metadata: {
-      goNoGo: { order: 1, oracle: "immutable-upstream", status: "pass" },
-    },
+    metadata: {},
   }),
   fixture("mapped-tuple-rest-synthetic-key", "input.ts", ["05", "14"], "immutable-upstream", {
     metadata: { issueViews: { "05": { order: 2, group: "tuple" } } },
@@ -449,32 +429,12 @@ export const fixtureEvidenceCatalog = [
       { plan: "issue14", order: 2 },
     ],
     warnings: { oracleFile: "warnings.tsgo.json", codes: [] },
-    metadata: {
-      goNoGo: {
-        order: 2,
-        oracle: "immutable-upstream",
-        status: "pass",
-        notes: [
-          "type-only declaration-file re-exports are filtered",
-          "package-owned module-resolution operation is implemented",
-          "module import metadata is preserved",
-        ],
-      },
-    },
+    metadata: {},
   }),
   fixture("module-dts-type-star", "input.d.ts", ["02"], "generated", {
     conformance: false,
     metadata: {
       expectedExports: ["RuntimeValue", "Value", "OtherValue"],
-      goNoGo: {
-        order: 3,
-        oracle: "public-seam-regression",
-        status: "pass",
-        notes: [
-          "export type * from ./source.js resolves to source.d.ts",
-          "type exports are retained and runtime exports are filtered from the star",
-        ],
-      },
     },
   }),
   fixture("module-export-forms", "input.tsx", ["13", "14"], "reviewed-divergence", {
@@ -502,30 +462,12 @@ export const fixtureEvidenceCatalog = [
     conformance: false,
     metadata: {
       expectedExports: ["RuntimeValue", "AliasValue"],
-      goNoGo: {
-        order: 4,
-        oracle: "public-seam-regression",
-        status: "pass",
-        notes: [
-          "non-relative path mapping resolves through the compiler symbol graph",
-          "explicit runtime re-export remains visible",
-        ],
-      },
     },
   }),
   fixture("module-resolution-package", "input.d.ts", ["02"], "generated", {
     conformance: false,
     metadata: {
       expectedExports: ["RuntimeValue", "PackageValue"],
-      goNoGo: {
-        order: 5,
-        oracle: "public-seam-regression",
-        status: "pass",
-        notes: [
-          "package exports resolve through the compiler symbol graph",
-          "explicit runtime re-export remains visible",
-        ],
-      },
     },
   }),
   fixture("namespace-callback-alias-resolution", "input.tsx", ["10", "14"], "immutable-upstream", {
@@ -914,7 +856,6 @@ function validateSeamOnlyRecord(record: FixtureEvidenceRecord): void {
     metadata.issueViews === undefined &&
     metadata.warningOrder === undefined &&
     metadata.expectedExports === undefined &&
-    metadata.goNoGo === undefined &&
     metadata.reactAudit === undefined;
   const valid =
     hasNoOracle &&
@@ -988,9 +929,6 @@ export function validateFixtureEvidenceCatalog(catalog: readonly FixtureEvidence
     }
     if (record.evidence.metadata.expectedExports !== undefined && !record.issues.includes("02")) {
       throw new Error(`Fixture ${record.id} has supplemental exports without Issue 02 membership.`);
-    }
-    if (record.evidence.metadata.goNoGo !== undefined && !record.issues.includes("02")) {
-      throw new Error(`Fixture ${record.id} has go/no-go evidence without Issue 02 membership.`);
     }
     if (record.evidence.metadata.reactAudit !== undefined && !record.issues.includes("12")) {
       throw new Error(`Fixture ${record.id} has React audit evidence without Issue 12 membership.`);

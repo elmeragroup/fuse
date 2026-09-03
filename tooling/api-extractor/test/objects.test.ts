@@ -191,18 +191,24 @@ describe("Issue 03 object APIs, documentation, enums, and provenance", () => {
       expect.arrayContaining([
         expect.objectContaining({
           path: ["Options"],
-          declarations: [expect.objectContaining({ path: "test/fixtures/object-api-documentation/input.ts" })],
+          declarations: [
+            expect.objectContaining({ path: "test/fixtures/object-api-documentation/input.ts" }),
+          ],
           synthesized: false,
         }),
         expect.objectContaining({
           path: ["Options", "properties", "label"],
-          declarations: [expect.objectContaining({ path: "test/fixtures/object-api-documentation/input.ts" })],
+          declarations: [
+            expect.objectContaining({ path: "test/fixtures/object-api-documentation/input.ts" }),
+          ],
           synthesized: false,
           readonly: true,
         }),
         expect.objectContaining({
           path: ["use", "callSignatures", "0", "parameters", "options"],
-          declarations: [expect.objectContaining({ path: "test/fixtures/object-api-documentation/input.ts" })],
+          declarations: [
+            expect.objectContaining({ path: "test/fixtures/object-api-documentation/input.ts" }),
+          ],
           synthesized: false,
           defaultInitializer: "{ nested: { id: 1 }, format: String }",
         }),

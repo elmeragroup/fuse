@@ -255,12 +255,3 @@ export const issue02SupplementalFixtures: readonly Issue02SupplementalFixture[] 
           },
         ]
   );
-
-export const issue02GoNoGoFixtures = orderedView(
-  fixtureEvidenceCatalog.flatMap((record) => {
-    const evidence = record.evidence.metadata.goNoGo;
-    return evidence === undefined ? [] : [{ fixture: record.id, ...evidence }];
-  }),
-  "Issue 02 go/no-go fixture view"
-).map(({ order: _order, ...entry }) => entry);
-export type Issue02GoNoGoFixture = (typeof issue02GoNoGoFixtures)[number];

@@ -23,7 +23,6 @@ export * from "./fixture-plans.ts";
 export * from "./fixture-views.ts";
 
 import type { TimingFixture } from "./fixture-plans.ts";
-import { issue02GoNoGoFixtures } from "./fixture-views.ts";
 import type { Issue02SupplementalFixture } from "./fixture-views.ts";
 
 const TimingTotalsSchema = Schema.Struct({
@@ -82,96 +81,7 @@ export const TimingReportSchema = Schema.Struct({
   decision: DecisionSchema,
 });
 
-/**
- * The checked-in go/no-go artifact is a fixed gate. Keep its seven exact
- * discriminants in the decoder, then validate the complete decoded matrix
- * against issue02GoNoGoFixtures below so metadata cannot silently drift.
- */
-const GoNoGoFixtureMatrixSchema = Schema.Tuple([
-  Schema.Struct({
-    fixture: Schema.Literal("alias-with-explicit-type-args"),
-    oracle: Schema.Literal("immutable-upstream"),
-    status: Schema.Literal("pass"),
-  }),
-  Schema.Struct({
-    fixture: Schema.Literal("mapped-alias-two-hop"),
-    oracle: Schema.Literal("immutable-upstream"),
-    status: Schema.Literal("pass"),
-  }),
-  Schema.Struct({
-    fixture: Schema.Literal("module-dts-declarations-and-reexports"),
-    oracle: Schema.Literal("immutable-upstream"),
-    status: Schema.Literal("pass"),
-    notes: Schema.NonEmptyArray(EvidenceTextSchema),
-  }),
-  Schema.Struct({
-    fixture: Schema.Literal("module-dts-type-star"),
-    oracle: Schema.Literal("public-seam-regression"),
-    status: Schema.Literal("pass"),
-    notes: Schema.NonEmptyArray(EvidenceTextSchema),
-  }),
-  Schema.Struct({
-    fixture: Schema.Literal("module-resolution-alias"),
-    oracle: Schema.Literal("public-seam-regression"),
-    status: Schema.Literal("pass"),
-    notes: Schema.NonEmptyArray(EvidenceTextSchema),
-  }),
-  Schema.Struct({
-    fixture: Schema.Literal("module-resolution-package"),
-    oracle: Schema.Literal("public-seam-regression"),
-    status: Schema.Literal("pass"),
-    notes: Schema.NonEmptyArray(EvidenceTextSchema),
-  }),
-  Schema.Struct({
-    fixture: Schema.Literal("base-ui-component"),
-    oracle: Schema.Literal("reviewed-ts7-exact"),
-    status: Schema.Literal("pass"),
-    divergenceRecord: EvidenceTextSchema,
-    warningOracle: EvidenceTextSchema,
-  }),
-]);
-
-export const GoNoGoArtifactSchema = Schema.Struct({
-  issue: Schema.Literal("02-prove-compiler-boundary"),
-  decision: DecisionSchema,
-  decisionRationale: Schema.String,
-  runtime: Schema.Struct({
-    node: Schema.String,
-    compiler: Schema.String,
-    upstreamOracleCommit: Schema.String,
-  }),
-  fixtureMatrix: GoNoGoFixtureMatrixSchema,
-  stopConditions: Schema.Struct({
-    backendLeakage: Schema.Struct({
-      status: BoundaryStatusSchema,
-      evidence: EvidenceTextSchema,
-    }),
-    durableContractLeakage: Schema.Struct({
-      status: BoundaryStatusSchema,
-      evidence: EvidenceTextSchema,
-    }),
-    unacceptableIpcGrowth: Schema.Struct({
-      status: TimingStatusSchema,
-      threshold: Schema.String,
-      evidence: EvidenceTextSchema,
-    }),
-  }),
-  verification: Schema.Struct({
-    fixtureTypecheck: Schema.String,
-    publicSeamConformance: Schema.String,
-    timingEvidence: Schema.String,
-    upstreamOraclePreserved: Schema.Boolean,
-  }),
-  scopeEvidence: Schema.Struct({
-    generic: Schema.String,
-    typeOperator: Schema.String,
-    react: Schema.String,
-  }),
-  residualRisk: Schema.NonEmptyArray(EvidenceTextSchema),
-});
-
 export type TimingReport = Schema.Schema.Type<typeof TimingReportSchema>;
-export type GoNoGoArtifact = Schema.Schema.Type<typeof GoNoGoArtifactSchema>;
 
 type NodeTimingCounters = {
   readonly nodesFetched: number;
@@ -355,23 +265,8 @@ export function decodeTimingReport(value: Schema.Json): TimingReport {
   return Schema.decodeUnknownSync(TimingReportSchema)(value);
 }
 
-export function decodeGoNoGoArtifact(value: Schema.Json): GoNoGoArtifact {
-  return Schema.decodeUnknownSync(GoNoGoArtifactSchema)(value);
-}
-
-/** Validate every decoded fixture-matrix field against the canonical gate. */
-export function validateGoNoGoFixtureMatrix(matrix: GoNoGoArtifact["fixtureMatrix"]): void {
-  if (JSON.stringify(matrix) !== JSON.stringify(issue02GoNoGoFixtures)) {
-    throw new Error("The Issue 02 go/no-go fixture matrix is stale or incomplete.");
-  }
-}
-
 export function readTimingReport(path: string): TimingReport {
   return decodeTimingReport(decodeJson(path));
-}
-
-export function readGoNoGoArtifact(path: string): GoNoGoArtifact {
-  return decodeGoNoGoArtifact(decodeJson(path));
 }
 
 export function fixtureInputPath(definition: TimingFixture | Issue02SupplementalFixture): string {

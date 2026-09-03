@@ -24,7 +24,6 @@ import {
   deriveConformancePlan,
   deriveIssueMembershipPlan,
   deriveWarningEvidencePlan,
-  issue02GoNoGoFixtures,
   issue02SupplementalFixtures,
   issue03UpstreamFixtures,
   issue04CanonicalizationFixtures,
@@ -141,7 +140,6 @@ describe("fixture evidence catalog", () => {
     expect({
       issue02Timing: issue02TimingFixtures.map((entry) => entry.fixture),
       issue02Supplemental: issue02SupplementalFixtures.map((entry) => entry.fixture),
-      issue02GoNoGo: issue02GoNoGoFixtures.map((entry) => entry.fixture),
       issue03: issue03UpstreamFixtures,
       issue04: issue04CanonicalizationFixtures.length,
       issue05: issue05ContainerFixtures.length,
@@ -168,15 +166,6 @@ describe("fixture evidence catalog", () => {
         "base-ui-component",
       ],
       issue02Supplemental: ["module-dts-type-star", "module-resolution-alias", "module-resolution-package"],
-      issue02GoNoGo: [
-        "alias-with-explicit-type-args",
-        "mapped-alias-two-hop",
-        "module-dts-declarations-and-reexports",
-        "module-dts-type-star",
-        "module-resolution-alias",
-        "module-resolution-package",
-        "base-ui-component",
-      ],
       issue03: [
         { fixture: "type-object-shape-resolution", file: "input.ts" },
         { fixture: "enum-members-values-and-docs", file: "input.ts" },
