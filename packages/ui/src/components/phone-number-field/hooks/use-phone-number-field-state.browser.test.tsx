@@ -7,14 +7,19 @@ import { page, userEvent } from "vitest/browser";
 
 import { renderThemed } from "../../../../test/themed-browser-render";
 import { usePhoneNumberFieldState } from "./use-phone-number-field-state";
+import type { UsePhoneNumberFieldStateOptions } from "./use-phone-number-field-state";
 
 /**
  * `AsYouType#input` runs exactly once per libphonenumber parse: the private engine builds
  * one `AsYouType` per `parsePhoneNumber` call, feeds it the number, and nothing else in
  * the hook touches the parser. Patching the shared prototype counts real parses without
- * mocking the module. The hook used to run up to three per controlled keystroke — the
- * detection pass, the emitted output, and the rendered display value — and
- * phone-number-field.md §8.16 fixes the budget at one.
+ * mocking the module.
+ *
+ * The budget is per-path, not one number (phone-number-field.md §8.16): a keystroke costs
+ * one parse, a paste that carries an international prefix costs three (two in the
+ * detection pass, one for the emitted output), and a country change costs one. The figures
+ * below are the whole claim; before this ticket the same paths cost six, and between four
+ * and thirty-two for eight keystrokes depending on `outputFormat`/`international`.
  *
  * The hook needs a React renderer that runs effects, which the node `unit` project has no
  * dependency for, so this behavioural unit test on the hook alone lives in the `browser`
@@ -40,22 +45,45 @@ afterEach(() => {
   AsYouType.prototype.input = realInput;
 });
 
+type ProbeOptions = Omit<UsePhoneNumberFieldStateOptions, "locale" | "value" | "onChange">;
+
 /** The controlled wiring PhoneNumberField itself uses: the emitted value comes straight back in. */
-function ControlledProbe(): ReactElement {
+function ControlledProbe({
+  options = {},
+  onSelectSweden,
+}: {
+  options?: ProbeOptions;
+  onSelectSweden?: (select: (code: "SE") => void) => void;
+}): ReactElement {
   const [value, setValue] = useState("");
-  const phone = usePhoneNumberFieldState({ value, onChange: setValue, locale: "en-US" });
+  const phone = usePhoneNumberFieldState({ ...options, value, onChange: setValue, locale: "en-US" });
+  onSelectSweden?.(phone.selectCountry);
   return (
     <input
       aria-label="Number"
       value={phone.displayValue}
       onChange={(event) => phone.handleInputChange(event.currentTarget.value)}
+      onPaste={phone.handlePaste}
     />
   );
 }
 
+function numberInput(): HTMLInputElement {
+  const element = page.getByRole("textbox", { name: "Number", exact: true }).element();
+  if (!(element instanceof HTMLInputElement)) {
+    throw new Error("expected the probe input");
+  }
+  return element;
+}
+
 describe("usePhoneNumberFieldState parse budget", () => {
-  it("parses once per keystroke while the controlled value echoes back", async () => {
-    renderThemed(<ControlledProbe />);
+  it.each([
+    ["default e164", {}],
+    ["outputFormat national", { outputFormat: "national" } as const],
+    ["international", { international: true } as const],
+    ["formatOnType", { formatOnType: true } as const],
+  ])("parses once per keystroke in %s, while the controlled value echoes back", async (_name, options) => {
+    renderThemed(<ControlledProbe options={options} />);
     const input = page.getByRole("textbox", { name: "Number", exact: true });
     expect(parses, "mount must not parse an empty value").toBe(0);
 
@@ -64,7 +92,38 @@ describe("usePhoneNumberFieldState parse budget", () => {
       await userEvent.type(input, digit);
       expect(parses, `after ${index + 1} keystroke(s)`).toBe(index + 1);
     }
+  });
 
-    expect(input.element()).toHaveProperty("value", digits);
+  it("costs three parses for a paste that carries an international prefix", async () => {
+    renderThemed(<ControlledProbe />);
+    const input = numberInput();
+    input.focus();
+
+    const clipboard = new DataTransfer();
+    clipboard.setData("text/plain", "+46701234567");
+    input.dispatchEvent(
+      new ClipboardEvent("paste", { bubbles: true, cancelable: true, clipboardData: clipboard })
+    );
+
+    await expect.poll(() => numberInput().value).toBe("701234567");
+    // Two in the detection pass — the country probe and the national-number extraction —
+    // and one for the emitted output, which the render then reads from the same cache.
+    expect(parses).toBe(3);
+  });
+
+  it("costs one parse for a country change", async () => {
+    let selectCountry: ((code: "SE") => void) | undefined;
+    renderThemed(
+      <ControlledProbe
+        options={{ preserveOnCountryChange: true }}
+        onSelectSweden={(select) => {
+          selectCountry = select;
+        }}
+      />
+    );
+    await userEvent.type(page.getByRole("textbox", { name: "Number", exact: true }), "41234567");
+    parses = 0;
+    selectCountry?.("SE");
+    await expect.poll(() => parses).toBe(1);
   });
 });

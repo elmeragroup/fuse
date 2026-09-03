@@ -1,10 +1,11 @@
 import { useRef, useState } from "react";
-import type { ReactNode } from "react";
+import type { ReactElement, ReactNode } from "react";
 
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import { PhoneNumberField } from "@elmeragroup/ui/phone-number-field";
+import type { PhoneNumberFieldProps } from "@elmeragroup/ui/phone-number-field";
 
 import "../../../dist/styles.css";
 import {
@@ -396,6 +397,18 @@ describe("PhoneNumberField", () => {
     expect(island.contains(listboxNamed())).toBe(true);
   });
 
+  it("keeps the list clamped inside the popup instead of growing it to the full country list", async () => {
+    renderField(<PhoneNumberField label="Mobile" />);
+    const list = await openPicker();
+    // Before the picker composed `Combobox.List`, its own clamp was written
+    // `max-h-[min(300px,calc(var(--available-height)-2.75rem))]`, and CSS `calc` requires
+    // whitespace around `-`: the whole `min()` was invalid, the declaration was dropped, the
+    // list never scrolled, and the popup grew to the height of every country row
+    // (phone-number-field.md §8.15).
+    expect(list.scrollHeight).toBeGreaterThan(list.clientHeight);
+    expect(list.clientHeight).toBeLessThan(window.innerHeight);
+  });
+
   it("paints the within ring on the group for keyboard focus, at both densities", async () => {
     renderField(<PhoneNumberField label="Mobile" />);
     await assertWithinKeyboardFocusRingAtBothDensities(
@@ -420,5 +433,48 @@ describe("PhoneNumberField", () => {
     expect(before.matches(":focus-visible")).toBe(false);
     await userEvent.click(buttonNamed("Select country"));
     expectNoFocusRing(inputGroupRoot(), "mouse focus on the country trigger must not paint the group ring");
+  });
+});
+
+/**
+ * The controlled configurations, which had no coverage before this ticket: the emitted
+ * value is fed straight back in as `value`, which is what makes the sync effect run on the
+ * hook's own output (phone-number-field.md §8.16).
+ */
+function ControlledField(props: Omit<PhoneNumberFieldProps, "value" | "onChange">): ReactElement {
+  const [value, setValue] = useState("");
+  return <PhoneNumberField {...props} value={value} onChange={setValue} />;
+}
+
+describe("PhoneNumberField controlled value", () => {
+  it("emits the national format without rewriting what was typed", async () => {
+    renderField(<ControlledField label="Mobile" name="phone" outputFormat="national" />);
+    await userEvent.fill(page.getByRole("textbox", { name: "Mobile", exact: true }), "41234567");
+    await expect.poll(() => hiddenNamed("phone").value).toBe("41 23 45 67");
+    expect(textboxNamed("Mobile")).toHaveProperty("value", "41234567");
+  });
+
+  it("shows what was entered in international mode and stores the full number", async () => {
+    renderField(<ControlledField label="Mobile" name="phone" international />);
+    await userEvent.fill(page.getByRole("textbox", { name: "Mobile", exact: true }), "41234567");
+    await expect.poll(() => hiddenNamed("phone").value).toBe("+4741234567");
+    // §8.16: the display follows the entry in controlled and uncontrolled use alike. Before
+    // this ticket a controlled field rewrote itself to "+4741234567" once the number became
+    // valid, and an uncontrolled one never did.
+    expect(textboxNamed("Mobile")).toHaveProperty("value", "41234567");
+  });
+
+  it("keeps a typed international prefix in international mode", async () => {
+    renderField(<ControlledField label="Mobile" name="phone" international />);
+    await userEvent.fill(page.getByRole("textbox", { name: "Mobile", exact: true }), "+4741234567");
+    await expect.poll(() => hiddenNamed("phone").value).toBe("+4741234567");
+    expect(textboxNamed("Mobile")).toHaveProperty("value", "+4741234567");
+  });
+
+  it("formats as you type when formatOnType is set", async () => {
+    renderField(<ControlledField label="Mobile" name="phone" formatOnType />);
+    await userEvent.fill(page.getByRole("textbox", { name: "Mobile", exact: true }), "41234567");
+    await expect.poll(() => hiddenNamed("phone").value).toBe("+4741234567");
+    expect(textboxNamed("Mobile")).toHaveProperty("value", "41 23 45 67");
   });
 });

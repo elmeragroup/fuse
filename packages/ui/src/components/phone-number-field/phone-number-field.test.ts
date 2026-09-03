@@ -1,4 +1,5 @@
 import { LocalizedStringFormatter } from "@internationalized/string";
+import { getCountries as getMetadataCountries } from "libphonenumber-js/core";
 import type { MetadataJson } from "libphonenumber-js/core";
 import { describe, expect, it } from "vitest";
 
@@ -62,21 +63,24 @@ describe("phone-number-field dictionary", () => {
 });
 
 describe("phone-number-field picker set", () => {
-  it("never includes AC, BQ, EH, TA or the 28 excluded product countries", () => {
-    const countries = getCountries();
-    const codes = countries.map((country) => country.code);
+  it("is exactly libphonenumber's countries, minus the flag gap, minus the product exclusions", () => {
+    const codes = getCountries().map((country) => country.code);
+    // Derived from libphonenumber and the flag manifest directly, so this is a two-way
+    // guard: a code wrongly added to the engine's exclusion set disappears from `codes`
+    // while staying in `expected`, and a code wrongly kept shows up the other way round.
+    // Counting the test's own literal instead would only restate it (ADR 0008).
+    const expected = getMetadataCountries(defaultMetadata).filter(
+      (code) =>
+        Object.hasOwn(flagAssets, code) &&
+        !EXCLUDED_PRODUCT_COUNTRY_CODES.some((excluded) => excluded === code)
+    );
+    expect(codes).toEqual(expected);
     expect(codes).toContain("NO");
     expect(codes).toContain("SE");
     expect(codes).toContain("FI");
-    expect(EXCLUDED_PRODUCT_COUNTRY_CODES).toHaveLength(28);
     for (const code of FLAG_GAP_COUNTRY_CODES) {
       expect(codes, code).not.toContain(code);
-    }
-    for (const code of EXCLUDED_PRODUCT_COUNTRY_CODES) {
-      expect(codes, code).not.toContain(code);
-    }
-    for (const country of countries) {
-      expect(Object.hasOwn(flagAssets, country.code), country.code).toBe(true);
+      expect(Object.hasOwn(flagAssets, code), code).toBe(false);
     }
   });
 
