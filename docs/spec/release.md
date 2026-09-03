@@ -69,3 +69,16 @@ The following infrastructure work is tracked as an **open HITL task** (027 — n
 6. **pkg-pr-new**: enable for per-PR preview installs (§3).
 
 Completion is recorded on the task ticket (org/repo URLs, owner accounts, deviations). Until items 1–4 are done, the release workflow cannot publish; until 5–6 are done, docs previews and per-PR installs are unavailable — neither blocks spec-driven implementation work.
+
+## 8 Post-merge sequence for the v1 integration merge
+
+_(added 2026-09-03 — this §8 entry is the release-sequence record for the v1 merge; §2 stays the general design.)_
+
+The v1 branch merges before the §7 org setup exists. The order below is what protects a repository whose §2 machinery is live but whose §7 accounts are not.
+
+1. **Merge commit, no squash, no rebase.** The branch carries 55 one-component commits and a per-component changeset each; squashing collapses that granularity into one subject and detaches the changesets from the code they describe, and rebasing rewrites a 119-commit shared branch for no gain. Two history artefacts are left as-is and recorded here rather than rewritten: the `4d54cac` / `64867fd` add-then-remove pair (+954 then −954 `plans/` files), and the non-conventional squash subject on `9a0a433`.
+2. **The Version Packages PR opens on its own and is left open.** `changesets/action` opens it as soon as the merge lands and keeps it up to date; it is bot-owned and consuming it is a deliberate act, not maintenance. **Do not merge it until the 027 org-setup items 1–4 in §7 are done.** Merging it earlier bumps `@elmeragroup/ui` to `0.1.0` and writes `CHANGELOG.md` against a package that has no npm org, no Trusted Publisher binding, and no publish workflow — a version number burned with nothing on the registry behind it.
+3. **No publish workflow exists yet.** `version-packages.yml` opens the Version Packages PR and nothing else; the §2.3 "publish on merge" step has no workflow implementing it. It arrives with 027, together with the §5 publish gates and the §6 OIDC binding. Until then the truthful statement, and the one the docs site makes, is that publishing is designed, not active.
+4. **Effect RC → stable is a tracked follow-up**, not part of this merge: see [roadmap](roadmap.md) §12.
+
+Two v1 tidy-ups that are not part of this sequence: the tracked `.scratch/poc/remaining-implementation.md` deletion is its own commit on `main` after the merge, never folded into it (verified 2026-09-03: no `.scratch/` path is tracked any more, so this is done); and the pre-v1 `wayfinder/` planning tree removal is recorded under [Provenance](README.md) in the spec README, not re-litigated here.

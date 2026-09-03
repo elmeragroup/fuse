@@ -51,6 +51,10 @@
       "cache": false,
       "persistent": true
     },
+    // Aggregate leaf. Every real gate below is its own task, so a package's own `ci:checks`
+    // script has nothing left to run: `@elmeragroup/ui` defines it as a self-describing no-op
+    // that exists only so `turbo run ci:checks` fans out to this dependency list. Only
+    // `@elmeragroup/api-extractor` has private gates of its own to run under the leaf.
     "ci:checks": {
       "dependsOn": [
         "//#lint",

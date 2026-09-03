@@ -86,3 +86,13 @@ Directional chapter for `@elmeragroup/ui`: work deliberately deferred out of v1,
 - **Trigger**: a consuming product committing to a charted surface, with `recharts` accepted as an optional peer.
 - **Already prepared**: the component spec, `--chart-1..8` tokens, and the exports-codegen deferred-entry seam (`DEFERRED_ENTRIES` in `packages/ui/scripts/entries.ts`). No docs page or nav entry until the component exists.
 - **Completion criteria**: `chart.ts` source; `recharts` in published optional-peer ranges; size-limit row excluding recharts; docs page + §10 demos; `DEFERRED_ENTRIES` empty or without `chart`.
+
+## 12 Effect 4 RC → stable
+
+_(added 2026-09-03 — tracked here as the standing follow-up named by [release](release.md) §8.4.)_
+
+- **What**: move `effect` off the pinned prerelease `4.0.0-rc.111` onto the first stable `4.x`, and delete the `minimumReleaseAgeExclude` entry that the pin requires from `pnpm-workspace.yaml`.
+- **Why deferred**: the Effect-based API extractor (`tooling/api-extractor`, [ADR 0007](../adr/0007-docs-api-extraction-pipeline.md)) and the docs generator both build on Effect 4 APIs; no stable 4.x exists yet. The repo-wide `minimumReleaseAge: 4320` (72 hours) supply-chain guard cannot admit a prerelease, so the pin buys itself a single named exclusion — the **only** entry in that list, and the reason the exception is temporary rather than a policy hole.
+- **Trigger**: Effect 4.0.0 stable on the registry, aged past the 72-hour guard on its own.
+- **Already prepared**: `effect` is a catalog entry (`pnpm-workspace.yaml`), so the version moves in one place for both consumers (`tooling/api-extractor`, `apps/docs`); the extractor's conformance, timing and fixture suites are the regression net for the upgrade.
+- **Completion criteria**: `effect` at a stable `4.x` in the catalog; `minimumReleaseAgeExclude` removed entirely (not merely emptied of this entry) unless a new exception is separately justified; `pnpm --filter @elmeragroup/api-extractor check:all` green on Node 24.

@@ -56,6 +56,28 @@ Hard-to-reverse trade-offs are recorded as ADRs in [../adr/](../adr/) (0001 toke
 
 References supply code and immutable source artwork only. They do **not** decide package paths, public API, tokens, focus styling, localization, client boundaries, dependency policy, or test expectations; this spec does. Lifted files retain applicable license/copyright notices, and no `.ref/` path may appear in package source, generated declarations, or the packed artifact.
 
+## Provenance
+
+_(added 2026-09-03; pairs with [release](release.md) §8, the post-merge sequence for the same merge)_
+
+The pre-v1 planning record — `wayfinder/MAP.md`, `wayfinder/TRACKER.md`, and the `tickets/`, `research/`, `prototypes/` trees — was **removed from the working tree when v1 was reached** (`290fd78 chore: remove the pre-v1 wayfinder planning tree`). Nothing was recreated in its place: MAP and TRACKER do not come back, and new decisions land in a chapter's §8 or an ADR, never in a revived tracker.
+
+Two numbering schemes appear in this repository's history, and they are not the same scheme:
+
+- **`wayfinder ticket NNN`** — the pre-v1 planning tickets, numbered `001`–`028`, cited in chapter `Sources:` lines and in commit subjects from before v1. These are provenance pointers only; they never override the normative layer. One citation is outside that range and resolves to no ticket file: `wayfinder ticket 072` in [roadmap](roadmap.md) §11. The ruling it carries is dated and self-contained on its line, so it stands on its own; the number does not.
+- **Waves** — the implementation ordering (`waves 1–3` internals/assets/spine, then `wave 4`…`wave 7` component groups, `wave 9` deferred). Changeset filenames carry it (`.changeset/wave-5-table.md`), as do commit subjects from the implementation phase.
+
+To read a `wayfinder ticket NNN` citation back out of git history:
+
+```sh
+git log --oneline -- wayfinder/            # every commit that touched the tree, ending at its removal
+git show 290fd78^:wayfinder/TRACKER.md     # the tracker as it stood immediately before removal
+git ls-tree --name-only 290fd78^:wayfinder/tickets   # the 28 ticket files, named NNN-<slug>.md
+git show 290fd78^:wayfinder/tickets/014-release-versioning-pipeline.md
+```
+
+`290fd78^` is the last commit at which the tree exists; every path above resolves there. Post-v1 planning artifacts live in the gitignored `.scratch/` tree instead and are deliberately untracked, so a `ticket NN` in a recent commit subject resolves against that working-tree record rather than git history.
+
 ## Out of scope (ruled, not deferred)
 
 Migration plans for the two existing OrderModule apps — ruled out of the effort entirely; the spec carries no compat assessment. Everything else deferred lives in [roadmap.md](roadmap.md) with its trigger.

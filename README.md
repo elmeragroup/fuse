@@ -4,16 +4,82 @@ Whitelabel React components for Elmera Group's energy brands and corporate Elmer
 
 Density is a document-level control-metric axis, independent of theme. Variant supplies only the deployment default (`internal → dense`, `external → comfortable`). Brand is host-owned: spread `themeAttributes(theme)` on `<html>`, then stamp density with `densityAttributes(defaultDensityForVariant(theme.variant))`.
 
-## Develop
+The normative specification lives in [docs/spec/](docs/spec/README.md); the glossary is [CONTEXT.md](CONTEXT.md).
 
-Node `>=24.13 <25`, pnpm 11.
+## Prerequisites
+
+- **Node**: `>=24.13 <25` — the version in [`.node-version`](.node-version) (`24.13.0`). The build, codegen and docs scripts run TypeScript directly through Node's type-stripping flags, so an older major fails.
+- **pnpm 11** — `packageManager` pins the exact version; use Corepack.
+- `.ref/` reference checkouts are needed only to lift new reference implementations or artwork ([docs/spec/README.md](docs/spec/README.md)). They are not needed to build, test, or run the repo.
 
 ```sh
 pnpm install
 pnpm dev
-pnpm lint
-pnpm test
-pnpm test:browser
 ```
 
-Docs: `pnpm --filter docs dev` → http://localhost:3000.
+Docs: `pnpm --filter docs dev` → http://localhost:3000. Playground: `pnpm --filter playground dev` → http://localhost:3001.
+
+## Scripts
+
+Root scripts fan out through turbo unless noted.
+
+| Script                  | Does                                                                                           |
+| ----------------------- | ---------------------------------------------------------------------------------------------- |
+| `pnpm build`            | Builds every package (`@elmeragroup/ui` via tsdown, the Next apps, static-theme)               |
+| `pnpm dev`              | Runs the dev servers                                                                           |
+| `pnpm lint`             | `oxlint . --deny-warnings` over the tree, including the two local plugins                      |
+| `pnpm lint:fix`         | The same with `--fix`                                                                          |
+| `pnpm format`           | `oxfmt` write; `pnpm format:check` is the CI form                                              |
+| `pnpm test`             | Unit tests (vitest) in every package                                                           |
+| `pnpm test:browser`     | Browser-mode vitest projects                                                                   |
+| `pnpm test:types`       | Type-level tests (`*.test-d.tsx`)                                                              |
+| `pnpm test:repo-policy` | Root-only vitest project in [`test/`](test) — merge-workflow shape, lint script, README claims |
+| `pnpm type-check`       | `tsc --noEmit` per package                                                                     |
+| `pnpm gen`              | plop scaffolder — new component (source, entry facade, tests, demos)                           |
+| `pnpm changeset`        | Adds a changeset; see [Contribution flow](#contribution-flow)                                  |
+| `pnpm ci:checks`        | The merge gate locally: `oxfmt --check` then `turbo run ci:checks`                             |
+
+Package-scoped scripts worth knowing:
+
+| Script                                           | Does                                                                         |
+| ------------------------------------------------ | ---------------------------------------------------------------------------- |
+| `pnpm --filter @elmeragroup/ui generate:exports` | Regenerates the root barrel and runtime export names from the entry facades  |
+| `pnpm --filter @elmeragroup/ui pack`             | Produces the single tarball that `package:check` and `size-limit` consume    |
+| `pnpm --filter @elmeragroup/ui package:check`    | publint / attw / exports-map / emitted-directive checks against that tarball |
+| `pnpm --filter @elmeragroup/ui size-limit`       | Bundle budgets against that tarball                                          |
+| `pnpm --filter docs generate`                    | Regenerates the docs API tables and each component's committed `api.json`    |
+| `pnpm --filter docs test:shadow`                 | Compares the api-extractor shadow pipeline against the committed snapshot    |
+| `pnpm --filter docs shadow:update`               | Rewrites `apps/docs/test/api-shadow.snapshot.json`                           |
+
+`@elmeragroup/ui` has no work of its own to do under `ci:checks`: its gates are separate turbo tasks that the aggregate already depends on. Its `ci:checks` script is therefore a no-op anchor that lets `turbo run ci:checks` fan out, and it says so; the same note is in [`turbo.json`](turbo.json).
+
+## Package map
+
+| Path                       | Name                                   | What it is                                                                               |
+| -------------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `packages/ui`              | `@elmeragroup/ui`                      | The one published package: components, `/theme`, `/icons`, `/illustrations`, CSS entries |
+| `apps/docs`                | `docs`                                 | Next docs site, generated API reference, demo corpus, llms.txt                           |
+| `apps/playground`          | `playground`                           | Next scratch app for trying components against the built package                         |
+| `apps/static-theme`        | `static-theme`                         | Vite host proving standalone-CSS mode and first-paint theme attributes                   |
+| `tooling/api-extractor`    | `@elmeragroup/api-extractor`           | Effect-based API extractor behind the docs API pipeline                                  |
+| `tooling/oxlint-plugin`    | `@elmeragroup/oxlint-plugin`           | Repo lint rules (density metrics, facade grammar, react-aria quarantine, …)              |
+| `tooling/oxlint-anti-slop` | `@elmeragroup/oxlint-plugin-anti-slop` | The anti-slop rule set                                                                   |
+| `tooling/typescript`       | `@elmeragroup/typescript-config`       | Shared tsconfig bases                                                                    |
+
+## Contribution flow
+
+1. **Scaffold** — `pnpm gen` for a new component; it writes the source, the entry facade, test files and demo stubs.
+2. **Implement** against the component's chapter in [docs/spec/components/](docs/spec/components/), starting from [conventions.md](docs/spec/components/conventions.md). Every deliberate difference from a reference is a §8 Divergence entry in that chapter, dated, landing in the same change as the code.
+3. **Tests and demos** ship in that same change (§9 tests, §10 demos).
+4. **Changeset** — `pnpm changeset` for anything user-facing. Internal-only PRs (CI, docs site, tests) carry the `no-changeset` GitHub label instead. Never edit an existing changeset to move a gate; edit one only to correct what it says shipped.
+5. **Gate** — `pnpm ci:checks` green locally before review. The merge workflow runs the same stages plus the label-aware changeset check.
+
+**After rebasing, regenerate the generated artifacts before running the gate**: `pnpm --filter docs generate` (the committed per-component `api.json` files) and `pnpm --filter docs shadow:update` (the api-extractor shadow snapshot). Both are committed files derived from the library's public API, so a rebase that picks up an API change leaves them stale and fails `docs#test:shadow` on work that is otherwise correct.
+
+## Release
+
+Merging to `main` accumulates changesets into a bot-owned Version Packages PR; nothing publishes yet. The designed flow and the publish gates are [docs/spec/release.md](docs/spec/release.md) §2 and §5; the post-merge sequence for the v1 merge — including which PR must not be merged before the npm/GitHub org setup lands — is §8 of the same chapter.
+
+## Provenance
+
+The pre-v1 `wayfinder/` planning tree was removed when v1 was reached. Commit subjects carrying a bare `ticket NNN` point into it; [docs/spec/README.md](docs/spec/README.md) explains how to read them back out of git history.
