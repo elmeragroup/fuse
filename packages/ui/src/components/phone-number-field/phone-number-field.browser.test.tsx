@@ -12,9 +12,9 @@ import {
   expectNoFocusRing,
 } from "../../../test/assert-focus-ring";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
+import { EXCLUDED_PRODUCT_COUNTRY_CODES, FLAG_GAP_COUNTRY_CODES } from "../../../test/phone-picker-contract";
 import { renderThemed, textboxNamed } from "../../../test/themed-browser-render";
 import { flagAssets } from "../../flags";
-import { PRODUCT_EXCLUDED_COUNTRY_CODES, UNRESOLVED_LIBPHONENUMBER_FLAG_GAP } from "./phone-engine";
 
 const SELECT_COUNTRY_COPY = {
   "nb-NO": "Velg land",
@@ -347,10 +347,10 @@ describe("PhoneNumberField", () => {
     await openPicker();
     const codes = optionFlagCodes();
     expect(codes.length).toBeGreaterThan(10);
-    for (const code of UNRESOLVED_LIBPHONENUMBER_FLAG_GAP) {
+    for (const code of FLAG_GAP_COUNTRY_CODES) {
       expect(codes, code).not.toContain(code);
     }
-    for (const code of PRODUCT_EXCLUDED_COUNTRY_CODES) {
+    for (const code of EXCLUDED_PRODUCT_COUNTRY_CODES) {
       expect(codes, code).not.toContain(code);
     }
     for (const code of codes) {

@@ -5,7 +5,7 @@
 - **Canonical name:** `PhoneNumberField`
 - **Export path:** `@elmeragroup/ui/phone-number-field` (also re-exported from `@elmeragroup/ui`) — exports `PhoneNumberField` and `PhoneNumberFieldProps` only. `Flag` and `usePhoneNumberFieldState` stay package-private.
 - **RSC:** client — owns input/country state, effects, callbacks, focus restoration, and `Intl.DisplayNames`
-- **Tier:** labeled composite over base-ui Field + InputGroup plus direct `@base-ui/react` Combobox primitives; it does not compose the public library `Combobox`. Phone logic is vendored package-private code over `libphonenumber-js`, with no `@elmeragroup/lib` dependency
+- **Tier:** labeled composite over base-ui Field + InputGroup. The country popup is the library `Combobox`'s `Content`/`List`/`Item`/`Empty`; `Combobox.Root`, the flag trigger, and the popup's search input stay direct `@base-ui/react` primitives (§8.15, 2026-09-03). Phone logic is vendored package-private code over `libphonenumber-js`, with no `@elmeragroup/lib` dependency
 - **Source of truth:** `.ref/OrderModuleInternalWeb/packages/ui/src/base-ui/phone-number-field/` (`index.ts`, `phone-number-field.tsx`, `flag.tsx`, `hooks/use-phone-number-field-state.ts`)
 
 ## 2 Anatomy
@@ -18,13 +18,11 @@ Field.Root                                (textFieldVariants slot `base` — bor
 │  │  ├─ Combobox.Root (items=countries, value=selectedCountry)
 │  │  │  ├─ InputGroup.Addon (inline-start)
 │  │  │  │  └─ Combobox.Trigger role="button"      — Flag + dial code (tabular-nums)
-│  │  │  └─ Combobox.Portal > Combobox.Positioner (anchor=InputGroup, bottom-start, offset 6)
-│  │  │     └─ Combobox.Popup (bg-popover, w-(--anchor-width) max-w-72)
-│  │  │        ├─ InputGroup > Addon(MagnifyingGlass) + Combobox.Input (named icon import; search)
-│  │  │        ├─ Combobox.Empty (noCountriesFoundText)
-│  │  │        └─ Combobox.List > Combobox.Item per country
-│  │  │           ├─ Combobox.ItemIndicator > Check (named icon import)
-│  │  │           └─ Flag + dial code + localized country name (truncated)
+│  │  │  └─ Combobox.Content (library part: portal + positioner + popup; anchor=InputGroup)
+│  │  │     ├─ InputGroup > Addon(MagnifyingGlass) + raw Combobox.Input (named icon import; search)
+│  │  │     ├─ Combobox.Empty (noCountriesFoundText)
+│  │  │     └─ Combobox.List > Combobox.Item per country (library parts)
+│  │  │        └─ Flag + dial code + localized country name (truncated) + the part's own indicator
 │  │  ├─ InputGroup.Input (visible number input, name=`${name}-display-value`)
 │  │  └─ endContent                                 — when `endContent`
 │  └─ Field.Description (`description`)             — when `description`
@@ -85,11 +83,11 @@ No own recipe. **Borrows the public `textFieldVariants`** slots `base`, `labelCo
 
 ## 5 Consumed tokens
 
-`card` (InputGroup surface per conventions), `input`/`ring`/`error` (InputGroup border/focus/invalid states), `popover` + `popover-foreground` (country popup), `accent` + `accent-foreground` (highlighted item), `muted` (trigger hover/pressed), `muted-foreground` (description, search icon, empty text), `foreground` (addon text; popup `ring-foreground/10`). Radii: popup `rounded-md`, trigger `rounded`, item `rounded-sm`.
+`card` (InputGroup surface per conventions), `input`/`ring`/`error` (InputGroup border/focus/invalid states; since §8.15 also the popup search box's `border-input/30` + `bg-input/30` fill, painted by `Combobox.Content`), `popover` + `popover-foreground` (country popup), `accent` + `accent-foreground` (highlighted item), `muted` (trigger hover/pressed), `muted-foreground` (description, search icon, empty text), `foreground` (addon text; popup `ring-foreground/10`). Radii: popup `rounded-md`, trigger `rounded`, item `rounded-sm`.
 
 ## 6 Data attributes
 
-- **Emitted:** `data-slot="field|field-label|field-description|field-error"` plus InputGroup's slots; the normal Combobox overlay attributes. Portal placement is resolved through the explicit `container` prop/nearest `ThemeScope`, not an overlay data attribute.
+- **Emitted:** `data-slot="field|field-label|field-description|field-error"` plus InputGroup's slots; from the composed library parts (§8.15) `data-slot="combobox-content|combobox-list|combobox-item|combobox-empty"` and `data-chips="true"` on the popup (the flag that tells `Combobox.Content` it is anchored to an external element). Portal placement is resolved through the explicit `container` prop/nearest `ThemeScope`, not an overlay data attribute.
 - **Consumed (base-ui Combobox):** `data-pressed` (trigger active fill), `data-open`/`data-closed` + `data-[side=…]` (popup animation), `data-highlighted`/`data-disabled` (items), `data-empty` (empty state). Popup animation classes use conventions' self-scoped `data-open:`/`data-closed:` custom variants on the popup element.
 
 ## 7 Accessibility
@@ -117,6 +115,10 @@ No own recipe. **Borrows the public `textFieldVariants`** slots `base`, `labelCo
 13. **Private phone engine:** `cleanPhoneInput`, parse/detect/format helpers, constants, country creation, validation types, and `usePhoneNumberFieldState` are copied into package-private modules from the pinned reference. None is re-exported and no `@elmeragroup/lib` type leaks into declarations.
 14. **`PhoneNumberFieldProps` is declared, not derived** (2026-09-03): the type is one object literal — it mirrors `UsePhoneNumberFieldStateOptions` minus the internal `locale` (which comes from `useElmeraGroupUi()`), adds the field props, and re-declares the nine native input keys as `ComponentProps<"input">[K]`; it is not an intersection with the hook options plus a `Pick`. The hook's return is the eight members of `UsePhoneNumberFieldStateReturn`. §3 documented a derived type and a fourteen-member return, seven of whose names the hook never had; the text is corrected to the shipped types, which stay as they are.
 
+15. **Country popup composed from the library Combobox** (2026-09-03): `Combobox.Content/List/Item/Empty` replace the hand-built `Portal`/`Positioner`/`Popup`/`List`/`Item`/`ItemIndicator`/`Empty` this chapter used to specify, so the picker inherits the family's popup chrome and its fixes instead of a copy that had already drifted from it. `Combobox.Root`, the flag `Trigger`, and the popup's search `Input` stay raw `@base-ui/react` primitives: the library `Trigger` appends a caret the flag trigger must not have and would lose the `role="button"` contract of §8.3, and the library `Input` builds its own InputGroup with no leading-icon slot. The deliberate output changes, in full: the popup loses `p-2` and gains the shared surface's `max-h-(--available-height)` + `overflow-hidden` (it previously grew to the full list height, with only the inner list scrolling); the search InputGroup drops its local `mb-2` for the shared `m-1 mb-0` compact chrome; the list takes the shared `max-h` clamp and `data-empty:p-0`; the empty row takes the shared `hidden` + `group-data-empty/combobox-content:flex` and `py-2` in place of `data-empty:flex` and `px-2`; and options gain `[&_svg:not([class*='size-'])]:size-4` and `data-highlighted:**:text-accent-foreground`, the two rules the copied item class had already missed. The `max-w-72` cap is dropped: `Combobox.Content` pins an anchored popup's minimum width to `--anchor-width`, which a smaller `max-width` cannot undo, so the popup is the width of the field — which is what §8.5 already intends. Every other emitted class set is byte-identical: root, InputGroup, trigger, positioner, search input, search addon and icon, item indicator, and the number input.
+16. **One parse per keystroke** (2026-09-03): the hook has a single `applyState(next, { emitChange })` where `commit` and `syncValue` duplicated the same country-notify / set-state / emit sequence; it carries `ProcessedPhoneInput` rather than restating that shape; the display/output pair comes from one memoized closure shared by the emit path and the render, invalidated by rebuilding the closure whenever a formatting option changes; and the sync effect returns early when the incoming `value` is the string the hook last emitted and neither `international` nor `metadata` has changed. Together these take a controlled keystroke from three `AsYouType` parses to one, pinned by a test. `Intl.DisplayNames.of` is resolved once per (locale, picker set) into a map instead of once per row per render. The hook's shape is unchanged: the same eight members of §3, the same options. Inside `phone-engine`, only symbols another module imports are exported, and `processInputWithDetection`, `resolvePhoneFieldValues`, and the private `getDisplayValue` take one options object rather than five or six positional arguments of which two were adjacent booleans.
+17. **The unbound `form` and the empty search `name`** (2026-09-03), previously shipped undocumented: `Combobox.Root` carries `form="elmera-ui-phone-country-unbound"`, an id that deliberately names no rendered form, so base-ui's own hidden country-code input is associated with nothing and cannot reach the host form's `FormData` beside `name` and `${name}-display-value` — the pair of §8.2 is the whole submitted surface. The popup's search input carries `name=""`: a control with no name is never submitted, and the empty name also keeps it out of browser autofill heuristics, which `autoComplete="one-time-code"` (§8.8) covers only for password managers. Both are load-bearing; neither may be tidied away unless the two-input contract of §8.2 changes first.
+
 ## 9 Test requirements
 
 Role/label-based queries throughout; keyboard flows per §7:
@@ -129,6 +131,8 @@ Role/label-based queries throughout; keyboard flows per §7:
 - `isInvalid`/`errorMessage` alert; `isDisabled` disables trigger and input; `isReadOnly` keeps focus but blocks edits.
 - i18n injection: overridden labels appear in the accessibility tree.
 - Empty search shows `noCountriesFoundText`.
+- Parse budget: a controlled probe over `usePhoneNumberFieldState` alone counts `AsYouType` parses and asserts exactly one per keystroke while the emitted value echoes back (§8.16). The hook needs a renderer that runs effects, which the node `unit` project has no dependency for, so this one hook test runs in the `browser` project and renders no library component.
+- The picker's exclusion list, flag gap, and empty-picker error are the test tree's own literals (`test/phone-picker-contract.ts`), not imports of the engine's constants: reading the implementation's own `Set` back made both assertions tautologies (ADR 0008).
 - Locale matrix: `selectCountry`, `searchCountries`, and `noCountries` render in all four supported locales; each override prop wins.
 - Flag contract: NO/SE/FI rows render the manifest's packaged SVG URLs with empty alt text plus the exact lazy-image attributes from [architecture](../architecture.md) §6a; the code has no platform branch. Picker tests assert that `AC`/`BQ`/`EH`/`TA` are absent, every rendered row resolves through `flagAssets`, and auto-detection never selects an unresolved code. Type tests reject those four values as `defaultCountryCode`; an untyped unresolved default exercises the documented fallback. Source/package scans reject `flagcdn.com`, browser-detection identifiers, Unicode regional-indicator helpers, and substitute-country mappings.
 

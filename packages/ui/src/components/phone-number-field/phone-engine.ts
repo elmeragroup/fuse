@@ -10,7 +10,7 @@ import { flagAssets } from "../../flags";
 import type { FlagAssetCode } from "../../flags";
 
 /** Product/compliance exclusion copied from the reference (phone-number-field.md §3). */
-export const PRODUCT_EXCLUDED_COUNTRY_CODES = new Set<CountryCode>([
+const PRODUCT_EXCLUDED_COUNTRY_CODES = new Set<CountryCode>([
   "AF",
   "BY",
   "MM",
@@ -41,18 +41,20 @@ export const PRODUCT_EXCLUDED_COUNTRY_CODES = new Set<CountryCode>([
   "ZW",
 ]);
 
-/** libphonenumber-js@1.13.9 codes with no packaged flag SVG (architecture.md §6a). */
-export const UNRESOLVED_LIBPHONENUMBER_FLAG_GAP = ["AC", "BQ", "EH", "TA"] as const;
+// The four libphonenumber@1.13.9 codes with no packaged flag SVG — AC, BQ, EH, TA — are not
+// listed here: `isPhoneCountryCode` filters on the flag manifest itself, so a fifth code
+// appearing upstream needs no edit. The four are named in architecture.md §6a, and the picker
+// suites assert their absence from their own copy of the list (test/phone-picker-contract.ts).
 
-export const DEFAULT_COUNTRY_CODE = "NO";
+const DEFAULT_COUNTRY_CODE = "NO";
 
-export const INTERNATIONAL_PREFIX = "+";
+const INTERNATIONAL_PREFIX = "+";
 
-export const ITU_INTERNATIONAL_PREFIX = "00";
+const ITU_INTERNATIONAL_PREFIX = "00";
 
 const PHONE_CHAR_REGEX = /[^\d\s+\-()]/g;
 
-export const EMPTY_PICKER_ERROR =
+const EMPTY_PICKER_ERROR =
   "PhoneNumberField: no picker countries remain after intersecting libphonenumber metadata with packaged flag assets and the product exclusion set.";
 
 export type PhoneCountryCode = Extract<CountryCode, FlagAssetCode>;
@@ -67,14 +69,11 @@ export type PhoneNumberFormat = "e164" | "international" | "national" | "raw";
 // SAFETY: the pinned min metadata JSON is the MetadataJson document libphonenumber-js ships.
 const metadataJson: MetadataJson = defaultMetadata;
 
-export function isPhoneCountryCode(code: string): code is PhoneCountryCode {
+function isPhoneCountryCode(code: string): code is PhoneCountryCode {
   return Object.hasOwn(flagAssets, code);
 }
 
-export function createCountry(
-  country: PhoneCountryCode,
-  metadata: MetadataJson = metadataJson
-): PhoneNumberCountry {
+function createCountry(country: PhoneCountryCode, metadata: MetadataJson = metadataJson): PhoneNumberCountry {
   return {
     code: country,
     dialCode: `+${getCountryCallingCode(country, metadata)}`,
@@ -119,7 +118,7 @@ export function resolveSelectedCountry(
   return first;
 }
 
-export function getInternationalPrefix(countryCode: CountryCode | undefined, metadata: MetadataJson): string {
+function getInternationalPrefix(countryCode: CountryCode | undefined, metadata: MetadataJson): string {
   if (!countryCode) {
     return "";
   }
@@ -130,7 +129,7 @@ export function getInternationalPrefix(countryCode: CountryCode | undefined, met
   }
 }
 
-export function parsePhoneNumber(
+function parsePhoneNumber(
   input: string,
   country: CountryCode | undefined,
   metadata: MetadataJson
@@ -143,11 +142,7 @@ export function parsePhoneNumber(
   return asYouType.getNumber();
 }
 
-export function buildFullNumber(
-  digits: string,
-  country: CountryCode | undefined,
-  metadata: MetadataJson
-): string {
+function buildFullNumber(digits: string, country: CountryCode | undefined, metadata: MetadataJson): string {
   if (!digits) {
     return "";
   }
@@ -160,7 +155,7 @@ export function buildFullNumber(
   return digits;
 }
 
-export function formatOutputValue(
+function formatOutputValue(
   phoneNumber: PhoneNumber | undefined,
   digits: string,
   outputFormat: PhoneNumberFormat
@@ -181,12 +176,20 @@ export function formatOutputValue(
   }
 }
 
-export function getDisplayValue(
+/**
+ * The two display switches, passed as one object so the call site cannot transpose them
+ * (phone-number-field.md §8.16).
+ */
+type PhoneDisplayOptions = {
+  international: boolean;
+  formatOnType: boolean;
+};
+
+function getDisplayValue(
   phoneNumber: PhoneNumber | undefined,
   digits: string,
-  international: boolean,
-  formatOnType: boolean,
-  country: CountryCode | undefined
+  country: CountryCode | undefined,
+  { international, formatOnType }: PhoneDisplayOptions
 ): string {
   if (!digits) {
     return "";
@@ -207,11 +210,11 @@ export function cleanPhoneInput(input: string): string {
   return input.replace(PHONE_CHAR_REGEX, "");
 }
 
-export function hasInternationalPrefix(input: string): boolean {
+function hasInternationalPrefix(input: string): boolean {
   return input.startsWith(INTERNATIONAL_PREFIX) || input.startsWith(ITU_INTERNATIONAL_PREFIX);
 }
 
-export function normalizeInternationalPrefix(input: string): string {
+function normalizeInternationalPrefix(input: string): string {
   if (input.startsWith(ITU_INTERNATIONAL_PREFIX)) {
     return INTERNATIONAL_PREFIX + input.substring(ITU_INTERNATIONAL_PREFIX.length);
   }
@@ -219,7 +222,7 @@ export function normalizeInternationalPrefix(input: string): string {
 }
 
 /** Country from an already-normalized `+` international number. */
-export function detectCountryFromInput(input: string, metadata: MetadataJson): CountryCode | undefined {
+function detectCountryFromInput(input: string, metadata: MetadataJson): CountryCode | undefined {
   if (!input.startsWith(INTERNATIONAL_PREFIX)) {
     return undefined;
   }
@@ -231,14 +234,24 @@ export type ProcessedPhoneInput = {
   country: PhoneNumberCountry;
 };
 
-export function processInputWithDetection(
-  input: string,
-  currentCountry: PhoneNumberCountry,
-  countries: readonly PhoneNumberCountry[],
-  autoDetectCountry: boolean,
-  international: boolean,
-  metadata: MetadataJson
-): ProcessedPhoneInput {
+/** Options for {@link processInputWithDetection} (phone-number-field.md §8.16). */
+export type ProcessInputOptions = {
+  input: string;
+  currentCountry: PhoneNumberCountry;
+  countries: readonly PhoneNumberCountry[];
+  autoDetectCountry: boolean;
+  international: boolean;
+  metadata: MetadataJson;
+};
+
+export function processInputWithDetection({
+  input,
+  currentCountry,
+  countries,
+  autoDetectCountry,
+  international,
+  metadata,
+}: ProcessInputOptions): ProcessedPhoneInput {
   if (!autoDetectCountry || !hasInternationalPrefix(input)) {
     return { digits: input, country: currentCountry };
   }
@@ -264,21 +277,31 @@ export type PhoneFieldValues = {
   outputValue: string;
 };
 
-export function resolvePhoneFieldValues(
-  digits: string,
-  country: CountryCode | undefined,
-  metadata: MetadataJson,
-  outputFormat: PhoneNumberFormat,
-  international: boolean,
-  formatOnType: boolean
-): PhoneFieldValues {
+/** Options for {@link resolvePhoneFieldValues} (phone-number-field.md §8.16). */
+export type ResolvePhoneFieldValuesOptions = {
+  digits: string;
+  country: CountryCode | undefined;
+  metadata: MetadataJson;
+  outputFormat: PhoneNumberFormat;
+  international: boolean;
+  formatOnType: boolean;
+};
+
+export function resolvePhoneFieldValues({
+  digits,
+  country,
+  metadata,
+  outputFormat,
+  international,
+  formatOnType,
+}: ResolvePhoneFieldValuesOptions): PhoneFieldValues {
   if (!digits) {
     return { displayValue: "", outputValue: "" };
   }
   const fullNumber = buildFullNumber(digits, country, metadata);
   const phoneNumber = parsePhoneNumber(fullNumber, country, metadata);
   return {
-    displayValue: getDisplayValue(phoneNumber, digits, international, formatOnType, country),
+    displayValue: getDisplayValue(phoneNumber, digits, country, { international, formatOnType }),
     outputValue: formatOutputValue(phoneNumber, digits, outputFormat),
   };
 }
