@@ -24,4 +24,4 @@ export function issue14SelectedOracleFile(definition: Issue14Fixture): "output.j
 // on that single owner without making the contract module another source of
 // command drift.
 export { issue14TypecheckCommand, issue14TypecheckStrategy } from "./typecheck.ts";
-import type { Issue14Fixture } from "../fixture-views.ts";
+import type { Issue14Fixture } from "../fixture-plans.ts";

@@ -25,7 +25,7 @@ import {
 } from "../fixture-evidence.ts";
 import type { Issue14Fixture } from "../fixture-evidence.ts";
 import { createFixtureFileSystem } from "../fixture-filesystem.ts";
-import { deriveWarningEvidencePlan } from "../fixture-views.ts";
+import { deriveWarningEvidencePlan } from "../fixture-plans.ts";
 import { auditPinnedReference, pinnedFixturePathUniverse, pinnedUpstream } from "../reference.ts";
 import { issue14ConformanceCommand, issue14SelectedOracleFile } from "./contract.ts";
 import {

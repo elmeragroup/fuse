@@ -1,26 +1,23 @@
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import {
-  expectedWarningCodes,
-  issue13ExpectedWarnings,
-  issue13ExternalFixtures,
-} from "../scripts/fixture-evidence.ts";
+import { expectedFixtureWarnings, expectedWarningCodes } from "../scripts/fixture-evidence.ts";
 import type { ExtractionResult } from "../src/index.ts";
 import type { ExternalTypeNode } from "../src/model.ts";
 import { defaultExtractorOptions } from "../src/options.ts";
 import { extractFixture, fixtureRoot } from "./support/extract.ts";
+import { externalTypeFixtures } from "./support/fixture-suites.ts";
 
 const tsconfigPath = resolve(fixtureRoot, "external-types-tsconfig.json");
 
 describe("external-type warnings on the ported upstream fixtures", () => {
   it("emits exactly the warnings each reviewed record declares", async () => {
-    for (const definition of issue13ExternalFixtures) {
+    for (const definition of externalTypeFixtures) {
       const result = await extractFixture(
         { tsconfigPath },
         resolve(fixtureRoot, definition.fixture, definition.file)
       );
-      const expectedCodes = [...expectedWarningCodes(issue13ExpectedWarnings, definition.fixture)].sort();
+      const expectedCodes = [...expectedWarningCodes(expectedFixtureWarnings, definition.fixture)].sort();
       const actualCodes = result.warnings.map((warning) => warning.code).sort();
       expect(actualCodes).toEqual(expectedCodes);
     }

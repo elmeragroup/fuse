@@ -14,8 +14,8 @@ import {
   decodeJson,
   sha256File,
 } from "../fixture-evidence.ts";
-import { issue14FixtureManifest } from "../fixture-views.ts";
-import type { Issue14Fixture } from "../fixture-views.ts";
+import { issue14FixtureManifest } from "../fixture-plans.ts";
+import type { Issue14Fixture } from "../fixture-plans.ts";
 import { pinnedFixturePathUniverse, pinnedUpstream, skippedPathUniverseSha256 } from "../reference.ts";
 import {
   issue14ConformanceCommand,

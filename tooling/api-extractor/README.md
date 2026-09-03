@@ -100,10 +100,15 @@ Consumers should branch on `code` and structured fields, not parse `message` tex
 
 ## Fixture evidence
 
-`scripts/fixture-catalog.ts` is the canonical fixture inventory. Its 125 records describe inputs,
-oracle ownership, warning evidence, issue membership, type-check strategy, timing membership, and
-package execution. Scripts and tests derive their ordered views from that catalog; do not add a
-second fixture list.
+`scripts/fixture-catalog.ts` derives the fixture inventory from `test/fixtures` itself: a directory
+holding an `input.*` file is a fixture, `output.json` makes it a conformance fixture,
+`output.tsgo.json` makes that a reviewed TypeScript 7 divergence, `ts7-oracle.json` is the
+divergence record, and `warnings.tsgo.json` supplies the warning oracle and its code order.
+`test/fixtures/fixtures.json` holds only what a filename cannot state: IPC ceilings, the fixture
+type-checked through a virtual upstream dependency, the two locally generated oracles, and the
+projects the type-check plan skips. `scripts/fixture-plans.ts` projects the plans the gates run;
+suite grouping and order belong to the suite that asserts them (`test/support/fixture-suites.ts`).
+Do not add a second fixture list. _(Amended 2026-09-03.)_
 
 The full conformance view contains 116 fixtures ported from upstream: 97 whose oracle is unchanged
 and 19 with a reviewed TypeScript 7 divergence. Their evidence files are:
@@ -195,10 +200,11 @@ reviewing the semantic output and the reason for a timing change.
 
 When adding or porting a fixture:
 
-1. Add one record to `fixtureEvidenceCatalog` with its input, oracle, warning, issue, and execution
-   metadata.
-2. Preserve copied `output.json` bytes. Add reviewed TypeScript 7 evidence only when the catalog
-   declares a divergence and the reason record accounts for every changed path.
+1. Create its directory with an `input.*` file. The catalog derives the record; add a row to
+   `test/fixtures/fixtures.json` only for an IPC ceiling or one of the recorded exceptions, and a
+   row to `test/support/fixture-suites.ts` when a behaviour suite should cover it.
+2. Preserve copied `output.json` bytes. Add reviewed TypeScript 7 evidence only when the fixture
+   carries a `ts7-oracle.json` reason record that accounts for every changed path.
 3. Run `check:catalog`, `test:fixtures`, the focused semantic test, and `test:conformance`.
 4. Refresh only the reviewed artifact class that changed, then inspect the complete diff.
 

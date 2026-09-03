@@ -20,10 +20,9 @@ import { decodeJson, posixRelative } from "./files.ts";
 
 export * from "./fixture-catalog.ts";
 export * from "./fixture-plans.ts";
-export * from "./fixture-views.ts";
 
 import type { TimingFixture } from "./fixture-plans.ts";
-import type { Issue02SupplementalFixture } from "./fixture-views.ts";
+import type { Issue02SupplementalFixture } from "./fixture-plans.ts";
 
 const TimingTotalsSchema = Schema.Struct({
   requestCount: Schema.Number,
