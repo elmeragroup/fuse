@@ -4,21 +4,17 @@ import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { cn } from "../../styles/cn";
 import { fieldBox } from "../../styles/field-box";
 import { cardVariants } from "../card/card-variants";
-import {
-  fieldFrameContentClass,
-  fieldFrameDescriptionClass,
-  fieldFrameLabelRowClass,
-  fieldFrameRootClass,
-} from "../field/field-frame";
+import { fieldFrameVariants } from "../field/field-frame";
 import { textFieldVariants } from "./text-field-variants";
 
 describe("textFieldVariants", () => {
-  it("composes FieldFrame constants under its public slot names", () => {
+  it("composes FieldFrame recipe slots under its public slot names", () => {
     const slots = textFieldVariants();
-    expect(slots.base()).toBe(fieldFrameRootClass);
-    expect(slots.labelContainer()).toBe(fieldFrameLabelRowClass);
-    expect(slots.container()).toBe(fieldFrameContentClass);
-    expect(slots.description()).toBe(fieldFrameDescriptionClass);
+    const frame = fieldFrameVariants();
+    expect(slots.base()).toBe(frame.root());
+    expect(slots.labelContainer()).toBe(frame.labelRow());
+    expect(slots.container()).toBe(frame.content());
+    expect(slots.description()).toBe(frame.description());
   });
 
   it("exposes the spec slots and no textArea slot", () => {

@@ -1,3 +1,5 @@
+import { tv } from "tailwind-variants";
+
 /**
  * The md control inset and type pair: inline padding plus the density-owned font-size
  * and line-height. One constant because five files spelled the same three utilities
@@ -5,5 +7,8 @@
  * not drift. Lives outside `utils.ts` so consumers of the focus-ring constants do not
  * inherit these tokens in recipe token extraction.
  */
-export const controlInsetMdClass =
-  "px-(--control-px-md) [font-size:var(--control-text)] [line-height:var(--control-leading)]";
+const controlInsetMd = tv({
+  base: "px-(--control-px-md) [font-size:var(--control-text)] [line-height:var(--control-leading)]",
+});
+
+export const controlInsetMdClass = controlInsetMd();
