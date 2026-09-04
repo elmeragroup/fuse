@@ -1,17 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { renderThemed } from "../../../test/themed-browser-render";
+import "../../../dist/themes.css";
+import { cssVarColor, headingNamed, px, renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { Heading } from "./heading";
-
-function headingNamed(name: string, level?: 1 | 2 | 3 | 4 | 5 | 6): HTMLElement {
-  const element = page.getByRole("heading", { name, exact: true, level }).element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error(`expected a heading named ${name}`);
-  }
-  return element;
-}
 
 const LEVELS = [1, 2, 3, 4, 5, 6] as const;
 const LEVEL_NAMES = {
@@ -58,12 +50,13 @@ describe("Heading", () => {
         </Heading>
       </>
     );
-    expect(headingNamed("Auto 1", 1).className.split(/\s+/)).toContain("text-2xl");
-    expect(headingNamed("Auto 2", 2).className.split(/\s+/)).toContain("text-lg");
-    expect(headingNamed("Auto 3", 3).className.split(/\s+/)).toContain("text-base");
-    const override = headingNamed("Override", 1);
-    expect(override.className.split(/\s+/)).toContain("text-4xl");
-    expect(override.className.split(/\s+/)).not.toContain("text-2xl");
+    const auto1 = px(getComputedStyle(headingNamed("Auto 1", 1)).fontSize);
+    const auto2 = px(getComputedStyle(headingNamed("Auto 2", 2)).fontSize);
+    const auto3 = px(getComputedStyle(headingNamed("Auto 3", 3)).fontSize);
+    const override = px(getComputedStyle(headingNamed("Override", 1)).fontSize);
+    expect(auto1).toBeGreaterThan(auto2);
+    expect(auto2).toBeGreaterThan(auto3);
+    expect(override).toBeGreaterThan(auto1);
   });
 
   it("toggles noMargin, uppercase, and align, and lets className win", () => {
@@ -75,24 +68,24 @@ describe("Heading", () => {
         <Heading className="text-primary">Tinted</Heading>
       </>
     );
-    expect(headingNamed("Flush").className.split(/\s+/)).toContain("mb-0");
-    expect(headingNamed("Shout").className.split(/\s+/)).toContain("uppercase");
-    expect(headingNamed("Centered").className.split(/\s+/)).toContain("text-center");
+    expect(getComputedStyle(headingNamed("Flush")).marginBottom).toBe("0px");
+    expect(getComputedStyle(headingNamed("Shout")).textTransform).toBe("uppercase");
+    expect(getComputedStyle(headingNamed("Centered")).textAlign).toBe("center");
     const tinted = headingNamed("Tinted");
-    expect(tinted.className.split(/\s+/)).toContain("text-primary");
-    expect(tinted.className.split(/\s+/)).not.toContain("text-inherit");
+    expect(getComputedStyle(tinted).color).toBe(cssVarColor(tinted, "--primary"));
   });
 
   it("renders the provided element with merged recipe classes", () => {
-    renderThemed(<Heading render={<a href="#order" />}>Order overview</Heading>);
-    const link = page.getByRole("link", { name: "Order overview", exact: true }).element();
-    if (!(link instanceof HTMLElement)) {
-      throw new Error("expected a link named Order overview");
-    }
+    renderThemed(
+      <>
+        <Heading>Details</Heading>
+        <Heading render={<a href="#order" />}>Order overview</Heading>
+      </>
+    );
+    const link = roleNamed("link", "Order overview");
     expect(link.tagName).toBe("A");
     expect(link.getAttribute("href")).toBe("#order");
     expect(link.getAttribute("data-slot")).toBe("heading");
-    expect(link.className.split(/\s+/)).toContain("font-heading");
-    expect(link.className.split(/\s+/)).toContain("text-lg");
+    expect(getComputedStyle(link).fontSize).toBe(getComputedStyle(headingNamed("Details")).fontSize);
   });
 });

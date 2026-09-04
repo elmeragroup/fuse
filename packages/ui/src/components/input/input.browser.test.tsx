@@ -8,6 +8,7 @@ import {
   fkasExternal,
   px,
   renderThemed,
+  roleNamed,
   stampDensity,
   textboxNamed,
 } from "../../../test/themed-browser-render";
@@ -56,15 +57,11 @@ describe("Input", () => {
     );
     expect(textboxNamed("Disabled")).toHaveProperty("disabled", true);
     expect(textboxNamed("Email").getAttribute("aria-invalid")).toBe("true");
-    const before = page.getByRole("button", { name: "Before", exact: true }).element();
-    if (!(before instanceof HTMLElement)) {
-      throw new Error("expected before");
-    }
-    before.focus();
+    roleNamed("button", "Before").focus();
     await userEvent.keyboard("{Tab}");
     expect(document.activeElement).toBe(textboxNamed("Email"));
     await userEvent.keyboard("{Tab}");
-    expect(document.activeElement).toBe(page.getByRole("button", { name: "After", exact: true }).element());
+    expect(document.activeElement).toBe(roleNamed("button", "After"));
   });
 
   it("fires native onChange while typing for uncontrolled and controlled values", async () => {
@@ -148,10 +145,6 @@ describe("Input", () => {
         <Input aria-label="Email" />
       </>
     );
-    const previous = page.getByRole("button", { name: "Before", exact: true }).element();
-    if (!(previous instanceof HTMLElement)) {
-      throw new Error("expected before");
-    }
-    await assertKeyboardFocusRingAtBothDensities(previous, textboxNamed("Email"));
+    await assertKeyboardFocusRingAtBothDensities(roleNamed("button", "Before"), textboxNamed("Email"));
   });
 });

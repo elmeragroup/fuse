@@ -2,63 +2,72 @@ import { describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { renderThemed } from "../../../test/themed-browser-render";
+import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { Frame } from "./frame";
 
-function slot(name: string): HTMLElement {
-  const element = document.querySelector(`[data-slot="${name}"]`);
+function textNamed(name: string): HTMLElement {
+  const element = page.getByText(name, { exact: true }).element();
   if (!(element instanceof HTMLElement)) {
-    throw new Error(`expected an element with data-slot="${name}"`);
+    throw new Error(`expected text ${name}`);
   }
   return element;
 }
 
-function panels(): HTMLElement[] {
-  return [...document.querySelectorAll('[data-slot="frame-panel"]')].filter(
-    (element): element is HTMLElement => element instanceof HTMLElement
-  );
+function frameRoot(label: string): HTMLElement {
+  const root = roleNamed("region", label).firstElementChild;
+  if (!(root instanceof HTMLElement)) {
+    throw new Error(`expected frame root in ${label}`);
+  }
+  return root;
 }
 
 describe("Frame", () => {
   it("renders children in order and emits each part's data-slot", () => {
     renderThemed(
-      <Frame.Root>
-        <Frame.Header>
-          <Frame.Title>Invoices</Frame.Title>
-          <Frame.Description>Last 30 days</Frame.Description>
-        </Frame.Header>
-        <Frame.Panel>March</Frame.Panel>
-        <Frame.Footer>Export</Frame.Footer>
-      </Frame.Root>
+      <section aria-label="Invoice frame">
+        <Frame.Root>
+          <Frame.Header>
+            <Frame.Title>Invoices</Frame.Title>
+            <Frame.Description>Last 30 days</Frame.Description>
+          </Frame.Header>
+          <Frame.Panel>March</Frame.Panel>
+          <Frame.Footer>Export</Frame.Footer>
+        </Frame.Root>
+      </section>
     );
-    const root = slot("frame");
+    const root = frameRoot("Invoice frame");
+    expect(root.getAttribute("data-slot")).toBe("frame");
     expect([...root.children].map((child) => child.getAttribute("data-slot"))).toEqual([
       "frame-panel-header",
       "frame-panel",
       "frame-panel-footer",
     ]);
-    expect(slot("frame-panel-title").textContent).toBe("Invoices");
-    expect(slot("frame-panel-description").textContent).toBe("Last 30 days");
+    expect(textNamed("Invoices").getAttribute("data-slot")).toBe("frame-panel-title");
+    expect(textNamed("Last 30 days").getAttribute("data-slot")).toBe("frame-panel-description");
   });
 
   it("renders real header and footer elements without landmark roles under the div root", () => {
     renderThemed(
       <main>
-        <Frame.Root>
-          <Frame.Header>
-            <Frame.Title>Invoices</Frame.Title>
-          </Frame.Header>
-          <Frame.Panel>March</Frame.Panel>
-          <Frame.Footer>Export</Frame.Footer>
-        </Frame.Root>
+        <section aria-label="Invoice frame">
+          <Frame.Root>
+            <Frame.Header>
+              <Frame.Title>Invoices</Frame.Title>
+            </Frame.Header>
+            <Frame.Panel>March</Frame.Panel>
+            <Frame.Footer>Export</Frame.Footer>
+          </Frame.Root>
+        </section>
       </main>
     );
-    const header = slot("frame-panel-header");
-    const footer = slot("frame-panel-footer");
-    expect(header.tagName).toBe("HEADER");
+    const title = textNamed("Invoices");
+    const header = title.parentElement;
+    const footer = textNamed("Export");
+    const root = frameRoot("Invoice frame");
+    expect(header?.tagName).toBe("HEADER");
     expect(footer.tagName).toBe("FOOTER");
-    expect(slot("frame").tagName).toBe("DIV");
-    expect(header.getAttribute("role")).toBeNull();
+    expect(root.tagName).toBe("DIV");
+    expect(header?.getAttribute("role")).toBeNull();
     expect(footer.getAttribute("role")).toBeNull();
     expect(page.getByRole("banner").elements()).toEqual([]);
     expect(page.getByRole("contentinfo").elements()).toEqual([]);
@@ -71,15 +80,8 @@ describe("Frame", () => {
         <Frame.Panel>April</Frame.Panel>
       </Frame.Root>
     );
-    const [first, second] = panels();
-    if (first === undefined || second === undefined) {
-      throw new Error("expected two panels");
-    }
+    const second = textNamed("April");
     expect(getComputedStyle(second).marginTop).toBe("4px");
-    expect(first.className.split(/\s+/)).toContain("rounded-xl");
-    expect(second.className.split(/\s+/)).toContain("rounded-xl");
-    expect(first.className).not.toContain("rounded-b-none");
-    expect(second.className).not.toContain("rounded-t-none");
     expect(getComputedStyle(second).borderTopWidth).not.toBe("0px");
   });
 
@@ -90,10 +92,8 @@ describe("Frame", () => {
         <Frame.Panel>April</Frame.Panel>
       </Frame.Root>
     );
-    const [first, second] = panels();
-    if (first === undefined || second === undefined) {
-      throw new Error("expected two panels");
-    }
+    const first = textNamed("March");
+    const second = textNamed("April");
     expect(getComputedStyle(first).borderBottomLeftRadius).toBe("0px");
     expect(getComputedStyle(first).borderBottomRightRadius).toBe("0px");
     expect(getComputedStyle(second).borderTopLeftRadius).toBe("0px");
@@ -109,7 +109,7 @@ describe("Frame", () => {
         <Frame.Panel>March</Frame.Panel>
       </Frame.Root>
     );
-    const overlay = getComputedStyle(slot("frame-panel"), "::before");
+    const overlay = getComputedStyle(textNamed("March"), "::before");
     expect(overlay.pointerEvents).toBe("none");
     expect(overlay.position).toBe("absolute");
   });

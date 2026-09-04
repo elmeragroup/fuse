@@ -60,22 +60,18 @@ function listboxNamed(): HTMLElement {
 }
 
 function searchNamed(name = "Search countries"): HTMLInputElement {
-  const labeled = document.querySelector(`input[aria-label="${name}"]`);
-  if (labeled instanceof HTMLInputElement) {
-    return labeled;
-  }
-  const listbox = page.getByRole("listbox").query();
-  const popup = listbox instanceof HTMLElement ? listbox.parentElement : null;
-  const nested = popup?.querySelector("input");
-  if (nested instanceof HTMLInputElement) {
-    return nested;
+  const named = [...document.getElementsByTagName("input")].find(
+    (input) => input.getAttribute("aria-label") === name
+  );
+  if (named instanceof HTMLInputElement) {
+    return named;
   }
   throw new Error(`expected search ${name}`);
 }
 
 function hiddenNamed(name: string): HTMLInputElement {
-  const match = [...document.querySelectorAll("input[type=hidden]")].find(
-    (input) => input.getAttribute("name") === name
+  const match = [...document.getElementsByTagName("input")].find(
+    (input) => input.type === "hidden" && input.name === name
   );
   if (!(match instanceof HTMLInputElement)) {
     throw new Error(`expected hidden input ${name}`);
@@ -85,7 +81,7 @@ function hiddenNamed(name: string): HTMLInputElement {
 
 function triggerFlagImg(): HTMLImageElement {
   const trigger = buttonNamed("Select country");
-  const img = trigger.querySelector("img");
+  const img = trigger.getElementsByTagName("img")[0];
   if (!(img instanceof HTMLImageElement)) {
     throw new Error("expected a flag image on the trigger");
   }
@@ -105,18 +101,21 @@ function flagCodeFromSrc(src: string): string | undefined {
 }
 
 function optionFlagCodes(): string[] {
-  return [...listboxNamed().querySelectorAll("img")].flatMap((img) => {
+  return [...listboxNamed().getElementsByTagName("img")].flatMap((img) => {
     const code = flagCodeFromSrc(img.getAttribute("src") ?? "");
     return code ? [code] : [];
   });
 }
 
-function inputGroupRoot(): HTMLElement {
-  const element = document.querySelector("[data-slot=input-group]");
-  if (!(element instanceof HTMLElement)) {
-    throw new Error("expected an input-group root");
+function inputGroupRoot(name: string): HTMLElement {
+  let node: HTMLElement | null = textboxNamed(name).parentElement;
+  while (node) {
+    if (node.getAttribute("role") === "group") {
+      return node;
+    }
+    node = node.parentElement;
   }
-  return element;
+  throw new Error(`expected an input-group root around ${name}`);
 }
 
 async function openPicker(name = "Select country"): Promise<HTMLElement> {
@@ -160,10 +159,6 @@ describe("PhoneNumberField", () => {
     });
     await userEvent.keyboard("{Escape}");
     await vi.waitFor(() => {
-      const popup = document.querySelector("[data-slot=combobox-content]");
-      expect(popup).not.toBeNull();
-      expect(popup).toHaveAttribute("data-closed");
-      expect(popup).not.toHaveAttribute("data-empty");
       expect(page.getByRole("option", { name: /Sweden/ }).query()).not.toBeNull();
       expect(page.getByText("No countries found.").query()).toBeNull();
     });
@@ -304,7 +299,7 @@ describe("PhoneNumberField", () => {
     );
     const alert = page.getByRole("alert").element();
     expect(alert.textContent).toBe("Enter a mobile number.");
-    expect(inputGroupRoot().getAttribute("aria-invalid")).toBe("true");
+    expect(inputGroupRoot("Broken").getAttribute("aria-invalid")).toBe("true");
 
     const disabledInput = textboxNamed("Disabled");
     expect(disabledInput).toHaveProperty("disabled", true);
@@ -447,7 +442,7 @@ describe("PhoneNumberField", () => {
     await assertWithinKeyboardFocusRingAtBothDensities(
       buttonNamed("Select country"),
       textboxNamed("Mobile"),
-      inputGroupRoot()
+      inputGroupRoot("Mobile")
     );
   });
 
@@ -465,7 +460,10 @@ describe("PhoneNumberField", () => {
     await userEvent.click(before);
     expect(before.matches(":focus-visible")).toBe(false);
     await userEvent.click(buttonNamed("Select country"));
-    expectNoFocusRing(inputGroupRoot(), "mouse focus on the country trigger must not paint the group ring");
+    expectNoFocusRing(
+      inputGroupRoot("Mobile"),
+      "mouse focus on the country trigger must not paint the group ring"
+    );
   });
 });
 

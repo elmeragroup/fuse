@@ -3,7 +3,7 @@ import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { withLocale } from "../../../test/locale-matrix";
-import { renderThemed, textboxNamed } from "../../../test/themed-browser-render";
+import { renderThemed, roleNamed, textboxNamed } from "../../../test/themed-browser-render";
 import { CheckboxGroup, CheckboxItem } from "../checkbox/checkbox";
 import { Input } from "../input/input";
 import { NumberField } from "../number-field/number-field";
@@ -14,7 +14,7 @@ import { TextareaField } from "../textarea-field/textarea-field";
 import { FieldFrame } from "./field-frame";
 
 function fieldRootFrom(name: string): HTMLElement {
-  const root = textboxNamed(name).closest("[data-slot=field]");
+  const root = textboxNamed(name).closest("[data-orientation]");
   if (!(root instanceof HTMLElement)) {
     throw new Error(`expected field root around ${name}`);
   }
@@ -22,7 +22,11 @@ function fieldRootFrom(name: string): HTMLElement {
 }
 
 function statusSvgs(root: HTMLElement): SVGElement[] {
-  return [...root.querySelectorAll("svg")];
+  return [...root.getElementsByTagName("svg")];
+}
+
+function nestedOrientationStamps(root: HTMLElement): Element[] {
+  return [...root.getElementsByTagName("*")].filter((element) => element.hasAttribute("data-orientation"));
 }
 
 describe("FieldFrame", () => {
@@ -58,7 +62,7 @@ describe("FieldFrame", () => {
         <Input aria-label="Bare" />
       </FieldFrame>
     );
-    expect(fieldRootFrom("Bare").querySelector("label")).toBeNull();
+    expect(fieldRootFrom("Bare").getElementsByTagName("label")).toHaveLength(0);
     expect(page.getByText("Only a description.").query()).toBeTruthy();
   });
 
@@ -88,13 +92,21 @@ describe("FieldFrame", () => {
     expect(pending).toHaveLength(2);
     const pendingShown = pending.filter((svg) => getComputedStyle(svg).opacity === "1");
     expect(pendingShown).toHaveLength(1);
-    expect(pendingShown[0]?.classList.contains("animate-spin")).toBe(true);
+    const pendingFace = pendingShown[0];
+    if (!(pendingFace instanceof SVGElement)) {
+      throw new Error("expected the pending face");
+    }
+    expect(getComputedStyle(pendingFace).animationName).not.toBe("none");
 
     const done = statusSvgs(fieldRootFrom("Done"));
     expect(done).toHaveLength(2);
     const doneShown = done.filter((svg) => getComputedStyle(svg).opacity === "1");
     expect(doneShown).toHaveLength(1);
-    expect(doneShown[0]?.classList.contains("animate-spin")).toBe(false);
+    const doneFace = doneShown[0];
+    if (!(doneFace instanceof SVGElement)) {
+      throw new Error("expected the success face");
+    }
+    expect(getComputedStyle(doneFace).animationName).toBe("none");
   });
 
   it("groups the control with the description when a content class is given", () => {
@@ -109,7 +121,8 @@ describe("FieldFrame", () => {
       throw new Error("expected a content wrapper");
     }
     expect(wrapper.contains(textboxNamed("Email"))).toBe(true);
-    expect(wrapper.className).toContain("flex");
+    expect(getComputedStyle(wrapper).display).toBe("flex");
+    expect(getComputedStyle(wrapper).flexDirection).toBe("row");
   });
 
   it("leaves the control and the description as siblings without a content class", () => {
@@ -129,11 +142,11 @@ describe("FieldFrame", () => {
       </FieldFrame>
     );
 
-    const group = page.getByRole("group", { name: "Options", exact: true }).element();
+    const group = roleNamed("group", "Options");
     expect(group.tagName).toBe("FIELDSET");
-    expect(group.querySelector("[data-slot=field-legend]")?.textContent).toBe("Options");
+    expect(page.getByText("Options", { exact: true }).element().textContent).toBe("Options");
     expect(page.getByRole("alert").element().textContent).toBe("Required");
-    expect(fieldRootFrom("Choice").querySelectorAll("[data-slot=field]")).toHaveLength(0);
+    expect(nestedOrientationStamps(fieldRootFrom("Choice"))).toHaveLength(0);
   });
 
   it("renders the legend description before the options", () => {
@@ -157,8 +170,8 @@ describe("FieldFrame", () => {
       </FieldFrame>
     );
     const root = fieldRootFrom("Bare options");
-    expect(root.querySelector("[data-slot=field-legend]")).toBeNull();
-    expect(root.querySelector("label")).toBeNull();
+    expect(root.getElementsByTagName("legend")).toHaveLength(0);
+    expect(root.getElementsByTagName("label")).toHaveLength(0);
     expect(page.getByText("busy").query()).toBeTruthy();
   });
 
@@ -186,15 +199,17 @@ describe("FieldFrame", () => {
       fieldRootFrom("Quantity"),
       fieldRootFrom("Notes"),
       fieldRootFrom("Phone"),
-      page.getByRole("group", { name: "Checks", exact: true }).element().closest("[data-slot=field]"),
-      page.getByRole("radiogroup", { name: "Radios", exact: true }).element().closest("[data-slot=field]"),
+      roleNamed("group", "Checks").closest("[data-orientation]"),
+      roleNamed("radiogroup", "Radios").closest("[data-orientation]"),
     ];
     for (const root of named) {
       if (!(root instanceof HTMLElement)) {
         throw new Error("expected a field root");
       }
-      expect(root.querySelectorAll("[data-slot=field]")).toHaveLength(0);
+      expect(nestedOrientationStamps(root)).toHaveLength(0);
     }
-    expect(document.querySelectorAll("[data-slot=field]")).toHaveLength(6);
+    expect(
+      [...document.getElementsByTagName("*")].filter((element) => element.hasAttribute("data-orientation"))
+    ).toHaveLength(6);
   });
 });

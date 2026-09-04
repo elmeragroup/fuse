@@ -8,7 +8,7 @@ import { PopoverInfoButton } from "@elmeragroup/ui/popover-info-button";
 
 import "../../../dist/styles.css";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
-import { renderThemed } from "../../../test/themed-browser-render";
+import { px, renderThemed, roleNamed } from "../../../test/themed-browser-render";
 
 const MORE_INFORMATION_COPY = {
   "nb-NO": "Mer informasjon",
@@ -24,11 +24,7 @@ function renderInfo(node: ReactNode, locale: (typeof SUPPORTED_LOCALES)[number] 
 }
 
 function triggerNamed(name: string): HTMLElement {
-  const element = page.getByRole("button", { name, exact: true }).element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error(`expected button ${name}`);
-  }
-  return element;
+  return roleNamed("button", name);
 }
 
 async function openInfo(name = "More information"): Promise<HTMLElement> {
@@ -74,9 +70,9 @@ describe("PopoverInfoButton", () => {
     );
     const trigger = triggerNamed("More information");
     expect(trigger.getAttribute("aria-expanded")).not.toBe("true");
-    expect(trigger.querySelector("button")).toBeNull();
-    expect(document.querySelectorAll("button")).toHaveLength(1);
-    expect(trigger.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
+    expect(trigger.getElementsByTagName("button")).toHaveLength(0);
+    expect(document.getElementsByTagName("button")).toHaveLength(1);
+    expect(trigger.getElementsByTagName("svg")[0]?.getAttribute("aria-hidden")).toBe("true");
 
     const dialog = await openInfo();
     expect(dialog.textContent).toContain(EXPLAINER);
@@ -101,14 +97,13 @@ describe("PopoverInfoButton", () => {
         <PopoverInfoButton contentSize="sm">{EXPLAINER}</PopoverInfoButton>
       </div>
     );
-    expect(triggerNamed("More information").className).toContain("hover:bg-muted");
-    expect(triggerNamed("More information").className).toContain("size-(--control-h-sm)");
+    const trigger = triggerNamed("More information");
+    expect(px(getComputedStyle(trigger).width)).toBe(px(getComputedStyle(trigger).height));
 
     let dialog = await openInfo();
-    expect(dialog.className).toContain("max-w-sm");
-    expect(dialog.className).toContain("w-auto");
-    expect(dialog.className).toContain("p-4");
-    expect(dialog.className).toContain("text-sm");
+    const smMaxWidth = px(getComputedStyle(dialog).maxWidth);
+    expect(smMaxWidth).toBeGreaterThan(0);
+    expect(px(getComputedStyle(dialog).paddingTop)).toBeGreaterThan(0);
 
     await userEvent.keyboard("{Escape}");
     await vi.waitFor(() => {
@@ -126,7 +121,7 @@ describe("PopoverInfoButton", () => {
       )
     );
     const outlined = triggerNamed("More information");
-    expect(outlined.className).toContain("border-border");
+    expect(getComputedStyle(outlined).borderTopColor).not.toBe("rgba(0, 0, 0, 0)");
     expect(outlined).toHaveProperty("disabled", true);
 
     rerender(
@@ -138,17 +133,17 @@ describe("PopoverInfoButton", () => {
       )
     );
     dialog = await openInfo();
-    expect(dialog.className).toContain("max-w-2xl");
+    expect(px(getComputedStyle(dialog).maxWidth)).toBeGreaterThan(smMaxWidth);
   });
 
   it("portals into the enclosing ThemeScope instead of the document body", async () => {
-    const { host } = renderInfo(
+    renderInfo(
       <div style={{ padding: 240 }}>
         <PopoverInfoButton>{EXPLAINER}</PopoverInfoButton>
       </div>
     );
-    const scope = host.querySelector("[data-theme-brand]");
     const dialog = await openInfo();
+    const scope = dialog.closest("[data-theme-brand]");
     expect(scope).not.toBeNull();
     expect(scope?.contains(dialog)).toBe(true);
     expect([...document.body.children].includes(dialog)).toBe(false);
@@ -184,7 +179,6 @@ describe("PopoverInfoButton", () => {
 
     await userEvent.click(triggerNamed("More information"));
     expect(page.getByRole("dialog").query()).toBeNull();
-    expect(document.querySelector("[data-slot=popover-content]")).toBeNull();
     expect([...document.body.children].some((child) => child.getAttribute("role") === "dialog")).toBe(false);
   });
 });

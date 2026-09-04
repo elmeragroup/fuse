@@ -5,7 +5,7 @@ import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
-import { renderThemed } from "../../../test/themed-browser-render";
+import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { Meter } from "./meter";
 import type { MeterMode } from "./meter-constants";
 
@@ -27,14 +27,7 @@ function renderMeter(node: ReactNode, locale: (typeof SUPPORTED_LOCALES)[number]
   return renderThemed(withLocale(locale, node));
 }
 
-function meterNamed(name: string): HTMLElement {
-  const element = page.getByRole("meter", { name, exact: true }).element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error(`expected meter ${name}`);
-  }
-  return element;
-}
-
+/** spec §9 slot audit: the five `data-slot` parts and the `meter-bar-fill` class matrix. */
 function slot(name: string, root?: HTMLElement): HTMLElement {
   const element = (root ?? document).querySelector(`[data-slot="${name}"]`);
   if (!(element instanceof HTMLElement)) {
@@ -46,7 +39,7 @@ function slot(name: string, root?: HTMLElement): HTMLElement {
 describe("Meter", () => {
   it("is found by role=meter with default aria values and the label as the accessible name", () => {
     renderMeter(<Meter label="Storage used" value={42} />);
-    const meter = meterNamed("Storage used");
+    const meter = roleNamed("meter", "Storage used");
     expect(meter.getAttribute("aria-valuenow")).toBe("42");
     expect(meter.getAttribute("aria-valuemin")).toBe("0");
     expect(meter.getAttribute("aria-valuemax")).toBe("100");
@@ -65,7 +58,7 @@ describe("Meter", () => {
 
   it("emits all five data-slots", () => {
     renderMeter(<Meter label="Storage used" value={42} />);
-    const root = meterNamed("Storage used");
+    const root = roleNamed("meter", "Storage used");
     expect(root.getAttribute("data-slot")).toBe("meter");
     expect(slot("meter-label", root).textContent).toBe("Storage used");
     expect(slot("meter-bar", root)).toBeTruthy();
@@ -185,9 +178,9 @@ describe("Meter", () => {
 
   it("is read-only: no keyboard interaction surface", () => {
     renderMeter(<Meter label="Storage used" value={42} />);
-    const meter = meterNamed("Storage used");
+    const meter = roleNamed("meter", "Storage used");
     expect(meter.getAttribute("tabindex")).toBeNull();
-    expect(meter.querySelector("input")).toBeNull();
+    expect(meter.getElementsByTagName("input")).toHaveLength(0);
     meter.focus();
     expect(document.activeElement).not.toBe(meter);
   });
