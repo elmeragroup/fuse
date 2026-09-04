@@ -100,11 +100,11 @@
         },
         {
           "name": "size",
-          "origin": "declared",
+          "origin": "recipe-axis",
           "type": "\"2xl\" | \"3xl\" | \"4xl\" | \"5xl\" | \"6xl\" | \"default\" | \"lg\" | \"sm\" | \"xl\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"2xl\"",
-          "description": "Typography size for the title, mapped to a `text-{size}` class. Defaults to `2xl`.",
+          "description": "",
           "required": false
         }
       ]
@@ -129,11 +129,11 @@
         },
         {
           "name": "size",
-          "origin": "declared",
+          "origin": "recipe-axis",
           "type": "\"2xl\" | \"default\" | \"lg\" | \"sm\" | \"xl\" | \"xs\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"sm\"",
-          "description": "Typography size for the description, mapped to a `text-{size}` class. Defaults to `sm`.",
+          "description": "",
           "required": false
         }
       ]
