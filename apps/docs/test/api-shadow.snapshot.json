@@ -934,15 +934,22 @@
     {
       "component": "card",
       "path": "evidence.Card.Description.props.size.declarationPaths[0]",
-      "current": "packages/ui/src/components/card/card.tsx",
       "effect": "packages/ui/src/components/card/card-variants.ts",
       "reason": "card evidence.Card.Description.props.size.declarationPaths[0]: tv recipe VariantProps provenance after 2026-09-04 class-map migration."
     },
     {
       "component": "card",
-      "path": "evidence.Card.Description.props.size.declarationPaths[1]",
-      "effect": "packages/ui/src/components/card/card.tsx",
-      "reason": "card evidence.Card.Description.props.size.declarationPaths[1]: tv recipe VariantProps provenance after 2026-09-04 class-map migration."
+      "path": "evidence.Card.Description.props.size.ownership",
+      "current": "synthesized",
+      "effect": "library",
+      "reason": "card Card.Description.size ownership: checker `synthesized` vs Effect `library` (recipe-axis synthesized vs library variants file)."
+    },
+    {
+      "component": "card",
+      "path": "evidence.Card.Description.props.size.synthesized",
+      "current": true,
+      "effect": false,
+      "reason": "card Card.Description.size synthesized: checker true vs Effect false from extractor provenance."
     },
     {
       "component": "card",
@@ -961,22 +968,22 @@
     {
       "component": "card",
       "path": "evidence.Card.Title.props.size.declarationPaths[0]",
-      "current": "packages/ui/src/components/card/card.tsx",
       "effect": "packages/ui/src/components/card/card-variants.ts",
       "reason": "card evidence.Card.Title.props.size.declarationPaths[0]: tv recipe VariantProps provenance after 2026-09-04 class-map migration."
     },
     {
       "component": "card",
-      "path": "evidence.Card.Title.props.size.declarationPaths[1]",
-      "effect": "packages/ui/src/components/card/card.tsx",
-      "reason": "card evidence.Card.Title.props.size.declarationPaths[1]: tv recipe VariantProps provenance after 2026-09-04 class-map migration."
+      "path": "evidence.Card.Title.props.size.ownership",
+      "current": "synthesized",
+      "effect": "library",
+      "reason": "card Card.Title.size ownership: checker `synthesized` vs Effect `library` (recipe-axis synthesized vs library variants file)."
     },
     {
       "component": "card",
-      "path": "parts.Card.Description.props.size.origin",
-      "current": "declared",
-      "effect": "recipe-axis",
-      "reason": "card parts.Card.Description.props.size.origin: tv recipe VariantProps provenance after 2026-09-04 class-map migration."
+      "path": "evidence.Card.Title.props.size.synthesized",
+      "current": true,
+      "effect": false,
+      "reason": "card Card.Title.size synthesized: checker true vs Effect false from extractor provenance."
     },
     {
       "component": "card",
@@ -984,13 +991,6 @@
       "current": "ReactNode",
       "effect": "ReactNode | undefined",
       "reason": "card Card.Title.icon type: Effect appends `| undefined` to optional `ReactNode`; checker omits the undefined member."
-    },
-    {
-      "component": "card",
-      "path": "parts.Card.Title.props.size.origin",
-      "current": "declared",
-      "effect": "recipe-axis",
-      "reason": "card parts.Card.Title.props.size.origin: tv recipe VariantProps provenance after 2026-09-04 class-map migration."
     },
     {
       "component": "checkbox-card",
@@ -8810,7 +8810,9 @@
       "path": "evidence.Toast.Close.props.label",
       "current": {
         "name": "label",
-        "declarationPaths": ["packages/ui/src/components/toast/toast.tsx"],
+        "declarationPaths": [
+          "packages/ui/src/components/toast/toast.tsx"
+        ],
         "ownership": "library",
         "synthesized": false
       },
@@ -8827,7 +8829,9 @@
       "path": "evidence.Toast.Provider.props.toastManager",
       "current": {
         "name": "toastManager",
-        "declarationPaths": ["packages/ui/src/components/toast/toast.tsx"],
+        "declarationPaths": [
+          "packages/ui/src/components/toast/toast.tsx"
+        ],
         "ownership": "library",
         "synthesized": false
       },
@@ -8844,7 +8848,9 @@
       "path": "evidence.Toast.Viewport.props.container",
       "current": {
         "name": "container",
-        "declarationPaths": ["packages/ui/src/components/overlay/overlay-props.ts"],
+        "declarationPaths": [
+          "packages/ui/src/components/overlay/overlay-props.ts"
+        ],
         "ownership": "library",
         "synthesized": false
       },
