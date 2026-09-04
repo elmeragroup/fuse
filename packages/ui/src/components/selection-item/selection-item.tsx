@@ -10,11 +10,16 @@ import { disabledHatch } from "../../styles/utils";
 import { Field } from "../field/field";
 import { Item } from "../item/item";
 import { itemVariants } from "../item/item-variants";
+import {
+  selectionGroupOrientationVariants,
+  type SelectionItemGroupOrientation,
+} from "./selection-item-variants";
 
 /** Resolved once at module scope — the shell always borrows the `outline` arm. */
 const outlineItemClass = itemVariants({ variant: "outline" });
 
-export type SelectionItemGroupOrientation = "vertical" | "horizontal";
+export type { SelectionItemGroupOrientation };
+
 /**
  * What a shell sits in: `false` outside any selection group; otherwise the enclosing
  * group's `orientation` plus whether that group is the private `role="list"` card list
@@ -41,28 +46,6 @@ export function SelectionGroupLayout({ children, orientation }: SelectionGroupLa
   return <SelectionItemGroupContext.Provider value={value}>{children}</SelectionItemGroupContext.Provider>;
 }
 
-/**
- * The one orientation map for the selection-group family (checkbox.md §8.10,
- * radio-group.md §8.11): `group` lays out the group primitive itself, `list` the private
- * stacked-card list inside it. CheckboxGroup and RadioGroup read `group`,
- * `SelectionItemGroup` reads `list`, and the three copies of these two strings that used
- * to sit in `checkbox.tsx`, `radio-group.tsx` and this file are gone (spec 08 finding S18).
- *
- * The option-stack `gap-2` is layout, not a control rung (radio-group.md §4), which is why
- * it is a plain literal here and not a `--control-gap-*` read. The vertical group collapses
- * that gap to `0` when its direct children are selection shells
- * (`has-[>[data-selection-item]]:gap-0`, selection-item.md §8.9): shells draw connected
- * edges, and a gap between connected edges was the bug this closes. Plain
- * `Checkbox`/`Radio` rows keep the `gap-2` stack.
- */
-export const selectionGroupOrientationClass = {
-  group: {
-    vertical: "flex flex-col gap-2 has-[>[data-selection-item]]:gap-0",
-    horizontal: "flex flex-wrap gap-4",
-  },
-  list: { vertical: "gap-0", horizontal: "flex-row flex-wrap gap-4" },
-} as const satisfies Record<"group" | "list", Record<SelectionItemGroupOrientation, string>>;
-
 type SelectionItemGroupProps = {
   children?: ReactNode;
   /**
@@ -86,7 +69,7 @@ export function SelectionItemGroup({
   const value = useMemo(() => ({ orientation, list: true }), [orientation]);
   return (
     <SelectionItemGroupContext.Provider value={value}>
-      <Item.Group className={cn("select-none", selectionGroupOrientationClass.list[orientation])}>
+      <Item.Group className={cn("select-none", selectionGroupOrientationVariants({ orientation }).list())}>
         {children}
       </Item.Group>
     </SelectionItemGroupContext.Provider>

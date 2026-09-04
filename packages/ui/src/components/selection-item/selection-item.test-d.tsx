@@ -22,6 +22,8 @@ test("public API exports only the namespace — aliases and recipes stay out of 
   expectTypeOf(SelectionItemModule).not.toHaveProperty("RadioItem");
   expectTypeOf(SelectionItemModule).not.toHaveProperty("itemVariants");
   expectTypeOf(SelectionItemModule).not.toHaveProperty("selectionItemVariants");
+  expectTypeOf(SelectionItemModule).not.toHaveProperty("selectionGroupOrientationVariants");
+  expectTypeOf(SelectionItemModule).not.toHaveProperty("selectionGroupOrientationClass");
   expectTypeOf(SelectionItemModule).not.toHaveProperty("SelectionItemShell");
   expectTypeOf(SelectionItemModule).not.toHaveProperty("SelectionItemTitle");
   expectTypeOf(SelectionItemModule).not.toHaveProperty("SelectionItemGroup");
