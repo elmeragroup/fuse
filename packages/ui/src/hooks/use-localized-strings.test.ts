@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
 
 import { discoverEntries } from "../../scripts/entries";
 import { SUPPORTED_LOCALES, withLocale } from "../../test/locale-matrix";
-import { createStringDictionary } from "./create-string-dictionary";
+import { createStringDictionary } from "../intl/create-string-dictionary";
 import { fixtureDictionary } from "./intl-fixture";
 import { enUS } from "./intl-fixture/en-US";
 import { fiFI } from "./intl-fixture/fi-FI";

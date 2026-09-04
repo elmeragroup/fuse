@@ -1,7 +1,7 @@
 "use client";
 
 import { use, useState } from "react";
-import type { ComponentProps, ReactElement, ReactNode, RefObject } from "react";
+import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 import { getLocalTimeZone, toCalendarDate, today } from "@internationalized/date";
 import type { CalendarDate } from "@internationalized/date";
@@ -18,6 +18,7 @@ import type {
 } from "react-aria-components";
 
 import { buttonVariants } from "../../components/button/button-variants";
+import type { OverlayContainerProps } from "../../components/overlay/overlay-props";
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { pickerVariants } from "../../styles/picker";
 import { Calendar } from "../calendar/calendar";
@@ -69,7 +70,7 @@ export type DatePickerProps<T extends DateValue> = {
    * inherits the theme it was opened from (theming.md §7.4); an explicit element or ref
    * wins.
    */
-  container?: HTMLElement | RefObject<HTMLElement | null>;
+  container?: OverlayContainerProps["container"];
 } & Omit<AriaDatePickerProps<T>, "defaultValue" | "shouldForceLeadingZeros">;
 
 /**

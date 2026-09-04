@@ -6,40 +6,58 @@ import { cn } from "../../styles/cn";
 import { iconCrossfadeHidden, iconCrossfadeShown, iconCrossfadeTransition } from "../../styles/utils";
 import { Field } from "./field";
 
-/**
- * The label row's own layout, shared by every composite that frames a control. The row
- * is a single flex line with the label at the start and the status face at the end;
- * composites append their own classes (TextField its public `labelContainer` slot,
- * TextareaField the counter gap) through {@link FieldFrameClassNames.labelRow}.
- */
-const fieldFrameLabelRowClass = "flex items-center justify-between";
+/** Default `Field.Root` stack for labeled (non-legend) composites. */
+export const fieldFrameRootClass = "group flex flex-col gap-1";
 
 /**
- * One class argument per part the frame paints. The five keys are the five
- * `textFieldVariants` slots that survive at this tier — TextField, the only caller that
- * uses all of them, passes its recipe slots straight through, so the names line up with
- * the recipe rather than describing a second vocabulary.
+ * The heading row's own layout. Composites append their own classes (TextareaField the
+ * counter gap) through {@link FieldFrameClassNames.labelRow}.
+ */
+export const fieldFrameLabelRowClass = "flex items-center justify-between";
+
+/** Default wrapper around control + description when that wrapper is opted into. */
+export const fieldFrameContentClass = "flex flex-col gap-1";
+
+/**
+ * Default `Field.Description` class. `text-pretty` lives here, not on TextField's public
+ * slot: Field.Description already paints it, and PhoneNumberField must not import
+ * TextField's recipe to re-state it.
+ */
+export const fieldFrameDescriptionClass = "text-sm text-pretty";
+
+/**
+ * One class argument per part the frame paints. `content` opts into the
+ * control/description wrapper and is the wrapper's class as given — no default merge.
  */
 export type FieldFrameClassNames = {
-  /** `Field.Root` — TextField's `base` slot. */
-  root?: string;
-  /** The label row — TextField's `labelContainer` slot. */
+  /** The heading row. */
   labelRow?: string;
-  /** `Field.Label` — TextField's `label` slot. */
+  /** `Field.Label` or `Field.Legend`. */
   label?: string;
-  /** The content wrapper; painted only when `groupsControlWithDescription` is set. */
+  /**
+   * The content wrapper around control + description. Rendered when this class is
+   * given, as this string exactly; omitted, both are direct children of `Field.Root` /
+   * `Field.Set`.
+   */
   content?: string;
-  /** `Field.Description` — TextField's `description` slot. */
+  /** `Field.Description`. */
   description?: string;
 };
 
+export type FieldFrameHeading = "label" | "legend";
+
 export type FieldFrameProps = {
-  /** Visible label, rendered as `Field.Label`. Falsy renders no label. */
+  /**
+   * How the heading is labelled. `"label"` (default) renders `Field.Label`; `"legend"`
+   * wraps the body in `Field.Set` and renders `Field.Legend variant="label"`.
+   */
+  heading?: FieldFrameHeading;
+  /** Visible heading. Falsy renders no label/legend element. */
   label?: string;
   /**
-   * Component-owned status face rendered at the end of the label row — TextareaField's
-   * character counter. Its presence forces the row to exist, the same way `isPending`
-   * and `isSuccess` do.
+   * Component-owned status face at the end of the heading row — TextareaField's
+   * character counter, RadioGroup's pending spinner. Its presence forces the row to
+   * exist, the same way `isPending` and `isSuccess` do.
    */
   status?: ReactNode;
   /** Shows the spinner face of the label-row crossfade. */
@@ -48,19 +66,16 @@ export type FieldFrameProps = {
   isSuccess?: boolean;
   /** Supporting copy, rendered as `Field.Description` when truthy. */
   description?: ReactNode;
-  /**
-   * Wraps the control and the description in a `div` of their own — TextField's
-   * `container` slot, which turns the pair into a row under `variant="card"`. Unset,
-   * both are direct children of `Field.Root`. The wrapper's classes are
-   * {@link FieldFrameClassNames.content}; asking for a bare wrapper is legal.
-   */
-  groupsControlWithDescription?: boolean;
   /** Error copy, rendered as `Field.Error`, which self-suppresses on falsy children. */
   errorMessage?: ReactNode;
   /** Forwarded to `Field.Root`. */
   invalid?: boolean;
   /** Forwarded to `Field.Root`. */
   disabled?: boolean;
+  /** Forwarded to `Field.Root`. CheckboxGroup threads its `name` here (checkbox.md §8.6). */
+  name?: string;
+  /** Extra classes, merged onto `Field.Root`. */
+  className?: string;
   /** Per-part classes; see {@link FieldFrameClassNames}. */
   classNames?: FieldFrameClassNames;
   /** The control this frame labels. */
@@ -68,79 +83,99 @@ export type FieldFrameProps = {
 };
 
 /**
- * Package-private label/status/description/error frame for the labeled field composites
- * (field.md §8.9; spec 08 finding S18). TextField, NumberField and TextareaField had
- * rebuilt this shape three times and had already drifted — TextField crossfaded the
- * pending and success glyphs while NumberField stacked both side by side
- * (number-field.md §8.7).
+ * Package-private heading/description/error frame for every labeled composite
+ * (field.md §8.9). `heading="legend"` is the fieldset skeleton CheckboxGroup and
+ * RadioGroup used to rebuild beside this module.
  *
  * It is not exported through `package.json#exports` and carries no client directive: it
- * owns no state, and all three consumers are client modules already, so a directive here
+ * owns no state, and its consumers are client modules already, so a directive here
  * would only widen the client graph (performance.md §3; `source-contracts.test.ts` pins
- * the classification, as it does for the shared overlay close button).
+ * the classification).
  *
  * **It does not nest a second `Field.Root`.** The card-style label shape that field.md
- * §7 warns about — a nested root shadowing the outer registration and leaving the
- * control unnamed — is exactly one `Field.Root` per composite here, as before.
+ * §7 warns about is exactly one `Field.Root` per composite here, as before.
  */
 export function FieldFrame({
+  heading = "label",
   label,
   status,
   isPending = false,
   isSuccess = false,
   description,
-  groupsControlWithDescription = false,
   errorMessage,
   invalid,
   disabled,
+  name,
+  className,
   classNames,
   children,
 }: FieldFrameProps): ReactElement {
   const hasCrossfade = isPending || isSuccess;
+  const headingClass = classNames?.label;
   const descriptionNode = description ? (
-    <Field.Description className={classNames?.description}>{description}</Field.Description>
+    <Field.Description className={cn(fieldFrameDescriptionClass, classNames?.description)}>
+      {description}
+    </Field.Description>
   ) : null;
+  const body =
+    heading === "legend" ? (
+      <>
+        {descriptionNode}
+        {children}
+      </>
+    ) : (
+      <>
+        {children}
+        {descriptionNode}
+      </>
+    );
+  const content = classNames?.content === undefined ? body : <div className={classNames.content}>{body}</div>;
+  const headingRow =
+    label || status != null || hasCrossfade ? (
+      <div className={cn(fieldFrameLabelRowClass, classNames?.labelRow)}>
+        {label ? (
+          heading === "legend" ? (
+            <Field.Legend variant="label" className={headingClass}>
+              {label}
+            </Field.Legend>
+          ) : (
+            <Field.Label className={headingClass}>{label}</Field.Label>
+          )
+        ) : null}
+        {status}
+        {hasCrossfade ? (
+          <div className="relative size-3.5">
+            <SpinnerGap
+              aria-hidden
+              className={cn(
+                "animate-spin absolute inset-0 m-auto size-3",
+                iconCrossfadeTransition,
+                isSuccess ? iconCrossfadeHidden : iconCrossfadeShown
+              )}
+            />
+            <Check
+              aria-hidden
+              className={cn(
+                "absolute inset-0 m-auto size-3.5",
+                iconCrossfadeTransition,
+                isSuccess ? iconCrossfadeShown : iconCrossfadeHidden
+              )}
+            />
+          </div>
+        ) : null}
+      </div>
+    ) : null;
+  const framed = (
+    <>
+      {headingRow}
+      {content}
+      <Field.Error>{errorMessage}</Field.Error>
+    </>
+  );
 
   return (
-    <Field.Root invalid={invalid} disabled={disabled} className={classNames?.root}>
-      {label || status != null || hasCrossfade ? (
-        <div className={cn(fieldFrameLabelRowClass, classNames?.labelRow)}>
-          {label ? <Field.Label className={classNames?.label}>{label}</Field.Label> : null}
-          {status}
-          {hasCrossfade ? (
-            <div className="relative size-3.5">
-              <SpinnerGap
-                aria-hidden
-                className={cn(
-                  "animate-spin absolute inset-0 m-auto size-3",
-                  iconCrossfadeTransition,
-                  isSuccess ? iconCrossfadeHidden : iconCrossfadeShown
-                )}
-              />
-              <Check
-                aria-hidden
-                className={cn(
-                  "absolute inset-0 m-auto size-3.5",
-                  iconCrossfadeTransition,
-                  isSuccess ? iconCrossfadeShown : iconCrossfadeHidden
-                )}
-              />
-            </div>
-          ) : null}
-        </div>
-      ) : null}
-      {groupsControlWithDescription ? (
-        <div className={classNames?.content}>
-          {children}
-          {descriptionNode}
-        </div>
-      ) : (
-        <>
-          {children}
-          {descriptionNode}
-        </>
-      )}
-      <Field.Error>{errorMessage}</Field.Error>
+    <Field.Root name={name} invalid={invalid} disabled={disabled} className={className}>
+      {heading === "legend" ? <Field.Set>{framed}</Field.Set> : framed}
     </Field.Root>
   );
 }

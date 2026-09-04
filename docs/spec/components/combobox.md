@@ -16,7 +16,7 @@
 | `Combobox.Input`      | `InputGroup > ComboboxPrimitive.Input(render=InputGroup.Input) + InputGroup.Addon(inline-end)` | the whole field chrome; addon holds the trigger and/or clear buttons; `children` render inside the InputGroup (extra addons, hidden inputs) |
 | `Combobox.Trigger`    | `ComboboxPrimitive.Trigger`                                                                    | appends a rotating `CaretDown` after `children`; inside `Combobox.Input` it is rendered through `InputGroup.Button` (ghost, icon-sm)        |
 | `Combobox.Clear`      | `ComboboxPrimitive.Clear`                                                                      | `render={<InputGroup.Button variant="ghost" size="icon-sm" />}` with an `X` icon; **unexported in the ref**, exported here (§8)             |
-| `Combobox.Content`    | `Portal > Positioner > Popup`                                                                  | popup surface; declares `group/combobox-content`; emits `data-chips`                                                                        |
+| `Combobox.Content`    | `Portal > Positioner > Popup`                                                                  | popup surface; declares `group/combobox-content`; emits `data-external-anchor`                                                              |
 | `Combobox.List`       | `ComboboxPrimitive.List`                                                                       | scroll container with the `--spacing()` max-height calc (§8-kept)                                                                           |
 | `Combobox.Item`       | `ComboboxPrimitive.Item`                                                                       | `children` + auto `ItemIndicator` (`span` render, `Check`, absolute right-2)                                                                |
 | `Combobox.Group`      | `ComboboxPrimitive.Group`                                                                      | passthrough (no default classes)                                                                                                            |
@@ -73,14 +73,14 @@ Runtime note (kept, §8): `showTrigger` and `showClear` are effectively mutually
 
 **Combobox.Content** — `ComponentProps<ComboboxPrimitive.Popup>` plus positioner props (forwarded to `ComboboxPrimitive.Positioner`) plus the conventions' overlay `container`:
 
-| Prop          | Type                                            | Default                      | Notes                                                          |
-| ------------- | ----------------------------------------------- | ---------------------------- | -------------------------------------------------------------- |
-| `side`        | Positioner `side`                               | `"bottom"`                   |                                                                |
-| `sideOffset`  | `number`                                        | `6`                          | (Select uses 4 — faithful to each ref)                         |
-| `align`       | Positioner `align`                              | `"start"`                    |                                                                |
-| `alignOffset` | `number`                                        | `0`                          |                                                                |
-| `anchor`      | Positioner `anchor` (element/ref/virtual)       | —                            | pass `useComboboxAnchor()`'s ref; also flips `data-chips` (§6) |
-| `container`   | `HTMLElement \| RefObject<HTMLElement \| null>` | nearest `ThemeScope` element | portal target (§8)                                             |
+| Prop          | Type                                            | Default                      | Notes                                                                    |
+| ------------- | ----------------------------------------------- | ---------------------------- | ------------------------------------------------------------------------ |
+| `side`        | Positioner `side`                               | `"bottom"`                   |                                                                          |
+| `sideOffset`  | `number`                                        | `6`                          | (Select uses 4 — faithful to each ref)                                   |
+| `align`       | Positioner `align`                              | `"start"`                    |                                                                          |
+| `alignOffset` | `number`                                        | `0`                          |                                                                          |
+| `anchor`      | Positioner `anchor` (element/ref/virtual)       | —                            | pass `useComboboxAnchor()`'s ref; also flips `data-external-anchor` (§6) |
+| `container`   | `HTMLElement \| RefObject<HTMLElement \| null>` | nearest `ThemeScope` element | portal target (§8)                                                       |
 
 **Combobox.Chip** — `ComponentProps<ComboboxPrimitive.Chip>` plus:
 
@@ -115,14 +115,14 @@ No `tv` recipes and no axes — Content, Item, Label, and Separator compose the 
 **Emitted (by our wrappers)**:
 
 - `data-slot`: `combobox-value` · `combobox-trigger` · `combobox-clear` · `combobox-content` · `combobox-list` · `combobox-item` · `combobox-group` · `combobox-label` · `combobox-collection` · `combobox-empty` · `combobox-separator` · `combobox-chips` · `combobox-chip` · `combobox-chip-remove` · `combobox-chip-input` (ChipsInput — the ref's singular spelling, kept) — plus `data-slot="input-group-button"` on the trigger's InputGroup.Button face inside `Combobox.Input`. `Combobox.ChipsInput` also emits `data-focus-ring-control` for the Chips within adapter. Root emits nothing.
-- `data-chips="true" | "false"` on Content — `!!anchor`; true switches popup sizing from `min-w-[calc(var(--anchor-width)+--spacing(7))]` to `min-w-(--anchor-width)` (anchored/chips mode hugs the anchor exactly).
+- `data-external-anchor="true" | "false"` on Content — `!!anchor`; true switches popup sizing from `min-w-[calc(var(--anchor-width)+--spacing(7))]` to `min-w-(--anchor-width)` (anchored mode hugs the anchor exactly).
 
 **Emitted (by base-ui, styled by us)**: `data-popup-open` (trigger ancestry — caret rotation via `in-data-popup-open:rotate-180`), `data-open`/`data-closed` + `data-side` (popup), `data-highlighted`/`data-disabled` (items), `data-empty` (popup + list), `data-pressed` (trigger button), `disabled` (chip children via `has-disabled:`).
 
 **Consumed selectors**:
 
 - `Combobox.Input`'s trigger button: `group-has-data-[slot=combobox-clear]/input-group:hidden` (trigger/clear exclusivity) and `data-pressed:bg-transparent`.
-- Popup: `data-open:animate-in fade-in-0 zoom-in-95`, `data-closed:animate-out fade-out-0 zoom-out-95`, `data-[side=bottom|top|left|right|inline-start|inline-end]:slide-in-from-*`, `data-[chips=true]:min-w-(--anchor-width)`; sizing vars `max-h-(--available-height) w-(--anchor-width) max-w-(--available-width) origin-(--transform-origin)`; child restyle `*:data-[slot=input-group]:m-1 …mb-0 …h-(--control-h-sm) …border-input/30 …bg-input/30 …shadow-none` for a popup-embedded search InputGroup (the `sm` control rung, not a literal 32 px). Bare `data-open:`/`data-closed:` are the self-scoped custom variants from conventions and stay on the popup that emits the state. _(Amended 2026-09-02.)_
+- Popup: `data-open:animate-in fade-in-0 zoom-in-95`, `data-closed:animate-out fade-out-0 zoom-out-95`, `data-[side=bottom|top|left|right|inline-start|inline-end]:slide-in-from-*`, `data-[external-anchor=true]:min-w-(--anchor-width)`; sizing vars `max-h-(--available-height) w-(--anchor-width) max-w-(--available-width) origin-(--transform-origin)`; child restyle `*:data-[slot=input-group]:m-1 …mb-0 …h-(--control-h-sm) …border-input/30 …bg-input/30 …shadow-none` for a popup-embedded search InputGroup (the `sm` control rung, not a literal 32 px). Bare `data-open:`/`data-closed:` are the self-scoped custom variants from conventions and stay on the popup that emits the state. _(Amended 2026-09-04: `data-external-anchor` renamed from `data-chips`.)_
 - List: `data-empty:p-0` and the kept max-height calc `max-h-[min(calc(--spacing(72)---spacing(9)),calc(var(--available-height)---spacing(9)))]` — caps the list at 72 spacing units minus a 9-unit allowance for popup-embedded chrome, never exceeding available height minus the same allowance.
 - Empty: `group-data-empty/combobox-content:flex` (visible only when the popup reports no matches).
 - Item: `data-highlighted:bg-accent data-highlighted:text-accent-foreground`, `data-disabled:pointer-events-none data-disabled:opacity-50`.
@@ -151,7 +151,8 @@ No `tv` recipes and no axes — Content, Item, Label, and Separator compose the 
 9. **Provider-owned locale and strings:** removes Root's public `locale`; Clear, Chip remove, Empty, and the Input caret Trigger use the co-located four-locale dictionary with optional copy overrides (`clearLabel` / `removeLabel` / Empty `children`). The caret name is dictionary `toggle` in all four locales. _(Amended 2026-09-02.)_
 10. **Chip `removeLabel` default uses children, then `itemToStringLabel(value)`:** Chip still exposes no `value` prop. The wrapper reads the selected value for this chip via `Combobox.Value` plus render-order index under `Combobox.Chips`, and Root's `itemToStringLabel`, without importing the banned `@base-ui/react/combobox` subpath. Default accessible name formats dictionary `removeItem` with string/number children; non-string children fall back to `itemToStringLabel(value)`; if neither yields text, the localized "Remove" string alone with no trailing space. _(Amended 2026-09-02.)_
 
-11. **Shared overlay spine adopted:** `Combobox.Content` composes `useResolvedPortalContainer`, `OverlayContainerProps`, and `overlayPositionerClass` / `overlayPopupSurfaceClass` / `overlayPopupMotionClass` / `overlayPopupDurationClass`; `Combobox.Item`, `Combobox.Label`, and `Combobox.Separator` compose `menuItemClass` / `menuItemIndicatorClass` / `menuGroupLabelClass` / `menuSeparatorClass`; Chips and ChipsInput compose `withinFocusRingClass` / `withinFocusRingControlClass`, and `isChipText` becomes the shared `isTextValueNode`. Only `side` and `alignOffset` take the shared `OverlayPositionerProps` declarations: `sideOffset` (6) and `align` (`"start"`) differ from the shared `@default` tags and are redeclared, interleaved so the published `propOrder` (`side, sideOffset, align, alignOffset, anchor, container`) does not move. The extras that stay Combobox's are the popup geometry and embedded-InputGroup selectors, the option's `w-full pr-8 pl-2` and its `data-highlighted:` highlight face (base-ui spells the listbox highlight `data-highlighted:`, so `menuItemClass` deliberately excludes it), and the indicator's `size-4`. Emitted class set, prop names, documented defaults, and DOM are unchanged. _(Amended 2026-09-03.)_
+11. **Shared overlay spine adopted:** `Combobox.Content` composes `OverlayPortal`, `OverlayContainerProps`, `OverlayPositionerProps`, and `overlayPositionerClass` / `overlayTimedPopupClass`; `Combobox.Item`, `Combobox.Label`, and `Combobox.Separator` compose `menuItemClass` / `menuItemIndicatorClass` / `menuGroupLabelClass` / `menuSeparatorClass`; Chips and ChipsInput compose `withinFocusRingClass` / `withinFocusRingControlClass`, and `isChipText` becomes the shared `isTextValueNode`. Content takes the shared positioner block whole and keeps `anchor` as its extra; published defaults come from destructuring (popover.md §8.7). The extras that stay Combobox's are the popup geometry and embedded-InputGroup selectors, the option's `w-full pr-8 pl-2` and its `data-highlighted:` highlight face (base-ui spells the listbox highlight `data-highlighted:`, so `menuItemClass` deliberately excludes it), and the indicator's `size-4`. Emitted class set, prop names, documented defaults, and DOM are unchanged. _(Amended 2026-09-04: tickets 02, 05, 08.)_
+12. **`data-external-anchor` not `data-chips`** (ticket 09, 2026-09-04): Content emits `data-external-anchor` because any `anchor` caller (Chips and PhoneNumberField) reuses the width switch; `data-chips` named the chips family and no longer described the rule.
 
 Kept faithfully:
 
@@ -159,7 +160,7 @@ Kept faithfully:
 - `showTrigger`/`showClear` runtime mutual exclusivity via `group-has-data-[slot=combobox-clear]/input-group:hidden` (§3).
 - `Combobox.Input` wrapping itself in an `InputGroup` (className goes to the group; `w-auto`).
 - The `--spacing()` max-height calc on `Combobox.List` (§6).
-- `data-chips={!!anchor}` on Content and its `min-w` switch.
+- `data-external-anchor={!!anchor}` on Content and its `min-w` switch.
 - The chips family (multi-select) incl. `has-aria-invalid:` chrome, `has-data-[slot=combobox-chip]:px-1.5`, chip `showRemove`, `ChipsInput` as a bare input.
 - `data-slot="combobox-chip-input"` singular spelling on ChipsInput.
 - Popup-embedded InputGroup spacing, height (`h-(--control-h-sm)`), border tint, fill, and shadow restyle selectors; focus-ring suppression is explicitly not carried forward.
@@ -174,7 +175,7 @@ Role/label-based queries throughout; keyboard flows per §7:
 - Trigger button: `getByRole("button", { name })` using dictionary `toggle` in each locale; click opens/closes; caret rotation state via `data-popup-open` (attribute assertion).
 - Clear button: with `showClear`, after a selection `getByRole("button", { name: /clear/i })` empties the value and the trigger button stays hidden while Clear is present (assert exclusivity); focus returns to the input.
 - Chips multi-select: with `multiple` + Chips/Chip/ChipsInput, selecting options appends chips (popup stays open); chip remove button deletes its chip; Backspace in the empty ChipsInput removes the last chip; `aria-invalid` surfaces the Chips error ring.
-- Anchored mode: passing `anchor` from `useComboboxAnchor` sets `data-chips="true"` on the popup and positions against the anchor element.
+- Anchored mode: passing `anchor` from `useComboboxAnchor` sets `data-external-anchor="true"` on the popup and positions against the anchor element.
 - `container`: popup renders inside the provided element / nearest ThemeScope, not `document.body`.
 - Disabled: `Combobox.Input disabled` disables input, trigger, and clear.
 - Empty/Clear/Remove defaults render in all four locales; `children`, `clearLabel`, `label`, and `removeLabel` override their respective copy. Chip-remove for object items without string children is named from `itemToStringLabel(value)`; if that yields no text, the name is the localized "Remove" string with no trailing space.

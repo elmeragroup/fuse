@@ -444,12 +444,12 @@ describe("SelectionItem", () => {
 });
 
 /**
- * The shared fieldset skeleton and the one orientation map (checkbox.md §8.10,
- * radio-group.md §8.11, selection-item.md §8.8). These assertions compare the two
- * families against each other rather than against a class string, so the map cannot be
- * forked back into two copies without one of the two moving and this failing.
+ * The one orientation map (checkbox.md §8.10, radio-group.md §8.11, selection-item.md
+ * §8.8). These assertions compare the two families against each other rather than against
+ * a class string, so the map cannot be forked back into two copies without one of the two
+ * moving and this failing. The fieldset skeleton is FieldFrame `heading="legend"`.
  */
-describe("SelectionGroupFrame", () => {
+describe("selection group orientation map", () => {
   function radioNamed(name: string): HTMLElement {
     const element = page.getByRole("radio", { name, exact: true }).element();
     if (!(element instanceof HTMLElement)) {

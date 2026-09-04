@@ -10,11 +10,11 @@ import { SpinnerGap } from "../../icons/generated/spinner-gap";
 import { cn } from "../../styles/cn";
 import { selfFocusRingClass } from "../../styles/utils";
 import { Field } from "../field/field";
+import { FieldFrame } from "../field/field-frame";
 import {
-  renderSelectionItemCardGroup,
-  SelectionGroupFrame,
   selectionGroupOrientationClass,
   SelectionItem,
+  SelectionItemGroup,
 } from "../selection-item/selection-item";
 
 /**
@@ -58,8 +58,8 @@ export type RadioGroupProps = {
   /**
    * Decorative `SpinnerGap` at the header row's end. Sets `aria-busy` on the
    * radiogroup while true; omitted when pending is false or absent. The header
-   * row renders when `label` or `isPending` is truthy — `isPending={false}` with
-   * no label does not emit an empty legend.
+   * row renders when `label` or `isPending` is truthy. An unlabeled pending group
+   * renders that status row with no legend element.
    */
   isPending?: boolean;
   /**
@@ -128,13 +128,13 @@ export function RadioGroup({
   children,
 }: RadioGroupProps): ReactElement {
   return (
-    <SelectionGroupFrame
+    <FieldFrame
+      heading="legend"
       label={label}
       description={description}
       errorMessage={errorMessage}
-      isInvalid={isInvalid}
-      isDisabled={isDisabled}
-      groupsLegendWithStatus
+      invalid={isInvalid}
+      disabled={isDisabled}
       status={isPending ? <SpinnerGap aria-hidden className="animate-spin size-3" /> : null}>
       <RadioGroupPrimitive
         data-slot="radio-group"
@@ -150,7 +150,7 @@ export function RadioGroup({
         className={cn(selectionGroupOrientationClass.group[orientation], className)}>
         {children}
       </RadioGroupPrimitive>
-    </SelectionGroupFrame>
+    </FieldFrame>
   );
 }
 
@@ -161,9 +161,13 @@ export function RadioGroup({
  * horizontal is `flex-row flex-wrap gap-4` with individually rounded cards.
  */
 export function RadioItemGroup({ orientation = "vertical", ...props }: RadioGroupProps): ReactElement {
-  // The default is spelled here, not only inside the shared body, because the docs API
-  // extractor reads a part's documented defaults out of its own destructuring.
-  return renderSelectionItemCardGroup(RadioGroup, { ...props, orientation });
+  // The default is spelled here because the docs API extractor reads a part's
+  // documented defaults out of its own destructuring.
+  return (
+    <RadioGroup {...props} orientation={orientation}>
+      <SelectionItemGroup orientation={orientation}>{props.children}</SelectionItemGroup>
+    </RadioGroup>
+  );
 }
 
 export type RadioProps = {

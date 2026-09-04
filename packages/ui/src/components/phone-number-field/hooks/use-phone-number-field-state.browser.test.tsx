@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { ReactElement } from "react";
 
 import { AsYouType } from "libphonenumber-js/core";
@@ -76,6 +76,38 @@ function numberInput(): HTMLInputElement {
   return element;
 }
 
+/**
+ * Parent can clear `value` and later restore the string the hook itself last emitted —
+ * the form-reset / undo / navigate-back sequence the echo guard must still converge on.
+ */
+function RestoreProbe(): ReactElement {
+  const [value, setValue] = useState("");
+  const emittedRef = useRef("");
+  const phone = usePhoneNumberFieldState({
+    value,
+    onChange: (next) => {
+      emittedRef.current = next;
+      setValue(next);
+    },
+    locale: "en-US",
+  });
+  return (
+    <>
+      <input
+        aria-label="Number"
+        value={phone.displayValue}
+        onChange={(event) => phone.handleInputChange(event.currentTarget.value)}
+      />
+      <button type="button" onClick={() => setValue("")}>
+        Clear
+      </button>
+      <button type="button" onClick={() => setValue(emittedRef.current)}>
+        Restore
+      </button>
+    </>
+  );
+}
+
 describe("usePhoneNumberFieldState parse budget", () => {
   it.each([
     ["default e164", {}],
@@ -125,5 +157,24 @@ describe("usePhoneNumberFieldState parse budget", () => {
     parses = 0;
     selectCountry?.("SE");
     await expect.poll(() => parses).toBe(1);
+  });
+});
+
+describe("usePhoneNumberFieldState controlled restore", () => {
+  it("shows the digits again when the parent clears then restores the emitted value", async () => {
+    renderThemed(<RestoreProbe />);
+    const input = page.getByRole("textbox", { name: "Number", exact: true });
+    const digits = "41234567";
+    for (const [index, digit] of digits.split("").entries()) {
+      await userEvent.type(input, digit);
+      expect(parses, `after ${index + 1} keystroke(s)`).toBe(index + 1);
+    }
+    await expect.poll(() => numberInput().value).toBe(digits);
+
+    await userEvent.click(page.getByRole("button", { name: "Clear", exact: true }));
+    await expect.poll(() => numberInput().value).toBe("");
+
+    await userEvent.click(page.getByRole("button", { name: "Restore", exact: true }));
+    await expect.poll(() => numberInput().value).toBe(digits);
   });
 });

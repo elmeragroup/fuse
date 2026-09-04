@@ -178,12 +178,19 @@ describe("Sheet", () => {
     }
 
     last.focus();
+    await vi.waitFor(() => {
+      expect(document.activeElement).toBe(last);
+    });
     await userEvent.keyboard("{Tab}");
-    expect(dialog.contains(document.activeElement)).toBe(true);
-    expect(document.activeElement).toBe(first);
+    await vi.waitFor(() => {
+      expect(dialog.contains(document.activeElement)).toBe(true);
+      expect(document.activeElement).toBe(first);
+    });
 
     await userEvent.keyboard("{Shift>}{Tab}{/Shift}");
-    expect(document.activeElement).toBe(last);
+    await vi.waitFor(() => {
+      expect(document.activeElement).toBe(last);
+    });
     expect(behind.contains(document.activeElement)).toBe(false);
   });
 
@@ -247,8 +254,8 @@ describe("Sheet", () => {
 
   it("resolves the size axis to the side-gated used max-width on both gated sides", async () => {
     // Asserts the used value the panel is actually capped at, not the class spelling:
-    // the axis moves through `--sheet-width`, so a rung is only correct if the two
-    // side-gated `max-w-(--sheet-width)` consumers resolve it (sheet.md §4, §8.11).
+    // the axis moves through `--overlay-width`, so a rung is only correct if the two
+    // side-gated `max-w-(--overlay-width)` consumers resolve it (sheet.md §4, §8.13).
     const cases = [
       { size: undefined, cap: () => remToPx(readToken("--container-md")) },
       { size: "sm", cap: () => remToPx(readToken("--container-sm")) },

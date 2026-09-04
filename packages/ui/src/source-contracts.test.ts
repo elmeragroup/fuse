@@ -3,18 +3,27 @@ import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
+import { overlayLayer } from "./components/overlay/overlay-classes";
+
 /**
  * Remaining source-level invariants that are not already a lint rule
  * (`facade-reexport-grammar`, `no-rac-outside-quarantine`,
  * `no-hardcoded-density-metrics`, `no-primitive-colors`, `no-local-focus-ring`,
- * `no-tailwind-dark-variant`, `restrict-process-env`) or an
- * exports/package-check gate. Each describe documents why the contract is not a
- * lint rule.
+ * `restrict-focus-ring-call`, `no-field-part-jsx`, `no-tailwind-dark-variant`,
+ * `restrict-process-env`, `no-restricted-imports` for `LocalizedStringDictionary`)
+ * or an exports/package-check gate. Each describe documents why the contract is
+ * not a lint rule.
  */
 const SRC_ROOT = dirname(fileURLToPath(import.meta.url));
 const PACKAGE_ROOT = join(SRC_ROOT, "..");
 
 type RscStatus = "client" | "server";
+
+type SourceRecord = {
+  relative: string;
+  source: string;
+  code: string;
+};
 
 const CLIENT_COMPONENTS: ReadonlyArray<readonly [string, readonly string[]]> = [
   ["accordion", ["components/accordion/accordion.tsx"]],
@@ -99,16 +108,7 @@ const CLIENT_ISLANDS: ReadonlyArray<readonly [string, readonly string[]]> = [
   ["description-list", ["components/description-list/description-list-heading.tsx"]],
 ];
 
-const CLIENT_HOOKS = ["hooks/use-localized-strings.ts", "theme/use-resolved-portal-container.ts"] as const;
-
-function readSrc(relativePath: string): string {
-  return readFileSync(join(SRC_ROOT, relativePath), "utf8");
-}
-
-function hasUseClientDirective(source: string): boolean {
-  const trimmed = source.trimStart();
-  return trimmed.startsWith('"use client"') || trimmed.startsWith("'use client'");
-}
+const CLIENT_HOOKS = ["hooks/use-localized-strings.ts"] as const;
 
 function isTestFile(path: string): boolean {
   return (
@@ -132,6 +132,66 @@ function walkSourceFiles(directory: string): string[] {
     }
   }
   return files;
+}
+
+/** Line-comment and block-comment lines dropped, so prose citing a spelling is not a copy of it. */
+function codeOnly(source: string): string {
+  return source
+    .split("\n")
+    .filter((line) => {
+      const trimmed = line.trimStart();
+      return !trimmed.startsWith("*") && !trimmed.startsWith("//") && !trimmed.startsWith("/*");
+    })
+    .join("\n");
+}
+
+function loadSourceTree(): ReadonlyMap<string, SourceRecord> {
+  const tree = new Map<string, SourceRecord>();
+  for (const file of walkSourceFiles(SRC_ROOT)) {
+    const source = readFileSync(file, "utf8");
+    tree.set(file, {
+      relative: relative(SRC_ROOT, file),
+      source,
+      code: codeOnly(source),
+    });
+  }
+  return tree;
+}
+
+const SOURCE_TREE = loadSourceTree();
+
+function readSrc(relativePath: string): string {
+  const record = SOURCE_TREE.get(join(SRC_ROOT, relativePath));
+  if (record === undefined) {
+    throw new Error(`expected source file ${relativePath}`);
+  }
+  return record.source;
+}
+
+function ownedBy(owner: string, needle: string): string[] {
+  const ownerPath = join(SRC_ROOT, owner);
+  const restating: string[] = [];
+  for (const [file, record] of SOURCE_TREE) {
+    if (file !== ownerPath && record.code.includes(needle)) {
+      restating.push(record.relative);
+    }
+  }
+  return restating;
+}
+
+function filesContainingCode(needle: string): string[] {
+  const hits: string[] = [];
+  for (const record of SOURCE_TREE.values()) {
+    if (record.code.includes(needle)) {
+      hits.push(record.relative);
+    }
+  }
+  return hits;
+}
+
+function hasUseClientDirective(source: string): boolean {
+  const trimmed = source.trimStart();
+  return trimmed.startsWith('"use client"') || trimmed.startsWith("'use client'");
 }
 
 function expectRsc(relativePath: string, rsc: RscStatus): void {
@@ -191,10 +251,9 @@ describe("RSC classification", () => {
   });
 
   // Why not a lint rule: same judgment as the close button above. FieldFrame holds no
-  // state either, and its four consumers (TextField, NumberField, TextareaField,
-  // PhoneNumberField) are client modules already, so a directive would only widen the
-  // client graph. SelectionGroupFrame needs no entry: it lives in `selection-item.tsx`,
-  // which is a client module in its own right.
+  // state either, and its six consumers (TextField, NumberField, TextareaField,
+  // PhoneNumberField, CheckboxGroup, RadioGroup) are client modules already, so a
+  // directive would only widen the client graph.
   it("leaves the shared field frame directive-free — it owns no state", () => {
     expectRsc("components/field/field-frame.tsx", "server");
   });
@@ -206,12 +265,11 @@ describe("no .ref/ in package source", () => {
   // packed artifact; this walk is the source-side half. A path-literal lint
   // rule would need a reviewed allowlist for scripts that read the snapshots.
   it("does not mention .ref/ in library source modules", () => {
-    const files = walkSourceFiles(SRC_ROOT);
-    expect(files.length).toBeGreaterThan(0);
-    for (const file of files) {
-      expect(readFileSync(file, "utf8"), file).not.toContain(".ref/");
+    expect(SOURCE_TREE.size).toBeGreaterThan(0);
+    for (const [file, record] of SOURCE_TREE) {
+      expect(record.source, file).not.toContain(".ref/");
     }
-  }, 30_000);
+  });
 });
 
 describe("deleted user-agent and @elmeragroup/lib APIs", () => {
@@ -219,18 +277,16 @@ describe("deleted user-agent and @elmeragroup/lib APIs", () => {
   // syntactic class of mistakes. The allowlist would be the identifiers
   // themselves.
   it("does not ship userAgent, UserAgentParserResult, or @elmeragroup/lib", () => {
-    const files = walkSourceFiles(SRC_ROOT);
-    for (const file of files) {
-      const text = readFileSync(file, "utf8");
-      expect(text, file).not.toMatch(/\buserAgent\b/);
-      expect(text, file).not.toMatch(/\bUserAgentParserResult\b/);
-      expect(text, file).not.toMatch(/@elmeragroup\/lib/);
+    for (const [file, record] of SOURCE_TREE) {
+      expect(record.source, file).not.toMatch(/\buserAgent\b/);
+      expect(record.source, file).not.toMatch(/\bUserAgentParserResult\b/);
+      expect(record.source, file).not.toMatch(/@elmeragroup\/lib/);
     }
     const manifest = readFileSync(join(PACKAGE_ROOT, "package.json"), "utf8");
     expect(manifest).not.toMatch(/\buserAgent\b/);
     expect(manifest).not.toMatch(/\bUserAgentParserResult\b/);
     expect(manifest).not.toMatch(/@elmeragroup\/lib/);
-  }, 30_000);
+  });
 });
 
 describe("combobox", () => {
@@ -265,41 +321,14 @@ describe("field", () => {
 });
 
 describe("field composites", () => {
-  // Why not a lint rule: a one-off do-not-reintroduce ban (ADR 0008). Each of these
-  // composites rebuilt the label row, description and error before a shared frame took
-  // ownership — `FieldFrame` for the four labeled fields (field.md §8.9,
-  // phone-number-field.md §8.18), `SelectionGroupFrame` for the two selection groups
-  // (selection-item.md §8.8) — and the ban keeps that markup from growing back here. It
-  // is not a repo-wide API ban: Field's own demos and every composite outside this list
-  // render these parts directly, and the frames themselves must. What the parts do once
-  // rendered is asserted behaviourally by each composite's browser suite and by
-  // `field-frame.browser.test.tsx`.
-  it.each([
-    "components/text-field/text-field.tsx",
-    "components/number-field/number-field.tsx",
-    "components/textarea-field/textarea-field.tsx",
-    "components/phone-number-field/phone-number-field.tsx",
-    "components/checkbox/checkbox.tsx",
-    "components/radio-group/radio-group.tsx",
-  ])("%s renders no label, description, or error markup of its own", (file) => {
-    const source = readSrc(file);
-    // JSX openers only: the prop docs still name the parts the frame renders, and the
-    // docs generator publishes that text.
-    for (const part of ["<Field.Label", "<Field.Description", "<Field.Error", "<Field.Root"]) {
-      expect(source, part).not.toContain(part);
-    }
+  // Why not a lint rule: PhoneNumberField importing TextField's public recipe is a
+  // one-file "do not reintroduce" coupling, not a repo-wide specifier ban. Field
+  // part JSX in these composites is `elmera/no-field-part-jsx`.
+  it("does not import the text-field recipe — layout comes from FieldFrame", () => {
+    const source = readSrc("components/phone-number-field/phone-number-field.tsx");
+    expect(source).not.toContain("text-field-variants");
+    expect(source).not.toContain("textFieldVariants");
   });
-
-  // The selection groups additionally own no fieldset skeleton of their own.
-  it.each(["components/checkbox/checkbox.tsx", "components/radio-group/radio-group.tsx"])(
-    "%s renders no fieldset or legend markup of its own",
-    (file) => {
-      const source = readSrc(file);
-      for (const part of ["<Field.Set", "<Field.Legend"]) {
-        expect(source, part).not.toContain(part);
-      }
-    }
-  );
 });
 
 describe("selection-item", () => {
@@ -379,85 +408,20 @@ describe("overlay layer", () => {
   // would need a per-file exemption for exactly the module that owns it, and
   // could not assert the "exactly once" half.
   it("is declared once in overlay-classes.ts and nowhere else in component source", () => {
-    const overlayClasses = readSrc("components/overlay/overlay-classes.ts");
-    expect(overlayClasses.match(/z-50/gu)).toHaveLength(1);
-    expect(overlayClasses).toContain('export const overlayLayer = "z-50"');
-
-    const owner = join(SRC_ROOT, "components/overlay/overlay-classes.ts");
-    const restating = walkSourceFiles(SRC_ROOT)
-      .filter((file) => file !== owner && readFileSync(file, "utf8").includes("z-50"))
-      .map((file) => relative(SRC_ROOT, file));
-    expect(restating).toEqual([]);
-  }, 30_000);
+    expect(overlayLayer).toBe("z-50");
+    expect(codeOnly(readSrc("components/overlay/overlay-classes.ts")).match(/z-50/gu)).toHaveLength(1);
+    expect(ownedBy("components/overlay/overlay-classes.ts", "z-50")).toEqual([]);
+  });
 });
 
 describe("superseded local forms", () => {
-  // Why not a lint rule: each of these is a "there is exactly one owner" count across
-  // the whole tree, and the owner is the one file that must be allowed to spell the
-  // thing. A rule banning the spelling would need a per-file exemption for precisely
-  // its owner and still could not assert the "exactly once" half. Spec 08 built the
-  // five owners; this is the ban on the private copies growing back (2026-09-03).
-  const nonTestSources = (): string[] => walkSourceFiles(SRC_ROOT);
-
-  /** Line-comment and block-comment lines dropped, so prose citing a spelling is not a copy of it. */
-  function codeOnly(source: string): string {
-    return source
-      .split("\n")
-      .filter((line) => {
-        const trimmed = line.trimStart();
-        return !trimmed.startsWith("*") && !trimmed.startsWith("//") && !trimmed.startsWith("/*");
-      })
-      .join("\n");
-  }
-
-  function ownedBy(owner: string, needle: string): string[] {
-    const ownerPath = join(SRC_ROOT, owner);
-    return nonTestSources()
-      .filter((file) => file !== ownerPath && codeOnly(readFileSync(file, "utf8")).includes(needle))
-      .map((file) => relative(SRC_ROOT, file));
-  }
-
-  it("resolves every fixed focus-ring rung only in styles/utils.ts", () => {
-    // All three targets. The one call that is not a constant — `react-aria/link`, which
-    // passes a live `isFocusVisible` from a RAC render prop — is the single exemption,
-    // and naming it here is what stops a second one appearing quietly.
-    for (const needle of [
-      'focusRing({ target: "self" })',
-      'focusRing({ target: "within" })',
-      'focusRing({ target: "state" })',
-      'focusRing({ target: "state", isFocusVisible: true })',
-    ]) {
-      expect(ownedBy("styles/utils.ts", needle), needle).toEqual([]);
-    }
-    expect(
-      nonTestSources()
-        .filter((file) =>
-          /focusRing\(\{[^}]*isFocusVisible[^:}]*\}\)/u.test(codeOnly(readFileSync(file, "utf8")))
-        )
-        .map((file) => relative(SRC_ROOT, file))
-    ).toEqual(["react-aria/link/link.tsx"]);
-    const utils = readSrc("styles/utils.ts");
-    expect(utils).toContain('export const selfFocusRingClass = focusRing({ target: "self" }).root();');
-    expect(utils).toContain('export const withinFocusRingClass = focusRing({ target: "within" }).root();');
-    expect(utils).toContain(
-      'export const withinFocusRingControlClass = focusRing({ target: "within" }).control();'
-    );
-    expect(utils).toContain('export const stateFocusRingClass = focusRing({ target: "state" }).root();');
-    expect(utils).toContain(
-      'export const stateFocusRingVisibleClass = focusRing({ target: "state", isFocusVisible: true }).root();'
-    );
-  }, 30_000);
-
-  it("reads the ThemeScope portal container only through useResolvedPortalContainer", () => {
-    // theme-scope-container.ts publishes the context and the hook; the resolver is its
-    // only caller, and every overlay goes through the resolver (theming.md §7.4).
-    expect(
-      ownedBy("theme/use-resolved-portal-container.ts", "useThemeScopeContainer(").filter(
-        (file) => file !== "theme/theme-scope-container.ts"
-      )
-    ).toEqual([]);
-  }, 30_000);
-
+  // Why not a lint rule: each of these is a "there is exactly one owner" count
+  // across the whole tree. A rule banning the spelling would need a per-file
+  // exemption for precisely its owner and still could not assert the "exactly
+  // once" half. Spec 08 built the owners; this is the ban on the private copies
+  // growing back (2026-09-03). One-owner *calls and imports* moved to lint
+  // allow lists (ADR 0008 amendment 2026-09-04); class-string ownership stays
+  // here because lint cannot count.
   it("spells the popup motion, fill and surface classes only in overlay-classes.ts", () => {
     for (const needle of [
       "origin-(--transform-origin)",
@@ -468,19 +432,7 @@ describe("superseded local forms", () => {
     ]) {
       expect(ownedBy("components/overlay/overlay-classes.ts", needle), needle).toEqual([]);
     }
-  }, 30_000);
-
-  it("assembles every locale dictionary with createStringDictionary", () => {
-    const indexes = nonTestSources()
-      .map((file) => relative(SRC_ROOT, file))
-      .filter((file) => file.endsWith("intl/index.ts"));
-    expect(indexes.length).toBeGreaterThanOrEqual(12);
-    for (const file of indexes) {
-      const source = readSrc(file);
-      expect(source, file).toContain("createStringDictionary({ enUS, fiFI, nbNO, svSE })");
-      expect(source, file).not.toContain("LocalizedStringDictionary");
-    }
-  }, 30_000);
+  });
 
   it("asks whether a ReactNode is text only through internal/is-text-node.ts", () => {
     // The two survivors elsewhere are not this question: Toast's manager adapter and
@@ -497,10 +449,6 @@ describe("superseded local forms", () => {
     }
     // The `Object.prototype.toString.call(v) === "[object String]"` spelling evaded the
     // anti-slop rule rather than answering it; no source file spells it any more.
-    expect(
-      nonTestSources()
-        .filter((file) => codeOnly(readFileSync(file, "utf8")).includes("[object String]"))
-        .map((file) => relative(SRC_ROOT, file))
-    ).toEqual([]);
-  }, 30_000);
+    expect(filesContainingCode("[object String]")).toEqual([]);
+  });
 });

@@ -7,7 +7,7 @@
     "effectPropCount": 615,
     "currentProblemCount": 0,
     "effectProblemCount": 85,
-    "apiDifferenceCount": 1106,
+    "apiDifferenceCount": 1103,
     "problemDifferenceCount": 85
   },
   "apiDifferences": [
@@ -651,7 +651,7 @@
       "effect": {
         "name": "render",
         "declarationPaths": [
-          "node_modules/.pnpm/@base-ui+react@1.6.0_@types+react@19.2.17_react-dom@19.2.8_react@19.2.8__react@19.2.8/node_modules/@base-ui/react/use-render/useRender.d.mts"
+          "node_modules/.pnpm/@base-ui+react@1.6.0_@types+react@19.2.17_react-dom@19.2.8_react@19.2.8__react@19.2.8/node_modules/@base-ui/react/use-render/userender.d.mts"
         ],
         "ownership": "external",
         "synthesized": false
@@ -724,7 +724,7 @@
       "effect": {
         "name": "render",
         "declarationPaths": [
-          "node_modules/.pnpm/@base-ui+react@1.6.0_@types+react@19.2.17_react-dom@19.2.8_react@19.2.8__react@19.2.8/node_modules/@base-ui/react/use-render/useRender.d.mts"
+          "node_modules/.pnpm/@base-ui+react@1.6.0_@types+react@19.2.17_react-dom@19.2.8_react@19.2.8__react@19.2.8/node_modules/@base-ui/react/use-render/userender.d.mts"
         ],
         "ownership": "external",
         "synthesized": false
@@ -1646,31 +1646,17 @@
     },
     {
       "component": "combobox",
-      "path": "evidence.Combobox.Content.propOrder[0]",
-      "current": "side",
-      "effect": "align",
-      "reason": "combobox Combobox.Content evidence propOrder[0]: checker side vs Effect align."
-    },
-    {
-      "component": "combobox",
-      "path": "evidence.Combobox.Content.propOrder[1]",
-      "current": "sideOffset",
-      "effect": "alignOffset",
-      "reason": "combobox Combobox.Content evidence propOrder[1]: checker sideOffset vs Effect alignOffset."
-    },
-    {
-      "component": "combobox",
       "path": "evidence.Combobox.Content.propOrder[2]",
-      "current": "align",
+      "current": "side",
       "effect": "anchor",
-      "reason": "combobox Combobox.Content evidence propOrder[2]: checker align vs Effect anchor."
+      "reason": "combobox Combobox.Content evidence propOrder[2]: checker side vs Effect anchor."
     },
     {
       "component": "combobox",
       "path": "evidence.Combobox.Content.propOrder[3]",
-      "current": "alignOffset",
+      "current": "sideOffset",
       "effect": "container",
-      "reason": "combobox Combobox.Content evidence propOrder[3]: checker alignOffset vs Effect container."
+      "reason": "combobox Combobox.Content evidence propOrder[3]: checker sideOffset vs Effect container."
     },
     {
       "component": "combobox",
@@ -1694,12 +1680,6 @@
     },
     {
       "component": "combobox",
-      "path": "evidence.Combobox.Content.props.align.declarationPaths[1]",
-      "effect": "packages/ui/src/components/overlay/overlay-props.ts",
-      "reason": "combobox Combobox.Content.align declarationPaths[1]: Combobox.Content redeclares `align` (default `\"start\"`) because the shared `OverlayPositionerProps` `@default` tags are Popover's, and subtracts the key with `Omit`/`Pick`. The checker lists only the local declaration; the Effect adapter keeps `overlay-props.ts` as a second one, because it does not drop declarations of keys a `Pick`/`Omit` removes. Docs-only: the published table reads the checker row."
-    },
-    {
-      "component": "combobox",
       "path": "evidence.Combobox.Content.props.render",
       "effect": {
         "name": "render",
@@ -1710,12 +1690,6 @@
         "synthesized": false
       },
       "reason": "combobox Combobox.Content.render: Effect lists Base UI `render` (`ComponentRenderFn | ReactElement`); checker omits it from library rows."
-    },
-    {
-      "component": "combobox",
-      "path": "evidence.Combobox.Content.props.sideOffset.declarationPaths[1]",
-      "effect": "packages/ui/src/components/overlay/overlay-props.ts",
-      "reason": "combobox Combobox.Content.sideOffset declarationPaths[1]: Combobox.Content redeclares `sideOffset` (default `6`) because the shared `OverlayPositionerProps` `@default` tags are Popover's, and subtracts the key with `Omit`/`Pick`. The checker lists only the local declaration; the Effect adapter keeps `overlay-props.ts` as a second one, because it does not drop declarations of keys a `Pick`/`Omit` removes. Docs-only: the published table reads the checker row."
     },
     {
       "component": "combobox",
@@ -2627,6 +2601,13 @@
     },
     {
       "component": "date-picker",
+      "path": "parts.DatePicker.props.container.type",
+      "current": "HTMLElement | RefObject<HTMLElement | null> | undefined",
+      "effect": "HTMLElement | React.RefObject<HTMLElement | null> | undefined",
+      "reason": "date-picker DatePicker.container type: checker prints `RefObject`; Effect qualifies indexed-access `OverlayContainerProps[\"container\"]` as `React.RefObject`. Published description is unchanged."
+    },
+    {
+      "component": "date-picker",
       "path": "parts.DatePicker.props.errorMessage.type",
       "current": "((validation: ValidationResult) => ReactNode) | ReactNode",
       "effect": "((validation: ValidationResult) => React.ReactNode) | ReactNode | undefined",
@@ -2723,6 +2704,13 @@
         "synthesized": false
       },
       "reason": "date-range-picker DateRangePicker.render: Effect lists RAC `render` (`DOMRenderFunction`); checker omits it from library rows."
+    },
+    {
+      "component": "date-range-picker",
+      "path": "parts.DateRangePicker.props.container.type",
+      "current": "HTMLElement | RefObject<HTMLElement | null> | undefined",
+      "effect": "HTMLElement | React.RefObject<HTMLElement | null> | undefined",
+      "reason": "date-range-picker DateRangePicker.container type: checker prints `RefObject`; Effect qualifies indexed-access `OverlayContainerProps[\"container\"]` as `React.RefObject`. Published description is unchanged."
     },
     {
       "component": "date-range-picker",
@@ -3117,7 +3105,7 @@
       "component": "dropdown-menu",
       "path": "evidence.DropdownMenu.Content.props.align.declarationPaths[1]",
       "effect": "packages/ui/src/components/overlay/overlay-props.ts",
-      "reason": "dropdown-menu DropdownMenu.Content.align declarationPaths[1]: DropdownMenu.Content redeclares `align` (default `\"start\"`) because the shared `OverlayPositionerProps` `@default` tags are Popover's, and subtracts the key with `Omit`/`Pick`. The checker lists only the local declaration; the Effect adapter keeps `overlay-props.ts` as a second one, because it does not drop declarations of keys a `Pick`/`Omit` removes. Docs-only: the published table reads the checker row."
+      "reason": "dropdown-menu DropdownMenu.Content.align declarationPaths[1]: DropdownMenu.Content redeclares `align` because its description (menus lead from the trigger edge) differs from the shared positioner prose, and subtracts the key with `Omit`. The checker lists only the local declaration; the Effect adapter keeps `overlay-props.ts` as a second one, because it does not drop declarations of keys an `Omit` removes. Docs-only: the published table reads the checker row."
     },
     {
       "component": "dropdown-menu",
@@ -4065,15 +4053,8 @@
       "component": "focusable",
       "path": "evidence.Focusable.declarationPaths[0]",
       "current": "node_modules/.pnpm/@types+react@19.2.17/node_modules/@types/react/index.d.ts",
-      "effect": "node_modules/.pnpm/react-aria@3.50.0_react-dom@19.2.8_react@19.2.8__react@19.2.8/node_modules/react-aria/dist/types/src/interactions/useFocusable.d.ts",
+      "effect": "node_modules/.pnpm/react-aria@3.50.0_react-dom@19.2.8_react@19.2.8__react@19.2.8/node_modules/react-aria/dist/types/src/interactions/usefocusable.d.ts",
       "reason": "focusable Focusable declarationPaths: checker `node_modules/.pnpm/@types+react@19.2.17/node_modules/@types/react/ind…` vs Effect `node_modules/.pnpm/react-aria@3.50.0_react-dom@19.2.8_react@19.2.8__r…`."
-    },
-    {
-      "component": "focusable",
-      "path": "evidence.useFocusable.declarationPaths[0]",
-      "current": "node_modules/.pnpm/react-aria@3.50.0_react-dom@19.2.8_react@19.2.8__react@19.2.8/node_modules/react-aria/dist/types/src/interactions/usefocusable.d.ts",
-      "effect": "node_modules/.pnpm/react-aria@3.50.0_react-dom@19.2.8_react@19.2.8__react@19.2.8/node_modules/react-aria/dist/types/src/interactions/useFocusable.d.ts",
-      "reason": "focusable useFocusable declarationPaths: checker `node_modules/.pnpm/react-aria@3.50.0_react-dom@19.2.8_react@19.2.8__r…` vs Effect `node_modules/.pnpm/react-aria@3.50.0_react-dom@19.2.8_react@19.2.8__r…`."
     },
     {
       "component": "grid-list",
@@ -4250,7 +4231,7 @@
       "effect": {
         "name": "render",
         "declarationPaths": [
-          "node_modules/.pnpm/@base-ui+react@1.6.0_@types+react@19.2.17_react-dom@19.2.8_react@19.2.8__react@19.2.8/node_modules/@base-ui/react/use-render/useRender.d.mts"
+          "node_modules/.pnpm/@base-ui+react@1.6.0_@types+react@19.2.17_react-dom@19.2.8_react@19.2.8__react@19.2.8/node_modules/@base-ui/react/use-render/userender.d.mts"
         ],
         "ownership": "external",
         "synthesized": false
@@ -4561,7 +4542,7 @@
       "effect": {
         "name": "render",
         "declarationPaths": [
-          "node_modules/.pnpm/@base-ui+react@1.6.0_@types+react@19.2.17_react-dom@19.2.8_react@19.2.8__react@19.2.8/node_modules/@base-ui/react/use-render/useRender.d.mts"
+          "node_modules/.pnpm/@base-ui+react@1.6.0_@types+react@19.2.17_react-dom@19.2.8_react@19.2.8__react@19.2.8/node_modules/@base-ui/react/use-render/userender.d.mts"
         ],
         "ownership": "external",
         "synthesized": false
@@ -5483,6 +5464,13 @@
     },
     {
       "component": "phone-number-field",
+      "path": "parts.PhoneNumberField.props.container.type",
+      "current": "HTMLElement | RefObject<HTMLElement | null> | undefined",
+      "effect": "HTMLElement | React.RefObject<HTMLElement | null> | undefined",
+      "reason": "phone-number-field PhoneNumberField.container type: checker prints `RefObject`; Effect qualifies indexed-access `OverlayContainerProps[\"container\"]` as `React.RefObject`. Published description is unchanged."
+    },
+    {
+      "component": "phone-number-field",
       "path": "parts.PhoneNumberField.props.defaultCountryCode.type",
       "current": "\"AD\" | \"AE\" | \"AF\" | \"AG\" | \"AI\" | \"AL\" | \"AM\" | \"AO\" | \"AR\" | \"AS\" | \"AT\" | \"AU\" | \"AW\" | \"AX\" | \"AZ\" | \"BA\" | \"BB\" | \"BD\" | \"BE\" | \"BF\" | \"BG\" | \"BH\" | \"BI\" | \"BJ\" | \"BL\" | \"BM\" | \"BN\" | ... 214 more ... | undefined",
       "effect": "\"AD\" | \"AE\" | \"AF\" | \"AG\" | \"AI\" | \"AL\" | \"AM\" | \"AO\" | \"AR\" | \"AS\" | \"AT\" | \"AU\" | \"AW\" | \"AX\" | \"AZ\" | \"BA\" | \"BB\" | \"BD\" | \"BE\" | \"BF\" | \"BG\" | \"BH\" | \"BI\" | \"BJ\" | \"BL\" | \"BM\" | \"BN\" | \"BO\" | \"BR\" | \"BS\" | \"BT\" | \"BW\" | \"BY\" | \"BZ\" | \"CA\" | \"CC\" | \"CD\" | \"CF\" | \"CG\" | \"CH\" | \"CI\" | \"CK\" | \"CL\" | \"CM\" | \"CN\" | \"CO\" | \"CR\" | \"CU\" | \"CV\" | \"CW\" | \"CX\" | \"CY\" | \"CZ\" | \"DE\" | \"DJ\" | \"DK\" | \"DM\" | \"DO\" | \"DZ\" | \"EC\" | \"EE\" | \"EG\" | \"ER\" | \"ES\" | \"ET\" | \"FI\" | \"FJ\" | \"FK\" | \"FM\" | \"FO\" | \"FR\" | \"GA\" | \"GB\" | \"GD\" | \"GE\" | \"GF\" | \"GG\" | \"GH\" | \"GI\" | \"GL\" | \"GM\" | \"GN\" | \"GP\" | \"GQ\" | \"GR\" | \"GT\" | \"GU\" | \"GW\" | \"GY\" | \"HK\" | \"HN\" | \"HR\" | \"HT\" | \"HU\" | \"ID\" | \"IE\" | \"IL\" | \"IM\" | \"IN\" | \"IO\" | \"IQ\" | \"IR\" | \"IS\" | \"IT\" | \"JE\" | \"JM\" | \"JO\" | \"JP\" | \"KE\" | \"KG\" | \"KH\" | \"KI\" | \"KM\" | \"KN\" | \"KP\" | \"KR\" | \"KW\" | \"KY\" | \"KZ\" | \"LA\" | \"LB\" | \"LC\" | \"LI\" | \"LK\" | \"LR\" | \"LS\" | \"LT\" | \"LU\" | \"LV\" | \"LY\" | \"MA\" | \"MC\" | \"MD\" | \"ME\" | \"MF\" | \"MG\" | \"MH\" | \"MK\" | \"ML\" | \"MM\" | \"MN\" | \"MO\" | \"MP\" | \"MQ\" | \"MR\" | \"MS\" | \"MT\" | \"MU\" | \"MV\" | \"MW\" | \"MX\" | \"MY\" | \"MZ\" | \"NA\" | \"NC\" | \"NE\" | \"NF\" | \"NG\" | \"NI\" | \"NL\" | \"NO\" | \"NP\" | \"NR\" | \"NU\" | \"NZ\" | \"OM\" | \"PA\" | \"PE\" | \"PF\" | \"PG\" | \"PH\" | \"PK\" | \"PL\" | \"PM\" | \"PR\" | \"PS\" | \"PT\" | \"PW\" | \"PY\" | \"QA\" | \"RE\" | \"RO\" | \"RS\" | \"RU\" | \"RW\" | \"SA\" | \"SB\" | \"SC\" | \"SD\" | \"SE\" | \"SG\" | \"SH\" | \"SI\" | \"SJ\" | \"SK\" | \"SL\" | \"SM\" | \"SN\" | \"SO\" | \"SR\" | \"SS\" | \"ST\" | \"SV\" | \"SX\" | \"SY\" | \"SZ\" | \"TC\" | \"TD\" | \"TG\" | \"TH\" | \"TJ\" | \"TK\" | \"TL\" | \"TM\" | \"TN\" | \"TO\" | \"TR\" | \"TT\" | \"TV\" | \"TW\" | \"TZ\" | \"UA\" | \"UG\" | \"US\" | \"UY\" | \"UZ\" | \"VA\" | \"VC\" | \"VE\" | \"VG\" | \"VI\" | \"VN\" | \"VU\" | \"WF\" | \"WS\" | \"XK\" | \"YE\" | \"YT\" | \"ZA\" | \"ZM\" | \"ZW\" | undefined",
@@ -5644,6 +5632,13 @@
       "current": true,
       "effect": false,
       "reason": "popover-info-button PopoverInfoButton.variant synthesized: checker true vs Effect false from extractor provenance."
+    },
+    {
+      "component": "popover-info-button",
+      "path": "parts.PopoverInfoButton.props.container.type",
+      "current": "HTMLElement | RefObject<HTMLElement | null> | undefined",
+      "effect": "HTMLElement | React.RefObject<HTMLElement | null> | undefined",
+      "reason": "popover-info-button PopoverInfoButton.container type: checker prints `RefObject`; Effect qualifies indexed-access `OverlayContainerProps[\"container\"]` as `React.RefObject`. Published description is unchanged."
     },
     {
       "component": "popover-info-button",
@@ -7304,7 +7299,7 @@
       "effect": {
         "name": "render",
         "declarationPaths": [
-          "node_modules/.pnpm/@base-ui+react@1.6.0_@types+react@19.2.17_react-dom@19.2.8_react@19.2.8__react@19.2.8/node_modules/@base-ui/react/use-render/useRender.d.mts"
+          "node_modules/.pnpm/@base-ui+react@1.6.0_@types+react@19.2.17_react-dom@19.2.8_react@19.2.8__react@19.2.8/node_modules/@base-ui/react/use-render/userender.d.mts"
         ],
         "ownership": "external",
         "synthesized": false
@@ -7323,7 +7318,7 @@
       "effect": {
         "name": "render",
         "declarationPaths": [
-          "node_modules/.pnpm/@base-ui+react@1.6.0_@types+react@19.2.17_react-dom@19.2.8_react@19.2.8__react@19.2.8/node_modules/@base-ui/react/use-render/useRender.d.mts"
+          "node_modules/.pnpm/@base-ui+react@1.6.0_@types+react@19.2.17_react-dom@19.2.8_react@19.2.8__react@19.2.8/node_modules/@base-ui/react/use-render/userender.d.mts"
         ],
         "ownership": "external",
         "synthesized": false
@@ -7349,7 +7344,7 @@
       "effect": {
         "name": "render",
         "declarationPaths": [
-          "node_modules/.pnpm/@base-ui+react@1.6.0_@types+react@19.2.17_react-dom@19.2.8_react@19.2.8__react@19.2.8/node_modules/@base-ui/react/use-render/useRender.d.mts"
+          "node_modules/.pnpm/@base-ui+react@1.6.0_@types+react@19.2.17_react-dom@19.2.8_react@19.2.8__react@19.2.8/node_modules/@base-ui/react/use-render/userender.d.mts"
         ],
         "ownership": "external",
         "synthesized": false
@@ -7389,7 +7384,7 @@
       "effect": {
         "name": "render",
         "declarationPaths": [
-          "node_modules/.pnpm/@base-ui+react@1.6.0_@types+react@19.2.17_react-dom@19.2.8_react@19.2.8__react@19.2.8/node_modules/@base-ui/react/use-render/useRender.d.mts"
+          "node_modules/.pnpm/@base-ui+react@1.6.0_@types+react@19.2.17_react-dom@19.2.8_react@19.2.8__react@19.2.8/node_modules/@base-ui/react/use-render/userender.d.mts"
         ],
         "ownership": "external",
         "synthesized": false
@@ -7462,7 +7457,7 @@
       "effect": {
         "name": "render",
         "declarationPaths": [
-          "node_modules/.pnpm/@base-ui+react@1.6.0_@types+react@19.2.17_react-dom@19.2.8_react@19.2.8__react@19.2.8/node_modules/@base-ui/react/use-render/useRender.d.mts"
+          "node_modules/.pnpm/@base-ui+react@1.6.0_@types+react@19.2.17_react-dom@19.2.8_react@19.2.8__react@19.2.8/node_modules/@base-ui/react/use-render/userender.d.mts"
         ],
         "ownership": "external",
         "synthesized": false
@@ -7700,8 +7695,8 @@
       "component": "sidebar",
       "path": "parts.Sidebar.MenuButton.props.tooltip.type",
       "current": "string | TooltipContentProps | undefined",
-      "effect": "Omit<TooltipPopupProps, \"ref\"> & React.RefAttributes<HTMLDivElement> & Omit<OverlayPositionerProps<Omit<TooltipPositionerProps, \"ref\"> & React.RefAttributes<HTMLDivElement>>, \"side\" | \"sideOffset\"> & { side?: \"bottom\" | \"inline-end\" | \"inline-start\" | \"left\" | \"right\" | \"top\" | undefined; sideOffset?: OffsetFunction | number | undefined; } & OverlayContainerProps | string | undefined",
-      "reason": "sidebar Sidebar.MenuButton.tooltip type: checker keeps `string | TooltipContentProps`; Effect expands TooltipContentProps into its intersection members (`Omit<OverlayPositionerProps<…>, \"side\" | \"sideOffset\">`, the redeclared `side`/`sideOffset`, `OverlayContainerProps`)."
+      "effect": "Omit<TooltipPopupProps, \"ref\"> & React.RefAttributes<HTMLDivElement> & Omit<OverlayPositionerProps<Omit<TooltipPositionerProps, \"ref\"> & React.RefAttributes<HTMLDivElement>>, \"side\"> & { side?: \"bottom\" | \"inline-end\" | \"inline-start\" | \"left\" | \"right\" | \"top\" | undefined; } & OverlayContainerProps | string | undefined",
+      "reason": "sidebar Sidebar.MenuButton.tooltip type: checker keeps `string | TooltipContentProps`; Effect expands TooltipContentProps into its intersection members (`Omit<OverlayPositionerProps<…>, \"side\">`, the redeclared `side`, `OverlayContainerProps`)."
     },
     {
       "component": "sidebar",
@@ -8698,7 +8693,7 @@
       "effect": {
         "name": "render",
         "declarationPaths": [
-          "node_modules/.pnpm/@base-ui+react@1.6.0_@types+react@19.2.17_react-dom@19.2.8_react@19.2.8__react@19.2.8/node_modules/@base-ui/react/use-render/useRender.d.mts"
+          "node_modules/.pnpm/@base-ui+react@1.6.0_@types+react@19.2.17_react-dom@19.2.8_react@19.2.8__react@19.2.8/node_modules/@base-ui/react/use-render/userender.d.mts"
         ],
         "ownership": "external",
         "synthesized": false
@@ -9091,16 +9086,16 @@
     {
       "component": "tooltip",
       "path": "evidence.Tooltip.Content.propOrder[2]",
-      "current": "side",
+      "current": "sideOffset",
       "effect": "container",
-      "reason": "tooltip Tooltip.Content evidence propOrder[2]: checker side vs Effect container."
+      "reason": "tooltip Tooltip.Content evidence propOrder[2]: checker sideOffset vs Effect container."
     },
     {
       "component": "tooltip",
       "path": "evidence.Tooltip.Content.propOrder[3]",
-      "current": "sideOffset",
+      "current": "side",
       "effect": "render",
-      "reason": "tooltip Tooltip.Content evidence propOrder[3]: checker sideOffset vs Effect render."
+      "reason": "tooltip Tooltip.Content evidence propOrder[3]: checker side vs Effect render."
     },
     {
       "component": "tooltip",
@@ -9133,26 +9128,13 @@
       "path": "evidence.Tooltip.Content.props.side.declarationPaths[0]",
       "current": "packages/ui/src/components/tooltip/tooltip.tsx",
       "effect": "packages/ui/src/components/overlay/overlay-props.ts",
-      "reason": "tooltip Tooltip.Content.side declarationPaths: checker `packages/ui/src/components/tooltip/tooltip.tsx` vs Effect `packages/ui/src/components/overlay/overlay-props.ts`. Tooltip `Omit`s `side` from the shared positioner props and redeclares it with its own `@default \"top\"`; Effect reports the omitted-from source, the checker the redeclaration."
+      "reason": "tooltip Tooltip.Content.side declarationPaths: checker `packages/ui/src/components/tooltip/tooltip.tsx` vs Effect `packages/ui/src/components/overlay/overlay-props.ts`. Tooltip `Omit`s `side` from the shared positioner props and redeclares it so the description can say tooltips open upward; Effect reports the omitted-from source, the checker the redeclaration."
     },
     {
       "component": "tooltip",
       "path": "evidence.Tooltip.Content.props.side.declarationPaths[1]",
       "effect": "packages/ui/src/components/tooltip/tooltip.tsx",
       "reason": "tooltip Tooltip.Content.side declarationPaths: checker `omitted` vs Effect `packages/ui/src/components/tooltip/tooltip.tsx`. Effect lists the redeclaration as a second declaration site; the checker collapses the intersection to one."
-    },
-    {
-      "component": "tooltip",
-      "path": "evidence.Tooltip.Content.props.sideOffset.declarationPaths[0]",
-      "current": "packages/ui/src/components/tooltip/tooltip.tsx",
-      "effect": "packages/ui/src/components/overlay/overlay-props.ts",
-      "reason": "tooltip Tooltip.Content.sideOffset declarationPaths: checker `packages/ui/src/components/tooltip/tooltip.tsx` vs Effect `packages/ui/src/components/overlay/overlay-props.ts`. `sideOffset` is `Omit`ted and redeclared beside `side` to hold the published prop order; same two-site split as `side`."
-    },
-    {
-      "component": "tooltip",
-      "path": "evidence.Tooltip.Content.props.sideOffset.declarationPaths[1]",
-      "effect": "packages/ui/src/components/tooltip/tooltip.tsx",
-      "reason": "tooltip Tooltip.Content.sideOffset declarationPaths: checker `omitted` vs Effect `packages/ui/src/components/tooltip/tooltip.tsx`. Effect keeps the redeclaration as its own site; the checker reports a single one."
     },
     {
       "component": "tooltip",
@@ -10140,12 +10122,12 @@
     },
     {
       "component": "toast",
-      "key": "effect-extractor|toast|unsupported-type-fallback|Could not extract type \"{ Provider: { ({ toastManager, ...props }: ToastProviderProps): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; ... 8 more ...; createToastManager: <Data extends object = object>() => CreateToastManagerReturnValue<...>; }\" at \"<repo>/packages/ui/src/components/toast/toast.tsx:435:14\". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/toast/toast.tsx:435:14]#1",
+      "key": "effect-extractor|toast|unsupported-type-fallback|Could not extract type \"{ Provider: { ({ toastManager, ...props }: ToastProviderProps): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; ... 8 more ...; createToastManager: <Data extends object = object>() => CreateToastManagerReturnValue<...>; }\" at \"<repo>/packages/ui/src/components/toast/toast.tsx:429:14\". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/toast/toast.tsx:429:14]#1",
       "effect": {
         "component": "toast",
         "source": "effect-extractor",
         "code": "unsupported-type-fallback",
-        "message": "Could not extract type \"{ Provider: { ({ toastManager, ...props }: ToastProviderProps): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; ... 8 more ...; createToastManager: <Data extends object = object>() => CreateToastManagerReturnValue<...>; }\" at \"<repo>/packages/ui/src/components/toast/toast.tsx:435:14\". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/toast/toast.tsx:435:14]"
+        "message": "Could not extract type \"{ Provider: { ({ toastManager, ...props }: ToastProviderProps): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; ... 8 more ...; createToastManager: <Data extends object = object>() => CreateToastManagerReturnValue<...>; }\" at \"<repo>/packages/ui/src/components/toast/toast.tsx:429:14\". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/toast/toast.tsx:429:14]"
       },
       "reason": "toast: Effect `unsupported-type-fallback` emits `any` for the Toast namespace object type `{ Provider, Viewport, … }`; adapter still maps checker member names into parts."
     },

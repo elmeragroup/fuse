@@ -6,13 +6,8 @@ import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 
 import { cn } from "../../styles/cn";
 import { selfFocusRingClass } from "../../styles/utils";
-import { useResolvedPortalContainer } from "../../theme/use-resolved-portal-container";
-import {
-  overlayPopupDurationClass,
-  overlayPopupMotionClass,
-  overlayPopupSurfaceClass,
-  overlayPositionerClass,
-} from "../overlay/overlay-classes";
+import { overlayPositionerClass, overlayTimedPopupClass } from "../overlay/overlay-classes";
+import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps, OverlayPositionerProps } from "../overlay/overlay-props";
 
 function PopoverRoot(props: ComponentProps<typeof PopoverPrimitive.Root>): ReactElement {
@@ -32,12 +27,6 @@ function PopoverTrigger({
   );
 }
 
-/**
- * `OverlayContainerProps` is intersected **last** on purpose: the docs API pipeline
- * derives its prop order from the intersection order, and moving `container` ahead of
- * `showArrow` changes `Popover.Content.propOrder[4]/[5]` and fails the docs shadow gate.
- * Keep the order as written.
- */
 export type PopoverContentProps = ComponentProps<typeof PopoverPrimitive.Popup> &
   OverlayPositionerProps<ComponentProps<typeof PopoverPrimitive.Positioner>> & {
     /**
@@ -57,14 +46,8 @@ function PopoverContent({
   container,
   ...props
 }: PopoverContentProps): ReactElement | null {
-  const resolvedContainer = useResolvedPortalContainer(container);
-
-  if (resolvedContainer === null) {
-    return null;
-  }
-
   return (
-    <PopoverPrimitive.Portal container={resolvedContainer}>
+    <OverlayPortal portal={PopoverPrimitive.Portal} container={container}>
       <PopoverPrimitive.Positioner
         align={align}
         alignOffset={alignOffset}
@@ -75,9 +58,7 @@ function PopoverContent({
           data-slot="popover-content"
           className={cn(
             selfFocusRingClass,
-            overlayPopupSurfaceClass,
-            overlayPopupMotionClass,
-            overlayPopupDurationClass,
+            overlayTimedPopupClass,
             "text-sm flex w-72 flex-col gap-4 p-4",
             className
           )}
@@ -88,7 +69,7 @@ function PopoverContent({
           ) : null}
         </PopoverPrimitive.Popup>
       </PopoverPrimitive.Positioner>
-    </PopoverPrimitive.Portal>
+    </OverlayPortal>
   );
 }
 

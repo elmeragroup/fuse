@@ -6,6 +6,7 @@ import type {
   BackendTypeHandle,
 } from "../backend/contracts.ts";
 import type { ClassMethod, ClassNode, ClassProperty, ConstructSignatureNode, TypeName } from "../model.ts";
+import { definedFields, flagFields } from "../optional-fields.ts";
 import type { ResolveSemanticType, ResolverContext } from "./contracts.ts";
 import {
   declarationProvenance,
@@ -75,8 +76,7 @@ export function resolveClassNode(
   extractMembers(type, true, properties, methods, classPath, context, resolveType);
   const result: ClassNode = {
     kind: "class",
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
-    ...(typeNameValue === undefined ? {} : { typeName: typeNameValue }),
+    ...definedFields({ typeName: typeNameValue }),
     constructSignatures,
     properties,
     methods,
@@ -162,8 +162,7 @@ function extractMembers(
     recordProvenance(context, {
       path: objectPropertySemanticPath(classPath, info.name),
       ...declarationProvenance(info, context),
-      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
-      ...(readonly ? { readonly: true } : {}),
+      ...flagFields({ readonly }),
     });
     const property: ClassProperty = {
       name: info.name,
@@ -179,8 +178,7 @@ function extractMembers(
           propertyDepth: context.propertyDepth + 1,
         }
       ),
-      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
-      ...(docs === undefined ? {} : { documentation: docs }),
+      ...definedFields({ documentation: docs }),
       // Deliberately wider than upstream's authored `?` check: the checker's
       // `Optional` flag is accepted too, so checker-synthesized optionality
       // survives where upstream would report only the modifier.
@@ -205,8 +203,7 @@ function resolveClassMethod(
   recordProvenance(context, { path: memberPath, ...declarationProvenance(info, context) });
   const method: ClassMethod = {
     name: info.name,
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
-    ...(docs === undefined ? {} : { documentation: docs }),
+    ...definedFields({ documentation: docs }),
     isStatic,
     callSignatures: signatures.map((signature, index) =>
       resolveSignatureNode(signature, { ...context, provenancePath: memberPath }, index, resolveType)

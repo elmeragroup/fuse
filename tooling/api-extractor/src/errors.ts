@@ -1,5 +1,12 @@
 import { Schema } from "effect";
 
+/** The one runtime `typeof` in this module — untrusted thrown values are narrowed at this seam. */
+// oxlint-disable-next-line anti-slop/no-unknown-parameters -- untrusted thrown values are narrowed at this seam.
+function runtimeType(value: unknown): string {
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- untrusted thrown values are narrowed at this seam.
+  return typeof value;
+}
+
 /**
  * Errors cross the extractor boundary as data.  In particular, never retain a
  * checker/AST object (or an opaque backend handle) as a cause: those objects
@@ -7,34 +14,34 @@ import { Schema } from "effect";
  */
 export function safeCause(cause: unknown): string {
   try {
-    // oxlint-disable-next-line anti-slop/no-runtime-typeof -- safe-cause normalization narrows untrusted thrown values.
-    if (typeof cause === "string") return cause;
-    if (cause === null) return "null";
-    if (cause === undefined) return "undefined";
-    // oxlint-disable-next-line anti-slop/no-runtime-typeof -- safe-cause normalization narrows untrusted thrown values.
-    if (typeof cause === "number" || typeof cause === "boolean" || typeof cause === "bigint") {
-      return String(cause);
+    switch (runtimeType(cause)) {
+      case "string":
+        return String(cause);
+      case "undefined":
+        return "undefined";
+      case "number":
+      case "boolean":
+      case "bigint":
+        return String(cause);
+      case "object": {
+        if (cause === null) return "null";
+        if (cause instanceof Error) {
+          const code = "code" in cause ? cause.code : undefined;
+          const codeKind = runtimeType(code);
+          const codeSuffix = codeKind === "string" || codeKind === "number" ? ` [${String(code)}]` : "";
+          return `${cause.name}: ${cause.message}${codeSuffix}`;
+        }
+        // SAFETY: this branch only reads two optional primitive diagnostic fields;
+        // the object itself never crosses a durable package boundary.
+        const value = cause as { readonly _tag?: unknown; readonly message?: unknown };
+        const tag = runtimeType(value._tag) === "string" ? String(value._tag) : "BackendFailure";
+        const message =
+          runtimeType(value.message) === "string" ? String(value.message) : "Compiler operation failed";
+        return `${tag}: ${message}`;
+      }
+      default:
+        return Object.prototype.toString.call(cause);
     }
-    if (cause instanceof Error) {
-      const code =
-        // oxlint-disable-next-line anti-slop/no-runtime-typeof -- safe-cause normalization narrows untrusted thrown values.
-        "code" in cause && (typeof cause.code === "string" || typeof cause.code === "number")
-          ? ` [${cause.code}]`
-          : "";
-      return `${cause.name}: ${cause.message}${code}`;
-    }
-    // oxlint-disable-next-line anti-slop/no-runtime-typeof -- safe-cause normalization narrows untrusted thrown values.
-    if (typeof cause === "object") {
-      // SAFETY: this branch only reads two optional primitive diagnostic fields;
-      // the object itself never crosses a durable package boundary.
-      const value = cause as { readonly _tag?: unknown; readonly message?: unknown };
-      // oxlint-disable-next-line anti-slop/no-runtime-typeof -- safe-cause normalization narrows untrusted thrown values.
-      const tag = typeof value._tag === "string" ? value._tag : "BackendFailure";
-      // oxlint-disable-next-line anti-slop/no-runtime-typeof -- safe-cause normalization narrows untrusted thrown values.
-      const message = typeof value.message === "string" ? value.message : "Compiler operation failed";
-      return `${tag}: ${message}`;
-    }
-    return Object.prototype.toString.call(cause);
   } catch {
     return "Unknown compiler failure";
   }

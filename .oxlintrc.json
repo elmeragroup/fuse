@@ -156,12 +156,33 @@
         "elmera/no-tailwind-dark-variant": "error",
         "elmera/enforce-variant-standard": "error",
         "elmera/no-local-focus-ring": "error",
+        "elmera/restrict-focus-ring-call": "error",
+        "elmera/no-field-part-jsx": "error",
         "elmera/require-icon-button-label": "error",
         "elmera/restrict-process-env": "error",
         "elmera/no-internal-dynamic-import": "error",
         "elmera/facade-reexport-grammar": "error",
         "elmera/no-rac-outside-quarantine": "error",
-        "elmera/no-hardcoded-density-metrics": "warn"
+        "elmera/no-hardcoded-density-metrics": "warn",
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@internationalized/string",
+                "importNames": ["LocalizedStringDictionary"],
+                "allowTypeImports": true,
+                "message": "Assemble dictionaries with createStringDictionary; do not construct LocalizedStringDictionary outside the factory."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["packages/ui/src/intl/create-string-dictionary.ts"],
+      "rules": {
+        "no-restricted-imports": "off"
       }
     },
     {

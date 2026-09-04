@@ -8,12 +8,27 @@ const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 describe("merge workflow", () => {
   const yaml = readFileSync(join(repoRoot, ".github/workflows/merge.yml"), "utf8");
 
-  it("runs oxfmt, turbo ci:checks, changeset presence, and Playwright Chromium", () => {
+  it("runs oxfmt, the turbo ci:checks gates, changeset presence, and Playwright Chromium", () => {
     expect(yaml).toContain("oxfmt --check");
-    expect(yaml).toContain("turbo run ci:checks");
     expect(yaml).toContain("changeset status");
     expect(yaml).toContain("no-changeset");
-    expect(yaml).toContain("playwright install --with-deps chromium");
+    for (const task of [
+      "'//#lint'",
+      "'//#test:repo-policy'",
+      "type-check test test:types",
+      "package:check",
+      "size-limit",
+      "'docs#test:shadow'",
+    ]) {
+      expect(yaml).toContain(task);
+    }
+    const checks = yaml.split(/^  browser:/m)[0];
+    const browser = yaml.split(/^  browser:/m)[1];
+    expect(browser).toBeDefined();
+    expect(checks).not.toContain("turbo run test:browser");
+    expect(checks).not.toContain("playwright");
+    expect(browser).toContain("playwright install --with-deps chromium");
+    expect(browser).toContain("turbo run test:browser");
   });
 
   it("runs the check suite on pull_request and on push to the default branch", () => {

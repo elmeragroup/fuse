@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { buttonVariants } from "../../components/button/button-variants";
+import { numberFieldGroupClass } from "../../styles/field-box";
 import { fieldBox, fieldBoxChromeClass } from "../../styles/field-box";
 import { checkboxVariants } from "./checkbox";
 import { fieldGroupVariants } from "./field";
@@ -66,23 +67,26 @@ describe("fieldGroupVariants", () => {
 
 describe("field-box chrome parity", () => {
   // spec 08 user story 6 / date-field.md §8.9 (2026-09-03): the interim tier's field
-  // box and the base-ui tier's are the same chrome, so a DateField, a SearchField and an
-  // Input in one form read as one family. A `satisfies` cannot express this — it would
-  // pin keys, not the rendered tokens — so the constant is asserted to survive twMerge
-  // on both sides, and the absence of a competing rung is asserted separately.
+  // box, the base-ui recipe, and NumberField's group are the same chrome, so a DateField,
+  // a SearchField, an Input and a NumberField in one form read as one family. A
+  // `satisfies` cannot express this — it would pin keys, not the rendered tokens — so
+  // the constant is asserted to survive twMerge on every consumer, and the absence of a
+  // competing rung is asserted separately.
   const tokens = fieldBoxChromeClass.split(" ");
 
-  it("lands every shared chrome token on both tiers' computed output", () => {
+  it("lands every shared chrome token on every field box's computed output", () => {
     const racBox = fieldGroupVariants().split(" ");
     const baseUiBox = fieldBox({ box: "control" }).split(" ");
+    const numberFieldBox = numberFieldGroupClass.split(" ");
     for (const token of tokens) {
       expect(racBox, `interim tier lost ${token}`).toContain(token);
       expect(baseUiBox, `base-ui tier lost ${token}`).toContain(token);
+      expect(numberFieldBox, `NumberField group lost ${token}`).toContain(token);
     }
   });
 
-  it("leaves neither tier a second radius or elevation rung to drift on", () => {
-    for (const rendered of [fieldGroupVariants(), fieldBox({ box: "control" })]) {
+  it("leaves no field box a second radius or elevation rung to drift on", () => {
+    for (const rendered of [fieldGroupVariants(), fieldBox({ box: "control" }), numberFieldGroupClass]) {
       expect(rendered.match(/(?:^|\s)rounded-\S+/gu)).toHaveLength(1);
       expect(rendered.match(/(?:^|\s)shadow-\S+/gu)).toHaveLength(1);
     }

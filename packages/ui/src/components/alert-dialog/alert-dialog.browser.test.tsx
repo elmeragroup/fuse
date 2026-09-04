@@ -108,12 +108,19 @@ describe("AlertDialog", () => {
     }
 
     last.focus();
+    await vi.waitFor(() => {
+      expect(document.activeElement).toBe(last);
+    });
     await userEvent.keyboard("{Tab}");
-    expect(dialog.contains(document.activeElement)).toBe(true);
-    expect(document.activeElement).toBe(first);
+    await vi.waitFor(() => {
+      expect(dialog.contains(document.activeElement)).toBe(true);
+      expect(document.activeElement).toBe(first);
+    });
 
     await userEvent.keyboard("{Shift>}{Tab}{/Shift}");
-    expect(document.activeElement).toBe(last);
+    await vi.waitFor(() => {
+      expect(document.activeElement).toBe(last);
+    });
     expect(behind.contains(document.activeElement)).toBe(false);
 
     await userEvent.keyboard("{Escape}");

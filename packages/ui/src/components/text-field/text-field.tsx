@@ -113,14 +113,17 @@ export function TextField({
 
   const {
     base,
-    container,
     input,
     fieldGroup,
-    labelContainer,
-    label: labelStyles,
-    description: descriptionStyles,
     iconContainer,
-  } = textFieldVariants({ variant, hidden, isIconActive: Boolean(icon) });
+    label: labelSlot,
+    container,
+    description: descriptionSlot,
+  } = textFieldVariants({
+    variant,
+    hidden,
+    isIconActive: Boolean(icon),
+  });
 
   function handleChange(next: string): void {
     if (filter === "numeric" && next !== "" && !containsOnlyDigits(next)) {
@@ -137,19 +140,17 @@ export function TextField({
 
   return (
     <FieldFrame
+      className={cn(base(), className)}
       classNames={{
-        root: cn(base(), className),
-        labelRow: labelContainer(),
-        label: labelStyles(),
+        label: labelSlot() || undefined,
         content: container(),
-        description: cn(descriptionStyles(), "text-pretty"),
+        description: descriptionSlot() || undefined,
       }}
       invalid={isInvalid}
       disabled={isDisabled}
       label={label}
       isPending={isPending}
       isSuccess={isSuccess}
-      groupsControlWithDescription
       description={description}
       errorMessage={errorMessage}>
       <div className="relative">

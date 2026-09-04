@@ -8,17 +8,15 @@ import { CaretRight } from "../../icons/generated/caret-right";
 import { Check } from "../../icons/generated/check";
 import { cn } from "../../styles/cn";
 import { selfFocusRingClass } from "../../styles/utils";
-import { useResolvedPortalContainer } from "../../theme/use-resolved-portal-container";
 import {
   menuGroupLabelClass,
   menuItemClass,
   menuItemIndicatorClass,
   menuSeparatorClass,
-  overlayPopupDurationClass,
-  overlayPopupMotionClass,
-  overlayPopupSurfaceClass,
   overlayPositionerClass,
+  overlayTimedPopupClass,
 } from "../overlay/overlay-classes";
+import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps, OverlayPositionerProps } from "../overlay/overlay-props";
 
 /**
@@ -34,13 +32,16 @@ const dropdownMenuItemClassName = cn(
   "group/dropdown-menu-item px-2 focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-inset:pl-8 data-[variant=destructive]:text-error data-[variant=destructive]:focus:bg-error/10 data-[variant=destructive]:focus:text-error data-[variant=destructive]:*:[svg]:text-error"
 );
 
+function DropdownMenuPortal(props: ComponentProps<typeof MenuPrimitive.Portal>): ReactElement {
+  return <MenuPrimitive.Portal data-slot="dropdown-menu-portal" {...props} />;
+}
+
 /**
  * The one menu popup (dropdown-menu.md §8.3). Content and SubContent are the same
  * `Portal > Positioner > Popup` with different defaults, a different `data-slot`, and a
  * different popup-chrome extra; §8.3's ruling — that SubContent never renders through
  * Content, and each popup carries a single class string — is what this shape enforces,
- * rather than the ref's double-wrap. Both callers resolve their own positioner defaults
- * so their published `@default` tags stay theirs.
+ * rather than the ref's double-wrap. Both callers resolve their own positioner defaults.
  */
 function DropdownMenuPopup({
   className,
@@ -58,14 +59,8 @@ function DropdownMenuPopup({
     popupClassName: string;
     dataSlot: "dropdown-menu-content" | "dropdown-menu-sub-content";
   }): ReactElement | null {
-  const resolvedContainer = useResolvedPortalContainer(container);
-
-  if (resolvedContainer === null) {
-    return null;
-  }
-
   return (
-    <MenuPrimitive.Portal data-slot="dropdown-menu-portal" container={resolvedContainer}>
+    <OverlayPortal portal={DropdownMenuPortal} container={container}>
       <MenuPrimitive.Positioner
         // oxlint-disable-next-line elmera/no-local-focus-ring -- dropdown-menu.md §7: positioner is not a focus target
         className={cn(overlayPositionerClass, "outline-none")}
@@ -75,17 +70,11 @@ function DropdownMenuPopup({
         sideOffset={sideOffset}>
         <MenuPrimitive.Popup
           data-slot={dataSlot}
-          className={cn(
-            overlayPopupSurfaceClass,
-            overlayPopupMotionClass,
-            overlayPopupDurationClass,
-            popupClassName,
-            className
-          )}
+          className={cn(overlayTimedPopupClass, popupClassName, className)}
           {...props}
         />
       </MenuPrimitive.Positioner>
-    </MenuPrimitive.Portal>
+    </OverlayPortal>
   );
 }
 
@@ -106,21 +95,10 @@ function DropdownMenuTrigger({
   );
 }
 
-function DropdownMenuPortal(props: ComponentProps<typeof MenuPrimitive.Portal>): ReactElement {
-  return <MenuPrimitive.Portal data-slot="dropdown-menu-portal" {...props} />;
-}
-
-/**
- * `align` is redeclared ahead of the shared block because menus default to `"start"`
- * where Popover defaults to `"center"`; overlay-props.ts requires the Omit-and-redeclare
- * so the docs table publishes this family's default. Declaring it first keeps
- * `DropdownMenu.Content.propOrder` exactly as it was (popover.tsx).
- */
 export type DropdownMenuContentProps = ComponentProps<typeof MenuPrimitive.Popup> & {
   /**
    * How the popup aligns to the trigger on the cross axis. Menus lead from the trigger
    * edge (unlike Popover/Tooltip, which default to `"center"`).
-   * @default "start"
    */
   align?: ComponentProps<typeof MenuPrimitive.Positioner>["align"];
 } & Omit<OverlayPositionerProps<ComponentProps<typeof MenuPrimitive.Positioner>>, "align"> &
@@ -339,31 +317,22 @@ function DropdownMenuSubTrigger({
   );
 }
 
-/**
- * All four positioner defaults are the submenu's own (`start / -3 / right / 0`,
- * dropdown-menu.md §8), so none of the shared `@default` tags apply and the block stays
- * declared here; only `container` comes from the shared type.
- */
 export type DropdownMenuSubContentProps = ComponentProps<typeof MenuPrimitive.Popup> & {
   /**
    * How the popup aligns to its SubTrigger on the cross axis.
-   * @default "start"
    */
   align?: ComponentProps<typeof MenuPrimitive.Positioner>["align"];
   /**
    * Offset along the alignment axis, in pixels. Negative tucks the submenu's first
    * item level with its trigger.
-   * @default -3
    */
   alignOffset?: ComponentProps<typeof MenuPrimitive.Positioner>["alignOffset"];
   /**
    * Which side of the SubTrigger the popup is placed on.
-   * @default "right"
    */
   side?: ComponentProps<typeof MenuPrimitive.Positioner>["side"];
   /**
    * Distance from the SubTrigger, in pixels. Flush against the parent menu by default.
-   * @default 0
    */
   sideOffset?: ComponentProps<typeof MenuPrimitive.Positioner>["sideOffset"];
 } & OverlayContainerProps;

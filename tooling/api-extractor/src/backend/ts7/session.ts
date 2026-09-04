@@ -11,6 +11,7 @@ import type {
 } from "typescript/unstable/sync";
 
 import { BackendError } from "../../errors.ts";
+import { definedFields } from "../../optional-fields.ts";
 import { externalTypeSelectionAllowsOwnership, isExternalOwnership } from "../contracts.ts";
 import type {
   BackendCompilerOperations,
@@ -210,10 +211,10 @@ export class TsgoExtractionSession implements BackendExtractionSession {
   private context(operation: string) {
     return {
       operation,
-      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized optional facts preserve the public encoding.
-      ...(this.currentFilePath === undefined ? {} : { filePath: this.currentFilePath }),
-      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized optional facts preserve the public encoding.
-      ...(this.symbolStack.length === 0 ? {} : { symbolStack: [...this.symbolStack] }),
+      ...definedFields({
+        filePath: this.currentFilePath,
+        symbolStack: this.symbolStack.length === 0 ? undefined : [...this.symbolStack],
+      }),
     };
   }
 

@@ -1,5 +1,5 @@
 /**
- * SIZE CEILING: full. Nothing more lands here before the node-facts or
+ * SIZE CEILING: 665. Nothing more lands here before the node-facts or
  * type-name machinery splits into its own sibling (`class-facts.ts` style).
  */
 
@@ -24,6 +24,7 @@ import type {
   Type,
 } from "typescript/unstable/sync";
 
+import { definedFields, flagFields } from "../../optional-fields.ts";
 import { typeFlagNames } from "../../warnings.ts";
 import type { TypeFlagName } from "../../warnings.ts";
 import type {
@@ -225,69 +226,47 @@ function typeFacts(session: TsgoFactsSession, handle: BackendTypeHandle): Backen
   const type = session.type(handle, "typeFacts");
   const symbol = type.getSymbol();
   const aliasSymbol = type.getAliasSymbol();
-  const intrinsic = isIntrinsic(type.flags);
+  const isTypeReference = type.isTypeReference();
+  const isConditional = type.isConditionalType();
+  const isSubstitution = type.isSubstitutionType();
   return {
     flags: typeFlagNamesOf(type.flags),
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized compiler facts preserve optional fields.
-    ...(intrinsic === undefined ? {} : { intrinsic }),
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized compiler facts preserve optional fields.
-    ...(type.isErrorType() ? { isError: true } : {}),
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized compiler facts preserve optional fields.
-    ...(type.isTypeParameter() ? { isTypeParameter: true } : {}),
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized compiler facts preserve optional fields.
-    ...(type.isUnionType() ? { isUnion: true } : {}),
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized compiler facts preserve optional fields.
-    ...(type.isIntersectionType() ? { isIntersection: true } : {}),
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized compiler facts preserve optional fields.
-    ...(type.isIndexType() ? { indexTarget: session.typeHandle(type.getTarget()) } : {}),
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized compiler facts preserve optional fields.
-    ...(tupleTarget(type) === undefined ? {} : { isTuple: true }),
-    // `typeToString` is a checker round trip, so it is asked only for the one
-    // flag combination whose answer depends on it: the `object` keyword.
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized compiler facts preserve optional fields.
-    ...(type.isIntersectionType() ||
-    (type.flags & TypeFlags.Object) !== 0 ||
-    ((type.flags & TypeFlags.NonPrimitive) !== 0 && session.checker.typeToString(type) === "object")
-      ? { isObject: true }
-      : {}),
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized compiler facts preserve optional fields.
-    ...((type.flags & TypeFlags.EnumLike) !== 0 ? { isEnum: true } : {}),
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized compiler facts preserve optional fields.
-    ...(symbol === undefined ? {} : { symbol: session.symbolHandle(symbol) }),
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized compiler facts preserve optional fields.
-    ...(aliasSymbol === undefined ? {} : { aliasSymbol: session.symbolHandle(aliasSymbol) }),
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized compiler facts preserve optional fields.
-    ...(type.isLiteralType() && isLiteral(type.value) ? { literal: type.value } : {}),
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized compiler facts preserve optional fields.
-    ...(type.isUnionType() || type.isIntersectionType()
-      ? { unionOrIntersectionTypes: session.typeHandlesFor(type.getTypes()) }
-      : {}),
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized compiler facts preserve optional fields.
-    ...(type.isTypeReference()
-      ? {
-          referenceTarget: session.typeHandle(type.getTarget()),
-          typeArguments: session.typeHandlesFor(session.checker.getTypeArguments(type)),
-        }
-      : {}),
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized compiler facts preserve optional fields.
-    ...(type.getAliasTypeArguments().length > 0
-      ? { aliasTypeArguments: session.typeHandlesFor(type.getAliasTypeArguments()) }
-      : {}),
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized compiler facts preserve optional fields.
-    ...(type.isConditionalType()
-      ? {
-          conditionalCheckType: session.typeHandle(type.getCheckType()),
-          conditionalTrueType: session.typeHandle(type.getTrueType()),
-          conditionalFalseType: session.typeHandle(type.getFalseType()),
-        }
-      : {}),
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized compiler facts preserve optional fields.
-    ...(type.isSubstitutionType()
-      ? {
-          substitutionBaseType: session.typeHandle(type.getBaseType()),
-          substitutionConstraint: session.typeHandle(type.getConstraint()),
-        }
-      : {}),
+    ...definedFields({
+      intrinsic: isIntrinsic(type.flags),
+      indexTarget: type.isIndexType() ? session.typeHandle(type.getTarget()) : undefined,
+      symbol: symbol === undefined ? undefined : session.symbolHandle(symbol),
+      aliasSymbol: aliasSymbol === undefined ? undefined : session.symbolHandle(aliasSymbol),
+      literal: type.isLiteralType() && isLiteral(type.value) ? type.value : undefined,
+      unionOrIntersectionTypes:
+        type.isUnionType() || type.isIntersectionType() ? session.typeHandlesFor(type.getTypes()) : undefined,
+      referenceTarget: isTypeReference ? session.typeHandle(type.getTarget()) : undefined,
+      typeArguments: isTypeReference
+        ? session.typeHandlesFor(session.checker.getTypeArguments(type))
+        : undefined,
+      aliasTypeArguments:
+        type.getAliasTypeArguments().length > 0
+          ? session.typeHandlesFor(type.getAliasTypeArguments())
+          : undefined,
+      conditionalCheckType: isConditional ? session.typeHandle(type.getCheckType()) : undefined,
+      conditionalTrueType: isConditional ? session.typeHandle(type.getTrueType()) : undefined,
+      conditionalFalseType: isConditional ? session.typeHandle(type.getFalseType()) : undefined,
+      substitutionBaseType: isSubstitution ? session.typeHandle(type.getBaseType()) : undefined,
+      substitutionConstraint: isSubstitution ? session.typeHandle(type.getConstraint()) : undefined,
+    }),
+    ...flagFields({
+      isError: type.isErrorType(),
+      isTypeParameter: type.isTypeParameter(),
+      isUnion: type.isUnionType(),
+      isIntersection: type.isIntersectionType(),
+      isTuple: tupleTarget(type) !== undefined,
+      // `typeToString` is a checker round trip, so it is asked only for the one
+      // flag combination whose answer depends on it: the `object` keyword.
+      isObject:
+        type.isIntersectionType() ||
+        (type.flags & TypeFlags.Object) !== 0 ||
+        ((type.flags & TypeFlags.NonPrimitive) !== 0 && session.checker.typeToString(type) === "object"),
+      isEnum: (type.flags & TypeFlags.EnumLike) !== 0,
+    }),
   };
 }
 
@@ -346,10 +325,10 @@ function enumFacts(
       name: member.name,
       value: inferredValue,
       symbol: session.symbolHandle(member),
-      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized compiler facts preserve optional fields.
-      ...(declaration === undefined ? {} : { declaration: session.nodeHandle(declaration) }),
-      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized compiler facts preserve optional fields.
-      ...(memberDocumentation === undefined ? {} : { documentation: memberDocumentation }),
+      ...definedFields({
+        declaration: declaration === undefined ? undefined : session.nodeHandle(declaration),
+        documentation: memberDocumentation,
+      }),
     });
   }
   const documentation = documentationOf(session.symbolHandle(symbol));
@@ -357,10 +336,10 @@ function enumFacts(
     name: symbol.name,
     namespaces: symbolNamespaces(session, symbol),
     members,
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized compiler facts preserve optional fields.
-    ...(warnings.length === 0 ? {} : { warnings }),
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized compiler facts preserve optional fields.
-    ...(documentation === undefined ? {} : { documentation }),
+    ...definedFields({
+      warnings: warnings.length === 0 ? undefined : warnings,
+      documentation,
+    }),
   };
 }
 
@@ -402,16 +381,11 @@ function typeNameFromNode(session: TsgoFactsSession, node: TypeNode): BackendTyp
   return {
     name: rightmostName(typeName) ?? "",
     namespaces,
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized compiler facts preserve optional fields.
-    ...(typeReference.typeArguments === undefined
-      ? {}
-      : {
-          authoredArguments: typeReference.typeArguments.map((argument) => session.typeNodeHandle(argument)),
-        }),
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized compiler facts preserve optional fields.
-    ...(authoredSymbol === undefined ? {} : { authoredSymbol }),
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized compiler facts preserve optional fields.
-    ...(builtInArray === undefined ? {} : { builtInArray }),
+    ...definedFields({
+      authoredArguments: typeReference.typeArguments?.map((argument) => session.typeNodeHandle(argument)),
+      authoredSymbol,
+      builtInArray,
+    }),
   };
 }
 
@@ -484,13 +458,11 @@ function signatureFacts(session: TsgoFactsSession, handle: BackendSignatureHandl
   const returnType = session.checker.getReturnTypeOfSignature(signature);
   return {
     parameters: signature.getParameters().map((parameter) => session.symbolHandle(parameter)),
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized compiler facts preserve optional fields.
-    ...(returnType === undefined ? {} : { returnType: session.typeHandle(returnType) }),
     typeParameters: signature.getTypeParameters().map((parameter) => session.typeHandle(parameter)),
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized compiler facts preserve optional fields.
-    ...(signature.declaration === undefined
-      ? {}
-      : { declaration: session.declarationHandle(signature.declaration) }),
+    ...definedFields({
+      returnType: returnType === undefined ? undefined : session.typeHandle(returnType),
+      declaration: signature.declaration && session.declarationHandle(signature.declaration),
+    }),
   };
 }
 
@@ -564,17 +536,17 @@ function indexSignaturesOfType(
     return {
       keyType: indexKeyType(info.keyType.flags),
       valueType: session.typeHandle(info.valueType),
-      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized compiler facts preserve optional fields.
-      ...(info.isReadonly ? { isReadonly: true } : {}),
-      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized compiler facts preserve optional fields.
-      ...(declaration === undefined ? {} : { declaration: session.nodeHandle(declaration) }),
-      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized compiler facts preserve optional fields.
-      ...(declaration !== undefined &&
-      isIndexSignatureDeclaration(declaration) &&
-      declaration.parameters[0] !== undefined &&
-      isIdentifier(declaration.parameters[0].name)
-        ? { keyName: declaration.parameters[0].name.text }
-        : {}),
+      ...flagFields({ isReadonly: info.isReadonly }),
+      ...definedFields({
+        declaration: declaration === undefined ? undefined : session.nodeHandle(declaration),
+        keyName:
+          declaration !== undefined &&
+          isIndexSignatureDeclaration(declaration) &&
+          declaration.parameters[0] !== undefined &&
+          isIdentifier(declaration.parameters[0].name)
+            ? declaration.parameters[0].name.text
+            : undefined,
+      }),
     };
   });
 }

@@ -9,17 +9,17 @@ import type { VariantProps } from "tailwind-variants";
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { cn } from "../../styles/cn";
 import { selfFocusRingClass } from "../../styles/utils";
-import { useResolvedPortalContainer } from "../../theme/use-resolved-portal-container";
 import { overlayCloseStrings } from "../overlay/intl";
 import {
   overlayFooterClass,
   overlayLayer,
   overlayPopupSurfaceClass,
   overlayScrimClass,
-  overlaySizeClasses,
   overlayTitleClass,
+  overlayWidthClasses,
 } from "../overlay/overlay-classes";
 import { overlayCornerCloseButton, overlayFooterCloseButton } from "../overlay/overlay-close-button";
+import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps } from "../overlay/overlay-props";
 
 const dialogContentVariants = tv({
@@ -30,13 +30,13 @@ const dialogContentVariants = tv({
   // that `overlayPopupMotionClass` carries, and its `duration-100` rides with them.
   base: cn(
     overlayPopupSurfaceClass,
-    "text-sm shadow-lg fixed top-1/2 left-1/2 grid max-h-[calc(100%-2rem)] w-full -translate-x-1/2 -translate-y-1/2 gap-6 overflow-y-auto rounded-xl p-6 duration-100 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+    "text-sm shadow-lg fixed top-1/2 left-1/2 grid max-h-[calc(100%-2rem)] w-full max-w-(--overlay-width) -translate-x-1/2 -translate-y-1/2 gap-6 overflow-y-auto rounded-xl p-6 duration-100 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
     overlayLayer,
     selfFocusRingClass
   ),
   variants: {
-    // The 13-value axis is shared with the interim RAC Modal (dialog.md §4).
-    size: overlaySizeClasses,
+    // The 13-value overlay width axis, shared with Sheet (dialog.md §4).
+    size: overlayWidthClasses,
   },
   defaultVariants: {
     size: "md",
@@ -92,12 +92,6 @@ function DialogOverlay({
   );
 }
 
-/**
- * `OverlayContainerProps` is intersected **between** `showCloseButton` and `closeLabel`
- * rather than appended: the docs API pipeline derives `Dialog.Content.propOrder` from
- * the intersection order, and the shadow snapshot pins it as
- * `size, showCloseButton, container, closeLabel`. Keep the order as written.
- */
 export type DialogContentProps = ComponentProps<typeof DialogPrimitive.Popup> &
   VariantProps<typeof dialogContentVariants> & {
     /**
@@ -123,16 +117,10 @@ function DialogContent({
   ...props
 }: DialogContentProps): ReactElement | null {
   const strings = useLocalizedStrings(overlayCloseStrings);
-  const resolvedContainer = useResolvedPortalContainer(container);
-
-  if (resolvedContainer === null) {
-    return null;
-  }
-
   const label = closeLabel ?? strings.format("close");
 
   return (
-    <DialogPortal container={resolvedContainer}>
+    <OverlayPortal portal={DialogPortal} container={container}>
       <DialogOverlay />
       <DialogPrimitive.Popup
         data-slot="dialog-content"
@@ -143,7 +131,7 @@ function DialogContent({
           <DialogPrimitive.Close data-slot="dialog-close" render={overlayCornerCloseButton({ label })} />
         ) : null}
       </DialogPrimitive.Popup>
-    </DialogPortal>
+    </OverlayPortal>
   );
 }
 

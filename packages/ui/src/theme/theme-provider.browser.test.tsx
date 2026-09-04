@@ -17,7 +17,7 @@ import { DEFAULT_COLOR_SCHEME_STORAGE_KEY } from "./color-scheme";
 import { ElmeraGroupUiProvider, useElmeraGroupUi } from "./elmera-group-ui";
 import { ThemeProvider, useTheme } from "./theme-provider";
 import { ThemeScope } from "./theme-scope";
-import { ThemeScopeContainerContext, useThemeScopeContainer } from "./theme-scope-container";
+import { ThemeScopeContainerContext, useResolvedPortalContainer } from "./theme-scope-container";
 import type { ThemeInput } from "./tokens/themes";
 
 beforeEach(() => {
@@ -63,7 +63,7 @@ function LocaleProbe() {
 }
 
 function ScopeProbe({ container }: { container?: HTMLElement | RefObject<HTMLElement | null> }) {
-  const resolved = useThemeScopeContainer(container);
+  const resolved = useResolvedPortalContainer(container);
   if (resolved === undefined) {
     return <span>no-scope</span>;
   }

@@ -6,7 +6,8 @@
     "build": "vite build --configLoader native",
     "dev": "vite --configLoader native",
     "preview": "vite preview",
-    "test": "vitest run",
+    "test": "vitest run --project unit",
+    "test:browser": "vitest run --project browser",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {

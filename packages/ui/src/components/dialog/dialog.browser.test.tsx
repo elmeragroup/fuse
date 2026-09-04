@@ -99,12 +99,19 @@ describe("Dialog", () => {
     }
 
     last.focus();
+    await vi.waitFor(() => {
+      expect(document.activeElement).toBe(last);
+    });
     await userEvent.keyboard("{Tab}");
-    expect(dialog.contains(document.activeElement)).toBe(true);
-    expect(document.activeElement).toBe(first);
+    await vi.waitFor(() => {
+      expect(dialog.contains(document.activeElement)).toBe(true);
+      expect(document.activeElement).toBe(first);
+    });
 
     await userEvent.keyboard("{Shift>}{Tab}{/Shift}");
-    expect(document.activeElement).toBe(last);
+    await vi.waitFor(() => {
+      expect(document.activeElement).toBe(last);
+    });
     expect(behind.contains(document.activeElement)).toBe(false);
   });
 
@@ -213,15 +220,16 @@ describe("Dialog", () => {
 
   it("maps the size axis onto the popup max-width", async () => {
     const cases = [
-      { size: undefined, expected: "max-w-[min(var(--container-md),90%)]" },
-      { size: "sm", expected: "max-w-[min(var(--container-sm),90%)]" },
-      { size: "10xl", expected: "max-w-[min(1920px,90%)]" },
+      { size: undefined, expected: "[--overlay-width:min(var(--container-md),90%)]" },
+      { size: "sm", expected: "[--overlay-width:min(var(--container-sm),90%)]" },
+      { size: "10xl", expected: "[--overlay-width:min(1920px,90%)]" },
     ] as const;
 
     for (const { size, expected } of cases) {
       const { unmount } = renderThemed(withLocale("en-US", <BasicDialog size={size} />));
       const dialog = await openDialog();
       expect(dialog.className, expected).toContain(expected);
+      expect(dialog.className).toContain("max-w-(--overlay-width)");
       unmount();
     }
   });

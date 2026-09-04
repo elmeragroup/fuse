@@ -1,5 +1,6 @@
 import type { BackendNodeHandle, BackendNodeReference, BackendTypeHandle } from "../backend/contracts.ts";
 import type { SemanticType, TypeName } from "../model.ts";
+import { definedFields } from "../optional-fields.ts";
 import { authoredContainsPreservableKeyof } from "./authored-node.ts";
 import { addUndefined } from "./component.ts";
 import type { ResolveSemanticType, ResolverContext } from "./contracts.ts";
@@ -72,11 +73,11 @@ export function mappedObjectNode(
       // mapped declaration, so `Record`'s internal `P` would become public here.
       // The upstream oracle for `type-object-shape-resolution` is the recorded
       // evidence for that difference.
-      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
-      ...(mapped.keyName === undefined || mapped.keyNameFromLibrary ? {} : { keyName: mapped.keyName }),
+      ...definedFields({
+        keyName: mapped.keyName === undefined || mapped.keyNameFromLibrary ? undefined : mapped.keyName,
+      }),
     },
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
-    ...(typeNameValue === undefined ? {} : { typeName: typeNameValue }),
+    ...definedFields({ typeName: typeNameValue }),
   };
 }
 

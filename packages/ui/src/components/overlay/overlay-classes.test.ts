@@ -13,8 +13,8 @@ import {
   overlayPopupMotionClass,
   overlayPopupSurfaceClass,
   overlayPositionerClass,
-  overlaySheetWidthClasses,
-  overlaySizeClasses,
+  overlayTimedPopupClass,
+  overlayWidthClasses,
 } from "./overlay-classes";
 
 function tokens(value: string): Set<string> {
@@ -123,6 +123,14 @@ describe("overlayPopupMotionClass", () => {
   });
 });
 
+describe("overlayTimedPopupClass", () => {
+  it("is the surface, motion, and duration parts, in that order", () => {
+    expect(overlayTimedPopupClass).toBe(
+      `${overlayPopupSurfaceClass} ${overlayPopupMotionClass} ${overlayPopupDurationClass}`
+    );
+  });
+});
+
 describe("menu part classes", () => {
   it("leaves the highlight face to the family, which base-ui spells two ways", () => {
     expect(menuItemClass).not.toContain("focus:");
@@ -149,28 +157,25 @@ describe("menu part classes", () => {
   });
 });
 
-describe("overlaySheetWidthClasses", () => {
-  /**
-   * The guard `satisfies Record<OverlaySize, string>` cannot give: it pins the keys of
-   * the two width tables, not their values. Sheet's rungs restate the cap because
-   * Tailwind only emits a utility whose candidate appears literally in source, so this
-   * derives the expected spelling from the `max-width` table and fails on any drift.
-   */
-  it("caps every rung at exactly the value overlaySizeClasses caps it at", () => {
-    const asCustomProperty = Object.fromEntries(
-      Object.entries(overlaySizeClasses).map(([rung, utility]) => {
-        const cap = /^max-w-\[(?<cap>.+)\]$/u.exec(utility)?.groups?.cap;
-        if (cap === undefined) {
-          throw new Error(`overlaySizeClasses.${rung} is not an arbitrary max-width: ${utility}`);
-        }
-        return [rung, `[--sheet-width:${cap}]`];
-      })
-    );
-
-    expect(overlaySheetWidthClasses).toEqual(asCustomProperty);
-  });
-
-  it("covers the whole axis and nothing else", () => {
-    expect(Object.keys(overlaySheetWidthClasses)).toEqual(Object.keys(overlaySizeClasses));
+describe("overlayWidthClasses", () => {
+  it("covers the 13-value overlay width axis and the three literal pixel caps", () => {
+    expect(Object.keys(overlayWidthClasses)).toEqual([
+      "sm",
+      "md",
+      "lg",
+      "xl",
+      "2xl",
+      "3xl",
+      "4xl",
+      "5xl",
+      "6xl",
+      "7xl",
+      "8xl",
+      "9xl",
+      "10xl",
+    ]);
+    expect(overlayWidthClasses["8xl"]).toBe("[--overlay-width:min(1366px,90%)]");
+    expect(overlayWidthClasses["9xl"]).toBe("[--overlay-width:min(1536px,90%)]");
+    expect(overlayWidthClasses["10xl"]).toBe("[--overlay-width:min(1920px,90%)]");
   });
 });

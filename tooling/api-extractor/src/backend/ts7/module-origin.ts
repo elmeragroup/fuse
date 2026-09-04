@@ -24,6 +24,7 @@ import {
 import { SymbolFlags } from "typescript/unstable/sync";
 import type { Symbol as TsSymbol } from "typescript/unstable/sync";
 
+import { definedFields } from "../../optional-fields.ts";
 import type { BackendDeclarationOwnership, BackendModuleOrigin } from "../contracts.ts";
 import type { TsgoFactsSession } from "./facts.ts";
 import { declarationOwnershipOfPath } from "./file-ownership.ts";
@@ -209,8 +210,7 @@ function moduleSource(node: Node): ModuleSource | undefined {
       return {
         specifier: current.moduleSpecifier.text,
         node: current.moduleSpecifier,
-        // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional origin facts preserve the backend contract.
-        ...(importedName === undefined ? {} : { importedName }),
+        ...definedFields({ importedName }),
       };
     }
     if (isExportDeclaration(current)) {
@@ -225,8 +225,7 @@ function moduleSource(node: Node): ModuleSource | undefined {
       return {
         specifier: moduleSpecifier.text,
         node: moduleSpecifier,
-        // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional origin facts preserve the backend contract.
-        ...(importedName === undefined ? {} : { importedName }),
+        ...definedFields({ importedName }),
       };
     }
     current = current.parent;
@@ -244,8 +243,7 @@ function originFromSpecifier(
 ): OriginResolution {
   return moduleOriginFromSource(
     session,
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional origin facts preserve the backend contract.
-    { specifier: node.text, node, ...(importedName === undefined ? {} : { importedName }) },
+    { specifier: node.text, node, ...definedFields({ importedName }) },
     seen,
     memberPath
   );
@@ -261,8 +259,7 @@ function moduleOriginFromSource(
   const moduleSymbol = session.rawSymbolAt(source.node);
   const direct = {
     moduleSpecifier: source.specifier,
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional origin facts preserve the backend contract.
-    ...(sourcePackageName === undefined ? {} : { packageName: sourcePackageName }),
+    ...definedFields({ packageName: sourcePackageName }),
     external: moduleSymbol === undefined ? false : moduleIsExternal(session, moduleSymbol),
   } satisfies BackendModuleOrigin;
   const directOrigin = resolvedOrigin(direct, moduleSymbol);

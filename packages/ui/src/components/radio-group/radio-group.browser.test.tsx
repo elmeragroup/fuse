@@ -54,6 +54,25 @@ function radiogroupNamed(name: string): HTMLElement {
   return element;
 }
 
+function groupHosting(control: HTMLElement): HTMLElement {
+  const group = page
+    .getByRole("group")
+    .elements()
+    .find((element) => element.contains(control));
+  if (!(group instanceof HTMLElement)) {
+    throw new Error("expected a group around the radiogroup");
+  }
+  return group;
+}
+
+function namedGroupHosting(control: HTMLElement): HTMLElement | null {
+  const match = page
+    .getByRole("group", { name: /.+/ })
+    .elements()
+    .find((element) => element.contains(control));
+  return match instanceof HTMLElement ? match : null;
+}
+
 function headingNamed(name: string): HTMLElement {
   const element = page.getByRole("heading", { name, exact: true }).element();
   if (!(element instanceof HTMLElement)) {
@@ -197,6 +216,9 @@ describe("RadioGroup", () => {
         <RadioGroup isPending={false}>
           <Radio value="fixed">Bare fixed</Radio>
         </RadioGroup>
+        <RadioGroup isPending>
+          <Radio value="fixed">Pending unlabeled</Radio>
+        </RadioGroup>
         <RadioGroup label="Contract" isPending>
           <Radio value="fixed">Pending fixed</Radio>
         </RadioGroup>
@@ -209,21 +231,27 @@ describe("RadioGroup", () => {
       throw new Error("expected the unlabeled radiogroup");
     }
     expect(bare.getAttribute("aria-labelledby")).toBeFalsy();
-    const bareSet = bare.closest("fieldset");
-    expect(bareSet?.querySelector("legend")).toBeNull();
-    expect(
-      [...(bareSet?.querySelectorAll("svg") ?? [])].some((svg) => svg.classList.contains("animate-spin"))
-    ).toBe(false);
+    expect(namedGroupHosting(bare)).toBeNull();
+    expect(groupHosting(bare)).toBeTruthy();
+    expect(bare.previousElementSibling).toBeNull();
+
+    const pendingUnlabeled = unnamed.find((element) => element.contains(radioNamed("Pending unlabeled")));
+    if (!(pendingUnlabeled instanceof HTMLElement)) {
+      throw new Error("expected the unlabeled pending radiogroup");
+    }
+    expect(pendingUnlabeled.getAttribute("aria-labelledby")).toBeFalsy();
+    expect(pendingUnlabeled.getAttribute("aria-busy")).toBe("true");
+    expect(namedGroupHosting(pendingUnlabeled)).toBeNull();
+    if (!(pendingUnlabeled.previousElementSibling instanceof HTMLElement)) {
+      throw new Error("expected a pending status row without a legend");
+    }
 
     const pendingGroup = radiogroupNamed("Contract");
-    const spinner = [...(pendingGroup.closest("fieldset")?.querySelectorAll("svg") ?? [])].find((svg) =>
-      svg.classList.contains("animate-spin")
-    );
-    if (!(spinner instanceof SVGElement)) {
-      throw new Error("expected a pending spinner beside the label");
+    expect(page.getByRole("group", { name: "Contract", exact: true }).query()).not.toBeNull();
+    expect(namedGroupHosting(pendingGroup)?.textContent).toContain("Contract");
+    if (!(pendingGroup.previousElementSibling instanceof HTMLElement)) {
+      throw new Error("expected a pending status row beside the legend");
     }
-    expect(spinner.getAttribute("aria-hidden")).toBe("true");
-    expect([...spinner.classList]).toContain("size-3");
     expect(page.getByRole("img").query()).toBeNull();
     expect(page.getByRole("status").query()).toBeNull();
   });

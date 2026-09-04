@@ -390,6 +390,11 @@ describe("DropdownMenu", () => {
 
     await userEvent.click(checkbox);
     expect(onCheckedChange).toHaveBeenCalledWith(false);
+    expect(itemNamed("Show toolbar", "menuitemcheckbox").getAttribute("aria-checked")).toBe("false");
+    await userEvent.keyboard("{Escape}");
+    await vi.waitFor(() => {
+      expect(page.getByRole("menu").query()).toBeNull();
+    });
     await openWithClick();
     expect(itemNamed("Show toolbar", "menuitemcheckbox").getAttribute("aria-checked")).toBe("false");
   });
@@ -421,6 +426,11 @@ describe("DropdownMenu", () => {
 
     await userEvent.click(itemNamed("Panel", "menuitemradio"));
     expect(onValueChange).toHaveBeenCalledWith("panel");
+    expect(itemNamed("Panel", "menuitemradio").getAttribute("aria-checked")).toBe("true");
+    await userEvent.keyboard("{Escape}");
+    await vi.waitFor(() => {
+      expect(page.getByRole("menu").query()).toBeNull();
+    });
     await openWithClick();
     expect(itemNamed("Panel", "menuitemradio").getAttribute("aria-checked")).toBe("true");
     expect(

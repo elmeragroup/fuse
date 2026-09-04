@@ -1,6 +1,6 @@
 # 0008 — Tests assert behaviour, not source spelling
 
-Date: 2026-09-02. Status: accepted.
+Date: 2026-09-02. Status: accepted; amended 2026-09-04 — one-owner spellings are lint `allow` lists, not source-line greps.
 
 ## Context
 
@@ -28,3 +28,13 @@ Component behaviour is proven in the browser project by role and label queries; 
 - Renaming an import, extracting a helper or moving a class constant no longer touches the component's test file.
 - A regression that only a spelling assertion caught now fails in the contracts suite instead, with the reason it lives there written next to it.
 - Adding a contract is a reviewed act: it must state why it is not a lint rule, which keeps the suite from re-growing into per-component source greps.
+
+## Amendment 2026-09-04 — lint `allow` lists for one-owner spellings
+
+Phase B added "only this file may spell or import that" contracts as exact-source greps in `source-contracts.test.ts`. Those fail when a formatter wraps a line or a constant is renamed, with behaviour intact. One-owner spellings are now oxlint rules with a per-file `allow` for the owner:
+
+- `no-restricted-imports` forbids a value import of `LocalizedStringDictionary` outside `intl/create-string-dictionary.ts` (type-only imports stay legal).
+- `elmera/restrict-focus-ring-call` forbids `focusRing({…})` outside `styles/utils.ts`, with the documented `react-aria/link` exemption.
+- `elmera/no-field-part-jsx` forbids `<Field.Label|Description|Error|Root|Set|Legend` in the labeled composites FieldFrame already owns.
+
+The contracts suite walks the source tree once per run and keeps only what lint cannot see: file absence, RSC classification, and `ownedBy` exactly-one-owner counts for class strings. Exact `export const …` source-line assertions are value assertions against the recipe, or gone.

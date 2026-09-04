@@ -1,4 +1,5 @@
 import type { IntersectionNode, PropertyNode, SemanticType, TypeName, UnionNode } from "../model.ts";
+import { definedFields } from "../optional-fields.ts";
 import { areEquivalentStrictly, areFunctionsEquivalentIgnoringAny, containsAny } from "./equivalence.ts";
 import { renderTypeName } from "./render.ts";
 
@@ -38,8 +39,7 @@ export function unionType(typeName: TypeName | undefined, types: readonly Semant
   const node: UnionNode = {
     kind: "union",
     types: canonicalizeUnionMembers(types),
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
-    ...(name === undefined ? {} : { typeName: name }),
+    ...definedFields({ typeName: name }),
   };
   return node;
 }
@@ -57,8 +57,7 @@ export function intersectionType(
     kind: "intersection",
     types: canonicalizeIntersectionMembers(types),
     properties: [...properties],
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
-    ...(name === undefined ? {} : { typeName: name }),
+    ...definedFields({ typeName: name }),
   };
   return node;
 }

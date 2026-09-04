@@ -7,7 +7,9 @@ import { NumberField as NumberFieldPrimitive } from "@base-ui/react/number-field
 import { CaretDown } from "../../icons/generated/caret-down";
 import { CaretUp } from "../../icons/generated/caret-up";
 import { cn } from "../../styles/cn";
-import { withinFocusRingClass, withinFocusRingControlClass } from "../../styles/utils";
+import { controlInsetMdClass } from "../../styles/control-inset";
+import { numberFieldGroupClass } from "../../styles/field-box";
+import { withinFocusRingControlClass } from "../../styles/utils";
 import { useElmeraGroupUi } from "../../theme/elmera-group-ui";
 import { FieldFrame } from "../field/field-frame";
 
@@ -105,7 +107,7 @@ export function NumberField({
 
   return (
     <FieldFrame
-      classNames={{ root: rootClassName }}
+      className={rootClassName}
       invalid={isInvalid}
       disabled={isDisabled}
       label={label}
@@ -129,19 +131,16 @@ export function NumberField({
         id={id}>
         <NumberFieldPrimitive.Group
           aria-invalid={isInvalid || undefined}
-          className={cn(
-            "shadow-xs flex h-(--control-h-md) w-full min-w-0 items-center overflow-hidden rounded-md border border-input bg-card transition-[color,box-shadow] aria-invalid:border-error aria-invalid:ring-3 aria-invalid:ring-error/20",
-            withinFocusRingClass,
-            {
-              "bg-muted": isDisabled || isReadOnly,
-            }
-          )}>
+          className={cn(numberFieldGroupClass, {
+            "bg-muted": isDisabled || isReadOnly,
+          })}>
           <NumberFieldPrimitive.Input
             aria-label={ariaLabel}
             autoFocus={autoFocus}
             data-focus-ring-control=""
             className={cn(
-              "h-full w-full min-w-0 flex-1 bg-transparent px-(--control-px-md) [font-size:var(--control-text)] [line-height:var(--control-leading)] tabular-nums",
+              "h-full w-full min-w-0 flex-1 bg-transparent tabular-nums",
+              controlInsetMdClass,
               withinFocusRingControlClass
             )}
           />

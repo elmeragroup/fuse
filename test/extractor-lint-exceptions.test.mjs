@@ -73,4 +73,22 @@ describe("api-extractor lint exceptions", () => {
       .filter((file) => file.startsWith("tooling/api-extractor"));
     expect(exempted).toEqual([]);
   });
+
+  it("keeps next-line disables at or under the per-rule ceiling", () => {
+    /** Empty-object-spread sprawl is gone; this is the current max so the count cannot regrow. */
+    const ceiling = 17;
+    /** @type {Map<string, number>} */
+    const counts = new Map();
+    for (const file of files) {
+      for (const match of readFileSync(file, "utf8").matchAll(nextLineDisable)) {
+        counts.set(match[1], (counts.get(match[1]) ?? 0) + 1);
+      }
+    }
+    const offenders = [...counts.entries()]
+      .filter(([, count]) => count > ceiling)
+      .map(([rule, count]) => `${rule}: ${count}`)
+      .sort();
+    expect(offenders).toEqual([]);
+    expect(counts.get("anti-slop/no-conditional-empty-object-spread") ?? 0).toBe(0);
+  });
 });

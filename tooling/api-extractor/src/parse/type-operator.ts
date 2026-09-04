@@ -6,6 +6,7 @@ import type {
 } from "../backend/contracts.ts";
 import { unionType, canonicalizeUnionMembers } from "../canonical/canonicalize.ts";
 import type { SemanticType, TypeName, TypeOperatorResolutionKind } from "../model.ts";
+import { definedFields } from "../optional-fields.ts";
 import type { TypeFlagName } from "../warnings.ts";
 import { maxKeyofAliasHops, unwrapAuthoredNode } from "./authored-node.ts";
 import type { ResolveSemanticType, ResolverContext } from "./contracts.ts";
@@ -138,8 +139,7 @@ function resolveTypeOperatorOperand(
       kind: "object",
       typeName: resolved.typeName,
       properties: [],
-      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional operator fields preserve the upstream encoding.
-      ...(resolved.indexSignature === undefined ? {} : { indexSignature: resolved.indexSignature }),
+      ...definedFields({ indexSignature: resolved.indexSignature }),
     };
   }
   return resolved;
@@ -290,8 +290,7 @@ function keyofNode(
     kind: "typeOperator",
     operator: "keyof",
     type: operand,
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional operator fields preserve the upstream encoding.
-    ...(typeNameValue === undefined ? {} : { typeName: typeNameValue }),
+    ...definedFields({ typeName: typeNameValue }),
     resolvedType: resolved.type,
     resolutionKind: resolved.resolutionKind,
   };

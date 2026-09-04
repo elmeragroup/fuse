@@ -11,23 +11,22 @@
 ## 2 Anatomy
 
 ```
-Field.Root                                (textFieldVariants slot `base` — borrowed public recipe)
-├─ label row (div, `labelContainer`) > Field.Label (`label`)   — when `label`
-├─ container (div, `container`)
-│  ├─ InputGroup (ref: popover anchor; carries aria-invalid)
-│  │  ├─ Combobox.Root (items=countries, value=selectedCountry)
-│  │  │  ├─ InputGroup.Addon (inline-start)
-│  │  │  │  └─ Combobox.Trigger role="button"      — Flag + dial code (tabular-nums)
-│  │  │  └─ Combobox.Content (library part: portal + positioner + popup; anchor=InputGroup)
-│  │  │     ├─ InputGroup > Addon(MagnifyingGlass) + raw Combobox.Input (named icon import; search)
-│  │  │     ├─ Combobox.Empty (noCountriesFoundText)
-│  │  │     └─ Combobox.List > Combobox.Item per country (library parts)
-│  │  │        └─ Flag + dial code + localized country name (truncated) + the part's own indicator
-│  │  ├─ InputGroup.Input (visible number input, name=`${name}-display-value`)
-│  │  └─ endContent                                 — when `endContent`
-│  └─ Field.Description (`description`)             — when `description`
-├─ Field.Error                                      — when errorMessage truthy
-└─ <input type="hidden" name={name} value={outputValue} />   — the real form value
+Field.Root                                (FieldFrame default root — `fieldFrameRootClass`)
+├─ label row (div) > Field.Label                    — when `label`
+├─ InputGroup (ref: popover anchor; carries aria-invalid)
+│  ├─ Combobox.Root (items=countries, value=selectedCountry)
+│  │  ├─ InputGroup.Addon (inline-start)
+│  │  │  └─ Combobox.Trigger role="button"      — Flag + dial code (tabular-nums)
+│  │  └─ Combobox.Content (library part: portal + positioner + popup; anchor=InputGroup)
+│  │     ├─ InputGroup > Addon(MagnifyingGlass) + raw Combobox.Input (named icon import; search)
+│  │     ├─ Combobox.Empty (noCountriesFoundText)
+│  │     └─ Combobox.List > Combobox.Item per country (library parts)
+│  │        └─ Flag + dial code + localized country name (truncated) + the part's own indicator
+│  ├─ InputGroup.Input (visible number input, name=`${name}-display-value`)
+│  └─ endContent                                 — when `endContent`
+├─ Field.Description                             — when `description`
+└─ Field.Error                                   — when errorMessage truthy
+<input type="hidden" name={name} value={outputValue} />   — sibling of FieldFrame; the real form value
 ```
 
 Internal parts: `Flag` renders the packaged `@elmeragroup/ui/flags` SVG URL as a decorative lazy `<img>` in a fixed 20×15 px slot; `usePhoneNumberFieldState` owns digits, country detection, formatting, and validation. There is no OS detection, emoji branch, network fallback, or public flag variant.
@@ -79,7 +78,7 @@ Flag availability is a separate filter, not an addition to that product list. Th
 
 ## 4 Variants
 
-No own recipe. **Borrows the public `textFieldVariants`** slots `base`, `labelContainer`, `label`, `container`, `description` (no axes passed — plain defaults). Trigger/popup/item styling is inline; no size axis.
+No own recipe. Layout comes from package-private `FieldFrame` (`fieldFrameRootClass` on the root; heading row, description and error from the frame defaults). Does not import `textFieldVariants`. Trigger/popup/item styling is inline; no size axis.
 
 ## 5 Consumed tokens
 
@@ -87,7 +86,7 @@ No own recipe. **Borrows the public `textFieldVariants`** slots `base`, `labelCo
 
 ## 6 Data attributes
 
-- **Emitted:** `data-slot="field|field-label|field-description|field-error"` plus InputGroup's slots; from the composed library parts (§8.15) `data-slot="combobox-content|combobox-list|combobox-item|combobox-empty"` and `data-chips="true"` on the popup (the flag that tells `Combobox.Content` it is anchored to an external element). Portal placement is resolved through the explicit `container` prop/nearest `ThemeScope`, not an overlay data attribute.
+- **Emitted:** `data-slot="field|field-label|field-description|field-error"` plus InputGroup's slots; from the composed library parts (§8.15) `data-slot="combobox-content|combobox-list|combobox-item|combobox-empty"` and `data-external-anchor="true"` on the popup (the flag that tells `Combobox.Content` it is anchored to an external element). Portal placement is resolved through the explicit `container` prop/nearest `ThemeScope`, not an overlay data attribute.
 - **Consumed (base-ui Combobox):** `data-pressed` (trigger active fill), `data-open`/`data-closed` + `data-[side=…]` (popup animation), `data-highlighted`/`data-disabled` (items), `data-empty` (empty state). Popup animation classes use conventions' self-scoped `data-open:`/`data-closed:` custom variants on the popup element.
 
 ## 7 Accessibility
@@ -123,7 +122,7 @@ No own recipe. **Borrows the public `textFieldVariants`** slots `base`, `labelCo
 
     The old list clamp was **inert**, not merely generous: it was written `max-h-[min(300px,calc(var(--available-height)-2.75rem))]`, and CSS `calc` requires whitespace around a `-`, so the whole `min()` was invalid and the declaration was dropped. With no `max-height` on the popup either, the popup grew to the height of every country row — 6218 px against a 283 px popup after the change, in the harness that measured it. §9 pins the clamp by asserting the open list scrolls within the viewport rather than by pinning either number.
 
-16. **Parse budget and the controlled echo** (2026-09-03): the hook has a single `applyState(next, { emitChange })` where `commit` and `syncValue` duplicated the same country-notify / set-state / emit sequence; it carries `ProcessedPhoneInput` rather than restating that shape; the display/output pair comes from one cache shared by the emit path and the render, held in a ref rather than a `useMemo` so React cannot silently evict it and double the cost; and the sync effect returns early when the incoming `value` is the string the hook last emitted and neither `international` nor `metadata` has changed. `Intl.DisplayNames.of` is resolved once per (locale, picker set) into a map instead of once per row per render.
+16. **Parse budget and the controlled echo** (2026-09-03): the hook has a single `applyState(next, { emitChange })` where `commit` and `syncValue` duplicated the same country-notify / set-state / emit sequence; it carries `ProcessedPhoneInput` rather than restating that shape; the display/output pair comes from a `useMemo` over the current digits and format options; `applyState` computes the same pair at the emit call site and records it in a field-compared cache (no `JSON.stringify`) so the following render reuses that parse — the cache is written from event/effect handlers, never from render (ticket 09, 2026-09-04). The sync effect returns early when the incoming `value` is the string the hook last reconciled and neither `international` nor `metadata` has changed (ticket 01, 2026-09-04: the guard compares the last emitted _or_ synced value, not only the last emit — see §8.19). `Intl.DisplayNames.of` is resolved lazily per locale through a module-level cache filled on first lookup and shared across instances; mounting the field does not call `.of` until the country popup opens — `itemToStringLabel` returns the country code until then so Combobox.Root's selected-item stringify is not a mount-time lookup (ticket 09, 2026-09-04).
 
     The budget is **per path, not one number**: a keystroke costs one parse, a paste carrying an international prefix costs three (two in the detection pass, one for the emitted output), and a country change costs one. Before this ticket the same eight keystrokes cost 32 parses under `e164`, `international`, and `formatOnType` and 17 under `national`, and that paste cost six. §9 pins each path.
 
@@ -133,9 +132,11 @@ No own recipe. **Borrows the public `textFieldVariants`** slots `base`, `labelCo
 
 17. **The unbound `form` and the empty search `name`** (2026-09-03), previously shipped undocumented: `Combobox.Root` carries `form="elmera-ui-phone-country-unbound"`, an id that deliberately names no rendered form, so base-ui's own hidden country-code input is associated with nothing and cannot reach the host form's `FormData` beside `name` and `${name}-display-value` — the pair of §8.2 is the whole submitted surface. The popup's search input carries `name=""`: a control with no name is never submitted, and the empty name also keeps it out of browser autofill heuristics, which `autoComplete="one-time-code"` (§8.8) covers only for password managers. Both are load-bearing; neither may be tidied away unless the two-input contract of §8.2 changes first.
 
-18. **The field frame is `FieldFrame`, and the hidden input moved into it** (2026-09-03): the label row, the control/description wrapper, the description and the error come from the package-private `field/field-frame.tsx` (field.md §8.9) instead of a fourth hand-built copy; `textFieldVariants`' `base`/`labelContainer`/`label`/`container`/`description` slots are passed to it as class arguments exactly as TextField passes its own, so every rendered class set is unchanged part for part.
+18. **The field frame is `FieldFrame`** (2026-09-03): the label row, the description and the error come from the package-private `field/field-frame.tsx` (field.md §8.9) instead of a fourth hand-built copy; `textFieldVariants`' `base`/`labelContainer`/`label`/`container`/`description` slots are passed to it as class arguments exactly as TextField passes its own, so every rendered class set is unchanged part for part.
 
-    The frame has no slot after `Field.Error`, which is where the hidden submit input used to sit. Rather than widen the frame with a prop no other composite would use, the input moved into `children`, so it now renders inside the content wrapper after the field box and before the description. It is `type="hidden"`: it paints no box, takes no flex slot, and does not displace the description, which stays the wrapper's last child and keeps matching its `last:mt-0` rule. It is still `name={name}` carrying `outputValue` — the second half of §8.2's two-input submitted surface, pinned by the `FormData` test in §9.
+    The hidden submit input is a sibling of `<FieldFrame>` under a fragment, not a child of it and not a reason to give the frame a trailing slot. It is still `type="hidden"` `name={name}` carrying `outputValue` — the second half of §8.2's two-input submitted surface, pinned by the `FormData` test in §9. _(Amended 2026-09-04: the input left `children` and sits beside the frame.)_ _(Amended 2026-09-04: PhoneNumberField passes only a root class (`fieldFrameRootClass`) and no longer imports `textFieldVariants`; the control/description wrapper is omitted because the frame root is already that stack, so description is a direct child of `Field.Root`.)_
+
+19. **Echo guard compares the last reconciled value** (ticket 01, 2026-09-04: a parent that clears then restores a previously emitted string must converge on the prop). The sync effect returns early when the incoming `value` is the string the hook last reconciled — written on emit and again after the early-return check on a non-emitting sync — and neither `international` nor `metadata` has changed. Recording the incoming value after that check is what makes form-reset / undo / navigate-back restore the digits instead of leaving the field blank. The per-path parse budget of §8.16 is unchanged.
 
 ## 9 Test requirements
 
@@ -150,7 +151,9 @@ Role/label-based queries throughout; keyboard flows per §7:
 - i18n injection: overridden labels appear in the accessibility tree.
 - Empty search shows `noCountriesFoundText`.
 - Parse budget: a controlled probe over `usePhoneNumberFieldState` alone counts `AsYouType` parses and pins each path from §8.16 — one per keystroke under each of `e164`, `outputFormat="national"`, `international`, and `formatOnType`; three for a paste carrying an international prefix; one for a country change. The hook needs a renderer that runs effects, which the node `unit` project has no dependency for, so this one hook test runs in the `browser` project and renders no library component.
+- Country names: mounting `PhoneNumberField` performs no `Intl.DisplayNames.of` until the country popup opens; a module-level per-locale resolver fills names on first lookup.
 - Controlled value: with the emitted value fed straight back in, `outputFormat="national"` and `formatOnType` render as they always did, `international` shows what was entered while the hidden input carries `+4741234567` (§8.16), and a typed `+` prefix survives in `international` mode.
+- Controlled restore: a parent that types through the hook, sets `value=""`, then sets `value` back to the previously emitted string must show those digits again (§8.19).
 - Popup geometry: with the picker open, the country list scrolls inside the popup and its height stays inside the viewport, so the clamp §8.15 restored cannot go inert again.
 - The picker's exclusion list, flag gap, and empty-picker error are the test tree's own literals (`test/phone-picker-contract.ts`), not imports of the engine's constants: reading the implementation's own `Set` back made both assertions tautologies (ADR 0008).
 - Locale matrix: `selectCountry`, `searchCountries`, and `noCountries` render in all four supported locales; each override prop wins.

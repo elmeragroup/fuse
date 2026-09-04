@@ -7,12 +7,12 @@ import { afterEach, describe, expect, it } from "vitest";
 import { discoverEntries } from "../scripts/entries";
 import {
   bareEntryRacDeclarationFailure,
-  declarationModuleSpecifiers,
   emittedDirectiveFailure,
   isForbiddenRacDeclarationSpecifier,
   packedBareEntryRacDeclarationFailure,
   packedValueExportFailure,
   parsePackedEvalJson,
+  withDeclarationParser,
 } from "../scripts/package-check-lib";
 import { parseFacadeValueExports } from "../scripts/parse-facade";
 import { ARTIFACTS_DIR } from "../scripts/tarball";
@@ -258,31 +258,29 @@ describe("bare-entry RAC declaration quarantine", () => {
   });
 
   it("collects only real module-specifier nodes across the syntax matrix", () => {
-    expect(declarationModuleSpecifiers('import { A } from "react-aria-components";\n')).toEqual([
-      "react-aria-components",
-    ]);
-    expect(declarationModuleSpecifiers('import type { B } from "react-aria";\n')).toEqual(["react-aria"]);
-    expect(declarationModuleSpecifiers('export { C } from "@internationalized/date";\n')).toEqual([
-      "@internationalized/date",
-    ]);
-    expect(declarationModuleSpecifiers('export type { D } from "@react-aria/i18n";\n')).toEqual([
-      "@react-aria/i18n",
-    ]);
-    expect(declarationModuleSpecifiers('import "react-aria-components/i18n";\n')).toEqual([
-      "react-aria-components/i18n",
-    ]);
-    expect(
-      declarationModuleSpecifiers('type E = import("@internationalized/date/calendar").Calendar;\n')
-    ).toEqual(["@internationalized/date/calendar"]);
-    expect(declarationModuleSpecifiers('export type F = typeof import("react-aria");\n')).toEqual([
-      "react-aria",
-    ]);
-    expect(
-      declarationModuleSpecifiers(
-        `// import { X } from "react-aria-components";\n/* import "react-aria" */\nconst note = "see @internationalized/date";\n/** {@link import("react-aria-components").Foo} */\nexport declare const ok: 1;\n`
-      )
-    ).toEqual([]);
-  });
+    withDeclarationParser((parser) => {
+      expect(parser.specifiers('import { A } from "react-aria-components";\n')).toEqual([
+        "react-aria-components",
+      ]);
+      expect(parser.specifiers('import type { B } from "react-aria";\n')).toEqual(["react-aria"]);
+      expect(parser.specifiers('export { C } from "@internationalized/date";\n')).toEqual([
+        "@internationalized/date",
+      ]);
+      expect(parser.specifiers('export type { D } from "@react-aria/i18n";\n')).toEqual(["@react-aria/i18n"]);
+      expect(parser.specifiers('import "react-aria-components/i18n";\n')).toEqual([
+        "react-aria-components/i18n",
+      ]);
+      expect(parser.specifiers('type E = import("@internationalized/date/calendar").Calendar;\n')).toEqual([
+        "@internationalized/date/calendar",
+      ]);
+      expect(parser.specifiers('export type F = typeof import("react-aria");\n')).toEqual(["react-aria"]);
+      expect(
+        parser.specifiers(
+          `// import { X } from "react-aria-components";\n/* import "react-aria" */\nconst note = "see @internationalized/date";\n/** {@link import("react-aria-components").Foo} */\nexport declare const ok: 1;\n`
+        )
+      ).toEqual([]);
+    });
+  }, 30_000);
 
   it("treats architecture quarantine packages and @react-aria/* as forbidden", () => {
     expect(isForbiddenRacDeclarationSpecifier("react-aria-components")).toBe(true);

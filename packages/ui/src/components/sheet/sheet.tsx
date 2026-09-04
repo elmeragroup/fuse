@@ -10,15 +10,15 @@ import type { VariantProps } from "tailwind-variants";
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { cn } from "../../styles/cn";
 import { selfFocusRingClass } from "../../styles/utils";
-import { useResolvedPortalContainer } from "../../theme/use-resolved-portal-container";
 import { overlayCloseStrings } from "../overlay/intl";
 import {
   overlayLayer,
   overlayPopupFillClass,
   overlayScrimClass,
-  overlaySheetWidthClasses,
+  overlayWidthClasses,
 } from "../overlay/overlay-classes";
 import { overlayCornerCloseButton } from "../overlay/overlay-close-button";
+import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps } from "../overlay/overlay-props";
 
 /**
@@ -39,15 +39,15 @@ const SheetSideContext = createContext<SheetSide>("right");
 const sheetContentVariants = tv({
   base: cn(
     overlayPopupFillClass,
-    // `--sheet-width` is set by the `size` axis below; these two selectors are the only
-    // consumers, and they appear once rather than once per rung (sheet.md §4).
-    "data-[side=left]:sm:max-w-(--sheet-width) data-[side=right]:sm:max-w-(--sheet-width)",
+    // `--overlay-width` is set by the `size` axis below; these two selectors gate the
+    // cap to left/right at `sm:` rather than repeating every rung (sheet.md §4).
+    "data-[side=left]:sm:max-w-(--overlay-width) data-[side=right]:sm:max-w-(--overlay-width)",
     "text-sm shadow-lg ease-out pointer-events-auto fixed bg-clip-padding transition-transform duration-200 data-ending-style:duration-[calc(var(--drawer-swipe-strength,1)*150ms)] data-ending-style:ease-[cubic-bezier(0.23,1,0.32,1)] data-swiping:transition-none data-[side=bottom]:inset-x-0 data-[side=bottom]:bottom-0 data-[side=bottom]:h-auto data-[side=bottom]:[transform:translateY(var(--drawer-swipe-movement-y,0px))] data-[side=bottom]:border-t data-[side=bottom]:data-ending-style:[transform:translateY(100%)] data-[side=bottom]:data-starting-style:[transform:translateY(100%)] data-[side=left]:inset-y-0 data-[side=left]:left-0 data-[side=left]:h-full data-[side=left]:w-full data-[side=left]:[transform:translateX(var(--drawer-swipe-movement-x,0px))] data-[side=left]:border-r data-[side=left]:data-ending-style:[transform:translateX(-100%)] data-[side=left]:data-starting-style:[transform:translateX(-100%)] data-[side=right]:inset-y-0 data-[side=right]:right-0 data-[side=right]:h-full data-[side=right]:w-full data-[side=right]:[transform:translateX(var(--drawer-swipe-movement-x,0px))] data-[side=right]:border-l data-[side=right]:data-ending-style:[transform:translateX(100%)] data-[side=right]:data-starting-style:[transform:translateX(100%)] data-[side=top]:inset-x-0 data-[side=top]:top-0 data-[side=top]:h-auto data-[side=top]:[transform:translateY(var(--drawer-swipe-movement-y,0px))] data-[side=top]:border-b data-[side=top]:data-ending-style:[transform:translateY(-100%)] data-[side=top]:data-starting-style:[transform:translateY(-100%)]"
   ),
   variants: {
     // Gated to the left/right sides at `sm:` by the base selectors above; top/bottom
     // panels are `h-auto` and full width, so the axis is inert for them.
-    size: overlaySheetWidthClasses,
+    size: overlayWidthClasses,
   },
   defaultVariants: {
     size: "md",
@@ -116,12 +116,6 @@ function SheetOverlay({ className, ...props }: ComponentProps<typeof SheetPrimit
   );
 }
 
-/**
- * `OverlayContainerProps` is intersected **between** `showCloseButton` and `closeLabel`
- * rather than appended: the docs API pipeline derives `Sheet.Content.propOrder` from the
- * intersection order, and the shadow snapshot pins it as
- * `size, showCloseButton, container, closeLabel`. Keep the order as written.
- */
 export type SheetContentProps = ComponentProps<typeof SheetPrimitive.Popup> &
   VariantProps<typeof sheetContentVariants> & {
     /**
@@ -148,16 +142,10 @@ function SheetContent({
 }: SheetContentProps): ReactElement | null {
   const side = use(SheetSideContext);
   const strings = useLocalizedStrings(overlayCloseStrings);
-  const resolvedContainer = useResolvedPortalContainer(container);
-
-  if (resolvedContainer === null) {
-    return null;
-  }
-
   const label = closeLabel ?? strings.format("close");
 
   return (
-    <SheetPortal container={resolvedContainer}>
+    <OverlayPortal portal={SheetPortal} container={container}>
       <SheetOverlay />
       <SheetPrimitive.Viewport
         data-slot="sheet-viewport"
@@ -179,7 +167,7 @@ function SheetContent({
           </SheetPrimitive.Content>
         </SheetPrimitive.Popup>
       </SheetPrimitive.Viewport>
-    </SheetPortal>
+    </OverlayPortal>
   );
 }
 

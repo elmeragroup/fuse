@@ -134,12 +134,15 @@ function collectModuleSpecifierNodes(sourceFile: SourceFile): string[] {
   return specifiers;
 }
 
-type DeclarationParser = {
+export type DeclarationParser = {
   specifiers: (declaration: string) => string[];
+};
+
+type OwnedDeclarationParser = DeclarationParser & {
   close: () => void;
 };
 
-function createDeclarationParser(): DeclarationParser {
+function createDeclarationParser(): OwnedDeclarationParser {
   const virtualFs = createVirtualFileSystem({});
   const writeFile = virtualFs.writeFile;
   if (writeFile === undefined) {
@@ -162,17 +165,13 @@ function createDeclarationParser(): DeclarationParser {
   };
 }
 
-function withDeclarationParser<T>(fn: (parser: DeclarationParser) => T): T {
+export function withDeclarationParser<T>(fn: (parser: DeclarationParser) => T): T {
   const parser = createDeclarationParser();
   try {
     return fn(parser);
   } finally {
     parser.close();
   }
-}
-
-export function declarationModuleSpecifiers(declaration: string): string[] {
-  return withDeclarationParser((parser) => parser.specifiers(declaration));
 }
 
 function entryDeclarationKey(subpath: string): string {

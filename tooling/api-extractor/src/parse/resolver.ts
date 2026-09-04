@@ -11,6 +11,7 @@ import type {
 import type { BackendModuleDraft } from "../backend/contracts.ts";
 import { isInternalSymbolName } from "../backend/contracts.ts";
 import type { ExportNode, ModuleNode, SemanticType, TypeName } from "../model.ts";
+import { definedFields, flagFields } from "../optional-fields.ts";
 import { defaultExtractorOptions } from "../options.ts";
 import type { ExtractorOptions } from "../options.ts";
 import type { ProvenanceEntry } from "../provenance.ts";
@@ -94,8 +95,7 @@ export function resolveModule(
   const module: ModuleNode = {
     name: draft.name,
     exports,
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
-    ...(draft.imports === undefined ? {} : { imports: draft.imports }),
+    ...definedFields({ imports: draft.imports }),
   };
   const semanticPaths = collectSemanticPaths(module);
   return {
@@ -115,8 +115,7 @@ function resolveExport(entry: BackendExportDraft, base: Context): ExportNode {
   const rootProvenance: ProvenanceEntry = {
     path: semanticPath,
     ...declarationProvenance(symbolFacts, base),
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
-    ...(entry.reexportChain === undefined ? {} : { reexportChain: entry.reexportChain }),
+    ...definedFields({ reexportChain: entry.reexportChain }),
   };
   const declaration = primaryDeclaration(symbolFacts);
   const declarationFacts = declaration === undefined ? undefined : base.operations.nodeFacts(declaration);
@@ -154,8 +153,7 @@ function resolveExport(entry: BackendExportDraft, base: Context): ExportNode {
       provenancePropertyContainer: "componentProps",
       propertyDepth: 0,
       symbolStack,
-      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
-      ...(authored.bindingDefaults === undefined ? {} : { bindingDefaults: authored.bindingDefaults }),
+      ...definedFields({ bindingDefaults: authored.bindingDefaults }),
     })
   );
   // The authored export context is applied BEFORE the component transform,
@@ -193,12 +191,11 @@ function resolveExport(entry: BackendExportDraft, base: Context): ExportNode {
   const output: ExportNode = {
     name: entry.name,
     type: resolvedOutputType,
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
-    ...(entry.documentation === undefined ? {} : { documentation: entry.documentation }),
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
-    ...(entry.reexportedFrom === undefined ? {} : { reexportedFrom: entry.reexportedFrom }),
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
-    ...(entry.extendsTypes === undefined ? {} : { extendsTypes: entry.extendsTypes }),
+    ...definedFields({
+      documentation: entry.documentation,
+      reexportedFrom: entry.reexportedFrom,
+      extendsTypes: entry.extendsTypes,
+    }),
   };
   return output;
 }
@@ -230,8 +227,7 @@ function publicExportName(type: SemanticType, entry: BackendExportDraft): Semant
     typeName: {
       name: ownName,
       namespaces: [...parentNamespaces],
-      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
-      ...(typeName?.typeArguments === undefined ? {} : { typeArguments: typeName.typeArguments }),
+      ...definedFields({ typeArguments: typeName?.typeArguments }),
     },
   };
 }
@@ -364,8 +360,7 @@ function typeNodeUnsafe(
     return {
       kind: "intrinsic",
       intrinsic: facts.intrinsic,
-      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
-      ...(typeNameValue === undefined ? {} : { typeName: typeNameValue }),
+      ...definedFields({ typeName: typeNameValue }),
     };
   }
   // TypeScript's `object` intrinsic has no slot in the intrinsic-name union;
@@ -381,16 +376,14 @@ function typeNodeUnsafe(
     return {
       kind: "object",
       properties: [],
-      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
-      ...(typeNameValue === undefined ? {} : { typeName: typeNameValue }),
+      ...definedFields({ typeName: typeNameValue }),
     };
   }
   if (facts.literal !== undefined) {
     return {
       kind: "literal",
       value: literalValue(facts.literal),
-      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
-      ...(typeNameValue === undefined ? {} : { typeName: typeNameValue }),
+      ...definedFields({ typeName: typeNameValue }),
     };
   }
   // Template-literal types are not checker literals (`isLiteralType` is false).
@@ -400,8 +393,7 @@ function typeNodeUnsafe(
     return {
       kind: "literal",
       value: context.operations.typeToString(type),
-      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
-      ...(typeNameValue === undefined ? {} : { typeName: typeNameValue }),
+      ...definedFields({ typeName: typeNameValue }),
     };
   }
   // Deferred conditionals follow upstream's dispatch order: a built-in
@@ -458,8 +450,7 @@ function typeNodeUnsafe(
       callSignatures: signatures.map((signature, index) =>
         resolveSignatureNode(signature, context, index, typeNode)
       ),
-      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
-      ...(typeNameValue === undefined ? {} : { typeName: typeNameValue }),
+      ...definedFields({ typeName: typeNameValue }),
     };
   }
   // A class is recognized after plain callables and before objects, matching
@@ -533,8 +524,7 @@ function baseConstraintOrAny(
   return {
     kind: "intrinsic",
     intrinsic: "any",
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
-    ...(typeNameValue === undefined ? {} : { typeName: typeNameValue }),
+    ...definedFields({ typeName: typeNameValue }),
   };
 }
 
@@ -570,8 +560,7 @@ function recordMissingEnumWarning(
     code: "missing-enum-declaration",
     ...warningLocation(context, symbolFacts?.declarations[0]),
     enumName: typeNameValue?.name ?? symbolFacts?.name ?? "enum",
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
-    ...(memberName === undefined ? {} : { memberName }),
+    ...definedFields({ memberName }),
   });
 }
 
@@ -602,15 +591,13 @@ function shallowType(
     return {
       kind: "intrinsic",
       intrinsic: facts.intrinsic,
-      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
-      ...(name === undefined ? {} : { typeName: name }),
+      ...definedFields({ typeName: name }),
     };
   if (facts.literal !== undefined) {
     return {
       kind: "literal",
       value: literalValue(facts.literal),
-      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
-      ...(name === undefined ? {} : { typeName: name }),
+      ...definedFields({ typeName: name }),
     };
   }
   const externalDecision = externalPolicy({
@@ -626,16 +613,13 @@ function shallowType(
     return { kind: "external", typeName: externalDecision.typeName };
   }
   if (externalDecision.kind === "anonymous-root") return { kind: "object", properties: [] };
-  if (facts.isUnion === true)
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
-    return { kind: "union", types: [], ...(name === undefined ? {} : { typeName: name }) };
+  if (facts.isUnion === true) return { kind: "union", types: [], ...definedFields({ typeName: name }) };
   if (facts.isIntersection === true)
     return {
       kind: "intersection",
       types: [],
       properties: [],
-      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
-      ...(name === undefined ? {} : { typeName: name }),
+      ...definedFields({ typeName: name }),
     };
   // An array keeps an element type in the model, so the cut supplies the
   // wildcard `any` rather than omitting the field.
@@ -643,22 +627,17 @@ function shallowType(
     return {
       kind: "array",
       elementType: { kind: "intrinsic", intrinsic: "any" },
-      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
-      ...(context.operations.isReadonlyType(type) ? { isReadonly: true as const } : {}),
-      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
-      ...(name === undefined ? {} : { typeName: name }),
+      ...flagFields({ isReadonly: context.operations.isReadonlyType(type) }),
+      ...definedFields({ typeName: name }),
     };
   if (facts.isTuple === true)
     return {
       kind: "tuple",
       types: [],
-      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
-      ...(context.operations.isReadonlyType(type) ? { isReadonly: true as const } : {}),
-      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
-      ...(name === undefined ? {} : { typeName: name }),
+      ...flagFields({ isReadonly: context.operations.isReadonlyType(type) }),
+      ...definedFields({ typeName: name }),
     };
-  // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
-  return { kind: "object", properties: [], ...(name === undefined ? {} : { typeName: name }) };
+  return { kind: "object", properties: [], ...definedFields({ typeName: name }) };
 }
 
 /**
@@ -785,10 +764,10 @@ function typeNameFor(
   });
   return {
     name,
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
-    ...(named.namespaces.length === 0 ? {} : { namespaces: named.namespaces }),
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
-    ...(named.typeArguments.length === 0 ? {} : { typeArguments: named.typeArguments }),
+    ...definedFields({
+      namespaces: named.namespaces.length === 0 ? undefined : named.namespaces,
+      typeArguments: named.typeArguments.length === 0 ? undefined : named.typeArguments,
+    }),
   };
 }
 
