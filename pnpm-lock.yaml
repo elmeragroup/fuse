@@ -476,6 +476,10 @@ importers:
       '@oxlint/plugins':
         specifier: 'catalog:'
         version: 1.78.0
+    devDependencies:
+      oxlint:
+        specifier: 'catalog:'
+        version: 1.78.0(oxlint-tsgolint@7.0.2001)
 
   tooling/oxlint-plugin:
     dependencies:

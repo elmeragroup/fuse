@@ -65,7 +65,7 @@ Rules:
 
 ```ts
 import { defineConfig } from "tsdown";
-import { entries } from "./scripts/entries"; // same manifest that drives exports codegen (§3, Appendix A)
+import { entries } from "./scripts/entries.ts"; // same manifest that drives exports codegen (§3, Appendix A)
 
 export default defineConfig({
   entry: entries.sourceFiles,
@@ -77,16 +77,22 @@ export default defineConfig({
   dts: true,
   clean: true,
   sourcemap: true,
+  // Keep validateTheme's runtime NODE_ENV branch (theming.md §7.6).
+  define: {
+    "process.env.NODE_ENV": "process.env.NODE_ENV",
+  },
   deps: {
     neverBundle: true,
-    onlyImport: entries.runtimeDependencies,
+    onlyImport: [...entries.runtimeDependencies],
   },
-  publint: true,
-  attw: { profile: "esm-only", level: "error" },
+  // Package-shape gates run against the packed artifact in package-check (§4).
+  // In-repo exports point at src/ for workspace consumers.
+  publint: false,
+  attw: false,
 });
 ```
 
-This follows tsdown's documented [unbundle mode](https://tsdown.dev/options/unbundle) and [`deps.neverBundle`](https://tsdown.dev/options/dependencies) contract. Do not replace it with per-entry bundles or static banners.
+This follows tsdown's documented [unbundle mode](https://tsdown.dev/options/unbundle) and [`deps.neverBundle`](https://tsdown.dev/options/dependencies) contract. `publint` and `attw` stay off in this config: they run in `package-check` against the packed tarball (`publint`, then `attw --pack --profile esm-only`), not during the in-repo compile. `define` keeps `process.env.NODE_ENV` as a runtime lookup so `validateTheme`'s dev-throw/prod-coerce branch survives ([theming](theming.md) §7.6). Do not replace it with per-entry bundles or static banners. _(Amended 2026-09-04.)_
 
 - **`publishConfig.directory: "dist"`** (base-ui pattern): the in-repo `package.json` keeps source-pointing exports for workspace consumers (§7); `npm publish`/changesets publishes the `dist` directory whose generated `package.json` carries the built exports map. The gates above run against the **published** shape, never the in-repo one.
 
