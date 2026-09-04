@@ -2,6 +2,8 @@
 
 import type { ReactElement } from "react";
 
+import { tv } from "tailwind-variants";
+
 import { ThemeScope } from "@elmeragroup/ui/theme";
 
 import type { TokenRef } from "../lib/docs-model";
@@ -11,13 +13,15 @@ export type TokenSwatchListProps = {
   tokens: readonly TokenRef[];
 };
 
-const classNames = {
-  list: "not-prose m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(190px,1fr))] gap-[0.35rem_1rem] p-0",
-  item: "flex min-w-0 items-center gap-2 [&_code]:overflow-hidden [&_code]:font-docs-mono [&_code]:text-[11.5px] [&_code]:text-ellipsis [&_code]:whitespace-nowrap [&_code]:text-docs-ink",
-  swatch: "size-[0.85rem] flex-none rounded-[3px] border border-docs-ink/18",
-  swatchEmpty:
-    "size-[0.85rem] flex-none rounded-[3px] border border-docs-ink/18 bg-[repeating-linear-gradient(45deg,transparent,transparent_3px,color-mix(in_oklab,var(--color-docs-ink)_14%,transparent)_3px,color-mix(in_oklab,var(--color-docs-ink)_14%,transparent)_6px)]",
-} as const;
+const tokenSwatchList = tv({
+  slots: {
+    list: "not-prose m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(190px,1fr))] gap-[0.35rem_1rem] p-0",
+    item: "[&_code]:font-docs-mono [&_code]:text-docs-ink flex min-w-0 items-center gap-2 [&_code]:overflow-hidden [&_code]:text-[11.5px] [&_code]:text-ellipsis [&_code]:whitespace-nowrap",
+    swatch: "border-docs-ink/18 size-[0.85rem] flex-none rounded-[3px] border",
+    swatchEmpty:
+      "border-docs-ink/18 size-[0.85rem] flex-none rounded-[3px] border bg-[repeating-linear-gradient(45deg,transparent,transparent_3px,color-mix(in_oklab,var(--color-docs-ink)_14%,transparent)_3px,color-mix(in_oklab,var(--color-docs-ink)_14%,transparent)_6px)]",
+  },
+});
 
 /**
  * The one way this site lists custom properties: a swatch beside the token name.
@@ -28,20 +32,21 @@ const classNames = {
  */
 export function TokenSwatchList({ tokens }: TokenSwatchListProps): ReactElement {
   const { theme } = usePreviewTheme();
+  const { list, item, swatch, swatchEmpty } = tokenSwatchList();
 
   return (
-    <ThemeScope theme={theme} className={classNames.list} render={<ul />}>
+    <ThemeScope theme={theme} className={list()} render={<ul />}>
       {tokens.map((token) => (
-        <li key={token.name} className={classNames.item}>
+        <li key={token.name} className={item()}>
           {token.isColor ? (
             <span
-              className={classNames.swatch}
+              className={swatch()}
               data-token-swatch
               style={{ background: `var(${token.name})` }}
               aria-hidden="true"
             />
           ) : (
-            <span className={classNames.swatchEmpty} data-token-swatch aria-hidden="true" />
+            <span className={swatchEmpty()} data-token-swatch aria-hidden="true" />
           )}
           <code>{token.name}</code>
         </li>
