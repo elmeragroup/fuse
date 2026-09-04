@@ -31,8 +31,7 @@ describe("Avatar", () => {
     await vi.waitFor(() => {
       expect(page.getByText("AL", { exact: true }).query()).not.toBeNull();
     });
-    expect(slot("avatar").getAttribute("data-slot")).toBe("avatar");
-    expect(slot("avatar-fallback").textContent).toBe("AL");
+    expect(page.getByText("AL", { exact: true }).element().textContent).toBe("AL");
     expect(page.getByRole("img", { name: "Ada Lovelace" }).query()).toBeNull();
   });
 
@@ -57,7 +56,9 @@ describe("Avatar", () => {
       expect(loaded).toBe(true);
       expect(page.getByRole("img", { name: "Ada Lovelace" }).query()).not.toBeNull();
     });
-    expect(slot("avatar-image").getAttribute("alt")).toBe("Ada Lovelace");
+    expect(page.getByRole("img", { name: "Ada Lovelace" }).element().getAttribute("alt")).toBe(
+      "Ada Lovelace"
+    );
     expect(page.getByText("AL", { exact: true }).query()).toBeNull();
   });
 
@@ -72,7 +73,7 @@ describe("Avatar", () => {
     await vi.waitFor(() => {
       expect(page.getByRole("img", { name: "Portrait of Ada Lovelace" }).query()).not.toBeNull();
     });
-    expect(page.getByRole("img", { name: "Portrait of Ada Lovelace" }).element()).toBe(slot("avatar-image"));
+    expect(page.getByRole("img", { name: "Portrait of Ada Lovelace" }).element().tagName).toBe("IMG");
   });
 
   it("emits data-slot values on every rendered part", () => {

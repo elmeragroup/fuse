@@ -4,7 +4,8 @@ import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { renderThemed } from "../../../test/themed-browser-render";
+import "../../../dist/themes.css";
+import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
 import { Button } from "../button/button";
 import { ButtonGroup } from "./button-group";
 
@@ -146,6 +147,8 @@ describe("ButtonGroup", () => {
     expect(labeled.tagName).toBe("LABEL");
     expect(labeled.getAttribute("for")).toBe("amount");
     expect(labeled.getAttribute("data-slot")).toBe("button-group-text");
+    expect(getComputedStyle(plain).backgroundColor).toBe(cssVarColor(plain, "--muted"));
+    expect(getComputedStyle(labeled).backgroundColor).toBe(cssVarColor(labeled, "--muted"));
     expect(getComputedStyle(plain).textTransform).not.toBe("uppercase");
     expect(getComputedStyle(labeled).textTransform).toBe("uppercase");
   });

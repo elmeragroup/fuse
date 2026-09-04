@@ -5,8 +5,9 @@ import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import "../../../dist/themes.css";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
-import { renderThemed } from "../../../test/themed-browser-render";
+import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme/theme-scope";
 import { AlertDialog } from "./alert-dialog";
 
@@ -225,22 +226,32 @@ describe("AlertDialog", () => {
   it("maps variant onto the action button and fallback icon, and lets icon replace the fallback", async () => {
     const { unmount: unmountDestructive } = renderThemed(withLocale("en-US", <ConfirmDialog />));
     const destructive = await openConfirm();
+    const destructiveAction = page.getByRole("button", { name: ACTION, exact: true }).element();
     const destructiveIcon = destructive.querySelector("svg");
-    if (!(destructiveIcon instanceof SVGElement)) {
-      throw new Error("expected the destructive fallback icon");
+    if (!(destructiveAction instanceof HTMLElement) || !(destructiveIcon instanceof SVGElement)) {
+      throw new Error("expected the destructive action and WarningOctagon fallback");
     }
+    const error = cssVarColor(destructiveAction, "--error");
+    const primary = cssVarColor(destructiveAction, "--primary");
+    expect(getComputedStyle(destructiveAction).backgroundColor).not.toBe(primary);
+    expect(getComputedStyle(destructiveIcon).color).toBe(error);
     expect(getComputedStyle(destructiveIcon).width).toBe("20px");
+    const destructiveGlyph = destructiveIcon.innerHTML;
     unmountDestructive();
 
     const { unmount: unmountNeutral } = renderThemed(
       withLocale("en-US", <ConfirmDialog variant="neutral" />)
     );
     const neutral = await openConfirm();
+    const neutralAction = page.getByRole("button", { name: ACTION, exact: true }).element();
     const neutralIcon = neutral.querySelector("svg");
-    if (!(neutralIcon instanceof SVGElement)) {
-      throw new Error("expected the neutral fallback icon");
+    if (!(neutralAction instanceof HTMLElement) || !(neutralIcon instanceof SVGElement)) {
+      throw new Error("expected the default action and Info fallback");
     }
+    expect(getComputedStyle(neutralAction).backgroundColor).toBe(cssVarColor(neutralAction, "--primary"));
+    expect(getComputedStyle(neutralIcon).color).not.toBe(cssVarColor(neutralAction, "--error"));
     expect(getComputedStyle(neutralIcon).width).toBe("20px");
+    expect(neutralIcon.innerHTML).not.toBe(destructiveGlyph);
     unmountNeutral();
 
     renderThemed(withLocale("en-US", <ConfirmDialog icon={<span>Custom mark</span>} />));

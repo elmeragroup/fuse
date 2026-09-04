@@ -5,8 +5,9 @@ import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import "../../../dist/themes.css";
 import { assertFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
-import { renderThemed } from "../../../test/themed-browser-render";
+import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
 import { Accordion } from "./accordion";
 
 function htmlControl(name: string): HTMLElement {
@@ -227,18 +228,30 @@ describe("Accordion", () => {
   it("passes variant and radius from Root to Item, Trigger, and Content via context", () => {
     renderThemed(<ShippingBilling variant="card" radius="xl" defaultValue={["shipping"]} />);
 
+    const heading = page.getByRole("heading", { level: 3, name: "Shipping" }).element();
     const trigger = htmlControl("Shipping");
     const content = page.getByRole("region", { name: "Shipping" }).element();
+    const item = heading.parentElement;
+    if (!(heading instanceof HTMLElement) || !(item instanceof HTMLElement)) {
+      throw new Error("expected the shipping item");
+    }
     if (!(content instanceof HTMLElement)) {
       throw new Error("expected the shipping region");
     }
-    // card trigger is justify-between; infodropdown is justify-start (accordion.md §4).
+    expect(heading.contains(trigger)).toBe(true);
+    expect(getComputedStyle(item).backgroundColor).toBe(cssVarColor(item, "--card"));
+    expect(Number.parseFloat(getComputedStyle(item).borderTopLeftRadius)).toBeGreaterThan(0);
+    expect(getComputedStyle(item).overflow).toBe("hidden");
+    expect(getComputedStyle(content).backgroundColor).toBe(cssVarColor(content, "--card"));
     expect(getComputedStyle(trigger).justifyContent).toBe("space-between");
-    const shippingBox = trigger.getBoundingClientRect();
-    const billingBox = htmlControl("Billing").getBoundingClientRect();
-    // Root `space-y-3` on the card variant separates items.
-    expect(billingBox.top - shippingBox.bottom).toBeGreaterThan(8);
-    expect(page.getByRole("heading", { level: 3, name: "Shipping" }).element().contains(trigger)).toBe(true);
+    const billingHeading = page.getByRole("heading", { level: 3, name: "Billing" }).element();
+    const billingItem = billingHeading.parentElement;
+    if (!(billingItem instanceof HTMLElement)) {
+      throw new Error("expected the billing item");
+    }
+    const gap = billingItem.getBoundingClientRect().top - item.getBoundingClientRect().bottom;
+    expect(gap).toBeGreaterThanOrEqual(11);
+    expect(gap).toBeLessThan(16);
   });
 
   it("paints the shared ring on keyboard focus-visible and not on mouse focus, at both densities", async () => {

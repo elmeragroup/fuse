@@ -4,9 +4,10 @@ import { describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import "../../../dist/themes.css";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
-import { renderThemed } from "../../../test/themed-browser-render";
+import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
 import { Breadcrumb } from "./breadcrumb";
 
 const LANDMARK_COPY = {
@@ -101,9 +102,7 @@ describe("Breadcrumb", () => {
     expect(link.tagName).toBe("A");
     expect(link.getAttribute("href")).toBe("#home");
     expect(link.getAttribute("data-slot")).toBe("breadcrumb-link");
-    const classes = link.className.split(/\s+/);
-    expect(classes).toContain("text-primary");
-    expect(classes).toContain("hover:text-foreground");
+    expect(getComputedStyle(link).color).toBe(cssVarColor(link, "--primary"));
   });
 
   it("hides separators from the accessibility tree and keeps ellipsis more in it", () => {
