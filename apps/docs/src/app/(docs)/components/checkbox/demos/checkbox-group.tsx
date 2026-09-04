@@ -3,7 +3,19 @@
 import { useState } from "react";
 
 import { Button } from "@elmeragroup/ui/button";
-import { CheckboxGroup, CheckboxItem } from "@elmeragroup/ui/checkbox";
+import { Checkbox, CheckboxGroup } from "@elmeragroup/ui/checkbox";
+import { Field } from "@elmeragroup/ui/field";
+
+const toppings = [
+  { value: "pepperoni", label: "Pepperoni" },
+  { value: "mushroom", label: "Mushroom" },
+  { value: "olive", label: "Olive" },
+];
+
+const sides = [
+  { value: "fries", label: "Fries" },
+  { value: "salad", label: "Salad" },
+];
 
 export function CheckboxGroupDemo() {
   const [vertical, setVertical] = useState<string[]>(["pepperoni"]);
@@ -20,9 +32,14 @@ export function CheckboxGroupDemo() {
         onChange={setVertical}
         isInvalid={invalid}
         errorMessage={invalid ? "Pick at least one topping." : undefined}>
-        <CheckboxItem value="pepperoni">Pepperoni</CheckboxItem>
-        <CheckboxItem value="mushroom">Mushroom</CheckboxItem>
-        <CheckboxItem value="olive">Olive</CheckboxItem>
+        {toppings.map((topping) => (
+          <Field.Item key={topping.value} className="flex">
+            <Field.Label className="font-normal flex cursor-pointer items-center gap-2">
+              <Checkbox value={topping.value} />
+              {topping.label}
+            </Field.Label>
+          </Field.Item>
+        ))}
       </CheckboxGroup>
       <CheckboxGroup
         label="Sides"
@@ -30,8 +47,14 @@ export function CheckboxGroupDemo() {
         orientation="horizontal"
         value={horizontal}
         onChange={setHorizontal}>
-        <CheckboxItem value="fries">Fries</CheckboxItem>
-        <CheckboxItem value="salad">Salad</CheckboxItem>
+        {sides.map((side) => (
+          <Field.Item key={side.value} className="flex">
+            <Field.Label className="font-normal flex cursor-pointer items-center gap-2">
+              <Checkbox value={side.value} />
+              {side.label}
+            </Field.Label>
+          </Field.Item>
+        ))}
       </CheckboxGroup>
       <Button type="button" onClick={() => setInvalid((current) => !current)}>
         {invalid ? "Clear error" : "Show error"}

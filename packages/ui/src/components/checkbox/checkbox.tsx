@@ -12,6 +12,7 @@ import { cn } from "../../styles/cn";
 import { selfFocusRingClass } from "../../styles/utils";
 import { FieldFrame } from "../field/field-frame";
 import {
+  SelectionGroupLayout,
   selectionGroupOrientationClass,
   SelectionItem,
   SelectionItemGroup,
@@ -130,7 +131,7 @@ export function CheckboxGroup({
         allValues={allValues}
         disabled={isDisabled}
         className={cn(selectionGroupOrientationClass.group[orientation], className)}>
-        {children}
+        <SelectionGroupLayout orientation={orientation}>{children}</SelectionGroupLayout>
       </CheckboxGroupPrimitive>
     </FieldFrame>
   );

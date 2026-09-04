@@ -12,6 +12,7 @@ import { selfFocusRingClass } from "../../styles/utils";
 import { Field } from "../field/field";
 import { FieldFrame } from "../field/field-frame";
 import {
+  SelectionGroupLayout,
   selectionGroupOrientationClass,
   SelectionItem,
   SelectionItemGroup,
@@ -148,7 +149,7 @@ export function RadioGroup({
         name={name}
         aria-busy={isPending ? true : undefined}
         className={cn(selectionGroupOrientationClass.group[orientation], className)}>
-        {children}
+        <SelectionGroupLayout orientation={orientation}>{children}</SelectionGroupLayout>
       </RadioGroupPrimitive>
     </FieldFrame>
   );

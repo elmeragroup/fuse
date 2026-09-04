@@ -1,6 +1,6 @@
 "use client";
 
-import { Children, createContext, isValidElement, useContext } from "react";
+import { Children, createContext, isValidElement, useContext, useMemo } from "react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 import { Field as FieldPrimitive } from "@base-ui/react/field";
@@ -15,9 +15,31 @@ import { itemVariants } from "../item/item-variants";
 const outlineItemClass = itemVariants({ variant: "outline" });
 
 export type SelectionItemGroupOrientation = "vertical" | "horizontal";
-type SelectionItemGroupContextValue = false | SelectionItemGroupOrientation;
+/**
+ * What a shell sits in: `false` outside any selection group; otherwise the enclosing
+ * group's `orientation` plus whether that group is the private `role="list"` card list
+ * (`list: true`) or the plain group primitive (`list: false`).
+ */
+type SelectionItemGroupContextValue = false | { orientation: SelectionItemGroupOrientation; list: boolean };
 
 const SelectionItemGroupContext = createContext<SelectionItemGroupContextValue>(false);
+
+type SelectionGroupLayoutProps = {
+  children?: ReactNode;
+  orientation: SelectionItemGroupOrientation;
+};
+
+/**
+ * Package-private layout announcer that `CheckboxGroup` and `RadioGroup` wrap their
+ * primitive's children in (selection-item.md §8.9). A shell placed directly in a plain
+ * group then follows the group's `orientation` for its edge treatment — connected stack
+ * when vertical, individually rounded card when horizontal — instead of always
+ * assuming a connected stack. It adds no `role`; only `SelectionItemGroup` is a list.
+ */
+export function SelectionGroupLayout({ children, orientation }: SelectionGroupLayoutProps): ReactElement {
+  const value = useMemo(() => ({ orientation, list: false }), [orientation]);
+  return <SelectionItemGroupContext.Provider value={value}>{children}</SelectionItemGroupContext.Provider>;
+}
 
 /**
  * The one orientation map for the selection-group family (checkbox.md §8.10,
@@ -27,10 +49,17 @@ const SelectionItemGroupContext = createContext<SelectionItemGroupContextValue>(
  * to sit in `checkbox.tsx`, `radio-group.tsx` and this file are gone (spec 08 finding S18).
  *
  * The option-stack `gap-2` is layout, not a control rung (radio-group.md §4), which is why
- * it is a plain literal here and not a `--control-gap-*` read.
+ * it is a plain literal here and not a `--control-gap-*` read. The vertical group collapses
+ * that gap to `0` when its direct children are selection shells
+ * (`has-[>[data-selection-item]]:gap-0`, selection-item.md §8.9): shells draw connected
+ * edges, and a gap between connected edges was the bug this closes. Plain
+ * `Checkbox`/`Radio` rows keep the `gap-2` stack.
  */
 export const selectionGroupOrientationClass = {
-  group: { vertical: "flex flex-col gap-2", horizontal: "flex flex-wrap gap-4" },
+  group: {
+    vertical: "flex flex-col gap-2 has-[>[data-selection-item]]:gap-0",
+    horizontal: "flex flex-wrap gap-4",
+  },
   list: { vertical: "gap-0", horizontal: "flex-row flex-wrap gap-4" },
 } as const satisfies Record<"group" | "list", Record<SelectionItemGroupOrientation, string>>;
 
@@ -54,8 +83,9 @@ export function SelectionItemGroup({
   children,
   orientation = "vertical",
 }: SelectionItemGroupProps): ReactElement {
+  const value = useMemo(() => ({ orientation, list: true }), [orientation]);
   return (
-    <SelectionItemGroupContext.Provider value={orientation}>
+    <SelectionItemGroupContext.Provider value={value}>
       <Item.Group className={cn("select-none", selectionGroupOrientationClass.list[orientation])}>
         {children}
       </Item.Group>
@@ -133,8 +163,8 @@ type SelectionItemShellProps = Omit<ComponentProps<typeof Field.Item>, "classNam
  * classification). Control and sub-section columns share one parent grid so the
  * spacer tracks the control slot without measuring it.
  *
- * Vertical, default, and shells outside the private group collapse borders with
- * `not-first:border-t-0`. A checked non-first shell then repaints its top border in
+ * Vertical and default shells, in either group shape or outside any group, collapse
+ * borders with `not-first:border-t-0`. A checked non-first shell then repaints its top border in
  * `primary` by pulling itself up one pixel
  * (`has-[[data-slot=selection-item-control]_[data-checked]]:not-first:-mt-px`)
  * instead of a z-index lift; `className` margin overrides can break that. Horizontal
@@ -152,8 +182,8 @@ function SelectionItemShell({
   ...props
 }: SelectionItemShellProps): ReactElement {
   const groupLayout = useContext(SelectionItemGroupContext);
-  const inItemGroup = groupLayout !== false;
-  const connectedStack = groupLayout !== "horizontal";
+  const inItemGroup = groupLayout !== false && groupLayout.list;
+  const connectedStack = groupLayout === false || groupLayout.orientation !== "horizontal";
   const childArray = Children.toArray(children);
   const subSections = childArray.filter(
     (child) => isValidElement(child) && child.type === SelectionItemSubSection
@@ -178,6 +208,7 @@ function SelectionItemShell({
       {...(inItemGroup ? { role: "listitem" as const } : null)}
       {...props}
       data-slot={dataSlot}
+      data-selection-item=""
       className={cn(
         outlineItemClass,
         "grid items-stretch gap-0 gap-x-2.5 bg-background px-4 py-0 transition-colors has-[[data-slot=selection-item-control]_[data-checked]]:border-primary has-[[data-slot=selection-item-control]_[data-checked]]:bg-muted",

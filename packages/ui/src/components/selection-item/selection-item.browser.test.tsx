@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { assertHorizontalItemList, radiusToken } from "../../../test/assert-selection-item-group-layout";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { disabledHatch } from "../../styles/utils";
 import { Checkbox as UiCheckbox, CheckboxGroup, CheckboxItem, CheckboxItemGroup } from "../checkbox/checkbox";
@@ -512,13 +513,19 @@ describe("selection group orientation map", () => {
     renderThemed(
       <>
         <CheckboxGroup label="Checks vertical">
-          <CheckboxItem value="a">Check vertical</CheckboxItem>
+          <Field.Label>
+            <UiCheckbox value="a" />
+            Check vertical
+          </Field.Label>
         </CheckboxGroup>
         <RadioGroup label="Radios vertical">
           <Radio value="a">Radio vertical</Radio>
         </RadioGroup>
         <CheckboxGroup label="Checks horizontal" orientation="horizontal">
-          <CheckboxItem value="a">Check horizontal</CheckboxItem>
+          <Field.Label>
+            <UiCheckbox value="a" />
+            Check horizontal
+          </Field.Label>
         </CheckboxGroup>
         <RadioGroup label="Radios horizontal" orientation="horizontal">
           <Radio value="a">Radio horizontal</Radio>
@@ -570,6 +577,73 @@ describe("selection group orientation map", () => {
     // The card list is nested in a group primitive that keeps the group orientation.
     expect(layout(groupPrimitiveAround(checkboxNamed("Check card vertical")))).toEqual(VERTICAL_GROUP);
     expect(layout(groupPrimitiveAround(radioNamed("Radio card horizontal")))).toEqual(HORIZONTAL);
+  });
+
+  it("collapses the plain vertical group gap when its direct children are shells", () => {
+    renderThemed(
+      <>
+        <CheckboxGroup label="Check shells vertical">
+          <CheckboxItem value="a">Check shell vertical a</CheckboxItem>
+          <CheckboxItem value="b">Check shell vertical b</CheckboxItem>
+        </CheckboxGroup>
+        <RadioGroup label="Radio shells vertical">
+          <RadioItem value="a">
+            <RowTitle>Radio shell vertical a</RowTitle>
+          </RadioItem>
+          <RadioItem value="b">
+            <RowTitle>Radio shell vertical b</RowTitle>
+          </RadioItem>
+        </RadioGroup>
+      </>
+    );
+
+    const checkGroup = groupPrimitiveAround(checkboxNamed("Check shell vertical a"));
+    const radioGroup = groupPrimitiveAround(radioNamed("Radio shell vertical a"));
+    expect(layout(checkGroup)).toEqual(VERTICAL_LIST);
+    expect(layout(radioGroup)).toEqual(VERTICAL_LIST);
+    // Plain groups stay plain: no list semantics are added to the shells.
+    expect(page.getByRole("listitem").elements()).toHaveLength(0);
+    // The second shell still collapses its top border into the first, as a connected stack.
+    const secondCheck = checkboxNamed("Check shell vertical b").closest("[data-slot=checkbox-item]");
+    if (!(secondCheck instanceof HTMLElement)) {
+      throw new Error("expected checkbox-item shell");
+    }
+    expect(getComputedStyle(secondCheck).borderTopWidth).toBe("0px");
+  });
+
+  it("renders shells in a plain horizontal group as independent rounded cards", () => {
+    renderThemed(
+      <div style={radiusToken}>
+        <CheckboxGroup label="Check shells horizontal" orientation="horizontal">
+          <CheckboxItem value="a">Check shell horizontal a</CheckboxItem>
+          <CheckboxItem value="b">Check shell horizontal b</CheckboxItem>
+        </CheckboxGroup>
+        <RadioGroup label="Radio shells horizontal" orientation="horizontal">
+          <RadioItem value="a">
+            <RowTitle>Radio shell horizontal a</RowTitle>
+          </RadioItem>
+          <RadioItem value="b">
+            <RowTitle>Radio shell horizontal b</RowTitle>
+          </RadioItem>
+        </RadioGroup>
+      </div>
+    );
+
+    const checkGroup = groupPrimitiveAround(checkboxNamed("Check shell horizontal a"));
+    const radioGroup = groupPrimitiveAround(radioNamed("Radio shell horizontal a"));
+    assertHorizontalItemList(
+      checkGroup,
+      [...checkGroup.querySelectorAll("[data-slot=checkbox-item]")].filter(
+        (node): node is HTMLElement => node instanceof HTMLElement
+      )
+    );
+    assertHorizontalItemList(
+      radioGroup,
+      [...radioGroup.querySelectorAll("[data-slot=radio-item]")].filter(
+        (node): node is HTMLElement => node instanceof HTMLElement
+      )
+    );
+    expect(page.getByRole("listitem").elements()).toHaveLength(0);
   });
 
   it("gives every member control an accessible name in both the plain and card shapes", () => {
