@@ -26,6 +26,8 @@ const demoFrame = tv({
   },
 });
 
+const { root, card } = demoFrame();
+
 /**
  * The §3.5 demo frame: a theme-tinted dotted stage, the active theme coordinate and its
  * deployment-default density in mono, and the source of the very file that rendered the
@@ -39,7 +41,6 @@ const demoFrame = tv({
  */
 export async function DemoFrame({ slug, id, title, file, children }: DemoFrameProps): Promise<ReactElement> {
   const demo = await readDemoSource(slug, file);
-  const { root, card } = demoFrame();
 
   return (
     <section className={root()} data-demo-frame aria-labelledby={id}>

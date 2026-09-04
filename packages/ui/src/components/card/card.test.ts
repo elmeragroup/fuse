@@ -4,6 +4,25 @@ import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { cn } from "../../styles/cn";
 import { cardDescriptionVariants, cardTitleVariants, cardVariants } from "./card-variants";
 
+const TITLE_SIZE_CLASS = {
+  default: "text-base",
+  sm: "text-sm",
+  lg: "text-lg",
+  xl: "text-xl",
+  "2xl": "text-2xl",
+  "3xl": "text-3xl",
+  "4xl": "text-4xl",
+  "5xl": "text-5xl",
+  "6xl": "text-6xl",
+} as const;
+const DESCRIPTION_SIZE_CLASS = {
+  xs: "text-xs",
+  sm: "text-sm",
+  default: "text-base",
+  lg: "text-lg",
+  xl: "text-xl",
+  "2xl": "text-2xl",
+} as const;
 const TITLE_SIZES = ["default", "sm", "lg", "xl", "2xl", "3xl", "4xl", "5xl", "6xl"] as const;
 const DESCRIPTION_SIZES = ["xs", "sm", "default", "lg", "xl", "2xl"] as const;
 
@@ -56,19 +75,11 @@ describe("cardTitleVariants", () => {
   });
 
   it("resolves each type-scale size without density control metrics", () => {
-    expect(cardTitleVariants({ size: "default" })).toContain("text-base");
-    expect(cardTitleVariants({ size: "sm" })).toContain("text-sm");
-    expect(cardTitleVariants({ size: "lg" })).toContain("text-lg");
-    expect(cardTitleVariants({ size: "xl" })).toContain("text-xl");
-    expect(cardTitleVariants({ size: "2xl" })).toContain("text-2xl");
-    expect(cardTitleVariants({ size: "3xl" })).toContain("text-3xl");
-    expect(cardTitleVariants({ size: "4xl" })).toContain("text-4xl");
-    expect(cardTitleVariants({ size: "5xl" })).toContain("text-5xl");
-    expect(cardTitleVariants({ size: "6xl" })).toContain("text-6xl");
+    expect(Object.keys(cardTitleVariants.variants.size)).toEqual(TITLE_SIZES);
     for (const size of TITLE_SIZES) {
+      expect(cardTitleVariants({ size }), size).toContain(TITLE_SIZE_CLASS[size]);
       expect(cardTitleVariants({ size }), size).not.toContain("--control-");
     }
-    expect(TITLE_SIZES).toHaveLength(9);
   });
 });
 
@@ -79,15 +90,10 @@ describe("cardDescriptionVariants", () => {
   });
 
   it("resolves each type-scale size without density control metrics", () => {
-    expect(cardDescriptionVariants({ size: "xs" })).toContain("text-xs");
-    expect(cardDescriptionVariants({ size: "sm" })).toContain("text-sm");
-    expect(cardDescriptionVariants({ size: "default" })).toContain("text-base");
-    expect(cardDescriptionVariants({ size: "lg" })).toContain("text-lg");
-    expect(cardDescriptionVariants({ size: "xl" })).toContain("text-xl");
-    expect(cardDescriptionVariants({ size: "2xl" })).toContain("text-2xl");
+    expect(Object.keys(cardDescriptionVariants.variants.size)).toEqual(DESCRIPTION_SIZES);
     for (const size of DESCRIPTION_SIZES) {
+      expect(cardDescriptionVariants({ size }), size).toContain(DESCRIPTION_SIZE_CLASS[size]);
       expect(cardDescriptionVariants({ size }), size).not.toContain("--control-");
     }
-    expect(DESCRIPTION_SIZES).toHaveLength(6);
   });
 });

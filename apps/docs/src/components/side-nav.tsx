@@ -21,10 +21,11 @@ const sideNav = tv({
   },
 });
 
+const { root, scroll, section, heading, link } = sideNav();
+const { list } = docsNavList();
+
 export function SideNav(): ReactElement {
   const pathname = usePathname();
-  const { root, scroll, section, heading, link } = sideNav();
-  const { list } = docsNavList();
 
   return (
     <nav aria-label="Main navigation" className={root()}>

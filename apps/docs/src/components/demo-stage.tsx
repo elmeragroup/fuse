@@ -26,6 +26,15 @@ const demoStage = tv({
   },
 });
 
+const {
+  stage,
+  meta,
+  slug: slugClass,
+  density: densityClass,
+  spacer,
+  sourcePath: sourcePathClass,
+} = demoStage();
+
 /**
  * The two theme-dependent regions of a §3.5 frame: the dotted, theme-tinted stage and the
  * meta row naming the coordinate it renders under.
@@ -40,14 +49,6 @@ export function DemoStage({ sourcePath, children }: DemoStageProps): ReactElemen
   const { theme } = usePreviewTheme();
   const slug = themeSlug(theme).replaceAll("-", "·");
   const density = defaultDensityForVariant(theme.variant);
-  const {
-    stage,
-    meta,
-    slug: slugClass,
-    density: densityClass,
-    spacer,
-    sourcePath: sourcePathClass,
-  } = demoStage();
 
   return (
     <>

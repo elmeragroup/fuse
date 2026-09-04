@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { focusRing } from "../../styles/utils";
-import { ITEM_TITLE_CLASSES, itemTitleVariants, itemVariants } from "./item-variants";
+import { ITEM_TITLE_CLASSES } from "./item-title-classes";
+import { itemVariants } from "./item-variants";
 
 const focusSelf = focusRing({ target: "self" }).root();
 
@@ -30,7 +31,9 @@ describe("itemVariants", () => {
 });
 
 describe("ITEM_TITLE_CLASSES", () => {
-  it("resolves from the title recipe", () => {
-    expect(ITEM_TITLE_CLASSES).toBe(itemTitleVariants().title());
+  it("is the Item.Title / Alert.Title face", () => {
+    expect(ITEM_TITLE_CLASSES).toContain("font-medium");
+    expect(ITEM_TITLE_CLASSES).toContain("line-clamp-1");
+    expect(ITEM_TITLE_CLASSES).toContain("underline-offset-4");
   });
 });

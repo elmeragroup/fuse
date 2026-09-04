@@ -22,6 +22,8 @@ const themePicker = tv({
   },
 });
 
+const { root } = themePicker();
+
 export type ThemePickerProps = {
   theme: ThemeInput;
   onThemeChange: (theme: ThemeInput) => void;
@@ -53,8 +55,6 @@ export function ThemePicker({ theme, onThemeChange }: ThemePickerProps): ReactEl
     }
     commitTheme({ variant: theme.variant, brand: theme.brand, segment }, onThemeChange);
   };
-
-  const { root } = themePicker();
 
   return (
     <div className={root()}>

@@ -37,7 +37,7 @@ All parts: `ComponentProps<typeof AvatarPrimitive.{Part}>` — full primitive pa
 
 ## 4 Variants
 
-Recipe: **`avatarVariants`** — **private** (not on `@elmeragroup/ui/avatar`). No axes; `Root` classes are the `root` slot, resolved once as `ROOT_CLASSES`. Size stays a `className` concern (`size-8` default; consumers pass `size-10` etc.). If a size axis is ever needed it lands on this recipe, still not public. Image and Fallback stay inline `cn()` strings. _(Amended 2026-09-04.)_
+No public recipe and no axes. `Root` classes are the module-private `ROOT_CLASSES` `cn("…")` string. Size stays a `className` concern (`size-8` default; consumers pass `size-10` etc.). If a size axis is ever needed it lands as a private `tv` recipe, still not public. Image and Fallback stay inline `cn()` strings. _(Amended 2026-09-04. Amended 2026-09-04: axis-less string is `cn()`, not a one-slot recipe.)_
 
 ## 5 Consumed tokens
 

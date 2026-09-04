@@ -21,9 +21,9 @@ const docsHome = tv({
   },
 });
 
-export default function DocsHomePage(): ReactElement {
-  const { groupHeading, list } = docsHome();
+const { groupHeading, list } = docsHome();
 
+export default function DocsHomePage(): ReactElement {
   return (
     <>
       <DocsPageTitle>elmera/ui</DocsPageTitle>

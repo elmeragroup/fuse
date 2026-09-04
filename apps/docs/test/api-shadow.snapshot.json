@@ -7,7 +7,7 @@
     "effectPropCount": 615,
     "currentProblemCount": 0,
     "effectProblemCount": 91,
-    "apiDifferenceCount": 1114,
+    "apiDifferenceCount": 1109,
     "problemDifferenceCount": 91
   },
   "apiDifferences": [
@@ -933,30 +933,17 @@
     },
     {
       "component": "card",
-      "path": "evidence.Card.Description.props.size.declarationPaths[0]",
-      "effect": "packages/ui/src/components/card/card-variants.ts",
-      "reason": "card evidence.Card.Description.props.size.declarationPaths[0]: tv recipe VariantProps provenance after 2026-09-04 class-map migration."
-    },
-    {
-      "component": "card",
-      "path": "evidence.Card.Description.props.size.ownership",
-      "current": "synthesized",
-      "effect": "library",
-      "reason": "card Card.Description.size ownership: checker `synthesized` vs Effect `library` (recipe-axis synthesized vs library variants file)."
-    },
-    {
-      "component": "card",
-      "path": "evidence.Card.Description.props.size.synthesized",
-      "current": true,
-      "effect": false,
-      "reason": "card Card.Description.size synthesized: checker true vs Effect false from extractor provenance."
-    },
-    {
-      "component": "card",
       "path": "evidence.Card.Title.propOrder[1]",
-      "current": "size",
+      "current": "level",
       "effect": "icon",
-      "reason": "card Card.Title evidence propOrder[1]: checker size vs Effect icon."
+      "reason": "card Card.Title evidence propOrder[1]: checker level vs Effect icon."
+    },
+    {
+      "component": "card",
+      "path": "evidence.Card.Title.propOrder[2]",
+      "current": "size",
+      "effect": "level",
+      "reason": "card Card.Title evidence propOrder[2]: checker size vs Effect level."
     },
     {
       "component": "card",
@@ -967,23 +954,10 @@
     },
     {
       "component": "card",
-      "path": "evidence.Card.Title.props.size.declarationPaths[0]",
-      "effect": "packages/ui/src/components/card/card-variants.ts",
-      "reason": "card evidence.Card.Title.props.size.declarationPaths[0]: tv recipe VariantProps provenance after 2026-09-04 class-map migration."
-    },
-    {
-      "component": "card",
-      "path": "evidence.Card.Title.props.size.ownership",
-      "current": "synthesized",
-      "effect": "library",
-      "reason": "card Card.Title.size ownership: checker `synthesized` vs Effect `library` (recipe-axis synthesized vs library variants file)."
-    },
-    {
-      "component": "card",
-      "path": "evidence.Card.Title.props.size.synthesized",
-      "current": true,
-      "effect": false,
-      "reason": "card Card.Title.size synthesized: checker true vs Effect false from extractor provenance."
+      "path": "parts.Card.Description.props.size.type",
+      "current": "NonNullable<\"2xl\" | \"default\" | \"lg\" | \"sm\" | \"xl\" | \"xs\" | undefined> | undefined",
+      "effect": "\"2xl\" | \"default\" | \"lg\" | \"sm\" | \"xl\" | \"xs\" | undefined",
+      "reason": "card Card.Description.size type: checker prints \"NonNullable<\\\"2xl\\\" | \\\"default\\\" | \\\"lg\\\" | \\\"sm\\\" | \\\"xl\\\" | \\\"xs\\\" | undefined> | undefined\"; Effect prints \"\\\"2xl\\\" | \\\"default\\\" | \\\"lg\\\" | \\\"sm\\\" | \\\"xl\\\" | \\\"xs\\\" | undefined\"."
     },
     {
       "component": "card",
@@ -991,6 +965,13 @@
       "current": "ReactNode",
       "effect": "ReactNode | undefined",
       "reason": "card Card.Title.icon type: Effect appends `| undefined` to optional `ReactNode`; checker omits the undefined member."
+    },
+    {
+      "component": "card",
+      "path": "parts.Card.Title.props.size.type",
+      "current": "NonNullable<\"2xl\" | \"3xl\" | \"4xl\" | \"5xl\" | \"6xl\" | \"default\" | \"lg\" | \"sm\" | \"xl\" | undefined> | undefined",
+      "effect": "\"2xl\" | \"3xl\" | \"4xl\" | \"5xl\" | \"6xl\" | \"default\" | \"lg\" | \"sm\" | \"xl\" | undefined",
+      "reason": "card Card.Title.size type: checker prints \"NonNullable<\\\"2xl\\\" | \\\"3xl\\\" | \\\"4xl\\\" | \\\"5xl\\\" | \\\"6xl\\\" | \\\"default\\\" | \\\"lg\\\" | \\\"sm\\\" | \\\"xl\\\" | undefined> | undefined\"; Effect prints \"\\\"2xl\\\" | \\\"3xl\\\" | \\\"4xl\\\" | \\\"5xl\\\" | \\\"6xl\\\" | \\\"default\\\" | \\\"lg\\\" | \\\"sm\\\" | \\\"xl\\\" | undefined\"."
     },
     {
       "component": "checkbox-card",
@@ -6009,23 +5990,23 @@
     {
       "component": "radio-group",
       "path": "evidence.RadioIconButton.propOrder[0]",
-      "current": "size",
+      "current": "value",
       "effect": "aria-label",
-      "reason": "radio-group RadioIconButton evidence propOrder[0]: checker size vs Effect aria-label."
+      "reason": "radio-group RadioIconButton evidence propOrder[0]: checker value vs Effect aria-label."
     },
     {
       "component": "radio-group",
       "path": "evidence.RadioIconButton.propOrder[1]",
-      "current": "value",
+      "current": "isDisabled",
       "effect": "children",
-      "reason": "radio-group RadioIconButton evidence propOrder[1]: checker value vs Effect children."
+      "reason": "radio-group RadioIconButton evidence propOrder[1]: checker isDisabled vs Effect children."
     },
     {
       "component": "radio-group",
       "path": "evidence.RadioIconButton.propOrder[2]",
-      "current": "isDisabled",
+      "current": "size",
       "effect": "className",
-      "reason": "radio-group RadioIconButton evidence propOrder[2]: checker isDisabled vs Effect className."
+      "reason": "radio-group RadioIconButton evidence propOrder[2]: checker size vs Effect className."
     },
     {
       "component": "radio-group",
@@ -6066,19 +6047,6 @@
         "synthesized": false
       },
       "reason": "radio-group RadioIconButton.render: Effect lists Base UI `render` (`ComponentRenderFn | ReactElement`); checker omits it from library rows."
-    },
-    {
-      "component": "radio-group",
-      "path": "evidence.RadioIconButton.props.size.declarationPaths[0]",
-      "current": "packages/ui/src/components/radio-group/radio-group.tsx",
-      "effect": "packages/ui/src/components/radio-group/radio-group-variants.ts",
-      "reason": "radio-group evidence.RadioIconButton.props.size.declarationPaths[0]: tv recipe VariantProps provenance after 2026-09-04 class-map migration."
-    },
-    {
-      "component": "radio-group",
-      "path": "evidence.RadioIconButton.props.size.declarationPaths[1]",
-      "effect": "packages/ui/src/components/radio-group/radio-group.tsx",
-      "reason": "radio-group evidence.RadioIconButton.props.size.declarationPaths[1]: tv recipe VariantProps provenance after 2026-09-04 class-map migration."
     },
     {
       "component": "radio-group",
@@ -6279,10 +6247,10 @@
     },
     {
       "component": "radio-group",
-      "path": "parts.RadioIconButton.props.size.origin",
-      "current": "declared",
-      "effect": "recipe-axis",
-      "reason": "radio-group parts.RadioIconButton.props.size.origin: tv recipe VariantProps provenance after 2026-09-04 class-map migration."
+      "path": "parts.RadioIconButton.props.size.type",
+      "current": "NonNullable<\"icon\" | \"icon-lg\" | \"icon-sm\" | \"icon-xs\" | \"icon-xxs\" | undefined> | undefined",
+      "effect": "\"icon\" | \"icon-lg\" | \"icon-sm\" | \"icon-xs\" | \"icon-xxs\" | undefined",
+      "reason": "radio-group RadioIconButton.size type: checker prints \"NonNullable<\\\"icon\\\" | \\\"icon-lg\\\" | \\\"icon-sm\\\" | \\\"icon-xs\\\" | \\\"icon-xxs\\\" | undefined> | undefined\"; Effect prints \"\\\"icon\\\" | \\\"icon-lg\\\" | \\\"icon-sm\\\" | \\\"icon-xs\\\" | \\\"icon-xxs\\\" | undefined\"."
     },
     {
       "component": "radio-group",

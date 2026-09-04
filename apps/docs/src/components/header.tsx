@@ -17,9 +17,10 @@ const header = tv({
   },
 });
 
+const { root, wordmark } = header();
+
 export function Header(): ReactElement {
   const { theme, setTheme } = usePreviewTheme();
-  const { root, wordmark } = header();
 
   return (
     <header className={root()}>

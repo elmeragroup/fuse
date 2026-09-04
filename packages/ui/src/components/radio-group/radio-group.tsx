@@ -244,29 +244,28 @@ export function RadioItem({
 export type RadioIconButtonProps = Omit<
   ComponentProps<typeof RadioPrimitive.Root>,
   "value" | "disabled" | "className" | "children" | "aria-label"
-> &
-  VariantProps<typeof radioIconButtonVariants> & {
-    /** Member value in the group. */
-    value: string;
-    /** Forwards `disabled` to the radio root. */
-    isDisabled?: boolean;
-    /**
-     * Icon-button size mapped onto the control-height rungs like Button: `icon-xxs`
-     * and `icon-xs` share `--control-h-xs` (svg-3 / svg-3.5), `icon-sm` `--control-h-sm`
-     * (svg-4), `icon` `--control-h-md` (svg-4), `icon-lg` `--control-h-lg` (svg-5).
-     * Svg sizes apply only to `svg:not([class*='size-'])`. Default `"icon"`.
-     */
-    size?: NonNullable<VariantProps<typeof radioIconButtonVariants>["size"]>;
-    /** Extra classes, merged via `cn`. */
-    className?: string;
-    /** The icon. */
-    children?: ReactNode;
-    /**
-     * Required accessible name. `RadioIconButton` is mechanically icon-only
-     * (accessibility.md §3).
-     */
-    "aria-label": string;
-  };
+> & {
+  /** Member value in the group. */
+  value: string;
+  /** Forwards `disabled` to the radio root. */
+  isDisabled?: boolean;
+  /**
+   * Icon-button size mapped onto the control-height rungs like Button: `icon-xxs`
+   * and `icon-xs` share `--control-h-xs` (svg-3 / svg-3.5), `icon-sm` `--control-h-sm`
+   * (svg-4), `icon` `--control-h-md` (svg-4), `icon-lg` `--control-h-lg` (svg-5).
+   * Svg sizes apply only to `svg:not([class*='size-'])`. Default `"icon"`.
+   */
+  size?: NonNullable<VariantProps<typeof radioIconButtonVariants>["size"]>;
+  /** Extra classes, merged via `cn`. */
+  className?: string;
+  /** The icon. */
+  children?: ReactNode;
+  /**
+   * Required accessible name. `RadioIconButton` is mechanically icon-only
+   * (accessibility.md §3).
+   */
+  "aria-label": string;
+};
 
 /**
  * Icon-only segmented radio over the base-ui radio root (radio-group.md §2/§7).

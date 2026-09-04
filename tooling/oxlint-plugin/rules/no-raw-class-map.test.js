@@ -31,6 +31,12 @@ const recipe = tv({
 `,
     },
     {
+      name: "call-expression init accepted",
+      filename: component,
+      code: `const className = joinClasses("flex items-center gap-2 text-sm font-medium");
+`,
+    },
+    {
       name: "named cn() constant accepted",
       filename: "packages/ui/src/components/dropdown-menu/dropdown-menu.tsx",
       code: `const dropdownMenuItemClassName = cn(

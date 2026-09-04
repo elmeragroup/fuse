@@ -12,13 +12,14 @@ type CardDivProps = HTMLAttributes<HTMLDivElement> & CardVariantProps;
 type CardTitleLevel = 1 | 2 | 3 | 4 | 5 | 6;
 
 type CardTitleProps = HTMLAttributes<HTMLHeadingElement> &
-  CardVariantProps &
-  VariantProps<typeof cardTitleVariants> & {
+  CardVariantProps & {
     /**
      * Heading element level — `1`–`6` picks the rendered `h1`–`h6`. Defaults to `3`, so
      * a card titles itself without assuming its place in the document outline.
      */
     level?: CardTitleLevel;
+    /** Typography size for the title, mapped to a `text-{size}` class. Defaults to `2xl`. */
+    size?: NonNullable<VariantProps<typeof cardTitleVariants>["size"]>;
     /**
      * Rendered before `children` — the title becomes a flex row (`items-center gap-x-1.5`)
      * and any `svg` is sized to `5`.
@@ -27,8 +28,10 @@ type CardTitleProps = HTMLAttributes<HTMLHeadingElement> &
   };
 
 type CardDescriptionProps = HTMLAttributes<HTMLParagraphElement> &
-  CardVariantProps &
-  VariantProps<typeof cardDescriptionVariants>;
+  CardVariantProps & {
+    /** Typography size for the description, mapped to a `text-{size}` class. Defaults to `sm`. */
+    size?: NonNullable<VariantProps<typeof cardDescriptionVariants>["size"]>;
+  };
 
 function CardRoot({ className, direction, ...props }: CardDivProps): ReactElement {
   const { base } = cardVariants({ direction });

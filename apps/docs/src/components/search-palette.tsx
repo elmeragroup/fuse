@@ -28,6 +28,18 @@ const searchPalette = tv({
   },
 });
 
+const {
+  trigger,
+  keys,
+  palette,
+  input,
+  results: resultsClass,
+  option,
+  optionTitle,
+  optionGroup,
+  empty,
+} = searchPalette();
+
 /**
  * The complete-site header search (docs-site.md §3.2).
  *
@@ -132,18 +144,6 @@ export function SearchPalette(): ReactElement {
       navigate(activeEntry.href);
     }
   };
-
-  const {
-    trigger,
-    keys,
-    palette,
-    input,
-    results: resultsClass,
-    option,
-    optionTitle,
-    optionGroup,
-    empty,
-  } = searchPalette();
 
   return (
     <>

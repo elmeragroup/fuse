@@ -25,19 +25,3 @@ export const itemVariants = tv({
     size: "default",
   },
 });
-
-/**
- * Package-private Item.Title face (item.md §2). Shared with Alert.Title so the
- * alert heading keeps the same type while staying an `h*` (alert.md §8.2).
- * No axes — one look, resolved once. Empty `variants` / `defaultVariants` satisfy
- * `elmera/enforce-variant-standard` on this colocated module.
- */
-export const itemTitleVariants = tv({
-  slots: {
-    title: "text-sm leading-snug font-medium line-clamp-1 flex w-fit items-center gap-2 underline-offset-4",
-  },
-  variants: {},
-  defaultVariants: {},
-});
-
-export const ITEM_TITLE_CLASSES = itemTitleVariants().title();

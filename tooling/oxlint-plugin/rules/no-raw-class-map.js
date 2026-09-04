@@ -1,6 +1,6 @@
 import { defineRule } from "@oxlint/plugins";
 
-import { extractStrings, isNamedCall } from "../extract-strings.js";
+import { extractStrings } from "../extract-strings.js";
 import { normalizeFilename } from "../filename-normalizer.js";
 
 /**
@@ -230,19 +230,6 @@ function isSkippedPath(filename) {
 
 /**
  * @param {import("estree").Node | null | undefined} node
- * @param {string} name
- */
-function isInsideNamedCall(node, name) {
-  for (let current = node?.parent; current; current = current.parent) {
-    if (current.type === "CallExpression" && isNamedCall(current.callee, name)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-/**
- * @param {import("estree").Node | null | undefined} node
  */
 function unwrap(node) {
   let current = node;
@@ -407,11 +394,11 @@ export default defineRule({
     type: "problem",
     docs: {
       description:
-        "Forbid raw Tailwind class maps and hand-spelled class constants; class maps are tv() recipes. Skips tests, *.test-d.tsx, intl dictionaries, and generated files",
+        "Forbid raw Tailwind class maps and hand-spelled class constants. Maps with an axis or two-plus slots are tv() recipes; a single axis-less string is cn(). Any call-expression initializer is accepted. EXACT_UTILITIES and UTILITY_PREFIXES are the heuristic boundary for 'looks like Tailwind'. Skips tests, *.test-d.tsx, intl dictionaries, and generated files",
     },
     messages: {
       rawClassMap:
-        "Class maps are `tv()` recipes typed via VariantProps. Resolved string constants are legal only when derived from a recipe call, never spelled by hand.",
+        'Class maps with an axis or two or more slots are `tv()` recipes; a single axis-less class string is `cn("…")`. Resolved string constants are legal when they are `cn(…)` or a recipe call, never spelled by hand.',
     },
     schema: [],
   },
@@ -432,10 +419,10 @@ export default defineRule({
       },
       VariableDeclarator(node) {
         if (skipFile || !node.init) return;
-        if (isInsideNamedCall(node.init, "tv") || isInsideNamedCall(node.init, "cn")) return;
 
         const init = unwrap(node.init);
         if (!init) return;
+        if (init.type === "CallExpression") return;
 
         if (init.type === "ObjectExpression") {
           if (objectLooksLikeClassMap(init)) report(init);

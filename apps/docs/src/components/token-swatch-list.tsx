@@ -23,6 +23,8 @@ const tokenSwatchList = tv({
   },
 });
 
+const { list, item, swatch, swatchEmpty } = tokenSwatchList();
+
 /**
  * The one way this site lists custom properties: a swatch beside the token name.
  *
@@ -32,7 +34,6 @@ const tokenSwatchList = tv({
  */
 export function TokenSwatchList({ tokens }: TokenSwatchListProps): ReactElement {
   const { theme } = usePreviewTheme();
-  const { list, item, swatch, swatchEmpty } = tokenSwatchList();
 
   return (
     <ThemeScope theme={theme} className={list()} render={<ul />}>

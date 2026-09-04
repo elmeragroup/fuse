@@ -12,6 +12,7 @@ import { textVariants } from "../text/text-variants";
 
 export const spanVariants = tv({
   extend: textVariants,
+  // Keep an empty variants object: conventions.md, class-maps paragraph.
   variants: {},
   defaultVariants: {
     leading: "snug",

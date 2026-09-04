@@ -28,6 +28,8 @@ const docsTable = tv({
   },
 });
 
+const { wrap, root, caption } = docsTable();
+
 export type DocsTableWrapProps = ComponentProps<"div">;
 export type DocsTableRootProps = ComponentProps<"table">;
 export type DocsTableCaptionProps = ComponentProps<"caption">;
@@ -39,17 +41,14 @@ export type DocsTableBodyCellProps = TdHTMLAttributes<HTMLTableCellElement> & {
 };
 
 function DocsTableWrap({ className, ...props }: DocsTableWrapProps): ReactElement {
-  const { wrap } = docsTable();
   return <div className={wrap({ className })} {...props} />;
 }
 
 function DocsTableRoot({ className, ...props }: DocsTableRootProps): ReactElement {
-  const { root } = docsTable();
   return <table className={root({ className })} {...props} />;
 }
 
 function DocsTableCaption({ className, ...props }: DocsTableCaptionProps): ReactElement {
-  const { caption } = docsTable();
   return <caption className={caption({ className })} {...props} />;
 }
 

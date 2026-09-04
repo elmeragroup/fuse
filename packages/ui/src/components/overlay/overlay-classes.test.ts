@@ -13,8 +13,8 @@ import {
   overlayPopupMotionClass,
   overlayPopupSurfaceClass,
   overlayPositionerClass,
+  overlaySizeVariants,
   overlayTimedPopupClass,
-  overlayWidthClasses,
 } from "./overlay-classes";
 
 function tokens(value: string): Set<string> {
@@ -124,9 +124,13 @@ describe("overlayPopupMotionClass", () => {
 });
 
 describe("overlayTimedPopupClass", () => {
-  it("is the surface, motion, and duration parts, in that order", () => {
-    expect(overlayTimedPopupClass).toBe(
-      `${overlayPopupSurfaceClass} ${overlayPopupMotionClass} ${overlayPopupDurationClass}`
+  it("is the surface, motion, and duration parts", () => {
+    expect(tokens(overlayTimedPopupClass)).toEqual(
+      new Set([
+        ...tokens(overlayPopupSurfaceClass),
+        ...tokens(overlayPopupMotionClass),
+        ...tokens(overlayPopupDurationClass),
+      ])
     );
   });
 });
@@ -157,9 +161,10 @@ describe("menu part classes", () => {
   });
 });
 
-describe("overlayWidthClasses", () => {
+describe("overlaySizeVariants size axis", () => {
   it("covers the 13-value overlay width axis and the three literal pixel caps", () => {
-    expect(Object.keys(overlayWidthClasses)).toEqual([
+    const size = overlaySizeVariants.variants.size;
+    expect(Object.keys(size)).toEqual([
       "sm",
       "md",
       "lg",
@@ -174,8 +179,8 @@ describe("overlayWidthClasses", () => {
       "9xl",
       "10xl",
     ]);
-    expect(overlayWidthClasses["8xl"]).toBe("[--overlay-width:min(1366px,90%)]");
-    expect(overlayWidthClasses["9xl"]).toBe("[--overlay-width:min(1536px,90%)]");
-    expect(overlayWidthClasses["10xl"]).toBe("[--overlay-width:min(1920px,90%)]");
+    expect(size["8xl"]).toBe("[--overlay-width:min(1366px,90%)]");
+    expect(size["9xl"]).toBe("[--overlay-width:min(1536px,90%)]");
+    expect(size["10xl"]).toBe("[--overlay-width:min(1920px,90%)]");
   });
 });

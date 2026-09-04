@@ -24,8 +24,4 @@ export const dropdownMenuVariants = tv({
       "max-h-(--available-height) min-w-32 overflow-x-hidden overflow-y-auto p-1 outline-none data-closed:overflow-hidden",
     subContent: "shadow-lg w-auto min-w-[96px] p-1",
   },
-  // Required shape: elmera/enforce-variant-standard makes every recipe declare both
-  // objects. DropdownMenu has no axes — Item `variant`/`inset` stay data attributes.
-  variants: {},
-  defaultVariants: {},
 });

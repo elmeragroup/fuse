@@ -22,14 +22,14 @@ const bundleSizes = tv({
   },
 });
 
+const { note } = bundleSizes();
+
 /**
  * The measured size of every published entry against the ceiling `size-limit` enforces
  * (performance.md §2). Both columns are generated from the library's budget module, so
  * the table cannot drift from the gate it describes.
  */
 export function BundleSizes(): ReactElement {
-  const { note } = bundleSizes();
-
   return (
     <>
       <DocsTable.Wrap>

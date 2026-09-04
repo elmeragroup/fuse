@@ -11,6 +11,8 @@
 import { tv } from "tailwind-variants";
 import type { VariantProps } from "tailwind-variants";
 
+import { cn } from "../../styles/cn";
+
 /**
  * One overlay layer for the whole family (dialog.md §8.4): the ref stamps the level on
  * both Backdrop and Popup, we declare it once and share it, so DOM order — not a second
@@ -56,13 +58,6 @@ export const overlaySizeVariants = tv({
   },
 });
 
-/**
- * The keys of {@link overlaySizeVariants}'s `size` axis — the shared overlay width
- * table. Kept so existing `size: overlayWidthClasses` spreads and the overlay unit
- * suite stay source-compatible.
- */
-export const overlayWidthClasses = overlaySizeVariants.variants.size;
-
 /** The keys of {@link overlaySizeVariants}'s `size` axis — the shared overlay width axis. */
 export type OverlaySize = NonNullable<VariantProps<typeof overlaySizeVariants>["size"]>;
 
@@ -74,9 +69,10 @@ export type OverlaySize = NonNullable<VariantProps<typeof overlaySizeVariants>["
  * groups. Tooltip composes {@link overlayPopupMotionClass} only; it does not take
  * {@link overlayPopupSurfaceClass} or {@link overlayTimedPopupClass}.
  *
- * `surface` restates fill + edge + `rounded-md` as one slot string; `timed` restates
- * surface + motion + duration. Fill and edge are not folded away — a surface-only
- * recipe would be the thing Tooltip would then have to negate.
+ * {@link overlayPopupSurfaceClass} is fill + edge + `rounded-md`;
+ * {@link overlayTimedPopupClass} is surface + motion + duration. Both are `cn()`
+ * composites of the slots below, so each class is spelled once. Fill and edge stay
+ * slots — a surface-only recipe would be the thing Tooltip would then have to negate.
  *
  * The positioner interpolates {@link overlayLayer} rather than restating `z-50`, which
  * this module spells exactly once.
@@ -117,25 +113,6 @@ const overlayPopupVariants = tv({
      * motion untimed, and Dialog keeps a local `duration-100` beside its own keyframes.
      */
     duration: "duration-100",
-    /**
-     * Fill + edge + the `md` radius rung as one slot string. Joined from those
-     * literals so oxfmt's `tv` class sort cannot interleave them with motion.
-     */
-    surface: ["bg-popover text-popover-foreground", "shadow-md ring-1 ring-foreground/10", "rounded-md"].join(
-      " "
-    ),
-    /**
-     * Surface + motion + duration as one slot string: the four timed anchored popups
-     * (Popover, Select, Combobox, DropdownMenu). Joined in that order so the resolved
-     * value stays surface, then motion, then duration.
-     */
-    timed: [
-      "bg-popover text-popover-foreground",
-      "shadow-md ring-1 ring-foreground/10",
-      "rounded-md",
-      "origin-(--transform-origin) data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
-      "duration-100",
-    ].join(" "),
   },
 });
 
@@ -165,9 +142,10 @@ export const overlayPopupDurationClass = overlayPopupSlots.duration();
  * Tooltip's rendered set. Tooltip composes {@link overlayPopupMotionClass} only, and
  * takes {@link overlayPopupFillClass}/{@link overlayPopupEdgeClass} as the seam if a
  * future surface of its own is wanted. Fill and edge stay separate slots for that
- * reason; this export is the `surface` slot, not a fold of those two.
+ * reason; this export is the `cn()` composite of fill, edge, and the radius rung,
+ * not a restated slot.
  */
-export const overlayPopupSurfaceClass = overlayPopupVariants().surface();
+export const overlayPopupSurfaceClass = cn(overlayPopupFillClass, overlayPopupEdgeClass, "rounded-md");
 
 /**
  * Surface + motion + duration: the four timed anchored popups (Popover, Select,
@@ -176,7 +154,11 @@ export const overlayPopupSurfaceClass = overlayPopupVariants().surface();
  * {@link overlayPopupSurfaceClass} plus its own keyframes — neither is a timed
  * anchored popup, which is what the fill/edge/motion/duration split is for.
  */
-export const overlayTimedPopupClass = overlayPopupVariants().timed();
+export const overlayTimedPopupClass = cn(
+  overlayPopupSurfaceClass,
+  overlayPopupMotionClass,
+  overlayPopupDurationClass
+);
 
 /**
  * Menu-row slots shared by Select, Combobox, and DropdownMenu. The *highlight* face is

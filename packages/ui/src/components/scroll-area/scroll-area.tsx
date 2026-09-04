@@ -11,7 +11,7 @@ import { selfFocusRingClass } from "../../styles/utils";
 
 /**
  * Visibility face for the Radix-style `type` prop (scroll-area.md §4).
- * `keepMounted` is not a class, so it stays beside the recipe on {@link SCROLLBAR_TYPE}.
+ * `keepMounted` is not a class, so it stays on {@link SCROLLBAR_KEEP_MOUNTED}.
  */
 const scrollbarTypeVariants = tv({
   variants: {
@@ -48,12 +48,12 @@ type ScrollAreaBarProps = ComponentProps<typeof ScrollAreaPrimitive.Scrollbar> &
   type?: ScrollAreaType;
 };
 
-// Base UI has no `type` prop — map the Radix-style API to keepMounted + visibility.
-const SCROLLBAR_TYPE = {
-  always: { keepMounted: true, className: scrollbarTypeVariants({ type: "always" }) },
-  auto: { keepMounted: false, className: scrollbarTypeVariants({ type: "auto" }) },
-  hover: { keepMounted: false, className: scrollbarTypeVariants({ type: "hover" }) },
-} satisfies Record<ScrollAreaType, { keepMounted: boolean; className: string }>;
+// Base UI has no `type` prop — map the Radix-style API to keepMounted; visibility is the recipe.
+const SCROLLBAR_KEEP_MOUNTED = {
+  always: true,
+  auto: false,
+  hover: false,
+} as const satisfies Record<ScrollAreaType, boolean>;
 
 function ScrollAreaRoot({
   className,
@@ -84,7 +84,6 @@ function ScrollAreaBar({
   type = "hover",
   ...props
 }: ScrollAreaBarProps): ReactElement {
-  const { keepMounted, className: visibilityClassName } = SCROLLBAR_TYPE[type];
   return (
     <ScrollAreaPrimitive.Scrollbar
       data-slot="scroll-area-scrollbar"
@@ -92,12 +91,12 @@ function ScrollAreaBar({
         "flex touch-none p-px select-none",
         orientation === "vertical" && "w-2.5 border-l border-l-transparent",
         orientation === "horizontal" && "h-2.5 flex-col border-t border-t-transparent",
-        visibilityClassName,
+        scrollbarTypeVariants({ type }),
         className
       )}
       {...props}
       orientation={orientation}
-      keepMounted={keepMounted}>
+      keepMounted={SCROLLBAR_KEEP_MOUNTED[type]}>
       <ScrollAreaPrimitive.Thumb
         data-slot="scroll-area-thumb"
         className="relative flex-1 rounded-full bg-border"

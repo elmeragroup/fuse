@@ -25,6 +25,8 @@ const apiReference = tv({
   },
 });
 
+const { part, partHeader, partHeading, partNote, propGroupHeading } = apiReference();
+
 /**
  * A component page's API reference (docs-site.md §3.4 item 4, §8): one expandable table per
  * compound part, in the order the entry facade exports them.
@@ -41,7 +43,6 @@ const apiReference = tv({
 export async function ApiReference({ slug }: ApiReferenceProps): Promise<ReactElement> {
   const api = await readComponentApi(slug);
   const parts = api.parts.map(toPartView);
-  const { part, partHeader, partHeading, partNote, propGroupHeading } = apiReference();
 
   return (
     <section aria-labelledby={API_SECTION_ID}>

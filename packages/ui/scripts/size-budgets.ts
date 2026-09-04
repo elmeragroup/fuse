@@ -26,10 +26,6 @@
  * ratchet above; the root barrel `.` and `styles.css` are the two shared/aggregate rows
  * and neither grew past its ceiling either). Earlier measurement rounds live in git.
  *
- * 2026-09-04 (ticket 08): `avatar` and `table` now derive class constants from tv
- * slots, so those entries pull `tailwind-variants`. Ceilings raised to measured×1.5
- * (avatar 24668 → 37002, table 24155 → 36233).
- *
  * Current measurements (gzip bytes, 2026-09-03). Earlier measurement rounds live in git.
  *   .                            233896
  *   theme                          6172
@@ -62,7 +58,7 @@
  *   accordion                     30211
  *   description-list              10715
  *   emoji                          2442
- *   avatar                        24668  (2026-09-04 ticket 08: ROOT_CLASSES is now a tv slot; the entry pulls tailwind-variants. Ceiling raised measured×1.5.)
+ *   avatar                        12463
  *   alert-dialog                  47735
  *   dropdown-menu                 68278
  *   collapsible                   27276
@@ -85,7 +81,7 @@
  *   meter                         27773
  *   tabs                          25832
  *   confirm-button                25662
- *   table                         24155  (2026-09-04 ticket 08: TABLE_CELL_CLASSES is now a tv slot; the entry pulls tailwind-variants. Ceiling raised measured×1.5.)
+ *   table                         11932
  *   textarea-field                32934
  *   pagination                    19425
  *   breadcrumb                    25352
@@ -166,7 +162,7 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = [
   { name: "accordion", entryFile: "accordion.js", ceilingGzip: 45276 },
   { name: "description-list", entryFile: "description-list.js", ceilingGzip: 16070 },
   { name: "emoji", entryFile: "emoji.js", ceilingGzip: 3663 },
-  { name: "avatar", entryFile: "avatar.js", ceilingGzip: 37002 },
+  { name: "avatar", entryFile: "avatar.js", ceilingGzip: 18701 },
   { name: "alert-dialog", entryFile: "alert-dialog.js", ceilingGzip: 71367 },
   { name: "dropdown-menu", entryFile: "dropdown-menu.js", ceilingGzip: 102293 },
   { name: "collapsible", entryFile: "collapsible.js", ceilingGzip: 40881 },
@@ -189,7 +185,7 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = [
   { name: "meter", entryFile: "meter.js", ceilingGzip: 41048 },
   { name: "tabs", entryFile: "tabs.js", ceilingGzip: 38664 },
   { name: "confirm-button", entryFile: "confirm-button.js", ceilingGzip: 38438 },
-  { name: "table", entryFile: "table.js", ceilingGzip: 36233 },
+  { name: "table", entryFile: "table.js", ceilingGzip: 17721 },
   { name: "textarea-field", entryFile: "textarea-field.js", ceilingGzip: 46464 },
   { name: "pagination", entryFile: "pagination.js", ceilingGzip: 28785 },
   { name: "breadcrumb", entryFile: "breadcrumb.js", ceilingGzip: 37869 },

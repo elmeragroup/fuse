@@ -20,6 +20,8 @@ const componentIntro = tv({
   },
 });
 
+const { importLine } = componentIntro();
+
 /**
  * The head of a component page (docs-site.md §3.4, items 1–2): H1, the lede from the
  * page's frontmatter, the two meta links, and the import line with the part's RSC
@@ -28,7 +30,6 @@ const componentIntro = tv({
  */
 export function ComponentIntro({ slug }: ComponentIntroProps): ReactElement {
   const component = requireComponent(slug);
-  const { importLine } = componentIntro();
   return (
     <>
       <DocsPageTitle>{component.title}</DocsPageTitle>

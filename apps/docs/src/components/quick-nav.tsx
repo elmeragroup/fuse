@@ -19,11 +19,12 @@ const quickNav = tv({
   },
 });
 
+const { root, scroll, title, link } = quickNav();
+const { list } = docsNavList();
+
 export function QuickNav(): ReactElement {
   const pathname = usePathname();
   const items = tocForPath(pathname);
-  const { root, scroll, title, link } = quickNav();
-  const { list } = docsNavList();
 
   return (
     <nav aria-label="On this page" className={root()}>

@@ -17,6 +17,8 @@ const brandsAndSegments = tv({
   },
 });
 
+const { mono } = brandsAndSegments();
+
 export const metadata = pageMetadata(HREF);
 
 /** The permutations the pin table forbids — listed as absent, never rendered as cells. */
@@ -28,8 +30,6 @@ const ILLEGAL_SLUGS = [
 ] as const;
 
 export default function BrandsAndSegmentsPage(): ReactElement {
-  const { mono } = brandsAndSegments();
-
   return (
     <DocsPage href={HREF}>
       <h2 id="brands">Brands</h2>

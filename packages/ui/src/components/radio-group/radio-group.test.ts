@@ -57,9 +57,11 @@ describe("radioIconButtonVariants", () => {
   });
 
   it("covers every public size value", () => {
-    expect(ICON_BUTTON_SIZES).toHaveLength(5);
+    expect(Object.keys(radioIconButtonVariants.variants.size).toSorted()).toEqual(
+      [...ICON_BUTTON_SIZES].toSorted()
+    );
     for (const size of ICON_BUTTON_SIZES) {
-      expect(radioIconButtonVariants({ size }).length).toBeGreaterThan(0);
+      expect(radioIconButtonVariants({ size }), size).toContain("size-(--control-h-");
     }
   });
 });

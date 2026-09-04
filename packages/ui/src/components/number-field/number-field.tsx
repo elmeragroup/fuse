@@ -12,7 +12,6 @@ import { numberFieldGroupClass } from "../../styles/field-box";
 import { withinFocusRingControlClass } from "../../styles/utils";
 import { useElmeraGroupUi } from "../../theme/elmera-group-ui";
 import { FieldFrame } from "../field/field-frame";
-import { numberFieldVariants } from "./number-field-variants";
 
 export type NumberFieldProps = {
   /** Visible label, rendered as `Field.Label`. */
@@ -67,7 +66,9 @@ export type NumberFieldProps = {
   id?: string;
 };
 
-const stepperButton = numberFieldVariants().stepper();
+const stepperButton = cn(
+  "flex flex-1 cursor-default items-center justify-center bg-background px-0.5 text-foreground transition-colors hover:bg-muted disabled:bg-muted disabled:opacity-50"
+);
 
 /**
  * Labeled number field composite over Field + base-ui NumberField (number-field.md §2/§7).

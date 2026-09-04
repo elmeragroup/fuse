@@ -46,6 +46,8 @@ const apiRows = tv({
   },
 });
 
+const apiRowSlots = apiRows();
+
 export type ApiRowsRootProps = ComponentProps<"div">;
 export type ApiRowsHeaderProps = ComponentProps<"div">;
 export type ApiRowsHeaderCellProps = ComponentProps<"span"> & {
@@ -68,13 +70,11 @@ export type ApiRowsNoDefaultProps = ComponentProps<"span">;
 export type ApiRowsPropLinkProps = ComponentProps<"a">;
 
 function ApiRowsRoot({ className, ...props }: ApiRowsRootProps): ReactElement {
-  const { root } = apiRows();
-  return <div className={root({ className })} {...props} />;
+  return <div className={apiRowSlots.root({ className })} {...props} />;
 }
 
 function ApiRowsHeader({ className, ...props }: ApiRowsHeaderProps): ReactElement {
-  const { header } = apiRows();
-  return <div className={header({ className })} {...props} />;
+  return <div className={apiRowSlots.header({ className })} {...props} />;
 }
 
 function ApiRowsHeaderCell({ className, column = "prop", ...props }: ApiRowsHeaderCellProps): ReactElement {
@@ -83,13 +83,11 @@ function ApiRowsHeaderCell({ className, column = "prop", ...props }: ApiRowsHead
 }
 
 function ApiRowsRow({ className, ...props }: ApiRowsRowProps): ReactElement {
-  const { row } = apiRows();
-  return <details className={row({ className })} {...props} />;
+  return <details className={apiRowSlots.row({ className })} {...props} />;
 }
 
 function ApiRowsSummary({ className, ...props }: ApiRowsSummaryProps): ReactElement {
-  const { summary } = apiRows();
-  return <summary className={summary({ className })} {...props} />;
+  return <summary className={apiRowSlots.summary({ className })} {...props} />;
 }
 
 function ApiRowsCell({ className, column = "name", ...props }: ApiRowsCellProps): ReactElement {
@@ -98,57 +96,53 @@ function ApiRowsCell({ className, column = "name", ...props }: ApiRowsCellProps)
 }
 
 function ApiRowsPanel({ className, ...props }: ApiRowsPanelProps): ReactElement {
-  const { panel } = apiRows();
-  return <div className={panel({ className })} {...props} />;
+  return <div className={apiRowSlots.panel({ className })} {...props} />;
 }
 
 function ApiRowsPanelList({ className, ...props }: ApiRowsPanelListProps): ReactElement {
-  const { panelList } = apiRows();
-  return <dl className={panelList({ className })} {...props} />;
+  return <dl className={apiRowSlots.panelList({ className })} {...props} />;
 }
 
 function ApiRowsPanelItem({ className, ...props }: ApiRowsPanelItemProps): ReactElement {
-  const { panelItem } = apiRows();
-  return <div className={panelItem({ className })} {...props} />;
+  return <div className={apiRowSlots.panelItem({ className })} {...props} />;
 }
 
 function ApiRowsTerm({ className, ...props }: ApiRowsTermProps): ReactElement {
-  const { term } = apiRows();
-  return <dt className={term({ className })} {...props} />;
+  return <dt className={apiRowSlots.term({ className })} {...props} />;
 }
 
 function ApiRowsDefinition({ className, ...props }: ApiRowsDefinitionProps): ReactElement {
-  const { definition } = apiRows();
-  return <dd className={definition({ className })} {...props} />;
+  return <dd className={apiRowSlots.definition({ className })} {...props} />;
 }
 
 function ApiRowsChevronCell({ className, ...props }: ApiRowsChevronCellProps): ReactElement {
-  const { chevronCell } = apiRows();
-  return <span className={chevronCell({ className })} {...props} />;
+  return <span className={apiRowSlots.chevronCell({ className })} {...props} />;
 }
 
 function ApiRowsChevron({ className, ...props }: ApiRowsChevronProps): ReactElement {
-  const { chevron } = apiRows();
   return (
-    <svg className={chevron({ className })} width="10" height="10" viewBox="0 0 10 10" fill="none" {...props}>
+    <svg
+      className={apiRowSlots.chevron({ className })}
+      width="10"
+      height="10"
+      viewBox="0 0 10 10"
+      fill="none"
+      {...props}>
       <path d="M1 3.5L5 7.5L9 3.5" stroke="currentColor" strokeWidth="1.25" />
     </svg>
   );
 }
 
 function ApiRowsRequired({ className, ...props }: ApiRowsRequiredProps): ReactElement {
-  const { required } = apiRows();
-  return <sup className={required({ className })} {...props} />;
+  return <sup className={apiRowSlots.required({ className })} {...props} />;
 }
 
 function ApiRowsNoDefault({ className, ...props }: ApiRowsNoDefaultProps): ReactElement {
-  const { noDefault } = apiRows();
-  return <span className={noDefault({ className })} {...props} />;
+  return <span className={apiRowSlots.noDefault({ className })} {...props} />;
 }
 
 function ApiRowsPropLink({ className, ...props }: ApiRowsPropLinkProps): ReactElement {
-  const { propLink } = apiRows();
-  return <a className={propLink({ className })} {...props} />;
+  return <a className={apiRowSlots.propLink({ className })} {...props} />;
 }
 
 ApiRowsRoot.displayName = "ApiRows.Root";

@@ -27,6 +27,8 @@ const themeMatrix = tv({
   },
 });
 
+const { grid, cell, slug: slugClass, surface, row } = themeMatrix();
+
 /**
  * The whitelabel pitch grid (docs-site.md §5).
  *
@@ -40,7 +42,6 @@ const themeMatrix = tv({
  */
 function MatrixCell({ theme }: { theme: ThemeInput }): ReactElement {
   const slug = themeSlug(theme);
-  const { cell, slug: slugClass, surface, row } = themeMatrix();
 
   return (
     <ThemeScope theme={theme} className={cell()} data-theme-matrix-cell>
@@ -83,8 +84,6 @@ function MatrixCell({ theme }: { theme: ThemeInput }): ReactElement {
 }
 
 export function ThemeMatrix(): ReactElement {
-  const { grid } = themeMatrix();
-
   return (
     <div className={grid()} data-theme-matrix>
       {LEGAL_THEMES.map((theme) => (

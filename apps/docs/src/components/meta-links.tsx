@@ -16,10 +16,10 @@ const metaLinks = tv({
   },
 });
 
+const { root } = metaLinks();
+
 /** The §3.4 meta links that sit directly under the lede. */
 export function MetaLinks({ markdownUrl, sourceUrl, sourcePath }: MetaLinksProps): ReactElement {
-  const { root } = metaLinks();
-
   return (
     <p className={root()}>
       <a href={markdownUrl}>View as Markdown</a>

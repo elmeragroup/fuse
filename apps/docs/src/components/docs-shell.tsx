@@ -19,13 +19,13 @@ const docsShell = tv({
   },
 });
 
+const { root, columns, main } = docsShell();
+
 export type DocsShellProps = {
   children: ReactNode;
 };
 
 export function DocsShell({ children }: DocsShellProps): ReactElement {
-  const { root, columns, main } = docsShell();
-
   return (
     <PreviewThemeProvider>
       <ElmeraGroupUiProvider locale="en-US">

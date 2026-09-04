@@ -10,9 +10,9 @@ const skipNav = tv({
   },
 });
 
-export function SkipNav(): ReactElement {
-  const { root } = skipNav();
+const { root } = skipNav();
 
+export function SkipNav(): ReactElement {
   return (
     <a className={root()} href={"#" + MAIN_CONTENT_ID}>
       Skip to contents
