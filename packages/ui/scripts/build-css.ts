@@ -1,10 +1,11 @@
 import { spawnSync } from "node:child_process";
 import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 
 import { generateThemesCss } from "../src/theme/generate-css";
 import { generateDemoStageComfortableCss } from "../src/theme/generate-demo-stage-css";
+import { packageRootFromScript } from "./paths";
 
 export function buildCss(packageRoot: string): void {
   const distDir = join(packageRoot, "dist");
@@ -37,5 +38,5 @@ export function buildCss(packageRoot: string): void {
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
-  buildCss(join(dirname(fileURLToPath(import.meta.url)), ".."));
+  buildCss(packageRootFromScript(import.meta.url));
 }

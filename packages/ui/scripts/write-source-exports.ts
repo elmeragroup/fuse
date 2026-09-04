@@ -1,8 +1,6 @@
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
-
 import { writeSourceExports } from "./generate-exports";
+import { packageRootFromScript } from "./paths";
 
-const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
+const packageRoot = packageRootFromScript(import.meta.url);
 
 writeSourceExports(packageRoot);

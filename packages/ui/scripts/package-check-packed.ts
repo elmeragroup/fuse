@@ -1,10 +1,10 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync, realpathSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { evaluateColorSchemeBootstrapScript } from "./color-scheme-bootstrap-harness";
-import { exportKey, toPosix } from "./entries";
+import { exportKey } from "./entries";
 import type { DiscoveredEntries } from "./entries";
 import {
   assertFlagPayload,
@@ -21,9 +21,10 @@ import {
   packedValueExportFailure,
   parsePackedEvalJson,
 } from "./package-check-lib";
+import { packageRootFromScript, toPosix } from "./paths";
 import { twemojiNoticeFailure } from "./twemoji-notices";
 
-const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
+const packageRoot = packageRootFromScript(import.meta.url);
 
 export function fail(message: string): never {
   console.error(message);

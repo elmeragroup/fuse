@@ -1,11 +1,10 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
 
 import { flagPayload, listFlagFiles } from "./flag-assets.ts";
+import { packageRootFromScript } from "./paths.ts";
 import {
   budgetFailure,
   CSS_BUDGETS,
@@ -13,9 +12,9 @@ import {
   JS_ENTRY_BUDGETS,
   NAMED_IMPORT_BUDGETS,
 } from "./size-budgets.ts";
-import { extractPackedPackage, findTarball } from "./tarball.ts";
+import { withExtractedTarball } from "./tarball.ts";
 
-const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
+const packageRoot = packageRootFromScript(import.meta.url);
 const PEER_EXTERNALS = ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime", "tailwindcss"];
 
 function fail(message: string): never {
@@ -116,36 +115,25 @@ function checkFlagRaw(extracted: string, name: string, ceilingBytes: number): vo
   reportBudget(name, flagPayload(flagsDir, files).bytes, ceilingBytes, "raw bytes");
 }
 
-let tarball: string;
 try {
-  tarball = findTarball(packageRoot);
+  withExtractedTarball(packageRoot, "elmera-ui-size-", (extracted) => {
+    const work = join(dirname(extracted), "work");
+    mkdirSync(work);
+    for (const budget of JS_ENTRY_BUDGETS) {
+      checkJsEntry(extracted, work, budget.entryFile, budget.name, budget.ceilingGzip);
+    }
+    for (const budget of NAMED_IMPORT_BUDGETS) {
+      checkNamedImport(extracted, work, budget.entryFile, budget.exportName, budget.name, budget.ceilingGzip);
+    }
+    for (const budget of CSS_BUDGETS) {
+      checkCss(extracted, budget.file, budget.name, budget.ceilingGzip);
+    }
+    for (const budget of FLAG_RAW_BUDGETS) {
+      checkFlagRaw(extracted, budget.name, budget.ceilingBytes);
+    }
+  });
 } catch (error) {
   fail(error instanceof Error ? error.message : String(error));
-}
-const scratch = mkdtempSync(join(tmpdir(), "elmera-ui-size-"));
-try {
-  let extracted: string;
-  try {
-    extracted = extractPackedPackage(tarball, scratch, packageRoot);
-  } catch (error) {
-    fail(error instanceof Error ? error.message : String(error));
-  }
-  const work = join(scratch, "work");
-  mkdirSync(work);
-  for (const budget of JS_ENTRY_BUDGETS) {
-    checkJsEntry(extracted, work, budget.entryFile, budget.name, budget.ceilingGzip);
-  }
-  for (const budget of NAMED_IMPORT_BUDGETS) {
-    checkNamedImport(extracted, work, budget.entryFile, budget.exportName, budget.name, budget.ceilingGzip);
-  }
-  for (const budget of CSS_BUDGETS) {
-    checkCss(extracted, budget.file, budget.name, budget.ceilingGzip);
-  }
-  for (const budget of FLAG_RAW_BUDGETS) {
-    checkFlagRaw(extracted, budget.name, budget.ceilingBytes);
-  }
-} finally {
-  rmSync(scratch, { recursive: true, force: true });
 }
 
 console.log("size-limit passed");

@@ -1,36 +1,13 @@
 import { defineRule } from "@oxlint/plugins";
 
+import { isForbiddenRacSpecifier } from "../../../packages/ui/scripts/forbidden-rac-packages.js";
 import { normalizeFilename } from "../filename-normalizer.js";
-
-/**
- * RAC interim stack from architecture.md Appendix A, plus the scoped packages
- * those entries pull in (`@react-aria/*`, `@react-stately/*`).
- */
-const FORBIDDEN = [
-  "react-aria-components",
-  "react-aria",
-  "@internationalized/date",
-  "@react-aria",
-  "@react-stately",
-];
 
 /**
  * @param {string} filename
  */
 function isReactAriaQuarantine(filename) {
   return normalizeFilename(filename).includes("/src/react-aria/");
-}
-
-/**
- * @param {string} specifier
- */
-function isForbiddenModule(specifier) {
-  for (const name of FORBIDDEN) {
-    if (specifier === name || specifier.startsWith(`${name}/`)) {
-      return true;
-    }
-  }
-  return false;
 }
 
 /**
@@ -65,7 +42,7 @@ export default defineRule({
      * @param {string | null} specifier
      */
     function reportIfForbidden(node, specifier) {
-      if (skipFile || specifier === null || !isForbiddenModule(specifier)) {
+      if (skipFile || specifier === null || !isForbiddenRacSpecifier(specifier)) {
         return;
       }
       context.report({ node, messageId: "quarantined", data: { specifier } });

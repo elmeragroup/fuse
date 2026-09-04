@@ -841,4 +841,12 @@ describe("exports map", () => {
     expect(source).not.toContain('["Button", "buttonVariants"]');
     expect(source).not.toContain('["ScrollArea"]');
   });
+
+  it("keeps toPosix in one module and re-exports it from entries", () => {
+    const entries = readFileSync(join(packageRoot, "scripts/entries.ts"), "utf8");
+    const paths = readFileSync(join(packageRoot, "scripts/paths.ts"), "utf8");
+    expect(paths).toContain("export function toPosix");
+    expect(entries).toContain("export { packageRootFromScript, toPosix }");
+    expect(entries).not.toContain("function toPosix");
+  });
 });
