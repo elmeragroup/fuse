@@ -5,8 +5,9 @@ import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import "../../../dist/themes.css";
 import { assertFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
-import { renderThemed } from "../../../test/themed-browser-render";
+import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
 import { Accordion } from "./accordion";
 
 function htmlControl(name: string): HTMLElement {
@@ -227,25 +228,30 @@ describe("Accordion", () => {
   it("passes variant and radius from Root to Item, Trigger, and Content via context", () => {
     renderThemed(<ShippingBilling variant="card" radius="xl" defaultValue={["shipping"]} />);
 
-    const item = htmlControl("Shipping").closest('[data-slot="accordion-item"]');
+    const heading = page.getByRole("heading", { level: 3, name: "Shipping" }).element();
     const trigger = htmlControl("Shipping");
     const content = page.getByRole("region", { name: "Shipping" }).element();
-    if (!(item instanceof HTMLElement)) {
+    const item = heading.parentElement;
+    if (!(heading instanceof HTMLElement) || !(item instanceof HTMLElement)) {
       throw new Error("expected the shipping item");
     }
     if (!(content instanceof HTMLElement)) {
       throw new Error("expected the shipping region");
     }
-    const root = document.querySelector('[data-slot="accordion"]');
-    if (!(root instanceof HTMLElement)) {
-      throw new Error("expected the accordion root");
+    expect(heading.contains(trigger)).toBe(true);
+    expect(getComputedStyle(item).backgroundColor).toBe(cssVarColor(item, "--card"));
+    expect(Number.parseFloat(getComputedStyle(item).borderTopLeftRadius)).toBeGreaterThan(0);
+    expect(getComputedStyle(item).overflow).toBe("hidden");
+    expect(getComputedStyle(content).backgroundColor).toBe(cssVarColor(content, "--card"));
+    expect(getComputedStyle(trigger).justifyContent).toBe("space-between");
+    const billingHeading = page.getByRole("heading", { level: 3, name: "Billing" }).element();
+    const billingItem = billingHeading.parentElement;
+    if (!(billingItem instanceof HTMLElement)) {
+      throw new Error("expected the billing item");
     }
-    expect(item.className.split(/\s+/)).toContain("bg-card");
-    expect(item.className.split(/\s+/)).toContain("rounded-xl");
-    expect(item.className.split(/\s+/)).toContain("overflow-hidden");
-    expect(trigger.className.split(/\s+/)).not.toContain("justify-start");
-    expect(content.className.split(/\s+/)).toContain("bg-card");
-    expect(root.className.split(/\s+/)).toContain("space-y-3");
+    const gap = billingItem.getBoundingClientRect().top - item.getBoundingClientRect().bottom;
+    expect(gap).toBeGreaterThanOrEqual(11);
+    expect(gap).toBeLessThan(16);
   });
 
   it("paints the shared ring on keyboard focus-visible and not on mouse focus, at both densities", async () => {

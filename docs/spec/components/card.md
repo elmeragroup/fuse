@@ -113,14 +113,14 @@ Recipes: **`cardTitleVariants`** and **`cardDescriptionVariants`** — both **PR
 ## 9 Test requirements
 
 - `Card.Title` renders `getByRole("heading", { level: 3 })` by default; `level={2}` yields level-2 heading.
-- All eight parts emit their `data-slot` values.
-- Header grid: with a `Card.Action` child the header carries the `has-data-[slot=card-action]` two-column class state; without one it does not.
-- `direction="horizontal"` on `Card.Root` applies `flex-row`; default is column.
-- `icon` on `Card.Title` renders before the title text and applies the icon-gap classes.
+- All eight parts emit their `data-slot` values (slot audit).
+- Header grid: with a `Card.Action` child the header is two computed grid columns; without one it is one. The `has-data-[slot=card-action]` class lives in the unit recipe test. _(Amended 2026-09-04 — spec 07 / [ADR 0008](../../adr/0008-tests-assert-behaviour-not-source-spelling.md).)_
+- `direction="horizontal"` on `Card.Root` applies computed `flex-row`; default is column.
+- `icon` on `Card.Title` renders before the title text; browser asserts flex alignment, unit asserts the icon-gap classes.
 - `cardVariants` unit: slot functions resolve for both directions; `base()` contains `bg-card`.
 - `cardTitleVariants` / `cardDescriptionVariants` unit: each size rung resolves to its `text-*` class; defaults are `2xl` / `sm`.
-- Browser: at default props the title class list contains `text-2xl` and the description class list contains `text-sm`.
-- No `destructive`, raw palette, or `dark:` classes in resolved output.
+- Browser: at default props the title computed font-size is larger than the description.
+- No `destructive`, raw palette, or `dark:` classes in resolved unit output.
 
 ## 10 Demo requirements
 

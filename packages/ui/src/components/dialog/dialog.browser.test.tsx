@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
+import { assertFocusRingOnKeyboardAbsentOnMouse, expectFocusRing } from "../../../test/assert-focus-ring";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme/theme-scope";
@@ -138,7 +138,7 @@ describe("Dialog", () => {
     if (!(dialog instanceof HTMLElement)) {
       throw new Error("expected the popup");
     }
-    expect(getComputedStyle(dialog).getPropertyValue("--tw-ring-offset-width")).toBe("2px");
+    expectFocusRing(dialog, "fallback focus on the popup must paint the shared ring");
   });
 
   it("closes from the corner button and drops it when showCloseButton is false", async () => {
@@ -148,7 +148,6 @@ describe("Dialog", () => {
     expect(corner.getAttribute("data-slot")).toBe("dialog-close");
     expect(corner.querySelector("svg")).not.toBeNull();
     expect(corner.getAttribute("aria-label")).toBe("Close");
-    expect(corner.className).toContain("hit-area-1");
     await userEvent.click(corner);
     await vi.waitFor(() => {
       expect(page.getByRole("dialog").query()).toBeNull();
@@ -219,19 +218,21 @@ describe("Dialog", () => {
   });
 
   it("maps the size axis onto the popup max-width", async () => {
-    const cases = [
-      { size: undefined, expected: "[--overlay-width:min(var(--container-md),90%)]" },
-      { size: "sm", expected: "[--overlay-width:min(var(--container-sm),90%)]" },
-      { size: "10xl", expected: "[--overlay-width:min(1920px,90%)]" },
-    ] as const;
-
-    for (const { size, expected } of cases) {
+    await page.viewport(1280, 720);
+    const widths: number[] = [];
+    for (const size of [undefined, "sm", "10xl"] as const) {
       const { unmount } = renderThemed(withLocale("en-US", <BasicDialog size={size} />));
       const dialog = await openDialog();
-      expect(dialog.className, expected).toContain(expected);
-      expect(dialog.className).toContain("max-w-(--overlay-width)");
+      expect(getComputedStyle(dialog).maxWidth).not.toBe("none");
+      widths.push(dialog.getBoundingClientRect().width);
       unmount();
     }
+    const [md, sm, xl] = widths;
+    if (md === undefined || sm === undefined || xl === undefined) {
+      throw new Error("expected three overlay widths");
+    }
+    expect(sm).toBeLessThan(md);
+    expect(md).toBeLessThan(xl);
   });
 
   it("portals into the enclosing ThemeScope instead of the document body", async () => {
@@ -257,8 +258,6 @@ describe("Dialog", () => {
     renderThemed(withLocale("en-US", <NeverAttached />));
 
     expect(page.getByRole("dialog").query()).toBeNull();
-    expect(document.querySelector("[data-slot=dialog-content]")).toBeNull();
-    expect(document.querySelector("[data-slot=dialog-overlay]")).toBeNull();
   });
 
   it("does not paint the popup outside a ThemeScope element that has not attached yet", () => {
@@ -307,8 +306,20 @@ describe("Dialog", () => {
     await userEvent.keyboard("{Escape}");
     expect(page.getByRole("dialog").element()).toBeTruthy();
 
-    const overlay = document.querySelector("[data-slot=dialog-overlay]");
-    if (!(overlay instanceof HTMLElement)) {
+    const dialog = page.getByRole("dialog").element();
+    if (!(dialog instanceof HTMLElement)) {
+      throw new Error("expected the popup");
+    }
+    let overlay: HTMLElement | null = null;
+    let sibling = dialog.previousElementSibling;
+    while (sibling) {
+      if (sibling instanceof HTMLElement && sibling.getAttribute("role") === "presentation") {
+        overlay = sibling;
+        break;
+      }
+      sibling = sibling.previousElementSibling;
+    }
+    if (overlay === null) {
       throw new Error("expected the backdrop");
     }
     await userEvent.click(overlay, { position: { x: 2, y: 2 } });

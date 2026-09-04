@@ -2,8 +2,9 @@ import { describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import "../../../dist/themes.css";
 import { assertFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
-import { renderThemed } from "../../../test/themed-browser-render";
+import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
 import { CheckboxGroup } from "../checkbox/checkbox";
 import { CheckboxCard } from "./checkbox-card";
 
@@ -24,14 +25,12 @@ function labelFor(name: string): HTMLLabelElement {
 }
 
 function cardSurface(name: string): HTMLElement {
-  let current = checkboxNamed(name).parentElement;
-  while (current) {
-    if (current.getAttribute("data-slot") === "card") {
-      return current;
-    }
-    current = current.parentElement;
+  const content = labelFor(name).parentElement;
+  const root = content?.parentElement;
+  if (!(root instanceof HTMLElement)) {
+    throw new Error(`expected a card surface around ${name}`);
   }
-  throw new Error(`expected a card surface around ${name}`);
+  return root;
 }
 
 function fieldItemFor(name: string): HTMLElement {
@@ -40,29 +39,6 @@ function fieldItemFor(name: string): HTMLElement {
     throw new Error(`expected a Field item wrapping ${name}`);
   }
   return item;
-}
-
-function exactTextElement(root: ParentNode, text: string): HTMLElement {
-  for (const node of root.querySelectorAll("*")) {
-    if (
-      node instanceof HTMLElement &&
-      node.childNodes.length === 1 &&
-      node.childNodes[0]?.nodeType === Node.TEXT_NODE &&
-      node.textContent === text
-    ) {
-      return node;
-    }
-  }
-  throw new Error(`expected an element whose text is ${text}`);
-}
-
-function cssVarColor(host: HTMLElement, token: string): string {
-  const probe = document.createElement("span");
-  probe.style.backgroundColor = `var(${token})`;
-  host.append(probe);
-  const color = getComputedStyle(probe).backgroundColor;
-  probe.remove();
-  return color;
 }
 
 function indicatorSvgs(name: string): [SVGElement, SVGElement] {
@@ -103,10 +79,10 @@ describe("CheckboxCard", () => {
     const details = page.getByRole("button", { name: "Details", exact: true }).element();
     expect(details.closest("label")).toBeNull();
 
-    await userEvent.click(exactTextElement(labelFor("Insurance"), "Insurance"));
+    await userEvent.click(page.getByText("Insurance", { exact: true }));
     expect(checkboxNamed("Insurance", true).getAttribute("aria-checked")).toBe("true");
 
-    await userEvent.click(exactTextElement(labelFor("Insurance"), "Covers everything."));
+    await userEvent.click(page.getByText("Covers everything.", { exact: true }));
     expect(checkboxNamed("Insurance", false).getAttribute("aria-checked")).toBe("false");
 
     await userEvent.click(page.getByRole("button", { name: "Details", exact: true }));
@@ -166,12 +142,9 @@ describe("CheckboxCard", () => {
       </CheckboxGroup>
     );
 
-    const popular = labelFor("Insurance").querySelector('[data-slot="badge"]');
-    if (!(popular instanceof HTMLElement)) {
-      throw new Error("expected a badge inside the Insurance label");
-    }
-    expect(popular.textContent).toBe("Popular");
-    expect(labelFor("Roadside").querySelector('[data-slot="badge"]')).toBeNull();
+    expect(page.getByText("Popular", { exact: true }).element()).toBeTruthy();
+    expect(labelFor("Insurance").textContent).toContain("Popular");
+    expect(labelFor("Roadside").textContent).not.toContain("Popular");
   });
 
   it("reflects muted and disabled in computed card surface styles", () => {

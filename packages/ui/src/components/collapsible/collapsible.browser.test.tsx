@@ -16,8 +16,12 @@ function triggerNamed(name: string): HTMLElement {
   return element;
 }
 
-function panel(): HTMLElement | null {
-  const element = document.querySelector('[data-slot="collapsible-content"]');
+function panelControlledBy(trigger: HTMLElement): HTMLElement | null {
+  const id = trigger.getAttribute("aria-controls");
+  if (!id) {
+    return null;
+  }
+  const element = document.getElementById(id);
   return element instanceof HTMLElement ? element : null;
 }
 
@@ -33,7 +37,7 @@ describe("Collapsible", () => {
     const trigger = triggerNamed("Show details");
     expect(trigger.getAttribute("aria-expanded")).toBe("false");
     expect(page.getByText("Delivery window", { exact: true }).query()).toBeNull();
-    expect(panel()).toBeNull();
+    expect(panelControlledBy(trigger)).toBeNull();
 
     await userEvent.click(trigger);
     await vi.waitFor(() => {
@@ -41,7 +45,7 @@ describe("Collapsible", () => {
       expect(page.getByText("Delivery window", { exact: true }).query()).not.toBeNull();
     });
     const controls = trigger.getAttribute("aria-controls");
-    const openPanel = panel();
+    const openPanel = panelControlledBy(trigger);
     expect(controls).toBeTruthy();
     expect(openPanel).not.toBeNull();
     expect(openPanel?.id).toBe(controls);
@@ -222,7 +226,7 @@ describe("Collapsible", () => {
     expect(page.getByText("Unmounted when closed", { exact: true }).query()).toBeNull();
     const kept = page.getByText("Stays mounted", { exact: true }).element();
     expect(kept).not.toBeNull();
-    const keptPanel = kept.closest('[data-slot="collapsible-content"]');
+    const keptPanel = kept instanceof HTMLElement ? kept.closest("[hidden]") : null;
     expect(keptPanel).not.toBeNull();
     expect(keptPanel?.hasAttribute("hidden")).toBe(true);
   });
@@ -237,7 +241,7 @@ describe("Collapsible", () => {
     );
 
     const content = page.getByText("Meter-reading reconciliation", { exact: true }).element();
-    const foundPanel = content.closest('[data-slot="collapsible-content"]');
+    const foundPanel = content instanceof HTMLElement ? content.closest("[hidden]") : null;
     if (!(foundPanel instanceof HTMLElement)) {
       throw new Error("expected a collapsible panel");
     }
@@ -276,7 +280,7 @@ describe("Collapsible", () => {
     });
     const controls = trigger.getAttribute("aria-controls");
     expect(controls).toBeTruthy();
-    expect(panel()?.id).toBe(controls);
+    expect(panelControlledBy(trigger)?.id).toBe(controls);
   });
 
   it("gives the trigger the shared keyboard focus ring", async () => {

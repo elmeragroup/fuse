@@ -2,13 +2,23 @@ import { describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { renderThemed } from "../../../test/themed-browser-render";
+import "../../../dist/themes.css";
+import { cssVarColor, headingNamed, renderThemed } from "../../../test/themed-browser-render";
 import { Card } from "./card";
 
 function slot(name: string): HTMLElement {
+  // spec §9 slot audit: all eight parts emit their data-slot values.
   const element = document.querySelector(`[data-slot="${name}"]`);
   if (!(element instanceof HTMLElement)) {
     throw new Error(`expected an element with data-slot="${name}"`);
+  }
+  return element;
+}
+
+function textNamed(name: string): HTMLElement {
+  const element = page.getByText(name, { exact: true }).element();
+  if (!(element instanceof HTMLElement)) {
+    throw new Error(`expected text ${name}`);
   }
   return element;
 }
@@ -29,9 +39,9 @@ describe("Card", () => {
         </Card.Root>
       </>
     );
-    const defaultTitle = page.getByRole("heading", { level: 3, name: "March usage" }).element();
+    const defaultTitle = headingNamed("March usage", 3);
     expect(defaultTitle.tagName).toBe("H3");
-    const levelTwo = page.getByRole("heading", { level: 2, name: "April usage" }).element();
+    const levelTwo = headingNamed("April usage", 2);
     expect(levelTwo.tagName).toBe("H2");
   });
 
@@ -66,7 +76,7 @@ describe("Card", () => {
     expect(slot("card-tag").tagName).toBe("DIV");
   });
 
-  it("renders default title and description type-scale classes", () => {
+  it("renders default title type larger than the description", () => {
     renderThemed(
       <Card.Root>
         <Card.Header>
@@ -75,8 +85,11 @@ describe("Card", () => {
         </Card.Header>
       </Card.Root>
     );
-    expect(slot("card-title").className.split(/\s+/)).toContain("text-2xl");
-    expect(slot("card-description").className.split(/\s+/)).toContain("text-sm");
+    const title = headingNamed("March usage", 3);
+    const description = textNamed("Estimated consumption.");
+    expect(Number.parseFloat(getComputedStyle(title).fontSize)).toBeGreaterThan(
+      Number.parseFloat(getComputedStyle(description).fontSize)
+    );
   });
 
   it("switches the header to two grid columns only when an action child exists", () => {
@@ -97,35 +110,43 @@ describe("Card", () => {
         </Card.Root>
       </>
     );
-    const headers = document.querySelectorAll("[data-slot=card-header]");
-    const [withAction, withoutAction] = [headers[0], headers[1]];
+    const withAction = headingNamed("With action", 3).parentElement;
+    const withoutAction = headingNamed("Without action", 3).parentElement;
     if (!(withAction instanceof HTMLElement) || !(withoutAction instanceof HTMLElement)) {
       throw new Error("expected two headers");
     }
-    expect(withAction.className).toContain("has-data-[slot=card-action]:grid-cols-[1fr_auto]");
     expect(getComputedStyle(withAction).gridTemplateColumns.split(/\s+/)).toHaveLength(2);
     expect(getComputedStyle(withoutAction).gridTemplateColumns.split(/\s+/)).toHaveLength(1);
   });
 
   it("lays the root out as a row for direction=horizontal and a column by default", () => {
     renderThemed(
-      <Card.Root direction="horizontal">
+      <Card.Root aria-label="Horizontal card" direction="horizontal">
         <Card.Content direction="horizontal">Body</Card.Content>
       </Card.Root>
     );
-    expect(getComputedStyle(slot("card")).flexDirection).toBe("row");
+    const root = page.getByLabelText("Horizontal card", { exact: true }).element();
+    if (!(root instanceof HTMLElement)) {
+      throw new Error("expected the card root");
+    }
+    expect(getComputedStyle(root).flexDirection).toBe("row");
   });
 
   it("lays the root out as a column by default", () => {
     renderThemed(
-      <Card.Root>
+      <Card.Root aria-label="Vertical card">
         <Card.Content>Body</Card.Content>
       </Card.Root>
     );
-    expect(getComputedStyle(slot("card")).flexDirection).toBe("column");
+    const root = page.getByLabelText("Vertical card", { exact: true }).element();
+    if (!(root instanceof HTMLElement)) {
+      throw new Error("expected the card root");
+    }
+    expect(getComputedStyle(root).display).toBe("flex");
+    expect(getComputedStyle(root).flexDirection).toBe("column");
   });
 
-  it("renders the title icon before the text with the icon gap classes", () => {
+  it("renders the title icon before the text with the icon gap", () => {
     renderThemed(
       <Card.Root>
         <Card.Header>
@@ -133,28 +154,24 @@ describe("Card", () => {
         </Card.Header>
       </Card.Root>
     );
-    const title = slot("card-title");
-    expect(page.getByRole("heading", { level: 3, name: "March usage" }).element()).toBe(title);
+    const title = headingNamed("March usage", 3);
     expect(title.firstElementChild?.tagName.toLowerCase()).toBe("svg");
-    expect(title.className.split(/\s+/)).toContain("gap-x-1.5");
-    expect(title.className.split(/\s+/)).toContain("items-center");
     expect(getComputedStyle(title).display).toBe("flex");
+    expect(getComputedStyle(title).alignItems).toBe("center");
   });
 
-  it("paints the card surface from tokens without a dark variant", () => {
+  it("paints the card surface from tokens without a transparent fill", () => {
     renderThemed(
-      <Card.Root>
+      <Card.Root aria-label="Painted card">
         <Card.Content>Body</Card.Content>
       </Card.Root>
     );
-    const root = slot("card");
+    const root = page.getByLabelText("Painted card", { exact: true }).element();
+    if (!(root instanceof HTMLElement)) {
+      throw new Error("expected the card root");
+    }
     const styles = getComputedStyle(root);
-    expect(root.className).not.toContain("dark:");
-    expect(root.className.split(/\s+/)).toContain("bg-card");
-    expect(root.className.split(/\s+/)).toContain("text-card-foreground");
-    expect(root.className).not.toMatch(/\b(?:bg|text|border)-(?:white|black|gray|zinc|slate|neutral)\b/);
+    expect(styles.backgroundColor).toBe(cssVarColor(root, "--card"));
     expect(styles.borderTopWidth).toBe("1px");
-    // Radius derives from the brand `--radius` scale, never a literal (card.md §5).
-    expect(root.className.split(/\s+/)).toContain("rounded-lg");
   });
 });

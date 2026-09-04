@@ -79,10 +79,10 @@ No other API divergence — prop surface identical to ref.
 
 ## 9 Test requirements
 
-- Renders children text; `getByText` reachable; element carries `data-slot="badge"`.
-- Each of the 14 variants renders and resolves classes (parametrized): `destructive` resolves to `bg-error` classes and never a `destructive` class; `info` resolves to the `color-mix` classes.
-- Sizes: `sm`/`default`/`lg` each contain their padding/text classes.
-- `className` merge wins over recipe conflicts via `cn`.
+- Renders children text; `getByText` reachable; element carries `data-slot="badge"` (slot audit).
+- Each of the 14 variants resolves classes in the unit recipe test (parametrized): `destructive` resolves to `bg-error` classes and never a `destructive` class; `info` resolves to the `color-mix` classes. Browser asserts computed surfaces from role tokens, not class strings. _(Amended 2026-09-04 — spec 07 / [ADR 0008](../../adr/0008-tests-assert-behaviour-not-source-spelling.md).)_
+- Sizes: `sm`/`default`/`lg` each contain their padding/text classes in the unit recipe test; browser asserts computed padding/type scale.
+- `className` merge wins over recipe conflicts via `cn` (unit); browser asserts the winning computed fill.
 - `badgeVariants` unit: defaults resolve to `variant: default, size: default`; output contains no raw palette classes and no `dark:` variants.
 
 ## 10 Demo requirements

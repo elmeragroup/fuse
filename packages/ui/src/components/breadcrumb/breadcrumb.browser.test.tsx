@@ -4,9 +4,10 @@ import { describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import "../../../dist/themes.css";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
-import { renderThemed } from "../../../test/themed-browser-render";
+import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
 import { Breadcrumb } from "./breadcrumb";
 
 const LANDMARK_COPY = {
@@ -101,9 +102,7 @@ describe("Breadcrumb", () => {
     expect(link.tagName).toBe("A");
     expect(link.getAttribute("href")).toBe("#home");
     expect(link.getAttribute("data-slot")).toBe("breadcrumb-link");
-    const classes = link.className.split(/\s+/);
-    expect(classes).toContain("text-primary");
-    expect(classes).toContain("hover:text-foreground");
+    expect(getComputedStyle(link).color).toBe(cssVarColor(link, "--primary"));
   });
 
   it("hides separators from the accessibility tree and keeps ellipsis more in it", () => {
@@ -125,22 +124,28 @@ describe("Breadcrumb", () => {
       </Breadcrumb.Root>
     );
     const nav = navNamed("Breadcrumb");
-    const separators = nav.querySelectorAll('[data-slot="breadcrumb-separator"]');
+    const list = nav.querySelector("ol");
+    if (!(list instanceof HTMLOListElement)) {
+      throw new Error("expected ol");
+    }
+    const separators = [...list.children].filter((child) => child.getAttribute("role") === "presentation");
     expect(separators).toHaveLength(2);
     for (const separator of separators) {
       expect(separator.getAttribute("aria-hidden")).toBe("true");
-      expect(separator.getAttribute("role")).toBe("presentation");
     }
     expect(page.getByRole("listitem").elements()).toHaveLength(3);
-    const ellipsis = nav.querySelector('[data-slot="breadcrumb-ellipsis"]');
+    const more = page.getByText("More", { exact: true }).element();
+    if (!(more instanceof HTMLElement)) {
+      throw new Error("expected ellipsis more copy");
+    }
+    const ellipsis = more.parentElement;
     if (!(ellipsis instanceof HTMLElement)) {
-      throw new Error("expected breadcrumb-ellipsis");
+      throw new Error("expected breadcrumb ellipsis");
     }
     const icon = ellipsis.querySelector("svg");
     expect(icon).not.toBeNull();
     expect(icon?.getAttribute("aria-hidden")).toBe("true");
     expect(ellipsis.getAttribute("aria-hidden")).toBeNull();
-    expect(page.getByText("More", { exact: true }).element()).toBeTruthy();
   });
 
   it("renders an ordered list with one li per item plus separators", () => {
@@ -233,9 +238,9 @@ describe("Breadcrumb", () => {
         </Breadcrumb.List>
       </Breadcrumb.Root>
     );
-    const separator = document.querySelector('[data-slot="breadcrumb-separator"]');
-    expect(separator?.textContent).toBe("/");
-    expect(separator?.querySelector("svg")).toBeNull();
+    const slash = page.getByText("/", { exact: true }).element();
+    expect(slash.getAttribute("role")).toBe("presentation");
+    expect(slash.querySelector("svg")).toBeNull();
   });
 
   it("paints the shared focus ring on keyboard focus of Link", async () => {

@@ -3,9 +3,9 @@ import { createRef } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
+import "../../../dist/styles.css";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { Button } from "./button";
-import { buttonVariants } from "./button-variants";
 
 function flushEffects(): Promise<void> {
   return new Promise((resolve) => {
@@ -98,7 +98,7 @@ describe("Button", () => {
     const button = buttonNamed("Looks off");
 
     await expect.element(page.getByRole("button", { name: "Looks off" })).not.toBeDisabled();
-    expect(button.className.split(/\s+/)).toContain("opacity-70");
+    expect(Number.parseFloat(getComputedStyle(button).opacity)).toBeCloseTo(0.7);
     expect(button.hasAttribute("disabled")).toBe(false);
     expect(button.getAttribute("aria-disabled")).toBeNull();
 
@@ -196,7 +196,6 @@ describe("Button", () => {
   });
 
   it("renders variant and size recipe classes and keeps role when render swaps the tag", () => {
-    const outline = buttonVariants({ variant: "outline", size: "lg" });
     renderThemed(
       <>
         <Button variant="outline" size="lg">
@@ -209,10 +208,8 @@ describe("Button", () => {
     );
 
     const outlineButton = buttonNamed("Outline");
-    for (const token of ["border-border", "h-(--control-h-lg)", "shadow-xs"]) {
-      expect(outline).toContain(token);
-      expect(outlineButton.className.split(/\s+/)).toContain(token);
-    }
+    expect(getComputedStyle(outlineButton).borderTopWidth).not.toBe("0px");
+    expect(Number.parseFloat(getComputedStyle(outlineButton).height)).toBeGreaterThan(36);
 
     const link = buttonNamed("Open");
     expect(link.tagName).toBe("A");

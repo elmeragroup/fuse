@@ -5,8 +5,9 @@ import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import "../../../dist/themes.css";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
-import { renderThemed } from "../../../test/themed-browser-render";
+import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme/theme-scope";
 import { AlertDialog } from "./alert-dialog";
 
@@ -77,7 +78,7 @@ describe("AlertDialog", () => {
     expect(onOpenChange.mock.calls[0]?.[0]).toBe(true);
     expect(dialog.getAttribute("role")).toBe("alertdialog");
     expect(dialog.getAttribute("data-slot")).toBe("dialog-content");
-    expect(document.querySelector('[role="dialog"]')).toBeNull();
+    expect(page.getByRole("dialog").query()).toBeNull();
 
     const description = page.getByText(BODY, { exact: true }).element();
     expect(dialog.getAttribute("aria-describedby")).toBe(description.id);
@@ -226,11 +227,16 @@ describe("AlertDialog", () => {
     const { unmount: unmountDestructive } = renderThemed(withLocale("en-US", <ConfirmDialog />));
     const destructive = await openConfirm();
     const destructiveAction = page.getByRole("button", { name: ACTION, exact: true }).element();
-    expect(destructiveAction.className).toContain("bg-error/10");
     const destructiveIcon = destructive.querySelector("svg");
-    expect(destructiveIcon).not.toBeNull();
-    expect(destructiveIcon?.classList.contains("text-error")).toBe(true);
-    expect(destructiveIcon?.classList.contains("size-5")).toBe(true);
+    if (!(destructiveAction instanceof HTMLElement) || !(destructiveIcon instanceof SVGElement)) {
+      throw new Error("expected the destructive action and WarningOctagon fallback");
+    }
+    const error = cssVarColor(destructiveAction, "--error");
+    const primary = cssVarColor(destructiveAction, "--primary");
+    expect(getComputedStyle(destructiveAction).backgroundColor).not.toBe(primary);
+    expect(getComputedStyle(destructiveIcon).color).toBe(error);
+    expect(getComputedStyle(destructiveIcon).width).toBe("20px");
+    const destructiveGlyph = destructiveIcon.innerHTML;
     unmountDestructive();
 
     const { unmount: unmountNeutral } = renderThemed(
@@ -238,12 +244,14 @@ describe("AlertDialog", () => {
     );
     const neutral = await openConfirm();
     const neutralAction = page.getByRole("button", { name: ACTION, exact: true }).element();
-    expect(neutralAction.className).toContain("bg-primary");
-    expect(neutralAction.className).not.toContain("bg-error/10");
     const neutralIcon = neutral.querySelector("svg");
-    expect(neutralIcon).not.toBeNull();
-    expect(neutralIcon?.classList.contains("text-error")).toBe(false);
-    expect(neutralIcon?.classList.contains("size-5")).toBe(true);
+    if (!(neutralAction instanceof HTMLElement) || !(neutralIcon instanceof SVGElement)) {
+      throw new Error("expected the default action and Info fallback");
+    }
+    expect(getComputedStyle(neutralAction).backgroundColor).toBe(cssVarColor(neutralAction, "--primary"));
+    expect(getComputedStyle(neutralIcon).color).not.toBe(cssVarColor(neutralAction, "--error"));
+    expect(getComputedStyle(neutralIcon).width).toBe("20px");
+    expect(neutralIcon.innerHTML).not.toBe(destructiveGlyph);
     unmountNeutral();
 
     renderThemed(withLocale("en-US", <ConfirmDialog icon={<span>Custom mark</span>} />));
@@ -275,8 +283,6 @@ describe("AlertDialog", () => {
     renderThemed(withLocale("en-US", <NeverAttached />));
 
     expect(page.getByRole("alertdialog").query()).toBeNull();
-    expect(document.querySelector("[data-slot=dialog-content]")).toBeNull();
-    expect(document.querySelector("[data-slot=dialog-overlay]")).toBeNull();
   });
 
   it("does not paint the popup outside a ThemeScope element that has not attached yet", () => {

@@ -48,6 +48,77 @@ const KNOWN_LOCAL_HELPER_COPIES = [
   "components/timeline-list/timeline-list.browser.test.tsx headingNamed",
 ];
 
+/**
+ * Directory names under `src/components/` for the a–d batch (ticket 47). 48/49 add
+ * sibling `it(...)` blocks with their own ranges; keep this list a–d only.
+ */
+const RANGE_A_D = [
+  "accordion",
+  "alert",
+  "alert-dialog",
+  "avatar",
+  "badge",
+  "breadcrumb",
+  "button",
+  "button-group",
+  "card",
+  "checkbox",
+  "checkbox-card",
+  "code",
+  "collapsible",
+  "combobox",
+  "confirm-button",
+  "description-list",
+  "dialog",
+  "dropdown-menu",
+] as const;
+
+function componentBrowserSuites(names: readonly string[]): string[] {
+  return names.flatMap((name) => walk(join(sourceRoot, "components", name)));
+}
+
+const SLOT_AUDIT_CITE = /§9/;
+const DOCUMENT_QUERY = /\bdocument\.querySelector(?:All)?\s*\(/;
+const SLOT_QUERY = /(?:querySelector(?:All)?|closest)\s*\(\s*(['"`])[^'"`]*data-slot/;
+const SLOT_QUERY_TEMPLATE = /(?:querySelector(?:All)?|closest)\s*\(\s*`[^`]*data-slot/;
+const STAR_QUERY = /querySelectorAll\(\s*(['"`])\*\1\s*\)/;
+
+function isCommentLine(line: string): boolean {
+  const trimmed = line.trim();
+  return trimmed.startsWith("//") || trimmed.startsWith("*") || trimmed.startsWith("/*");
+}
+
+function isSlotOrDocumentLocator(line: string): boolean {
+  if (isCommentLine(line)) {
+    return false;
+  }
+  if (DOCUMENT_QUERY.test(line) || SLOT_QUERY.test(line) || SLOT_QUERY_TEMPLATE.test(line)) {
+    return true;
+  }
+  return STAR_QUERY.test(line);
+}
+
+function isCitedSlotAudit(lines: string[], index: number): boolean {
+  const windowStart = Math.max(0, index - 4);
+  return lines.slice(windowStart, index + 1).some((line) => SLOT_AUDIT_CITE.test(line));
+}
+
+/** CSS/`data-slot` locators that are not a cited spec-§9 slot audit (tooling §7.2). */
+function unsanctionedSlotLocators(files: string[]): string[] {
+  const findings: string[] = [];
+  for (const file of files) {
+    const lines = readFileSync(file, "utf8").split("\n");
+    for (let index = 0; index < lines.length; index++) {
+      const line = lines[index] ?? "";
+      if (!isSlotOrDocumentLocator(line) || isCitedSlotAudit(lines, index)) {
+        continue;
+      }
+      findings.push(`${relative(sourceRoot, file)}:${index + 1}`);
+    }
+  }
+  return findings;
+}
+
 describe("themed browser-test harness", () => {
   it("is the only ThemeScope / density / CONTROL_MD surface the component and react-aria suites use", () => {
     const files = suiteRoots.flatMap((root) => walk(root));
@@ -82,5 +153,11 @@ describe("themed browser-test harness", () => {
 
   it("records that the react-aria tier already has no local helper copies", () => {
     expect(KNOWN_LOCAL_HELPER_COPIES.filter((finding) => finding.startsWith("react-aria/"))).toEqual([]);
+  });
+
+  it("a-d browser suites locate by role/label except cited §9 slot audits", () => {
+    const files = componentBrowserSuites(RANGE_A_D);
+    expect(files.length).toBeGreaterThan(0);
+    expect(unsanctionedSlotLocators(files)).toEqual([]);
   });
 });

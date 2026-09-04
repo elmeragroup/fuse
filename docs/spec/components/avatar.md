@@ -69,9 +69,9 @@ Pure base-ui passthrough otherwise — no prop or behavior divergence.
 
 - With a loading/failed image, `Avatar.Fallback` content is visible (`getByText(initials)`); once the image loads, the `img` role is present and fallback hidden (drive via `onLoadingStatusChange`/mocked image).
 - `Avatar.Image` renders `getByRole("img")` with the given `alt`.
-- Parts emit their `data-slot` values.
-- Root classes contain `bg-muted` and never `bg-gray-*` (token regression guard).
-- `className` on root overrides size (`size-10` beats default `size-8` via `cn`).
+- Parts emit their `data-slot` values (slot audit).
+- Root classes contain `bg-muted` and never `bg-gray-*` (token regression guard) in the unit recipe test; browser asserts the computed muted fill and default 32px box. _(Amended 2026-09-04 — spec 07 / [ADR 0008](../../adr/0008-tests-assert-behaviour-not-source-spelling.md).)_
+- `className` on root overrides size (`size-10` beats default `size-8` via `cn`) in the unit test; browser asserts the computed 40px box.
 
 ## 10 Demo requirements
 

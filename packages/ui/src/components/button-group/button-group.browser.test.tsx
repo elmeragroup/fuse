@@ -4,7 +4,8 @@ import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { renderThemed } from "../../../test/themed-browser-render";
+import "../../../dist/themes.css";
+import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
 import { Button } from "../button/button";
 import { ButtonGroup } from "./button-group";
 
@@ -136,18 +137,20 @@ describe("ButtonGroup", () => {
         <Button>Copy</Button>
       </ButtonGroup.Root>
     );
-    const root = groupNamed("Prefixed");
-    const [plain, labeled] = [...root.querySelectorAll('[data-slot="button-group-text"]')];
+    const plain = page.getByText("https://", { exact: true }).element();
+    const labeled = page.getByText("NOK", { exact: true }).element();
     if (!(plain instanceof HTMLElement) || !(labeled instanceof HTMLElement)) {
       throw new Error("expected two button-group-text parts");
     }
     expect(plain.tagName).toBe("DIV");
-    expect(plain.textContent).toBe("https://");
-    expect(plain.className.split(/\s+/)).toContain("bg-muted");
+    expect(plain.getAttribute("data-slot")).toBe("button-group-text");
     expect(labeled.tagName).toBe("LABEL");
     expect(labeled.getAttribute("for")).toBe("amount");
-    expect(labeled.className.split(/\s+/)).toContain("uppercase");
-    expect(labeled.className.split(/\s+/)).toContain("bg-muted");
+    expect(labeled.getAttribute("data-slot")).toBe("button-group-text");
+    expect(getComputedStyle(plain).backgroundColor).toBe(cssVarColor(plain, "--muted"));
+    expect(getComputedStyle(labeled).backgroundColor).toBe(cssVarColor(labeled, "--muted"));
+    expect(getComputedStyle(plain).textTransform).not.toBe("uppercase");
+    expect(getComputedStyle(labeled).textTransform).toBe("uppercase");
   });
 
   it("collapses inner corners of data-slot children and keeps the trailing rounded edge", () => {

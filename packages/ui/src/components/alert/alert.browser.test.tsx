@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { renderThemed } from "../../../test/themed-browser-render";
+import { headingNamed, renderThemed } from "../../../test/themed-browser-render";
 import { Alert } from "./alert";
 
 const VARIANTS = ["default", "destructive", "warning", "success"] as const;
@@ -22,14 +22,6 @@ function alertNamed(name: string): HTMLElement {
   return element;
 }
 
-function headingNamed(name: string, level?: 1 | 2 | 3 | 4 | 5 | 6): HTMLElement {
-  const element = page.getByRole("heading", { name, exact: true, level }).element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error(`expected heading ${name}`);
-  }
-  return element;
-}
-
 function buttonNamed(name: string): HTMLElement {
   const element = page.getByRole("button", { name, exact: true }).element();
   if (!(element instanceof HTMLElement)) {
@@ -39,6 +31,7 @@ function buttonNamed(name: string): HTMLElement {
 }
 
 function iconIn(root: HTMLElement): SVGSVGElement {
+  // spec §9 slot audit: variant icons are asserted via the alert-icon data-slot hook.
   const icon = root.querySelector('[data-slot="alert-icon"]');
   if (!(icon instanceof SVGSVGElement)) {
     throw new Error("expected alert-icon");
@@ -61,8 +54,6 @@ describe("Alert", () => {
       expect(root.getAttribute("data-size")).toBe("sm");
       expect(root.contains(headingNamed(`${variant} title`, 3))).toBe(true);
       expect(root.textContent).toContain(`${variant} body`);
-      expect(root.className).not.toContain("bg-destructive");
-      expect(root.className).not.toContain("warning-accent");
       unmount();
     }
   });
@@ -114,7 +105,6 @@ describe("Alert", () => {
     );
     const action = buttonNamed("Retry");
     expect(action.getAttribute("type")).toBe("button");
-    expect(action.closest('[data-slot="item-actions"]')).not.toBeNull();
     await userEvent.click(action);
     expect(onAction).toHaveBeenCalledOnce();
     unmount();
@@ -125,7 +115,6 @@ describe("Alert", () => {
       </Alert.Root>
     );
     expect(page.getByRole("button").query()).toBeNull();
-    expect(document.querySelector('[data-slot="item-actions"]')).toBeNull();
   });
 
   it("does not emit a variant attribute on Title or Description", () => {
@@ -136,13 +125,12 @@ describe("Alert", () => {
       </Alert.Root>
     );
     const title = headingNamed("Outage", 3);
-    const description = document.querySelector('[data-slot="item-description"]');
+    const description = page.getByText("Two meters are offline.", { exact: true }).element();
     if (!(description instanceof HTMLElement)) {
-      throw new Error("expected item-description");
+      throw new Error("expected the description");
     }
     expect(title.getAttribute("variant")).toBeNull();
     expect(description.getAttribute("variant")).toBeNull();
     expect(description.tagName).toBe("P");
-    expect(description.className).toContain("text-foreground");
   });
 });
