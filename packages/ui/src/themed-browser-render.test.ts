@@ -120,6 +120,20 @@ function localHelperCopiesIn(source: string): string[] {
   return LOCAL_HELPER_PATTERNS.filter(({ pattern }) => pattern.test(source)).map(({ helper }) => helper);
 }
 
+function helperCopyFindings(readSource: (file: string) => string): string[] {
+  return suiteRoots
+    .flatMap((root) => walk(root))
+    .flatMap((file) => {
+      const path = relative(sourceRoot, file);
+      return localHelperCopiesIn(readSource(file)).map((helper) => `${path} ${helper}`);
+    })
+    .sort();
+}
+
+function extrasNotAllowlisted(findings: string[]): string[] {
+  return findings.filter((finding) => !KNOWN_LOCAL_HELPER_COPIES.includes(finding));
+}
+
 const QZ_COMPONENTS = new Set([
   "radio-group",
   "scroll-area",
@@ -206,21 +220,24 @@ describe("themed browser-test harness", () => {
   });
 
   it("forbids a local copy of roleNamed / headingNamed / cssVarColor", () => {
-    const findings = suiteRoots
-      .flatMap((root) => walk(root))
-      .flatMap((file) => {
-        const source = readFileSync(file, "utf8");
-        const path = relative(sourceRoot, file);
-        return localHelperCopiesIn(source).map((helper) => `${path} ${helper}`);
-      })
-      .sort();
-
-    expect(findings.filter((finding) => !KNOWN_LOCAL_HELPER_COPIES.includes(finding))).toEqual([]);
+    expect(extrasNotAllowlisted(helperCopyFindings((file) => readFileSync(file, "utf8")))).toEqual([]);
   });
 
   it("fails a planted local function roleNamed", () => {
-    expect(localHelperCopiesIn("function roleNamed(role, name) { return name; }")).toEqual(["roleNamed"]);
-    expect(localHelperCopiesIn("export function roleNamed() {}")).toEqual(["roleNamed"]);
+    const files = suiteRoots.flatMap((root) => walk(root));
+    const target = files.find(
+      (file) => relative(sourceRoot, file) === "components/show/show.browser.test.tsx"
+    );
+    if (target === undefined) {
+      throw new Error("expected show.browser.test.tsx in the walked suite roots");
+    }
+    const extras = extrasNotAllowlisted(
+      helperCopyFindings((file) => {
+        const source = readFileSync(file, "utf8");
+        return file === target ? `${source}\nfunction roleNamed() {}` : source;
+      })
+    );
+    expect(extras).toEqual([`${relative(sourceRoot, target)} roleNamed`]);
     expect(localHelperCopiesIn("const roleNamed = () => undefined;")).toEqual([]);
   });
 

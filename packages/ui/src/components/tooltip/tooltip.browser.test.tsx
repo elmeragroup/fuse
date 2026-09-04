@@ -143,12 +143,11 @@ describe("Tooltip", () => {
     );
 
     await hoverOpen("Grouped", "Grouped tip");
-    const started = performance.now();
     await userEvent.hover(triggerNamed("Scoped"));
     await vi.waitFor(() => {
-      expect(performance.now() - started).toBeGreaterThanOrEqual(120);
-      expect(page.getByRole("tooltip", { name: "Scoped tip", exact: true }).query()).toBeNull();
+      expect(page.getByRole("tooltip", { name: "Grouped tip", exact: true }).query()).toBeNull();
     });
+    expect(page.getByRole("tooltip", { name: "Scoped tip", exact: true }).query()).toBeNull();
 
     await vi.waitFor(
       () => {

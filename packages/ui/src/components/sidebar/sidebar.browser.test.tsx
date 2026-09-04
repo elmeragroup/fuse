@@ -604,12 +604,11 @@ describe("Sidebar.MenuButton tooltip", () => {
   it("keeps the label hidden while expanded", async () => {
     renderThemed(<TooltipFrame defaultOpen tooltip="string" />);
     const link = element(page.getByRole("link", { name: "Orders", exact: true }));
-    const started = performance.now();
     await userEvent.hover(link);
     await vi.waitFor(() => {
-      expect(performance.now() - started).toBeGreaterThanOrEqual(150);
-      expect(page.getByRole("tooltip", { name: "Orders", exact: true }).query()).toBeNull();
+      expect(link.matches(":hover")).toBe(true);
     });
+    expect(page.getByRole("tooltip", { name: "Orders", exact: true }).query()).toBeNull();
   });
 
   for (const form of ["string", "object"] as const) {

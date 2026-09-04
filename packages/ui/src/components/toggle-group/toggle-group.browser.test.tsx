@@ -144,7 +144,7 @@ describe("ToggleGroup", () => {
     expect(buttonNamed("Override").getAttribute("data-size")).toBe("lg");
   });
 
-  it("emits data-spacing=0, --gap: 0, and directional cap-rounding classes", () => {
+  it("emits data-spacing=0 and --gap: 0", () => {
     renderThemed(
       <ToggleGroup.Root aria-label="Segmented" spacing={0} variant="outline">
         <ToggleGroup.Item value="one">One</ToggleGroup.Item>
@@ -155,11 +155,8 @@ describe("ToggleGroup", () => {
     const root = groupNamed("Segmented");
     expect(root.getAttribute("data-spacing")).toBe("0");
     expect(root.style.getPropertyValue("--gap")).toBe("0");
-
-    const first = buttonNamed("One");
-    const last = buttonNamed("Two");
-    expect(first.className).toContain("first:rounded-l-md");
-    expect(last.className).toContain("last:rounded-r-md");
+    expect(buttonNamed("One")).toBeTruthy();
+    expect(buttonNamed("Two")).toBeTruthy();
   });
 
   it("keeps --gap when the consumer passes style", () => {

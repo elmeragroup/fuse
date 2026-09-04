@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
+import "../../../dist/styles.css";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { ScrollArea } from "./scroll-area";
 
@@ -137,8 +138,9 @@ describe("ScrollArea", () => {
     if (!(hover instanceof HTMLElement)) {
       throw new Error("expected a hover-gated scrollbar");
     }
-    expect(hover.className).toContain("data-[hovering]:opacity-100");
-    expect(hover.className).toContain("pointer-events-none");
+    await userEvent.hover(labeledText("Always on"));
+    await expect.poll(() => Number.parseFloat(getComputedStyle(hover).opacity)).toBe(0);
+    expect(getComputedStyle(hover).pointerEvents).toBe("none");
   });
 
   it("keeps ArrowDown and PageDown on a focused overflow viewport as native scroll", async () => {
