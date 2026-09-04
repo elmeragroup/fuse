@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { cn } from "../../styles/cn";
-import { typographyAlignClasses, typographyColorClasses } from "../../styles/typography-fragments";
+import { typographyFragments } from "../../styles/typography-fragments";
 import { textVariants } from "./text-variants";
 
 const VARIANTS = [
@@ -17,10 +17,9 @@ const VARIANTS = [
   "success",
 ] as const;
 
-const VARIANT_CLASS = {
-  ...typographyColorClasses,
-  success: "text-success",
-} as const;
+function expectedVariantClass(variant: (typeof VARIANTS)[number]): string {
+  return variant === "success" ? "text-success" : typographyFragments({ variant });
+}
 
 const SIZES = ["xs", "sm", "default", "lg", "xl", "2xl"] as const;
 const SIZE_TOKEN = {
@@ -47,7 +46,7 @@ describe("textVariants", () => {
 
   it.each(VARIANTS)("resolves variant %s onto its token class", (variant) => {
     const resolved = textVariants({ variant });
-    expect(resolved.split(/\s+/)).toContain(VARIANT_CLASS[variant]);
+    expect(resolved.split(/\s+/)).toContain(expectedVariantClass(variant));
     expect(resolved, variant).not.toContain("dark:");
     expect(resolved, variant).not.toMatch(RAW_PALETTE_RE);
   });
@@ -99,9 +98,11 @@ describe("textVariants", () => {
   });
 
   it("surfaces align as a first-class axis", () => {
-    expect(textVariants({ align: "left" }).split(/\s+/)).toContain(typographyAlignClasses.left);
-    expect(textVariants({ align: "center" }).split(/\s+/)).toContain(typographyAlignClasses.center);
-    expect(textVariants({ align: "right" }).split(/\s+/)).toContain(typographyAlignClasses.right);
+    expect(textVariants({ align: "left" }).split(/\s+/)).toContain(typographyFragments({ align: "left" }));
+    expect(textVariants({ align: "center" }).split(/\s+/)).toContain(
+      typographyFragments({ align: "center" })
+    );
+    expect(textVariants({ align: "right" }).split(/\s+/)).toContain(typographyFragments({ align: "right" }));
     expect(textVariants({ align: "justify" }).split(/\s+/)).toContain("text-justify");
     expect(textVariants().split(/\s+/)).not.toContain("text-left");
   });

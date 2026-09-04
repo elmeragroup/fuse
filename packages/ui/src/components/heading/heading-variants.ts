@@ -2,6 +2,10 @@
  * PUBLIC recipe (heading.md §4). Other package modules import this file relatively;
  * consumers borrow it from `@elmeragroup/ui/heading`.
  *
+ * Colour (`variant`) and start/center/end (`align`) come from the package-private
+ * `typographyFragments` recipe via `extend`. Size, font, noMargin, and uppercase
+ * stay here.
+ *
  * - `destructive` keeps its ref value name for consumer compat, but the class is
  *   `text-error` (heading.md §8.4) — no `destructive` class appears in library source.
  * - `size` is a type-scale axis, not a density control-box rung (conventions.md
@@ -9,12 +13,12 @@
  */
 import { tv } from "tailwind-variants";
 
-import { typographyAlignClasses, typographyColorClasses } from "../../styles/typography-fragments";
+import { typographyFragments } from "../../styles/typography-fragments";
 
 export const headingVariants = tv({
+  extend: typographyFragments,
   base: "font-heading text-foreground",
   variants: {
-    variant: typographyColorClasses,
     size: {
       default: "text-base leading-snug",
       sm: "text-sm leading-snug",
@@ -37,7 +41,6 @@ export const headingVariants = tv({
     uppercase: {
       true: "uppercase",
     },
-    align: typographyAlignClasses,
   },
   defaultVariants: {
     variant: "default",
