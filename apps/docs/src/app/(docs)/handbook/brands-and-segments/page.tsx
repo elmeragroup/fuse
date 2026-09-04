@@ -1,6 +1,7 @@
 import type { ReactElement } from "react";
 
 import Link from "next/link";
+import { tv } from "tailwind-variants";
 
 import { BRANDS, themeSlug } from "@elmeragroup/ui/theme";
 
@@ -10,9 +11,11 @@ import { LEGAL_THEMES, THEME_BRANDS } from "../../../../lib/theme";
 
 const HREF = "/handbook/brands-and-segments";
 
-const classNames = {
-  mono: "font-docs-mono text-[0.75rem]",
-} as const;
+const brandsAndSegments = tv({
+  slots: {
+    mono: "font-docs-mono text-[0.75rem]",
+  },
+});
 
 export const metadata = pageMetadata(HREF);
 
@@ -25,6 +28,8 @@ const ILLEGAL_SLUGS = [
 ] as const;
 
 export default function BrandsAndSegmentsPage(): ReactElement {
+  const { mono } = brandsAndSegments();
+
   return (
     <DocsPage href={HREF}>
       <h2 id="brands">Brands</h2>
@@ -49,9 +54,7 @@ export default function BrandsAndSegmentsPage(): ReactElement {
                   <code>{code}</code>
                 </DocsTable.BodyCell>
                 <DocsTable.BodyCell>{BRANDS[code].displayName}</DocsTable.BodyCell>
-                <DocsTable.BodyCell className={classNames.mono}>
-                  {BRANDS[code].segments.join(", ")}
-                </DocsTable.BodyCell>
+                <DocsTable.BodyCell className={mono()}>{BRANDS[code].segments.join(", ")}</DocsTable.BodyCell>
               </tr>
             ))}
           </tbody>
@@ -111,7 +114,7 @@ export default function BrandsAndSegmentsPage(): ReactElement {
         Each theme has a canonical slug, <code>variant-brand-segment</code>. The{" "}
         <Link href="/handbook/theme-matrix">Theme matrix</Link> renders all of them side by side.
       </p>
-      <ul className={classNames.mono}>
+      <ul className={mono()}>
         {LEGAL_THEMES.map((theme) => (
           <li key={themeSlug(theme)}>{themeSlug(theme)}</li>
         ))}

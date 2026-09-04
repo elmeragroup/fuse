@@ -2,6 +2,8 @@
 
 import type { ChangeEvent, ReactElement } from "react";
 
+import { tv } from "tailwind-variants";
+
 import { BRANDS, coerceTheme } from "@elmeragroup/ui/theme";
 import type { ThemeInput, ThemeSegment } from "@elmeragroup/ui/theme";
 
@@ -14,9 +16,11 @@ import {
   THEME_VARIANTS,
 } from "../lib/theme";
 
-const classNames = {
-  root: "ml-auto flex items-center [&_select]:appearance-none [&_select]:cursor-pointer [&_select]:border [&_select]:border-docs-line [&_select]:bg-docs-soft [&_select]:px-[9px] [&_select]:py-[5px] [&_select]:font-docs-mono [&_select]:text-[11.5px] [&_select]:font-[500] [&_select]:text-docs-ink [&_select:first-child]:rounded-[6px_0_0_6px] [&_select+select]:border-l-0 [&_select:last-child]:rounded-[0_6px_6px_0] [&_select:focus-visible]:relative [&_select:focus-visible]:z-[1] [&_select:focus-visible]:outline-2 [&_select:focus-visible]:outline-docs-ink [&_select:focus-visible]:outline-offset-[-1px]",
-} as const;
+const themePicker = tv({
+  slots: {
+    root: "[&_select]:border-docs-line [&_select]:bg-docs-soft [&_select]:font-docs-mono [&_select]:text-docs-ink [&_select:focus-visible]:outline-docs-ink ml-auto flex items-center [&_select]:cursor-pointer [&_select]:appearance-none [&_select]:border [&_select]:px-[9px] [&_select]:py-[5px] [&_select]:text-[11.5px] [&_select]:font-[500] [&_select+select]:border-l-0 [&_select:first-child]:rounded-[6px_0_0_6px] [&_select:focus-visible]:relative [&_select:focus-visible]:z-[1] [&_select:focus-visible]:outline-2 [&_select:focus-visible]:outline-offset-[-1px] [&_select:last-child]:rounded-[0_6px_6px_0]",
+  },
+});
 
 export type ThemePickerProps = {
   theme: ThemeInput;
@@ -50,8 +54,10 @@ export function ThemePicker({ theme, onThemeChange }: ThemePickerProps): ReactEl
     commitTheme({ variant: theme.variant, brand: theme.brand, segment }, onThemeChange);
   };
 
+  const { root } = themePicker();
+
   return (
-    <div className={classNames.root}>
+    <div className={root()}>
       <select aria-label="Variant" value={theme.variant} onChange={handleVariantChange}>
         {THEME_VARIANTS.map((variant) => (
           <option key={variant} value={variant}>

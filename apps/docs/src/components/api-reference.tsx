@@ -1,6 +1,8 @@
 import { Fragment } from "react";
 import type { ReactElement } from "react";
 
+import { tv } from "tailwind-variants";
+
 import { readComponentApi } from "../lib/api-source";
 import { toPartView } from "../lib/api-view";
 import { API_SECTION_ID } from "../lib/nav";
@@ -12,14 +14,16 @@ export type ApiReferenceProps = {
   slug: string;
 };
 
-const classNames = {
-  part: "mt-8",
-  partHeader: "mt-[1.6rem] mb-[0.7rem] flex items-center gap-[0.55rem]",
-  partHeading:
-    "m-0 scroll-mt-[calc(var(--spacing-docs-header)_+_1rem)] text-[1rem] font-semibold [&_code]:font-docs-mono [&_code]:text-[13px]",
-  partNote: "mt-[0.6rem] text-[0.78rem] text-docs-sub",
-  propGroupHeading: "mt-[1.2rem] mb-[0.55rem] text-[0.78rem] font-medium tracking-[0.01em] text-docs-sub",
-} as const;
+const apiReference = tv({
+  slots: {
+    part: "mt-8",
+    partHeader: "mt-[1.6rem] mb-[0.7rem] flex items-center gap-[0.55rem]",
+    partHeading:
+      "font-semibold [&_code]:font-docs-mono m-0 scroll-mt-[calc(var(--spacing-docs-header)_+_1rem)] text-[1rem] [&_code]:text-[13px]",
+    partNote: "text-docs-sub mt-[0.6rem] text-[0.78rem]",
+    propGroupHeading: "font-medium text-docs-sub mt-[1.2rem] mb-[0.55rem] text-[0.78rem] tracking-[0.01em]",
+  },
+});
 
 /**
  * A component page's API reference (docs-site.md §3.4 item 4, §8): one expandable table per
@@ -37,36 +41,39 @@ const classNames = {
 export async function ApiReference({ slug }: ApiReferenceProps): Promise<ReactElement> {
   const api = await readComponentApi(slug);
   const parts = api.parts.map(toPartView);
+  const { part, partHeader, partHeading, partNote, propGroupHeading } = apiReference();
 
   return (
     <section aria-labelledby={API_SECTION_ID}>
       <DocsSectionHeading id={API_SECTION_ID}>API reference</DocsSectionHeading>
-      {parts.map((part) => (
-        <section className={classNames.part} key={part.name} aria-labelledby={part.anchor}>
-          <div className={classNames.partHeader}>
-            <h3 className={classNames.partHeading} id={part.anchor}>
-              <code>{part.name}</code>
+      {parts.map((partView) => (
+        <section className={part()} key={partView.name} aria-labelledby={partView.anchor}>
+          <div className={partHeader()}>
+            <h3 className={partHeading()} id={partView.anchor}>
+              <code>{partView.name}</code>
             </h3>
-            <DocsRscBadge variant="part" rsc={part.rsc}>
-              {part.rscLabel}
+            <DocsRscBadge variant="part" rsc={partView.rsc}>
+              {partView.rscLabel}
             </DocsRscBadge>
           </div>
-          {part.propGroups.length === 0 ? (
-            <p className={classNames.partNote}>Every prop is forwarded to the underlying part.</p>
+          {partView.propGroups.length === 0 ? (
+            <p className={partNote()}>Every prop is forwarded to the underlying part.</p>
           ) : (
-            part.propGroups.map((group) => (
+            partView.propGroups.map((group) => (
               <Fragment key={group.key}>
-                {group.label === null ? null : <h4 className={classNames.propGroupHeading}>{group.label}</h4>}
+                {group.label === null ? null : <h4 className={propGroupHeading()}>{group.label}</h4>}
                 <ApiPropRows
-                  partName={group.label === null ? `${part.name} props` : `${part.name} ${group.label}`}
+                  partName={
+                    group.label === null ? `${partView.name} props` : `${partView.name} ${group.label}`
+                  }
                   props={group.props}
                 />
               </Fragment>
             ))
           )}
-          {part.forwardedCount > 0 ? (
-            <p className={classNames.partNote}>
-              Plus {part.forwardedCount} forwarded props from {part.forwardedFrom.join(", ")}.
+          {partView.forwardedCount > 0 ? (
+            <p className={partNote()}>
+              Plus {partView.forwardedCount} forwarded props from {partView.forwardedFrom.join(", ")}.
             </p>
           ) : null}
         </section>
