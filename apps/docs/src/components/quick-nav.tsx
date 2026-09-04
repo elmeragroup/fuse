@@ -8,7 +8,7 @@ import { tv } from "tailwind-variants";
 import { ScrollArea } from "@elmeragroup/ui/scroll-area";
 
 import { tocForPath } from "../lib/nav";
-import { docsNavListSlots } from "./docs-nav-list";
+import { docsNavList } from "./docs-nav-list";
 
 const quickNav = tv({
   slots: {
@@ -23,7 +23,7 @@ export function QuickNav(): ReactElement {
   const pathname = usePathname();
   const items = tocForPath(pathname);
   const { root, scroll, title, link } = quickNav();
-  const { list } = docsNavListSlots;
+  const { list } = docsNavList();
 
   return (
     <nav aria-label="On this page" className={root()}>

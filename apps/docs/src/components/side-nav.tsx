@@ -9,7 +9,7 @@ import { tv } from "tailwind-variants";
 import { ScrollArea } from "@elmeragroup/ui/scroll-area";
 
 import { NAV_GROUPS } from "../lib/nav";
-import { docsNavListSlots } from "./docs-nav-list";
+import { docsNavList } from "./docs-nav-list";
 
 const sideNav = tv({
   slots: {
@@ -24,7 +24,7 @@ const sideNav = tv({
 export function SideNav(): ReactElement {
   const pathname = usePathname();
   const { root, scroll, section, heading, link } = sideNav();
-  const { list } = docsNavListSlots;
+  const { list } = docsNavList();
 
   return (
     <nav aria-label="Main navigation" className={root()}>
