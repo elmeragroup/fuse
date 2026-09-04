@@ -1,7 +1,11 @@
+import { createElement } from "react";
+
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { cn } from "../../styles/cn";
+import { Card } from "./card";
 import { cardDescriptionVariants, cardTitleVariants, cardVariants } from "./card-variants";
 
 const TITLE_SIZE_CLASS = {
@@ -65,6 +69,17 @@ describe("cardVariants", () => {
     expect(resolved).not.toContain("dark:");
     expect(resolved).not.toContain("destructive");
     expect(resolved).not.toMatch(RAW_PALETTE_RE);
+  });
+});
+
+describe("card title icon", () => {
+  it("puts the title in a flex row with the icon gap", () => {
+    const html = renderToStaticMarkup(
+      createElement(Card.Title, { icon: createElement("svg") }, "March usage")
+    );
+    expect(html).toContain("gap-x-1.5");
+    expect(html).toContain("flex");
+    expect(html).toContain("items-center");
   });
 });
 

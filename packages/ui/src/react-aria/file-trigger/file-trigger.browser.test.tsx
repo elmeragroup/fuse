@@ -6,10 +6,6 @@ import { assertFocusRingAtBothDensities } from "../../../test/assert-focus-ring"
 import { CONTROL_SM, px, renderThemed, roleNamed, stampDensity } from "../../../test/themed-browser-render";
 import { FileTrigger } from "./file-trigger";
 
-function buttonNamed(name: string): HTMLElement {
-  return roleNamed("button", name);
-}
-
 function fileInputFor(button: HTMLElement): HTMLInputElement {
   let node: ChildNode | null = button.nextSibling;
   while (node) {
@@ -41,7 +37,7 @@ describe("FileTrigger", () => {
       </FileTrigger>
     );
 
-    const button = buttonNamed("Attach files");
+    const button = roleNamed("button", "Attach files");
     const input = fileInputFor(button);
     expect(input.getAttribute("type")).toBe("file");
     expect(getComputedStyle(input).display).toBe("none");
@@ -57,7 +53,7 @@ describe("FileTrigger", () => {
       </FileTrigger>
     );
 
-    const button = buttonNamed("Attach files");
+    const button = roleNamed("button", "Attach files");
     const input = fileInputFor(button);
     const click = vi.spyOn(input, "click");
 
@@ -90,10 +86,10 @@ describe("FileTrigger", () => {
       </>
     );
 
-    const attach = buttonNamed("Attach file");
-    const photo = buttonNamed("Take photo");
-    const folder = buttonNamed("Choose folder");
-    const none = buttonNamed("No icon");
+    const attach = roleNamed("button", "Attach file");
+    const photo = roleNamed("button", "Take photo");
+    const folder = roleNamed("button", "Choose folder");
+    const none = roleNamed("button", "No icon");
 
     expect(attach.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
     expect(photo.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
@@ -117,7 +113,7 @@ describe("FileTrigger", () => {
       </FileTrigger>
     );
 
-    const button = buttonNamed("Attach files");
+    const button = roleNamed("button", "Attach files");
     const input = fileInputFor(button);
     expect(button).toHaveAttribute("data-disabled");
     expect(button).toHaveAttribute("disabled");
@@ -140,7 +136,7 @@ describe("FileTrigger", () => {
       </>
     );
 
-    await assertFocusRingAtBothDensities(buttonNamed("Before"), buttonNamed("Attach files"));
+    await assertFocusRingAtBothDensities(roleNamed("button", "Before"), roleNamed("button", "Attach files"));
   });
 
   it("follows the signed sm rung at both densities and ignores a nested stamp", () => {
@@ -159,8 +155,8 @@ describe("FileTrigger", () => {
     for (const density of ["dense", "comfortable"] as const) {
       stampDensity(density);
       const rung = CONTROL_SM[density].height;
-      expect(px(getComputedStyle(buttonNamed("Root")).height)).toBe(rung);
-      expect(px(getComputedStyle(buttonNamed("Nested")).height)).toBe(rung);
+      expect(px(getComputedStyle(roleNamed("button", "Root")).height)).toBe(rung);
+      expect(px(getComputedStyle(roleNamed("button", "Nested")).height)).toBe(rung);
     }
   });
 
@@ -174,8 +170,8 @@ describe("FileTrigger", () => {
       </>
     );
 
-    const defaults = buttonNamed("Attach file");
-    const outline = buttonNamed("Outline large");
+    const defaults = roleNamed("button", "Attach file");
+    const outline = roleNamed("button", "Outline large");
     expect(px(getComputedStyle(defaults).height)).toBe(CONTROL_SM.dense.height);
     expect(px(getComputedStyle(outline).height)).toBeGreaterThan(px(getComputedStyle(defaults).height));
     expect(getComputedStyle(outline).borderTopWidth).not.toBe("0px");

@@ -23,12 +23,8 @@ function renderInfo(node: ReactNode, locale: (typeof SUPPORTED_LOCALES)[number] 
   return renderThemed(withLocale(locale, node));
 }
 
-function triggerNamed(name: string): HTMLElement {
-  return roleNamed("button", name);
-}
-
 async function openInfo(name = "More information"): Promise<HTMLElement> {
-  await userEvent.click(triggerNamed(name));
+  await userEvent.click(roleNamed("button", name));
   const dialog = page.getByRole("dialog").element();
   if (!(dialog instanceof HTMLElement)) {
     throw new Error("expected the popup");
@@ -40,11 +36,11 @@ describe("PopoverInfoButton", () => {
   it("names the trigger from the en-US dictionary default and lets label override it", () => {
     const { rerender } = renderInfo(<PopoverInfoButton>{EXPLAINER}</PopoverInfoButton>);
 
-    expect(triggerNamed("More information")).toBeTruthy();
+    expect(roleNamed("button", "More information")).toBeTruthy();
     expect(page.getByRole("button").elements()).toHaveLength(1);
 
     rerender(withLocale("en-US", <PopoverInfoButton label="About grid rent">{EXPLAINER}</PopoverInfoButton>));
-    expect(triggerNamed("About grid rent")).toBeTruthy();
+    expect(roleNamed("button", "About grid rent")).toBeTruthy();
     expect(page.getByRole("button", { name: "More information", exact: true }).query()).toBeNull();
   });
 
@@ -68,11 +64,11 @@ describe("PopoverInfoButton", () => {
         <PopoverInfoButton>{EXPLAINER}</PopoverInfoButton>
       </div>
     );
-    const trigger = triggerNamed("More information");
+    const trigger = roleNamed("button", "More information");
     expect(trigger.getAttribute("aria-expanded")).not.toBe("true");
-    expect(trigger.getElementsByTagName("button")).toHaveLength(0);
-    expect(document.getElementsByTagName("button")).toHaveLength(1);
-    expect(trigger.getElementsByTagName("svg")[0]?.getAttribute("aria-hidden")).toBe("true");
+    expect(trigger.querySelectorAll("button")).toHaveLength(0);
+    expect(page.getByRole("button").elements()).toHaveLength(1);
+    expect(trigger.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
 
     const dialog = await openInfo();
     expect(dialog.textContent).toContain(EXPLAINER);
@@ -97,7 +93,7 @@ describe("PopoverInfoButton", () => {
         <PopoverInfoButton contentSize="sm">{EXPLAINER}</PopoverInfoButton>
       </div>
     );
-    const trigger = triggerNamed("More information");
+    const trigger = roleNamed("button", "More information");
     expect(px(getComputedStyle(trigger).width)).toBe(px(getComputedStyle(trigger).height));
 
     let dialog = await openInfo();
@@ -120,7 +116,7 @@ describe("PopoverInfoButton", () => {
         </div>
       )
     );
-    const outlined = triggerNamed("More information");
+    const outlined = roleNamed("button", "More information");
     expect(getComputedStyle(outlined).borderTopColor).not.toBe("rgba(0, 0, 0, 0)");
     expect(outlined).toHaveProperty("disabled", true);
 
@@ -177,7 +173,7 @@ describe("PopoverInfoButton", () => {
     }
     renderInfo(<NeverAttached />);
 
-    await userEvent.click(triggerNamed("More information"));
+    await userEvent.click(roleNamed("button", "More information"));
     expect(page.getByRole("dialog").query()).toBeNull();
     expect([...document.body.children].some((child) => child.getAttribute("role") === "dialog")).toBe(false);
   });

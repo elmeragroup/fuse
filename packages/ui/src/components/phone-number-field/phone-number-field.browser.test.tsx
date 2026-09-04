@@ -52,9 +52,7 @@ function listboxNamed(): HTMLElement {
 }
 
 function searchNamed(name = "Search countries"): HTMLInputElement {
-  const named = [...document.getElementsByTagName("input")].find(
-    (input) => input.getAttribute("aria-label") === name
-  );
+  const named = document.body.querySelector(`input[aria-label="${name}"]`);
   if (named instanceof HTMLInputElement) {
     return named;
   }
@@ -62,9 +60,7 @@ function searchNamed(name = "Search countries"): HTMLInputElement {
 }
 
 function hiddenNamed(name: string): HTMLInputElement {
-  const match = [...document.getElementsByTagName("input")].find(
-    (input) => input.type === "hidden" && input.name === name
-  );
+  const match = document.body.querySelector(`input[type="hidden"][name="${name}"]`);
   if (!(match instanceof HTMLInputElement)) {
     throw new Error(`expected hidden input ${name}`);
   }
@@ -73,7 +69,7 @@ function hiddenNamed(name: string): HTMLInputElement {
 
 function triggerFlagImg(): HTMLImageElement {
   const trigger = roleNamed("button", "Select country");
-  const img = trigger.getElementsByTagName("img")[0];
+  const img = trigger.querySelector("img");
   if (!(img instanceof HTMLImageElement)) {
     throw new Error("expected a flag image on the trigger");
   }
@@ -93,21 +89,18 @@ function flagCodeFromSrc(src: string): string | undefined {
 }
 
 function optionFlagCodes(): string[] {
-  return [...listboxNamed().getElementsByTagName("img")].flatMap((img) => {
+  return [...listboxNamed().querySelectorAll("img")].flatMap((img) => {
     const code = flagCodeFromSrc(img.getAttribute("src") ?? "");
     return code ? [code] : [];
   });
 }
 
 function inputGroupRoot(name: string): HTMLElement {
-  let node: HTMLElement | null = textboxNamed(name).parentElement;
-  while (node) {
-    if (node.getAttribute("role") === "group") {
-      return node;
-    }
-    node = node.parentElement;
+  const group = textboxNamed(name).closest('[role="group"]');
+  if (!(group instanceof HTMLElement)) {
+    throw new Error(`expected an input-group root around ${name}`);
   }
-  throw new Error(`expected an input-group root around ${name}`);
+  return group;
 }
 
 async function openPicker(name = "Select country"): Promise<HTMLElement> {

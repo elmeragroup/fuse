@@ -1,6 +1,10 @@
+import { createElement } from "react";
+
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { SUPPORTED_LOCALES } from "../../../test/locale-matrix";
+import { Breadcrumb } from "./breadcrumb";
 import { breadcrumbStrings } from "./intl";
 
 const LANDMARK_COPY = {
@@ -16,6 +20,13 @@ const MORE_COPY = {
   "en-US": "More",
   "fi-FI": "Lisää",
 } as const;
+
+describe("breadcrumb link classes", () => {
+  it("hovers to the foreground token", () => {
+    const html = renderToStaticMarkup(createElement(Breadcrumb.Link, { href: "/" }, "Home"));
+    expect(html).toContain("hover:text-foreground");
+  });
+});
 
 describe("breadcrumb dictionary", () => {
   it("owns the locked breadcrumb.* copy in all four locales", () => {

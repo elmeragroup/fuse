@@ -2,16 +2,8 @@ import { describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { headingNamed, renderThemed } from "../../../test/themed-browser-render";
+import { headingNamed, renderThemed, textNamed } from "../../../test/themed-browser-render";
 import { DescriptionList } from "./description-list";
-
-function textNamed(name: string): HTMLElement {
-  const element = page.getByText(name, { exact: true }).element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error(`expected text ${name}`);
-  }
-  return element;
-}
 
 function renderBasicList() {
   renderThemed(

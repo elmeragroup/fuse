@@ -13,32 +13,22 @@ import {
   renderThemed,
   roleNamed,
   stampDensity,
+  textNamed,
   textboxNamed,
 } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme";
 import { InputGroup } from "./input-group";
 
 function groupAround(start: HTMLElement): HTMLElement {
-  let node: HTMLElement | null = start.parentElement;
-  while (node) {
-    if (node.getAttribute("role") === "group") {
-      return node;
-    }
-    node = node.parentElement;
+  const group = start.closest('[role="group"]');
+  if (!(group instanceof HTMLElement)) {
+    throw new Error("expected a group ancestor");
   }
-  throw new Error("expected a group ancestor");
+  return group;
 }
 
 function rootNamed(name: string): HTMLElement {
   return groupAround(textboxNamed(name));
-}
-
-function textNamed(name: string): HTMLElement {
-  const element = page.getByText(name, { exact: true }).element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error(`expected text ${name}`);
-  }
-  return element;
 }
 
 describe("InputGroup", () => {

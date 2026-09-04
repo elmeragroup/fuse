@@ -27,10 +27,6 @@ function renderField(node: ReactNode) {
   );
 }
 
-function searchboxNamed(name: string): HTMLElement {
-  return roleNamed("searchbox", name);
-}
-
 /**
  * The private RAC `FieldGroup` wrapping the named searchbox. It carries `role="group"`
  * but no accessible name of its own, so it is reached from the control it labels — it is
@@ -38,7 +34,7 @@ function searchboxNamed(name: string): HTMLElement {
  * `focusRing({ target: "state" })` ring (search-field.md §9, react-aria/internal/field).
  */
 function fieldGroupFor(name: string): HTMLElement {
-  const group = searchboxNamed(name).closest('[role="group"]');
+  const group = roleNamed("searchbox", name).closest('[role="group"]');
   if (!(group instanceof HTMLElement)) {
     throw new Error(`expected the SearchField field group around ${name}`);
   }
@@ -46,7 +42,7 @@ function fieldGroupFor(name: string): HTMLElement {
 }
 
 function fieldRootFrom(name: string): HTMLElement {
-  const root = searchboxNamed(name).parentElement?.parentElement;
+  const root = roleNamed("searchbox", name).parentElement?.parentElement;
   if (!(root instanceof HTMLElement)) {
     throw new Error(`expected SearchField root around ${name}`);
   }
@@ -73,7 +69,7 @@ describe("SearchField", () => {
       />
     );
 
-    const input = searchboxNamed("Meter search");
+    const input = roleNamed("searchbox", "Meter search");
     await expect.element(page.getByRole("searchbox", { name: "Meter search" })).toBeVisible();
     expect(input.getAttribute("type")).toBe("search");
     expect(describedTextsFor(input)).toEqual(
@@ -89,7 +85,7 @@ describe("SearchField", () => {
       <SearchField label="Meter search" onChange={onChange} onClear={onClear} onSubmit={onSubmit} />
     );
 
-    const input = searchboxNamed("Meter search");
+    const input = roleNamed("searchbox", "Meter search");
     await userEvent.fill(page.getByRole("searchbox", { name: "Meter search", exact: true }), "735999123");
     expect(onChange).toHaveBeenCalled();
     expect(onChange.mock.calls.at(-1)?.[0]).toBe("735999123");
@@ -111,7 +107,7 @@ describe("SearchField", () => {
     const onClear = vi.fn();
     renderField(<SearchField label="Meter search" defaultValue="735999123" onClear={onClear} />);
 
-    const input = searchboxNamed("Meter search");
+    const input = roleNamed("searchbox", "Meter search");
     const root = fieldRootFrom("Meter search");
     expect(root.hasAttribute("data-empty")).toBe(false);
 
@@ -157,11 +153,11 @@ describe("SearchField", () => {
     expect(fieldRootFrom("Valid").hasAttribute("data-invalid")).toBe(false);
     expect(functionValidation?.isInvalid).toBe(true);
 
-    expect(describedTextsFor(searchboxNamed("Valid"))).toContain("Search by meter number.");
-    expect(describedTextsFor(searchboxNamed("Valid"))).not.toContain("Enter a query.");
+    expect(describedTextsFor(roleNamed("searchbox", "Valid"))).toContain("Search by meter number.");
+    expect(describedTextsFor(roleNamed("searchbox", "Valid"))).not.toContain("Enter a query.");
     expect(fieldRootFrom("Valid").textContent).not.toContain("Enter a query.");
 
-    expect(describedTextsFor(searchboxNamed("String error"))).toContain("Enter a query.");
+    expect(describedTextsFor(roleNamed("searchbox", "String error"))).toContain("Enter a query.");
     const functionError = page.getByRole("status", { name: "Function error details" });
     await expect.element(functionError).toBeVisible();
     const functionErrorNode = functionError.element();
@@ -169,7 +165,7 @@ describe("SearchField", () => {
       throw new Error("expected function error node");
     }
     expect(fieldRootFrom("Function error").contains(functionErrorNode)).toBe(true);
-    expect(describedTextsFor(searchboxNamed("Function error"))).toContain("Query is required");
+    expect(describedTextsFor(roleNamed("searchbox", "Function error"))).toContain("Query is required");
   });
 
   it("names the clear button from the dictionary in every shipped locale", async () => {
@@ -194,7 +190,7 @@ describe("SearchField", () => {
 
     await assertStateFocusRingAtBothDensities(
       roleNamed("button", "Before"),
-      searchboxNamed("Meter search"),
+      roleNamed("searchbox", "Meter search"),
       fieldGroupFor("Meter search")
     );
   });

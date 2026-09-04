@@ -556,17 +556,13 @@ export type SidebarMenuButtonProps = useRender.ComponentProps<"button"> &
  * so a menu button without a `tooltip` does not re-render when the rail toggles
  * (sidebar.md §8.21).
  */
-function SidebarMenuButtonTooltip(contentProps: TooltipContentProps): ReactElement {
+function SidebarMenuButtonTooltip(contentProps: TooltipContentProps): ReactElement | null {
   const { isMobile, state } = useSidebar();
+  if (state !== "collapsed" || isMobile) {
+    return null;
+  }
 
-  return (
-    <Tooltip.Content
-      side="right"
-      align="center"
-      hidden={state !== "collapsed" || isMobile}
-      {...contentProps}
-    />
-  );
+  return <Tooltip.Content side="right" align="center" {...contentProps} />;
 }
 
 function SidebarMenuButton({

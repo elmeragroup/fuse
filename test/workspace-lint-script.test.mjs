@@ -77,7 +77,24 @@ describe("workspace lint script", () => {
     );
     expect(uiSrcRules["elmera/no-rac-outside-quarantine"]).toBe("error");
     expect(uiSrcRules["elmera/restrict-focus-ring-call"]).toBe("error");
+    expect(uiSrcRules["elmera/restrict-browser-helper-copy"]).toBe("error");
     expect(uiSrcRules["elmera/no-field-part-jsx"]).toBe("error");
+
+    const uiTestOverride = overrides.find((entry) =>
+      overrideFiles(entry).includes("packages/ui/test/**/*.{ts,tsx}")
+    );
+    expect(
+      asRecord(uiTestOverride?.rules, "ui test override rules")["elmera/restrict-browser-helper-copy"]
+    ).toBe("error");
+
+    const uiScriptsOverride = overrides.find((entry) =>
+      overrideFiles(entry).includes("packages/ui/scripts/**")
+    );
+    expect(
+      asRecord(uiScriptsOverride?.rules, "ui scripts override rules")[
+        "elmera/restrict-package-root-from-script"
+      ]
+    ).toBe("error");
     expect(uiSrcRules["no-restricted-imports"]?.[0]).toBe("error");
 
     const dictionaryFactoryOverride = overrides.find((entry) =>

@@ -3,7 +3,7 @@ import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { withLocale } from "../../../test/locale-matrix";
-import { renderThemed, roleNamed, textboxNamed } from "../../../test/themed-browser-render";
+import { fieldRootFrom, renderThemed, roleNamed, textboxNamed } from "../../../test/themed-browser-render";
 import { CheckboxGroup, CheckboxItem } from "../checkbox/checkbox";
 import { Input } from "../input/input";
 import { NumberField } from "../number-field/number-field";
@@ -13,20 +13,12 @@ import { TextField } from "../text-field/text-field";
 import { TextareaField } from "../textarea-field/textarea-field";
 import { FieldFrame } from "./field-frame";
 
-function fieldRootFrom(name: string): HTMLElement {
-  const root = textboxNamed(name).closest("[data-orientation]");
-  if (!(root instanceof HTMLElement)) {
-    throw new Error(`expected field root around ${name}`);
-  }
-  return root;
-}
-
 function statusSvgs(root: HTMLElement): SVGElement[] {
-  return [...root.getElementsByTagName("svg")];
+  return [...root.querySelectorAll("svg")];
 }
 
 function nestedOrientationStamps(root: HTMLElement): Element[] {
-  return [...root.getElementsByTagName("*")].filter((element) => element.hasAttribute("data-orientation"));
+  return [...root.querySelectorAll("[data-orientation]")];
 }
 
 describe("FieldFrame", () => {
@@ -62,7 +54,7 @@ describe("FieldFrame", () => {
         <Input aria-label="Bare" />
       </FieldFrame>
     );
-    expect(fieldRootFrom("Bare").getElementsByTagName("label")).toHaveLength(0);
+    expect(fieldRootFrom("Bare").querySelectorAll("label")).toHaveLength(0);
     expect(page.getByText("Only a description.").query()).toBeTruthy();
   });
 
@@ -170,13 +162,13 @@ describe("FieldFrame", () => {
       </FieldFrame>
     );
     const root = fieldRootFrom("Bare options");
-    expect(root.getElementsByTagName("legend")).toHaveLength(0);
-    expect(root.getElementsByTagName("label")).toHaveLength(0);
+    expect(root.querySelectorAll("legend")).toHaveLength(0);
+    expect(root.querySelectorAll("label")).toHaveLength(0);
     expect(page.getByText("busy").query()).toBeTruthy();
   });
 
   it("renders one Field.Root per labeled composite so the nested-root trap cannot return", () => {
-    renderThemed(
+    const { host } = renderThemed(
       withLocale(
         "en-US",
         <>
@@ -208,8 +200,6 @@ describe("FieldFrame", () => {
       }
       expect(nestedOrientationStamps(root)).toHaveLength(0);
     }
-    expect(
-      [...document.getElementsByTagName("*")].filter((element) => element.hasAttribute("data-orientation"))
-    ).toHaveLength(6);
+    expect(host.querySelectorAll("[data-orientation]")).toHaveLength(6);
   });
 });

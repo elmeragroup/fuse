@@ -13,7 +13,7 @@ import type { OverlayContainerProps } from "../overlay/overlay-props";
 import { Popover } from "../popover/popover";
 import { popoverInfoButtonStrings } from "./intl";
 
-/** Module-private recipe (popover-info-button.md §4). Not re-exported from the public entry. */
+/** Recipe for the unit test (popover-info-button.md §4). Not re-exported from the public entry. */
 export const popoverInfoButtonStyles = tv({
   slots: {
     icon: "size-4",

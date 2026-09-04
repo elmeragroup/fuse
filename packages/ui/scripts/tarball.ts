@@ -5,6 +5,11 @@ import { join } from "node:path";
 
 export const ARTIFACTS_DIR = ".artifacts";
 
+export function fail(message: string): never {
+  console.error(message);
+  process.exit(1);
+}
+
 export function findTarball(packageRoot: string): string {
   const artifactsDir = join(packageRoot, ARTIFACTS_DIR);
   if (!existsSync(artifactsDir)) {
@@ -44,12 +49,12 @@ export function extractPackedPackage(tarball: string, destination: string, packa
 export function withExtractedTarball<T>(
   packageRoot: string,
   prefix: string,
-  fn: (extracted: string) => T
+  fn: (extracted: string, tarball: string) => T
 ): T {
   const tarball = findTarball(packageRoot);
   const scratch = mkdtempSync(join(tmpdir(), prefix));
   try {
-    return fn(extractPackedPackage(tarball, scratch, packageRoot));
+    return fn(extractPackedPackage(tarball, scratch, packageRoot), tarball);
   } finally {
     rmSync(scratch, { recursive: true, force: true });
   }

@@ -13,19 +13,18 @@ import {
   checkPackedRuntimeExports,
   checkPackedTwemojiNotices,
   checkValidateThemeEnv,
-  fail,
   importPackedModules,
   importSpecifier,
 } from "./package-check-packed";
 import { packageRootFromScript } from "./paths";
-import { findTarball, withExtractedTarball } from "./tarball";
+import { fail, withExtractedTarball } from "./tarball";
 
 const packageRoot = packageRootFromScript(import.meta.url);
 
 function runInherited(command: string, args: string[]): void {
   const result = spawnSync(command, args, { cwd: packageRoot, stdio: "inherit" });
   if (result.status !== 0) {
-    process.exit(result.status ?? 1);
+    throw new Error(`${command} ${args.join(" ")} exited with status ${String(result.status ?? "null")}`);
   }
 }
 
@@ -44,28 +43,21 @@ function linkConsumerModules(consumerRoot: string, extracted: string): void {
   symlinkSync(extracted, join(scoped, "ui"));
 }
 
-let tarball: string;
 try {
-  tarball = findTarball(packageRoot);
-} catch (error) {
-  fail(error instanceof Error ? error.message : String(error));
-}
-runInherited("pnpm", ["exec", "publint", tarball]);
-runInherited("pnpm", [
-  "exec",
-  "attw",
-  tarball,
-  "--profile",
-  "esm-only",
-  "--exclude-entrypoints",
-  "css",
-  "demo-stage-comfortable.css",
-  "styles.css",
-  "themes.css",
-]);
-
-try {
-  withExtractedTarball(packageRoot, "elmera-ui-pack-", (extracted) => {
+  withExtractedTarball(packageRoot, "elmera-ui-pack-", (extracted, tarball) => {
+    runInherited("pnpm", ["exec", "publint", tarball]);
+    runInherited("pnpm", [
+      "exec",
+      "attw",
+      tarball,
+      "--profile",
+      "esm-only",
+      "--exclude-entrypoints",
+      "css",
+      "demo-stage-comfortable.css",
+      "styles.css",
+      "themes.css",
+    ]);
     const consumerRoot = join(dirname(extracted), "consumer");
     mkdirSync(consumerRoot, { recursive: true });
     linkConsumerModules(consumerRoot, extracted);

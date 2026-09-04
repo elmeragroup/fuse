@@ -155,8 +155,6 @@ describe("ToggleGroup", () => {
     const root = groupNamed("Segmented");
     expect(root.getAttribute("data-spacing")).toBe("0");
     expect(root.style.getPropertyValue("--gap")).toBe("0");
-    expect(buttonNamed("One")).toBeTruthy();
-    expect(buttonNamed("Two")).toBeTruthy();
   });
 
   it("keeps --gap when the consumer passes style", () => {

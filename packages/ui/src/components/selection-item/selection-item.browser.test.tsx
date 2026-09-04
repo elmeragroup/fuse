@@ -62,14 +62,11 @@ function controlSlot(shell: HTMLElement): HTMLElement {
 }
 
 function subsectionHost(from: HTMLElement): HTMLElement {
-  let current: HTMLElement | null = from;
-  while (current) {
-    if (current.hasAttribute("data-mode") || current.getAttribute("aria-hidden") === "true") {
-      return current;
-    }
-    current = current.parentElement;
+  const host = from.closest("[data-mode], [aria-hidden='true']");
+  if (!(host instanceof HTMLElement)) {
+    throw new Error("expected a subsection host");
   }
-  throw new Error("expected a subsection host");
+  return host;
 }
 
 function subsectionSpacer(label: string): HTMLElement {

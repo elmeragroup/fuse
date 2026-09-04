@@ -103,7 +103,7 @@ describe("Toggle", () => {
     expect(toggle.getAttribute("data-slot")).toBe("toggle");
   });
 
-  it("renders variant and size classes without leaking invalid tokens, and keeps the icon-start hook", () => {
+  it("stamps data-slot=toggle on each face and keeps the icon-start hook", () => {
     renderThemed(
       <>
         <Toggle variant="default">Default</Toggle>

@@ -11,6 +11,7 @@ import {
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
 import {
   CONTROL_MD,
+  fieldRootFrom,
   fkasExternal,
   px,
   renderThemed,
@@ -24,17 +25,9 @@ function renderField(node: ReactNode, locale: (typeof SUPPORTED_LOCALES)[number]
   return renderThemed(withLocale(locale, node));
 }
 
-function fieldRootFrom(name: string): HTMLElement {
-  const root = textboxNamed(name).closest("[data-orientation]");
-  if (!(root instanceof HTMLElement)) {
-    throw new Error(`expected field root around ${name}`);
-  }
-  return root;
-}
-
 /** The label-row status glyphs: every icon in the field that is not a stepper button's. */
 function statusSvgs(name: string): SVGElement[] {
-  return [...fieldRootFrom(name).getElementsByTagName("svg")].filter((svg) => svg.closest("button") === null);
+  return [...fieldRootFrom(name).querySelectorAll("svg")].filter((svg) => svg.closest("button") === null);
 }
 
 function groupFrom(name: string): HTMLElement {
@@ -54,7 +47,7 @@ function buttonNamed(name: string): HTMLElement {
 }
 
 function stepperIn(fieldName: string, name: "Increase" | "Decrease"): HTMLElement {
-  const match = [...fieldRootFrom(fieldName).getElementsByTagName("button")].find(
+  const match = [...fieldRootFrom(fieldName).querySelectorAll("button")].find(
     (button) => button.getAttribute("aria-label") === name
   );
   if (!(match instanceof HTMLElement)) {
@@ -260,7 +253,7 @@ describe("NumberField", () => {
     // number-field.md §8.7 (2026-09-03): the two faces crossfade like TextField's
     // instead of stacking side by side, so both are always in the DOM and exactly one
     // is opaque.
-    expect(fieldRootFrom("Pending").getElementsByTagName("label")).toHaveLength(0);
+    expect(fieldRootFrom("Pending").querySelectorAll("label")).toHaveLength(0);
 
     const pendingSvgs = statusSvgs("Pending");
     expect(pendingSvgs).toHaveLength(2);

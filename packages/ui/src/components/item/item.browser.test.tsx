@@ -3,26 +3,15 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
-import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
+import { renderThemed, roleNamed, textNamed } from "../../../test/themed-browser-render";
 import { Item } from "./item";
 
-function textNamed(name: string): HTMLElement {
-  const element = page.getByText(name, { exact: true }).element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error(`expected text ${name}`);
-  }
-  return element;
-}
-
 function footerHost(name: string): HTMLElement {
-  let node: HTMLElement | null = textNamed(name);
-  while (node) {
-    if (node.hasAttribute("data-mode")) {
-      return node;
-    }
-    node = node.parentElement;
+  const host = textNamed(name).closest("[data-mode]");
+  if (!(host instanceof HTMLElement)) {
+    throw new Error(`expected a footer around ${name}`);
   }
-  throw new Error(`expected a footer around ${name}`);
+  return host;
 }
 
 describe("Item", () => {

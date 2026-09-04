@@ -157,6 +157,7 @@
         "elmera/enforce-variant-standard": "error",
         "elmera/no-local-focus-ring": "error",
         "elmera/restrict-focus-ring-call": "error",
+        "elmera/restrict-browser-helper-copy": "error",
         "elmera/no-field-part-jsx": "error",
         "elmera/require-icon-button-label": "error",
         "elmera/restrict-process-env": "error",
@@ -184,6 +185,18 @@
       "files": ["apps/docs/src/**/*.{ts,tsx}"],
       "rules": {
         "elmera/no-raw-class-map": "error"
+      }
+    },
+    {
+      "files": ["packages/ui/test/**/*.{ts,tsx}"],
+      "rules": {
+        "elmera/restrict-browser-helper-copy": "error"
+      }
+    },
+    {
+      "files": ["packages/ui/scripts/**"],
+      "rules": {
+        "elmera/restrict-package-root-from-script": "error"
       }
     },
     {

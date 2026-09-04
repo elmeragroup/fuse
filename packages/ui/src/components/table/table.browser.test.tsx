@@ -237,7 +237,7 @@ describe("VerticalTable", () => {
         </VerticalTable.Row>
       </VerticalTable.Body>
     );
-    expect(document.querySelectorAll("#facts")).toHaveLength(1);
+    expect(document.body.querySelectorAll("#facts")).toHaveLength(1);
     const wrapper = document.getElementById("facts");
     expect(wrapper?.getAttribute("data-slot")).toBe("vertical-table");
     expect(wrapper instanceof HTMLElement ? px(getComputedStyle(wrapper).maxWidth) : 0).toBe(448);
@@ -264,8 +264,8 @@ describe("VerticalTable", () => {
     );
 
     expect(htmlTable("Customer")).toBeTruthy();
-    expect(document.querySelectorAll("#facts")).toHaveLength(1);
-    expect(document.querySelectorAll("#facts-table")).toHaveLength(1);
+    expect(document.body.querySelectorAll("#facts")).toHaveLength(1);
+    expect(document.body.querySelectorAll("#facts-table")).toHaveLength(1);
     expect(document.getElementById("facts")?.getAttribute("aria-labelledby")).toBe("wrapper-only");
     expect(htmlTable("Customer").id).toBe("facts-table");
 

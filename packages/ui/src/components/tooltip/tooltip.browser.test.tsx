@@ -9,20 +9,12 @@ import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme/theme-scope";
 import { Tooltip } from "./tooltip";
 
-function triggerNamed(name: string): HTMLElement {
-  return roleNamed("button", name);
-}
-
-function tooltipNamed(name: string): HTMLElement {
-  return roleNamed("tooltip", name);
-}
-
 async function hoverOpen(name: string, tooltipName = name): Promise<HTMLElement> {
-  await userEvent.hover(triggerNamed(name));
+  await userEvent.hover(roleNamed("button", name));
   await vi.waitFor(() => {
     expect(page.getByRole("tooltip", { name: tooltipName, exact: true }).query()).not.toBeNull();
   });
-  return tooltipNamed(tooltipName);
+  return roleNamed("tooltip", tooltipName);
 }
 
 describe("Tooltip", () => {
@@ -76,7 +68,7 @@ describe("Tooltip", () => {
     await vi.waitFor(() => {
       expect(page.getByRole("tooltip").query()).toBeNull();
     });
-    expect(document.activeElement).toBe(triggerNamed("Hint"));
+    expect(document.activeElement).toBe(roleNamed("button", "Hint"));
 
     await userEvent.click(previous);
     await userEvent.keyboard("{Tab}");
@@ -100,7 +92,7 @@ describe("Tooltip", () => {
       </Tooltip.Provider>
     );
 
-    const trigger = triggerNamed("Hint");
+    const trigger = roleNamed("button", "Hint");
     await hoverOpen("Hint", "Add to library");
     await expect.element(trigger).toHaveAccessibleDescription("Add to library");
   });
@@ -121,7 +113,7 @@ describe("Tooltip", () => {
 
     await hoverOpen("First", "First tip");
     const started = performance.now();
-    await userEvent.hover(triggerNamed("Second"));
+    await userEvent.hover(roleNamed("button", "Second"));
     await vi.waitFor(() => {
       expect(page.getByRole("tooltip", { name: "Second tip", exact: true }).query()).not.toBeNull();
     });
@@ -143,7 +135,7 @@ describe("Tooltip", () => {
     );
 
     await hoverOpen("Grouped", "Grouped tip");
-    await userEvent.hover(triggerNamed("Scoped"));
+    await userEvent.hover(roleNamed("button", "Scoped"));
     await vi.waitFor(() => {
       expect(page.getByRole("tooltip", { name: "Grouped tip", exact: true }).query()).toBeNull();
     });
@@ -169,7 +161,7 @@ describe("Tooltip", () => {
       </div>
     );
 
-    const tooltip = tooltipNamed("Add to library");
+    const tooltip = roleNamed("tooltip", "Add to library");
     expect(tooltip.getAttribute("data-side")).toBe("top");
     const arrow = tooltip.querySelector("[data-side]");
     expect(arrow).not.toBeNull();
@@ -188,7 +180,7 @@ describe("Tooltip", () => {
       </div>
     );
 
-    const placed = tooltipNamed("Add to library");
+    const placed = roleNamed("tooltip", "Add to library");
     expect(placed.getAttribute("data-side")).toBe("left");
     expect(placed.getAttribute("data-align")).toBe("start");
   });
@@ -226,7 +218,7 @@ describe("Tooltip", () => {
       );
     }
     renderThemed(<ExplicitContainer />);
-    const tooltip = tooltipNamed("Add to library");
+    const tooltip = roleNamed("tooltip", "Add to library");
     const island = page.getByRole("region", { name: "Theme island", exact: true }).element();
     expect(island.contains(tooltip)).toBe(true);
     expect([...document.body.children].includes(tooltip)).toBe(false);
@@ -277,7 +269,7 @@ describe("Tooltip", () => {
       </>
     );
     const previous = page.getByRole("button", { name: "Before", exact: true }).element();
-    const trigger = triggerNamed("Hint");
+    const trigger = roleNamed("button", "Hint");
     if (!(previous instanceof HTMLElement)) {
       throw new Error("expected before button");
     }

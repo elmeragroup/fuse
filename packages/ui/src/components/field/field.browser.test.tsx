@@ -3,24 +3,15 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { cssVarColor, renderThemed, roleNamed, textboxNamed } from "../../../test/themed-browser-render";
+import {
+  cssVarColor,
+  fieldRootFrom,
+  renderThemed,
+  roleNamed,
+  textNamed,
+  textboxNamed,
+} from "../../../test/themed-browser-render";
 import { Field } from "./field";
-
-function fieldRootFrom(name: string): HTMLElement {
-  const root = textboxNamed(name).closest("[data-orientation]");
-  if (!(root instanceof HTMLElement)) {
-    throw new Error(`expected field root around ${name}`);
-  }
-  return root;
-}
-
-function textNamed(name: string): HTMLElement {
-  const element = page.getByText(name, { exact: true }).element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error(`expected text ${name}`);
-  }
-  return element;
-}
 
 describe("Field", () => {
   it("associates the label with a control fixture", () => {

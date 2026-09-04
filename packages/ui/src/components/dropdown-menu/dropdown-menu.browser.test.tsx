@@ -5,8 +5,9 @@ import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import "../../../dist/themes.css";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
-import { renderThemed } from "../../../test/themed-browser-render";
+import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme/theme-scope";
 import { DropdownMenu } from "./dropdown-menu";
 
@@ -468,7 +469,7 @@ describe("DropdownMenu", () => {
     const item = itemNamed("Delete");
     expect(item.getAttribute("data-variant")).toBe("destructive");
     expect(item.getAttribute("data-inset")).toBe("true");
-    expect(getComputedStyle(item).color).not.toBe("rgba(0, 0, 0, 0)");
+    expect(getComputedStyle(item).color).toBe(cssVarColor(item, "--error"));
   });
 
   it("portals Content into the enclosing ThemeScope instead of the document body", async () => {

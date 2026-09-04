@@ -2,16 +2,8 @@ import { describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
+import { renderThemed, roleNamed, textNamed } from "../../../test/themed-browser-render";
 import { Empty } from "./empty";
-
-function textNamed(name: string): HTMLElement {
-  const element = page.getByText(name, { exact: true }).element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error(`expected text ${name}`);
-  }
-  return element;
-}
 
 describe("Empty", () => {
   it("renders title, description, and content children reachable by text", () => {

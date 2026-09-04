@@ -54,14 +54,6 @@ function renderPagination(node: ReactNode, locale: (typeof SUPPORTED_LOCALES)[nu
   return renderThemed(withLocale(locale, node));
 }
 
-function navNamed(name: string): HTMLElement {
-  return roleNamed("navigation", name);
-}
-
-function linkNamed(name: string): HTMLElement {
-  return roleNamed("link", name);
-}
-
 function BasicPages() {
   return (
     <Pagination.Root>
@@ -91,24 +83,24 @@ function BasicPages() {
 describe("Pagination", () => {
   it("is a navigation landmark named Pagination in en-US, with page links by name", () => {
     renderPagination(<BasicPages />);
-    expect(navNamed("Pagination").getAttribute("data-slot")).toBe("pagination");
-    expect(linkNamed("1").getAttribute("href")).toBe("#1");
-    expect(linkNamed("2").getAttribute("href")).toBe("#2");
-    expect(linkNamed("Go to previous page").getAttribute("data-slot")).toBe("pagination-previous");
-    expect(linkNamed("Go to next page").getAttribute("data-slot")).toBe("pagination-next");
+    expect(roleNamed("navigation", "Pagination").getAttribute("data-slot")).toBe("pagination");
+    expect(roleNamed("link", "1").getAttribute("href")).toBe("#1");
+    expect(roleNamed("link", "2").getAttribute("href")).toBe("#2");
+    expect(roleNamed("link", "Go to previous page").getAttribute("data-slot")).toBe("pagination-previous");
+    expect(roleNamed("link", "Go to next page").getAttribute("data-slot")).toBe("pagination-next");
   });
 
   it("exposes aria-current=page only on the active link, never false", () => {
     renderPagination(<BasicPages />);
-    expect(linkNamed("1").getAttribute("aria-current")).toBe("page");
-    expect(linkNamed("2").hasAttribute("aria-current")).toBe(false);
-    expect(linkNamed("2").getAttribute("aria-current")).toBeNull();
-    expect(linkNamed("Go to previous page").hasAttribute("aria-current")).toBe(false);
+    expect(roleNamed("link", "1").getAttribute("aria-current")).toBe("page");
+    expect(roleNamed("link", "2").hasAttribute("aria-current")).toBe(false);
+    expect(roleNamed("link", "2").getAttribute("aria-current")).toBeNull();
+    expect(roleNamed("link", "Go to previous page").hasAttribute("aria-current")).toBe(false);
   });
 
   it("lets an explicit aria-label win over the label prop and the dictionary", () => {
     const { unmount: unmountDefault } = renderPagination(<BasicPages />);
-    expect(navNamed("Pagination")).toBeTruthy();
+    expect(roleNamed("navigation", "Pagination")).toBeTruthy();
     unmountDefault();
 
     const { unmount: unmountLabel } = renderPagination(
@@ -116,7 +108,7 @@ describe("Pagination", () => {
         <Pagination.Content />
       </Pagination.Root>
     );
-    expect(navNamed("Pages")).toBeTruthy();
+    expect(roleNamed("navigation", "Pages")).toBeTruthy();
     expect(page.getByRole("navigation", { name: "Pagination", exact: true }).query()).toBeNull();
     unmountLabel();
 
@@ -125,7 +117,7 @@ describe("Pagination", () => {
         <Pagination.Content />
       </Pagination.Root>
     );
-    expect(navNamed("Invoice pages")).toBeTruthy();
+    expect(roleNamed("navigation", "Invoice pages")).toBeTruthy();
     expect(page.getByRole("navigation", { name: "Pages", exact: true }).query()).toBeNull();
     expect(page.getByRole("navigation", { name: "Pagination", exact: true }).query()).toBeNull();
   });
@@ -133,9 +125,9 @@ describe("Pagination", () => {
   it("resolves landmark, Previous/Next, and ellipsis copy in every locale and lets overrides win", () => {
     for (const locale of SUPPORTED_LOCALES) {
       const { unmount } = renderPagination(<BasicPages />, locale);
-      expect(navNamed(LANDMARK_COPY[locale]), locale).toBeTruthy();
-      const previous = linkNamed(GO_TO_PREVIOUS_COPY[locale]);
-      const next = linkNamed(GO_TO_NEXT_COPY[locale]);
+      expect(roleNamed("navigation", LANDMARK_COPY[locale]), locale).toBeTruthy();
+      const previous = roleNamed("link", GO_TO_PREVIOUS_COPY[locale]);
+      const next = roleNamed("link", GO_TO_NEXT_COPY[locale]);
       expect(previous.textContent, locale).toContain(PREVIOUS_COPY[locale]);
       expect(next.textContent, locale).toContain(NEXT_COPY[locale]);
       expect(page.getByText(MORE_PAGES_COPY[locale], { exact: true }).element(), locale).toBeTruthy();
@@ -158,8 +150,8 @@ describe("Pagination", () => {
       </Pagination.Root>,
       "nb-NO"
     );
-    expect(linkNamed("Earlier page").textContent).toContain("Back");
-    expect(linkNamed("Later page").textContent).toContain("Forward");
+    expect(roleNamed("link", "Earlier page").textContent).toContain("Back");
+    expect(roleNamed("link", "Later page").textContent).toContain("Forward");
     expect(page.getByRole("link", { name: "Gå til forrige side", exact: true }).query()).toBeNull();
     expect(page.getByRole("link", { name: "Gå til neste side", exact: true }).query()).toBeNull();
     expect(page.getByText("Hidden pages", { exact: true }).element()).toBeTruthy();
@@ -176,8 +168,8 @@ describe("Pagination", () => {
     if (!(ellipsis instanceof HTMLElement)) {
       throw new Error("expected pagination ellipsis");
     }
-    const icon = ellipsis.getElementsByTagName("svg")[0];
-    expect(icon).not.toBeUndefined();
+    const icon = ellipsis.querySelector("svg");
+    expect(icon).not.toBeNull();
     expect(icon?.getAttribute("aria-hidden")).toBe("true");
     expect(ellipsis.getAttribute("aria-hidden")).toBeNull();
     expect(ellipsis.getAttribute("data-slot")).toBe("pagination-ellipsis");
@@ -185,8 +177,8 @@ describe("Pagination", () => {
 
   it("maps isActive onto the outline button variant and leaves others ghost", () => {
     renderPagination(<BasicPages />);
-    const active = linkNamed("1");
-    const inactive = linkNamed("2");
+    const active = roleNamed("link", "1");
+    const inactive = roleNamed("link", "2");
     expect(active.getAttribute("data-slot")).toBe("pagination-link");
     expect(inactive.getAttribute("data-slot")).toBe("pagination-link");
     expect(getComputedStyle(active).borderTopColor).not.toBe(getComputedStyle(inactive).borderTopColor);

@@ -117,13 +117,4 @@ describe("source-export generation ownership", () => {
     expect(writeSourceExportsEntry).toContain("writeSourceExports(");
     expect(scripts["generate:exports"]).toContain("scripts/write-source-exports.ts");
   });
-
-  it("copies published dependency ranges in a loop over PUBLISHED_DEPENDENCY_RANGES keys", () => {
-    const generateExports = readFileSync(join(packageRoot, "scripts/generate-exports.ts"), "utf8");
-    expect(generateExports).toMatch(/for \(const name of Object\.keys\(/);
-    expect(generateExports).toContain("PUBLISHED_DEPENDENCY_RANGES");
-    expect(generateExports).not.toContain(
-      'dependencies["react-aria-components"] = PUBLISHED_DEPENDENCY_RANGES'
-    );
-  });
 });

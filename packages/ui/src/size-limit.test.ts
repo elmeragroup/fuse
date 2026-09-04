@@ -16,43 +16,6 @@ import {
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
-function gzipBudgets() {
-  return [...JS_ENTRY_BUDGETS, ...NAMED_IMPORT_BUDGETS, ...CSS_BUDGETS];
-}
-
-type SourceBudgetRow = {
-  name: string;
-  measuredGzip: number;
-  ceilingGzip?: number;
-};
-
-const BUDGET_OBJECT = /\{\s*name:\s*"([^"]+)"([^}]*)\}/g;
-
-function fieldNumber(body: string, field: string): number | undefined {
-  const match = new RegExp(`${field}:\\s*(\\d+)`).exec(body);
-  const value = match?.[1];
-  return value === undefined ? undefined : Number(value);
-}
-
-/** Source rows only — does not apply derivation. */
-function parseSourceGzipRows(source: string): SourceBudgetRow[] {
-  const rows: SourceBudgetRow[] = [];
-  for (const match of source.matchAll(BUDGET_OBJECT)) {
-    const name = match[1];
-    const body = match[2] ?? "";
-    if (name === undefined || !body.includes("measuredGzip:")) {
-      continue;
-    }
-    const measuredGzip = fieldNumber(body, "measuredGzip");
-    if (measuredGzip === undefined) {
-      continue;
-    }
-    const ceilingGzip = fieldNumber(body, "ceilingGzip");
-    rows.push(ceilingGzip === undefined ? { name, measuredGzip } : { name, measuredGzip, ceilingGzip });
-  }
-  return rows;
-}
-
 describe("size-limit harness", () => {
   it("is not the stub true script", () => {
     const parsed: unknown = JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8"));
@@ -164,47 +127,5 @@ describe("size-limit harness", () => {
     });
     // Ticket-46 standing ceilings may sit slightly above a fresh ×1.5 (badge, date-picker).
     expect(withDerivedCeiling({ measuredGzip: 15658, ceilingGzip: 23493 }).ceilingGzip).toBe(23493);
-  });
-
-  it("exports each budget ceiling as explicit ?? ceilingFromMeasured(measured)", () => {
-    const budgetsSource = readFileSync(join(packageRoot, "scripts/size-budgets.ts"), "utf8");
-    expect(budgetsSource).toContain("withDerivedCeiling");
-    const parsed = parseSourceGzipRows(budgetsSource);
-    const exported = gzipBudgets();
-    expect(parsed.map((row) => row.name)).toEqual(exported.map((budget) => budget.name));
-    for (const [index, row] of parsed.entries()) {
-      const budget = exported[index];
-      expect(budget, row.name).toBeDefined();
-      expect(budget?.measuredGzip, row.name).toBe(row.measuredGzip);
-      expect(budget?.ceilingGzip, row.name).toBe(row.ceilingGzip ?? ceilingFromMeasured(row.measuredGzip));
-    }
-  });
-
-  it("shares packed extract+symlink with package-check through withExtractedTarball", () => {
-    const tarball = readFileSync(join(packageRoot, "scripts/tarball.ts"), "utf8");
-    expect(tarball).toContain("export function withExtractedTarball");
-    expect(tarball).toContain("export function extractPackedPackage");
-    expect(tarball).toContain("export const ARTIFACTS_DIR");
-    expect(readFileSync(join(packageRoot, "scripts/package-check.ts"), "utf8")).toContain(
-      "withExtractedTarball"
-    );
-    expect(readFileSync(join(packageRoot, "scripts/size-limit.ts"), "utf8")).toContain(
-      "withExtractedTarball"
-    );
-    expect(readFileSync(join(packageRoot, "scripts/package-check.ts"), "utf8")).not.toContain(
-      "function extractPackedPackage"
-    );
-    expect(readFileSync(join(packageRoot, "scripts/size-limit.ts"), "utf8")).not.toContain("symlinkSync");
-    expect(readFileSync(join(packageRoot, "scripts/package-check.ts"), "utf8")).not.toContain("mkdtempSync");
-    expect(readFileSync(join(packageRoot, "scripts/size-limit.ts"), "utf8")).not.toContain("mkdtempSync");
-  });
-
-  it("packs the tarball outside the dist tree", () => {
-    const source = readFileSync(join(packageRoot, "scripts/pack.ts"), "utf8");
-    expect(source).toContain("--pack-destination");
-    expect(source).toContain("ARTIFACTS_DIR");
-    expect(source).toContain("findTarball");
-    expect(source).not.toContain("copyFileSync");
-    expect(source).not.toContain("readdirSync(dist)");
   });
 });

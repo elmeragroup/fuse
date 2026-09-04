@@ -13,7 +13,7 @@ import { selfFocusRingClass } from "../../styles/utils";
  * Visibility face for the Radix-style `type` prop (scroll-area.md §4).
  * `keepMounted` is not a class, so it stays on {@link SCROLLBAR_KEEP_MOUNTED}.
  */
-const scrollbarTypeVariants = tv({
+export const scrollbarTypeVariants = tv({
   variants: {
     type: {
       always: "opacity-100",

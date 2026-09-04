@@ -7,22 +7,14 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
+import { FLAG_RAW_CEILING_BYTES } from "../../../packages/ui/scripts/flag-payload.ts";
 import { repoRoot, uiRoot } from "../scripts/lib/paths.ts";
 import { parseBudgets, parseMeasuredOn } from "../scripts/lib/sizes.ts";
+import { specSection } from "./spec-section.ts";
 
 const performanceSpec = readFileSync(join(repoRoot, "docs/spec/performance.md"), "utf8");
 const sizeBudgetsPath = join(uiRoot, "scripts/size-budgets.ts");
 const sizeBudgetsSource = readFileSync(sizeBudgetsPath, "utf8");
-
-function specSection(markdown: string, heading: string): string {
-  const start = markdown.indexOf(`## ${heading}`);
-  if (start === -1) {
-    throw new Error(`docs/spec/performance.md is missing ## ${heading}`);
-  }
-  const fromHeading = markdown.slice(start);
-  const next = fromHeading.slice(3).search(/\n## /);
-  return next === -1 ? fromHeading : fromHeading.slice(0, 3 + next);
-}
 
 function parseEmbeddedGzipRows(section: string): Map<string, { measuredGzip: number; ceilingGzip: number }> {
   const rows = new Map<string, { measuredGzip: number; ceilingGzip: number }>();
@@ -61,13 +53,8 @@ describe("performance.md §2 tracks size-budgets.ts", () => {
   });
 
   it("records the flag SVG raw ceiling from FLAG_RAW_CEILING_BYTES", () => {
-    const flagPayload = readFileSync(join(uiRoot, "scripts/flag-payload.ts"), "utf8");
-    const factors = /export const FLAG_RAW_CEILING_BYTES = (\d+)\s*\*\s*(\d+)/.exec(flagPayload);
-    expect(factors?.[1], "flag-payload.ts FLAG_RAW_CEILING_BYTES factors").toBeDefined();
-    expect(factors?.[2], "flag-payload.ts FLAG_RAW_CEILING_BYTES factors").toBeDefined();
-    const ceilingBytes = Number(factors?.[1]) * Number(factors?.[2]);
     expect(section).toContain("flags/*.svg");
-    expect(section).toContain(String(ceilingBytes));
+    expect(section).toContain(String(FLAG_RAW_CEILING_BYTES));
   });
 });
 

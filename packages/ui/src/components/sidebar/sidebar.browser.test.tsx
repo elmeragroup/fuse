@@ -18,6 +18,7 @@ import {
   stampDensity,
   textboxNamed,
 } from "../../../test/themed-browser-render";
+import { Tooltip } from "../tooltip/tooltip";
 import { Sidebar, useSidebar } from "./sidebar";
 import type { SidebarContextValue, SidebarProviderProps, SidebarRootProps } from "./sidebar";
 
@@ -151,10 +152,6 @@ function menuList(): HTMLElement {
 }
 
 /** Trigger is the only tab-stop named from sidebar.toggle; Rail is aria-hidden. */
-function triggerNamed(name: string): HTMLElement {
-  return roleNamed("button", name);
-}
-
 function railNamed(name: string): HTMLButtonElement {
   const rail = page.getByTitle(name, { exact: true }).element();
   if (!(rail instanceof HTMLButtonElement)) {
@@ -256,7 +253,7 @@ describe("Sidebar toggle paths", () => {
         </Sidebar.Provider>
       )
     );
-    const trigger = triggerNamed("Toggle sidebar");
+    const trigger = roleNamed("button", "Toggle sidebar");
     expect(trigger.getAttribute("data-slot")).toBe("sidebar-trigger");
     expect(trigger.getAttribute("aria-label")).toBe("Toggle sidebar");
     expect(trigger.querySelector(".sr-only")?.textContent).toBe("Toggle sidebar");
@@ -286,8 +283,8 @@ describe("Sidebar callback stability", () => {
     const seen: SidebarContextValue[] = [];
     renderThemed(<Frame probe={<ContextProbe onValue={(value) => seen.push(value)} />} />);
 
-    await userEvent.click(triggerNamed(TOGGLE_COPY["en-US"]));
-    await userEvent.click(triggerNamed(TOGGLE_COPY["en-US"]));
+    await userEvent.click(roleNamed("button", TOGGLE_COPY["en-US"]));
+    await userEvent.click(roleNamed("button", TOGGLE_COPY["en-US"]));
 
     expect(seen.length, "three context values: mount plus two toggles").toBe(3);
     expect(seen.map((value) => value.open)).toEqual([true, false, true]);
@@ -303,8 +300,8 @@ describe("Sidebar callback stability", () => {
       const addedOnMount = added.mock.calls.filter(([type]) => type === "keydown").length;
       expect(addedOnMount, "one keydown subscription on mount").toBe(1);
 
-      await userEvent.click(triggerNamed(TOGGLE_COPY["en-US"]));
-      await userEvent.click(triggerNamed(TOGGLE_COPY["en-US"]));
+      await userEvent.click(roleNamed("button", TOGGLE_COPY["en-US"]));
+      await userEvent.click(roleNamed("button", TOGGLE_COPY["en-US"]));
 
       expect(added.mock.calls.filter(([type]) => type === "keydown").length).toBe(addedOnMount);
       expect(removed.mock.calls.filter(([type]) => type === "keydown").length).toBe(0);
@@ -331,11 +328,11 @@ describe("Sidebar callback stability", () => {
     const afterMount = renders;
     expect(afterMount).toBeGreaterThan(0);
 
-    await userEvent.click(triggerNamed(TOGGLE_COPY["en-US"]));
+    await userEvent.click(roleNamed("button", TOGGLE_COPY["en-US"]));
     expect(sidebarRoot().getAttribute("data-state"), "the rail really toggled").toBe("collapsed");
     expect(renders, "menu button render count is unchanged by the toggle").toBe(afterMount);
 
-    await userEvent.click(triggerNamed(TOGGLE_COPY["en-US"]));
+    await userEvent.click(roleNamed("button", TOGGLE_COPY["en-US"]));
     expect(sidebarRoot().getAttribute("data-state")).toBe("expanded");
     expect(renders).toBe(afterMount);
   });
@@ -345,14 +342,14 @@ describe("Sidebar locale copy", () => {
   for (const locale of SUPPORTED_LOCALES) {
     it(`labels the Trigger and Rail from the ${locale} dictionary`, () => {
       renderThemed(<Frame locale={locale} />);
-      expect(triggerNamed(TOGGLE_COPY[locale]).getAttribute("data-slot")).toBe("sidebar-trigger");
+      expect(roleNamed("button", TOGGLE_COPY[locale]).getAttribute("data-slot")).toBe("sidebar-trigger");
       expect(railNamed(TOGGLE_COPY[locale]).getAttribute("title")).toBe(TOGGLE_COPY[locale]);
     });
 
     it(`titles and describes the mobile Sheet from the ${locale} dictionary`, async () => {
       await page.viewport(MOBILE.width, MOBILE.height);
       renderThemed(<Frame locale={locale} />);
-      await userEvent.click(triggerNamed(TOGGLE_COPY[locale]));
+      await userEvent.click(roleNamed("button", TOGGLE_COPY[locale]));
       await expect.element(page.getByRole("dialog", { name: TITLE_COPY[locale] })).toBeVisible();
       const dialog = element(page.getByRole("dialog", { name: TITLE_COPY[locale] }));
       const description = page.getByText(DESCRIPTION_COPY[locale], { exact: true }).element();
@@ -364,11 +361,11 @@ describe("Sidebar locale copy", () => {
     renderThemed(
       <Frame provider={{ labels: { toggle: "Menu", title: "Navigation", description: "Site links." } }} />
     );
-    expect(triggerNamed("Menu").getAttribute("data-slot")).toBe("sidebar-trigger");
+    expect(roleNamed("button", "Menu").getAttribute("data-slot")).toBe("sidebar-trigger");
     expect(railNamed("Menu").getAttribute("title")).toBe("Menu");
 
     await page.viewport(MOBILE.width, MOBILE.height);
-    await userEvent.click(triggerNamed("Menu"));
+    await userEvent.click(roleNamed("button", "Menu"));
     await expect.element(page.getByRole("dialog", { name: "Navigation" })).toBeVisible();
     expect(page.getByText("Site links.", { exact: true }).query()).not.toBeNull();
   });
@@ -378,8 +375,8 @@ describe("Sidebar cookie persistence", () => {
   it("writes sidebar:state with path and seven-day max-age on every toggle", async () => {
     renderThemed(<Frame />);
     const writes = await captureCookieWrites(async () => {
-      await userEvent.click(triggerNamed("Toggle sidebar"));
-      await userEvent.click(triggerNamed("Toggle sidebar"));
+      await userEvent.click(roleNamed("button", "Toggle sidebar"));
+      await userEvent.click(roleNamed("button", "Toggle sidebar"));
     });
     expect(writes).toEqual([
       "sidebar:state=false; path=/; max-age=604800",
@@ -392,7 +389,7 @@ describe("Sidebar cookie persistence", () => {
     const onOpenChange = vi.fn();
     renderThemed(<Frame provider={{ open: true, onOpenChange }} />);
     const writes = await captureCookieWrites(async () => {
-      await userEvent.click(triggerNamed("Toggle sidebar"));
+      await userEvent.click(roleNamed("button", "Toggle sidebar"));
     });
     expect(onOpenChange).toHaveBeenCalledWith(false);
     expect(writes).toEqual(["sidebar:state=false; path=/; max-age=604800"]);
@@ -453,7 +450,7 @@ describe("Sidebar controlled and uncontrolled state", () => {
     const { rerender } = renderThemed(<Frame provider={{ open: false, onOpenChange }} />);
     expect(sidebarRoot().getAttribute("data-state")).toBe("collapsed");
 
-    await userEvent.click(triggerNamed("Toggle sidebar"));
+    await userEvent.click(roleNamed("button", "Toggle sidebar"));
     expect(onOpenChange).toHaveBeenCalledWith(true);
     expect(sidebarRoot().getAttribute("data-state")).toBe("collapsed");
 
@@ -589,25 +586,28 @@ describe("Sidebar sanctioned motion", () => {
 describe("Sidebar.MenuButton tooltip", () => {
   function TooltipFrame({ defaultOpen, tooltip }: { defaultOpen: boolean; tooltip: "string" | "object" }) {
     return (
-      <Frame provider={{ defaultOpen }} root={{ collapsible: "icon" }}>
-        <Sidebar.MenuItem>
-          <Sidebar.MenuButton
-            tooltip={tooltip === "string" ? "Orders" : { children: "Orders", sideOffset: 12 }}
-            render={<a href="/orders" />}>
-            <span>Orders</span>
-          </Sidebar.MenuButton>
-        </Sidebar.MenuItem>
-      </Frame>
+      <Tooltip.Provider delay={0}>
+        <Frame provider={{ defaultOpen }} root={{ collapsible: "icon" }}>
+          <Sidebar.MenuItem>
+            <Sidebar.MenuButton
+              tooltip={tooltip === "string" ? "Orders" : { children: "Orders", sideOffset: 12 }}
+              render={<a href="/orders" />}>
+              <span>Orders</span>
+            </Sidebar.MenuButton>
+          </Sidebar.MenuItem>
+        </Frame>
+      </Tooltip.Provider>
     );
   }
 
-  it("keeps the label hidden while expanded", async () => {
+  it("renders no tooltip while expanded", async () => {
     renderThemed(<TooltipFrame defaultOpen tooltip="string" />);
     const link = element(page.getByRole("link", { name: "Orders", exact: true }));
     await userEvent.hover(link);
     await vi.waitFor(() => {
       expect(link.matches(":hover")).toBe(true);
     });
+    await new Promise(requestAnimationFrame);
     expect(page.getByRole("tooltip", { name: "Orders", exact: true }).query()).toBeNull();
   });
 
@@ -650,7 +650,7 @@ describe("Sidebar.Root branches", () => {
     expect(page.getByRole("dialog").query()).toBeNull();
 
     await page.viewport(MOBILE.width, MOBILE.height);
-    await userEvent.click(triggerNamed("Toggle sidebar"));
+    await userEvent.click(roleNamed("button", "Toggle sidebar"));
     expect(page.getByRole("dialog").query()).toBeNull();
   });
 
@@ -695,7 +695,7 @@ describe("Sidebar.Root branches", () => {
     });
     expect(page.getByRole("dialog").query()).toBeNull();
 
-    await userEvent.click(triggerNamed("Toggle sidebar"));
+    await userEvent.click(roleNamed("button", "Toggle sidebar"));
     await expect.element(page.getByRole("dialog", { name: "Sidebar" })).toBeVisible();
     const dialog = element(page.getByRole("dialog", { name: "Sidebar" }));
     expect(dialog.getAttribute("data-slot")).toBe("sidebar");
@@ -1004,8 +1004,9 @@ describe("Sidebar data-slot audit", () => {
     }
     expect(document.querySelectorAll("[data-sidebar]")).toHaveLength(0);
     expect(bySlot("sidebar-separator").getAttribute("role")).toBe("separator");
-    expect(document.querySelectorAll('[data-slot="separator"]')).toHaveLength(0); // spec §9 slot audit
-    expect(document.querySelectorAll('[data-slot="input"]')).toHaveLength(0); // spec §9 slot audit
+    // spec §9 slot audit
+    expect(document.querySelectorAll('[data-slot="separator"]')).toHaveLength(0);
+    expect(document.querySelectorAll('[data-slot="input"]')).toHaveLength(0);
     expect(bySlot("sidebar-inset").tagName).toBe("MAIN");
     expect(bySlot("sidebar-menu").tagName).toBe("UL");
     expect(bySlot("sidebar-menu-item").tagName).toBe("LI");

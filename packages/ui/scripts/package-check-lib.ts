@@ -18,7 +18,7 @@ import {
 import { createVirtualFileSystem } from "typescript/unstable/fs";
 import { API } from "typescript/unstable/sync";
 
-import { isForbiddenRacSpecifier } from "./entries";
+import { isForbiddenRacSpecifier } from "./forbidden-rac-packages.js";
 import { toPosix } from "./paths";
 
 export type PackedEvalJson = { ok: true; value: unknown } | { ok: false; failure: string };
@@ -78,10 +78,6 @@ export function emittedDirectiveFailure(
     }
   }
   return undefined;
-}
-
-export function isForbiddenRacDeclarationSpecifier(specifier: string): boolean {
-  return isForbiddenRacSpecifier(specifier);
 }
 
 function stringLiteralText(node: Node | undefined): string | undefined {
@@ -183,7 +179,7 @@ function pushUnique(values: string[], value: string): void {
 function leaksFromSpecifiers(specifiers: readonly string[]): string[] {
   const leaks: string[] = [];
   for (const specifier of specifiers) {
-    if (isForbiddenRacDeclarationSpecifier(specifier)) {
+    if (isForbiddenRacSpecifier(specifier)) {
       pushUnique(leaks, specifier);
     }
   }
@@ -269,7 +265,7 @@ function collectReachableDeclarationLeaks(
       continue;
     }
     for (const specifier of parser.specifiers(readFileSync(filePath, "utf8"))) {
-      if (isForbiddenRacDeclarationSpecifier(specifier)) {
+      if (isForbiddenRacSpecifier(specifier)) {
         pushUnique(leaks, specifier);
         continue;
       }

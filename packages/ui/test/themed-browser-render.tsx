@@ -78,6 +78,22 @@ export function headingNamed(name: string, level?: 1 | 2 | 3 | 4 | 5 | 6): HTMLE
   return element;
 }
 
+export function textNamed(name: string): HTMLElement {
+  const element = page.getByText(name, { exact: true }).element();
+  if (!(element instanceof HTMLElement)) {
+    throw new Error(`expected text ${name}`);
+  }
+  return element;
+}
+
+export function fieldRootFrom(name: string): HTMLElement {
+  const root = textboxNamed(name).closest("[data-orientation]");
+  if (!(root instanceof HTMLElement)) {
+    throw new Error(`expected field root around ${name}`);
+  }
+  return root;
+}
+
 /**
  * The computed colour a role token resolves to, read where `host` sits in the cascade.
  *

@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { cssVarColor, headingNamed, renderThemed } from "../../../test/themed-browser-render";
+import { cssVarColor, headingNamed, renderThemed, textNamed } from "../../../test/themed-browser-render";
 import { Card } from "./card";
 
 function slot(name: string): HTMLElement {
@@ -11,14 +10,6 @@ function slot(name: string): HTMLElement {
   const element = document.querySelector(`[data-slot="${name}"]`);
   if (!(element instanceof HTMLElement)) {
     throw new Error(`expected an element with data-slot="${name}"`);
-  }
-  return element;
-}
-
-function textNamed(name: string): HTMLElement {
-  const element = page.getByText(name, { exact: true }).element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error(`expected text ${name}`);
   }
   return element;
 }
@@ -121,11 +112,11 @@ describe("Card", () => {
 
   it("lays the root out as a row for direction=horizontal and a column by default", () => {
     renderThemed(
-      <Card.Root aria-label="Horizontal card" direction="horizontal">
+      <Card.Root direction="horizontal">
         <Card.Content direction="horizontal">Body</Card.Content>
       </Card.Root>
     );
-    const root = page.getByLabelText("Horizontal card", { exact: true }).element();
+    const root = slot("card");
     if (!(root instanceof HTMLElement)) {
       throw new Error("expected the card root");
     }
@@ -134,11 +125,11 @@ describe("Card", () => {
 
   it("lays the root out as a column by default", () => {
     renderThemed(
-      <Card.Root aria-label="Vertical card">
+      <Card.Root>
         <Card.Content>Body</Card.Content>
       </Card.Root>
     );
-    const root = page.getByLabelText("Vertical card", { exact: true }).element();
+    const root = slot("card");
     if (!(root instanceof HTMLElement)) {
       throw new Error("expected the card root");
     }
@@ -162,11 +153,11 @@ describe("Card", () => {
 
   it("paints the card surface from tokens without a transparent fill", () => {
     renderThemed(
-      <Card.Root aria-label="Painted card">
+      <Card.Root>
         <Card.Content>Body</Card.Content>
       </Card.Root>
     );
-    const root = page.getByLabelText("Painted card", { exact: true }).element();
+    const root = slot("card");
     if (!(root instanceof HTMLElement)) {
       throw new Error("expected the card root");
     }

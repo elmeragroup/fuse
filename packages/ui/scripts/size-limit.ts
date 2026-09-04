@@ -12,15 +12,10 @@ import {
   JS_ENTRY_BUDGETS,
   NAMED_IMPORT_BUDGETS,
 } from "./size-budgets.ts";
-import { withExtractedTarball } from "./tarball.ts";
+import { fail, withExtractedTarball } from "./tarball.ts";
 
 const packageRoot = packageRootFromScript(import.meta.url);
 const PEER_EXTERNALS = ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime", "tailwindcss"];
-
-function fail(message: string): never {
-  console.error(message);
-  process.exit(1);
-}
 
 function gzipSize(bytes: Uint8Array): number {
   return gzipSync(bytes).byteLength;
@@ -37,7 +32,7 @@ function reportBudget(name: string, bytes: number, ceiling: number, unit: string
   console.log(`${name}: ${bytes} ${unit} (ceiling ${ceiling})`);
   const message = budgetFailure(name, bytes, ceiling);
   if (message !== undefined) {
-    fail(message);
+    throw new Error(message);
   }
 }
 
@@ -59,7 +54,7 @@ function rolldownBundle(input: string, output: string): void {
   }
   const result = spawnSync("pnpm", args, { cwd: packageRoot, encoding: "utf8" });
   if (result.status !== 0) {
-    fail(`rolldown failed for ${input}:\n${result.stderr || result.stdout}`);
+    throw new Error(`rolldown failed for ${input}:\n${result.stderr || result.stdout}`);
   }
 }
 
@@ -72,7 +67,7 @@ function checkJsEntry(
 ): void {
   const input = join(extracted, entryFile);
   if (!existsSync(input)) {
-    fail(`Packed entry ${name} missing ${entryFile}`);
+    throw new Error(`Packed entry ${name} missing ${entryFile}`);
   }
   const output = join(work, `${workStem(name)}.js`);
   rolldownBundle(input, output);
@@ -89,7 +84,7 @@ function checkNamedImport(
 ): void {
   const input = join(extracted, entryFile);
   if (!existsSync(input)) {
-    fail(`Packed entry ${name} missing ${entryFile}`);
+    throw new Error(`Packed entry ${name} missing ${entryFile}`);
   }
   const fixture = join(work, `${workStem(name)}.fixture.js`);
   writeFileSync(fixture, `export { ${exportName} } from ${JSON.stringify(input)};\n`);
@@ -101,7 +96,7 @@ function checkNamedImport(
 function checkCss(extracted: string, file: string, name: string, ceilingGzip: number): void {
   const path = join(extracted, file);
   if (!existsSync(path)) {
-    fail(`Packed CSS ${name} missing ${file}`);
+    throw new Error(`Packed CSS ${name} missing ${file}`);
   }
   reportBudget(name, gzipSize(readFileSync(path)), ceilingGzip, "gzip bytes");
 }
@@ -109,7 +104,7 @@ function checkCss(extracted: string, file: string, name: string, ceilingGzip: nu
 function checkFlagRaw(extracted: string, name: string, ceilingBytes: number): void {
   const flagsDir = join(extracted, "flags");
   if (!existsSync(flagsDir)) {
-    fail(`Packed ${name} missing flags/`);
+    throw new Error(`Packed ${name} missing flags/`);
   }
   const files = listFlagFiles(flagsDir);
   reportBudget(name, flagPayload(flagsDir, files).bytes, ceilingBytes, "raw bytes");

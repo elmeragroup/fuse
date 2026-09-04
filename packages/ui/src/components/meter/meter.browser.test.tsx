@@ -180,7 +180,7 @@ describe("Meter", () => {
     renderMeter(<Meter label="Storage used" value={42} />);
     const meter = roleNamed("meter", "Storage used");
     expect(meter.getAttribute("tabindex")).toBeNull();
-    expect(meter.getElementsByTagName("input")).toHaveLength(0);
+    expect(meter.querySelectorAll("input")).toHaveLength(0);
     meter.focus();
     expect(document.activeElement).not.toBe(meter);
   });

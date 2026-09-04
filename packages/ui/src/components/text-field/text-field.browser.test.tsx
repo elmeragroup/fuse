@@ -4,6 +4,7 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import {
   CONTROL_MD,
+  fieldRootFrom,
   fkasExternal,
   px,
   renderThemed,
@@ -12,18 +13,6 @@ import {
 } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme";
 import { TextField } from "./text-field";
-
-function fieldRootFrom(name: string): HTMLElement {
-  const control = textboxNamed(name);
-  let current = control.parentElement;
-  while (current) {
-    if (current.querySelectorAll("svg").length > 0) {
-      return current;
-    }
-    current = current.parentElement;
-  }
-  throw new Error(`expected field root around ${name}`);
-}
 
 function fieldSvgs(name: string): SVGElement[] {
   return [...fieldRootFrom(name).querySelectorAll("svg")];

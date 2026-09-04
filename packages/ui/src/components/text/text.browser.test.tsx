@@ -3,18 +3,10 @@ import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { cssVarColor, px, renderThemed } from "../../../test/themed-browser-render";
+import { cssVarColor, px, renderThemed, textNamed } from "../../../test/themed-browser-render";
 import { Text } from "./text";
 
 const WIDGET_ROLES = ["button", "link", "textbox", "checkbox", "radio", "listitem", "heading"] as const;
-
-function textNamed(name: string): HTMLElement {
-  const element = page.getByText(name, { exact: true }).element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error(`expected an element labelled ${name}`);
-  }
-  return element;
-}
 
 describe("Text", () => {
   it("renders a p by default with data-slot=text and no widget role", () => {

@@ -43,10 +43,6 @@ async function openPopover(): Promise<HTMLElement> {
   return dialog;
 }
 
-function descendantWith(root: HTMLElement, attr: string): Element | undefined {
-  return [...root.getElementsByTagName("*")].find((element) => element.hasAttribute(attr));
-}
-
 describe("Popover", () => {
   it("opens from the trigger, is named by its Title, and exposes the Description", async () => {
     const onOpenChange = vi.fn();
@@ -134,7 +130,7 @@ describe("Popover", () => {
   it("omits the arrow by default and renders it with matching data-side when showArrow is set", async () => {
     const { rerender } = renderThemed(<BasicPopover />);
     const dialog = await openPopover();
-    expect(descendantWith(dialog, "data-side")).toBeUndefined();
+    expect(dialog.querySelector("[data-side]")).toBeNull();
 
     rerender(
       <div style={{ padding: 240 }}>
@@ -146,8 +142,8 @@ describe("Popover", () => {
     if (!(withArrow instanceof HTMLElement)) {
       throw new Error("expected the popup");
     }
-    const arrow = descendantWith(withArrow, "data-side");
-    expect(arrow).not.toBeUndefined();
+    const arrow = withArrow.querySelector("[data-side]");
+    expect(arrow).not.toBeNull();
     expect(arrow?.getAttribute("data-side")).toBe(withArrow.getAttribute("data-side"));
     expect(withArrow.getAttribute("data-side")).toBe("top");
   });

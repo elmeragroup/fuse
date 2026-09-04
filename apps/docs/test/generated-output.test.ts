@@ -27,6 +27,7 @@ import { repoRelative, repoRoot } from "../scripts/lib/paths.ts";
 import { COMPONENT_PAGES } from "../src/generated/component-pages";
 import type { ComponentApiArtifact, ComponentPageEntry } from "../src/lib/docs-model";
 import { dependencyPackageName, normalizeDemoSource } from "../src/lib/docs-model";
+import { specSectionBody } from "./spec-section.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const docsRoot = join(here, "..");
@@ -87,23 +88,13 @@ function declaredRsc(sourcePath: string): string {
   return readRscStatus(readFileSync(join(repoRoot, sourcePath), "utf8"));
 }
 
-/** The body of one numbered section of a spec chapter, up to the next heading. */
-function specSection(file: string, heading: number): string {
-  const text = readFileSync(join(repoRoot, "docs/spec", file), "utf8");
-  const body = new RegExp(`^## ${String(heading)}\\.?\\s.*?$(.*?)(?=^## |$(?![\\s\\S]))`, "ms").exec(text);
-  if (body === null) {
-    throw new Error(`${file} has no §${String(heading)} section`);
-  }
-  return body[1] ?? "";
-}
-
 /**
  * The demo files a component spec's §10 requires. A scenario is written as an inline
  * code span, with or without the `.tsx` suffix; §10 may also cross-reference a sibling
  * component's demo, which is why the file name carries the owning component's prefix.
  */
 function specDemoScenarios(slug: string): readonly string[] {
-  const named = [...specSection(`components/${slug}.md`, 10).matchAll(/`([A-Za-z0-9-]+(?:\.tsx)?)`/g)]
+  const named = [...specSectionBody(`components/${slug}.md`, 10).matchAll(/`([A-Za-z0-9-]+(?:\.tsx)?)`/g)]
     .map((match) => match[1] ?? "")
     .map((name) => (name.endsWith(".tsx") ? name : `${name}.tsx`));
   return [...new Set(named)];
@@ -116,7 +107,7 @@ function specDemoScenarios(slug: string): readonly string[] {
  */
 function specRscStatuses(): ReadonlyMap<string, string> {
   const statuses = new Map<string, string>();
-  for (const line of specSection("performance.md", 3).split("\n")) {
+  for (const line of specSectionBody("performance.md", 3).split("\n")) {
     const row = /^\s*\|\s*([a-z][a-z0-9-]*)\s*\|\s*(server|client|deferred)\b/.exec(line);
     if (row === null) continue;
     const [, slug = "", status = ""] = row;

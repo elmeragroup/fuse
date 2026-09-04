@@ -27,7 +27,7 @@ function statusElement(name?: string): HTMLElement {
 }
 
 function statusIcon(status: HTMLElement): SVGElement {
-  const icon = status.getElementsByTagName("svg")[0];
+  const icon = status.querySelector("svg");
   if (!(icon instanceof SVGElement)) {
     throw new Error("expected the status to contain an svg icon");
   }

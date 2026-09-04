@@ -238,10 +238,10 @@ describe("Sheet", () => {
   });
 
   it("keeps Body as the scroll container and stamps the layout slots", async () => {
-    // spec §9 slot audit: data-slot attributes present incl. sheet on Root and sheet-viewport
     renderThemed(withLocale("en-US", <BasicSheet />));
     const dialog = await openSheet();
-    const body = dialog.querySelector("[data-slot=sheet-body]"); // spec §9 slot audit
+    // spec §9 slot audit
+    const body = dialog.querySelector("[data-slot=sheet-body]");
     expect(body).not.toBeNull();
     if (!(body instanceof HTMLElement)) {
       throw new Error("expected sheet body");
@@ -249,12 +249,12 @@ describe("Sheet", () => {
     expect(getComputedStyle(body).overflowY).toBe("auto");
     expect(getComputedStyle(body).minHeight).toBe("0px");
     expect(getComputedStyle(body).flexGrow).toBe("1");
-    expect(document.querySelector("[data-slot=sheet-viewport]")).not.toBeNull(); // spec §9 slot audit
-    expect(dialog.querySelector("[data-slot=sheet-content-inner]")).not.toBeNull(); // spec §9 slot audit
-    expect(dialog.querySelector("[data-slot=sheet-header]")).not.toBeNull(); // spec §9 slot audit
-    expect(dialog.querySelector("[data-slot=sheet-footer]")).not.toBeNull(); // spec §9 slot audit
-    expect(dialog.querySelector("[data-slot=sheet-title]")).not.toBeNull(); // spec §9 slot audit
-    expect(dialog.querySelector("[data-slot=sheet-description]")).not.toBeNull(); // spec §9 slot audit
+    expect(document.querySelector("[data-slot=sheet-viewport]")).not.toBeNull();
+    expect(dialog.querySelector("[data-slot=sheet-content-inner]")).not.toBeNull();
+    expect(dialog.querySelector("[data-slot=sheet-header]")).not.toBeNull();
+    expect(dialog.querySelector("[data-slot=sheet-footer]")).not.toBeNull();
+    expect(dialog.querySelector("[data-slot=sheet-title]")).not.toBeNull();
+    expect(dialog.querySelector("[data-slot=sheet-description]")).not.toBeNull();
   });
 
   it("resolves the size axis to the side-gated used max-width on both gated sides", async () => {

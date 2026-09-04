@@ -8,7 +8,7 @@ import { renderThemed } from "../../../test/themed-browser-render";
 import { ScrollArea } from "./scroll-area";
 
 afterEach(() => {
-  for (const styles of document.querySelectorAll("[data-scroll-area-test-styles]")) {
+  for (const styles of document.head.querySelectorAll("[data-scroll-area-test-styles]")) {
     styles.remove();
   }
 });

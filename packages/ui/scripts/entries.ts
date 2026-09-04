@@ -6,9 +6,6 @@ import { requireFlagsDirectory } from "./flag-assets.ts";
 import { parseFacadeValueExports } from "./parse-facade.ts";
 import { packageRootFromScript, toPosix } from "./paths.ts";
 
-export { FORBIDDEN_RAC_PACKAGES, isForbiddenRacSpecifier } from "./forbidden-rac-packages.js";
-export { packageRootFromScript, toPosix };
-
 /** Appendix A — 55 shipped bare component entries plus 1 deferred (`chart`). */
 export const BARE_COMPONENT_ENTRIES = [
   "accordion",

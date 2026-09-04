@@ -10,8 +10,9 @@ import { overlayLayer } from "./components/overlay/overlay-classes";
  * Remaining source-level invariants that are not already a lint rule
  * (`facade-reexport-grammar`, `no-rac-outside-quarantine`,
  * `no-hardcoded-density-metrics`, `no-primitive-colors`, `no-local-focus-ring`,
- * `restrict-focus-ring-call`, `no-field-part-jsx`, `no-tailwind-dark-variant`,
- * `restrict-process-env`, `no-restricted-imports` for `LocalizedStringDictionary`)
+ * `restrict-focus-ring-call`, `restrict-browser-helper-copy`, `no-field-part-jsx`,
+ * `no-tailwind-dark-variant`, `restrict-process-env`, `no-restricted-imports` for
+ * `LocalizedStringDictionary`)
  * or an exports/package-check gate. Each describe documents why the contract is
  * not a lint rule.
  */

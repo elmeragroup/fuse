@@ -5,7 +5,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-import { discoverEntries, runtimeDependencies } from "../scripts/entries";
+import { discoverEntries, PUBLISHED_DEPENDENCY_RANGES, runtimeDependencies } from "../scripts/entries";
 import {
   flagHashFailure,
   flagPayload,
@@ -74,15 +74,22 @@ describe("flag assets", () => {
     expect(pkg.dependencies["libphonenumber-js"]).toBe("catalog:");
     expect(pkg.devDependencies["libphonenumber-js"]).toBeUndefined();
     expect(runtimeDependencies).toContain("libphonenumber-js");
+    const required = {
+      "@base-ui/react": "catalog:",
+      clsx: "catalog:",
+      "tailwind-merge": "catalog:",
+      "tailwind-variants": "catalog:",
+      "tailwindcss-react-aria-components": "catalog:",
+      "tw-animate-css": "catalog:",
+    };
+    expect(publishedDependencies(required)["react-aria-components"]).toBeUndefined();
+    expect(
+      publishedDependencies({ ...required, "react-aria-components": "catalog:" })["react-aria-components"]
+    ).toBe(PUBLISHED_DEPENDENCY_RANGES["react-aria-components"]);
     expect(
       publishedDependencies({
-        "@base-ui/react": "catalog:",
-        clsx: "catalog:",
+        ...required,
         "libphonenumber-js": "catalog:",
-        "tailwind-merge": "catalog:",
-        "tailwind-variants": "catalog:",
-        "tailwindcss-react-aria-components": "catalog:",
-        "tw-animate-css": "catalog:",
       })["libphonenumber-js"]
     ).toBe("^1.13.9");
   });

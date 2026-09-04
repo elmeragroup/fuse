@@ -232,8 +232,7 @@ describe("AlertDialog", () => {
       throw new Error("expected the destructive action and WarningOctagon fallback");
     }
     const error = cssVarColor(destructiveAction, "--error");
-    const primary = cssVarColor(destructiveAction, "--primary");
-    expect(getComputedStyle(destructiveAction).backgroundColor).not.toBe(primary);
+    expect(getComputedStyle(destructiveAction).color).toBe(error);
     expect(getComputedStyle(destructiveIcon).color).toBe(error);
     expect(getComputedStyle(destructiveIcon).width).toBe("20px");
     const destructiveGlyph = destructiveIcon.innerHTML;
