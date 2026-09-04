@@ -78,10 +78,25 @@ export const stateFocusRingClass = focusRing({ target: "state" }).root();
  */
 export const stateFocusRingVisibleClass = focusRing({ target: "state", isFocusVisible: true }).root();
 
-export const disabledHatch =
-  "bg-[repeating-linear-gradient(45deg,transparent,transparent_8px,rgb(0_0_0/0.02)_8px,rgb(0_0_0/0.02)_16px)]";
+/**
+ * Hatch texture and icon-crossfade faces, resolved once at module scope. Exact
+ * class values are pinned in conventions.md; `elmera/no-primitive-colors`
+ * allowlists the hatch as a whole token, so the slot string must not split,
+ * re-space, or prefix it.
+ */
+export const faces = tv({
+  slots: {
+    hatch:
+      "bg-[repeating-linear-gradient(45deg,transparent,transparent_8px,rgb(0_0_0/0.02)_8px,rgb(0_0_0/0.02)_16px)]",
+    iconTransition: "transition-[opacity,filter,scale] duration-300 ease-[cubic-bezier(0.2,0,0,1)]",
+    iconShown: "blur-0 scale-100 opacity-100",
+    iconHidden: "scale-[0.25] opacity-0 blur-[4px]",
+  },
+});
 
-export const iconCrossfadeTransition =
-  "transition-[opacity,filter,scale] duration-300 ease-[cubic-bezier(0.2,0,0,1)]";
-export const iconCrossfadeShown = "blur-0 scale-100 opacity-100";
-export const iconCrossfadeHidden = "scale-[0.25] opacity-0 blur-[4px]";
+const facesSlots = faces();
+
+export const disabledHatch = facesSlots.hatch();
+export const iconCrossfadeTransition = facesSlots.iconTransition();
+export const iconCrossfadeShown = facesSlots.iconShown();
+export const iconCrossfadeHidden = facesSlots.iconHidden();

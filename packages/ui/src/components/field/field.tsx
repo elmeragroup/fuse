@@ -4,27 +4,11 @@ import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 import { Field as FieldPrimitive } from "@base-ui/react/field";
 import { Fieldset as FieldsetPrimitive } from "@base-ui/react/fieldset";
-import { tv } from "tailwind-variants";
 import type { VariantProps } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
 import { Separator } from "../separator/separator";
-
-const fieldVariants = tv({
-  base: "group/field flex w-full gap-3 data-invalid:text-error",
-  variants: {
-    orientation: {
-      vertical: "flex-col *:w-full [&>.sr-only]:w-auto",
-      horizontal:
-        "flex-row items-center has-[>[data-slot=field-content]]:items-start *:data-field-heading:flex-auto has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px",
-      responsive:
-        "@md/field-group:flex-row @md/field-group:items-center @md/field-group:*:w-auto @md/field-group:has-[>[data-slot=field-content]]:items-start @md/field-group:*:data-field-heading:flex-auto @md/field-group:has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px flex-col *:w-full [&>.sr-only]:w-auto",
-    },
-  },
-  defaultVariants: {
-    orientation: "vertical",
-  },
-});
+import { fieldVariants } from "./field-variants";
 
 function FieldRoot({
   className,
@@ -35,7 +19,7 @@ function FieldRoot({
     <FieldPrimitive.Root
       data-slot="field"
       data-orientation={orientation}
-      className={cn(fieldVariants({ orientation }), className)}
+      className={cn(fieldVariants({ orientation }).root(), className)}
       {...props}
     />
   );
@@ -101,7 +85,7 @@ function FieldContent({ className, ...props }: ComponentProps<"div">): ReactElem
   );
 }
 
-const fieldHeadingClassName = "flex w-fit gap-2 text-sm font-medium group-data-disabled/field:opacity-50";
+const fieldHeadingClassName = fieldVariants().heading();
 
 function FieldLabel({ className, ...props }: ComponentProps<typeof FieldPrimitive.Label>): ReactElement {
   return (

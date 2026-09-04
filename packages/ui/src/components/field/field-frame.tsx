@@ -1,29 +1,47 @@
 import type { ReactElement, ReactNode } from "react";
 
+import { tv } from "tailwind-variants";
+
 import { Check } from "../../icons/generated/check";
 import { SpinnerGap } from "../../icons/generated/spinner-gap";
 import { cn } from "../../styles/cn";
 import { iconCrossfadeHidden, iconCrossfadeShown, iconCrossfadeTransition } from "../../styles/utils";
 import { Field } from "./field";
 
+/**
+ * Package-private FieldFrame layout (field.md §4 / §8.9). No axes — the frame
+ * has one layout; TextField's public recipe composes these slots under its own
+ * names. The four exported class names below are the same slots, resolved once.
+ */
+export const fieldFrameVariants = tv({
+  slots: {
+    root: "group flex flex-col gap-1",
+    labelRow: "flex items-center justify-between",
+    content: "flex flex-col gap-1",
+    description: "text-sm text-pretty",
+  },
+});
+
+const fieldFrameSlots = fieldFrameVariants();
+
 /** Default `Field.Root` stack for labeled (non-legend) composites. */
-export const fieldFrameRootClass = "group flex flex-col gap-1";
+export const fieldFrameRootClass = fieldFrameSlots.root();
 
 /**
  * The heading row's own layout. Composites append their own classes (TextareaField the
  * counter gap) through {@link FieldFrameClassNames.labelRow}.
  */
-export const fieldFrameLabelRowClass = "flex items-center justify-between";
+export const fieldFrameLabelRowClass = fieldFrameSlots.labelRow();
 
 /** Default wrapper around control + description when that wrapper is opted into. */
-export const fieldFrameContentClass = "flex flex-col gap-1";
+export const fieldFrameContentClass = fieldFrameSlots.content();
 
 /**
  * Default `Field.Description` class. `text-pretty` lives here, not on TextField's public
  * slot: Field.Description already paints it, and PhoneNumberField must not import
  * TextField's recipe to re-state it.
  */
-export const fieldFrameDescriptionClass = "text-sm text-pretty";
+export const fieldFrameDescriptionClass = fieldFrameSlots.description();
 
 /**
  * One class argument per part the frame paints. `content` opts into the
