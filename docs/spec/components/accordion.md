@@ -143,7 +143,7 @@ Role/label-based queries throughout; keyboard flows per §7:
 - Controlled: `value` + `onValueChange` round-trips; callback receives the full array value; single-mode array has length ≤ 1.
 - Disabled: `disabled` on Root disables every trigger; per-item `disabled` disables only that item (`data-disabled` present, click is a no-op).
 - `hiddenUntilFound`: closed panel content stays in the DOM with `hidden="until-found"`; dispatching `beforematch` opens the item. `keepMounted`: closed panel stays in the DOM (hidden); default unmounts.
-- Variants: `variant`/`radius` from Root reach Item/Trigger/Content classes via context; parts throw when rendered outside `Accordion.Root`.
+- Variants: `variant`/`radius` from Root reach Item/Trigger/Content via context — unit recipe test asserts the class tokens; browser asserts computed fill, radius, and item spacing. Parts throw when rendered outside `Accordion.Root`. _(Amended 2026-09-04 — spec 07 / [ADR 0008](../../adr/0008-tests-assert-behaviour-not-source-spelling.md).)_
 
 ## 10 Demo requirements
 

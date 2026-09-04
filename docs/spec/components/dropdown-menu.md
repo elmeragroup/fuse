@@ -159,7 +159,7 @@ Role/label-based queries throughout; keyboard flows per §7:
 - CheckboxItem: `getByRole("menuitemcheckbox")` toggles `aria-checked`; `onCheckedChange` fires; indicator visibility follows checked state.
 - RadioGroup/RadioItem: `menuitemradio` items reflect `aria-checked` from group value; activation calls `onValueChange` with the value.
 - LinkItem: renders `getByRole("menuitem")` backed by an `<a href>`; `render` composition with a router link keeps menu keyboard flow.
-- Variant/inset: `data-variant="destructive"` and `data-inset` emitted; error-token classes applied to destructive items.
+- Variant/inset: `data-variant="destructive"` and `data-inset` emitted; error-token classes live in the unit recipe test; browser asserts the destructive item paints a non-transparent colour. _(Amended 2026-09-04 — spec 07 / [ADR 0008](../../adr/0008-tests-assert-behaviour-not-source-spelling.md).)_
 - `container`: Content and SubContent render inside the provided element / nearest ThemeScope, not `document.body`.
 
 ## 10 Demo requirements

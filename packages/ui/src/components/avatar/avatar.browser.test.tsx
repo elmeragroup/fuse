@@ -2,7 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { renderThemed } from "../../../test/themed-browser-render";
+import "../../../dist/themes.css";
+import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
 import { Avatar } from "./avatar";
 
 const PIXEL =
@@ -10,6 +11,7 @@ const PIXEL =
 const BROKEN = "data:image/png;base64,not-a-png";
 
 function slot(name: string): HTMLElement {
+  // spec §9 slot audit: parts emit data-slot="avatar" | "avatar-image" | "avatar-fallback".
   const element = document.querySelector(`[data-slot="${name}"]`);
   if (!(element instanceof HTMLElement)) {
     throw new Error(`expected an element with data-slot="${name}"`);
@@ -57,7 +59,6 @@ describe("Avatar", () => {
     });
     expect(slot("avatar-image").getAttribute("alt")).toBe("Ada Lovelace");
     expect(page.getByText("AL", { exact: true }).query()).toBeNull();
-    expect(document.querySelector('[data-slot="avatar-fallback"]')).toBeNull();
   });
 
   it("renders getByRole img with the given alt", async () => {
@@ -84,17 +85,22 @@ describe("Avatar", () => {
     expect(slot("avatar-fallback").getAttribute("data-slot")).toBe("avatar-fallback");
   });
 
-  it("uses bg-muted on the root and never a raw gray palette class", () => {
+  it("paints the root from the muted token and sizes it as a control box", () => {
     renderThemed(
       <Avatar.Root>
         <Avatar.Fallback>AL</Avatar.Fallback>
       </Avatar.Root>
     );
-    const classes = slot("avatar").className.split(/\s+/);
-    expect(classes).toContain("bg-muted");
-    expect(classes).toContain("text-muted-foreground");
-    expect(classes.some((token) => token.startsWith("bg-gray-"))).toBe(false);
-    expect(classes.some((token) => token.startsWith("text-gray-"))).toBe(false);
+    const fallback = page.getByText("AL", { exact: true }).element();
+    if (!(fallback instanceof HTMLElement)) {
+      throw new Error("expected the fallback");
+    }
+    const avatar = fallback.parentElement;
+    if (!(avatar instanceof HTMLElement)) {
+      throw new Error("expected the avatar root");
+    }
+    expect(getComputedStyle(avatar).backgroundColor).toBe(cssVarColor(avatar, "--muted"));
+    expect(getComputedStyle(avatar).width).toBe("32px");
   });
 
   it("lets className size-10 beat the default size-8", () => {
@@ -103,8 +109,14 @@ describe("Avatar", () => {
         <Avatar.Fallback>AL</Avatar.Fallback>
       </Avatar.Root>
     );
-    const classes = slot("avatar").className.split(/\s+/);
-    expect(classes).toContain("size-10");
-    expect(classes).not.toContain("size-8");
+    const fallback = page.getByText("AL", { exact: true }).element();
+    if (!(fallback instanceof HTMLElement)) {
+      throw new Error("expected the fallback");
+    }
+    const avatar = fallback.parentElement;
+    if (!(avatar instanceof HTMLElement)) {
+      throw new Error("expected the avatar root");
+    }
+    expect(getComputedStyle(avatar).width).toBe("40px");
   });
 });

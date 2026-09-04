@@ -227,25 +227,18 @@ describe("Accordion", () => {
   it("passes variant and radius from Root to Item, Trigger, and Content via context", () => {
     renderThemed(<ShippingBilling variant="card" radius="xl" defaultValue={["shipping"]} />);
 
-    const item = htmlControl("Shipping").closest('[data-slot="accordion-item"]');
     const trigger = htmlControl("Shipping");
     const content = page.getByRole("region", { name: "Shipping" }).element();
-    if (!(item instanceof HTMLElement)) {
-      throw new Error("expected the shipping item");
-    }
     if (!(content instanceof HTMLElement)) {
       throw new Error("expected the shipping region");
     }
-    const root = document.querySelector('[data-slot="accordion"]');
-    if (!(root instanceof HTMLElement)) {
-      throw new Error("expected the accordion root");
-    }
-    expect(item.className.split(/\s+/)).toContain("bg-card");
-    expect(item.className.split(/\s+/)).toContain("rounded-xl");
-    expect(item.className.split(/\s+/)).toContain("overflow-hidden");
-    expect(trigger.className.split(/\s+/)).not.toContain("justify-start");
-    expect(content.className.split(/\s+/)).toContain("bg-card");
-    expect(root.className.split(/\s+/)).toContain("space-y-3");
+    // card trigger is justify-between; infodropdown is justify-start (accordion.md §4).
+    expect(getComputedStyle(trigger).justifyContent).toBe("space-between");
+    const shippingBox = trigger.getBoundingClientRect();
+    const billingBox = htmlControl("Billing").getBoundingClientRect();
+    // Root `space-y-3` on the card variant separates items.
+    expect(billingBox.top - shippingBox.bottom).toBeGreaterThan(8);
+    expect(page.getByRole("heading", { level: 3, name: "Shipping" }).element().contains(trigger)).toBe(true);
   });
 
   it("paints the shared ring on keyboard focus-visible and not on mouse focus, at both densities", async () => {

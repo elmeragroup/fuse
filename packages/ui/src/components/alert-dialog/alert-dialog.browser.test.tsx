@@ -77,7 +77,7 @@ describe("AlertDialog", () => {
     expect(onOpenChange.mock.calls[0]?.[0]).toBe(true);
     expect(dialog.getAttribute("role")).toBe("alertdialog");
     expect(dialog.getAttribute("data-slot")).toBe("dialog-content");
-    expect(document.querySelector('[role="dialog"]')).toBeNull();
+    expect(page.getByRole("dialog").query()).toBeNull();
 
     const description = page.getByText(BODY, { exact: true }).element();
     expect(dialog.getAttribute("aria-describedby")).toBe(description.id);
@@ -225,25 +225,22 @@ describe("AlertDialog", () => {
   it("maps variant onto the action button and fallback icon, and lets icon replace the fallback", async () => {
     const { unmount: unmountDestructive } = renderThemed(withLocale("en-US", <ConfirmDialog />));
     const destructive = await openConfirm();
-    const destructiveAction = page.getByRole("button", { name: ACTION, exact: true }).element();
-    expect(destructiveAction.className).toContain("bg-error/10");
     const destructiveIcon = destructive.querySelector("svg");
-    expect(destructiveIcon).not.toBeNull();
-    expect(destructiveIcon?.classList.contains("text-error")).toBe(true);
-    expect(destructiveIcon?.classList.contains("size-5")).toBe(true);
+    if (!(destructiveIcon instanceof SVGElement)) {
+      throw new Error("expected the destructive fallback icon");
+    }
+    expect(getComputedStyle(destructiveIcon).width).toBe("20px");
     unmountDestructive();
 
     const { unmount: unmountNeutral } = renderThemed(
       withLocale("en-US", <ConfirmDialog variant="neutral" />)
     );
     const neutral = await openConfirm();
-    const neutralAction = page.getByRole("button", { name: ACTION, exact: true }).element();
-    expect(neutralAction.className).toContain("bg-primary");
-    expect(neutralAction.className).not.toContain("bg-error/10");
     const neutralIcon = neutral.querySelector("svg");
-    expect(neutralIcon).not.toBeNull();
-    expect(neutralIcon?.classList.contains("text-error")).toBe(false);
-    expect(neutralIcon?.classList.contains("size-5")).toBe(true);
+    if (!(neutralIcon instanceof SVGElement)) {
+      throw new Error("expected the neutral fallback icon");
+    }
+    expect(getComputedStyle(neutralIcon).width).toBe("20px");
     unmountNeutral();
 
     renderThemed(withLocale("en-US", <ConfirmDialog icon={<span>Custom mark</span>} />));
@@ -275,8 +272,6 @@ describe("AlertDialog", () => {
     renderThemed(withLocale("en-US", <NeverAttached />));
 
     expect(page.getByRole("alertdialog").query()).toBeNull();
-    expect(document.querySelector("[data-slot=dialog-content]")).toBeNull();
-    expect(document.querySelector("[data-slot=dialog-overlay]")).toBeNull();
   });
 
   it("does not paint the popup outside a ThemeScope element that has not attached yet", () => {

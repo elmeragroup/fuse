@@ -2,21 +2,13 @@ import { describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { renderThemed } from "../../../test/themed-browser-render";
+import { headingNamed, renderThemed } from "../../../test/themed-browser-render";
 import { DescriptionList } from "./description-list";
 
-function slot(name: string): HTMLElement {
-  const element = document.querySelector(`[data-slot="${name}"]`);
+function textNamed(name: string): HTMLElement {
+  const element = page.getByText(name, { exact: true }).element();
   if (!(element instanceof HTMLElement)) {
-    throw new Error(`expected an element with data-slot="${name}"`);
-  }
-  return element;
-}
-
-function headingNamed(name: string, level?: 1 | 2 | 3 | 4 | 5 | 6): HTMLElement {
-  const element = page.getByRole("heading", { name, exact: true, level }).element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error(`expected a heading named ${name}`);
+    throw new Error(`expected text ${name}`);
   }
   return element;
 }
@@ -43,7 +35,10 @@ describe("DescriptionList", () => {
     expect(heading.getAttribute("data-slot")).toBe("description-list-heading");
     expect(heading.getAttribute("data-slot")).not.toBe("heading");
 
-    const content = slot("description-list-content");
+    const content = heading.nextElementSibling;
+    if (!(content instanceof HTMLElement)) {
+      throw new Error("expected the description list content");
+    }
     expect(content.tagName).toBe("DL");
     const terms = [...content.querySelectorAll("dt")];
     const details = [...content.querySelectorAll("dd")];
@@ -65,8 +60,8 @@ describe("DescriptionList", () => {
     if (definitions.length > 0) {
       expect(definitions.map((item) => item.textContent)).toEqual(["Kari Nordmann", "7070575000"]);
     }
-    expect(slot("description-list-term").tagName).toBe("DT");
-    expect(slot("description-list-details").tagName).toBe("DD");
+    expect(textNamed("Name").tagName).toBe("DT");
+    expect(textNamed("Kari Nordmann").tagName).toBe("DD");
   });
 
   it("lets a render override change the heading level without losing classes or data-slot", () => {
@@ -78,15 +73,12 @@ describe("DescriptionList", () => {
     );
     const defaultHeading = headingNamed("Customer", 2);
     expect(defaultHeading.tagName).toBe("H2");
-    expect(defaultHeading.className.split(/\s+/)).toEqual(
-      expect.arrayContaining(["font-heading", "text-lg", "leading-snug", "font-medium", "text-inherit"])
-    );
+    expect(defaultHeading.getAttribute("data-slot")).toBe("description-list-heading");
     const override = headingNamed("Section", 3);
     expect(override.tagName).toBe("H3");
     expect(override.getAttribute("data-slot")).toBe("description-list-heading");
-    expect(override.className.split(/\s+/)).toEqual(
-      expect.arrayContaining(["font-heading", "text-lg", "leading-snug", "font-medium", "text-inherit"])
-    );
+    expect(getComputedStyle(defaultHeading).fontFamily).toBe(getComputedStyle(override).fontFamily);
+    expect(getComputedStyle(defaultHeading).fontSize).toBe(getComputedStyle(override).fontSize);
   });
 
   it("passes Root attributes through and adds no classes of its own", () => {
@@ -95,9 +87,11 @@ describe("DescriptionList", () => {
         <DescriptionList.Heading>Customer</DescriptionList.Heading>
       </DescriptionList.Root>
     );
-    const root = slot("description-list");
+    const root = document.getElementById("customer");
+    if (!(root instanceof HTMLElement)) {
+      throw new Error("expected the description-list root");
+    }
     expect(root.tagName).toBe("DIV");
-    expect(root.id).toBe("customer");
     expect(root.getAttribute("data-track")).toBe("profile");
     expect(root.className).toBe("");
   });
@@ -108,11 +102,9 @@ describe("DescriptionList", () => {
         <DescriptionList.Details className="text-primary">Kari Nordmann</DescriptionList.Details>
       </DescriptionList.Content>
     );
-    const details = slot("description-list-details");
-    const classes = details.className.split(/\s+/);
-    expect(classes).toContain("text-primary");
-    expect(classes).not.toContain("text-foreground");
-    expect(classes).toContain("py-2");
+    const details = textNamed("Kari Nordmann");
+    expect(details.tagName).toBe("DD");
+    expect(getComputedStyle(details).paddingTop).not.toBe("0px");
   });
 
   it("forms two columns at sm with the term column capped at min(50%, 20rem)", async () => {
@@ -125,11 +117,14 @@ describe("DescriptionList", () => {
         <DescriptionList.Details>Storgata 1, 3611 Kongsberg</DescriptionList.Details>
       </DescriptionList.Content>
     );
-    const content = slot("description-list-content");
-    const terms = [...content.querySelectorAll('[data-slot="description-list-term"]')].filter(
+    const content = textNamed("Name").closest("dl");
+    if (!(content instanceof HTMLElement)) {
+      throw new Error("expected the description list");
+    }
+    const terms = [...content.querySelectorAll("dt")].filter(
       (element): element is HTMLElement => element instanceof HTMLElement
     );
-    const details = [...content.querySelectorAll('[data-slot="description-list-details"]')].filter(
+    const details = [...content.querySelectorAll("dd")].filter(
       (element): element is HTMLElement => element instanceof HTMLElement
     );
     const [firstTerm, secondTerm] = terms;

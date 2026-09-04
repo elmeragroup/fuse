@@ -69,7 +69,7 @@ function listboxNamed(): HTMLElement {
 }
 
 function comboboxContent(): HTMLElement {
-  const content = listboxNamed().closest("[data-slot=combobox-content]");
+  const content = listboxNamed().closest("[data-external-anchor]");
   if (!(content instanceof HTMLElement)) {
     throw new Error("expected combobox content around the listbox");
   }
@@ -85,7 +85,10 @@ function optionNamed(name: string): HTMLElement {
 }
 
 function highlightedOption(): HTMLElement {
-  const element = document.querySelector('[role="option"][data-highlighted]');
+  const element = page
+    .getByRole("option")
+    .elements()
+    .find((option) => option instanceof HTMLElement && option.hasAttribute("data-highlighted"));
   if (!(element instanceof HTMLElement)) {
     throw new Error("expected a highlighted option");
   }
@@ -112,12 +115,12 @@ function expectChipFocused(removeButtonName: string): void {
   );
 }
 
-function inputGroupRoot(): HTMLElement {
-  const element = document.querySelector("[data-slot=input-group]");
-  if (!(element instanceof HTMLElement)) {
+function inputGroupRoot(name = "Fruit"): HTMLElement {
+  const group = comboboxNamed(name).closest('[role="group"]');
+  if (!(group instanceof HTMLElement)) {
     throw new Error("expected an input-group root");
   }
-  return element;
+  return group;
 }
 
 function FruitCombobox({
@@ -562,7 +565,6 @@ describe("Combobox", () => {
     }
     renderCombobox(<NeverAttached />);
     expect(page.getByRole("listbox").query()).toBeNull();
-    expect(document.querySelector("[data-slot=combobox-content]")).toBeNull();
   });
 
   it("renders Empty, Clear, and chip-remove defaults in all four locales and honors copy overrides", async () => {

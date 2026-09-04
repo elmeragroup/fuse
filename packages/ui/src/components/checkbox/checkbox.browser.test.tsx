@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import "../../../dist/themes.css";
 import { assertFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
 import {
   assertConnectedVerticalList,
@@ -10,7 +11,7 @@ import {
   listitemHosts,
   radiusToken,
 } from "../../../test/assert-selection-item-group-layout";
-import { renderThemed } from "../../../test/themed-browser-render";
+import { cssVarColor, headingNamed, renderThemed } from "../../../test/themed-browser-render";
 import { Field } from "../field/field";
 import { Checkbox, CheckboxDescription, CheckboxGroup, CheckboxItem, CheckboxItemGroup } from "./checkbox";
 
@@ -28,16 +29,6 @@ function groupNamed(name: string): HTMLElement {
     throw new Error(`expected group named ${name}`);
   }
   return element;
-}
-
-function cssVarColor(host: HTMLElement, token: string): string {
-  const probe = document.createElement("span");
-  probe.style.border = "1px solid";
-  probe.style.borderColor = `var(${token})`;
-  host.append(probe);
-  const color = getComputedStyle(probe).borderTopColor;
-  probe.remove();
-  return color;
 }
 
 function flexAncestor(
@@ -291,14 +282,6 @@ describe("CheckboxGroup", () => {
     expect(horizontalFlex).not.toBeNull();
   });
 });
-
-function headingNamed(name: string): HTMLElement {
-  const element = page.getByRole("heading", { name, exact: true }).element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error(`expected heading named ${name}`);
-  }
-  return element;
-}
 
 describe("CheckboxItem", () => {
   it("toggles from the row and isolates SubSection clicks", async () => {
