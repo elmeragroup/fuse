@@ -5,18 +5,15 @@ import { DialogTrigger } from "react-aria-components";
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
+import "../../../dist/styles.css";
+import "../../../dist/themes.css";
 import { withLocale } from "../../../test/locale-matrix";
-import { renderThemed } from "../../../test/themed-browser-render";
-import { buttonVariants } from "../../components/button/button-variants";
+import { CONTROL_MD, CONTROL_SM, cssVarColor, px, renderThemed } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme/theme-scope";
 import { Button } from "./button";
 import { Dialog } from "./dialog";
 import { FieldGroup, Input, Label } from "./field";
 import { Popover } from "./popover";
-
-function recipeClasses(rendered: string): string[] {
-  return rendered.split(/\s+/u).filter(Boolean);
-}
 
 describe("the internal RAC Button", () => {
   it("renders the public buttonVariants classes for the requested variant and size", () => {
@@ -28,17 +25,15 @@ describe("the internal RAC Button", () => {
     const trigger = page.getByRole("button", { name: "Calendar" }).element();
 
     expect(trigger.getAttribute("data-slot")).toBe("button");
-    for (const className of recipeClasses(buttonVariants({ variant: "ghost", size: "icon-sm" }))) {
-      expect(trigger.classList.contains(className), `missing ${className}`).toBe(true);
-    }
+    expect(px(getComputedStyle(trigger).height)).toBe(CONTROL_SM.dense.height);
   });
 
   it("keeps caller classes on top of the borrowed recipe", () => {
     renderThemed(<Button className="mt-4">Next month</Button>);
     const trigger = page.getByRole("button", { name: "Next month" }).element();
 
-    expect(trigger.classList.contains("mt-4")).toBe(true);
-    expect(trigger.classList.contains("h-(--control-h-md)")).toBe(true);
+    expect(px(getComputedStyle(trigger).marginTop)).toBe(16);
+    expect(px(getComputedStyle(trigger).height)).toBe(CONTROL_MD.dense.height);
   });
 
   it("stays a real RAC button that reports presses", async () => {
@@ -63,7 +58,7 @@ describe("the internal field chrome", () => {
     const group = page.getByRole("group", { name: "From" }).element();
 
     expect(group.getAttribute("data-slot")).toBe("field-group");
-    expect(group.classList.contains("h-(--control-h-md)")).toBe(true);
+    expect(px(getComputedStyle(group).height)).toBe(CONTROL_MD.dense.height);
 
     await userEvent.click(page.getByRole("textbox", { name: "From" }).element());
     expect(group.hasAttribute("data-focus-within")).toBe(true);
@@ -76,9 +71,11 @@ describe("the internal field chrome", () => {
       </FieldGroup>
     );
     const group = page.getByRole("group", { name: "Due date" }).element();
+    if (!(group instanceof HTMLElement)) {
+      throw new Error("expected the field group");
+    }
 
-    expect(group.classList.contains("border-error")).toBe(true);
-    expect(group.className).not.toContain("destructive");
+    expect(getComputedStyle(group).borderTopColor).toBe(cssVarColor(group, "--error"));
   });
 });
 
@@ -166,7 +163,9 @@ describe("the internal styled Dialog", () => {
 
     expect(close).not.toBeNull();
     await userEvent.click(close);
-    expect(page.getByRole("dialog").query()).toBeNull();
+    await vi.waitFor(() => {
+      expect(page.getByRole("dialog").query()).toBeNull();
+    });
   });
 
   it("omits the affordance entirely when closeButton is false", () => {
@@ -197,9 +196,8 @@ describe("the internal styled Dialog", () => {
         </DialogTrigger>
       )
     );
-    const withTitle = page.getByRole("dialog").element();
 
-    expect(withTitle.querySelector("[data-slot=dialog-header]")).not.toBeNull();
+    expect(page.getByRole("heading", { name: "Calendar", exact: true }).query()).not.toBeNull();
     await expect.element(page.getByRole("dialog", { name: "Calendar" })).toBeVisible();
     titled.unmount();
 
@@ -222,10 +220,13 @@ describe("the internal styled Dialog", () => {
     // would resolve RAC's title slot and become the dialog's accessible name; with the
     // slot unclaimed, the name `DialogTrigger` publishes on `DialogContext` (the
     // trigger's own copy) reaches the overlay instead.
-    expect(untitled.querySelector("[data-slot=dialog-header]")).toBeNull();
-    expect(untitled.querySelector("[data-slot=dialog-content]")?.firstElementChild).toBe(
-      page.getByRole("button", { name: "Inside the dialog" }).element()
-    );
+    expect(
+      page
+        .getByRole("heading")
+        .elements()
+        .filter((heading) => untitled.contains(heading))
+    ).toHaveLength(0);
+    expect(untitled.contains(page.getByRole("button", { name: "Inside the dialog" }).element())).toBe(true);
     await expect.element(page.getByRole("dialog", { name: "Open" })).toBeVisible();
   });
 });

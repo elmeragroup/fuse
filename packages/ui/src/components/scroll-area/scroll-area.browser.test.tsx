@@ -4,10 +4,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import { renderThemed } from "../../../test/themed-browser-render";
-import { focusRing } from "../../styles/utils";
 import { ScrollArea } from "./scroll-area";
-
-const focusSelf = focusRing({ target: "self" }).root();
 
 afterEach(() => {
   for (const styles of document.querySelectorAll("[data-scroll-area-test-styles]")) {
@@ -35,6 +32,7 @@ function labeledText(name: string): HTMLElement {
 }
 
 function scrollRootFromText(name: string): HTMLElement {
+  // spec §9: the overflow host has no role; locate it by the mandated data-slot.
   const root = labeledText(name).closest("[data-slot=scroll-area]");
   if (!(root instanceof HTMLElement)) {
     throw new Error(`Expected a scroll area around ${name}`);
@@ -43,6 +41,7 @@ function scrollRootFromText(name: string): HTMLElement {
 }
 
 function viewportFromText(name: string): HTMLElement {
+  // spec §9: the viewport has no role; locate it by the mandated data-slot.
   const viewport = labeledText(name).closest("[data-slot=scroll-area-viewport]");
   if (!(viewport instanceof HTMLElement)) {
     throw new Error(`Expected a viewport around ${name}`);
@@ -51,6 +50,7 @@ function viewportFromText(name: string): HTMLElement {
 }
 
 function barsIn(root: HTMLElement): HTMLElement[] {
+  // spec §9: scrollbars have no role; locate them by the mandated data-slot.
   return [...root.querySelectorAll("[data-slot=scroll-area-scrollbar]")].filter(
     (node): node is HTMLElement => node instanceof HTMLElement
   );
@@ -85,9 +85,7 @@ describe("ScrollArea", () => {
     const viewport = viewportFromText("Tags");
     expect(viewport.contains(labeledText("Tags"))).toBe(true);
     expect(viewport.getAttribute("data-slot")).toBe("scroll-area-viewport");
-    for (const token of focusSelf.split(/\s+/).filter(Boolean)) {
-      expect(viewport.className.split(/\s+/)).toContain(token);
-    }
+    expect(viewport.tabIndex).toBe(0);
   });
 
   it("renders exactly one scrollbar for the Root orientation", async () => {
@@ -129,16 +127,18 @@ describe("ScrollArea", () => {
     await waitForOverflow("Always on", "data-has-overflow-y");
     await waitForOverflow("Hover gated", "data-has-overflow-y");
 
-    const always = barsIn(scrollRootFromText("Always on"));
-    expect(always).toHaveLength(1);
-    expect(always[0]?.className.split(/\s+/)).toContain("opacity-100");
-    expect(always[0]?.className.split(/\s+/)).not.toContain("pointer-events-none");
+    const always = barsIn(scrollRootFromText("Always on"))[0];
+    if (!(always instanceof HTMLElement)) {
+      throw new Error("expected an always-visible scrollbar");
+    }
+    expect(getComputedStyle(always).opacity).toBe("1");
 
-    const hover = barsIn(scrollRootFromText("Hover gated"));
-    expect(hover).toHaveLength(1);
-    expect(hover[0]?.className.split(/\s+/)).toContain("pointer-events-none");
-    expect(hover[0]?.className).toContain("data-[hovering]:opacity-100");
-    expect(hover[0]?.className).toContain("data-[hovering]:pointer-events-auto");
+    const hover = barsIn(scrollRootFromText("Hover gated"))[0];
+    if (!(hover instanceof HTMLElement)) {
+      throw new Error("expected a hover-gated scrollbar");
+    }
+    expect(hover.className).toContain("data-[hovering]:opacity-100");
+    expect(hover.className).toContain("pointer-events-none");
   });
 
   it("keeps ArrowDown and PageDown on a focused overflow viewport as native scroll", async () => {

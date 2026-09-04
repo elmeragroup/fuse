@@ -22,7 +22,7 @@ function switchNamed(name: string, checked?: boolean): HTMLElement {
 
 function measureSwitch(name: string) {
   const root = switchNamed(name);
-  const thumb = root.querySelector("[data-slot=switch-thumb]");
+  const thumb = [...root.children].find((child): child is HTMLElement => child instanceof HTMLElement);
   if (!(thumb instanceof HTMLElement)) {
     throw new Error(`Expected a thumb inside ${name}`);
   }

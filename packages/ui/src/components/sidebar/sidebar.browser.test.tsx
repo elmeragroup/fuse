@@ -14,6 +14,7 @@ import {
   CONTROL_MD,
   px,
   renderThemed,
+  roleNamed,
   stampDensity,
   textboxNamed,
 } from "../../../test/themed-browser-render";
@@ -110,7 +111,9 @@ function element(locator: ReturnType<typeof page.getByRole>): HTMLElement {
   return node;
 }
 
+/** spec §9 slot audit: every part stamps its slot; no data-sidebar anywhere. */
 function bySlot(slot: string, root: ParentNode = document): HTMLElement {
+  // spec §9 slot audit
   const node = root.querySelector(`[data-slot="${slot}"]`);
   if (!(node instanceof HTMLElement)) {
     throw new Error(`expected [data-slot="${slot}"]`);
@@ -119,17 +122,37 @@ function bySlot(slot: string, root: ParentNode = document): HTMLElement {
 }
 
 function sidebarRoot(): HTMLElement {
-  return bySlot("sidebar");
+  const dialog = page.getByRole("dialog").query();
+  if (dialog instanceof HTMLElement) {
+    return dialog;
+  }
+  for (const title of Object.values(TOGGLE_COPY)) {
+    const rail = page.getByTitle(title, { exact: true }).query();
+    if (rail instanceof HTMLElement) {
+      const root = rail.closest("[data-state]");
+      if (root instanceof HTMLElement) {
+        return root;
+      }
+    }
+  }
+  throw new Error("expected sidebar root");
 }
 
-/** Trigger and Rail share the dictionary name; the Trigger is the one stamped as such. */
-function triggerNamed(name: string): HTMLElement {
-  const buttons = page.getByRole("button", { name, exact: true }).elements();
-  const trigger = buttons.find((button) => button.getAttribute("data-slot") === "sidebar-trigger");
-  if (!(trigger instanceof HTMLElement)) {
-    throw new Error(`expected a sidebar trigger named ${name}`);
+function layoutChildren(root: HTMLElement): HTMLElement[] {
+  return [...root.children].filter((child): child is HTMLElement => child instanceof HTMLElement);
+}
+
+function menuList(): HTMLElement {
+  const element = page.getByRole("list").element();
+  if (!(element instanceof HTMLElement)) {
+    throw new Error("expected a menu list");
   }
-  return trigger;
+  return element;
+}
+
+/** Trigger is the only tab-stop named from sidebar.toggle; Rail is aria-hidden. */
+function triggerNamed(name: string): HTMLElement {
+  return roleNamed("button", name);
 }
 
 function railNamed(name: string): HTMLButtonElement {
@@ -535,8 +558,10 @@ describe("Sidebar group and menu action targets", () => {
 describe("Sidebar sanctioned motion", () => {
   it("animates only shell width, and strips that property under prefers-reduced-motion", async () => {
     renderThemed(<Frame />);
-    const gap = bySlot("sidebar-gap");
-    const container = bySlot("sidebar-container");
+    const [gap, container] = layoutChildren(sidebarRoot());
+    if (!(gap instanceof HTMLElement) || !(container instanceof HTMLElement)) {
+      throw new Error("expected gap and container");
+    }
     expect(
       getComputedStyle(gap)
         .transitionProperty.split(",")
@@ -579,13 +604,12 @@ describe("Sidebar.MenuButton tooltip", () => {
   it("keeps the label hidden while expanded", async () => {
     renderThemed(<TooltipFrame defaultOpen tooltip="string" />);
     const link = element(page.getByRole("link", { name: "Orders", exact: true }));
+    const started = performance.now();
     await userEvent.hover(link);
-    await new Promise((resolve) => {
-      setTimeout(resolve, 150);
+    await vi.waitFor(() => {
+      expect(performance.now() - started).toBeGreaterThanOrEqual(150);
+      expect(page.getByRole("tooltip", { name: "Orders", exact: true }).query()).toBeNull();
     });
-    const popup = document.querySelector('[data-slot="tooltip-content"]');
-    expect(popup === null || popup.hasAttribute("hidden")).toBe(true);
-    expect(page.getByRole("tooltip", { name: "Orders", exact: true }).query()).toBeNull();
   });
 
   for (const form of ["string", "object"] as const) {
@@ -603,8 +627,7 @@ describe("Sidebar.MenuButton tooltip", () => {
       const tooltip = element(page.getByRole("tooltip", { name: "Orders", exact: true }));
       expect(tooltip.getAttribute("data-side")).toBe("right");
       expect(link.getAttribute("aria-describedby")).toBe(tooltip.id);
-      expect(document.querySelectorAll('[data-slot="sidebar-menu-button"]')).toHaveLength(1);
-      expect(document.querySelectorAll("a")).toHaveLength(1);
+      expect(page.getByRole("link", { name: "Orders", exact: true }).elements()).toHaveLength(1);
     });
   }
 });
@@ -619,7 +642,12 @@ describe("Sidebar.Root branches", () => {
     expect(root.hasAttribute("data-collapsible")).toBe(false);
     expect(root.classList.contains("peer")).toBe(true);
     expect(root.classList.contains("group")).toBe(true);
-    expect(document.querySelector('[data-slot="sidebar-gap"]')).toBeNull();
+    expect(
+      layoutChildren(root).some(
+        (child) =>
+          child.childElementCount === 0 && getComputedStyle(child).transitionProperty.includes("width")
+      )
+    ).toBe(false);
     expect(page.getByRole("dialog").query()).toBeNull();
 
     await page.viewport(MOBILE.width, MOBILE.height);
@@ -633,13 +661,16 @@ describe("Sidebar.Root branches", () => {
     expect(root.getAttribute("data-variant")).toBe("floating");
     expect(root.getAttribute("data-side")).toBe("right");
     expect(root.getAttribute("data-collapsible")).toBe("");
-    expect(bySlot("sidebar-gap", root)).toBeInstanceOf(HTMLElement);
-    const container = bySlot("sidebar-container", root);
+    const [gap, container] = layoutChildren(root);
+    expect(gap).toBeInstanceOf(HTMLElement);
+    if (!(container instanceof HTMLElement)) {
+      throw new Error("expected sidebar container");
+    }
     expect(container.getAttribute("data-side")).toBe("right");
     expect(container.classList.contains("shell")).toBe(true);
     expect(getComputedStyle(container).position).toBe("fixed");
     expect(px(getComputedStyle(container).width)).toBe(256);
-    expect(bySlot("sidebar-inner", container)).toBeInstanceOf(HTMLElement);
+    expect(container.firstElementChild).toBeInstanceOf(HTMLElement);
   });
 
   it("renders the mobile Sheet branch below 768px with the caller className on the dialog", async () => {
@@ -673,7 +704,7 @@ describe("Sidebar.Root branches", () => {
     expect(dialog.getAttribute("data-side")).toBe("left");
     expect(dialog.classList.contains("mobile-shell")).toBe(true);
     expect(dialog.style.getPropertyValue("--sidebar-width")).toBe("18rem");
-    expect(dialog.querySelector('[data-slot="sheet-close"]')).toBeNull();
+    expect(page.getByRole("button", { name: "Close", exact: true }).query()).toBeNull();
     expect(page.getByRole("button", { name: "Orders", exact: true }).query()).not.toBeNull();
     expect(latest?.openMobile).toBe(true);
 
@@ -717,7 +748,10 @@ describe("Sidebar.MenuButton", () => {
     expect(px(getComputedStyle(buttonNamed("Default action")).top)).toBe(6);
     expect(px(getComputedStyle(buttonNamed("Large action")).top)).toBe(10);
     expect(px(getComputedStyle(buttonNamed("Small action")).top)).toBe(4);
-    const badge = bySlot("sidebar-menu-badge");
+    const badge = page.getByText("3", { exact: true }).element();
+    if (!(badge instanceof HTMLElement)) {
+      throw new Error("expected a menu badge");
+    }
     expect(px(getComputedStyle(badge).top)).toBe(6);
     expect(getComputedStyle(badge).pointerEvents).toBe("none");
     expect(px(getComputedStyle(active).paddingRight), "pr-8 while a MenuAction is present").toBe(32);
@@ -816,20 +850,36 @@ describe("Sidebar.MenuSkeleton", () => {
 
   it("renders identical DOM across mounts and varies the bar width by row position", () => {
     const first = renderThemed(<SkeletonRows />);
-    const firstHtml = bySlot("sidebar-menu").innerHTML;
-    const widths = [...document.querySelectorAll('[data-slot="sidebar-menu-skeleton-text"]')].map(
-      (bar) => getComputedStyle(bar).maxWidth
-    );
+    const firstHtml = menuList().innerHTML;
+    const bars = page
+      .getByRole("listitem")
+      .elements()
+      .flatMap((item) =>
+        [...item.querySelectorAll("[aria-hidden='true']")].filter(
+          (node): node is HTMLElement =>
+            node instanceof HTMLElement && getComputedStyle(node).maxWidth !== "none"
+        )
+      );
+    const widths = bars.map((bar) => getComputedStyle(bar).maxWidth);
     first.unmount();
     renderThemed(<SkeletonRows />);
-    expect(bySlot("sidebar-menu").innerHTML).toBe(firstHtml);
+    expect(menuList().innerHTML).toBe(firstHtml);
 
     expect(widths).toHaveLength(3);
     expect(new Set(widths).size).toBe(3);
     for (const width of widths) {
       expect(width.endsWith("%") || width.endsWith("px")).toBe(true);
     }
-    expect(document.querySelectorAll('[data-slot="sidebar-menu-skeleton-icon"]')).toHaveLength(1);
+    const icons = page
+      .getByRole("listitem")
+      .elements()
+      .flatMap((item) =>
+        [...item.querySelectorAll("[aria-hidden='true']")].filter(
+          (node): node is HTMLElement =>
+            node instanceof HTMLElement && getComputedStyle(node).maxWidth === "none"
+        )
+      );
+    expect(icons).toHaveLength(1);
     expect(firstHtml).not.toContain('style="');
   });
 });
@@ -863,8 +913,8 @@ describe("Sidebar.MenuSubButton", () => {
     const closed = element(page.getByRole("link", { name: "Closed", exact: true }));
     expect(closed.getAttribute("data-size")).toBe("sm");
     expect(closed.hasAttribute("data-active")).toBe(false);
-    expect(bySlot("sidebar-menu-sub").tagName).toBe("UL");
-    expect(bySlot("sidebar-menu-sub-item").tagName).toBe("LI");
+    expect(open.closest("ul")?.tagName).toBe("UL");
+    expect(open.closest("li")?.tagName).toBe("LI");
   });
 
   it("reads the signed sm/md control rungs at both density stamps", () => {
@@ -903,6 +953,7 @@ describe("Sidebar.MenuSubButton", () => {
 
 describe("Sidebar data-slot audit", () => {
   it("stamps every roster slot once composed, with no legacy data-sidebar attribute anywhere", () => {
+    // spec §9 slot audit: every part stamps its slot; no data-sidebar attributes anywhere
     renderThemed(
       withLocale(
         "en-US",
@@ -949,12 +1000,13 @@ describe("Sidebar data-slot audit", () => {
       )
     );
     for (const slot of SLOT_ROSTER) {
+      // spec §9 slot audit
       expect(document.querySelectorAll(`[data-slot="${slot}"]`).length, slot).toBeGreaterThanOrEqual(1);
     }
     expect(document.querySelectorAll("[data-sidebar]")).toHaveLength(0);
     expect(bySlot("sidebar-separator").getAttribute("role")).toBe("separator");
-    expect(document.querySelectorAll('[data-slot="separator"]')).toHaveLength(0);
-    expect(document.querySelectorAll('[data-slot="input"]')).toHaveLength(0);
+    expect(document.querySelectorAll('[data-slot="separator"]')).toHaveLength(0); // spec §9 slot audit
+    expect(document.querySelectorAll('[data-slot="input"]')).toHaveLength(0); // spec §9 slot audit
     expect(bySlot("sidebar-inset").tagName).toBe("MAIN");
     expect(bySlot("sidebar-menu").tagName).toBe("UL");
     expect(bySlot("sidebar-menu-item").tagName).toBe("LI");

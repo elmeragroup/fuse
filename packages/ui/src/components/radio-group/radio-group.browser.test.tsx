@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import "../../../dist/themes.css";
 import { assertFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
 import {
   assertConnectedVerticalList,
@@ -12,7 +13,13 @@ import {
   listitemHosts,
   radiusToken,
 } from "../../../test/assert-selection-item-group-layout";
-import { px, renderThemed, stampDensity } from "../../../test/themed-browser-render";
+import {
+  cssVarColor,
+  headingNamed,
+  px,
+  renderThemed,
+  stampDensity,
+} from "../../../test/themed-browser-render";
 import { Radio, RadioGroup, RadioGroupItem, RadioIconButton, RadioItem, RadioItemGroup } from "./radio-group";
 
 const ICON_SIZES = ["icon-xxs", "icon-xs", "icon-sm", "icon", "icon-lg"] as const;
@@ -71,24 +78,6 @@ function namedGroupHosting(control: HTMLElement): HTMLElement | null {
     .elements()
     .find((element) => element.contains(control));
   return match instanceof HTMLElement ? match : null;
-}
-
-function headingNamed(name: string): HTMLElement {
-  const element = page.getByRole("heading", { name, exact: true }).element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error(`expected heading named ${name}`);
-  }
-  return element;
-}
-
-function cssVarColor(host: HTMLElement, token: string): string {
-  const probe = document.createElement("span");
-  probe.style.border = "1px solid";
-  probe.style.borderColor = `var(${token})`;
-  host.append(probe);
-  const color = getComputedStyle(probe).borderTopColor;
-  probe.remove();
-  return color;
 }
 
 function flexAncestor(

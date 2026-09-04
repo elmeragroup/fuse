@@ -14,11 +14,15 @@ import { ThemeScope } from "../../theme";
 import { TextField } from "./text-field";
 
 function fieldRootFrom(name: string): HTMLElement {
-  const root = textboxNamed(name).closest("[data-slot=field]");
-  if (!(root instanceof HTMLElement)) {
-    throw new Error(`expected field root around ${name}`);
+  const control = textboxNamed(name);
+  let current = control.parentElement;
+  while (current) {
+    if (current.querySelectorAll("svg").length > 0) {
+      return current;
+    }
+    current = current.parentElement;
   }
-  return root;
+  throw new Error(`expected field root around ${name}`);
 }
 
 function fieldSvgs(name: string): SVGElement[] {
@@ -132,7 +136,7 @@ describe("TextField", () => {
     );
 
     expect(page.getByRole("textbox", { name: "Pending", exact: true }).query()).toBeTruthy();
-    expect(fieldRootFrom("Pending").querySelector("[data-slot=field-label]")).toBeNull();
+    expect(page.getByText("Pending", { exact: true }).query()).toBeNull();
 
     const pendingSvgs = fieldSvgs("Pending");
     expect(pendingSvgs).toHaveLength(2);

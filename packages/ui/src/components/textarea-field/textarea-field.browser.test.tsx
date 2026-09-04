@@ -5,14 +5,6 @@ import "../../../dist/styles.css";
 import { renderThemed, textboxNamed } from "../../../test/themed-browser-render";
 import { TextareaField } from "./textarea-field";
 
-function fieldRootFrom(name: string): HTMLElement {
-  const root = textboxNamed(name).closest("[data-slot=field]");
-  if (!(root instanceof HTMLElement)) {
-    throw new Error(`expected field root around ${name}`);
-  }
-  return root;
-}
-
 describe("TextareaField", () => {
   it("resolves the textbox by accessible name and links description and error", () => {
     renderThemed(
@@ -124,9 +116,8 @@ describe("TextareaField", () => {
 
   it("omits the label row when neither label nor maxLength is given", () => {
     renderThemed(<TextareaField aria-label="Bare" />);
-    const root = fieldRootFrom("Bare");
-    expect(root.querySelector("[data-slot=field-label]")).toBeNull();
-    expect(root.textContent).not.toMatch(/\d+\/\d+/);
+    expect(page.getByText("Bare", { exact: true }).query()).toBeNull();
+    expect(textboxNamed("Bare").parentElement?.textContent).not.toMatch(/\d+\/\d+/);
   });
 
   it("renders the 0/0 counter when maxLength is 0", () => {

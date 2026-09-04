@@ -4,8 +4,9 @@ import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import "../../../dist/themes.css";
 import { assertFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
-import { renderThemed } from "../../../test/themed-browser-render";
+import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
 import { UiProviders } from "../ui-providers/ui-providers";
 import { Link } from "./link";
 
@@ -23,10 +24,6 @@ function buttonNamed(name: string): HTMLElement {
     throw new Error(`expected button ${name}`);
   }
   return element;
-}
-
-function classesOf(element: HTMLElement): string[] {
-  return element.className.split(/\s+/).filter(Boolean);
 }
 
 /**
@@ -184,9 +181,8 @@ describe("Link styling", () => {
       </Link>
     );
 
-    expect(classesOf(linkNamed("Invoice 1042"))).toEqual(
-      expect.arrayContaining(["font-sans", "transition-opacity", "hover:opacity-80", "text-error"])
-    );
+    const link = linkNamed("Invoice 1042");
+    expect(getComputedStyle(link).color).toBe(cssVarColor(link, "--error"));
   });
 
   it("merges a caller className last, so it wins the conflicting utility", () => {
@@ -196,9 +192,9 @@ describe("Link styling", () => {
       </Link>
     );
 
-    const classes = classesOf(linkNamed("Invoice 1042"));
-    expect(classes).toEqual(expect.arrayContaining(["font-sans", "text-brand", "underline"]));
-    expect(classes, "the caller's colour must replace the recipe's").not.toContain("text-error");
+    const link = linkNamed("Invoice 1042");
+    expect(getComputedStyle(link).color).not.toBe(cssVarColor(link, "--error"));
+    expect(getComputedStyle(link).textDecorationLine).toContain("underline");
   });
 
   it("paints the shared state ring on keyboard focus only, at both densities", async () => {

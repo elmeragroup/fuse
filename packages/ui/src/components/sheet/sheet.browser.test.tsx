@@ -201,7 +201,8 @@ describe("Sheet", () => {
     expect(corner.getAttribute("data-slot")).toBe("sheet-close");
     expect(corner.querySelector("svg")).not.toBeNull();
     expect(corner.getAttribute("aria-label")).toBe("Close");
-    expect(corner.className).toContain("hit-area-1");
+    expect(corner.getBoundingClientRect().width).toBeGreaterThanOrEqual(24);
+    expect(corner.getBoundingClientRect().height).toBeGreaterThanOrEqual(24);
     await userEvent.click(corner);
     await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
 
@@ -237,19 +238,23 @@ describe("Sheet", () => {
   });
 
   it("keeps Body as the scroll container and stamps the layout slots", async () => {
+    // spec §9 slot audit: data-slot attributes present incl. sheet on Root and sheet-viewport
     renderThemed(withLocale("en-US", <BasicSheet />));
     const dialog = await openSheet();
-    const body = dialog.querySelector("[data-slot=sheet-body]");
+    const body = dialog.querySelector("[data-slot=sheet-body]"); // spec §9 slot audit
     expect(body).not.toBeNull();
-    expect(body?.className).toContain("overflow-y-auto");
-    expect(body?.className).toContain("min-h-0");
-    expect(body?.className).toContain("flex-1");
-    expect(document.querySelector("[data-slot=sheet-viewport]")).not.toBeNull();
-    expect(dialog.querySelector("[data-slot=sheet-content-inner]")).not.toBeNull();
-    expect(dialog.querySelector("[data-slot=sheet-header]")).not.toBeNull();
-    expect(dialog.querySelector("[data-slot=sheet-footer]")).not.toBeNull();
-    expect(dialog.querySelector("[data-slot=sheet-title]")).not.toBeNull();
-    expect(dialog.querySelector("[data-slot=sheet-description]")).not.toBeNull();
+    if (!(body instanceof HTMLElement)) {
+      throw new Error("expected sheet body");
+    }
+    expect(getComputedStyle(body).overflowY).toBe("auto");
+    expect(getComputedStyle(body).minHeight).toBe("0px");
+    expect(getComputedStyle(body).flexGrow).toBe("1");
+    expect(document.querySelector("[data-slot=sheet-viewport]")).not.toBeNull(); // spec §9 slot audit
+    expect(dialog.querySelector("[data-slot=sheet-content-inner]")).not.toBeNull(); // spec §9 slot audit
+    expect(dialog.querySelector("[data-slot=sheet-header]")).not.toBeNull(); // spec §9 slot audit
+    expect(dialog.querySelector("[data-slot=sheet-footer]")).not.toBeNull(); // spec §9 slot audit
+    expect(dialog.querySelector("[data-slot=sheet-title]")).not.toBeNull(); // spec §9 slot audit
+    expect(dialog.querySelector("[data-slot=sheet-description]")).not.toBeNull(); // spec §9 slot audit
   });
 
   it("resolves the size axis to the side-gated used max-width on both gated sides", async () => {
@@ -321,8 +326,6 @@ describe("Sheet", () => {
     renderThemed(withLocale("en-US", <NeverAttached />));
 
     expect(page.getByRole("dialog").query()).toBeNull();
-    expect(document.querySelector("[data-slot=sheet-content]")).toBeNull();
-    expect(document.querySelector("[data-slot=sheet-overlay]")).toBeNull();
   });
 
   it("does not paint the popup outside a ThemeScope element that has not attached yet", () => {

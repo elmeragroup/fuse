@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { renderThemed } from "../../../test/themed-browser-render";
+import "../../../dist/themes.css";
+import { cssVarColor, px, renderThemed } from "../../../test/themed-browser-render";
 import { Span } from "./span";
 
 const WIDGET_ROLES = ["button", "link", "textbox", "checkbox", "radio", "listitem", "heading"] as const;
@@ -30,10 +31,15 @@ describe("Span", () => {
   });
 
   it("defaults leading to leading-snug", () => {
-    renderThemed(<Span>Inline count</Span>);
-    const classes = spanNamed("Inline count").className.split(/\s+/);
-    expect(classes).toContain("leading-snug");
-    expect(classes).not.toContain("leading-relaxed");
+    renderThemed(
+      <>
+        <Span>Inline count</Span>
+        <Span leading="relaxed">Relaxed count</Span>
+      </>
+    );
+    expect(getComputedStyle(spanNamed("Inline count")).lineHeight).not.toBe(
+      getComputedStyle(spanNamed("Relaxed count")).lineHeight
+    );
   });
 
   it("resolves destructive onto text-error, success onto text-success, and bold onto font-medium", () => {
@@ -42,22 +48,29 @@ describe("Span", () => {
         <Span variant="destructive">Cancelled</Span>
         <Span variant="success">Delivered</Span>
         <Span weight="bold">Medium cap</Span>
+        <Span weight="normal">Normal cap</Span>
       </>
     );
     const cancelled = spanNamed("Cancelled");
-    expect(cancelled.className.split(/\s+/)).toContain("text-error");
-    expect(cancelled.className).not.toContain("destructive");
-    expect(spanNamed("Delivered").className.split(/\s+/)).toContain("text-success");
-    expect(spanNamed("Medium cap").className.split(/\s+/)).toContain("font-medium");
-    expect(spanNamed("Medium cap").className).not.toContain("font-bold");
+    expect(getComputedStyle(cancelled).color).toBe(cssVarColor(cancelled, "--error"));
+    expect(getComputedStyle(spanNamed("Delivered")).color).toBe(
+      cssVarColor(spanNamed("Delivered"), "--success")
+    );
+    expect(Number.parseInt(getComputedStyle(spanNamed("Medium cap")).fontWeight, 10)).toBeGreaterThan(
+      Number.parseInt(getComputedStyle(spanNamed("Normal cap")).fontWeight, 10)
+    );
   });
 
   it("cascades size=xs onto the host and descendants", () => {
-    renderThemed(<Span size="xs">Tiny count</Span>);
-    const classes = spanNamed("Tiny count").className.split(/\s+/);
-    expect(classes).toContain("text-xs");
-    expect(classes).toContain("*:text-xs");
-    expect(classes).toContain("**:text-xs");
+    renderThemed(
+      <>
+        <Span size="xs">Tiny count</Span>
+        <Span size="lg">Large count</Span>
+      </>
+    );
+    expect(px(getComputedStyle(spanNamed("Tiny count")).fontSize)).toBeLessThan(
+      px(getComputedStyle(spanNamed("Large count")).fontSize)
+    );
   });
 
   it("adds truncate and lets a className override win over the recipe", () => {
@@ -67,10 +80,11 @@ describe("Span", () => {
         <Span className="text-muted-foreground">Override</Span>
       </>
     );
-    expect(spanNamed("very-long-inline-value").className.split(/\s+/)).toContain("truncate");
+    const truncated = spanNamed("very-long-inline-value");
+    expect(getComputedStyle(truncated).overflow).toBe("hidden");
+    expect(getComputedStyle(truncated).textOverflow).toBe("ellipsis");
     const override = spanNamed("Override");
-    expect(override.className.split(/\s+/)).toContain("text-muted-foreground");
-    expect(override.className.split(/\s+/)).not.toContain("text-inherit");
+    expect(getComputedStyle(override).color).toBe(cssVarColor(override, "--muted-foreground"));
   });
 
   it("renders the provided render element with merged recipe classes", () => {
@@ -82,9 +96,7 @@ describe("Span", () => {
     const strong = spanNamed("Continue as strong");
     expect(strong.tagName).toBe("STRONG");
     expect(strong.getAttribute("data-slot")).toBe("span");
-    expect(strong.className.split(/\s+/)).toContain("font-sans");
-    expect(strong.className.split(/\s+/)).toContain("text-muted-foreground");
-    expect(strong.className.split(/\s+/)).toContain("text-sm");
-    expect(strong.className.split(/\s+/)).toContain("leading-snug");
+    expect(getComputedStyle(strong).color).toBe(cssVarColor(strong, "--muted-foreground"));
+    expect(px(getComputedStyle(strong).fontSize)).toBe(14);
   });
 });

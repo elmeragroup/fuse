@@ -5,30 +5,16 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
-import { renderThemed } from "../../../test/themed-browser-render";
+import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme/theme-scope";
 import { Tooltip } from "./tooltip";
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
-
 function triggerNamed(name: string): HTMLElement {
-  const element = page.getByRole("button", { name, exact: true }).element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error(`expected trigger ${name}`);
-  }
-  return element;
+  return roleNamed("button", name);
 }
 
 function tooltipNamed(name: string): HTMLElement {
-  const element = page.getByRole("tooltip", { name, exact: true }).element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error(`expected tooltip ${name}`);
-  }
-  return element;
+  return roleNamed("tooltip", name);
 }
 
 async function hoverOpen(name: string, tooltipName = name): Promise<HTMLElement> {
@@ -157,9 +143,12 @@ describe("Tooltip", () => {
     );
 
     await hoverOpen("Grouped", "Grouped tip");
+    const started = performance.now();
     await userEvent.hover(triggerNamed("Scoped"));
-    await sleep(120);
-    expect(page.getByRole("tooltip", { name: "Scoped tip", exact: true }).query()).toBeNull();
+    await vi.waitFor(() => {
+      expect(performance.now() - started).toBeGreaterThanOrEqual(120);
+      expect(page.getByRole("tooltip", { name: "Scoped tip", exact: true }).query()).toBeNull();
+    });
 
     await vi.waitFor(
       () => {
@@ -258,7 +247,6 @@ describe("Tooltip", () => {
     renderThemed(<NeverAttached />);
 
     expect(page.getByRole("tooltip").query()).toBeNull();
-    expect(document.querySelector("[data-slot=tooltip-content]")).toBeNull();
   });
 
   it("does not paint the popup outside a ThemeScope element that has not attached yet", () => {

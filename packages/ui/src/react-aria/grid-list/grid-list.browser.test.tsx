@@ -219,7 +219,7 @@ describe("GridList", () => {
 
     const grid = gridNamed("Meters");
     expect(grid).toHaveAttribute("data-empty");
-    expect(grid.querySelectorAll('[data-slot="grid-list-item"]')).toHaveLength(0);
+    expect(page.getByRole("row", { name: "Oslo" }).query()).toBeNull();
     await expect.element(page.getByText("No meters match this filter.")).toBeVisible();
     expect(getComputedStyle(grid).display).toBe("flex");
     expect(getComputedStyle(grid).alignItems).toBe("center");

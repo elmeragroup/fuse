@@ -42,11 +42,7 @@ function queryToastCopy(name: string): HTMLElement | undefined {
   const copy = page
     .getByText(name, { exact: true })
     .elements()
-    .find(
-      (node) =>
-        node.getAttribute("data-slot") === "toast-title" ||
-        node.getAttribute("data-slot") === "toast-description"
-    );
+    .find((node) => node.closest('[role="dialog"], [role="alertdialog"]'));
   return copy instanceof HTMLElement ? copy : undefined;
 }
 
@@ -59,11 +55,18 @@ function toastCopy(name: string): HTMLElement {
 }
 
 function toastRootNamed(name: string): HTMLElement {
-  const root = toastCopy(name).closest("[data-slot=toast-root]");
+  const copy = toastCopy(name);
+  const root = copy.closest('[role="dialog"], [role="alertdialog"]');
   if (!(root instanceof HTMLElement)) {
     throw new Error(`expected toast root for ${name}`);
   }
   return root;
+}
+
+function toastRoots(): HTMLElement[] {
+  return [...page.getByRole("dialog").elements(), ...page.getByRole("alertdialog").elements()].filter(
+    (element): element is HTMLElement => element instanceof HTMLElement
+  );
 }
 
 async function waitForToast(name: string): Promise<HTMLElement> {
@@ -124,7 +127,7 @@ describe("Toast manager", () => {
     expect(upserted).toBe("save");
     await waitForToast("Saved");
     expect(queryToastCopy("Saving…")).toBeUndefined();
-    expect(document.querySelectorAll("[data-slot=toast-root]")).toHaveLength(1);
+    expect(toastRoots()).toHaveLength(1);
 
     manager.update("save", { description: "All good." });
     await vi.waitFor(() => {
@@ -133,7 +136,7 @@ describe("Toast manager", () => {
 
     const extra = manager.add({ title: "Second", timeout: 0 });
     await waitForToast("Second");
-    expect(document.querySelectorAll("[data-slot=toast-root]").length).toBeGreaterThan(1);
+    expect(toastRoots().length).toBeGreaterThan(1);
 
     manager.close(extra);
     await waitForToastGone("Second");
@@ -141,7 +144,7 @@ describe("Toast manager", () => {
 
     manager.close();
     await vi.waitFor(() => {
-      expect(document.querySelector("[data-slot=toast-root]")).toBeNull();
+      expect(toastRoots()).toHaveLength(0);
     });
   });
 
@@ -465,8 +468,7 @@ describe("Toast overlay containment", () => {
       )
     );
 
-    expect(document.querySelector("[data-slot=toast-viewport]")).toBeNull();
-    expect(document.querySelector("[data-slot=toast-root]")).toBeNull();
     expect(page.getByRole("region", { name: "Notifications", exact: true }).query()).toBeNull();
+    expect(toastRoots()).toHaveLength(0);
   });
 });

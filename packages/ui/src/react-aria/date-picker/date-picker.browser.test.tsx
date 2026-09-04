@@ -7,6 +7,7 @@ import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import "../../../dist/themes.css";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
 import {
   calendarGrid,
@@ -18,6 +19,7 @@ import {
 } from "../../../test/rac-calendar-testing";
 import {
   CONTROL_MD,
+  cssVarColor,
   fkasExternal,
   px,
   renderThemed,
@@ -349,9 +351,9 @@ describe("DatePicker", () => {
     // The FieldGroup's own `isReadOnly` axis paints the fill, exactly once. The glyph is
     // deliberately untinted: `bg-muted` on the `<svg>` never belonged there and went with
     // the picker recipe's duplicate arm (§8.11, 2026-09-03).
-    expect(group.className.split(/\s+/)).toContain("bg-muted");
+    expect(getComputedStyle(group).backgroundColor).toBe(cssVarColor(group, "--muted"));
     expect(group.getAttribute("data-readonly")).toBe("true");
-    expect((glyph.getAttribute("class") ?? "").split(/\s+/)).not.toContain("bg-muted");
+    expect(getComputedStyle(glyph).backgroundColor).not.toBe(cssVarColor(group, "--muted"));
     expect(trigger()).toBeDisabled();
 
     await userEvent.click(trigger(), { force: true });
@@ -580,9 +582,11 @@ describe("DatePicker composition surface", () => {
       throw new Error("expected the DatePicker root");
     }
 
-    expect(root.className.split(/\s+/)).toEqual(expect.arrayContaining(["flex", "flex-col", "gap-2"]));
+    expect(getComputedStyle(root).display).toBe("flex");
+    expect(getComputedStyle(root).flexDirection).toBe("column");
+    expect(px(getComputedStyle(root).rowGap)).toBe(8);
     await openPicker();
-    expect(root.className.split(/\s+/)).toContain("gap-4");
+    expect(px(getComputedStyle(root).rowGap)).toBe(16);
   });
 
   it("strips the calendar's card border and the dialog's padding inside the popover", async () => {
@@ -596,9 +600,8 @@ describe("DatePicker composition surface", () => {
     // No `title` ⇒ no header row at all: an empty heading would take the dialog's
     // accessible name from RAC and spend one 16 px `gap-4` on nothing
     // (react-aria/internal/dialog.tsx).
-    expect(dialog.querySelector("[data-slot=dialog-header]")).toBeNull();
-    const content = dialog.querySelector("[data-slot=dialog-content]");
-    expect(content?.firstElementChild).toBe(paneAroundCalendar());
+    expect(page.getByRole("button", { name: /close/i }).query()).toBeNull();
+    expect(paneAroundCalendar().closest('[role="dialog"]')).toBe(dialog);
   });
 
   it("lays the dialog out in two divided panes only when a renderable preset group is given", async () => {
@@ -635,9 +638,8 @@ describe("DatePicker composition surface", () => {
 
     await userEvent.click(buttonNamed("Add presets"));
     await openPicker();
-    expect(paneAroundCalendar().className.split(/\s+/)).toEqual(
-      expect.arrayContaining(["flex", "gap-x-3", "divide-x", "pr-3", "pb-3"])
-    );
+    expect(getComputedStyle(paneAroundCalendar()).display).toBe("flex");
+    expect(px(getComputedStyle(paneAroundCalendar()).columnGap)).toBe(12);
     await expect.element(page.getByRole("radiogroup", { name: "Date presets" })).toBeVisible();
   });
 });

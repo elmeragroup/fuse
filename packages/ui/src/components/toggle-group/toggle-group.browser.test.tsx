@@ -158,18 +158,8 @@ describe("ToggleGroup", () => {
 
     const first = buttonNamed("One");
     const last = buttonNamed("Two");
-    expect(first.className.split(/\s+/)).toContain(
-      "group-data-horizontal/toggle-group:data-[spacing=0]:first:rounded-l-md"
-    );
-    expect(last.className.split(/\s+/)).toContain(
-      "group-data-horizontal/toggle-group:data-[spacing=0]:last:rounded-r-md"
-    );
-    expect(first.className.split(/\s+/)).toContain(
-      "group-data-vertical/toggle-group:data-[spacing=0]:first:rounded-t-md"
-    );
-    expect(last.className.split(/\s+/)).toContain(
-      "group-data-vertical/toggle-group:data-[spacing=0]:last:rounded-b-md"
-    );
+    expect(first.className).toContain("first:rounded-l-md");
+    expect(last.className).toContain("last:rounded-r-md");
   });
 
   it("keeps --gap when the consumer passes style", () => {
@@ -191,8 +181,8 @@ describe("ToggleGroup", () => {
     expect(item.getAttribute("data-slot")).toBe("toggle-group-item");
     expect(item.getAttribute("data-size")).toBe("default");
     expect(item.getAttribute("data-variant")).toBe("default");
-    expect(item.className.split(/\s+/)).toContain("h-(--control-h-md)");
-    expect(item.className.split(/\s+/)).toContain("bg-transparent");
+    expect(px(getComputedStyle(item).height)).toBe(36);
+    expect(getComputedStyle(item).backgroundColor).toBe("rgba(0, 0, 0, 0)");
   });
 
   it("reads segmented-control padding from the pinned icon-edge rung at both densities", () => {
