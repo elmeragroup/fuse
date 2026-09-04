@@ -1,6 +1,6 @@
 import { defineRule } from "@oxlint/plugins";
 
-import { FORBIDDEN_RAC_PACKAGES } from "../../../packages/ui/scripts/forbidden-rac-packages.js";
+import { isForbiddenRacSpecifier } from "../../../packages/ui/scripts/forbidden-rac-packages.js";
 import { normalizeFilename } from "../filename-normalizer.js";
 
 /**
@@ -8,18 +8,6 @@ import { normalizeFilename } from "../filename-normalizer.js";
  */
 function isReactAriaQuarantine(filename) {
   return normalizeFilename(filename).includes("/src/react-aria/");
-}
-
-/**
- * @param {string} specifier
- */
-function isForbiddenModule(specifier) {
-  for (const name of FORBIDDEN_RAC_PACKAGES) {
-    if (specifier === name || specifier.startsWith(`${name}/`)) {
-      return true;
-    }
-  }
-  return false;
 }
 
 /**
@@ -54,7 +42,7 @@ export default defineRule({
      * @param {string | null} specifier
      */
     function reportIfForbidden(node, specifier) {
-      if (skipFile || specifier === null || !isForbiddenModule(specifier)) {
+      if (skipFile || specifier === null || !isForbiddenRacSpecifier(specifier)) {
         return;
       }
       context.report({ node, messageId: "quarantined", data: { specifier } });

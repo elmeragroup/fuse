@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -33,22 +33,23 @@ describe("shared script helpers", () => {
       "function toPosixPath"
     );
     expect(readFileSync(join(scriptsDir, "package-check-lib.ts"), "utf8")).toContain('from "./paths"');
-    const scripts = [
-      "build.ts",
-      "build-css.ts",
-      "generate-flags.ts",
-      "generate-icons.ts",
-      "pack.ts",
-      "package-check.ts",
-      "package-check-packed.ts",
-      "size-limit.ts",
-      "write-source-exports.ts",
-    ];
-    for (const script of scripts) {
-      expect(readFileSync(join(scriptsDir, script), "utf8"), script).toContain("packageRootFromScript");
-      expect(readFileSync(join(scriptsDir, script), "utf8"), script).not.toContain(
-        "dirname(fileURLToPath(import.meta.url))"
-      );
+    for (const script of readdirSync(scriptsDir)) {
+      if (!/\.(ts|js)$/.test(script) || script.endsWith(".d.ts")) {
+        continue;
+      }
+      const source = readFileSync(join(scriptsDir, script), "utf8");
+      if (script === "paths.ts") {
+        expect(source).toContain("export function packageRootFromScript");
+        continue;
+      }
+      const locatesPackageRoot =
+        /fileURLToPath\(\s*import\.meta\.url\s*\)/.test(source) ||
+        /packageRootFromScript\(\s*import\.meta\.url\s*\)/.test(source);
+      if (!locatesPackageRoot) {
+        continue;
+      }
+      expect(source, script).toContain("packageRootFromScript");
+      expect(source, script).not.toContain("dirname(fileURLToPath(import.meta.url))");
     }
   });
 
@@ -67,9 +68,10 @@ describe("shared script helpers", () => {
       join(packageRoot, "../../tooling/oxlint-plugin/rules/no-rac-outside-quarantine.js"),
       "utf8"
     );
-    expect(lintRule).toContain("FORBIDDEN_RAC_PACKAGES");
+    expect(lintRule).toContain("isForbiddenRacSpecifier");
     expect(lintRule).toContain("forbidden-rac-packages.js");
     expect(lintRule).not.toMatch(/const FORBIDDEN = \[/);
+    expect(lintRule).not.toContain("for (const name of FORBIDDEN");
   });
 });
 

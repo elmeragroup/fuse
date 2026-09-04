@@ -68,7 +68,7 @@ export function ceilingFromMeasured(gzipBytes: number): number {
   return Math.round(gzipBytes * 1.5);
 }
 
-function withDerivedCeiling<T extends MeasuredRow>(row: T): T & { ceilingGzip: number } {
+export function withDerivedCeiling<T extends MeasuredRow>(row: T): T & { ceilingGzip: number } {
   return { ...row, ceilingGzip: row.ceilingGzip ?? ceilingFromMeasured(row.measuredGzip) };
 }
 

@@ -11,12 +11,46 @@ import {
   FLAG_RAW_BUDGETS,
   JS_ENTRY_BUDGETS,
   NAMED_IMPORT_BUDGETS,
+  withDerivedCeiling,
 } from "../scripts/size-budgets";
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 function gzipBudgets() {
   return [...JS_ENTRY_BUDGETS, ...NAMED_IMPORT_BUDGETS, ...CSS_BUDGETS];
+}
+
+type SourceBudgetRow = {
+  name: string;
+  measuredGzip: number;
+  ceilingGzip?: number;
+};
+
+const BUDGET_OBJECT = /\{\s*name:\s*"([^"]+)"([^}]*)\}/g;
+
+function fieldNumber(body: string, field: string): number | undefined {
+  const match = new RegExp(`${field}:\\s*(\\d+)`).exec(body);
+  const value = match?.[1];
+  return value === undefined ? undefined : Number(value);
+}
+
+/** Source rows only — does not apply derivation. */
+function parseSourceGzipRows(source: string): SourceBudgetRow[] {
+  const rows: SourceBudgetRow[] = [];
+  for (const match of source.matchAll(BUDGET_OBJECT)) {
+    const name = match[1];
+    const body = match[2] ?? "";
+    if (name === undefined || !body.includes("measuredGzip:")) {
+      continue;
+    }
+    const measuredGzip = fieldNumber(body, "measuredGzip");
+    if (measuredGzip === undefined) {
+      continue;
+    }
+    const ceilingGzip = fieldNumber(body, "ceilingGzip");
+    rows.push(ceilingGzip === undefined ? { name, measuredGzip } : { name, measuredGzip, ceilingGzip });
+  }
+  return rows;
 }
 
 describe("size-limit harness", () => {
@@ -119,24 +153,30 @@ describe("size-limit harness", () => {
     expect(CSS_BUDGETS.map((budget) => budget.name)).toEqual(["themes.css", "styles.css"]);
   });
 
-  it("derives ceilingGzip from measuredGzip and never re-types per-entry ceilings", () => {
+  it("derives an omitted ceiling at measured × 1.5 and keeps a standing override", () => {
+    expect(withDerivedCeiling({ measuredGzip: 1000 })).toEqual({
+      measuredGzip: 1000,
+      ceilingGzip: 1500,
+    });
+    expect(withDerivedCeiling({ measuredGzip: 1000, ceilingGzip: 1200 })).toEqual({
+      measuredGzip: 1000,
+      ceilingGzip: 1200,
+    });
+    // Ticket-46 standing ceilings may sit slightly above a fresh ×1.5 (badge, date-picker).
+    expect(withDerivedCeiling({ measuredGzip: 15658, ceilingGzip: 23493 }).ceilingGzip).toBe(23493);
+  });
+
+  it("exports each budget ceiling as explicit ?? ceilingFromMeasured(measured)", () => {
     const budgetsSource = readFileSync(join(packageRoot, "scripts/size-budgets.ts"), "utf8");
     expect(budgetsSource).toContain("withDerivedCeiling");
-    expect(budgetsSource).toContain("measuredGzip");
-    const testSource = readFileSync(fileURLToPath(import.meta.url), "utf8");
-    expect(testSource).not.toMatch(/JS_ENTRY_BUDGETS\.find\(/);
-
-    for (const budget of gzipBudgets()) {
-      expect(budget.measuredGzip, budget.name).toBeGreaterThan(0);
-      const derived = ceilingFromMeasured(budget.measuredGzip);
-      if (budget.ceilingGzip === derived) {
-        expect(budget.ceilingGzip).toBe(derived);
-        continue;
-      }
-      // Standing ratchet: the written ceiling is the previously committed number, never
-      // raised when the entry grows under it, and not looser than measured × 1.5 either.
-      expect(budget.ceilingGzip, budget.name).toBeGreaterThan(0);
-      expect(budget.ceilingGzip, budget.name).not.toBe(derived);
+    const parsed = parseSourceGzipRows(budgetsSource);
+    const exported = gzipBudgets();
+    expect(parsed.map((row) => row.name)).toEqual(exported.map((budget) => budget.name));
+    for (const [index, row] of parsed.entries()) {
+      const budget = exported[index];
+      expect(budget, row.name).toBeDefined();
+      expect(budget?.measuredGzip, row.name).toBe(row.measuredGzip);
+      expect(budget?.ceilingGzip, row.name).toBe(row.ceilingGzip ?? ceilingFromMeasured(row.measuredGzip));
     }
   });
 

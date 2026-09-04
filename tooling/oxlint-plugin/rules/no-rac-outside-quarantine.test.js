@@ -113,9 +113,10 @@ describe("shared RAC forbidden list", () => {
       join(dirname(fileURLToPath(import.meta.url)), "no-rac-outside-quarantine.js"),
       "utf8"
     );
-    expect(source).toContain("FORBIDDEN_RAC_PACKAGES");
+    expect(source).toContain("isForbiddenRacSpecifier");
     expect(source).toContain("forbidden-rac-packages.js");
     expect(source).not.toMatch(/const FORBIDDEN = \[/);
+    expect(source).not.toContain("for (const name of FORBIDDEN");
     expect([...FORBIDDEN_RAC_PACKAGES]).toEqual([
       "react-aria-components",
       "react-aria",
@@ -132,6 +133,6 @@ describe("shared RAC forbidden list", () => {
     );
     const planted = `const FORBIDDEN = ${JSON.stringify(["react-aria-components", "react-aria"])};`;
     expect(source).not.toContain(planted);
-    expect(source.includes("FORBIDDEN_RAC_PACKAGES") && !source.includes("const FORBIDDEN = [")).toBe(true);
+    expect(source.includes("isForbiddenRacSpecifier") && !source.includes("const FORBIDDEN = [")).toBe(true);
   });
 });
