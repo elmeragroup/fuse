@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import "../../../dist/themes.css";
 import { assertFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
 import {
   accessibleRangeHeading,
@@ -18,7 +19,7 @@ import {
   navButtons,
   visibleMonthTitle,
 } from "../../../test/rac-calendar-testing";
-import { renderThemed } from "../../../test/themed-browser-render";
+import { cssVarColor, px, renderThemed } from "../../../test/themed-browser-render";
 import { CaretLeft } from "../../icons/generated/caret-left";
 import { CaretRight } from "../../icons/generated/caret-right";
 import { UiProviders } from "../ui-providers/ui-providers";
@@ -89,7 +90,7 @@ describe("Calendar", () => {
     expect(visibleTitle).toHaveAttribute("aria-hidden", "true");
     expect(visibleTitle.getAttribute("aria-live")).toBeNull();
     expect(visibleTitle.getAttribute("data-slot")).toBe("heading");
-    expect(visibleTitle.className.split(/\s+/)).toEqual(expect.arrayContaining(["font-heading", "text-lg"]));
+    expect(px(getComputedStyle(visibleTitle).fontSize)).toBe(18);
     expect(visibleTitle.textContent).toMatch(/July\s+2026/i);
 
     const accessibleRange = accessibleRangeHeading();
@@ -246,7 +247,7 @@ describe("Calendar", () => {
     expect(textHost.getAttribute("data-slot")).toBe("text");
     expect(textHost.getAttribute("slot")).toBe("errorMessage");
     expect(textHost.textContent).toBe("That day is closed.");
-    expect(textHost.className.split(/\s+/)).toEqual(expect.arrayContaining(["text-error", "font-sans"]));
+    expect(getComputedStyle(textHost).color).toBe(cssVarColor(textHost, "--error"));
 
     // RAC wires the errorMessage slot to the invalid selected day, not to the root:
     // `useCalendarBase` hands the id to `useCalendarCell`, which is where an AT reading
@@ -298,8 +299,7 @@ describe("Calendar", () => {
       />
     );
     await expect.element(page.getByRole("grid")).toBeVisible();
-    expect(calendarRoot().className.split(/\s+/)).toEqual(
-      expect.arrayContaining(["bg-card", "border-border", "min-w-40"])
-    );
+    expect(calendarRoot().className).toContain("min-w-40");
+    expect(getComputedStyle(calendarRoot()).backgroundColor).toBe(cssVarColor(calendarRoot(), "--card"));
   });
 });

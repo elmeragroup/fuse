@@ -52,7 +52,7 @@ function htmlControl(name: string): HTMLElement {
 }
 
 function tabsRoot(): HTMLElement {
-  const root = htmlTablist().closest("[data-slot='tabs']");
+  const root = htmlTablist().parentElement;
   if (!(root instanceof HTMLElement)) {
     throw new Error("Expected the tabs root");
   }
@@ -219,9 +219,7 @@ describe("Tabs", () => {
     renderThemed(<AccountPassword variant="line" />);
 
     expect(htmlTablist().getAttribute("data-variant")).toBe("line");
-    const classes = htmlTab("Account").className.split(/\s+/);
-    expect(classes).not.toContain("bg-background");
-    expect(classes.some((token) => token.includes("data-active:bg-transparent"))).toBe(true);
+    expect(getComputedStyle(htmlTab("Account")).backgroundColor).toBe("rgba(0, 0, 0, 0)");
   });
 
   it("matches signed md list height when horizontal and stays content-sized when vertical", () => {

@@ -36,23 +36,44 @@ function extraNamed(name: string): HTMLElement {
 }
 
 function shellFrom(name: string): HTMLElement {
-  const shell = titled(name).closest("[data-slot=checkbox-item]");
-  if (!(shell instanceof HTMLElement)) {
-    throw new Error(`expected checkbox-item shell around ${name}`);
+  const heading = titled(name);
+  const shell = heading.closest("[data-selection-item]");
+  if (shell instanceof HTMLElement) {
+    return shell;
   }
-  return shell;
+  const article = heading.closest("article");
+  if (article instanceof HTMLElement) {
+    return article;
+  }
+  throw new Error(`expected checkbox-item shell around ${name}`);
 }
 
 function controlSlot(shell: HTMLElement): HTMLElement {
-  const media = shell.querySelector("[data-slot=selection-item-control]");
+  const control = [
+    ...page.getByRole("checkbox").elements(),
+    ...page.getByRole("radio").elements(),
+    ...page.getByRole("img").elements(),
+  ].find((element) => shell.contains(element));
+  const media = control?.parentElement;
   if (!(media instanceof HTMLElement)) {
     throw new Error("expected selection-item-control slot");
   }
   return media;
 }
 
+function subsectionHost(from: HTMLElement): HTMLElement {
+  let current: HTMLElement | null = from;
+  while (current) {
+    if (current.hasAttribute("data-mode") || current.getAttribute("aria-hidden") === "true") {
+      return current;
+    }
+    current = current.parentElement;
+  }
+  throw new Error("expected a subsection host");
+}
+
 function subsectionSpacer(label: string): HTMLElement {
-  const footer = extraNamed(label).closest("[data-slot=item-footer]");
+  const footer = extraNamed(label).parentElement;
   let current = footer?.parentElement ?? null;
   while (current) {
     const spacer = [...current.children].find((child) => child.getAttribute("aria-hidden") === "true");
@@ -165,11 +186,7 @@ describe("SelectionItem", () => {
 
     const button = page.getByRole("button", { name: "Inside fragment", exact: true }).element();
     expect(button.closest("label")).not.toBeNull();
-    const footer = button.closest("[data-slot=item-footer]");
-    if (!(footer instanceof HTMLElement)) {
-      throw new Error("expected the wrapped SubSection to render an item-footer");
-    }
-    footer.click();
+    button.closest("label")?.click();
     const box = page.getByRole("checkbox", { checked: true }).element();
     expect(box.getAttribute("aria-checked")).toBe("true");
   });
@@ -183,7 +200,7 @@ describe("SelectionItem", () => {
         </SelectionItem.Shell>
       </Field.Root>
     );
-    expect(shellFrom("Fixed price").querySelector("[data-slot=item-footer]")).toBeNull();
+    expect(page.getByRole("region").query()).toBeNull();
     expect(page.getByRole("region", { name: "Hidden extra", exact: true }).query()).toBeNull();
   });
 
@@ -211,11 +228,7 @@ describe("SelectionItem", () => {
     if (!(detailsEl instanceof HTMLElement)) {
       throw new Error("expected hidden details button");
     }
-    const footer = detailsEl.closest("[data-slot=item-footer]");
-    expect(footer).toBeInstanceOf(HTMLElement);
-    if (!(footer instanceof HTMLElement)) {
-      throw new Error("expected item-footer");
-    }
+    const footer = subsectionHost(detailsEl);
     expect(footer.getAttribute("data-mode")).toBe("hidden");
     expect(getComputedStyle(footer).pointerEvents).toBe("none");
 
@@ -604,7 +617,7 @@ describe("selection group orientation map", () => {
     // Plain groups stay plain: no list semantics are added to the shells.
     expect(page.getByRole("listitem").elements()).toHaveLength(0);
     // The second shell still collapses its top border into the first, as a connected stack.
-    const secondCheck = checkboxNamed("Check shell vertical b").closest("[data-slot=checkbox-item]");
+    const secondCheck = checkboxNamed("Check shell vertical b").closest("[data-selection-item]");
     if (!(secondCheck instanceof HTMLElement)) {
       throw new Error("expected checkbox-item shell");
     }
@@ -633,13 +646,13 @@ describe("selection group orientation map", () => {
     const radioGroup = groupPrimitiveAround(radioNamed("Radio shell horizontal a"));
     assertHorizontalItemList(
       checkGroup,
-      [...checkGroup.querySelectorAll("[data-slot=checkbox-item]")].filter(
+      [...checkGroup.querySelectorAll("[data-selection-item]")].filter(
         (node): node is HTMLElement => node instanceof HTMLElement
       )
     );
     assertHorizontalItemList(
       radioGroup,
-      [...radioGroup.querySelectorAll("[data-slot=radio-item]")].filter(
+      [...radioGroup.querySelectorAll("[data-selection-item]")].filter(
         (node): node is HTMLElement => node instanceof HTMLElement
       )
     );

@@ -26,27 +26,14 @@ function walk(directory: string): string[] {
   return files;
 }
 
-/**
- * Helpers whose local re-declaration is still being unwound, suite by suite, by the batch tickets
- * that adopt the shared exports. New copies are a failure; the recorded ones are a worklist.
- */
-const MIGRATING_HELPERS = [
+const LOCAL_HELPER_PATTERNS = [
   { helper: "headingNamed", pattern: /function headingNamed\b/ },
   { helper: "cssVarColor", pattern: /function cssVarColor\b/ },
   { helper: "roleNamed", pattern: /function roleNamed\b/ },
 ] as const;
 
-const KNOWN_LOCAL_HELPER_COPIES = [
-  "components/alert/alert.browser.test.tsx headingNamed",
-  "components/checkbox-card/checkbox-card.browser.test.tsx cssVarColor",
-  "components/checkbox/checkbox.browser.test.tsx cssVarColor",
-  "components/checkbox/checkbox.browser.test.tsx headingNamed",
-  "components/description-list/description-list.browser.test.tsx headingNamed",
-  "components/heading/heading.browser.test.tsx headingNamed",
-  "components/radio-group/radio-group.browser.test.tsx cssVarColor",
-  "components/radio-group/radio-group.browser.test.tsx headingNamed",
-  "components/timeline-list/timeline-list.browser.test.tsx headingNamed",
-];
+/** Empty worklist: a local `function roleNamed` / `headingNamed` / `cssVarColor` fails. */
+const KNOWN_LOCAL_HELPER_COPIES: readonly string[] = [];
 
 /**
  * Directory names under `src/components/` for the a–d batch (ticket 47). 48/49 add
@@ -119,6 +106,93 @@ function unsanctionedSlotLocators(files: string[]): string[] {
   return findings;
 }
 
+function localHelperCopiesIn(source: string): string[] {
+  return LOCAL_HELPER_PATTERNS.filter(({ pattern }) => pattern.test(source)).map(({ helper }) => helper);
+}
+
+function helperCopyFindings(readSource: (file: string) => string): string[] {
+  return suiteRoots
+    .flatMap((root) => walk(root))
+    .flatMap((file) => {
+      const path = relative(sourceRoot, file);
+      return localHelperCopiesIn(readSource(file)).map((helper) => `${path} ${helper}`);
+    })
+    .sort();
+}
+
+function extrasNotAllowlisted(findings: string[]): string[] {
+  return findings.filter((finding) => !KNOWN_LOCAL_HELPER_COPIES.includes(finding));
+}
+
+const QZ_COMPONENTS = new Set([
+  "radio-group",
+  "scroll-area",
+  "select",
+  "selection-item",
+  "separator",
+  "sheet",
+  "show",
+  "sidebar",
+  "skeleton",
+  "span",
+  "switch",
+  "table",
+  "tabs",
+  "text",
+  "text-field",
+  "textarea",
+  "textarea-field",
+  "timeline-list",
+  "toast",
+  "toggle",
+  "toggle-group",
+  "tooltip",
+]);
+
+function isQzOrReactAria(relPath: string): boolean {
+  if (relPath.startsWith("react-aria/")) {
+    return true;
+  }
+  const match = /^components\/([^/]+)\//.exec(relPath);
+  return match !== null && QZ_COMPONENTS.has(match[1] ?? "");
+}
+
+const QZ_SLOT_AUDIT_CITE = /spec §9/;
+
+function lineCited(lines: string[], index: number): boolean {
+  const line = lines[index] ?? "";
+  if (QZ_SLOT_AUDIT_CITE.test(line)) {
+    return true;
+  }
+  for (let previous = index - 1; previous >= 0; previous--) {
+    const text = (lines[previous] ?? "").trim();
+    if (text === "" || text.startsWith("//") || text.startsWith("*") || text.startsWith("/*")) {
+      if (QZ_SLOT_AUDIT_CITE.test(lines[previous] ?? "")) {
+        return true;
+      }
+      continue;
+    }
+    break;
+  }
+  return false;
+}
+
+const UNSANCTIONED_LOCATOR =
+  /querySelector(?:All)?\s*\(\s*[`'"][^`'"]*data-slot|closest\(\s*[`'"][^`'"]*data-slot|function bySlot\b/;
+
+function unsanctionedLocators(source: string, path: string): string[] {
+  const lines = source.split("\n");
+  const findings: string[] = [];
+  for (let index = 0; index < lines.length; index++) {
+    const line = lines[index] ?? "";
+    if (!UNSANCTIONED_LOCATOR.test(line) || lineCited(lines, index)) {
+      continue;
+    }
+    findings.push(`${path}:${String(index + 1)}`);
+  }
+  return findings;
+}
+
 describe("themed browser-test harness", () => {
   it("is the only ThemeScope / density / CONTROL_MD surface the component and react-aria suites use", () => {
     const files = suiteRoots.flatMap((root) => walk(root));
@@ -135,24 +209,64 @@ describe("themed browser-test harness", () => {
     }
   });
 
-  it("grows no new local copy of roleNamed / headingNamed / cssVarColor", () => {
+  it("forbids a local copy of roleNamed / headingNamed / cssVarColor", () => {
+    expect(helperCopyFindings((file) => readFileSync(file, "utf8"))).toEqual([]);
+  });
+
+  it("fails a planted local function roleNamed", () => {
+    const files = suiteRoots.flatMap((root) => walk(root));
+    const target = files.find(
+      (file) => relative(sourceRoot, file) === "components/show/show.browser.test.tsx"
+    );
+    if (target === undefined) {
+      throw new Error("expected show.browser.test.tsx in the walked suite roots");
+    }
+    const extras = extrasNotAllowlisted(
+      helperCopyFindings((file) => {
+        const source = readFileSync(file, "utf8");
+        return file === target ? `${source}\nfunction roleNamed() {}` : source;
+      })
+    );
+    expect(extras).toEqual([`${relative(sourceRoot, target)} roleNamed`]);
+    expect(localHelperCopiesIn("const roleNamed = () => undefined;")).toEqual([]);
+  });
+
+  it("records that the react-aria tier has no local helper copies", () => {
     const findings = suiteRoots
       .flatMap((root) => walk(root))
       .flatMap((file) => {
-        const source = readFileSync(file, "utf8");
         const path = relative(sourceRoot, file);
-        return MIGRATING_HELPERS.filter(({ pattern }) => pattern.test(source)).map(
-          ({ helper }) => `${path} ${helper}`
-        );
-      })
-      .sort();
-
-    // Subset, not equality: the batch tickets delete these copies without editing this list.
-    expect(findings.filter((finding) => !KNOWN_LOCAL_HELPER_COPIES.includes(finding))).toEqual([]);
+        if (!path.startsWith("react-aria/")) {
+          return [];
+        }
+        return localHelperCopiesIn(readFileSync(file, "utf8")).map((helper) => `${path} ${helper}`);
+      });
+    expect(findings).toEqual([]);
   });
 
-  it("records that the react-aria tier already has no local helper copies", () => {
-    expect(KNOWN_LOCAL_HELPER_COPIES.filter((finding) => finding.startsWith("react-aria/"))).toEqual([]);
+  it("browser suites do not wait with setTimeout", () => {
+    const findings = suiteRoots.flatMap((root) =>
+      walk(root).flatMap((file) => {
+        const path = relative(sourceRoot, file);
+        return readFileSync(file, "utf8")
+          .split("\n")
+          .flatMap((line, index) => (/setTimeout\s*\(/.test(line) ? [`${path}:${String(index + 1)}`] : []));
+      })
+    );
+    expect(findings).toEqual([]);
+  });
+
+  it("q-z and react-aria suites locate by role, not querySelector/data-slot, except cited slot audits", () => {
+    const findings = suiteRoots
+      .flatMap((root) => walk(root))
+      .flatMap((file) => {
+        const path = relative(sourceRoot, file);
+        if (!isQzOrReactAria(path)) {
+          return [];
+        }
+        return unsanctionedLocators(readFileSync(file, "utf8"), path);
+      });
+    expect(findings).toEqual([]);
   });
 
   it("a-d browser suites locate by role/label except cited §9 slot audits", () => {

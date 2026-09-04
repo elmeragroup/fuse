@@ -218,11 +218,12 @@ describe("VerticalTable", () => {
     const loadingRow = page
       .getByRole("row")
       .elements()
-      .find((row) => row.querySelector('[data-slot="skeleton"]'));
+      .find((row) => row.textContent.trim() === "");
     if (!(loadingRow instanceof HTMLElement)) {
       throw new Error("expected a loading row");
     }
     expect(loadingRow.textContent.trim()).toBe("");
+    // spec §9: isLoading cells contain the skeleton node (no role; locate by the mandated slot).
     expect(loadingRow.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(2);
     expect(page.getByRole("cell", { name: "Name" }).elements()).toHaveLength(0);
   });
@@ -239,11 +240,11 @@ describe("VerticalTable", () => {
     expect(document.querySelectorAll("#facts")).toHaveLength(1);
     const wrapper = document.getElementById("facts");
     expect(wrapper?.getAttribute("data-slot")).toBe("vertical-table");
-    expect(wrapper?.className.split(/\s+/)).toContain("max-w-md");
+    expect(wrapper instanceof HTMLElement ? px(getComputedStyle(wrapper).maxWidth) : 0).toBe(448);
     const table = htmlTable();
     expect(table.id).toBe("");
-    expect(table.className.split(/\s+/)).toContain("table-fixed");
-    expect(table.className.split(/\s+/)).not.toContain("max-w-md");
+    expect(getComputedStyle(table).tableLayout).toBe("fixed");
+    expect(getComputedStyle(table).maxWidth).not.toBe("448px");
   });
 
   it("names the table from Header via tableProps and exposes a Key row header", () => {

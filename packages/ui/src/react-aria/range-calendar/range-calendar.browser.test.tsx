@@ -7,6 +7,7 @@ import type { Mock } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import "../../../dist/themes.css";
 import { assertStateFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
 import {
   accessibleRangeHeading,
@@ -21,7 +22,7 @@ import {
   parkPointerOffGrid,
   visibleMonthTitle,
 } from "../../../test/rac-calendar-testing";
-import { renderThemed } from "../../../test/themed-browser-render";
+import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
 import { UiProviders } from "../ui-providers/ui-providers";
 import { RangeCalendar } from "./range-calendar";
 
@@ -138,10 +139,9 @@ describe("RangeCalendar", () => {
       />
     );
     await expect.element(page.getByRole("grid")).toBeVisible();
-    const classes = calendarRoot().className.split(/\s+/);
-    expect(classes).toContain("min-w-40");
-    expect(classes).not.toContain("bg-card");
-    expect(classes).not.toContain("border-border");
+    expect(calendarRoot().className).toContain("min-w-40");
+    expect(getComputedStyle(calendarRoot()).backgroundColor).toBe("rgba(0, 0, 0, 0)");
+    expect(getComputedStyle(calendarRoot()).borderTopWidth).toBe("0px");
   });
 
   it("anchors the range on Enter, extends it with ArrowRight and commits once on the second Enter", async () => {
@@ -218,13 +218,15 @@ describe("RangeCalendar", () => {
       expect(middle.hasAttribute("data-selection-start")).toBe(false);
       expect(middle.hasAttribute("data-selection-end")).toBe(false);
       // Middle days take the translucent band on the band layer, never the caps' fill.
-      expect(pillOf(middle).className.split(/\s+/)).not.toContain("text-primary-foreground");
+      expect(getComputedStyle(pillOf(middle)).color).not.toBe(
+        cssVarColor(pillOf(middle), "--primary-foreground")
+      );
     }
 
     for (const cap of [start, end]) {
-      expect(pillOf(cap).className.split(/\s+/)).toEqual(
-        expect.arrayContaining(["bg-primary", "text-primary-foreground"])
-      );
+      const pill = pillOf(cap);
+      expect(getComputedStyle(pill).backgroundColor).toBe(cssVarColor(pill, "--primary"));
+      expect(getComputedStyle(pill).color).toBe(cssVarColor(pill, "--primary-foreground"));
     }
     expect(cellNumbered(13).getAttribute("aria-selected")).not.toBe("true");
     expect(cellNumbered(18).getAttribute("aria-selected")).not.toBe("true");
@@ -306,7 +308,7 @@ describe("RangeCalendar", () => {
     }
     expect(textHost.getAttribute("data-slot")).toBe("text");
     expect(textHost.getAttribute("slot")).toBe("errorMessage");
-    expect(textHost.className.split(/\s+/)).toContain("text-error");
+    expect(getComputedStyle(textHost).color).toBe(cssVarColor(textHost, "--error"));
     // The errorMessage slot is what wires the copy to the invalid days.
     const describedBy = dayNumbered(18).getAttribute("aria-describedby");
     expect(describedBy, "an invalid day must reference the errorMessage").toBeTruthy();
@@ -344,7 +346,9 @@ describe("RangeCalendar", () => {
   it("greys a fully disabled calendar's pills with the muted-foreground token", async () => {
     renderRangeCalendar(<RangeCalendar defaultValue={{ start: july14, end: july17 }} isDisabled />);
     await expect.element(page.getByRole("grid")).toBeVisible();
-    expect(pillOf(dayNumbered(14)).className.split(/\s+/)).toContain("text-muted-foreground");
+    expect(getComputedStyle(pillOf(dayNumbered(14))).color).toBe(
+      cssVarColor(pillOf(dayNumbered(14)), "--muted-foreground")
+    );
   });
 
   it("paints the shared state ring on the pill of the focused day at both densities", async () => {

@@ -3,10 +3,12 @@ import { createRef } from "react";
 import { describe, expect, it } from "vitest";
 
 import "../../../dist/styles.css";
-import { renderThemed } from "../../../test/themed-browser-render";
+import "../../../dist/themes.css";
+import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
 import { Skeleton } from "./skeleton";
 
 function skeletonElement(): HTMLElement {
+  // spec §9 slot audit: skeleton has no role; locate by the mandated data-slot.
   const element = document.querySelector('[data-slot="skeleton"]');
   if (!(element instanceof HTMLElement)) {
     throw new Error('expected an element with data-slot="skeleton"');
@@ -46,12 +48,11 @@ describe("Skeleton", () => {
 
   it("merges consumer sizing with the base classes and lets a bg-* override win", () => {
     renderThemed(<Skeleton className="h-4 w-full max-w-24 bg-primary" />);
-    const classes = skeletonElement().className.split(/\s+/);
-    expect(classes).toEqual(
-      expect.arrayContaining(["animate-pulse", "rounded-md", "h-4", "w-full", "max-w-24"])
-    );
-    expect(classes).toContain("bg-primary");
-    expect(classes).not.toContain("bg-muted");
+    const skeleton = skeletonElement();
+    expect(skeleton.getBoundingClientRect().height).toBe(16);
+    expect(skeleton.getBoundingClientRect().width).toBeGreaterThan(0);
+    expect(getComputedStyle(skeleton).maxWidth).toBe("96px");
+    expect(getComputedStyle(skeleton).backgroundColor).toBe(cssVarColor(skeleton, "--primary"));
   });
 
   it("forwards id, data-*, event handlers, and ref to the div", () => {

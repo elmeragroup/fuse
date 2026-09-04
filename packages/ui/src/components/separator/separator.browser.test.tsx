@@ -4,7 +4,8 @@ import { describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { renderThemed } from "../../../test/themed-browser-render";
+import "../../../dist/themes.css";
+import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
 import { Separator } from "./separator";
 
 function separatorNamed(): HTMLElement {
@@ -44,8 +45,7 @@ describe("Separator", () => {
   it("lets a consumer className override the border fill via cn", () => {
     renderThemed(<Separator className="bg-primary" />);
     const separator = separatorNamed();
-    expect(separator.className.split(/\s+/)).toContain("bg-primary");
-    expect(separator.className.split(/\s+/)).not.toContain("bg-border");
+    expect(getComputedStyle(separator).backgroundColor).toBe(cssVarColor(separator, "--primary"));
   });
 
   it("stretches to a non-zero height in a flex row with no explicit height", () => {

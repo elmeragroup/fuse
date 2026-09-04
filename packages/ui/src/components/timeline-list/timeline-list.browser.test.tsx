@@ -4,23 +4,33 @@ import { describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { renderThemed } from "../../../test/themed-browser-render";
+import { headingNamed, px, renderThemed } from "../../../test/themed-browser-render";
 import { TimelineList } from "./timeline-list";
 
-function slot(name: string): HTMLElement {
-  const element = document.querySelector(`[data-slot="${name}"]`);
+function listRoot(): HTMLElement {
+  const element = page.getByRole("list").element();
   if (!(element instanceof HTMLElement)) {
-    throw new Error(`expected an element with data-slot="${name}"`);
+    throw new Error("expected a list");
   }
   return element;
 }
 
-function headingNamed(name: string, level?: 1 | 2 | 3 | 4 | 5 | 6): HTMLElement {
-  const element = page.getByRole("heading", { name, exact: true, level }).element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error(`expected a heading named ${name}`);
-  }
-  return element;
+function listItems(): HTMLElement[] {
+  return page
+    .getByRole("listitem")
+    .elements()
+    .filter((element): element is HTMLElement => element instanceof HTMLElement);
+}
+
+function decorativeDots(): HTMLElement[] {
+  return listItems().flatMap((item) =>
+    [...item.children].filter(
+      (child): child is HTMLElement =>
+        child instanceof HTMLElement &&
+        child.tagName === "SPAN" &&
+        child.getAttribute("aria-hidden") === "true"
+    )
+  );
 }
 
 function renderBasicList() {
@@ -50,25 +60,22 @@ describe("TimelineList", () => {
     renderBasicList();
     expect(page.getByRole("list").elements()).toHaveLength(1);
     expect(page.getByRole("listitem").elements()).toHaveLength(3);
-    expect(page.getByRole("heading", { level: 3, name: "Order placed" }).element()).toBeDefined();
-    expect(page.getByRole("heading", { name: "Meter reading received" }).element()).toBeDefined();
+    expect(headingNamed("Order placed", 3)).toBeDefined();
+    expect(headingNamed("Meter reading received")).toBeDefined();
     expect(page.getByText("Confirmed at checkout.").element()).toBeDefined();
     expect(page.getByText("3 March 2024").element()).toBeDefined();
-    expect(slot("timeline-list").tagName).toBe("OL");
+    expect(listRoot().tagName).toBe("OL");
   });
 
   it("hides the decorative dot from the accessibility tree", () => {
     renderBasicList();
-    const dots = document.querySelectorAll('[data-slot="timeline-list-dot"]');
+    const dots = decorativeDots();
     expect(dots).toHaveLength(3);
     for (const dot of dots) {
-      if (!(dot instanceof HTMLElement)) {
-        throw new Error("expected a decorative dot element");
-      }
       expect(dot.tagName).toBe("SPAN");
       expect(dot.getAttribute("aria-hidden")).toBe("true");
     }
-    expect(page.getByRole("listitem").elements()).toHaveLength(3);
+    expect(listItems()).toHaveLength(3);
   });
 
   it("lets an explicit Title level override the default of 3 and keeps noMargin forced", () => {
@@ -85,7 +92,7 @@ describe("TimelineList", () => {
     const defaultTitle = headingNamed("Default", 3);
     expect(defaultTitle.tagName).toBe("H3");
     expect(defaultTitle.getAttribute("data-slot")).toBe("timeline-list-title");
-    expect(defaultTitle.className.split(/\s+/)).toContain("mb-0");
+    expect(px(getComputedStyle(defaultTitle).marginBottom)).toBe(0);
     const outline = headingNamed("Outline", 2);
     expect(outline.tagName).toBe("H2");
   });
@@ -112,29 +119,39 @@ describe("TimelineList", () => {
         </TimelineList.Item>
       </TimelineList.Root>
     );
-    const root = slot("timeline-list");
+    const root = listRoot();
     expect(rootRef.current).toBe(root);
     expect(root.id).toBe("history");
     expect(root.getAttribute("data-track")).toBe("orders");
-    expect(root.className.split(/\s+/)).toEqual(expect.arrayContaining(["list-none", "max-w-md"]));
+    expect(getComputedStyle(root).listStyleType).toBe("none");
+    expect(px(getComputedStyle(root).maxWidth)).toBe(448);
 
-    const item = slot("timeline-list-item");
+    const item = listItems()[0];
+    if (!(item instanceof HTMLElement)) {
+      throw new Error("expected a listitem");
+    }
     expect(itemRef.current).toBe(item);
     expect(item.getAttribute("data-step")).toBe("1");
-    expect(item.className.split(/\s+/)).toContain("ring-1");
+    expect(getComputedStyle(item).boxShadow).not.toBe("none");
 
     const title = headingNamed("Order placed");
-    expect(title.className.split(/\s+/)).toContain("uppercase");
+    expect(getComputedStyle(title).textTransform).toBe("uppercase");
 
-    const time = slot("timeline-list-time");
+    const time = page.getByText("3 March 2024", { exact: true }).element();
+    if (!(time instanceof HTMLTimeElement)) {
+      throw new Error("expected a time element");
+    }
     expect(timeRef.current).toBe(time);
     expect(time.id).toBe("placed-at");
-    expect(time.className.split(/\s+/)).toEqual(expect.arrayContaining(["text-foreground", "tabular-nums"]));
+    expect(getComputedStyle(time).fontVariantNumeric).toContain("tabular-nums");
     expect(time.getAttribute("datetime")).toBe("2024-03-03T10:00:00.000Z");
 
-    const description = slot("timeline-list-description");
+    const description = page.getByText("Confirmed at checkout.", { exact: true }).element();
+    if (!(description instanceof HTMLElement)) {
+      throw new Error("expected the description");
+    }
     expect(descriptionRef.current).toBe(description);
     expect(description.id).toBe("placed-copy");
-    expect(description.className.split(/\s+/)).toContain("text-sm");
+    expect(px(getComputedStyle(description).fontSize)).toBe(14);
   });
 });

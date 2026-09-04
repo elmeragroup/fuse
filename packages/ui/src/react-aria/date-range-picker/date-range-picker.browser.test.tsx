@@ -9,6 +9,7 @@ import type { Mock } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import "../../../dist/themes.css";
 import { assertStateFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
 import {
   anchorAndExtend,
@@ -21,6 +22,7 @@ import {
 } from "../../../test/rac-calendar-testing";
 import {
   CONTROL_MD,
+  cssVarColor,
   fkasExternal,
   px,
   renderThemed,
@@ -377,9 +379,9 @@ describe("DateRangePicker", () => {
     // The FieldGroup's own `isReadOnly` axis paints the fill, exactly once. The glyph is
     // deliberately untinted: `bg-muted` on the `<svg>` never belonged there and went with
     // the picker recipe's duplicate arm (§8.13, 2026-09-03).
-    expect(group.className.split(/\s+/)).toContain("bg-muted");
+    expect(getComputedStyle(group).backgroundColor).toBe(cssVarColor(group, "--muted"));
     expect(group.getAttribute("data-readonly")).toBe("true");
-    expect((glyph.getAttribute("class") ?? "").split(/\s+/)).not.toContain("bg-muted");
+    expect(getComputedStyle(glyph).backgroundColor).not.toBe(cssVarColor(group, "--muted"));
     expect(trigger()).toBeDisabled();
 
     await userEvent.click(segment("day, Start Date"));
@@ -560,9 +562,11 @@ describe("DateRangePicker composition surface", () => {
       throw new Error("expected the DateRangePicker root");
     }
 
-    expect(root.className.split(/\s+/)).toEqual(expect.arrayContaining(["flex", "flex-col", "gap-2"]));
+    expect(getComputedStyle(root).display).toBe("flex");
+    expect(getComputedStyle(root).flexDirection).toBe("column");
+    expect(px(getComputedStyle(root).rowGap)).toBe(8);
     await openPicker();
-    expect(root.className.split(/\s+/)).toContain("gap-4");
+    expect(px(getComputedStyle(root).rowGap)).toBe(16);
   });
 
   it("floors the field box width and lets only the end row absorb the slack (§2/§4)", async () => {
@@ -588,9 +592,8 @@ describe("DateRangePicker composition surface", () => {
     // No `title` ⇒ no header row at all: an empty heading would take the dialog's
     // accessible name from RAC and spend one 16 px `gap-4` on nothing
     // (react-aria/internal/dialog.tsx).
-    expect(dialog.querySelector("[data-slot=dialog-header]")).toBeNull();
-    const content = dialog.querySelector("[data-slot=dialog-content]");
-    expect(content?.firstElementChild).toBe(root);
+    expect(page.getByRole("button", { name: /close/i }).query()).toBeNull();
+    expect(root.closest('[role="dialog"]')).toBe(dialog);
     // `closeButton={false}`: the popover is dismissed by Escape or an outside click, so
     // the dialog chrome renders no dismiss affordance of its own (§8.2).
     expect(page.getByRole("button", { name: /close/i }).query()).toBeNull();

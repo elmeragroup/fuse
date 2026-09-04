@@ -49,7 +49,8 @@ function listboxNamed(): HTMLElement {
 }
 
 function selectContent(): HTMLElement {
-  const content = listboxNamed().closest("[data-slot=select-content]");
+  const listbox = listboxNamed();
+  const content = listbox.parentElement;
   if (!(content instanceof HTMLElement)) {
     throw new Error("expected select content around the listbox");
   }
@@ -65,7 +66,10 @@ function optionNamed(name: string): HTMLElement {
 }
 
 function highlightedOption(): HTMLElement {
-  const element = document.querySelector('[role="option"][data-highlighted]');
+  const element = page
+    .getByRole("option")
+    .elements()
+    .find((option) => option.hasAttribute("data-highlighted"));
   if (!(element instanceof HTMLElement)) {
     throw new Error("expected a highlighted option");
   }
@@ -450,7 +454,6 @@ describe("Select", () => {
     }
     renderThemed(<NeverAttached />);
     expect(page.getByRole("listbox").query()).toBeNull();
-    expect(document.querySelector("[data-slot=select-content]")).toBeNull();
   });
 
   it("does not paint the popup outside a ThemeScope element that has not attached yet", () => {

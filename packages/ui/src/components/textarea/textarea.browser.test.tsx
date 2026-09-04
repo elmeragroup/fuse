@@ -78,7 +78,7 @@ describe("Textarea", () => {
   it("matches md inline padding and type at both densities and keeps min-h-16", () => {
     renderThemed(<Textarea aria-label="Notes" />);
     const area = textboxNamed("Notes");
-    expect(area.className.split(/\s+/)).toContain("min-h-16");
+    expect(px(getComputedStyle(area).minHeight)).toBe(64);
     const heights = new Set<number>();
     for (const density of ["dense", "comfortable"] as const) {
       stampDensity(density);

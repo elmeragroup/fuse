@@ -16,6 +16,7 @@ import { assertStateFocusRingAtBothDensities } from "../../../test/assert-focus-
 import { describedTextsFor } from "../../../test/rac-calendar-testing";
 import {
   CONTROL_MD,
+  cssVarColor,
   fkasExternal,
   px,
   renderThemed,
@@ -279,10 +280,11 @@ describe("DateField", () => {
     if (!(root instanceof HTMLElement)) {
       throw new Error("expected DateField root");
     }
-    expect(root.className.split(/\s+/)).toEqual(expect.arrayContaining(["flex", "flex-col", "gap-2"]));
-    expect(rootGroup.className.split(/\s+/)).toEqual(
-      expect.arrayContaining(["bg-card", "h-(--control-h-md)"])
-    );
+    expect(getComputedStyle(root).display).toBe("flex");
+    expect(getComputedStyle(root).flexDirection).toBe("column");
+    expect(px(getComputedStyle(root).rowGap)).toBe(8);
+    expect(getComputedStyle(rootGroup).backgroundColor).toBe(cssVarColor(rootGroup, "--card"));
+    expect(px(getComputedStyle(rootGroup).height)).toBe(CONTROL_MD.dense.height);
   });
 
   it("composes a stateful DateInput className under field chrome", () => {
@@ -293,8 +295,9 @@ describe("DateField", () => {
       </RacDateField>
     );
     const group = groupNamed("Custom start");
-    const classes = group.className.split(/\s+/);
-    expect(classes).toEqual(expect.arrayContaining(["bg-card", "h-(--control-h-md)", "min-w-[200px]"]));
+    expect(getComputedStyle(group).backgroundColor).toBe(cssVarColor(group, "--card"));
+    expect(px(getComputedStyle(group).height)).toBe(CONTROL_MD.dense.height);
+    expect(group.className).toContain("min-w-[200px]");
     expect(spinbuttonsIn("Custom start").length).toBeGreaterThan(0);
   });
 

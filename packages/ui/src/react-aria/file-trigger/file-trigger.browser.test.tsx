@@ -176,17 +176,12 @@ describe("FileTrigger", () => {
 
     const defaults = buttonNamed("Attach file");
     const outline = buttonNamed("Outline large");
-    expect(defaults.className.split(/\s+/)).toEqual(
-      expect.arrayContaining(["bg-primary", "h-(--control-h-sm)", "text-sm", "gap-x-2"])
-    );
-    expect(outline.className.split(/\s+/)).toEqual(
-      expect.arrayContaining(["border-border", "h-(--control-h-lg)"])
-    );
-    expect(outline.className.split(/\s+/)).not.toContain("bg-primary");
-    expect(outline.className.split(/\s+/)).not.toContain("h-(--control-h-sm)");
-
+    expect(px(getComputedStyle(defaults).height)).toBe(CONTROL_SM.dense.height);
+    expect(px(getComputedStyle(outline).height)).toBeGreaterThan(px(getComputedStyle(defaults).height));
+    expect(getComputedStyle(outline).borderTopWidth).not.toBe("0px");
+    expect(defaults.className).toContain("bg-primary");
     expect(fileInputFor(defaults).className).not.toContain("bg-primary");
+    expect(outline.className).toContain("border-border");
     expect(fileInputFor(outline).className).not.toContain("border-border");
-    expect(fileInputFor(outline).className).not.toContain("h-(--control-h-lg)");
   });
 });
