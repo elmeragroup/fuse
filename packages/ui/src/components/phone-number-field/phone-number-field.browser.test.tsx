@@ -16,6 +16,7 @@ import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
 import { EXCLUDED_PRODUCT_COUNTRY_CODES, FLAG_GAP_COUNTRY_CODES } from "../../../test/phone-picker-contract";
 import { renderThemed, textboxNamed } from "../../../test/themed-browser-render";
 import { flagAssets } from "../../flags";
+import { resetCountryNameCache } from "./country-names";
 
 const SELECT_COUNTRY_COPY = {
   "nb-NO": "Velg land",
@@ -134,6 +135,38 @@ describe("PhoneNumberField", () => {
     expect(page.getByRole("button", { name: "Mobile", exact: true }).query()).toBeNull();
     expect(textboxNamed("Mobile")).toBeTruthy();
     expect(textboxNamed("Mobile")).toHaveProperty("inputMode", "tel");
+  });
+
+  it("does not call Intl.DisplayNames.of until the country popup opens", async () => {
+    resetCountryNameCache();
+    const ofSpy = vi.spyOn(Intl.DisplayNames.prototype, "of");
+    try {
+      renderField(<PhoneNumberField label="Mobile" />);
+      expect(ofSpy).not.toHaveBeenCalled();
+      await openPicker();
+      expect(ofSpy.mock.calls.length).toBeGreaterThan(0);
+    } finally {
+      ofSpy.mockRestore();
+      resetCountryNameCache();
+    }
+  });
+
+  it("keeps filtered country options through the close transition", async () => {
+    renderField(<PhoneNumberField label="Mobile" />);
+    await openPicker();
+    await userEvent.fill(searchNamed(), "swe");
+    await vi.waitFor(() => {
+      expect(page.getByRole("option", { name: /Sweden/ }).query()).not.toBeNull();
+    });
+    await userEvent.keyboard("{Escape}");
+    await vi.waitFor(() => {
+      const popup = document.querySelector("[data-slot=combobox-content]");
+      expect(popup).not.toBeNull();
+      expect(popup).toHaveAttribute("data-closed");
+      expect(popup).not.toHaveAttribute("data-empty");
+      expect(page.getByRole("option", { name: /Sweden/ }).query()).not.toBeNull();
+      expect(page.getByText("No countries found.").query()).toBeNull();
+    });
   });
 
   it("selects a country from the keyboard, closes, updates the dial code, and focuses the number input", async () => {

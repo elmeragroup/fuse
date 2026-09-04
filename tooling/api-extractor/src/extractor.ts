@@ -16,6 +16,7 @@ import type {
   InternalTimingFactory,
 } from "./internal/project-options.ts";
 import { ExtractionResultSchema } from "./model.ts";
+import { definedFields } from "./optional-fields.ts";
 import type { ExtractorOptions, OpenProjectOptions } from "./options.ts";
 import { normalizeExternalTypeSelection } from "./parse/external-type-selection.ts";
 import { ResolverFailure } from "./parse/resolver-failure.ts";
@@ -159,8 +160,7 @@ function classifyThrown(cause: unknown, context: ThrownContext): ExtractionError
     cause: safeCause(cause),
     operation: context.operation,
     filePath: context.filePath,
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional fields preserve model JSON.
-    ...(symbolStack.length === 0 ? {} : { symbolStack: [...symbolStack] }),
+    ...definedFields({ symbolStack: symbolStack.length === 0 ? undefined : [...symbolStack] }),
   });
 }
 
@@ -175,11 +175,13 @@ function withThrownContext(error: BackendError, context: ThrownContext): Backend
     cause: error.cause,
     operation: error.operation ?? context.operation,
     filePath: error.filePath ?? context.filePath,
-    ...(needsSymbolStack
-      ? { symbolStack: [...symbolStack] }
-      : existingStack === undefined
-        ? {}
-        : { symbolStack: [...existingStack] }),
+    ...definedFields({
+      symbolStack: needsSymbolStack
+        ? [...symbolStack]
+        : existingStack === undefined
+          ? undefined
+          : [...existingStack],
+    }),
   });
 }
 

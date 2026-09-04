@@ -1,6 +1,7 @@
 import type { BackendNodeReference, BackendSymbolHandle, BackendTypeHandle } from "../backend/contracts.ts";
 import { intersectionType, unionType } from "../canonical/canonicalize.ts";
 import type { SemanticType, TypeName } from "../model.ts";
+import { definedFields } from "../optional-fields.ts";
 import { unwrapAuthoredNode } from "./authored-node.ts";
 import type { ResolveSemanticType, ResolverContext } from "./contracts.ts";
 import { resolveObjectNode, resolveSignatureNode } from "./object-resolver.ts";
@@ -148,8 +149,7 @@ export function intersectionNode(
       callSignatures: signatures.map((signature, index) =>
         resolveSignatureNode(signature, context, index, resolve)
       ),
-      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
-      ...(typeNameValue === undefined ? {} : { typeName: typeNameValue }),
+      ...definedFields({ typeName: typeNameValue }),
     };
   }
   // The aggregate property list is the compiler's merged view of every member.
@@ -370,8 +370,7 @@ function authoredUnionMembers(
   if (alias === undefined) return { nodes: [] };
   return {
     nodes: flattenAuthoredUnion(alias.body, context),
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
-    ...(alias.substitutions === undefined ? {} : { substitutions: alias.substitutions }),
+    ...definedFields({ substitutions: alias.substitutions }),
   };
 }
 
@@ -389,8 +388,7 @@ function aliasUnionBody(
     const substitutions = aliasTypeParameterSubstitutions(declaration.declaration, type, sourceNode, context);
     return {
       body: declaration.body,
-      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
-      ...(substitutions === undefined ? {} : { substitutions }),
+      ...definedFields({ substitutions }),
     };
   }
   return undefined;

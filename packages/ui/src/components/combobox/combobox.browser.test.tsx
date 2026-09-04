@@ -179,7 +179,7 @@ describe("Combobox", () => {
     await openWithClick();
     const content = comboboxContent();
     expect(content.getAttribute("data-slot")).toBe("combobox-content");
-    expect(content.getAttribute("data-chips")).toBe("false");
+    expect(content.getAttribute("data-external-anchor")).toBe("false");
     expect(optionNamed("Apple")).toBeTruthy();
     expect(optionNamed("Banana")).toBeTruthy();
   });
@@ -490,7 +490,7 @@ describe("Combobox", () => {
     ).not.toBe(getComputedStyle(valid).boxShadow);
   });
 
-  it("sets data-chips=true and positions against a useComboboxAnchor ref", async () => {
+  it("sets data-external-anchor=true and positions against a useComboboxAnchor ref", async () => {
     function Anchored() {
       const anchor = useComboboxAnchor();
       return (
@@ -508,7 +508,7 @@ describe("Combobox", () => {
     }
     renderCombobox(<Anchored />);
     await openWithClick();
-    expect(comboboxContent().getAttribute("data-chips")).toBe("true");
+    expect(comboboxContent().getAttribute("data-external-anchor")).toBe("true");
   });
 
   it("portals Content into the enclosing ThemeScope instead of the document body", async () => {

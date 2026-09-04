@@ -20,10 +20,10 @@ import { WarningOctagon } from "../../icons/generated/warning-octagon";
 import { X } from "../../icons/generated/x";
 import { cn } from "../../styles/cn";
 import { selfFocusRingClass } from "../../styles/utils";
-import { useResolvedPortalContainer } from "../../theme/use-resolved-portal-container";
 import { Button } from "../button/button";
 import { overlayCloseStrings } from "../overlay/intl";
 import { overlayLayer } from "../overlay/overlay-classes";
+import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps } from "../overlay/overlay-props";
 import { toastVariants } from "./toast-variants";
 
@@ -287,14 +287,8 @@ function ToastViewport({
   children,
   ...props
 }: ToastViewportProps): ReactElement | null {
-  const resolvedContainer = useResolvedPortalContainer(container);
-
-  if (resolvedContainer === null) {
-    return null;
-  }
-
   return (
-    <ToastPrimitive.Portal container={resolvedContainer}>
+    <OverlayPortal portal={ToastPrimitive.Portal} container={container}>
       <ToastPrimitive.Viewport
         data-slot="toast-viewport"
         className={cn(
@@ -306,7 +300,7 @@ function ToastViewport({
         {...props}>
         {children ?? <ToastList />}
       </ToastPrimitive.Viewport>
-    </ToastPrimitive.Portal>
+    </OverlayPortal>
   );
 }
 

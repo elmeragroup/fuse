@@ -1,6 +1,6 @@
 /**
  * Package-private class vocabulary shared by every overlay family — the public base-ui
- * Dialog/Sheet and the interim RAC Modal/Dialog alike. Nothing here is exported through
+ * Dialog/Sheet and the interim RAC Dialog alike. Nothing here is exported through
  * `package.json#exports`; it reaches the standalone stylesheet only through the emitted
  * dist modules that import it, which are that sheet's only source (architecture.md §5).
  */
@@ -16,56 +16,33 @@ export const overlayLayer = "z-50";
  * The 13-value overlay width axis (dialog.md §4), default `md`. `sm`–`7xl` read the
  * Tailwind container variables; no `--container-8xl+` variables exist, so the top three
  * pixel caps stay literal and documented.
+ *
+ * Written as a `--overlay-width` custom property, not a `max-width` utility: Sheet
+ * gates its cap on two side selectors (`data-[side=left]:sm:` / `data-[side=right]:sm:`),
+ * and Dialog reads the same variable through `max-w-(--overlay-width)` on its recipe
+ * base. **The values are restated as literals, not interpolated** — the Tailwind scanner
+ * only emits a utility whose candidate appears literally in a source file, so
+ * `` `[--overlay-width:${…}]` `` would compile to nothing.
  */
-export const overlaySizeClasses = {
-  sm: "max-w-[min(var(--container-sm),90%)]",
-  md: "max-w-[min(var(--container-md),90%)]",
-  lg: "max-w-[min(var(--container-lg),90%)]",
-  xl: "max-w-[min(var(--container-xl),90%)]",
-  "2xl": "max-w-[min(var(--container-2xl),90%)]",
-  "3xl": "max-w-[min(var(--container-3xl),90%)]",
-  "4xl": "max-w-[min(var(--container-4xl),90%)]",
-  "5xl": "max-w-[min(var(--container-5xl),90%)]",
-  "6xl": "max-w-[min(var(--container-6xl),90%)]",
-  "7xl": "max-w-[min(var(--container-7xl),90%)]",
+export const overlayWidthClasses = {
+  sm: "[--overlay-width:min(var(--container-sm),90%)]",
+  md: "[--overlay-width:min(var(--container-md),90%)]",
+  lg: "[--overlay-width:min(var(--container-lg),90%)]",
+  xl: "[--overlay-width:min(var(--container-xl),90%)]",
+  "2xl": "[--overlay-width:min(var(--container-2xl),90%)]",
+  "3xl": "[--overlay-width:min(var(--container-3xl),90%)]",
+  "4xl": "[--overlay-width:min(var(--container-4xl),90%)]",
+  "5xl": "[--overlay-width:min(var(--container-5xl),90%)]",
+  "6xl": "[--overlay-width:min(var(--container-6xl),90%)]",
+  "7xl": "[--overlay-width:min(var(--container-7xl),90%)]",
   // No --container-8xl+ variables exist; the pixel caps stay literal (dialog.md §4).
-  "8xl": "max-w-[min(1366px,90%)]",
-  "9xl": "max-w-[min(1536px,90%)]",
-  "10xl": "max-w-[min(1920px,90%)]",
+  "8xl": "[--overlay-width:min(1366px,90%)]",
+  "9xl": "[--overlay-width:min(1536px,90%)]",
+  "10xl": "[--overlay-width:min(1920px,90%)]",
 } as const;
 
-/** The keys of {@link overlaySizeClasses} — the shared overlay width axis. */
-export type OverlaySize = keyof typeof overlaySizeClasses;
-
-/**
- * The same 13 rungs as {@link overlaySizeClasses}, written as a `--sheet-width` custom
- * property instead of a `max-width` utility. Sheet gates its cap on two side selectors
- * (`data-[side=left]:sm:` / `data-[side=right]:sm:`), so it declares the value once here
- * and the two consumers read the variable, rather than repeating every rung twice.
- *
- * **The values are restated, not computed, and that is a Tailwind constraint, not a
- * choice**: the scanner only emits a utility whose candidate appears literally in a
- * source file, so `` `[--sheet-width:${…}]` `` would compile to nothing. The pair is
- * pinned instead — `overlay-classes.test.ts` derives this table from
- * {@link overlaySizeClasses} rung by rung and fails on any drift, which is the guard
- * `satisfies Record<OverlaySize, string>` cannot give (it pins the keys only).
- */
-export const overlaySheetWidthClasses = {
-  sm: "[--sheet-width:min(var(--container-sm),90%)]",
-  md: "[--sheet-width:min(var(--container-md),90%)]",
-  lg: "[--sheet-width:min(var(--container-lg),90%)]",
-  xl: "[--sheet-width:min(var(--container-xl),90%)]",
-  "2xl": "[--sheet-width:min(var(--container-2xl),90%)]",
-  "3xl": "[--sheet-width:min(var(--container-3xl),90%)]",
-  "4xl": "[--sheet-width:min(var(--container-4xl),90%)]",
-  "5xl": "[--sheet-width:min(var(--container-5xl),90%)]",
-  "6xl": "[--sheet-width:min(var(--container-6xl),90%)]",
-  "7xl": "[--sheet-width:min(var(--container-7xl),90%)]",
-  // No --container-8xl+ variables exist; the pixel caps stay literal (dialog.md §4).
-  "8xl": "[--sheet-width:min(1366px,90%)]",
-  "9xl": "[--sheet-width:min(1536px,90%)]",
-  "10xl": "[--sheet-width:min(1920px,90%)]",
-} satisfies Record<OverlaySize, string>;
+/** The keys of {@link overlayWidthClasses} — the shared overlay width axis. */
+export type OverlaySize = keyof typeof overlayWidthClasses;
 
 /**
  * The backdrop scrim (dialog.md §5): `bg-black/10` is deliberately not tokenized and is
@@ -96,10 +73,10 @@ export const overlayPopupEdgeClass = "shadow-md ring-1 ring-foreground/10";
 
 /**
  * Fill + edge + the `md` radius rung: the whole surface of a popup that sits on the
- * popover role. Intended consumers are Popover, Select (`rounded-lg`), Combobox,
- * DropdownMenu Content/SubContent, PhoneNumberField's country popup, and Dialog
- * (`rounded-xl shadow-lg`) — each overriding a rung through the extra `cn` argument
- * rather than restating the fill and ring.
+ * popover role. Dialog (`rounded-xl shadow-lg`) composes this directly; the four timed
+ * anchored popups (Popover, Select, Combobox, DropdownMenu — Select raises the radius
+ * to `rounded-lg`) take it through {@link overlayTimedPopupClass}. Each still overrides
+ * a rung through the extra `cn` argument rather than restating the fill and ring.
  *
  * **Not Tooltip.** Tooltip inverts the fill (`bg-foreground text-background`) and paints
  * neither shadow nor ring, and it cannot subtract them here: `ring-0` does not remove
@@ -117,19 +94,30 @@ export const overlayPopupSurfaceClass = `${overlayPopupFillClass} ${overlayPopup
  * `data-open`/`data-closed`. Declared once so a fix to one popup cannot leave the other
  * six behind.
  *
- * The timing rung is deliberately **not** bundled in: six of the seven families pair
- * this with {@link overlayPopupDurationClass}, and Tooltip is the one that ships the set
- * untimed (tooltip.md §6). Composing the rung explicitly keeps that difference visible
- * instead of forcing Tooltip to negate a class it never wanted.
+ * The timing rung is deliberately **not** bundled in: the four timed anchored popups
+ * compose {@link overlayTimedPopupClass} instead of restating the three parts, and
+ * Tooltip is the one that ships the set untimed (tooltip.md §6). Composing the rung
+ * explicitly keeps that difference visible instead of forcing Tooltip to negate a class
+ * it never wanted.
  */
 export const overlayPopupMotionClass =
   "origin-(--transform-origin) data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95";
 
 /**
- * The shared popup timing rung (popover.md §6). Paired with
- * {@link overlayPopupMotionClass} by every family except Tooltip.
+ * The shared popup timing rung (popover.md §6). Folded into
+ * {@link overlayTimedPopupClass} for the four timed anchored popups; Tooltip ships
+ * motion untimed, and Dialog keeps a local `duration-100` beside its own keyframes.
  */
 export const overlayPopupDurationClass = "duration-100";
+
+/**
+ * Surface + motion + duration: the four timed anchored popups (Popover, Select,
+ * Combobox, DropdownMenu) compose this instead of restating the three parts.
+ * Tooltip keeps {@link overlayPopupMotionClass} untimed; Dialog keeps
+ * {@link overlayPopupSurfaceClass} plus its own keyframes — neither is a timed
+ * anchored popup, which is what the fill/edge/motion/duration split is for.
+ */
+export const overlayTimedPopupClass = `${overlayPopupSurfaceClass} ${overlayPopupMotionClass} ${overlayPopupDurationClass}`;
 
 /**
  * The geometry, disabled face, and icon sizing an option row shares across Select,

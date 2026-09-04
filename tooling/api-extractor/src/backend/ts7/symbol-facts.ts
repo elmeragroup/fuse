@@ -4,6 +4,7 @@ import { isIdentifier, isModuleDeclaration } from "typescript/unstable/ast/is";
 import { SymbolFlags } from "typescript/unstable/sync";
 import type { Symbol as TsSymbol } from "typescript/unstable/sync";
 
+import { definedFields } from "../../optional-fields.ts";
 import type { BackendSymbolFacts, BackendSymbolHandle, BackendSymbolOrigin } from "../contracts.ts";
 import { isExternalOwnership } from "../contracts.ts";
 import { authoredSymbolName } from "./class-facts.ts";
@@ -30,8 +31,7 @@ export function symbolFacts(session: TsgoFactsSession, handle: BackendSymbolHand
     declarationPaths: sourcePaths,
     declarations: symbol.declarations.map((declaration) => session.declarationHandle(declaration)),
     repositoryRelativeDeclarationPaths: sourcePaths.map(repoPath),
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional origin facts preserve the backend contract.
-    ...(valueDeclaration === undefined ? {} : { valueDeclaration }),
+    ...definedFields({ valueDeclaration }),
   };
 }
 

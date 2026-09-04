@@ -1,7 +1,7 @@
 "use client";
 
 import { Children, createContext, isValidElement, useContext } from "react";
-import type { ComponentProps, ComponentType, ReactElement, ReactNode } from "react";
+import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 import { Field as FieldPrimitive } from "@base-ui/react/field";
 
@@ -22,10 +22,9 @@ const SelectionItemGroupContext = createContext<SelectionItemGroupContextValue>(
 /**
  * The one orientation map for the selection-group family (checkbox.md §8.10,
  * radio-group.md §8.11): `group` lays out the group primitive itself, `list` the private
- * stacked-card list inside it. CheckboxGroup and RadioGroup read `group` through
- * {@link SelectionGroupFrame}'s callers, `SelectionItemGroup` reads `list`, and the three
- * copies of these two strings that used to sit in `checkbox.tsx`, `radio-group.tsx` and
- * this file are gone (spec 08 finding S18).
+ * stacked-card list inside it. CheckboxGroup and RadioGroup read `group`,
+ * `SelectionItemGroup` reads `list`, and the three copies of these two strings that used
+ * to sit in `checkbox.tsx`, `radio-group.tsx` and this file are gone (spec 08 finding S18).
  *
  * The option-stack `gap-2` is layout, not a control rung (radio-group.md §4), which is why
  * it is a plain literal here and not a `--control-gap-*` read.
@@ -34,117 +33,6 @@ export const selectionGroupOrientationClass = {
   group: { vertical: "flex flex-col gap-2", horizontal: "flex flex-wrap gap-4" },
   list: { vertical: "gap-0", horizontal: "flex-row flex-wrap gap-4" },
 } as const satisfies Record<"group" | "list", Record<SelectionItemGroupOrientation, string>>;
-
-/** The legend row's own layout, the selection-group twin of `FieldFrame`'s label row. */
-const selectionGroupLegendRowClass = "flex items-center justify-between";
-
-type SelectionGroupFrameBaseProps = {
-  /** Fieldset legend, rendered as `Field.Legend variant="label"`. */
-  label?: string;
-  /** Supporting copy, rendered as `Field.Description` when truthy. */
-  description?: string;
-  /** Error copy, rendered as `Field.Error`, which self-suppresses on falsy children. */
-  errorMessage?: ReactNode;
-  /** Forwarded to `Field.Root`. CheckboxGroup threads its `name` here (checkbox.md §8.6). */
-  name?: string;
-  /** Forwarded to `Field.Root`. */
-  isInvalid?: boolean;
-  /** Forwarded to `Field.Root`. */
-  isDisabled?: boolean;
-  /** The group primitive this frame legends — a direct child of `Field.Set`. */
-  children: ReactNode;
-};
-
-/**
- * A composite either has a status face beside its legend or it does not, and that is a
- * property of the composite rather than of one render: RadioGroup always renders the
- * legend inside a status row (so an unlabeled pending group emits an empty legend, which
- * is radio-group.md §8.2's gate `label || isPending`), while CheckboxGroup renders a bare
- * legend and has no status face at all. The union makes the second case unable to pass a
- * `status` node that the frame would silently drop.
- */
-type SelectionGroupFrameProps = SelectionGroupFrameBaseProps &
-  (
-    | {
-        /** Puts the legend in a row with {@link SelectionGroupFrameProps.status}. */
-        groupsLegendWithStatus: true;
-        /** Component-owned status face at the row's end — RadioGroup's pending spinner. */
-        status?: ReactNode;
-      }
-    | { groupsLegendWithStatus?: false; status?: never }
-  );
-
-/**
- * Package-private fieldset skeleton for the labeled selection groups (selection-item.md
- * §8.8; spec 08 finding S18). CheckboxGroup and RadioGroup had rebuilt the same
- * `Field.Root` → `Field.Set` → legend → description → primitive → error shape, and the
- * copies had drifted: both guarded `errorMessage ?` although `Field.Error` already returns
- * null for falsy children (field.tsx), and only one of them owned a status row.
- *
- * It renders **one** `Field.Root`, so the nested-root name-shadowing trap of field.md §7
- * is neither reintroduced nor widened: a member control's name still comes from its own
- * `Field.Item`/label row, and the group's name from the legend.
- */
-export function SelectionGroupFrame({
-  label,
-  description,
-  errorMessage,
-  name,
-  isInvalid,
-  isDisabled,
-  groupsLegendWithStatus = false,
-  status,
-  children,
-}: SelectionGroupFrameProps): ReactElement {
-  const legend = <Field.Legend variant="label">{label}</Field.Legend>;
-  return (
-    <Field.Root name={name} invalid={isInvalid} disabled={isDisabled}>
-      <Field.Set>
-        {groupsLegendWithStatus ? (
-          label || status != null ? (
-            <div className={selectionGroupLegendRowClass}>
-              {legend}
-              {status}
-            </div>
-          ) : null
-        ) : label ? (
-          legend
-        ) : null}
-        {description ? <Field.Description>{description}</Field.Description> : null}
-        {children}
-        <Field.Error>{errorMessage}</Field.Error>
-      </Field.Set>
-    </Field.Root>
-  );
-}
-
-SelectionGroupFrame.displayName = "SelectionGroupFrame";
-
-/** The props {@link renderSelectionItemCardGroup} reads off the group it wraps. */
-type SelectionItemCardGroupProps = {
-  orientation?: SelectionItemGroupOrientation;
-  children?: ReactNode;
-};
-
-/**
- * The one stacked-card group body, parameterized by the labeled group that hosts it
- * (spec 08 user story 18): `CheckboxItemGroup` passes `CheckboxGroup`, `RadioItemGroup`
- * passes `RadioGroup`, and each stays a component of its own so its public signature and
- * prop docs are unchanged. `orientation` is forwarded twice on purpose — to the outer
- * group primitive and to the private item list — which is the whole reason the two
- * wrappers existed (checkbox.md §8.10, radio-group.md §8.11).
- */
-export function renderSelectionItemCardGroup<P extends SelectionItemCardGroupProps>(
-  Group: ComponentType<P>,
-  props: P
-): ReactElement {
-  const orientation = props.orientation ?? "vertical";
-  return (
-    <Group {...props} orientation={orientation}>
-      <SelectionItemGroup orientation={orientation}>{props.children}</SelectionItemGroup>
-    </Group>
-  );
-}
 
 type SelectionItemGroupProps = {
   children?: ReactNode;

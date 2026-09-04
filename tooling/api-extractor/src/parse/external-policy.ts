@@ -6,6 +6,7 @@ import type {
 } from "../backend/contracts.ts";
 import { isInternalSymbolName } from "../backend/contracts.ts";
 import type { TypeName } from "../model.ts";
+import { definedFields } from "../optional-fields.ts";
 import type { ResolverContext } from "./contracts.ts";
 import { externalTypeSelectionAllowsSymbol } from "./external-type-selection.ts";
 import { isExternalSymbol, isTypeScriptToolchainDeclaration } from "./ownership.ts";
@@ -119,10 +120,10 @@ export function externalPolicy(input: ExternalPolicyInput): ExternalPolicyDecisi
       kind: "external-reference",
       typeName: {
         name: resolvedName,
-        // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model names preserve the contract.
-        ...(value.namespaces === undefined ? {} : { namespaces: value.namespaces }),
-        // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model names preserve the contract.
-        ...(value.typeArguments === undefined ? {} : { typeArguments: value.typeArguments }),
+        ...definedFields({
+          namespaces: value.namespaces,
+          typeArguments: value.typeArguments,
+        }),
       },
     };
   }

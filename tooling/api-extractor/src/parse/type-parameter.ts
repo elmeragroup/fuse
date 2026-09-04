@@ -6,6 +6,7 @@ import type {
   BackendTypeHandle,
 } from "../backend/contracts.ts";
 import type { SemanticType, TypeParameterNode } from "../model.ts";
+import { definedFields } from "../optional-fields.ts";
 import { authoredContainsPreservableKeyof } from "./authored-node.ts";
 import type { ResolveSemanticType, ResolverContext } from "./contracts.ts";
 
@@ -142,12 +143,10 @@ function declaredInfo(
     owned !== undefined && context.operations.nodeKind(owned) === "typeParameter"
       ? owned
       : info?.declarations[0];
-  return {
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
-    ...(info?.name === undefined ? {} : { name: info.name }),
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional model fields preserve the upstream encoding.
-    ...(declaration === undefined ? {} : { node: context.operations.nodeFacts(declaration) }),
-  };
+  return definedFields({
+    name: info?.name,
+    node: declaration === undefined ? undefined : context.operations.nodeFacts(declaration),
+  });
 }
 
 /** Resolves the authored constraint/default node with its own syntax attached. */

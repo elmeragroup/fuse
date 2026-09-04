@@ -10,11 +10,11 @@ import { Minus } from "../../icons/generated/minus";
 import { isTextNode } from "../../internal/is-text-node";
 import { cn } from "../../styles/cn";
 import { selfFocusRingClass } from "../../styles/utils";
+import { FieldFrame } from "../field/field-frame";
 import {
-  renderSelectionItemCardGroup,
-  SelectionGroupFrame,
   selectionGroupOrientationClass,
   SelectionItem,
+  SelectionItemGroup,
 } from "../selection-item/selection-item";
 
 /**
@@ -113,13 +113,14 @@ export function CheckboxGroup({
   children,
 }: CheckboxGroupProps): ReactElement {
   return (
-    <SelectionGroupFrame
+    <FieldFrame
+      heading="legend"
       label={label}
       description={description}
       errorMessage={errorMessage}
       name={name}
-      isInvalid={isInvalid}
-      isDisabled={isDisabled}>
+      invalid={isInvalid}
+      disabled={isDisabled}>
       <CheckboxGroupPrimitive
         data-slot="checkbox-group"
         id={id}
@@ -131,7 +132,7 @@ export function CheckboxGroup({
         className={cn(selectionGroupOrientationClass.group[orientation], className)}>
         {children}
       </CheckboxGroupPrimitive>
-    </SelectionGroupFrame>
+    </FieldFrame>
   );
 }
 
@@ -142,9 +143,13 @@ export function CheckboxGroup({
  * horizontal is `flex-row flex-wrap gap-4` with individually rounded cards.
  */
 export function CheckboxItemGroup({ orientation = "vertical", ...props }: CheckboxGroupProps): ReactElement {
-  // The default is spelled here, not only inside the shared body, because the docs API
-  // extractor reads a part's documented defaults out of its own destructuring.
-  return renderSelectionItemCardGroup(CheckboxGroup, { ...props, orientation });
+  // The default is spelled here because the docs API extractor reads a part's
+  // documented defaults out of its own destructuring.
+  return (
+    <CheckboxGroup {...props} orientation={orientation}>
+      <SelectionItemGroup orientation={orientation}>{props.children}</SelectionItemGroup>
+    </CheckboxGroup>
+  );
 }
 
 export type CheckboxDescriptionProps = {

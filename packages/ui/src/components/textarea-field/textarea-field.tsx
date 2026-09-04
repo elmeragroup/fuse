@@ -3,10 +3,11 @@
 import { useState } from "react";
 import type { ChangeEvent, ComponentProps, ReactElement, ReactNode } from "react";
 
-import { cn } from "../../styles/cn";
 import { Field } from "../field/field";
 import { FieldFrame } from "../field/field-frame";
 import { Textarea } from "../textarea/textarea";
+
+const TEXTAREA_FIELD_FRAME_CLASS_NAMES = { labelRow: "gap-2" } as const;
 
 export type TextareaFieldProps = {
   /** Visible label, rendered as `Field.Label`. */
@@ -72,7 +73,7 @@ export function TextareaField({
       invalid={isInvalid}
       disabled={isDisabled}
       label={label}
-      classNames={{ labelRow: "gap-2" }}
+      classNames={TEXTAREA_FIELD_FRAME_CLASS_NAMES}
       status={
         maxLength === undefined ? undefined : (
           <span className="text-xs text-muted-foreground">
@@ -86,7 +87,7 @@ export function TextareaField({
         render={
           <Textarea
             {...props}
-            className={cn(className)}
+            className={className}
             value={isControlled ? value : undefined}
             defaultValue={isControlled ? undefined : defaultValue}
             maxLength={maxLength}

@@ -16,7 +16,6 @@ import { isTextValueNode } from "../../internal/is-text-node";
 import { cn } from "../../styles/cn";
 import { withinFocusRingClass, withinFocusRingControlClass } from "../../styles/utils";
 import { useElmeraGroupUi } from "../../theme/elmera-group-ui";
-import { useResolvedPortalContainer } from "../../theme/use-resolved-portal-container";
 import { Button } from "../button/button";
 import { InputGroup } from "../input-group/input-group";
 import {
@@ -24,11 +23,10 @@ import {
   menuItemClass,
   menuItemIndicatorClass,
   menuSeparatorClass,
-  overlayPopupDurationClass,
-  overlayPopupMotionClass,
-  overlayPopupSurfaceClass,
   overlayPositionerClass,
+  overlayTimedPopupClass,
 } from "../overlay/overlay-classes";
+import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps, OverlayPositionerProps } from "../overlay/overlay-props";
 import { comboboxStrings } from "./intl";
 
@@ -173,36 +171,11 @@ function ComboboxInput({
   );
 }
 
-/**
- * The shared positioner block, generic over Combobox's own positioner props.
- * `side` and `alignOffset` take the shared declarations verbatim; `sideOffset` (6) and
- * `align` (`"start"`) differ from Popover's defaults, so they are redeclared here with
- * their own `@default` tags, as overlay-props.ts requires.
- */
-type ComboboxPositionerProps = OverlayPositionerProps<ComponentProps<typeof ComboboxPrimitive.Positioner>>;
-
-/**
- * The four positioner props are interleaved rather than grouped: the docs API pipeline
- * derives `Combobox.Content.propOrder` from declaration order (popover.tsx), so the
- * published order `side, sideOffset, align, alignOffset, anchor, container` is kept
- * exactly as it was, with `OverlayContainerProps` last.
- */
 export type ComboboxContentProps = ComponentProps<typeof ComboboxPrimitive.Popup> &
-  Pick<ComboboxPositionerProps, "side"> & {
-    /**
-     * Distance from the trigger, in pixels.
-     * @default 6
-     */
-    sideOffset?: ComponentProps<typeof ComboboxPrimitive.Positioner>["sideOffset"];
-    /**
-     * How the popup aligns to the trigger on the cross axis.
-     * @default "start"
-     */
-    align?: ComponentProps<typeof ComboboxPrimitive.Positioner>["align"];
-  } & Pick<ComboboxPositionerProps, "alignOffset"> & {
+  OverlayPositionerProps<ComponentProps<typeof ComboboxPrimitive.Positioner>> & {
     /**
      * Element, ref, or virtual element to position against. Pass `useComboboxAnchor()`'s
-     * ref; also flips `data-chips` on the popup.
+     * ref; also flips `data-external-anchor` on the popup.
      */
     anchor?: ComponentProps<typeof ComboboxPrimitive.Positioner>["anchor"];
   } & OverlayContainerProps;
@@ -217,14 +190,8 @@ function ComboboxContent({
   container,
   ...props
 }: ComboboxContentProps): ReactElement | null {
-  const resolvedContainer = useResolvedPortalContainer(container);
-
-  if (resolvedContainer === null) {
-    return null;
-  }
-
   return (
-    <ComboboxPrimitive.Portal container={resolvedContainer}>
+    <OverlayPortal portal={ComboboxPrimitive.Portal} container={container}>
       <ComboboxPrimitive.Positioner
         side={side}
         sideOffset={sideOffset}
@@ -234,18 +201,16 @@ function ComboboxContent({
         className={overlayPositionerClass}>
         <ComboboxPrimitive.Popup
           data-slot="combobox-content"
-          data-chips={anchor ? "true" : "false"}
+          data-external-anchor={anchor ? "true" : "false"}
           className={cn(
-            overlayPopupSurfaceClass,
-            overlayPopupMotionClass,
-            overlayPopupDurationClass,
-            "group/combobox-content relative max-h-(--available-height) w-(--anchor-width) max-w-(--available-width) min-w-[calc(var(--anchor-width)+--spacing(7))] overflow-hidden data-[chips=true]:min-w-(--anchor-width) *:data-[slot=input-group]:m-1 *:data-[slot=input-group]:mb-0 *:data-[slot=input-group]:h-(--control-h-sm) *:data-[slot=input-group]:border-input/30 *:data-[slot=input-group]:bg-input/30 *:data-[slot=input-group]:shadow-none",
+            overlayTimedPopupClass,
+            "group/combobox-content relative max-h-(--available-height) w-(--anchor-width) max-w-(--available-width) min-w-[calc(var(--anchor-width)+--spacing(7))] overflow-hidden data-[external-anchor=true]:min-w-(--anchor-width) *:data-[slot=input-group]:m-1 *:data-[slot=input-group]:mb-0 *:data-[slot=input-group]:h-(--control-h-sm) *:data-[slot=input-group]:border-input/30 *:data-[slot=input-group]:bg-input/30 *:data-[slot=input-group]:shadow-none",
             className
           )}
           {...props}
         />
       </ComboboxPrimitive.Positioner>
-    </ComboboxPrimitive.Portal>
+    </OverlayPortal>
   );
 }
 

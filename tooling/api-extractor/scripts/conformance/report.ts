@@ -5,6 +5,7 @@ import { join, resolve } from "node:path";
 
 import { ExtractWarningSchema, ProjectExtractor } from "../../src/index.ts";
 import type { ExtractWarning } from "../../src/index.ts";
+import { definedFields } from "../../src/optional-fields.ts";
 import { writeArtifactBatchOrThrow } from "../artifact-batch-writer.ts";
 import type { ArtifactBatchItem } from "../artifact-batch-writer.ts";
 import { runIfMain } from "../cli.ts";
@@ -277,14 +278,12 @@ function failedExtraction(definition: ConformanceFixture, error: string): Extrac
     upstreamDifferenceCount: 0,
     upstreamDifferenceDigest: differenceDigest([]),
     ...warningEvidence([]),
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- report fields are normalized.
-    ...(definition.disposition === "reviewed-ts7"
-      ? {
-          divergenceRecord: relativeFixturePath(
-            join(fixtureDirectory, definition.fixture, "ts7-oracle.json")
-          ),
-        }
-      : {}),
+    ...definedFields({
+      divergenceRecord:
+        definition.disposition === "reviewed-ts7"
+          ? relativeFixturePath(join(fixtureDirectory, definition.fixture, "ts7-oracle.json"))
+          : undefined,
+    }),
     error,
   };
 }
@@ -321,16 +320,13 @@ function compareFixtureExtraction(
         upstreamDifferenceCount: upstreamDifferences.length,
         upstreamDifferenceDigest: differenceDigest(upstreamDifferences),
         ...warningEvidence(result.warnings),
-        // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- report fields are normalized.
-        ...(warningPath === undefined ? {} : { warningOracle: relativeFixturePath(warningPath) }),
-        // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- report fields are normalized.
-        ...(definition.disposition === "reviewed-ts7"
-          ? {
-              divergenceRecord: relativeFixturePath(
-                join(fixtureDirectory, definition.fixture, "ts7-oracle.json")
-              ),
-            }
-          : {}),
+        ...definedFields({
+          warningOracle: warningPath === undefined ? undefined : relativeFixturePath(warningPath),
+          divergenceRecord:
+            definition.disposition === "reviewed-ts7"
+              ? relativeFixturePath(join(fixtureDirectory, definition.fixture, "ts7-oracle.json"))
+              : undefined,
+        }),
         error: warningPath === undefined ? "unexpected warning without oracle" : "warning oracle mismatch",
       };
     }
@@ -344,18 +340,14 @@ function compareFixtureExtraction(
       upstreamDifferenceCount: upstreamDifferences.length,
       upstreamDifferenceDigest: differenceDigest(upstreamDifferences),
       ...warningEvidence(result.warnings),
-      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- report fields are normalized.
-      ...(warningPath === undefined ? {} : { warningOracle: relativeFixturePath(warningPath) }),
-      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- report fields are normalized.
-      ...(definition.disposition === "reviewed-ts7"
-        ? {
-            divergenceRecord: relativeFixturePath(
-              join(fixtureDirectory, definition.fixture, "ts7-oracle.json")
-            ),
-          }
-        : {}),
-      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- report fields are normalized.
-      ...(differences.length === 0 ? {} : { error: "extraction output does not match selected oracle" }),
+      ...definedFields({
+        warningOracle: warningPath === undefined ? undefined : relativeFixturePath(warningPath),
+        divergenceRecord:
+          definition.disposition === "reviewed-ts7"
+            ? relativeFixturePath(join(fixtureDirectory, definition.fixture, "ts7-oracle.json"))
+            : undefined,
+        error: differences.length === 0 ? undefined : "extraction output does not match selected oracle",
+      }),
     };
   } catch (error) {
     return failedExtraction(definition, error instanceof Error ? error.message : String(error));

@@ -318,7 +318,7 @@ describe("wrapped and compound component representation", () => {
     );
   });
 
-  it("keeps wrapper components recognizable when external expansion is enabled", async () => {
+  it("keeps a forwardRef wrapper recognizable when external expansion is enabled", async () => {
     const forward = await extractFixture(
       { tsconfigPath },
       resolve(fixtureRoot, "react-forward-ref-component", "input.tsx"),
@@ -327,6 +327,9 @@ describe("wrapped and compound component representation", () => {
       }
     );
     expect(component(forward, "TestComponent").props.map((entry) => entry.name)).toEqual(["className", "id"]);
+  }, 60_000);
+
+  it("keeps a memo wrapper recognizable when external expansion is enabled", async () => {
     const memo = await extractFixture(
       { tsconfigPath },
       resolve(fixtureRoot, "react-memo-component", "input.tsx"),

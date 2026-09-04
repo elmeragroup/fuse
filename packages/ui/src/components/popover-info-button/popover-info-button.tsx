@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactElement, ReactNode, RefObject } from "react";
+import type { ReactElement, ReactNode } from "react";
 
 import { tv } from "tailwind-variants";
 import type { VariantProps } from "tailwind-variants";
@@ -9,6 +9,7 @@ import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { Info } from "../../icons/generated/info";
 import type { ButtonProps } from "../button/button";
 import { Button } from "../button/button";
+import type { OverlayContainerProps } from "../overlay/overlay-props";
 import { Popover } from "../popover/popover";
 import { popoverInfoButtonStrings } from "./intl";
 
@@ -71,7 +72,7 @@ export type PopoverInfoButtonProps = DistributiveOmit<ButtonProps, "children" | 
      * Portal target forwarded to `Popover.Content`. Defaults to the nearest
      * enclosing `ThemeScope` element.
      */
-    container?: HTMLElement | RefObject<HTMLElement | null>;
+    container?: OverlayContainerProps["container"];
     /**
      * Max-width of the popover content. `sm`–`7xl` map to `max-w-sm`–`max-w-7xl`;
      * `"default"` is `max-w-md`.

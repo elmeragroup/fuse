@@ -13,6 +13,7 @@ import {
 import { tv } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
+import { controlInsetMdClass } from "../../styles/control-inset";
 import { fieldBoxChromeClass } from "../../styles/field-box";
 import { stateFocusRingClass, stateFocusRingVisibleClass } from "../../styles/utils";
 import { composeTailwindRenderProps } from "./utils";
@@ -121,8 +122,12 @@ export function Input({ className, ...props }: InputProps): ReactElement {
         className,
         // The FieldGroup owns the surface (bg-card, §8.9), so the inner control never
         // paints a second one — that is what keeps the read-only `bg-muted` fill honest.
-        // oxlint-disable-next-line elmera/no-local-focus-ring -- conventions.md: within-adapter control outline
-        "min-w-0 flex-1 bg-transparent px-(--control-px-md) [font-size:var(--control-text)] [line-height:var(--control-leading)] text-foreground outline-none placeholder:text-muted-foreground disabled:text-muted-foreground"
+        cn(
+          "min-w-0 flex-1 bg-transparent",
+          controlInsetMdClass,
+          // oxlint-disable-next-line elmera/no-local-focus-ring -- conventions.md: within-adapter control outline
+          "text-foreground outline-none placeholder:text-muted-foreground disabled:text-muted-foreground"
+        )
       )}
       {...props}
     />

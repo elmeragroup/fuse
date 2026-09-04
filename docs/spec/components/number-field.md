@@ -61,7 +61,7 @@ Field.Root                              (base-ui Field.Root, gap-1)
 
 ## 4 Variants
 
-No component-specific tv recipe and **no size axis**. The field box pins the `md` rung per [conventions](conventions.md) ruling 2, 2026-08-21: `h-(--control-h-md)` plus `--control-px-md` / control-type where those families appear, and composes shared `focusRing({ target: "within" })`. A module-private `stepperButton` class string is shared by Increment/Decrement. Nothing exported.
+No component-specific tv recipe and **no size axis**. The field box pins the `md` rung per [conventions](conventions.md) ruling 2, 2026-08-21: `h-(--control-h-md)` plus `controlInsetMdClass` (the md inset/type pair) on the input, and composes shared `focusRing({ target: "within" })`. The group's chrome is `fieldBoxChromeClass` (§8.8). A module-private `stepperButton` class string is shared by Increment/Decrement. Nothing exported from the public entry.
 
 **Density mapping.** Single-height field box → `md` rung. Dense computed height matches the ref's `h-9`; comfortable is the signed `ui.css` column. No `dense:` / `comfortable:` variants.
 
@@ -92,6 +92,7 @@ No component-specific tv recipe and **no size axis**. The field box pins the `md
 5. **Locale is provider-only:** no public `locale` prop is added; `useElmeraGroupUi().locale` is passed to `NumberField.Root`, matching Meter and ADR 0006's single-source rule.
 6. **Density retokenization:** the fixed `h-9` box pins the `md` rung without gaining a `size` axis.
 7. **Pending/success crossfade adopted (2026-09-03):** the two glyphs were stacked side by side here while TextField crossfaded them, so the same two booleans produced two different label rows. Both composites now render the shared package-private field frame, whose indicator keeps both faces mounted in a `relative size-3.5` box and crossfades them with `iconCrossfadeTransition`/`iconCrossfadeShown`/`iconCrossfadeHidden`; success wins. This is the one deliberate rendered-output change of that migration — the §2 label row and the `isSuccess` row in §3 are amended with it, and §9 pins it.
+8. **Group chrome is the shared field-box chrome.** _(2026-09-04.)_ The group was restating Input's elevation, radius, border, fill, and transition by hand, and had already dropped `border-color` from the transition list. It now composes `fieldBoxChromeClass`; the one rendered change is that an invalid border transitions its colour like every other field box. `internal-stack.test.ts` asserts the group's computed chrome beside the two recipe tiers.
 
 ## 9 Test requirements
 

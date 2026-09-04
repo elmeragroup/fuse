@@ -68,5 +68,15 @@ describe("workspace lint script", () => {
     expect(uiSrcRules["elmera/no-hardcoded-density-metrics"]).toBe("warn");
     expect(uiSrcRules["elmera/facade-reexport-grammar"]).toBe("error");
     expect(uiSrcRules["elmera/no-rac-outside-quarantine"]).toBe("error");
+    expect(uiSrcRules["elmera/restrict-focus-ring-call"]).toBe("error");
+    expect(uiSrcRules["elmera/no-field-part-jsx"]).toBe("error");
+    expect(uiSrcRules["no-restricted-imports"]?.[0]).toBe("error");
+
+    const dictionaryFactoryOverride = overrides.find((entry) =>
+      overrideFiles(entry).includes("packages/ui/src/intl/create-string-dictionary.ts")
+    );
+    expect(
+      asRecord(dictionaryFactoryOverride?.rules, "dictionary factory override rules")["no-restricted-imports"]
+    ).toBe("off");
   });
 });

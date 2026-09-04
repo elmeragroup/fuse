@@ -1,9 +1,10 @@
 "use client";
 
-import type { ReactElement, ReactNode, RefObject } from "react";
+import type { ReactElement, ReactNode } from "react";
 
 import type { ValidationResult } from "react-aria-components";
 
+import type { OverlayContainerProps } from "../../components/overlay/overlay-props";
 import { CalendarBlank } from "../../icons/generated/calendar-blank";
 import { pickerVariants } from "../../styles/picker";
 import { Button } from "./button";
@@ -46,7 +47,7 @@ export type PickerShellProps = {
   /** Paints the read-only fill on the field box — the only place it is painted. */
   isReadOnly?: boolean;
   /** Portal target for the popover, forwarded to the private RAC `Popover`. */
-  container?: HTMLElement | RefObject<HTMLElement | null>;
+  container?: OverlayContainerProps["container"];
   /**
    * The picker's `range` axis. The shell resolves its own three slots from
    * `pickerVariants` rather than taking them as class strings: they always come from one

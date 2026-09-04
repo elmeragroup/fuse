@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { render } from "../../test/browser-render";
 import { ThemeScope } from "./theme-scope";
-import { useResolvedPortalContainer } from "./use-resolved-portal-container";
+import { useResolvedPortalContainer } from "./theme-scope-container";
 
 type Resolved = HTMLElement | null | undefined;
 

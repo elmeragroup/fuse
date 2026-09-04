@@ -2,21 +2,28 @@ import { tv } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
 import { cardVariants } from "../card/card-variants";
+import {
+  fieldFrameContentClass,
+  fieldFrameDescriptionClass,
+  fieldFrameLabelRowClass,
+  fieldFrameRootClass,
+} from "../field/field-frame";
 
 /**
- * PUBLIC slot recipe (text-field.md §4). PhoneNumberField borrows it, so it ships
- * from `@elmeragroup/ui/text-field`. No size axis — the inner Input pins the md
- * field-box rung. The ref's unused textarea slot is omitted (§8.3).
+ * PUBLIC slot recipe (text-field.md §4). Layout slots compose FieldFrame
+ * constants so the documented names stay stable while the frame owns the defaults.
+ * No size axis — the inner Input pins the md field-box rung. The ref's unused textarea
+ * slot is omitted (§8.3).
  */
 export const textFieldVariants = tv({
   slots: {
-    base: "group flex flex-col gap-1",
+    base: fieldFrameRootClass,
     fieldGroup: "w-auto",
     input: "",
-    labelContainer: "flex items-center justify-between",
+    labelContainer: fieldFrameLabelRowClass,
     label: "",
-    container: "flex flex-col gap-1",
-    description: "text-sm",
+    container: fieldFrameContentClass,
+    description: fieldFrameDescriptionClass,
     iconContainer: "pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 [&>svg]:size-4",
   },
   variants: {

@@ -7,8 +7,8 @@ import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
 
 import { cn } from "../../styles/cn";
 import { selfFocusRingClass } from "../../styles/utils";
-import { useResolvedPortalContainer } from "../../theme/use-resolved-portal-container";
 import { overlayPopupMotionClass, overlayPositionerClass } from "../overlay/overlay-classes";
+import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps, OverlayPositionerProps } from "../overlay/overlay-props";
 
 /** Shared popup id so the trigger's `aria-describedby` points at the tooltip (tooltip.md §7). */
@@ -68,30 +68,12 @@ function TooltipTrigger({
   );
 }
 
-/**
- * Tooltip takes the shared positioner block but redeclares `side` and `sideOffset`.
- *
- * `side` must be redeclared because the shared `@default` tags are Popover's: Tooltip
- * destructures `side = "top"` below, and the docs generator publishes the tag verbatim,
- * so inheriting Popover's `"bottom"` would ship a wrong public prop table. `sideOffset`
- * is redeclared alongside it — same default, same words — only to keep the pair in
- * declaration order: the docs API pipeline derives `Tooltip.Content.propOrder` from the
- * intersection order and the shadow snapshot pins it as
- * `align, alignOffset, side, sideOffset, container`. Re-read the tags whenever the
- * destructuring below changes; there is no gate on the pair.
- */
 export type TooltipContentProps = ComponentProps<typeof TooltipPrimitive.Popup> &
-  Omit<OverlayPositionerProps<ComponentProps<typeof TooltipPrimitive.Positioner>>, "side" | "sideOffset"> & {
+  Omit<OverlayPositionerProps<ComponentProps<typeof TooltipPrimitive.Positioner>>, "side"> & {
     /**
      * Which side of the trigger the popup is placed on. Tooltips open upward by default.
-     * @default "top"
      */
     side?: ComponentProps<typeof TooltipPrimitive.Positioner>["side"];
-    /**
-     * Distance from the trigger, in pixels.
-     * @default 4
-     */
-    sideOffset?: ComponentProps<typeof TooltipPrimitive.Positioner>["sideOffset"];
   } & OverlayContainerProps;
 
 function TooltipContent({
@@ -105,14 +87,9 @@ function TooltipContent({
   ...props
 }: TooltipContentProps): ReactElement | null {
   const tooltipId = use(TooltipDescriptionContext);
-  const resolvedContainer = useResolvedPortalContainer(container);
-
-  if (resolvedContainer === null) {
-    return null;
-  }
 
   return (
-    <TooltipPrimitive.Portal container={resolvedContainer}>
+    <OverlayPortal portal={TooltipPrimitive.Portal} container={container}>
       <TooltipPrimitive.Positioner
         align={align}
         alignOffset={alignOffset}
@@ -137,7 +114,7 @@ function TooltipContent({
           <TooltipPrimitive.Arrow className="size-2.5 translate-y-[calc(-50%-2px)] rotate-45 rounded-[2px] bg-foreground fill-foreground data-[side=bottom]:top-1 data-[side=inline-end]:top-1/2! data-[side=inline-end]:-left-1 data-[side=inline-end]:-translate-y-1/2 data-[side=inline-start]:top-1/2! data-[side=inline-start]:-right-1 data-[side=inline-start]:-translate-y-1/2 data-[side=left]:top-1/2! data-[side=left]:-right-1 data-[side=left]:-translate-y-1/2 data-[side=right]:top-1/2! data-[side=right]:-left-1 data-[side=right]:-translate-y-1/2 data-[side=top]:-bottom-2.5" />
         </TooltipPrimitive.Popup>
       </TooltipPrimitive.Positioner>
-    </TooltipPrimitive.Portal>
+    </OverlayPortal>
   );
 }
 

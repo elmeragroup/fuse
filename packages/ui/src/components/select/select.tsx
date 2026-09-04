@@ -9,18 +9,17 @@ import { CaretDown } from "../../icons/generated/caret-down";
 import { CaretUp } from "../../icons/generated/caret-up";
 import { Check } from "../../icons/generated/check";
 import { cn } from "../../styles/cn";
+import { fieldBoxChromeClass } from "../../styles/field-box";
 import { selfFocusRingClass } from "../../styles/utils";
-import { useResolvedPortalContainer } from "../../theme/use-resolved-portal-container";
 import {
   menuGroupLabelClass,
   menuItemClass,
   menuItemIndicatorClass,
   menuSeparatorClass,
-  overlayPopupDurationClass,
-  overlayPopupMotionClass,
-  overlayPopupSurfaceClass,
   overlayPositionerClass,
+  overlayTimedPopupClass,
 } from "../overlay/overlay-classes";
+import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps, OverlayPositionerProps } from "../overlay/overlay-props";
 
 function SelectRoot<Value = unknown, Multiple extends boolean | undefined = false>(
@@ -51,8 +50,9 @@ function SelectTrigger({
       // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- select.md §4: value-slot gap is content layout, not a control rung
       className={cn(
         selfFocusRingClass,
+        fieldBoxChromeClass,
         // oxlint-disable-next-line elmera/no-local-focus-ring -- select.md §7: native outline off; ring comes from the shared adapter
-        "group/select-trigger shadow-xs data-[size=sm]:text-sm flex w-fit items-center justify-between rounded-md border border-input bg-card whitespace-nowrap transition-[color,box-shadow] outline-none select-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-error aria-invalid:ring-3 aria-invalid:ring-error/20 data-placeholder:text-muted-foreground data-[size=default]:h-(--control-h-md) data-[size=default]:gap-(--control-gap-md) data-[size=default]:px-(--control-px-md) data-[size=default]:[font-size:var(--control-text)] data-[size=default]:[line-height:var(--control-leading)] data-[size=sm]:h-(--control-h-sm) data-[size=sm]:gap-(--control-gap-sm) data-[size=sm]:px-(--control-px-sm) *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "group/select-trigger data-[size=sm]:text-sm flex w-fit items-center justify-between whitespace-nowrap outline-none select-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-error aria-invalid:ring-3 aria-invalid:ring-error/20 data-placeholder:text-muted-foreground data-[size=default]:h-(--control-h-md) data-[size=default]:gap-(--control-gap-md) data-[size=default]:px-(--control-px-md) data-[size=default]:[font-size:var(--control-text)] data-[size=default]:[line-height:var(--control-leading)] data-[size=sm]:h-(--control-h-sm) data-[size=sm]:gap-(--control-gap-sm) data-[size=sm]:px-(--control-px-sm) *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className
       )}
       {...props}>
@@ -76,12 +76,6 @@ function SelectValue({ className, ...props }: ComponentProps<typeof SelectPrimit
   );
 }
 
-/**
- * `align`/`alignOffset`/`side`/`sideOffset` are the shared block: Select's runtime
- * defaults are Popover's, so the shared `@default` tags publish correctly here
- * (overlay-props.ts). `OverlayContainerProps` is intersected last so `container` keeps
- * its published position in `Select.Content.propOrder` (popover.tsx).
- */
 export type SelectContentProps = ComponentProps<typeof SelectPrimitive.Popup> &
   OverlayPositionerProps<ComponentProps<typeof SelectPrimitive.Positioner>> & {
     /**
@@ -103,14 +97,8 @@ function SelectContent({
   container,
   ...props
 }: SelectContentProps): ReactElement | null {
-  const resolvedContainer = useResolvedPortalContainer(container);
-
-  if (resolvedContainer === null) {
-    return null;
-  }
-
   return (
-    <SelectPrimitive.Portal container={resolvedContainer}>
+    <OverlayPortal portal={SelectPrimitive.Portal} container={container}>
       <SelectPrimitive.Positioner
         side={side}
         sideOffset={sideOffset}
@@ -122,9 +110,7 @@ function SelectContent({
           data-slot="select-content"
           data-align-trigger={alignItemWithTrigger ? "true" : "false"}
           className={cn(
-            overlayPopupSurfaceClass,
-            overlayPopupMotionClass,
-            overlayPopupDurationClass,
+            overlayTimedPopupClass,
             "relative max-h-(--available-height) w-(--anchor-width) min-w-36 overflow-x-hidden overflow-y-auto rounded-lg data-[align-trigger=true]:animate-none",
             className
           )}
@@ -134,7 +120,7 @@ function SelectContent({
           <SelectScrollDownButton />
         </SelectPrimitive.Popup>
       </SelectPrimitive.Positioner>
-    </SelectPrimitive.Portal>
+    </OverlayPortal>
   );
 }
 

@@ -4,6 +4,7 @@ import type { Project } from "typescript/unstable/sync";
 
 import { BackendError, ConfigError, safeCause } from "../../errors.ts";
 import type { InternalOpenProjectOptions } from "../../internal/project-options.ts";
+import { definedFields } from "../../optional-fields.ts";
 import type { ProjectFileSystem } from "../../options.ts";
 import type { BackendExtractionOptions, BackendProject, BackendTiming } from "../contracts.ts";
 import { disabledTiming } from "../contracts.ts";
@@ -117,12 +118,10 @@ function normalizeTiming(info: ReturnType<API["getTimingInfo"]>): BackendTiming 
       roundTripMs: request.roundTripMs,
       bytesSent: request.bytesSent,
       bytesReceived: request.bytesReceived,
-      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional native FS hooks are normalized.
-      ...(request.serverTimeMs === undefined ? {} : { serverTimeMs: request.serverTimeMs }),
-      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional native FS hooks are normalized.
-      ...(request.transportOverheadMs === undefined
-        ? {}
-        : { transportOverheadMs: request.transportOverheadMs }),
+      ...definedFields({
+        serverTimeMs: request.serverTimeMs,
+        transportOverheadMs: request.transportOverheadMs,
+      }),
     })),
   };
 }

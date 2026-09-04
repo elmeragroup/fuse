@@ -17,6 +17,7 @@ import { SymbolFlags } from "typescript/unstable/sync";
 import type { Checker, Project, Symbol as TsSymbol } from "typescript/unstable/sync";
 
 import { FileNotInProgramError } from "../../errors.ts";
+import { definedFields } from "../../optional-fields.ts";
 import type {
   BackendDocumentation,
   BackendExportDraft,
@@ -150,12 +151,11 @@ export function readModule(session: TsgoModuleSession, filePath: string): Backen
   return {
     name: moduleName(session.rootDirectory, absoluteFilePath),
     exports: applyTypeOnlyStarFilter(exports, typeOnlyFiles),
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized optional module facts preserve the contract.
-    ...(imports.length === 0 ? {} : { imports }),
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized optional module facts preserve the contract.
-    ...(typeOnlyStarExports.length === 0 ? {} : { typeOnlyStarExports }),
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized optional module facts preserve the contract.
-    ...(warnings.length === 0 ? {} : { warnings }),
+    ...definedFields({
+      imports: imports.length === 0 ? undefined : imports,
+      typeOnlyStarExports: typeOnlyStarExports.length === 0 ? undefined : typeOnlyStarExports,
+      warnings: warnings.length === 0 ? undefined : warnings,
+    }),
   };
 }
 
@@ -427,21 +427,20 @@ function exportDescriptor(
     name: joinPublicName(scope.parentNamespaces, scope.publicName),
     symbol: session.symbolHandle(target),
     symbolStack: scope.symbolStack,
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized optional module facts preserve the contract.
-    ...(docs === undefined ? {} : { documentation: docs }),
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized optional module facts preserve the contract.
-    ...(declarationHandle === undefined ? {} : { declarationSourcePath: declarationHandle.path }),
+    ...definedFields({
+      documentation: docs,
+      declarationSourcePath: declarationHandle === undefined ? undefined : declarationHandle.path,
+    }),
     pureType: isPureType(target),
     explicitValueReExport:
       scope.source === undefined
         ? false
         : explicitValueReExport(session, scope.symbol, scope.source, scope.publicName),
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized optional module facts preserve the contract.
-    ...(reexportedFrom === undefined ? {} : { reexportedFrom }),
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized optional module facts preserve the contract.
-    ...(chain.length === 0 ? {} : { reexportChain: chain }),
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized optional module facts preserve the contract.
-    ...(inheritedTypes === undefined ? {} : { extendsTypes: inheritedTypes }),
+    ...definedFields({
+      reexportedFrom,
+      reexportChain: chain.length === 0 ? undefined : chain,
+      extendsTypes: inheritedTypes,
+    }),
   };
 }
 

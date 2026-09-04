@@ -685,7 +685,7 @@
           "type": "Element | RefObject<Element | null> | VirtualElement | (() => Element | VirtualElement | null) | null | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Element, ref, or virtual element to position against. Pass `useComboboxAnchor()`'s ref; also flips `data-chips` on the popup.",
+          "description": "Element, ref, or virtual element to position against. Pass `useComboboxAnchor()`'s ref; also flips `data-external-anchor` on the popup.",
           "required": false
         },
         {

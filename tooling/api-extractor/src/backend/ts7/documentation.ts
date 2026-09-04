@@ -1,6 +1,7 @@
 import type { Node } from "typescript/unstable/ast";
 import { SyntaxKind } from "typescript/unstable/ast";
 
+import { definedFields } from "../../optional-fields.ts";
 import type { BackendDocumentation, BackendNodeReference, BackendSymbolHandle } from "../contracts.ts";
 import { authoredSymbolName } from "./class-facts.ts";
 import type { TsgoFactsSession } from "./facts.ts";
@@ -52,12 +53,11 @@ function documentationFromNode(node: Node): BackendDocumentation | undefined {
   )
     return undefined;
   return {
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized optional facts preserve the public encoding.
-    ...(description === undefined ? {} : { description }),
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized optional facts preserve the public encoding.
-    ...(defaultValueTag === undefined ? {} : { defaultValue: jsDocText(defaultValueTag.comment) ?? "" }),
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized optional facts preserve the public encoding.
-    ...(visibility === undefined ? {} : { visibility }),
+    ...definedFields({
+      description,
+      defaultValue: defaultValueTag === undefined ? undefined : (jsDocText(defaultValueTag.comment) ?? ""),
+      visibility,
+    }),
     tags,
   };
 }
@@ -152,15 +152,18 @@ export function documentationOfSymbol(
     return undefined;
   const isParameter = firstOwned?.kind === SyntaxKind.Parameter;
   return {
-    ...(description === ""
-      ? isParameter
-        ? { description: "" }
-        : {}
-      : { description: isParameter ? normalizeParameterSummary(description) : description }),
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized optional facts preserve the public encoding.
-    ...(defaultTag?.text === undefined ? {} : { defaultValue: String(defaultTag.text) }),
-    // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- normalized optional facts preserve the public encoding.
-    ...(visibility === undefined ? {} : { visibility }),
+    ...definedFields({
+      description:
+        description === ""
+          ? isParameter
+            ? ""
+            : undefined
+          : isParameter
+            ? normalizeParameterSummary(description)
+            : description,
+      defaultValue: defaultTag?.text === undefined ? undefined : String(defaultTag.text),
+      visibility,
+    }),
     tags,
   };
 }

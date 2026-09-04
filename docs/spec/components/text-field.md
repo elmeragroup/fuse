@@ -57,7 +57,7 @@ With `filter="numeric"`, rejected keystrokes never reach `onChange` and never up
 
 ## 4 Variants
 
-Recipe: `textFieldVariants` (tv, slots) — **public export** (borrowed by `PhoneNumberField`).
+Recipe: `textFieldVariants` (tv, slots) — **public export**. Layout slots `base` / `labelContainer` / `container` / `description` compose the package-private FieldFrame constants; PhoneNumberField no longer borrows this recipe (phone-number-field.md §4, 2026-09-04).
 
 Slots: `base`, `fieldGroup`, `input`, `labelContainer`, `label`, `container`, `description`, `iconContainer`. The ref's `textArea` slot (`min-h-16`) is dead and removed (§8).
 
@@ -97,7 +97,7 @@ Slots: `base`, `fieldGroup`, `input`, `labelContainer`, `label`, `container`, `d
 5. **Icon swaps:** the reference loader/check icons become named Phosphor `SpinnerGap` (with `animate-spin`) / `Check` imports.
 6. **Token renames:** `destructive` → `error`, `bg-white` → `bg-card`, `dark:`/`inverted:` input-surface variants dropped in favor of token-level dark axis.
 7. **Inline-field border is `:focus-visible` only (2026-09-02):** the first port painted `border-ring` on `group-focus-within`, so mouse and programmatic focus got a ring-coloured border. The class lives on the input, so it is `focus-visible:border-ring` (Tailwind `has-focus-visible` is `:has(:focus-visible)` and would miss self-focus).
-8. **Label row, description and error move to the shared frame (2026-09-03, field.md §8.9):** the §2 tree is rendered by the package-private `FieldFrame`, which receives the `labelContainer`, `label`, `container` and `description` recipe slots as class arguments. Emitted markup and every part's class set are unchanged; `textFieldVariants` stays the public recipe and PhoneNumberField keeps borrowing it.
+8. **Label row, description and error move to the shared frame (2026-09-03, field.md §8.9):** the §2 tree is rendered by the package-private `FieldFrame`, which receives the `labelContainer`, `label`, `container` and `description` recipe slots as class arguments. Emitted markup and every part's class set are unchanged; `textFieldVariants` stays the public recipe and PhoneNumberField keeps borrowing it. _(Amended 2026-09-04: `textFieldVariants` composes FieldFrame constants under those public slot names; PhoneNumberField no longer borrows the recipe. `text-pretty` on the description is a frame default, so the public `description` slot includes it. One recipe call per render forwards `label` / `container` / `description` into the frame.)_
 
 ## 9 Test requirements
 

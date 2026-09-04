@@ -36,19 +36,25 @@ const dialogVariants = tv({
   },
 });
 
-export function DialogHeader({ className, ...props }: ComponentProps<"div">): ReactElement {
-  const { header } = dialogVariants();
-  return <div data-slot="dialog-header" className={cn(header(), className)} {...props} />;
+/** Resolved once at module scope — the recipe has no axes (no per-render work). */
+const dialogSlots = dialogVariants();
+const dialogBaseClass = dialogSlots.base();
+const dialogHeaderClass = dialogSlots.header();
+const dialogHeadingClass = dialogSlots.heading();
+const dialogContentClass = dialogSlots.content();
+const dialogCloseButtonClass = dialogSlots.closeButton();
+const dialogCloseButtonIconClass = dialogSlots.closeButtonIcon();
+
+function DialogHeader({ className, ...props }: ComponentProps<"div">): ReactElement {
+  return <div data-slot="dialog-header" className={cn(dialogHeaderClass, className)} {...props} />;
 }
 
-export function DialogContent({ className, ...props }: ComponentProps<"div">): ReactElement {
-  const { content } = dialogVariants();
-  return <div data-slot="dialog-content" className={cn(content(), className)} {...props} />;
+function DialogContent({ className, ...props }: ComponentProps<"div">): ReactElement {
+  return <div data-slot="dialog-content" className={cn(dialogContentClass, className)} {...props} />;
 }
 
-export function DialogHeading({ className, ...props }: ComponentProps<typeof Heading>): ReactElement {
-  const { heading } = dialogVariants();
-  return <Heading slot="title" className={cn(heading(), className)} {...props} />;
+function DialogHeading({ className, ...props }: ComponentProps<typeof Heading>): ReactElement {
+  return <Heading slot="title" className={cn(dialogHeadingClass, className)} {...props} />;
 }
 
 /**
@@ -56,27 +62,19 @@ export function DialogHeading({ className, ...props }: ComponentProps<typeof Hea
  * `children`-as-function form, so `children` stays a plain `ReactNode` and no runtime
  * `typeof` branch decides how to render a subtree.
  */
-function DialogCloseButton({
-  className,
-  iconClassName,
-  label,
-}: {
-  className: string;
-  iconClassName: string;
-  label: string;
-}): ReactElement {
+function DialogCloseButton({ label }: { label: string }): ReactElement {
   const state = use(OverlayTriggerStateContext);
 
   return (
     <Button
       aria-label={label}
-      className={className}
+      className={dialogCloseButtonClass}
       onPress={() => {
         state?.close();
       }}
       size="icon-sm"
       variant="ghost">
-      <X className={iconClassName} />
+      <X className={dialogCloseButtonIconClass} />
     </Button>
   );
 }
@@ -113,22 +111,15 @@ export function Dialog({
   ...props
 }: DialogProps): ReactElement {
   const strings = useLocalizedStrings(overlayCloseStrings);
-  const { base, closeButton: closeButtonClass, closeButtonIcon } = dialogVariants();
   const label = closeLabel ?? strings.format("close");
 
   return (
-    <AriaDialog data-slot="dialog" {...props} className={cn(base(), className)}>
+    <AriaDialog data-slot="dialog" {...props} className={cn(dialogBaseClass, className)}>
       <DialogContent>
         {title !== undefined || closeButton ? (
           <DialogHeader>
             {title !== undefined ? <DialogHeading>{title}</DialogHeading> : null}
-            {closeButton ? (
-              <DialogCloseButton
-                className={closeButtonClass()}
-                iconClassName={closeButtonIcon()}
-                label={label}
-              />
-            ) : null}
+            {closeButton ? <DialogCloseButton label={label} /> : null}
           </DialogHeader>
         ) : null}
         {children}
@@ -141,5 +132,3 @@ Dialog.displayName = "ReactAriaInternal.Dialog";
 DialogContent.displayName = "ReactAriaInternal.DialogContent";
 DialogHeader.displayName = "ReactAriaInternal.DialogHeader";
 DialogHeading.displayName = "ReactAriaInternal.DialogHeading";
-
-export { dialogVariants };

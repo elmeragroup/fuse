@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactElement, ReactNode, RefObject } from "react";
+import type { ReactElement, ReactNode } from "react";
 
 import { DateRangePicker as AriaDateRangePicker } from "react-aria-components";
 import type {
@@ -9,6 +9,7 @@ import type {
   ValidationResult,
 } from "react-aria-components";
 
+import type { OverlayContainerProps } from "../../components/overlay/overlay-props";
 import { pickerVariants } from "../../styles/picker";
 import { DateInput } from "../date-field/date-field";
 import { PickerShell } from "../internal/picker-shell";
@@ -48,7 +49,7 @@ export type DateRangePickerProps<T extends DateValue> = {
    * inherits the theme it was opened from (theming.md §7.4); an explicit element or ref
    * wins.
    */
-  container?: HTMLElement | RefObject<HTMLElement | null>;
+  container?: OverlayContainerProps["container"];
 } & Omit<AriaDateRangePickerProps<T>, "shouldForceLeadingZeros">;
 
 export function DateRangePicker<T extends DateValue>({

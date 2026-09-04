@@ -1,5 +1,7 @@
 import { tv } from "tailwind-variants";
 
+import { controlInsetMdClass } from "./control-inset";
+
 /**
  * The one date-picker recipe (date-picker.md §4, date-range-picker.md §4). Package-private
  * — no entry re-exports it, and the interim tier has no public recipe surface. It lives
@@ -28,8 +30,8 @@ import { tv } from "tailwind-variants";
  *
  * There is deliberately no `size` axis — `fieldGroupVariants` already pins
  * `h-(--control-h-md)` for the whole field family (conventions.md ruling 2). The `input`
- * slot reads `--control-px-md` and the control type pair so the segmented rows match Input
- * at both densities; `py-*` stays off the height-pinned box.
+ * slot is `controlInsetMdClass` so the segmented rows match Input at both densities;
+ * `py-*` stays off the height-pinned box.
  */
 export const pickerVariants = tv({
   slots: {
@@ -39,7 +41,7 @@ export const pickerVariants = tv({
     /** The private FieldGroup around the segment row(s) and the trigger. */
     group: "w-auto",
     /** A public DateInput inside the field box. */
-    input: "px-(--control-px-md) [font-size:var(--control-text)] [line-height:var(--control-leading)]",
+    input: controlInsetMdClass,
     /**
      * The en-dash between a range's two rows: decorative, `aria-hidden`, and the only slot
      * with a colour of its own. date-range-picker.md §8.4 renames the reference's two

@@ -1,6 +1,7 @@
 import type { CallExpression, Node } from "typescript/unstable/ast";
 import { isElementAccessExpression, isStringLiteral } from "typescript/unstable/ast/is";
 
+import { definedFields } from "../../optional-fields.ts";
 import type { BackendNodeFacts, BackendSymbolHandle, BackendSymbolOrigin } from "../contracts.ts";
 import type { TsgoFactsSession } from "./facts.ts";
 import { moduleOriginResolutionOfExpression } from "./module-origin.ts";
@@ -37,8 +38,7 @@ export function callExpressionFacts(
     ...result,
     calleeFacts: {
       symbol: calleeSymbol,
-      // oxlint-disable-next-line anti-slop/no-conditional-empty-object-spread -- optional origin facts preserve the backend contract.
-      ...(moduleOrigin === undefined ? {} : { moduleOrigin }),
+      ...definedFields({ moduleOrigin }),
       identity: origin.identity,
     },
   };
