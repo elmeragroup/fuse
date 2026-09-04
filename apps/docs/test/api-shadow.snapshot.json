@@ -8810,9 +8810,7 @@
       "path": "evidence.Toast.Close.props.label",
       "current": {
         "name": "label",
-        "declarationPaths": [
-          "packages/ui/src/components/toast/toast.tsx"
-        ],
+        "declarationPaths": ["packages/ui/src/components/toast/toast.tsx"],
         "ownership": "library",
         "synthesized": false
       },
@@ -8829,9 +8827,7 @@
       "path": "evidence.Toast.Provider.props.toastManager",
       "current": {
         "name": "toastManager",
-        "declarationPaths": [
-          "packages/ui/src/components/toast/toast.tsx"
-        ],
+        "declarationPaths": ["packages/ui/src/components/toast/toast.tsx"],
         "ownership": "library",
         "synthesized": false
       },
@@ -8848,9 +8844,7 @@
       "path": "evidence.Toast.Viewport.props.container",
       "current": {
         "name": "container",
-        "declarationPaths": [
-          "packages/ui/src/components/overlay/overlay-props.ts"
-        ],
+        "declarationPaths": ["packages/ui/src/components/overlay/overlay-props.ts"],
         "ownership": "library",
         "synthesized": false
       },
