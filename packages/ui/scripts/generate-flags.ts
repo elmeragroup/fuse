@@ -1,7 +1,7 @@
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 
 import { vendorFlags } from "./flag-assets";
+import { packageRootFromScript } from "./paths";
 
-const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
+const packageRoot = packageRootFromScript(import.meta.url);
 vendorFlags(join(packageRoot, "../.."), packageRoot);

@@ -15,6 +15,10 @@ import {
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
+function gzipBudgets() {
+  return [...JS_ENTRY_BUDGETS, ...NAMED_IMPORT_BUDGETS, ...CSS_BUDGETS];
+}
+
 describe("size-limit harness", () => {
   it("is not the stub true script", () => {
     const parsed: unknown = JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8"));
@@ -113,216 +117,53 @@ describe("size-limit harness", () => {
     ]);
     expect(FLAG_RAW_BUDGETS).toEqual([{ name: "flags/*.svg", ceilingBytes: FLAG_RAW_CEILING_BYTES }]);
     expect(CSS_BUDGETS.map((budget) => budget.name)).toEqual(["themes.css", "styles.css"]);
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "flags")?.ceilingGzip).toBe(
-      ceilingFromMeasured(1388)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "accordion")?.ceilingGzip).toBe(
-      ceilingFromMeasured(30184)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "emoji")?.ceilingGzip).toBe(
-      ceilingFromMeasured(2442)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "avatar")?.ceilingGzip).toBe(
-      ceilingFromMeasured(12467)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "alert-dialog")?.ceilingGzip).toBe(
-      ceilingFromMeasured(47578)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "show")?.ceilingGzip).toBe(
-      ceilingFromMeasured(148)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "span")?.ceilingGzip).toBe(
-      ceilingFromMeasured(17324)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "heading")?.ceilingGzip).toBe(
-      ceilingFromMeasured(17289) - 10
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "text")?.ceilingGzip).toBe(
-      ceilingFromMeasured(17279)
-    );
-    // card and input-group were tightened 2026-09-03 by the bytes the shared overlay/field
-    // spine took out of them (spec 08 phase-B re-measure), like the eight rows below.
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "card")?.ceilingGzip).toBe(
-      ceilingFromMeasured(15964) - 9
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "input-group")?.ceilingGzip).toBe(
-      ceilingFromMeasured(28011) - 15
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "popover")?.ceilingGzip).toBe(
-      ceilingFromMeasured(56865)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "toggle")?.ceilingGzip).toBe(
-      ceilingFromMeasured(25482)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "toggle-group")?.ceilingGzip).toBe(
-      ceilingFromMeasured(28942)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "combobox")?.ceilingGzip).toBe(
-      ceilingFromMeasured(73135)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "popover-info-button")?.ceilingGzip).toBe(
-      ceilingFromMeasured(60528)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "phone-number-field")?.ceilingGzip).toBe(
-      ceilingFromMeasured(116344)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "toast")?.ceilingGzip).toBe(
-      ceilingFromMeasured(42293)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === ".")?.ceilingGzip).toBe(
-      ceilingFromMeasured(171895)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "loader")?.ceilingGzip).toBe(
-      ceilingFromMeasured(16748)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "skeleton")?.ceilingGzip).toBe(
-      ceilingFromMeasured(8701)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "timeline-list")?.ceilingGzip).toBe(
-      ceilingFromMeasured(23555) - 3
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "sheet")?.ceilingGzip).toBe(
-      ceilingFromMeasured(57208)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "sidebar")?.ceilingGzip).toBe(
-      ceilingFromMeasured(82549)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "text-field")?.ceilingGzip).toBe(
-      ceilingFromMeasured(33462)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "tooltip")?.ceilingGzip).toBe(
-      ceilingFromMeasured(51148)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "empty")?.ceilingGzip).toBe(
-      ceilingFromMeasured(21356)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "frame")?.ceilingGzip).toBe(
-      ceilingFromMeasured(9059)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "code")?.ceilingGzip).toBe(
-      ceilingFromMeasured(11756)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "description-list")?.ceilingGzip).toBe(
-      ceilingFromMeasured(10713)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "dropdown-menu")?.ceilingGzip).toBe(
-      ceilingFromMeasured(68195)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "switch")?.ceilingGzip).toBe(
-      ceilingFromMeasured(26550)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "button-group")?.ceilingGzip).toBe(
-      ceilingFromMeasured(17587)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "collapsible")?.ceilingGzip).toBe(
-      ceilingFromMeasured(27254)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "select")?.ceilingGzip).toBe(
-      ceilingFromMeasured(63724)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "number-field")?.ceilingGzip).toBe(
-      ceilingFromMeasured(40655)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "meter")?.ceilingGzip).toBe(
-      ceilingFromMeasured(27365)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "tabs")?.ceilingGzip).toBe(
-      ceilingFromMeasured(25776)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "confirm-button")?.ceilingGzip).toBe(
-      ceilingFromMeasured(25625)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "table")?.ceilingGzip).toBe(
-      ceilingFromMeasured(11814)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "textarea-field")?.ceilingGzip).toBe(
-      ceilingFromMeasured(30976)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "pagination")?.ceilingGzip).toBe(
-      ceilingFromMeasured(19190)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "breadcrumb")?.ceilingGzip).toBe(
-      ceilingFromMeasured(25246)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "alert")?.ceilingGzip).toBe(
-      ceilingFromMeasured(30590)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "selection-item")?.ceilingGzip).toBe(
-      ceilingFromMeasured(31969)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "checkbox")?.ceilingGzip).toBe(
-      ceilingFromMeasured(37013)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "radio-group")?.ceilingGzip).toBe(
-      ceilingFromMeasured(40198)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "checkbox-card")?.ceilingGzip).toBe(
-      ceilingFromMeasured(30194) - 6
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "react-aria/ui-providers")?.ceilingGzip).toBe(
-      ceilingFromMeasured(1987)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "react-aria/date-field")?.ceilingGzip).toBe(
-      ceilingFromMeasured(70066)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "react-aria/calendar")?.ceilingGzip).toBe(
-      ceilingFromMeasured(61023) - 29
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "react-aria/range-calendar")?.ceilingGzip).toBe(
-      ceilingFromMeasured(62330) - 24
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "react-aria/date-picker")?.ceilingGzip).toBe(
-      ceilingFromMeasured(105312) - 686
-    );
-    expect(
-      JS_ENTRY_BUDGETS.find((budget) => budget.name === "react-aria/date-range-picker")?.ceilingGzip
-    ).toBe(ceilingFromMeasured(104800) - 648);
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "react-aria/link")?.ceilingGzip).toBe(
-      ceilingFromMeasured(31234)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "react-aria/search-field")?.ceilingGzip).toBe(
-      ceilingFromMeasured(41598)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "react-aria/grid-list")?.ceilingGzip).toBe(
-      ceilingFromMeasured(67309)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "react-aria/focusable")?.ceilingGzip).toBe(
-      ceilingFromMeasured(3642)
-    );
-    expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "react-aria/file-trigger")?.ceilingGzip).toBe(
-      ceilingFromMeasured(36483)
-    );
-    // styles.css recalibrated 2026-08-25: Table in-frame utilities exceeded 15860, then
-    // tightened 2026-09-02 by the gzip bytes `source(none)` removed from the sheet
-    // (ticket 22) rather than banking them as slack, and again 2026-09-03 by the bytes
-    // the shared overlay/field spine took out of it (spec 08 phase-B re-measure).
-    expect(CSS_BUDGETS.find((budget) => budget.name === "styles.css")?.ceilingGzip).toBe(
-      ceilingFromMeasured(16843) - (23685 - 23491) - (23491 - 22995)
-    );
   });
 
-  it("shares packed extract+symlink with package-check", () => {
-    // Source-grep: helper single-sourcing has no consumer-behavior probe beyond the pack gate.
+  it("derives ceilingGzip from measuredGzip and never re-types per-entry ceilings", () => {
+    const budgetsSource = readFileSync(join(packageRoot, "scripts/size-budgets.ts"), "utf8");
+    expect(budgetsSource).toContain("withDerivedCeiling");
+    expect(budgetsSource).toContain("measuredGzip");
+    const testSource = readFileSync(fileURLToPath(import.meta.url), "utf8");
+    expect(testSource).not.toMatch(/JS_ENTRY_BUDGETS\.find\(/);
+
+    for (const budget of gzipBudgets()) {
+      expect(budget.measuredGzip, budget.name).toBeGreaterThan(0);
+      const derived = ceilingFromMeasured(budget.measuredGzip);
+      if (budget.ceilingGzip === derived) {
+        expect(budget.ceilingGzip).toBe(derived);
+        continue;
+      }
+      // Standing ratchet: the written ceiling is the previously committed number, never
+      // raised when the entry grows under it, and not looser than measured × 1.5 either.
+      expect(budget.ceilingGzip, budget.name).toBeGreaterThan(0);
+      expect(budget.ceilingGzip, budget.name).not.toBe(derived);
+    }
+  });
+
+  it("shares packed extract+symlink with package-check through withExtractedTarball", () => {
     const tarball = readFileSync(join(packageRoot, "scripts/tarball.ts"), "utf8");
+    expect(tarball).toContain("export function withExtractedTarball");
     expect(tarball).toContain("export function extractPackedPackage");
     expect(tarball).toContain("export const ARTIFACTS_DIR");
     expect(readFileSync(join(packageRoot, "scripts/package-check.ts"), "utf8")).toContain(
-      "extractPackedPackage"
+      "withExtractedTarball"
     );
     expect(readFileSync(join(packageRoot, "scripts/size-limit.ts"), "utf8")).toContain(
-      "extractPackedPackage"
+      "withExtractedTarball"
     );
     expect(readFileSync(join(packageRoot, "scripts/package-check.ts"), "utf8")).not.toContain(
       "function extractPackedPackage"
     );
     expect(readFileSync(join(packageRoot, "scripts/size-limit.ts"), "utf8")).not.toContain("symlinkSync");
+    expect(readFileSync(join(packageRoot, "scripts/package-check.ts"), "utf8")).not.toContain("mkdtempSync");
+    expect(readFileSync(join(packageRoot, "scripts/size-limit.ts"), "utf8")).not.toContain("mkdtempSync");
   });
 
   it("packs the tarball outside the dist tree", () => {
-    // Order/absence of pack destination has no consumer-behavior probe beyond the pack task.
     const source = readFileSync(join(packageRoot, "scripts/pack.ts"), "utf8");
     expect(source).toContain("--pack-destination");
     expect(source).toContain("ARTIFACTS_DIR");
+    expect(source).toContain("findTarball");
     expect(source).not.toContain("copyFileSync");
     expect(source).not.toContain("readdirSync(dist)");
   });

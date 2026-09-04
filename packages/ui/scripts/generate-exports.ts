@@ -228,36 +228,17 @@ function publishedPeerDependencies(): WorkspacePeers {
 }
 
 export function publishedDependencies(declared: WorkspaceDependencies): WorkspaceDependencies {
-  const dependencies: WorkspaceDependencies = {
-    "@base-ui/react": PUBLISHED_DEPENDENCY_RANGES["@base-ui/react"],
-    clsx: PUBLISHED_DEPENDENCY_RANGES.clsx,
-    "tailwind-merge": PUBLISHED_DEPENDENCY_RANGES["tailwind-merge"],
-    "tailwind-variants": PUBLISHED_DEPENDENCY_RANGES["tailwind-variants"],
-    "tailwindcss-react-aria-components": PUBLISHED_DEPENDENCY_RANGES["tailwindcss-react-aria-components"],
-    "tw-animate-css": PUBLISHED_DEPENDENCY_RANGES["tw-animate-css"],
-  };
-  if (declared["react-aria-components"] !== undefined) {
-    dependencies["react-aria-components"] = PUBLISHED_DEPENDENCY_RANGES["react-aria-components"];
+  const dependencies: Partial<WorkspaceDependencies> = {};
+  for (const name of Object.keys(PUBLISHED_DEPENDENCY_RANGES)) {
+    // SAFETY: Object.keys of the published-range const object yields that object's keys.
+    const key = name as keyof typeof PUBLISHED_DEPENDENCY_RANGES;
+    if (declared[key] !== undefined) {
+      dependencies[key] = PUBLISHED_DEPENDENCY_RANGES[key];
+    }
   }
-  if (declared["react-aria"] !== undefined) {
-    dependencies["react-aria"] = PUBLISHED_DEPENDENCY_RANGES["react-aria"];
-  }
-  if (declared["@internationalized/date"] !== undefined) {
-    dependencies["@internationalized/date"] = PUBLISHED_DEPENDENCY_RANGES["@internationalized/date"];
-  }
-  if (declared["@phosphor-icons/react"] !== undefined) {
-    dependencies["@phosphor-icons/react"] = PUBLISHED_DEPENDENCY_RANGES["@phosphor-icons/react"];
-  }
-  if (declared["@internationalized/string"] !== undefined) {
-    dependencies["@internationalized/string"] = PUBLISHED_DEPENDENCY_RANGES["@internationalized/string"];
-  }
-  if (declared["libphonenumber-js"] !== undefined) {
-    dependencies["libphonenumber-js"] = PUBLISHED_DEPENDENCY_RANGES["libphonenumber-js"];
-  }
-  if (declared["sugar-high"] !== undefined) {
-    dependencies["sugar-high"] = PUBLISHED_DEPENDENCY_RANGES["sugar-high"];
-  }
-  return dependencies;
+  // SAFETY: every WorkspaceDependencies key that the workspace manifest declares is
+  // copied from PUBLISHED_DEPENDENCY_RANGES; required keys are always on that manifest.
+  return dependencies as WorkspaceDependencies;
 }
 
 const ROOT_BARREL_BANNER = `/**

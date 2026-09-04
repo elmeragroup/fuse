@@ -1,18 +1,7 @@
 import { defineRule } from "@oxlint/plugins";
 
+import { FORBIDDEN_RAC_PACKAGES } from "../../../packages/ui/scripts/forbidden-rac-packages.js";
 import { normalizeFilename } from "../filename-normalizer.js";
-
-/**
- * RAC interim stack from architecture.md Appendix A, plus the scoped packages
- * those entries pull in (`@react-aria/*`, `@react-stately/*`).
- */
-const FORBIDDEN = [
-  "react-aria-components",
-  "react-aria",
-  "@internationalized/date",
-  "@react-aria",
-  "@react-stately",
-];
 
 /**
  * @param {string} filename
@@ -25,7 +14,7 @@ function isReactAriaQuarantine(filename) {
  * @param {string} specifier
  */
 function isForbiddenModule(specifier) {
-  for (const name of FORBIDDEN) {
+  for (const name of FORBIDDEN_RAC_PACKAGES) {
     if (specifier === name || specifier.startsWith(`${name}/`)) {
       return true;
     }

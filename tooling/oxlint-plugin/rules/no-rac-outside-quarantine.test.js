@@ -1,3 +1,9 @@
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { describe, expect, it } from "vitest";
+
+import { FORBIDDEN_RAC_PACKAGES } from "../../../packages/ui/scripts/forbidden-rac-packages.js";
 import { createRuleTester } from "../rule-tester.js";
 import noRacOutsideQuarantine from "./no-rac-outside-quarantine.js";
 
@@ -99,4 +105,33 @@ tester.run("elmera/no-rac-outside-quarantine", noRacOutsideQuarantine, {
       errors: [error],
     },
   ],
+});
+
+describe("shared RAC forbidden list", () => {
+  it("imports the shared list rather than a hand-copied array", () => {
+    const source = readFileSync(
+      join(dirname(fileURLToPath(import.meta.url)), "no-rac-outside-quarantine.js"),
+      "utf8"
+    );
+    expect(source).toContain("FORBIDDEN_RAC_PACKAGES");
+    expect(source).toContain("forbidden-rac-packages.js");
+    expect(source).not.toMatch(/const FORBIDDEN = \[/);
+    expect([...FORBIDDEN_RAC_PACKAGES]).toEqual([
+      "react-aria-components",
+      "react-aria",
+      "@internationalized/date",
+      "@react-aria",
+      "@react-stately",
+    ]);
+  });
+
+  it("fails a planted local copy that diverges from the shared list", () => {
+    const source = readFileSync(
+      join(dirname(fileURLToPath(import.meta.url)), "no-rac-outside-quarantine.js"),
+      "utf8"
+    );
+    const planted = `const FORBIDDEN = ${JSON.stringify(["react-aria-components", "react-aria"])};`;
+    expect(source).not.toContain(planted);
+    expect(source.includes("FORBIDDEN_RAC_PACKAGES") && !source.includes("const FORBIDDEN = [")).toBe(true);
+  });
 });

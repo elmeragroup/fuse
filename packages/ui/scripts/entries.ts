@@ -1,10 +1,13 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 
 import { BESPOKE_ICON_NAMES, LOGO_NAMES, PHOSPHOR_ICON_NAMES } from "../src/icons/roster.ts";
 import { requireFlagsDirectory } from "./flag-assets.ts";
 import { parseFacadeValueExports } from "./parse-facade.ts";
+import { packageRootFromScript, toPosix } from "./paths.ts";
+
+export { FORBIDDEN_RAC_PACKAGES, isForbiddenRacSpecifier } from "./forbidden-rac-packages.js";
+export { packageRootFromScript, toPosix };
 
 /** Appendix A — 55 shipped bare component entries plus 1 deferred (`chart`). */
 export const BARE_COMPONENT_ENTRIES = [
@@ -186,14 +189,6 @@ export type DiscoveredEntries = {
   sourceFiles: string[];
 };
 
-export function packageRootFromScript(scriptUrl: string): string {
-  return join(dirname(fileURLToPath(scriptUrl)), "..");
-}
-
-export function toPosix(path: string): string {
-  return path.replaceAll("\\", "/");
-}
-
 export function isSkippedSourceFile(relativePath: string): boolean {
   const posix = toPosix(relativePath);
   if (posix.includes("/__snapshots__/")) {
@@ -240,69 +235,65 @@ function canonicalJsAllowlist(): Set<string> {
   return allow;
 }
 
-export function unexpectedJsEntryFiles(packageRoot: string): string[] {
-  const allow = canonicalJsAllowlist();
+function collectUnexpectedJsFiles(
+  packageRoot: string,
+  relativeDir: string,
+  allow: Set<string>,
+  toSubpath: (baseName: string) => string,
+  skipDirectory: (name: string) => boolean
+): string[] {
   const unexpected: string[] = [];
-  const srcRoot = join(packageRoot, "src");
-  if (!existsSync(srcRoot)) {
+  const dir = join(packageRoot, relativeDir);
+  if (!existsSync(dir) || !statSync(dir).isDirectory()) {
     return unexpected;
   }
 
-  for (const entry of readdirSync(srcRoot)) {
-    const fullPath = join(srcRoot, entry);
+  for (const entry of readdirSync(dir)) {
+    const fullPath = join(dir, entry);
     const stat = statSync(fullPath);
+    const relativePath = `${relativeDir}/${entry}`;
     if (stat.isFile()) {
       if (!SOURCE_EXTENSIONS.some((extension) => entry.endsWith(extension))) {
         continue;
       }
-      if (isSkippedSourceFile(`src/${entry}`)) {
+      if (isSkippedSourceFile(relativePath)) {
         continue;
       }
       const baseName = entry.replace(/\.(tsx|ts|jsx|js)$/u, "");
-      const subpath = baseName === "index" ? "." : baseName;
-      if (!allow.has(subpath)) {
-        unexpected.push(toPosix(`src/${entry}`));
+      if (!allow.has(toSubpath(baseName))) {
+        unexpected.push(toPosix(relativePath));
       }
       continue;
     }
-    if (!stat.isDirectory() || IMPLEMENTATION_DIRECTORIES.has(entry)) {
+    if (!stat.isDirectory() || skipDirectory(entry)) {
       continue;
     }
-    const index = resolveExistingSource(packageRoot, `src/${entry}`);
-    if (index?.startsWith(`src/${entry}/`) && !allow.has(entry)) {
-      unexpected.push(index);
-    }
-  }
-
-  const racRoot = join(srcRoot, "react-aria");
-  if (!existsSync(racRoot) || !statSync(racRoot).isDirectory()) {
-    return unexpected;
-  }
-  for (const entry of readdirSync(racRoot)) {
-    const fullPath = join(racRoot, entry);
-    const stat = statSync(fullPath);
-    if (stat.isFile()) {
-      if (!SOURCE_EXTENSIONS.some((extension) => entry.endsWith(extension))) {
-        continue;
-      }
-      if (isSkippedSourceFile(`src/react-aria/${entry}`)) {
-        continue;
-      }
-      const baseName = entry.replace(/\.(tsx|ts|jsx|js)$/u, "");
-      if (!allow.has(`react-aria/${baseName}`)) {
-        unexpected.push(toPosix(`src/react-aria/${entry}`));
-      }
-      continue;
-    }
-    if (!stat.isDirectory()) {
-      continue;
-    }
-    const index = resolveExistingSource(packageRoot, `src/react-aria/${entry}`);
-    if (index?.startsWith(`src/react-aria/${entry}/`) && !allow.has(`react-aria/${entry}`)) {
+    const index = resolveExistingSource(packageRoot, relativePath);
+    if (index?.startsWith(`${relativeDir}/${entry}/`) && !allow.has(toSubpath(entry))) {
       unexpected.push(index);
     }
   }
   return unexpected;
+}
+
+export function unexpectedJsEntryFiles(packageRoot: string): string[] {
+  const allow = canonicalJsAllowlist();
+  return [
+    ...collectUnexpectedJsFiles(
+      packageRoot,
+      "src",
+      allow,
+      (baseName) => (baseName === "index" ? "." : baseName),
+      (name) => IMPLEMENTATION_DIRECTORIES.has(name)
+    ),
+    ...collectUnexpectedJsFiles(
+      packageRoot,
+      "src/react-aria",
+      allow,
+      (baseName) => `react-aria/${baseName}`,
+      () => false
+    ),
+  ];
 }
 
 function resolveJsSource(packageRoot: string, subpath: string): string | undefined {

@@ -18,6 +18,9 @@ import {
 import { createVirtualFileSystem } from "typescript/unstable/fs";
 import { API } from "typescript/unstable/sync";
 
+import { isForbiddenRacSpecifier } from "./entries";
+import { toPosix } from "./paths";
+
 export type PackedEvalJson = { ok: true; value: unknown } | { ok: false; failure: string };
 
 export function parsePackedEvalJson(text: string, context: string): PackedEvalJson {
@@ -77,15 +80,8 @@ export function emittedDirectiveFailure(
   return undefined;
 }
 
-const FORBIDDEN_RAC_PACKAGES = ["react-aria-components", "react-aria", "@internationalized/date"] as const;
-
 export function isForbiddenRacDeclarationSpecifier(specifier: string): boolean {
-  for (const name of FORBIDDEN_RAC_PACKAGES) {
-    if (specifier === name || specifier.startsWith(`${name}/`)) {
-      return true;
-    }
-  }
-  return specifier.startsWith("@react-aria/");
+  return isForbiddenRacSpecifier(specifier);
 }
 
 function stringLiteralText(node: Node | undefined): string | undefined {
@@ -215,10 +211,6 @@ function publishedTypesFile(sourceFile: string): string {
   return sourceFile.replace(/^src\//, "").replace(/\.(tsx|ts|jsx|js)$/u, ".d.ts");
 }
 
-function toPosixPath(path: string): string {
-  return path.replaceAll("\\", "/");
-}
-
 function isRelativeSpecifier(specifier: string): boolean {
   return specifier === "." || specifier === ".." || specifier.startsWith("./") || specifier.startsWith("../");
 }
@@ -229,7 +221,7 @@ function isInsideExtracted(extracted: string, candidate: string): boolean {
 }
 
 function isPackedRacDeclaration(extracted: string, filePath: string): boolean {
-  const rel = toPosixPath(relative(resolve(extracted), resolve(filePath)));
+  const rel = toPosix(relative(resolve(extracted), resolve(filePath)));
   return rel === "react-aria" || rel.startsWith("react-aria/");
 }
 

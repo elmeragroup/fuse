@@ -1,8 +1,6 @@
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readdirSync, rmSync, symlinkSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { mkdirSync, readdirSync, symlinkSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 
 import { discoverEntries } from "./entries";
 import {
@@ -19,9 +17,10 @@ import {
   importPackedModules,
   importSpecifier,
 } from "./package-check-packed";
-import { extractPackedPackage, findTarball } from "./tarball";
+import { packageRootFromScript } from "./paths";
+import { findTarball, withExtractedTarball } from "./tarball";
 
-const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
+const packageRoot = packageRootFromScript(import.meta.url);
 
 function runInherited(command: string, args: string[]): void {
   const result = spawnSync(command, args, { cwd: packageRoot, stdio: "inherit" });
@@ -65,33 +64,28 @@ runInherited("pnpm", [
   "themes.css",
 ]);
 
-const scratch = mkdtempSync(join(tmpdir(), "elmera-ui-pack-"));
 try {
-  let extracted: string;
-  try {
-    extracted = extractPackedPackage(tarball, scratch, packageRoot);
-  } catch (error) {
-    fail(error instanceof Error ? error.message : String(error));
-  }
-  const consumerRoot = join(scratch, "consumer");
-  mkdirSync(consumerRoot, { recursive: true });
-  linkConsumerModules(consumerRoot, extracted);
-  const discovered = discoverEntries(packageRoot);
-  const exported = importPackedModules(
-    consumerRoot,
-    discovered.jsEntries.map((entry) => importSpecifier(entry.subpath))
-  );
-  checkPackedExports(extracted, discovered);
-  checkPackedPeers(extracted);
-  checkPackedRuntimeExports(exported, discovered);
-  checkPackedDirectives(extracted, discovered);
-  checkPackedBareEntryRacDeclarations(extracted, discovered);
-  checkPackedFlags(extracted, consumerRoot, exported[importSpecifier("flags")]);
-  checkPackedTwemojiNotices(extracted);
-  checkValidateThemeEnv(extracted);
-  checkPackedBootstrap(consumerRoot, exported[importSpecifier("theme")]);
-} finally {
-  rmSync(scratch, { recursive: true, force: true });
+  withExtractedTarball(packageRoot, "elmera-ui-pack-", (extracted) => {
+    const consumerRoot = join(dirname(extracted), "consumer");
+    mkdirSync(consumerRoot, { recursive: true });
+    linkConsumerModules(consumerRoot, extracted);
+    const discovered = discoverEntries(packageRoot);
+    const exported = importPackedModules(
+      consumerRoot,
+      discovered.jsEntries.map((entry) => importSpecifier(entry.subpath))
+    );
+    checkPackedExports(extracted, discovered);
+    checkPackedPeers(extracted);
+    checkPackedRuntimeExports(exported, discovered);
+    checkPackedDirectives(extracted, discovered);
+    checkPackedBareEntryRacDeclarations(extracted, discovered);
+    checkPackedFlags(extracted, consumerRoot, exported[importSpecifier("flags")]);
+    checkPackedTwemojiNotices(extracted);
+    checkValidateThemeEnv(extracted);
+    checkPackedBootstrap(consumerRoot, exported[importSpecifier("theme")]);
+  });
+} catch (error) {
+  fail(error instanceof Error ? error.message : String(error));
 }
 
 console.log("package:check passed");

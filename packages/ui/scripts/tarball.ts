@@ -1,5 +1,6 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, readdirSync, symlinkSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, rmSync, symlinkSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 export const ARTIFACTS_DIR = ".artifacts";
@@ -38,4 +39,18 @@ export function extractPackedPackage(tarball: string, destination: string, packa
     symlinkSync(join(packageRoot, "node_modules"), extractedModules);
   }
   return extracted;
+}
+
+export function withExtractedTarball<T>(
+  packageRoot: string,
+  prefix: string,
+  fn: (extracted: string) => T
+): T {
+  const tarball = findTarball(packageRoot);
+  const scratch = mkdtempSync(join(tmpdir(), prefix));
+  try {
+    return fn(extractPackedPackage(tarball, scratch, packageRoot));
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
 }

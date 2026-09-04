@@ -1,6 +1,4 @@
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
-
 import { writeGeneratedIcons } from "../src/icons/generate";
+import { packageRootFromScript } from "./paths";
 
-writeGeneratedIcons(join(dirname(fileURLToPath(import.meta.url)), ".."));
+writeGeneratedIcons(packageRootFromScript(import.meta.url));

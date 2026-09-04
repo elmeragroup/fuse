@@ -102,7 +102,7 @@ export default function plopfile(plop) {
         pattern: BUDGET_MARKER,
         // A brand-new packed entry has no measurement yet; 0 fails size-limit until the
         // implementer records measured × 1.5 (performance.md §2, how-to §6).
-        template: `  { name: "{{name}}", entryFile: "{{name}}.js", ceilingGzip: 0 }, // TODO({{name}}): measured × 1.5`,
+        template: `  { name: "{{name}}", entryFile: "{{name}}.js", measuredGzip: 0 }, // TODO({{name}}): measured × 1.5`,
       },
       // Template line breaks cannot know how long a component name is, so the emitted
       // TypeScript is normalised here — `oxfmt --check` is part of the merge gate.

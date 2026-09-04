@@ -1,12 +1,12 @@
 import { spawnSync } from "node:child_process";
 import { copyFileSync, mkdirSync, readdirSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 
 import { buildCss } from "./build-css";
 import { writePublishManifest } from "./generate-exports";
+import { packageRootFromScript } from "./paths";
 
-const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
+const packageRoot = packageRootFromScript(import.meta.url);
 
 const tsdown = spawnSync("pnpm", ["exec", "tsdown"], {
   cwd: packageRoot,

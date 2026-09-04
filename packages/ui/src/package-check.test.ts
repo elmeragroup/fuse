@@ -4,7 +4,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { discoverEntries } from "../scripts/entries";
+import { discoverEntries, FORBIDDEN_RAC_PACKAGES } from "../scripts/entries";
 import {
   bareEntryRacDeclarationFailure,
   emittedDirectiveFailure,
@@ -22,6 +22,56 @@ const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 function sorted(names: readonly string[]): string[] {
   return [...names].toSorted((left, right) => left.localeCompare(right));
 }
+
+describe("shared script helpers", () => {
+  it("owns toPosix in one module and uses packageRootFromScript in every script", () => {
+    const scriptsDir = join(packageRoot, "scripts");
+    const paths = readFileSync(join(scriptsDir, "paths.ts"), "utf8");
+    expect(paths).toContain("export function toPosix");
+    expect(paths).toContain("export function packageRootFromScript");
+    expect(readFileSync(join(scriptsDir, "package-check-lib.ts"), "utf8")).not.toContain(
+      "function toPosixPath"
+    );
+    expect(readFileSync(join(scriptsDir, "package-check-lib.ts"), "utf8")).toContain('from "./paths"');
+    const scripts = [
+      "build.ts",
+      "build-css.ts",
+      "generate-flags.ts",
+      "generate-icons.ts",
+      "pack.ts",
+      "package-check.ts",
+      "package-check-packed.ts",
+      "size-limit.ts",
+      "write-source-exports.ts",
+    ];
+    for (const script of scripts) {
+      expect(readFileSync(join(scriptsDir, script), "utf8"), script).toContain("packageRootFromScript");
+      expect(readFileSync(join(scriptsDir, script), "utf8"), script).not.toContain(
+        "dirname(fileURLToPath(import.meta.url))"
+      );
+    }
+  });
+
+  it("exports one RAC forbidden list consumed by package-check and the lint rule", () => {
+    expect(FORBIDDEN_RAC_PACKAGES).toEqual([
+      "react-aria-components",
+      "react-aria",
+      "@internationalized/date",
+      "@react-aria",
+      "@react-stately",
+    ]);
+    const lib = readFileSync(join(packageRoot, "scripts/package-check-lib.ts"), "utf8");
+    expect(lib).toContain("isForbiddenRacSpecifier");
+    expect(lib).not.toContain('["react-aria-components", "react-aria", "@internationalized/date"]');
+    const lintRule = readFileSync(
+      join(packageRoot, "../../tooling/oxlint-plugin/rules/no-rac-outside-quarantine.js"),
+      "utf8"
+    );
+    expect(lintRule).toContain("FORBIDDEN_RAC_PACKAGES");
+    expect(lintRule).toContain("forbidden-rac-packages.js");
+    expect(lintRule).not.toMatch(/const FORBIDDEN = \[/);
+  });
+});
 
 describe("Twemoji packed notices", () => {
   it("wires the package-file copy and packed-artifact assertion", () => {
@@ -210,6 +260,11 @@ describe("bare-entry RAC declaration quarantine", () => {
     ).toBe(". declaration references @react-aria/i18n");
     expect(
       bareEntryRacDeclarationFailure([
+        { subpath: "button", declaration: 'import "@react-stately/select";\n' },
+      ])
+    ).toBe("./button declaration references @react-stately/select");
+    expect(
+      bareEntryRacDeclarationFailure([
         {
           subpath: "react-aria/ui-providers",
           declaration: 'import "react-aria-components";\n',
@@ -282,7 +337,7 @@ describe("bare-entry RAC declaration quarantine", () => {
     });
   }, 30_000);
 
-  it("treats architecture quarantine packages and @react-aria/* as forbidden", () => {
+  it("treats architecture quarantine packages and @react-aria/* / @react-stately/* as forbidden", () => {
     expect(isForbiddenRacDeclarationSpecifier("react-aria-components")).toBe(true);
     expect(isForbiddenRacDeclarationSpecifier("react-aria-components/i18n")).toBe(true);
     expect(isForbiddenRacDeclarationSpecifier("react-aria")).toBe(true);
@@ -290,6 +345,7 @@ describe("bare-entry RAC declaration quarantine", () => {
     expect(isForbiddenRacDeclarationSpecifier("@internationalized/date")).toBe(true);
     expect(isForbiddenRacDeclarationSpecifier("@internationalized/date/calendar")).toBe(true);
     expect(isForbiddenRacDeclarationSpecifier("@react-aria/i18n")).toBe(true);
+    expect(isForbiddenRacDeclarationSpecifier("@react-stately/select")).toBe(true);
     expect(isForbiddenRacDeclarationSpecifier("tailwindcss-react-aria-components")).toBe(false);
     expect(isForbiddenRacDeclarationSpecifier("react-aria-components-extra")).toBe(false);
     expect(isForbiddenRacDeclarationSpecifier("@internationalized/string")).toBe(false);

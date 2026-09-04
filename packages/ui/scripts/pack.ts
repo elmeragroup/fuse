@@ -1,11 +1,11 @@
 import { spawnSync } from "node:child_process";
-import { mkdirSync, readdirSync, rmSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { mkdirSync, rmSync } from "node:fs";
+import { join } from "node:path";
 
-import { ARTIFACTS_DIR } from "./tarball.ts";
+import { packageRootFromScript } from "./paths.ts";
+import { ARTIFACTS_DIR, findTarball } from "./tarball.ts";
 
-const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
+const packageRoot = packageRootFromScript(import.meta.url);
 const dist = join(packageRoot, "dist");
 const artifacts = join(packageRoot, ARTIFACTS_DIR);
 
@@ -20,9 +20,4 @@ if (packed.status !== 0) {
   process.exit(packed.status ?? 1);
 }
 
-const tarballs = readdirSync(artifacts).filter((name) => name.endsWith(".tgz"));
-if (tarballs.length !== 1 || tarballs[0] === undefined) {
-  throw new Error(
-    `Expected one tarball in ${ARTIFACTS_DIR} after pack, found ${tarballs.join(", ") || "none"}`
-  );
-}
+findTarball(packageRoot);
