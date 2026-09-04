@@ -8,6 +8,7 @@ import noInternalDynamicImport from "./rules/no-internal-dynamic-import.js";
 import noLocalFocusRing from "./rules/no-local-focus-ring.js";
 import noPrimitiveColors from "./rules/no-primitive-colors.js";
 import noRacOutsideQuarantine from "./rules/no-rac-outside-quarantine.js";
+import noRawClassMap from "./rules/no-raw-class-map.js";
 import noTailwindDarkVariant from "./rules/no-tailwind-dark-variant.js";
 import requireIconButtonLabel from "./rules/require-icon-button-label.js";
 import restrictFocusRingCall from "./rules/restrict-focus-ring-call.js";
@@ -26,6 +27,7 @@ export default eslintCompatPlugin({
     "no-local-focus-ring": noLocalFocusRing,
     "no-primitive-colors": noPrimitiveColors,
     "no-rac-outside-quarantine": noRacOutsideQuarantine,
+    "no-raw-class-map": noRawClassMap,
     "no-tailwind-dark-variant": noTailwindDarkVariant,
     "require-icon-button-label": requireIconButtonLabel,
     "restrict-focus-ring-call": restrictFocusRingCall,

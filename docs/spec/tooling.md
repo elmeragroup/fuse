@@ -58,7 +58,7 @@ Format checking (`oxfmt --check`) runs as a root script, not a per-package turbo
 
 ## 4 Formatting & linting
 
-- **oxfmt** formats everything. Required config: `sortTailwindcss.stylesheet` pointed at the library's source stylesheet (the file behind the `@elmeragroup/ui/css` entry, see [architecture](architecture.md) §5) so class sorting knows the custom tokens/utilities and `functions: ["tv", "cn"]` (so classes inside `tv` recipes and `cn` calls are sorted too). `oxfmt --check` gates merges; no prettier anywhere.
+- **oxfmt** formats everything. Required config: `sortTailwindcss.stylesheet` pointed at the library's source stylesheet (the file behind the `@elmeragroup/ui/css` entry, see [architecture](architecture.md) §5) so class sorting knows the custom tokens/utilities and `functions: ["tv", "cn"]` (so classes inside `tv` recipes and `cn` calls are sorted too). `oxfmt --check` gates merges; no prettier anywhere. Tracked `.vscode/settings.json` sets `tailwindCSS.classFunctions` to `["tv", "cn"]` so the Tailwind IntelliSense extension completes inside those same calls. _(Amended 2026-09-04.)_
 - **oxlint, type-aware** (`oxlint-tsgolint`), configured in root `.oxlintrc.json`. Built-in plugins are `typescript`, `oxc`, `import`, and `unicorn` (`unicorn` is also listed on the apps/ui override that replaces the plugin set). `unicorn/filename-case` is `error` with `kebabCase` for every linted file; BCP 47 locale modules (`en-US.ts`, `nb-NO.ts`, …) are ignored so they keep the locale-id filenames required by [accessibility](accessibility.md) §4. Other unicorn correctness rules stay `off` so enabling the plugin does not pull in the rest of the category pack. Three JS plugins:
 
   ```json
@@ -121,6 +121,10 @@ It does **not** ban `p-*` / `h-*` / `gap-*` across the package. Type-scale axes 
 ### 5.7 `no-restricted-imports` for `LocalizedStringDictionary` — `error`
 
 Library source may not value-import `LocalizedStringDictionary` from `@internationalized/string`. Type-only imports stay legal (`useLocalizedStrings` takes the dictionary as a parameter). The factory `packages/ui/src/intl/create-string-dictionary.ts` is the per-file allow. _(Added 2026-09-04 — [ADR 0008](../adr/0008-tests-assert-behaviour-not-source-spelling.md) amendment.)_
+
+### 5.8 `elmera/no-raw-class-map` — `warn`
+
+Class maps are `tv` recipes. This rule warns on object-literal variable initializers (with or without `as const` / `satisfies`) whose string values look like Tailwind classes, and on bare string or template class constants, when those initializers are not `tv()` or `cn()` arguments and are not derived from a recipe call. Severity is warning; CI is deny-warnings, so a hit still blocks. Promote to error once library and docs source are clean. Scoped to `packages/ui/src/**` and `apps/docs/src/**` (not playground or static-theme). Test files, `*.test-d.tsx`, intl dictionaries, and generated paths are exempt. _(Added 2026-09-04.)_
 
 ## 6 Scaffolding (plop, v1)
 
