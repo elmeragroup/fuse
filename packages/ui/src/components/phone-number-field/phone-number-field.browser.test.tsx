@@ -14,7 +14,7 @@ import {
 } from "../../../test/assert-focus-ring";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
 import { EXCLUDED_PRODUCT_COUNTRY_CODES, FLAG_GAP_COUNTRY_CODES } from "../../../test/phone-picker-contract";
-import { renderThemed, textboxNamed } from "../../../test/themed-browser-render";
+import { renderThemed, roleNamed, textboxNamed } from "../../../test/themed-browser-render";
 import { flagAssets } from "../../flags";
 import { resetCountryNameCache } from "./country-names";
 
@@ -41,14 +41,6 @@ const NO_COUNTRIES_COPY = {
 
 function renderField(node: ReactNode, locale: (typeof SUPPORTED_LOCALES)[number] = "en-US") {
   return renderThemed(withLocale(locale, node));
-}
-
-function buttonNamed(name: string): HTMLElement {
-  const element = page.getByRole("button", { name, exact: true }).element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error(`expected button ${name}`);
-  }
-  return element;
 }
 
 function listboxNamed(): HTMLElement {
@@ -80,7 +72,7 @@ function hiddenNamed(name: string): HTMLInputElement {
 }
 
 function triggerFlagImg(): HTMLImageElement {
-  const trigger = buttonNamed("Select country");
+  const trigger = roleNamed("button", "Select country");
   const img = trigger.getElementsByTagName("img")[0];
   if (!(img instanceof HTMLImageElement)) {
     throw new Error("expected a flag image on the trigger");
@@ -119,7 +111,7 @@ function inputGroupRoot(name: string): HTMLElement {
 }
 
 async function openPicker(name = "Select country"): Promise<HTMLElement> {
-  buttonNamed(name).focus();
+  roleNamed("button", name).focus();
   await userEvent.keyboard("{Enter}");
   await vi.waitFor(() => {
     expect(page.getByRole("listbox").query()).not.toBeNull();
@@ -130,7 +122,7 @@ async function openPicker(name = "Select country"): Promise<HTMLElement> {
 describe("PhoneNumberField", () => {
   it("names the country trigger independently of the Field label", () => {
     renderField(<PhoneNumberField label="Mobile" />);
-    expect(buttonNamed("Select country")).toBeTruthy();
+    expect(roleNamed("button", "Select country")).toBeTruthy();
     expect(page.getByRole("button", { name: "Mobile", exact: true }).query()).toBeNull();
     expect(textboxNamed("Mobile")).toBeTruthy();
     expect(textboxNamed("Mobile")).toHaveProperty("inputMode", "tel");
@@ -166,7 +158,7 @@ describe("PhoneNumberField", () => {
 
   it("selects a country from the keyboard, closes, updates the dial code, and focuses the number input", async () => {
     renderField(<PhoneNumberField label="Mobile" />);
-    expect(buttonNamed("Select country").textContent).toContain("+47");
+    expect(roleNamed("button", "Select country").textContent).toContain("+47");
     await openPicker();
     const search = searchNamed();
     expect(search.getAttribute("autocomplete")).toBe("one-time-code");
@@ -178,7 +170,7 @@ describe("PhoneNumberField", () => {
     await vi.waitFor(() => {
       expect(page.getByRole("listbox").query()).toBeNull();
     });
-    expect(buttonNamed("Select country").textContent).toContain("+46");
+    expect(roleNamed("button", "Select country").textContent).toContain("+46");
     expect(document.activeElement).toBe(textboxNamed("Mobile"));
   });
 
@@ -209,7 +201,7 @@ describe("PhoneNumberField", () => {
   it("auto-detects SE from +46 and strips the prefix in national mode", async () => {
     renderField(<PhoneNumberField label="Mobile" />);
     await userEvent.fill(page.getByRole("textbox", { name: "Mobile", exact: true }), "+46701234567");
-    expect(buttonNamed("Select country").textContent).toContain("+46");
+    expect(roleNamed("button", "Select country").textContent).toContain("+46");
     expect(textboxNamed("Mobile")).toHaveProperty("value", "701234567");
   });
 
@@ -395,7 +387,7 @@ describe("PhoneNumberField", () => {
         defaultCountryCode="AC"
       />
     );
-    expect(buttonNamed("Select country").textContent).toContain("+47");
+    expect(roleNamed("button", "Select country").textContent).toContain("+47");
     expect(triggerFlagImg().getAttribute("src")).toBe(flagAssets.NO);
   });
 
@@ -405,7 +397,7 @@ describe("PhoneNumberField", () => {
       return <PhoneNumberField label="Pending" container={ref} />;
     }
     renderField(<NeverAttached />);
-    await userEvent.click(buttonNamed("Select country"));
+    await userEvent.click(roleNamed("button", "Select country"));
     expect(page.getByRole("listbox").query()).toBeNull();
   });
 
@@ -440,7 +432,7 @@ describe("PhoneNumberField", () => {
   it("paints the within ring on the group for keyboard focus, at both densities", async () => {
     renderField(<PhoneNumberField label="Mobile" />);
     await assertWithinKeyboardFocusRingAtBothDensities(
-      buttonNamed("Select country"),
+      roleNamed("button", "Select country"),
       textboxNamed("Mobile"),
       inputGroupRoot("Mobile")
     );
@@ -459,7 +451,7 @@ describe("PhoneNumberField", () => {
     }
     await userEvent.click(before);
     expect(before.matches(":focus-visible")).toBe(false);
-    await userEvent.click(buttonNamed("Select country"));
+    await userEvent.click(roleNamed("button", "Select country"));
     expectNoFocusRing(
       inputGroupRoot("Mobile"),
       "mouse focus on the country trigger must not paint the group ring"

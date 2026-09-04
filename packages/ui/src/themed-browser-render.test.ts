@@ -102,7 +102,7 @@ describe("themed browser-test harness", () => {
       "popover",
       "popover-info-button",
     ]);
-    const slotAuditDirs = new Set(["emoji", "empty", "frame", "meter", "pagination"]);
+    const slotAuditDirs = new Set(["emoji", "frame", "meter", "pagination"]);
     const locator = /\.querySelector(All)?\s*\(|\.closest\(\s*["'`][^"'`]*data-slot|dataset\.slot\b/;
 
     const files = suiteRoots
