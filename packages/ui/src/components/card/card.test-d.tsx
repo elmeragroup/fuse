@@ -1,6 +1,7 @@
 import { expectTypeOf, test } from "vitest";
 
 import type { Card as RootCard } from "@elmeragroup/ui";
+import * as CardModule from "@elmeragroup/ui/card";
 import { Card, cardVariants } from "@elmeragroup/ui/card";
 
 test("the namespace ships all eight parts from the card entry and the root barrel", () => {
@@ -22,6 +23,11 @@ test("cardVariants is public and slotted with a single direction axis", () => {
 
   // @ts-expect-error the external ref's surface axes are decomposed away (card.md §8.5)
   cardVariants({ variant: "bright" });
+});
+
+test("title and description size recipes stay module-private", () => {
+  expectTypeOf(CardModule).not.toHaveProperty("cardTitleVariants");
+  expectTypeOf(CardModule).not.toHaveProperty("cardDescriptionVariants");
 });
 
 test("parts take the shared direction axis and no polymorphic as prop", () => {
