@@ -66,6 +66,19 @@ describe("Card", () => {
     expect(slot("card-tag").tagName).toBe("DIV");
   });
 
+  it("renders default title and description type-scale classes", () => {
+    renderThemed(
+      <Card.Root>
+        <Card.Header>
+          <Card.Title>March usage</Card.Title>
+          <Card.Description>Estimated consumption.</Card.Description>
+        </Card.Header>
+      </Card.Root>
+    );
+    expect(slot("card-title").className.split(/\s+/)).toContain("text-2xl");
+    expect(slot("card-description").className.split(/\s+/)).toContain("text-sm");
+  });
+
   it("switches the header to two grid columns only when an action child exists", () => {
     renderThemed(
       <>
