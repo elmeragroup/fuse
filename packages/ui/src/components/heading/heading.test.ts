@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { cn } from "../../styles/cn";
-import { typographyAlignClasses, typographyColorClasses } from "../../styles/typography-fragments";
+import { typographyFragments } from "../../styles/typography-fragments";
 import { headingVariants } from "./heading-variants";
 
 const VARIANTS = [
@@ -32,7 +32,7 @@ describe("headingVariants", () => {
   it("resolves each variant class; destructive is text-error and never a destructive class", () => {
     for (const variant of VARIANTS) {
       const resolved = headingVariants({ variant });
-      expect(resolved, variant).toContain(typographyColorClasses[variant]);
+      expect(resolved, variant).toContain(typographyFragments({ variant }));
       expect(resolved, variant).not.toContain("dark:");
       expect(resolved, variant).not.toMatch(RAW_PALETTE_RE);
     }
@@ -65,9 +65,9 @@ describe("headingVariants", () => {
   it("toggles noMargin, uppercase, and align", () => {
     expect(headingVariants({ noMargin: true })).toContain("mb-0");
     expect(headingVariants({ uppercase: true })).toContain("uppercase");
-    expect(headingVariants({ align: "left" })).toContain(typographyAlignClasses.left);
-    expect(headingVariants({ align: "center" })).toContain(typographyAlignClasses.center);
-    expect(headingVariants({ align: "right" })).toContain(typographyAlignClasses.right);
+    expect(headingVariants({ align: "left" })).toContain(typographyFragments({ align: "left" }));
+    expect(headingVariants({ align: "center" })).toContain(typographyFragments({ align: "center" }));
+    expect(headingVariants({ align: "right" })).toContain(typographyFragments({ align: "right" }));
   });
 
   it("lets a className merge win over a conflicting recipe class through cn", () => {

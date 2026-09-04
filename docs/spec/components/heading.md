@@ -40,7 +40,7 @@ The ref's `slot` prop (RAC slot wiring) is **dropped** (§8).
 
 ## 4 Variants
 
-Recipe: **`headingVariants`** — **PUBLIC** from `@elmeragroup/ui/heading`. Other package modules import its private source file relatively; consumers borrow it from the component entry. Typed via `VariantProps`.
+Recipe: **`headingVariants`** — **PUBLIC** from `@elmeragroup/ui/heading`. Other package modules import its private source file relatively; consumers borrow it from the component entry. Typed via `VariantProps`. Colour (`variant`) and start/center/end (`align`) come from the package-private `typographyFragments` recipe in `styles/typography-fragments.ts` (not in `package.json#exports`); Heading extends that recipe and keeps its own size/font/noMargin/uppercase axes. _(Amended 2026-09-04.)_
 
 | Axis        | Values                                                                                                                                            | Default                       |
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
