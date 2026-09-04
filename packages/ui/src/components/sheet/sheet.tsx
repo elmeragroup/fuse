@@ -15,7 +15,7 @@ import {
   overlayLayer,
   overlayPopupFillClass,
   overlayScrimClass,
-  overlayWidthClasses,
+  overlaySizeVariants,
 } from "../overlay/overlay-classes";
 import { overlayCornerCloseButton } from "../overlay/overlay-close-button";
 import { OverlayPortal } from "../overlay/overlay-portal";
@@ -47,7 +47,7 @@ const sheetContentVariants = tv({
   variants: {
     // Gated to the left/right sides at `sm:` by the base selectors above; top/bottom
     // panels are `h-auto` and full width, so the axis is inert for them.
-    size: overlayWidthClasses,
+    size: overlaySizeVariants.variants.size,
   },
   defaultVariants: {
     size: "md",

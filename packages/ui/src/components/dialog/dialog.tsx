@@ -15,8 +15,8 @@ import {
   overlayLayer,
   overlayPopupSurfaceClass,
   overlayScrimClass,
+  overlaySizeVariants,
   overlayTitleClass,
-  overlayWidthClasses,
 } from "../overlay/overlay-classes";
 import { overlayCornerCloseButton, overlayFooterCloseButton } from "../overlay/overlay-close-button";
 import { OverlayPortal } from "../overlay/overlay-portal";
@@ -36,7 +36,7 @@ const dialogContentVariants = tv({
   ),
   variants: {
     // The 13-value overlay width axis, shared with Sheet (dialog.md §4).
-    size: overlayWidthClasses,
+    size: overlaySizeVariants.variants.size,
   },
   defaultVariants: {
     size: "md",
