@@ -164,7 +164,7 @@
         "elmera/facade-reexport-grammar": "error",
         "elmera/no-rac-outside-quarantine": "error",
         "elmera/no-hardcoded-density-metrics": "warn",
-        "elmera/no-raw-class-map": "warn",
+        "elmera/no-raw-class-map": "error",
         "no-restricted-imports": [
           "error",
           {
@@ -183,7 +183,7 @@
     {
       "files": ["apps/docs/src/**/*.{ts,tsx}"],
       "rules": {
-        "elmera/no-raw-class-map": "warn"
+        "elmera/no-raw-class-map": "error"
       }
     },
     {

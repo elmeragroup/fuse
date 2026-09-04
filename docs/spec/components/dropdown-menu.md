@@ -94,7 +94,7 @@ All rendering parts take `className` (merged via `cn`) and forward the rest of t
 
 ## 4 Variants
 
-Recipe `dropdownMenuVariants` (tv, slotted), **module-private** — no borrow pattern; Item `variant`/`inset` stay data attributes, not recipe axes. Slots: `item` (composed from `selfFocusRingClass` + `menuItemClass` plus this family's `focus:` highlight face), `content` (root-menu popup chrome), `subContent` (submenu popup chrome). The module-private `dropdownMenuItemClassName` / `dropdownMenuContentClassName` / `dropdownMenuSubContentClassName` constants are those slots resolved once. Trigger composes the shared self-target focus ring. _(Amended 2026-09-03; see §8.10. Amended 2026-09-04 — ticket 06.)_
+Recipe `dropdownMenuVariants` (tv, slotted), **module-private** — no borrow pattern; Item `variant`/`inset` stay data attributes, not recipe axes. Slots: `item` (composed from `selfFocusRingClass` + `menuItemClass` plus this family's `focus:` highlight face), `content` (root-menu popup chrome), `subContent` (submenu popup chrome). The module-private `dropdownMenuItemClassName` / `dropdownMenuContentClassName` / `dropdownMenuSubContentClassName` constants are those slots resolved once. Trigger composes the shared self-target focus ring. _(Amended 2026-09-03; see §8.10. Amended 2026-09-04 — ticket 06, 2026-09-04: recipe-derived class constants.)_
 
 ## 5 Consumed tokens
 

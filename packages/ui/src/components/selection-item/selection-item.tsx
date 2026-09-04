@@ -10,10 +10,8 @@ import { disabledHatch } from "../../styles/utils";
 import { Field } from "../field/field";
 import { Item } from "../item/item";
 import { itemVariants } from "../item/item-variants";
-import {
-  selectionGroupOrientationVariants,
-  type SelectionItemGroupOrientation,
-} from "./selection-item-variants";
+import { selectionGroupOrientationVariants } from "./selection-item-variants";
+import type { SelectionItemGroupOrientation } from "./selection-item-variants";
 
 /** Resolved once at module scope — the shell always borrows the `outline` arm. */
 const outlineItemClass = itemVariants({ variant: "outline" });

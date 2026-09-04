@@ -61,7 +61,7 @@ Field.Root                              (base-ui Field.Root, gap-1)
 
 ## 4 Variants
 
-Recipe `numberFieldVariants` (tv, slotted), **module-private** — no borrow pattern and **no size axis**. The `stepper` slot is shared by Increment/Decrement and resolved once as `stepperButton`. The field box pins the `md` rung per [conventions](conventions.md) ruling 2, 2026-08-21: `h-(--control-h-md)` plus `controlInsetMdClass` (the md inset/type pair, itself recipe-derived) on the input, and composes shared `focusRing({ target: "within" })`. The group's chrome is `fieldBoxChromeClass` (§8.8); `numberFieldGroupClass` is a sibling recipe of that chrome, not a slot of `fieldBox`. Nothing exported from the public entry. _(Amended 2026-09-04 — ticket 06.)_
+Recipe `numberFieldVariants` (tv, slotted), **module-private** — no borrow pattern and **no size axis**. The `stepper` slot is shared by Increment/Decrement and resolved once as `stepperButton`. The field box pins the `md` rung per [conventions](conventions.md) ruling 2, 2026-08-21: `h-(--control-h-md)` plus `controlInsetMdClass` (the md inset/type pair, itself recipe-derived) on the input, and composes shared `focusRing({ target: "within" })`. The group's chrome is `fieldBoxChromeClass` (§8.8); `numberFieldGroupClass` is a sibling recipe of that chrome, not a slot of `fieldBox`. Nothing exported from the public entry. _(Amended 2026-09-04 — ticket 06, 2026-09-04: recipe-derived group chrome.)_
 
 **Density mapping.** Single-height field box → `md` rung. Dense computed height matches the ref's `h-9`; comfortable is the signed `ui.css` column. No `dense:` / `comfortable:` variants.
 

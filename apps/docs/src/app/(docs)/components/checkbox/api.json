@@ -333,7 +333,7 @@
           "type": "\"horizontal\" | \"vertical\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"vertical\"",
-          "description": "Layout of the group primitive, and of CheckboxItemGroup's stacked-card list. Vertical: primitive `flex-col gap-2`; item list connected `flex-col gap-0`. Horizontal: primitive `flex-wrap gap-4`; item list `flex-row flex-wrap gap-4` with individually rounded cards. Not a recipe axis.",
+          "description": "Layout of the group primitive, and of CheckboxItemGroup's stacked-card list. Vertical: primitive `flex-col gap-2`; item list connected `flex-col gap-0`. Horizontal: primitive `flex-wrap gap-4`; item list `flex-row flex-wrap gap-4` with individually rounded cards. Maps through `selectionGroupOrientationVariants`.",
           "required": false
         },
         {
@@ -540,7 +540,7 @@
           "type": "\"horizontal\" | \"vertical\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"vertical\"",
-          "description": "Layout of the group primitive, and of CheckboxItemGroup's stacked-card list. Vertical: primitive `flex-col gap-2`; item list connected `flex-col gap-0`. Horizontal: primitive `flex-wrap gap-4`; item list `flex-row flex-wrap gap-4` with individually rounded cards. Not a recipe axis.",
+          "description": "Layout of the group primitive, and of CheckboxItemGroup's stacked-card list. Vertical: primitive `flex-col gap-2`; item list connected `flex-col gap-0`. Horizontal: primitive `flex-wrap gap-4`; item list `flex-row flex-wrap gap-4` with individually rounded cards. Maps through `selectionGroupOrientationVariants`.",
           "required": false
         },
         {
