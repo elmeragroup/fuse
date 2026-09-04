@@ -4,28 +4,95 @@ Normative chapter for `@elmeragroup/ui`. Sources: A11y & performance guideline c
 
 ## 1 Principles
 
-- Budgets are **regression ratchets, not aspirations**: every published entry has a CI-enforced ceiling; ceilings only move **down** (or are consciously raised in a reviewed PR that says why).
-- The library never trades app control for its own convenience: no internal lazy boundaries or self-scheduled work. Approved global listeners are limited to base-ui internals, Button's shared intent registry, and Sidebar's mounted keyboard shortcut; §6 defines their lifetimes.
+- Budgets are **regression ratchets, not aspirations**: every published entry has a CI-enforced ceiling. **Per-component and per-icon** ceilings only move **down** (or are consciously raised in a reviewed PR that says why). **Shared/aggregate** entries (`styles.css`, the root barrel `.`) are the exception: they recalibrate to measured×1.5 in the PR that grows them (§2). _(Amended 2026-09-04.)_
+- The library never trades app control for its own convenience: no internal lazy boundaries or self-scheduled work. Approved global listeners are enumerated in §6.
 - Weight is opt-in by architecture: per-icon exports, subpath entries, optional peers — importing `Button` must never pay for `Chart`.
 
 ## 2 Bundle budgets
 
 - **Mechanism**: `size-limit` bundles a minimal consumer fixture for each public JS entry against the packed package, then measures min+gzip. Measuring raw unbundled facades is meaningless, so the fixture imports the entry's named exports and exercises its normal graph. Runs in the merge gate; breach fails the build.
-- **Calibration**: numbers below are provisional; at first real build each is set to **measured × ~1.5** and committed. From then on, the ratchet rule applies for **per-component and per-icon** entries (ceilings only move down, or are consciously raised in a reviewed PR that says why). **Shared/aggregate** entries (`styles.css`, the root barrel) recalibrate to measured×1.5 in the PR that grows them; the new measurement is recorded next to the budget table in `packages/ui/scripts/size-budgets.ts`. The `/flags` JS entry follows the new-entry rule (measured×1.5). The Flag SVG aggregate raw ceiling (800 KiB) is enforced with the size-limit budgets.
-- **A shrink is not a recalibration trigger, in either direction.** When an entry measures _below_ the number the budget table records, the freed bytes are not left as slack: the ceiling is tightened by exactly what was lost, keeping the headroom that entry was calibrated with (precedent 2026-08-24, `styles.css` 9905 → 9758). When an entry grows but stays under its ceiling, the new measurement is **recorded, not loosened**. The full budget set was re-measured at the close of the shared overlay/field spine (spec 08, tickets 29 and 36–45): ten entries — `card`, `input-group`, `checkbox-card`, `timeline-list`, `heading`, `react-aria/calendar`, `react-aria/range-calendar`, `react-aria/date-picker`, `react-aria/date-range-picker` and `styles.css` — came in under their recorded measurement and had their ceilings tightened by exactly the bytes lost; the rest grew by the per-entry cost of the shared modules they now pull in and were recorded against their standing ceilings. Every number lives in `size-budgets.ts`. _(Amended 2026-09-03 — spec 08 phase-B re-measure.)_
-- Provisional ceilings (min+gzip, ESM, excluding react/react-dom/peers):
+- **Source of truth**: see `packages/ui/scripts/size-budgets.ts`. Each row stores `measuredGzip`; `ceilingGzip` is derived as measured × 1.5 unless a standing ratchet ceiling is written. The table below is the calibrated snapshot as of 2026-09-03 (`BUDGETS_MEASURED_ON`). A spec-conformance test asserts this section's numbers equal that module. `chart` is deferred (Wave 9) and is not a published, budgeted entry; when it ships it is a new-entry row (measured×1.5, excluding recharts). _(Amended 2026-09-04.)_
+- **Calibration**: first real build set each ceiling to **measured × ~1.5**. From then on, the ratchet rule applies for **per-component and per-icon** entries (ceilings only move down, or are consciously raised in a reviewed PR that says why). **Shared/aggregate** entries (`styles.css`, the root barrel `.`) recalibrate to measured×1.5 in the PR that grows them; the new measurement is recorded in `size-budgets.ts`. The `/flags` JS entry follows the new-entry rule (measured×1.5). The Flag SVG aggregate raw ceiling (`FLAG_RAW_CEILING_BYTES`, 819200 / 800 KiB) is enforced with the size-limit budgets.
+- **A shrink is not a recalibration trigger, in either direction.** When an entry measures _below_ the number the budget table records, the freed bytes are not left as slack: the ceiling is tightened by exactly what was lost, keeping the headroom that entry was calibrated with (precedent 2026-08-24, `styles.css` 9905 → 9758). When an entry grows but stays under its ceiling, the new measurement is **recorded, not loosened**. The full budget set was re-measured at the close of the shared overlay/field spine (spec 08, tickets 29 and 36–45): ten entries — `card`, `input-group`, `checkbox-card`, `timeline-list`, `heading`, `react-aria/calendar`, `react-aria/range-calendar`, `react-aria/date-picker`, `react-aria/date-range-picker` and `styles.css` — came in under their recorded measurement and had their ceilings tightened by exactly the bytes lost; the rest grew by the per-entry cost of the shared modules they now pull in and were recorded against their standing ceilings. _(Amended 2026-09-03 — spec 08 phase-B re-measure.)_
+- Calibrated snapshot as of 2026-09-03 (min+gzip bytes, ESM, excluding react/react-dom/peers):
 
-  | Entry                                                                      | Ceiling                       | Note                                                                                                                                                                                                                                                                   |
-  | -------------------------------------------------------------------------- | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-  | Baseline component entry (button, badge, input, …)                         | 10 kB                         | includes shared runtime pulled by that entry                                                                                                                                                                                                                           |
-  | Heavy composites: select, combobox, table, sidebar, toast                  | 20 kB                         | base-ui positioning/list machinery                                                                                                                                                                                                                                     |
-  | `phone-number-field`                                                       | 60 kB                         | includes the min-metadata phone engine and generated flag-URL manifest, but no SVG bytes                                                                                                                                                                               |
-  | `chart`                                                                    | deferred (Wave 9)             | not a published entry at v1; when it ships, 15 kB excluding recharts (optional peer — never bundled)                                                                                                                                                                   |
-  | Date cluster (`react-aria/` date entries, incl. `@internationalized/date`) | 60 kB                         | quarantined tier; uninstalls with the cluster                                                                                                                                                                                                                          |
-  | Root barrel (55 shipped bare components + theme)                           | 150 kB                        | excludes the quarantined RAC entries and deferred `chart`; exists for DX and apps are steered to subpaths                                                                                                                                                              |
-  | `icons` per-icon export                                                    | 2 kB                          | Phosphor single icon                                                                                                                                                                                                                                                   |
-  | `themes.css` (standalone bundle)                                           | 10 kB gzip                    | see §4                                                                                                                                                                                                                                                                 |
-  | Flag SVGs                                                                  | 800 KiB aggregate raw ceiling | 249 two-letter country assets total 765,286 bytes at the pinned snapshot; excluded from JS budgets and never inlined. Individual SVGs legitimately exceed 5 kB; count + hashes + aggregate size are the gates. The manifest module counts within `phone-number-field`. |
+  | Entry                          | measuredGzip | ceilingGzip |
+  | ------------------------------ | -----------: | ----------: |
+  | `.`                            |       233896 |      257843 |
+  | `theme`                        |         6172 |        9194 |
+  | `badge`                        |        15658 |       23493 |
+  | `button`                       |        25248 |       37821 |
+  | `card`                         |        15954 |       23937 |
+  | `dialog`                       |        45332 |       67844 |
+  | `popover`                      |        56880 |       85298 |
+  | `scroll-area`                  |        28555 |       42804 |
+  | `illustrations`                |        11046 |       16590 |
+  | `separator`                    |        10524 |       15786 |
+  | `field`                        |        30277 |       45407 |
+  | `item`                         |        24143 |       36177 |
+  | `input`                        |        25114 |       37569 |
+  | `input-group`                  |        28003 |       42002 |
+  | `textarea`                     |        21354 |       31917 |
+  | `flags`                        |         1388 |        2082 |
+  | `sidebar`                      |        82845 |      123824 |
+  | `toast`                        |        42392 |       63440 |
+  | `phone-number-field`           |       118120 |      174516 |
+  | `popover-info-button`          |        60611 |       90792 |
+  | `combobox`                     |        73510 |      109703 |
+  | `toggle-group`                 |        29089 |       43413 |
+  | `checkbox-card`                |        30198 |       45285 |
+  | `radio-group`                  |        40401 |       60297 |
+  | `checkbox`                     |        37222 |       55520 |
+  | `selection-item`               |        32013 |       47954 |
+  | `switch`                       |        26569 |       39825 |
+  | `button-group`                 |        17587 |       26381 |
+  | `accordion`                    |        30211 |       45276 |
+  | `description-list`             |        10715 |       16070 |
+  | `emoji`                        |         2442 |        3663 |
+  | `avatar`                       |        12463 |       18701 |
+  | `alert-dialog`                 |        47735 |       71367 |
+  | `dropdown-menu`                |        68278 |      102293 |
+  | `collapsible`                  |        27276 |       40881 |
+  | `select`                       |        64087 |       95586 |
+  | `show`                         |          148 |         222 |
+  | `loader`                       |        16748 |       25122 |
+  | `empty`                        |        21356 |       32034 |
+  | `frame`                        |         9059 |       13589 |
+  | `code`                         |        11756 |       17634 |
+  | `span`                         |        17324 |       25986 |
+  | `timeline-list`                |        23552 |       35330 |
+  | `sheet`                        |        57266 |       85812 |
+  | `text-field`                   |        33692 |       50193 |
+  | `tooltip`                      |        51165 |       76722 |
+  | `heading`                      |        17319 |       25924 |
+  | `text`                         |        17315 |       25919 |
+  | `toggle`                       |        25540 |       38223 |
+  | `skeleton`                     |         8701 |       13052 |
+  | `number-field`                 |        41008 |       60983 |
+  | `meter`                        |        27773 |       41048 |
+  | `tabs`                         |        25832 |       38664 |
+  | `confirm-button`               |        25662 |       38438 |
+  | `table`                        |        11932 |       17721 |
+  | `textarea-field`               |        32934 |       46464 |
+  | `pagination`                   |        19425 |       28785 |
+  | `breadcrumb`                   |        25352 |       37869 |
+  | `alert`                        |        30619 |       45885 |
+  | `react-aria/ui-providers`      |         1987 |        2981 |
+  | `react-aria/date-field`        |        70232 |      105099 |
+  | `react-aria/calendar`          |        61203 |       91506 |
+  | `react-aria/range-calendar`    |        62393 |       93471 |
+  | `react-aria/date-picker`       |       104626 |      157282 |
+  | `react-aria/date-range-picker` |       104152 |      156552 |
+  | `react-aria/link`              |        31282 |       46851 |
+  | `react-aria/search-field`      |        41782 |       62397 |
+  | `react-aria/grid-list`         |        68846 |      100964 |
+  | `react-aria/focusable`         |         3642 |        5463 |
+  | `react-aria/file-trigger`      |        36501 |       54725 |
+  | `icons/Check`                  |          818 |        1215 |
+  | `themes.css`                   |         2274 |        3424 |
+  | `styles.css`                   |        22995 |       24575 |
+
+  Flag SVGs (`flags/*.svg`) are a raw-byte asset ceiling, not a gzip JS/CSS row: **819200** bytes (800 KiB) aggregate, 249 two-letter files totalling 765,286 bytes at the pinned snapshot. Individual SVGs legitimately exceed 5 kB; count + hashes + aggregate size are the gates. The manifest module counts within `phone-number-field`.
 
 - The docs site publishes the measured sizes per entry (generated, same source as the API tables).
 
@@ -135,11 +202,22 @@ Normative chapter for `@elmeragroup/ui`. Sources: A11y & performance guideline c
 
 ## 6 Runtime practices
 
-- Animations touch **`transform` and `opacity` only** by default. Reviewed v1 exceptions are: Accordion/Collapsible panel height driven by the primitive's measured CSS variable; Sidebar shell **width** during its 200 ms expand/collapse transition (not the offcanvas `left`/`right` offset, Rail position, or GroupLabel margin — those snap; [sidebar](components/sidebar.md) §8.19); and Item's content-reveal grid track. Each exception is enumerated in its component spec and disabled by the central reduced-motion rule. New layout-property animation requires a spec amendment and measurement. _(Amended 2026-09-02.)_
+- Animations touch **`transform` and `opacity` only** by default. Layout-property animations the library itself installs (the reviewed v1 exceptions) are:
+  - **Accordion.Content** panel **height**: `transition-[height] duration-200` against base-ui's `--accordion-panel-height` ([accordion](components/accordion.md) §8.8). Collapsible does **not** install a height transition; it is an unstyled passthrough that exposes `--collapsible-panel-height` / `--collapsible-panel-width` for consumers ([collapsible](components/collapsible.md) §4).
+  - **Accordion** default-variant Trigger **padding-bottom**: `transition-[padding-bottom]` ([accordion](components/accordion.md) §4 / §8.8).
+  - **Sidebar** shell **width** during its 200 ms expand/collapse: gap and container `transition-[width] duration-200 ease-linear`. Offcanvas `left`/`right` offset, Rail position, and GroupLabel `-mt-8` snap ([sidebar](components/sidebar.md) §8.19). MenuButton color/background/box-shadow and GroupLabel opacity are non-layout.
+  - **Item.Footer** content-reveal **grid track**: `grid-rows` `0fr↔1fr` plus `@starting-style` ([item](components/item.md) §4).
+  - **Meter** bar fill: `transition-all` on the absolutely positioned fill (width of the value bar) ([meter](components/meter.md) §4).
+- Each of those exceptions is disabled by the central reduced-motion rule ([accessibility](accessibility.md) §7). New layout-property animation requires a spec amendment and measurement. _(Amended 2026-09-04.)_
 - Context values are **memoized** (`ElmeraGroupUiProvider` already does); no context provider re-renders its subtree on unrelated prop churn.
 - No per-frame CSS-variable writes on shared ancestors (inherited-var recalc storms); transient interaction state writes `style.transform` on the element itself.
-- Tooltips/popovers reuse base-ui's shared positioning; components never install their own scroll/resize listeners.
-- Button intent prediction uses one package-private registry: it installs at most one document `pointermove` listener while at least one `onIntent` registration exists and removes it when the registry empties. `usePredictedEvents` and `useMergedRefs` are not public. Sidebar's `window.keydown` shortcut listener exists only while `Sidebar.Provider` is mounted and is removed on cleanup. `useIsMobile` (package-private, Sidebar only) subscribes to `(max-width: 767px)` through `useSyncExternalStore`; the snapshot is `mql.matches` and the server snapshot is `false` ([sidebar](components/sidebar.md) §8.12). _(Amended 2026-09-02 — sidebar §8.12.)_
+- Tooltips/popovers reuse base-ui's shared positioning; components never install their own scroll/resize listeners. Overlay positioning listeners belong to base-ui internals.
+- **Document-level listeners the library installs** (and no others):
+  1. **ThemeProvider** (`theme-provider.tsx`): while mounted, one `window` `storage` listener (filtered on `storageKey`) and, when `enableSystem` is true, one `matchMedia("(prefers-color-scheme: dark)")` `change` listener. Both are removed on cleanup.
+  2. **`useIsMobile`** (package-private, Sidebar only): subscribes to `(max-width: 767px)` through `useSyncExternalStore`; the snapshot is `mql.matches` and the server snapshot is `false` ([sidebar](components/sidebar.md) §8.12).
+  3. **Button intent prediction**: one package-private registry installs at most one document `pointermove` listener while at least one `onIntent` registration exists and removes it when the registry empties. `usePredictedEvents` and `useMergedRefs` are not public.
+  4. **Sidebar.Provider**: one `window` `keydown` shortcut listener (`cmd`/`ctrl`+B) exists only while the Provider is mounted and is removed on cleanup.
+- `ColorSchemeScript` / `colorSchemeScriptSource` read `matchMedia` once at first paint; they do not subscribe. `prefers-reduced-motion` is a CSS `@media` block in the library stylesheet, not a JS listener. _(Amended 2026-09-04.)_
 
 ## 7 i18n cost
 

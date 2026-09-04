@@ -12,5 +12,8 @@
   },
   "dependencies": {
     "@oxlint/plugins": "catalog:"
+  },
+  "devDependencies": {
+    "oxlint": "catalog:"
   }
 }

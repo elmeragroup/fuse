@@ -30,29 +30,43 @@ tooling/api-extractor/        # @elmeragroup/api-extractor — Effect-native Typ
 - **Release-age guard**: `minimumReleaseAge: 4320` (72 hours) in pnpm settings — no package version installs until it has been on the registry for three days. The refs' `overrides` block carries any forced resolutions; additions to it require a PR comment stating why.
 - **oxlint and `@oxlint/plugins` are pinned to the same minor, ≥ 1.78.0** — the floor the vendored anti-slop code is validated against (§5.3).
 - **Node 24**, pinned as `"engines": { "node": ">=24.13.0 <25" }` and `.node-version` containing `24.13.0`. Node 24 and pnpm 11 majors are normative; patch bumps within those majors are maintenance changes. `@elmeragroup/api-extractor` timing and evidence gates on Node major 24 and records the exact patch as an observation, not an assertion. _(Amended 2026-09-02.)_
-- **TypeScript configs** split in `tooling/typescript` per the internal ref: `base.json`, `react-library.json` (packages/ui), `internal-package.json` (tooling/*); apps extend base + framework preset. `strict` everywhere; no per-package compiler-option drift outside these files.
+- **TypeScript configs** split in `tooling/typescript` per the internal ref: `base.json`, `react-library.json` (packages/ui), `internal-package.json` (tooling/*); apps extend base + framework preset. `strict` everywhere; no per-package compiler-option drift outside these files, except `@elmeragroup/api-extractor`. That package extends `internal-package.json` and then sets `jsx: "react-jsx"`, `stripInternal: true`, `lib: ["ES2022", "DOM"]`, `skipLibCheck: false` (the shared bases leave `skipLibCheck: true`), a `paths` alias for one module-resolution fixture, and `exclude` of `test/fixtures/module-imports-only/**`. Those options are required by the extractor's type-check of DOM-facing fixtures and by `stripInternal` on its declarations; they are the documented deviation, not permission for further per-package drift. _(Amended 2026-09-04.)_
 
 The initial scaffold uses this reviewed, registry-verified exact catalog baseline; reference-derived versions are retained where applicable, while missing tool pins are explicit project choices. Upgrading one is a deliberate maintenance change, not an install-time choice: React/React DOM `19.2.8`, corresponding types `19.2.17`/`19.2.3`, Tailwind `4.3.3`, TypeScript `7.0.2`, tsdown `0.22.14`, turbo `2.10.2`, Vite `8.2.1`, Vitest and `@vitest/browser-playwright` `4.1.10`, Playwright `1.62.1`, oxfmt `0.60.0`, oxlint and `@oxlint/plugins` `1.78.0`, and oxlint-tsgolint `7.0.2001`. Runtime package pins/ranges are the canonical table in [architecture](architecture.md) §6; duplicate literals do not appear in workspace package manifests.
 
 ## 3 Turbo task graph
 
-`turbo.json` declares, with explicit `outputs` and env allowlists (no implicit env passthrough):
+`turbo.json` declares, with explicit `outputs` and env allowlists (no implicit env passthrough). Root tasks:
 
-| Task               | Depends on | Outputs         | Notes                                                                                                                                                                          |
-| ------------------ | ---------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `build`            | `^build`   | `dist/**`       | tsdown for packages/ui ([architecture](architecture.md)); Next build for apps                                                                                                  |
-| `lint`             | —          | —               | oxlint; `inputs` include `tooling/oxlint-plugin/**` and `tooling/oxlint-anti-slop/**` so rule edits bust the cache                                                             |
-| `type-check`       | `^build`   | —               | `tsc --noEmit` per package                                                                                                                                                     |
-| `test`             | —          | —               | vitest `unit` project (§7.1)                                                                                                                                                   |
-| `test:browser`     | `build`    | —               | vitest `browser` project; needs this package's built CSS                                                                                                                       |
-| `test:types`       | `build`    | —               | type tests (§7.3), `*.test-d.tsx` — a dedicated task, not folded into `test`                                                                                                   |
-| `test:shadow`      | `build`    | —               | docs API extractor shadow (`docs#test:shadow`); depends on the docs build; does not reuse the `ci:checks` leaf name _(amended 2026-09-02)_                                     |
-| `test:repo-policy` | —          | —               | root vitest project (`test/**`); merge-workflow and workspace lint-script contracts (`//#test:repo-policy`) _(amended 2026-09-02)_                                             |
-| `pack`             | `build`    | `.artifacts/**` | `pnpm pack --pack-destination .artifacts`; produces the one ignored tarball all package-shape checks consume                                                                   |
-| `package:check`    | `pack`     | —               | `publint`, `attw --pack`, export-path resolution, emitted-directive parity, and packed-asset contract checks against that tarball                                              |
-| `size-limit`       | `pack`     | —               | consumer-bundled entries plus built CSS and raw flag assets enforce every [performance](performance.md) §2 ceiling against that tarball                                        |
-| `dev`              | `^build`   | —               | `persistent: true`, uncached                                                                                                                                                   |
-| `ci:checks`        | aggregate  | —               | fans out to lint + type-check + test + test:browser + test:types + build + package:check + size-limit + `docs#test:shadow` + `//#test:repo-policy` (§8) _(amended 2026-09-02)_ |
+| Task               | Depends on                               | Outputs               | Notes                                                                                                                                                                          |
+| ------------------ | ---------------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `build`            | `^build`                                 | `dist/**`, `.next/**` | tsdown for packages/ui ([architecture](architecture.md)); Next/Vite for apps                                                                                                   |
+| `lint`             | —                                        | —                     | package-level oxlint; `inputs` include `tooling/oxlint-plugin/**` and `tooling/oxlint-anti-slop/**` so rule edits bust the cache                                               |
+| `//#lint`          | `@elmeragroup/ui#build`, `docs#generate` | —                     | root `oxlint .`; needs the ui build (`apps/static-theme` imports `dist/theme.js`) and the generated docs tree                                                                  |
+| `type-check`       | `^build`                                 | —                     | `tsc --noEmit` per package                                                                                                                                                     |
+| `test`             | `@elmeragroup/ui#build`                  | —                     | vitest `unit` project (§7.1); density-artifact tripwires assert dist. `apps/docs` and `apps/static-theme` **shadow** this with `dependsOn: ["build"]`                          |
+| `test:browser`     | `build`                                  | —                     | vitest `browser` project; needs this package's built CSS. Docs/static-theme also set their base-url env                                                                        |
+| `test:types`       | `build`                                  | —                     | type tests (§7.3), `*.test-d.tsx` — a dedicated task, not folded into `test`                                                                                                   |
+| `test:shadow`      | `build`                                  | —                     | docs API extractor shadow (`docs#test:shadow`); depends on the docs build; does not reuse the `ci:checks` leaf name _(amended 2026-09-02)_                                     |
+| `test:repo-policy` | —                                        | —                     | root vitest project (`test/**`); merge-workflow and workspace lint-script contracts (`//#test:repo-policy`) _(amended 2026-09-02)_                                             |
+| `pack`             | `build`                                  | `.artifacts/**`       | `pnpm pack --pack-destination .artifacts`; produces the one ignored tarball all package-shape checks consume                                                                   |
+| `package:check`    | `pack`                                   | —                     | `publint`, `attw --pack`, export-path resolution, emitted-directive parity, and packed-asset contract checks against that tarball                                              |
+| `size-limit`       | `pack`                                   | —                     | consumer-bundled entries plus built CSS and raw flag assets enforce every [performance](performance.md) §2 ceiling against that tarball                                        |
+| `dev`              | `^build`                                 | —                     | `persistent: true`, uncached                                                                                                                                                   |
+| `ci:checks`        | aggregate                                | —                     | fans out to lint + type-check + test + test:browser + test:types + build + package:check + size-limit + `docs#test:shadow` + `//#test:repo-policy` (§8) _(amended 2026-09-02)_ |
+
+Workspace shadows:
+
+| Task                    | Workspace    | Depends on | Outputs                                                                                               | Notes                                                                                  |
+| ----------------------- | ------------ | ---------- | ----------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `generate`              | docs         | `^build`   | `src/generated/**`, `src/app/(docs)/components/*/api.json`, `public/components/**`, `public/llms.txt` | writes the generated tree; `inputs` also include `packages/ui/scripts/size-budgets.ts` |
+| `build`                 | docs         | `generate` | (root)                                                                                                | Next build after generate                                                              |
+| `type-check`            | docs         | `generate` | —                                                                                                     | `next typegen && tsc --noEmit` after generate                                          |
+| `test` / `test:browser` | docs         | `build`    | —                                                                                                     | `DOCS_BASE_URL`                                                                        |
+| `test:shadow`           | docs         | `build`    | —                                                                                                     | extractor shadow against the docs build                                                |
+| `test` / `test:browser` | static-theme | `build`    | —                                                                                                     | `STATIC_THEME_BASE_URL`                                                                |
+
+_(Amended 2026-09-04 — real task dependencies, `docs#generate` outputs.)_
 
 Format checking (`oxfmt --check`) runs as a root script, not a per-package turbo task.
 
@@ -69,7 +83,15 @@ Format checking (`oxfmt --check`) runs as a root script, not a per-package turbo
   ]
   ```
 
-- Overrides carve the two plugin source dirs (`tooling/oxlint-plugin/**`, `tooling/oxlint-anti-slop/**`) out of the type-unsafe rules, exactly as the internal ref does for its rule sources. The dictionary factory `packages/ui/src/intl/create-string-dictionary.ts` is a per-file `allow` that turns `no-restricted-imports` off so it can construct `LocalizedStringDictionary` _(added 2026-09-04 — [ADR 0008](../adr/0008-tests-assert-behaviour-not-source-spelling.md))_.
+- `ignorePatterns` in `.oxlintrc.json`: `**/dist/**`, `**/coverage/**`, `**/.turbo/**`, `**/.next/**`, `apps/docs/src/generated/**`, `plop-templates/**`, `**/.artifacts/**`, `**/.cache/**`, `**/node_modules/**`, `.ref/**`, `.scratch/**`, `tooling/api-extractor/test/fixtures/**`, `packages/ui/scripts/*.mjs`, and the agent-dot dirs (`.agent/**`, `.agents/**`, `.claude/**`, `.codex/**`, `.continue/**`, `.cursor/**`, `.gemini/**`, `.opencode/**`, `.pi/**`, `.roo/**`, `.windsurf/**`). _(Added 2026-09-04.)_
+- Overrides, in order, scoped exactly as `.oxlintrc.json`:
+  - `apps/**/*.{ts,tsx}` and `packages/ui/**/*.{ts,tsx}` — React globals plus the `react` plugin (`react-hooks/rules-of-hooks` and both exhaustive-deps rules at `error`); this override also **replaces** the plugin set with `typescript`, `oxc`, `react`, `unicorn`.
+  - `packages/ui/src/**/*.{ts,tsx}` — every `elmera/*` library rule in §5, plus the `LocalizedStringDictionary` `no-restricted-imports` path.
+  - `apps/docs/src/**/*.{ts,tsx}` — `elmera/no-raw-class-map` at `error`.
+  - `packages/ui/src/intl/create-string-dictionary.ts` — per-file `allow` that turns `no-restricted-imports` off so the factory can construct `LocalizedStringDictionary` _(added 2026-09-04 — [ADR 0008](../adr/0008-tests-assert-behaviour-not-source-spelling.md))_.
+  - `plopfile.mjs` — the five `typescript/no-unsafe-*` rules off.
+  - `tooling/oxlint-plugin/**` — the five `typescript/no-unsafe-*` rules, `typescript/no-redundant-type-constituents`, and `anti-slop/no-runtime-typeof` off (rule-source carve-out).
+  - `tooling/oxlint-anti-slop/**` — the same type-unsafe carve-out, plus `typescript/no-unnecessary-condition`, `typescript/prefer-optional-chain`, `anti-slop/no-chained-type-assertions`, `anti-slop/no-unknown-parameters`, and `anti-slop/no-unsafe-dictionary-type` off.
 - `tooling/api-extractor` deliberately takes none: the extractor's exceptions are all at their use sites — an `oxlint-disable-next-line` naming one rule and the reason it cannot hold on that line, or the `SAFETY:` comment a rule asks for instead of a disable. File-wide `oxlint-disable` headers are forbidden in that package; the root repo-policy project (§7.6) fails on a returning header, on a reasonless next-line disable, on any `.oxlintrc.json` override matching that path, and on a per-rule next-line count above the recorded ceiling. Optional model fields are built with `definedFields` / `flagFields` (`tooling/api-extractor/src/optional-fields.ts`) so absent keys stay absent and call sites stay flat literals. _(Added 2026-09-03 — [ADR 0007](../adr/0007-docs-api-extraction-pipeline.md), “Lint overrides”: the package's 60 file-wide header directives across 37 files are gone. Amended 2026-09-04: the empty-object-spread disable is gone from call sites; next-line disables are capped per rule so that sprawl cannot return.)_
 
 ## 5 Custom lint guardrails
@@ -98,7 +120,7 @@ Exactly these existing rules carry over from the internal plugin and run as `err
 
 `dmmulroy/anti-slop` — 15 AST-only oxlint rules rejecting low-evidence TS patterns (type-assertion laundering, `unknown` escape hatches, module mocking, reflection), vendored from commit `446268e5d15baa968eaec669ff65358d36ae6259`.
 
-- **Vendored, never installed**: the upstream repo is `private: true` and unpublished by design; `oxlint-plugin-anti-slop@0.0.0` on npm is a **third-party name-squat — never install it**. The upstream is days-old, single-author, releaseless: immature as a dependency, acceptable as owned code. We copy `src/` into `tooling/oxlint-anti-slop` as `@elmeragroup/oxlint-plugin-anti-slop` (`private`, `"exports": { ".": "./index.ts" }`, one dependency: `@oxlint/plugins` at the pinned oxlint minor) and record the vendored upstream commit SHA in that package's README. Upstream refresh = manual diff, opt-in.
+- **Vendored, never installed**: the upstream repo is `private: true` and unpublished by design; `oxlint-plugin-anti-slop@0.0.0` on npm is a **third-party name-squat — never install it**. The upstream is days-old, single-author, releaseless: immature as a dependency, acceptable as owned code. We copy `src/` into `tooling/oxlint-anti-slop` as `@elmeragroup/oxlint-plugin-anti-slop` (`private`, `"exports": { ".": "./index.ts" }`, runtime dependency `@oxlint/plugins` at the pinned oxlint minor, plus `oxlint` as a test dependency so RuleTester can import `oxlint/plugins-dev`) and record the vendored upstream commit SHA in that package's README. Upstream refresh = manual diff, opt-in. _(Amended 2026-09-04.)_
 - **Tests**: the 12 vendored RuleTester modules plus 2 local ones (14 total) run under Node 24's test runner (`node --experimental-strip-types --test rules/*.test.ts`) and are part of the root Turbo `test` graph through the package `test` script. An upstream refresh must keep that script green, keep the local rules listed below, and update the documented test count if files are added or removed.
 - **Rule tiers**: `error` — `no-chained-type-assertions`, `no-widen-then-assert`, `no-known-value-widening`, `no-conditional-empty-object-spread` (object spreads and `JSXSpreadAttribute`), `no-reflect-apply`, `no-reflect-get`, `no-object-parameters`, `no-unknown-type-aliases`, `no-unsafe-dictionary-type`, `no-unknown-returns`, `no-unknown-parameters`. `warn` (promote after audit) — `require-safety-comment-for-type-assertion`, `no-runtime-typeof`, `no-shape-in-symbol-names`. _(Amended 2026-09-02: `no-conditional-empty-object-spread` also matches JSX spreads.)_
 - **Local rules** (not upstream; keep across refreshes): `no-slop-comments` (`warn`) rejects banners, commented-out code, panic vocabulary, and TODO/FIXME/HACK/XXX without a tracker or RFC reference. A genuine tracker or RFC reference satisfies only that last check; it does not exempt a banner or a corpse. Its one option, `ticketPattern`, is the regex source for a bare ticket id (matched with word boundaries); the default `[A-Z][A-Z0-9]*-\d+` accepts any Jira-style key, and the repo config narrows it to `ELM-\d+` so `ADR-0002`, `SHA-256`, or `HTTP-2` do not pass as tickets. `no-narration-comments` (`warn`) rejects line comments that restate the next code line, skipping over further comment lines to find it. It is a separate rule because it is a fuzzy heuristic that a team may want to disable on its own; the severity is moot in CI, where `lint` runs with `--deny-warnings`.
@@ -116,7 +138,15 @@ It does **not** ban `p-*` / `h-*` / `gap-*` across the package. Type-scale axes 
 
 ### 5.6 `elmera/no-rac-outside-quarantine` — `error`
 
-`react-aria-components`, `react-aria`, and `@internationalized/date` (and their subpaths) may be imported only from `packages/ui/src/react-aria/**`. Imports from `src/components/**` and every other library path fail. The rule is the quarantine; it lands before any RAC source exists.
+The forbidden specifier list is `packages/ui/scripts/forbidden-rac-packages.js` (`FORBIDDEN_RAC_PACKAGES`), the single owner imported by this rule and by package-check:
+
+- `react-aria-components`
+- `react-aria`
+- `@internationalized/date`
+- `@react-aria`
+- `@react-stately`
+
+Each name also matches its subpaths (`name/...`). Those specifiers may be imported only from `packages/ui/src/react-aria/**`. Imports from `src/components/**` and every other library path fail. The rule is the quarantine; it lands before any RAC source exists. _(Amended 2026-09-04.)_
 
 ### 5.7 `no-restricted-imports` for `LocalizedStringDictionary` — `error`
 
@@ -125,6 +155,10 @@ Library source may not value-import `LocalizedStringDictionary` from `@internati
 ### 5.8 `elmera/no-raw-class-map` — `error`
 
 Class maps with an axis or two or more slots are `tv` recipes; a single axis-less class string is `cn("…")`. This rule errors on object-literal variable initializers (with or without `as const` / `satisfies`) whose string values look like Tailwind classes, and on bare string or template class constants. Any call-expression initializer is accepted. The utility prefix and exact-token tables in the rule are the heuristic for "looks like Tailwind". Severity is error. Scoped to `packages/ui/src/**` and `apps/docs/src/**` (not playground or static-theme). Test files, `*.test-d.tsx`, intl dictionaries, and generated paths are exempt. _(Added 2026-09-04; promoted to error 2026-09-04. Amended 2026-09-04: `cn()` for axis-less strings, call-expression inits accepted explicitly.)_
+
+### 5.9 `elmera/facade-reexport-grammar` — `error`
+
+`src/<name>.ts(x)` and `src/react-aria/<name>.ts(x)` facades must be explicit named re-exports only: no `export *`, no local declarations, no directives. The generated root barrel may use `export *` and is excluded. Scoped to `packages/ui/src/**`. _(Added 2026-09-04.)_
 
 ## 6 Scaffolding (plop, v1)
 
