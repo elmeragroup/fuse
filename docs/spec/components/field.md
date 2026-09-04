@@ -67,7 +67,7 @@ Polymorphism via base-ui `useRender` (`render` prop); never `as`.
 
 - Recipe `fieldVariants` (tv, slotted), **module-private** — no borrow pattern exists; consumers style via `className`. Slots: `root` (the orientation axis) and `heading` (the Label/Title shared class, resolved once as `fieldHeadingClassName`).
 - Single axis `orientation`: `vertical` (default, column, children full-width except `.sr-only`), `horizontal` (row, centered; top-aligns when a `[data-slot=field-content]` child exists; checkbox/radio nudged `mt-px`), `responsive` (vertical, switching to horizontal at `@md/field-group` container width).
-- Package-private `fieldFrameVariants` (in `field-frame.tsx`, no axes) owns the composite layout slots `root` / `labelRow` / `content` / `description`. The exported `fieldFrame*Class` names are those slots resolved once; `textFieldVariants` composes the recipe via slot reads. _(Amended 2026-09-04 — ticket 06.)_
+- Package-private `fieldFrameVariants` (in `field-frame.tsx`, no axes) owns the composite layout slots `root` / `labelRow` / `content` / `description`. The exported `fieldFrame*Class` names are those slots resolved once; `textFieldVariants` composes the recipe via slot reads. _(Amended 2026-09-04 — ticket 06, 2026-09-04: recipe-derived FieldFrame slots.)_
 - `Field.Legend`'s `variant` is styled via `data-[variant=…]` selectors, not a tv recipe.
 
 ## 5 Consumed tokens

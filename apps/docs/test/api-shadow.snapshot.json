@@ -6,9 +6,9 @@
     "currentPropCount": 501,
     "effectPropCount": 615,
     "currentProblemCount": 0,
-    "effectProblemCount": 85,
-    "apiDifferenceCount": 1103,
-    "problemDifferenceCount": 85
+    "effectProblemCount": 91,
+    "apiDifferenceCount": 1114,
+    "problemDifferenceCount": 91
   },
   "apiDifferences": [
     {
@@ -933,17 +933,23 @@
     },
     {
       "component": "card",
-      "path": "evidence.Card.Title.propOrder[1]",
-      "current": "level",
-      "effect": "icon",
-      "reason": "card Card.Title evidence propOrder[1]: checker level vs Effect icon."
+      "path": "evidence.Card.Description.props.size.declarationPaths[0]",
+      "current": "packages/ui/src/components/card/card.tsx",
+      "effect": "packages/ui/src/components/card/card-variants.ts",
+      "reason": "card evidence.Card.Description.props.size.declarationPaths[0]: tv recipe VariantProps provenance after 2026-09-04 class-map migration."
     },
     {
       "component": "card",
-      "path": "evidence.Card.Title.propOrder[2]",
+      "path": "evidence.Card.Description.props.size.declarationPaths[1]",
+      "effect": "packages/ui/src/components/card/card.tsx",
+      "reason": "card evidence.Card.Description.props.size.declarationPaths[1]: tv recipe VariantProps provenance after 2026-09-04 class-map migration."
+    },
+    {
+      "component": "card",
+      "path": "evidence.Card.Title.propOrder[1]",
       "current": "size",
-      "effect": "level",
-      "reason": "card Card.Title evidence propOrder[2]: checker size vs Effect level."
+      "effect": "icon",
+      "reason": "card Card.Title evidence propOrder[1]: checker size vs Effect icon."
     },
     {
       "component": "card",
@@ -954,10 +960,23 @@
     },
     {
       "component": "card",
-      "path": "parts.Card.Description.props.size.type",
-      "current": "\"2xl\" | \"default\" | \"lg\" | \"sm\" | \"xl\" | \"xs\" | undefined",
-      "effect": "CardDescriptionSize | undefined",
-      "reason": "card Card.Description.size type: checker expands `\"2xl\" | \"default\" | \"lg\" | \"sm\" | \"xl\" | \"xs\" | undefined`; Effect keeps alias `CardDescriptionSize | undefined`."
+      "path": "evidence.Card.Title.props.size.declarationPaths[0]",
+      "current": "packages/ui/src/components/card/card.tsx",
+      "effect": "packages/ui/src/components/card/card-variants.ts",
+      "reason": "card evidence.Card.Title.props.size.declarationPaths[0]: tv recipe VariantProps provenance after 2026-09-04 class-map migration."
+    },
+    {
+      "component": "card",
+      "path": "evidence.Card.Title.props.size.declarationPaths[1]",
+      "effect": "packages/ui/src/components/card/card.tsx",
+      "reason": "card evidence.Card.Title.props.size.declarationPaths[1]: tv recipe VariantProps provenance after 2026-09-04 class-map migration."
+    },
+    {
+      "component": "card",
+      "path": "parts.Card.Description.props.size.origin",
+      "current": "declared",
+      "effect": "recipe-axis",
+      "reason": "card parts.Card.Description.props.size.origin: tv recipe VariantProps provenance after 2026-09-04 class-map migration."
     },
     {
       "component": "card",
@@ -968,10 +987,10 @@
     },
     {
       "component": "card",
-      "path": "parts.Card.Title.props.size.type",
-      "current": "\"2xl\" | \"3xl\" | \"4xl\" | \"5xl\" | \"6xl\" | \"default\" | \"lg\" | \"sm\" | \"xl\" | undefined",
-      "effect": "CardTitleSize | undefined",
-      "reason": "card Card.Title.size type: checker expands `\"2xl\" | \"3xl\" | \"4xl\" | \"5xl\" | \"6xl\" | \"default\" | \"lg\" | \"sm\" | \"xl\" | undefi…`; Effect keeps alias `CardTitleSize | undefined`."
+      "path": "parts.Card.Title.props.size.origin",
+      "current": "declared",
+      "effect": "recipe-axis",
+      "reason": "card parts.Card.Title.props.size.origin: tv recipe VariantProps provenance after 2026-09-04 class-map migration."
     },
     {
       "component": "checkbox-card",
@@ -3778,7 +3797,7 @@
     {
       "component": "field",
       "path": "evidence.Field.Root.props.orientation.declarationPaths[0]",
-      "effect": "packages/ui/src/components/field/field.tsx",
+      "effect": "packages/ui/src/components/field/field-variants.ts",
       "reason": "field Field.Root.orientation declarationPaths: checker `omitted` vs Effect `packages/ui/src/components/field/field.tsx`."
     },
     {
@@ -3929,13 +3948,6 @@
         "required": false
       },
       "reason": "field Field.Legend.render: Effect lists Base UI `render` (`ComponentRenderFn | ReactElement`); checker omits it from library rows."
-    },
-    {
-      "component": "field",
-      "path": "parts.Field.Root.props.orientation.origin",
-      "current": "recipe-axis",
-      "effect": "declared",
-      "reason": "field Field.Root.orientation origin: checker `recipe-axis` vs Effect `declared` (recipe-axis vs declared; Effect uses extractor provenance)."
     },
     {
       "component": "field",
@@ -4168,7 +4180,7 @@
     {
       "component": "heading",
       "path": "evidence.Heading.props.align.declarationPaths[0]",
-      "effect": "packages/ui/src/components/heading/heading-variants.ts",
+      "effect": "packages/ui/src/styles/typography-fragments.ts",
       "reason": "heading Heading.align declarationPaths: checker `omitted` vs Effect `packages/ui/src/components/heading/heading-variants.ts`."
     },
     {
@@ -4281,7 +4293,7 @@
     {
       "component": "heading",
       "path": "evidence.Heading.props.variant.declarationPaths[0]",
-      "effect": "packages/ui/src/components/heading/heading-variants.ts",
+      "effect": "packages/ui/src/styles/typography-fragments.ts",
       "reason": "heading Heading.variant declarationPaths: checker `omitted` vs Effect `packages/ui/src/components/heading/heading-variants.ts`."
     },
     {
@@ -4300,6 +4312,13 @@
     },
     {
       "component": "heading",
+      "path": "parts.Heading.props.align.origin",
+      "current": "recipe-axis",
+      "effect": "declared",
+      "reason": "heading parts.Heading.props.align.origin: tv recipe VariantProps provenance after 2026-09-04 class-map migration."
+    },
+    {
+      "component": "heading",
       "path": "parts.Heading.props.render",
       "effect": {
         "name": "render",
@@ -4312,6 +4331,13 @@
         "required": false
       },
       "reason": "heading Heading.render: Effect lists Base UI `render` (`ComponentRenderFn | ReactElement`); checker omits it from library rows."
+    },
+    {
+      "component": "heading",
+      "path": "parts.Heading.props.variant.origin",
+      "current": "recipe-axis",
+      "effect": "declared",
+      "reason": "heading parts.Heading.props.variant.origin: tv recipe VariantProps provenance after 2026-09-04 class-map migration."
     },
     {
       "component": "input-group",
@@ -5983,23 +6009,23 @@
     {
       "component": "radio-group",
       "path": "evidence.RadioIconButton.propOrder[0]",
-      "current": "value",
+      "current": "size",
       "effect": "aria-label",
-      "reason": "radio-group RadioIconButton evidence propOrder[0]: checker value vs Effect aria-label."
+      "reason": "radio-group RadioIconButton evidence propOrder[0]: checker size vs Effect aria-label."
     },
     {
       "component": "radio-group",
       "path": "evidence.RadioIconButton.propOrder[1]",
-      "current": "isDisabled",
+      "current": "value",
       "effect": "children",
-      "reason": "radio-group RadioIconButton evidence propOrder[1]: checker isDisabled vs Effect children."
+      "reason": "radio-group RadioIconButton evidence propOrder[1]: checker value vs Effect children."
     },
     {
       "component": "radio-group",
       "path": "evidence.RadioIconButton.propOrder[2]",
-      "current": "size",
+      "current": "isDisabled",
       "effect": "className",
-      "reason": "radio-group RadioIconButton evidence propOrder[2]: checker size vs Effect className."
+      "reason": "radio-group RadioIconButton evidence propOrder[2]: checker isDisabled vs Effect className."
     },
     {
       "component": "radio-group",
@@ -6040,6 +6066,19 @@
         "synthesized": false
       },
       "reason": "radio-group RadioIconButton.render: Effect lists Base UI `render` (`ComponentRenderFn | ReactElement`); checker omits it from library rows."
+    },
+    {
+      "component": "radio-group",
+      "path": "evidence.RadioIconButton.props.size.declarationPaths[0]",
+      "current": "packages/ui/src/components/radio-group/radio-group.tsx",
+      "effect": "packages/ui/src/components/radio-group/radio-group-variants.ts",
+      "reason": "radio-group evidence.RadioIconButton.props.size.declarationPaths[0]: tv recipe VariantProps provenance after 2026-09-04 class-map migration."
+    },
+    {
+      "component": "radio-group",
+      "path": "evidence.RadioIconButton.props.size.declarationPaths[1]",
+      "effect": "packages/ui/src/components/radio-group/radio-group.tsx",
+      "reason": "radio-group evidence.RadioIconButton.props.size.declarationPaths[1]: tv recipe VariantProps provenance after 2026-09-04 class-map migration."
     },
     {
       "component": "radio-group",
@@ -6237,6 +6276,13 @@
         "required": false
       },
       "reason": "radio-group RadioIconButton.render: Effect lists Base UI `render` (`ComponentRenderFn | ReactElement`); checker omits it from library rows."
+    },
+    {
+      "component": "radio-group",
+      "path": "parts.RadioIconButton.props.size.origin",
+      "current": "declared",
+      "effect": "recipe-axis",
+      "reason": "radio-group parts.RadioIconButton.props.size.origin: tv recipe VariantProps provenance after 2026-09-04 class-map migration."
     },
     {
       "component": "radio-group",
@@ -7800,6 +7846,12 @@
     },
     {
       "component": "span",
+      "path": "evidence.Span.props.align.declarationPaths[1]",
+      "effect": "packages/ui/src/styles/typography-fragments.ts",
+      "reason": "span evidence.Span.props.align.declarationPaths[1]: tv recipe VariantProps provenance after 2026-09-04 class-map migration."
+    },
+    {
+      "component": "span",
       "path": "evidence.Span.props.align.ownership",
       "current": "synthesized",
       "effect": "library",
@@ -7877,6 +7929,12 @@
       "path": "evidence.Span.props.variant.declarationPaths[0]",
       "effect": "packages/ui/src/components/text/text-variants.ts",
       "reason": "span Span.variant declarationPaths: checker `omitted` vs Effect `packages/ui/src/components/text/text-variants.ts`."
+    },
+    {
+      "component": "span",
+      "path": "evidence.Span.props.variant.declarationPaths[1]",
+      "effect": "packages/ui/src/styles/typography-fragments.ts",
+      "reason": "span evidence.Span.props.variant.declarationPaths[1]: tv recipe VariantProps provenance after 2026-09-04 class-map migration."
     },
     {
       "component": "span",
@@ -8423,6 +8481,12 @@
     },
     {
       "component": "text",
+      "path": "evidence.Text.props.align.declarationPaths[1]",
+      "effect": "packages/ui/src/styles/typography-fragments.ts",
+      "reason": "text evidence.Text.props.align.declarationPaths[1]: tv recipe VariantProps provenance after 2026-09-04 class-map migration."
+    },
+    {
+      "component": "text",
       "path": "evidence.Text.props.align.ownership",
       "current": "synthesized",
       "effect": "library",
@@ -8500,6 +8564,12 @@
       "path": "evidence.Text.props.variant.declarationPaths[0]",
       "effect": "packages/ui/src/components/text/text-variants.ts",
       "reason": "text Text.variant declarationPaths: checker `omitted` vs Effect `packages/ui/src/components/text/text-variants.ts`."
+    },
+    {
+      "component": "text",
+      "path": "evidence.Text.props.variant.declarationPaths[1]",
+      "effect": "packages/ui/src/styles/typography-fragments.ts",
+      "reason": "text evidence.Text.props.variant.declarationPaths[1]: tv recipe VariantProps provenance after 2026-09-04 class-map migration."
     },
     {
       "component": "text",
@@ -9604,48 +9674,81 @@
       "reason": "dialog: Effect adapter treats `Dialog.Content.size` as a declared public prop and requires JSDoc; checker origin is recipe-axis/inherited so it does not emit missing-description."
     },
     {
-      "component": "field",
-      "key": "docs-adapter|field|missing-description|Field.Root.orientation: public prop has no JSDoc description (packages/ui/src/components/field/field.tsx)#1",
+      "component": "heading",
+      "key": "docs-adapter|heading|missing-description|Heading.align: public prop has no JSDoc description (packages/ui/src/components/heading/heading.tsx)#1",
       "effect": {
-        "component": "field",
+        "component": "heading",
         "source": "docs-adapter",
         "code": "missing-description",
-        "message": "Field.Root.orientation: public prop has no JSDoc description (packages/ui/src/components/field/field.tsx)"
+        "message": "Heading.align: public prop has no JSDoc description (packages/ui/src/components/heading/heading.tsx)"
       },
-      "reason": "field: Effect adapter treats `Field.Root.orientation` as a declared public prop and requires JSDoc; checker origin is recipe-axis/inherited so it does not emit missing-description."
+      "reason": "heading: Effect adapter treats `Heading.align` as a declared public prop and requires JSDoc; checker origin is recipe-axis/inherited so it does not emit missing-description."
     },
     {
       "component": "heading",
-      "key": "effect-extractor|heading|unsupported-type-fallback|Could not extract type \"{ variant: { readonly default: \"text-inherit\"; readonly foreground: \"text-foreground\"; readonly primary: \"text-primary\"; readonly secondary: \"text-secondary\"; readonly brand: \"text-brand\"; readonly muted: \"text-muted-foreground\"; readonly inherit: \"text-inherit\"; readonly destructive: \"text-error\"; }; ... 4 more ......\" at \"<repo>/packages/ui/src/heading.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/heading.ts:1:1]#1",
+      "key": "docs-adapter|heading|missing-description|Heading.variant: public prop has no JSDoc description (packages/ui/src/components/heading/heading.tsx)#1",
+      "effect": {
+        "component": "heading",
+        "source": "docs-adapter",
+        "code": "missing-description",
+        "message": "Heading.variant: public prop has no JSDoc description (packages/ui/src/components/heading/heading.tsx)"
+      },
+      "reason": "heading: Effect adapter treats `Heading.variant` as a declared public prop and requires JSDoc; checker origin is recipe-axis/inherited so it does not emit missing-description."
+    },
+    {
+      "component": "heading",
+      "key": "effect-extractor|heading|unsupported-type-fallback|Could not extract type \"{ size: { default: \"text-base leading-snug\"; sm: \"text-sm leading-snug\"; lg: \"text-lg leading-snug\"; xl: \"text-xl leading-snug\"; \"2xl\": \"text-2xl leading-snug\"; \"3xl\": \"text-3xl leading-snug\"; \"4xl\": \"text-4xl leading-snug\"; \"5xl\": \"text-5xl leading-snug\"; \"6xl\": \"text-6xl leading-tight\"; }; font: { ...; }; noMargin...\" at \"<repo>/packages/ui/src/heading.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/heading.ts:1:1]#1",
       "effect": {
         "component": "heading",
         "source": "effect-extractor",
         "code": "unsupported-type-fallback",
-        "message": "Could not extract type \"{ variant: { readonly default: \"text-inherit\"; readonly foreground: \"text-foreground\"; readonly primary: \"text-primary\"; readonly secondary: \"text-secondary\"; readonly brand: \"text-brand\"; readonly muted: \"text-muted-foreground\"; readonly inherit: \"text-inherit\"; readonly destructive: \"text-error\"; }; ... 4 more ......\" at \"<repo>/packages/ui/src/heading.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/heading.ts:1:1]"
+        "message": "Could not extract type \"{ size: { default: \"text-base leading-snug\"; sm: \"text-sm leading-snug\"; lg: \"text-lg leading-snug\"; xl: \"text-xl leading-snug\"; \"2xl\": \"text-2xl leading-snug\"; \"3xl\": \"text-3xl leading-snug\"; \"4xl\": \"text-4xl leading-snug\"; \"5xl\": \"text-5xl leading-snug\"; \"6xl\": \"text-6xl leading-tight\"; }; font: { ...; }; noMargin...\" at \"<repo>/packages/ui/src/heading.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/heading.ts:1:1]"
       },
-      "reason": "heading: Effect `unsupported-type-fallback` emits `any` for the tv variants-map object `{ variant: { readonly default: \"text-inherit\"; readonly foreground: \"text-foreground\"; readonly prim…`."
+      "reason": "heading: Effect `unsupported-type-fallback` emits `any` for the tv object `{ size: { default: `."
     },
     {
       "component": "heading",
-      "key": "effect-extractor|heading|unsupported-type-fallback|Could not extract type \"{ variant: { readonly default: \"text-inherit\"; readonly foreground: \"text-foreground\"; readonly primary: \"text-primary\"; readonly secondary: \"text-secondary\"; readonly brand: \"text-brand\"; readonly muted: \"text-muted-foreground\"; readonly inherit: \"text-inherit\"; readonly destructive: \"text-error\"; }; ... 4 more ......\" at \"<repo>/packages/ui/src/heading.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/heading.ts:1:1]#2",
+      "key": "effect-extractor|heading|unsupported-type-fallback|Could not extract type \"{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"text-secondary\"; brand: \"text-brand\"; muted: \"text-muted-foreground\"; inherit: \"text-inherit\"; destructive: \"text-error\"; }; align: { ...; }; }\" at \"<repo>/packages/ui/src/heading.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/heading.ts:1:1]#1",
       "effect": {
         "component": "heading",
         "source": "effect-extractor",
         "code": "unsupported-type-fallback",
-        "message": "Could not extract type \"{ variant: { readonly default: \"text-inherit\"; readonly foreground: \"text-foreground\"; readonly primary: \"text-primary\"; readonly secondary: \"text-secondary\"; readonly brand: \"text-brand\"; readonly muted: \"text-muted-foreground\"; readonly inherit: \"text-inherit\"; readonly destructive: \"text-error\"; }; ... 4 more ......\" at \"<repo>/packages/ui/src/heading.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/heading.ts:1:1]"
+        "message": "Could not extract type \"{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"text-secondary\"; brand: \"text-brand\"; muted: \"text-muted-foreground\"; inherit: \"text-inherit\"; destructive: \"text-error\"; }; align: { ...; }; }\" at \"<repo>/packages/ui/src/heading.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/heading.ts:1:1]"
       },
-      "reason": "heading: Effect `unsupported-type-fallback` emits `any` for the tv variants-map object `{ variant: { readonly default: \"text-inherit\"; readonly foreground: \"text-foreground\"; readonly prim…`."
+      "reason": "heading: Effect `unsupported-type-fallback` emits `any` for the tv object `{ variant: { default: `."
     },
     {
       "component": "heading",
-      "key": "effect-extractor|heading|unsupported-type-fallback|Could not extract type \"{ variant: { readonly default: \"text-inherit\"; readonly foreground: \"text-foreground\"; readonly primary: \"text-primary\"; readonly secondary: \"text-secondary\"; readonly brand: \"text-brand\"; readonly muted: \"text-muted-foreground\"; readonly inherit: \"text-inherit\"; readonly destructive: \"text-error\"; }; ... 4 more ......\" at \"<repo>/packages/ui/src/heading.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/heading.ts:1:1]#3",
+      "key": "effect-extractor|heading|unsupported-type-fallback|Could not extract type \"{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"text-secondary\"; brand: \"text-brand\"; muted: \"text-muted-foreground\"; inherit: \"text-inherit\"; destructive: \"text-error\"; }; align: { ...; }; }\" at \"<repo>/packages/ui/src/heading.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/heading.ts:1:1]#2",
       "effect": {
         "component": "heading",
         "source": "effect-extractor",
         "code": "unsupported-type-fallback",
-        "message": "Could not extract type \"{ variant: { readonly default: \"text-inherit\"; readonly foreground: \"text-foreground\"; readonly primary: \"text-primary\"; readonly secondary: \"text-secondary\"; readonly brand: \"text-brand\"; readonly muted: \"text-muted-foreground\"; readonly inherit: \"text-inherit\"; readonly destructive: \"text-error\"; }; ... 4 more ......\" at \"<repo>/packages/ui/src/heading.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/heading.ts:1:1]"
+        "message": "Could not extract type \"{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"text-secondary\"; brand: \"text-brand\"; muted: \"text-muted-foreground\"; inherit: \"text-inherit\"; destructive: \"text-error\"; }; align: { ...; }; }\" at \"<repo>/packages/ui/src/heading.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/heading.ts:1:1]"
       },
-      "reason": "heading: Effect `unsupported-type-fallback` emits `any` for the tv variants-map object `{ variant: { readonly default: \"text-inherit\"; readonly foreground: \"text-foreground\"; readonly prim…`."
+      "reason": "heading: Effect `unsupported-type-fallback` emits `any` for the tv object `{ variant: { default: `."
+    },
+    {
+      "component": "heading",
+      "key": "effect-extractor|heading|unsupported-type-fallback|Could not extract type \"{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"text-secondary\"; brand: \"text-brand\"; muted: \"text-muted-foreground\"; inherit: \"text-inherit\"; destructive: \"text-error\"; }; align: { ...; }; }\" at \"<repo>/packages/ui/src/heading.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/heading.ts:1:1]#3",
+      "effect": {
+        "component": "heading",
+        "source": "effect-extractor",
+        "code": "unsupported-type-fallback",
+        "message": "Could not extract type \"{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"text-secondary\"; brand: \"text-brand\"; muted: \"text-muted-foreground\"; inherit: \"text-inherit\"; destructive: \"text-error\"; }; align: { ...; }; }\" at \"<repo>/packages/ui/src/heading.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/heading.ts:1:1]"
+      },
+      "reason": "heading: Effect `unsupported-type-fallback` emits `any` for the tv object `{ variant: { default: `."
+    },
+    {
+      "component": "heading",
+      "key": "effect-extractor|heading|unsupported-type-fallback|Could not extract type \"{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"text-secondary\"; brand: \"text-brand\"; muted: \"text-muted-foreground\"; inherit: \"text-inherit\"; destructive: \"text-error\"; }; align: { ...; }; }\" at \"<repo>/packages/ui/src/heading.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/heading.ts:1:1]#4",
+      "effect": {
+        "component": "heading",
+        "source": "effect-extractor",
+        "code": "unsupported-type-fallback",
+        "message": "Could not extract type \"{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"text-secondary\"; brand: \"text-brand\"; muted: \"text-muted-foreground\"; inherit: \"text-inherit\"; destructive: \"text-error\"; }; align: { ...; }; }\" at \"<repo>/packages/ui/src/heading.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/heading.ts:1:1]"
+      },
+      "reason": "heading: Effect `unsupported-type-fallback` emits `any` for the tv object `{ variant: { default: `."
     },
     {
       "component": "input-group",
@@ -9946,47 +10049,58 @@
     },
     {
       "component": "span",
-      "key": "effect-extractor|span|unsupported-type-fallback|Could not extract type \"{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"text-secondary\"; brand: \"text-brand\"; muted: \"text-muted-foreground\"; inherit: \"text-inherit\"; destructive: \"text-error\"; success: \"text-success\"; }; ... 4 more ...; weight: { ...; }; }\" at \"<repo>/packages/ui/src/span.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/span.ts:1:1]#1",
+      "key": "effect-extractor|span|unsupported-type-fallback|Could not extract type \"{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"text-secondary\"; brand: \"text-brand\"; muted: \"text-muted-foreground\"; inherit: \"text-inherit\"; destructive: \"text-error\"; }; align: { ...; }; }\" at \"<repo>/packages/ui/src/span.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/span.ts:1:1]#1",
       "effect": {
         "component": "span",
         "source": "effect-extractor",
         "code": "unsupported-type-fallback",
-        "message": "Could not extract type \"{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"text-secondary\"; brand: \"text-brand\"; muted: \"text-muted-foreground\"; inherit: \"text-inherit\"; destructive: \"text-error\"; success: \"text-success\"; }; ... 4 more ...; weight: { ...; }; }\" at \"<repo>/packages/ui/src/span.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/span.ts:1:1]"
+        "message": "Could not extract type \"{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"text-secondary\"; brand: \"text-brand\"; muted: \"text-muted-foreground\"; inherit: \"text-inherit\"; destructive: \"text-error\"; }; align: { ...; }; }\" at \"<repo>/packages/ui/src/span.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/span.ts:1:1]"
       },
-      "reason": "span: Effect `unsupported-type-fallback` emits `any` for the tv variants-map object `{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"tex…`."
+      "reason": "span: Effect `unsupported-type-fallback` emits `any` for the tv object `{ variant: { default: `."
     },
     {
       "component": "span",
-      "key": "effect-extractor|span|unsupported-type-fallback|Could not extract type \"{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"text-secondary\"; brand: \"text-brand\"; muted: \"text-muted-foreground\"; inherit: \"text-inherit\"; destructive: \"text-error\"; success: \"text-success\"; }; ... 4 more ...; weight: { ...; }; }\" at \"<repo>/packages/ui/src/span.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/span.ts:1:1]#2",
+      "key": "effect-extractor|span|unsupported-type-fallback|Could not extract type \"{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"text-secondary\"; brand: \"text-brand\"; muted: \"text-muted-foreground\"; inherit: \"text-inherit\"; destructive: \"text-error\"; }; align: { ...; }; }\" at \"<repo>/packages/ui/src/span.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/span.ts:1:1]#2",
       "effect": {
         "component": "span",
         "source": "effect-extractor",
         "code": "unsupported-type-fallback",
-        "message": "Could not extract type \"{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"text-secondary\"; brand: \"text-brand\"; muted: \"text-muted-foreground\"; inherit: \"text-inherit\"; destructive: \"text-error\"; success: \"text-success\"; }; ... 4 more ...; weight: { ...; }; }\" at \"<repo>/packages/ui/src/span.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/span.ts:1:1]"
+        "message": "Could not extract type \"{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"text-secondary\"; brand: \"text-brand\"; muted: \"text-muted-foreground\"; inherit: \"text-inherit\"; destructive: \"text-error\"; }; align: { ...; }; }\" at \"<repo>/packages/ui/src/span.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/span.ts:1:1]"
       },
-      "reason": "span: Effect `unsupported-type-fallback` emits `any` for the tv variants-map object `{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"tex…`."
+      "reason": "span: Effect `unsupported-type-fallback` emits `any` for the tv object `{ variant: { default: `."
     },
     {
       "component": "span",
-      "key": "effect-extractor|span|unsupported-type-fallback|Could not extract type \"{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"text-secondary\"; brand: \"text-brand\"; muted: \"text-muted-foreground\"; inherit: \"text-inherit\"; destructive: \"text-error\"; success: \"text-success\"; }; ... 4 more ...; weight: { ...; }; }\" at \"<repo>/packages/ui/src/span.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/span.ts:1:1]#3",
+      "key": "effect-extractor|span|unsupported-type-fallback|Could not extract type \"{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"text-secondary\"; brand: \"text-brand\"; muted: \"text-muted-foreground\"; inherit: \"text-inherit\"; destructive: \"text-error\"; }; align: { ...; }; }\" at \"<repo>/packages/ui/src/span.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/span.ts:1:1]#3",
       "effect": {
         "component": "span",
         "source": "effect-extractor",
         "code": "unsupported-type-fallback",
-        "message": "Could not extract type \"{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"text-secondary\"; brand: \"text-brand\"; muted: \"text-muted-foreground\"; inherit: \"text-inherit\"; destructive: \"text-error\"; success: \"text-success\"; }; ... 4 more ...; weight: { ...; }; }\" at \"<repo>/packages/ui/src/span.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/span.ts:1:1]"
+        "message": "Could not extract type \"{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"text-secondary\"; brand: \"text-brand\"; muted: \"text-muted-foreground\"; inherit: \"text-inherit\"; destructive: \"text-error\"; }; align: { ...; }; }\" at \"<repo>/packages/ui/src/span.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/span.ts:1:1]"
       },
-      "reason": "span: Effect `unsupported-type-fallback` emits `any` for the tv variants-map object `{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"tex…`."
+      "reason": "span: Effect `unsupported-type-fallback` emits `any` for the tv object `{ variant: { default: `."
     },
     {
       "component": "span",
-      "key": "effect-extractor|span|unsupported-type-fallback|Could not extract type \"{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"text-secondary\"; brand: \"text-brand\"; muted: \"text-muted-foreground\"; inherit: \"text-inherit\"; destructive: \"text-error\"; success: \"text-success\"; }; ... 4 more ...; weight: { ...; }; }\" at \"<repo>/packages/ui/src/span.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/span.ts:1:1]#4",
+      "key": "effect-extractor|span|unsupported-type-fallback|Could not extract type \"{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"text-secondary\"; brand: \"text-brand\"; muted: \"text-muted-foreground\"; inherit: \"text-inherit\"; destructive: \"text-error\"; }; align: { ...; }; }\" at \"<repo>/packages/ui/src/span.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/span.ts:1:1]#4",
       "effect": {
         "component": "span",
         "source": "effect-extractor",
         "code": "unsupported-type-fallback",
-        "message": "Could not extract type \"{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"text-secondary\"; brand: \"text-brand\"; muted: \"text-muted-foreground\"; inherit: \"text-inherit\"; destructive: \"text-error\"; success: \"text-success\"; }; ... 4 more ...; weight: { ...; }; }\" at \"<repo>/packages/ui/src/span.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/span.ts:1:1]"
+        "message": "Could not extract type \"{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"text-secondary\"; brand: \"text-brand\"; muted: \"text-muted-foreground\"; inherit: \"text-inherit\"; destructive: \"text-error\"; }; align: { ...; }; }\" at \"<repo>/packages/ui/src/span.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/span.ts:1:1]"
       },
-      "reason": "span: Effect `unsupported-type-fallback` emits `any` for the tv variants-map object `{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"tex…`."
+      "reason": "span: Effect `unsupported-type-fallback` emits `any` for the tv object `{ variant: { default: `."
+    },
+    {
+      "component": "span",
+      "key": "effect-extractor|span|unsupported-type-fallback|Could not extract type \"{ variant: { success: \"text-success\"; }; size: { xs: \"text-xs *:text-xs **:text-xs\"; sm: \"text-sm *:text-sm **:text-sm\"; default: \"text-base *:text-base **:text-base\"; lg: \"text-lg *:text-lg **:text-lg\"; xl: \"text-xl *:text-xl **:text-xl\"; \"2xl\": \"text-2xl *:text-2xl **:text-2xl\"; }; leading: { ...; }; truncate: { ....\" at \"<repo>/packages/ui/src/span.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/span.ts:1:1]#1",
+      "effect": {
+        "component": "span",
+        "source": "effect-extractor",
+        "code": "unsupported-type-fallback",
+        "message": "Could not extract type \"{ variant: { success: \"text-success\"; }; size: { xs: \"text-xs *:text-xs **:text-xs\"; sm: \"text-sm *:text-sm **:text-sm\"; default: \"text-base *:text-base **:text-base\"; lg: \"text-lg *:text-lg **:text-lg\"; xl: \"text-xl *:text-xl **:text-xl\"; \"2xl\": \"text-2xl *:text-2xl **:text-2xl\"; }; leading: { ...; }; truncate: { ....\" at \"<repo>/packages/ui/src/span.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/span.ts:1:1]"
+      },
+      "reason": "span: Effect `unsupported-type-fallback` emits `any` for the tv object `{ variant: { success: `."
     },
     {
       "component": "tabs",
@@ -10089,36 +10203,58 @@
     },
     {
       "component": "text",
-      "key": "effect-extractor|text|unsupported-type-fallback|Could not extract type \"{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"text-secondary\"; brand: \"text-brand\"; muted: \"text-muted-foreground\"; inherit: \"text-inherit\"; destructive: \"text-error\"; success: \"text-success\"; }; ... 4 more ...; weight: { ...; }; }\" at \"<repo>/packages/ui/src/text.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/text.ts:1:1]#1",
+      "key": "effect-extractor|text|unsupported-type-fallback|Could not extract type \"{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"text-secondary\"; brand: \"text-brand\"; muted: \"text-muted-foreground\"; inherit: \"text-inherit\"; destructive: \"text-error\"; }; align: { ...; }; }\" at \"<repo>/packages/ui/src/text.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/text.ts:1:1]#1",
       "effect": {
         "component": "text",
         "source": "effect-extractor",
         "code": "unsupported-type-fallback",
-        "message": "Could not extract type \"{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"text-secondary\"; brand: \"text-brand\"; muted: \"text-muted-foreground\"; inherit: \"text-inherit\"; destructive: \"text-error\"; success: \"text-success\"; }; ... 4 more ...; weight: { ...; }; }\" at \"<repo>/packages/ui/src/text.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/text.ts:1:1]"
+        "message": "Could not extract type \"{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"text-secondary\"; brand: \"text-brand\"; muted: \"text-muted-foreground\"; inherit: \"text-inherit\"; destructive: \"text-error\"; }; align: { ...; }; }\" at \"<repo>/packages/ui/src/text.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/text.ts:1:1]"
       },
-      "reason": "text: Effect `unsupported-type-fallback` emits `any` for the tv variants-map object `{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"tex…`."
+      "reason": "text: Effect `unsupported-type-fallback` emits `any` for the tv object `{ variant: { default: `."
     },
     {
       "component": "text",
-      "key": "effect-extractor|text|unsupported-type-fallback|Could not extract type \"{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"text-secondary\"; brand: \"text-brand\"; muted: \"text-muted-foreground\"; inherit: \"text-inherit\"; destructive: \"text-error\"; success: \"text-success\"; }; ... 4 more ...; weight: { ...; }; }\" at \"<repo>/packages/ui/src/text.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/text.ts:1:1]#2",
+      "key": "effect-extractor|text|unsupported-type-fallback|Could not extract type \"{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"text-secondary\"; brand: \"text-brand\"; muted: \"text-muted-foreground\"; inherit: \"text-inherit\"; destructive: \"text-error\"; }; align: { ...; }; }\" at \"<repo>/packages/ui/src/text.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/text.ts:1:1]#2",
       "effect": {
         "component": "text",
         "source": "effect-extractor",
         "code": "unsupported-type-fallback",
-        "message": "Could not extract type \"{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"text-secondary\"; brand: \"text-brand\"; muted: \"text-muted-foreground\"; inherit: \"text-inherit\"; destructive: \"text-error\"; success: \"text-success\"; }; ... 4 more ...; weight: { ...; }; }\" at \"<repo>/packages/ui/src/text.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/text.ts:1:1]"
+        "message": "Could not extract type \"{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"text-secondary\"; brand: \"text-brand\"; muted: \"text-muted-foreground\"; inherit: \"text-inherit\"; destructive: \"text-error\"; }; align: { ...; }; }\" at \"<repo>/packages/ui/src/text.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/text.ts:1:1]"
       },
-      "reason": "text: Effect `unsupported-type-fallback` emits `any` for the tv variants-map object `{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"tex…`."
+      "reason": "text: Effect `unsupported-type-fallback` emits `any` for the tv object `{ variant: { default: `."
     },
     {
       "component": "text",
-      "key": "effect-extractor|text|unsupported-type-fallback|Could not extract type \"{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"text-secondary\"; brand: \"text-brand\"; muted: \"text-muted-foreground\"; inherit: \"text-inherit\"; destructive: \"text-error\"; success: \"text-success\"; }; ... 4 more ...; weight: { ...; }; }\" at \"<repo>/packages/ui/src/text.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/text.ts:1:1]#3",
+      "key": "effect-extractor|text|unsupported-type-fallback|Could not extract type \"{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"text-secondary\"; brand: \"text-brand\"; muted: \"text-muted-foreground\"; inherit: \"text-inherit\"; destructive: \"text-error\"; }; align: { ...; }; }\" at \"<repo>/packages/ui/src/text.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/text.ts:1:1]#3",
       "effect": {
         "component": "text",
         "source": "effect-extractor",
         "code": "unsupported-type-fallback",
-        "message": "Could not extract type \"{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"text-secondary\"; brand: \"text-brand\"; muted: \"text-muted-foreground\"; inherit: \"text-inherit\"; destructive: \"text-error\"; success: \"text-success\"; }; ... 4 more ...; weight: { ...; }; }\" at \"<repo>/packages/ui/src/text.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/text.ts:1:1]"
+        "message": "Could not extract type \"{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"text-secondary\"; brand: \"text-brand\"; muted: \"text-muted-foreground\"; inherit: \"text-inherit\"; destructive: \"text-error\"; }; align: { ...; }; }\" at \"<repo>/packages/ui/src/text.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/text.ts:1:1]"
       },
-      "reason": "text: Effect `unsupported-type-fallback` emits `any` for the tv variants-map object `{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"tex…`."
+      "reason": "text: Effect `unsupported-type-fallback` emits `any` for the tv object `{ variant: { default: `."
+    },
+    {
+      "component": "text",
+      "key": "effect-extractor|text|unsupported-type-fallback|Could not extract type \"{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"text-secondary\"; brand: \"text-brand\"; muted: \"text-muted-foreground\"; inherit: \"text-inherit\"; destructive: \"text-error\"; }; align: { ...; }; }\" at \"<repo>/packages/ui/src/text.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/text.ts:1:1]#4",
+      "effect": {
+        "component": "text",
+        "source": "effect-extractor",
+        "code": "unsupported-type-fallback",
+        "message": "Could not extract type \"{ variant: { default: \"text-inherit\"; foreground: \"text-foreground\"; primary: \"text-primary\"; secondary: \"text-secondary\"; brand: \"text-brand\"; muted: \"text-muted-foreground\"; inherit: \"text-inherit\"; destructive: \"text-error\"; }; align: { ...; }; }\" at \"<repo>/packages/ui/src/text.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/text.ts:1:1]"
+      },
+      "reason": "text: Effect `unsupported-type-fallback` emits `any` for the tv object `{ variant: { default: `."
+    },
+    {
+      "component": "text",
+      "key": "effect-extractor|text|unsupported-type-fallback|Could not extract type \"{ variant: { success: \"text-success\"; }; size: { xs: \"text-xs *:text-xs **:text-xs\"; sm: \"text-sm *:text-sm **:text-sm\"; default: \"text-base *:text-base **:text-base\"; lg: \"text-lg *:text-lg **:text-lg\"; xl: \"text-xl *:text-xl **:text-xl\"; \"2xl\": \"text-2xl *:text-2xl **:text-2xl\"; }; leading: { ...; }; truncate: { ....\" at \"<repo>/packages/ui/src/text.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/text.ts:1:1]#1",
+      "effect": {
+        "component": "text",
+        "source": "effect-extractor",
+        "code": "unsupported-type-fallback",
+        "message": "Could not extract type \"{ variant: { success: \"text-success\"; }; size: { xs: \"text-xs *:text-xs **:text-xs\"; sm: \"text-sm *:text-sm **:text-sm\"; default: \"text-base *:text-base **:text-base\"; lg: \"text-lg *:text-lg **:text-lg\"; xl: \"text-xl *:text-xl **:text-xl\"; \"2xl\": \"text-2xl *:text-2xl **:text-2xl\"; }; leading: { ...; }; truncate: { ....\" at \"<repo>/packages/ui/src/text.ts:1:1\". The extractor used any. Review this API or add support for this type. [packages/ui/src/text.ts:1:1]"
+      },
+      "reason": "text: Effect `unsupported-type-fallback` emits `any` for the tv object `{ variant: { success: `."
     },
     {
       "component": "toast",

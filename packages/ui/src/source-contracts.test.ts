@@ -205,7 +205,9 @@ function expectRsc(relativePath: string, rsc: RscStatus): void {
 }
 
 function orientationLiteral(sourceText: string, key: "vertical" | "horizontal" | "responsive"): string {
-  const match = new RegExp(`${key}:\\s*"([^"]*)"`).exec(sourceText);
+  const match =
+    new RegExp(`${key}:\\s*\\{\\s*root:\\s*"([^"]*)"`).exec(sourceText) ??
+    new RegExp(`${key}:\\s*"([^"]*)"`).exec(sourceText);
   if (match?.[1] === undefined) {
     throw new Error(`expected a literal ${key} orientation string`);
   }
@@ -306,7 +308,7 @@ describe("field", () => {
   // derivation from the vertical and horizontal literals. That is a data
   // relationship, not a grammar oxlint can name without encoding the recipe.
   it("derives responsive orientation tokens from the vertical and horizontal literals", () => {
-    const source = readSrc("components/field/field.tsx");
+    const source = readSrc("components/field/field-variants.ts");
     const vertical = orientationLiteral(source, "vertical");
     const horizontal = orientationLiteral(source, "horizontal");
     const responsive = orientationLiteral(source, "responsive");

@@ -78,7 +78,7 @@ Flag availability is a separate filter, not an addition to that product list. Th
 
 ## 4 Variants
 
-No own recipe. Layout comes from package-private `FieldFrame` (`fieldFrameRootClass` on the root, derived from `fieldFrameVariants`; heading row, description and error from the frame defaults). Does not import `textFieldVariants`. Trigger/popup/item styling is inline; no size axis. _(Amended 2026-09-04 — ticket 06.)_
+No own recipe. Layout comes from package-private `FieldFrame` (`fieldFrameRootClass` on the root, derived from `fieldFrameVariants`; heading row, description and error from the frame defaults). Does not import `textFieldVariants`. Trigger/popup/item styling is inline; no size axis. _(Amended 2026-09-04 — ticket 06, 2026-09-04: recipe-derived FieldFrame classes.)_
 
 ## 5 Consumed tokens
 

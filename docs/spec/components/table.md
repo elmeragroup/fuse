@@ -83,7 +83,7 @@ type VerticalTableItem = {
 
 ## 4 Variants
 
-- `Table.*`: no tv recipe, no variant axes — single-look class strings whose in-frame branch is selector-driven (§6), not prop-driven.
+- `Table.*`: no public tv recipe, no variant axes — single-look class strings whose in-frame branch is selector-driven (§6), not prop-driven. `TABLE_CELL_CLASSES` is the `cell` slot of a package-private `tableCellVariants` recipe, shared with `VerticalTable.Key`. _(Amended 2026-09-04.)_
 - `VerticalTable.Root` `variant` axis: `"default" | "non-bordered-compact"` (default `"default"`). Not a tv recipe — implemented as a `data-variant` attribute consumed by descendant `in-data-[variant=non-bordered-compact]:` selectors: the bordered wrapper drops border/background, rows drop borders, `Key` loses its muted background and horizontal padding (`px-0 py-1`), `Value` tightens to `p-1`, skeletons stretch to `h-lh`. Module-private styling; no recipe is exported.
 
 ## 5 Consumed tokens

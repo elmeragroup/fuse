@@ -123,7 +123,7 @@ describe("size-limit harness", () => {
       ceilingFromMeasured(2442)
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "avatar")?.ceilingGzip).toBe(
-      ceilingFromMeasured(12467)
+      ceilingFromMeasured(24668)
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "alert-dialog")?.ceilingGzip).toBe(
       ceilingFromMeasured(47578)
@@ -233,7 +233,7 @@ describe("size-limit harness", () => {
       ceilingFromMeasured(25625)
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "table")?.ceilingGzip).toBe(
-      ceilingFromMeasured(11814)
+      ceilingFromMeasured(24155)
     );
     expect(JS_ENTRY_BUDGETS.find((budget) => budget.name === "textarea-field")?.ceilingGzip).toBe(
       ceilingFromMeasured(30976)

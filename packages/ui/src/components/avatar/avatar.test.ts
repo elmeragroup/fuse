@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import { cn } from "../../styles/cn";
-
-const ROOT_CLASSES =
-  "inline-flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted align-middle text-sm font-medium text-muted-foreground select-none";
+import { avatarVariants, ROOT_CLASSES } from "./avatar-variants";
 
 describe("avatar className merge", () => {
+  it("resolves ROOT_CLASSES from the recipe", () => {
+    expect(ROOT_CLASSES).toBe(avatarVariants().root());
+  });
+
   it("lets size-10 beat the default size-8 through cn", () => {
     const merged = cn(ROOT_CLASSES, "size-10").split(/\s+/);
     expect(merged).toContain("size-10");

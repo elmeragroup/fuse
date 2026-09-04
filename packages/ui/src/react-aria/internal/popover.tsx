@@ -23,6 +23,10 @@ const popoverVariants = tv({
     arrow: "group my-0!",
     arrowSvg:
       "block fill-popover stroke-border stroke-1 group-placement-left:-rotate-90 group-placement-right:rotate-90 group-placement-bottom:rotate-180",
+    entering:
+      "animate-in fade-in-0 placement-left:slide-in-from-right-2 placement-right:slide-in-from-left-2 placement-top:slide-in-from-bottom-2 placement-bottom:slide-in-from-top-2",
+    exiting:
+      "animate-out fade-out-0 placement-left:slide-out-to-right-2 placement-right:slide-out-to-left-2 placement-top:slide-out-to-bottom-2 placement-bottom:slide-out-to-top-2",
   },
 });
 
@@ -31,10 +35,8 @@ const popoverSlots = popoverVariants();
 const popoverBaseClass = popoverSlots.base();
 const popoverArrowClass = popoverSlots.arrow();
 const popoverArrowSvgClass = popoverSlots.arrowSvg();
-const popoverEnteringClass =
-  "animate-in fade-in-0 placement-left:slide-in-from-right-2 placement-right:slide-in-from-left-2 placement-top:slide-in-from-bottom-2 placement-bottom:slide-in-from-top-2";
-const popoverExitingClass =
-  "animate-out fade-out-0 placement-left:slide-out-to-right-2 placement-right:slide-out-to-left-2 placement-top:slide-out-to-bottom-2 placement-bottom:slide-out-to-top-2";
+const popoverEnteringClass = popoverSlots.entering();
+const popoverExitingClass = popoverSlots.exiting();
 
 export type PopoverProps = Omit<AriaPopoverProps, "children" | "UNSTABLE_portalContainer"> & {
   showArrow?: boolean;

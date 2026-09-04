@@ -122,9 +122,9 @@ It does **not** ban `p-*` / `h-*` / `gap-*` across the package. Type-scale axes 
 
 Library source may not value-import `LocalizedStringDictionary` from `@internationalized/string`. Type-only imports stay legal (`useLocalizedStrings` takes the dictionary as a parameter). The factory `packages/ui/src/intl/create-string-dictionary.ts` is the per-file allow. _(Added 2026-09-04 — [ADR 0008](../adr/0008-tests-assert-behaviour-not-source-spelling.md) amendment.)_
 
-### 5.8 `elmera/no-raw-class-map` — `warn`
+### 5.8 `elmera/no-raw-class-map` — `error`
 
-Class maps are `tv` recipes. This rule warns on object-literal variable initializers (with or without `as const` / `satisfies`) whose string values look like Tailwind classes, and on bare string or template class constants, when those initializers are not `tv()` or `cn()` arguments and are not derived from a recipe call. Severity is warning; CI is deny-warnings, so a hit still blocks. Promote to error once library and docs source are clean. Scoped to `packages/ui/src/**` and `apps/docs/src/**` (not playground or static-theme). Test files, `*.test-d.tsx`, intl dictionaries, and generated paths are exempt. _(Added 2026-09-04.)_
+Class maps are `tv` recipes. This rule errors on object-literal variable initializers (with or without `as const` / `satisfies`) whose string values look like Tailwind classes, and on bare string or template class constants, when those initializers are not `tv()` or `cn()` arguments and are not derived from a recipe call. Severity is error. Scoped to `packages/ui/src/**` and `apps/docs/src/**` (not playground or static-theme). Test files, `*.test-d.tsx`, intl dictionaries, and generated paths are exempt. _(Added 2026-09-04; promoted to error 2026-09-04.)_
 
 ## 6 Scaffolding (plop, v1)
 

@@ -57,7 +57,7 @@ With `filter="numeric"`, rejected keystrokes never reach `onChange` and never up
 
 ## 4 Variants
 
-Recipe: `textFieldVariants` (tv, slots) — **public export**. Layout slots `base` / `labelContainer` / `container` / `description` compose the package-private `fieldFrameVariants` recipe via slot reads; PhoneNumberField no longer borrows this recipe (phone-number-field.md §4, 2026-09-04). _(Amended 2026-09-04 — ticket 06.)_
+Recipe: `textFieldVariants` (tv, slots) — **public export**. Layout slots `base` / `labelContainer` / `container` / `description` compose the package-private `fieldFrameVariants` recipe via slot reads; PhoneNumberField no longer borrows this recipe (phone-number-field.md §4, 2026-09-04). _(Amended 2026-09-04 — ticket 06, 2026-09-04: recipe-derived FieldFrame slots.)_
 
 Slots: `base`, `fieldGroup`, `input`, `labelContainer`, `label`, `container`, `description`, `iconContainer`. The ref's `textArea` slot (`min-h-16`) is dead and removed (§8).
 

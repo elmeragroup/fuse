@@ -37,7 +37,7 @@ All parts: `ComponentProps<typeof AvatarPrimitive.{Part}>` — full primitive pa
 
 ## 4 Variants
 
-None — no tv recipe (styling is inline class strings). Size is a `className` concern (`size-8` default; consumers pass `size-10` etc.). If a size axis is ever needed it becomes a private micro-recipe, not public.
+Recipe: **`avatarVariants`** — **private** (not on `@elmeragroup/ui/avatar`). No axes; `Root` classes are the `root` slot, resolved once as `ROOT_CLASSES`. Size stays a `className` concern (`size-8` default; consumers pass `size-10` etc.). If a size axis is ever needed it lands on this recipe, still not public. Image and Fallback stay inline `cn()` strings. _(Amended 2026-09-04.)_
 
 ## 5 Consumed tokens
 

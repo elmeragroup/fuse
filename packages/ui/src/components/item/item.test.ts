@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { focusRing } from "../../styles/utils";
-import { itemVariants } from "./item-variants";
+import { ITEM_TITLE_CLASSES, itemTitleVariants, itemVariants } from "./item-variants";
 
 const focusSelf = focusRing({ target: "self" }).root();
 
@@ -26,5 +26,11 @@ describe("itemVariants", () => {
       expect(classes).toContain(token);
     }
     expect(classes).not.toContain("dark:");
+  });
+});
+
+describe("ITEM_TITLE_CLASSES", () => {
+  it("resolves from the title recipe", () => {
+    expect(ITEM_TITLE_CLASSES).toBe(itemTitleVariants().title());
   });
 });
