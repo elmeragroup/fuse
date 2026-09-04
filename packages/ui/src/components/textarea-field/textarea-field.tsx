@@ -7,8 +7,6 @@ import { Field } from "../field/field";
 import { FieldFrame } from "../field/field-frame";
 import { Textarea } from "../textarea/textarea";
 
-const TEXTAREA_FIELD_FRAME_CLASS_NAMES = { labelRow: "gap-2" } as const;
-
 export type TextareaFieldProps = {
   /** Visible label, rendered as `Field.Label`. */
   label?: string;
@@ -73,7 +71,7 @@ export function TextareaField({
       invalid={isInvalid}
       disabled={isDisabled}
       label={label}
-      classNames={TEXTAREA_FIELD_FRAME_CLASS_NAMES}
+      classNames={{ labelRow: "gap-2" }}
       status={
         maxLength === undefined ? undefined : (
           <span className="text-xs text-muted-foreground">

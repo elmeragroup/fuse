@@ -11,12 +11,8 @@ import { isTextNode } from "../../internal/is-text-node";
 import { cn } from "../../styles/cn";
 import { selfFocusRingClass } from "../../styles/utils";
 import { FieldFrame } from "../field/field-frame";
-import {
-  SelectionGroupLayout,
-  selectionGroupOrientationClass,
-  SelectionItem,
-  SelectionItemGroup,
-} from "../selection-item/selection-item";
+import { SelectionGroupLayout, SelectionItem, SelectionItemGroup } from "../selection-item/selection-item";
+import { selectionGroupOrientationVariants } from "../selection-item/selection-item-variants";
 
 /**
  * Unlabeled 16px checkbox over the base-ui primitive (checkbox.md §2/§7). Client —
@@ -60,7 +56,7 @@ export type CheckboxGroupProps = {
    * Layout of the group primitive, and of CheckboxItemGroup's stacked-card list.
    * Vertical: primitive `flex-col gap-2`; item list connected `flex-col gap-0`.
    * Horizontal: primitive `flex-wrap gap-4`; item list `flex-row flex-wrap gap-4`
-   * with individually rounded cards. Not a recipe axis.
+   * with individually rounded cards. Maps through `selectionGroupOrientationVariants`.
    */
   orientation?: "vertical" | "horizontal";
   /** Controlled selected values. */
@@ -130,7 +126,7 @@ export function CheckboxGroup({
         onValueChange={onChange}
         allValues={allValues}
         disabled={isDisabled}
-        className={cn(selectionGroupOrientationClass.group[orientation], className)}>
+        className={cn(selectionGroupOrientationVariants({ orientation }).group(), className)}>
         <SelectionGroupLayout orientation={orientation}>{children}</SelectionGroupLayout>
       </CheckboxGroupPrimitive>
     </FieldFrame>

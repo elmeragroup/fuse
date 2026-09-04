@@ -55,6 +55,7 @@ test("the entry exports only the spec names", () => {
   expectTypeOf(RadioGroupModule).not.toHaveProperty("RadioItemDescription");
   expectTypeOf(RadioGroupModule).not.toHaveProperty("RadioItemSubSection");
   expectTypeOf(RadioGroupModule).not.toHaveProperty("radioGroupVariants");
+  expectTypeOf(RadioGroupModule).not.toHaveProperty("radioIconButtonVariants");
   expectTypeOf(RadioGroupModule).not.toHaveProperty("iconButtonSizes");
   expectTypeOf(RadioGroupModule).not.toHaveProperty("SelectionItemGroup");
   expectTypeOf(RadioGroupModule).not.toHaveProperty("RadioItemGroupContext");

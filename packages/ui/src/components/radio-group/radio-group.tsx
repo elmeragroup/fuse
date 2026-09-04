@@ -5,18 +5,16 @@ import type { ComponentProps, ReactElement, ReactNode } from "react";
 import { Field as FieldPrimitive } from "@base-ui/react/field";
 import { Radio as RadioPrimitive } from "@base-ui/react/radio";
 import { RadioGroup as RadioGroupPrimitive } from "@base-ui/react/radio-group";
+import type { VariantProps } from "tailwind-variants";
 
 import { SpinnerGap } from "../../icons/generated/spinner-gap";
 import { cn } from "../../styles/cn";
 import { selfFocusRingClass } from "../../styles/utils";
 import { Field } from "../field/field";
 import { FieldFrame } from "../field/field-frame";
-import {
-  SelectionGroupLayout,
-  selectionGroupOrientationClass,
-  SelectionItem,
-  SelectionItemGroup,
-} from "../selection-item/selection-item";
+import { SelectionGroupLayout, SelectionItem, SelectionItemGroup } from "../selection-item/selection-item";
+import { selectionGroupOrientationVariants } from "../selection-item/selection-item-variants";
+import { radioIconButtonVariants } from "./radio-group-variants";
 
 /**
  * Unlabeled 16px radio over the base-ui primitive (radio-group.md §2/§7). Client —
@@ -67,7 +65,8 @@ export type RadioGroupProps = {
    * Layout of the group primitive, and of RadioItemGroup's stacked-card list.
    * Vertical: primitive `flex-col gap-2`; item list connected `flex-col gap-0`.
    * Horizontal: primitive `flex-wrap gap-4`; item list `flex-row flex-wrap gap-4`
-   * with individually rounded cards. Not a recipe axis. Default `"vertical"`.
+   * with individually rounded cards. Maps through `selectionGroupOrientationVariants`.
+   * Default `"vertical"`.
    */
   orientation?: "vertical" | "horizontal";
   /**
@@ -148,7 +147,7 @@ export function RadioGroup({
         required={isRequired}
         name={name}
         aria-busy={isPending ? true : undefined}
-        className={cn(selectionGroupOrientationClass.group[orientation], className)}>
+        className={cn(selectionGroupOrientationVariants({ orientation }).group(), className)}>
         <SelectionGroupLayout orientation={orientation}>{children}</SelectionGroupLayout>
       </RadioGroupPrimitive>
     </FieldFrame>
@@ -245,36 +244,29 @@ export function RadioItem({
 export type RadioIconButtonProps = Omit<
   ComponentProps<typeof RadioPrimitive.Root>,
   "value" | "disabled" | "className" | "children" | "aria-label"
-> & {
-  /** Member value in the group. */
-  value: string;
-  /** Forwards `disabled` to the radio root. */
-  isDisabled?: boolean;
-  /**
-   * Icon-button size mapped onto the control-height rungs like Button: `icon-xxs`
-   * and `icon-xs` share `--control-h-xs` (svg-3 / svg-3.5), `icon-sm` `--control-h-sm`
-   * (svg-4), `icon` `--control-h-md` (svg-4), `icon-lg` `--control-h-lg` (svg-5).
-   * Svg sizes apply only to `svg:not([class*='size-'])`. Default `"icon"`.
-   */
-  size?: "icon" | "icon-xxs" | "icon-xs" | "icon-sm" | "icon-lg";
-  /** Extra classes, merged via `cn`. */
-  className?: string;
-  /** The icon. */
-  children?: ReactNode;
-  /**
-   * Required accessible name. `RadioIconButton` is mechanically icon-only
-   * (accessibility.md §3).
-   */
-  "aria-label": string;
-};
-
-const iconButtonSizes = {
-  "icon-xxs": "size-(--control-h-xs) [&_svg:not([class*='size-'])]:size-3",
-  "icon-xs": "size-(--control-h-xs) [&_svg:not([class*='size-'])]:size-3.5",
-  "icon-sm": "size-(--control-h-sm) [&_svg:not([class*='size-'])]:size-4",
-  icon: "size-(--control-h-md) [&_svg:not([class*='size-'])]:size-4",
-  "icon-lg": "size-(--control-h-lg) [&_svg:not([class*='size-'])]:size-5",
-} as const satisfies Record<NonNullable<RadioIconButtonProps["size"]>, string>;
+> &
+  VariantProps<typeof radioIconButtonVariants> & {
+    /** Member value in the group. */
+    value: string;
+    /** Forwards `disabled` to the radio root. */
+    isDisabled?: boolean;
+    /**
+     * Icon-button size mapped onto the control-height rungs like Button: `icon-xxs`
+     * and `icon-xs` share `--control-h-xs` (svg-3 / svg-3.5), `icon-sm` `--control-h-sm`
+     * (svg-4), `icon` `--control-h-md` (svg-4), `icon-lg` `--control-h-lg` (svg-5).
+     * Svg sizes apply only to `svg:not([class*='size-'])`. Default `"icon"`.
+     */
+    size?: NonNullable<VariantProps<typeof radioIconButtonVariants>["size"]>;
+    /** Extra classes, merged via `cn`. */
+    className?: string;
+    /** The icon. */
+    children?: ReactNode;
+    /**
+     * Required accessible name. `RadioIconButton` is mechanically icon-only
+     * (accessibility.md §3).
+     */
+    "aria-label": string;
+  };
 
 /**
  * Icon-only segmented radio over the base-ui radio root (radio-group.md §2/§7).
@@ -293,13 +285,7 @@ export function RadioIconButton({
       data-slot="radio-icon-button"
       value={value}
       disabled={isDisabled}
-      className={cn(
-        // oxlint-disable-next-line elmera/no-local-focus-ring -- radio-group.md §7: native outline off; ring comes from the shared adapter
-        "ease-out inline-flex shrink-0 items-center justify-center rounded-lg border border-input bg-card text-foreground transition-[color,background-color,box-shadow,scale] duration-150 outline-none hover:bg-muted active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-50 data-invalid:border-error data-checked:border-primary data-checked:bg-muted",
-        iconButtonSizes[size],
-        selfFocusRingClass,
-        className
-      )}
+      className={cn(radioIconButtonVariants({ size }), selfFocusRingClass, className)}
       {...props}>
       {children}
     </RadioPrimitive.Root>
