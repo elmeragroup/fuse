@@ -32,18 +32,8 @@ const LOCAL_HELPER_PATTERNS = [
   { helper: "roleNamed", pattern: /function roleNamed\b/ },
 ] as const;
 
-/**
- * a–p copies tickets 47/48 delete without editing this list. Empty once those land.
- * Ticket 49 owns the planted-copy failure and equality-with-empty once the worklist is gone.
- */
-const KNOWN_LOCAL_HELPER_COPIES = [
-  "components/alert/alert.browser.test.tsx headingNamed",
-  "components/checkbox-card/checkbox-card.browser.test.tsx cssVarColor",
-  "components/checkbox/checkbox.browser.test.tsx cssVarColor",
-  "components/checkbox/checkbox.browser.test.tsx headingNamed",
-  "components/description-list/description-list.browser.test.tsx headingNamed",
-  "components/heading/heading.browser.test.tsx headingNamed",
-];
+/** Empty worklist: a local `function roleNamed` / `headingNamed` / `cssVarColor` fails. */
+const KNOWN_LOCAL_HELPER_COPIES: readonly string[] = [];
 
 /**
  * Directory names under `src/components/` for the a–d batch (ticket 47). 48/49 add
@@ -220,7 +210,7 @@ describe("themed browser-test harness", () => {
   });
 
   it("forbids a local copy of roleNamed / headingNamed / cssVarColor", () => {
-    expect(extrasNotAllowlisted(helperCopyFindings((file) => readFileSync(file, "utf8")))).toEqual([]);
+    expect(helperCopyFindings((file) => readFileSync(file, "utf8"))).toEqual([]);
   });
 
   it("fails a planted local function roleNamed", () => {
