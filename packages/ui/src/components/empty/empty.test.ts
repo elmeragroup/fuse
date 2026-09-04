@@ -105,5 +105,8 @@ describe("Empty server boundary", () => {
     expect(html).toContain('data-slot="empty-media"');
     expect(html).not.toContain('data-slot="empty-icon"');
     expect(html).toMatch(/<p[^>]*data-slot="empty-description"/);
+    expect(html).toContain("[&amp;&gt;a]:underline");
+    expect(html).toContain("[&amp;&gt;a]:underline-offset-4");
+    expect(html).toContain("[&amp;&gt;a:hover]:text-primary");
   });
 });

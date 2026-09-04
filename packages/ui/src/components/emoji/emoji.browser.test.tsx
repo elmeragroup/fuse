@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { renderThemed } from "../../../test/themed-browser-render";
+import { px, renderThemed } from "../../../test/themed-browser-render";
 import { Emoji } from "./emoji";
 
 const FACES = [
@@ -13,6 +13,7 @@ const FACES = [
   ["PartyingFace", Emoji.PartyingFace],
 ] as const;
 
+/** spec §9 slot audit: each face emits `data-slot="emoji"` on the svg. */
 function slotSvg(): SVGElement {
   const element = document.querySelector('[data-slot="emoji"]');
   if (!(element instanceof SVGElement)) {
@@ -68,6 +69,7 @@ describe("Emoji", () => {
 
   it("lands className on the svg", () => {
     renderThemed(<Emoji.SlightlyFrowningFace className="size-5" />);
-    expect([...slotSvg().classList]).toContain("size-5");
+    expect(px(getComputedStyle(slotSvg()).width)).toBe(20);
+    expect(px(getComputedStyle(slotSvg()).height)).toBe(20);
   });
 });

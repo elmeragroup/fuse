@@ -1,6 +1,10 @@
+import { createElement } from "react";
+
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { focusRing } from "../../styles/utils";
+import { Item } from "./item";
 import { ITEM_TITLE_CLASSES } from "./item-title-classes";
 import { itemVariants } from "./item-variants";
 
@@ -35,5 +39,21 @@ describe("ITEM_TITLE_CLASSES", () => {
     expect(ITEM_TITLE_CLASSES).toContain("font-medium");
     expect(ITEM_TITLE_CLASSES).toContain("line-clamp-1");
     expect(ITEM_TITLE_CLASSES).toContain("underline-offset-4");
+  });
+});
+
+describe("Item.Media and Item.Footer class contracts", () => {
+  it("emits image variant without a dark class", () => {
+    const html = renderToStaticMarkup(createElement(Item.Media, { variant: "image" }, "Portrait"));
+    expect(html).toContain('data-variant="image"');
+    expect(html).not.toContain("dark:");
+  });
+
+  it("hides and reveals footer mode with the documented class tokens", () => {
+    const hidden = renderToStaticMarkup(createElement(Item.Footer, { mode: "hidden" }, "Hidden"));
+    const visible = renderToStaticMarkup(createElement(Item.Footer, { mode: "visible" }, "Visible"));
+    expect(hidden).toContain("pointer-events-none");
+    expect(hidden).toContain("0fr");
+    expect(visible).toContain("starting:");
   });
 });

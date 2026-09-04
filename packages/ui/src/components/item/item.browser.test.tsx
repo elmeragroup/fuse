@@ -3,8 +3,27 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
-import { renderThemed } from "../../../test/themed-browser-render";
+import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { Item } from "./item";
+
+function textNamed(name: string): HTMLElement {
+  const element = page.getByText(name, { exact: true }).element();
+  if (!(element instanceof HTMLElement)) {
+    throw new Error(`expected text ${name}`);
+  }
+  return element;
+}
+
+function footerHost(name: string): HTMLElement {
+  let node: HTMLElement | null = textNamed(name);
+  while (node) {
+    if (node.hasAttribute("data-mode")) {
+      return node;
+    }
+    node = node.parentElement;
+  }
+  throw new Error(`expected a footer around ${name}`);
+}
 
 describe("Item", () => {
   it("keeps data-slot, data-variant, and data-size on a link render", () => {
@@ -13,7 +32,7 @@ describe("Item", () => {
         <Item.Title>Order</Item.Title>
       </Item.Root>
     );
-    const link = page.getByRole("link", { name: "Order", exact: true }).element();
+    const link = roleNamed("link", "Order");
     expect(link.tagName).toBe("A");
     expect(link.getAttribute("data-slot")).toBe("item");
     expect(link.getAttribute("data-variant")).toBe("outline");
@@ -26,7 +45,7 @@ describe("Item", () => {
         <Item.Title>Activate</Item.Title>
       </Item.Root>
     );
-    const button = page.getByRole("button", { name: "Activate", exact: true }).element();
+    const button = roleNamed("button", "Activate");
     expect(button.getAttribute("data-slot")).toBe("item");
     expect(button.getAttribute("data-variant")).toBe("default");
     expect(button.getAttribute("data-size")).toBe("default");
@@ -49,34 +68,35 @@ describe("Item", () => {
         </Item.Group>
       </>
     );
-    const loose = page.getByText("Loose", { exact: true }).element().closest("[data-slot=item]");
-    expect(loose?.getAttribute("role")).toBeNull();
-    expect(page.getByRole("list").element().getAttribute("data-slot")).toBe("item-group");
-    const member = page.getByText("Member", { exact: true }).element().closest("[data-slot=item]");
+    expect(textNamed("Loose").parentElement?.getAttribute("role")).toBeNull();
+    const list = page.getByRole("list").element();
+    if (!(list instanceof HTMLElement)) {
+      throw new Error("expected an item group list");
+    }
+    expect(list.getAttribute("data-slot")).toBe("item-group");
+    const member = textNamed("Member").parentElement;
     expect(member?.getAttribute("role")).toBe("listitem");
     expect(member?.getAttribute("data-slot")).toBe("item");
-    const override = page.getByText("Override", { exact: true }).element().closest("[data-slot=item]");
-    expect(override?.getAttribute("role")).toBe("presentation");
+    expect(textNamed("Override").parentElement?.getAttribute("role")).toBe("presentation");
   });
 
   it("emits media variant and footer mode without dark classes", () => {
     renderThemed(
       <Item.Root>
-        <Item.Media variant="image" />
+        <Item.Media variant="image">Portrait</Item.Media>
         <Item.Footer mode="hidden">Hidden</Item.Footer>
         <Item.Footer mode="visible">Visible</Item.Footer>
       </Item.Root>
     );
-    const media = document.querySelector("[data-slot=item-media]");
-    expect(media?.getAttribute("data-variant")).toBe("image");
-    expect(media?.className).not.toContain("dark:");
-    const hidden = page.getByText("Hidden", { exact: true }).element().closest("[data-slot=item-footer]");
-    const visible = page.getByText("Visible", { exact: true }).element().closest("[data-slot=item-footer]");
-    expect(hidden?.getAttribute("data-mode")).toBe("hidden");
-    expect(hidden?.className.split(/\s+/)).toContain("pointer-events-none");
-    expect(hidden?.className).toContain("0fr");
-    expect(visible?.getAttribute("data-mode")).toBe("visible");
-    expect(visible?.className).toContain("starting:");
+    const media = textNamed("Portrait");
+    expect(media.getAttribute("data-variant")).toBe("image");
+    const hidden = footerHost("Hidden");
+    const visible = footerHost("Visible");
+    expect(hidden.getAttribute("data-mode")).toBe("hidden");
+    expect(visible.getAttribute("data-mode")).toBe("visible");
+    expect(getComputedStyle(hidden).pointerEvents).toBe("none");
+    expect(getComputedStyle(hidden).opacity).toBe("0");
+    expect(getComputedStyle(visible).pointerEvents).not.toBe("none");
   });
 
   it("makes a link-rendered item keyboard-activatable with the shared focus ring", async () => {
@@ -88,11 +108,8 @@ describe("Item", () => {
         </Item.Root>
       </>
     );
-    const previous = page.getByRole("link", { name: "Before", exact: true }).element();
-    const link = page.getByRole("link", { name: "Order", exact: true }).element();
-    if (!(previous instanceof HTMLElement) || !(link instanceof HTMLElement)) {
-      throw new Error("expected links");
-    }
+    const previous = roleNamed("link", "Before");
+    const link = roleNamed("link", "Order");
     const initialHash = window.location.hash;
     const setHash = (hash: string) => {
       history.replaceState(null, "", `${window.location.pathname}${window.location.search}${hash}`);
@@ -127,13 +144,9 @@ describe("Item", () => {
       </>
     );
 
-    const previous = page.getByRole("button", { name: "Before", exact: true }).element();
-    if (!(previous instanceof HTMLElement)) {
-      throw new Error("expected the preceding button");
-    }
-    previous.focus();
+    roleNamed("button", "Before").focus();
     await userEvent.keyboard("{Tab}");
-    const item = page.getByRole("button", { name: "Activate", exact: true }).element();
+    const item = roleNamed("button", "Activate");
     expect(document.activeElement, "the item must be reachable by Tab").toBe(item);
 
     await userEvent.keyboard("{Enter}");

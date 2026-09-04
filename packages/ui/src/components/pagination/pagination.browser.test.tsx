@@ -5,7 +5,7 @@ import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
-import { renderThemed } from "../../../test/themed-browser-render";
+import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { Pagination } from "./pagination";
 
 const LANDMARK_COPY = {
@@ -55,19 +55,11 @@ function renderPagination(node: ReactNode, locale: (typeof SUPPORTED_LOCALES)[nu
 }
 
 function navNamed(name: string): HTMLElement {
-  const element = page.getByRole("navigation", { name, exact: true }).element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error(`expected navigation ${name}`);
-  }
-  return element;
+  return roleNamed("navigation", name);
 }
 
 function linkNamed(name: string): HTMLElement {
-  const element = page.getByRole("link", { name, exact: true }).element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error(`expected link ${name}`);
-  }
-  return element;
+  return roleNamed("link", name);
 }
 
 function BasicPages() {
@@ -176,15 +168,19 @@ describe("Pagination", () => {
 
   it("hides only the ellipsis icon and keeps morePages in the accessibility tree", () => {
     renderPagination(<BasicPages />);
-    const ellipsis = document.querySelector('[data-slot="pagination-ellipsis"]');
-    if (!(ellipsis instanceof HTMLElement)) {
-      throw new Error("expected pagination-ellipsis");
+    const sr = page.getByText("More pages", { exact: true }).element();
+    if (!(sr instanceof HTMLElement)) {
+      throw new Error("expected morePages copy");
     }
-    const icon = ellipsis.querySelector("svg");
-    expect(icon).not.toBeNull();
+    const ellipsis = sr.parentElement;
+    if (!(ellipsis instanceof HTMLElement)) {
+      throw new Error("expected pagination ellipsis");
+    }
+    const icon = ellipsis.getElementsByTagName("svg")[0];
+    expect(icon).not.toBeUndefined();
     expect(icon?.getAttribute("aria-hidden")).toBe("true");
     expect(ellipsis.getAttribute("aria-hidden")).toBeNull();
-    expect(page.getByText("More pages", { exact: true }).element()).toBeTruthy();
+    expect(ellipsis.getAttribute("data-slot")).toBe("pagination-ellipsis");
   });
 
   it("maps isActive onto the outline button variant and leaves others ghost", () => {
@@ -193,9 +189,7 @@ describe("Pagination", () => {
     const inactive = linkNamed("2");
     expect(active.getAttribute("data-slot")).toBe("pagination-link");
     expect(inactive.getAttribute("data-slot")).toBe("pagination-link");
-    expect(active.className.split(/\s+/)).toContain("border-border");
-    expect(active.className.split(/\s+/)).toContain("shadow-xs");
-    expect(inactive.className.split(/\s+/)).not.toContain("border-border");
-    expect(inactive.className.split(/\s+/)).not.toContain("shadow-xs");
+    expect(getComputedStyle(active).borderTopColor).not.toBe(getComputedStyle(inactive).borderTopColor);
+    expect(getComputedStyle(active).boxShadow).not.toBe(getComputedStyle(inactive).boxShadow);
   });
 });

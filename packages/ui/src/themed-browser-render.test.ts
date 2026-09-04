@@ -160,4 +160,55 @@ describe("themed browser-test harness", () => {
     expect(files.length).toBeGreaterThan(0);
     expect(unsanctionedSlotLocators(files)).toEqual([]);
   });
+
+  it("locates emoji…popover-info-button browser suites by role, not unsanctioned data-slot/querySelector", () => {
+    const epDirs = new Set([
+      "emoji",
+      "empty",
+      "field",
+      "frame",
+      "heading",
+      "input",
+      "input-group",
+      "item",
+      "loader",
+      "meter",
+      "number-field",
+      "pagination",
+      "phone-number-field",
+      "popover",
+      "popover-info-button",
+    ]);
+    const slotAuditDirs = new Set(["emoji", "frame", "meter", "pagination"]);
+    const locator = /\.querySelector(All)?\s*\(|\.closest\(\s*["'`][^"'`]*data-slot|dataset\.slot\b/;
+
+    const files = suiteRoots
+      .flatMap((root) => walk(root))
+      .filter((file) => {
+        const path = relative(sourceRoot, file);
+        const dir = path.split("/")[1];
+        return path.startsWith("components/") && dir !== undefined && epDirs.has(dir);
+      });
+    expect(files.length).toBeGreaterThan(0);
+
+    const unsanctioned: string[] = [];
+    for (const file of files) {
+      const path = relative(sourceRoot, file);
+      const dir = path.split("/")[1] ?? "";
+      const lines = readFileSync(file, "utf8").split("\n");
+      for (const [index, line] of lines.entries()) {
+        if (!locator.test(line) || /^\s*(\/\/|\*)/.test(line)) {
+          continue;
+        }
+        const cited = lines
+          .slice(Math.max(0, index - 16), index + 1)
+          .some((candidate) => /§9/.test(candidate) && /(\/\/|\*|\/\*)/.test(candidate));
+        if (slotAuditDirs.has(dir) && cited) {
+          continue;
+        }
+        unsanctioned.push(`${path}:${index + 1}`);
+      }
+    }
+    expect(unsanctioned).toEqual([]);
+  });
 });

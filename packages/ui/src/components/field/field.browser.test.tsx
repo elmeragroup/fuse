@@ -2,33 +2,24 @@ import { describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { renderThemed, textboxNamed } from "../../../test/themed-browser-render";
+import "../../../dist/themes.css";
+import { cssVarColor, renderThemed, roleNamed, textboxNamed } from "../../../test/themed-browser-render";
 import { Field } from "./field";
 
 function fieldRootFrom(name: string): HTMLElement {
-  const root = textboxNamed(name).closest("[data-slot=field]");
+  const root = textboxNamed(name).closest("[data-orientation]");
   if (!(root instanceof HTMLElement)) {
     throw new Error(`expected field root around ${name}`);
   }
   return root;
 }
 
-function tokenColor(host: HTMLElement, utility: string): string {
-  const probe = document.createElement("span");
-  probe.className = utility;
-  host.append(probe);
-  const color = getComputedStyle(probe).color;
-  probe.remove();
-  return color;
-}
-
-function tokenOpacity(host: HTMLElement, utility: string): string {
-  const probe = document.createElement("span");
-  probe.className = utility;
-  host.append(probe);
-  const opacity = getComputedStyle(probe).opacity;
-  probe.remove();
-  return opacity;
+function textNamed(name: string): HTMLElement {
+  const element = page.getByText(name, { exact: true }).element();
+  if (!(element instanceof HTMLElement)) {
+    throw new Error(`expected text ${name}`);
+  }
+  return element;
 }
 
 describe("Field", () => {
@@ -79,7 +70,7 @@ describe("Field", () => {
     expect(textboxNamed("Email").getAttribute("aria-invalid")).toBe("true");
     const root = fieldRootFrom("Email");
     expect(root.getAttribute("data-invalid")).toBe("");
-    expect(getComputedStyle(root).color).toBe(tokenColor(root, "text-error"));
+    expect(getComputedStyle(root).color).toBe(cssVarColor(root, "--error"));
 
     rerender(
       <Field.Root invalid>
@@ -104,18 +95,14 @@ describe("Field", () => {
     expect(textboxNamed("Email")).toHaveProperty("disabled", true);
     const root = fieldRootFrom("Email");
     expect(root.getAttribute("data-disabled")).toBe("");
-    const label = page.getByText("Email", { exact: true }).element();
-    const title = page.getByText("Account", { exact: true }).element();
-    if (!(label instanceof HTMLElement) || !(title instanceof HTMLElement)) {
-      throw new Error("expected label and title");
-    }
+    const label = textNamed("Email");
+    const title = textNamed("Account");
     expect(label.getAttribute("data-slot")).toBe("field-label");
     expect(title.getAttribute("data-slot")).toBe("field-title");
     expect(label.hasAttribute("data-field-heading")).toBe(true);
     expect(title.hasAttribute("data-field-heading")).toBe(true);
-    const dimmed = tokenOpacity(root, "opacity-50");
-    expect(getComputedStyle(label).opacity).toBe(dimmed);
-    expect(getComputedStyle(title).opacity).toBe(dimmed);
+    expect(getComputedStyle(label).opacity).toBe("0.5");
+    expect(getComputedStyle(title).opacity).toBe("0.5");
   });
 
   it("reflects orientation and legend variant as data attributes", () => {
@@ -134,24 +121,27 @@ describe("Field", () => {
         </Field.Set>
       </Field.Group>
     );
-    const name = textboxNamed("Name").closest("[data-slot=field]");
-    const city = textboxNamed("City").closest("[data-slot=field]");
-    expect(name?.getAttribute("data-orientation")).toBe("horizontal");
-    expect(city?.getAttribute("data-orientation")).toBe("responsive");
-    expect(page.getByText("Options", { exact: true }).element().getAttribute("data-variant")).toBe("label");
+    expect(fieldRootFrom("Name").getAttribute("data-orientation")).toBe("horizontal");
+    expect(fieldRootFrom("City").getAttribute("data-orientation")).toBe("responsive");
+    expect(textNamed("Options").getAttribute("data-variant")).toBe("label");
   });
 
   it("stamps data-content on Separator based on children", () => {
     renderThemed(
       <>
-        <Field.Separator />
-        <Field.Separator>Or</Field.Separator>
+        <section aria-label="Blank separator">
+          <Field.Separator />
+        </section>
+        <section aria-label="Labeled separator">
+          <Field.Separator>Or</Field.Separator>
+        </section>
       </>
     );
-    const separators = [...document.querySelectorAll("[data-slot=field-separator]")];
-    expect(separators).toHaveLength(2);
-    expect(separators[0]?.getAttribute("data-content")).toBe("false");
-    expect(separators[1]?.getAttribute("data-content")).toBe("true");
+    const blank = roleNamed("region", "Blank separator").firstElementChild;
+    const labeled = roleNamed("region", "Labeled separator").firstElementChild;
+    expect(blank?.getAttribute("data-content")).toBe("false");
+    expect(labeled?.getAttribute("data-content")).toBe("true");
+    expect(textNamed("Or").tagName).toBe("SPAN");
   });
 
   it("focuses the control when the label is clicked and Tab reaches it", async () => {
@@ -167,11 +157,7 @@ describe("Field", () => {
     await userEvent.click(page.getByText("Email", { exact: true }));
     expect(document.activeElement).toBe(textboxNamed("Email"));
 
-    const before = page.getByRole("button", { name: "Before", exact: true }).element();
-    if (!(before instanceof HTMLElement)) {
-      throw new Error("expected before button");
-    }
-    before.focus();
+    roleNamed("button", "Before").focus();
     await userEvent.keyboard("{Tab}");
     expect(document.activeElement).toBe(textboxNamed("Email"));
   });
