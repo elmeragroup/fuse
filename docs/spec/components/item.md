@@ -69,6 +69,7 @@ Recipe: **`itemVariants`** — **PUBLIC**. The ref exports it and `selection-ite
 | `itemVariants`                 | `size`    | `default` (`gap-3.5 px-4 py-3.5`) · `sm` (`gap-2.5 px-3 py-2.5`) · `xs` (`gap-2 px-2.5 py-2`, zeroed inside dropdown-menu content via `in-data-[slot=dropdown-menu-content]:p-0`) | `default` |
 | `itemMediaVariants` (private)  | `variant` | `default` · `icon` (`svg size-4` guard) · `image` (`size-10 rounded-sm` box, shrinks with item size; see outline note)                                                            | `default` |
 | `itemFooterVariants` (private) | `mode`    | `default` (static open) · `visible` (`starting:` entry animation) · `hidden` (collapsed `0fr`, pointer-events-none)                                                               | `default` |
+| `ITEM_TITLE_CLASSES` (private) | —         | no axes; `cn("…")` string for the Item.Title / Alert.Title face                                                                                                                   | —         |
 
 Item's `size` axis is density-classified as **not a control-box rung**: it encodes row padding and gap, which sit outside the control-box remit (conventions.md density ladder; ruling 82, 2026-08-22: a layout size axis without a pinned control height is legal). The lint treats a layout size axis without a pinned control height as legal.
 
@@ -115,7 +116,7 @@ Base notes:
    - RAC `muted` variant was `border-input bg-muted`; base-ui `muted` is `border-transparent bg-muted/50`. RAC link hover was `bg-accent/50`; base-ui is `bg-muted`.
    - RAC sizes were `default`/`sm`; base-ui adds `xs`.
 5. **List semantics fixed:** the base-ui ref dropped the RAC item's default `role="listitem"` while `Item.Group` kept `role="list"`, creating a half-list. This spec follows the cluster-wide accessibility ruling: group context makes `Item.Root` default to `role="listitem"` inside `Item.Group`, while an explicit consumer `role` remains authoritative.
-6. `itemVariants` publicity confirmed (ref exports it; `selection-item` borrows it). `itemMediaVariants`/`itemFooterVariants` stay private.
+6. `itemVariants` publicity confirmed (ref exports it; `selection-item` borrows it). `itemMediaVariants`/`itemFooterVariants` stay private. `ITEM_TITLE_CLASSES` is the package-private `cn("…")` string in `item-title-classes.ts`, shared with Alert. _(Amended 2026-09-04. Amended 2026-09-04: axis-less string is `cn()`, not a one-slot recipe.)_
 7. **Layout size axis (ruling 82, 2026-08-22):** Item's `size` encodes row padding and gap, not a control-box rung; a layout size axis without a pinned control height is legal for the density lint.
 
 ## 9 Test requirements

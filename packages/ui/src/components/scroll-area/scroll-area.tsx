@@ -3,11 +3,31 @@
 import type { ComponentProps, ReactElement } from "react";
 
 import { ScrollArea as ScrollAreaPrimitive } from "@base-ui/react/scroll-area";
+import { tv } from "tailwind-variants";
+import type { VariantProps } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
 import { selfFocusRingClass } from "../../styles/utils";
 
-type ScrollAreaType = "auto" | "always" | "hover";
+/**
+ * Visibility face for the Radix-style `type` prop (scroll-area.md §4).
+ * `keepMounted` is not a class, so it stays on {@link SCROLLBAR_KEEP_MOUNTED}.
+ */
+const scrollbarTypeVariants = tv({
+  variants: {
+    type: {
+      always: "opacity-100",
+      auto: "opacity-100",
+      hover:
+        "pointer-events-none opacity-0 transition-opacity data-[hovering]:pointer-events-auto data-[hovering]:opacity-100 data-[scrolling]:pointer-events-auto data-[scrolling]:opacity-100 data-[scrolling]:duration-0",
+    },
+  },
+  defaultVariants: {
+    type: "hover",
+  },
+});
+
+type ScrollAreaType = NonNullable<VariantProps<typeof scrollbarTypeVariants>["type"]>;
 
 type ScrollAreaRootProps = ComponentProps<typeof ScrollAreaPrimitive.Root> & {
   /**
@@ -28,16 +48,12 @@ type ScrollAreaBarProps = ComponentProps<typeof ScrollAreaPrimitive.Scrollbar> &
   type?: ScrollAreaType;
 };
 
-// Base UI has no `type` prop — map the Radix-style API to keepMounted + visibility.
-const SCROLLBAR_TYPE = {
-  always: { keepMounted: true, className: "opacity-100" },
-  auto: { keepMounted: false, className: "opacity-100" },
-  hover: {
-    keepMounted: false,
-    className:
-      "pointer-events-none opacity-0 transition-opacity data-[hovering]:pointer-events-auto data-[hovering]:opacity-100 data-[scrolling]:pointer-events-auto data-[scrolling]:opacity-100 data-[scrolling]:duration-0",
-  },
-} satisfies Record<ScrollAreaType, { keepMounted: boolean; className: string }>;
+// Base UI has no `type` prop — map the Radix-style API to keepMounted; visibility is the recipe.
+const SCROLLBAR_KEEP_MOUNTED = {
+  always: true,
+  auto: false,
+  hover: false,
+} as const satisfies Record<ScrollAreaType, boolean>;
 
 function ScrollAreaRoot({
   className,
@@ -68,7 +84,6 @@ function ScrollAreaBar({
   type = "hover",
   ...props
 }: ScrollAreaBarProps): ReactElement {
-  const { keepMounted, className: visibilityClassName } = SCROLLBAR_TYPE[type];
   return (
     <ScrollAreaPrimitive.Scrollbar
       data-slot="scroll-area-scrollbar"
@@ -76,12 +91,12 @@ function ScrollAreaBar({
         "flex touch-none p-px select-none",
         orientation === "vertical" && "w-2.5 border-l border-l-transparent",
         orientation === "horizontal" && "h-2.5 flex-col border-t border-t-transparent",
-        visibilityClassName,
+        scrollbarTypeVariants({ type }),
         className
       )}
       {...props}
       orientation={orientation}
-      keepMounted={keepMounted}>
+      keepMounted={SCROLLBAR_KEEP_MOUNTED[type]}>
       <ScrollAreaPrimitive.Thumb
         data-slot="scroll-area-thumb"
         className="relative flex-1 rounded-full bg-border"

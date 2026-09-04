@@ -101,7 +101,7 @@
         {
           "name": "size",
           "origin": "declared",
-          "type": "\"2xl\" | \"3xl\" | \"4xl\" | \"5xl\" | \"6xl\" | \"default\" | \"lg\" | \"sm\" | \"xl\" | undefined",
+          "type": "NonNullable<\"2xl\" | \"3xl\" | \"4xl\" | \"5xl\" | \"6xl\" | \"default\" | \"lg\" | \"sm\" | \"xl\" | undefined> | undefined",
           "shortType": "Union",
           "defaultValue": "\"2xl\"",
           "description": "Typography size for the title, mapped to a `text-{size}` class. Defaults to `2xl`.",
@@ -130,7 +130,7 @@
         {
           "name": "size",
           "origin": "declared",
-          "type": "\"2xl\" | \"default\" | \"lg\" | \"sm\" | \"xl\" | \"xs\" | undefined",
+          "type": "NonNullable<\"2xl\" | \"default\" | \"lg\" | \"sm\" | \"xl\" | \"xs\" | undefined> | undefined",
           "shortType": "Union",
           "defaultValue": "\"sm\"",
           "description": "Typography size for the description, mapped to a `text-{size}` class. Defaults to `sm`.",

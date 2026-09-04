@@ -141,7 +141,7 @@
           "type": "\"horizontal\" | \"vertical\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"vertical\"",
-          "description": "Layout of the group primitive, and of RadioItemGroup's stacked-card list. Vertical: primitive `flex-col gap-2`; item list connected `flex-col gap-0`. Horizontal: primitive `flex-wrap gap-4`; item list `flex-row flex-wrap gap-4` with individually rounded cards. Not a recipe axis. Default `\"vertical\"`.",
+          "description": "Layout of the group primitive, and of RadioItemGroup's stacked-card list. Vertical: primitive `flex-col gap-2`; item list connected `flex-col gap-0`. Horizontal: primitive `flex-wrap gap-4`; item list `flex-row flex-wrap gap-4` with individually rounded cards. Maps through `selectionGroupOrientationVariants`. Default `\"vertical\"`.",
           "required": false
         },
         {
@@ -504,7 +504,7 @@
           "type": "\"horizontal\" | \"vertical\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"vertical\"",
-          "description": "Layout of the group primitive, and of RadioItemGroup's stacked-card list. Vertical: primitive `flex-col gap-2`; item list connected `flex-col gap-0`. Horizontal: primitive `flex-wrap gap-4`; item list `flex-row flex-wrap gap-4` with individually rounded cards. Not a recipe axis. Default `\"vertical\"`.",
+          "description": "Layout of the group primitive, and of RadioItemGroup's stacked-card list. Vertical: primitive `flex-col gap-2`; item list connected `flex-col gap-0`. Horizontal: primitive `flex-wrap gap-4`; item list `flex-row flex-wrap gap-4` with individually rounded cards. Maps through `selectionGroupOrientationVariants`. Default `\"vertical\"`.",
           "required": false
         },
         {
@@ -567,7 +567,7 @@
         {
           "name": "size",
           "origin": "declared",
-          "type": "\"icon\" | \"icon-lg\" | \"icon-sm\" | \"icon-xs\" | \"icon-xxs\" | undefined",
+          "type": "NonNullable<\"icon\" | \"icon-lg\" | \"icon-sm\" | \"icon-xs\" | \"icon-xxs\" | undefined> | undefined",
           "shortType": "Union",
           "defaultValue": "\"icon\"",
           "description": "Icon-button size mapped onto the control-height rungs like Button: `icon-xxs` and `icon-xs` share `--control-h-xs` (svg-3 / svg-3.5), `icon-sm` `--control-h-sm` (svg-4), `icon` `--control-h-md` (svg-4), `icon-lg` `--control-h-lg` (svg-5). Svg sizes apply only to `svg:not([class*='size-'])`. Default `\"icon\"`.",

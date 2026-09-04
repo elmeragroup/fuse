@@ -1,5 +1,7 @@
 import type { ReactElement, ReactNode } from "react";
 
+import { tv } from "tailwind-variants";
+
 import { readDemoSource } from "../lib/demo-source";
 import { DemoStage } from "./demo-stage";
 import { DocsCodeBlock } from "./docs-code-block";
@@ -17,10 +19,14 @@ export type DemoFrameProps = {
   children: ReactNode;
 };
 
-const classNames = {
-  root: "mt-8",
-  card: "overflow-hidden rounded-[10px] border border-docs-line",
-} as const;
+const demoFrame = tv({
+  slots: {
+    root: "mt-8",
+    card: "border-docs-line overflow-hidden rounded-[10px] border",
+  },
+});
+
+const { root, card } = demoFrame();
 
 /**
  * The §3.5 demo frame: a theme-tinted dotted stage, the active theme coordinate and its
@@ -37,9 +43,9 @@ export async function DemoFrame({ slug, id, title, file, children }: DemoFramePr
   const demo = await readDemoSource(slug, file);
 
   return (
-    <section className={classNames.root} data-demo-frame aria-labelledby={id}>
+    <section className={root()} data-demo-frame aria-labelledby={id}>
       <DocsSectionHeading id={id}>{title}</DocsSectionHeading>
-      <div className={classNames.card}>
+      <div className={card()}>
         <DemoStage sourcePath={demo.sourcePath}>{children}</DemoStage>
         <DocsCodeBlock variant="embedded" data-demo-source source={demo.source} />
       </div>

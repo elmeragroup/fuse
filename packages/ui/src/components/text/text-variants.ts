@@ -3,19 +3,21 @@
  * `@elmeragroup/ui/text`. `size` is a type-scale axis, not a density control-box
  * rung (conventions.md §Density metrics): it does not read `--control-*`.
  *
- * `destructive` keeps its ref value name for consumer compat, but the class is
- * `text-error` (text.md §8.5). `weight: "bold"` maps to `font-medium` — a
+ * Colour (`variant`) and start/center/end (`align`) come from the package-private
+ * `typographyFragments` recipe via `extend`. This recipe adds `success` and
+ * `justify`. `destructive` keeps its ref value name for consumer compat, but the
+ * class is `text-error` (text.md §8.5). `weight: "bold"` maps to `font-medium` — a
  * deliberate cap on body-copy weight, kept from the ref.
  */
 import { tv } from "tailwind-variants";
 
-import { typographyAlignClasses, typographyColorClasses } from "../../styles/typography-fragments";
+import { typographyFragments } from "../../styles/typography-fragments";
 
 export const textVariants = tv({
+  extend: typographyFragments,
   base: "font-sans",
   variants: {
     variant: {
-      ...typographyColorClasses,
       success: "text-success",
     },
     size: {
@@ -37,7 +39,6 @@ export const textVariants = tv({
       true: "truncate",
     },
     align: {
-      ...typographyAlignClasses,
       justify: "text-justify",
     },
     weight: {

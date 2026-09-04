@@ -30,12 +30,31 @@ function isTvCall(callee) {
  * @param {import("estree").ObjectExpression} obj
  * @param {string} name
  */
-function objectHasProp(obj, name) {
-  return obj.properties.some((prop) => {
-    if (prop.type !== "Property") return false;
-    if (prop.key.type === "Identifier") return prop.key.name === name;
-    return prop.key.type === "Literal" && prop.key.value === name;
-  });
+function getObjectProp(obj, name) {
+  for (const prop of obj.properties) {
+    if (prop.type !== "Property" || prop.computed) continue;
+    const key =
+      prop.key.type === "Identifier"
+        ? prop.key.name
+        : prop.key.type === "Literal"
+          ? String(prop.key.value)
+          : null;
+    if (key === name) return prop.value;
+  }
+  return undefined;
+}
+
+/**
+ * A recipe has axes when `variants` is present and not an empty object.
+ * Identifiers and spreads count as axes; we cannot see through them.
+ *
+ * @param {import("estree").ObjectExpression} obj
+ */
+function recipeHasAxes(obj) {
+  const variants = getObjectProp(obj, "variants");
+  if (!variants) return false;
+  if (variants.type !== "ObjectExpression") return true;
+  return variants.properties.length > 0;
 }
 
 export default defineRule({
@@ -43,15 +62,15 @@ export default defineRule({
     type: "problem",
     docs: {
       description:
-        "Enforce tv recipe structure: named recipe, variants/defaultVariants shape, VariantProps typing",
+        "Enforce tv recipe structure: named recipe, variants/defaultVariants on recipes with axes, VariantProps typing",
     },
     messages: {
       unnamedRecipe: "tv() recipes must be assigned to a named const (e.g. buttonVariants).",
-      inlineObject: "tv() must receive an inline object with variants and defaultVariants.",
-      missingVariants: "tv() recipe '{{name}}' must declare a variants object.",
-      missingDefaultVariants: "tv() recipe '{{name}}' must declare defaultVariants.",
+      inlineObject: "tv() must receive an inline object.",
+      missingDefaultVariants:
+        "tv() recipe '{{name}}' must declare defaultVariants when it has a variants axis.",
       missingVariantProps:
-        "Component files that define a tv() recipe must type props with VariantProps<typeof recipe>.",
+        "Component files that define a tv() recipe with axes must type props with VariantProps<typeof recipe>.",
     },
     schema: [],
   },
@@ -92,15 +111,7 @@ export default defineRule({
             continue;
           }
 
-          if (!objectHasProp(firstArg, "variants")) {
-            context.report({
-              node,
-              messageId: "missingVariants",
-              data: { name: named },
-            });
-          }
-
-          if (!objectHasProp(firstArg, "defaultVariants")) {
+          if (recipeHasAxes(firstArg) && !getObjectProp(firstArg, "defaultVariants")) {
             context.report({
               node,
               messageId: "missingDefaultVariants",
@@ -109,7 +120,11 @@ export default defineRule({
           }
         }
 
-        if (requireVariantProps && !context.sourceCode.getText().includes("VariantProps")) {
+        const anyHasAxes = tvCalls.some((call) => {
+          const arg = call.arguments[0];
+          return arg?.type === "ObjectExpression" && recipeHasAxes(arg);
+        });
+        if (requireVariantProps && anyHasAxes && !context.sourceCode.getText().includes("VariantProps")) {
           context.report({
             loc: tvCalls[0]?.loc,
             messageId: "missingVariantProps",

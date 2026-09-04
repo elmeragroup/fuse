@@ -3,37 +3,12 @@ import type { HTMLAttributes, ReactElement, ReactNode } from "react";
 import type { VariantProps } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
-import { cardVariants } from "./card-variants";
+import { cardDescriptionVariants, cardTitleVariants, cardVariants } from "./card-variants";
 
 type CardVariantProps = VariantProps<typeof cardVariants>;
 
 type CardDivProps = HTMLAttributes<HTMLDivElement> & CardVariantProps;
 
-/** Heading type scale (heading.md §4 values); `size` maps to `text-{size}` (card.md §3). */
-const TITLE_SIZE_CLASSES = {
-  default: "text-base",
-  sm: "text-sm",
-  lg: "text-lg",
-  xl: "text-xl",
-  "2xl": "text-2xl",
-  "3xl": "text-3xl",
-  "4xl": "text-4xl",
-  "5xl": "text-5xl",
-  "6xl": "text-6xl",
-} as const;
-
-/** Body type scale (text.md §4 values); `size` maps to `text-{size}` (card.md §3). */
-const DESCRIPTION_SIZE_CLASSES = {
-  xs: "text-xs",
-  sm: "text-sm",
-  default: "text-base",
-  lg: "text-lg",
-  xl: "text-xl",
-  "2xl": "text-2xl",
-} as const;
-
-type CardTitleSize = keyof typeof TITLE_SIZE_CLASSES;
-type CardDescriptionSize = keyof typeof DESCRIPTION_SIZE_CLASSES;
 type CardTitleLevel = 1 | 2 | 3 | 4 | 5 | 6;
 
 type CardTitleProps = HTMLAttributes<HTMLHeadingElement> &
@@ -44,7 +19,7 @@ type CardTitleProps = HTMLAttributes<HTMLHeadingElement> &
      */
     level?: CardTitleLevel;
     /** Typography size for the title, mapped to a `text-{size}` class. Defaults to `2xl`. */
-    size?: CardTitleSize;
+    size?: NonNullable<VariantProps<typeof cardTitleVariants>["size"]>;
     /**
      * Rendered before `children` — the title becomes a flex row (`items-center gap-x-1.5`)
      * and any `svg` is sized to `5`.
@@ -55,7 +30,7 @@ type CardTitleProps = HTMLAttributes<HTMLHeadingElement> &
 type CardDescriptionProps = HTMLAttributes<HTMLParagraphElement> &
   CardVariantProps & {
     /** Typography size for the description, mapped to a `text-{size}` class. Defaults to `sm`. */
-    size?: CardDescriptionSize;
+    size?: NonNullable<VariantProps<typeof cardDescriptionVariants>["size"]>;
   };
 
 function CardRoot({ className, direction, ...props }: CardDivProps): ReactElement {
@@ -92,7 +67,7 @@ function CardTitle({
     <Heading
       data-slot="card-title"
       className={cn(
-        TITLE_SIZE_CLASSES[size],
+        cardTitleVariants({ size }),
         cardTitle({
           // `direction="horizontal"` pins `text-xl` here, so the size class must come first.
           className: icon ? "flex items-center gap-x-1.5 [&>svg]:size-5" : undefined,
@@ -117,7 +92,7 @@ function CardDescription({
   return (
     <p
       data-slot="card-description"
-      className={cn(DESCRIPTION_SIZE_CLASSES[size], cardDescription(), className)}
+      className={cn(cardDescriptionVariants({ size }), cardDescription(), className)}
       {...props}
     />
   );

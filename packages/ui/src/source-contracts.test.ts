@@ -3,6 +3,7 @@ import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
+import { fieldVariants } from "./components/field/field-variants";
 import { overlayLayer } from "./components/overlay/overlay-classes";
 
 /**
@@ -204,14 +205,6 @@ function expectRsc(relativePath: string, rsc: RscStatus): void {
   expect(source, relativePath).not.toContain("'use client'");
 }
 
-function orientationLiteral(sourceText: string, key: "vertical" | "horizontal" | "responsive"): string {
-  const match = new RegExp(`${key}:\\s*"([^"]*)"`).exec(sourceText);
-  if (match?.[1] === undefined) {
-    throw new Error(`expected a literal ${key} orientation string`);
-  }
-  return match[1];
-}
-
 function classTokens(value: string): string[] {
   return value.split(/\s+/).filter(Boolean);
 }
@@ -305,18 +298,23 @@ describe("field", () => {
   // Why not a lint rule: the responsive orientation face is a private recipe
   // derivation from the vertical and horizontal literals. That is a data
   // relationship, not a grammar oxlint can name without encoding the recipe.
-  it("derives responsive orientation tokens from the vertical and horizontal literals", () => {
-    const source = readSrc("components/field/field.tsx");
-    const vertical = orientationLiteral(source, "vertical");
-    const horizontal = orientationLiteral(source, "horizontal");
-    const responsive = orientationLiteral(source, "responsive");
+  it("derives responsive orientation tokens from the vertical and horizontal outputs", () => {
+    const vertical = classTokens(fieldVariants({ orientation: "vertical" }).root());
+    const horizontal = classTokens(fieldVariants({ orientation: "horizontal" }).root());
+    const responsive = classTokens(fieldVariants({ orientation: "responsive" }).root());
+    const verticalSet = new Set(vertical);
+    const horizontalSet = new Set(horizontal);
+    const shared = vertical.filter((token) => horizontalSet.has(token));
+    const verticalOnly = vertical.filter((token) => !horizontalSet.has(token));
+    const horizontalOnly = horizontal.filter((token) => !verticalSet.has(token));
     const fieldGroupMd = "@md/field-group:";
     const derived = [
-      ...classTokens(horizontal).map((token) => `${fieldGroupMd}${token}`),
+      ...shared,
+      ...horizontalOnly.map((token) => `${fieldGroupMd}${token}`),
       `${fieldGroupMd}*:w-auto`,
-      ...classTokens(vertical),
+      ...verticalOnly,
     ];
-    expect(classTokens(responsive).toSorted()).toEqual(derived.toSorted());
+    expect(responsive.toSorted()).toEqual(derived.toSorted());
   });
 });
 

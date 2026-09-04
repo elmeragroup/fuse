@@ -35,3 +35,46 @@ export const cardVariants = tv({
     direction: "vertical",
   },
 });
+
+/**
+ * Module-private type-scale recipes for `Card.Title` / `Card.Description`
+ * (card.md §4). Not exported from `@elmeragroup/ui/card` — there is no borrow
+ * pattern. Kept off `cardVariants` because `direction="horizontal"` already
+ * sets `cardTitle: "text-xl"`; a second `size` axis on that slot would fight
+ * through twMerge. `size` is a type-scale axis, not a density control-box rung
+ * (conventions.md §Density metrics): it does not read `--control-*`.
+ */
+export const cardTitleVariants = tv({
+  variants: {
+    size: {
+      default: "text-base",
+      sm: "text-sm",
+      lg: "text-lg",
+      xl: "text-xl",
+      "2xl": "text-2xl",
+      "3xl": "text-3xl",
+      "4xl": "text-4xl",
+      "5xl": "text-5xl",
+      "6xl": "text-6xl",
+    },
+  },
+  defaultVariants: {
+    size: "2xl",
+  },
+});
+
+export const cardDescriptionVariants = tv({
+  variants: {
+    size: {
+      xs: "text-xs",
+      sm: "text-sm",
+      default: "text-base",
+      lg: "text-lg",
+      xl: "text-xl",
+      "2xl": "text-2xl",
+    },
+  },
+  defaultVariants: {
+    size: "sm",
+  },
+});

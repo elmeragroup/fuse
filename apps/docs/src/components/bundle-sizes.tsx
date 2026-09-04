@@ -1,5 +1,7 @@
 import type { ReactElement } from "react";
 
+import { tv } from "tailwind-variants";
+
 import { BUNDLE_SIZES, BUNDLE_SIZES_MEASURED_ON } from "../generated/bundle-sizes";
 import { ceilingUsage } from "../lib/docs-model";
 import { DocsTable } from "./docs-table";
@@ -14,9 +16,13 @@ function percent(fraction: number): string {
   return `${String(Math.round(fraction * 100))}%`;
 }
 
-const classNames = {
-  note: "text-[0.78rem] text-docs-sub m-[-0.4rem_0_1.4rem]",
-} as const;
+const bundleSizes = tv({
+  slots: {
+    note: "text-docs-sub m-[-0.4rem_0_1.4rem] text-[0.78rem]",
+  },
+});
+
+const { note } = bundleSizes();
 
 /**
  * The measured size of every published entry against the ceiling `size-limit` enforces
@@ -59,7 +65,7 @@ export function BundleSizes(): ReactElement {
           </tbody>
         </DocsTable.Root>
       </DocsTable.Wrap>
-      <p className={classNames.note}>
+      <p className={note()}>
         The flag SVG payload is gated separately, as a raw-byte aggregate ceiling rather than a measured
         JavaScript payload, and is never inlined.
       </p>

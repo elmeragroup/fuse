@@ -6,8 +6,9 @@ import { Avatar as AvatarPrimitive } from "@base-ui/react/avatar";
 
 import { cn } from "../../styles/cn";
 
-const ROOT_CLASSES =
-  "inline-flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted align-middle text-sm font-medium text-muted-foreground select-none";
+const ROOT_CLASSES = cn(
+  "text-sm font-medium inline-flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted align-middle text-muted-foreground select-none"
+);
 
 /**
  * Client image-or-initials avatar (avatar.md §2/§7). Base-ui Avatar owns image

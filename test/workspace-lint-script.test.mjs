@@ -66,7 +66,15 @@ describe("workspace lint script", () => {
     );
     const uiSrcRules = asRecord(uiSrcOverride?.rules, "ui src override rules");
     expect(uiSrcRules["elmera/no-hardcoded-density-metrics"]).toBe("warn");
+    expect(uiSrcRules["elmera/no-raw-class-map"]).toBe("error");
     expect(uiSrcRules["elmera/facade-reexport-grammar"]).toBe("error");
+
+    const docsSrcOverride = overrides.find((entry) =>
+      overrideFiles(entry).includes("apps/docs/src/**/*.{ts,tsx}")
+    );
+    expect(asRecord(docsSrcOverride?.rules, "docs src override rules")["elmera/no-raw-class-map"]).toBe(
+      "error"
+    );
     expect(uiSrcRules["elmera/no-rac-outside-quarantine"]).toBe("error");
     expect(uiSrcRules["elmera/restrict-focus-ring-call"]).toBe("error");
     expect(uiSrcRules["elmera/no-field-part-jsx"]).toBe("error");

@@ -8,22 +8,18 @@ import { selfFocusRingClass, withinFocusRingClass } from "./utils";
  * The field box's *chrome* — the surface a reader recognises as "a field": elevation
  * rung, radius rung, hairline border, fill, and the transition that animates all three.
  *
- * It is a standalone constant because every field box paints it and they must not drift
- * (spec 08 user story 6; date-field.md §8.9, 2026-09-03): the base-ui tier through
- * {@link fieldBox} below and NumberField's group, and the interim react-aria tier through
- * `fieldGroupVariants` in `react-aria/internal/field.tsx`. Everything that is *not*
- * chrome stays with its consumer — padding, the control-type pair, the focus adapter
- * (`self` for a focusable control, `state` for RAC's non-focusable `Group`, `within` for
- * NumberField), and the disabled/invalid faces, which they express through different
- * selectors.
+ * Sibling of {@link fieldBox}: that recipe is a flat `box` axis consumed as a string by
+ * Input/Textarea, and chrome is also painted by RAC `fieldGroupVariants` and Select's
+ * trigger, which are not field-box variants. NumberField's group is a second sibling —
+ * same chrome, plus flex/`within` focus/invalid ring. Export names stay.
  *
  * `internal-stack.test.ts` asserts every token here reaches all three consumers' computed
  * output and that none carries a second radius or elevation rung; `date-field.browser.test.tsx`
  * asserts the two boxes' *computed* radius and shadow are equal in one rendered form.
- * A `satisfies` could not give either guard.
  */
-export const fieldBoxChromeClass =
-  "shadow-xs rounded-md border border-input bg-card transition-[color,border-color,box-shadow]";
+export const fieldBoxChromeClass = cn(
+  "shadow-xs rounded-md border border-input bg-card transition-[color,border-color,box-shadow]"
+);
 
 /** NumberField group chrome — same elevation as Input, `within` focus, invalid ring. */
 export const numberFieldGroupClass = cn(

@@ -41,7 +41,7 @@ The ref's `slot` prop (RAC slot wiring) is **dropped** (§8 — migration note).
 
 ## 4 Variants
 
-Recipe: **`textVariants`** — **PUBLIC** from `@elmeragroup/ui/text`. `spanVariants` and other package modules import its private source relatively; consumers borrow it from the component entry. Typed via `VariantProps`.
+Recipe: **`textVariants`** — **PUBLIC** from `@elmeragroup/ui/text`. `spanVariants` and other package modules import its private source relatively; consumers borrow it from the component entry. Typed via `VariantProps`. Colour (`variant`) and start/center/end (`align`) come from the package-private `typographyFragments` recipe in `styles/typography-fragments.ts`; Text extends that recipe and adds `success` on `variant` and `justify` on `align`. _(Amended 2026-09-04.)_
 
 | Axis       | Values                                                                                                                                                        | Default   |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |

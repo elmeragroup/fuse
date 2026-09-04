@@ -66,8 +66,9 @@ export type NumberFieldProps = {
   id?: string;
 };
 
-const stepperButton =
-  "flex flex-1 cursor-default items-center justify-center bg-background px-0.5 text-foreground transition-colors hover:bg-muted disabled:bg-muted disabled:opacity-50";
+const stepperButton = cn(
+  "flex flex-1 cursor-default items-center justify-center bg-background px-0.5 text-foreground transition-colors hover:bg-muted disabled:bg-muted disabled:opacity-50"
+);
 
 /**
  * Labeled number field composite over Field + base-ui NumberField (number-field.md §2/§7).

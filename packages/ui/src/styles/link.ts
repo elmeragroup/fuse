@@ -22,16 +22,16 @@
  */
 import { tv } from "tailwind-variants";
 
-import { typographyAlignClasses, typographyColorClasses } from "./typography-fragments";
+import { typographyFragments } from "./typography-fragments";
 
 /**
  * Heading and Text's colour map minus the one key Link does not carry, plus that key's
  * class under Link's own name. §8.2 renames the reference's status colour to `error`, so
  * the *value* is shared with Heading's `destructive` arm while the *key* stays Link's —
- * spreading the fragment wholesale would widen the public `LinkProps["variant"]` union
- * with a ninth arm nobody asked for.
+ * `extend: typographyFragments` would merge every arm and widen `LinkProps["variant"]`
+ * with a ninth `destructive` value nobody asked for. Read `variants.variant` instead.
  */
-const { destructive: errorColorClass, ...linkColorClasses } = typographyColorClasses;
+const { destructive: errorColorClass, ...linkColorClasses } = typographyFragments.variants.variant;
 
 export const linkVariants = tv({
   base: "font-sans transition-opacity hover:opacity-80",
@@ -51,8 +51,7 @@ export const linkVariants = tv({
       true: "truncate",
     },
     align: {
-      ...typographyAlignClasses,
-      // Link is the only consumer that offers a justified arm.
+      ...typographyFragments.variants.align,
       justify: "text-justify",
     },
     weight: {

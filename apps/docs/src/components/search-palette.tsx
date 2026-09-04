@@ -4,26 +4,41 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 import type { ChangeEvent, KeyboardEvent, ReactElement } from "react";
 
 import { useRouter } from "next/navigation";
+import { tv } from "tailwind-variants";
 
 import { Dialog } from "@elmeragroup/ui/dialog";
 
 import { matchSearchEntries } from "../lib/search";
 
-const classNames = {
-  trigger:
-    "inline-flex min-h-[26px] cursor-pointer items-center gap-2 rounded-[6px] border border-docs-line bg-docs-soft p-[4px_8px] font-docs-mono text-[11.5px] font-medium text-docs-sub hover:text-docs-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-docs-ink",
-  keys: "[font:inherit] text-docs-sub",
-  palette:
-    "top-[10vh] block w-[min(34rem,calc(100vw_-_2rem))] translate-y-0 gap-0 overflow-hidden p-0 font-docs-sans",
-  input:
-    "block w-full border-0 border-b border-docs-line bg-transparent p-[0.9rem_1rem] text-[0.95rem] text-docs-ink placeholder:text-docs-sub focus:outline-none",
-  results: "m-0 max-h-[22rem] list-none overflow-y-auto p-[0.35rem]",
-  option:
-    "flex cursor-pointer items-baseline justify-between gap-4 rounded-[6px] p-[0.4rem_0.65rem] text-[0.85rem] text-docs-sub data-active:bg-docs-soft data-active:text-docs-ink",
-  optionTitle: "font-medium text-docs-ink",
-  optionGroup: "font-docs-mono text-[11px] font-medium text-docs-sub",
-  empty: "m-0 p-4 text-[0.85rem] text-docs-sub",
-} as const;
+const searchPalette = tv({
+  slots: {
+    trigger:
+      "border-docs-line bg-docs-soft font-docs-mono font-medium text-docs-sub hover:text-docs-ink focus-visible:outline-docs-ink inline-flex min-h-[26px] cursor-pointer items-center gap-2 rounded-[6px] border p-[4px_8px] text-[11.5px] focus-visible:outline-2 focus-visible:outline-offset-2",
+    keys: "text-docs-sub [font:inherit]",
+    palette:
+      "font-docs-sans top-[10vh] block w-[min(34rem,calc(100vw_-_2rem))] translate-y-0 gap-0 overflow-hidden p-0",
+    input:
+      "border-docs-line text-docs-ink placeholder:text-docs-sub block w-full border-0 border-b bg-transparent p-[0.9rem_1rem] text-[0.95rem] focus:outline-none",
+    results: "m-0 max-h-[22rem] list-none overflow-y-auto p-[0.35rem]",
+    option:
+      "text-docs-sub data-active:bg-docs-soft data-active:text-docs-ink flex cursor-pointer items-baseline justify-between gap-4 rounded-[6px] p-[0.4rem_0.65rem] text-[0.85rem]",
+    optionTitle: "font-medium text-docs-ink",
+    optionGroup: "font-docs-mono font-medium text-docs-sub text-[11px]",
+    empty: "text-docs-sub m-0 p-4 text-[0.85rem]",
+  },
+});
+
+const {
+  trigger,
+  keys,
+  palette,
+  input,
+  results: resultsClass,
+  option,
+  optionTitle,
+  optionGroup,
+  empty,
+} = searchPalette();
 
 /**
  * The complete-site header search (docs-site.md §3.2).
@@ -51,7 +66,7 @@ export function SearchPalette(): ReactElement {
   const results = useMemo(() => matchSearchEntries(query), [query]);
   const activeEntry = results[activeIndex];
 
-  const optionId = useCallback((index: number): string => `${listboxId}option-${String(index)}`, [listboxId]);
+  const optionId = useCallback((index: number): string => listboxId + "option-" + String(index), [listboxId]);
 
   const openPalette = useCallback((): void => {
     const active = document.activeElement;
@@ -135,11 +150,11 @@ export function SearchPalette(): ReactElement {
       <button
         ref={triggerRef}
         type="button"
-        className={classNames.trigger}
+        className={trigger()}
         aria-keyshortcuts="Meta+K Control+K"
         onClick={openPalette}>
         <span>Search</span>
-        <kbd className={classNames.keys}>⌘K</kbd>
+        <kbd className={keys()}>⌘K</kbd>
       </button>
       <Dialog.Root
         open={open}
@@ -147,14 +162,14 @@ export function SearchPalette(): ReactElement {
           setOpen(nextOpen);
         }}>
         <Dialog.Content
-          className={classNames.palette}
+          className={palette()}
           showCloseButton={false}
           initialFocus={inputRef}
           finalFocus={invokerRef}>
           <Dialog.Title className="sr-only">Search the documentation</Dialog.Title>
           <input
             ref={inputRef}
-            className={classNames.input}
+            className={input()}
             type="text"
             role="combobox"
             aria-label="Search the documentation"
@@ -168,7 +183,7 @@ export function SearchPalette(): ReactElement {
             onChange={handleQueryChange}
             onKeyDown={handleKeyDown}
           />
-          <ul id={listboxId} role="listbox" aria-label="Search results" className={classNames.results}>
+          <ul id={listboxId} role="listbox" aria-label="Search results" className={resultsClass()}>
             {results.map((entry, index) => (
               <li
                 key={entry.href}
@@ -176,20 +191,20 @@ export function SearchPalette(): ReactElement {
                 role="option"
                 aria-selected={index === activeIndex}
                 data-active={index === activeIndex || undefined}
-                className={classNames.option}
+                className={option()}
                 onMouseMove={() => {
                   setActiveIndex(index);
                 }}
                 onClick={() => {
                   navigate(entry.href);
                 }}>
-                <span className={classNames.optionTitle}>{entry.title}</span>
-                <span className={classNames.optionGroup}>{entry.group}</span>
+                <span className={optionTitle()}>{entry.title}</span>
+                <span className={optionGroup()}>{entry.group}</span>
               </li>
             ))}
           </ul>
           {results.length === 0 ? (
-            <p className={classNames.empty} role="status">
+            <p className={empty()} role="status">
               No pages match “{query}”.
             </p>
           ) : null}

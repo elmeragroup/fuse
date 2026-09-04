@@ -6,6 +6,8 @@
 
 import type { ReactElement } from "react";
 
+import { tv } from "tailwind-variants";
+
 import { Badge } from "@elmeragroup/ui/badge";
 import { Button } from "@elmeragroup/ui/button";
 import { Dialog } from "@elmeragroup/ui/dialog";
@@ -15,13 +17,17 @@ import type { ThemeInput } from "@elmeragroup/ui/theme";
 
 import { LEGAL_THEMES } from "../lib/theme";
 
-const classNames = {
-  grid: "not-prose m-[1.4rem_0_2rem] grid grid-cols-[repeat(auto-fill,minmax(210px,1fr))] gap-px overflow-hidden rounded-[8px] border border-docs-line bg-docs-line",
-  cell: "flex min-w-0 flex-col bg-background",
-  slug: "overflow-hidden border-b border-border px-3 py-2 font-docs-mono text-[0.66rem] tracking-[0.01em] text-ellipsis whitespace-nowrap text-muted-foreground",
-  surface: "flex flex-col gap-[0.55rem] p-[0.85rem_0.75rem_1rem] text-foreground",
-  row: "flex flex-wrap items-center gap-[0.4rem]",
-} as const;
+const themeMatrix = tv({
+  slots: {
+    grid: "not-prose border-docs-line bg-docs-line m-[1.4rem_0_2rem] grid grid-cols-[repeat(auto-fill,minmax(210px,1fr))] gap-px overflow-hidden rounded-[8px] border",
+    cell: "flex min-w-0 flex-col bg-background",
+    slug: "font-docs-mono overflow-hidden border-b border-border px-3 py-2 text-[0.66rem] tracking-[0.01em] text-ellipsis whitespace-nowrap text-muted-foreground",
+    surface: "flex flex-col gap-[0.55rem] p-[0.85rem_0.75rem_1rem] text-foreground",
+    row: "flex flex-wrap items-center gap-[0.4rem]",
+  },
+});
+
+const { grid, cell, slug: slugClass, surface, row } = themeMatrix();
 
 /**
  * The whitelabel pitch grid (docs-site.md §5).
@@ -38,24 +44,24 @@ function MatrixCell({ theme }: { theme: ThemeInput }): ReactElement {
   const slug = themeSlug(theme);
 
   return (
-    <ThemeScope theme={theme} className={classNames.cell} data-theme-matrix-cell>
-      <div className={classNames.slug} data-theme-slug={slug}>
+    <ThemeScope theme={theme} className={cell()} data-theme-matrix-cell>
+      <div className={slugClass()} data-theme-slug={slug}>
         {slug}
       </div>
-      <div className={classNames.surface}>
-        <div className={classNames.row}>
+      <div className={surface()}>
+        <div className={row()}>
           <Button size="sm">Bestill</Button>
           <Button size="sm" variant="outline">
             Avbryt
           </Button>
         </div>
-        <div className={classNames.row}>
+        <div className={row()}>
           <Badge>Aktiv</Badge>
           <Badge variant="secondary">Fastpris</Badge>
           <Badge variant="outline">Bedrift</Badge>
         </div>
         <Separator />
-        <div className={classNames.row}>
+        <div className={row()}>
           <Dialog.Root>
             <Dialog.Trigger render={<Button size="sm" variant="ghost" />}>Overlay</Dialog.Trigger>
             <Dialog.Content size="sm">
@@ -79,7 +85,7 @@ function MatrixCell({ theme }: { theme: ThemeInput }): ReactElement {
 
 export function ThemeMatrix(): ReactElement {
   return (
-    <div className={classNames.grid} data-theme-matrix>
+    <div className={grid()} data-theme-matrix>
       {LEGAL_THEMES.map((theme) => (
         <MatrixCell key={themeSlug(theme)} theme={theme} />
       ))}

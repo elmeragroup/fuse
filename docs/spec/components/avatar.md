@@ -37,7 +37,7 @@ All parts: `ComponentProps<typeof AvatarPrimitive.{Part}>` — full primitive pa
 
 ## 4 Variants
 
-None — no tv recipe (styling is inline class strings). Size is a `className` concern (`size-8` default; consumers pass `size-10` etc.). If a size axis is ever needed it becomes a private micro-recipe, not public.
+No public recipe and no axes. `Root` classes are the module-private `ROOT_CLASSES` `cn("…")` string. Size stays a `className` concern (`size-8` default; consumers pass `size-10` etc.). If a size axis is ever needed it lands as a private `tv` recipe, still not public. Image and Fallback stay inline `cn()` strings. _(Amended 2026-09-04. Amended 2026-09-04: axis-less string is `cn()`, not a one-slot recipe.)_
 
 ## 5 Consumed tokens
 
