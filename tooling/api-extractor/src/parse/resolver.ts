@@ -290,7 +290,14 @@ function typeNode(
   if (context.active.has(substituted)) return shallowType(substituted, sourceNode, context);
   const active = new Set(context.active);
   active.add(substituted);
-  return typeNodeUnsafe(substituted, sourceNode, symbol, { ...context, active });
+  // A bound parameter's syntax names the donor, not the supplied object.
+  // Keep the argument's declaration anchor so anonymous object arguments are
+  // described as structure rather than mistaken for unanchored module values.
+  const substitutedSource =
+    substituted === type || facts.symbol === undefined
+      ? sourceNode
+      : (primaryDeclaration(context.operations.symbolFacts(facts.symbol)) ?? sourceNode);
+  return typeNodeUnsafe(substituted, substitutedSource, symbol, { ...context, active });
 }
 
 function typeNodeUnsafe(

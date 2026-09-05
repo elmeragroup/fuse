@@ -276,6 +276,20 @@ const keyofTarget = {
 };
 
 describe("container review regressions", () => {
+  it.each([
+    ["TwoEnvironments", "DirectEnvironments"],
+    ["RenamedEnvironment", "DirectRenamedEnvironment"],
+    ["RepeatedEnvironment", "DirectRepeatedEnvironment"],
+  ])("keeps each donated tuple element's generic environment: %s", (spread, direct) => {
+    expect(reviewTupleElements(spread)).toEqual(reviewTupleElements(direct));
+    expect(
+      reviewResult.warnings.filter(
+        (warning) =>
+          warning.code === "unsupported-type-fallback" && warning.parsedSymbolStack.includes(spread)
+      )
+    ).toEqual([]);
+  });
+
   it("maps an open rest element to the array's element syntax, not to the array", () => {
     // `[string, ...(keyof Target)[]]` has two semantic elements and two authored
     // positions, but the rest position was written as the *array*. Attaching

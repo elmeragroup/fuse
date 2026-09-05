@@ -61,3 +61,13 @@ export type DualIndexed = {
 
 /** A type declaring an index signature the semantic model cannot represent. */
 export type SymbolIndexed = { [key: symbol]: Element };
+
+// Each spread must keep the donor parameter environment belonging to that occurrence.
+type EnvironmentTail<T> = [T, keyof T];
+export type TwoEnvironments = [...EnvironmentTail<{ first: 1 }>, ...EnvironmentTail<{ second: 2 }>];
+export type DirectEnvironments = [{ first: 1 }, keyof { first: 1 }, { second: 2 }, keyof { second: 2 }];
+export type RenamedEnvironment<U> = [...EnvironmentTail<U>];
+export type DirectRenamedEnvironment<U> = [U, keyof U];
+type NestedEnvironment<U> = [...EnvironmentTail<U>, ...EnvironmentTail<U>];
+export type RepeatedEnvironment = [...NestedEnvironment<{ nested: 3 }>];
+export type DirectRepeatedEnvironment = [{ nested: 3 }, keyof { nested: 3 }, { nested: 3 }, keyof { nested: 3 }];

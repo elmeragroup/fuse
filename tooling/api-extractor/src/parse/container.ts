@@ -8,19 +8,12 @@ import { applySubstitutions, bindAliasParameters } from "./substitutions.ts";
 
 type Context = ResolverContext;
 
-/**
- * One authored tuple source's expansion: the element nodes it donates and the
- * type-parameter bindings those nodes were read under.
- *
- * A spread of a *generic* tuple alias (`[...Pair<string, number>]`) donates the
- * declaration's own element nodes, which only describe this instantiation once
- * the declaration's parameters are rebound to the written arguments — the same
- * carrying-through upstream's `deriveTypeParameterBindings` performs.
- */
-type TupleElementExpansion = {
-  readonly nodes: readonly (BackendNodeReference | undefined)[];
-  readonly substitutions?: Substitutions;
+/** An authored element and the generic environment belonging to its spread occurrence. */
+type TupleElement = {
+  readonly node: BackendNodeReference | undefined;
+  readonly substitutions: Substitutions;
 };
+type TupleElementExpansion = { readonly elements: readonly TupleElement[] };
 
 /** The tuple an authored rest element spreads, with the bindings its element nodes are read under. */
 type TupleSource = {
@@ -78,19 +71,19 @@ export function tupleNode(
 ): SemanticType {
   const elements = context.operations.typeFacts(type).typeArguments ?? [];
   const expansion = authoredTupleElementNodes(sourceNode, elements.length, context);
-  const scoped: Context =
-    expansion.substitutions === undefined ? context : { ...context, substitutions: expansion.substitutions };
   return {
     kind: "tuple",
     types: elements.map((element, index) => {
-      const node = expansion.nodes[index];
+      const authored = expansion.elements[index];
+      const node = authored?.node;
+      const scoped = authored === undefined ? context : { ...context, substitutions: authored.substitutions };
       if (node === undefined) return resolve(element, undefined, undefined, scoped);
       // A donated element node written in terms of a spread alias's own
       // parameters resolves to its bound argument; every other node keeps the
       // semantic element the checker already instantiated.
       const nodeType = context.operations.typeAtNode(node);
       const bound = applySubstitutions(nodeType, scoped.substitutions, context.operations);
-      return resolve(bound === nodeType ? element : bound, node, undefined, scoped);
+      return resolve(bound === nodeType ? element : nodeType, node, undefined, scoped);
     }),
     ...flagFields({ isReadonly: context.operations.isReadonlyType(type) }),
     ...definedFields({ typeName: typeNameValue }),
@@ -152,9 +145,9 @@ function authoredTupleElementNodes(
   context: Context
 ): TupleElementExpansion {
   const node = unwrapAuthoredNode(sourceNode, context, isContainerWrapper);
-  if (node === undefined) return { nodes: [] };
+  if (node === undefined) return { elements: [] };
   const plan = tupleElementPlan(node, elementCount, context, new Set());
-  return plan ?? { nodes: [] };
+  return plan ?? { elements: [] };
 }
 
 /** Authored tuple sources already entered, so a spread cannot re-enter itself. */
@@ -163,15 +156,13 @@ type VisitedTupleSources = ReadonlySet<BackendNodeReference>;
 /**
  * Expands one authored element node per semantic tuple element, or `undefined`
  * when the authored widths cannot account for the semantic element list.
- * `inherited` carries the bindings of any generic alias spread this plan is
- * nested inside.
+ * Each donated element carries its own bindings, including through nested spreads.
  */
 function tupleElementPlan(
   node: BackendNodeReference,
   elementCount: number,
   context: Context,
-  visited: VisitedTupleSources,
-  inherited?: Substitutions
+  visited: VisitedTupleSources
 ): TupleElementExpansion | undefined {
   const facts = context.operations.nodeFacts(node);
   if (facts.kind !== "tuple" || facts.children === undefined) return undefined;
@@ -184,10 +175,10 @@ function tupleElementPlan(
     elementCount
   );
   if (widths === undefined) return undefined;
-  const nodes = children.flatMap((child, index) =>
+  const elements = children.flatMap((child, index) =>
     expandedTupleElement(child, restPositions[index] === true, widths[index] ?? 0, context, visited)
   );
-  return { nodes, ...definedFields({ substitutions: inherited }) };
+  return { elements };
 }
 
 /**
@@ -213,18 +204,17 @@ function expandedTupleElement(
   width: number,
   context: Context,
   visited: VisitedTupleSources
-): readonly (BackendNodeReference | undefined)[] {
-  if (!isRest) return [child];
+): readonly TupleElement[] {
+  if (!isRest) return [{ node: child, substitutions: context.substitutions }];
   const source = finiteTupleSource(child, context, visited);
   if (source === undefined) return openRestArrayElements(child, width, context);
   const nested = tupleElementPlan(
     source.body,
     width,
-    context,
-    new Set([...visited, source.body]),
-    source.substitutions
+    source.substitutions === undefined ? context : { ...context, substitutions: source.substitutions },
+    new Set([...visited, source.body])
   );
-  if (nested !== undefined) return nested.nodes;
+  if (nested !== undefined) return nested.elements;
   return openRestArrayElements(child, width, context);
 }
 
@@ -237,9 +227,9 @@ function openRestArrayElements(
   child: BackendNodeReference,
   width: number,
   context: Context
-): readonly (BackendNodeReference | undefined)[] {
-  const element = containerElementNode(child, context);
-  return Array.from({ length: width }, () => element);
+): readonly TupleElement[] {
+  const node = containerElementNode(child, context);
+  return Array.from({ length: width }, () => ({ node, substitutions: context.substitutions }));
 }
 
 /**
@@ -309,7 +299,13 @@ function finiteTupleSource(
   // arguments so its element nodes describe this spread.
   const bindings = bindAliasParameters(declaration, context, (index) => {
     const argument = authoredArguments[index];
-    return argument === undefined ? undefined : context.operations.typeAtNode(argument);
+    return argument === undefined
+      ? undefined
+      : applySubstitutions(
+          context.operations.typeAtNode(argument),
+          context.substitutions,
+          context.operations
+        );
   });
   if (bindings === undefined) {
     return finiteTupleSource(body, context, new Set([...visited, node]));
