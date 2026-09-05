@@ -1,7 +1,16 @@
 "use client";
 
 import type { ComponentProps, CSSProperties, Dispatch, ReactElement, SetStateAction } from "react";
-import { createContext, use, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  createContext,
+  use,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
@@ -128,15 +137,25 @@ function SidebarProvider({
   const [internalOpen, setInternalOpen] = useState(defaultOpen);
   const open = openProp ?? internalOpen;
 
-  // Latest-render values the two callbacks read at call time (sidebar.md §8.21). They
-  // are what keeps `setOpen`/`toggleSidebar` referentially stable across a toggle, so
-  // the keydown listener is subscribed once and the context callbacks never change.
+  // Stable handlers read only committed props and responsive state. Suspended or
+  // abandoned renders must not change how the visible controls behave.
   const latest = useRef({ open, isMobile, setOpenProp });
-  latest.current = { open, isMobile, setOpenProp };
+  useLayoutEffect(() => {
+    latest.current = { open, isMobile, setOpenProp };
+  });
+  const pendingOpen = useRef<boolean | undefined>(undefined);
 
   const setOpen = useCallback((value: boolean | ((value: boolean) => boolean)) => {
     // oxlint-disable-next-line anti-slop/no-runtime-typeof -- updater-or-boolean is the setter contract (sidebar.md §8.3)
-    const openState = typeof value === "function" ? value(latest.current.open) : value;
+    const openState = typeof value === "function" ? value(pendingOpen.current ?? latest.current.open) : value;
+    if (pendingOpen.current === undefined) {
+      // Compose requests within this event, then return authority to committed state.
+      // A controlled parent may reject every request without causing another render.
+      queueMicrotask(() => {
+        pendingOpen.current = undefined;
+      });
+    }
+    pendingOpen.current = openState;
     const onOpenChange = latest.current.setOpenProp;
 
     if (onOpenChange) {
