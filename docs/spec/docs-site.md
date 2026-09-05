@@ -38,6 +38,8 @@ The chosen direction mirrors base-ui's docs closely. Everything in this section 
 2. The **preview theme coordinate picker**: three **joined mono-font selects** — variant · brand · segment. It writes docs-local preview state consumed by demo `ThemeScope`s; it does **not** change the document `ThemeProvider` or `<html>` brand attributes (§4). Pinned brands **disable the illegal segment option** (the picker can never express one of the four illegal permutations); legality rules per [theming](theming.md).
 3. **Search, ⌘K** (right). Complete-site contract; **omitted from the docs-app MVP** (§2). The MVP header is wordmark + theme-coordinate selects only.
 
+The complete-site search keeps focus in its combobox input while `aria-activedescendant` identifies the selected result. End, Home and arrow navigation reveal that option by scrolling only the result list; the surrounding page retains its scroll position. Filtering selects the first matching result, and Enter activates the linked active option. Production browser coverage measures the actual option/list rectangles with an overflowing result set.
+
 ### 3.3 Sidebar navigation
 
 This left column is the **docs-local SideNav** (base-ui docs pattern), not `@elmeragroup/ui/sidebar`. All navigation lives there, grouped base-ui-style with **muted, normal-case group labels**. The groups and their contents:

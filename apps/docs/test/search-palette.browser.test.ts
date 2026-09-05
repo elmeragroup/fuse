@@ -184,6 +184,65 @@ describe("docs ⌘K palette (docs-site.md §3.2)", () => {
     await page.close();
   });
 
+  it("keeps keyboard-active results visible within the list without scrolling the page", async () => {
+    const page = await openDocsPage();
+    await page.evaluate(() => window.scrollTo(0, 300));
+    await page.keyboard.press("Meta+k");
+    await waitForPalette(page, "visible");
+    await waitForSearchFieldFocus(page);
+    const scroll = await page.evaluate(() => ({ x: window.scrollX, y: window.scrollY }));
+    const geometry = () =>
+      page.locator(FIELD).evaluate((field) => {
+        const active = document.getElementById(field.getAttribute("aria-activedescendant") ?? "");
+        const list = document.getElementById(field.getAttribute("aria-controls") ?? "");
+        if (!active || !list) throw new Error("Expected linked search option and list");
+        const a = active.getBoundingClientRect();
+        const l = list.getBoundingClientRect();
+        return {
+          visible: a.top >= l.top - 1 && a.bottom <= l.bottom + 1,
+          optionTop: a.top,
+          optionBottom: a.bottom,
+          listTop: l.top,
+          listBottom: l.bottom,
+          overflow: list.scrollHeight > list.clientHeight,
+          scrollTop: list.scrollTop,
+          first: active === list.firstElementChild,
+          last: active === list.lastElementChild,
+          focused: document.activeElement === field,
+          selected: active.getAttribute("aria-selected"),
+          x: window.scrollX,
+          y: window.scrollY,
+        };
+      });
+    expect((await geometry()).overflow).toBe(true);
+    for (const key of [
+      "End",
+      "Home",
+      "ArrowUp",
+      "ArrowDown",
+      ...Array.from({ length: 15 }, () => "ArrowDown"),
+    ]) {
+      await page.keyboard.press(key);
+      await expect.poll(geometry).toMatchObject({ visible: true });
+      const current = await geometry();
+      expect(current.focused).toBe(true);
+      expect(current.selected).toBe("true");
+      expect({ x: current.x, y: current.y }).toEqual(scroll);
+      if (key === "End") {
+        expect(current.last).toBe(true);
+        expect(current.scrollTop).toBeGreaterThan(0);
+      }
+      if (key === "Home") expect(current.first).toBe(true);
+    }
+    await page.locator(FIELD).fill("theme mat");
+    await waitForOptionCount(page, 1);
+    await expect.poll(geometry).toMatchObject({ visible: true });
+    expect((await readActiveOption(page)).text).toContain("Theme matrix");
+    await page.keyboard.press("Enter");
+    await page.waitForURL(`${docsBaseUrl()}/handbook/theme-matrix`);
+    await page.close();
+  });
+
   it("returns focus to the invoking context on close", async () => {
     const page = await openDocsPage();
 

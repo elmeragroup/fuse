@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, KeyboardEvent, ReactElement } from "react";
 
 import { useRouter } from "next/navigation";
@@ -57,6 +57,7 @@ export function SearchPalette(): ReactElement {
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   // Where focus goes on close. The hotkey opens the palette from anywhere, so the
   // invoking context is whatever was focused then — not necessarily the header button.
@@ -67,6 +68,22 @@ export function SearchPalette(): ReactElement {
   const activeEntry = results[activeIndex];
 
   const optionId = useCallback((index: number): string => listboxId + "option-" + String(index), [listboxId]);
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    const list = listRef.current;
+    const active = document.getElementById(optionId(activeIndex));
+    if (!list || !active || !list.contains(active)) return;
+    const optionRect = active.getBoundingClientRect();
+    const listRect = list.getBoundingClientRect();
+    // The opening dialog may still be scaled; scrollTop uses unscaled CSS pixels.
+    const scale = listRect.height / list.offsetHeight;
+    if (scale === 0) return;
+    const top = listRect.top + list.clientTop * scale;
+    const bottom = top + list.clientHeight * scale;
+    if (optionRect.top < top) list.scrollTop += (optionRect.top - top) / scale;
+    else if (optionRect.bottom > bottom) list.scrollTop += (optionRect.bottom - bottom) / scale;
+  }, [open, activeIndex, results, optionId]);
 
   const openPalette = useCallback((): void => {
     const active = document.activeElement;
@@ -183,7 +200,12 @@ export function SearchPalette(): ReactElement {
             onChange={handleQueryChange}
             onKeyDown={handleKeyDown}
           />
-          <ul id={listboxId} role="listbox" aria-label="Search results" className={resultsClass()}>
+          <ul
+            ref={listRef}
+            id={listboxId}
+            role="listbox"
+            aria-label="Search results"
+            className={resultsClass()}>
             {results.map((entry, index) => (
               <li
                 key={entry.href}
