@@ -1,0 +1,73 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "bracketSpacing": true,
+  "bracketSameLine": true,
+  "singleQuote": false,
+  "jsxSingleQuote": false,
+  "trailingComma": "es5",
+  "semi": true,
+  "printWidth": 110,
+  "arrowParens": "always",
+  "endOfLine": "lf",
+  "sortTailwindcss": {
+    "stylesheet": "./packages/ui/src/styles/ui.css",
+    "functions": ["tv", "cn"]
+  },
+  "sortImports": {
+    "newlinesBetween": true,
+    "sortSideEffects": true,
+    "customGroups": [
+      {
+        "groupName": "react",
+        "elementNamePattern": ["react", "react/**"]
+      },
+      {
+        "groupName": "elmera",
+        "elementNamePattern": ["@elmeragroup", "@elmeragroup/**"]
+      }
+    ],
+    "groups": [
+      "react",
+      ["builtin", "external", "internal", "subpath"],
+      "elmera",
+      ["parent", "sibling", "index"],
+      "unknown"
+    ]
+  },
+  "sortPackageJson": false,
+  "ignorePatterns": [
+    "node_modules",
+    "**/node_modules/**",
+    "dist",
+    "**/dist/**",
+    ".turbo",
+    "**/.next/**",
+    "apps/docs/src/generated/**",
+    "apps/docs/src/app/(docs)/components/*/api.json",
+    "plop-templates/**",
+    "**/next-env.d.ts",
+    ".artifacts",
+    ".cache",
+    ".ref",
+    "tooling/oxlint-anti-slop/**",
+    "**/__snapshots__/**",
+    "tooling/api-extractor/test/fixtures/**",
+    "pnpm-lock.yaml",
+    "*.lock",
+    "*.log",
+    ".DS_Store",
+    ".agent/**",
+    ".agents/**",
+    ".claude/**",
+    ".codex/**",
+    ".continue/**",
+    ".cursor/**",
+    ".gemini/**",
+    ".opencode/**",
+    ".pi/**",
+    ".roo/**",
+    ".windsurf/**",
+    "docs/**",
+    "CONTEXT.md"
+  ]
+}

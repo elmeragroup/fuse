@@ -1,0 +1,91 @@
+/**
+ * Packed-entry gzip ceilings. Rows store `measuredGzip`. Ceiling derives as
+ * measured × 1.5 unless a standing ceiling is written.
+ */
+import { FLAG_RAW_CEILING_BYTES } from "./flag-payload";
+
+/** Date of the `measuredGzip` values recorded in the budget tables. */
+export const BUDGETS_MEASURED_ON = "2026-09-03";
+
+export type JsEntryBudget = {
+  name: string;
+  entryFile: string;
+  measuredGzip: number;
+  ceilingGzip: number;
+};
+
+export type NamedImportBudget = {
+  name: string;
+  entryFile: string;
+  exportName: string;
+  measuredGzip: number;
+  ceilingGzip: number;
+};
+
+export type CssBudget = {
+  name: string;
+  file: string;
+  measuredGzip: number;
+  ceilingGzip: number;
+};
+
+export type FlagRawBudget = {
+  name: string;
+  ceilingBytes: number;
+};
+
+type MeasuredRow = { measuredGzip: number; ceilingGzip?: number };
+type Measured<T> = Omit<T, "ceilingGzip"> & { ceilingGzip?: number };
+
+export function ceilingFromMeasured(gzipBytes: number): number {
+  return Math.round(gzipBytes * 1.5);
+}
+
+export function withDerivedCeiling<T extends MeasuredRow>(row: T): T & { ceilingGzip: number } {
+  return { ...row, ceilingGzip: row.ceilingGzip ?? ceilingFromMeasured(row.measuredGzip) };
+}
+
+function derive<T extends MeasuredRow>(rows: readonly T[]): Array<T & { ceilingGzip: number }> {
+  return rows.map(withDerivedCeiling);
+}
+
+export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
+  { name: ".", entryFile: "index.js", measuredGzip: 233896, ceilingGzip: 257843 },
+  { name: "theme", entryFile: "theme.js", measuredGzip: 6172, ceilingGzip: 9194 },
+  { name: "button", entryFile: "button.js", measuredGzip: 25248, ceilingGzip: 37821 },
+  { name: "scroll-area", entryFile: "scroll-area.js", measuredGzip: 28555, ceilingGzip: 42804 },
+  { name: "illustrations", entryFile: "illustrations.js", measuredGzip: 11046, ceilingGzip: 16590 },
+  { name: "separator", entryFile: "separator.js", measuredGzip: 10524 },
+  { name: "field", entryFile: "field.js", measuredGzip: 30277, ceilingGzip: 45407 },
+  { name: "item", entryFile: "item.js", measuredGzip: 24143, ceilingGzip: 36177 },
+  { name: "input", entryFile: "input.js", measuredGzip: 25114, ceilingGzip: 37569 },
+  { name: "input-group", entryFile: "input-group.js", measuredGzip: 28003, ceilingGzip: 42002 },
+  { name: "textarea", entryFile: "textarea.js", measuredGzip: 21354, ceilingGzip: 31917 },
+  { name: "flags", entryFile: "flags.js", measuredGzip: 1388 },
+] satisfies readonly Measured<JsEntryBudget>[]);
+
+export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
+  {
+    name: "icons/Check",
+    entryFile: "icons.js",
+    exportName: "Check",
+    measuredGzip: 818,
+    ceilingGzip: 1215,
+  },
+] satisfies readonly Measured<NamedImportBudget>[]);
+
+export const CSS_BUDGETS: readonly CssBudget[] = derive([
+  { name: "themes.css", file: "themes.css", measuredGzip: 2274, ceilingGzip: 3424 },
+  { name: "styles.css", file: "styles.css", measuredGzip: 22995, ceilingGzip: 24575 },
+] satisfies readonly Measured<CssBudget>[]);
+
+export const FLAG_RAW_BUDGETS: readonly FlagRawBudget[] = [
+  { name: "flags/*.svg", ceilingBytes: FLAG_RAW_CEILING_BYTES },
+];
+
+export function budgetFailure(name: string, bytes: number, ceiling: number): string | undefined {
+  if (bytes <= ceiling) {
+    return undefined;
+  }
+  return `${name} ${bytes} bytes exceeds ceiling ${ceiling}`;
+}

@@ -1,0 +1,9 @@
+{
+  "extends": ["//"],
+  "tasks": {
+    "test": {
+      "dependsOn": ["build"],
+      "env": ["DOCS_BASE_URL"]
+    }
+  }
+}

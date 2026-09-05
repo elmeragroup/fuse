@@ -1,0 +1,135 @@
+{
+  "name": "@elmeragroup/ui",
+  "version": "0.0.0",
+  "private": false,
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts"
+    },
+    "./button": {
+      "types": "./src/button.ts",
+      "import": "./src/button.ts"
+    },
+    "./css": "./src/styles/ui.css",
+    "./demo-stage-comfortable.css": "./dist/demo-stage-comfortable.css",
+    "./field": {
+      "types": "./src/field.ts",
+      "import": "./src/field.ts"
+    },
+    "./flags": {
+      "types": "./src/flags.ts",
+      "import": "./src/flags.ts"
+    },
+    "./flags/*.svg": "./src/flags/*.svg",
+    "./icons": {
+      "types": "./src/icons.ts",
+      "import": "./src/icons.ts"
+    },
+    "./illustrations": {
+      "types": "./src/illustrations.ts",
+      "import": "./src/illustrations.ts"
+    },
+    "./input": {
+      "types": "./src/input.ts",
+      "import": "./src/input.ts"
+    },
+    "./input-group": {
+      "types": "./src/input-group.ts",
+      "import": "./src/input-group.ts"
+    },
+    "./item": {
+      "types": "./src/item.ts",
+      "import": "./src/item.ts"
+    },
+    "./scroll-area": {
+      "types": "./src/scroll-area.ts",
+      "import": "./src/scroll-area.ts"
+    },
+    "./separator": {
+      "types": "./src/separator.ts",
+      "import": "./src/separator.ts"
+    },
+    "./styles.css": "./dist/styles.css",
+    "./textarea": {
+      "types": "./src/textarea.ts",
+      "import": "./src/textarea.ts"
+    },
+    "./theme": {
+      "types": "./src/theme.ts",
+      "import": "./src/theme.ts"
+    },
+    "./theme-catalog": {
+      "types": "./src/theme/catalog.ts",
+      "import": "./src/theme/catalog.ts"
+    },
+    "./themes.css": "./dist/themes.css"
+  },
+  "publishConfig": {
+    "directory": "dist",
+    "access": "public",
+    "linkDirectory": false
+  },
+  "scripts": {
+    "build": "node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/build.ts",
+    "ci:checks": "echo '@elmeragroup/ui ci:checks is a no-op anchor; its gates run as turbo dependsOn (see turbo.json)'",
+    "generate:exports": "node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/write-source-exports.ts",
+    "pack": "node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/pack.ts",
+    "package:check": "node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/package-check.ts",
+    "size-limit": "node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/size-limit.ts",
+    "test": "vitest run --project unit",
+    "test:browser": "vitest run --project browser",
+    "test:types": "vitest --config vitest.types.config.ts --typecheck.only --run",
+    "type-check": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "tailwindcss": "catalog:"
+  },
+  "peerDependenciesMeta": {
+    "tailwindcss": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@base-ui/react": "catalog:",
+    "@internationalized/date": "catalog:",
+    "@internationalized/string": "catalog:",
+    "@phosphor-icons/react": "catalog:",
+    "clsx": "catalog:",
+    "libphonenumber-js": "catalog:",
+    "react-aria": "catalog:",
+    "react-aria-components": "catalog:",
+    "sugar-high": "catalog:",
+    "tailwind-merge": "catalog:",
+    "tailwind-variants": "catalog:",
+    "tailwindcss-react-aria-components": "catalog:",
+    "tw-animate-css": "catalog:"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/cli": "catalog:",
+    "@arethetypeswrong/core": "catalog:",
+    "@elmeragroup/typescript-config": "workspace:*",
+    "@tailwindcss/cli": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitest/browser-playwright": "catalog:",
+    "playwright": "catalog:",
+    "publint": "catalog:",
+    "rolldown": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "tailwindcss": "catalog:",
+    "tsdown": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  }
+}
