@@ -1,0 +1,32 @@
+/**
+ * SCAFFOLD — replace with the §4 axis table of docs/spec/components/{{name}}.md.
+ *
+ * The `size` axis below is the canonical control-box ladder: four rungs reading the
+ * `--control-*` implementation variables (conventions.md § Density metrics). Keep it
+ * only if {{pascalCase name}} encodes a control box. Delete it when the spec's size axis is a
+ * type-scale axis (Text/Heading), an overlay-width axis (Dialog/Sheet) or a decorative
+ * size — those are not density rungs. A single-height field box pins the `md` rung and
+ * grows no size axis at all (ruling 2).
+ *
+ * Never write a literal `h-9` / `px-2.5` metric ladder here; density retargets the
+ * variables on `:root[data-density="comfortable"]`.
+ *
+ * TODO({{name}}): fill `base`, and compose `focusRing({ target: … })` from
+ * `../../styles/utils` if the spec §7 gives this component a focus receiver.
+ */
+import { tv } from "tailwind-variants";
+
+export const {{camelCase name}}Variants = tv({
+  base: "",
+  variants: {
+    size: {
+      xs: "text-xs h-(--control-h-xs) gap-(--control-gap-xs) px-(--control-px-xs)",
+      sm: "text-sm h-(--control-h-sm) gap-(--control-gap-sm) px-(--control-px-sm)",
+      md: "h-(--control-h-md) gap-(--control-gap-md) px-(--control-px-md) [font-size:var(--control-text)] [line-height:var(--control-leading)]",
+      lg: "h-(--control-h-lg) gap-(--control-gap-lg) px-(--control-px-lg) [font-size:var(--control-text)] [line-height:var(--control-leading)]",
+    },
+  },
+  defaultVariants: {
+    size: "md",
+  },
+});

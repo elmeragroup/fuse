@@ -8,6 +8,7 @@
     "dev": "turbo run dev",
     "format": "oxfmt",
     "format:check": "oxfmt --check",
+    "gen": "plop --plopfile plopfile.mjs",
     "lint": "oxlint . --deny-warnings",
     "lint:fix": "oxlint --fix .",
     "test": "turbo run test",
@@ -26,6 +27,7 @@
     "oxfmt": "catalog:",
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",
+    "plop": "catalog:",
     "turbo": "catalog:",
     "typescript": "catalog:"
   },

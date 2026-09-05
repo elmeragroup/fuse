@@ -178,6 +178,9 @@ importers:
       oxlint-tsgolint:
         specifier: 'catalog:'
         version: 7.0.2001
+      plop:
+        specifier: 'catalog:'
+        version: 4.0.5(@types/node@25.9.5)
       turbo:
         specifier: 'catalog:'
         version: 2.10.2
