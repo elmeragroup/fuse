@@ -26,9 +26,9 @@ import { phoneNumberFieldStrings } from "./intl";
 import type { PhoneNumberCountry } from "./phone-engine";
 
 export type PhoneNumberFieldProps = {
-  /** Controlled outer value; URI-decoded on sync (may arrive from URL params). */
+  /** Authoritative controlled value; URI-decoded when received. Omit for uncontrolled editing. */
   value?: string;
-  /** Receives the formatted output value (per `outputFormat`), not raw digits. */
+  /** Proposes a formatted output value. Controlled fields display it after parent acceptance. */
   onChange?: (value: string) => void;
   /**
    * Initial country. Must be a libphonenumber country with a packaged flag asset.
@@ -36,7 +36,7 @@ export type PhoneNumberFieldProps = {
    * @default "NO"
    */
   defaultCountryCode?: Extract<CountryCode, FlagAssetCode>;
-  /** Custom/trimmed libphonenumber metadata. Country rows are intersected with `flagAssets`. */
+  /** Custom/trimmed metadata. Replacement reconciles the picker while preserving existing international identity. */
   metadata?: MetadataJson;
   /**
    * Detect country from a `+`/`00` prefix while typing or pasting.
@@ -44,7 +44,7 @@ export type PhoneNumberFieldProps = {
    */
   autoDetectCountry?: boolean;
   /**
-   * Store and display the full number with prefix instead of national digits.
+   * Preserve entered digits and international prefixes in the display. Accepted national drafts stay national.
    * @default false
    */
   international?: boolean;
@@ -81,12 +81,12 @@ export type PhoneNumberFieldProps = {
    */
   isInvalid?: boolean;
   /**
-   * Forwards `disabled` to Field and the country Combobox.
+   * Disables editing and both visible and hidden form inputs.
    * @default false
    */
   isDisabled?: boolean;
   /**
-   * Forwards `readOnly` to the country Combobox and the visible input.
+   * Blocks edits, including paste and country changes, while preserving focus and form submission.
    * @default false
    */
   isReadOnly?: boolean;
@@ -214,6 +214,7 @@ export function PhoneNumberField({
             items={phone.countries}
             value={phone.selectedCountry}
             onValueChange={(next) => {
+              if (isDisabled || isReadOnly) return;
               phone.selectCountry(next?.code);
               requestAnimationFrame(() => numberInputRef.current?.focus());
             }}
@@ -307,8 +308,12 @@ export function PhoneNumberField({
             readOnly={isReadOnly}
             name={name ? `${name}-display-value` : "phone-number-display-value"}
             value={phone.displayValue}
-            onChange={(event) => phone.handleInputChange(event.currentTarget.value)}
-            onPaste={phone.handlePaste}
+            onChange={(event) => {
+              if (!isDisabled && !isReadOnly) phone.handleInputChange(event.currentTarget.value);
+            }}
+            onPaste={(event) => {
+              if (!isDisabled && !isReadOnly) phone.handlePaste(event);
+            }}
             onBlur={onBlur}
             placeholder={placeholder}
             autoFocus={autoFocus}
@@ -322,7 +327,7 @@ export function PhoneNumberField({
           {endContent}
         </InputGroup.Root>
       </FieldFrame>
-      <input type="hidden" name={name} value={phone.outputValue} />
+      <input type="hidden" name={name} value={phone.outputValue} disabled={isDisabled} />
     </>
   );
 }

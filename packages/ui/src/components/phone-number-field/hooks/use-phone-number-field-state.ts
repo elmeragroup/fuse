@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ClipboardEvent } from "react";
 
 import type { CountryCode, MetadataJson } from "libphonenumber-js/core";
@@ -21,7 +21,6 @@ import type {
   PhoneNumberCountry,
   PhoneNumberFormat,
   ProcessedPhoneInput,
-  ResolvePhoneFieldValuesOptions,
 } from "../phone-engine";
 
 export type UsePhoneNumberFieldStateOptions = {
@@ -57,31 +56,48 @@ function decodeFieldValue(value: string): string {
   }
 }
 
-type CachedPhoneValues = ResolvePhoneFieldValuesOptions & { values: PhoneFieldValues };
+type PhoneSnapshot = ProcessedPhoneInput & { values: PhoneFieldValues };
 
-function phoneFieldValuesFrom(
-  input: ResolvePhoneFieldValuesOptions,
-  cacheRef: { current: CachedPhoneValues | null }
-): PhoneFieldValues {
-  const cache = cacheRef.current;
-  if (
-    cache !== null &&
-    cache.digits === input.digits &&
-    cache.country === input.country &&
-    cache.metadata === input.metadata &&
-    cache.outputFormat === input.outputFormat &&
-    cache.international === input.international &&
-    cache.formatOnType === input.formatOnType
-  ) {
-    return cache.values;
-  }
-  const values = resolvePhoneFieldValues(input);
-  cacheRef.current = { ...input, values };
-  return values;
+type PhoneConfiguration = {
+  countries: PhoneNumberCountry[];
+  metadata: MetadataJson;
+  autoDetectCountry: boolean;
+  international: boolean;
+  outputFormat: PhoneNumberFormat;
+  formatOnType: boolean;
+};
+
+type PhoneState = {
+  configuration: PhoneConfiguration;
+  value: string | undefined;
+  accepted: PhoneSnapshot;
+  proposal: PhoneSnapshot | null;
+};
+
+function snapshot(next: ProcessedPhoneInput, configuration: PhoneConfiguration): PhoneSnapshot {
+  return {
+    ...next,
+    values: resolvePhoneFieldValues({
+      ...configuration,
+      digits: next.digits,
+      country: next.country.code,
+    }),
+  };
+}
+
+function receiveValue(input: string, country: PhoneNumberCountry, configuration: PhoneConfiguration) {
+  return snapshot(
+    processInputWithDetection({
+      ...configuration,
+      input: cleanPhoneInput(decodeFieldValue(input)),
+      currentCountry: country,
+    }),
+    configuration
+  );
 }
 
 export function usePhoneNumberFieldState({
-  value = "",
+  value,
   onChange,
   defaultCountryCode,
   metadata = defaultMetadata,
@@ -94,122 +110,83 @@ export function usePhoneNumberFieldState({
   locale,
 }: UsePhoneNumberFieldStateOptions): UsePhoneNumberFieldStateReturn {
   const countries = useMemo(() => requirePickerCountries(getCountries(metadata)), [metadata]);
-  const initialCountry = useMemo(
-    () => resolveSelectedCountry(countries, defaultCountryCode),
-    [countries, defaultCountryCode]
+  const configuration = useMemo(
+    () => ({
+      countries,
+      metadata,
+      autoDetectCountry,
+      international,
+      outputFormat,
+      formatOnType,
+    }),
+    [countries, metadata, autoDetectCountry, international, outputFormat, formatOnType]
   );
+  const [stored, setState] = useState<PhoneState>(() => ({
+    configuration,
+    value,
+    accepted: receiveValue(value ?? "", resolveSelectedCountry(countries, defaultCountryCode), configuration),
+    proposal: null,
+  }));
 
-  const [phoneState, setPhoneState] = useState<ProcessedPhoneInput>({
-    digits: "",
-    country: initialCountry,
-  });
-  const { digits, country: selectedCountry } = phoneState;
+  // Parsed values belong to immutable snapshots. A proposed edit is reusable only when
+  // the parent accepts its output; an unchanged prop keeps the accepted snapshot visible.
+  let state = stored;
+  if (stored.configuration !== configuration || stored.value !== value) {
+    const previous =
+      stored.proposal && (stored.value === undefined || stored.proposal.values.outputValue === stored.value)
+        ? stored.proposal
+        : stored.accepted;
+    const country = resolveSelectedCountry(countries, previous.country.code);
+    const acceptedEcho =
+      stored.configuration === configuration && stored.proposal?.values.outputValue === value;
+    // Catalog replacement preserves the existing number's international identity. An
+    // unsupported prefix remains visible instead of being reinterpreted in the new country.
+    const existingInput =
+      previous.digits && !previous.digits.startsWith("+")
+        ? previous.country.dialCode + previous.digits
+        : previous.digits;
+    const accepted =
+      acceptedEcho && stored.proposal
+        ? stored.proposal
+        : receiveValue(value ?? existingInput, country, configuration);
+    state = { configuration, value, accepted, proposal: null };
+    setState(state);
+  }
+  const current =
+    state.proposal && (value === undefined || state.proposal.values.outputValue === value)
+      ? state.proposal
+      : state.accepted;
+  const { digits, country: selectedCountry, values } = current;
 
-  /**
-   * applyState computes the next display/output pair at the emit call site and
-   * records it here so the `useMemo` below reuses that parse. Written from
-   * event/effect handlers, never from render (phone-number-field.md §8.16).
-   */
-  const valuesCacheRef = useRef<CachedPhoneValues | null>(null);
-
-  // The value this hook last reconciled — emitted to `onChange` or synced from the parent.
-  // A controlled parent echoing it straight back is the common case, and re-processing it
-  // parses the same string a second time.
-  const lastReconciledRef = useRef<string | null>(null);
-  // The `international`/`metadata` pair the sync effect last ran on, so a change to either
-  // still re-syncs even when `value` is the string the hook itself last reconciled.
-  const lastSyncRef = useRef<{ international: boolean; metadata: MetadataJson } | null>(null);
-
-  /**
-   * The single state application: country-change notification, the state write, and the
-   * optional `onChange` emit. `commit` (emitting) and `syncValue` (not emitting) were the
-   * same three steps written twice.
-   *
-   * `onChange` / `onCountryChange` arrive as parent inline arrows, so wrapping this
-   * chain in `useCallback` cannot keep `handleInputChange` / `selectCountry` /
-   * `handlePaste` stable. They are recreated each render on purpose.
-   */
-  const applyState = (next: ProcessedPhoneInput, { emitChange }: { emitChange: boolean }) => {
-    if (next.country.code !== selectedCountry.code) {
-      onCountryChange?.(next.country);
+  // Notify only committed country changes, including external value/catalog replacement.
+  const notifiedCountry = useRef(selectedCountry.code);
+  useEffect(() => {
+    if (notifiedCountry.current !== selectedCountry.code) {
+      notifiedCountry.current = selectedCountry.code;
+      onCountryChange?.(selectedCountry);
     }
-    setPhoneState(next);
-    if (emitChange) {
-      const values = phoneFieldValuesFrom(
-        {
-          digits: next.digits,
-          country: next.country.code,
-          metadata,
-          outputFormat,
-          international,
-          formatOnType,
-        },
-        valuesCacheRef
-      );
-      lastReconciledRef.current = values.outputValue;
-      onChange?.(values.outputValue);
-    }
+  }, [selectedCountry, onCountryChange]);
+
+  const propose = (next: ProcessedPhoneInput) => {
+    const proposal = snapshot(next, configuration);
+    setState({ ...state, accepted: current, proposal });
+    onChange?.(proposal.values.outputValue);
   };
 
-  const syncValue = useEffectEvent(
-    (nextValue: string, nextInternational: boolean, nextMetadata: MetadataJson) => {
-      const lastSync = lastSyncRef.current;
-      if (
-        nextValue === lastReconciledRef.current &&
-        lastSync?.international === nextInternational &&
-        lastSync.metadata === nextMetadata
-      ) {
-        return;
-      }
-      lastSyncRef.current = { international: nextInternational, metadata: nextMetadata };
-      lastReconciledRef.current = nextValue;
-
-      if (!nextValue) {
-        applyState({ digits: "", country: selectedCountry }, { emitChange: false });
-        return;
-      }
-
-      applyState(
-        processInputWithDetection({
-          input: decodeFieldValue(nextValue),
-          currentCountry: selectedCountry,
-          countries,
-          autoDetectCountry,
-          international: nextInternational,
-          metadata: nextMetadata,
-        }),
-        { emitChange: false }
-      );
-    }
-  );
-
-  useEffect(() => {
-    syncValue(value, international, metadata);
-  }, [value, international, metadata]);
-
-  const handleInputChange = (newValue: string) => {
-    applyState(
+  const handleInputChange = (input: string) => {
+    propose(
       processInputWithDetection({
-        input: cleanPhoneInput(newValue),
+        ...configuration,
+        input: cleanPhoneInput(input),
         currentCountry: selectedCountry,
-        countries,
-        autoDetectCountry,
-        international,
-        metadata,
-      }),
-      { emitChange: true }
+      })
     );
   };
 
   const selectCountry = (code: CountryCode | undefined) => {
-    if (!code || code === selectedCountry.code) {
-      return;
-    }
-    const nextCountry = countries.find((row) => row.code === code);
-    if (!nextCountry) {
-      return;
-    }
-    applyState({ digits: preserveOnCountryChange ? digits : "", country: nextCountry }, { emitChange: true });
+    if (!code || code === selectedCountry.code) return;
+    const country = countries.find((row) => row.code === code);
+    if (country) propose({ digits: preserveOnCountryChange ? digits : "", country });
   };
 
   const handlePaste = (event: ClipboardEvent<HTMLInputElement>) => {
@@ -218,26 +195,8 @@ export function usePhoneNumberFieldState({
   };
 
   const getCountryName = useMemo(() => countryNameResolver(locale), [locale]);
-
-  const { displayValue, outputValue } = useMemo(
-    () =>
-      phoneFieldValuesFrom(
-        {
-          digits,
-          country: selectedCountry.code,
-          metadata,
-          outputFormat,
-          international,
-          formatOnType,
-        },
-        valuesCacheRef
-      ),
-    [digits, selectedCountry.code, metadata, outputFormat, international, formatOnType]
-  );
-
   return {
-    displayValue,
-    outputValue,
+    ...values,
     handleInputChange,
     selectCountry,
     handlePaste,

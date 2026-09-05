@@ -18,6 +18,7 @@ import {
   processInputWithDetection,
   requirePickerCountries,
   resolveSelectedCountry,
+  resolvePhoneFieldValues,
 } from "./phone-engine";
 
 const SELECT_COUNTRY_COPY = {
@@ -145,7 +146,34 @@ describe("phone-number-field picker set", () => {
 
     const ac = detect("+24712345");
     expect(ac.country.code).toBe("NO");
-    expect(ac.digits).toBe("12345");
+    expect(ac.digits).toBe("+24712345");
     expect(FLAG_GAP_COUNTRY_CODES).not.toContain(ac.country.code);
   });
+});
+
+describe("phone number international identity", () => {
+  it.each(["+24712345", "+79123456789", "0024712345", "+46701234567"])(
+    "preserves the full input %s through detection and output",
+    (input) => {
+      const countries = getCountries();
+      const currentCountry = resolveSelectedCountry(countries, "NO");
+      const next = processInputWithDetection({
+        input,
+        currentCountry,
+        countries,
+        autoDetectCountry: true,
+        international: false,
+        metadata: defaultMetadata,
+      });
+      const values = resolvePhoneFieldValues({
+        digits: next.digits,
+        country: next.country.code,
+        metadata: defaultMetadata,
+        outputFormat: "e164",
+        international: false,
+        formatOnType: false,
+      });
+      expect(values.outputValue).toBe(input.replace(/^00/, "+"));
+    }
+  );
 });

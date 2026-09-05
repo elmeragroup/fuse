@@ -159,7 +159,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Store and display the full number with prefix instead of national digits.",
+          "description": "Preserve entered digits and international prefixes in the display. Accepted national drafts stay national.",
           "required": false
         },
         {
@@ -168,7 +168,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Forwards `disabled` to Field and the country Combobox.",
+          "description": "Disables editing and both visible and hidden form inputs.",
           "required": false
         },
         {
@@ -186,7 +186,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Forwards `readOnly` to the country Combobox and the visible input.",
+          "description": "Blocks edits, including paste and country changes, while preserving focus and form submission.",
           "required": false
         },
         {
@@ -213,7 +213,7 @@
           "type": "MetadataJson | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Custom/trimmed libphonenumber metadata. Country rows are intersected with `flagAssets`.",
+          "description": "Custom/trimmed metadata. Replacement reconciles the picker while preserving existing international identity.",
           "required": false
         },
         {
@@ -249,7 +249,7 @@
           "type": "((value: string) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Receives the formatted output value (per `outputFormat`), not raw digits.",
+          "description": "Proposes a formatted output value. Controlled fields display it after parent acceptance.",
           "required": false
         },
         {
@@ -312,7 +312,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Controlled outer value; URI-decoded on sync (may arrive from URL params).",
+          "description": "Authoritative controlled value; URI-decoded when received. Omit for uncontrolled editing.",
           "required": false
         }
       ]

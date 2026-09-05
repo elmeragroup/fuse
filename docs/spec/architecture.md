@@ -147,6 +147,7 @@ Both CSS modes ship in the same package version; there is no separate CSS packag
 
 Rules:
 
+- **React 19 compatibility includes 19.0.0 and 19.1.1.** Library code must use APIs available at that lower bound. The packed package check independently installs the tarball with React/React DOM 19.0.0, 19.1.1, and the exact workspace pair. Each consumer verifies its resolved versions, imports the root and phone entries, and server-renders PhoneNumberField plus Button as a control. Workspace symlinks do not satisfy this check.
 - **React is the only unconditional peer consumers must already have.** Raw-source CSS consumers install the optional Tailwind peer. Standalone-CSS consumers need neither. When `chart` ships (Wave 9), its consumers will also install the optional `recharts` peer. Implementation libraries (base-ui, RAC, Phosphor, intl runtimes) are regular dependencies — never peers — so consumers do no bookkeeping for our internals and version skew is impossible.
 - Optional-peer discipline (when chart ships): nothing outside `chart` may import `recharts`; the import is lintable and the entry is budgeted excluding recharts ([performance](performance.md) §2).
 - Pinned deps (`@base-ui/react`, `react-aria-components`, `react-aria`, `@phosphor-icons/react`) are bumped in dedicated PRs with the contract test suite as the gate — never by broad range resolution.

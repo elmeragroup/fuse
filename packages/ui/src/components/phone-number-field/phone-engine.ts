@@ -161,7 +161,8 @@ function formatOutputValue(
   outputFormat: PhoneNumberFormat
 ): string {
   if (!phoneNumber) {
-    return outputFormat === "raw" ? digits : "";
+    if (outputFormat === "raw") return digits;
+    return outputFormat === "e164" && digits.startsWith("+") ? digits.replace(/[^\d+]/g, "") : "";
   }
   switch (outputFormat) {
     case "e164":
@@ -193,6 +194,9 @@ function getDisplayValue(
 ): string {
   if (!digits) {
     return "";
+  }
+  if (digits.startsWith("+") && (!phoneNumber?.country || phoneNumber.country !== country)) {
+    return formatOnType && phoneNumber ? phoneNumber.formatInternational() : digits.replace(/[^\d+]/g, "");
   }
   if (formatOnType && phoneNumber) {
     if (international) {
@@ -252,16 +256,17 @@ export function processInputWithDetection({
   international,
   metadata,
 }: ProcessInputOptions): ProcessedPhoneInput {
-  if (!autoDetectCountry || !hasInternationalPrefix(input)) {
+  if (!hasInternationalPrefix(input)) {
     return { digits: input, country: currentCountry };
   }
 
   const normalized = normalizeInternationalPrefix(input);
+  if (!autoDetectCountry) return { digits: normalized, country: currentCountry };
   const detected = detectCountryFromInput(normalized, metadata);
   const nextCountry = detected ? countries.find((row) => row.code === detected) : undefined;
   const country = nextCountry && nextCountry.code !== currentCountry.code ? nextCountry : currentCountry;
 
-  if (!international) {
+  if (!international && nextCountry) {
     const phoneNumber = parsePhoneNumber(normalized, country.code, metadata);
     return {
       digits: phoneNumber?.nationalNumber ?? normalized,

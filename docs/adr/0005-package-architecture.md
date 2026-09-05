@@ -39,3 +39,7 @@ Both reference monorepos ship raw TSX consumed via `transpilePackages` — a sha
 ## Amendment 2026-09-02 — standalone CSS compiles from dist only
 
 The build-only wrapper that produces `styles.css` imports `tailwindcss/utilities.css` with `source(none)` and names the emitted dist JavaScript as its single `@source`. Automatic source detection is off: with it on, Tailwind also scanned the working tree, so a utility spelled only in a test or another unpublished module was compiled into the published sheet. The wrapper therefore carries no `@source not` exclusions — nothing under `src/` is scanned, so nothing under `src/` has to be excluded — and the sheet is a description of the published JavaScript. Dual distribution itself is unchanged: raw-source consumers still point one `@source` at the installed package.
+
+## Amendment 2026-09-05: retain the React 19 lower bound
+
+React and React DOM remain `^19`. Phone state uses APIs available in React 19.0 rather than requiring React 19.2's `useEffectEvent`. Package checks install the actual tarball into independent consumers at 19.0.0, the reproduced 19.1.1 failure, and the exact workspace pair. Root and phone imports and phone/button server rendering must pass on each pair.
