@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import type { ChangeEvent, ComponentProps, ReactElement, ReactNode } from "react";
 
+import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { Field } from "../field/field";
 import { FieldFrame } from "../field/field-frame";
 import { Textarea } from "../textarea/textarea";
@@ -16,7 +17,7 @@ export type TextareaFieldProps = {
   errorMessage?: ReactNode;
   /** Controlled value. */
   value?: string;
-  /** Uncontrolled initial value. */
+  /** Uncontrolled initial value, restored with its counter by native form reset. */
   defaultValue?: string;
   /** Called with the string value, not the native event. */
   onChange?: (value: string) => void;
@@ -52,10 +53,31 @@ export function TextareaField({
   isInvalid = false,
   isDisabled = false,
   className,
+  ref,
   ...props
 }: TextareaFieldProps): ReactElement {
   const isControlled = value !== undefined;
   const [uncontrolledLength, setUncontrolledLength] = useState(() => (defaultValue ?? "").length);
+  const [textarea, setTextarea] = useState<HTMLTextAreaElement | null>(null);
+  const mergedRef = useMergedRefs(ref, setTextarea);
+  const formId = props.form;
+  useLayoutEffect(() => {
+    const form = textarea?.form;
+    if (!textarea || !form || isControlled) return;
+    const control = textarea;
+    let subscribed = true;
+    function handleReset(event: Event): void {
+      // A task runs after native reset, including reset-button default actions.
+      setTimeout(() => {
+        if (subscribed && !event.defaultPrevented) setUncontrolledLength(control.value.length);
+      });
+    }
+    form.addEventListener("reset", handleReset);
+    return () => {
+      subscribed = false;
+      form.removeEventListener("reset", handleReset);
+    };
+  }, [textarea, isControlled, formId]);
   const currentLength = value === undefined ? uncontrolledLength : value.length;
 
   function handleChange(event: ChangeEvent<HTMLTextAreaElement>): void {
@@ -85,6 +107,7 @@ export function TextareaField({
         render={
           <Textarea
             {...props}
+            ref={mergedRef}
             className={className}
             value={isControlled ? value : undefined}
             defaultValue={isControlled ? undefined : defaultValue}

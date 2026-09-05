@@ -46,7 +46,7 @@ Label row renders when `label` is set or `maxLength` is set, including `maxLengt
 | `className`    | `string`                   | —       | merged onto the inner `Textarea`                                        |
 | …rest          | remaining `Textarea` props | —       | spread onto the inner `Textarea`                                        |
 
-Controlled/uncontrolled: supplying `value` makes it controlled; `defaultValue` (or neither) is uncontrolled. The character counter reflects the current value in both modes (uncontrolled mode tracks length internally from the change event).
+Controlled/uncontrolled: supplying `value` makes it controlled; `defaultValue` (or neither) is uncontrolled. The character counter reflects the current value in both modes (uncontrolled mode tracks length internally from the change event). After an uncanceled native form reset (button or programmatic), the counter reads the restored DOM value. Canceled resets preserve the current count. Controlled values remain parent-owned, and resets never call `onChange`. The form listener and pending reset work are invalidated on unmount.
 
 ## 4 Variants
 
