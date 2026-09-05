@@ -35,16 +35,19 @@ describe("exports map", () => {
       "icons",
       "illustrations",
       "flags",
+      "accordion",
       "alert",
       "alert-dialog",
       "avatar",
       "badge",
+      "breadcrumb",
       "button",
       "button-group",
       "card",
       "checkbox",
       "checkbox-card",
       "code",
+      "collapsible",
       "combobox",
       "confirm-button",
       "description-list",
@@ -61,6 +64,7 @@ describe("exports map", () => {
       "loader",
       "meter",
       "number-field",
+      "pagination",
       "phone-number-field",
       "popover",
       "popover-info-button",
@@ -71,10 +75,12 @@ describe("exports map", () => {
       "separator",
       "sheet",
       "show",
+      "sidebar",
       "skeleton",
       "span",
       "switch",
       "table",
+      "tabs",
       "text",
       "text-field",
       "textarea",
@@ -101,7 +107,7 @@ describe("exports map", () => {
 
   it("asserts the deferred list and the shipped bare-component count separately", () => {
     expect(DEFERRED_ENTRIES).toEqual(["chart"]);
-    expect(BARE_COMPONENT_ENTRIES).toHaveLength(50);
+    expect(BARE_COMPONENT_ENTRIES).toHaveLength(56);
     const shippedBare = discovered.jsEntries.filter(
       (entry) => entry.inRootBarrel && entry.subpath !== "." && entry.subpath !== "theme"
     );
@@ -596,6 +602,12 @@ describe("exports map", () => {
     expect(popoverInfoButton?.runtimeExports).toEqual(["PopoverInfoButton"]);
   });
 
+  it("publishes Accordion and the public accordionVariants recipe from /accordion and the root barrel", () => {
+    const accordion = discovered.jsEntries.find((entry) => entry.subpath === "accordion");
+    expect(accordion?.inRootBarrel).toBe(true);
+    expect(accordion?.runtimeExports).toEqual(["Accordion", "accordionVariants"]);
+  });
+
   it("publishes AlertDialog from /alert-dialog and the root barrel", () => {
     const alertDialog = discovered.jsEntries.find((entry) => entry.subpath === "alert-dialog");
     expect(alertDialog?.inRootBarrel).toBe(true);
@@ -606,6 +618,12 @@ describe("exports map", () => {
     const dropdownMenu = discovered.jsEntries.find((entry) => entry.subpath === "dropdown-menu");
     expect(dropdownMenu?.inRootBarrel).toBe(true);
     expect(dropdownMenu?.runtimeExports).toEqual(["DropdownMenu"]);
+  });
+
+  it("publishes Collapsible from /collapsible and the root barrel", () => {
+    const collapsible = discovered.jsEntries.find((entry) => entry.subpath === "collapsible");
+    expect(collapsible?.inRootBarrel).toBe(true);
+    expect(collapsible?.runtimeExports).toEqual(["Collapsible"]);
   });
 
   it("publishes ConfirmButton from /confirm-button and the root barrel", () => {
@@ -630,6 +648,21 @@ describe("exports map", () => {
     const combobox = discovered.jsEntries.find((entry) => entry.subpath === "combobox");
     expect(combobox?.inRootBarrel).toBe(true);
     expect(combobox?.runtimeExports).toEqual(["Combobox", "useComboboxAnchor"]);
+  });
+
+  it("publishes Sidebar, useSidebar and the six constants from /sidebar and the root barrel", () => {
+    const sidebar = discovered.jsEntries.find((entry) => entry.subpath === "sidebar");
+    expect(sidebar?.inRootBarrel).toBe(true);
+    expect(sidebar?.runtimeExports).toEqual([
+      "SIDEBAR_COOKIE_MAX_AGE",
+      "SIDEBAR_COOKIE_NAME",
+      "SIDEBAR_KEYBOARD_SHORTCUT",
+      "SIDEBAR_WIDTH",
+      "SIDEBAR_WIDTH_ICON",
+      "SIDEBAR_WIDTH_MOBILE",
+      "Sidebar",
+      "useSidebar",
+    ]);
   });
 
   it("publishes Toast from /toast and the root barrel", () => {
@@ -714,6 +747,24 @@ describe("exports map", () => {
     const meter = discovered.jsEntries.find((entry) => entry.subpath === "meter");
     expect(meter?.inRootBarrel).toBe(true);
     expect(meter?.runtimeExports).toEqual(["Meter", "METER_CONSTANTS"]);
+  });
+
+  it("publishes Tabs and the public tabsListVariants recipe from /tabs and the root barrel", () => {
+    const tabs = discovered.jsEntries.find((entry) => entry.subpath === "tabs");
+    expect(tabs?.inRootBarrel).toBe(true);
+    expect(tabs?.runtimeExports).toEqual(["Tabs", "tabsListVariants"]);
+  });
+
+  it("publishes Pagination and the public paginationVariants recipe from /pagination and the root barrel", () => {
+    const pagination = discovered.jsEntries.find((entry) => entry.subpath === "pagination");
+    expect(pagination?.inRootBarrel).toBe(true);
+    expect(pagination?.runtimeExports).toEqual(["Pagination", "paginationVariants"]);
+  });
+
+  it("publishes Breadcrumb from /breadcrumb and the root barrel", () => {
+    const breadcrumb = discovered.jsEntries.find((entry) => entry.subpath === "breadcrumb");
+    expect(breadcrumb?.inRootBarrel).toBe(true);
+    expect(breadcrumb?.runtimeExports).toEqual(["Breadcrumb"]);
   });
 
   it("publishes Alert from /alert and the root barrel", () => {

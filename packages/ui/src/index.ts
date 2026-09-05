@@ -5,16 +5,19 @@
  * Icons, illustrations, flags, and react-aria/* stay subpath-only.
  */
 
+export * from "./accordion";
 export * from "./alert";
 export * from "./alert-dialog";
 export * from "./avatar";
 export * from "./badge";
+export * from "./breadcrumb";
 export * from "./button";
 export * from "./button-group";
 export * from "./card";
 export * from "./checkbox";
 export * from "./checkbox-card";
 export * from "./code";
+export * from "./collapsible";
 export * from "./combobox";
 export * from "./confirm-button";
 export * from "./description-list";
@@ -31,6 +34,7 @@ export * from "./item";
 export * from "./loader";
 export * from "./meter";
 export * from "./number-field";
+export * from "./pagination";
 export * from "./phone-number-field";
 export * from "./popover";
 export * from "./popover-info-button";
@@ -41,10 +45,12 @@ export * from "./selection-item";
 export * from "./separator";
 export * from "./sheet";
 export * from "./show";
+export * from "./sidebar";
 export * from "./skeleton";
 export * from "./span";
 export * from "./switch";
 export * from "./table";
+export * from "./tabs";
 export * from "./text";
 export * from "./text-field";
 export * from "./textarea";

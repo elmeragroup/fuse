@@ -66,6 +66,10 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   { name: "input-group", entryFile: "input-group.js", measuredGzip: 28003, ceilingGzip: 42002 },
   { name: "textarea", entryFile: "textarea.js", measuredGzip: 21354, ceilingGzip: 31917 },
   { name: "flags", entryFile: "flags.js", measuredGzip: 1388 },
+  // `pnpm gen component` appends a 0-ceiling row below this marker, so a brand-new packed
+  // entry cannot slip through unbudgeted. Replace the 0 with measured × 1.5.
+  // plop:js-entry-budget
+  { name: "sidebar", entryFile: "sidebar.js", measuredGzip: 82845, ceilingGzip: 123824 },
   { name: "toast", entryFile: "toast.js", measuredGzip: 42392, ceilingGzip: 63440 },
   {
     name: "phone-number-field",
@@ -87,11 +91,13 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   { name: "selection-item", entryFile: "selection-item.js", measuredGzip: 32013, ceilingGzip: 47954 },
   { name: "switch", entryFile: "switch.js", measuredGzip: 26569, ceilingGzip: 39825 },
   { name: "button-group", entryFile: "button-group.js", measuredGzip: 17587 },
+  { name: "accordion", entryFile: "accordion.js", measuredGzip: 30211, ceilingGzip: 45276 },
   { name: "description-list", entryFile: "description-list.js", measuredGzip: 10715, ceilingGzip: 16070 },
   { name: "emoji", entryFile: "emoji.js", measuredGzip: 2442 },
   { name: "avatar", entryFile: "avatar.js", measuredGzip: 12463, ceilingGzip: 18701 },
   { name: "alert-dialog", entryFile: "alert-dialog.js", measuredGzip: 47735, ceilingGzip: 71367 },
   { name: "dropdown-menu", entryFile: "dropdown-menu.js", measuredGzip: 68278, ceilingGzip: 102293 },
+  { name: "collapsible", entryFile: "collapsible.js", measuredGzip: 27276, ceilingGzip: 40881 },
   { name: "select", entryFile: "select.js", measuredGzip: 64087, ceilingGzip: 95586 },
   { name: "show", entryFile: "show.js", measuredGzip: 148 },
   { name: "loader", entryFile: "loader.js", measuredGzip: 16748 },
@@ -109,9 +115,12 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   { name: "skeleton", entryFile: "skeleton.js", measuredGzip: 8701 },
   { name: "number-field", entryFile: "number-field.js", measuredGzip: 41008, ceilingGzip: 60983 },
   { name: "meter", entryFile: "meter.js", measuredGzip: 27773, ceilingGzip: 41048 },
+  { name: "tabs", entryFile: "tabs.js", measuredGzip: 25832, ceilingGzip: 38664 },
   { name: "confirm-button", entryFile: "confirm-button.js", measuredGzip: 25662, ceilingGzip: 38438 },
   { name: "table", entryFile: "table.js", measuredGzip: 11932, ceilingGzip: 17721 },
   { name: "textarea-field", entryFile: "textarea-field.js", measuredGzip: 32934, ceilingGzip: 46464 },
+  { name: "pagination", entryFile: "pagination.js", measuredGzip: 19425, ceilingGzip: 28785 },
+  { name: "breadcrumb", entryFile: "breadcrumb.js", measuredGzip: 25352, ceilingGzip: 37869 },
   { name: "alert", entryFile: "alert.js", measuredGzip: 30619, ceilingGzip: 45885 },
   { name: "react-aria/ui-providers", entryFile: "react-aria/ui-providers.js", measuredGzip: 1987 },
   {

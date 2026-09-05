@@ -12,6 +12,10 @@
       "types": "./src/index.ts",
       "import": "./src/index.ts"
     },
+    "./accordion": {
+      "types": "./src/accordion.ts",
+      "import": "./src/accordion.ts"
+    },
     "./alert": {
       "types": "./src/alert.ts",
       "import": "./src/alert.ts"
@@ -27,6 +31,10 @@
     "./badge": {
       "types": "./src/badge.ts",
       "import": "./src/badge.ts"
+    },
+    "./breadcrumb": {
+      "types": "./src/breadcrumb.ts",
+      "import": "./src/breadcrumb.ts"
     },
     "./button": {
       "types": "./src/button.ts",
@@ -51,6 +59,10 @@
     "./code": {
       "types": "./src/code.ts",
       "import": "./src/code.ts"
+    },
+    "./collapsible": {
+      "types": "./src/collapsible.ts",
+      "import": "./src/collapsible.ts"
     },
     "./combobox": {
       "types": "./src/combobox.ts",
@@ -130,6 +142,10 @@
     "./number-field": {
       "types": "./src/number-field.ts",
       "import": "./src/number-field.ts"
+    },
+    "./pagination": {
+      "types": "./src/pagination.ts",
+      "import": "./src/pagination.ts"
     },
     "./phone-number-field": {
       "types": "./src/phone-number-field.ts",
@@ -215,6 +231,10 @@
       "types": "./src/show.ts",
       "import": "./src/show.ts"
     },
+    "./sidebar": {
+      "types": "./src/sidebar.ts",
+      "import": "./src/sidebar.ts"
+    },
     "./skeleton": {
       "types": "./src/skeleton.ts",
       "import": "./src/skeleton.ts"
@@ -231,6 +251,10 @@
     "./table": {
       "types": "./src/table.ts",
       "import": "./src/table.ts"
+    },
+    "./tabs": {
+      "types": "./src/tabs.ts",
+      "import": "./src/tabs.ts"
     },
     "./text": {
       "types": "./src/text.ts",
