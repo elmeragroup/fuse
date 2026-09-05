@@ -42,7 +42,7 @@ describe("date field surface ownership", () => {
         await userEvent.keyboard("{Tab}");
         const segments = Array.from(host.querySelectorAll('[role="spinbutton"]'));
         const rows = Array.from(new Set(segments.map((element) => element.parentElement)));
-        const surface = kind === "field" ? rows[0] : host.querySelector('[data-slot="field-group"]');
+        const surface = page.getByRole("group", { name: "Date", exact: true }).element();
         if (!(surface instanceof HTMLElement)) throw new Error("Missing field surface");
         expect(surface.getBoundingClientRect().height).toBe(density === "dense" ? 36 : 44);
         expect(getComputedStyle(surface).borderTopWidth).toBe("1px");
@@ -96,9 +96,7 @@ describe("date field surface ownership", () => {
           )}
         </UiProviders>
       );
-      const segment = host.querySelector('[role="spinbutton"]');
-      const surface =
-        kind === "field" ? segment?.parentElement : host.querySelector('[data-slot="field-group"]');
+      const surface = page.getByRole("group", { name: "Date", exact: true }).element();
       if (!(surface instanceof HTMLElement)) throw new Error("Missing field surface");
       expect(getComputedStyle(surface).opacity).toBe("0.5");
       expect(getComputedStyle(surface).borderTopColor).toBe(cssVarColor(surface, "--error"));

@@ -6,13 +6,12 @@ import { describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
 
 import { render } from "../../../test/browser-render";
+import { fkasPrivate as theme } from "../../../test/themed-browser-render";
 import { Popover } from "../../components/popover/popover";
 import { ThemeScope } from "../../theme/theme-scope";
 import { useResolvedPortalContainer } from "../../theme/theme-scope-container";
 import { DatePicker } from "../date-picker/date-picker";
 import { UiProviders } from "../ui-providers/ui-providers";
-
-const theme = { variant: "internal", brand: "fkas", segment: "private" } as const;
 
 function Calendar({ container }: { container?: HTMLElement | RefObject<HTMLElement | null> }) {
   return (
@@ -70,14 +69,14 @@ describe("portal attachment", () => {
     });
   }
 
-  it("leaves a never-attached explicit ref pending inside a scope", () => {
+  it("leaves a never-attached explicit ref pending inside a scope", async () => {
     render(
       <ThemeScope theme={theme}>
         <Calendar container={{ current: null }} />
         <Popup container={{ current: null }} />
       </ThemeScope>
     );
-    expect(document.querySelector('[role="dialog"]')).toBeNull();
+    await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("renders into an already attached explicit element", async () => {
