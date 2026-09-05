@@ -5,12 +5,28 @@
  * Icons, illustrations, flags, and react-aria/* stay subpath-only.
  */
 
+export * from "./avatar";
+export * from "./badge";
 export * from "./button";
+export * from "./card";
+export * from "./code";
+export * from "./description-list";
+export * from "./emoji";
+export * from "./empty";
 export * from "./field";
+export * from "./frame";
+export * from "./heading";
 export * from "./input";
 export * from "./input-group";
 export * from "./item";
+export * from "./loader";
 export * from "./scroll-area";
 export * from "./separator";
+export * from "./show";
+export * from "./skeleton";
+export * from "./span";
+export * from "./table";
+export * from "./text";
 export * from "./textarea";
 export * from "./theme";
+export * from "./timeline-list";

@@ -12,12 +12,40 @@
       "types": "./src/index.ts",
       "import": "./src/index.ts"
     },
+    "./avatar": {
+      "types": "./src/avatar.ts",
+      "import": "./src/avatar.ts"
+    },
+    "./badge": {
+      "types": "./src/badge.ts",
+      "import": "./src/badge.ts"
+    },
     "./button": {
       "types": "./src/button.ts",
       "import": "./src/button.ts"
     },
+    "./card": {
+      "types": "./src/card.ts",
+      "import": "./src/card.ts"
+    },
+    "./code": {
+      "types": "./src/code.ts",
+      "import": "./src/code.ts"
+    },
     "./css": "./src/styles/ui.css",
     "./demo-stage-comfortable.css": "./dist/demo-stage-comfortable.css",
+    "./description-list": {
+      "types": "./src/description-list.ts",
+      "import": "./src/description-list.ts"
+    },
+    "./emoji": {
+      "types": "./src/emoji.ts",
+      "import": "./src/emoji.ts"
+    },
+    "./empty": {
+      "types": "./src/empty.ts",
+      "import": "./src/empty.ts"
+    },
     "./field": {
       "types": "./src/field.ts",
       "import": "./src/field.ts"
@@ -27,6 +55,14 @@
       "import": "./src/flags.ts"
     },
     "./flags/*.svg": "./src/flags/*.svg",
+    "./frame": {
+      "types": "./src/frame.ts",
+      "import": "./src/frame.ts"
+    },
+    "./heading": {
+      "types": "./src/heading.ts",
+      "import": "./src/heading.ts"
+    },
     "./icons": {
       "types": "./src/icons.ts",
       "import": "./src/icons.ts"
@@ -47,6 +83,10 @@
       "types": "./src/item.ts",
       "import": "./src/item.ts"
     },
+    "./loader": {
+      "types": "./src/loader.ts",
+      "import": "./src/loader.ts"
+    },
     "./scroll-area": {
       "types": "./src/scroll-area.ts",
       "import": "./src/scroll-area.ts"
@@ -55,7 +95,27 @@
       "types": "./src/separator.ts",
       "import": "./src/separator.ts"
     },
+    "./show": {
+      "types": "./src/show.ts",
+      "import": "./src/show.ts"
+    },
+    "./skeleton": {
+      "types": "./src/skeleton.ts",
+      "import": "./src/skeleton.ts"
+    },
+    "./span": {
+      "types": "./src/span.ts",
+      "import": "./src/span.ts"
+    },
     "./styles.css": "./dist/styles.css",
+    "./table": {
+      "types": "./src/table.ts",
+      "import": "./src/table.ts"
+    },
+    "./text": {
+      "types": "./src/text.ts",
+      "import": "./src/text.ts"
+    },
     "./textarea": {
       "types": "./src/textarea.ts",
       "import": "./src/textarea.ts"
@@ -68,7 +128,11 @@
       "types": "./src/theme/catalog.ts",
       "import": "./src/theme/catalog.ts"
     },
-    "./themes.css": "./dist/themes.css"
+    "./themes.css": "./dist/themes.css",
+    "./timeline-list": {
+      "types": "./src/timeline-list.ts",
+      "import": "./src/timeline-list.ts"
+    }
   },
   "publishConfig": {
     "directory": "dist",

@@ -35,21 +35,37 @@ describe("exports map", () => {
       "icons",
       "illustrations",
       "flags",
+      "avatar",
+      "badge",
       "button",
+      "card",
+      "code",
+      "description-list",
+      "emoji",
+      "empty",
       "field",
+      "frame",
+      "heading",
       "input",
       "input-group",
       "item",
+      "loader",
       "scroll-area",
       "separator",
+      "show",
+      "skeleton",
+      "span",
+      "table",
+      "text",
       "textarea",
+      "timeline-list",
     ]);
     expect(unexpectedJsEntryFiles(packageRoot)).toEqual([]);
   });
 
   it("asserts the deferred list and the shipped bare-component count separately", () => {
     expect(DEFERRED_ENTRIES).toEqual(["chart"]);
-    expect(BARE_COMPONENT_ENTRIES).toHaveLength(9);
+    expect(BARE_COMPONENT_ENTRIES).toHaveLength(25);
     const shippedBare = discovered.jsEntries.filter(
       (entry) => entry.inRootBarrel && entry.subpath !== "." && entry.subpath !== "theme"
     );
@@ -249,10 +265,113 @@ describe("exports map", () => {
     expect(textarea?.runtimeExports).toEqual(["Textarea"]);
   });
 
+  it("publishes Badge and the public badgeVariants recipe from /badge and the root barrel", () => {
+    const badge = discovered.jsEntries.find((entry) => entry.subpath === "badge");
+    expect(badge?.inRootBarrel).toBe(true);
+    expect(badge?.runtimeExports).toEqual(["Badge", "badgeVariants"]);
+  });
+
+  it("publishes Show from /show and the root barrel", () => {
+    const show = discovered.jsEntries.find((entry) => entry.subpath === "show");
+    expect(show?.inRootBarrel).toBe(true);
+    expect(show?.runtimeExports).toEqual(["Show"]);
+  });
+
+  it("publishes Loader and the public loaderVariants recipe from /loader and the root barrel", () => {
+    const loader = discovered.jsEntries.find((entry) => entry.subpath === "loader");
+    expect(loader?.inRootBarrel).toBe(true);
+    expect(loader?.runtimeExports).toEqual(["Loader", "loaderVariants"]);
+  });
+
+  it("publishes Frame from /frame and the root barrel", () => {
+    const frame = discovered.jsEntries.find((entry) => entry.subpath === "frame");
+    expect(frame?.inRootBarrel).toBe(true);
+    expect(frame?.runtimeExports).toEqual(["Frame"]);
+  });
+
+  it("publishes Code from /code and the root barrel", () => {
+    const code = discovered.jsEntries.find((entry) => entry.subpath === "code");
+    expect(code?.inRootBarrel).toBe(true);
+    expect(code?.runtimeExports).toEqual(["Code"]);
+  });
+
+  it("publishes DescriptionList from /description-list and the root barrel", () => {
+    const descriptionList = discovered.jsEntries.find((entry) => entry.subpath === "description-list");
+    expect(descriptionList?.inRootBarrel).toBe(true);
+    expect(descriptionList?.runtimeExports).toEqual(["DescriptionList"]);
+  });
+
+  it("publishes Skeleton from /skeleton and the root barrel", () => {
+    const skeleton = discovered.jsEntries.find((entry) => entry.subpath === "skeleton");
+    expect(skeleton?.inRootBarrel).toBe(true);
+    expect(skeleton?.runtimeExports).toEqual(["Skeleton"]);
+  });
+
+  it("publishes Emoji and the five named faces from /emoji and the root barrel", () => {
+    const emoji = discovered.jsEntries.find((entry) => entry.subpath === "emoji");
+    expect(emoji?.inRootBarrel).toBe(true);
+    expect(emoji?.runtimeExports).toEqual([
+      "Emoji",
+      "LoudlyCryingFace",
+      "NeutralFace",
+      "PartyingFace",
+      "SlightlyFrowningFace",
+      "SlightlySmilingFace",
+    ]);
+  });
+
+  it("publishes Avatar from /avatar and the root barrel", () => {
+    const avatar = discovered.jsEntries.find((entry) => entry.subpath === "avatar");
+    expect(avatar?.inRootBarrel).toBe(true);
+    expect(avatar?.runtimeExports).toEqual(["Avatar"]);
+  });
+
+  it("publishes Empty from /empty and the root barrel with private recipes", () => {
+    const empty = discovered.jsEntries.find((entry) => entry.subpath === "empty");
+    expect(empty?.inRootBarrel).toBe(true);
+    expect(empty?.runtimeExports).toEqual(["Empty"]);
+  });
+
+  it("publishes TimelineList from /timeline-list and the root barrel with a private recipe", () => {
+    const timelineList = discovered.jsEntries.find((entry) => entry.subpath === "timeline-list");
+    expect(timelineList?.inRootBarrel).toBe(true);
+    expect(timelineList?.runtimeExports).toEqual(["TimelineList"]);
+  });
+
+  it("publishes Card and the public cardVariants recipe from /card and the root barrel", () => {
+    const card = discovered.jsEntries.find((entry) => entry.subpath === "card");
+    expect(card?.inRootBarrel).toBe(true);
+    expect(card?.runtimeExports).toEqual(["Card", "cardVariants"]);
+  });
+
+  it("publishes Heading and the public headingVariants recipe from /heading and the root barrel", () => {
+    const heading = discovered.jsEntries.find((entry) => entry.subpath === "heading");
+    expect(heading?.inRootBarrel).toBe(true);
+    expect(heading?.runtimeExports).toEqual(["Heading", "headingVariants"]);
+  });
+
+  it("publishes Table and VerticalTable from /table and the root barrel", () => {
+    const table = discovered.jsEntries.find((entry) => entry.subpath === "table");
+    expect(table?.inRootBarrel).toBe(true);
+    expect(table?.runtimeExports).toEqual(["Table", "VerticalTable"]);
+  });
+
   it("publishes InputGroup from /input-group and the root barrel with private recipes", () => {
     const inputGroup = discovered.jsEntries.find((entry) => entry.subpath === "input-group");
     expect(inputGroup?.inRootBarrel).toBe(true);
     expect(inputGroup?.runtimeExports).toEqual(["InputGroup"]);
+  });
+
+  it("publishes Text and the public textVariants recipe from /text and the root barrel", () => {
+    const text = discovered.jsEntries.find((entry) => entry.subpath === "text");
+    expect(text?.inRootBarrel).toBe(true);
+    expect(text?.runtimeExports).toEqual(["Text", "textVariants"]);
+  });
+
+  it("publishes Span and the public spanVariants recipe from /span and the root barrel", () => {
+    const span = discovered.jsEntries.find((entry) => entry.subpath === "span");
+    expect(span?.inRootBarrel).toBe(true);
+    expect(span?.runtimeExports).toEqual(["Span", "spanVariants"]);
   });
 
   it("keeps /icons as a subpath-only entry with the curated roster", () => {

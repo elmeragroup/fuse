@@ -6,17 +6,33 @@ import { requireFlagsDirectory } from "./flag-assets.ts";
 import { parseFacadeValueExports } from "./parse-facade.ts";
 import { packageRootFromScript, toPosix } from "./paths.ts";
 
-/** Appendix A — 8 shipped bare component entries plus 1 deferred (`chart`). */
+/** Appendix A — 24 shipped bare component entries plus 1 deferred (`chart`). */
 export const BARE_COMPONENT_ENTRIES = [
+  "avatar",
+  "badge",
   "button",
+  "card",
   "chart",
+  "code",
+  "description-list",
+  "emoji",
+  "empty",
   "field",
+  "frame",
+  "heading",
   "input",
   "input-group",
   "item",
+  "loader",
   "scroll-area",
   "separator",
+  "show",
+  "skeleton",
+  "span",
+  "table",
+  "text",
   "textarea",
+  "timeline-list",
 ] as const;
 
 /**

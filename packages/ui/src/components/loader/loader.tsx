@@ -1,0 +1,27 @@
+import type { HTMLAttributes, ReactElement } from "react";
+
+import type { VariantProps } from "tailwind-variants";
+
+import { SpinnerGap } from "../../icons/generated/spinner-gap";
+import { cn } from "../../styles/cn";
+import { loaderVariants } from "./loader-variants";
+
+export type LoaderProps = HTMLAttributes<HTMLDivElement> & VariantProps<typeof loaderVariants>;
+
+/**
+ * Server spinner (loader.md §2/§7). A polite `role="status"` wrapper around a
+ * decorative spinning `SpinnerGap`. Consumers pass a translated `aria-label`;
+ * there is no baked English name. Owns no state, handlers, or browser APIs
+ * (performance.md §RSC classification).
+ */
+export function Loader({ className, variant, size, ...props }: LoaderProps): ReactElement {
+  const { base, icon } = loaderVariants({ variant, size });
+
+  return (
+    <div data-slot="loader" role="status" className={cn(base(), className)} {...props}>
+      <SpinnerGap aria-hidden="true" className={icon()} />
+    </div>
+  );
+}
+
+Loader.displayName = "Loader";

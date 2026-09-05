@@ -15,8 +15,8 @@ const compiledCssPath = join(here, "../../dist/styles.css");
  */
 const SRC_ONLY_CLASSES = ["mb-4", "border-inherit", "min-w-xl", "ms-1"] as const;
 
-/** A utility Button emits, so the compiled sheet is known to be populated. */
-const DIST_CLASS = "inline-flex";
+/** A utility Skeleton emits, so the compiled sheet is known to be populated. */
+const DIST_CLASS = "animate-pulse";
 
 function selectorLines(css: string): Set<string> {
   const selectors = new Set<string>();

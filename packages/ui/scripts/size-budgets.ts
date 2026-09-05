@@ -52,7 +52,9 @@ function derive<T extends MeasuredRow>(rows: readonly T[]): Array<T & { ceilingG
 export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   { name: ".", entryFile: "index.js", measuredGzip: 233896, ceilingGzip: 257843 },
   { name: "theme", entryFile: "theme.js", measuredGzip: 6172, ceilingGzip: 9194 },
+  { name: "badge", entryFile: "badge.js", measuredGzip: 15658, ceilingGzip: 23493 },
   { name: "button", entryFile: "button.js", measuredGzip: 25248, ceilingGzip: 37821 },
+  { name: "card", entryFile: "card.js", measuredGzip: 15954, ceilingGzip: 23937 },
   { name: "scroll-area", entryFile: "scroll-area.js", measuredGzip: 28555, ceilingGzip: 42804 },
   { name: "illustrations", entryFile: "illustrations.js", measuredGzip: 11046, ceilingGzip: 16590 },
   { name: "separator", entryFile: "separator.js", measuredGzip: 10524 },
@@ -62,6 +64,20 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   { name: "input-group", entryFile: "input-group.js", measuredGzip: 28003, ceilingGzip: 42002 },
   { name: "textarea", entryFile: "textarea.js", measuredGzip: 21354, ceilingGzip: 31917 },
   { name: "flags", entryFile: "flags.js", measuredGzip: 1388 },
+  { name: "description-list", entryFile: "description-list.js", measuredGzip: 10715, ceilingGzip: 16070 },
+  { name: "emoji", entryFile: "emoji.js", measuredGzip: 2442 },
+  { name: "avatar", entryFile: "avatar.js", measuredGzip: 12463, ceilingGzip: 18701 },
+  { name: "show", entryFile: "show.js", measuredGzip: 148 },
+  { name: "loader", entryFile: "loader.js", measuredGzip: 16748 },
+  { name: "empty", entryFile: "empty.js", measuredGzip: 21356 },
+  { name: "frame", entryFile: "frame.js", measuredGzip: 9059 },
+  { name: "code", entryFile: "code.js", measuredGzip: 11756 },
+  { name: "span", entryFile: "span.js", measuredGzip: 17324 },
+  { name: "timeline-list", entryFile: "timeline-list.js", measuredGzip: 23552, ceilingGzip: 35330 },
+  { name: "heading", entryFile: "heading.js", measuredGzip: 17319, ceilingGzip: 25924 },
+  { name: "text", entryFile: "text.js", measuredGzip: 17315, ceilingGzip: 25919 },
+  { name: "skeleton", entryFile: "skeleton.js", measuredGzip: 8701 },
+  { name: "table", entryFile: "table.js", measuredGzip: 11932, ceilingGzip: 17721 },
 ] satisfies readonly Measured<JsEntryBudget>[]);
 
 export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
