@@ -4,6 +4,7 @@
   "globalEnv": ["NODE_ENV"],
   "tasks": {
     "test:packed-consumer": { "dependsOn": ["pack"] },
+    "@elmeragroup/api-extractor#ci:checks": { "dependsOn": ["build", "test", "type-check"] },
     "//#lint": {
       // apps/static-theme/vite.config.ts must import packages/ui/dist/theme.js (architecture.md:
       // colorSchemeScriptSource's Function#toString() has to be the packed IIFE, not re-emitted
