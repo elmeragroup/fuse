@@ -1,0 +1,163 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "avatar",
+  "parts": [
+    {
+      "name": "Avatar.Root",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/avatar/avatar.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 275,
+      "props": [
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: AvatarRootState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, AvatarRootState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: AvatarRootState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Avatar.Image",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/avatar/avatar.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 287,
+      "props": [
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: AvatarImageState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "onLoadingStatusChange",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((status: ImageLoadingStatus) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Callback fired when the loading status changes.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, AvatarImageState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: AvatarImageState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Avatar.Fallback",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/avatar/avatar.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 275,
+      "props": [
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: AvatarFallbackState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "delay",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "How long to wait before showing the fallback. Specified in milliseconds.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, AvatarFallbackState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: AvatarFallbackState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

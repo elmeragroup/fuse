@@ -1,0 +1,630 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "sidebar",
+  "parts": [
+    {
+      "name": "Sidebar.Provider",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": [
+        {
+          "name": "defaultOpen",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Uncontrolled initial open state. SSR pattern: parse the `sidebar:state` cookie server-side and pass it here.",
+          "required": false
+        },
+        {
+          "name": "labels",
+          "origin": "declared",
+          "type": "Partial<SidebarLabels> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Copy overrides for the Trigger/Rail label and the mobile Sheet's sr-only title and description. Defaults to the locale dictionary (`sidebar.*`).",
+          "required": false
+        },
+        {
+          "name": "onOpenChange",
+          "origin": "declared",
+          "type": "((open: boolean) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Controlled setter. When provided, internal state is bypassed but the cookie is still written on every change.",
+          "required": false
+        },
+        {
+          "name": "open",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Controlled open state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Sidebar.Root",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 279,
+      "props": [
+        {
+          "name": "collapsible",
+          "origin": "declared",
+          "type": "\"icon\" | \"none\" | \"offcanvas\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"offcanvas\"",
+          "description": "`offcanvas` slides the rail off-screen when collapsed; `icon` collapses to `--sidebar-width-icon`; `none` renders the static branch — which still emits `group peer` and `data-state/variant/side` for inset compositions.",
+          "required": false
+        },
+        {
+          "name": "dir",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Text direction, forwarded to the mobile Sheet content (RTL).",
+          "required": false
+        },
+        {
+          "name": "side",
+          "origin": "declared",
+          "type": "\"left\" | \"right\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"left\"",
+          "description": "Edge the rail anchors to. Emitted as `data-side`; drives gap rotation, container offsets, border side and rail cursors.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "declared",
+          "type": "\"floating\" | \"inset\" | \"sidebar\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"sidebar\"",
+          "description": "`floating` pads the rail and rounds/shadows the inner surface; `inset` pads the rail and lets the sibling `Sidebar.Inset` react through peer selectors; `sidebar` is flush with an edge border.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Sidebar.Trigger",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 284,
+      "props": [
+        {
+          "name": "aria-label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Defines a string value that labels the current element. Accessible name for the icon-only trigger. Defaults to the locale dictionary `sidebar.toggle`.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes, merged last through `cn`.",
+          "required": false
+        },
+        {
+          "name": "isPending",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Disables the element and stamps `data-pending`, blocking activation entirely. Effective disabled is `disabled || isPending`.",
+          "required": false
+        },
+        {
+          "name": "isVisuallyDisabled",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Renders the disabled treatment (`opacity-70`) and suppresses focus-on-press while the button stays fully interactive — click, keyboard and focus-visible all still work. For \"looks disabled but explains itself on activation\" flows.",
+          "required": false
+        },
+        {
+          "name": "onIntent",
+          "origin": "declared",
+          "type": "(() => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Predictive-prefetch callback. Fires once when the pointer's predicted trajectory lands inside the inflated hit rect; browsers without the prediction API fail soft.",
+          "required": false
+        },
+        {
+          "name": "predictionZoneSize",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Pixels the hit rect is inflated on every side when predicting pointer intent.",
+          "required": false
+        },
+        {
+          "name": "size",
+          "origin": "declared",
+          "type": "IconButtonSize | LabelButtonSize | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Recipe size axis. The `icon*` sizes are square and additionally require an `aria-label`.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "recipe-axis",
+          "type": "\"default\" | \"destructive\" | \"ghost\" | \"link\" | \"outline\" | \"secondary\" | \"success\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"ghost\"",
+          "description": "",
+          "required": false
+        },
+        {
+          "name": "focusableWhenDisabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the button should be focusable when disabled.",
+          "required": false
+        },
+        {
+          "name": "nativeButton",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Whether the component renders a native `<button>` element when replacing it via the `render` prop. Set to `false` if the rendered element is not a button (for example, `<div>`).",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, ButtonState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: ButtonState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Sidebar.Rail",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 290,
+      "props": []
+    },
+    {
+      "name": "Sidebar.Inset",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Sidebar.Input",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 310,
+      "props": []
+    },
+    {
+      "name": "Sidebar.Header",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Sidebar.Footer",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Sidebar.Separator",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 275,
+      "props": [
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: SeparatorState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "orientation",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "Orientation | undefined",
+          "shortType": null,
+          "defaultValue": "'horizontal'",
+          "description": "The orientation of the separator.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, SeparatorState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: SeparatorState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Sidebar.Content",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Sidebar.Group",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Sidebar.GroupLabel",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": [
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Sidebar.GroupAction",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 290,
+      "props": [
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Sidebar.GroupContent",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Sidebar.Menu",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Sidebar.MenuItem",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 281,
+      "props": []
+    },
+    {
+      "name": "Sidebar.MenuButton",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 290,
+      "props": [
+        {
+          "name": "isActive",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Current item. Emits `data-active` and the accent background/foreground; pair with `aria-current=\"page\"` at the call site.",
+          "required": false
+        },
+        {
+          "name": "size",
+          "origin": "recipe-axis",
+          "type": "\"default\" | \"lg\" | \"sm\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "",
+          "required": false
+        },
+        {
+          "name": "tooltip",
+          "origin": "declared",
+          "type": "string | TooltipContentProps | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Collapsed icon-mode label. The button becomes the tooltip trigger (one DOM node is the menu button, the caller's `render` element and the trigger); the content sits on the right and is only visible while the desktop rail is collapsed. A string is shorthand for `{ children }`.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "recipe-axis",
+          "type": "\"default\" | \"outline\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Sidebar.MenuAction",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 290,
+      "props": [
+        {
+          "name": "showOnHover",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Hides the action at `md:` and up until the menu item is hovered or focused within, or the action reports `aria-expanded` (an open dropdown keeps it visible).",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Sidebar.MenuBadge",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Sidebar.MenuSkeleton",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": [
+        {
+          "name": "showIcon",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Renders a square icon placeholder before the text bar.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Sidebar.MenuSub",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Sidebar.MenuSubItem",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 281,
+      "props": []
+    },
+    {
+      "name": "Sidebar.MenuSubButton",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 288,
+      "props": [
+        {
+          "name": "isActive",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Current item. Emits `data-active` and the accent background/foreground.",
+          "required": false
+        },
+        {
+          "name": "size",
+          "origin": "declared",
+          "type": "\"md\" | \"sm\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"md\"",
+          "description": "Row size, emitted as `data-size`. `md` pins the md control rung and the control-type pair; `sm` pins the sm rung with size-owned `text-sm`.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Sidebar.Icon",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "useSidebar",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": []
+    }
+  ]
+}

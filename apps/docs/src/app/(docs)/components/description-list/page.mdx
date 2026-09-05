@@ -1,0 +1,50 @@
+---
+title: DescriptionList
+lede: >
+  A server semantic description list. `Root` groups a heading with its terms and
+  details; `Content` is the `<dl>` that switches from one column on mobile to two
+  at `sm`.
+---
+
+import { DescriptionListBasic } from "./demos/description-list-basic";
+import { DescriptionListMultiDetails } from "./demos/description-list-multi-details";
+import { DescriptionListResponsive } from "./demos/description-list-responsive";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("description-list");
+
+<ComponentIntro slug="description-list" />
+
+<Prose>
+
+The compound is server-safe: it owns no state, handlers, or browser APIs. `Heading`
+renders a plain `<h2>` with the level-2 type classes — not the library `Heading`
+component, and with no react-aria import. Other outline levels use `render`. `Root` is a
+bare grouping `div`; all layout lives on `Content`.
+
+Term/definition association is structural HTML. Multiple `<dt>`s may share a `<dd>` and
+vice versa. Consumers add `aria-labelledby` on `Content` when the heading should name the
+list. There is no keyboard behavior or ARIA wiring.
+
+</Prose>
+
+<Demo slug="description-list" id="basic" title="Basic" file="description-list-basic.tsx">
+  <DescriptionListBasic />
+</Demo>
+
+<Demo
+  slug="description-list"
+  id="multi-details"
+  title="Content model"
+  file="description-list-multi-details.tsx">
+  <DescriptionListMultiDetails />
+</Demo>
+
+<Demo slug="description-list" id="responsive" title="Responsive" file="description-list-responsive.tsx">
+  <DescriptionListResponsive />
+</Demo>
+
+<ApiReference slug="description-list" />
+
+<ComponentTokens slug="description-list" />

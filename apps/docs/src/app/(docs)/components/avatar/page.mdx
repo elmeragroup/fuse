@@ -1,0 +1,49 @@
+---
+title: Avatar
+lede: >
+  A user's profile picture, initials, or fallback. `Avatar.Root` is a size-8 circle;
+  `Image` and `Fallback` pass through to base-ui, which owns the loading state.
+---
+
+import { AvatarBasic } from "./demos/avatar-basic";
+import { AvatarFallback } from "./demos/avatar-fallback";
+import { AvatarSizes } from "./demos/avatar-sizes";
+import { AvatarGroup } from "./demos/avatar-group";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("avatar");
+
+<ComponentIntro slug="avatar" />
+
+<Prose>
+
+Thin styled wrappers over `@base-ui/react/avatar` — no added state and no size axis.
+Override the default `size-8` with `className`. When adjacent text names the user,
+`Avatar.Image` should use `alt=""`; give the root an `aria-label` when the fallback
+initials would otherwise be the only name.
+
+The fallback surface uses `bg-muted` / `text-muted-foreground`. There is no library
+API for stacking — overlapping groups are consumer classes.
+
+</Prose>
+
+<Demo slug="avatar" id="basic" title="Basic" file="avatar-basic.tsx">
+  <AvatarBasic />
+</Demo>
+
+<Demo slug="avatar" id="fallback" title="Fallback" file="avatar-fallback.tsx">
+  <AvatarFallback />
+</Demo>
+
+<Demo slug="avatar" id="sizes" title="Sizes" file="avatar-sizes.tsx">
+  <AvatarSizes />
+</Demo>
+
+<Demo slug="avatar" id="group" title="Group" file="avatar-group.tsx">
+  <AvatarGroup />
+</Demo>
+
+<ApiReference slug="avatar" />
+
+<ComponentTokens slug="avatar" />

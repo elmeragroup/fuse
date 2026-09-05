@@ -1,0 +1,35 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "badge",
+  "parts": [
+    {
+      "name": "Badge",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/badge/badge.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": [
+        {
+          "name": "size",
+          "origin": "recipe-axis",
+          "type": "\"default\" | \"lg\" | \"sm\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "recipe-axis",
+          "type": "\"accent\" | \"card\" | \"default\" | \"destructive\" | \"info\" | \"muted\" | \"outline\" | \"outline-destructive\" | \"outline-secondary\" | \"outline-success\" | \"outline-warning\" | \"secondary\" | \"success\" | \"warning\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

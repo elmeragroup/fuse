@@ -1,0 +1,76 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "frame",
+  "parts": [
+    {
+      "name": "Frame.Root",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/frame/frame.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": [
+        {
+          "name": "stackedPanels",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Fuse adjacent `Frame.Panel`s into one card (shared radii and hairline). Default `false` keeps a 4px muted gutter between panels (frame.md §4).",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Frame.Panel",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/frame/frame.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Frame.Header",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/frame/frame.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Frame.Title",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/frame/frame.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Frame.Description",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/frame/frame.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Frame.Footer",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/frame/frame.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    }
+  ]
+}

@@ -1,9 +1,40 @@
 {
   "extends": ["//"],
   "tasks": {
+    // The docs pipeline writes src/generated and public/components before anything
+    // reads them. It is its own task so turbo orders it ahead of build, type-check and
+    // the root lint, instead of a build script racing them for the same files.
+    "generate": {
+      "dependsOn": ["^build"],
+      // The Tokens page publishes the library's own recorded measurements, so a budget
+      // recalibration must invalidate this task even though nothing in apps/docs moved.
+      "inputs": ["$TURBO_DEFAULT$", "../../packages/ui/scripts/size-budgets.ts"],
+      // The committed per-component api.json is an output too. It is tracked, unlike
+      // everything else here, but this task is what writes it — so a cache hit has to
+      // restore it, or the drift check would read a file this run never produced (§8).
+      "outputs": [
+        "src/generated/**",
+        "src/app/\\(docs\\)/components/*/api.json",
+        "public/components/**",
+        "public/llms.txt"
+      ]
+    },
+    "build": {
+      "dependsOn": ["generate"]
+    },
+    "type-check": {
+      "dependsOn": ["generate"]
+    },
     "test": {
       "dependsOn": ["build"],
       "env": ["DOCS_BASE_URL"]
+    },
+    "test:browser": {
+      "dependsOn": ["build"],
+      "env": ["DOCS_BASE_URL"]
+    },
+    "test:shadow": {
+      "dependsOn": ["build"]
     }
   }
 }

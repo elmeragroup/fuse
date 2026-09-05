@@ -1,0 +1,33 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "show",
+  "parts": [
+    {
+      "name": "Show",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/show/show.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Rendered inside a fragment when `when` is true. `children` is an ordinary prop: the JSX is evaluated by the parent before `Show` decides anything; only rendering is skipped. Guarding expressions that throw when the condition is false (`data!.name`) is not safe here — use an inline ternary or optional chaining.",
+          "required": false
+        },
+        {
+          "name": "when",
+          "origin": "declared",
+          "type": "boolean",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Render condition. Strict boolean — callers coerce (for example `items.length > 0`); the helper does not.",
+          "required": true
+        }
+      ]
+    }
+  ]
+}

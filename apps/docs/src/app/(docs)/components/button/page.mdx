@@ -1,0 +1,50 @@
+---
+title: Button
+lede: >
+  Triggers an action. Renders a native `button` through the base-ui primitive; compose
+  with links or router primitives through the `render` prop.
+---
+
+import { ButtonVariantMatrix } from "./demos/button-variant-matrix";
+import { ButtonSizes } from "./demos/button-sizes";
+import { ButtonPending } from "./demos/button-pending";
+import { ButtonVisuallyDisabled } from "./demos/button-visually-disabled";
+import { ButtonPredictiveIntent } from "./demos/button-predictive-intent";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("button");
+
+<ComponentIntro slug="button" />
+
+<Prose>
+
+`isVisuallyDisabled` looks disabled but stays interactive, so the button can explain
+itself on activation; `isPending` disables the element outright and stamps
+`data-pending`. Effective disabled is `disabled || isPending`.
+
+</Prose>
+
+<Demo slug="button" id="variants" title="Variants" file="button-variant-matrix.tsx">
+  <ButtonVariantMatrix />
+</Demo>
+
+<Demo slug="button" id="sizes" title="Sizes" file="button-sizes.tsx">
+  <ButtonSizes />
+</Demo>
+
+<Demo slug="button" id="pending" title="Pending" file="button-pending.tsx">
+  <ButtonPending />
+</Demo>
+
+<Demo slug="button" id="visually-disabled" title="Visually disabled" file="button-visually-disabled.tsx">
+  <ButtonVisuallyDisabled />
+</Demo>
+
+<Demo slug="button" id="predictive-intent" title="Predictive intent" file="button-predictive-intent.tsx">
+  <ButtonPredictiveIntent />
+</Demo>
+
+<ApiReference slug="button" />
+
+<ComponentTokens slug="button" />

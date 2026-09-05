@@ -4,6 +4,7 @@ import { createServer } from "node:net";
 import type { AddressInfo } from "node:net";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { expect } from "vitest";
 
 const docsRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const nextBin = path.join(docsRoot, "node_modules/next/dist/bin/next");
@@ -130,4 +131,19 @@ export function docsBaseUrl(): string {
     throw new Error("DOCS_BASE_URL is missing. Vitest globalSetup must start the docs production server.");
   }
   return url;
+}
+
+/** Fetches a site-relative path off the running server, asserting a non-error response. */
+export async function fetchOk(pathname: string): Promise<Response> {
+  const response = await fetch(new URL(pathname, docsBaseUrl()));
+  await response.arrayBuffer();
+  expect(response.ok, `${pathname} responded ${String(response.status)}`).toBe(true);
+  return response;
+}
+
+/** The same fetch, returning the response body as text. */
+export async function fetchText(pathname: string): Promise<string> {
+  const response = await fetch(new URL(pathname, docsBaseUrl()));
+  expect(response.ok, `${pathname} responded ${String(response.status)}`).toBe(true);
+  return await response.text();
 }

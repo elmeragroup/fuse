@@ -1,0 +1,55 @@
+---
+title: Sheet
+lede: >
+  An edge-anchored overlay with swipe-to-dismiss. `Sheet.Root` owns `side` (default
+  `right`) and the swipe direction coupled to that edge; `Sheet.Content` sizes the panel,
+  ships the corner close button, and portals into the nearest `ThemeScope`.
+---
+
+import { SheetBasic } from "./demos/sheet-basic";
+import { SheetSides } from "./demos/sheet-sides";
+import { SheetSizes } from "./demos/sheet-sizes";
+import { SheetForm } from "./demos/sheet-form";
+import { SheetScrolling } from "./demos/sheet-scrolling";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("sheet");
+
+<ComponentIntro slug="sheet" />
+
+<Prose>
+
+`Sheet` is a drawer, not a centred dialog: it sits on an edge, follows the finger while
+you swipe, and uses transitions rather than keyframes so the same transform can serve
+enter, exit, and swipe-follow. `size` only applies to left and right panels from the
+`sm` breakpoint up — top and bottom sheets, and every sheet below `sm`, are full width.
+
+The built-in close button is the same helper Dialog uses. Pass `closeLabel` to override
+the locale dictionary (`sheet.close`).
+
+</Prose>
+
+<Demo slug="sheet" id="basic" title="Basic" file="sheet-basic.tsx">
+  <SheetBasic />
+</Demo>
+
+<Demo slug="sheet" id="sides" title="Sides" file="sheet-sides.tsx">
+  <SheetSides />
+</Demo>
+
+<Demo slug="sheet" id="sizes" title="Sizes" file="sheet-sizes.tsx">
+  <SheetSizes />
+</Demo>
+
+<Demo slug="sheet" id="form" title="Form" file="sheet-form.tsx">
+  <SheetForm />
+</Demo>
+
+<Demo slug="sheet" id="scrolling" title="Scrolling content" file="sheet-scrolling.tsx">
+  <SheetScrolling />
+</Demo>
+
+<ApiReference slug="sheet" />
+
+<ComponentTokens slug="sheet" />

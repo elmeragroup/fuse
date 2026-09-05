@@ -1,0 +1,62 @@
+---
+title: DropdownMenu
+lede: >
+  A menu anchored to its trigger. Groups, checkboxes, radios, links, and nested submenus
+  share one item face; portals land in the nearest ThemeScope.
+---
+
+import { DropdownMenuBasic } from "./demos/dropdown-menu-basic";
+import { DropdownMenuCheckboxes } from "./demos/dropdown-menu-checkboxes";
+import { DropdownMenuRadioGroup } from "./demos/dropdown-menu-radio-group";
+import { DropdownMenuSubmenu } from "./demos/dropdown-menu-submenu";
+import { DropdownMenuLinks } from "./demos/dropdown-menu-links";
+import { DropdownMenuDestructive } from "./demos/dropdown-menu-destructive";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("dropdown-menu");
+
+<ComponentIntro slug="dropdown-menu" />
+
+<Prose>
+
+Positioner props (`side`, `align`, `sideOffset`, `alignOffset`) and `container` surface on
+both `DropdownMenu.Content` and `DropdownMenu.SubContent`. Content defaults to
+`start / 0 / bottom / 4`; SubContent tucks against its trigger at `start / -3 / right / 0`
+and renders its own thin popup — it does not wrap Content. The standalone
+`DropdownMenu.Portal` part stays exported for advanced composition.
+
+`Item.variant` keeps the value `"destructive"` and emits `data-variant="destructive"` so
+existing callers keep working; the classes themselves read `error` tokens.
+`LinkItem` is the navigational face — pass `render={<Link href=… />}` for a router link.
+Radio items use a check indicator, matching the Funnel face rather than a filled dot.
+
+</Prose>
+
+<Demo slug="dropdown-menu" id="basic" title="Basic" file="dropdown-menu-basic.tsx">
+  <DropdownMenuBasic />
+</Demo>
+
+<Demo slug="dropdown-menu" id="checkboxes" title="Checkboxes" file="dropdown-menu-checkboxes.tsx">
+  <DropdownMenuCheckboxes />
+</Demo>
+
+<Demo slug="dropdown-menu" id="radio-group" title="Radio group" file="dropdown-menu-radio-group.tsx">
+  <DropdownMenuRadioGroup />
+</Demo>
+
+<Demo slug="dropdown-menu" id="submenu" title="Submenu" file="dropdown-menu-submenu.tsx">
+  <DropdownMenuSubmenu />
+</Demo>
+
+<Demo slug="dropdown-menu" id="links" title="Links" file="dropdown-menu-links.tsx">
+  <DropdownMenuLinks />
+</Demo>
+
+<Demo slug="dropdown-menu" id="destructive" title="Destructive" file="dropdown-menu-destructive.tsx">
+  <DropdownMenuDestructive />
+</Demo>
+
+<ApiReference slug="dropdown-menu" />
+
+<ComponentTokens slug="dropdown-menu" />

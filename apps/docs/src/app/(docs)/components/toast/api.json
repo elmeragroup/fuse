@@ -1,0 +1,139 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "toast",
+  "parts": [
+    {
+      "name": "Toast.Provider",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/toast/toast.tsx",
+      "forwardedFrom": [
+        "@base-ui/react"
+      ],
+      "forwardedCount": 3,
+      "props": [
+        {
+          "name": "toastManager",
+          "origin": "declared",
+          "type": "CreateToastManagerReturnValue<object> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Optional manager from `Toast.createToastManager()` so non-React code (timers, query-cache listeners) can dispatch through the same adapter as `Toast.useToastManager()`.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Toast.Viewport",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/toast/toast.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": [
+        {
+          "name": "container",
+          "origin": "declared",
+          "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Portal target for this overlay. Defaults to the nearest enclosing `ThemeScope` element, so it never escapes the theme that opened it.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Toast.Root",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/toast/toast.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Toast.Content",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/toast/toast.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": []
+    },
+    {
+      "name": "Toast.Title",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/toast/toast.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": []
+    },
+    {
+      "name": "Toast.Description",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/toast/toast.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": []
+    },
+    {
+      "name": "Toast.Action",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/toast/toast.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 289,
+      "props": []
+    },
+    {
+      "name": "Toast.Close",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/toast/toast.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 289,
+      "props": [
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Accessible name for the close button. Defaults to the locale dictionary `toast.close`. Icon-only Close sets it as `aria-label`; visible children replace the icon face and name the control themselves.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Toast.useToastManager",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/toast/toast.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": []
+    },
+    {
+      "name": "Toast.createToastManager",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/toast/toast.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": []
+    }
+  ]
+}

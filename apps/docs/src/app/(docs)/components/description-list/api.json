@@ -1,0 +1,66 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "description-list",
+  "parts": [
+    {
+      "name": "DescriptionList.Root",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/description-list/description-list.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "DescriptionList.Heading",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/description-list/description-list-heading.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": [
+        {
+          "name": "render",
+          "origin": "declared",
+          "type": "RenderProp<Record<string, unknown>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Replaces the host `<h2>` via base-ui `useRender`. Use this for other outline levels; the level-2 type classes and `data-slot` stay merged onto the replacement.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DescriptionList.Content",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/description-list/description-list.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "DescriptionList.Term",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/description-list/description-list.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "DescriptionList.Details",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/description-list/description-list.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    }
+  ]
+}

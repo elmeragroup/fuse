@@ -1,0 +1,218 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "collapsible",
+  "parts": [
+    {
+      "name": "Collapsible.Root",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/collapsible/collapsible.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 275,
+      "props": [
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: CollapsibleRootState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "defaultOpen",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the collapsible panel is initially open. To render a controlled collapsible, use the `open` prop instead.",
+          "required": false
+        },
+        {
+          "name": "disabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the component should ignore user interaction.",
+          "required": false
+        },
+        {
+          "name": "onOpenChange",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((open: boolean, eventDetails: CollapsibleRootChangeEventDetails) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Event handler called when the panel is opened or closed.",
+          "required": false
+        },
+        {
+          "name": "open",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Whether the collapsible panel is currently open. To render an uncontrolled collapsible, use the `defaultOpen` prop instead.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, CollapsibleRootState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: CollapsibleRootState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Collapsible.Trigger",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/collapsible/collapsible.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 285,
+      "props": [
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: CollapsibleTriggerState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "nativeButton",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Whether the component renders a native `<button>` element when replacing it via the `render` prop. Set to `false` if the rendered element is not a button (for example, `<div>`).",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, CollapsibleTriggerState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: CollapsibleTriggerState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Collapsible.Content",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/collapsible/collapsible.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 275,
+      "props": [
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: CollapsiblePanelState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "hiddenUntilFound",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Allows the browser's built-in page search to find and expand the panel contents. Overrides the `keepMounted` prop and uses `hidden=\"until-found\"` to hide the element without removing it from the DOM.",
+          "required": false
+        },
+        {
+          "name": "keepMounted",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether to keep the element in the DOM while the panel is hidden. This prop is ignored when `hiddenUntilFound` is used.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, CollapsiblePanelState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: CollapsiblePanelState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

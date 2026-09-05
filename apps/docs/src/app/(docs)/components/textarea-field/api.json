@@ -1,0 +1,116 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "textarea-field",
+  "parts": [
+    {
+      "name": "TextareaField",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/textarea-field/textarea-field.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 287,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes, merged onto the inner `Textarea`.",
+          "required": false
+        },
+        {
+          "name": "defaultValue",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Uncontrolled initial value, restored with its counter by native form reset.",
+          "required": false
+        },
+        {
+          "name": "description",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Supporting copy, rendered as `Field.Description`.",
+          "required": false
+        },
+        {
+          "name": "errorMessage",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`.",
+          "required": false
+        },
+        {
+          "name": "isDisabled",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Forwards `disabled` to `Field.Root` and the inner textarea.",
+          "required": false
+        },
+        {
+          "name": "isInvalid",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Forwards `invalid` to `Field.Root`.",
+          "required": false
+        },
+        {
+          "name": "isRequired",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Forwards `required` to the inner textarea.",
+          "required": false
+        },
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Visible label, rendered as `Field.Label`.",
+          "required": false
+        },
+        {
+          "name": "maxLength",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Native `maxLength`, also drives the `current/max` character counter. `0` is set.",
+          "required": false
+        },
+        {
+          "name": "onChange",
+          "origin": "declared",
+          "type": "((value: string) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Called with the string value, not the native event.",
+          "required": false
+        },
+        {
+          "name": "value",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Controlled value.",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

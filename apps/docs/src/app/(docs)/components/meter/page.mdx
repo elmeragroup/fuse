@@ -1,0 +1,53 @@
+---
+title: Meter
+lede: >
+  A labeled, read-only value display over `@base-ui/react/meter` with a baked-in
+  label row and track. Locale comes from the provider; it is never an input.
+---
+
+import { MeterBasic } from "./demos/meter-basic";
+import { MeterModes } from "./demos/meter-modes";
+import { MeterValueLabel } from "./demos/meter-value-label";
+import { MeterRange } from "./demos/meter-range";
+import { MeterNeutral } from "./demos/meter-neutral";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("meter");
+
+<ComponentIntro slug="meter" />
+
+<Prose>
+
+The composite face is `value`, `minValue` / `maxValue`, `mode`, optional `label` /
+`valueLabel`, and `warningLabel` / `successLabel` overrides for the status icons.
+There is no `locale` prop — number formatting and dictionary defaults follow
+`ElmeraGroupUiProvider`. Mode `"inverted"` flips good/bad colors; it is not a
+Tailwind variant. `inverted` and `neutral` never render an icon. There is no
+`size` axis: the track is a decorative bar, not a control box.
+
+</Prose>
+
+<Demo slug="meter" id="basic" title="Basic" file="meter-basic.tsx">
+  <MeterBasic />
+</Demo>
+
+<Demo slug="meter" id="modes" title="Modes" file="meter-modes.tsx">
+  <MeterModes />
+</Demo>
+
+<Demo slug="meter" id="value-label" title="Value label" file="meter-value-label.tsx">
+  <MeterValueLabel />
+</Demo>
+
+<Demo slug="meter" id="range" title="Range" file="meter-range.tsx">
+  <MeterRange />
+</Demo>
+
+<Demo slug="meter" id="neutral" title="Neutral" file="meter-neutral.tsx">
+  <MeterNeutral />
+</Demo>
+
+<ApiReference slug="meter" />
+
+<ComponentTokens slug="meter" />

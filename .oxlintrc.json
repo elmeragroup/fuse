@@ -109,10 +109,13 @@
     "**/coverage/**",
     "**/.turbo/**",
     "**/.next/**",
+    "apps/docs/src/generated/**",
+    "plop-templates/**",
     "**/.artifacts/**",
     "**/.cache/**",
     "**/node_modules/**",
     ".ref/**",
+    "tooling/api-extractor/test/fixtures/**",
     "packages/ui/scripts/*.mjs",
     ".agent/**",
     ".agents/**",
@@ -124,10 +127,7 @@
     ".opencode/**",
     ".pi/**",
     ".roo/**",
-    ".windsurf/**",
-    "tooling/api-extractor/test/fixtures/**",
-    "apps/docs/src/generated/**",
-    "plop-templates/**"
+    ".windsurf/**"
   ],
   "options": {
     "typeAware": true

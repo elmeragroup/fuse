@@ -1,0 +1,56 @@
+---
+title: Accordion
+lede: >
+  A set of collapsible sections. Single mode is always collapsible; `multiple` keeps
+  items independent. Panels animate height against `--accordion-panel-height`.
+---
+
+import { AccordionBasic } from "./demos/accordion-basic";
+import { AccordionMultiple } from "./demos/accordion-multiple";
+import { AccordionVariants } from "./demos/accordion-variants";
+import { AccordionControlled } from "./demos/accordion-controlled";
+import { AccordionHiddenUntilFound } from "./demos/accordion-hidden-until-found";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("accordion");
+
+<ComponentIntro slug="accordion" />
+
+<Prose>
+
+`value`, `defaultValue`, and `onValueChange` are always arrays — even with one open item.
+`multiple` replaces radix `type`; there is no `collapsible` prop. Compose `Header` around
+`Trigger` explicitly; `Content` is base-ui's `Panel`. Find-in-page can open closed panels
+when `hiddenUntilFound` is set. `orientation` and `loopFocus` pass through but no longer
+move focus — Tab and Shift+Tab are the only trigger-to-trigger keys.
+
+</Prose>
+
+<Demo slug="accordion" id="basic" title="Basic" file="accordion-basic.tsx">
+  <AccordionBasic />
+</Demo>
+
+<Demo slug="accordion" id="multiple" title="Multiple" file="accordion-multiple.tsx">
+  <AccordionMultiple />
+</Demo>
+
+<Demo slug="accordion" id="variants" title="Variants" file="accordion-variants.tsx">
+  <AccordionVariants />
+</Demo>
+
+<Demo slug="accordion" id="controlled" title="Controlled" file="accordion-controlled.tsx">
+  <AccordionControlled />
+</Demo>
+
+<Demo
+  slug="accordion"
+  id="hidden-until-found"
+  title="Hidden until found"
+  file="accordion-hidden-until-found.tsx">
+  <AccordionHiddenUntilFound />
+</Demo>
+
+<ApiReference slug="accordion" />
+
+<ComponentTokens slug="accordion" />

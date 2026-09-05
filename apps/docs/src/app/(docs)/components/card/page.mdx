@@ -1,0 +1,50 @@
+---
+title: Card
+lede: >
+  A layout surface. `Card.Root` sets the surface and its parts — header, tag, title,
+  description, action, content, footer — compose plain elements, so the whole compound is
+  server-safe.
+---
+
+import { CardBasic } from "./demos/card-basic";
+import { CardWithAction } from "./demos/card-with-action";
+import { CardTag } from "./demos/card-tag";
+import { CardHorizontal } from "./demos/card-horizontal";
+import { CardItemRows } from "./demos/card-item-rows";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("card");
+
+<ComponentIntro slug="card" />
+
+<Prose>
+
+Card has no base-ui primitive behind it. Every part is a styled element, and the recipe
+`cardVariants` is public so an app can restyle a bespoke surface on the same axes.
+
+</Prose>
+
+<Demo slug="card" id="basic" title="Basic" file="card-basic.tsx">
+  <CardBasic />
+</Demo>
+
+<Demo slug="card" id="with-action" title="With an action" file="card-with-action.tsx">
+  <CardWithAction />
+</Demo>
+
+<Demo slug="card" id="tag" title="Tag" file="card-tag.tsx">
+  <CardTag />
+</Demo>
+
+<Demo slug="card" id="horizontal" title="Horizontal" file="card-horizontal.tsx">
+  <CardHorizontal />
+</Demo>
+
+<Demo slug="card" id="item-rows" title="Item rows" file="card-item-rows.tsx">
+  <CardItemRows />
+</Demo>
+
+<ApiReference slug="card" />
+
+<ComponentTokens slug="card" />

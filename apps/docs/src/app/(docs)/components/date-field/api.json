@@ -1,0 +1,86 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "date-field",
+  "parts": [
+    {
+      "name": "DateField",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/react-aria/date-field/date-field.tsx",
+      "forwardedFrom": [
+        "@react-types/shared",
+        "react-aria",
+        "react-aria-components",
+        "react-stately"
+      ],
+      "forwardedCount": 104,
+      "props": [
+        {
+          "name": "description",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Supporting copy, rendered as the private RAC `Description`.",
+          "required": false
+        },
+        {
+          "name": "errorMessage",
+          "origin": "declared",
+          "type": "((validation: ValidationResult) => ReactNode) | ReactNode",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Error copy, rendered as `FieldError` when the field is invalid. Accepts a node or a validation render function.",
+          "required": false
+        },
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Visible label, rendered as the private RAC `Label`.",
+          "required": false
+        },
+        {
+          "name": "shouldForceLeadingZeros",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Pads day and month segments with a leading zero. The reference flips RAC's locale-dependent default; this port keeps that flip.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DateInput",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/react-aria/date-field/date-field.tsx",
+      "forwardedFrom": [
+        "@react-types/shared",
+        "react-aria-components"
+      ],
+      "forwardedCount": 71,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "ClassNameOrFunction<DateInputRenderProps> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Extra classes, composed with the segment row and its standalone field surface. Inside a field group, the group owns the surface. A function may compute the class from DateInput render props.",
+          "required": false
+        },
+        {
+          "name": "slot",
+          "origin": "declared",
+          "type": "string | null | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Range-picker slot. `\"start\"` / `\"end\"` inside DateRangePicker.",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+---
+title: Table
+lede: >
+  Semantic table composites. `Table` is the spreadsheet layout; `VerticalTable` is the
+  key/value facts sheet. Both ship from `@elmeragroup/ui/table`. Selection is a
+  consumer `data-state` on the row — there is no sortable API in v1.
+---
+
+import { TableBasic } from "./demos/table-basic";
+import { TableInFrame } from "./demos/table-in-frame";
+import { VerticalTableData } from "./demos/vertical-table-data";
+import { VerticalTableCompact } from "./demos/vertical-table-compact";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("table");
+
+<ComponentIntro slug="table" />
+
+<Prose>
+
+`Table.Root` wraps a native `<table>` in a horizontal scroll container. Props and
+`className` go to the table; the scroll div is fixed. Header, body, footer, row, head,
+cell, and caption are the matching HTML elements. Put `data-state="selected"` on
+`Table.Row` when a row model marks it selected — the library never stamps that
+attribute.
+
+Inside `Frame.Root` the body restyles itself: separate borders, rounded corner cells,
+`bg-background` cells, and an inner hairline. That reshape is selector-driven. There is
+no `inFrame` prop.
+
+`VerticalTable` is the facts-sheet layout. `Root` carries `data-variant`. `Header` is a
+plain `<h2>` — polymorphic through `render`, not react-aria Heading. `Body` maps a
+`data` array to rows first, then renders children. All Body props including `className`
+stay on the bordered wrapper.
+
+</Prose>
+
+<Demo slug="table" id="basic" title="Basic" file="table-basic.tsx">
+  <TableBasic />
+</Demo>
+
+<Demo slug="table" id="in-frame" title="In a frame" file="table-in-frame.tsx">
+  <TableInFrame />
+</Demo>
+
+<Demo slug="table" id="vertical-data" title="Vertical data" file="vertical-table-data.tsx">
+  <VerticalTableData />
+</Demo>
+
+<Demo slug="table" id="vertical-compact" title="Compact" file="vertical-table-compact.tsx">
+  <VerticalTableCompact />
+</Demo>
+
+<ApiReference slug="table" />
+
+<ComponentTokens slug="table" />

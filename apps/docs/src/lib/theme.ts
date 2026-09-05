@@ -1,10 +1,17 @@
-import { BRAND_CODES, isBrandCode } from "@elmeragroup/ui/theme";
+import { isBrandCode } from "@elmeragroup/ui/theme";
 import type {
   BrandCode,
   ColorSchemeOptions,
   ThemeInput,
   ThemeSegment,
   ThemeVariant,
+} from "@elmeragroup/ui/theme";
+
+export {
+  BRAND_CODES as THEME_BRANDS,
+  LEGAL_THEMES,
+  THEME_SEGMENTS,
+  THEME_VARIANTS,
 } from "@elmeragroup/ui/theme";
 
 export const DOCUMENT_THEME = {
@@ -24,12 +31,6 @@ export const DEFAULT_THEME = {
   brand: "fkas",
   segment: "private",
 } as const satisfies ThemeInput;
-
-export const THEME_VARIANTS = ["internal", "external"] as const satisfies readonly ThemeVariant[];
-
-export const THEME_BRANDS = BRAND_CODES;
-
-export const THEME_SEGMENTS = ["private", "company"] as const satisfies readonly ThemeSegment[];
 
 export function parseThemeVariant(value: string): ThemeVariant | null {
   if (value === "internal" || value === "external") {

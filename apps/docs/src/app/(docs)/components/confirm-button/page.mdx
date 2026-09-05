@@ -1,0 +1,42 @@
+---
+title: ConfirmButton
+lede: >
+  A two-press confirm wrapper over Button. The first press arms; the second
+  confirms. Escape and blur return to rest. Copy is consumer-owned.
+---
+
+import { ConfirmButtonDestructive } from "./demos/confirm-button-destructive";
+import { ConfirmButtonSuccess } from "./demos/confirm-button-success";
+import { ConfirmButtonIcon } from "./demos/confirm-button-icon";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("confirm-button");
+
+<ComponentIntro slug="confirm-button" />
+
+<Prose>
+
+The first press arms the button (`data-armed`, armed styles, label swap, and a
+polite live announcement). The second press disarms and fires `onConfirm` once.
+`Escape` and blur cancel the armed state without confirming. Supply a string
+`armedChildren` or `armedAriaLabel` so the escalation is announced. There is no
+size axis — density comes from Button.
+
+</Prose>
+
+<Demo slug="confirm-button" id="destructive" title="Destructive" file="confirm-button-destructive.tsx">
+  <ConfirmButtonDestructive />
+</Demo>
+
+<Demo slug="confirm-button" id="success" title="Success" file="confirm-button-success.tsx">
+  <ConfirmButtonSuccess />
+</Demo>
+
+<Demo slug="confirm-button" id="icon" title="Icon" file="confirm-button-icon.tsx">
+  <ConfirmButtonIcon />
+</Demo>
+
+<ApiReference slug="confirm-button" />
+
+<ComponentTokens slug="confirm-button" />

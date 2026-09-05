@@ -1,0 +1,78 @@
+---
+title: RadioGroup
+lede: >
+  A labeled Field composite over base-ui RadioGroup, with a 16px radio primitive,
+  compact `Radio` rows, `RadioItem` selection cards that alias SelectionItem
+  parts by object identity, and an icon-only segmented picker.
+---
+
+import { RadioGroupBasic } from "./demos/radio-group-basic";
+import { RadioGroupPending } from "./demos/radio-group-pending";
+import { RadioItemGroupDemo } from "./demos/radio-item-group";
+import { RadioIconButtonDemo } from "./demos/radio-icon-button";
+import { RadioControlledNull } from "./demos/radio-controlled-null";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("radio-group");
+
+<ComponentIntro slug="radio-group" />
+
+<Prose>
+
+`RadioGroup` is the labeled composite: `label` / `description` / `errorMessage`
+(`ReactNode`), `isPending`, `isDisabled` / `isInvalid` / `isReadOnly` /
+`isRequired`, and `onChange(value)` as a `string`. Controlled `value` is
+`string | null`; `null` is passed through to the primitive so the group stays
+controlled with nothing selected.
+
+The header row renders when `label || isPending` is truthy. `isPending={false}`
+with no label does not emit an empty legend. The pending indicator is Phosphor
+regular `SpinnerGap` (`size-3 animate-spin`) and is decorative. `isPending`
+sets `aria-busy` on the radiogroup; announce pending in a consumer live region
+if it must be spoken.
+
+Base-ui's radio-group primitive accepts `name`, so `RadioGroup` sets `name`
+directly on that primitive. `CheckboxGroup` threads `name` through Field
+instead because its primitive has no `name`. Both faces still expose
+`name?: string`.
+
+`RadioItem.Title`, `.Description`, `.Content`, `.Actions`, and `.SubSection`
+are the **same objects** as `SelectionItem.*`. Direct `RadioItem.SubSection`
+children stay outside the row label so interactive content does not change
+selection. Wrapping one in a Fragment hides it from that filter.
+`controlPosition` passes through to `SelectionItem.Shell`.
+
+The 16px radio expands its hit target with `after:-inset-x-3 after:-inset-y-2`
+— adjacent interactive elements need clearance. A checked radio in an invalid
+group keeps the primary border (`aria-invalid:aria-checked:border-primary`).
+
+`RadioIconButton` is mechanically icon-only, so `aria-label` is required.
+Its resting surface is `bg-card`. The `size` map is decorative, not a density
+rung.
+
+</Prose>
+
+<Demo slug="radio-group" id="basic" title="Basic" file="radio-group-basic.tsx">
+  <RadioGroupBasic />
+</Demo>
+
+<Demo slug="radio-group" id="pending" title="Pending" file="radio-group-pending.tsx">
+  <RadioGroupPending />
+</Demo>
+
+<Demo slug="radio-group" id="item-group" title="Item group" file="radio-item-group.tsx">
+  <RadioItemGroupDemo />
+</Demo>
+
+<Demo slug="radio-group" id="icon-button" title="Icon button" file="radio-icon-button.tsx">
+  <RadioIconButtonDemo />
+</Demo>
+
+<Demo slug="radio-group" id="controlled-null" title="Controlled null" file="radio-controlled-null.tsx">
+  <RadioControlledNull />
+</Demo>
+
+<ApiReference slug="radio-group" />
+
+<ComponentTokens slug="radio-group" />

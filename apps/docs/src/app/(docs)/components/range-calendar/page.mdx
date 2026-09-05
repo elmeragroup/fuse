@@ -1,0 +1,73 @@
+---
+title: RangeCalendar
+lede: >
+  An interim single-month range calendar over React Aria Components. Two layers
+  paint each day — a square band carrying the range fill and end caps, and a pill
+  carrying the day itself.
+---
+
+import { RangeCalendarBasic } from "./demos/range-calendar-basic";
+import { RangeCalendarControlled } from "./demos/range-calendar-controlled";
+import { RangeCalendarUnavailable } from "./demos/range-calendar-unavailable";
+import { RangeCalendarError } from "./demos/range-calendar-error";
+import { RangeCalendarBounds } from "./demos/range-calendar-bounds";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("range-calendar");
+
+<ComponentIntro slug="range-calendar" />
+
+<Prose>
+
+`RangeCalendar` lives at `@elmeragroup/ui/react-aria/range-calendar`. The
+`react-aria/` prefix is the quarantine marker: this module is replaced alongside
+`Calendar` when a base-ui range calendar ships, and the bare path is reserved for
+that successor. The composite is a single month — `visibleDuration` is omitted —
+and its `value`, `defaultValue` and `onChange` speak the RAC range shape,
+`{ start, end }`. Remaining RAC RangeCalendar props (`focusedValue`, `minValue` /
+`maxValue`, `isDateUnavailable`, `allowsNonContiguousRanges`, …) pass through, and
+`errorMessage` takes any `ReactNode`.
+
+The month row and the weekday row are `CalendarHeader` and `CalendarGridHeader`
+from `@elmeragroup/ui/react-aria/calendar` — the same parts `Calendar` renders, so
+navigation and RTL behaviour match. Unlike `Calendar`, the root carries no card
+surface: standalone it renders borderless, and the picker dialog supplies the
+chrome. Wrap locale-dependent usage in `UiProviders` from
+`@elmeragroup/ui/react-aria/ui-providers`.
+
+Values are `@internationalized/date` objects — `CalendarDate` and friends — not
+`Date`. That package is a direct install for consumers (`pnpm add
+@internationalized/date`): the demos below import it by name, and the copy shipped
+inside `@elmeragroup/ui` is an implementation detail of the quarantined tier, not a
+re-export.
+
+Keyboard range selection anchors on Enter or Space, extends while the arrow keys
+move the focused day, and commits on the second Enter or Space. Escape cancels an
+in-progress selection and restores the previous range.
+
+</Prose>
+
+<Demo slug="range-calendar" id="basic" title="Basic" file="range-calendar-basic.tsx">
+  <RangeCalendarBasic />
+</Demo>
+
+<Demo slug="range-calendar" id="controlled" title="Controlled" file="range-calendar-controlled.tsx">
+  <RangeCalendarControlled />
+</Demo>
+
+<Demo slug="range-calendar" id="unavailable" title="Unavailable dates" file="range-calendar-unavailable.tsx">
+  <RangeCalendarUnavailable />
+</Demo>
+
+<Demo slug="range-calendar" id="error" title="Error" file="range-calendar-error.tsx">
+  <RangeCalendarError />
+</Demo>
+
+<Demo slug="range-calendar" id="bounds" title="Bounds" file="range-calendar-bounds.tsx">
+  <RangeCalendarBounds />
+</Demo>
+
+<ApiReference slug="range-calendar" />
+
+<ComponentTokens slug="range-calendar" />

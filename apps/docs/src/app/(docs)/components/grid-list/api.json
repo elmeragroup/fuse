@@ -1,0 +1,31 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "grid-list",
+  "parts": [
+    {
+      "name": "GridList",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/react-aria/grid-list/grid-list.tsx",
+      "forwardedFrom": [
+        "@react-types/shared",
+        "@types/react",
+        "react-aria",
+        "react-aria-components"
+      ],
+      "forwardedCount": 102,
+      "props": []
+    },
+    {
+      "name": "GridListItem",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/react-aria/grid-list/grid-list.tsx",
+      "forwardedFrom": [
+        "@react-types/shared",
+        "@types/react",
+        "react-aria-components"
+      ],
+      "forwardedCount": 96,
+      "props": []
+    }
+  ]
+}

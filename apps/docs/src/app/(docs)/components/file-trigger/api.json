@@ -1,0 +1,72 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "file-trigger",
+  "parts": [
+    {
+      "name": "FileTrigger",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/react-aria/file-trigger/file-trigger.tsx",
+      "forwardedFrom": [
+        "@react-types/shared",
+        "react-aria-components"
+      ],
+      "forwardedCount": 75,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Merged onto the visible Button.",
+          "required": false
+        },
+        {
+          "name": "isDisabled",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Disables the visible Button (and picker activation).",
+          "required": false
+        },
+        {
+          "name": "ref",
+          "origin": "declared",
+          "type": "Ref<HTMLInputElement> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The hidden file input.",
+          "required": false
+        },
+        {
+          "name": "size",
+          "origin": "recipe-axis",
+          "type": "\"default\" | \"icon\" | \"icon-inline\" | \"icon-lg\" | \"icon-sm\" | \"icon-xs\" | \"lg\" | \"sm\" | \"xs\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"sm\"",
+          "description": "",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "recipe-axis",
+          "type": "\"default\" | \"destructive\" | \"ghost\" | \"link\" | \"outline\" | \"secondary\" | \"success\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        },
+        {
+          "name": "withIcon",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Leading icon on/off. Defaults to on, and adds `gap-x-2` between the icon and the label when on.",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

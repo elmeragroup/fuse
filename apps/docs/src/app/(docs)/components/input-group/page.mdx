@@ -1,0 +1,54 @@
+---
+title: InputGroup
+lede: >
+  A structural primitive that joins a control with addons — icons, text, buttons, a
+  keyboard hint — into one bordered group that owns the focus ring for the whole cluster.
+---
+
+import { InputGroupIcons } from "./demos/input-group-icons";
+import { InputGroupButtons } from "./demos/input-group-buttons";
+import { InputGroupKbd } from "./demos/input-group-kbd";
+import { InputGroupBlock } from "./demos/input-group-block";
+import { InputGroupTextarea } from "./demos/input-group-textarea";
+import { InputGroupInvalid } from "./demos/input-group-invalid";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("input-group");
+
+<ComponentIntro slug="input-group" />
+
+<Prose>
+
+The group is the focus-ring owner: the nested control's own ring is neutralised so a
+keyboard user sees one ring around the cluster, not two.
+
+</Prose>
+
+<Demo slug="input-group" id="icons" title="Icon addons" file="input-group-icons.tsx">
+  <InputGroupIcons />
+</Demo>
+
+<Demo slug="input-group" id="buttons" title="Button addons" file="input-group-buttons.tsx">
+  <InputGroupButtons />
+</Demo>
+
+<Demo slug="input-group" id="kbd" title="Keyboard hint" file="input-group-kbd.tsx">
+  <InputGroupKbd />
+</Demo>
+
+<Demo slug="input-group" id="block" title="Block addons" file="input-group-block.tsx">
+  <InputGroupBlock />
+</Demo>
+
+<Demo slug="input-group" id="textarea" title="Textarea" file="input-group-textarea.tsx">
+  <InputGroupTextarea />
+</Demo>
+
+<Demo slug="input-group" id="invalid" title="Invalid" file="input-group-invalid.tsx">
+  <InputGroupInvalid />
+</Demo>
+
+<ApiReference slug="input-group" />
+
+<ComponentTokens slug="input-group" />

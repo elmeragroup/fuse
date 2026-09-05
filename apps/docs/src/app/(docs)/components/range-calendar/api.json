@@ -1,0 +1,29 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "range-calendar",
+  "parts": [
+    {
+      "name": "RangeCalendar",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/react-aria/range-calendar/range-calendar.tsx",
+      "forwardedFrom": [
+        "@react-types/shared",
+        "react-aria",
+        "react-aria-components",
+        "react-stately"
+      ],
+      "forwardedCount": 98,
+      "props": [
+        {
+          "name": "errorMessage",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Error copy, rendered through the public Text onto RAC `Text slot=\"errorMessage\"` when present. RangeCalendar has no ValidationResult render face.",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

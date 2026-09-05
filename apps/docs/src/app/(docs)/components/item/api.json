@@ -1,0 +1,212 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "item",
+  "parts": [
+    {
+      "name": "Item.Root",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/item/item.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": [
+        {
+          "name": "size",
+          "origin": "recipe-axis",
+          "type": "\"default\" | \"sm\" | \"xs\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "recipe-axis",
+          "type": "\"default\" | \"muted\" | \"outline\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Item.Media",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/item/item.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": [
+        {
+          "name": "variant",
+          "origin": "recipe-axis",
+          "type": "\"default\" | \"icon\" | \"image\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Item.Content",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/item/item.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Item.Actions",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/item/item.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Item.Group",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/item/item.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Item.Separator",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/item/item.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 275,
+      "props": [
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: SeparatorState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "orientation",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "Orientation | undefined",
+          "shortType": null,
+          "defaultValue": "'horizontal'",
+          "description": "The orientation of the separator.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, SeparatorState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: SeparatorState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Item.Title",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/item/item.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Item.Description",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/item/item.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Item.Header",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/item/item.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Item.Footer",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/item/item.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 279,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Footer content, wrapped in the inner `item-footer-content` element that `mode` reveals or collapses via the grid-row animation.",
+          "required": false
+        },
+        {
+          "name": "mode",
+          "origin": "recipe-axis",
+          "type": "\"default\" | \"hidden\" | \"visible\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

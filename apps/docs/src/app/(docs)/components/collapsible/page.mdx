@@ -1,0 +1,50 @@
+---
+title: Collapsible
+lede: >
+  The styling-free single-disclosure primitive. `Root` owns open state, `Trigger` toggles
+  the panel, and `Content` is base-ui's `Panel`. Accordion is the styled sibling.
+---
+
+import { CollapsibleBasic } from "./demos/collapsible-basic";
+import { CollapsibleControlled } from "./demos/collapsible-controlled";
+import { CollapsibleHiddenUntilFound } from "./demos/collapsible-hidden-until-found";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("collapsible");
+
+<ComponentIntro slug="collapsible" />
+
+<Prose>
+
+Collapsible is a visually unstyled passthrough over `@base-ui/react/collapsible`. The
+wrappers add `data-slot` attributes and the canonical `focusRing` on `Trigger` — nothing
+else. Style via `className` or `render`. Height animation uses
+`--collapsible-panel-height` on the panel, for example
+`h-0 overflow-hidden transition-[height] data-open:h-(--collapsible-panel-height)`.
+
+Ungrouped `Disclosure` usage migrates here: `defaultExpanded` → `defaultOpen`,
+`isExpanded` → `open`, `onExpandedChange` → `onOpenChange`, `shouldUnmountOnCollapse` →
+`!keepMounted`. Grouped usage migrates to Accordion.
+
+</Prose>
+
+<Demo slug="collapsible" id="basic" title="Basic" file="collapsible-basic.tsx">
+  <CollapsibleBasic />
+</Demo>
+
+<Demo slug="collapsible" id="controlled" title="Controlled" file="collapsible-controlled.tsx">
+  <CollapsibleControlled />
+</Demo>
+
+<Demo
+  slug="collapsible"
+  id="hidden-until-found"
+  title="Hidden until found"
+  file="collapsible-hidden-until-found.tsx">
+  <CollapsibleHiddenUntilFound />
+</Demo>
+
+<ApiReference slug="collapsible" />
+
+<ComponentTokens slug="collapsible" />

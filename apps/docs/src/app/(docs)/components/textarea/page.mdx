@@ -1,0 +1,39 @@
+---
+title: Textarea
+lede: >
+  An unlabeled multi-line text control. A plain native `textarea` carrying the library's
+  control tokens; labeled usage composes it under `Field.Root`.
+---
+
+import { TextareaBasic } from "./demos/textarea-basic";
+import { TextareaStates } from "./demos/textarea-states";
+import { TextareaInField } from "./demos/textarea-in-field";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("textarea");
+
+<ComponentIntro slug="textarea" />
+
+<Prose>
+
+Like `Input`, a bare `Textarea` has no accessible name of its own. Compose it under
+`Field.Root`, or inside `InputGroup` when it needs adornments.
+
+</Prose>
+
+<Demo slug="textarea" id="basic" title="Basic" file="textarea-basic.tsx">
+  <TextareaBasic />
+</Demo>
+
+<Demo slug="textarea" id="states" title="States" file="textarea-states.tsx">
+  <TextareaStates />
+</Demo>
+
+<Demo slug="textarea" id="in-field" title="In a Field" file="textarea-in-field.tsx">
+  <TextareaInField />
+</Demo>
+
+<ApiReference slug="textarea" />
+
+<ComponentTokens slug="textarea" />

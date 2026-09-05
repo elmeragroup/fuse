@@ -1,0 +1,203 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "input-group",
+  "parts": [
+    {
+      "name": "InputGroup.Root",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/input-group/input-group.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "InputGroup.Addon",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/input-group/input-group.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": [
+        {
+          "name": "align",
+          "origin": "recipe-axis",
+          "type": "\"block-end\" | \"block-start\" | \"inline-end\" | \"inline-start\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"inline-start\"",
+          "description": "",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "InputGroup.Button",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/input-group/input-group.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 283,
+      "props": [
+        {
+          "name": "aria-label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Defines a string value that labels the current element.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes, merged last through `cn`.",
+          "required": false
+        },
+        {
+          "name": "isPending",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Disables the element and stamps `data-pending`, blocking activation entirely. Effective disabled is `disabled || isPending`.",
+          "required": false
+        },
+        {
+          "name": "isVisuallyDisabled",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Renders the disabled treatment (`opacity-70`) and suppresses focus-on-press while the button stays fully interactive — click, keyboard and focus-visible all still work. For \"looks disabled but explains itself on activation\" flows.",
+          "required": false
+        },
+        {
+          "name": "onIntent",
+          "origin": "declared",
+          "type": "(() => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Predictive-prefetch callback. Fires once when the pointer's predicted trajectory lands inside the inflated hit rect; browsers without the prediction API fail soft.",
+          "required": false
+        },
+        {
+          "name": "predictionZoneSize",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Pixels the hit rect is inflated on every side when predicting pointer intent.",
+          "required": false
+        },
+        {
+          "name": "size",
+          "origin": "declared",
+          "type": "IconInputGroupButtonSize | LabelInputGroupButtonSize | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"xs\"",
+          "description": "Local compact size axis, not Button's `size`. Labelled values; icon sizes require `aria-label`. Local compact size axis, not Button's `size`. Icon sizes require `aria-label`.",
+          "required": false
+        },
+        {
+          "name": "type",
+          "origin": "declared",
+          "type": "\"button\" | \"reset\" | \"submit\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"button\"",
+          "description": "Native button type, re-typed over `Button`'s own. Defaults to `\"button\"`, so an addon action never submits the surrounding form unless it asks to.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "recipe-axis",
+          "type": "\"default\" | \"destructive\" | \"ghost\" | \"link\" | \"outline\" | \"secondary\" | \"success\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"ghost\"",
+          "description": "",
+          "required": false
+        },
+        {
+          "name": "focusableWhenDisabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the button should be focusable when disabled.",
+          "required": false
+        },
+        {
+          "name": "nativeButton",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Whether the component renders a native `<button>` element when replacing it via the `render` prop. Set to `false` if the rendered element is not a button (for example, `<div>`).",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, ButtonState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: ButtonState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "InputGroup.Text",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/input-group/input-group.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "InputGroup.Input",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/input-group/input-group.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 310,
+      "props": []
+    },
+    {
+      "name": "InputGroup.Textarea",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/input-group/input-group.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 294,
+      "props": []
+    }
+  ]
+}

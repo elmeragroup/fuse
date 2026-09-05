@@ -1,0 +1,470 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "popover",
+  "parts": [
+    {
+      "name": "Popover.Root",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/popover/popover.tsx",
+      "forwardedFrom": [
+        "@base-ui/react"
+      ],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "actionsRef",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "RefObject<PopoverRootActions | null> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "A ref to imperative actions. - `unmount`: Manually unmounts the popover. Call this after any externally controlled closing animation finishes. - `close`: Closes the popover imperatively when called.",
+          "required": false
+        },
+        {
+          "name": "children",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "PayloadChildRenderFunction<unknown> | ReactNode",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The content of the popover. This can be a regular React node or a render function that receives the `payload` of the active trigger.",
+          "required": false
+        },
+        {
+          "name": "defaultOpen",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the popover is initially open. To render a controlled popover, use the `open` prop instead.",
+          "required": false
+        },
+        {
+          "name": "defaultTriggerId",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | null | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "ID of the trigger that the popover is associated with. This is useful in conjunction with the `defaultOpen` prop to create an initially open popover.",
+          "required": false
+        },
+        {
+          "name": "handle",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "PopoverHandle<unknown> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "A handle to associate the popover with a trigger. If specified, allows external triggers to control the popover's open state.",
+          "required": false
+        },
+        {
+          "name": "modal",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "\"trap-focus\" | boolean | undefined",
+          "shortType": "Union",
+          "defaultValue": "false",
+          "description": "Determines if the popover enters a modal state when open. - `true`: user interaction is limited to the popover: document page scroll is locked, and pointer interactions on outside elements are disabled. - `false`: user interaction with the rest of the document is allowed. - `'trap-focus'`: focus is trapped inside the popover, but document page scroll is not locked and pointer interactions outside of it remain enabled. When `modal` is `true`, focus trapping is enabled only if `<Popover.Close>` is rendered inside `<Popover.Popup>`. It can be visually hidden with your own CSS if needed, such as Tailwind's `sr-only` utility. When `modal` is `'trap-focus'`, render `<Popover.Close>` inside `<Popover.Popup>` so touch screen readers can escape the popup.",
+          "required": false
+        },
+        {
+          "name": "onOpenChange",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((open: boolean, eventDetails: PopoverRootChangeEventDetails) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Event handler called when the popover is opened or closed.",
+          "required": false
+        },
+        {
+          "name": "onOpenChangeComplete",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((open: boolean) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Event handler called after any animations complete when the popover is opened or closed.",
+          "required": false
+        },
+        {
+          "name": "open",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Whether the popover is currently open.",
+          "required": false
+        },
+        {
+          "name": "triggerId",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | null | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "ID of the trigger that the popover is associated with. This is useful in conjunction with the `open` prop to create a controlled popover. There's no need to specify this prop when the popover is uncontrolled (that is, when the `open` prop is not set).",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Popover.Trigger",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/popover/popover.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 284,
+      "props": [
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: PopoverTriggerState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "closeDelay",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": "0",
+          "description": "How long to wait before closing the popover that was opened on hover. Specified in milliseconds. Requires the `openOnHover` prop.",
+          "required": false
+        },
+        {
+          "name": "delay",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": "300",
+          "description": "How long to wait before the popover may be opened on hover. Specified in milliseconds. Requires the `openOnHover` prop.",
+          "required": false
+        },
+        {
+          "name": "handle",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "PopoverHandle<unknown> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "A handle to associate the trigger with a popover.",
+          "required": false
+        },
+        {
+          "name": "id",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "ID of the trigger. In addition to being forwarded to the rendered element, it is also used to specify the active trigger for the popover in controlled mode (with the PopoverRoot `triggerId` prop).",
+          "required": false
+        },
+        {
+          "name": "nativeButton",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Whether the component renders a native `<button>` element when replacing it via the `render` prop. Set to `false` if the rendered element is not a button (for example, `<div>`).",
+          "required": false
+        },
+        {
+          "name": "openOnHover",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the popover should also open when the trigger is hovered.",
+          "required": false
+        },
+        {
+          "name": "payload",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "unknown",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "A payload to pass to the popover when it is opened.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, PopoverTriggerState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: PopoverTriggerState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Popover.Content",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/popover/popover.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 275,
+      "props": [
+        {
+          "name": "align",
+          "origin": "declared",
+          "type": "Align | undefined",
+          "shortType": null,
+          "defaultValue": "\"center\"",
+          "description": "How the popup aligns to the trigger on the cross axis.",
+          "required": false
+        },
+        {
+          "name": "alignOffset",
+          "origin": "declared",
+          "type": "number | OffsetFunction | undefined",
+          "shortType": "Union",
+          "defaultValue": "0",
+          "description": "Offset along the alignment axis, in pixels.",
+          "required": false
+        },
+        {
+          "name": "container",
+          "origin": "declared",
+          "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Portal target for this overlay. Defaults to the nearest enclosing `ThemeScope` element, so it never escapes the theme that opened it.",
+          "required": false
+        },
+        {
+          "name": "showArrow",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Renders the placement arrow after `children`. Off by default.",
+          "required": false
+        },
+        {
+          "name": "side",
+          "origin": "declared",
+          "type": "Side | undefined",
+          "shortType": null,
+          "defaultValue": "\"bottom\"",
+          "description": "Which side of the trigger the popup is placed on.",
+          "required": false
+        },
+        {
+          "name": "sideOffset",
+          "origin": "declared",
+          "type": "number | OffsetFunction | undefined",
+          "shortType": "Union",
+          "defaultValue": "4",
+          "description": "Distance from the trigger, in pixels.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: PopoverPopupState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "finalFocus",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | RefObject<HTMLElement | null> | ((closeType: InteractionType) => void | boolean | HTMLElement | null) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Determines the element to focus when the popover is closed. - `false`: Do not move focus. - `true`: Move focus based on the default behavior (trigger or previously focused element). - `RefObject`: Move focus to the ref element. - `function`: Called with the interaction type (`mouse`, `touch`, `pen`, or `keyboard`). Return an element to focus, `true` to use the default behavior, `null` to fall back to the default behavior, or `false`/`undefined` to do nothing.",
+          "required": false
+        },
+        {
+          "name": "initialFocus",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | RefObject<HTMLElement | null> | ((openType: InteractionType) => void | boolean | HTMLElement | null) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Determines the element to focus when the popover is opened. By default, focus moves to the first tabbable element inside the popup, except when the popover is opened by touch — then the popup itself is focused to avoid opening the virtual keyboard. - `false`: Do not move focus. - `true`: Move focus based on the default behavior (first tabbable element or popup). - `RefObject`: Move focus to the ref element. - `function`: Called with the interaction type (`mouse`, `touch`, `pen`, or `keyboard`). Return an element to focus, `true` to use the default behavior, `null` to fall back to the default behavior, or `false`/`undefined` to do nothing.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, PopoverPopupState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: PopoverPopupState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Popover.Header",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/popover/popover.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Popover.Title",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/popover/popover.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 275,
+      "props": [
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: PopoverTitleState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, PopoverTitleState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: PopoverTitleState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Popover.Description",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/popover/popover.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 275,
+      "props": [
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: PopoverDescriptionState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, PopoverDescriptionState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: PopoverDescriptionState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

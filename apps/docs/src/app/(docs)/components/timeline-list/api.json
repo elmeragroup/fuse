@@ -1,0 +1,133 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "timeline-list",
+  "parts": [
+    {
+      "name": "TimelineList.Root",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/timeline-list/timeline-list.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 283,
+      "props": []
+    },
+    {
+      "name": "TimelineList.Item",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/timeline-list/timeline-list.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 281,
+      "props": []
+    },
+    {
+      "name": "TimelineList.Title",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/timeline-list/timeline-list.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 279,
+      "props": [
+        {
+          "name": "align",
+          "origin": "recipe-axis",
+          "type": "\"center\" | \"left\" | \"right\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        },
+        {
+          "name": "font",
+          "origin": "recipe-axis",
+          "type": "\"default\" | \"normal\" | \"semi-bold\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        },
+        {
+          "name": "level",
+          "origin": "declared",
+          "type": "HeadingLevel | undefined",
+          "shortType": null,
+          "defaultValue": "3",
+          "description": "Document-outline level — `1`–`6` picks the rendered `h1`–`h6`. Defaults to `2`. Visual `size` is independent of `level`.",
+          "required": false
+        },
+        {
+          "name": "size",
+          "origin": "recipe-axis",
+          "type": "\"2xl\" | \"3xl\" | \"4xl\" | \"5xl\" | \"6xl\" | \"default\" | \"lg\" | \"sm\" | \"xl\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        },
+        {
+          "name": "uppercase",
+          "origin": "recipe-axis",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "recipe-axis",
+          "type": "\"brand\" | \"default\" | \"destructive\" | \"foreground\" | \"inherit\" | \"muted\" | \"primary\" | \"secondary\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "TimelineList.Time",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/timeline-list/timeline-list.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": [
+        {
+          "name": "date",
+          "origin": "declared",
+          "type": "string | Date",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Event instant. A `Date` or parseable string, normalized with `new Date(date).toISOString()` onto the host `dateTime`. Every invalid value throws `RangeError(\"TimelineList.Time received an invalid date\")`.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "TimelineList.Description",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/timeline-list/timeline-list.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    }
+  ]
+}

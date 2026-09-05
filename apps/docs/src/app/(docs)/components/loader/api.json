@@ -1,0 +1,35 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "loader",
+  "parts": [
+    {
+      "name": "Loader",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/loader/loader.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": [
+        {
+          "name": "size",
+          "origin": "recipe-axis",
+          "type": "\"default\" | \"large\" | \"medium\" | \"small\" | \"xl\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "recipe-axis",
+          "type": "\"default\" | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

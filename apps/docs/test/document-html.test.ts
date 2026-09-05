@@ -41,7 +41,7 @@ describe("docs response HTML", () => {
     expect(bootstrap?.start).toBeLessThan(paintable);
 
     const skipNav = html.indexOf("Skip to contents");
-    const docsRoot = html.indexOf("DocsRoot");
+    const docsRoot = html.indexOf("data-docs-root");
     expect(skipNav).toBeGreaterThan(bootstrap?.start ?? -1);
     expect(docsRoot).toBeGreaterThan(bootstrap?.start ?? -1);
     expect(html.indexOf(BOOTSTRAP_MANIFEST_KEY)).toBeGreaterThan(-1);
@@ -58,7 +58,7 @@ describe("docs response HTML", () => {
       expect(html).not.toContain('aria-label="Brand"');
       expect(html).not.toContain('aria-label="Segment"');
       expect(html).not.toContain("ThemePicker");
-      expect(html).not.toContain("DocsRoot");
+      expect(html).not.toContain("data-docs-root");
       expect(html).not.toContain("Skip to contents");
     }
   });

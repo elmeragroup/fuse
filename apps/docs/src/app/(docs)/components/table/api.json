@@ -1,0 +1,251 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "table",
+  "parts": [
+    {
+      "name": "Table.Root",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/table/table.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 289,
+      "props": []
+    },
+    {
+      "name": "Table.Header",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/table/table.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Table.Body",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/table/table.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Table.Footer",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/table/table.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Table.Row",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/table/table.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Table.Head",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/table/table.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 286,
+      "props": []
+    },
+    {
+      "name": "Table.Cell",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/table/table-cell.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 289,
+      "props": []
+    },
+    {
+      "name": "Table.Caption",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/table/table.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "VerticalTable.Root",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/table/table.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": [
+        {
+          "name": "variant",
+          "origin": "declared",
+          "type": "\"default\" | \"non-bordered-compact\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "Facts-sheet look. `\"non-bordered-compact\"` drops the wrapper border/background and tightens cell padding via descendant `data-variant` selectors (table.md §4).",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "VerticalTable.Header",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/table/vertical-table-header.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": [
+        {
+          "name": "render",
+          "origin": "declared",
+          "type": "RenderProp<Record<string, unknown>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Replaces the host `<h2>` via base-ui `useRender`. Use this for other outline levels; the level-2 type classes and `data-slot` stay merged onto the replacement.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "VerticalTable.Body",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/table/table.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": [
+        {
+          "name": "data",
+          "origin": "declared",
+          "type": "VerticalTableItem[] | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Key/value rows rendered before `children`. Each item becomes a `VerticalTable.Row` with `Key` then `Value`.",
+          "required": false
+        },
+        {
+          "name": "tableProps",
+          "origin": "declared",
+          "type": "DetailedHTMLProps<TableHTMLAttributes<HTMLTableElement>, HTMLTableElement> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Inner `<table>` (`Table.Root`) props. Association attributes such as `aria-labelledby` belong here — Body's own props, including `aria-*`, stay on the wrapper only (table.md §8.3). `className` merges with `table-fixed`.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "VerticalTable.Row",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/table/table.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": [
+        {
+          "name": "fontWeight",
+          "origin": "declared",
+          "type": "\"bold\" | \"normal\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"normal\"",
+          "description": "Weight token consumed by `Key`/`Value` via the row group scope.",
+          "required": false
+        },
+        {
+          "name": "isHidden",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Hides the row with the `hidden` class when true.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "VerticalTable.Key",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/table/vertical-table-key.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 289,
+      "props": [
+        {
+          "name": "isLoading",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Replaces children with a `Skeleton` (`h-4 w-full max-w-24`).",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": "declared",
+          "type": "RenderProp<Record<string, unknown>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Replaces the host `<td>` via base-ui `useRender`. Pass `render={<th scope=\"row\" />}` for row-header semantics; Key classes and `data-slot` stay merged onto the host.",
+          "required": false
+        },
+        {
+          "name": "text",
+          "origin": "declared",
+          "type": "\"default\" | \"truncate\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"truncate\"",
+          "description": "`\"truncate\"` clips overflowing text; `\"default\"` wraps (`whitespace-normal`).",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "VerticalTable.Value",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/table/table.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 289,
+      "props": [
+        {
+          "name": "isLoading",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Replaces children with a `Skeleton` (`h-4 w-full max-w-24`).",
+          "required": false
+        },
+        {
+          "name": "text",
+          "origin": "declared",
+          "type": "\"default\" | \"truncate\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"truncate\"",
+          "description": "`\"truncate\"` clips overflowing text; `\"default\"` wraps (`whitespace-normal`).",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

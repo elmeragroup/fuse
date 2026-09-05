@@ -1,0 +1,63 @@
+---
+title: SelectionItem
+lede: >
+  The shared card-row shell that CheckboxItem and RadioItem plug a control into.
+  Not usable on its own without a Field.Root supplying context.
+---
+
+import { SelectionItemBasic } from "./demos/selection-item-basic";
+import { SelectionItemSubsection } from "./demos/selection-item-subsection";
+import { SelectionItemControlEnd } from "./demos/selection-item-control-end";
+import { SelectionItemStacked } from "./demos/selection-item-stacked";
+import { SelectionItemDisabled } from "./demos/selection-item-disabled";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("selection-item");
+
+<ComponentIntro slug="selection-item" />
+
+<Prose>
+
+The whole row is a `Field.Label`, so clicking the title or description toggles the
+plugged-in control. `SelectionItem.SubSection` is pulled **outside** that label by
+identity (`child.type === SelectionItem.SubSection`) on **direct** children only —
+interactive content in the band must not select the row. Wrapping a SubSection in a
+Fragment, another component, or an HOC hides it from the filter; it then renders
+inside the label and clicks toggle the control. That fragility is kept from the
+reference, not fixed.
+
+`controlPosition="end"` puts the control after the row children. The sub-section
+indent spacer derives its width from the actual control slot so a trailing or wide
+custom `control` still lines the extra content up with the text column.
+
+Stacked shells drop the shared top border (`not-first:border-t-0`) and a checked
+non-first row repaints that edge in `primary` by pulling itself up one pixel
+(`-mt-px`) instead of a z-index lift. A `className` margin override can break the
+repaint.
+
+</Prose>
+
+<Demo slug="selection-item" id="basic" title="Basic" file="selection-item-basic.tsx">
+  <SelectionItemBasic />
+</Demo>
+
+<Demo slug="selection-item" id="subsection" title="Sub-section" file="selection-item-subsection.tsx">
+  <SelectionItemSubsection />
+</Demo>
+
+<Demo slug="selection-item" id="control-end" title="Control at the end" file="selection-item-control-end.tsx">
+  <SelectionItemControlEnd />
+</Demo>
+
+<Demo slug="selection-item" id="stacked" title="Stacked" file="selection-item-stacked.tsx">
+  <SelectionItemStacked />
+</Demo>
+
+<Demo slug="selection-item" id="disabled" title="Disabled" file="selection-item-disabled.tsx">
+  <SelectionItemDisabled />
+</Demo>
+
+<ApiReference slug="selection-item" />
+
+<ComponentTokens slug="selection-item" />

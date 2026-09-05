@@ -1,0 +1,45 @@
+---
+title: Code
+lede: >
+  A single server syntax-highlighted code block. Pass raw source on `code`;
+  `sugar-high` highlights it. Do not pass pre-built HTML.
+---
+
+import { CodeBasic } from "./demos/code-basic";
+import { CodeScroll } from "./demos/code-scroll";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("code");
+
+<ComponentIntro slug="code" />
+
+<Prose>
+
+`Code` is server-safe: it owns no state, handlers, or browser APIs. Content comes
+exclusively from the `code` string — there is no `children` slot, and the inner
+`<code>` is not independently addressable.
+
+Highlighter markup is injected with `dangerouslySetInnerHTML`. That HTML is
+`sugar-high`'s `highlight()` output over the caller-supplied string;
+`highlight()` escapes token text. The trust boundary is the calling component,
+same as ordinary children. Syntax colors come from the theme's `--sh-*` tokens;
+the component itself paints no colors.
+
+The `<pre>` is a keyboard-reachable scroll region (`tabIndex={0}`,
+`role="region"`, `max-h-160 overflow-auto`). Long listings should supply
+`aria-label`.
+
+</Prose>
+
+<Demo slug="code" id="basic" title="Basic" file="code-basic.tsx">
+  <CodeBasic />
+</Demo>
+
+<Demo slug="code" id="scroll" title="Scroll region" file="code-scroll.tsx">
+  <CodeScroll />
+</Demo>
+
+<ApiReference slug="code" />
+
+<ComponentTokens slug="code" />

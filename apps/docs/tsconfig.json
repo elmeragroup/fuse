@@ -7,6 +7,15 @@
     "declarationMap": false,
     "incremental": true
   },
-  "include": ["src", "test", "vitest.config.ts", "next.config.ts", "next-env.d.ts"],
+  "include": [
+    "src",
+    "test",
+    "scripts",
+    "vitest.config.ts",
+    "vitest.shadow.config.ts",
+    "next.config.ts",
+    "next-env.d.ts",
+    "mdx-components.tsx"
+  ],
   "exclude": ["node_modules"]
 }

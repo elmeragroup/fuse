@@ -1,0 +1,64 @@
+---
+title: CheckboxCard
+lede: >
+  A selectable marketing/product card over the base-ui Checkbox primitive, with
+  a circle/check-circle crossfade indicator, tags, a large title, and a
+  right-content slot.
+---
+
+import { CheckboxCardBasic } from "./demos/checkbox-card-basic";
+import { CheckboxCardTags } from "./demos/checkbox-card-tags";
+import { CheckboxCardRightContent } from "./demos/checkbox-card-right-content";
+import { CheckboxCardVariants } from "./demos/checkbox-card-variants";
+import { CheckboxCardGroup } from "./demos/checkbox-card-group";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("checkbox-card");
+
+<ComponentIntro slug="checkbox-card" />
+
+<Prose>
+
+`CheckboxCard` is a labeled composite, not a `CheckboxItem` row. It always
+renders `Field.Item` → `Card` / `Card.Content` → `Field.Label` plus the checkbox
+control. That requires a `Field.Root` ancestor — typically `CheckboxGroup`,
+which also supplies the checkbox-group primitive `value` membership needs.
+`CheckboxCard` does not create those ancestors.
+
+`title` is required `ReactNode`; native `title` is omitted so that type is not
+narrowed to `string`. `description` is a required string. `tags` render as
+`Badge` chips above the title and disappear when the array is empty or absent.
+`children` sit below the description, still inside the label, so they toggle
+the control. `rightContent` sits outside the label and does not.
+
+`variant` is `default` (`bg-card`) or `muted` (`bg-muted`). `isDisabled` fades
+the card and disables the primitive — there is no `disabled` pass-through, no
+`className`, and no `render` escape hatch. The circle/check-circle indicator is
+fixed. Custom indicators belong on `SelectionItem.Shell`'s `control` slot.
+
+</Prose>
+
+<Demo slug="checkbox-card" id="basic" title="Basic" file="checkbox-card-basic.tsx">
+  <CheckboxCardBasic />
+</Demo>
+
+<Demo slug="checkbox-card" id="tags" title="Tags" file="checkbox-card-tags.tsx">
+  <CheckboxCardTags />
+</Demo>
+
+<Demo slug="checkbox-card" id="right-content" title="Right content" file="checkbox-card-right-content.tsx">
+  <CheckboxCardRightContent />
+</Demo>
+
+<Demo slug="checkbox-card" id="variants" title="Variants" file="checkbox-card-variants.tsx">
+  <CheckboxCardVariants />
+</Demo>
+
+<Demo slug="checkbox-card" id="group" title="Group" file="checkbox-card-group.tsx">
+  <CheckboxCardGroup />
+</Demo>
+
+<ApiReference slug="checkbox-card" />
+
+<ComponentTokens slug="checkbox-card" />

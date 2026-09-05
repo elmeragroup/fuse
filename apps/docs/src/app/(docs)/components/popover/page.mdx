@@ -1,0 +1,48 @@
+---
+title: Popover
+lede: >
+  A non-modal overlay anchored to its trigger. `Popover.Content` owns placement and the
+  portal target; `showArrow` is opt-in so the popup can sit flush or grow a tokenized
+  arrow.
+---
+
+import { PopoverBasic } from "./demos/popover-basic";
+import { PopoverArrow } from "./demos/popover-arrow";
+import { PopoverPlacement } from "./demos/popover-placement";
+import { PopoverControlled } from "./demos/popover-controlled";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("popover");
+
+<ComponentIntro slug="popover" />
+
+<Prose>
+
+Positioner props (`side`, `align`, `sideOffset`, `alignOffset`) surface on
+`Popover.Content`. Portal, Positioner and Popup stay unexported — `container` on Content
+is the only portal-control surface, and it defaults to the nearest `ThemeScope`. The
+arrow is off unless `showArrow` is set; that is deliberate and is not unified with
+Tooltip.
+
+</Prose>
+
+<Demo slug="popover" id="basic" title="Basic" file="popover-basic.tsx">
+  <PopoverBasic />
+</Demo>
+
+<Demo slug="popover" id="arrow" title="Arrow" file="popover-arrow.tsx">
+  <PopoverArrow />
+</Demo>
+
+<Demo slug="popover" id="placement" title="Placement" file="popover-placement.tsx">
+  <PopoverPlacement />
+</Demo>
+
+<Demo slug="popover" id="controlled" title="Controlled" file="popover-controlled.tsx">
+  <PopoverControlled />
+</Demo>
+
+<ApiReference slug="popover" />
+
+<ComponentTokens slug="popover" />

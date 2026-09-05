@@ -1,0 +1,86 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "empty",
+  "parts": [
+    {
+      "name": "Empty.Root",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/empty/empty.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": [
+        {
+          "name": "variant",
+          "origin": "recipe-axis",
+          "type": "\"default\" | \"outline\" | \"outline-dashed\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Empty.Header",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/empty/empty.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Empty.Media",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/empty/empty.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": [
+        {
+          "name": "variant",
+          "origin": "recipe-axis",
+          "type": "\"default\" | \"icon\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Empty.Title",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/empty/empty.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Empty.Description",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/empty/empty.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Empty.Content",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/empty/empty.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    }
+  ]
+}

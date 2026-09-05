@@ -1,0 +1,1548 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "dropdown-menu",
+  "parts": [
+    {
+      "name": "DropdownMenu.Root",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/dropdown-menu/dropdown-menu.tsx",
+      "forwardedFrom": [
+        "@base-ui/react"
+      ],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "actionsRef",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "RefObject<MenuRootActions | null> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "A ref to imperative actions. - `unmount`: Manually unmounts the menu. Call this after any externally controlled closing animation finishes. - `close`: When specified, the menu can be closed imperatively.",
+          "required": false
+        },
+        {
+          "name": "children",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "PayloadChildRenderFunction<unknown> | ReactNode",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The content of the popover. This can be a regular React node or a render function that receives the `payload` of the active trigger.",
+          "required": false
+        },
+        {
+          "name": "closeParentOnEsc",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "When in a submenu, determines whether pressing the Escape key closes the entire menu, or only the current child menu.",
+          "required": false
+        },
+        {
+          "name": "defaultOpen",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the menu is initially open. To render a controlled menu, use the `open` prop instead.",
+          "required": false
+        },
+        {
+          "name": "defaultTriggerId",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | null | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "ID of the trigger that the popover is associated with. This is useful in conjunction with the `defaultOpen` prop to create an initially open popover.",
+          "required": false
+        },
+        {
+          "name": "disabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the component should ignore user interaction.",
+          "required": false
+        },
+        {
+          "name": "handle",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "MenuHandle<unknown> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "A handle to associate the menu with a trigger. If specified, allows external triggers to control the menu's open state.",
+          "required": false
+        },
+        {
+          "name": "highlightItemOnHover",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Whether moving the pointer over items should highlight them. Disabling this prop allows CSS `:hover` to be differentiated from the `:focus` (`data-highlighted`) state.",
+          "required": false
+        },
+        {
+          "name": "loopFocus",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Whether to loop keyboard focus back to the first item when the end of the list is reached while using the arrow keys.",
+          "required": false
+        },
+        {
+          "name": "modal",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Determines if the menu enters a modal state when open. - `true`: user interaction is limited to the menu: document page scroll is locked and pointer interactions on outside elements are disabled. - `false`: user interaction with the rest of the document is allowed.",
+          "required": false
+        },
+        {
+          "name": "onOpenChange",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((open: boolean, eventDetails: MenuRootChangeEventDetails) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Event handler called when the menu is opened or closed.",
+          "required": false
+        },
+        {
+          "name": "onOpenChangeComplete",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((open: boolean) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Event handler called after any animations complete when the menu is closed.",
+          "required": false
+        },
+        {
+          "name": "open",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Whether the menu is currently open.",
+          "required": false
+        },
+        {
+          "name": "orientation",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "MenuRootOrientation | undefined",
+          "shortType": "Union",
+          "defaultValue": "'vertical'",
+          "description": "The visual orientation of the menu. Controls whether roving focus uses up/down or left/right arrow keys.",
+          "required": false
+        },
+        {
+          "name": "triggerId",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | null | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "ID of the trigger that the popover is associated with. This is useful in conjunction with the `open` prop to create a controlled popover. There's no need to specify this prop when the popover is uncontrolled (that is, when the `open` prop is not set).",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DropdownMenu.Trigger",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/dropdown-menu/dropdown-menu.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 284,
+      "props": [
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: MenuTriggerState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "closeDelay",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": "0",
+          "description": "How long to wait before closing the menu that was opened on hover. Specified in milliseconds. Requires the `openOnHover` prop.",
+          "required": false
+        },
+        {
+          "name": "delay",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": "100",
+          "description": "How long to wait before the menu may be opened on hover. Specified in milliseconds. Requires the `openOnHover` prop.",
+          "required": false
+        },
+        {
+          "name": "disabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the component should ignore user interaction.",
+          "required": false
+        },
+        {
+          "name": "handle",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "MenuHandle<unknown> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "A handle to associate the trigger with a menu.",
+          "required": false
+        },
+        {
+          "name": "nativeButton",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Whether the component renders a native `<button>` element when replacing it via the `render` prop. Set to `false` if the rendered element is not a button (for example, `<div>`).",
+          "required": false
+        },
+        {
+          "name": "openOnHover",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Whether the menu should also open when the trigger is hovered.",
+          "required": false
+        },
+        {
+          "name": "payload",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "unknown",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "A payload to pass to the menu when it is opened.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, MenuTriggerState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: MenuTriggerState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DropdownMenu.Portal",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/dropdown-menu/dropdown-menu.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 275,
+      "props": [
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: MenuPortalState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "container",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "HTMLElement | RefObject<HTMLElement | ShadowRoot | null> | ShadowRoot | null | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "A parent element to render the portal element into.",
+          "required": false
+        },
+        {
+          "name": "keepMounted",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether to keep the portal mounted in the DOM while the popup is hidden.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, MenuPortalState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: MenuPortalState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DropdownMenu.Content",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/dropdown-menu/dropdown-menu.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 275,
+      "props": [
+        {
+          "name": "align",
+          "origin": "declared",
+          "type": "Align | undefined",
+          "shortType": null,
+          "defaultValue": "\"start\"",
+          "description": "How the popup aligns to the trigger on the cross axis. Menus lead from the trigger edge (unlike Popover/Tooltip, which default to `\"center\"`).",
+          "required": false
+        },
+        {
+          "name": "alignOffset",
+          "origin": "declared",
+          "type": "number | OffsetFunction | undefined",
+          "shortType": "Union",
+          "defaultValue": "0",
+          "description": "Offset along the alignment axis, in pixels.",
+          "required": false
+        },
+        {
+          "name": "container",
+          "origin": "declared",
+          "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Portal target for this overlay. Defaults to the nearest enclosing `ThemeScope` element, so it never escapes the theme that opened it.",
+          "required": false
+        },
+        {
+          "name": "side",
+          "origin": "declared",
+          "type": "Side | undefined",
+          "shortType": null,
+          "defaultValue": "\"bottom\"",
+          "description": "Which side of the trigger the popup is placed on.",
+          "required": false
+        },
+        {
+          "name": "sideOffset",
+          "origin": "declared",
+          "type": "number | OffsetFunction | undefined",
+          "shortType": "Union",
+          "defaultValue": "4",
+          "description": "Distance from the trigger, in pixels.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: MenuPopupState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "finalFocus",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | RefObject<HTMLElement | null> | ((closeType: InteractionType) => void | boolean | HTMLElement | null) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Determines the element to focus when the menu is closed. - `false`: Do not move focus. - `true`: Move focus based on the default behavior (trigger or previously focused element). - `RefObject`: Move focus to the ref element. - `function`: Called with the interaction type (`mouse`, `touch`, `pen`, or `keyboard`). Return an element to focus, `true` to use the default behavior, or `false`/`undefined` to do nothing.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, MenuPopupState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: MenuPopupState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DropdownMenu.Group",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/dropdown-menu/dropdown-menu.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 274,
+      "props": [
+        {
+          "name": "children",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The content of the component.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: MenuGroupState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, MenuGroupState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: MenuGroupState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DropdownMenu.Label",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/dropdown-menu/dropdown-menu.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 275,
+      "props": [
+        {
+          "name": "inset",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Pads the label to align with indicator-bearing items. Emitted as `data-inset`.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: MenuGroupLabelState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, MenuGroupLabelState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: MenuGroupLabelState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DropdownMenu.Item",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/dropdown-menu/dropdown-menu.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 274,
+      "props": [
+        {
+          "name": "inset",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Pads the item to align with indicator-bearing items. Emitted as `data-inset`.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "declared",
+          "type": "\"default\" | \"destructive\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "Visual tone. The value stays `\"destructive\"` for consumer compat; classes use `error` tokens (dropdown-menu.md §8).",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: MenuItemState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "closeOnClick",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Whether to close the menu when the item is clicked.",
+          "required": false
+        },
+        {
+          "name": "disabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the component should ignore user interaction.",
+          "required": false
+        },
+        {
+          "name": "label",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Overrides the text label to use when the item is matched during keyboard text navigation.",
+          "required": false
+        },
+        {
+          "name": "nativeButton",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the component renders a native `<button>` element when replacing it via the `render` prop. Set to `true` if the rendered element is a native button.",
+          "required": false
+        },
+        {
+          "name": "onClick",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((event: BaseUIEvent<MouseEvent<HTMLDivElement, MouseEvent>>) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "The click handler for the menu item.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, MenuItemState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: MenuItemState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DropdownMenu.LinkItem",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/dropdown-menu/dropdown-menu.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 283,
+      "props": [
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: MenuLinkItemState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "closeOnClick",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether to close the menu when the item is clicked.",
+          "required": false
+        },
+        {
+          "name": "label",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Overrides the text label to use when the item is matched during keyboard text navigation.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, MenuLinkItemState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: MenuLinkItemState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DropdownMenu.CheckboxItem",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/dropdown-menu/dropdown-menu.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 274,
+      "props": [
+        {
+          "name": "inset",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Pads the item to align with indicator-bearing items. Emitted as `data-inset`.",
+          "required": false
+        },
+        {
+          "name": "checked",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Whether the checkbox item is currently ticked. To render an uncontrolled checkbox item, use the `defaultChecked` prop instead.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: MenuCheckboxItemState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "closeOnClick",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether to close the menu when the item is clicked.",
+          "required": false
+        },
+        {
+          "name": "defaultChecked",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the checkbox item is initially ticked. To render a controlled checkbox item, use the `checked` prop instead.",
+          "required": false
+        },
+        {
+          "name": "disabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the component should ignore user interaction.",
+          "required": false
+        },
+        {
+          "name": "label",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Overrides the text label to use when the item is matched during keyboard text navigation.",
+          "required": false
+        },
+        {
+          "name": "nativeButton",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the component renders a native `<button>` element when replacing it via the `render` prop. Set to `true` if the rendered element is a native button.",
+          "required": false
+        },
+        {
+          "name": "onCheckedChange",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((checked: boolean, eventDetails: MenuRootChangeEventDetails) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Event handler called when the checkbox item is ticked or unticked.",
+          "required": false
+        },
+        {
+          "name": "onClick",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((event: BaseUIEvent<MouseEvent<HTMLDivElement, MouseEvent>>) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "The click handler for the menu item.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, MenuCheckboxItemState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: MenuCheckboxItemState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DropdownMenu.RadioGroup",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/dropdown-menu/dropdown-menu.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 274,
+      "props": [
+        {
+          "name": "children",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The content of the component.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: MenuRadioGroupState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "defaultValue",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "any",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The uncontrolled value of the radio item that should be initially selected. To render a controlled radio group, use the `value` prop instead.",
+          "required": false
+        },
+        {
+          "name": "disabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the component should ignore user interaction.",
+          "required": false
+        },
+        {
+          "name": "onValueChange",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((value: any, eventDetails: MenuRootChangeEventDetails) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Function called when the selected value changes.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, MenuRadioGroupState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: MenuRadioGroupState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "value",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "any",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The controlled value of the radio item that should be currently selected. To render an uncontrolled radio group, use the `defaultValue` prop instead.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DropdownMenu.RadioItem",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/dropdown-menu/dropdown-menu.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 274,
+      "props": [
+        {
+          "name": "inset",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Pads the item to align with indicator-bearing items. Emitted as `data-inset`.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: MenuRadioItemState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "closeOnClick",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether to close the menu when the item is clicked.",
+          "required": false
+        },
+        {
+          "name": "disabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the component should ignore user interaction.",
+          "required": false
+        },
+        {
+          "name": "label",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Overrides the text label to use when the item is matched during keyboard text navigation.",
+          "required": false
+        },
+        {
+          "name": "nativeButton",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the component renders a native `<button>` element when replacing it via the `render` prop. Set to `true` if the rendered element is a native button.",
+          "required": false
+        },
+        {
+          "name": "onClick",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((event: BaseUIEvent<MouseEvent<HTMLDivElement, MouseEvent>>) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "The click handler for the menu item.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, MenuRadioItemState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: MenuRadioItemState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "value",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "any",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Value of the radio item. This is the value that will be set in the MenuRadioGroup when the item is selected.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "DropdownMenu.Separator",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/dropdown-menu/dropdown-menu.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 275,
+      "props": [
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: SeparatorState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "orientation",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "Orientation | undefined",
+          "shortType": null,
+          "defaultValue": "'horizontal'",
+          "description": "The orientation of the separator.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, SeparatorState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: SeparatorState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DropdownMenu.Shortcut",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/dropdown-menu/dropdown-menu.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "DropdownMenu.Sub",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/dropdown-menu/dropdown-menu.tsx",
+      "forwardedFrom": [
+        "@base-ui/react"
+      ],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "actionsRef",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "RefObject<MenuRootActions | null> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "A ref to imperative actions. - `unmount`: Manually unmounts the menu. Call this after any externally controlled closing animation finishes. - `close`: When specified, the menu can be closed imperatively.",
+          "required": false
+        },
+        {
+          "name": "children",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The content of the submenu.",
+          "required": false
+        },
+        {
+          "name": "closeParentOnEsc",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "When in a submenu, determines whether pressing the Escape key closes the entire menu, or only the current child menu.",
+          "required": false
+        },
+        {
+          "name": "defaultOpen",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the menu is initially open. To render a controlled menu, use the `open` prop instead.",
+          "required": false
+        },
+        {
+          "name": "disabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the component should ignore user interaction.",
+          "required": false
+        },
+        {
+          "name": "highlightItemOnHover",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Whether moving the pointer over items should highlight them. Disabling this prop allows CSS `:hover` to be differentiated from the `:focus` (`data-highlighted`) state.",
+          "required": false
+        },
+        {
+          "name": "loopFocus",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Whether to loop keyboard focus back to the first item when the end of the list is reached while using the arrow keys.",
+          "required": false
+        },
+        {
+          "name": "onOpenChange",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((open: boolean, eventDetails: MenuRootChangeEventDetails) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Event handler called when the menu is opened or closed.",
+          "required": false
+        },
+        {
+          "name": "onOpenChangeComplete",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((open: boolean) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Event handler called after any animations complete when the menu is closed.",
+          "required": false
+        },
+        {
+          "name": "open",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Whether the menu is currently open.",
+          "required": false
+        },
+        {
+          "name": "orientation",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "MenuRootOrientation | undefined",
+          "shortType": "Union",
+          "defaultValue": "'vertical'",
+          "description": "The visual orientation of the menu. Controls whether roving focus uses up/down or left/right arrow keys.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DropdownMenu.SubTrigger",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/dropdown-menu/dropdown-menu.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 275,
+      "props": [
+        {
+          "name": "inset",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Pads the trigger to align with indicator-bearing items. Emitted as `data-inset`.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: MenuSubmenuTriggerState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "closeDelay",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": "0",
+          "description": "How long to wait before closing the menu that was opened on hover. Specified in milliseconds. Requires the `openOnHover` prop.",
+          "required": false
+        },
+        {
+          "name": "delay",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": "100",
+          "description": "How long to wait before the menu may be opened on hover. Specified in milliseconds. Requires the `openOnHover` prop.",
+          "required": false
+        },
+        {
+          "name": "disabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the component should ignore user interaction.",
+          "required": false
+        },
+        {
+          "name": "label",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Overrides the text label to use when the item is matched during keyboard text navigation.",
+          "required": false
+        },
+        {
+          "name": "nativeButton",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the component renders a native `<button>` element when replacing it via the `render` prop. Set to `true` if the rendered element is a native button.",
+          "required": false
+        },
+        {
+          "name": "openOnHover",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Whether the menu should also open when the trigger is hovered.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, MenuSubmenuTriggerState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: MenuSubmenuTriggerState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DropdownMenu.SubContent",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/dropdown-menu/dropdown-menu.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 275,
+      "props": [
+        {
+          "name": "align",
+          "origin": "declared",
+          "type": "Align | undefined",
+          "shortType": null,
+          "defaultValue": "\"start\"",
+          "description": "How the popup aligns to its SubTrigger on the cross axis.",
+          "required": false
+        },
+        {
+          "name": "alignOffset",
+          "origin": "declared",
+          "type": "number | OffsetFunction | undefined",
+          "shortType": "Union",
+          "defaultValue": "-3",
+          "description": "Offset along the alignment axis, in pixels. Negative tucks the submenu's first item level with its trigger.",
+          "required": false
+        },
+        {
+          "name": "container",
+          "origin": "declared",
+          "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Portal target for this overlay. Defaults to the nearest enclosing `ThemeScope` element, so it never escapes the theme that opened it.",
+          "required": false
+        },
+        {
+          "name": "side",
+          "origin": "declared",
+          "type": "Side | undefined",
+          "shortType": null,
+          "defaultValue": "\"right\"",
+          "description": "Which side of the SubTrigger the popup is placed on.",
+          "required": false
+        },
+        {
+          "name": "sideOffset",
+          "origin": "declared",
+          "type": "number | OffsetFunction | undefined",
+          "shortType": "Union",
+          "defaultValue": "0",
+          "description": "Distance from the SubTrigger, in pixels. Flush against the parent menu by default.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: MenuPopupState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "finalFocus",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | RefObject<HTMLElement | null> | ((closeType: InteractionType) => void | boolean | HTMLElement | null) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Determines the element to focus when the menu is closed. - `false`: Do not move focus. - `true`: Move focus based on the default behavior (trigger or previously focused element). - `RefObject`: Move focus to the ref element. - `function`: Called with the interaction type (`mouse`, `touch`, `pen`, or `keyboard`). Return an element to focus, `true` to use the default behavior, or `false`/`undefined` to do nothing.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, MenuPopupState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: MenuPopupState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

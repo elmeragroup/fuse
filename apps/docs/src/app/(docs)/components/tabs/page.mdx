@@ -1,0 +1,53 @@
+---
+title: Tabs
+lede: >
+  A tabbed panel switcher. List variants are the filled pill and the underline track;
+  orientation is horizontal or vertical. The open panel is a keyboard tab stop.
+---
+
+import { TabsBasic } from "./demos/tabs-basic";
+import { TabsLine } from "./demos/tabs-line";
+import { TabsVertical } from "./demos/tabs-vertical";
+import { TabsWithIcons } from "./demos/tabs-with-icons";
+import { TabsDisabled } from "./demos/tabs-disabled";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("tabs");
+
+<ComponentIntro slug="tabs" />
+
+<Prose>
+
+`Tabs.Root` owns the selected value. `Tabs.List` takes `variant`: `"default"` is the
+filled pill track, `"line"` is the underline style. `orientation` defaults to
+`"horizontal"` and is stamped on Root before hydration so the first paint already
+stacks the list above the panels. Arrow keys move and activate tabs; the open panel
+has `tabIndex={0}` and composes the shared focus ring. Disabled triggers stay in the
+roving-focus sequence but do not activate.
+
+</Prose>
+
+<Demo slug="tabs" id="basic" title="Basic" file="tabs-basic.tsx">
+  <TabsBasic />
+</Demo>
+
+<Demo slug="tabs" id="line" title="Line" file="tabs-line.tsx">
+  <TabsLine />
+</Demo>
+
+<Demo slug="tabs" id="vertical" title="Vertical" file="tabs-vertical.tsx">
+  <TabsVertical />
+</Demo>
+
+<Demo slug="tabs" id="with-icons" title="With icons" file="tabs-with-icons.tsx">
+  <TabsWithIcons />
+</Demo>
+
+<Demo slug="tabs" id="disabled" title="Disabled" file="tabs-disabled.tsx">
+  <TabsDisabled />
+</Demo>
+
+<ApiReference slug="tabs" />
+
+<ComponentTokens slug="tabs" />

@@ -1,0 +1,72 @@
+---
+title: TextField
+lede: >
+  A labeled single-line field composite over Field + Input. `textFieldVariants` ships
+  from the same entry so later composites can borrow the look.
+---
+
+import { TextFieldBasic } from "./demos/text-field-basic";
+import { TextFieldError } from "./demos/text-field-error";
+import { TextFieldStates } from "./demos/text-field-states";
+import { TextFieldPendingSuccess } from "./demos/text-field-pending-success";
+import { TextFieldIcon } from "./demos/text-field-icon";
+import { TextFieldNumeric } from "./demos/text-field-numeric";
+import { TextFieldCard } from "./demos/text-field-card";
+import { TextFieldInline } from "./demos/text-field-inline";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("text-field");
+
+<ComponentIntro slug="text-field" />
+
+<Prose>
+
+The composite face is `isDisabled` / `isInvalid` / `isPending` / `isSuccess`,
+`onChange(value)`, and `errorMessage` as a `ReactNode`. `isDisabled` disables the inner
+input natively. `filter="numeric"` absorbs the old numeric-only wrapper: non-digits never
+reach `onChange`, and `inputMode="numeric"` is applied unless you pass `inputMode`
+yourself. `variant="card"` composes `cardVariants`; `variant="inline"` restyles the input
+chrome. Unset `variant` is the plain Input.
+
+</Prose>
+
+<Demo slug="text-field" id="basic" title="Basic" file="text-field-basic.tsx">
+  <TextFieldBasic />
+</Demo>
+
+<Demo slug="text-field" id="error" title="Error" file="text-field-error.tsx">
+  <TextFieldError />
+</Demo>
+
+<Demo slug="text-field" id="states" title="States" file="text-field-states.tsx">
+  <TextFieldStates />
+</Demo>
+
+<Demo
+  slug="text-field"
+  id="pending-success"
+  title="Pending and success"
+  file="text-field-pending-success.tsx">
+  <TextFieldPendingSuccess />
+</Demo>
+
+<Demo slug="text-field" id="icon" title="Trailing icon" file="text-field-icon.tsx">
+  <TextFieldIcon />
+</Demo>
+
+<Demo slug="text-field" id="numeric" title="Numeric filter" file="text-field-numeric.tsx">
+  <TextFieldNumeric />
+</Demo>
+
+<Demo slug="text-field" id="card" title="Card" file="text-field-card.tsx">
+  <TextFieldCard />
+</Demo>
+
+<Demo slug="text-field" id="inline" title="Inline" file="text-field-inline.tsx">
+  <TextFieldInline />
+</Demo>
+
+<ApiReference slug="text-field" />
+
+<ComponentTokens slug="text-field" />

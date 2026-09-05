@@ -1,0 +1,156 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "scroll-area",
+  "parts": [
+    {
+      "name": "ScrollArea.Root",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/scroll-area/scroll-area.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 275,
+      "props": [
+        {
+          "name": "orientation",
+          "origin": "declared",
+          "type": "\"horizontal\" | \"vertical\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"vertical\"",
+          "description": "Which single scrollbar `Root` renders. For two-axis scrolling, compose the base-ui primitives directly and mount two `ScrollArea.Bar`s.",
+          "required": false
+        },
+        {
+          "name": "type",
+          "origin": "declared",
+          "type": "ScrollAreaType | undefined",
+          "shortType": null,
+          "defaultValue": "\"hover\"",
+          "description": "Scrollbar visibility, mapped onto base-ui's `keepMounted` plus opacity: `hover` reveals on hover or scroll, `always` keeps the bar mounted and visible, `auto` mounts it only while the content overflows.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: ScrollAreaRootState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "overflowEdgeThreshold",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "number | Partial<{ xStart: number; xEnd: number; yStart: number; yEnd: number; }> | undefined",
+          "shortType": "Union",
+          "defaultValue": "0",
+          "description": "The threshold in pixels that must be passed before the overflow edge attributes are applied. Accepts a single number for all edges or an object to configure them individually.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, ScrollAreaRootState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: ScrollAreaRootState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "ScrollArea.Bar",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/scroll-area/scroll-area.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 275,
+      "props": [
+        {
+          "name": "type",
+          "origin": "declared",
+          "type": "ScrollAreaType | undefined",
+          "shortType": null,
+          "defaultValue": "\"hover\"",
+          "description": "Scrollbar visibility, as on `ScrollArea.Root`.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: ScrollAreaScrollbarState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "keepMounted",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether to keep the HTML element in the DOM when the viewport isn't scrollable.",
+          "required": false
+        },
+        {
+          "name": "orientation",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "\"horizontal\" | \"vertical\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"vertical\"",
+          "description": "Whether the scrollbar controls vertical or horizontal scroll.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, ScrollAreaScrollbarState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: ScrollAreaScrollbarState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

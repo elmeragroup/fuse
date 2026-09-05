@@ -1,0 +1,43 @@
+---
+title: UiProviders
+lede: >
+  Interim app-root wrapper that composes the permanent locale provider with RAC
+  I18nProvider and RouterProvider. It renders no DOM of its own and dies with
+  the react-aria tier.
+---
+
+import { UiProvidersBasic } from "./demos/ui-providers-basic";
+import { UiProvidersLocaleSwitch } from "./demos/ui-providers-locale-switch";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("ui-providers");
+
+<ComponentIntro slug="ui-providers" />
+
+<Prose>
+
+`UiProviders` is the quarantined convenience at `@elmeragroup/ui/react-aria/ui-providers`.
+It requires `children`, a function-valued `navigate`, and a `SupportedLocale`. The
+anatomy is `ElmeraGroupUiProvider` → RAC `I18nProvider` → RAC `RouterProvider` →
+children. Dictionary strings still come from the permanent `/theme` provider;
+RAC date and link surfaces read the same locale and the app router instead of
+`navigator.language` or a full navigation.
+
+When the react-aria tier retires, delete `UiProviders`. Keep
+`ElmeraGroupUiProvider` from `@elmeragroup/ui/theme`. Do not nest both locale
+providers.
+
+</Prose>
+
+<Demo slug="ui-providers" id="basic" title="Basic" file="ui-providers-basic.tsx">
+  <UiProvidersBasic />
+</Demo>
+
+<Demo slug="ui-providers" id="locale-switch" title="Locale switch" file="ui-providers-locale-switch.tsx">
+  <UiProvidersLocaleSwitch />
+</Demo>
+
+<ApiReference slug="ui-providers" />
+
+<ComponentTokens slug="ui-providers" />

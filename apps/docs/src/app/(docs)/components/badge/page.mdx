@@ -1,0 +1,45 @@
+---
+title: Badge
+lede: >
+  A small status marker. A plain `div` styled by the public `badgeVariants` recipe — no
+  base-ui primitive, no interactivity, server-safe.
+---
+
+import { BadgeVariants } from "./demos/badge-variants";
+import { BadgeSizes } from "./demos/badge-sizes";
+import { BadgeStatus } from "./demos/badge-status";
+import { BadgeBasic } from "./demos/badge-basic";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("badge");
+
+<ComponentIntro slug="badge" />
+
+<Prose>
+
+Badge carries no semantics of its own: it renders whatever children it is given inside a
+styled box. When the badge communicates a live state, the surrounding region owns the
+announcement.
+
+</Prose>
+
+<Demo slug="badge" id="variants" title="Variants" file="badge-variants.tsx">
+  <BadgeVariants />
+</Demo>
+
+<Demo slug="badge" id="sizes" title="Sizes" file="badge-sizes.tsx">
+  <BadgeSizes />
+</Demo>
+
+<Demo slug="badge" id="status" title="Status tones" file="badge-status.tsx">
+  <BadgeStatus />
+</Demo>
+
+<Demo slug="badge" id="basic" title="Basic" file="badge-basic.tsx">
+  <BadgeBasic />
+</Demo>
+
+<ApiReference slug="badge" />
+
+<ComponentTokens slug="badge" />

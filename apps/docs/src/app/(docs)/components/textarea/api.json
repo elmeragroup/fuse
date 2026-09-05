@@ -1,0 +1,16 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "textarea",
+  "parts": [
+    {
+      "name": "Textarea",
+      "rsc": "server",
+      "sourcePath": "packages/ui/src/components/textarea/textarea.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 294,
+      "props": []
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+---
+title: ButtonGroup
+lede: >
+  A client layout composite that joins `data-slot` children into one visual control.
+  Inner radii and shared borders collapse; each button stays its own tab stop.
+---
+
+import { ButtonGroupBasic } from "./demos/button-group-basic";
+import { ButtonGroupVertical } from "./demos/button-group-vertical";
+import { ButtonGroupSplitButton } from "./demos/button-group-split-button";
+import { ButtonGroupText } from "./demos/button-group-text";
+import { ButtonGroupNested } from "./demos/button-group-nested";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("button-group");
+
+<ComponentIntro slug="button-group" />
+
+<Prose>
+
+`ButtonGroup.Root` is a `div role="group"` — it does not provide roving focus. Tab moves
+between child buttons; arrow keys do not. Name the group with `aria-label` or
+`aria-labelledby` when the cluster needs an accessible name.
+
+Children join the silhouette by emitting `data-slot`. That is why `ButtonGroup.Separator`
+wraps the canonical library Separator instead of a slotless hairline, and why
+`ButtonGroup.Text` stamps `data-slot="button-group-text"` through `useRender` `state`.
+`orientation` defaults to `"horizontal"` so `data-orientation` is always present.
+`ButtonGroup.Separator` flips that default to `"vertical"` — a horizontal group needs a
+vertical hairline.
+
+The public `buttonGroupVariants` recipe is the orientation axis other surfaces can borrow.
+`ButtonGroup.Text` is the library's `useRender` convention exemplar: pass `render={<label
+htmlFor=… />}` when the affix labels an adjacent input.
+
+</Prose>
+
+<Demo slug="button-group" id="basic" title="Basic" file="button-group-basic.tsx">
+  <ButtonGroupBasic />
+</Demo>
+
+<Demo slug="button-group" id="vertical" title="Vertical" file="button-group-vertical.tsx">
+  <ButtonGroupVertical />
+</Demo>
+
+<Demo slug="button-group" id="split-button" title="Split button" file="button-group-split-button.tsx">
+  <ButtonGroupSplitButton />
+</Demo>
+
+<Demo slug="button-group" id="text" title="Text" file="button-group-text.tsx">
+  <ButtonGroupText />
+</Demo>
+
+<Demo slug="button-group" id="nested" title="Nested" file="button-group-nested.tsx">
+  <ButtonGroupNested />
+</Demo>
+
+<ApiReference slug="button-group" />
+
+<ComponentTokens slug="button-group" />

@@ -1,0 +1,80 @@
+---
+title: Sidebar
+lede: >
+  The application shell: a fixed navigation rail that collapses to icons or off-screen,
+  becomes a Sheet below 768px, remembers its open state in a cookie, and toggles from
+  cmd/ctrl+B. `Sidebar.Provider` owns the state; twenty-three parts compose the rail.
+---
+
+import { SidebarAppFrame } from "./demos/sidebar-app-frame";
+import { SidebarIconCollapse } from "./demos/sidebar-icon-collapse";
+import { SidebarMobileSheet } from "./demos/sidebar-mobile-sheet";
+import { SidebarInsetVariant } from "./demos/sidebar-inset-variant";
+import { SidebarMenuRich } from "./demos/sidebar-menu-rich";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("sidebar");
+
+<ComponentIntro slug="sidebar" />
+
+<Prose>
+
+`Sidebar` is not a base-ui primitive wrapper. It is a shell composed from plain elements,
+our `Separator`, `Skeleton`, `Sheet` and `Tooltip`, with five `useRender` parts
+(`GroupLabel`, `GroupAction`, `MenuButton`, `MenuAction`, `MenuSubButton`) that accept a
+`render` element — pass your router's link and one DOM node is the menu button, the link
+and, with `tooltip` set, the tooltip trigger.
+
+`Sidebar.Root` has three branches. On desktop it renders an in-flow spacer plus a fixed
+container, so the sibling `Sidebar.Inset` is pushed aside and the rail animates its width
+and offset in lockstep. Below 768px it renders a `Sheet` (18rem wide, no close button,
+titled by the locale dictionary) driven by `openMobile`, which is session-only. With
+`collapsible="none"` it is a static column that still emits `group peer` and
+`data-state/variant/side`, because inset compositions read those attributes.
+
+The desktop open state is written to the `sidebar:state` cookie on every change,
+controlled or not, so a server layout can render the right state on first paint:
+
+```tsx
+// app/layout.tsx
+import { cookies } from "next/headers";
+import { SIDEBAR_COOKIE_NAME, Sidebar } from "@elmeragroup/ui/sidebar";
+
+const open = (await cookies()).get(SIDEBAR_COOKIE_NAME)?.value !== "false";
+<Sidebar.Provider defaultOpen={open}>…</Sidebar.Provider>;
+```
+
+Trigger and Rail copy, and the mobile Sheet's title and description, come from the
+`sidebar.*` rows of the locale dictionary; `Sidebar.Provider`'s `labels` prop overrides
+them. The menu-button heights (`h-8` / `h-7` / `h-12`) and `Sidebar.Input`'s `h-8` are
+shell-local rail metrics, identical at both density stamps — they are not control rungs.
+
+The demos below pin the rail inside a bordered box (`contain-paint` plus `h-full` on the
+Root and `min-h-full` on the Provider); in an application the Provider is the page.
+
+</Prose>
+
+<Demo slug="sidebar" id="app-frame" title="Application frame" file="sidebar-app-frame.tsx">
+  <SidebarAppFrame />
+</Demo>
+
+<Demo slug="sidebar" id="icon-collapse" title="Icon collapse" file="sidebar-icon-collapse.tsx">
+  <SidebarIconCollapse />
+</Demo>
+
+<Demo slug="sidebar" id="mobile-sheet" title="Mobile Sheet" file="sidebar-mobile-sheet.tsx">
+  <SidebarMobileSheet />
+</Demo>
+
+<Demo slug="sidebar" id="inset-variant" title="Inset variant" file="sidebar-inset-variant.tsx">
+  <SidebarInsetVariant />
+</Demo>
+
+<Demo slug="sidebar" id="menu-rich" title="Rich menu" file="sidebar-menu-rich.tsx">
+  <SidebarMenuRich />
+</Demo>
+
+<ApiReference slug="sidebar" />
+
+<ComponentTokens slug="sidebar" />

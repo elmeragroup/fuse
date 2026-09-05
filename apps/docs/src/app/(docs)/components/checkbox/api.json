@@ -1,0 +1,585 @@
+{
+  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "checkbox",
+  "parts": [
+    {
+      "name": "Checkbox",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/checkbox/checkbox.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 273,
+      "props": [
+        {
+          "name": "checked",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "undefined",
+          "description": "Whether the checkbox is currently ticked. To render an uncontrolled checkbox, use the `defaultChecked` prop instead.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: CheckboxRootState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "defaultChecked",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the checkbox is initially ticked. To render a controlled checkbox, use the `checked` prop instead.",
+          "required": false
+        },
+        {
+          "name": "disabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the component should ignore user interaction.",
+          "required": false
+        },
+        {
+          "name": "form",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Identifies the form that owns the hidden input. Useful when the checkbox is rendered outside the form.",
+          "required": false
+        },
+        {
+          "name": "id",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The id of the input element.",
+          "required": false
+        },
+        {
+          "name": "indeterminate",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the checkbox is in a mixed state: neither ticked, nor unticked.",
+          "required": false
+        },
+        {
+          "name": "inputRef",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "Ref<HTMLInputElement> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "A ref to access the hidden `<input>` element.",
+          "required": false
+        },
+        {
+          "name": "name",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": "undefined",
+          "description": "Identifies the field when a form is submitted.",
+          "required": false
+        },
+        {
+          "name": "nativeButton",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the component renders a native `<button>` element when replacing it via the `render` prop. Set to `true` if the rendered element is a native button.",
+          "required": false
+        },
+        {
+          "name": "onCheckedChange",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((checked: boolean, eventDetails: { reason: \"none\"; event: Event; cancel: () => void; allowPropagation: () => void; isCanceled: boolean; isPropagationAllowed: boolean; trigger: Element | undefined; }) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Event handler called when the checkbox is ticked or unticked.",
+          "required": false
+        },
+        {
+          "name": "parent",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the checkbox controls a group of child checkboxes. Must be used in a [Checkbox Group](https://base-ui.com/react/components/checkbox-group).",
+          "required": false
+        },
+        {
+          "name": "readOnly",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the user should be unable to tick or untick the checkbox.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, CheckboxRootState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "required",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the user must tick the checkbox before submitting a form.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: CheckboxRootState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "uncheckedValue",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The value submitted with the form when the checkbox is unchecked. By default, unchecked checkboxes do not submit any value, matching native checkbox behavior.",
+          "required": false
+        },
+        {
+          "name": "value",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The value of the selected checkbox.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "CheckboxGroup",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/checkbox/checkbox.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "allValues",
+          "origin": "declared",
+          "type": "string[] | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Enables the tri-state `parent` checkbox. Base-ui derives checked/indeterminate from whether the group's value is a subset of these members.",
+          "required": false
+        },
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Group members — typically `Checkbox` or `CheckboxItem`.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes, merged onto the group primitive via `cn`.",
+          "required": false
+        },
+        {
+          "name": "defaultValue",
+          "origin": "declared",
+          "type": "string[] | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Uncontrolled initial selected values.",
+          "required": false
+        },
+        {
+          "name": "description",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Supporting copy, rendered as `Field.Description`.",
+          "required": false
+        },
+        {
+          "name": "errorMessage",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`.",
+          "required": false
+        },
+        {
+          "name": "id",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Forwarded to the group primitive.",
+          "required": false
+        },
+        {
+          "name": "isDisabled",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Forwards `disabled` to `Field.Root` and the group primitive.",
+          "required": false
+        },
+        {
+          "name": "isInvalid",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Forwards `invalid` to `Field.Root`.",
+          "required": false
+        },
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Fieldset legend, rendered as `Field.Legend variant=\"label\"`. The legend row is omitted when absent.",
+          "required": false
+        },
+        {
+          "name": "name",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Set on `Field.Root`, not the group primitive. Base-ui's CheckboxGroup has no `name`; Field context threads it to member hidden inputs. RadioGroup puts `name` on its primitive — the face is the same `name?: string` either way.",
+          "required": false
+        },
+        {
+          "name": "onChange",
+          "origin": "declared",
+          "type": "((value: string[]) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Called with the selected `string[]`, not the event. Mapped to base-ui `onValueChange`.",
+          "required": false
+        },
+        {
+          "name": "orientation",
+          "origin": "declared",
+          "type": "\"horizontal\" | \"vertical\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"vertical\"",
+          "description": "Layout of the group primitive, and of CheckboxItemGroup's stacked-card list. Vertical: primitive `flex-col gap-2`; item list connected `flex-col gap-0`. Horizontal: primitive `flex-wrap gap-4`; item list `flex-row flex-wrap gap-4` with individually rounded cards. Maps through `selectionGroupOrientationVariants`.",
+          "required": false
+        },
+        {
+          "name": "value",
+          "origin": "declared",
+          "type": "string[] | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Controlled selected values.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "CheckboxItem",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/checkbox/checkbox.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Row children, partitioned by the shell. Direct `CheckboxItem.SubSection` (the same object as `SelectionItem.SubSection`) children render outside the label.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes, merged onto the shell via `cn`.",
+          "required": false
+        },
+        {
+          "name": "controlPosition",
+          "origin": "declared",
+          "type": "\"end\" | \"start\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"start\"",
+          "description": "Where the control sits in the labelled row. Forwarded to `SelectionItem.Shell`. Default `\"start\"`.",
+          "required": false
+        },
+        {
+          "name": "isDisabled",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Forwards `disabled` to the inner Checkbox and applies disabled hatch styling on the shell.",
+          "required": false
+        },
+        {
+          "name": "isReadOnly",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Forwards `readOnly` to the inner Checkbox.",
+          "required": false
+        },
+        {
+          "name": "parent",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "When true, this row is the tri-state parent. Incompatible with `value`. Tri-state parent — checked/indeterminate/unchecked from the group's `allValues`.",
+          "required": false
+        },
+        {
+          "name": "value",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Member value in the group. Required unless `parent`. Parent rows must not set `value`.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "CheckboxItemGroup",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/checkbox/checkbox.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "allValues",
+          "origin": "declared",
+          "type": "string[] | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Enables the tri-state `parent` checkbox. Base-ui derives checked/indeterminate from whether the group's value is a subset of these members.",
+          "required": false
+        },
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Group members — typically `Checkbox` or `CheckboxItem`.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes, merged onto the group primitive via `cn`.",
+          "required": false
+        },
+        {
+          "name": "defaultValue",
+          "origin": "declared",
+          "type": "string[] | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Uncontrolled initial selected values.",
+          "required": false
+        },
+        {
+          "name": "description",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Supporting copy, rendered as `Field.Description`.",
+          "required": false
+        },
+        {
+          "name": "errorMessage",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`.",
+          "required": false
+        },
+        {
+          "name": "id",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Forwarded to the group primitive.",
+          "required": false
+        },
+        {
+          "name": "isDisabled",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Forwards `disabled` to `Field.Root` and the group primitive.",
+          "required": false
+        },
+        {
+          "name": "isInvalid",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Forwards `invalid` to `Field.Root`.",
+          "required": false
+        },
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Fieldset legend, rendered as `Field.Legend variant=\"label\"`. The legend row is omitted when absent.",
+          "required": false
+        },
+        {
+          "name": "name",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Set on `Field.Root`, not the group primitive. Base-ui's CheckboxGroup has no `name`; Field context threads it to member hidden inputs. RadioGroup puts `name` on its primitive — the face is the same `name?: string` either way.",
+          "required": false
+        },
+        {
+          "name": "onChange",
+          "origin": "declared",
+          "type": "((value: string[]) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Called with the selected `string[]`, not the event. Mapped to base-ui `onValueChange`.",
+          "required": false
+        },
+        {
+          "name": "orientation",
+          "origin": "declared",
+          "type": "\"horizontal\" | \"vertical\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"vertical\"",
+          "description": "Layout of the group primitive, and of CheckboxItemGroup's stacked-card list. Vertical: primitive `flex-col gap-2`; item list connected `flex-col gap-0`. Horizontal: primitive `flex-wrap gap-4`; item list `flex-row flex-wrap gap-4` with individually rounded cards. Maps through `selectionGroupOrientationVariants`.",
+          "required": false
+        },
+        {
+          "name": "value",
+          "origin": "declared",
+          "type": "string[] | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Controlled selected values.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "CheckboxDescription",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/checkbox/checkbox.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Typically a `Checkbox`.",
+          "required": false
+        },
+        {
+          "name": "describedBy",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Trailing note. A string renders as a muted `<small>`; any other node renders intact. Visual-only — not wired to `aria-describedby`. Use Field description wiring when programmatic association is required.",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

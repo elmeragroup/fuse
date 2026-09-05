@@ -1,0 +1,34 @@
+---
+title: Separator
+lede: >
+  A hairline rule over the base-ui `Separator` primitive, horizontal or vertical, with
+  the orientation carried in the accessible semantics.
+---
+
+import { SeparatorHorizontal } from "./demos/separator-horizontal";
+import { SeparatorVertical } from "./demos/separator-vertical";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("separator");
+
+<ComponentIntro slug="separator" />
+
+<Prose>
+
+A vertical separator uses `self-stretch`, so inside a flex row it takes the row height
+with no explicit height anywhere — the classic invisible-divider bug does not apply.
+
+</Prose>
+
+<Demo slug="separator" id="horizontal" title="Horizontal" file="separator-horizontal.tsx">
+  <SeparatorHorizontal />
+</Demo>
+
+<Demo slug="separator" id="vertical" title="Vertical" file="separator-vertical.tsx">
+  <SeparatorVertical />
+</Demo>
+
+<ApiReference slug="separator" />
+
+<ComponentTokens slug="separator" />
