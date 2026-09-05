@@ -84,6 +84,17 @@ describe("exports map", () => {
       "toggle",
       "toggle-group",
       "tooltip",
+      "react-aria/calendar",
+      "react-aria/date-field",
+      "react-aria/date-picker",
+      "react-aria/date-range-picker",
+      "react-aria/file-trigger",
+      "react-aria/focusable",
+      "react-aria/grid-list",
+      "react-aria/link",
+      "react-aria/range-calendar",
+      "react-aria/search-field",
+      "react-aria/ui-providers",
     ]);
     expect(unexpectedJsEntryFiles(packageRoot)).toEqual([]);
   });
@@ -135,6 +146,198 @@ describe("exports map", () => {
     expect(exportBindingTarget(sourceExports, "./illustrations")).toEqual({
       types: "./src/illustrations.ts",
       import: "./src/illustrations.ts",
+    });
+  });
+
+  it("does not invent component entries before their source files exist", () => {
+    expect(exportBindingTarget(sourceExports, "./react-aria/calendar")).toEqual({
+      types: "./src/react-aria/calendar.ts",
+      import: "./src/react-aria/calendar.ts",
+    });
+    expect(exportBindingTarget(sourceExports, "./react-aria/date-field")).toEqual({
+      types: "./src/react-aria/date-field.ts",
+      import: "./src/react-aria/date-field.ts",
+    });
+    expect(exportBindingTarget(sourceExports, "./react-aria/date-picker")).toEqual({
+      types: "./src/react-aria/date-picker.ts",
+      import: "./src/react-aria/date-picker.ts",
+    });
+    expect(exportBindingTarget(sourceExports, "./react-aria/date-range-picker")).toEqual({
+      types: "./src/react-aria/date-range-picker.ts",
+      import: "./src/react-aria/date-range-picker.ts",
+    });
+    expect(exportBindingTarget(sourceExports, "./react-aria/file-trigger")).toEqual({
+      types: "./src/react-aria/file-trigger.ts",
+      import: "./src/react-aria/file-trigger.ts",
+    });
+    expect(exportBindingTarget(sourceExports, "./react-aria/focusable")).toEqual({
+      types: "./src/react-aria/focusable.ts",
+      import: "./src/react-aria/focusable.ts",
+    });
+    expect(exportBindingTarget(sourceExports, "./react-aria/grid-list")).toEqual({
+      types: "./src/react-aria/grid-list.ts",
+      import: "./src/react-aria/grid-list.ts",
+    });
+    expect(exportBindingTarget(sourceExports, "./react-aria/link")).toEqual({
+      types: "./src/react-aria/link.ts",
+      import: "./src/react-aria/link.ts",
+    });
+    expect(exportBindingTarget(sourceExports, "./react-aria/search-field")).toEqual({
+      types: "./src/react-aria/search-field.ts",
+      import: "./src/react-aria/search-field.ts",
+    });
+    expect(exportBindingTarget(sourceExports, "./react-aria/range-calendar")).toEqual({
+      types: "./src/react-aria/range-calendar.ts",
+      import: "./src/react-aria/range-calendar.ts",
+    });
+    expect(exportBindingTarget(sourceExports, "./react-aria/ui-providers")).toEqual({
+      types: "./src/react-aria/ui-providers.ts",
+      import: "./src/react-aria/ui-providers.ts",
+    });
+  });
+
+  it("publishes DateField and DateInput from the quarantined react-aria/date-field entry only", () => {
+    const dateField = discovered.jsEntries.find((entry) => entry.subpath === "react-aria/date-field");
+    const root = discovered.jsEntries.find((entry) => entry.subpath === ".");
+    expect(dateField?.inRootBarrel).toBe(false);
+    expect(dateField?.runtimeExports).toEqual(["DateField", "DateInput"]);
+    expect(root?.runtimeExports).not.toContain("DateField");
+    expect(root?.runtimeExports).not.toContain("DateInput");
+    expect(exportBindingTarget(publishExports, "./react-aria/date-field")).toEqual({
+      types: "./react-aria/date-field.d.ts",
+      import: "./react-aria/date-field.js",
+    });
+  });
+
+  it("publishes UiProviders from the quarantined react-aria/ui-providers entry only", () => {
+    const uiProviders = discovered.jsEntries.find((entry) => entry.subpath === "react-aria/ui-providers");
+    const root = discovered.jsEntries.find((entry) => entry.subpath === ".");
+    expect(uiProviders?.inRootBarrel).toBe(false);
+    expect(uiProviders?.runtimeExports).toEqual(["UiProviders"]);
+    expect(root?.runtimeExports).not.toContain("UiProviders");
+    expect(exportBindingTarget(publishExports, "./react-aria/ui-providers")).toEqual({
+      types: "./react-aria/ui-providers.d.ts",
+      import: "./react-aria/ui-providers.js",
+    });
+  });
+
+  it("publishes Calendar, CalendarHeader, and CalendarGridHeader from the quarantined react-aria/calendar entry only", () => {
+    const calendar = discovered.jsEntries.find((entry) => entry.subpath === "react-aria/calendar");
+    const root = discovered.jsEntries.find((entry) => entry.subpath === ".");
+    expect(calendar?.inRootBarrel).toBe(false);
+    expect(calendar?.runtimeExports).toEqual(["Calendar", "CalendarHeader", "CalendarGridHeader"]);
+    expect(root?.runtimeExports).not.toContain("Calendar");
+    expect(root?.runtimeExports).not.toContain("CalendarHeader");
+    expect(root?.runtimeExports).not.toContain("CalendarGridHeader");
+    expect(exportBindingTarget(publishExports, "./react-aria/calendar")).toEqual({
+      types: "./react-aria/calendar.d.ts",
+      import: "./react-aria/calendar.js",
+    });
+  });
+
+  it("publishes RangeCalendar from the quarantined react-aria/range-calendar entry only", () => {
+    const rangeCalendar = discovered.jsEntries.find((entry) => entry.subpath === "react-aria/range-calendar");
+    const root = discovered.jsEntries.find((entry) => entry.subpath === ".");
+    expect(rangeCalendar?.inRootBarrel).toBe(false);
+    expect(rangeCalendar?.runtimeExports).toEqual(["RangeCalendar"]);
+    expect(root?.runtimeExports).not.toContain("RangeCalendar");
+    expect(exportBindingTarget(publishExports, "./react-aria/range-calendar")).toEqual({
+      types: "./react-aria/range-calendar.d.ts",
+      import: "./react-aria/range-calendar.js",
+    });
+  });
+
+  it("publishes FileTrigger from the quarantined react-aria/file-trigger entry only", () => {
+    const fileTrigger = discovered.jsEntries.find((entry) => entry.subpath === "react-aria/file-trigger");
+    const root = discovered.jsEntries.find((entry) => entry.subpath === ".");
+    expect(fileTrigger?.inRootBarrel).toBe(false);
+    expect(fileTrigger?.runtimeExports).toEqual(["FileTrigger"]);
+    expect(root?.runtimeExports).not.toContain("FileTrigger");
+    expect(exportBindingTarget(publishExports, "./react-aria/file-trigger")).toEqual({
+      types: "./react-aria/file-trigger.d.ts",
+      import: "./react-aria/file-trigger.js",
+    });
+  });
+
+  it("publishes Focusable and useFocusable from the quarantined react-aria/focusable entry only", () => {
+    const focusable = discovered.jsEntries.find((entry) => entry.subpath === "react-aria/focusable");
+    const root = discovered.jsEntries.find((entry) => entry.subpath === ".");
+    expect(focusable?.inRootBarrel).toBe(false);
+    expect(focusable?.runtimeExports).toEqual(["Focusable", "useFocusable"]);
+    expect(root?.runtimeExports).not.toContain("Focusable");
+    expect(root?.runtimeExports).not.toContain("useFocusable");
+    expect(exportBindingTarget(publishExports, "./react-aria/focusable")).toEqual({
+      types: "./react-aria/focusable.d.ts",
+      import: "./react-aria/focusable.js",
+    });
+  });
+
+  it("publishes GridList and GridListItem from the quarantined react-aria/grid-list entry only", () => {
+    const gridList = discovered.jsEntries.find((entry) => entry.subpath === "react-aria/grid-list");
+    const root = discovered.jsEntries.find((entry) => entry.subpath === ".");
+    expect(gridList?.inRootBarrel).toBe(false);
+    expect(gridList?.runtimeExports).toEqual(["GridList", "GridListItem"]);
+    expect(root?.runtimeExports).not.toContain("GridList");
+    expect(root?.runtimeExports).not.toContain("GridListItem");
+    expect(exportBindingTarget(publishExports, "./react-aria/grid-list")).toEqual({
+      types: "./react-aria/grid-list.d.ts",
+      import: "./react-aria/grid-list.js",
+    });
+  });
+
+  it("publishes Link from the quarantined react-aria/link entry only", () => {
+    const link = discovered.jsEntries.find((entry) => entry.subpath === "react-aria/link");
+    const root = discovered.jsEntries.find((entry) => entry.subpath === ".");
+    expect(link?.inRootBarrel).toBe(false);
+    expect(link?.runtimeExports).toEqual(["Link"]);
+    expect(root?.runtimeExports).not.toContain("Link");
+    expect(exportBindingTarget(publishExports, "./react-aria/link")).toEqual({
+      types: "./react-aria/link.d.ts",
+      import: "./react-aria/link.js",
+    });
+  });
+
+  it("publishes SearchField from the quarantined react-aria/search-field entry only", () => {
+    const searchField = discovered.jsEntries.find((entry) => entry.subpath === "react-aria/search-field");
+    const root = discovered.jsEntries.find((entry) => entry.subpath === ".");
+    expect(searchField?.inRootBarrel).toBe(false);
+    expect(searchField?.runtimeExports).toEqual(["SearchField"]);
+    expect(root?.runtimeExports).not.toContain("SearchField");
+    expect(exportBindingTarget(publishExports, "./react-aria/search-field")).toEqual({
+      types: "./react-aria/search-field.d.ts",
+      import: "./react-aria/search-field.js",
+    });
+  });
+
+  it("publishes the DatePicker family from the quarantined react-aria/date-picker entry only", () => {
+    const datePicker = discovered.jsEntries.find((entry) => entry.subpath === "react-aria/date-picker");
+    const root = discovered.jsEntries.find((entry) => entry.subpath === ".");
+    expect(datePicker?.inRootBarrel).toBe(false);
+    expect(datePicker?.runtimeExports).toEqual([
+      "DatePicker",
+      "DatePickerPresetGroup",
+      "DatePickerPresetItem",
+    ]);
+    for (const name of ["DatePicker", "DatePickerPresetGroup", "DatePickerPresetItem"]) {
+      expect(root?.runtimeExports).not.toContain(name);
+    }
+    expect(exportBindingTarget(publishExports, "./react-aria/date-picker")).toEqual({
+      types: "./react-aria/date-picker.d.ts",
+      import: "./react-aria/date-picker.js",
+    });
+  });
+
+  it("publishes DateRangePicker from the quarantined react-aria/date-range-picker entry only", () => {
+    const dateRangePicker = discovered.jsEntries.find(
+      (entry) => entry.subpath === "react-aria/date-range-picker"
+    );
+    const root = discovered.jsEntries.find((entry) => entry.subpath === ".");
+    expect(dateRangePicker?.inRootBarrel).toBe(false);
+    expect(dateRangePicker?.runtimeExports).toEqual(["DateRangePicker"]);
+    expect(root?.runtimeExports).not.toContain("DateRangePicker");
+    expect(exportBindingTarget(publishExports, "./react-aria/date-range-picker")).toEqual({
+      types: "./react-aria/date-range-picker.d.ts",
+      import: "./react-aria/date-range-picker.js",
     });
   });
 

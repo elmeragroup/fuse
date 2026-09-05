@@ -93,6 +93,17 @@ describe("size-limit harness", () => {
       "table",
       "textarea-field",
       "alert",
+      "react-aria/ui-providers",
+      "react-aria/date-field",
+      "react-aria/calendar",
+      "react-aria/range-calendar",
+      "react-aria/date-picker",
+      "react-aria/date-range-picker",
+      "react-aria/link",
+      "react-aria/search-field",
+      "react-aria/grid-list",
+      "react-aria/focusable",
+      "react-aria/file-trigger",
       "icons/Check",
     ]);
     expect(FLAG_RAW_BUDGETS).toEqual([{ name: "flags/*.svg", ceilingBytes: FLAG_RAW_CEILING_BYTES }]);

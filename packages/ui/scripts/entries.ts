@@ -67,7 +67,19 @@ export const BARE_COMPONENT_ENTRIES = [
 export const DEFERRED_ENTRIES = ["chart"] as const;
 
 /** Appendix A — 11 quarantined react-aria interim entries. */
-export const RAC_ENTRIES: readonly string[] = [];
+export const RAC_ENTRIES = [
+  "calendar",
+  "date-field",
+  "date-picker",
+  "date-range-picker",
+  "file-trigger",
+  "focusable",
+  "grid-list",
+  "link",
+  "range-calendar",
+  "search-field",
+  "ui-providers",
+] as const;
 
 export const NON_COMPONENT_JS_ENTRIES = [".", "theme", "icons", "illustrations", "flags"] as const;
 

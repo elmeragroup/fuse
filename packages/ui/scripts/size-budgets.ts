@@ -113,6 +113,57 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   { name: "table", entryFile: "table.js", measuredGzip: 11932, ceilingGzip: 17721 },
   { name: "textarea-field", entryFile: "textarea-field.js", measuredGzip: 32934, ceilingGzip: 46464 },
   { name: "alert", entryFile: "alert.js", measuredGzip: 30619, ceilingGzip: 45885 },
+  { name: "react-aria/ui-providers", entryFile: "react-aria/ui-providers.js", measuredGzip: 1987 },
+  {
+    name: "react-aria/date-field",
+    entryFile: "react-aria/date-field.js",
+    measuredGzip: 70232,
+    ceilingGzip: 105099,
+  },
+  {
+    name: "react-aria/calendar",
+    entryFile: "react-aria/calendar.js",
+    measuredGzip: 61203,
+    ceilingGzip: 91506,
+  },
+  {
+    name: "react-aria/range-calendar",
+    entryFile: "react-aria/range-calendar.js",
+    measuredGzip: 62393,
+    ceilingGzip: 93471,
+  },
+  {
+    name: "react-aria/date-picker",
+    entryFile: "react-aria/date-picker.js",
+    measuredGzip: 104626,
+    ceilingGzip: 157282,
+  },
+  {
+    name: "react-aria/date-range-picker",
+    entryFile: "react-aria/date-range-picker.js",
+    measuredGzip: 104152,
+    ceilingGzip: 156552,
+  },
+  { name: "react-aria/link", entryFile: "react-aria/link.js", measuredGzip: 31282, ceilingGzip: 46851 },
+  {
+    name: "react-aria/search-field",
+    entryFile: "react-aria/search-field.js",
+    measuredGzip: 41782,
+    ceilingGzip: 62397,
+  },
+  {
+    name: "react-aria/grid-list",
+    entryFile: "react-aria/grid-list.js",
+    measuredGzip: 68846,
+    ceilingGzip: 100964,
+  },
+  { name: "react-aria/focusable", entryFile: "react-aria/focusable.js", measuredGzip: 3642 },
+  {
+    name: "react-aria/file-trigger",
+    entryFile: "react-aria/file-trigger.js",
+    measuredGzip: 36501,
+    ceilingGzip: 54725,
+  },
 ] satisfies readonly Measured<JsEntryBudget>[]);
 
 export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([

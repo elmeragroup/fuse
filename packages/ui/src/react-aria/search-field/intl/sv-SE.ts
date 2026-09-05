@@ -1,0 +1,4 @@
+/** accessibility.md §4.1 — locked copy for the `searchField.clear` row. */
+export const svSE = {
+  clear: "Rensa sökningen",
+};
