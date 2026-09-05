@@ -19,7 +19,13 @@ import type {
 
 import { cn } from "../../styles/cn";
 import { dateFieldVariants } from "../../styles/date-field";
-import { Description, FieldError, Label, fieldGroupVariants } from "../internal/field";
+import {
+  Description,
+  FieldError,
+  FieldGroupSurfaceContext,
+  Label,
+  fieldGroupVariants,
+} from "../internal/field";
 import { composeTailwindRenderProps } from "../internal/utils";
 
 /**
@@ -76,8 +82,8 @@ export type DateInputProps = {
   /** Range-picker slot. `"start"` / `"end"` inside DateRangePicker. */
   slot?: AriaDateInputProps["slot"];
   /**
-   * Extra classes, composed into `fieldGroupVariants` plus the `input` slot
-   * class. A function may compute the class from DateInput render props.
+   * Extra classes, composed with the segment row and its standalone field
+   * surface. Inside a field group, the group owns the surface. A function may compute the class from DateInput render props.
    */
   className?: AriaDateInputProps["className"];
 } & Omit<AriaDateInputProps, "children" | "slot" | "className">;
@@ -85,20 +91,23 @@ export type DateInputProps = {
 export function DateInput({ className, ...props }: DateInputProps): ReactElement {
   const { input, segment } = dateFieldVariants();
   const state = useContext(DateFieldStateContext);
+  const hasGroupSurface = useContext(FieldGroupSurfaceContext);
 
   return (
     <AriaDateInput
       {...props}
       className={composeRenderProps(className, (resolved, renderProps) =>
         cn(
-          fieldGroupVariants({
-            isFocusVisible: renderProps.isFocusVisible,
-            isFocusWithin: renderProps.isFocusWithin,
-            isInvalid: renderProps.isInvalid,
-            isDisabled: renderProps.isDisabled,
-            isReadOnly: state?.isReadOnly ?? false,
-            class: input(),
-          }),
+          hasGroupSurface
+            ? input()
+            : fieldGroupVariants({
+                isFocusVisible: renderProps.isFocusVisible,
+                isFocusWithin: renderProps.isFocusWithin,
+                isInvalid: renderProps.isInvalid,
+                isDisabled: renderProps.isDisabled,
+                isReadOnly: state?.isReadOnly ?? false,
+                class: input(),
+              }),
           resolved
         )
       )}>

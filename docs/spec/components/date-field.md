@@ -13,7 +13,7 @@
 ```
 AriaDateField                       (RAC DateField, flex flex-col gap-1)
 ├─ Label                            — when `label` (private react-aria field internals)
-├─ DateInput                        (RAC DateInput styled via fieldGroupVariants + input slot)
+├─ DateInput                        (RAC DateInput styled via standalone fieldGroupVariants + input slot)
 │  └─ DateSegment (×n)              — one per locale segment (day/month/year/literal)
 ├─ Description                      — when `description` (RAC Text slot="description")
 └─ FieldError                       — RAC FieldError; renders only when field is invalid
@@ -37,11 +37,13 @@ AriaDateField                       (RAC DateField, flex flex-col gap-1)
 
 ### DateInput
 
-`Omit<RAC DateInputProps, "children">` — `slot` (`"start"`/`"end"` inside range pickers), `className` (render-prop-composed into `fieldGroupVariants` + `input` slot class).
+`Omit<RAC DateInputProps, "children">` — `slot` (`"start"`/`"end"` inside range pickers), `className` is render-prop-composed into the segment-row class and, outside a private FieldGroup, the standalone `fieldGroupVariants` surface.
 
 ## 4 Variants
 
-`dateFieldVariants` — slotted tv recipe in `styles/date-field.ts`, **module-private** (not exported from the package). Slots: `base` (column), `input` (segment row: `controlInsetMdClass` plus `block min-w-[150px]`, no `py-*`), `segment`. Variant axes on `segment` (driven by RAC render props): `isPlaceholder`, `isDisabled`, `isFocused`. No size axis. `DateInput` additionally runs private `fieldGroupVariants` (shared field-box recipe pinning the `md` rung: `h-(--control-h-md) rounded-lg border bg-card`, invalid/disabled/read-only borders) with the `input` slot class as `class`; that recipe composes `focusRing({ target: "state", isFocusVisible })` from `DateInputRenderProps` and contains no separate focus ring.
+`dateFieldVariants` — slotted tv recipe in `styles/date-field.ts`, **module-private** (not exported from the package). Slots: `base` (column), `input` (segment row: `controlInsetMdClass` plus `block min-w-[150px]`, no `py-*`), `segment`. Variant axes on `segment` (driven by RAC render props): `isPlaceholder`, `isDisabled`, `isFocused`. No size axis. Outside a private FieldGroup, `DateInput` additionally runs private `fieldGroupVariants` (shared field-box recipe pinning the `md` rung: `h-(--control-h-md) rounded-md border bg-card`, invalid/disabled/read-only borders) with the `input` slot class as `class`; that recipe composes `focusRing({ target: "state", isFocusVisible })` from `DateInputRenderProps` and contains no separate focus ring.
+
+Inside the private FieldGroup used by PickerShell, DateInput renders only the segment row. The FieldGroup publishes surface ownership through package-private context and owns the single fixed-height border, fill, disabled opacity, invalid border and keyboard ring. Nested rows have automatic content height and no border, shadow, fill or second ring. This applies to both range slots without a public prop or picker-specific class cancellation. Standalone DateField and standalone DateInput keep their complete field surface at both densities.
 
 ## 5 Consumed tokens
 

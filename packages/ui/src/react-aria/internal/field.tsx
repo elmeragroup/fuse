@@ -1,5 +1,6 @@
 "use client";
 
+import { createContext } from "react";
 import type { ComponentProps, ReactElement } from "react";
 
 import {
@@ -77,26 +78,31 @@ export const fieldGroupVariants = tv({
   },
 });
 
+/** Descendant segment rows borrow this group's field surface. */
+export const FieldGroupSurfaceContext = createContext(false);
+
 export type FieldGroupProps = ComponentProps<typeof AriaGroup>;
 
 export function FieldGroup({ className, ...props }: FieldGroupProps): ReactElement {
   return (
-    <AriaGroup
-      data-slot="field-group"
-      className={composeRenderProps(className, (resolved: string | undefined, renderProps) =>
-        cn(
-          fieldGroupVariants({
-            isFocusVisible: renderProps.isFocusVisible,
-            isFocusWithin: renderProps.isFocusWithin,
-            isInvalid: renderProps.isInvalid,
-            isDisabled: renderProps.isDisabled,
-            isReadOnly: props.isReadOnly ?? false,
-          }),
-          resolved
-        )
-      )}
-      {...props}
-    />
+    <FieldGroupSurfaceContext.Provider value={true}>
+      <AriaGroup
+        data-slot="field-group"
+        className={composeRenderProps(className, (resolved: string | undefined, renderProps) =>
+          cn(
+            fieldGroupVariants({
+              isFocusVisible: renderProps.isFocusVisible,
+              isFocusWithin: renderProps.isFocusWithin,
+              isInvalid: renderProps.isInvalid,
+              isDisabled: renderProps.isDisabled,
+              isReadOnly: props.isReadOnly ?? false,
+            }),
+            resolved
+          )
+        )}
+        {...props}
+      />
+    </FieldGroupSurfaceContext.Provider>
   );
 }
 

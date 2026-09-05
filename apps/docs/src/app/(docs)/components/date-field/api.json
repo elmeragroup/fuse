@@ -68,7 +68,7 @@
           "type": "ClassNameOrFunction<DateInputRenderProps> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Extra classes, composed into `fieldGroupVariants` plus the `input` slot class. A function may compute the class from DateInput render props.",
+          "description": "Extra classes, composed with the segment row and its standalone field surface. Inside a field group, the group owns the surface. A function may compute the class from DateInput render props.",
           "required": false
         },
         {
