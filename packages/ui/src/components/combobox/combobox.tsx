@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useMemo, useRef } from "react";
+import { createContext, useContext, useRef, useState } from "react";
 import type { ComponentProps, ReactElement, ReactNode, RefObject } from "react";
 
 // Subpath import (`@base-ui/react/combobox`) type-checks but crashes at runtime with a
@@ -9,6 +9,7 @@ import { Combobox as ComboboxPrimitive } from "@base-ui/react";
 import type { ComboboxRoot as ComboboxRootType } from "@base-ui/react";
 
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
+import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { CaretDown } from "../../icons/generated/caret-down";
 import { Check } from "../../icons/generated/check";
 import { X } from "../../icons/generated/x";
@@ -28,13 +29,12 @@ import {
 } from "../overlay/overlay-classes";
 import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps, OverlayPositionerProps } from "../overlay/overlay-props";
+import { ChipIndexContext, createChipIndexRegistry, useChipIndex } from "./hooks/use-chip-index";
 import { comboboxStrings } from "./intl";
 
 type ComboboxItemLabelFn = (itemValue: ReactNode) => string;
 
 const ComboboxItemToStringLabelContext = createContext<ComboboxItemLabelFn | undefined>(undefined);
-
-const ComboboxChipIndexContext = createContext<{ next: () => number } | null>(null);
 
 export type ComboboxRootProps<Value = unknown, Multiple extends boolean | undefined = false> = Omit<
   ComboboxRootType.Props<Value, Multiple>,
@@ -311,22 +311,9 @@ function ComboboxChips({
   className,
   ...props
 }: ComponentProps<typeof ComboboxPrimitive.Chips>): ReactElement {
+  const [registry] = useState(createChipIndexRegistry);
   return (
-    <ComboboxPrimitive.Value>
-      {() => <ComboboxChipsIndexed className={className} {...props} />}
-    </ComboboxPrimitive.Value>
-  );
-}
-
-function ComboboxChipsIndexed({
-  className,
-  ...props
-}: ComponentProps<typeof ComboboxPrimitive.Chips>): ReactElement {
-  const counter = useRef(0);
-  counter.current = 0;
-  const indexApi = useMemo(() => ({ next: () => counter.current++ }), []);
-  return (
-    <ComboboxChipIndexContext.Provider value={indexApi}>
+    <ChipIndexContext.Provider value={registry}>
       <ComboboxPrimitive.Chips
         data-slot="combobox-chips"
         // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- combobox.md §6: chip wrap gap and compact chip padding are layout, not a control rung
@@ -337,7 +324,7 @@ function ComboboxChipsIndexed({
         )}
         {...props}
       />
-    </ComboboxChipIndexContext.Provider>
+    </ChipIndexContext.Provider>
   );
 }
 
@@ -367,7 +354,7 @@ function chipValueAt(selected: ReactNode, index: number): ReactNode {
     return selected;
   }
   // SAFETY: multiple-mode `Value` yields the consumer's selected items; Chip
-  // indexes that list in render order (combobox.md §3 removeLabel).
+  // indexes that list by committed DOM order, matching Base UI removal.
   return (selected[index] ?? null) as ReactNode;
 }
 
@@ -382,16 +369,18 @@ function stringifyChipValue(value: ReactNode, itemToStringLabel?: ComboboxItemLa
 }
 
 function ComboboxChip({
+  ref,
   className,
   children,
   showRemove = true,
   removeLabel,
   ...props
 }: ComboboxChipProps): ReactElement {
-  const indexApi = useContext(ComboboxChipIndexContext);
-  const index = indexApi?.next() ?? 0;
+  const { ref: indexRef, index } = useChipIndex();
+  const mergedRef = useMergedRefs(ref, indexRef);
   return (
     <ComboboxPrimitive.Chip
+      ref={mergedRef}
       data-slot="combobox-chip"
       // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- combobox.md §6: chip chrome is compact token, not a control rung
       className={cn(
