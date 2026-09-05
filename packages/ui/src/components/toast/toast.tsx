@@ -48,7 +48,8 @@ export type ToastManagerUpdateOptions<Data extends object = object> = Omit<
 > & {
   /**
    * Styled status. An update that changes `type` and omits `priority` derives
-   * the new default; omitting both preserves the existing priority.
+   * the new default; omitting both preserves the existing priority. Explicit
+   * `type: undefined` clears status to neutral and derives low priority.
    */
   type?: ToastStatus;
 };
@@ -127,14 +128,14 @@ function adaptAddOptions<Data extends object>(
 function adaptUpdateOptions<Data extends object>(
   options: ToastManagerUpdateOptions<Data>
 ): PrimitiveUpdateOptions<Data> {
-  const { priority, type, ...rest } = options;
-  if (priority !== undefined) {
-    return { ...rest, type, priority };
+  if (options.priority !== undefined) {
+    return { ...options };
   }
-  if (type !== undefined) {
-    return { ...rest, type, priority: derivedPriority(type) };
+  if (Object.hasOwn(options, "type")) {
+    return { ...options, priority: derivedPriority(options.type) };
   }
-  return { ...rest };
+  const { priority: _priority, ...rest } = options;
+  return rest;
 }
 
 type PromiseStateInput<Value, Data extends object> =
