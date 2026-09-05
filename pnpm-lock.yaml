@@ -146,6 +146,7 @@ catalogs:
       version: 4.1.10
 
 importers:
+
   .:
     devDependencies:
       '@changesets/cli':
@@ -187,6 +188,9 @@ importers:
       typescript:
         specifier: 'catalog:'
         version: 7.0.2
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.10(@types/node@25.9.5)(@vitest/browser-playwright@4.1.10)(vite@8.2.1(@types/node@25.9.5)(jiti@2.7.0)(yaml@2.9.0))
 
   apps/docs:
     dependencies:
