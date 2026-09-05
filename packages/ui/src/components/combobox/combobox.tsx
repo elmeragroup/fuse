@@ -30,7 +30,12 @@ import {
 } from "../overlay/overlay-classes";
 import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps, OverlayPositionerProps } from "../overlay/overlay-props";
-import { ChipIndexContext, createChipIndexRegistry, useChipIndex } from "./hooks/use-chip-index";
+import {
+  ChipIndexCommit,
+  ChipIndexContext,
+  createChipIndexRegistry,
+  useChipIndex,
+} from "./hooks/use-chip-index";
 import { comboboxStrings } from "./intl";
 
 type ComboboxItemLabelFn = (itemValue: ReactNode) => string;
@@ -317,6 +322,7 @@ function ComboboxChips({
   const [registry] = useState(createChipIndexRegistry);
   return (
     <ChipIndexContext.Provider value={registry}>
+      <ComboboxPrimitive.Value>{() => <ChipIndexCommit />}</ComboboxPrimitive.Value>
       <ComboboxPrimitive.Chips
         data-slot="combobox-chips"
         // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- combobox.md §6: chip wrap gap and compact chip padding are layout, not a control rung

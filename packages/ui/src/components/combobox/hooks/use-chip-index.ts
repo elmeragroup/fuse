@@ -44,3 +44,12 @@ export function useChipIndex() {
   });
   return { ref, index };
 }
+
+/** Reconcile even when memoized chip wrappers skip rendering after a value reorder. */
+export function ChipIndexCommit(): null {
+  const registry = useContext(ChipIndexContext);
+  useLayoutEffect(() => {
+    registry?.update();
+  });
+  return null;
+}

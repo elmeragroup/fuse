@@ -1,4 +1,4 @@
-import { StrictMode, useState } from "react";
+import { memo, StrictMode, useState } from "react";
 
 import { describe, expect, it, vi } from "vitest";
 import { userEvent } from "vitest/browser";
@@ -28,10 +28,18 @@ function RefreshingChip({ item, removeLabel }: { item: Option; removeLabel?: str
   );
 }
 
+const MemoRefreshingChip = memo(RefreshingChip);
+
 describe("Combobox chip item identity", () => {
-  it.each([false, true])(
-    "pairs object labels and removal after isolated rerender and reorder, StrictMode: %s",
-    async (strict) => {
+  it.each([
+    [false, false],
+    [true, false],
+    [false, true],
+    [true, true],
+  ])(
+    "pairs object labels and removal after isolated rerender and reorder, StrictMode: %s, memoized: %s",
+    async (strict, memoized) => {
+      const Chip = memoized ? MemoRefreshingChip : RefreshingChip;
       const changed = vi.fn<(values: Option[]) => void>();
       function Parent() {
         const [selected, setSelected] = useState(options);
@@ -52,7 +60,7 @@ describe("Combobox chip item identity", () => {
               itemToStringLabel={(item) => item.name}>
               <Combobox.Chips>
                 <Combobox.Value>
-                  {(values: Option[]) => values.map((item) => <RefreshingChip key={item.id} item={item} />)}
+                  {(values: Option[]) => values.map((item) => <Chip key={item.id} item={item} />)}
                 </Combobox.Value>
                 <Combobox.ChipsInput aria-label="People" />
               </Combobox.Chips>
@@ -88,6 +96,46 @@ describe("Combobox chip item identity", () => {
       expect(roleNamed("status", "Selected items").textContent).toBe("");
     }
   );
+
+  it("reconciles selection changes beneath a memoized Chips owner", async () => {
+    const changed = vi.fn<(values: Option[]) => void>();
+    const MemoChips = memo(function MemoChips() {
+      return (
+        <Combobox.Chips>
+          <Combobox.Value>
+            {(values: Option[]) => values.map((item) => <MemoRefreshingChip key={item.id} item={item} />)}
+          </Combobox.Value>
+        </Combobox.Chips>
+      );
+    });
+    function Parent() {
+      const [selected, setSelected] = useState(options);
+      return (
+        <>
+          <button type="button" onClick={() => setSelected([...selected].reverse())}>
+            Reorder
+          </button>
+          <Combobox.Root
+            multiple
+            items={options}
+            value={selected}
+            itemToStringLabel={(item) => item.name}
+            onValueChange={(next) => {
+              changed(next);
+              setSelected(next);
+            }}>
+            <MemoChips />
+          </Combobox.Root>
+        </>
+      );
+    }
+    render(withLocale("en-US", <Parent />));
+    await userEvent.click(roleNamed("button", "Reorder"));
+    await userEvent.click(roleNamed("button", "Remove Alpha"));
+    expect(changed).toHaveBeenLastCalledWith([options[1]]);
+    await userEvent.click(roleNamed("button", "Remove Beta"));
+    expect(changed).toHaveBeenLastCalledWith([]);
+  });
 
   it("preserves explicit removal labels for uncontrolled object selections", async () => {
     const changed = vi.fn<(values: Option[]) => void>();
