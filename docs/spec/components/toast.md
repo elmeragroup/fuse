@@ -39,6 +39,8 @@ toastManager.add({ type: "success", title: "Saved", description: "Changes stored
 
 ## 3 Props
 
+**State classes:** `Toast.Viewport`, `Toast.Root`, `Toast.Content`, `Toast.Title`, `Toast.Description`, `Toast.Action`, `Toast.Close` accept either a string or a callback receiving the current Base UI part state. Callback results are merged after library classes with the same conflict resolution as strings. Other parts retain their declared contracts; see [conventions](conventions.md#api-conventions).
+
 **Toast.Provider** — `ComponentProps<ToastPrimitive.Provider>` verbatim (`toastManager`, `limit`, `timeout`, `children`). Primitive-tier naming per conventions.
 
 **Toast.Viewport** — `ComponentProps<ToastPrimitive.Viewport>` plus:

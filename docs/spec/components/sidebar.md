@@ -98,6 +98,8 @@ Package-private implementation detail: `useSyncExternalStore` over `matchMedia("
 
 ## 3 Props
 
+**State classes:** `Sidebar.Separator` accepts either a string or a callback receiving the current Base UI part state. Callback results are merged after library classes with the same conflict resolution as strings. Other parts retain their declared contracts; see [conventions](conventions.md#api-conventions).
+
 All parts take `className` (merged via `cn`) and forward remaining props to their underlying element. `useRender` parts additionally take `render`.
 
 **Sidebar.Provider** — `ComponentProps<"div">` plus:

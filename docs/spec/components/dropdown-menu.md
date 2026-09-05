@@ -54,6 +54,8 @@
 
 ## 3 Props
 
+**State classes:** `DropdownMenu.Content`, `DropdownMenu.SubContent`, `DropdownMenu.Trigger`, `DropdownMenu.Label`, `DropdownMenu.Item`, `DropdownMenu.LinkItem`, `DropdownMenu.CheckboxItem`, `DropdownMenu.RadioItem`, `DropdownMenu.Separator`, `DropdownMenu.SubTrigger` accept either a string or a callback receiving the current Base UI part state. Callback results are merged after library classes with the same conflict resolution as strings. Other parts retain their declared contracts; see [conventions](conventions.md#api-conventions).
+
 All rendering parts take `className` (merged via `cn`) and forward the rest of their base-ui part's props (incl. `render`). Primitive-tier naming throughout (`disabled`, not `isDisabled`).
 
 **DropdownMenu.Root** — `ComponentProps<MenuPrimitive.Root>` verbatim (`open`/`defaultOpen`/`onOpenChange`, `modal`, `disabled`, `closeParentOnEsc`, …).

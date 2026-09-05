@@ -32,6 +32,8 @@ Root establishes the `group/tabs` Tailwind group scope; List establishes `group/
 
 ## 3 Props
 
+**State classes:** `Tabs.Root`, `Tabs.List`, `Tabs.Trigger`, `Tabs.Content` accept either a string or a callback receiving the current Base UI part state. Callback results are merged after library classes with the same conflict resolution as strings. Other parts retain their declared contracts; see [conventions](conventions.md#api-conventions).
+
 ### Tabs.Root
 
 `ComponentProps<typeof TabsPrimitive.Root>` — pass-through includes `value`, `defaultValue`, `onValueChange`, `orientation`, `render`.
@@ -39,17 +41,17 @@ Root establishes the `group/tabs` Tailwind group scope; List establishes `group/
 | Prop          | Type                         | Default        | Notes                                                                                                   |
 | ------------- | ---------------------------- | -------------- | ------------------------------------------------------------------------------------------------------- |
 | `orientation` | `"horizontal" \| "vertical"` | `"horizontal"` | destructured locally so `data-orientation` renders pre-hydration (SSR); also forwarded to the primitive |
-| `className`   | `string`                     | —              | merged via `cn` onto `group/tabs flex gap-2 data-horizontal:flex-col`                                   |
+| `className`   | string or state callback     | —              | merged via `cn` onto `group/tabs flex gap-2 data-horizontal:flex-col`                                   |
 
 ### Tabs.List
 
 `ComponentProps<typeof TabsPrimitive.List> & VariantProps<typeof tabsListVariants>` — pass-through includes `loopFocus`, `render`. _(Amended 2026-09-02, §8.8: the primitive prop is `loopFocus`, not `loop`.)_
 
-| Prop              | Type                  | Default     | Notes                                                                                                                                                                   |
-| ----------------- | --------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `variant`         | `"default" \| "line"` | `"default"` | emitted as `data-variant`; fed to `tabsListVariants`                                                                                                                    |
-| `activateOnFocus` | `boolean`             | `true`      | library default; the pinned base-ui default is `false`. `true` makes arrow keys move **and** activate (§7); `false` opts into manual activation with Enter/Space (§8.8) |
-| `className`       | `string`              | —           | merged via `cn`                                                                                                                                                         |
+| Prop              | Type                     | Default     | Notes                                                                                                                                                                   |
+| ----------------- | ------------------------ | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `variant`         | `"default" \| "line"`    | `"default"` | emitted as `data-variant`; fed to `tabsListVariants`                                                                                                                    |
+| `activateOnFocus` | `boolean`                | `true`      | library default; the pinned base-ui default is `false`. `true` makes arrow keys move **and** activate (§7); `false` opts into manual activation with Enter/Space (§8.8) |
+| `className`       | string or state callback | —           | merged via `cn`                                                                                                                                                         |
 
 ### Tabs.Trigger
 

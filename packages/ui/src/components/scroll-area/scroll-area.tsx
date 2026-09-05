@@ -7,6 +7,7 @@ import { tv } from "tailwind-variants";
 import type { VariantProps } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
+import { mergeClassName } from "../../styles/merge-class-name";
 import { selfFocusRingClass } from "../../styles/utils";
 
 /**
@@ -65,7 +66,7 @@ function ScrollAreaRoot({
   return (
     <ScrollAreaPrimitive.Root
       data-slot="scroll-area"
-      className={cn("relative overflow-hidden", className)}
+      className={mergeClassName(className, "relative overflow-hidden")}
       {...props}>
       <ScrollAreaPrimitive.Viewport
         data-slot="scroll-area-viewport"
@@ -87,12 +88,12 @@ function ScrollAreaBar({
   return (
     <ScrollAreaPrimitive.Scrollbar
       data-slot="scroll-area-scrollbar"
-      className={cn(
+      className={mergeClassName(
+        className,
         "flex touch-none p-px select-none",
         orientation === "vertical" && "w-2.5 border-l border-l-transparent",
         orientation === "horizontal" && "h-2.5 flex-col border-t border-t-transparent",
-        scrollbarTypeVariants({ type }),
-        className
+        scrollbarTypeVariants({ type })
       )}
       {...props}
       orientation={orientation}

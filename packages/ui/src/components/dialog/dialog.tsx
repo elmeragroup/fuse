@@ -8,6 +8,7 @@ import type { VariantProps } from "tailwind-variants";
 
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { cn } from "../../styles/cn";
+import { mergeClassName } from "../../styles/merge-class-name";
 import { selfFocusRingClass } from "../../styles/utils";
 import { overlayCloseStrings } from "../overlay/intl";
 import {
@@ -54,7 +55,7 @@ function DialogTrigger({
   return (
     <DialogPrimitive.Trigger
       data-slot="dialog-trigger"
-      className={cn(selfFocusRingClass, className)}
+      className={mergeClassName(className, selfFocusRingClass)}
       {...props}
     />
   );
@@ -68,7 +69,7 @@ function DialogClose({ className, ...props }: ComponentProps<typeof DialogPrimit
   return (
     <DialogPrimitive.Close
       data-slot="dialog-close"
-      className={cn(selfFocusRingClass, className)}
+      className={mergeClassName(className, selfFocusRingClass)}
       {...props}
     />
   );
@@ -81,11 +82,11 @@ function DialogOverlay({
   return (
     <DialogPrimitive.Backdrop
       data-slot="dialog-overlay"
-      className={cn(
+      className={mergeClassName(
+        className,
         overlayScrimClass,
         "fixed inset-0 isolate duration-100 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
-        overlayLayer,
-        className
+        overlayLayer
       )}
       {...props}
     />
@@ -124,7 +125,7 @@ function DialogContent({
       <DialogOverlay />
       <DialogPrimitive.Popup
         data-slot="dialog-content"
-        className={cn(dialogContentVariants({ size }), className)}
+        className={mergeClassName(className, dialogContentVariants({ size }))}
         {...props}>
         {children}
         {showCloseButton ? (
@@ -169,7 +170,11 @@ function DialogFooter({
 
 function DialogTitle({ className, ...props }: ComponentProps<typeof DialogPrimitive.Title>): ReactElement {
   return (
-    <DialogPrimitive.Title data-slot="dialog-title" className={cn(overlayTitleClass, className)} {...props} />
+    <DialogPrimitive.Title
+      data-slot="dialog-title"
+      className={mergeClassName(className, overlayTitleClass)}
+      {...props}
+    />
   );
 }
 
@@ -180,9 +185,9 @@ function DialogDescription({
   return (
     <DialogPrimitive.Description
       data-slot="dialog-description"
-      className={cn(
-        "text-sm text-pretty text-muted-foreground *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground",
-        className
+      className={mergeClassName(
+        className,
+        "text-sm text-pretty text-muted-foreground *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground"
       )}
       {...props}
     />

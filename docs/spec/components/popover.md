@@ -36,6 +36,8 @@ The internal `Portal`, `Positioner`, `Popup` and `Arrow` parts are not exported 
 
 ## 3 Props
 
+**State classes:** `Popover.Trigger`, `Popover.Content`, `Popover.Title`, `Popover.Description` accept either a string or a callback receiving the current Base UI part state. Callback results are merged after library classes with the same conflict resolution as strings. Other parts retain their declared contracts; see [conventions](conventions.md#api-conventions).
+
 All rendering parts take `className` (merged via `cn`) and forward the rest of their base-ui part's props (incl. `render` per conventions).
 
 **Popover.Root** — `ComponentProps<PopoverPrimitive.Root>` verbatim (`open`/`defaultOpen`/`onOpenChange`, `modal`, `openOnHover`/`delay`/`closeDelay`, …). Primitive-tier naming.

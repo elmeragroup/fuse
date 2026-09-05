@@ -7,6 +7,7 @@ import { Fieldset as FieldsetPrimitive } from "@base-ui/react/fieldset";
 import type { VariantProps } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
+import { mergeClassName } from "../../styles/merge-class-name";
 import { Separator } from "../separator/separator";
 import { fieldVariants } from "./field-variants";
 
@@ -19,7 +20,7 @@ function FieldRoot({
     <FieldPrimitive.Root
       data-slot="field"
       data-orientation={orientation}
-      className={cn(fieldVariants({ orientation }).root(), className)}
+      className={mergeClassName(className, fieldVariants({ orientation }).root())}
       {...props}
     />
   );
@@ -29,9 +30,9 @@ function FieldSet({ className, ...props }: ComponentProps<typeof FieldsetPrimiti
   return (
     <FieldsetPrimitive.Root
       data-slot="field-set"
-      className={cn(
-        "flex flex-col gap-6 has-[>[data-slot=checkbox-group]]:gap-3 has-[>[data-slot=radio-group]]:gap-3",
-        className
+      className={mergeClassName(
+        className,
+        "flex flex-col gap-6 has-[>[data-slot=checkbox-group]]:gap-3 has-[>[data-slot=radio-group]]:gap-3"
       )}
       {...props}
     />
@@ -53,9 +54,9 @@ function FieldLegend({
     <FieldsetPrimitive.Legend
       data-slot="field-legend"
       data-variant={variant}
-      className={cn(
-        "font-medium data-[variant=label]:text-sm data-[variant=legend]:text-base mb-3 text-balance",
-        className
+      className={mergeClassName(
+        className,
+        "font-medium data-[variant=label]:text-sm data-[variant=legend]:text-base mb-3 text-balance"
       )}
       {...props}
     />
@@ -92,11 +93,11 @@ function FieldLabel({ className, ...props }: ComponentProps<typeof FieldPrimitiv
     <FieldPrimitive.Label
       data-slot="field-label"
       data-field-heading=""
-      className={cn(
+      className={mergeClassName(
+        className,
         "group/field-label peer/field-label leading-snug has-data-checked:border-primary/30 has-[>[data-slot=field]]:rounded-md has-[>[data-slot=field]]:border *:data-[slot=field]:p-3",
         "has-[>[data-slot=field]]:w-full has-[>[data-slot=field]]:flex-col",
-        fieldHeadingClassName,
-        className
+        fieldHeadingClassName
       )}
       {...props}
     />
@@ -125,9 +126,9 @@ function FieldDescription({
   return (
     <FieldPrimitive.Description
       data-slot="field-description"
-      className={cn(
-        "text-sm leading-normal font-normal text-left text-pretty text-muted-foreground group-has-data-horizontal/field:text-balance last:mt-0 [&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary [[data-variant=legend]+&]:-mt-1.5",
-        className
+      className={mergeClassName(
+        className,
+        "text-sm leading-normal font-normal text-left text-pretty text-muted-foreground group-has-data-horizontal/field:text-balance last:mt-0 [&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary [[data-variant=legend]+&]:-mt-1.5"
       )}
       {...props}
     />
@@ -180,7 +181,7 @@ function FieldError({
       match
       role="alert"
       data-slot="field-error"
-      className={cn("text-sm font-normal text-error", className)}
+      className={mergeClassName(className, "text-sm font-normal text-error")}
       {...props}>
       {children}
     </FieldPrimitive.Error>

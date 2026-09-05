@@ -26,6 +26,8 @@ Renders a single `<div>` (base-ui default) — a visual and semantic divider.
 
 ## 3 Props
 
+**State classes:** `Separator` accepts either a string or a callback receiving the current Base UI part state. Callback results are merged after library classes with the same conflict resolution as strings. Other parts retain their declared contracts; see [conventions](conventions.md#api-conventions).
+
 `ComponentProps<typeof SeparatorPrimitive>` — pass-through includes `render`.
 
 | Prop          | Type                         | Default        | Notes                                                                                                                 |

@@ -9,6 +9,7 @@ import { tv } from "tailwind-variants";
 import type { VariantProps } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
+import { mergeClassName } from "../../styles/merge-class-name";
 import { Separator } from "../separator/separator";
 import { ITEM_TITLE_CLASSES } from "./item-title-classes";
 import { itemVariants } from "./item-variants";
@@ -36,7 +37,7 @@ function ItemSeparator({ className, ...props }: ComponentProps<typeof Separator>
     <Separator
       data-slot="item-separator"
       orientation="horizontal"
-      className={cn("my-2", className)}
+      className={mergeClassName(className, "my-2")}
       {...props}
     />
   );

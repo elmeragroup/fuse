@@ -10,6 +10,7 @@ import { CaretUp } from "../../icons/generated/caret-up";
 import { Check } from "../../icons/generated/check";
 import { cn } from "../../styles/cn";
 import { fieldBoxChromeClass } from "../../styles/field-box";
+import { mergeClassName } from "../../styles/merge-class-name";
 import { selfFocusRingClass } from "../../styles/utils";
 import {
   menuGroupLabelClass,
@@ -48,12 +49,12 @@ function SelectTrigger({
       data-slot="select-trigger"
       data-size={size}
       // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- select.md §4: value-slot gap is content layout, not a control rung
-      className={cn(
+      className={mergeClassName(
+        className,
         selfFocusRingClass,
         fieldBoxChromeClass,
         // oxlint-disable-next-line elmera/no-local-focus-ring -- select.md §7: native outline off; ring comes from the shared adapter
-        "group/select-trigger data-[size=sm]:text-sm flex w-fit items-center justify-between whitespace-nowrap outline-none select-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-error aria-invalid:ring-3 aria-invalid:ring-error/20 data-placeholder:text-muted-foreground data-[size=default]:h-(--control-h-md) data-[size=default]:gap-(--control-gap-md) data-[size=default]:px-(--control-px-md) data-[size=default]:[font-size:var(--control-text)] data-[size=default]:[line-height:var(--control-leading)] data-[size=sm]:h-(--control-h-sm) data-[size=sm]:gap-(--control-gap-sm) data-[size=sm]:px-(--control-px-sm) *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-        className
+        "group/select-trigger data-[size=sm]:text-sm flex w-fit items-center justify-between whitespace-nowrap outline-none select-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-error aria-invalid:ring-3 aria-invalid:ring-error/20 data-placeholder:text-muted-foreground data-[size=default]:h-(--control-h-md) data-[size=default]:gap-(--control-gap-md) data-[size=default]:px-(--control-px-md) data-[size=default]:[font-size:var(--control-text)] data-[size=default]:[line-height:var(--control-leading)] data-[size=sm]:h-(--control-h-sm) data-[size=sm]:gap-(--control-gap-sm) data-[size=sm]:px-(--control-px-sm) *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
       )}
       {...props}>
       {children}
@@ -70,7 +71,7 @@ function SelectValue({ className, ...props }: ComponentProps<typeof SelectPrimit
   return (
     <SelectPrimitive.Value
       data-slot="select-value"
-      className={cn("flex flex-1 text-left", className)}
+      className={mergeClassName(className, "flex flex-1 text-left")}
       {...props}
     />
   );
@@ -109,10 +110,10 @@ function SelectContent({
         <SelectPrimitive.Popup
           data-slot="select-content"
           data-align-trigger={alignItemWithTrigger ? "true" : "false"}
-          className={cn(
+          className={mergeClassName(
+            className,
             overlayTimedPopupClass,
-            "relative max-h-(--available-height) w-(--anchor-width) min-w-36 overflow-x-hidden overflow-y-auto rounded-lg data-[align-trigger=true]:animate-none",
-            className
+            "relative max-h-(--available-height) w-(--anchor-width) min-w-36 overflow-x-hidden overflow-y-auto rounded-lg data-[align-trigger=true]:animate-none"
           )}
           {...props}>
           <SelectScrollUpButton />
@@ -133,11 +134,11 @@ function SelectItem({
     <SelectPrimitive.Item
       data-slot="select-item"
       // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- select.md §4: option padding is menu layout, not a control rung
-      className={cn(
+      className={mergeClassName(
+        className,
         menuItemClass,
         // oxlint-disable-next-line elmera/no-local-focus-ring -- select.md §7: the highlight face menuItemClass leaves to the family; base-ui spells it `focus:` on Select items
-        "w-full pr-8 pl-2 focus:bg-accent focus:text-accent-foreground focus:**:text-accent-foreground *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
-        className
+        "w-full pr-8 pl-2 focus:bg-accent focus:text-accent-foreground focus:**:text-accent-foreground *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2"
       )}
       {...props}>
       <SelectPrimitive.ItemText className="flex flex-1 shrink-0 gap-2 whitespace-nowrap">
@@ -152,7 +153,11 @@ function SelectItem({
 
 function SelectGroup({ className, ...props }: ComponentProps<typeof SelectPrimitive.Group>): ReactElement {
   return (
-    <SelectPrimitive.Group data-slot="select-group" className={cn("scroll-my-1 p-1", className)} {...props} />
+    <SelectPrimitive.Group
+      data-slot="select-group"
+      className={mergeClassName(className, "scroll-my-1 p-1")}
+      {...props}
+    />
   );
 }
 
@@ -163,7 +168,7 @@ function SelectLabel({
   return (
     <SelectPrimitive.GroupLabel
       data-slot="select-label"
-      className={cn(menuGroupLabelClass, className)}
+      className={mergeClassName(className, menuGroupLabelClass)}
       {...props}
     />
   );
@@ -176,7 +181,7 @@ function SelectSeparator({
   return (
     <SelectPrimitive.Separator
       data-slot="select-separator"
-      className={cn(menuSeparatorClass, "pointer-events-none", className)}
+      className={mergeClassName(className, menuSeparatorClass, "pointer-events-none")}
       {...props}
     />
   );
@@ -189,9 +194,9 @@ function SelectScrollUpButton({
   return (
     <SelectPrimitive.ScrollUpArrow
       data-slot="select-scroll-up-button"
-      className={cn(
-        "top-0 z-10 flex w-full cursor-default items-center justify-center bg-popover py-1 [&_svg:not([class*='size-'])]:size-4",
-        className
+      className={mergeClassName(
+        className,
+        "top-0 z-10 flex w-full cursor-default items-center justify-center bg-popover py-1 [&_svg:not([class*='size-'])]:size-4"
       )}
       {...props}>
       <CaretUp />
@@ -206,9 +211,9 @@ function SelectScrollDownButton({
   return (
     <SelectPrimitive.ScrollDownArrow
       data-slot="select-scroll-down-button"
-      className={cn(
-        "bottom-0 z-10 flex w-full cursor-default items-center justify-center bg-popover py-1 [&_svg:not([class*='size-'])]:size-4",
-        className
+      className={mergeClassName(
+        className,
+        "bottom-0 z-10 flex w-full cursor-default items-center justify-center bg-popover py-1 [&_svg:not([class*='size-'])]:size-4"
       )}
       {...props}>
       <CaretDown />

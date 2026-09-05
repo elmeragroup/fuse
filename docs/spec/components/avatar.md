@@ -27,6 +27,8 @@ Thin styled wrappers over the base-ui Avatar parts — pure passthrough, no adde
 
 ## 3 Props
 
+**State classes:** `Avatar.Root`, `Avatar.Image`, `Avatar.Fallback` accept either a string or a callback receiving the current Base UI part state. Callback results are merged after library classes with the same conflict resolution as strings. Other parts retain their declared contracts; see [conventions](conventions.md#api-conventions).
+
 All parts: `ComponentProps<typeof AvatarPrimitive.{Part}>` — full primitive passthrough (`render`, `className`, and for `Image`: `src`, `onLoadingStatusChange`; for `Fallback`: `delay`). No wrapper-added props beyond `className` merging via `cn`.
 
 | Part              | Notable passthrough                   | Notes                                 |

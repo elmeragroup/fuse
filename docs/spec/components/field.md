@@ -38,6 +38,8 @@ Twelve parts. Base UI owns id/aria wiring; validation visibility stays external 
 
 ## 3 Props
 
+**State classes:** `Field.Root`, `Field.Set`, `Field.Legend`, `Field.Label`, `Field.Description`, `Field.Error` accept either a string or a callback receiving the current Base UI part state. Callback results are merged after library classes with the same conflict resolution as strings. Other parts retain their declared contracts; see [conventions](conventions.md#api-conventions).
+
 All parts accept `className` (merged via `cn`) and the underlying element/primitive props. Primitive-tier naming applies (`disabled`, `invalid`, `name` — never `isDisabled` at this tier).
 
 **Field.Root** — `ComponentProps<FieldPrimitive.Root>` plus:

@@ -4,7 +4,7 @@ import type { ComponentProps, ReactElement } from "react";
 
 import { Collapsible as CollapsiblePrimitive } from "@base-ui/react/collapsible";
 
-import { cn } from "../../styles/cn";
+import { mergeClassName } from "../../styles/merge-class-name";
 import { selfFocusRingClass } from "../../styles/utils";
 
 /**
@@ -22,7 +22,7 @@ function CollapsibleTrigger({
   return (
     <CollapsiblePrimitive.Trigger
       data-slot="collapsible-trigger"
-      className={cn(selfFocusRingClass, className)}
+      className={mergeClassName(className, selfFocusRingClass)}
       {...props}
     />
   );

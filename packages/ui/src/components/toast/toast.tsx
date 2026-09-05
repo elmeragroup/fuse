@@ -18,7 +18,7 @@ import { SpinnerGap } from "../../icons/generated/spinner-gap";
 import { Warning } from "../../icons/generated/warning";
 import { WarningOctagon } from "../../icons/generated/warning-octagon";
 import { X } from "../../icons/generated/x";
-import { cn } from "../../styles/cn";
+import { mergeClassName } from "../../styles/merge-class-name";
 import { selfFocusRingClass } from "../../styles/utils";
 import { Button } from "../button/button";
 import { overlayCloseStrings } from "../overlay/intl";
@@ -291,11 +291,11 @@ function ToastViewport({
     <OverlayPortal portal={ToastPrimitive.Portal} container={container}>
       <ToastPrimitive.Viewport
         data-slot="toast-viewport"
-        className={cn(
+        className={mergeClassName(
+          className,
           "sm:right-8 sm:bottom-8 sm:w-[340px] fixed top-auto right-4 bottom-4 isolate mx-auto flex w-[calc(100%-2rem)]",
           overlayLayer,
-          selfFocusRingClass,
-          className
+          selfFocusRingClass
         )}
         {...props}>
         {children ?? <ToastList />}
@@ -312,18 +312,26 @@ function ToastRoot({ className, toast, ...props }: ComponentProps<typeof ToastPr
       data-slot="toast-root"
       data-status={status}
       toast={toast}
-      className={cn(root(), className)}
+      className={mergeClassName(className, root())}
       {...props}
     />
   );
 }
 
 function ToastContent({ className, ...props }: ComponentProps<typeof ToastPrimitive.Content>): ReactElement {
-  return <ToastPrimitive.Content data-slot="toast-content" className={cn(content(), className)} {...props} />;
+  return (
+    <ToastPrimitive.Content
+      data-slot="toast-content"
+      className={mergeClassName(className, content())}
+      {...props}
+    />
+  );
 }
 
 function ToastTitle({ className, ...props }: ComponentProps<typeof ToastPrimitive.Title>): ReactElement {
-  return <ToastPrimitive.Title data-slot="toast-title" className={cn(title(), className)} {...props} />;
+  return (
+    <ToastPrimitive.Title data-slot="toast-title" className={mergeClassName(className, title())} {...props} />
+  );
 }
 
 function ToastDescription({
@@ -333,7 +341,7 @@ function ToastDescription({
   return (
     <ToastPrimitive.Description
       data-slot="toast-description"
-      className={cn(description(), className)}
+      className={mergeClassName(className, description())}
       {...props}
     />
   );
@@ -343,7 +351,7 @@ function ToastAction({ className, ...props }: ComponentProps<typeof ToastPrimiti
   return (
     <ToastPrimitive.Action
       data-slot="toast-action"
-      className={cn("mt-2 w-fit", className)}
+      className={mergeClassName(className, "mt-2 w-fit")}
       render={<Button size="sm" variant="outline" />}
       {...props}
     />
@@ -376,7 +384,7 @@ function ToastClose({ className, label, children, ...props }: ToastCloseProps): 
   return (
     <ToastPrimitive.Close
       data-slot="toast-close"
-      className={cn("absolute top-2 right-2 text-muted-foreground", className)}
+      className={mergeClassName(className, "absolute top-2 right-2 text-muted-foreground")}
       render={closeButton}
       {...props}>
       {visible ? children : <X aria-hidden="true" />}

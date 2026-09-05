@@ -41,6 +41,8 @@
 
 ## 3 Props
 
+**State classes:** `Dialog.Trigger`, `Dialog.Close`, `Dialog.Overlay`, `Dialog.Content`, `Dialog.Title`, `Dialog.Description` accept either a string or a callback receiving the current Base UI part state. Callback results are merged after library classes with the same conflict resolution as strings. Other parts retain their declared contracts; see [conventions](conventions.md#api-conventions).
+
 All rendering parts take `className` (merged via `cn`) and forward the rest of their base-ui part's props.
 
 **Dialog.Root** — `ComponentProps<DialogPrimitive.Root>` verbatim (`open`/`defaultOpen`/`onOpenChange`, `modal`, `disablePointerDismissal`, …). Primitive-tier naming per conventions.

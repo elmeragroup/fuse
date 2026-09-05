@@ -46,6 +46,8 @@ Inside Content, `SheetPrimitive.Popup` (slot `sheet-content`) carries positionin
 
 ## 3 Props
 
+**State classes:** `Sheet.Trigger`, `Sheet.Close`, `Sheet.Overlay`, `Sheet.Content`, `Sheet.Title`, `Sheet.Description` accept either a string or a callback receiving the current Base UI part state. Callback results are merged after library classes with the same conflict resolution as strings. Other parts retain their declared contracts; see [conventions](conventions.md#api-conventions).
+
 All rendering parts take `className` (merged via `cn`) and forward the rest of their base-ui part's props.
 
 **Sheet.Root** — `Omit<ComponentProps<SheetPrimitive.Root>, "swipeDirection" | "children">` plus:

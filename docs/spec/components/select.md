@@ -39,6 +39,8 @@
 
 ## 3 Props
 
+**State classes:** `Select.Trigger`, `Select.Value`, `Select.Content`, `Select.Item`, `Select.Group`, `Select.Label`, `Select.Separator`, `Select.ScrollUpButton`, `Select.ScrollDownButton` accept either a string or a callback receiving the current Base UI part state. Callback results are merged after library classes with the same conflict resolution as strings. Other parts retain their declared contracts; see [conventions](conventions.md#api-conventions).
+
 All rendering parts take `className` (merged via `cn`) and forward the rest of their base-ui part's props.
 
 **Select.Root** — primitive `SelectRoot.Props<Value, Multiple>` forwarded (`value`/`defaultValue`/`onValueChange` infer `Value`; `multiple` switches those to arrays; plus `open`/`defaultOpen`/`onOpenChange`, `items`, `disabled`, `readOnly`, `required`, `name`, `id`, `modal`, …). Primitive-tier naming per conventions (no `isDisabled` face).

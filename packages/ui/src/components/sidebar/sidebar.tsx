@@ -20,6 +20,7 @@ import { useIsMobile } from "../../hooks/use-is-mobile";
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { SidebarSimple } from "../../icons/generated/sidebar-simple";
 import { cn } from "../../styles/cn";
+import { mergeClassName } from "../../styles/merge-class-name";
 import { selfFocusRingClass } from "../../styles/utils";
 import { Button } from "../button/button";
 import type { ButtonProps } from "../button/button";
@@ -458,7 +459,7 @@ function SidebarSeparator({ className, ...props }: SidebarSeparatorProps): React
   return (
     <Separator
       data-slot="sidebar-separator"
-      className={cn("mx-2 w-auto bg-sidebar-border", className)}
+      className={mergeClassName(className, "mx-2 w-auto bg-sidebar-border")}
       {...props}
     />
   );

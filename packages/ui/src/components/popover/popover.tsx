@@ -5,6 +5,7 @@ import type { ComponentProps, ReactElement } from "react";
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 
 import { cn } from "../../styles/cn";
+import { mergeClassName } from "../../styles/merge-class-name";
 import { selfFocusRingClass } from "../../styles/utils";
 import { overlayPositionerClass, overlayTimedPopupClass } from "../overlay/overlay-classes";
 import { OverlayPortal } from "../overlay/overlay-portal";
@@ -21,7 +22,7 @@ function PopoverTrigger({
   return (
     <PopoverPrimitive.Trigger
       data-slot="popover-trigger"
-      className={cn(selfFocusRingClass, className)}
+      className={mergeClassName(className, selfFocusRingClass)}
       {...props}
     />
   );
@@ -56,11 +57,11 @@ function PopoverContent({
         className={overlayPositionerClass}>
         <PopoverPrimitive.Popup
           data-slot="popover-content"
-          className={cn(
+          className={mergeClassName(
+            className,
             selfFocusRingClass,
             overlayTimedPopupClass,
-            "text-sm flex w-72 flex-col gap-4 p-4",
-            className
+            "text-sm flex w-72 flex-col gap-4 p-4"
           )}
           {...props}>
           {children}
@@ -83,7 +84,7 @@ function PopoverTitle({ className, ...props }: ComponentProps<typeof PopoverPrim
   return (
     <PopoverPrimitive.Title
       data-slot="popover-title"
-      className={cn("font-medium text-balance", className)}
+      className={mergeClassName(className, "font-medium text-balance")}
       {...props}
     />
   );
@@ -96,7 +97,7 @@ function PopoverDescription({
   return (
     <PopoverPrimitive.Description
       data-slot="popover-description"
-      className={cn("text-pretty text-muted-foreground", className)}
+      className={mergeClassName(className, "text-pretty text-muted-foreground")}
       {...props}
     />
   );

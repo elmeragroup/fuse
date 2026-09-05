@@ -25,6 +25,8 @@
 
 ## 3 Props
 
+**State classes:** `Collapsible.Trigger` accepts either a string or a callback receiving the current Base UI part state. Callback results are merged after library classes with the same conflict resolution as strings. Other parts retain their declared contracts; see [conventions](conventions.md#api-conventions).
+
 Pure passthrough — every part forwards `ComponentProps` of its base-ui part verbatim, including `className` and `render` per conventions. The wrappers add only `data-slot` (§6).
 
 **Collapsible.Root**:

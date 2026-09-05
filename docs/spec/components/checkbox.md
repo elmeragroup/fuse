@@ -28,6 +28,8 @@
 
 ## 3 Props
 
+**State classes:** `Checkbox` accepts either a string or a callback receiving the current Base UI part state. Callback results are merged after library classes with the same conflict resolution as strings. Other parts retain their declared contracts; see [conventions](conventions.md#api-conventions).
+
 **Checkbox** — `ComponentProps<CheckboxPrimitive.Root>` pass-through plus `className` (merged via `cn`). Primitive naming (`disabled`, `readOnly`, `value`, `checked`, `indeterminate`, `parent`, `required`, `name`). No extra props; the indicator is internal (Minus when `state.indeterminate`, Check otherwise, via the Indicator `render` callback).
 
 **CheckboxGroup** (`CheckboxGroupProps`)

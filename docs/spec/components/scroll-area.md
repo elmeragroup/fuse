@@ -26,6 +26,8 @@
 
 ## 3 Props
 
+**State classes:** `ScrollArea.Root`, `ScrollArea.Bar` accept either a string or a callback receiving the current Base UI part state. Callback results are merged after library classes with the same conflict resolution as strings. Other parts retain their declared contracts; see [conventions](conventions.md#api-conventions).
+
 ### ScrollArea.Root
 
 `ComponentProps<typeof ScrollAreaPrimitive.Root> & { orientation?; type? }`.

@@ -9,6 +9,7 @@ import type { VariantProps } from "tailwind-variants";
 
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { cn } from "../../styles/cn";
+import { mergeClassName } from "../../styles/merge-class-name";
 import { selfFocusRingClass } from "../../styles/utils";
 import { overlayCloseStrings } from "../overlay/intl";
 import {
@@ -85,7 +86,7 @@ function SheetTrigger({ className, ...props }: ComponentProps<typeof SheetPrimit
   return (
     <SheetPrimitive.Trigger
       data-slot="sheet-trigger"
-      className={cn(selfFocusRingClass, className)}
+      className={mergeClassName(className, selfFocusRingClass)}
       {...props}
     />
   );
@@ -93,7 +94,11 @@ function SheetTrigger({ className, ...props }: ComponentProps<typeof SheetPrimit
 
 function SheetClose({ className, ...props }: ComponentProps<typeof SheetPrimitive.Close>): ReactElement {
   return (
-    <SheetPrimitive.Close data-slot="sheet-close" className={cn(selfFocusRingClass, className)} {...props} />
+    <SheetPrimitive.Close
+      data-slot="sheet-close"
+      className={mergeClassName(className, selfFocusRingClass)}
+      {...props}
+    />
   );
 }
 
@@ -105,11 +110,11 @@ function SheetOverlay({ className, ...props }: ComponentProps<typeof SheetPrimit
   return (
     <SheetPrimitive.Backdrop
       data-slot="sheet-overlay"
-      className={cn(
+      className={mergeClassName(
+        className,
         overlayScrimClass,
         "fixed inset-0 transition-opacity duration-150 data-ending-style:opacity-0 data-starting-style:opacity-0 data-swiping:transition-none",
-        overlayLayer,
-        className
+        overlayLayer
       )}
       {...props}
     />
@@ -155,7 +160,7 @@ function SheetContent({
         <SheetPrimitive.Popup
           data-slot="sheet-content"
           data-side={side}
-          className={cn(sheetContentVariants({ size }), className)}
+          className={mergeClassName(className, sheetContentVariants({ size }))}
           {...props}>
           <SheetPrimitive.Content
             data-slot="sheet-content-inner"
@@ -197,7 +202,7 @@ function SheetTitle({ className, ...props }: ComponentProps<typeof SheetPrimitiv
   return (
     <SheetPrimitive.Title
       data-slot="sheet-title"
-      className={cn("text-xl font-medium font-heading text-balance text-foreground", className)}
+      className={mergeClassName(className, "text-xl font-medium font-heading text-balance text-foreground")}
       {...props}
     />
   );
@@ -210,7 +215,7 @@ function SheetDescription({
   return (
     <SheetPrimitive.Description
       data-slot="sheet-description"
-      className={cn("text-base text-pretty text-muted-foreground", className)}
+      className={mergeClassName(className, "text-base text-pretty text-muted-foreground")}
       {...props}
     />
   );

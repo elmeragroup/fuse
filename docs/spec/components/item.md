@@ -47,6 +47,8 @@ import { Lightning } from "@elmeragroup/ui/icons";
 
 ## 3 Props
 
+**State classes:** `Item.Separator` accepts either a string or a callback receiving the current Base UI part state. Callback results are merged after library classes with the same conflict resolution as strings. Other parts retain their declared contracts; see [conventions](conventions.md#api-conventions).
+
 | Part             | Prop               | Type                                 | Default     | Notes                                                             |
 | ---------------- | ------------------ | ------------------------------------ | ----------- | ----------------------------------------------------------------- |
 | `Item.Root`      | `variant`          | `"default" \| "outline" \| "muted"`  | `"default"` | tv axis, also emitted as state                                    |

@@ -15,6 +15,7 @@ import { Check } from "../../icons/generated/check";
 import { X } from "../../icons/generated/x";
 import { isTextValueNode } from "../../internal/is-text-node";
 import { cn } from "../../styles/cn";
+import { mergeClassName } from "../../styles/merge-class-name";
 import { withinFocusRingClass, withinFocusRingControlClass } from "../../styles/utils";
 import { useElmeraGroupUi } from "../../theme/elmera-group-ui";
 import { Button } from "../button/button";
@@ -74,7 +75,7 @@ function ComboboxTrigger({
   return (
     <ComboboxPrimitive.Trigger
       data-slot="combobox-trigger"
-      className={cn("[&_svg:not([class*='size-'])]:size-4", className)}
+      className={mergeClassName(className, "[&_svg:not([class*='size-'])]:size-4")}
       {...props}>
       {children}
       <CaretDown className="ease-in-out pointer-events-none size-4 text-muted-foreground transition-transform duration-200 in-data-popup-open:rotate-180" />
@@ -97,7 +98,7 @@ function ComboboxClear({ className, label, ...props }: ComboboxClearProps): Reac
       data-slot="combobox-clear"
       render={<InputGroup.Button variant="ghost" size="icon-sm" aria-label={accessibleName} />}
       aria-label={accessibleName}
-      className={cn(className)}
+      className={mergeClassName(className)}
       {...props}>
       <X className="pointer-events-none" />
     </ComboboxPrimitive.Clear>
@@ -202,10 +203,10 @@ function ComboboxContent({
         <ComboboxPrimitive.Popup
           data-slot="combobox-content"
           data-external-anchor={anchor ? "true" : "false"}
-          className={cn(
+          className={mergeClassName(
+            className,
             overlayTimedPopupClass,
-            "group/combobox-content relative max-h-(--available-height) w-(--anchor-width) max-w-(--available-width) min-w-[calc(var(--anchor-width)+--spacing(7))] overflow-hidden data-[external-anchor=true]:min-w-(--anchor-width) *:data-[slot=input-group]:m-1 *:data-[slot=input-group]:mb-0 *:data-[slot=input-group]:h-(--control-h-sm) *:data-[slot=input-group]:border-input/30 *:data-[slot=input-group]:bg-input/30 *:data-[slot=input-group]:shadow-none",
-            className
+            "group/combobox-content relative max-h-(--available-height) w-(--anchor-width) max-w-(--available-width) min-w-[calc(var(--anchor-width)+--spacing(7))] overflow-hidden data-[external-anchor=true]:min-w-(--anchor-width) *:data-[slot=input-group]:m-1 *:data-[slot=input-group]:mb-0 *:data-[slot=input-group]:h-(--control-h-sm) *:data-[slot=input-group]:border-input/30 *:data-[slot=input-group]:bg-input/30 *:data-[slot=input-group]:shadow-none"
           )}
           {...props}
         />
@@ -218,9 +219,9 @@ function ComboboxList({ className, ...props }: ComponentProps<typeof ComboboxPri
   return (
     <ComboboxPrimitive.List
       data-slot="combobox-list"
-      className={cn(
-        "no-scrollbar max-h-[min(calc(--spacing(72)---spacing(9)),calc(var(--available-height)---spacing(9)))] scroll-py-1 overflow-y-auto overscroll-contain p-1 data-empty:p-0",
-        className
+      className={mergeClassName(
+        className,
+        "no-scrollbar max-h-[min(calc(--spacing(72)---spacing(9)),calc(var(--available-height)---spacing(9)))] scroll-py-1 overflow-y-auto overscroll-contain p-1 data-empty:p-0"
       )}
       {...props}
     />
@@ -236,11 +237,11 @@ function ComboboxItem({
     <ComboboxPrimitive.Item
       data-slot="combobox-item"
       // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- combobox.md §6: option padding is menu layout, not a control rung
-      className={cn(
+      className={mergeClassName(
+        className,
         menuItemClass,
         // oxlint-disable-next-line elmera/no-local-focus-ring -- combobox.md §7: the highlight face menuItemClass leaves to the family; base-ui spells it `data-highlighted:` on listbox options
-        "w-full pr-8 pl-2 data-highlighted:bg-accent data-highlighted:text-accent-foreground data-highlighted:**:text-accent-foreground",
-        className
+        "w-full pr-8 pl-2 data-highlighted:bg-accent data-highlighted:text-accent-foreground data-highlighted:**:text-accent-foreground"
       )}
       {...props}>
       {children}
@@ -255,7 +256,9 @@ function ComboboxGroup({
   className,
   ...props
 }: ComponentProps<typeof ComboboxPrimitive.Group>): ReactElement {
-  return <ComboboxPrimitive.Group data-slot="combobox-group" className={cn(className)} {...props} />;
+  return (
+    <ComboboxPrimitive.Group data-slot="combobox-group" className={mergeClassName(className)} {...props} />
+  );
 }
 
 function ComboboxLabel({
@@ -265,7 +268,7 @@ function ComboboxLabel({
   return (
     <ComboboxPrimitive.GroupLabel
       data-slot="combobox-label"
-      className={cn(menuGroupLabelClass, className)}
+      className={mergeClassName(className, menuGroupLabelClass)}
       {...props}
     />
   );
@@ -284,9 +287,9 @@ function ComboboxEmpty({
   return (
     <ComboboxPrimitive.Empty
       data-slot="combobox-empty"
-      className={cn(
-        "text-sm hidden w-full justify-center py-2 text-center text-muted-foreground group-data-empty/combobox-content:flex",
-        className
+      className={mergeClassName(
+        className,
+        "text-sm hidden w-full justify-center py-2 text-center text-muted-foreground group-data-empty/combobox-content:flex"
       )}
       {...props}>
       {children ?? strings.format("empty")}
@@ -301,7 +304,7 @@ function ComboboxSeparator({
   return (
     <ComboboxPrimitive.Separator
       data-slot="combobox-separator"
-      className={cn(menuSeparatorClass, className)}
+      className={mergeClassName(className, menuSeparatorClass)}
       {...props}
     />
   );
@@ -317,10 +320,10 @@ function ComboboxChips({
       <ComboboxPrimitive.Chips
         data-slot="combobox-chips"
         // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- combobox.md §6: chip wrap gap and compact chip padding are layout, not a control rung
-        className={cn(
+        className={mergeClassName(
+          className,
           "text-sm shadow-xs flex min-h-(--control-h-md) flex-wrap items-center gap-1.5 rounded-md border border-input bg-transparent bg-clip-padding px-(--control-px-md) py-1.5 transition-[color,box-shadow] has-aria-invalid:border-error has-aria-invalid:ring-3 has-aria-invalid:ring-error/20 has-data-[slot=combobox-chip]:px-1.5",
-          withinFocusRingClass,
-          className
+          withinFocusRingClass
         )}
         {...props}
       />
@@ -383,9 +386,9 @@ function ComboboxChip({
       ref={mergedRef}
       data-slot="combobox-chip"
       // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- combobox.md §6: chip chrome is compact token, not a control rung
-      className={cn(
-        "text-xs font-medium flex h-[calc(--spacing(5.5))] w-fit items-center justify-center gap-1 rounded-sm bg-muted px-1.5 whitespace-nowrap text-foreground has-disabled:pointer-events-none has-disabled:cursor-not-allowed has-disabled:opacity-50 has-data-[slot=combobox-chip-remove]:pr-0",
-        className
+      className={mergeClassName(
+        className,
+        "text-xs font-medium flex h-[calc(--spacing(5.5))] w-fit items-center justify-center gap-1 rounded-sm bg-muted px-1.5 whitespace-nowrap text-foreground has-disabled:pointer-events-none has-disabled:cursor-not-allowed has-disabled:opacity-50 has-data-[slot=combobox-chip-remove]:pr-0"
       )}
       {...props}>
       {children}
@@ -440,7 +443,7 @@ function ComboboxChipsInput({
       data-slot="combobox-chip-input"
       data-focus-ring-control=""
       // oxlint-disable-next-line elmera/no-local-focus-ring -- combobox.md §7 / input-group.md §8: within-adapter control outline
-      className={cn("min-w-16 flex-1 outline-none", withinFocusRingControlClass, className)}
+      className={mergeClassName(className, "min-w-16 flex-1 outline-none", withinFocusRingControlClass)}
       {...props}
     />
   );

@@ -7,6 +7,7 @@ import { useRender } from "@base-ui/react/use-render";
 import type { VariantProps } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
+import { mergeClassName } from "../../styles/merge-class-name";
 import { Separator } from "../separator/separator";
 import { buttonGroupVariants } from "./button-group-variants";
 
@@ -58,9 +59,9 @@ function ButtonGroupSeparator({
     <Separator
       data-slot="button-group-separator"
       orientation={orientation}
-      className={cn(
-        "relative self-stretch bg-input data-horizontal:mx-px data-horizontal:w-auto data-vertical:my-px data-vertical:h-auto",
-        className
+      className={mergeClassName(
+        className,
+        "relative self-stretch bg-input data-horizontal:mx-px data-horizontal:w-auto data-vertical:my-px data-vertical:h-auto"
       )}
       {...props}
     />

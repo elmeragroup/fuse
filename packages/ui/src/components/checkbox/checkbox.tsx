@@ -9,6 +9,7 @@ import { Check } from "../../icons/generated/check";
 import { Minus } from "../../icons/generated/minus";
 import { isTextNode } from "../../internal/is-text-node";
 import { cn } from "../../styles/cn";
+import { mergeClassName } from "../../styles/merge-class-name";
 import { selfFocusRingClass } from "../../styles/utils";
 import { FieldFrame } from "../field/field-frame";
 import { SelectionGroupLayout, SelectionItem, SelectionItemGroup } from "../selection-item/selection-item";
@@ -27,11 +28,11 @@ export function Checkbox({
   return (
     <CheckboxPrimitive.Root
       data-slot="checkbox"
-      className={cn(
+      className={mergeClassName(
+        className,
         // oxlint-disable-next-line elmera/no-local-focus-ring -- checkbox.md §7: native outline off; ring comes from the shared adapter
         "peer shadow-xs ease-out relative flex size-4 max-w-4 shrink-0 items-center justify-center rounded-[min(var(--radius-md),4px)] border border-input bg-card transition-[color,background-color,border-color,box-shadow] duration-150 outline-none after:absolute after:-inset-x-3 after:-inset-y-2 after:content-[''] disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-error aria-invalid:ring-3 aria-invalid:ring-error/20 aria-invalid:aria-checked:border-primary data-indeterminate:border-primary data-indeterminate:bg-primary data-indeterminate:text-primary-foreground data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground",
-        selfFocusRingClass,
-        className
+        selfFocusRingClass
       )}
       {...props}>
       <CheckboxPrimitive.Indicator

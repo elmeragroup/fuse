@@ -20,6 +20,8 @@ Children opt into the group's corner/border collapsing by emitting `data-slot` (
 
 ## 3. Props
 
+**State classes:** `ButtonGroup.Separator` accepts either a string or a callback receiving the current Base UI part state. Callback results are merged after library classes with the same conflict resolution as strings. Other parts retain their declared contracts; see [conventions](conventions.md#api-conventions).
+
 **`ButtonGroup.Root`** — `ComponentProps<"div"> & VariantProps<typeof buttonGroupVariants>`
 
 | Prop          | Type                         | Default        | Notes                                                                                                             |

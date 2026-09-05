@@ -7,6 +7,7 @@ import { Menu as MenuPrimitive } from "@base-ui/react/menu";
 import { CaretRight } from "../../icons/generated/caret-right";
 import { Check } from "../../icons/generated/check";
 import { cn } from "../../styles/cn";
+import { mergeClassName } from "../../styles/merge-class-name";
 import { selfFocusRingClass } from "../../styles/utils";
 import {
   menuGroupLabelClass,
@@ -61,7 +62,7 @@ function DropdownMenuPopup({
         sideOffset={sideOffset}>
         <MenuPrimitive.Popup
           data-slot={dataSlot}
-          className={cn(overlayTimedPopupClass, popupClassName, className)}
+          className={mergeClassName(className, overlayTimedPopupClass, popupClassName)}
           {...props}
         />
       </MenuPrimitive.Positioner>
@@ -80,7 +81,7 @@ function DropdownMenuTrigger({
   return (
     <MenuPrimitive.Trigger
       data-slot="dropdown-menu-trigger"
-      className={cn(selfFocusRingClass, className)}
+      className={mergeClassName(className, selfFocusRingClass)}
       {...props}
     />
   );
@@ -134,7 +135,7 @@ function DropdownMenuLabel({ className, inset, ...props }: DropdownMenuLabelProp
     <MenuPrimitive.GroupLabel
       data-slot="dropdown-menu-label"
       data-inset={inset ? true : undefined}
-      className={cn(menuGroupLabelClass, "font-medium data-inset:pl-8", className)}
+      className={mergeClassName(className, menuGroupLabelClass, "font-medium data-inset:pl-8")}
       {...props}
     />
   );
@@ -164,7 +165,7 @@ function DropdownMenuItem({
       data-slot="dropdown-menu-item"
       data-inset={inset ? true : undefined}
       data-variant={variant}
-      className={cn(dropdownMenuItemClassName, className)}
+      className={mergeClassName(className, dropdownMenuItemClassName)}
       {...props}
     />
   );
@@ -177,7 +178,7 @@ function DropdownMenuLinkItem({
   return (
     <MenuPrimitive.LinkItem
       data-slot="dropdown-menu-link-item"
-      className={cn(dropdownMenuItemClassName, className)}
+      className={mergeClassName(className, dropdownMenuItemClassName)}
       {...props}
     />
   );
@@ -201,7 +202,7 @@ function DropdownMenuCheckboxItem({
     <MenuPrimitive.CheckboxItem
       data-slot="dropdown-menu-checkbox-item"
       data-inset={inset ? true : undefined}
-      className={cn(dropdownMenuItemClassName, "pr-8", className)}
+      className={mergeClassName(className, dropdownMenuItemClassName, "pr-8")}
       checked={checked}
       {...props}>
       <span className={menuItemIndicatorClass} data-slot="dropdown-menu-checkbox-item-indicator">
@@ -235,7 +236,7 @@ function DropdownMenuRadioItem({
     <MenuPrimitive.RadioItem
       data-slot="dropdown-menu-radio-item"
       data-inset={inset ? true : undefined}
-      className={cn(dropdownMenuItemClassName, "pr-8", className)}
+      className={mergeClassName(className, dropdownMenuItemClassName, "pr-8")}
       {...props}>
       <span className={menuItemIndicatorClass} data-slot="dropdown-menu-radio-item-indicator">
         <MenuPrimitive.RadioItemIndicator>
@@ -254,7 +255,7 @@ function DropdownMenuSeparator({
   return (
     <MenuPrimitive.Separator
       data-slot="dropdown-menu-separator"
-      className={cn(menuSeparatorClass, className)}
+      className={mergeClassName(className, menuSeparatorClass)}
       {...props}
     />
   );
@@ -294,10 +295,10 @@ function DropdownMenuSubTrigger({
     <MenuPrimitive.SubmenuTrigger
       data-slot="dropdown-menu-sub-trigger"
       data-inset={inset ? true : undefined}
-      className={cn(
+      className={mergeClassName(
+        className,
         dropdownMenuItemClassName,
-        "data-popup-open:bg-accent data-popup-open:text-accent-foreground data-open:bg-accent data-open:text-accent-foreground",
-        className
+        "data-popup-open:bg-accent data-popup-open:text-accent-foreground data-open:bg-accent data-open:text-accent-foreground"
       )}
       {...props}>
       {children}

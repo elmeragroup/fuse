@@ -32,6 +32,8 @@ The internal `Portal`, `Positioner`, `Popup` and `Arrow` parts are not exported 
 
 ## 3 Props
 
+**State classes:** `Tooltip.Trigger`, `Tooltip.Content` accept either a string or a callback receiving the current Base UI part state. Callback results are merged after library classes with the same conflict resolution as strings. Other parts retain their declared contracts; see [conventions](conventions.md#api-conventions).
+
 All rendering parts take `className` (merged via `cn`) and forward the rest of their base-ui part's props (incl. `render` per conventions).
 
 **Tooltip.Provider** — `ComponentProps<TooltipPrimitive.Provider>` with one changed default:
@@ -82,7 +84,7 @@ No component-specific `tv` recipe and no variant axes — the single inverted st
 
 ## 7 Accessibility
 
-- The trigger's `aria-describedby` is **wired by this component, not by base-ui**: `Tooltip.Root` mints one `useId` per tooltip and publishes it on a package-private context; `Tooltip.Trigger` reads it as `aria-describedby` and `Tooltip.Content` stamps the same value as the popup's `id` plus an explicit `role="tooltip"` (§8.9). Base-ui 1.6.0 wires neither, so removing either half silently drops the description. The popup content is descriptive only (never put interactive controls in a tooltip).
+- The trigger's `aria-describedby` combines caller description tokens with the actual mounted popup id. `Tooltip.Content` accepts a custom `id`; otherwise Root supplies a stable generated id. The popup registers its committed DOM id, including a custom `render` element id, and unregisters on unmount. Closing removes the tooltip token once its exit animation unmounts the popup; caller tokens remain. Each Root owns its own relationship. The popup explicitly sets `role="tooltip"` and remains descriptive only (never put interactive controls in it).
 - Opens on pointer hover (after the effective provider `delay`) and on keyboard focus of the trigger (focus-open is instant); closes on hover/focus leaving, and immediately on Escape.
 - Grouping: within one `Tooltip.Provider`, moving between triggers inside the skip-delay window opens the next tooltip without re-waiting the delay.
 - The tooltip never receives focus; `hoverable` (base-ui default) keeps it open while the pointer is over the popup.
@@ -98,7 +100,7 @@ No component-specific `tv` recipe and no variant axes — the single inverted st
 6. **Arrow show-behavior deliberately not unified with Popover**: Tooltip keeps its _always-rendered_ `bg-foreground fill-foreground` token-inverted arrow (already token-clean in the ref); Popover keeps opt-in `showArrow` default `false`. Documented as an intentional family difference, not a divergence to fix.
 7. **`z-50` deduped**: the ref sets `isolate z-50` on the Positioner _and_ `z-50` on the Popup (plus `z-50` on the Arrow, which becomes redundant): kept once on the outermost layer (Positioner) per the flat z-strategy — every overlay gets exactly one `z-50` at its outermost portalled element.
 8. **Focus unified:** Trigger composes the canonical self-focus adapter, including when rendered without a Button target.
-9. **`aria-describedby` and `role="tooltip"` are hand-rolled** (2026-09-03): §2 called Trigger a bare re-export and §7 credited base-ui with the description wiring. Base-ui 1.6.0 does neither, so Root mints a `useId`, a private context carries it, Trigger sets `aria-describedby` and Popup sets the matching `id` and `role="tooltip"`. Kept as compensation for the primitive; the three halves are one mechanism and are locked by the §9 name/description test.
+9. **Description identity is owned by the wrapper**: Base UI does not supply the complete tooltip description relationship. Root supplies a fallback id, Content registers its mounted DOM id, and Trigger merges it with caller description tokens. Custom ids and rerenders follow the same path as generated ids.
 10. **Shared overlay spine adopted, minus the surface and the timing rung**: `Tooltip.Content` composes `OverlayPortal` (theming.md §7.4), `OverlayContainerProps`, `OverlayPositionerProps`, `overlayPositionerClass`, `overlayPopupMotionClass` and `selfFocusRingClass`. Motion is the overlay popup recipe's `motion` slot; fill and edge stay separate slots and are **not** folded into a surface slot Tooltip would then have to negate. It is deliberately **not** a consumer of the composed popup surface: it inverts the fill and flies frameless (the "Kept faithfully" line below: no shadow/ring, tooltips fly frameless), and it could not subtract the surface's ring afterwards — tailwind-merge treats ring width and ring colour as separate conflict groups, so `ring-0` would leave `ring-foreground/10` live and change the rendered set. It also takes the motion set **untimed**, without the shared `duration-100` rung the other popup families pair with it (§6). It takes the shared positioner block whole and redeclares only `side`, whose description notes that tooltips open upward; published defaults come from destructuring (popover.md §8.7). The rendered class set, prop names, documented defaults, and DOM are unchanged. _(Amended 2026-09-04.)_
 
 Kept faithfully: Provider `delay` default `0`; inverted `bg-foreground text-background` pill with `text-xs max-w-xs px-3 py-1.5`; the full arrow placement class set incl. `rounded-[2px]` and `translate-y-[calc(-50%-2px)]`; no shadow/ring on the popup (tooltips fly frameless); `side="top"` default.
@@ -109,7 +111,7 @@ Role/label-based queries throughout; keyboard flows per §7:
 
 - Hover open: hovering the trigger shows `getByRole("tooltip")` after the effective delay (default `0` → immediate); unhover hides it.
 - Focus open: keyboard-focusing the trigger opens instantly; blur closes; Escape while open closes immediately.
-- `aria-describedby`: while open, the trigger's accessible description equals the tooltip text.
+- `aria-describedby`: verify custom/generated ids, multiple instances, id rerenders, open/close/reopen and preserved caller tokens against accessible descriptions.
 - Provider grouping: two tooltips under one Provider — after opening the first, moving to the second opens without delay (skip-delay window).
 - Per-tooltip `delay`: a Root with `delay={500}` does not open before the delay elapses and does not inherit the outer Provider's skip-delay state (scoped-provider consequence, §8.5).
 - Positioner forwarding: `side`/`align` overrides surface as `data-side` on the popup; default is `data-side="top"`.

@@ -20,6 +20,8 @@ Every component spec has exactly ten sections: **1 Header** (canonical name, can
 - **Separate recipe vs slot-variant.** A part-local type-scale (or similar) ladder is its own `tv` recipe with a `size` axis, not a slot-variant on a shared slotted recipe whose slot already receives classes from another axis — twMerge would pick a winner. Card is the model: `cardTitleVariants` / `cardDescriptionVariants` sit beside `cardVariants`; the size class is merged first so `direction="horizontal"`'s `cardTitle: "text-xl"` still wins or loses the same way. _(Added 2026-09-04.)_
 - `aria-*` booleans use the `x || undefined` idiom (never `"false"`); conditional-spread objects guard against base-ui `mergeProps` clobbering auto-wired aria with `undefined`.
 
+**`className` contracts:** Parts that inherit a Base UI state callback evaluate it with the current primitive state and merge its result after required library classes using `mergeClassName`. String values use the same merge order. DOM-only parts and explicitly narrowed APIs (including `Combobox.Input`, `Button`, and `Toggle`) remain string-only; do not broaden them merely to match a neighboring primitive. Never pass a callback to `cn`, which accepts class values rather than state functions.
+
 ## Styling conventions
 
 - **Tokens only** — the `no-primitive-colors` lint rule forbids raw palette classes in library source. Canonical status names are `error/info/success/warning` (+`-soft`); `destructive` classes are consumer-compat aliases and never appear in library source.

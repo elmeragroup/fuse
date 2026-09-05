@@ -50,6 +50,8 @@
 
 ## 3 Props
 
+**State classes:** `Combobox.Trigger`, `Combobox.Clear`, `Combobox.Content`, `Combobox.List`, `Combobox.Item`, `Combobox.Group`, `Combobox.Label`, `Combobox.Empty`, `Combobox.Separator`, `Combobox.Chips`, `Combobox.Chip`, `Combobox.ChipsInput` accept either a string or a callback receiving the current Base UI part state. Callback results are merged after library classes with the same conflict resolution as strings. Other parts retain their declared contracts; see [conventions](conventions.md#api-conventions).
+
 All rendering parts take `className` (merged via `cn`) and forward the rest of their base-ui part's props. Primitive-tier naming per conventions.
 
 **Combobox.Root** — `Omit<ComponentProps<ComboboxPrimitive.Root>, "locale">` (`items`, `value`/`defaultValue`/`onValueChange`, `inputValue`/`defaultInputValue`/`onInputValueChange`, `multiple`, `filter`, `openOnInputClick`, `autoHighlight`, `disabled`, `readOnly`, `required`, `name`, …). It reads the required provider locale and forwards it to base-ui; components do not accept an independent locale.
