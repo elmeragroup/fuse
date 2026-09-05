@@ -11,7 +11,14 @@
       "inputs": ["$TURBO_DEFAULT$", "tooling/oxlint-plugin/**", "tooling/oxlint-anti-slop/**"]
     },
     "//#test:repo-policy": {
-      "inputs": ["test/**", ".github/workflows/**", "package.json", ".oxlintrc.json", "turbo.json"]
+      "inputs": [
+        "test/**",
+        ".github/workflows/**",
+        "package.json",
+        ".oxlintrc.json",
+        "turbo.json",
+        "tooling/api-extractor/package.json"
+      ]
     },
     "build": {
       "dependsOn": ["^build"],
@@ -58,6 +65,9 @@
     // script has nothing left to run: `@elmeragroup/ui` defines it as a self-describing no-op
     // that exists only so `turbo run ci:checks` fans out to this dependency list. Only
     // `@elmeragroup/api-extractor` has private gates of its own to run under the leaf.
+    "@elmeragroup/api-extractor#ci:checks": {
+      "dependsOn": ["build", "test", "type-check"]
+    },
     "ci:checks": {
       "dependsOn": [
         "//#lint",

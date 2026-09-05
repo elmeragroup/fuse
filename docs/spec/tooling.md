@@ -216,6 +216,8 @@ They are **not** the first-paint proofs. `apps/docs` verifies the Next App Route
 
 ### 7.6 Repo-policy tests
 
+The actual non-browser merge command is dry-run through Turbo in a durable repo-policy test. Its graph must include the extractor private `ci:checks` leaf and its build dependency, retain the existing extractor unit task, and exclude browser/packed-consumer tasks. The private leaf runs all seven package-owned gates: catalog, boundary, complete fixture typechecks, fresh conformance, and the issue02, issue14 and external-selection live timing plans. Its package-specific Turbo definition depends on its build, unit tests and type-check, retaining local aggregate coverage while avoiding the generic aggregate's browser fan-out.
+
 Merge-workflow shape and workspace lint-script contracts live in the root `test/` vitest project (`pnpm test:repo-policy`), not inside `@elmeragroup/oxlint-plugin`. `ci:checks` runs them as `//#test:repo-policy`. _(amended 2026-09-02)_
 
 ## 8 CI gates
