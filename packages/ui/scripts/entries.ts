@@ -6,8 +6,10 @@ import { requireFlagsDirectory } from "./flag-assets.ts";
 import { parseFacadeValueExports } from "./parse-facade.ts";
 import { packageRootFromScript, toPosix } from "./paths.ts";
 
-/** Appendix A — 24 shipped bare component entries plus 1 deferred (`chart`). */
+/** Appendix A — 33 shipped bare component entries plus 1 deferred (`chart`). */
 export const BARE_COMPONENT_ENTRIES = [
+  "alert",
+  "alert-dialog",
   "avatar",
   "badge",
   "button",
@@ -15,6 +17,8 @@ export const BARE_COMPONENT_ENTRIES = [
   "chart",
   "code",
   "description-list",
+  "dialog",
+  "dropdown-menu",
   "emoji",
   "empty",
   "field",
@@ -24,8 +28,11 @@ export const BARE_COMPONENT_ENTRIES = [
   "input-group",
   "item",
   "loader",
+  "popover",
+  "popover-info-button",
   "scroll-area",
   "separator",
+  "sheet",
   "show",
   "skeleton",
   "span",
@@ -33,6 +40,8 @@ export const BARE_COMPONENT_ENTRIES = [
   "text",
   "textarea",
   "timeline-list",
+  "toast",
+  "tooltip",
 ] as const;
 
 /**

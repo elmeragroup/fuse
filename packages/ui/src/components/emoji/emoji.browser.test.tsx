@@ -40,7 +40,7 @@ describe("Emoji", () => {
   });
 
   it("is decorative by default and is not found by role=img", () => {
-    renderThemed(<Emoji.SlightlySmilingFace className="size-6" />);
+    renderThemed(<Emoji.SlightlySmilingFace className="size-5" />);
     const svg = slotSvg();
     expect(svg.getAttribute("aria-hidden")).toBe("true");
     expect(svg.getAttribute("focusable")).toBe("false");
@@ -68,8 +68,8 @@ describe("Emoji", () => {
   });
 
   it("lands className on the svg", () => {
-    renderThemed(<Emoji.SlightlyFrowningFace className="size-6" />);
-    expect(px(getComputedStyle(slotSvg()).width)).toBe(24);
-    expect(px(getComputedStyle(slotSvg()).height)).toBe(24);
+    renderThemed(<Emoji.SlightlyFrowningFace className="size-5" />);
+    expect(px(getComputedStyle(slotSvg()).width)).toBe(20);
+    expect(px(getComputedStyle(slotSvg()).height)).toBe(20);
   });
 });

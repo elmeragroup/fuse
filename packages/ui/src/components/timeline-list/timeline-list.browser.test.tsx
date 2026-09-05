@@ -103,8 +103,8 @@ describe("TimelineList", () => {
     const timeRef = createRef<HTMLTimeElement>();
     const descriptionRef = createRef<HTMLDivElement>();
     renderThemed(
-      <TimelineList.Root ref={rootRef} id="history" className="max-w-sm" data-track="orders">
-        <TimelineList.Item ref={itemRef} className="shadow-xs" data-step="1">
+      <TimelineList.Root ref={rootRef} id="history" className="max-w-md" data-track="orders">
+        <TimelineList.Item ref={itemRef} className="ring-1" data-step="1">
           <TimelineList.Title className="uppercase">Order placed</TimelineList.Title>
           <TimelineList.Time
             ref={timeRef}
@@ -124,7 +124,7 @@ describe("TimelineList", () => {
     expect(root.id).toBe("history");
     expect(root.getAttribute("data-track")).toBe("orders");
     expect(getComputedStyle(root).listStyleType).toBe("none");
-    expect(px(getComputedStyle(root).maxWidth)).toBe(384);
+    expect(px(getComputedStyle(root).maxWidth)).toBe(448);
 
     const item = listItems()[0];
     if (!(item instanceof HTMLElement)) {

@@ -35,12 +35,16 @@ describe("exports map", () => {
       "icons",
       "illustrations",
       "flags",
+      "alert",
+      "alert-dialog",
       "avatar",
       "badge",
       "button",
       "card",
       "code",
       "description-list",
+      "dialog",
+      "dropdown-menu",
       "emoji",
       "empty",
       "field",
@@ -50,8 +54,11 @@ describe("exports map", () => {
       "input-group",
       "item",
       "loader",
+      "popover",
+      "popover-info-button",
       "scroll-area",
       "separator",
+      "sheet",
       "show",
       "skeleton",
       "span",
@@ -59,13 +66,15 @@ describe("exports map", () => {
       "text",
       "textarea",
       "timeline-list",
+      "toast",
+      "tooltip",
     ]);
     expect(unexpectedJsEntryFiles(packageRoot)).toEqual([]);
   });
 
   it("asserts the deferred list and the shipped bare-component count separately", () => {
     expect(DEFERRED_ENTRIES).toEqual(["chart"]);
-    expect(BARE_COMPONENT_ENTRIES).toHaveLength(25);
+    expect(BARE_COMPONENT_ENTRIES).toHaveLength(34);
     const shippedBare = discovered.jsEntries.filter(
       (entry) => entry.inRootBarrel && entry.subpath !== "." && entry.subpath !== "theme"
     );
@@ -350,10 +359,52 @@ describe("exports map", () => {
     expect(heading?.runtimeExports).toEqual(["Heading", "headingVariants"]);
   });
 
+  it("publishes Popover from /popover and the root barrel", () => {
+    const popover = discovered.jsEntries.find((entry) => entry.subpath === "popover");
+    expect(popover?.inRootBarrel).toBe(true);
+    expect(popover?.runtimeExports).toEqual(["Popover"]);
+  });
+
+  it("publishes PopoverInfoButton from /popover-info-button and the root barrel", () => {
+    const popoverInfoButton = discovered.jsEntries.find((entry) => entry.subpath === "popover-info-button");
+    expect(popoverInfoButton?.inRootBarrel).toBe(true);
+    expect(popoverInfoButton?.runtimeExports).toEqual(["PopoverInfoButton"]);
+  });
+
+  it("publishes AlertDialog from /alert-dialog and the root barrel", () => {
+    const alertDialog = discovered.jsEntries.find((entry) => entry.subpath === "alert-dialog");
+    expect(alertDialog?.inRootBarrel).toBe(true);
+    expect(alertDialog?.runtimeExports).toEqual(["AlertDialog"]);
+  });
+
+  it("publishes DropdownMenu from /dropdown-menu and the root barrel", () => {
+    const dropdownMenu = discovered.jsEntries.find((entry) => entry.subpath === "dropdown-menu");
+    expect(dropdownMenu?.inRootBarrel).toBe(true);
+    expect(dropdownMenu?.runtimeExports).toEqual(["DropdownMenu"]);
+  });
+
   it("publishes Table and VerticalTable from /table and the root barrel", () => {
     const table = discovered.jsEntries.find((entry) => entry.subpath === "table");
     expect(table?.inRootBarrel).toBe(true);
     expect(table?.runtimeExports).toEqual(["Table", "VerticalTable"]);
+  });
+
+  it("publishes Toast from /toast and the root barrel", () => {
+    const toast = discovered.jsEntries.find((entry) => entry.subpath === "toast");
+    expect(toast?.inRootBarrel).toBe(true);
+    expect(toast?.runtimeExports).toEqual(["Toast"]);
+  });
+
+  it("publishes Sheet from /sheet and the root barrel", () => {
+    const sheet = discovered.jsEntries.find((entry) => entry.subpath === "sheet");
+    expect(sheet?.inRootBarrel).toBe(true);
+    expect(sheet?.runtimeExports).toEqual(["Sheet"]);
+  });
+
+  it("publishes Tooltip from /tooltip and the root barrel", () => {
+    const tooltip = discovered.jsEntries.find((entry) => entry.subpath === "tooltip");
+    expect(tooltip?.inRootBarrel).toBe(true);
+    expect(tooltip?.runtimeExports).toEqual(["Tooltip"]);
   });
 
   it("publishes InputGroup from /input-group and the root barrel with private recipes", () => {
@@ -372,6 +423,12 @@ describe("exports map", () => {
     const span = discovered.jsEntries.find((entry) => entry.subpath === "span");
     expect(span?.inRootBarrel).toBe(true);
     expect(span?.runtimeExports).toEqual(["Span", "spanVariants"]);
+  });
+
+  it("publishes Alert from /alert and the root barrel", () => {
+    const alert = discovered.jsEntries.find((entry) => entry.subpath === "alert");
+    expect(alert?.inRootBarrel).toBe(true);
+    expect(alert?.runtimeExports).toEqual(["Alert"]);
   });
 
   it("keeps /icons as a subpath-only entry with the curated roster", () => {

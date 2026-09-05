@@ -230,7 +230,7 @@ describe("VerticalTable", () => {
 
   it("does not copy Body ids onto the inner table", () => {
     renderThemed(
-      <VerticalTable.Body id="facts" className="max-w-sm">
+      <VerticalTable.Body id="facts" className="max-w-md">
         <VerticalTable.Row>
           <VerticalTable.Key>Name</VerticalTable.Key>
           <VerticalTable.Value>Kari Nordmann</VerticalTable.Value>
@@ -240,11 +240,11 @@ describe("VerticalTable", () => {
     expect(document.body.querySelectorAll("#facts")).toHaveLength(1);
     const wrapper = document.getElementById("facts");
     expect(wrapper?.getAttribute("data-slot")).toBe("vertical-table");
-    expect(wrapper instanceof HTMLElement ? px(getComputedStyle(wrapper).maxWidth) : 0).toBe(384);
+    expect(wrapper instanceof HTMLElement ? px(getComputedStyle(wrapper).maxWidth) : 0).toBe(448);
     const table = htmlTable();
     expect(table.id).toBe("");
     expect(getComputedStyle(table).tableLayout).toBe("fixed");
-    expect(getComputedStyle(table).maxWidth).not.toBe("384px");
+    expect(getComputedStyle(table).maxWidth).not.toBe("448px");
   });
 
   it("names the table from Header via tableProps and exposes a Key row header", () => {
