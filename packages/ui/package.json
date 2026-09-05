@@ -316,7 +316,7 @@
     "size-limit": "node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/size-limit.ts",
     "test": "vitest run --project unit",
     "test:browser": "vitest run --project browser",
-    "test:packed-consumer": "node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/package-check-standalone.ts",
+    "test:packed-consumer": "node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/package-check-standalone.ts && node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/package-check-flags-consumer.ts",
     "test:types": "vitest --config vitest.types.config.ts --typecheck.only --run",
     "type-check": "tsc --noEmit"
   },
@@ -362,6 +362,7 @@
     "tailwindcss": "catalog:",
     "tsdown": "catalog:",
     "typescript": "catalog:",
+    "vite": "catalog:",
     "vitest": "catalog:"
   }
 }

@@ -130,7 +130,7 @@ export function writeFlagManifest(packageRoot: string): void {
 
   const codes = files.map((file) => file.slice(0, 2));
   const entries = codes
-    .map((code) => `  ${code}: new URL("./${code}.svg", import.meta.url).href,`)
+    .map((code) => `  ${code}: new URL("./${code}.svg?no-inline", import.meta.url).href,`)
     .join("\n");
 
   writeFileSync(

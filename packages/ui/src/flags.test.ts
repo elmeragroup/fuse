@@ -50,7 +50,7 @@ describe("flag assets", () => {
     // Source-grep: barrel absence has no consumer-behavior probe beyond discoverEntries.
     expect(readFileSync(join(packageRoot, "src/index.ts"), "utf8")).not.toContain("./flags");
     expect(readFileSync(join(packageRoot, "src/flags/manifest.ts"), "utf8")).toContain(
-      'new URL("./NO.svg", import.meta.url).href'
+      'new URL("./NO.svg?no-inline", import.meta.url).href'
     );
     expect(readFileSync(join(packageRoot, "src/flags/manifest.ts"), "utf8")).not.toMatch(/https?:\/\//);
   }, 30_000);

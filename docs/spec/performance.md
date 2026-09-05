@@ -92,7 +92,7 @@ Normative chapter for `@elmeragroup/ui`. Sources: A11y & performance guideline c
   | `themes.css`                   |         2274 |        3424 |
   | `styles.css`                   |        22995 |       24575 |
 
-  Flag SVGs (`flags/*.svg`) are a raw-byte asset ceiling, not a gzip JS/CSS row: **819200** bytes (800 KiB) aggregate, 249 two-letter files totalling 765,286 bytes at the pinned snapshot. Individual SVGs legitimately exceed 5 kB; count + hashes + aggregate size are the gates. The manifest module counts within `phone-number-field`.
+  Flag SVGs (`flags/*.svg`) are a raw-byte asset ceiling, not a gzip JS/CSS row: **819200** bytes (800 KiB) aggregate, 249 two-letter files totalling 765,286 bytes at the pinned snapshot. Individual SVGs legitimately exceed 5 kB; count + hashes + aggregate size are the gates. The manifest module counts within `phone-number-field`. A separate packed Vite production check also measures transformed consumer JavaScript: the dynamic flags-only consumer must stay below 40 KiB raw and contain no SVG data URLs. It records raw/gzip JavaScript and emitted SVG bytes for both flags-only and full React phone consumers, with default Vite asset settings and a non-root base. This catches inlining that the package-entry budget cannot see.
 
 - The docs site publishes the measured sizes per entry (generated, same source as the API tables).
 
