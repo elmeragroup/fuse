@@ -16,7 +16,7 @@ import {
   isIdentifier,
   isObjectBindingPattern,
 } from "typescript/unstable/ast/is";
-import { API, SignatureKind, SymbolFlags } from "typescript/unstable/sync";
+import { API, NodeBuilderFlags, SignatureKind, SymbolFlags } from "typescript/unstable/sync";
 import type {
   Checker,
   Program,
@@ -196,7 +196,8 @@ function printType(checker: Checker, type: Type | undefined): string | null {
   if (type === undefined || type.isErrorType()) {
     return null;
   }
-  const printed = checker.typeToString(type);
+  // TypeScript 7 exposes the shared NoTruncation printer bit through NodeBuilderFlags.
+  const printed = checker.typeToString(type, undefined, NodeBuilderFlags.NoTruncation);
   return printed === "" ? null : printed;
 }
 

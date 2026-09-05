@@ -1,5 +1,8 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
+import { markdownOutDir } from "../scripts/lib/paths.ts";
 import { DocsCodeBlock } from "../src/components/docs-code-block";
 import { NO_DEFAULT } from "../src/lib/api-row";
 import { readComponentApi } from "../src/lib/api-source";
@@ -61,6 +64,27 @@ describe("committed api.json read at render time (docs-site.md §8)", () => {
 });
 
 describe("reference row presentation (docs-site.md §8)", () => {
+  it("persists a country union beyond the compiler's diagnostic truncation limit", async () => {
+    const api = await readComponentApi("phone-number-field");
+    const phone = api.parts.find((part) => part.name === "PhoneNumberField");
+    const country = phone?.props.find((prop) => prop.name === "defaultCountryCode");
+    expect(country).toBeDefined();
+    expect(country?.type.length).toBeGreaterThan(1000);
+    expect(country?.type).not.toMatch(/\.\.\. \d+ more \.\.\./);
+    expect(country?.type).toContain('"NO"');
+    expect(country?.type).toContain('"SE"');
+    expect(country?.type).toContain('"ZW"');
+    const view = await partView("phone-number-field", "PhoneNumberField");
+    const row = view.props.find((prop) => prop.name === "defaultCountryCode");
+    expect(row?.closedType).toBe("Union");
+    expect(row?.signature).toMatchObject({ props: { source: country?.type } });
+    const markdown = readFileSync(join(markdownOutDir, "phone-number-field.md"), "utf8");
+    expect(markdown).not.toMatch(/\.\.\. \d+ more \.\.\./);
+    expect(markdown).toContain('"NO"');
+    expect(markdown).toContain('"SE"');
+    expect(markdown).toContain('"ZW"');
+  });
+
   it("shows the collapsed short type closed and the full signature expanded", async () => {
     const part = await partView("button", "Button");
     const onIntent = part.props.find((prop) => prop.name === "onIntent");

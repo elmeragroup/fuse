@@ -62,6 +62,23 @@ async function headerCellVisibility(page: Page): Promise<HeaderVisibility> {
 }
 
 describe("API panel layout (docs-site.md §8)", () => {
+  it("shows the entire persisted country union in the expanded phone reference", async () => {
+    const page = await browser.newPage();
+    try {
+      await page.goto(`${docsBaseUrl()}/components/phone-number-field`, { waitUntil: "load" });
+      const summary = page.locator('summary[aria-label*="Prop: defaultCountryCode,"]');
+      await summary.click();
+      const signature = await summary.locator("..").locator("pre").textContent();
+      expect(signature?.length).toBeGreaterThan(1000);
+      expect(signature).not.toMatch(/\.\.\. \d+ more \.\.\./);
+      expect(signature).toContain('"NO"');
+      expect(signature).toContain('"SE"');
+      expect(signature).toContain('"ZW"');
+    } finally {
+      await page.close();
+    }
+  });
+
   it("shows Prop, Type, and Default header cells according to viewport width", async () => {
     const page = await browser.newPage();
     await openScrollAreaApi(page);

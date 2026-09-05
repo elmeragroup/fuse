@@ -3,11 +3,11 @@
     "componentCount": 66,
     "currentPartCount": 286,
     "effectPartCount": 286,
-    "currentPropCount": 501,
-    "effectPropCount": 615,
+    "currentPropCount": 502,
+    "effectPropCount": 616,
     "currentProblemCount": 0,
     "effectProblemCount": 91,
-    "apiDifferenceCount": 1109,
+    "apiDifferenceCount": 1107,
     "problemDifferenceCount": 91
   },
   "apiDifferences": [
@@ -5478,13 +5478,6 @@
     },
     {
       "component": "phone-number-field",
-      "path": "parts.PhoneNumberField.props.defaultCountryCode.type",
-      "current": "\"AD\" | \"AE\" | \"AF\" | \"AG\" | \"AI\" | \"AL\" | \"AM\" | \"AO\" | \"AR\" | \"AS\" | \"AT\" | \"AU\" | \"AW\" | \"AX\" | \"AZ\" | \"BA\" | \"BB\" | \"BD\" | \"BE\" | \"BF\" | \"BG\" | \"BH\" | \"BI\" | \"BJ\" | \"BL\" | \"BM\" | \"BN\" | ... 214 more ... | undefined",
-      "effect": "\"AD\" | \"AE\" | \"AF\" | \"AG\" | \"AI\" | \"AL\" | \"AM\" | \"AO\" | \"AR\" | \"AS\" | \"AT\" | \"AU\" | \"AW\" | \"AX\" | \"AZ\" | \"BA\" | \"BB\" | \"BD\" | \"BE\" | \"BF\" | \"BG\" | \"BH\" | \"BI\" | \"BJ\" | \"BL\" | \"BM\" | \"BN\" | \"BO\" | \"BR\" | \"BS\" | \"BT\" | \"BW\" | \"BY\" | \"BZ\" | \"CA\" | \"CC\" | \"CD\" | \"CF\" | \"CG\" | \"CH\" | \"CI\" | \"CK\" | \"CL\" | \"CM\" | \"CN\" | \"CO\" | \"CR\" | \"CU\" | \"CV\" | \"CW\" | \"CX\" | \"CY\" | \"CZ\" | \"DE\" | \"DJ\" | \"DK\" | \"DM\" | \"DO\" | \"DZ\" | \"EC\" | \"EE\" | \"EG\" | \"ER\" | \"ES\" | \"ET\" | \"FI\" | \"FJ\" | \"FK\" | \"FM\" | \"FO\" | \"FR\" | \"GA\" | \"GB\" | \"GD\" | \"GE\" | \"GF\" | \"GG\" | \"GH\" | \"GI\" | \"GL\" | \"GM\" | \"GN\" | \"GP\" | \"GQ\" | \"GR\" | \"GT\" | \"GU\" | \"GW\" | \"GY\" | \"HK\" | \"HN\" | \"HR\" | \"HT\" | \"HU\" | \"ID\" | \"IE\" | \"IL\" | \"IM\" | \"IN\" | \"IO\" | \"IQ\" | \"IR\" | \"IS\" | \"IT\" | \"JE\" | \"JM\" | \"JO\" | \"JP\" | \"KE\" | \"KG\" | \"KH\" | \"KI\" | \"KM\" | \"KN\" | \"KP\" | \"KR\" | \"KW\" | \"KY\" | \"KZ\" | \"LA\" | \"LB\" | \"LC\" | \"LI\" | \"LK\" | \"LR\" | \"LS\" | \"LT\" | \"LU\" | \"LV\" | \"LY\" | \"MA\" | \"MC\" | \"MD\" | \"ME\" | \"MF\" | \"MG\" | \"MH\" | \"MK\" | \"ML\" | \"MM\" | \"MN\" | \"MO\" | \"MP\" | \"MQ\" | \"MR\" | \"MS\" | \"MT\" | \"MU\" | \"MV\" | \"MW\" | \"MX\" | \"MY\" | \"MZ\" | \"NA\" | \"NC\" | \"NE\" | \"NF\" | \"NG\" | \"NI\" | \"NL\" | \"NO\" | \"NP\" | \"NR\" | \"NU\" | \"NZ\" | \"OM\" | \"PA\" | \"PE\" | \"PF\" | \"PG\" | \"PH\" | \"PK\" | \"PL\" | \"PM\" | \"PR\" | \"PS\" | \"PT\" | \"PW\" | \"PY\" | \"QA\" | \"RE\" | \"RO\" | \"RS\" | \"RU\" | \"RW\" | \"SA\" | \"SB\" | \"SC\" | \"SD\" | \"SE\" | \"SG\" | \"SH\" | \"SI\" | \"SJ\" | \"SK\" | \"SL\" | \"SM\" | \"SN\" | \"SO\" | \"SR\" | \"SS\" | \"ST\" | \"SV\" | \"SX\" | \"SY\" | \"SZ\" | \"TC\" | \"TD\" | \"TG\" | \"TH\" | \"TJ\" | \"TK\" | \"TL\" | \"TM\" | \"TN\" | \"TO\" | \"TR\" | \"TT\" | \"TV\" | \"TW\" | \"TZ\" | \"UA\" | \"UG\" | \"US\" | \"UY\" | \"UZ\" | \"VA\" | \"VC\" | \"VE\" | \"VG\" | \"VI\" | \"VN\" | \"VU\" | \"WF\" | \"WS\" | \"XK\" | \"YE\" | \"YT\" | \"ZA\" | \"ZM\" | \"ZW\" | undefined",
-      "reason": "phone-number-field PhoneNumberField.defaultCountryCode type: both sides print the ISO country-code string union; Effect's member list/order differs from the checker."
-    },
-    {
-      "component": "phone-number-field",
       "path": "parts.PhoneNumberField.props.endContent.type",
       "current": "ReactNode",
       "effect": "ReactNode | undefined",
@@ -5503,13 +5496,6 @@
       "current": "FocusEventHandler<HTMLInputElement> | undefined",
       "effect": "React.FocusEventHandler<HTMLInputElement> | undefined",
       "reason": "phone-number-field PhoneNumberField.onBlur type: Effect prefixes the handler with `React.`; checker prints the global `FocusEventHandler<HTMLInputElement>`."
-    },
-    {
-      "component": "phone-number-field",
-      "path": "parts.PhoneNumberField.props.onCountryChange.type",
-      "current": "((country: { code: \"AD\" | \"AE\" | \"AF\" | \"AG\" | \"AI\" | \"AL\" | \"AM\" | \"AO\" | \"AR\" | \"AS\" | \"AT\" | \"AU\" | \"AW\" | \"AX\" | \"AZ\" | \"BA\" | \"BB\" | \"BD\" | \"BE\" | \"BF\" | \"BG\" | \"BH\" | \"BI\" | \"BJ\" | \"BL\" | \"BM\" | ... 214 more ... | \"ZW\"; dialCode: string; }) => void) | undefined",
-      "effect": "((country: { code: \"AD\" | \"AE\" | \"AF\" | \"AG\" | \"AI\" | \"AL\" | \"AM\" | \"AO\" | \"AR\" | \"AS\" | \"AT\" | \"AU\" | \"AW\" | \"AX\" | \"AZ\" | \"BA\" | \"BB\" | \"BD\" | \"BE\" | \"BF\" | \"BG\" | \"BH\" | \"BI\" | \"BJ\" | \"BL\" | \"BM\" | \"BN\" | \"BO\" | \"BR\" | \"BS\" | \"BT\" | \"BW\" | \"BY\" | \"BZ\" | \"CA\" | \"CC\" | \"CD\" | \"CF\" | \"CG\" | \"CH\" | \"CI\" | \"CK\" | \"CL\" | \"CM\" | \"CN\" | \"CO\" | \"CR\" | \"CU\" | \"CV\" | \"CW\" | \"CX\" | \"CY\" | \"CZ\" | \"DE\" | \"DJ\" | \"DK\" | \"DM\" | \"DO\" | \"DZ\" | \"EC\" | \"EE\" | \"EG\" | \"ER\" | \"ES\" | \"ET\" | \"FI\" | \"FJ\" | \"FK\" | \"FM\" | \"FO\" | \"FR\" | \"GA\" | \"GB\" | \"GD\" | \"GE\" | \"GF\" | \"GG\" | \"GH\" | \"GI\" | \"GL\" | \"GM\" | \"GN\" | \"GP\" | \"GQ\" | \"GR\" | \"GT\" | \"GU\" | \"GW\" | \"GY\" | \"HK\" | \"HN\" | \"HR\" | \"HT\" | \"HU\" | \"ID\" | \"IE\" | \"IL\" | \"IM\" | \"IN\" | \"IO\" | \"IQ\" | \"IR\" | \"IS\" | \"IT\" | \"JE\" | \"JM\" | \"JO\" | \"JP\" | \"KE\" | \"KG\" | \"KH\" | \"KI\" | \"KM\" | \"KN\" | \"KP\" | \"KR\" | \"KW\" | \"KY\" | \"KZ\" | \"LA\" | \"LB\" | \"LC\" | \"LI\" | \"LK\" | \"LR\" | \"LS\" | \"LT\" | \"LU\" | \"LV\" | \"LY\" | \"MA\" | \"MC\" | \"MD\" | \"ME\" | \"MF\" | \"MG\" | \"MH\" | \"MK\" | \"ML\" | \"MM\" | \"MN\" | \"MO\" | \"MP\" | \"MQ\" | \"MR\" | \"MS\" | \"MT\" | \"MU\" | \"MV\" | \"MW\" | \"MX\" | \"MY\" | \"MZ\" | \"NA\" | \"NC\" | \"NE\" | \"NF\" | \"NG\" | \"NI\" | \"NL\" | \"NO\" | \"NP\" | \"NR\" | \"NU\" | \"NZ\" | \"OM\" | \"PA\" | \"PE\" | \"PF\" | \"PG\" | \"PH\" | \"PK\" | \"PL\" | \"PM\" | \"PR\" | \"PS\" | \"PT\" | \"PW\" | \"PY\" | \"QA\" | \"RE\" | \"RO\" | \"RS\" | \"RU\" | \"RW\" | \"SA\" | \"SB\" | \"SC\" | \"SD\" | \"SE\" | \"SG\" | \"SH\" | \"SI\" | \"SJ\" | \"SK\" | \"SL\" | \"SM\" | \"SN\" | \"SO\" | \"SR\" | \"SS\" | \"ST\" | \"SV\" | \"SX\" | \"SY\" | \"SZ\" | \"TC\" | \"TD\" | \"TG\" | \"TH\" | \"TJ\" | \"TK\" | \"TL\" | \"TM\" | \"TN\" | \"TO\" | \"TR\" | \"TT\" | \"TV\" | \"TW\" | \"TZ\" | \"UA\" | \"UG\" | \"US\" | \"UY\" | \"UZ\" | \"VA\" | \"VC\" | \"VE\" | \"VG\" | \"VI\" | \"VN\" | \"VU\" | \"WF\" | \"WS\" | \"XK\" | \"YE\" | \"YT\" | \"ZA\" | \"ZM\" | \"ZW\"; dialCode: string; }) => void) | undefined",
-      "reason": "phone-number-field PhoneNumberField.onCountryChange type: checker prints `(country: { code: CountryCode; dialCode: string }) => void`; Effect splits that callback on `|` and emits a country-code string union plus a truncated handler."
     },
     {
       "component": "popover-info-button",
@@ -7709,8 +7695,8 @@
       "component": "sidebar",
       "path": "parts.Sidebar.MenuButton.props.tooltip.type",
       "current": "string | TooltipContentProps | undefined",
-      "effect": "Omit<TooltipPopupProps, \"ref\"> & React.RefAttributes<HTMLDivElement> & Omit<OverlayPositionerProps<Omit<TooltipPositionerProps, \"ref\"> & React.RefAttributes<HTMLDivElement>>, \"side\"> & { side?: \"bottom\" | \"inline-end\" | \"inline-start\" | \"left\" | \"right\" | \"top\" | undefined; } & OverlayContainerProps | string | undefined",
-      "reason": "sidebar Sidebar.MenuButton.tooltip type: checker keeps `string | TooltipContentProps`; Effect expands TooltipContentProps into its intersection members (`Omit<OverlayPositionerProps<…>, \"side\">`, the redeclared `side`, `OverlayContainerProps`)."
+      "effect": "Omit<Omit<TooltipPopupProps, \"ref\"> & React.RefAttributes<HTMLDivElement>, \"id\"> & Omit<OverlayPositionerProps<Omit<TooltipPositionerProps, \"ref\"> & React.RefAttributes<HTMLDivElement>>, \"side\"> & { id?: string | undefined; side?: \"bottom\" | \"inline-end\" | \"inline-start\" | \"left\" | \"right\" | \"top\" | undefined; } & OverlayContainerProps | string | undefined",
+      "reason": "sidebar Sidebar.MenuButton.tooltip: checker preserves TooltipContentProps by name; Effect expands its intersections, including the explicitly declared optional id and logical side props. This remains the accepted named-versus-expanded representation difference."
     },
     {
       "component": "sidebar",
@@ -9126,27 +9112,27 @@
       "path": "evidence.Tooltip.Content.propOrder[2]",
       "current": "sideOffset",
       "effect": "container",
-      "reason": "tooltip Tooltip.Content evidence propOrder[2]: checker sideOffset vs Effect container."
-    },
-    {
-      "component": "tooltip",
-      "path": "evidence.Tooltip.Content.propOrder[3]",
-      "current": "side",
-      "effect": "render",
-      "reason": "tooltip Tooltip.Content evidence propOrder[3]: checker side vs Effect render."
+      "reason": "tooltip Tooltip.Content explicitly declares optional id; Effect also includes Base UI render. propOrder[2]: checker sideOffset vs Effect container."
     },
     {
       "component": "tooltip",
       "path": "evidence.Tooltip.Content.propOrder[4]",
-      "current": "container",
-      "effect": "side",
-      "reason": "tooltip Tooltip.Content evidence propOrder[4]: checker container vs Effect side."
+      "current": "side",
+      "effect": "render",
+      "reason": "tooltip Tooltip.Content explicitly declares optional id; Effect also includes Base UI render. propOrder[4]: checker side vs Effect render."
     },
     {
       "component": "tooltip",
       "path": "evidence.Tooltip.Content.propOrder[5]",
+      "current": "container",
+      "effect": "side",
+      "reason": "tooltip Tooltip.Content explicitly declares optional id; Effect also includes Base UI render. propOrder[5]: checker container vs Effect side."
+    },
+    {
+      "component": "tooltip",
+      "path": "evidence.Tooltip.Content.propOrder[6]",
       "effect": "sideOffset",
-      "reason": "tooltip Tooltip.Content evidence propOrder[5]: checker omitted vs Effect sideOffset."
+      "reason": "tooltip Tooltip.Content explicitly declares optional id; Effect also includes Base UI render. propOrder[6]: checker omitted vs Effect sideOffset."
     },
     {
       "component": "tooltip",
@@ -10226,14 +10212,14 @@
     },
     {
       "component": "toast",
-      "key": "effect-extractor|toast|unsupported-type-fallback|Could not extract type \"{ Provider: { ({ toastManager, ...props }: ToastProviderProps): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; ... 8 more ...; createToastManager: <Data extends object = object>() => CreateToastManagerReturnValue<...>; }\" at \"<repo>/packages/ui/src/components/toast/toast.tsx:429:14\". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/toast/toast.tsx:429:14]#1",
+      "key": "effect-extractor|toast|unsupported-type-fallback|Could not extract type \"{ Provider: { ({ toastManager, ...props }: ToastProviderProps): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; ... 8 more ...; createToastManager: <Data extends object = object>() => CreateToastManagerReturnValue<...>; }\" at \"<repo>/packages/ui/src/components/toast/toast.tsx:438:14\". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/toast/toast.tsx:438:14]#1",
       "effect": {
         "component": "toast",
         "source": "effect-extractor",
         "code": "unsupported-type-fallback",
-        "message": "Could not extract type \"{ Provider: { ({ toastManager, ...props }: ToastProviderProps): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; ... 8 more ...; createToastManager: <Data extends object = object>() => CreateToastManagerReturnValue<...>; }\" at \"<repo>/packages/ui/src/components/toast/toast.tsx:429:14\". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/toast/toast.tsx:429:14]"
+        "message": "Could not extract type \"{ Provider: { ({ toastManager, ...props }: ToastProviderProps): ReactElement<unknown, string | JSXElementConstructor<any>>; displayName: string; }; ... 8 more ...; createToastManager: <Data extends object = object>() => CreateToastManagerReturnValue<...>; }\" at \"<repo>/packages/ui/src/components/toast/toast.tsx:438:14\". The extractor used any. Review this API or add support for this type. [packages/ui/src/components/toast/toast.tsx:438:14]"
       },
-      "reason": "toast: Effect `unsupported-type-fallback` emits `any` for the Toast namespace object type `{ Provider, Viewport, … }`; adapter still maps checker member names into parts."
+      "reason": "toast Toast namespace retains the existing unsupported-type-fallback to `any` for its anonymous object of components and generic createToastManager factory. Manager update handling moved the declaration from line 429 to 438; the fallback shape and count are unchanged."
     },
     {
       "component": "toggle",
