@@ -137,6 +137,53 @@ describe("Combobox chip item identity", () => {
     expect(changed).toHaveBeenLastCalledWith([]);
   });
 
+  it("keeps labels and caller ref cleanup with a custom rendered chip", async () => {
+    const cleanup = vi.fn();
+    const attached = vi.fn<(node: HTMLDivElement) => void>();
+    const ref = (node: HTMLDivElement | null) => {
+      if (node) {
+        attached(node);
+        return cleanup;
+      }
+    };
+    function Parent() {
+      const [selected, setSelected] = useState(options);
+      return (
+        <Combobox.Root
+          multiple
+          items={options}
+          value={selected}
+          onValueChange={setSelected}
+          itemToStringLabel={(item) => item.name}>
+          <Combobox.Chips>
+            <Combobox.Value>
+              {(values: Option[]) =>
+                values.map((item) => (
+                  <Combobox.Chip
+                    key={item.id}
+                    render={<div data-custom-chip={item.id} />}
+                    ref={item.id === "a" ? ref : undefined}>
+                    <span>{item.name}</span>
+                  </Combobox.Chip>
+                ))
+              }
+            </Combobox.Value>
+          </Combobox.Chips>
+        </Combobox.Root>
+      );
+    }
+    render(withLocale("en-US", <Parent />));
+    expect(attached).toHaveBeenCalled();
+    expect(attached.mock.calls[0]?.[0].dataset.customChip).toBe("a");
+    expect(roleNamed("button", "Remove Alpha")).toBeTruthy();
+    expect(roleNamed("button", "Remove Beta")).toBeTruthy();
+    cleanup.mockClear();
+    await userEvent.click(roleNamed("button", "Remove Alpha"));
+    expect(cleanup).toHaveBeenCalledOnce();
+    expect(roleNamed("button", "Remove Beta")).toBeTruthy();
+    await userEvent.click(roleNamed("button", "Remove Beta"));
+  });
+
   it("preserves explicit removal labels for uncontrolled object selections", async () => {
     const changed = vi.fn<(values: Option[]) => void>();
     render(

@@ -15,9 +15,9 @@ import { Sheet } from "@elmeragroup/ui/sheet";
 import { Tabs } from "@elmeragroup/ui/tabs";
 import { Tooltip } from "@elmeragroup/ui/tooltip";
 
-import "../../../dist/styles.css";
-import { withLocale } from "../../../test/locale-matrix";
-import { renderThemed as render, roleNamed } from "../../../test/themed-browser-render";
+import "../../dist/styles.css";
+import { withLocale } from "../../test/locale-matrix";
+import { renderThemed as render, roleNamed } from "../../test/themed-browser-render";
 
 function expectClasses(element: HTMLElement, ...classes: string[]) {
   for (const name of classes) expect(element.classList.contains(name), name).toBe(true);

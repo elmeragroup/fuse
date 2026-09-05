@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, readdirSync, rmSync, symlinkSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -46,16 +46,76 @@ export function extractPackedPackage(tarball: string, destination: string, packa
   return extracted;
 }
 
+function packageDependencies(packageRoot: string): string[] {
+  return readdirSync(join(packageRoot, "node_modules")).filter(
+    (entry) => entry !== ".bin" && entry !== "@elmeragroup"
+  );
+}
+
+/**
+ * Give a scratch consumer a `node_modules` that resolves `@elmeragroup/ui` to the extracted
+ * tarball and the named dependencies (every installed one by default) to this package's install.
+ */
+export function linkConsumerModules(
+  consumerRoot: string,
+  extracted: string,
+  packageRoot: string,
+  dependencies: readonly string[] = packageDependencies(packageRoot)
+): string {
+  const modules = join(consumerRoot, "node_modules");
+  mkdirSync(join(modules, "@elmeragroup"), { recursive: true });
+  for (const dependency of dependencies) {
+    symlinkSync(join(packageRoot, "node_modules", dependency), join(modules, dependency));
+  }
+  symlinkSync(extracted, join(modules, "@elmeragroup", "ui"));
+  return modules;
+}
+
+export type ExtractedTarball = {
+  /** The extracted `package/` directory, with its dependencies linked. */
+  extracted: string;
+  tarball: string;
+  /** The temporary directory that owns `extracted`; removed after the callback settles. */
+  scratch: string;
+};
+
+function openScratch(packageRoot: string, prefix: string) {
+  const tarball = findTarball(packageRoot);
+  const scratch = mkdtempSync(join(tmpdir(), prefix));
+  return {
+    open: (): ExtractedTarball => ({
+      extracted: extractPackedPackage(tarball, scratch, packageRoot),
+      tarball,
+      scratch,
+    }),
+    dispose: () => rmSync(scratch, { recursive: true, force: true }),
+  };
+}
+
 export function withExtractedTarball<T>(
   packageRoot: string,
   prefix: string,
-  fn: (extracted: string, tarball: string) => T
+  fn: (extracted: string, tarball: string, scratch: string) => T
 ): T {
-  const tarball = findTarball(packageRoot);
-  const scratch = mkdtempSync(join(tmpdir(), prefix));
+  const handle = openScratch(packageRoot, prefix);
   try {
-    return fn(extractPackedPackage(tarball, scratch, packageRoot), tarball);
+    const { extracted, tarball, scratch } = handle.open();
+    return fn(extracted, tarball, scratch);
   } finally {
-    rmSync(scratch, { recursive: true, force: true });
+    handle.dispose();
+  }
+}
+
+/** `withExtractedTarball` for checks that await a browser or a dev server. */
+export async function withExtractedTarballAsync<T>(
+  packageRoot: string,
+  prefix: string,
+  fn: (extracted: ExtractedTarball) => Promise<T>
+): Promise<T> {
+  const handle = openScratch(packageRoot, prefix);
+  try {
+    return await fn(handle.open());
+  } finally {
+    handle.dispose();
   }
 }

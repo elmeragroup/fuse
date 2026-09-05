@@ -200,6 +200,9 @@ export function PhoneNumberField({
     "aria-describedby": ariaDescribedby,
   });
 
+  // Every native edit path honors both flags together (phone-number-field.md §8.20).
+  const isEditable = !isDisabled && !isReadOnly;
+
   return (
     <>
       <FieldFrame
@@ -214,7 +217,7 @@ export function PhoneNumberField({
             items={phone.countries}
             value={phone.selectedCountry}
             onValueChange={(next) => {
-              if (isDisabled || isReadOnly) return;
+              if (!isEditable) return;
               phone.selectCountry(next?.code);
               requestAnimationFrame(() => numberInputRef.current?.focus());
             }}
@@ -252,9 +255,9 @@ export function PhoneNumberField({
                 className={cn(
                   selfFocusRingClass,
                   "rounded flex min-h-5.5 shrink-0 items-center px-1 transition-[color,background-color,scale] duration-150",
-                  isDisabled || isReadOnly
-                    ? "cursor-default"
-                    : "cursor-pointer hover:bg-muted active:scale-[0.97] data-pressed:bg-muted"
+                  isEditable
+                    ? "cursor-pointer hover:bg-muted active:scale-[0.97] data-pressed:bg-muted"
+                    : "cursor-default"
                 )}>
                 <div className="flex items-center gap-1">
                   <Flag country={phone.selectedCountry.code} />
@@ -309,10 +312,10 @@ export function PhoneNumberField({
             name={name ? `${name}-display-value` : "phone-number-display-value"}
             value={phone.displayValue}
             onChange={(event) => {
-              if (!isDisabled && !isReadOnly) phone.handleInputChange(event.currentTarget.value);
+              if (isEditable) phone.handleInputChange(event.currentTarget.value);
             }}
             onPaste={(event) => {
-              if (!isDisabled && !isReadOnly) phone.handlePaste(event);
+              if (isEditable) phone.handlePaste(event);
             }}
             onBlur={onBlur}
             placeholder={placeholder}

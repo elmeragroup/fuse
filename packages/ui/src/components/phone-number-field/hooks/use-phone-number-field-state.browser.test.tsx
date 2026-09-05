@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import type { ReactElement } from "react";
 
 import { AsYouType } from "libphonenumber-js/core";
+import { flushSync } from "react-dom";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -178,3 +179,30 @@ describe("usePhoneNumberFieldState controlled restore", () => {
     await expect.poll(() => numberInput().value).toBe(digits);
   });
 });
+
+it.each([false, true])(
+  "keeps accepted national digits when detection changes, same commit: %s",
+  (sameCommit) => {
+    let state: ReturnType<typeof usePhoneNumberFieldState> | undefined;
+    function Host({ autoDetectCountry = true }: { autoDetectCountry?: boolean }) {
+      const [value, setValue] = useState("");
+      const [detect, setDetect] = useState(true);
+      state = usePhoneNumberFieldState({
+        value,
+        onChange(next) {
+          setValue(next);
+          if (sameCommit) setDetect(false);
+        },
+        international: true,
+        locale: "en-US",
+        autoDetectCountry: autoDetectCountry && detect,
+      });
+      return <input aria-label="Draft" readOnly value={state.displayValue} />;
+    }
+    const { host, rerender } = renderThemed(<Host />);
+    flushSync(() => state?.handleInputChange("41234567"));
+    if (!sameCommit) rerender(<Host autoDetectCountry={false} />);
+    expect(host.querySelector("input")?.value).toBe("41234567");
+    expect(state?.outputValue).toBe("+4741234567");
+  }
+);

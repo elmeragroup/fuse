@@ -110,7 +110,10 @@ function ComboboxClear({ className, label, ...props }: ComboboxClearProps): Reac
   );
 }
 
-export type ComboboxInputProps = Omit<ComponentProps<typeof ComboboxPrimitive.Input>, "children"> & {
+export type ComboboxInputProps = Omit<
+  ComponentProps<typeof ComboboxPrimitive.Input>,
+  "children" | "className"
+> & {
   /**
    * Renders the caret trigger button in the inline-end addon.
    * Hidden at runtime whenever a clear button is present in the group.
@@ -322,7 +325,9 @@ function ComboboxChips({
   const [registry] = useState(createChipIndexRegistry);
   return (
     <ChipIndexContext.Provider value={registry}>
-      <ComboboxPrimitive.Value>{() => <ChipIndexCommit />}</ComboboxPrimitive.Value>
+      <ComboboxPrimitive.Value>
+        {(selected: ReactNode) => <ChipIndexCommit selected={selected} />}
+      </ComboboxPrimitive.Value>
       <ComboboxPrimitive.Chips
         data-slot="combobox-chips"
         // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- combobox.md §6: chip wrap gap and compact chip padding are layout, not a control rung

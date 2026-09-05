@@ -12,16 +12,16 @@ import {
   getCountries,
   processInputWithDetection,
   requirePickerCountries,
-  resolvePhoneFieldValues,
   resolveSelectedCountry,
 } from "../phone-engine";
 import type {
   PhoneCountryCode,
-  PhoneFieldValues,
   PhoneNumberCountry,
   PhoneNumberFormat,
   ProcessedPhoneInput,
 } from "../phone-engine";
+import { receiveValue, reconcile, snapshot, visibleSnapshot } from "../phone-field-state";
+import type { PhoneState } from "../phone-field-state";
 
 export type UsePhoneNumberFieldStateOptions = {
   value?: string;
@@ -47,54 +47,6 @@ export type UsePhoneNumberFieldStateReturn = {
   countries: PhoneNumberCountry[];
   getCountryName: (countryCode: CountryCode) => string;
 };
-
-function decodeFieldValue(value: string): string {
-  try {
-    return decodeURIComponent(value);
-  } catch {
-    return value;
-  }
-}
-
-type PhoneSnapshot = ProcessedPhoneInput & { values: PhoneFieldValues };
-
-type PhoneConfiguration = {
-  countries: PhoneNumberCountry[];
-  metadata: MetadataJson;
-  autoDetectCountry: boolean;
-  international: boolean;
-  outputFormat: PhoneNumberFormat;
-  formatOnType: boolean;
-};
-
-type PhoneState = {
-  configuration: PhoneConfiguration;
-  value: string | undefined;
-  accepted: PhoneSnapshot;
-  proposal: PhoneSnapshot | null;
-};
-
-function snapshot(next: ProcessedPhoneInput, configuration: PhoneConfiguration): PhoneSnapshot {
-  return {
-    ...next,
-    values: resolvePhoneFieldValues({
-      ...configuration,
-      digits: next.digits,
-      country: next.country.code,
-    }),
-  };
-}
-
-function receiveValue(input: string, country: PhoneNumberCountry, configuration: PhoneConfiguration) {
-  return snapshot(
-    processInputWithDetection({
-      ...configuration,
-      input: cleanPhoneInput(decodeFieldValue(input)),
-      currentCountry: country,
-    }),
-    configuration
-  );
-}
 
 export function usePhoneNumberFieldState({
   value,
@@ -128,34 +80,11 @@ export function usePhoneNumberFieldState({
     proposal: null,
   }));
 
-  // Parsed values belong to immutable snapshots. A proposed edit is reusable only when
-  // the parent accepts its output; an unchanged prop keeps the accepted snapshot visible.
-  let state = stored;
-  if (stored.configuration !== configuration || stored.value !== value) {
-    const previous =
-      stored.proposal && (stored.value === undefined || stored.proposal.values.outputValue === stored.value)
-        ? stored.proposal
-        : stored.accepted;
-    const country = resolveSelectedCountry(countries, previous.country.code);
-    const acceptedEcho =
-      stored.configuration === configuration && stored.proposal?.values.outputValue === value;
-    // Catalog replacement preserves the existing number's international identity. An
-    // unsupported prefix remains visible instead of being reinterpreted in the new country.
-    const existingInput =
-      previous.digits && !previous.digits.startsWith("+")
-        ? previous.country.dialCode + previous.digits
-        : previous.digits;
-    const accepted =
-      acceptedEcho && stored.proposal
-        ? stored.proposal
-        : receiveValue(value ?? existingInput, country, configuration);
-    state = { configuration, value, accepted, proposal: null };
-    setState(state);
-  }
-  const current =
-    state.proposal && (value === undefined || state.proposal.values.outputValue === value)
-      ? state.proposal
-      : state.accepted;
+  // Props are folded in during render so external replacement is visible in the same
+  // pass, including server rendering (§8.16). The store catches up on commit.
+  const state = reconcile(stored, value, configuration);
+  if (state !== stored) setState(state);
+  const current = visibleSnapshot(state);
   const { digits, country: selectedCountry, values } = current;
 
   // Notify only committed country changes, including external value/catalog replacement.

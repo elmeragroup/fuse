@@ -54,6 +54,8 @@ const ITU_INTERNATIONAL_PREFIX = "00";
 
 const PHONE_CHAR_REGEX = /[^\d\s+\-()]/g;
 
+const E164_NOISE_REGEX = /[^\d+]/g;
+
 const EMPTY_PICKER_ERROR =
   "PhoneNumberField: no picker countries remain after intersecting libphonenumber metadata with packaged flag assets and the product exclusion set.";
 
@@ -142,11 +144,25 @@ function parsePhoneNumber(
   return asYouType.getNumber();
 }
 
+/** Digits entered with their own `+` prefix carry an identity independent of the picker country. */
+export function hasInternationalDigits(digits: string): boolean {
+  return digits.startsWith(INTERNATIONAL_PREFIX);
+}
+
+/** The full international form of a snapshot, used to re-read it under another catalog (§8.19). */
+export function toInternationalInput({ digits, country }: ProcessedPhoneInput): string {
+  return !digits || hasInternationalDigits(digits) ? digits : country.dialCode + digits;
+}
+
+function toE164Digits(digits: string): string {
+  return digits.replace(E164_NOISE_REGEX, "");
+}
+
 function buildFullNumber(digits: string, country: CountryCode | undefined, metadata: MetadataJson): string {
   if (!digits) {
     return "";
   }
-  if (digits.startsWith(INTERNATIONAL_PREFIX)) {
+  if (hasInternationalDigits(digits)) {
     return digits;
   }
   if (country) {
@@ -162,7 +178,7 @@ function formatOutputValue(
 ): string {
   if (!phoneNumber) {
     if (outputFormat === "raw") return digits;
-    return outputFormat === "e164" && digits.startsWith("+") ? digits.replace(/[^\d+]/g, "") : "";
+    return outputFormat === "e164" && hasInternationalDigits(digits) ? toE164Digits(digits) : "";
   }
   switch (outputFormat) {
     case "e164":
@@ -195,8 +211,8 @@ function getDisplayValue(
   if (!digits) {
     return "";
   }
-  if (digits.startsWith("+") && (!phoneNumber?.country || phoneNumber.country !== country)) {
-    return formatOnType && phoneNumber ? phoneNumber.formatInternational() : digits.replace(/[^\d+]/g, "");
+  if (hasInternationalDigits(digits) && (!phoneNumber?.country || phoneNumber.country !== country)) {
+    return formatOnType && phoneNumber ? phoneNumber.formatInternational() : toE164Digits(digits);
   }
   if (formatOnType && phoneNumber) {
     if (international) {
@@ -215,7 +231,7 @@ export function cleanPhoneInput(input: string): string {
 }
 
 function hasInternationalPrefix(input: string): boolean {
-  return input.startsWith(INTERNATIONAL_PREFIX) || input.startsWith(ITU_INTERNATIONAL_PREFIX);
+  return hasInternationalDigits(input) || input.startsWith(ITU_INTERNATIONAL_PREFIX);
 }
 
 function normalizeInternationalPrefix(input: string): string {
@@ -227,7 +243,7 @@ function normalizeInternationalPrefix(input: string): string {
 
 /** Country from an already-normalized `+` international number. */
 function detectCountryFromInput(input: string, metadata: MetadataJson): CountryCode | undefined {
-  if (!input.startsWith(INTERNATIONAL_PREFIX)) {
+  if (!hasInternationalDigits(input)) {
     return undefined;
   }
   return parsePhoneNumber(input, undefined, metadata)?.country;

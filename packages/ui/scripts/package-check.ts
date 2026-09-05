@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdirSync, readdirSync, symlinkSync } from "node:fs";
+import { mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 import { discoverEntries } from "./entries";
@@ -18,7 +18,7 @@ import {
 } from "./package-check-packed";
 import { checkPackedReactCompatibility } from "./package-check-react";
 import { packageRootFromScript } from "./paths";
-import { fail, withExtractedTarball } from "./tarball";
+import { fail, linkConsumerModules, withExtractedTarball } from "./tarball";
 
 const packageRoot = packageRootFromScript(import.meta.url);
 
@@ -27,21 +27,6 @@ function runInherited(command: string, args: string[]): void {
   if (result.status !== 0) {
     throw new Error(`${command} ${args.join(" ")} exited with status ${String(result.status ?? "null")}`);
   }
-}
-
-function linkConsumerModules(consumerRoot: string, extracted: string): void {
-  const dest = join(consumerRoot, "node_modules");
-  const source = join(packageRoot, "node_modules");
-  mkdirSync(dest, { recursive: true });
-  for (const entry of readdirSync(source)) {
-    if (entry === ".bin" || entry === "@elmeragroup") {
-      continue;
-    }
-    symlinkSync(join(source, entry), join(dest, entry));
-  }
-  const scoped = join(dest, "@elmeragroup");
-  mkdirSync(scoped, { recursive: true });
-  symlinkSync(extracted, join(scoped, "ui"));
 }
 
 try {
@@ -62,7 +47,7 @@ try {
     ]);
     const consumerRoot = join(dirname(extracted), "consumer");
     mkdirSync(consumerRoot, { recursive: true });
-    linkConsumerModules(consumerRoot, extracted);
+    linkConsumerModules(consumerRoot, extracted, packageRoot);
     const discovered = discoverEntries(packageRoot);
     const exported = importPackedModules(
       consumerRoot,

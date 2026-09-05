@@ -185,6 +185,23 @@ describe("PhoneNumberField identity and authoritative value", () => {
     expect(submission().get("phone")).toBe("+46701234567");
   });
 
+  it("keeps an uncontrolled international draft when only the output format changes", async () => {
+    const field = (outputFormat: "e164" | "raw") =>
+      withLocale(
+        "en-US",
+        <form aria-label="Phone form">
+          <PhoneNumberField label="Mobile" name="phone" international outputFormat={outputFormat} />
+        </form>
+      );
+    const { rerender } = render(field("e164"));
+    await userEvent.fill(inputNamed(), "41234567");
+    expect(submission().get("phone")).toBe("+4741234567");
+    rerender(field("raw"));
+    expect(inputNamed().value).toBe("41234567");
+    expect(submission().get("phone")).toBe("41234567");
+    expect(roleNamed("button", "Select country").textContent).toContain("+47");
+  });
+
   it("server-renders populated form state and hydrates it without recovery", async () => {
     const hydrated = vi.fn<() => void>();
     function HydrationWitness() {

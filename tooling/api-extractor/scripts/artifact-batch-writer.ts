@@ -832,11 +832,15 @@ async function writeBatch(
     }
   }
   if (cleanupFailed && result.status === "success") {
+    const remaining = [
+      ...(transactionCleanupFailed ? ["transaction state"] : []),
+      ...(lockCleanupFailed ? ["lock"] : []),
+    ].join(" and ");
     return {
       ...result,
       cleanup: {
         temporaryState: "not-removed",
-        message: `The artifact batch was committed, but its ${transactionCleanupFailed ? (lockCleanupFailed ? "transaction state and lock" : "transaction state") : "lock"} could not be removed.`,
+        message: `The artifact batch was committed, but its ${remaining || "lock"} could not be removed.`,
       },
     };
   }
