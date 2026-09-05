@@ -40,8 +40,13 @@ describe("exports map", () => {
       "avatar",
       "badge",
       "button",
+      "button-group",
       "card",
+      "checkbox",
+      "checkbox-card",
       "code",
+      "combobox",
+      "confirm-button",
       "description-list",
       "dialog",
       "dropdown-menu",
@@ -54,19 +59,29 @@ describe("exports map", () => {
       "input-group",
       "item",
       "loader",
+      "meter",
+      "number-field",
       "popover",
       "popover-info-button",
+      "radio-group",
       "scroll-area",
+      "select",
+      "selection-item",
       "separator",
       "sheet",
       "show",
       "skeleton",
       "span",
+      "switch",
       "table",
       "text",
+      "text-field",
       "textarea",
+      "textarea-field",
       "timeline-list",
       "toast",
+      "toggle",
+      "toggle-group",
       "tooltip",
     ]);
     expect(unexpectedJsEntryFiles(packageRoot)).toEqual([]);
@@ -74,7 +89,7 @@ describe("exports map", () => {
 
   it("asserts the deferred list and the shipped bare-component count separately", () => {
     expect(DEFERRED_ENTRIES).toEqual(["chart"]);
-    expect(BARE_COMPONENT_ENTRIES).toHaveLength(34);
+    expect(BARE_COMPONENT_ENTRIES).toHaveLength(49);
     const shippedBare = discovered.jsEntries.filter(
       (entry) => entry.inRootBarrel && entry.subpath !== "." && entry.subpath !== "theme"
     );
@@ -250,6 +265,12 @@ describe("exports map", () => {
     expect(button?.runtimeExports).toEqual(["Button", "buttonVariants"]);
   });
 
+  it("publishes ButtonGroup and the public buttonGroupVariants recipe from /button-group and the root barrel", () => {
+    const buttonGroup = discovered.jsEntries.find((entry) => entry.subpath === "button-group");
+    expect(buttonGroup?.inRootBarrel).toBe(true);
+    expect(buttonGroup?.runtimeExports).toEqual(["ButtonGroup", "buttonGroupVariants"]);
+  });
+
   it("publishes ScrollArea from /scroll-area and the root barrel", () => {
     const scrollArea = discovered.jsEntries.find((entry) => entry.subpath === "scroll-area");
     expect(scrollArea?.inRootBarrel).toBe(true);
@@ -383,10 +404,28 @@ describe("exports map", () => {
     expect(dropdownMenu?.runtimeExports).toEqual(["DropdownMenu"]);
   });
 
+  it("publishes ConfirmButton from /confirm-button and the root barrel", () => {
+    const confirmButton = discovered.jsEntries.find((entry) => entry.subpath === "confirm-button");
+    expect(confirmButton?.inRootBarrel).toBe(true);
+    expect(confirmButton?.runtimeExports).toEqual(["ConfirmButton"]);
+  });
+
   it("publishes Table and VerticalTable from /table and the root barrel", () => {
     const table = discovered.jsEntries.find((entry) => entry.subpath === "table");
     expect(table?.inRootBarrel).toBe(true);
     expect(table?.runtimeExports).toEqual(["Table", "VerticalTable"]);
+  });
+
+  it("publishes Select from /select and the root barrel", () => {
+    const select = discovered.jsEntries.find((entry) => entry.subpath === "select");
+    expect(select?.inRootBarrel).toBe(true);
+    expect(select?.runtimeExports).toEqual(["Select"]);
+  });
+
+  it("publishes Combobox and useComboboxAnchor from /combobox and the root barrel", () => {
+    const combobox = discovered.jsEntries.find((entry) => entry.subpath === "combobox");
+    expect(combobox?.inRootBarrel).toBe(true);
+    expect(combobox?.runtimeExports).toEqual(["Combobox", "useComboboxAnchor"]);
   });
 
   it("publishes Toast from /toast and the root barrel", () => {
@@ -399,6 +438,24 @@ describe("exports map", () => {
     const sheet = discovered.jsEntries.find((entry) => entry.subpath === "sheet");
     expect(sheet?.inRootBarrel).toBe(true);
     expect(sheet?.runtimeExports).toEqual(["Sheet"]);
+  });
+
+  it("publishes Switch from /switch and the root barrel", () => {
+    const switchEntry = discovered.jsEntries.find((entry) => entry.subpath === "switch");
+    expect(switchEntry?.inRootBarrel).toBe(true);
+    expect(switchEntry?.runtimeExports).toEqual(["Switch"]);
+  });
+
+  it("publishes Toggle and the public toggleVariants recipe from /toggle and the root barrel", () => {
+    const toggle = discovered.jsEntries.find((entry) => entry.subpath === "toggle");
+    expect(toggle?.inRootBarrel).toBe(true);
+    expect(toggle?.runtimeExports).toEqual(["Toggle", "toggleVariants"]);
+  });
+
+  it("publishes ToggleGroup from /toggle-group and the root barrel without the toggle recipe", () => {
+    const toggleGroup = discovered.jsEntries.find((entry) => entry.subpath === "toggle-group");
+    expect(toggleGroup?.inRootBarrel).toBe(true);
+    expect(toggleGroup?.runtimeExports).toEqual(["ToggleGroup"]);
   });
 
   it("publishes Tooltip from /tooltip and the root barrel", () => {
@@ -425,10 +482,71 @@ describe("exports map", () => {
     expect(span?.runtimeExports).toEqual(["Span", "spanVariants"]);
   });
 
+  it("publishes TextField and the public textFieldVariants recipe from /text-field and the root barrel", () => {
+    const textField = discovered.jsEntries.find((entry) => entry.subpath === "text-field");
+    expect(textField?.inRootBarrel).toBe(true);
+    expect(textField?.runtimeExports).toEqual(["TextField", "textFieldVariants"]);
+  });
+
+  it("publishes NumberField from /number-field and the root barrel", () => {
+    const numberField = discovered.jsEntries.find((entry) => entry.subpath === "number-field");
+    expect(numberField?.inRootBarrel).toBe(true);
+    expect(numberField?.runtimeExports).toEqual(["NumberField"]);
+  });
+
+  it("publishes TextareaField from /textarea-field and the root barrel", () => {
+    const textareaField = discovered.jsEntries.find((entry) => entry.subpath === "textarea-field");
+    expect(textareaField?.inRootBarrel).toBe(true);
+    expect(textareaField?.runtimeExports).toEqual(["TextareaField"]);
+  });
+
+  it("publishes Meter and METER_CONSTANTS from /meter and the root barrel", () => {
+    const meter = discovered.jsEntries.find((entry) => entry.subpath === "meter");
+    expect(meter?.inRootBarrel).toBe(true);
+    expect(meter?.runtimeExports).toEqual(["Meter", "METER_CONSTANTS"]);
+  });
+
   it("publishes Alert from /alert and the root barrel", () => {
     const alert = discovered.jsEntries.find((entry) => entry.subpath === "alert");
     expect(alert?.inRootBarrel).toBe(true);
     expect(alert?.runtimeExports).toEqual(["Alert"]);
+  });
+
+  it("publishes SelectionItem from /selection-item and the root barrel", () => {
+    const selectionItem = discovered.jsEntries.find((entry) => entry.subpath === "selection-item");
+    expect(selectionItem?.inRootBarrel).toBe(true);
+    expect(selectionItem?.runtimeExports).toEqual(["SelectionItem"]);
+  });
+
+  it("publishes the checkbox surface from /checkbox and the root barrel", () => {
+    const checkbox = discovered.jsEntries.find((entry) => entry.subpath === "checkbox");
+    expect(checkbox?.inRootBarrel).toBe(true);
+    expect(checkbox?.runtimeExports).toEqual([
+      "Checkbox",
+      "CheckboxDescription",
+      "CheckboxGroup",
+      "CheckboxItem",
+      "CheckboxItemGroup",
+    ]);
+  });
+
+  it("publishes CheckboxCard from /checkbox-card and the root barrel", () => {
+    const checkboxCard = discovered.jsEntries.find((entry) => entry.subpath === "checkbox-card");
+    expect(checkboxCard?.inRootBarrel).toBe(true);
+    expect(checkboxCard?.runtimeExports).toEqual(["CheckboxCard"]);
+  });
+
+  it("publishes the radio-group surface from /radio-group and the root barrel", () => {
+    const radioGroup = discovered.jsEntries.find((entry) => entry.subpath === "radio-group");
+    expect(radioGroup?.inRootBarrel).toBe(true);
+    expect(radioGroup?.runtimeExports).toEqual([
+      "Radio",
+      "RadioGroup",
+      "RadioGroupItem",
+      "RadioIconButton",
+      "RadioItem",
+      "RadioItemGroup",
+    ]);
   });
 
   it("keeps /icons as a subpath-only entry with the curated roster", () => {

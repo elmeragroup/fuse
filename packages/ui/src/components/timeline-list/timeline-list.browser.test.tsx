@@ -109,7 +109,7 @@ describe("TimelineList", () => {
           <TimelineList.Time
             ref={timeRef}
             date="2024-03-03T10:00:00.000Z"
-            className="font-semibold"
+            className="tabular-nums"
             id="placed-at">
             3 March 2024
           </TimelineList.Time>
@@ -143,7 +143,7 @@ describe("TimelineList", () => {
     }
     expect(timeRef.current).toBe(time);
     expect(time.id).toBe("placed-at");
-    expect(getComputedStyle(time).fontWeight).toBe("600");
+    expect(getComputedStyle(time).fontVariantNumeric).toContain("tabular-nums");
     expect(time.getAttribute("datetime")).toBe("2024-03-03T10:00:00.000Z");
 
     const description = page.getByText("Confirmed at checkout.", { exact: true }).element();

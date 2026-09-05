@@ -32,13 +32,33 @@
       "types": "./src/button.ts",
       "import": "./src/button.ts"
     },
+    "./button-group": {
+      "types": "./src/button-group.ts",
+      "import": "./src/button-group.ts"
+    },
     "./card": {
       "types": "./src/card.ts",
       "import": "./src/card.ts"
     },
+    "./checkbox": {
+      "types": "./src/checkbox.ts",
+      "import": "./src/checkbox.ts"
+    },
+    "./checkbox-card": {
+      "types": "./src/checkbox-card.ts",
+      "import": "./src/checkbox-card.ts"
+    },
     "./code": {
       "types": "./src/code.ts",
       "import": "./src/code.ts"
+    },
+    "./combobox": {
+      "types": "./src/combobox.ts",
+      "import": "./src/combobox.ts"
+    },
+    "./confirm-button": {
+      "types": "./src/confirm-button.ts",
+      "import": "./src/confirm-button.ts"
     },
     "./css": "./src/styles/ui.css",
     "./demo-stage-comfortable.css": "./dist/demo-stage-comfortable.css",
@@ -103,6 +123,14 @@
       "types": "./src/loader.ts",
       "import": "./src/loader.ts"
     },
+    "./meter": {
+      "types": "./src/meter.ts",
+      "import": "./src/meter.ts"
+    },
+    "./number-field": {
+      "types": "./src/number-field.ts",
+      "import": "./src/number-field.ts"
+    },
     "./popover": {
       "types": "./src/popover.ts",
       "import": "./src/popover.ts"
@@ -111,9 +139,21 @@
       "types": "./src/popover-info-button.ts",
       "import": "./src/popover-info-button.ts"
     },
+    "./radio-group": {
+      "types": "./src/radio-group.ts",
+      "import": "./src/radio-group.ts"
+    },
     "./scroll-area": {
       "types": "./src/scroll-area.ts",
       "import": "./src/scroll-area.ts"
+    },
+    "./select": {
+      "types": "./src/select.ts",
+      "import": "./src/select.ts"
+    },
+    "./selection-item": {
+      "types": "./src/selection-item.ts",
+      "import": "./src/selection-item.ts"
     },
     "./separator": {
       "types": "./src/separator.ts",
@@ -136,6 +176,10 @@
       "import": "./src/span.ts"
     },
     "./styles.css": "./dist/styles.css",
+    "./switch": {
+      "types": "./src/switch.ts",
+      "import": "./src/switch.ts"
+    },
     "./table": {
       "types": "./src/table.ts",
       "import": "./src/table.ts"
@@ -144,9 +188,17 @@
       "types": "./src/text.ts",
       "import": "./src/text.ts"
     },
+    "./text-field": {
+      "types": "./src/text-field.ts",
+      "import": "./src/text-field.ts"
+    },
     "./textarea": {
       "types": "./src/textarea.ts",
       "import": "./src/textarea.ts"
+    },
+    "./textarea-field": {
+      "types": "./src/textarea-field.ts",
+      "import": "./src/textarea-field.ts"
     },
     "./theme": {
       "types": "./src/theme.ts",
@@ -164,6 +216,14 @@
     "./toast": {
       "types": "./src/toast.ts",
       "import": "./src/toast.ts"
+    },
+    "./toggle": {
+      "types": "./src/toggle.ts",
+      "import": "./src/toggle.ts"
+    },
+    "./toggle-group": {
+      "types": "./src/toggle-group.ts",
+      "import": "./src/toggle-group.ts"
     },
     "./tooltip": {
       "types": "./src/tooltip.ts",
