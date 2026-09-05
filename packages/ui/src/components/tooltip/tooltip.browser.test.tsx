@@ -149,7 +149,7 @@ describe("Tooltip", () => {
     );
   });
 
-  it("defaults the popup to data-side=top and forwards side/align overrides", () => {
+  it("defaults the popup to data-side=top and forwards side/align overrides", async () => {
     const { rerender } = renderThemed(
       <div style={{ padding: 240 }}>
         <Tooltip.Provider>
@@ -181,7 +181,7 @@ describe("Tooltip", () => {
     );
 
     const placed = roleNamed("tooltip", "Add to library");
-    expect(placed.getAttribute("data-side")).toBe("left");
+    await expect.poll(() => placed.getAttribute("data-side")).toBe("left");
     expect(placed.getAttribute("data-align")).toBe("start");
   });
 

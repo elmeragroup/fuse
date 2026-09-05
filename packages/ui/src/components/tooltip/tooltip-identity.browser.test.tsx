@@ -3,9 +3,8 @@ import { page } from "vitest/browser";
 
 import { Tooltip } from "@elmeragroup/ui/tooltip";
 
-import { render } from "../../../test/browser-render";
 import { withLocale } from "../../../test/locale-matrix";
-import { roleNamed } from "../../../test/themed-browser-render";
+import { renderThemed as render, roleNamed } from "../../../test/themed-browser-render";
 
 function descriptionIds(name: string): string[] {
   return (roleNamed("button", name).getAttribute("aria-describedby") ?? "").split(/\s+/).filter(Boolean);

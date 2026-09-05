@@ -5,9 +5,8 @@ import { page, userEvent } from "vitest/browser";
 
 import { Sidebar, useSidebar } from "@elmeragroup/ui/sidebar";
 
-import { render } from "../../../test/browser-render";
 import { withLocale } from "../../../test/locale-matrix";
-import { roleNamed } from "../../../test/themed-browser-render";
+import { renderThemed as render, roleNamed } from "../../../test/themed-browser-render";
 
 beforeEach(async () => {
   await page.viewport(1280, 900);

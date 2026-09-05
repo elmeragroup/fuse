@@ -35,7 +35,13 @@ afterEach(() => {
  * Nested ThemeScope / density stamps still go on the tree the caller passes in.
  */
 export function renderThemed(node: ReactNode) {
-  return render(<ThemeScope theme={fkasPrivate}>{node}</ThemeScope>);
+  const result = render(<ThemeScope theme={fkasPrivate}>{node}</ThemeScope>);
+  return {
+    ...result,
+    rerender: (next: ReactNode): void => {
+      result.rerender(<ThemeScope theme={fkasPrivate}>{next}</ThemeScope>);
+    },
+  };
 }
 
 export function stampDensity(density: Density): void {

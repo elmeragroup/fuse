@@ -5,8 +5,8 @@ import { page, userEvent } from "vitest/browser";
 
 import { TextareaField } from "@elmeragroup/ui/textarea-field";
 
-import { render } from "../../../test/browser-render";
 import { withLocale } from "../../../test/locale-matrix";
+import { renderThemed as render } from "../../../test/themed-browser-render";
 
 for (const defaultValue of ["Original", ""]) {
   for (const resetMethod of ["button", "programmatic"]) {

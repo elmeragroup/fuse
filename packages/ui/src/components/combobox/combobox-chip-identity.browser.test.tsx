@@ -5,9 +5,8 @@ import { userEvent } from "vitest/browser";
 
 import { Combobox } from "@elmeragroup/ui/combobox";
 
-import { render } from "../../../test/browser-render";
 import { withLocale } from "../../../test/locale-matrix";
-import { roleNamed } from "../../../test/themed-browser-render";
+import { renderThemed as render, roleNamed } from "../../../test/themed-browser-render";
 
 const options = [
   { id: "a", name: "Alpha" },

@@ -8,9 +8,8 @@ import { userEvent } from "vitest/browser";
 
 import { PhoneNumberField } from "@elmeragroup/ui/phone-number-field";
 
-import { render } from "../../../test/browser-render";
 import { withLocale } from "../../../test/locale-matrix";
-import { roleNamed } from "../../../test/themed-browser-render";
+import { renderThemed as render, roleNamed } from "../../../test/themed-browser-render";
 import { defaultMetadata } from "./phone-engine";
 
 const swedishMetadata: MetadataJson = {
