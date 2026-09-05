@@ -30,6 +30,9 @@
     "test:browser": {
       "dependsOn": ["build"]
     },
+    "test:packed-consumer": {
+      "dependsOn": ["pack"]
+    },
     "test:types": {
       "dependsOn": ["build"]
     },
@@ -62,6 +65,7 @@
         "type-check",
         "test",
         "test:browser",
+        "test:packed-consumer",
         "test:types",
         "build",
         "package:check",

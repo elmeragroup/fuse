@@ -34,7 +34,7 @@ jobs:
       - name: oxfmt
         run: pnpm exec oxfmt --check
 
-      # turbo.json ci:checks minus test:browser — a docs/unit failure should not
+      # turbo.json ci:checks minus browser checks — a docs/unit failure should not
       # wait on the Chromium suite.
       - name: turbo ci:checks (no browser)
         run: pnpm exec turbo run '//#lint' '//#test:repo-policy' type-check test test:types build package:check size-limit 'docs#test:shadow'
@@ -66,5 +66,5 @@ jobs:
       - name: Install Playwright Chromium
         run: pnpm --filter @elmeragroup/ui exec playwright install --with-deps chromium
 
-      - name: turbo test:browser
-        run: pnpm exec turbo run test:browser
+      - name: turbo browser checks
+        run: pnpm exec turbo run test:browser test:packed-consumer

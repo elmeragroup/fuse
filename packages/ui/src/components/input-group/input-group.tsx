@@ -66,7 +66,7 @@ function InputGroupRoot({ className, ...props }: InputGroupRootProps): ReactElem
       className={cn(
         // Single-height field box: pins the `md` control rung (conventions.md ruling 2,
         // input-group.md §4 "Density mapping"); block addons and textareas grow instead.
-        "group/input-group shadow-xs relative flex h-(--control-h-md) w-full min-w-0 items-center rounded-md border border-input transition-[color,border-color,box-shadow]",
+        "group/input-group shadow-xs relative box-border flex h-(--control-h-md) w-full min-w-0 items-center rounded-md border border-input transition-[color,border-color,box-shadow]",
         "has-disabled:bg-input/50 has-disabled:opacity-50",
         "has-[[data-slot=input-group-control]:focus-visible]:border-ring",
         "has-[[data-slot][aria-invalid=true]]:border-error has-[[data-slot][aria-invalid=true]]:ring-3 has-[[data-slot][aria-invalid=true]]:ring-error/20",
@@ -146,7 +146,7 @@ function InputGroupInput({ className, ...props }: InputGroupInputProps): ReactEl
     <Input
       data-slot="input-group-control"
       data-focus-ring-control=""
-      className={cn(CONTROL_CHROME, className)}
+      className={cn(CONTROL_CHROME, "max-h-full", className)}
       {...props}
     />
   );

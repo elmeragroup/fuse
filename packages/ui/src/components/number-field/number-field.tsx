@@ -67,7 +67,7 @@ export type NumberFieldProps = {
 };
 
 const stepperButton = cn(
-  "flex flex-1 cursor-default items-center justify-center bg-background px-0.5 text-foreground transition-colors hover:bg-muted disabled:bg-muted disabled:opacity-50"
+  "box-border flex flex-1 cursor-default items-center justify-center border-0 bg-background px-0.5 py-0 text-foreground transition-colors hover:bg-muted disabled:bg-muted disabled:opacity-50"
 );
 
 /**
@@ -140,7 +140,7 @@ export function NumberField({
             autoFocus={autoFocus}
             data-focus-ring-control=""
             className={cn(
-              "h-full w-full min-w-0 flex-1 bg-transparent tabular-nums",
+              "box-border h-full w-full min-w-0 flex-1 border-0 bg-transparent py-0 tabular-nums",
               controlInsetMdClass,
               withinFocusRingControlClass
             )}

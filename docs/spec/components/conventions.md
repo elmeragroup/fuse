@@ -44,7 +44,7 @@ A `size` axis that encodes a **control box** shares four rungs — `xs`, `sm`, `
 | `md` | density-owned | density-owned (control-type pair) |
 | `lg` | density-owned | density-owned (control-type pair) |
 
-`xs` and `sm` type must not read the control-type pair. Default size **must pin height**; it is never content-sized. Once height is pinned, do not also set `py-*` on that rung — vertical padding is leftover space in the box.
+`xs` and `sm` type must not read the control-type pair. Default size **must pin height**; it is never content-sized. Once height is pinned, do not add positive `py-*` on that rung: vertical padding is leftover space in the box. A zero padding reset is required where native controls otherwise supply padding. Fixed-size field and button recipes own `box-sizing: border-box`; standalone consumers must get the same outer dimensions without a global reset. Composed inputs fit inside the owning group's border. Textarea keeps its content-height model and `py-2` padding.
 
 **Field-box pinning (ruling 2, 2026-08-21).** Input-class surfaces that ship a single fixed height and **no `size` axis** (Input, Textarea inline padding, NumberField, Tabs list, RAC `fieldGroupVariants`) pin the `md` rung: `h-(--control-h-md)`, `--control-px-md`, and the control-type pair where type is density-owned. They do not grow a `size` axis to express density. Comfortable Input therefore matches comfortable Button `default`.
 

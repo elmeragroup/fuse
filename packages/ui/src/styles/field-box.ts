@@ -18,7 +18,7 @@ import { selfFocusRingClass, withinFocusRingClass } from "./utils";
  * asserts the two boxes' *computed* radius and shadow are equal in one rendered form.
  */
 export const fieldBoxChromeClass = cn(
-  "shadow-xs rounded-md border border-input bg-card transition-[color,border-color,box-shadow]"
+  "shadow-xs box-border rounded-md border border-input bg-card transition-[color,border-color,box-shadow]"
 );
 
 /** NumberField group chrome — same elevation as Input, `within` focus, invalid ring. */
@@ -44,7 +44,7 @@ export const fieldBox = tv({
   ),
   variants: {
     box: {
-      control: "h-(--control-h-md)",
+      control: "h-(--control-h-md) py-0",
       content: "min-h-16 py-2",
     },
   },
