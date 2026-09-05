@@ -55,6 +55,8 @@ function emitBrandPointers(): string {
     return cssRule(`[data-theme-brand="${code}"]`, [
       ["brand", pointer.brand],
       ["brand-foreground", pointer["brand-foreground"]],
+      ["sidebar-brand", DEFAULTS["sidebar-brand"]],
+      ["sidebar-brand-foreground", DEFAULTS["sidebar-brand-foreground"]],
     ]);
   }).join("\n\n");
 }
