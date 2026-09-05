@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, use } from "react";
+import { createContext, use, useEffect, useReducer } from "react";
 import type { RefObject } from "react";
 
 export const ThemeScopeContainerContext = createContext<HTMLElement | null | undefined>(undefined);
@@ -32,11 +32,16 @@ export function useResolvedPortalContainer(
   container?: HTMLElement | RefObject<HTMLElement | null>
 ): HTMLElement | null | undefined {
   const scope = use(ThemeScopeContainerContext);
-  if (container === undefined) {
-    return scope;
-  }
-  if (isElementRef(container)) {
-    return container.current;
-  }
-  return container;
+  const [, refresh] = useReducer((version: number) => version + 1, 0);
+  const resolved = container === undefined ? scope : isElementRef(container) ? container.current : container;
+
+  // React attaches sibling refs during commit. One post-commit comparison makes
+  // that attachment observable without polling or ever choosing a body fallback.
+  useEffect(() => {
+    if (container !== undefined && isElementRef(container) && container.current !== resolved) {
+      refresh();
+    }
+  }, [container, resolved]);
+
+  return resolved;
 }

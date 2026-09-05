@@ -79,7 +79,7 @@ describe("useResolvedPortalContainer", () => {
     expect(seen.at(-1)).toBe(target);
   });
 
-  it("reports a ref's element on the render after it attaches", () => {
+  it("reports a ref's element after commit without a host rerender", async () => {
     function Host({ onResolve }: { onResolve: (resolved: Resolved) => void }): ReactNode {
       const ref = useRef<HTMLElement | null>(null);
       return (
@@ -90,14 +90,7 @@ describe("useResolvedPortalContainer", () => {
       );
     }
     const seen: Resolved[] = [];
-    const { rerender } = render(
-      <Host
-        onResolve={(resolved) => {
-          seen.push(resolved);
-        }}
-      />
-    );
-    rerender(
+    render(
       <Host
         onResolve={(resolved) => {
           seen.push(resolved);
@@ -105,6 +98,6 @@ describe("useResolvedPortalContainer", () => {
       />
     );
     expect(seen[0]).toBeNull();
-    expect(seen.at(-1)).toBeInstanceOf(HTMLElement);
+    await expect.poll(() => seen.at(-1)).toBeInstanceOf(HTMLElement);
   });
 });
