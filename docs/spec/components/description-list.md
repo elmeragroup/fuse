@@ -10,13 +10,13 @@
 
 ## 2 Anatomy
 
-| Part | Renders | data-slot |
-| --- | --- | --- |
-| `DescriptionList.Root` | `<div>` — bare grouping wrapper | `description-list` |
-| `DescriptionList.Heading` | `<h2>` (plain semantic heading) | `description-list-heading` |
+| Part                      | Renders                             | data-slot                  |
+| ------------------------- | ----------------------------------- | -------------------------- |
+| `DescriptionList.Root`    | `<div>` — bare grouping wrapper     | `description-list`         |
+| `DescriptionList.Heading` | `<h2>` (plain semantic heading)     | `description-list-heading` |
 | `DescriptionList.Content` | `<dl>` — responsive two-column grid | `description-list-content` |
-| `DescriptionList.Term` | `<dt>` | `description-list-term` |
-| `DescriptionList.Details` | `<dd>` | `description-list-details` |
+| `DescriptionList.Term`    | `<dt>`                              | `description-list-term`    |
+| `DescriptionList.Details` | `<dd>`                              | `description-list-details` |
 
 ```tsx
 <DescriptionList.Root>
@@ -36,13 +36,13 @@
 
 All styled parts take `className` (merged via `cn`) plus native element pass-through; none hold state.
 
-| Part | Type | Notes |
-| --- | --- | --- |
-| `DescriptionList.Root` | `ComponentProps<"div">` | no default classes; passes everything through |
-| `DescriptionList.Heading` | `ComponentProps<"h2">` | plain `<h2>` by default; polymorphic via `render` (`useRender`) for other levels |
-| `DescriptionList.Content` | `ComponentProps<"dl">` | `grid grid-cols-1 text-base/6 sm:grid-cols-[min(50%,calc(var(--spacing)*80))_auto] sm:text-sm/6` — single column on mobile; ≥`sm`, term column is `min(50%, 20rem)` |
-| `DescriptionList.Term` | `ComponentProps<"dt">` | `col-start-1 border-t py-2 pr-2 text-muted-foreground first-of-type:border-none` |
-| `DescriptionList.Details` | `ComponentProps<"dd">` | `py-2 text-foreground first-of-type:border-none sm:border-t` — top border only at ≥`sm`; on mobile the `<dt>` alone carries the row divider |
+| Part                      | Type                    | Notes                                                                                                                                                               |
+| ------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DescriptionList.Root`    | `ComponentProps<"div">` | no default classes; passes everything through                                                                                                                       |
+| `DescriptionList.Heading` | `ComponentProps<"h2">`  | plain `<h2>` by default; polymorphic via `render` (`useRender`) for other levels                                                                                    |
+| `DescriptionList.Content` | `ComponentProps<"dl">`  | `grid grid-cols-1 text-base/6 sm:grid-cols-[min(50%,calc(var(--spacing)*80))_auto] sm:text-sm/6` — single column on mobile; ≥`sm`, term column is `min(50%, 20rem)` |
+| `DescriptionList.Term`    | `ComponentProps<"dt">`  | `col-start-1 border-t py-2 pr-2 text-muted-foreground first-of-type:border-none`                                                                                    |
+| `DescriptionList.Details` | `ComponentProps<"dd">`  | `py-2 text-foreground first-of-type:border-none sm:border-t` — top border only at ≥`sm`; on mobile the `<dt>` alone carries the row divider                         |
 
 ## 4 Variants
 
@@ -73,6 +73,7 @@ None — no tv recipe, no variant axes. The mobile/desktop layout switch is the 
 4. **`data-slot` attributes added** — the ref emits none in this file; ours emit the §2 set per family convention so the parts are selectable/testable like every other component.
 5. **KEPT**: `Root` as a bare, class-free div (purely semantic — stated in §2, not "fixed"); the `min(50%,calc(var(--spacing)*80))` column arithmetic; the mobile-vs-`sm` border split between Term and Details.
 6. No `dark:` classes, no raw palette classes in the ref — nothing to clean.
+7. **`Heading` stamps `data-slot` through `useRender` state** (ticket 44, 2026-09-03): the part passed a literal `"data-slot"` key in the `props` object ahead of `mergeProps`; it now passes `state: { slot: "description-list-heading" }` like `Breadcrumb.Link` (§8.3 of [breadcrumb](breadcrumb.md)) and every other `useRender` part. The emitted attribute, its position in the tag and the merged classes are unchanged.
 
 ## 9 Test requirements
 

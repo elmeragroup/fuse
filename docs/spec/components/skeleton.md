@@ -10,8 +10,8 @@
 
 ## 2 Anatomy
 
-| Part | Renders | data-slot |
-| --- | --- | --- |
+| Part       | Renders                                           | data-slot  |
+| ---------- | ------------------------------------------------- | ---------- |
 | `Skeleton` | `<div class="animate-pulse rounded-md bg-muted">` | `skeleton` |
 
 ```tsx
@@ -22,9 +22,9 @@ A shape-only placeholder: it has no intrinsic size — consumers size it via `cl
 
 ## 3 Props
 
-| Part | Type | Notes |
-| --- | --- | --- |
-| `Skeleton` | `ComponentProps<"div">` | `className` merged via `cn`; everything else passes through. No `isLoading` prop — rendering the component *is* the loading state; consumers conditionally render it |
+| Part       | Type                    | Notes                                                                                                                                                                |
+| ---------- | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Skeleton` | `ComponentProps<"div">` | `className` merged via `cn`; everything else passes through. No `isLoading` prop — rendering the component _is_ the loading state; consumers conditionally render it |
 
 ## 4 Variants
 
@@ -42,7 +42,7 @@ None — no tv recipe, no variant axes. Shape, size, and count are entirely cons
 
 ## 7 Accessibility
 
-- Purely decorative: a styled div with no role, no text, no interactivity. It should not be announced — consumers rendering skeleton regions set `aria-hidden="true"` on the placeholder block (or the skeletons themselves) and communicate loading via `aria-busy="true"` on the region being loaded, with a polite live-region announcement where the load matters.
+- Purely decorative: a styled div with no role, no text, no interactivity. The component emits `aria-hidden="true"` so it is absent from the accessibility tree by default. Consumers communicate loading via `aria-busy="true"` on the region being loaded, with a polite live-region announcement where the load matters. A consumer `aria-hidden` on the spread (including `"false"`) overrides the default. A redundant `aria-hidden` wrap around a skeleton block is optional, not required.
 - `animate-pulse` is an opacity animation; it is low-motion and acceptable under `prefers-reduced-motion`, but themes may still tone it down globally — the component adds no motion queries of its own.
 - No keyboard behavior, no focus semantics; a skeleton must never be a focus target.
 
@@ -56,7 +56,7 @@ None — no tv recipe, no variant axes. Shape, size, and count are entirely cons
 
 ## 9 Test requirements
 
-- Renders a `<div>` with `data-slot="skeleton"`; no role queries apply (assert it is *absent* from the accessibility tree when the consumer pattern `aria-hidden` is applied — the demo pattern is the tested pattern).
+- Renders a `<div>` with `data-slot="skeleton"` and `aria-hidden="true"`; no role queries apply. Assert the default emit and that the node is absent from the accessibility tree without a consumer wrap. A consumer `aria-hidden` (including `"false"`) on the spread overrides the default.
 - `className` merges via `cn`: consumer sizing classes coexist with the base classes; a consumer `bg-*` override wins over `bg-muted`.
 - Arbitrary props (`id`, `data-*`, event handlers) and `ref` pass through to the div (regression guard for §8.1).
 - Static/type-level: props type is `ComponentProps<"div">`.
@@ -64,4 +64,4 @@ None — no tv recipe, no variant axes. Shape, size, and count are entirely cons
 
 ## 10 Demo requirements
 
-Plain runnable `.tsx` demos: `skeleton-basic.tsx` (text-line stack: three widths of `h-4` bars plus a `size-10 rounded-full` avatar circle, wrapped in an `aria-hidden` block with `aria-busy` on the region — the canonical consumer pattern), `skeleton-card.tsx` (a card-shaped composite placeholder mirroring a real layout), plus the shared table scenario `vertical-table-data.tsx` (table.md §10) exercising skeletons via `isLoading`.
+Plain runnable `.tsx` demos: `skeleton-basic.tsx` (text-line stack: three widths of `h-4` bars plus a `size-10 rounded-full` avatar circle, with `aria-busy` on the loading region — the component supplies `aria-hidden`; a redundant wrap is optional, not the contract), `skeleton-card.tsx` (a card-shaped composite placeholder mirroring a real layout), plus the shared table scenario `vertical-table-data.tsx` (table.md §10) exercising skeletons via `isLoading`.

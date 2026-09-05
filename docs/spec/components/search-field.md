@@ -26,19 +26,19 @@ All inner parts come from the tier-internal RAC field module (`Label`, `Input`, 
 
 ## 3 Props
 
-`SearchFieldProps = { label?, description?, errorMessage?, placeholder? } & AriaSearchFieldProps`
+`SearchFieldProps = { label?, description?, errorMessage?, placeholder?, clearLabel? } & AriaSearchFieldProps`
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `label` | `string` | — | renders RAC `Label`, auto-associated |
-| `description` | `string` | — | renders `Description slot="description"` |
-| `errorMessage` | `ReactNode \| ((v: ValidationResult) => ReactNode)` | — | unified composite face; forwarded as FieldError children |
-| `clearLabel` | `string` | locale dictionary | accessible name for the clear button |
-| `placeholder` | `string` | — | forwarded to the inner `Input` |
-| `value` / `defaultValue` / `onChange` | RAC | — | `onChange(value: string)` |
-| `onSubmit` / `onClear` | RAC | — | Enter submits, clear button / Escape clears |
-| `isDisabled` / `isReadOnly` / `isRequired` / `isInvalid` | `boolean` | — | ref-style booleans (labeled composite, per conventions) |
-| `name`, `validate`, `autoFocus`, aria-* | RAC | — | pass-through |
+| Prop                                                     | Type                                                | Default           | Notes                                                    |
+| -------------------------------------------------------- | --------------------------------------------------- | ----------------- | -------------------------------------------------------- |
+| `label`                                                  | `string`                                            | —                 | renders RAC `Label`, auto-associated                     |
+| `description`                                            | `string`                                            | —                 | renders `Description slot="description"`                 |
+| `errorMessage`                                           | `ReactNode \| ((v: ValidationResult) => ReactNode)` | —                 | unified composite face; forwarded as FieldError children |
+| `clearLabel`                                             | `string`                                            | locale dictionary | accessible name for the clear button                     |
+| `placeholder`                                            | `string`                                            | —                 | forwarded to the inner `Input`                           |
+| `value` / `defaultValue` / `onChange`                    | RAC                                                 | —                 | `onChange(value: string)`                                |
+| `onSubmit` / `onClear`                                   | RAC                                                 | —                 | Enter submits, clear button / Escape clears              |
+| `isDisabled` / `isReadOnly` / `isRequired` / `isInvalid` | `boolean`                                           | —                 | ref-style booleans (labeled composite, per conventions)  |
+| `name`, `validate`, `autoFocus`, aria-*                  | RAC                                                 | —                 | pass-through                                             |
 
 `ref` forwards to the inner `<input>`.
 
@@ -82,6 +82,8 @@ All inner parts come from the tier-internal RAC field module (`Label`, `Input`, 
 - Clear button (`getByRole("button", { name: /clear/i })`) clears the field and is invisible when empty (root `data-empty`)
 - `isDisabled` / `isInvalid` reflect on the root data attributes; `errorMessage` renders only when invalid
 - Clear label renders in all four locales; explicit `clearLabel` wins.
+- Shared focus-ring helper: keyboard focus on the searchbox paints the `focusRing({ target: "state" })` ring on the private `FieldGroup` and never a second ring on the control; mouse focus paints none; both density stamps. _(Added 2026-09-03 — [ADR 0008](../../adr/0008-tests-assert-behaviour-not-source-spelling.md).)_
+- Dual-density: the FieldGroup box height matches the signed `md` rung at `dense` and `comfortable`; a nested `data-density` does not rescope it. _(Added 2026-09-03 — [ADR 0008](../../adr/0008-tests-assert-behaviour-not-source-spelling.md).)_
 
 ## 10 Demo requirements
 

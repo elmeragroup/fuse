@@ -12,14 +12,14 @@
 
 Single component, fixed internal structure:
 
-| Layer | Base | Notes |
-| --- | --- | --- |
-| root | base-ui `Field.Item` | **requires a `Field.Root` ancestor** (and a `CheckboxGroup` primitive ancestor for `value` to mean anything) |
-| card | `Card` + `CardContent` | surface + `variant`/`isDisabled` recipe classes |
-| label | base-ui `Field.Label` | wraps control + text column; whole text area clickable |
-| control | base-ui `Checkbox.Root` (custom `render`) | 24px `Circle`→`CheckCircle` icon crossfade |
-| text column | `div`s | tags (`Badge` per tag) → title → description → `children` |
-| `rightContent` | `ReactNode` | rendered **outside** the label — clicks there don't toggle |
+| Layer          | Base                                      | Notes                                                                                                        |
+| -------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| root           | base-ui `Field.Item`                      | **requires a `Field.Root` ancestor** (and a `CheckboxGroup` primitive ancestor for `value` to mean anything) |
+| card           | `Card` + `CardContent`                    | surface + `variant`/`isDisabled` recipe classes                                                              |
+| label          | base-ui `Field.Label`                     | wraps control + text column; whole text area clickable                                                       |
+| control        | base-ui `Checkbox.Root` (custom `render`) | 24px `Circle`→`CheckCircle` icon crossfade                                                                   |
+| text column    | `div`s                                    | tags (`Badge` per tag) → title → description → `children`                                                    |
+| `rightContent` | `ReactNode`                               | rendered **outside** the label — clicks there don't toggle                                                   |
 
 ```tsx
 <Field.Root name="addons">
@@ -31,21 +31,21 @@ Single component, fixed internal structure:
 
 ## 3 Props
 
-`Omit<ComponentProps<CheckboxPrimitive.Root>, "render" | "disabled" | "title">` + `VariantProps<typeof checkboxCardStyles>` plus:
+`Omit<ComponentProps<CheckboxPrimitive.Root>, "render" | "disabled" | "title" | "className">` + `VariantProps<typeof checkboxCardStyles>` plus:
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `title` | `ReactNode` | — (required) | native string `title` attr is Omit-ted so ReactNode isn't narrowed (ref comment) |
-| `description` | `string` | — (required) | `text-sm text-pretty` line under the title |
-| `tags` | `string[]` | — | rendered as `Badge` per tag above the title; row omitted when empty/absent |
-| `rightContent` | `ReactNode` | — | trailing slot outside the label |
-| `variant` | `"default" \| "muted"` | `"default"` | card surface: `bg-card` / `bg-muted` |
-| `isDisabled` | `boolean` | — | recipe `opacity-75` on the card + `disabled` on the checkbox primitive (primitive `disabled` is Omit-ted from the pass-through) |
-| `value` | `string` | — | checkbox group membership value |
-| `children` | `ReactNode` | — | extra content below the description, inside the label |
-| `...other` | checkbox primitive props | — | spread onto `Checkbox.Root` **after** the internal `render` prop — see §8.4 |
+| Prop           | Type                     | Default      | Notes                                                                                                                           |
+| -------------- | ------------------------ | ------------ | ------------------------------------------------------------------------------------------------------------------------------- |
+| `title`        | `ReactNode`              | — (required) | native string `title` attr is Omit-ted so ReactNode isn't narrowed (ref comment)                                                |
+| `description`  | `string`                 | — (required) | `text-sm text-pretty` line under the title                                                                                      |
+| `tags`         | `string[]`               | —            | rendered as `Badge` per tag above the title; row omitted when empty/absent                                                      |
+| `rightContent` | `ReactNode`              | —            | trailing slot outside the label                                                                                                 |
+| `variant`      | `"default" \| "muted"`   | `"default"`  | card surface: `bg-card` / `bg-muted`                                                                                            |
+| `isDisabled`   | `boolean`                | —            | recipe `opacity-75` on the card + `disabled` on the checkbox primitive (primitive `disabled` is Omit-ted from the pass-through) |
+| `value`        | `string`                 | —            | checkbox group membership value                                                                                                 |
+| `children`     | `ReactNode`              | —            | extra content below the description, inside the label                                                                           |
+| `...other`     | checkbox primitive props | —            | spread onto `Checkbox.Root` **after** the internal `render` prop — see §8.4                                                     |
 
-No `className` prop in the ref surface (styling axes are `variant`/`isDisabled` only).
+The public `CheckboxCard` surface has no `className` prop; styling axes are `variant`/`isDisabled` only (see §8.7).
 
 ## 4 Variants
 
@@ -81,9 +81,10 @@ No `className` prop in the ref surface (styling axes are `variant`/`isDisabled` 
 1. **Parity ruling recorded**: internal `CheckboxCard` is a **strict superset of the external ref's `CheckboxCardHorizontal`** — full parity, no migration action required.
 2. **Icons → Phosphor**: the reference circle/check-circle namespace icons become named `Circle` / `CheckCircle` imports from `@elmeragroup/ui/icons`. **`fill` weight is permitted for the checked `CheckCircle`** (selected/active state exception per the icon conventions); the unchecked `Circle` stays regular.
 3. **`checkboxCardStyles` stays module-private** — no export, consumers get `variant`/`isDisabled` only.
-4. **Spread-after-render constraint KEPT and documented**: `{...other}` is spread onto `Checkbox.Root` *after* the internal `render` prop, so a consumer-supplied `render` would override the icon indicator — which is why `render` is Omit-ted from the prop type. Net effect: **consumers cannot override the icon rendering**; the crossfade indicator is fixed. Any future custom-indicator need routes through `SelectionItem.Shell`'s `control` escape hatch instead.
+4. **Spread-after-render constraint KEPT and documented**: `{...other}` is spread onto `Checkbox.Root` _after_ the internal `render` prop, so a consumer-supplied `render` would override the icon indicator — which is why `render` is Omit-ted from the prop type. Net effect: **consumers cannot override the icon rendering**; the crossfade indicator is fixed. Any future custom-indicator need routes through `SelectionItem.Shell`'s `control` escape hatch instead.
 5. **No renames** — `CheckboxCard` was already a single flat export; it stays a single component (no namespace).
 6. **No `dark:`/`destructive` classes existed in this file** — nothing to strip; `bg-card` already canonical.
+7. **Inherited reference `className` omitted (BUGFIX)**: the pinned reference type is `Omit<ComponentProps<CheckboxPrimitive.Root>, "render" | "disabled" | "title">`, so Base UI's stateful `className` (`BaseUIComponentProps`) is inherited. Because `{...other}` is spread after the internal `className`/`render`, a consumer `className` would replace required focus/layout classes. Intentionally omitted from the public surface so the only styling axes are `variant`/`isDisabled` and those classes are not replaced for typed consumers.
 
 ## 9 Test requirements
 

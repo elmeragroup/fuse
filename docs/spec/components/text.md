@@ -22,35 +22,35 @@ RAC's `Text` slot mechanism is NOT re-created standalone — the date cluster ke
 
 ## 3 Props
 
-`TextProps = React.ComponentPropsWithoutRef<"p"> & VariantProps<typeof textVariants> & { elementType?: string; render?: useRender.RenderProp }` — exported (name disambiguated, §8).
+`TextProps = Omit<React.ComponentPropsWithoutRef<"p">, "slot"> & VariantProps<typeof textVariants> & { elementType?: keyof JSX.IntrinsicElements; render?: useRender.RenderProp }` — exported (name disambiguated, §8). The `slot` omit is what drops the ref's RAC slot wiring (§8); `elementType` is typed to the intrinsic tag names, not a bare `string`.
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `elementType` | `string` (tag name) | `"p"` | ref's public face kept exactly — the ref forwards it to RAC `Text`, which renders that tag; app code passes `"span"` and `"div"` today, so the prop stays even though `render` (below) also covers polymorphism |
-| `variant` | see §4 | `"default"` | tv axis |
-| `size` | see §4 | `"default"` | tv axis; classes also cascade to children via `*:`/`**:` selectors (kept from ref) |
-| `leading` | `"none" \| "tight" \| "snug" \| "relaxed" \| "loose"` | `"relaxed"` | line-height axis |
-| `truncate` | `boolean` | — | adds `truncate` |
-| `weight` | `"normal" \| "medium" \| "bold"` | `"normal"` | note: ref maps `bold` to `font-medium` (§4) |
-| `align` | `"left" \| "center" \| "right" \| "justify"` | — | tv axis present in the recipe (reachable via variant spread in the ref — kept public) |
-| `render` | `useRender` render prop | — | polymorphism, ADDED (§8) |
-| `className` | `string` | — | merged via `cn`, wins over recipe |
-| …rest | native element props | — | spread onto the element |
+| Prop          | Type                                                  | Default     | Notes                                                                                                                                                                                                           |
+| ------------- | ----------------------------------------------------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `elementType` | `keyof JSX.IntrinsicElements`                         | `"p"`       | ref's public face kept exactly — the ref forwards it to RAC `Text`, which renders that tag; app code passes `"span"` and `"div"` today, so the prop stays even though `render` (below) also covers polymorphism |
+| `variant`     | see §4                                                | `"default"` | tv axis                                                                                                                                                                                                         |
+| `size`        | see §4                                                | `"default"` | tv axis; classes also cascade to children via `*:`/`**:` selectors (kept from ref)                                                                                                                              |
+| `leading`     | `"none" \| "tight" \| "snug" \| "relaxed" \| "loose"` | `"relaxed"` | line-height axis                                                                                                                                                                                                |
+| `truncate`    | `boolean`                                             | —           | adds `truncate`                                                                                                                                                                                                 |
+| `weight`      | `"normal" \| "medium" \| "bold"`                      | `"normal"`  | note: ref maps `bold` to `font-medium` (§4)                                                                                                                                                                     |
+| `align`       | `"left" \| "center" \| "right" \| "justify"`          | —           | tv axis present in the recipe (reachable via variant spread in the ref — kept public)                                                                                                                           |
+| `render`      | `useRender` render prop                               | —           | polymorphism, ADDED (§8)                                                                                                                                                                                        |
+| `className`   | `string`                                              | —           | merged via `cn`, wins over recipe                                                                                                                                                                               |
+| …rest         | native element props                                  | —           | spread onto the element                                                                                                                                                                                         |
 
 The ref's `slot` prop (RAC slot wiring) is **dropped** (§8 — migration note).
 
 ## 4 Variants
 
-Recipe: **`textVariants`** — **PUBLIC** from `@elmeragroup/ui/text`. `spanVariants` and other package modules import its private source relatively; consumers borrow it from the component entry. Typed via `VariantProps`.
+Recipe: **`textVariants`** — **PUBLIC** from `@elmeragroup/ui/text`. `spanVariants` and other package modules import its private source relatively; consumers borrow it from the component entry. Typed via `VariantProps`. Colour (`variant`) and start/center/end (`align`) come from the package-private `typographyFragments` recipe in `styles/typography-fragments.ts`; Text extends that recipe and adds `success` on `variant` and `justify` on `align`. _(Amended 2026-09-04.)_
 
-| Axis | Values | Default |
-| --- | --- | --- |
-| `variant` | `default` (`text-inherit`) · `foreground` · `primary` · `secondary` · `brand` · `muted` (`text-muted-foreground`) · `inherit` · `destructive` · `success` (9) | `default` |
-| `size` | `xs` · `sm` · `default` (`text-base`) · `lg` · `xl` · `2xl` — each as `text-{s} *:text-{s} **:text-{s}` (6) | `default` |
-| `leading` | `none` · `tight` · `snug` · `relaxed` · `loose` | `relaxed` |
-| `truncate` | `true` (`truncate`) | — |
-| `align` | `left` · `center` · `right` · `justify` | — |
-| `weight` | `normal` (`font-normal`) · `medium` (`font-medium`) · `bold` (**`font-medium`** — ref maps bold to medium; KEPT, deliberate cap on body-copy weight) | `normal` |
+| Axis       | Values                                                                                                                                                        | Default   |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| `variant`  | `default` (`text-inherit`) · `foreground` · `primary` · `secondary` · `brand` · `muted` (`text-muted-foreground`) · `inherit` · `destructive` · `success` (9) | `default` |
+| `size`     | `xs` · `sm` · `default` (`text-base`) · `lg` · `xl` · `2xl` — each as `text-{s} *:text-{s} **:text-{s}` (6)                                                   | `default` |
+| `leading`  | `none` · `tight` · `snug` · `relaxed` · `loose`                                                                                                               | `relaxed` |
+| `truncate` | `true` (`truncate`)                                                                                                                                           | —         |
+| `align`    | `left` · `center` · `right` · `justify`                                                                                                                       | —         |
+| `weight`   | `normal` (`font-normal`) · `medium` (`font-medium`) · `bold` (**`font-medium`** — ref maps bold to medium; KEPT, deliberate cap on body-copy weight)          | `normal`  |
 
 Base: `font-sans`. The `size` classes deliberately restyle descendants (`*:`/`**:`) so nested inline elements inherit the scale — kept from ref. `destructive` keeps its value name but its class renames to `text-error` (§8).
 
@@ -75,7 +75,7 @@ Base: `font-sans`. The `size` classes deliberately restyle descendants (`*:`/`**
 ## 8 Divergence from reference
 
 1. **RE-HOME (de-RAC)**: ref renders react-aria `Text` (which consumes `TextContext` for slot props); spec renders the plain `elementType` element. Public face unchanged: `elementType` default `"p"` and all variant props kept.
-2. **`slot` prop dropped** — migration note: app sites passing `slot="description"` to `Text` inside RAC field/radio contexts exist in the ref app (e.g. `components/ui/label-value.tsx`, `components/form/feedback/form-feedback-shared.tsx`, `components/form/new-order/field-groups/field-group-customer.tsx`). Those relied on RAC context auto-wiring `aria-describedby`; in the new library that wiring comes from the field family's own Description part, and slotted text inside the date cluster uses the cluster's private RAC `Text`. The prop is simply absent here; TypeScript flags stragglers.
+2. **`slot` prop dropped** — migration note: app sites passing `slot="description"` to `Text` inside RAC field/radio contexts exist in the ref app (e.g. `components/ui/label-value.tsx`, `components/form/feedback/form-feedback-shared.tsx`, `components/form/new-order/field-groups/field-group-customer.tsx`). Those relied on RAC context auto-wiring `aria-describedby`; in the new library that wiring comes from the field family's own Description part, and slotted text inside the date cluster uses the cluster's private RAC `Text`. The prop is simply absent here; TypeScript flags stragglers. _(Amended 2026-09-03 — §3 now carries the `Omit<ComponentPropsWithoutRef<"p">, "slot">` the type actually ships, and types `elementType` as `keyof JSX.IntrinsicElements` rather than `string`.)_
 3. **`TextProps` disambiguation**: the ref exports THREE colliding `TextProps` types (`react-aria/text.tsx`, `react-aria/span.tsx`, `react-aria/field.tsx`). Ruling: exactly one `TextProps` — this component's; span exports `SpanProps`, field's internal alias goes private/renamed (see span.md §8, field.md).
 4. **`render` prop added** (base-ui `useRender` + `mergeProps`) — ref had no polymorphism; canonical polymorphic text primitive. `elementType` is kept alongside for compat (222 files import this family; `elementType="span"` is common).
 5. **`destructive` → `error` class rename**: value name kept, class becomes `text-error` per conventions.

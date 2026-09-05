@@ -5,76 +5,72 @@
 - **Canonical name:** `PhoneNumberField`
 - **Export path:** `@elmeragroup/ui/phone-number-field` (also re-exported from `@elmeragroup/ui`) — exports `PhoneNumberField` and `PhoneNumberFieldProps` only. `Flag` and `usePhoneNumberFieldState` stay package-private.
 - **RSC:** client — owns input/country state, effects, callbacks, focus restoration, and `Intl.DisplayNames`
-- **Tier:** labeled composite over base-ui Field + InputGroup plus direct `@base-ui/react` Combobox primitives; it does not compose the public library `Combobox`. Phone logic is vendored package-private code over `libphonenumber-js`, with no `@elmeragroup/lib` dependency
+- **Tier:** labeled composite over base-ui Field + InputGroup. The country popup is the library `Combobox`'s `Content`/`List`/`Item`/`Empty`; `Combobox.Root`, the flag trigger, and the popup's search input stay direct `@base-ui/react` primitives (§8.15, 2026-09-03). Phone logic is vendored package-private code over `libphonenumber-js`, with no `@elmeragroup/lib` dependency
 - **Source of truth:** `.ref/OrderModuleInternalWeb/packages/ui/src/base-ui/phone-number-field/` (`index.ts`, `phone-number-field.tsx`, `flag.tsx`, `hooks/use-phone-number-field-state.ts`)
 
 ## 2 Anatomy
 
 ```
-Field.Root                                (textFieldVariants slot `base` — borrowed public recipe)
-├─ label row (div, `labelContainer`) > Field.Label (`label`)   — when `label`
-├─ container (div, `container`)
-│  ├─ InputGroup (ref: popover anchor; carries aria-invalid)
-│  │  ├─ Combobox.Root (items=countries, value=selectedCountry)
-│  │  │  ├─ InputGroup.Addon (inline-start)
-│  │  │  │  └─ Combobox.Trigger role="button"      — Flag + dial code (tabular-nums)
-│  │  │  └─ Combobox.Portal > Combobox.Positioner (anchor=InputGroup, bottom-start, offset 6)
-│  │  │     └─ Combobox.Popup (bg-popover, w-(--anchor-width) max-w-72)
-│  │  │        ├─ InputGroup > Addon(MagnifyingGlass) + Combobox.Input (named icon import; search)
-│  │  │        ├─ Combobox.Empty (noCountriesFoundText)
-│  │  │        └─ Combobox.List > Combobox.Item per country
-│  │  │           ├─ Combobox.ItemIndicator > Check (named icon import)
-│  │  │           └─ Flag + dial code + localized country name (truncated)
-│  │  ├─ InputGroup.Input (visible number input, name=`${name}-display-value`)
-│  │  └─ endContent                                 — when `endContent`
-│  └─ Field.Description (`description`)             — when `description`
-├─ Field.Error                                      — when errorMessage truthy
-└─ <input type="hidden" name={name} value={outputValue} />   — the real form value
+Field.Root                                (FieldFrame default root — `fieldFrameRootClass`)
+├─ label row (div) > Field.Label                    — when `label`
+├─ InputGroup (ref: popover anchor; carries aria-invalid)
+│  ├─ Combobox.Root (items=countries, value=selectedCountry)
+│  │  ├─ InputGroup.Addon (inline-start)
+│  │  │  └─ Combobox.Trigger role="button"      — Flag + dial code (tabular-nums)
+│  │  └─ Combobox.Content (library part: portal + positioner + popup; anchor=InputGroup)
+│  │     ├─ InputGroup > Addon(MagnifyingGlass) + raw Combobox.Input (named icon import; search)
+│  │     ├─ Combobox.Empty (noCountriesFoundText)
+│  │     └─ Combobox.List > Combobox.Item per country (library parts)
+│  │        └─ Flag + dial code + localized country name (truncated) + the part's own indicator
+│  ├─ InputGroup.Input (visible number input, name=`${name}-display-value`)
+│  └─ endContent                                 — when `endContent`
+├─ Field.Description                             — when `description`
+└─ Field.Error                                   — when errorMessage truthy
+<input type="hidden" name={name} value={outputValue} />   — sibling of FieldFrame; the real form value
 ```
 
 Internal parts: `Flag` renders the packaged `@elmeragroup/ui/flags` SVG URL as a decorative lazy `<img>` in a fixed 20×15 px slot; `usePhoneNumberFieldState` owns digits, country detection, formatting, and validation. There is no OS detection, emoji branch, network fallback, or public flag variant.
 
 ## 3 Props
 
-`PhoneNumberFieldProps = UsePhoneNumberFieldStateOptions & { …field props } & Pick<ComponentProps<"input">, "id" | "autoFocus" | "onBlur" | "inputMode" | "enterKeyHint" | "autoComplete" | "aria-label" | "aria-labelledby" | "aria-describedby">`.
+`PhoneNumberFieldProps` is one declared object type: the state options below (every member of `UsePhoneNumberFieldStateOptions` except its internal, required `locale`, which the component reads from `useElmeraGroupUi()`), plus the field props, plus the nine native input keys re-declared as `ComponentProps<"input">[K]`.
 
-State options (from `UsePhoneNumberFieldStateOptions` — all public via the component):
+State options (mirrored from `UsePhoneNumberFieldStateOptions` — all public via the component):
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `value` | `string` | `""` | Controlled outer value; URI-decoded on sync (may arrive from URL params) |
-| `onChange` | `(value: string) => void` | — | Receives the **formatted output value** (per `outputFormat`), not raw digits |
-| `defaultCountryCode` | `Extract<CountryCode, FlagAssetCode>` | `"NO"` | `FlagAssetCode` comes from `@elmeragroup/ui/flags`; untyped unresolved values follow the fallback below |
-| `metadata` | `MetadataJson` | `libphonenumber-js/metadata.min.json` | Custom/trimmed metadata injection; country rows are intersected with `flagAssets` |
-| `autoDetectCountry` | `boolean` | `true` | Detect country from `+`/`00` prefix while typing/pasting |
-| `international` | `boolean` | `false` | Store/display full number with prefix vs. national digits |
-| `preserveOnCountryChange` | `boolean` | `false` | Keep digits when switching country (default clears and emits `""`) |
-| `outputFormat` | `"e164" \| "international" \| "national" \| "raw"` | `"e164"` | Format of `onChange`/hidden-input value; type is declared privately and reflected into `PhoneNumberFieldProps` |
-| `formatOnType` | `boolean` | `false` | As-you-type display formatting |
-| `isRequired` | `boolean` | `false` | Feeds validation; sets `aria-required` on the visible input |
-| `onCountryChange` | `(country: PhoneNumberCountry) => void` | — | |
+| Prop                      | Type                                               | Default                               | Notes                                                                                                                                                                                    |
+| ------------------------- | -------------------------------------------------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `value`                   | `string`                                           | `""`                                  | Authoritative controlled value; omit for uncontrolled editing; URI-decoded when received                                                                                                 |
+| `onChange`                | `(value: string) => void`                          | —                                     | Receives the **formatted output value** (per `outputFormat`), not raw digits                                                                                                             |
+| `defaultCountryCode`      | `Extract<CountryCode, FlagAssetCode>`              | `"NO"`                                | `FlagAssetCode` comes from `@elmeragroup/ui/flags`; untyped unresolved values follow the fallback below                                                                                  |
+| `metadata`                | `MetadataJson`                                     | `libphonenumber-js/metadata.min.json` | Custom/trimmed metadata injection; country rows are intersected with `flagAssets`                                                                                                        |
+| `autoDetectCountry`       | `boolean`                                          | `true`                                | Detect country from `+`/`00` prefix while typing/pasting                                                                                                                                 |
+| `international`           | `boolean`                                          | `false`                               | Store the full number with its prefix rather than national digits. The display shows what was entered; the prefix reaches `onChange` and the hidden input either way (§8.16, 2026-09-03) |
+| `preserveOnCountryChange` | `boolean`                                          | `false`                               | Keep digits when switching country (default clears and emits `""`)                                                                                                                       |
+| `outputFormat`            | `"e164" \| "international" \| "national" \| "raw"` | `"e164"`                              | Format of `onChange`/hidden-input value; type is declared privately and reflected into `PhoneNumberFieldProps`                                                                           |
+| `formatOnType`            | `boolean`                                          | `false`                               | As-you-type display formatting                                                                                                                                                           |
+| `onCountryChange`         | `(country: PhoneNumberCountry) => void`            | —                                     |                                                                                                                                                                                          |
 
 Field props:
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `label` / `description` | `string` | — | |
-| `errorMessage` | `ReactNode` | — | `Field.Error`, truthy-gated |
-| `placeholder` | `string` | — | Visible input |
-| `endContent` | `ReactNode` | — | Trailing content inside the InputGroup |
-| `isInvalid` | `boolean` | `false` | → `Field.Root invalid`; InputGroup gets `aria-invalid \|\| undefined` |
-| `isDisabled` | `boolean` | `false` | → Field + Combobox.Root disabled |
-| `isReadOnly` | `boolean` | `false` | → Combobox.Root + visible input readOnly |
-| `isRequired` | `boolean` | — | (shared with state options above) |
-| `name` | `string` | — | Hidden input gets `name`; visible input gets `${name}-display-value` (default `"phone-number-display-value"`) |
-| `className` | `string` | — | Root |
-| `selectCountryLabel` | `string` | locale dictionary | Explicit override for the built-in `selectCountry` key |
-| `searchCountriesLabel` | `string` | locale dictionary | Explicit override for `searchCountries` |
-| `noCountriesFoundText` | `string` | locale dictionary | Explicit override for `noCountries` |
-| `container` | `HTMLElement \| RefObject<HTMLElement>` | nearest `ThemeScope` | forwarded to the country Combobox content |
-| `id`, `autoFocus`, `onBlur`, `inputMode` (`"tel"` default), `enterKeyHint`, `autoComplete`, `aria-label`, `aria-labelledby`, `aria-describedby` | native input | — | `autoComplete` also forwarded to Combobox.Root; aria/id keys forwarded via conditional-spread guard (§8) |
+| Prop                                                                                                                                            | Type                                            | Default              | Notes                                                                                                         |
+| ----------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `label` / `description`                                                                                                                         | `string`                                        | —                    |                                                                                                               |
+| `errorMessage`                                                                                                                                  | `ReactNode`                                     | —                    | `Field.Error`, truthy-gated                                                                                   |
+| `placeholder`                                                                                                                                   | `string`                                        | —                    | Visible input                                                                                                 |
+| `endContent`                                                                                                                                    | `ReactNode`                                     | —                    | Trailing content inside the InputGroup                                                                        |
+| `isInvalid`                                                                                                                                     | `boolean`                                       | `false`              | → `Field.Root invalid`; InputGroup gets `aria-invalid \|\| undefined`                                         |
+| `isDisabled`                                                                                                                                    | `boolean`                                       | `false`              | → Field + Combobox.Root disabled                                                                              |
+| `isReadOnly`                                                                                                                                    | `boolean`                                       | `false`              | → Combobox.Root + visible input readOnly                                                                      |
+| `isRequired`                                                                                                                                    | `boolean`                                       | —                    | sets `aria-required` on the visible input; a component-level prop, not a state option                         |
+| `name`                                                                                                                                          | `string`                                        | —                    | Hidden input gets `name`; visible input gets `${name}-display-value` (default `"phone-number-display-value"`) |
+| `className`                                                                                                                                     | `string`                                        | —                    | Root                                                                                                          |
+| `selectCountryLabel`                                                                                                                            | `string`                                        | locale dictionary    | Explicit override for the built-in `selectCountry` key                                                        |
+| `searchCountriesLabel`                                                                                                                          | `string`                                        | locale dictionary    | Explicit override for `searchCountries`                                                                       |
+| `noCountriesFoundText`                                                                                                                          | `string`                                        | locale dictionary    | Explicit override for `noCountries`                                                                           |
+| `container`                                                                                                                                     | `HTMLElement \| RefObject<HTMLElement \| null>` | nearest `ThemeScope` | forwarded to the country Combobox content                                                                     |
+| `id`, `autoFocus`, `onBlur`, `inputMode` (`"tel"` default), `enterKeyHint`, `autoComplete`, `aria-label`, `aria-labelledby`, `aria-describedby` | native input                                    | —                    | `autoComplete` also forwarded to Combobox.Root; aria/id keys forwarded via conditional-spread guard (§8)      |
 
-Internal hook return (not public API, informs behavior): `displayValue`, `rawValue`, `outputValue`, `handleInputChange` (runs private `cleanPhoneInput` + detection), `handleCountrySelect`, `handlePaste` (preventDefault + reroute through input pipeline), `setCountry`, `country`, `selectedCountry`, `callingCode`, `validation`, `nationalNumber`, `countries`, `getCountryName`. Locale comes only from `useElmeraGroupUi().locale`; `Intl.DisplayNames` falls back to `en-US`, then the raw code.
+Internal hook return (`UsePhoneNumberFieldStateReturn`, not public API, informs behavior): exactly eight members — `displayValue`, `outputValue`, `handleInputChange` (runs the private clean + detection pipeline), `selectCountry`, `handlePaste` (preventDefault + reroute through that same pipeline), `selectedCountry`, `countries`, `getCountryName`. _(Amended 2026-09-03 — §8.14: the earlier list named seven members the hook never returned: `rawValue`, `handleCountrySelect`, `setCountry`, `country`, `callingCode`, `validation`, `nationalNumber`.)_ Locale comes only from `useElmeraGroupUi().locale`; `Intl.DisplayNames` falls back to `en-US`, then the raw code.
 
 `getCountries(metadata)` uses `libphonenumber-js/core` + `metadata.min.json`, constructs `{ code, dialCode }`, and preserves the reference's product exclusion set exactly: `AF`, `BY`, `MM`, `BI`, `CF`, `CD`, `GN`, `GW`, `HT`, `IQ`, `IR`, `LB`, `LY`, `ML`, `MD`, `NI`, `NE`, `KP`, `RU`, `SO`, `SD`, `SS`, `SY`, `TN`, `UA`, `VE`, `YE`, `ZW`. This is a copied product rule, not a claim that the list represents current law; changes require a product/compliance decision and a changeset.
 
@@ -82,15 +78,15 @@ Flag availability is a separate filter, not an addition to that product list. Th
 
 ## 4 Variants
 
-No own recipe. **Borrows the public `textFieldVariants`** slots `base`, `labelContainer`, `label`, `container`, `description` (no axes passed — plain defaults). Trigger/popup/item styling is inline; no size axis.
+No own recipe. Layout comes from package-private `FieldFrame` (`fieldFrameRootClass` on the root, derived from `fieldFrameVariants`; heading row, description and error from the frame defaults). Does not import `textFieldVariants`. Trigger/popup/item styling is inline; no size axis. _(Amended 2026-09-04 — ticket 06, 2026-09-04: recipe-derived FieldFrame classes.)_
 
 ## 5 Consumed tokens
 
-`card` (InputGroup surface per conventions), `input`/`ring`/`error` (InputGroup border/focus/invalid states), `popover` + `popover-foreground` (country popup), `accent` + `accent-foreground` (highlighted item), `muted` (trigger hover/pressed), `muted-foreground` (description, search icon, empty text), `foreground` (addon text; popup `ring-foreground/10`). Radii: popup `rounded-md`, trigger `rounded`, item `rounded-sm`.
+`card` (InputGroup surface per conventions), `input`/`ring`/`error` (InputGroup border/focus/invalid states; since §8.15 also the popup search box's `border-input/30` + `bg-input/30` fill, painted by `Combobox.Content`), `popover` + `popover-foreground` (country popup), `accent` + `accent-foreground` (highlighted item), `muted` (trigger hover/pressed), `muted-foreground` (description, search icon, empty text), `foreground` (addon text; popup `ring-foreground/10`). Radii: popup `rounded-md`, trigger `rounded`, item `rounded-sm`.
 
 ## 6 Data attributes
 
-- **Emitted:** `data-slot="field|field-label|field-description|field-error"` plus InputGroup's slots; the normal Combobox overlay attributes. Portal placement is resolved through the explicit `container` prop/nearest `ThemeScope`, not an overlay data attribute.
+- **Emitted:** `data-slot="field|field-label|field-description|field-error"` plus InputGroup's slots; from the composed library parts (§8.15) `data-slot="combobox-content|combobox-list|combobox-item|combobox-empty"` and `data-external-anchor="true"` on the popup (the flag that tells `Combobox.Content` it is anchored to an external element). Portal placement is resolved through the explicit `container` prop/nearest `ThemeScope`, not an overlay data attribute.
 - **Consumed (base-ui Combobox):** `data-pressed` (trigger active fill), `data-open`/`data-closed` + `data-[side=…]` (popup animation), `data-highlighted`/`data-disabled` (items), `data-empty` (empty state). Popup animation classes use conventions' self-scoped `data-open:`/`data-closed:` custom variants on the popup element.
 
 ## 7 Accessibility
@@ -116,6 +112,35 @@ No own recipe. **Borrows the public `textFieldVariants`** slots `base`, `labelCo
 11. **Token renames:** `destructive` → `error` in InputGroup invalid styles; the fixed flag artwork is exempt from theme tokens.
 12. **Locale is provider-only:** the component-level `locale` option and `document.documentElement.lang` fallback are deleted. `useElmeraGroupUi().locale` is required, and the same locale drives `Intl.DisplayNames` and built-in strings.
 13. **Private phone engine:** `cleanPhoneInput`, parse/detect/format helpers, constants, country creation, validation types, and `usePhoneNumberFieldState` are copied into package-private modules from the pinned reference. None is re-exported and no `@elmeragroup/lib` type leaks into declarations.
+14. **`PhoneNumberFieldProps` is declared, not derived** (2026-09-03): the type is one object literal — it mirrors `UsePhoneNumberFieldStateOptions` minus the internal `locale` (which comes from `useElmeraGroupUi()`), adds the field props, and re-declares the nine native input keys as `ComponentProps<"input">[K]`; it is not an intersection with the hook options plus a `Pick`. The hook's return is the eight members of `UsePhoneNumberFieldStateReturn`. §3 documented a derived type and a fourteen-member return, seven of whose names the hook never had; the text is corrected to the shipped types, which stay as they are.
+
+15. **Country popup composed from the library Combobox** (2026-09-03): `Combobox.Content/List/Item/Empty` replace the hand-built `Portal`/`Positioner`/`Popup`/`List`/`Item`/`ItemIndicator`/`Empty` this chapter used to specify, so the picker inherits the family's popup chrome and its fixes instead of a copy that had already drifted from it. `Combobox.Root`, the flag `Trigger`, and the popup's search `Input` stay raw `@base-ui/react` primitives: the library `Trigger` appends a caret the flag trigger must not have and would lose the `role="button"` contract of §8.3, and the library `Input` builds its own InputGroup with no leading-icon slot.
+
+    The deliberate changes, in full. **Popup:** loses `p-2` and `max-w-72`, gains `relative group/combobox-content max-h-(--available-height) max-w-(--available-width) overflow-hidden`, the shared `*:data-[slot=input-group]:…` compact chrome for its search box, and the two extra `data-[side=left|right]` slide variants the shared motion string carries. The `max-w-72` cap goes because `Combobox.Content` pins an anchored popup's minimum width to `--anchor-width`, which a smaller `max-width` cannot undo; the popup is the width of the field, which is what §8.5 already intends. **Search InputGroup:** drops its local `mb-2` for the shared `m-1 mb-0`. **List:** takes the shared `max-h` clamp and `data-empty:p-0`. **Empty row:** takes the shared `hidden` + `group-data-empty/combobox-content:flex` and `py-2` in place of `data-empty:flex` and `px-2`. **Option:** gains `[&_svg:not([class*='size-'])]:size-4` and `data-highlighted:**:text-accent-foreground`, the two rules the copied item class had already missed. **Option DOM:** the inner `<div class="flex items-center gap-2">` wrapper is deleted — the option row already carries `flex items-center gap-2` from `menuItemClass` — and the check indicator moves from the option's first child to its last, which is invisible because the indicator is absolutely positioned. New `data-slot` values appear per §6.
+
+    Unchanged, verified class set by class set against the rendered DOM: the field root, the InputGroup, the flag trigger, the positioner, the search input, the search addon and its icon, the item indicator, and the number input.
+
+    The old list clamp was **inert**, not merely generous: it was written `max-h-[min(300px,calc(var(--available-height)-2.75rem))]`, and CSS `calc` requires whitespace around a `-`, so the whole `min()` was invalid and the declaration was dropped. With no `max-height` on the popup either, the popup grew to the height of every country row — 6218 px against a 283 px popup after the change, in the harness that measured it. §9 pins the clamp by asserting the open list scrolls within the viewport rather than by pinning either number.
+
+16. **Parsed snapshots and controlled drafts** (amended 2026-09-05, review tickets 02/03): the hook owns one state record containing the accepted snapshot and the latest proposed snapshot. Each snapshot contains country, digits, display and output computed together. The parent `value` is authoritative: the proposal supplies the display only when its output equals the accepted prop. Immediate and delayed acceptance retain the entered draft formatting; rejection leaves both display and hidden submission at the accepted value. External replacement or clearing reconciles synchronously, including server rendering. Omitting `value` enables uncontrolled editing. Prop reconciliation is a pure transition over that record (`phone-field-state.ts`, unit-tested apart from React): a change to `outputFormat`, `formatOnType`, `international` or `autoDetectCountry` under the same metadata re-derives display and output from the existing digits and country, so a formatting change never adds a prefix to an uncontrolled or accepted controlled draft. A parent that accepts a proposal and changes these flags in the same commit retains the proposal digits too. Actual external value replacement is decoded as new input; metadata replacement re-reads the authoritative controlled value or migrates the existing uncontrolled number (§8.19).
+
+    Parsed values belong to immutable state snapshots, so render does not mutate a shared parse cache. A conditional state adjustment reconciles changed props and configuration before children render. Event handlers calculate a proposal once and its accepted echo reuses the same snapshot. Country notifications follow committed selection changes. No React 19.2-only API is required.
+
+    The existing budgets remain unchanged: one parse per national keystroke under each of `e164`, `national`, `international` and `formatOnType`; three for a paste carrying an included international prefix; one for a country change. Empty input needs no parse. Incomplete draft text whose formatted output still equals the controlled prop is retained, including the empty-output draft case. International mode retains entered national digits while the hidden input carries the full number after acceptance.
+
+    Country names still use the module-level lazy per-locale resolver; mounting does not call `Intl.DisplayNames.of` until the popup opens. `itemToStringLabel` returns the country code before opening. The phone engine remains package-private, and processing and formatting helpers take option objects.
+
+17. **The unbound `form` and the empty search `name`** (2026-09-03), previously shipped undocumented: `Combobox.Root` carries `form="elmera-ui-phone-country-unbound"`, an id that deliberately names no rendered form, so base-ui's own hidden country-code input is associated with nothing and cannot reach the host form's `FormData` beside `name` and `${name}-display-value` — the pair of §8.2 is the whole submitted surface. The popup's search input carries `name=""`: a control with no name is never submitted, and the empty name also keeps it out of browser autofill heuristics, which `autoComplete="one-time-code"` (§8.8) covers only for password managers. Both are load-bearing; neither may be tidied away unless the two-input contract of §8.2 changes first.
+
+18. **The field frame is `FieldFrame`** (2026-09-03): the label row, the description and the error come from the package-private `field/field-frame.tsx` (field.md §8.9) instead of a fourth hand-built copy; `textFieldVariants`' `base`/`labelContainer`/`label`/`container`/`description` slots are passed to it as class arguments exactly as TextField passes its own, so every rendered class set is unchanged part for part.
+
+    The hidden submit input is a sibling of `<FieldFrame>` under a fragment, not a child of it and not a reason to give the frame a trailing slot. It is still `type="hidden"` `name={name}` carrying `outputValue` — the second half of §8.2's two-input submitted surface, pinned by the `FormData` test in §9. _(Amended 2026-09-04: the input left `children` and sits beside the frame.)_ _(Amended 2026-09-04: PhoneNumberField passes only a root class (`fieldFrameRootClass`) and no longer imports `textFieldVariants`; the control/description wrapper is omitted because the frame root is already that stack, so description is a direct child of `Field.Root`.)_
+
+19. **International identity and metadata changes** (amended 2026-09-05): international input is normalized from `00` to `+`. Prefix removal is allowed only when detection resolves a country in the active picker catalog. Excluded or unavailable countries retain their full international digits in the display and E.164 output, while selection remains a valid picker country. If trimmed metadata cannot parse an international number, E.164 preserves the cleaned international input. This is preservation, not validation or rejection. The migration runs only when the `metadata` object itself is replaced; formatting-only prop changes keep the entered digits (§8.16).
+
+    Replacing metadata reconciles selection to the current country when present, otherwise NO or the first picker country. Controlled fields re-read the authoritative prop; uncontrolled fields preserve existing digits with their previous international prefix, so changing catalogs cannot reinterpret their identity. Empty fields stay empty. The next national edit uses the new selection. Clear and restore discard obsolete proposals and re-read the restored value.
+
+20. **Native edit and form boundaries** (2026-09-05): input changes, clipboard paste and country selection all honor `isDisabled` and `isReadOnly`. Read-only fields remain focusable and submit their unchanged accepted value. Both the visible and sibling hidden input are disabled together, so native `FormData` omits both while disabled. Toggling the flags restores editing and submission without remounting the field.
 
 ## 9 Test requirements
 
@@ -129,6 +154,14 @@ Role/label-based queries throughout; keyboard flows per §7:
 - `isInvalid`/`errorMessage` alert; `isDisabled` disables trigger and input; `isReadOnly` keeps focus but blocks edits.
 - i18n injection: overridden labels appear in the accessibility tree.
 - Empty search shows `noCountriesFoundText`.
+- Parse budget: a controlled probe over `usePhoneNumberFieldState` alone counts `AsYouType` parses and pins each path from §8.16 — one per keystroke under each of `e164`, `outputFormat="national"`, `international`, and `formatOnType`; three for a paste carrying an international prefix; one for a country change. The hook needs a renderer that runs effects, which the node `unit` project has no dependency for, so this one hook test runs in the `browser` project and renders no library component.
+- Country names: mounting `PhoneNumberField` performs no `Intl.DisplayNames.of` until the country popup opens; a module-level per-locale resolver fills names on first lookup.
+- Controlled value: with the emitted value fed straight back in, `outputFormat="national"` and `formatOnType` render as they always did, `international` shows what was entered while the hidden input carries `+4741234567` (§8.16), and a typed `+` prefix survives in `international` mode.
+- Controlled restore: a parent that types through the hook, sets `value=""`, then restores the previously emitted string must show those digits again (§8.19). Rejected and delayed proposals must leave actual FormData at the accepted value until acceptance; immediate/delayed acceptance preserves draft formatting. Nonempty server rendering must populate both inputs and hydrate without recovery.
+- International identity: initial and pasted +247/+7 values retain their prefix; +46 is the included-country control. Full-to-SE-only metadata replacement keeps selection in the catalog, preserves existing international digits and correctly parses the next Swedish national edit.
+- Native boundaries: trusted clipboard paste leaves readonly display, selected country, submission and callbacks unchanged; toggling disabled/readonly on the same instance restores editing. Actual FormData excludes both disabled inputs and includes enabled/readonly values.
+- Popup geometry: with the picker open, the country list scrolls inside the popup and its height stays inside the viewport, so the clamp §8.15 restored cannot go inert again.
+- The picker's exclusion list, flag gap, and empty-picker error are the test tree's own literals (`test/phone-picker-contract.ts`), not imports of the engine's constants: reading the implementation's own `Set` back made both assertions tautologies (ADR 0008).
 - Locale matrix: `selectCountry`, `searchCountries`, and `noCountries` render in all four supported locales; each override prop wins.
 - Flag contract: NO/SE/FI rows render the manifest's packaged SVG URLs with empty alt text plus the exact lazy-image attributes from [architecture](../architecture.md) §6a; the code has no platform branch. Picker tests assert that `AC`/`BQ`/`EH`/`TA` are absent, every rendered row resolves through `flagAssets`, and auto-detection never selects an unresolved code. Type tests reject those four values as `defaultCountryCode`; an untyped unresolved default exercises the documented fallback. Source/package scans reject `flagcdn.com`, browser-detection identifiers, Unicode regional-indicator helpers, and substitute-country mappings.
 

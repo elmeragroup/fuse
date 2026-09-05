@@ -17,7 +17,7 @@ Directional chapter for `@elmeragroup/ui`: work deliberately deferred out of v1,
 - **What**: mint and ship dark token values across the theme matrix, activated by the `data-theme="dark"` axis.
 - **Why deferred**: no product surface requires dark today; minting 20 permutations of dark values without design demand would be speculative. The out-of-scope ruling covers **values only** — the axis itself is v1 architecture.
 - **Trigger**: a consuming product committing to a dark surface; design supplying (or commissioning) dark palettes.
-- **Already prepared**: `data-theme` is reserved for dark in the attribute cascade (ADR [0002](../adr/0002-theme-attributes.md) — variant/brand/segment use their own attributes, leaving `data-theme` free); the token pipeline ends `themes.css` with a **commented dark-axis placeholder** (not an empty CSS rule); host-placed `ColorSchemeScript` / `colorSchemeScriptSource` plus provider-owned `useColorScheme` / `ForceColorScheme` already set the reserved marker before and after paint ([theming](theming.md) §7.8); `style.colorScheme` stays off until those values exist; the `no-tailwind-dark-variant` lint rule keeps components token-driven so dark lands by values alone. The external ref's `.guen-dark` block is recorded as reference input  §1.2) — recorded, not specced, and of limited quality (double-gated, never applied by any code, hex not oklch, status-containers only).
+- **Already prepared**: `data-theme` is reserved for dark in the attribute cascade (ADR [0002](../adr/0002-theme-attributes.md) — variant/brand/segment use their own attributes, leaving `data-theme` free); the token pipeline ends `themes.css` with a **commented dark-axis placeholder** (not an empty CSS rule); host-placed `ColorSchemeScript` / `colorSchemeScriptSource` plus provider-owned `useColorScheme` / `ForceColorScheme` already set the reserved marker before and after paint ([theming](theming.md) §7.8); `style.colorScheme` stays off until those values exist; the `no-tailwind-dark-variant` lint rule keeps components token-driven so dark lands by values alone. The external ref's `.guen-dark` block is recorded as reference input (token extraction §1.2) — recorded, not specced, and of limited quality (double-gated, never applied by any code, hex not oklch, status-containers only).
 - **Cost when triggered**: dark values per theme layer in the codegen modules, an extended contrast-matrix snapshot ([accessibility](accessibility.md) §6 applies unchanged), docs picker gains the axis.
 
 ## 3 Visual-regression testing
@@ -38,7 +38,7 @@ Directional chapter for `@elmeragroup/ui`: work deliberately deferred out of v1,
 ## 5 Per-brand focus-ring re-mint
 
 - **What**: replace the single brand-independent violet `--ring` default with per-brand ring values where the violet lacks contrast.
-- **Why deferred**: token values were locked at spec time : all mints final); the violet plus mandatory `ring-offset-2` is the accepted v1 mitigation, recorded as documented deviation 2 in [accessibility](accessibility.md) §6.
+- **Why deferred**: token values were locked at spec time (004: all mints final); the violet plus mandatory `ring-offset-2` is the accepted v1 mitigation, recorded as documented deviation 2 in [accessibility](accessibility.md) §6.
 - **Trigger**: design supplying per-brand ring colors, or an accessibility audit escalating the deviation — the violet falls below 3:1 non-text contrast against some strong external `--feature`/`--primary` fills.
 - **Already prepared**: `--ring` is already a **themable** role token with a library default — a re-mint is pure token values per theme layer, zero component changes; the `focusRing` recipe stays untouched.
 
@@ -63,11 +63,11 @@ Directional chapter for `@elmeragroup/ui`: work deliberately deferred out of v1,
 - **Trigger**: demand appearing from consuming teams (noted verbatim in the docs decision: "if demand appears").
 - **Already prepared**: demos are plain `.tsx` files AST-extracted at docs build, and the `llms.txt` + per-component markdown endpoints are generated from the same sources — a registry would be one more generated output of an existing pipeline, not a new authoring format.
 
-## 9 In-browser playground editor
+## 9 Additional playgrounds
 
-- **What**: an editable in-browser playground (live code editing in docs, base-ui/CodeSandbox style).
-- **Why deferred**: v1's playground is a standalone workspace app consuming source exports with instant HMR — full-fidelity for the team that owns the library; an in-browser editor mainly serves external contributors and issue reproductions.
-- **Trigger**: external-contribution or bug-repro friction once the package is public on npmjs.com.
+- **What**: a standalone scratch app or an editable in-browser playground for component experiments and reproductions.
+- **Why deferred**: the docs app already provides component demos, theme controls, and instant HMR against workspace source exports. A separate app or editor adds maintenance without a demonstrated v1 need. _(Amended 2026-09-05: defer the standalone app as well as the in-browser editor.)_
+- **Trigger**: a concrete limitation in the docs development workflow, or external-contribution and bug-reproduction friction after public release.
 - **Already prepared**: demos are plain runnable `.tsx` with no docs-specific format, so they load into any editor runtime unmodified; the standalone bundle CSS distribution gives an in-browser sandbox a single stylesheet to attach.
 
 ## 10 Density user preference (Wave 2)
@@ -78,3 +78,21 @@ Directional chapter for `@elmeragroup/ui`: work deliberately deferred out of v1,
 - **Already prepared**: `Density` / `densityAttributes` / `defaultDensityForVariant` are public and server-safe ([theming](theming.md) §7.2). Variant does not select `--control-*` in generated theme CSS. Library metrics stay `:root[data-density]`-anchored. `ThemeProvider` and `ThemeScope` have no `density` prop.
 - **Out of this item**: nested `data-density` in library CSS; a reserved `"system"` density value (there is no system density resolver); table row density (`h-10` / cell `p-2` / in-frame calc — [conventions](components/conventions.md)); OrderModule app migrations.
 - **Cost when triggered**: a host-placed pre-paint density stamp (not a copied IIFE); persistence and storage-failure behaviour; cross-tab sync; scroll/form/overlay preservation on toggle; docs picker only if product wants an override preview. Revisit `ThemeProvider` only if diagnosis/runtime echo is actually required — do not add a prop solely to repeat a server-known primitive.
+
+## 11 Chart (Wave 9)
+
+- **What**: ship `@elmeragroup/ui/chart` — recharts composition wrappers (`Chart.Container` / tooltip / legend / style) per [chart](components/chart.md). `recharts` becomes an optional peer; the entry is removed from `DEFERRED_ENTRIES` and joins the exports map, barrel, packed-name assertions, and size budgets.
+- **Why deferred**: ruling 2026-09-02 — Chart  moved to Wave 9 and does not gate the v1 publish. No consumer surface requires it for v1.
+- **Trigger**: a consuming product committing to a charted surface, with `recharts` accepted as an optional peer.
+- **Already prepared**: the component spec, `--chart-1..8` tokens, and the exports-codegen deferred-entry seam (`DEFERRED_ENTRIES` in `packages/ui/scripts/entries.ts`). No docs page or nav entry until the component exists.
+- **Completion criteria**: `chart.ts` source; `recharts` in published optional-peer ranges; size-limit row excluding recharts; docs page + §10 demos; `DEFERRED_ENTRIES` empty or without `chart`.
+
+## 12 Effect 4 RC → stable
+
+_(added 2026-09-03 — tracked here as the standing follow-up named by [release](release.md) §8.4.)_
+
+- **What**: move `effect` off the pinned prerelease `4.0.0-rc.111` onto the first stable `4.x`, and delete the `minimumReleaseAgeExclude` entry that the pin requires from `pnpm-workspace.yaml`.
+- **Why deferred**: the Effect-based API extractor (`tooling/api-extractor`, [ADR 0007](../adr/0007-docs-api-extraction-pipeline.md)) and the docs generator both build on Effect 4 APIs; no stable 4.x exists yet. The repo-wide `minimumReleaseAge: 4320` (72 hours) supply-chain guard cannot admit a prerelease, so the pin buys itself a single named exclusion — the **only** entry in that list, and the reason the exception is temporary rather than a policy hole.
+- **Trigger**: Effect 4.0.0 stable on the registry, aged past the 72-hour guard on its own.
+- **Already prepared**: `effect` is a catalog entry (`pnpm-workspace.yaml`), so the version moves in one place for both consumers (`tooling/api-extractor`, `apps/docs`); the extractor's conformance, timing and fixture suites are the regression net for the upgrade.
+- **Completion criteria**: `effect` at a stable `4.x` in the catalog; `minimumReleaseAgeExclude` removed entirely (not merely emptied of this entry) unless a new exception is separately justified; `pnpm --filter @elmeragroup/api-extractor check:all` green on Node 24.

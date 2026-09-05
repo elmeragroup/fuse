@@ -19,25 +19,27 @@ Thin styled wrappers over the base-ui Avatar parts — pure passthrough, no adde
 </Avatar.Root>
 ```
 
-| Part | base-ui primitive | Notes |
-| --- | --- | --- |
-| `Avatar.Root` | `AvatarPrimitive.Root` | `size-8` circle, `overflow-hidden`, `select-none`; sizing overridden via `className` |
-| `Avatar.Image` | `AvatarPrimitive.Image` | `size-full object-cover`; base-ui tracks load state |
-| `Avatar.Fallback` | `AvatarPrimitive.Fallback` | centered flex fill; shown until/unless the image loads |
+| Part              | base-ui primitive          | Notes                                                                                |
+| ----------------- | -------------------------- | ------------------------------------------------------------------------------------ |
+| `Avatar.Root`     | `AvatarPrimitive.Root`     | `size-8` circle, `overflow-hidden`, `select-none`; sizing overridden via `className` |
+| `Avatar.Image`    | `AvatarPrimitive.Image`    | `size-full object-cover`; base-ui tracks load state                                  |
+| `Avatar.Fallback` | `AvatarPrimitive.Fallback` | centered flex fill; shown until/unless the image loads                               |
 
 ## 3 Props
 
+**State classes:** `Avatar.Root`, `Avatar.Image`, `Avatar.Fallback` accept either a string or a callback receiving the current Base UI part state. Callback results are merged after library classes with the same conflict resolution as strings. Other parts retain their declared contracts; see [conventions](conventions.md#api-conventions).
+
 All parts: `ComponentProps<typeof AvatarPrimitive.{Part}>` — full primitive passthrough (`render`, `className`, and for `Image`: `src`, `onLoadingStatusChange`; for `Fallback`: `delay`). No wrapper-added props beyond `className` merging via `cn`.
 
-| Part | Notable passthrough | Notes |
-| --- | --- | --- |
-| `Avatar.Image` | `src`, `alt`, `onLoadingStatusChange` | base-ui swaps to fallback on error |
-| `Avatar.Fallback` | `delay` | debounce fallback flash on fast loads |
-| all | `render` | base-ui `useRender` polymorphism |
+| Part              | Notable passthrough                   | Notes                                 |
+| ----------------- | ------------------------------------- | ------------------------------------- |
+| `Avatar.Image`    | `src`, `alt`, `onLoadingStatusChange` | base-ui swaps to fallback on error    |
+| `Avatar.Fallback` | `delay`                               | debounce fallback flash on fast loads |
+| all               | `render`                              | base-ui `useRender` polymorphism      |
 
 ## 4 Variants
 
-None — no tv recipe (styling is inline class strings). Size is a `className` concern (`size-8` default; consumers pass `size-10` etc.). If a size axis is ever needed it becomes a private micro-recipe, not public.
+No public recipe and no axes. `Root` classes are the module-private `ROOT_CLASSES` `cn("…")` string. Size stays a `className` concern (`size-8` default; consumers pass `size-10` etc.). If a size axis is ever needed it lands as a private `tv` recipe, still not public. Image and Fallback stay inline `cn()` strings. _(Amended 2026-09-04. Amended 2026-09-04: axis-less string is `cn()`, not a one-slot recipe.)_
 
 ## 5 Consumed tokens
 
@@ -69,9 +71,9 @@ Pure base-ui passthrough otherwise — no prop or behavior divergence.
 
 - With a loading/failed image, `Avatar.Fallback` content is visible (`getByText(initials)`); once the image loads, the `img` role is present and fallback hidden (drive via `onLoadingStatusChange`/mocked image).
 - `Avatar.Image` renders `getByRole("img")` with the given `alt`.
-- Parts emit their `data-slot` values.
-- Root classes contain `bg-muted` and never `bg-gray-*` (token regression guard).
-- `className` on root overrides size (`size-10` beats default `size-8` via `cn`).
+- Parts emit their `data-slot` values (slot audit).
+- Root classes contain `bg-muted` and never `bg-gray-*` (token regression guard) in the unit recipe test; browser asserts the computed muted fill and default 32px box. _(Amended 2026-09-04 — spec 07 / [ADR 0008](../../adr/0008-tests-assert-behaviour-not-source-spelling.md).)_
+- `className` on root overrides size (`size-10` beats default `size-8` via `cn`) in the unit test; browser asserts the computed 40px box.
 
 ## 10 Demo requirements
 

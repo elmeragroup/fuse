@@ -15,8 +15,6 @@ Date: 2026-08-17. Status: accepted; amended 2026-08-18 after the accepted shared
 - **Defaults + must-override**: the library ships a complete neutral `:root` default layer; themes override subsets; compose-time, variant-specific must-override sets prevent brand identity from falling through to defaults. External themes supply their brand/surface/interactive/shape identity; internal themes supply the brand pair while inheriting the neutral system. This is an obligation on the composed theme, not on each partial layer module. Locked (not themable): derived radii arithmetic, breakpoints, easing, spacing, `--font-mono`.
 - **Clean break on legacy**: all values oklch; no HSL-triplet wrappers; `--popover` never eager-bound to `var(--card)`; dead tokens (`--surface-text`, `--tertiary*`, `--secondary-variant`, `--inactive`, `--primary-light`) shed. Sole compat concession: `--destructive(-foreground)` shipped as aliases of error.
 
-The complete normative enumeration, values, and legacy rename table live in [theming](../spec/theming.md) §§2–5. Ticket 001 is provenance only.
-
 ## Alternatives rejected
 
 - **M3 vocabulary as the base** — contradicted the standing shadcn directive, and the external codebase itself misuses the M3 roles (white "primary-container" as card), so fidelity bought nothing.
@@ -45,3 +43,12 @@ Density control metrics (`--control-h-*`, `--control-px-*`, `--control-px-icon-*
 They do not join the two public contract tiers in this ADR. Their distributed CSS names remain observable on `:root` / `:root[data-density="comfortable"]` in the existing main stylesheet. Direct consumer override is unsupported. Theme variant supplies only the deployment default for `data-density`; it does not select these values in generated theme CSS.
 
 Normative detail: [theming](../spec/theming.md) §2.7. Deferred preference/persistence work: [roadmap](../spec/roadmap.md) §10.
+
+## Amendment 2026-08-21 — density source and field-box pinning
+
+Recorded from the density spec-amendment ticket (ruling 82, 2026-08-22: component size axes that are not control boxes stay off the density ladder; field boxes pin `md`):
+
+1. **Comfortable source.** Dense control metrics come from the internal-ref lift (`:root` defaults; Button §8.5). Comfortable is the signed `--control-*` column in `ui.css`, never derived from the external ref. External deployments render comfortable via `defaultDensityForVariant` only.
+2. **Single-height field boxes pin `md`.** Input-class fixed-height surfaces (no `size` axis) read `h-(--control-h-md)`, `--control-px-md`, and the control-type pair where type is density-owned. They do not gain a `size` axis so density can retarget them.
+
+Normative detail: [conventions](../spec/components/conventions.md) density metrics.

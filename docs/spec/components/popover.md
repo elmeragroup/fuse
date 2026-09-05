@@ -10,14 +10,14 @@
 
 ## 2 Anatomy
 
-| Part | Base | Notes |
-| --- | --- | --- |
-| `Popover.Root` | `PopoverPrimitive.Root` | bare re-export; open-state owner, no DOM of its own |
-| `Popover.Trigger` | `PopoverPrimitive.Trigger` | bare re-export; anchor button |
-| `Popover.Content` | `Portal > Positioner > Popup` | popup surface (`w-72 p-4`, flex column, `gap-4`); optional `Arrow` when `showArrow` |
-| `Popover.Header` | plain `div` | `flex flex-col gap-1 text-sm`; groups Title + Description |
-| `Popover.Title` | `PopoverPrimitive.Title` | `font-medium text-balance`; wired as the popup's accessible name |
-| `Popover.Description` | `PopoverPrimitive.Description` | `text-pretty text-muted-foreground`; wired as accessible description |
+| Part                  | Base                           | Notes                                                                               |
+| --------------------- | ------------------------------ | ----------------------------------------------------------------------------------- |
+| `Popover.Root`        | `PopoverPrimitive.Root`        | bare re-export; open-state owner, no DOM of its own                                 |
+| `Popover.Trigger`     | `PopoverPrimitive.Trigger`     | bare re-export; anchor button                                                       |
+| `Popover.Content`     | `Portal > Positioner > Popup`  | popup surface (`w-72 p-4`, flex column, `gap-4`); optional `Arrow` when `showArrow` |
+| `Popover.Header`      | plain `div`                    | `flex flex-col gap-1 text-sm`; groups Title + Description                           |
+| `Popover.Title`       | `PopoverPrimitive.Title`       | `font-medium text-balance`; wired as the popup's accessible name                    |
+| `Popover.Description` | `PopoverPrimitive.Description` | `text-pretty text-muted-foreground`; wired as accessible description                |
 
 ```tsx
 <Popover.Root>
@@ -36,6 +36,8 @@ The internal `Portal`, `Positioner`, `Popup` and `Arrow` parts are not exported 
 
 ## 3 Props
 
+**State classes:** `Popover.Trigger`, `Popover.Content`, `Popover.Title`, `Popover.Description` accept either a string or a callback receiving the current Base UI part state. Callback results are merged after library classes with the same conflict resolution as strings. Other parts retain their declared contracts; see [conventions](conventions.md#api-conventions).
+
 All rendering parts take `className` (merged via `cn`) and forward the rest of their base-ui part's props (incl. `render` per conventions).
 
 **Popover.Root** — `ComponentProps<PopoverPrimitive.Root>` verbatim (`open`/`defaultOpen`/`onOpenChange`, `modal`, `openOnHover`/`delay`/`closeDelay`, …). Primitive-tier naming.
@@ -44,28 +46,28 @@ All rendering parts take `className` (merged via `cn`) and forward the rest of t
 
 **Popover.Content** — `ComponentProps<PopoverPrimitive.Popup>` plus `Pick<ComponentProps<PopoverPrimitive.Positioner>, "align" | "alignOffset" | "side" | "sideOffset">` (destructured and forwarded to the internal Positioner) plus:
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `align` | Positioner `align` | `"center"` | |
-| `alignOffset` | `number` | `0` | |
-| `side` | Positioner `side` | `"bottom"` | |
-| `sideOffset` | `number` | `4` | |
-| `showArrow` | `boolean` | `false` | renders `PopoverPrimitive.Arrow` after `children` |
-| `container` | `HTMLElement \| RefObject<HTMLElement>` | nearest `ThemeScope` element | forwarded to the internal `PopoverPrimitive.Portal` (§8) |
+| Prop          | Type                                            | Default                      | Notes                                                    |
+| ------------- | ----------------------------------------------- | ---------------------------- | -------------------------------------------------------- |
+| `align`       | Positioner `align`                              | `"center"`                   |                                                          |
+| `alignOffset` | `number`                                        | `0`                          |                                                          |
+| `side`        | Positioner `side`                               | `"bottom"`                   |                                                          |
+| `sideOffset`  | `number`                                        | `4`                          |                                                          |
+| `showArrow`   | `boolean`                                       | `false`                      | renders `PopoverPrimitive.Arrow` after `children`        |
+| `container`   | `HTMLElement \| RefObject<HTMLElement \| null>` | nearest `ThemeScope` element | forwarded to the internal `PopoverPrimitive.Portal` (§8) |
 
 **Popover.Header** — `ComponentProps<"div">`.
 **Popover.Title** / **Popover.Description** — their base-ui part's props verbatim.
 
 ## 4 Variants
 
-No component-specific `tv` recipe and no variant axes — Content styling is inline; Trigger composes shared `focusRing({ target: "self" })`. `showArrow` is a boolean render toggle, not a styling variant.
+No component-specific `tv` recipe and no variant axes — Content styling is composed from the shared overlay class constants plus popup-specific extras; Trigger and the Popup both compose the shared self-target focus ring. `showArrow` is a boolean render toggle, not a styling variant. _(Amended 2026-09-03; see §8.6.)_
 
 ## 5 Consumed tokens
 
-- `popover` / `popover-foreground` — popup surface and text (`bg-popover text-popover-foreground`).
+- `popover` / `popover-foreground` — popup surface and text (`bg-popover text-popover-foreground`). Fill, edge, and the composed surface are slots of the package-private overlay popup recipe (`overlayPopupFillClass` / `overlayPopupEdgeClass` / `overlayPopupSurfaceClass` from the `fill` / `edge` / `surface` slots); Popover takes them through `overlayTimedPopupClass` (the `timed` slot). Fill and edge stay separate so Tooltip can compose motion-only without negating a surface. _(Amended 2026-09-04.)_
 - `ring-foreground/10` — popup hairline (`ring-1`), paired with `shadow-md`.
 - `muted-foreground` — Description text.
-- `ring` + `background` — Trigger focus treatment.
+- `ring` + `background` — Trigger and Popup focus treatment.
 - `popover` + `border` — arrow fill and edge (`before:bg-popover before:border-border`), matching the popup surface (§8; ref uses raw `bg-white` / `dark:` neutrals).
 - Radii: popup `rounded-md` — `--radius`-derived scale step, no hardcoded values.
 
@@ -77,7 +79,7 @@ No component-specific `tv` recipe and no variant axes — Content styling is inl
 
 **Consumed selectors**:
 
-- Popup: `data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95`, `data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95`, `data-[side=bottom|top|left|right|inline-start|inline-end]:slide-in-from-*`, `duration-100`, `origin-(--transform-origin)`. Bare `data-open:`/`data-closed:` are self-scoped custom variants and stay on the popup that emits the state.
+- Popup: `data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95`, `data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95`, `data-[side=bottom|top|left|right|inline-start|inline-end]:slide-in-from-*`, `duration-100`, `origin-(--transform-origin)`. Bare `data-open:`/`data-closed:` are self-scoped custom variants and stay on the popup that emits the state. Motion and duration are the overlay popup recipe's `motion` / `duration` slots (`overlayPopupMotionClass` / `overlayPopupDurationClass`); Popover takes them through `overlayTimedPopupClass` (the `timed` slot: surface + motion + duration). Tooltip still composes motion only, untimed. _(Amended 2026-09-04.)_
 - Arrow: `data-[side=bottom]:top-[-6px]`, `data-[side=top]:bottom-[-6px] rotate-180`, `data-[side=left]:right-[-9px] rotate-90`, `data-[side=right]:left-[-9px] -rotate-90` — the arrow flips per placement. Geometry kept from the ref: a `h-1.5 w-3 overflow-clip` window over a rotated `before:` square sized `calc(6px*sqrt(2))` so the diagonal spans the window exactly.
 
 ## 7 Accessibility
@@ -90,10 +92,14 @@ No component-specific `tv` recipe and no variant axes — Content styling is inl
 ## 8 Divergence from reference
 
 1. **Renames (flat → namespace)**: `Popover`→`Popover.Root`, `PopoverTrigger`→`Popover.Trigger`, `PopoverContent`→`Popover.Content`, `PopoverHeader`→`Popover.Header`, `PopoverTitle`→`Popover.Title`, `PopoverDescription`→`Popover.Description`.
-2. **Overlay `container` prop added (mandated)** to `Popover.Content`, forwarded to the internal `PopoverPrimitive.Portal`, defaulting to the nearest `ThemeScope` element. The ref hardcodes the portal with no target (→ `document.body`) and does not export a Portal part at all — `container` on Content is therefore the *only* portal-control surface; documented as intentional (Portal/Positioner/Popup stay unexported here too).
-3. **Arrow tokenized (LOCKED ruling)**: the ref arrow hardcodes `before:bg-white` plus `dark:before:border-white dark:before:bg-neutral-950` — raw palette colors, the family's worst `no-primitive-colors` violation, and mismatched with the token-driven `bg-popover` popup it decorates. Re-expressed as `before:bg-popover before:border-border` so the arrow always matches its popup across all 20 themes; the `sqrt(2)` clip-window geometry is kept verbatim. All `dark:` classes dropped per conventions. `showArrow` stays default `false`. Deliberately *not* unified with Tooltip's always-rendered arrow — the two components' differing arrow show-behavior is intentional (see tooltip.md §8).
-4. **`z-50` deduped**: the ref sets `isolate z-50` on the Positioner *and* `z-50` on the Popup; kept on the outermost layer (Positioner) only. Flat z-strategy: every overlay gets exactly one `z-50` at its outermost portalled element.
-5. **Focus unified:** Trigger composes the canonical self-focus adapter, including when rendered without a Button target.
+2. **Overlay `container` prop added (mandated)** to `Popover.Content`, forwarded to the internal `PopoverPrimitive.Portal`, defaulting to the nearest `ThemeScope` element. The ref hardcodes the portal with no target (→ `document.body`) and does not export a Portal part at all — `container` on Content is therefore the _only_ portal-control surface; documented as intentional (Portal/Positioner/Popup stay unexported here too).
+3. **Arrow tokenized (LOCKED ruling)**: the ref arrow hardcodes `before:bg-white` plus `dark:before:border-white dark:before:bg-neutral-950` — raw palette colors, the family's worst `no-primitive-colors` violation, and mismatched with the token-driven `bg-popover` popup it decorates. Re-expressed as `before:bg-popover before:border-border` so the arrow always matches its popup across all 20 themes; the `sqrt(2)` clip-window geometry is kept verbatim. All `dark:` classes dropped per conventions. `showArrow` stays default `false`. Deliberately _not_ unified with Tooltip's always-rendered arrow — the two components' differing arrow show-behavior is intentional (see tooltip.md §8).
+4. **`z-50` deduped**: the ref sets `isolate z-50` on the Positioner _and_ `z-50` on the Popup; kept on the outermost layer (Positioner) only. Flat z-strategy: every overlay gets exactly one `z-50` at its outermost portalled element. The class is the overlay module's `overlayLayer` constant, spelled once; the popup recipe's `positioner` slot interpolates it (`overlayPositionerClass`) rather than restating it. _(Amended 2026-09-04.)_
+5. **Focus unified:** Trigger and the Popup compose the canonical self-focus adapter, including when the Trigger is rendered without a Button target. The Popup does not use `outline-hidden`. _(Amended 2026-09-02.)_
+
+6. **Shared overlay spine adopted (tracer)**: `Popover.Content` composes the package-private overlay primitives instead of restating them — `OverlayPortal` for the §7.4 portal-target resolution, `OverlayPositionerProps`/`OverlayContainerProps` for the `align`/`alignOffset`/`side`/`sideOffset`/`container` block, and `overlayPositionerClass` / `overlayTimedPopupClass` / `selfFocusRingClass` for the classes (`overlayTimedPopupClass` is the overlay popup recipe's `timed` slot — surface + motion + duration; Tooltip still composes the `motion` slot only, untimed, which is what the fill/edge/motion/duration split is for). The rendered class set, the prop names, their documented defaults, and the DOM are unchanged; Popover is the first consumer of the spine the remaining overlays adopt next. _(ticket 05, 2026-09-04: the three popup parts collapse to `overlayTimedPopupClass`; the overlay vocabulary is slotted `tv` recipes.) (ticket 08, 2026-09-04: `OverlayPortal` owns the wait-not-body rule.) (2026-09-04: `surface` and `timed` are first-class slots; fill and edge stay separate so Tooltip never has to negate a composed surface.)_
+
+7. **Positioner defaults are destructuring, not tags (2026-09-04):** public `align`/`alignOffset`/`side`/`sideOffset` defaults are derived from each Content's destructuring; `@default` tags on the shared positioner type are not a contract and are not consulted for library-declared props.
 
 Kept faithfully: `w-72 p-4 gap-4` popup dimensions; `shadow-md` + `ring-1 ring-foreground/10` elevation; `duration-100` animation timing and the full slide/fade/zoom class set; `Header` as a plain unstyled-primitive div; `showArrow` default `false`; Title/Description typography.
 
@@ -102,7 +108,7 @@ Kept faithfully: `w-72 p-4 gap-4` popup dimensions; `shadow-md` + `ring-1 ring-f
 Role/label-based queries throughout; keyboard flows per §7:
 
 - Open/close: click on `getByRole("button")` trigger opens `getByRole("dialog")`; Escape closes and returns focus to the trigger; outside press (pointerdown outside the popup) closes.
-- Focus management: on open, focus lands inside the popup; on close (Escape and outside press), focus returns to the trigger.
+- Focus management: on open, focus lands inside the popup; on close (Escape and outside press), focus returns to the trigger. When the popup itself is the keyboard focus target, the shared focus ring is visible (and absent on mouse focus).
 - Naming: with `Popover.Title` / `Popover.Description`, the dialog is queryable via `getByRole("dialog", { name })` and exposes the description text via `toHaveAccessibleDescription`.
 - `showArrow`: arrow element absent by default; present (with `data-side` mirroring placement) when `showArrow` is set.
 - Positioner forwarding: `side`/`align` overrides surface as `data-side` on the popup.

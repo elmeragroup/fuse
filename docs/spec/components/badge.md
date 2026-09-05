@@ -13,28 +13,30 @@
 Single `div` styled by `badgeVariants`.
 
 ```tsx
-<Badge variant="success" size="sm">Active</Badge>
+<Badge variant="success" size="sm">
+  Active
+</Badge>
 ```
 
 ## 3 Props
 
 `BadgeProps = React.HTMLAttributes<HTMLDivElement> & VariantProps<typeof badgeVariants>` — exported type, kept from ref.
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `variant` | 14 values, see §4 | `"default"` | tv axis |
-| `size` | `"sm" \| "default" \| "lg"` | `"default"` | tv axis |
-| `className` | `string` | — | merged via `cn` |
-| …rest | native `div` props | — | spread onto the element |
+| Prop        | Type                        | Default     | Notes                   |
+| ----------- | --------------------------- | ----------- | ----------------------- |
+| `variant`   | 14 values, see §4           | `"default"` | tv axis                 |
+| `size`      | `"sm" \| "default" \| "lg"` | `"default"` | tv axis                 |
+| `className` | `string`                    | —           | merged via `cn`         |
+| …rest       | native `div` props          | —           | spread onto the element |
 
 ## 4 Variants
 
 Recipe: **`badgeVariants`** — **PUBLIC**. The external ref exported it and `checkbox-card` borrows it for its tag chips (see checkbox-card.md); sanctioned borrow pattern, stays exported and typed via `VariantProps`.
 
-| Axis | Values | Default |
-| --- | --- | --- |
+| Axis      | Values                                                                                                                                                                                                        | Default   |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
 | `variant` | `default` · `secondary` · `destructive` · `success` · `warning` · `info` · `outline` · `outline-secondary` · `outline-destructive` · `outline-success` · `outline-warning` · `muted` · `accent` · `card` (14) | `default` |
-| `size` | `sm` (`px-2 py-px text-xs`) · `default` (`px-2.5 py-0.5 text-xs`) · `lg` (`px-3 py-1 text-sm`) | `default` |
+| `size`    | `sm` (`px-2 py-px text-xs`) · `default` (`px-2.5 py-0.5 text-xs`) · `lg` (`px-3 py-1 text-sm`)                                                                                                                | `default` |
 
 Variant notes:
 
@@ -77,10 +79,10 @@ No other API divergence — prop surface identical to ref.
 
 ## 9 Test requirements
 
-- Renders children text; `getByText` reachable; element carries `data-slot="badge"`.
-- Each of the 14 variants renders and resolves classes (parametrized): `destructive` resolves to `bg-error` classes and never a `destructive` class; `info` resolves to the `color-mix` classes.
-- Sizes: `sm`/`default`/`lg` each contain their padding/text classes.
-- `className` merge wins over recipe conflicts via `cn`.
+- Renders children text; `getByText` reachable; element carries `data-slot="badge"` (slot audit).
+- Each of the 14 variants resolves classes in the unit recipe test (parametrized): `destructive` resolves to `bg-error` classes and never a `destructive` class; `info` resolves to the `color-mix` classes. Browser asserts computed surfaces from role tokens, not class strings. _(Amended 2026-09-04 — spec 07 / [ADR 0008](../../adr/0008-tests-assert-behaviour-not-source-spelling.md).)_
+- Sizes: `sm`/`default`/`lg` each contain their padding/text classes in the unit recipe test; browser asserts computed padding/type scale.
+- `className` merge wins over recipe conflicts via `cn` (unit); browser asserts the winning computed fill.
 - `badgeVariants` unit: defaults resolve to `variant: default, size: default`; output contains no raw palette classes and no `dark:` variants.
 
 ## 10 Demo requirements

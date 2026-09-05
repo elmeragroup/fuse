@@ -10,14 +10,14 @@
 
 ## 2 Anatomy
 
-| Part | Renders | data-slot |
-| --- | --- | --- |
-| `Frame.Root` | `<div>` — muted ground (`rounded-xl bg-muted/72 p-1`) | `frame` |
-| `Frame.Panel` | `<div>` — white card surface with hairline overlay | `frame-panel` |
-| `Frame.Header` | `<header>` (`flex flex-col px-5 py-4`) | `frame-panel-header` |
-| `Frame.Title` | `<div>` (`text-sm font-semibold`) | `frame-panel-title` |
-| `Frame.Description` | `<div>` (`text-sm text-muted-foreground`) | `frame-panel-description` |
-| `Frame.Footer` | `<footer>` (`flex flex-col gap-1 px-5 py-4`) | `frame-panel-footer` |
+| Part                | Renders                                               | data-slot                 |
+| ------------------- | ----------------------------------------------------- | ------------------------- |
+| `Frame.Root`        | `<div>` — muted ground (`rounded-xl bg-muted/72 p-1`) | `frame`                   |
+| `Frame.Panel`       | `<div>` — white card surface with hairline overlay    | `frame-panel`             |
+| `Frame.Header`      | `<header>` (`flex flex-col px-5 py-4`)                | `frame-panel-header`      |
+| `Frame.Title`       | `<div>` (`text-sm font-semibold`)                     | `frame-panel-title`       |
+| `Frame.Description` | `<div>` (`text-sm text-muted-foreground`)             | `frame-panel-description` |
+| `Frame.Footer`      | `<footer>` (`flex flex-col gap-1 px-5 py-4`)          | `frame-panel-footer`      |
 
 ```tsx
 <Frame.Root>
@@ -38,14 +38,14 @@ Header and Footer are siblings of Panel inside Root — they sit directly on the
 
 All parts take `className` (merged via `cn`) plus native element pass-through; none hold state.
 
-| Part | Type | Notes |
-| --- | --- | --- |
-| `Frame.Root` | `ComponentProps<"div"> & { stackedPanels?: boolean }` | default `false`; switches the sibling-adjacency rules (§4) |
-| `Frame.Panel` | `ComponentProps<"div">` | `rounded-xl border bg-background bg-clip-padding p-5 shadow-xs/5` + `before:` hairline overlay (`inset-0`, `rounded-[calc(var(--radius-xl)-1px)]`, `shadow-[0_1px_--theme(--color-black/6%)]`, `pointer-events-none`) |
-| `Frame.Header` | `ComponentProps<"header">` | |
-| `Frame.Title` | `ComponentProps<"div">` | not a heading element; wrap or `render` a heading when the panel needs one in the outline |
-| `Frame.Description` | `ComponentProps<"div">` | |
-| `Frame.Footer` | `ComponentProps<"footer">` | |
+| Part                | Type                                                  | Notes                                                                                                                                                                                                                 |
+| ------------------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Frame.Root`        | `ComponentProps<"div"> & { stackedPanels?: boolean }` | default `false`; switches the sibling-adjacency rules (§4)                                                                                                                                                            |
+| `Frame.Panel`       | `ComponentProps<"div">`                               | `rounded-xl border bg-background bg-clip-padding p-5 shadow-xs/5` + `before:` hairline overlay (`inset-0`, `rounded-[calc(var(--radius-xl)-1px)]`, `shadow-[0_1px_--theme(--color-black/6%)]`, `pointer-events-none`) |
+| `Frame.Header`      | `ComponentProps<"header">`                            |                                                                                                                                                                                                                       |
+| `Frame.Title`       | `ComponentProps<"div">`                               | not a heading element and there is no `render` prop; nest a heading as children when the panel needs one in the outline                                                                                               |
+| `Frame.Description` | `ComponentProps<"div">`                               |                                                                                                                                                                                                                       |
+| `Frame.Footer`      | `ComponentProps<"footer">`                            |                                                                                                                                                                                                                       |
 
 ## 4 Variants
 
@@ -71,7 +71,7 @@ Both sets select on the `frame-panel` slot, which is why Panel's slot name is lo
 ## 7 Accessibility
 
 - Purely presentational: divs plus semantic `<header>`/`<footer>` in Header/Footer. Because Root is a `<div>` (not `<section>`/`<article>`), the header/footer elements do not create landmark roles in most contexts — acceptable; they exist for document semantics.
-- `Frame.Title` renders a `<div>`, deliberately outline-neutral: frames appear at arbitrary nesting depths, so heading level is the consumer's call (pass a heading via `render` or as children).
+- `Frame.Title` renders a `<div>`, deliberately outline-neutral: frames appear at arbitrary nesting depths, so heading level is the consumer's call — nest the heading element as children (no part in this component takes a `render` prop; every part is a plain element plus `className`).
 - No keyboard behavior, no ARIA wiring, no focus management.
 
 ## 8 Divergence from reference
@@ -82,6 +82,7 @@ Both sets select on the `frame-panel` slot, which is why Panel's slot name is lo
 4. **KEPT: `--theme()` shadow literal** — `before:shadow-[0_1px_--theme(--color-black/6%)]` retained; the hairline is a deliberate literal shared with table.md.
 5. **Frame ↔ Card**: the card judgment call (see card.md §8) decomposes the ref's monolithic `CardSection` so that its sectioned-surface role maps onto `Frame.Panel`; Card owns the standalone-card look, Frame owns grouped/stacked panels on a muted ground. Cross-reference, no API coupling.
 6. No `dark:` classes, no raw palette classes in the ref — nothing to clean.
+7. **No polymorphism anywhere in Frame** (2026-09-03): §3 and §7 told consumers to `render` a heading into `Frame.Title`. No part accepts `render` — each is a plain `div`/`header`/`footer` with `className` merged through `cn`, exactly as the ref ships. The text is corrected to nesting a heading as children; `useRender` is deliberately not added to a purely presentational shell.
 
 ## 9 Test requirements
 

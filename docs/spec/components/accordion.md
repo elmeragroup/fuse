@@ -11,13 +11,13 @@
 
 ## 2 Anatomy
 
-| Part | Base | Notes |
-| --- | --- | --- |
-| `Accordion.Root` | `AccordionPrimitive.Root` | `div`; owns value state; applies `base` slot; provides the variant context |
-| `Accordion.Item` | `AccordionPrimitive.Item` | `div`; one expandable section; applies `item` slot |
-| `Accordion.Header` | `AccordionPrimitive.Header` | native `h3`; applies `header` slot |
-| `Accordion.Trigger` | `AccordionPrimitive.Trigger` | native `button` inside Header; applies `trigger` slot, renders the caret icon after `children` |
-| `Accordion.Content` | `AccordionPrimitive.Panel` | `div role="region"`; applies `content` slot; wraps `children` in an inner `div` with the `contentInner` slot |
+| Part                | Base                         | Notes                                                                                                        |
+| ------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `Accordion.Root`    | `AccordionPrimitive.Root`    | `div`; owns value state; applies `base` slot; provides the variant context                                   |
+| `Accordion.Item`    | `AccordionPrimitive.Item`    | `div`; one expandable section; applies `item` slot                                                           |
+| `Accordion.Header`  | `AccordionPrimitive.Header`  | native `h3`; applies `header` slot                                                                           |
+| `Accordion.Trigger` | `AccordionPrimitive.Trigger` | native `button` inside Header; applies `trigger` slot, renders the caret icon after `children`               |
+| `Accordion.Content` | `AccordionPrimitive.Panel`   | `div role="region"`; applies `content` slot; wraps `children` in an inner `div` with the `contentInner` slot |
 
 ```tsx
 <Accordion.Root variant="card" defaultValue={["shipping"]}>
@@ -38,18 +38,18 @@ All parts take `className` (merged into their slot via the recipe's `className` 
 
 **Accordion.Root** — `ComponentProps<AccordionPrimitive.Root> & VariantProps<typeof accordionVariants>`:
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `value` | `Value[]` | — | controlled open item(s); always an array, even in single mode |
-| `defaultValue` | `Value[]` | — | uncontrolled initial open item(s) |
-| `onValueChange` | `(value: Value[], eventDetails) => void` | — | base-ui signature; second arg is `AccordionRoot.ChangeEventDetails` |
-| `multiple` | `boolean` | `false` | replaces radix `type="single" \| "multiple"` (§8) |
-| `disabled` | `boolean` | `false` | disables every item |
-| `hiddenUntilFound` | `boolean` | `false` | panels use `hidden="until-found"`; find-in-page can expand them; overrides `keepMounted` |
-| `keepMounted` | `boolean` | `false` | keep closed panels in the DOM |
-| `variant` | `"default" \| "card" \| "infodropdown"` | `"default"` | §4; provided to parts via context |
-| `radius` | `"none" \| "lg" \| "xl"` | `"none"` | §4; provided to parts via context |
-| `orientation`, `loopFocus` | — | — | accepted (base-ui passthrough) but **deprecated upstream** — they no longer affect keyboard focus after the APG roving-focus removal; not part of our documented API (§7, §8) |
+| Prop                       | Type                                     | Default     | Notes                                                                                                                                                                         |
+| -------------------------- | ---------------------------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `value`                    | `Value[]`                                | —           | controlled open item(s); always an array, even in single mode                                                                                                                 |
+| `defaultValue`             | `Value[]`                                | —           | uncontrolled initial open item(s)                                                                                                                                             |
+| `onValueChange`            | `(value: Value[], eventDetails) => void` | —           | base-ui signature; second arg is `AccordionRoot.ChangeEventDetails`                                                                                                           |
+| `multiple`                 | `boolean`                                | `false`     | replaces radix `type="single" \| "multiple"` (§8)                                                                                                                             |
+| `disabled`                 | `boolean`                                | `false`     | disables every item                                                                                                                                                           |
+| `hiddenUntilFound`         | `boolean`                                | `false`     | panels use `hidden="until-found"`; find-in-page can expand them; overrides `keepMounted`                                                                                      |
+| `keepMounted`              | `boolean`                                | `false`     | keep closed panels in the DOM                                                                                                                                                 |
+| `variant`                  | `"default" \| "card" \| "infodropdown"`  | `"default"` | §4; provided to parts via context                                                                                                                                             |
+| `radius`                   | `"none" \| "lg" \| "xl"`                 | `"none"`    | §4; provided to parts via context                                                                                                                                             |
+| `orientation`, `loopFocus` | —                                        | —           | accepted (base-ui passthrough) but **deprecated upstream** — they no longer affect keyboard focus after the APG roving-focus removal; not part of our documented API (§7, §8) |
 
 **Accordion.Item** — `ComponentProps<AccordionPrimitive.Item>` verbatim: `value` (identity for Root's `value` arrays; auto-generated when omitted), `disabled`, `onOpenChange(open, eventDetails)`.
 
@@ -63,14 +63,14 @@ All parts take `className` (merged into their slot via the recipe's `className` 
 
 Recipe: `accordionVariants` — **public export** (the ref exports it; kept). `tv` slots: `base`, `item`, `header`, `trigger`, `icon`, `content`, `contentInner`.
 
-| Axis | Values | Default | Effect |
-| --- | --- | --- | --- |
-| `variant` | `default` | ✓ | `item`: `bg-muted rounded-sm`; `trigger`: `transition-all` |
-| | `card` | | `base`: `space-y-3`; `item`: `bg-card text-foreground rounded-lg border`; `content`: `bg-card text-foreground rounded-lg`; `icon`: `text-foreground` |
-| | `infodropdown` | | `base`: `border-border border-b`; `trigger`: `relative justify-start data-[panel-open]:pb-0`; `icon`: `absolute right-0`; `content`: `pl-7` |
-| `radius` | `none` | ✓ | no-op |
-| | `lg` | | `item`: `overflow-hidden rounded-lg` |
-| | `xl` | | `item`: `overflow-hidden rounded-xl` |
+| Axis      | Values         | Default | Effect                                                                                                                                               |
+| --------- | -------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `variant` | `default`      | ✓       | `item`: `bg-muted rounded-sm`; `trigger`: `transition-[padding-bottom]`                                                                              |
+|           | `card`         |         | `base`: `space-y-3`; `item`: `bg-card text-foreground rounded-lg border`; `content`: `bg-card text-foreground rounded-lg`; `icon`: `text-foreground` |
+|           | `infodropdown` |         | `base`: `border-border border-b`; `trigger`: `relative justify-start data-[panel-open]:pb-0`; `icon`: `absolute right-0`; `content`: `pl-7`          |
+| `radius`  | `none`         | ✓       | no-op                                                                                                                                                |
+|           | `lg`           |         | `item`: `overflow-hidden rounded-lg`                                                                                                                 |
+|           | `xl`           |         | `item`: `overflow-hidden rounded-xl`                                                                                                                 |
 
 Base slot classes (variant-independent):
 
@@ -78,7 +78,7 @@ Base slot classes (variant-independent):
 - `header`: `flex`
 - `trigger`: `flex flex-1 cursor-pointer items-center justify-between gap-2 font-medium hover:underline data-[panel-open]:pb-4` plus shared `focusRing({ target: "self" })` (open-state selectors moved from radix `data-[state=open]` to base-ui attributes, §6/§8)
 - `icon`: `text-foreground size-4 shrink-0 transition-transform duration-200`, plus `rotate-180` when open (keyed off the trigger's `data-panel-open` via a group selector, §6)
-- `content`: `h-0 overflow-hidden transition-[height] duration-200 ease-in-out motion-reduce:transition-none data-[open]:h-(--accordion-panel-height)` — base-ui height-var transition replacing the radix keyframes (§8)
+- `content`: `h-0 overflow-hidden transition-[height] duration-200 ease-in-out data-[open]:h-(--accordion-panel-height)` — base-ui height-var transition replacing the radix keyframes; reduced-motion is the central stylesheet block, not a per-component override (§8)
 - `contentInner`: `pt-1.5`
 
 **Context-passed variants pattern (kept — extraction verdict: cleanest styling mechanism)**: `Accordion.Root` resolves nothing for its children; it publishes `{ variant, radius }` on an internal `AccordionContext` (memoized), and each part calls `useAccordion()` and runs `accordionVariants(variants)` for its own slot. Parts throw outside a Root. The context and hook stay module-private; only the recipe is public.
@@ -119,7 +119,7 @@ Material tokens re-expressed as contract tokens (§8 mapping):
 5. **Header**: the ref's `AccordionTrigger` internally rendered radix `Header asChild` around a react-aria `Heading level={3}`. Base-ui's `Accordion.Header` renders a native `h3` itself, so the react-aria `Heading` is dropped and Header becomes an explicit exported part the consumer composes.
 6. **Icon**: `MaterialIcon.ExpandMore` → Phosphor `CaretDown` (regular weight, from `@elmeragroup/ui/icons`), rotated `180deg` when open. Rotation selector moves from radix `[&[data-state=open]>svg]:rotate-180` to a group selector on base-ui's trigger attribute — note base-ui triggers emit `data-panel-open`, not `data-open`.
 7. **Open-state selectors**: every radix `data-[state=open]` / `data-[state=closed]` becomes the base-ui attribute for that element (`data-open` on Item/Header/Panel, `data-panel-open` on Trigger), scoped per conventions.
-8. **Animation**: radix `animate-accordion-up/down` keyframes (which depend on `--radix-accordion-content-height` and a Tailwind keyframe registration) are replaced by a plain height transition against base-ui's `--accordion-panel-height` var: `h-0 overflow-hidden transition-[height] … data-[open]:h-(--accordion-panel-height)`, with `motion-reduce:transition-none` added. No keyframes to register.
+8. **Animation**: radix `animate-accordion-up/down` keyframes (which depend on `--radix-accordion-content-height` and a Tailwind keyframe registration) are replaced by a plain height transition against base-ui's `--accordion-panel-height` var: `h-0 overflow-hidden transition-[height] … data-[open]:h-(--accordion-panel-height)`. Reduced-motion is the central stylesheet block (accessibility.md §7), not a per-component `motion-reduce:*` override. Default-variant trigger padding uses `transition-[padding-bottom]`, not `transition-all`. _(Amended 2026-09-02.)_
 9. **Content `className` merge point kept**: like the ref, consumer `className` on Content merges into the inner `contentInner` div (padding layer), not the animating outer panel — the outer height transition must not be perturbable.
 10. **Token mapping (Material → contract)**: `bg-secondary-container` → `bg-muted` (subtle grouped-surface role; not `secondary-soft`, which is reserved for status/emphasis tinting); `text-on-surface` → `text-foreground`; `bg-on-primary` → `bg-card`; `text-on-primary-container` → `text-foreground`; `border-on-primary-container/25` → `border-border`.
 11. **Deprecated primitive props not adopted**: base-ui's `orientation` and `loopFocus` are deprecated upstream (APG removed roving focus) and no longer affect keyboard behavior; they pass through but are documented as unsupported and excluded from tests/demos.
@@ -143,7 +143,7 @@ Role/label-based queries throughout; keyboard flows per §7:
 - Controlled: `value` + `onValueChange` round-trips; callback receives the full array value; single-mode array has length ≤ 1.
 - Disabled: `disabled` on Root disables every trigger; per-item `disabled` disables only that item (`data-disabled` present, click is a no-op).
 - `hiddenUntilFound`: closed panel content stays in the DOM with `hidden="until-found"`; dispatching `beforematch` opens the item. `keepMounted`: closed panel stays in the DOM (hidden); default unmounts.
-- Variants: `variant`/`radius` from Root reach Item/Trigger/Content classes via context; parts throw when rendered outside `Accordion.Root`.
+- Variants: `variant`/`radius` from Root reach Item/Trigger/Content via context — unit recipe test asserts the class tokens; browser asserts computed fill, radius, and item spacing. Parts throw when rendered outside `Accordion.Root`. _(Amended 2026-09-04 — spec 07 / [ADR 0008](../../adr/0008-tests-assert-behaviour-not-source-spelling.md).)_
 
 ## 10 Demo requirements
 

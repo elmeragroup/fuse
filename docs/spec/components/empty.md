@@ -15,7 +15,9 @@ Centered empty-state block: media/icon, then header (title + description), then 
 ```tsx
 <Empty.Root variant="outline-dashed">
   <Empty.Header>
-    <Empty.Media variant="icon"><Tray /></Empty.Media>
+    <Empty.Media variant="icon">
+      <Tray />
+    </Empty.Media>
     <Empty.Title>No orders yet</Empty.Title>
     <Empty.Description>Orders you create will show up here.</Empty.Description>
   </Empty.Header>
@@ -25,32 +27,32 @@ Centered empty-state block: media/icon, then header (title + description), then 
 </Empty.Root>
 ```
 
-| Part | Element | Notes |
-| --- | --- | --- |
-| `Empty.Root` | `div` | `flex min-w-0 flex-1 flex-col items-center justify-center gap-6 rounded-lg p-6 text-center text-balance md:p-12` |
-| `Empty.Header` | `div` | `flex max-w-sm flex-col items-center gap-2 text-center` |
-| `Empty.Media` | `div` | icon/illustration box; own `variant` axis |
-| `Empty.Title` | `div` | `text-lg font-medium tracking-tight` — deliberately not a heading (§7) |
-| `Empty.Description` | `p` | muted, link-styling hooks for inline `<a>` |
-| `Empty.Content` | `div` | `flex w-full max-w-sm min-w-0 flex-col items-center gap-4 text-sm text-balance` |
+| Part                | Element | Notes                                                                                                            |
+| ------------------- | ------- | ---------------------------------------------------------------------------------------------------------------- |
+| `Empty.Root`        | `div`   | `flex min-w-0 flex-1 flex-col items-center justify-center gap-6 rounded-lg p-6 text-center text-balance md:p-12` |
+| `Empty.Header`      | `div`   | `flex max-w-sm flex-col items-center gap-2 text-center`                                                          |
+| `Empty.Media`       | `div`   | icon/illustration box; own `variant` axis                                                                        |
+| `Empty.Title`       | `div`   | `text-lg font-medium tracking-tight` — deliberately not a heading (§7)                                           |
+| `Empty.Description` | `p`     | muted, link-styling hooks for inline `<a>`                                                                       |
+| `Empty.Content`     | `div`   | `flex w-full max-w-sm min-w-0 flex-col items-center gap-4 text-sm text-balance`                                  |
 
 ## 3 Props
 
 All parts: `React.ComponentProps<"div">` (`Empty.Description`: `React.ComponentProps<"p">`) plus, where noted, `VariantProps` of a private recipe.
 
-| Part | Prop | Type | Default | Notes |
-| --- | --- | --- | --- | --- |
-| `Empty.Root` | `variant` | `"default" \| "outline" \| "outline-dashed"` | `"default"` | private `emptyVariants` axis |
-| `Empty.Media` | `variant` | `"default" \| "icon"` | `"default"` | private `emptyMediaVariants` axis; also emitted as `data-variant` |
-| all | `className` | `string` | — | merged via `cn` |
+| Part          | Prop        | Type                                         | Default     | Notes                                                             |
+| ------------- | ----------- | -------------------------------------------- | ----------- | ----------------------------------------------------------------- |
+| `Empty.Root`  | `variant`   | `"default" \| "outline" \| "outline-dashed"` | `"default"` | private `emptyVariants` axis                                      |
+| `Empty.Media` | `variant`   | `"default" \| "icon"`                        | `"default"` | private `emptyMediaVariants` axis; also emitted as `data-variant` |
+| all           | `className` | `string`                                     | —           | merged via `cn`                                                   |
 
 ## 4 Variants
 
 Recipes: **`emptyVariants`** and **`emptyMediaVariants`** — both **PRIVATE** (module-scoped micro-recipes; no borrow pattern exists, ruled to stay unexported).
 
-| Recipe | Axis | Values | Default |
-| --- | --- | --- | --- |
-| `emptyVariants` | `variant` | `default` (frameless) · `outline` (`border border-border`) · `outline-dashed` (`border border-dashed border-border`) | `default` |
+| Recipe               | Axis      | Values                                                                                                                     | Default   |
+| -------------------- | --------- | -------------------------------------------------------------------------------------------------------------------------- | --------- |
+| `emptyVariants`      | `variant` | `default` (frameless) · `outline` (`border border-border`) · `outline-dashed` (`border border-dashed border-border`)       | `default` |
 | `emptyMediaVariants` | `variant` | `default` (`bg-transparent`) · `icon` (`size-10 rounded-lg bg-muted text-foreground [&_svg:not([class*='size-'])]:size-6`) | `default` |
 
 Media base carries `mb-2 flex shrink-0 items-center justify-center [&_svg]:pointer-events-none [&_svg]:shrink-0`.

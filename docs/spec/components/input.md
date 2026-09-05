@@ -29,19 +29,23 @@ Inside a field:
 
 `ComponentProps<"input">` — full native surface, primitive-tier naming (`disabled`, `readOnly`, `required`, `min`, `max`, event handlers; never `isDisabled` here).
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `type` | `string` | — (browser `"text"`) | destructured and forwarded explicitly in the ref; file-input styling included (`file:` classes) |
-| `className` | `string` | — | merged via `cn` after base classes |
-| …rest | `ComponentProps<"input">` | — | spread onto the base-ui primitive |
+| Prop        | Type                      | Default              | Notes                                                                                           |
+| ----------- | ------------------------- | -------------------- | ----------------------------------------------------------------------------------------------- |
+| `type`      | `string`                  | — (browser `"text"`) | destructured and forwarded explicitly in the ref; file-input styling included (`file:` classes) |
+| `className` | `string`                  | —                    | merged via `cn` after base classes                                                              |
+| …rest       | `ComponentProps<"input">` | —                    | spread onto the base-ui primitive                                                               |
 
 No `value`-massaging, no controlled/uncontrolled opinion — native semantics. Polymorphism is not applicable (always an `<input>`).
 
 ## 4 Variants
 
-None. No tv recipe — base classes are a plain string; nothing exported. (The exported borrow recipe for the text-input *look* is `textFieldVariants` at the labeled-composite tier, not here.)
+None public. Shared chrome lives in the package-private `fieldBox` `tv` recipe (`styles/field-box.ts`) — card fill, input border, md height/padding/type, placeholder, disabled fill/opacity, invalid border + ring, self focus ring, one transition list. Nothing exported. (The exported borrow recipe for the text-input _look_ is `textFieldVariants` at the labeled-composite tier, not here.)
 
-Fixed metrics from the ref: `h-9 w-full min-w-0 rounded-md px-2.5 py-1 text-base md:text-sm shadow-xs`; `file:` pseudo styling (`file:h-7 file:text-sm file:font-medium`). Radius via the `rounded-md` scale derived from `--radius`; never hardcoded.
+No `size` axis. The field box pins the `md` rung per [conventions](conventions.md) ruling 2, 2026-08-21, inside `fieldBox`. Input adds only host deltas: `min-w-0`, `file:` chrome, `disabled:pointer-events-none`. Do not also set `py-*` once height is pinned. Radius via the `rounded-md` scale derived from `--radius`; never hardcoded.
+
+**`file:h-7` exemption** _(amended 2026-09-02)_: the native file-selector button is UA chrome inside the md field box. `h-7` (1.75rem) is optical — no control-height rung is 1.75rem (`xs` is 1.5rem, `sm` is 2rem) — so the literal stays documented rather than retargeting with density.
+
+**Density mapping.** Single-height field box → `md` rung. Dense computed metrics match the ref's `h-9 px-2.5` box; comfortable is the signed `ui.css` column. No `dense:` / `comfortable:` variants.
 
 ## 5 Consumed tokens
 
@@ -72,6 +76,7 @@ Fixed metrics from the ref: `h-9 w-full min-w-0 rounded-md px-2.5 py-1 text-base
 3. **`dark:` variant classes dropped** (`dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40`) — dark axis lives in tokens behind `[data-theme="dark"]`, per `no-tailwind-dark-variant`.
 4. **`destructive` → `error`** token rename on the invalid border/ring classes.
 5. **Focus ring unified** — the ref's local border/three-pixel ring becomes shared `focusRing({ target: "self" })`; the focus-tinted border is dropped.
+6. **Density retokenization:** the fixed `h-9 … px-2.5 py-1 text-base md:text-sm` box pins the `md` rung (`--control-h-md`, `--control-px-md`, control-type pair) without gaining a `size` axis. `py-1` is dropped once height is pinned.
 
 No API divergence — prop surface is identical to the ref.
 
@@ -83,6 +88,8 @@ No API divergence — prop surface is identical to the ref.
 - `aria-invalid` reaches the DOM when Field is invalid.
 - Keyboard: type into the field and assert `onChange` fires with the native event; Tab focuses, typing edits (per §7 focus-visible behavior, assert ring class only via state, not snapshot).
 - Uncontrolled and controlled value both work (native semantics untouched).
+- Dual-density: at document `dense` and `comfortable`, computed height, inline padding, font-size, and line-height match the signed `md` rung; nested `data-density` and `ThemeScope` variant changes do not rescope metrics. Shared focus-ring helper: ring on `:focus-visible`, absent on mouse focus, both stamps.
+- Type tests (`*.test-d.tsx`, tooling §7.3): `InputProps` equals `ComponentProps<"input">` — no recipe axis and no `render` prop, since the md rung is pinned by the shared field box _(Added 2026-09-03 — [ADR 0008](../../adr/0008-tests-assert-behaviour-not-source-spelling.md).)_
 
 ## 10 Demo requirements
 

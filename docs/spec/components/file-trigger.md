@@ -24,19 +24,19 @@ FileTriggerPrimitive (RAC; renders a hidden <input type="file">, ref target)
 
 `FileTriggerProps = { withIcon?, isDisabled?, ref?, className? } & FileTriggerPrimitiveProps & VariantProps<typeof buttonVariants>`
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `acceptedFileTypes` | `string[]` | — | MIME types / extensions → input `accept` |
-| `allowsMultiple` | `boolean` | — | → input `multiple` |
-| `acceptDirectory` | `boolean` | — | directory picker (`webkitdirectory`); selects the Folder icon |
-| `defaultCamera` | `"user" \| "environment"` | — | mobile capture hint; selects the Camera icon |
-| `onSelect` | `(files: FileList \| null) => void` | — | fires after the native picker closes |
-| `withIcon` | `boolean` | `true` | leading icon on/off; adds `gap-x-2` when on |
-| `isDisabled` | `boolean` | — | applied to the visible Button |
-| `size` / `variant` | `buttonVariants` axes | `size="sm"` | `variant` routed to the Button (ref bug fixed, §8) |
-| `className` | `string` | — | merged onto the Button |
-| `ref` | `RefObject<HTMLInputElement>` | — | the hidden file input |
-| `children` | `ReactNode` | — | button label |
+| Prop                | Type                                | Default     | Notes                                                         |
+| ------------------- | ----------------------------------- | ----------- | ------------------------------------------------------------- |
+| `acceptedFileTypes` | `string[]`                          | —           | MIME types / extensions → input `accept`                      |
+| `allowsMultiple`    | `boolean`                           | —           | → input `multiple`                                            |
+| `acceptDirectory`   | `boolean`                           | —           | directory picker (`webkitdirectory`); selects the Folder icon |
+| `defaultCamera`     | `"user" \| "environment"`           | —           | mobile capture hint; selects the Camera icon                  |
+| `onSelect`          | `(files: FileList \| null) => void` | —           | fires after the native picker closes                          |
+| `withIcon`          | `boolean`                           | `true`      | leading icon on/off; adds `gap-x-2` when on                   |
+| `isDisabled`        | `boolean`                           | —           | applied to the visible Button                                 |
+| `size` / `variant`  | `buttonVariants` axes               | `size="sm"` | `variant` routed to the Button (ref bug fixed, §8)            |
+| `className`         | `string`                            | —           | merged onto the Button                                        |
+| `ref`               | `Ref<HTMLInputElement>`             | —           | the hidden file input                                         |
+| `children`          | `ReactNode`                         | —           | button label                                                  |
 
 ## 4 Variants
 
@@ -70,6 +70,8 @@ All via `buttonVariants` (button surface/foreground/focus tokens); this module a
 - Clicking/keyboard-activating the button clicks the hidden input (spy on input `click`); `onSelect` fires with a `FileList` when files are set on the input and `change` dispatched
 - Icon selection: `defaultCamera` → Camera, `acceptDirectory` → Folder, default → Paperclip; `withIcon={false}` renders no icon
 - `isDisabled` disables the button; `variant`/`size` classes land on the button (regression for §8.3)
+- Shared focus-ring helper on the visible button: ring on `:focus-visible`, absent on mouse focus, at both density stamps. _(Added 2026-09-03 — [ADR 0008](../../adr/0008-tests-assert-behaviour-not-source-spelling.md).)_
+- Dual-density: the visible button follows the signed `sm` rung (its default `size`) at `dense` and `comfortable`; a nested `data-density` does not rescope it. _(Added 2026-09-03 — [ADR 0008](../../adr/0008-tests-assert-behaviour-not-source-spelling.md).)_
 
 ## 10 Demo requirements
 

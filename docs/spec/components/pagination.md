@@ -10,24 +10,36 @@
 
 ## 2 Anatomy
 
-| Part | Renders | data-slot |
-| --- | --- | --- |
-| `Pagination.Root` | `<nav role="navigation">` with localized label | `pagination` |
-| `Pagination.Content` | `<ul>` | `pagination-content` |
-| `Pagination.Item` | `<li>` | `pagination-item` |
-| `Pagination.Link` | `<a>` styled via `buttonVariants` | `pagination-link` |
-| `Pagination.Previous` | `Pagination.Link` (`size="default"`) with `<CaretLeft />` + text | `pagination-previous` |
-| `Pagination.Next` | `Pagination.Link` (`size="default"`) with text + `<CaretRight />` | `pagination-next` |
+| Part                  | Renders                                                            | data-slot             |
+| --------------------- | ------------------------------------------------------------------ | --------------------- |
+| `Pagination.Root`     | `<nav role="navigation">` with localized label                     | `pagination`          |
+| `Pagination.Content`  | `<ul>`                                                             | `pagination-content`  |
+| `Pagination.Item`     | `<li>`                                                             | `pagination-item`     |
+| `Pagination.Link`     | `<a>` styled via `buttonVariants`                                  | `pagination-link`     |
+| `Pagination.Previous` | `Pagination.Link` (`size="default"`) with `<CaretLeft />` + text   | `pagination-previous` |
+| `Pagination.Next`     | `Pagination.Link` (`size="default"`) with text + `<CaretRight />`  | `pagination-next`     |
 | `Pagination.Ellipsis` | `<span>` with aria-hidden `<DotsThree />` + localized sr-only text | `pagination-ellipsis` |
 
 ```tsx
 <Pagination.Root>
   <Pagination.Content>
-    <Pagination.Item><Pagination.Previous href="#" /></Pagination.Item>
-    <Pagination.Item><Pagination.Link href="#" isActive>1</Pagination.Link></Pagination.Item>
-    <Pagination.Item><Pagination.Link href="#">2</Pagination.Link></Pagination.Item>
-    <Pagination.Item><Pagination.Ellipsis /></Pagination.Item>
-    <Pagination.Item><Pagination.Next href="#" /></Pagination.Item>
+    <Pagination.Item>
+      <Pagination.Previous href="#" />
+    </Pagination.Item>
+    <Pagination.Item>
+      <Pagination.Link href="#" isActive>
+        1
+      </Pagination.Link>
+    </Pagination.Item>
+    <Pagination.Item>
+      <Pagination.Link href="#">2</Pagination.Link>
+    </Pagination.Item>
+    <Pagination.Item>
+      <Pagination.Ellipsis />
+    </Pagination.Item>
+    <Pagination.Item>
+      <Pagination.Next href="#" />
+    </Pagination.Item>
   </Pagination.Content>
 </Pagination.Root>
 ```
@@ -36,15 +48,15 @@
 
 All parts are plain functions (no `forwardRef`; React 19 `ref` flows as a prop). `className` merged via `cn`.
 
-| Part | Type | Notes |
-| --- | --- | --- |
-| `Pagination.Root` | `ComponentProps<"nav"> & { label?: string }` | localized `landmark` default; explicit `aria-label` wins |
-| `Pagination.Content` | `ComponentProps<"ul">` | `flex flex-row items-center gap-1` |
-| `Pagination.Item` | `ComponentProps<"li">` | structural only |
-| `Pagination.Link` | `{ isActive?: boolean } & Pick<ButtonProps, "size"> & ComponentProps<"a">` | `size` default `"icon"`; see mapping below |
-| `Pagination.Previous` | `ComponentProps<typeof Pagination.Link> & { text?: string; label?: string }` | visible `text` defaults to localized `previous`; `label` defaults to `goToPrevious`; explicit `aria-label` wins |
-| `Pagination.Next` | same as Previous | visible `next` and `goToNext` defaults |
-| `Pagination.Ellipsis` | `ComponentProps<"span"> & { label?: string }` | localized `morePages` sr-only text; not interactive |
+| Part                  | Type                                                                                                                            | Notes                                                                                                                                                                                                    |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Pagination.Root`     | `ComponentProps<"nav"> & { label?: string }`                                                                                    | localized `landmark` default; explicit `aria-label` wins                                                                                                                                                 |
+| `Pagination.Content`  | `ComponentProps<"ul">`                                                                                                          | `flex flex-row items-center gap-1`                                                                                                                                                                       |
+| `Pagination.Item`     | `ComponentProps<"li">`                                                                                                          | structural only                                                                                                                                                                                          |
+| `Pagination.Link`     | `{ isActive?: boolean } & Pick<ButtonProps, "size"> & ComponentProps<"a">`                                                      | `size` default `"icon"`; see mapping below                                                                                                                                                               |
+| `Pagination.Previous` | `Omit<PaginationLinkProps, "size" \| "isActive" \| "children"> & { size?: ButtonProps["size"]; text?: string; label?: string }` | visible `text` defaults to localized `previous`; `label` defaults to `goToPrevious`; explicit `aria-label` wins. Owns its children (caret + text). Not a current-page control — `isActive` is Link-only. |
+| `Pagination.Next`     | same Omit as Previous                                                                                                           | visible `next` and `goToNext` defaults                                                                                                                                                                   |
+| `Pagination.Ellipsis` | `Omit<ComponentProps<"span">, "children"> & { label?: string }`                                                                 | localized `morePages` sr-only text; not interactive; children are owned                                                                                                                                  |
 
 **`isActive` → button-variant mapping**: `Pagination.Link` renders `buttonVariants({ variant: isActive ? "outline" : "ghost", size })` — the current page reads as an outlined button, all other pages as ghost buttons. `isActive` also drives `aria-current="page"` via the `isActive ? "page" : undefined` idiom.
 
@@ -79,7 +91,7 @@ Via borrowed `buttonVariants`: `background`, `accent`, `accent-foreground`, `inp
 ## 8 Divergence from reference (FULL CLEANUP — user-ruled)
 
 1. **Rename: flat → namespace** — ref exports `Pagination`, `PaginationContent`, `PaginationItem`, `PaginationLink`, `PaginationPrevious`, `PaginationNext`, `PaginationEllipsis`; ours are `Pagination.Root/.Content/.Item/.Link/.Previous/.Next/.Ellipsis`.
-2. **`forwardRef` dropped** — ref wraps `Content` and `Item` in `React.forwardRef` (and only those two); React 19 makes `ref` a plain prop, so all parts are plain functions. `displayName` assignments dropped with it.
+2. **`forwardRef` dropped** — ref wraps `Content` and `Item` in `React.forwardRef` (and only those two); React 19 makes `ref` a plain prop, so all parts are plain functions. `displayName` is **kept** on all seven parts (`Pagination.Root` … `Pagination.Ellipsis`), per the namespace convention. _(Amended 2026-09-03 — the entry claimed the displayNames went with `forwardRef`; they ship.)_
 3. **react-aria `Span` → plain `<span>`** — ref renders `Previous`/`Next` text and the whole `Ellipsis` through the RAC `Span` wrapper; replaced with native spans, removing a React Aria dependency from this family.
 4. **Dead tv slots removed** — the ref recipe's `item: ""` and `button: ""` slots are empty strings invoked for nothing; deleted from the recipe (Item is unstyled; Link uses `buttonVariants` + `link` slot).
 5. **`data-slot` attributes ADDED** — the ref emits none (the family's odd one out); ours adds the full §2 set per family convention.
@@ -88,6 +100,8 @@ Via borrowed `buttonVariants`: `background`, `accent`, `accent-foreground`, `inp
 8. **Localized defaults added:** Previous/Next text and labels, landmark label, and ellipsis text come from the provider dictionary; optional props preserve copy control.
 9. **KEPT: `isActive` → outline-vs-ghost mapping**, `size="icon"` default on Link, `size="default"` on Previous/Next, and the vestigial-looking `VariantProps<typeof paginationVariants>` intersections are simplified to the shapes in §3 (the ref sprinkles `VariantProps` on every part though only Previous/Next use the `direction` axis internally — trimmed to actual usage; `direction` is not a consumer-facing prop).
 10. **Client boundary added:** the plain reference was server-capable, but the provider-only locale ruling requires `useLocalizedStrings`; the component entry is therefore client. A locale prop is not added as a second source of truth.
+
+11. **`Previous`/`Next` are one parameterised edge, and the runtime `children`/`isActive` strip is gone** (ticket 44, 2026-09-03): both edges render through a private `PaginationEdge({ direction, … })` that carries the slot name, caret icon, dictionary keys and the `direction` recipe arm, so a fix lands once; the public `Pagination.Previous` / `Pagination.Next` names, props, defaults (`size="default"`) and DOM are unchanged. The `rest as typeof rest & { children?: unknown }` casts that deleted `children`/`isActive` at runtime in `Previous`, `Next` and `Ellipsis` are deleted with their SAFETY comments: the props are already omitted at the type level, which is the whole contract (§3). The module-scope recipe calls replace the per-render `paginationVariants()` in every part.
 
 ## 9 Test requirements
 

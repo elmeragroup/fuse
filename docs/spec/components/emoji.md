@@ -12,13 +12,13 @@
 
 Each member renders a single `<svg viewBox="0 0 36 36">` with hand-inlined Twemoji-style paths. No wrapper element, no slots, no children.
 
-| Part | Element | data-slot |
-| --- | --- | --- |
-| `Emoji.SlightlyFrowningFace` | `svg` | `emoji` |
-| `Emoji.SlightlySmilingFace` | `svg` | `emoji` |
-| `Emoji.NeutralFace` | `svg` | `emoji` |
-| `Emoji.LoudlyCryingFace` | `svg` | `emoji` |
-| `Emoji.PartyingFace` | `svg` | `emoji` |
+| Part                         | Element | data-slot |
+| ---------------------------- | ------- | --------- |
+| `Emoji.SlightlyFrowningFace` | `svg`   | `emoji`   |
+| `Emoji.SlightlySmilingFace`  | `svg`   | `emoji`   |
+| `Emoji.NeutralFace`          | `svg`   | `emoji`   |
+| `Emoji.LoudlyCryingFace`     | `svg`   | `emoji`   |
+| `Emoji.PartyingFace`         | `svg`   | `emoji`   |
 
 ```tsx
 <Emoji.SlightlySmilingFace className="size-5" />
@@ -31,11 +31,11 @@ App consumption (kept working verbatim): stormwind's `SatisfactionEmoji` maps `F
 
 `EmojiProps = ComponentProps<"svg"> & { label?: string }` — exported (shared by all five members, as in the ref).
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `label` | `string` | — | ADDED (§8): when set, the svg gets `role="img"` + `aria-label={label}`; when unset the svg is decorative (`aria-hidden="true"`) |
-| `className` | `string` | — | sizing is consumer-driven (`size-*`); no default size class (ref behavior kept — the `viewBox` scales to the styled box) |
-| …rest | native `svg` props | — | spread onto the `<svg>`; an explicit `aria-hidden` from props wins (spread after the defaults) |
+| Prop        | Type               | Default | Notes                                                                                                                           |
+| ----------- | ------------------ | ------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `label`     | `string`           | —       | ADDED (§8): when set, the svg gets `role="img"` + `aria-label={label}`; when unset the svg is decorative (`aria-hidden="true"`) |
+| `className` | `string`           | —       | sizing is consumer-driven (`size-*`); no default size class (ref behavior kept — the `viewBox` scales to the styled box)        |
+| …rest       | native `svg` props | —       | spread onto the `<svg>`; an explicit `aria-hidden` from props wins (spread after the defaults)                                  |
 
 No variant props, no `render` prop (an SVG asset is not polymorphic).
 

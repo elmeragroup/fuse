@@ -12,14 +12,14 @@
 
 Six parts. `Shell` renders a `Field.Item` containing a full-width `Field.Label` row (control + row children) and, when present, a sub-section band below the label. `Content`, `Description`, `Actions`, `Title`, `SubSection` are thin wrappers/re-exports of the `Item` family.
 
-| Part | Base | Notes |
-| --- | --- | --- |
-| `SelectionItem.Shell` | `Field.Item` + base-ui `Field.Label` + `ItemMedia variant="icon"` | card row; partitions children (see §7/§8) |
-| `SelectionItem.Title` | `ItemTitle` (`div`) | adds `font-normal` |
-| `SelectionItem.Description` | `ItemDescription` (`p`) | re-export, unmodified |
-| `SelectionItem.Content` | `ItemContent` (`div`) | re-export, unmodified |
-| `SelectionItem.Actions` | `ItemActions` (`div`) | adds `-translate-y-0.5 items-start` |
-| `SelectionItem.SubSection` | `ItemFooter` (`div`) | returns `null` when childless; rendered **outside** the label |
+| Part                        | Base                                                              | Notes                                                                                                                |
+| --------------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `SelectionItem.Shell`       | `Field.Item` + base-ui `Field.Label` + `ItemMedia variant="icon"` | card row; partitions children (see §7/§8); connected vs individual edges follow the private group's orientation (§4) |
+| `SelectionItem.Title`       | `ItemTitle` (`div`)                                               | adds `font-normal`                                                                                                   |
+| `SelectionItem.Description` | `ItemDescription` (`p`)                                           | re-export, unmodified                                                                                                |
+| `SelectionItem.Content`     | `ItemContent` (`div`)                                             | re-export, unmodified                                                                                                |
+| `SelectionItem.Actions`     | `ItemActions` (`div`)                                             | adds `-translate-y-0.5 items-start`                                                                                  |
+| `SelectionItem.SubSection`  | `ItemFooter` (`div`)                                              | returns `null` when childless; rendered **outside** the label                                                        |
 
 ```tsx
 <SelectionItem.Shell dataSlot="radio-item" control={<RadioGroupItem value="a" />}>
@@ -36,20 +36,20 @@ Six parts. `Shell` renders a `Field.Item` containing a full-width `Field.Label` 
 
 All parts accept `className` (merged via `cn`).
 
-**SelectionItem.Shell**
+**SelectionItem.Shell** — `Omit<ComponentProps<typeof Field.Item>, "className" | "children">` pass-through (`render`, `id`, `aria-*`, `data-*`, event handlers land on the `Field.Item` root; `className` is a plain string, never the Base UI state callback) plus: _(Amended 2026-09-02, §8.7.)_
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `dataSlot` | `string` | — (required) | emitted as `data-slot` on the `Field.Item` root (`"checkbox-item"`, `"radio-item"`) |
-| `control` | `ReactNode` | — (required) | the selection control rendered in the `ItemMedia variant="icon"` slot; **documented escape hatch** for custom indicators (switch, icon crossfade) that the dropped external-card axes used to provide |
-| `controlPosition` | `"start" \| "end"` | `"start"` | **new axis** (§8.2) — `"end"` places the control slot after the row children (trailing indicator) |
-| `isDisabled` | `boolean` | — | applies `cursor-not-allowed bg-muted` + shared `disabledHatch` overlay |
-| `children` | `ReactNode` | — | partitioned: `SubSection` elements are pulled out below the label; everything else renders in the label row |
+| Prop              | Type               | Default      | Notes                                                                                                                                                                                                 |
+| ----------------- | ------------------ | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dataSlot`        | `string`           | — (required) | emitted as `data-slot` on the `Field.Item` root (`"checkbox-item"`, `"radio-item"`)                                                                                                                   |
+| `control`         | `ReactNode`        | — (required) | the selection control rendered in the `ItemMedia variant="icon"` slot; **documented escape hatch** for custom indicators (switch, icon crossfade) that the dropped external-card axes used to provide |
+| `controlPosition` | `"start" \| "end"` | `"start"`    | **new axis** (§8.2) — `"end"` places the control slot after the row children (trailing indicator)                                                                                                     |
+| `isDisabled`      | `boolean`          | —            | applies `cursor-not-allowed bg-muted` + shared `disabledHatch` overlay                                                                                                                                |
+| `children`        | `ReactNode`        | —            | partitioned: `SubSection` elements are pulled out below the label; everything else renders in the label row                                                                                           |
 
 **SelectionItem.SubSection** — `ComponentProps<"div">` plus:
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
+| Prop   | Type                                 | Default     | Notes                                                                                                                                                                                                 |
+| ------ | ------------------------------------ | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `mode` | `"default" \| "visible" \| "hidden"` | `"default"` | `itemFooterVariants` axis: `default` static open; `visible` animates in (grid-rows + `starting:` styles); `hidden` collapses (`grid-rows-[minmax(0,0fr)]`, `pointer-events-none`, fade/translate out) |
 
 Renders `null` when `Children.toArray(children).length === 0`.
@@ -60,13 +60,14 @@ Renders `null` when `Children.toArray(children).length === 0`.
 
 - Shell composes the shared `itemVariants` recipe (from `item.tsx`) pinned to `variant: "outline"`; `itemVariants` **is exported** (borrow pattern in the ref), but `SelectionItem` exposes no variant axis of its own besides `controlPosition`.
 - `SubSection` uses `itemFooterVariants` (tv, module-private) — `mode` axis above.
-- Vertical stacking styles are baked in, not an axis: `rounded-none not-first:border-t-0 first:rounded-t-lg last:rounded-b-lg`, plus the checked border-repaint hack `has-data-checked:not-first:-mt-px has-data-checked:not-first:border-t` (§8.6).
+- Group and stacked-card-list layout is the package-private `selectionGroupOrientationVariants` slotted recipe in `selection-item-variants.ts` (`group` + `list` slots, `orientation` axis, `vertical` default). Not exported from `@elmeragroup/ui/selection-item`. _(Amended 2026-09-04.)_
+- Shell edge treatment is not a public axis; it follows the enclosing selection group's `orientation` — the private card list or a plain `CheckboxGroup`/`RadioGroup` (§8.9). Vertical (default) and shells **outside** any group are a connected stack: `rounded-none not-first:border-t-0 first:rounded-t-lg last:rounded-b-lg`, plus the checked border-repaint hack `has-[[data-slot=selection-item-control]_[data-checked]]:not-first:-mt-px has-[[data-slot=selection-item-control]_[data-checked]]:not-first:border-t` (§8.6). Horizontal groups (card list or plain) render individually rounded full-border cards (`rounded-lg`) with neither vertical border collapse nor checked negative margin. Checked surface/border selectors are scoped to the private control slot so a checked descendant in SubSection cannot repaint the shell. The private group itself is absent from the public namespace.
 
 ## 5 Consumed tokens
 
 - `background` — resting shell surface (`bg-background`).
-- `muted` — checked surface (`has-data-checked:bg-muted`) and disabled surface.
-- `primary` — checked border (`has-data-checked:border-primary`).
+- `muted` — checked surface (`has-[[data-slot=selection-item-control]_[data-checked]]:bg-muted`) and disabled surface.
+- `primary` — checked border (`has-[[data-slot=selection-item-control]_[data-checked]]:border-primary`).
 - `border` — resting border via `itemVariants` outline variant.
 - `ring` + `background` — the plugged-in Checkbox/Radio control's shared focus recipe. `itemVariants` contains a self-focus adapter for interactive Item uses, but it remains inert on this non-focusable shell.
 - `muted-foreground` — Description text (from `ItemDescription`).
@@ -74,14 +75,15 @@ Renders `null` when `Children.toArray(children).length === 0`.
 
 ## 6 Data attributes
 
-**Emitted**: `data-slot` = the `dataSlot` prop on the shell root; inherited part slots `item-media` (+`data-variant="icon"`), `item-content`, `item-title`, `item-description`, `item-actions`, `item-footer` (+`data-mode`) and `item-footer-content` on SubSection's inner wrapper.
+**Emitted**: `data-slot` = the `dataSlot` prop on the shell root; private `data-slot="selection-item-control"` on the control-slot `ItemMedia` host (the inherited `item-media` name is replaced on this host so checked-state `:has()` can target the `control` prop only); inherited part slots `item-content`, `item-title`, `item-description`, `item-actions`, `item-footer` (+`data-mode`) and `item-footer-content` on SubSection's inner wrapper. `data-variant="icon"` remains on the control-slot host.
 
-**Consumed**: `data-checked` from the plugged-in control via `has-data-checked:` (border/surface repaint); `disabled` on the control via `has-disabled:cursor-not-allowed` on the label; `data-slot=item-description` presence shifts `ItemMedia` to `self-start translate-y-0.5`.
+**Consumed**: `data-checked` from the plugged-in control, scoped to the private control slot via `has-[[data-slot=selection-item-control]_[data-checked]]:` (border/surface repaint); `disabled` on the control via `has-disabled:cursor-not-allowed` on the label; `data-slot=item-description` presence shifts `ItemMedia` to `self-start translate-y-0.5`.
 
 ## 7 Accessibility
 
 - The whole row is a base-ui `Field.Label` wrapping the control — clicking anywhere in the row toggles/selects the control. Keyboard behavior belongs to the plugged-in control (`Checkbox`, `RadioGroupItem`).
 - **SubSections render outside the label** deliberately: interactive content in a sub-section must not toggle the control when clicked. The shell partitions direct children by `child.type === SelectionItem.SubSection` reflection (§8.5).
+- Inside `CheckboxItemGroup` / `RadioItemGroup`, `SelectionItem.Shell` defaults to `role="listitem"` so the wrapping private list (`Item.Group`, `role="list"`) is a complete list. Vertical (default) lays that list out as connected `flex-col gap-0`; horizontal is the actual item list `flex-row flex-wrap gap-4`. That grouping context is private to SelectionItem and is not part of the public namespace. Outside those groups the shell adds no role: a plain `CheckboxGroup`/`RadioGroup` announces only its orientation to shells (§8.9), never list semantics.
 - The sub-section band indents under the text column via an `aria-hidden` spacer `<span>` whose width must equal the control slot width (§8.2); it carries no semantics.
 - `isDisabled` styles the surface but does not disable anything itself — disabling is the control's/group's job; the label picks up `has-disabled:cursor-not-allowed`.
 - Keyboard focus remains on the plugged-in Checkbox/Radio control, which renders the single canonical ring. The non-focusable shell never draws a second ring.
@@ -90,10 +92,14 @@ Renders `null` when `Children.toArray(children).length === 0`.
 
 1. **Renames (flat → namespace)**: `SelectionItemShell`→`SelectionItem.Shell`, `SelectionItemTitle`→`SelectionItem.Title`, `SelectionItemDescription`→`SelectionItem.Description` (ref re-exports `ItemDescription`), `SelectionItemContent`→`SelectionItem.Content` (ref re-exports `ItemContent`), `SelectionItemActions`→`SelectionItem.Actions`, `SelectionItemSubSection`→`SelectionItem.SubSection`. `CheckboxItem.*` and `RadioItem.*` expose the same five sub-parts as namespace aliases — **the same objects**, not copies (see checkbox.md/radio-group.md §8).
 2. **NEW axis `controlPosition?: "start" | "end"` (default `"start"`)** — the ref hardcodes control-first. `"end"` restores the external RadioCard's trailing-indicator pattern. Requirement: the sub-section indent spacer must **derive its width from the control slot** (same width, same side as the control) instead of the ref's hardcoded `w-4` `<span>` — otherwise wide custom `control` nodes or `controlPosition="end"` misalign the sub-section with the text column.
-3. **External card axes DROPPED** — the external ref's RadioCard/CheckboxCard family axes (pluggable switch/checkbox indicator prop, `iconPosition` grid, `shape`, Heading `level`, `wrapChildren={false}`, the `layout`/`itemSpacing`/`connectedEdges` matrix) are not carried over. Migration: pass a custom node via `control` (escape hatch) and compose Title/Description/Content/Actions for layout; stacked-group edge handling is the shell's built-in first/last rounding.
-4. **`aria-invalid:aria-checked:border-primary`-style state overrides live on the controls, not the shell** — unchanged here; noted because the shell relies on the control emitting base-ui state attributes for `has-data-checked:`.
-5. **`child.type` reflection partitioning KEPT (documented fragility)** — SubSections are detected by identity comparison `child.type === SelectionItemSubSection` on **direct** children only. Wrapping a SubSection in another component, a Fragment, or an HOC hides it from the filter and it renders *inside* the label (clicks toggle the control). This is deliberate ref behavior (wrappers would defeat the outside-the-label guarantee) and is kept as-is; the constraint must be documented in JSDoc and docs.
-6. **`-mt-px` border-collapse hack KEPT** — stacked items collapse borders with `not-first:border-t-0`; a checked non-first item repaints its top border in `primary` by pulling itself up one pixel (`has-data-checked:not-first:-mt-px has-data-checked:not-first:border-t`) instead of a z-index lift. Fragile against margin overrides via `className`; kept and documented.
+3. **External card axes DROPPED** — the external ref's RadioCard/CheckboxCard family axes (pluggable switch/checkbox indicator prop, `iconPosition` grid, `shape`, Heading `level`, `wrapChildren={false}`, the `layout`/`itemSpacing`/`connectedEdges` matrix) are not carried over. Migration: pass a custom node via `control` (escape hatch) and compose Title/Description/Content/Actions for layout. Vertical/default/outside-private-group edge handling is the shell's built-in first/last rounding; a horizontal private group uses individually rounded full-border cards instead.
+4. **`aria-invalid:aria-checked:border-primary`-style state overrides live on the controls, not the shell** — unchanged here; noted because the shell relies on the control emitting base-ui state attributes for the control-slot-scoped `has-[[data-slot=selection-item-control]_[data-checked]]:` selectors.
+5. **`child.type` reflection partitioning KEPT (documented fragility)** — SubSections are detected by identity comparison `child.type === SelectionItemSubSection` on **direct** children only. Wrapping a SubSection in another component, a Fragment, or an HOC hides it from the filter and it renders _inside_ the label (clicks toggle the control). This is deliberate ref behavior (wrappers would defeat the outside-the-label guarantee) and is kept as-is; the constraint must be documented in JSDoc and docs.
+6. **`-mt-px` border-collapse hack KEPT on the connected stack** — vertical, default, and outside-private-group items collapse borders with `not-first:border-t-0`; a checked non-first item repaints its top border in `primary` by pulling itself up one pixel (`has-[[data-slot=selection-item-control]_[data-checked]]:not-first:-mt-px has-[[data-slot=selection-item-control]_[data-checked]]:not-first:border-t`) instead of a z-index lift. Fragile against margin overrides via `className`; kept and documented on that stack. Horizontal item groups do **not** collapse vertical borders or apply the checked negative margin. The ref's descendant-wide `has-data-checked:` is **not** kept — checked selectors are scoped to the private control slot so a checked interactive control inside SubSection cannot repaint an otherwise unchecked shell.
+7. **Shell pass-through is wider than the five named props** — `SelectionItemShellProps` spreads every `Field.Item` prop except `className` and `children` onto the root, so consumers can attach `id`, `aria-describedby`, `data-*`, handlers, or `render` without a wrapper, the same shape `Field.Item`, `Tabs.*`, and `RadioGroupItem` document. _(Ruled 2026-09-02, pending owner confirmation: widen the §3 table to the shipped type rather than narrow the type, which would be a breaking change for a documented base-ui pass-through pattern.)_
+
+8. **The one orientation map is package-private here** (2026-09-03): `selection-item.tsx` owns `selectionGroupOrientationClass`, the single `group`/`list` orientation map (checkbox.md §8.11, radio-group.md §8.13; spec 08 finding S18), plus the card-row shell. None of this is exported from `package.json#exports` or the `SelectionItem` namespace. `CheckboxItemGroup` and `RadioItemGroup` inline the two-line stacked-card wrap rather than sharing a render helper. §9 pins the parity of the two families' computed layout, which is what stops the map from being forked back into copies. _(Amended 2026-09-04: the status-row union and `renderSelectionItemCardGroup` are gone.)_ _(Amended 2026-09-04: `SelectionGroupFrame` is deleted; CheckboxGroup and RadioGroup render `FieldFrame heading="legend"` from `field/field-frame.tsx`, and this module owns only the card row and the orientation map.)_ _(Amended 2026-09-04: the map is the colocated `selectionGroupOrientationVariants` slotted recipe in `selection-item-variants.ts` — `group` + `list` slots, `orientation` axis, `vertical` default. CheckboxGroup, RadioGroup and `SelectionItemGroup` call the recipe; the option-stack `gap-2` stays a layout literal inside it.)_
+9. **Shells in a plain group follow the group, and the group closes the gap** (2026-09-04): a `CheckboxItem`/`RadioItem` placed directly in `CheckboxGroup`/`RadioGroup` used to assume a connected stack while the group kept its `gap-2` option stack, so the docs "Tri-state" and "Group" demos and any consumer composing the same way rendered rectangular cards with collapsed top borders floating 8px apart. Two changes close it at the component, not the call site. The group context now carries `{ orientation, list }`: `SelectionItemGroup` provides `list: true`; the package-private `SelectionGroupLayout`, which `CheckboxGroup` and `RadioGroup` wrap their primitive's children in, provides `list: false`. The shell derives `role="listitem"` from `list` alone and its edge treatment from `orientation` alone, so a shell in a plain horizontal group is an individually rounded card and a shell in a plain vertical group is a connected stack. The shell stamps `data-selection-item=""`, and the vertical `group` arm of the orientation map adds `has-[>[data-selection-item]]:gap-0` (the same child-targeting pattern field.md §6 uses for `Field.Set`), so a vertical group over shells is `gap-0` while a group over plain `Checkbox`/`Radio` rows keeps `gap-2`. The horizontal `group` arm is unchanged: `gap-4` between independent cards is already the card-list shape. The reference never composed shells into a plain group and never fixed this; here it is fixed because the docs demo showed the composition as supported.
 
 ## 9 Test requirements
 
@@ -104,7 +110,11 @@ Renders `null` when `Children.toArray(children).length === 0`.
 - `mode="hidden"` SubSection content is not clickable (`pointer-events-none`).
 - `controlPosition="end"` renders the control after the row children; sub-section spacer width matches the control slot in both positions (layout assertion in browser test).
 - `isDisabled` shell with a disabled control: row click does not toggle; surface has disabled styling state.
-- Checked state reflects on the shell (`data-checked` descendant drives border/surface — assert via control's `aria-checked` plus shell attributes, role queries only).
+- Checked state reflects on the shell from the **control slot only** (`data-checked` on the plugged-in control drives border/surface — assert via control's `aria-checked` plus shell attributes, role queries only). An unchecked shell containing a separately checked interactive control inside SubSection retains unchecked surface/top-border state; selecting the shell's own control still paints checked state.
+- Selection-group orientation parity (browser): a `CheckboxGroup` and a `RadioGroup` at the same orientation have the same computed group layout, and a `CheckboxItemGroup` and `RadioItemGroup` the same computed card-list layout, asserted against signed values (`column`/`nowrap`/`8px`, `row`/`wrap`/`16px`, list `column`/`0px`) so an unstyled pair cannot pass by matching each other's defaults. Every member control keeps an accessible name in both the plain and the card shape, each group keeps its legend name, and each frame renders exactly one `role="alert"`.
+- Type test: `SelectionItem.Shell` accepts the `Field.Item` pass-through surface (`render`, `id`, `aria-*`, `data-*`, handlers) and rejects a function `className` (§8.7).
+- Connected stacking (first/last rounding, `not-first:border-t-0`, checked `-mt-px`) applies outside any group and inside a vertical group, card list or plain. A horizontal group, card list or plain, renders individually rounded full-border cards with no vertical border collapse and no checked negative margin. The private group remains unpublished.
+- Shells as direct children of a plain vertical `CheckboxGroup`/`RadioGroup` (browser): the group primitive's computed layout equals the card list's (`column`/`nowrap`/`0px`), the second shell's top border is `0px`, and no `listitem` roles are added. In a plain horizontal group both families' shells pass the same independent-rounded-card assertions as a horizontal card list (§8.9).
 
 ## 10 Demo requirements
 

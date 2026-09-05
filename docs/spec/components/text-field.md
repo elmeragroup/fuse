@@ -29,44 +29,44 @@ The pending/success indicator crossfades via the shared `iconCrossfadeTransition
 
 ## 3 Props
 
-`TextFieldProps` = the table below `& Omit<ComponentProps<"input">, "value" | "defaultValue" | "onChange" | "name" | "className">` — all remaining native input props (`type`, `inputMode`, `maxLength`, `autoComplete`, `aria-*`, …) spread onto the inner Input.
+`TextFieldProps` = the table below `& Omit<ComponentProps<"input">, "value" | "defaultValue" | "onChange" | "name" | "className" | "disabled" | "readOnly" | "required">` — all remaining native input props (`type`, `inputMode`, `maxLength`, `autoComplete`, `aria-*`, …) spread onto the inner Input. The three state keys are omitted on top of the retyped four because the composite owns them through `isDisabled`/`isReadOnly`/`isRequired`, which also drive `Field.Root`; a native twin would let the field chrome and the control disagree. _(Amended 2026-09-03 — the omit list shipped wider than §3 recorded.)_
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `label` | `string` | — | Rendered as `Field.Label` |
-| `description` | `string` | — | Rendered as `Field.Description`, `text-pretty` |
-| `errorMessage` | `ReactNode` | — | Unified type per conventions; `Field.Error` renders only when truthy |
-| `value` | `string` | — | Controlled value |
-| `defaultValue` | `string \| null` | — | `null` is coerced to `undefined` before reaching the input |
-| `onChange` | `(value: string) => void` | — | Value, not event |
-| `name` | `string` | — | |
-| `placeholder` | `string` | — | |
-| `hidden` | `boolean` | `false` | Hides both the root (`hidden` variant axis) and the input (native `hidden`) |
-| `isReadOnly` | `boolean` | `false` | → input `readOnly` |
-| `isDisabled` | `boolean` | `false` | → `Field.Root disabled` **and** input `disabled` (see §8) |
-| `isInvalid` | `boolean` | `false` | → `Field.Root invalid` |
-| `isRequired` | `boolean` | `false` | → input `required` |
-| `isPending` | `boolean` | `false` | Shows spinner in label row (see §8) |
-| `isSuccess` | `boolean` | `false` | Shows check in label row; wins the crossfade over pending |
-| `icon` | `ReactNode` | — | Trailing inline icon; activates `isIconActive` axis |
-| `filter` | `"numeric"` | — | **New (absorbs NumericOnlyTextField, §8).** Drops any change whose value is not digits-only (empty allowed); auto-sets `inputMode="numeric"` unless the caller passes `inputMode` explicitly |
-| `variant` | `"card" \| "inline"` | — | See §4 |
-| `className` | `string` | — | Merged onto the root via `cn` |
+| Prop           | Type                      | Default | Notes                                                                                                                                                                                        |
+| -------------- | ------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `label`        | `string`                  | —       | Rendered as `Field.Label`                                                                                                                                                                    |
+| `description`  | `string`                  | —       | Rendered as `Field.Description`, `text-pretty`                                                                                                                                               |
+| `errorMessage` | `ReactNode`               | —       | Unified type per conventions; `Field.Error` renders only when truthy                                                                                                                         |
+| `value`        | `string`                  | —       | Controlled value                                                                                                                                                                             |
+| `defaultValue` | `string \| null`          | —       | `null` is coerced to `undefined` before reaching the input                                                                                                                                   |
+| `onChange`     | `(value: string) => void` | —       | Value, not event                                                                                                                                                                             |
+| `name`         | `string`                  | —       |                                                                                                                                                                                              |
+| `placeholder`  | `string`                  | —       |                                                                                                                                                                                              |
+| `hidden`       | `boolean`                 | `false` | Hides both the root (`hidden` variant axis) and the input (native `hidden`)                                                                                                                  |
+| `isReadOnly`   | `boolean`                 | `false` | → input `readOnly`                                                                                                                                                                           |
+| `isDisabled`   | `boolean`                 | `false` | → `Field.Root disabled` **and** input `disabled` (see §8)                                                                                                                                    |
+| `isInvalid`    | `boolean`                 | `false` | → `Field.Root invalid`                                                                                                                                                                       |
+| `isRequired`   | `boolean`                 | `false` | → input `required`                                                                                                                                                                           |
+| `isPending`    | `boolean`                 | `false` | Shows spinner in label row (see §8)                                                                                                                                                          |
+| `isSuccess`    | `boolean`                 | `false` | Shows check in label row; wins the crossfade over pending                                                                                                                                    |
+| `icon`         | `ReactNode`               | —       | Trailing inline icon; activates `isIconActive` axis                                                                                                                                          |
+| `filter`       | `"numeric"`               | —       | **New (absorbs NumericOnlyTextField, §8).** Drops any change whose value is not digits-only (empty allowed); auto-sets `inputMode="numeric"` unless the caller passes `inputMode` explicitly |
+| `variant`      | `"card" \| "inline"`      | —       | See §4                                                                                                                                                                                       |
+| `className`    | `string`                  | —       | Merged onto the root via `cn`                                                                                                                                                                |
 
 With `filter="numeric"`, rejected keystrokes never reach `onChange` and never update uncontrolled internal state; a dev-only `console.warn` fires when a supplied `value`/`defaultValue` is not digits-only (behavior carried over from the ref).
 
 ## 4 Variants
 
-Recipe: `textFieldVariants` (tv, slots) — **public export** (borrowed by `PhoneNumberField`).
+Recipe: `textFieldVariants` (tv, slots) — **public export**. Layout slots `base` / `labelContainer` / `container` / `description` compose the package-private `fieldFrameVariants` recipe via slot reads; PhoneNumberField no longer borrows this recipe (phone-number-field.md §4, 2026-09-04). _(Amended 2026-09-04 — ticket 06, 2026-09-04: recipe-derived FieldFrame slots.)_
 
 Slots: `base`, `fieldGroup`, `input`, `labelContainer`, `label`, `container`, `description`, `iconContainer`. The ref's `textArea` slot (`min-h-16`) is dead and removed (§8).
 
-| Axis | Values | Default | Effect |
-| --- | --- | --- | --- |
-| `variant` | `card` | — | `base` composes `cardVariants.slots.base` + `gap-0 px-6 py-4`; borderless full-width `fieldGroup`; `input` unstyled `text-lg`; `label`/`description` `text-muted-foreground`; `container` becomes horizontal `flex-row items-center gap-3` |
-| | `inline` | | `base` adds `group/inline-field`; the inner input retains shared `focusRing({ target: "self" })` and is transparent at rest, `border-input` + `bg-background` on hover, `border-error` + `bg-background` on `group-data-[invalid]` |
-| `hidden` | `true \| false` | `false` | `base: hidden` |
-| `isIconActive` | `true \| false` | `false` | `fieldGroup: relative`; `input: truncate overflow-hidden pr-10 whitespace-nowrap` |
+| Axis           | Values          | Default | Effect                                                                                                                                                                                                                                                                                              |
+| -------------- | --------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `variant`      | `card`          | —       | `base` composes `cardVariants.slots.base` + `gap-0 px-6 py-4`; borderless full-width `fieldGroup`; `input` unstyled `text-lg`; `label`/`description` `text-muted-foreground`; `container` becomes horizontal `flex-row items-center gap-3`                                                          |
+|                | `inline`        |         | `base` adds `group/inline-field`; the inner input retains shared `focusRing({ target: "self" })` and is transparent at rest, `border-input` + `bg-background` on hover, `border-ring` on `:focus-visible` (`focus-visible:border-ring`), `border-error` + `bg-background` on `group-data-[invalid]` |
+| `hidden`       | `true \| false` | `false` | `base: hidden`                                                                                                                                                                                                                                                                                      |
+| `isIconActive` | `true \| false` | `false` | `fieldGroup: relative`; `input: truncate overflow-hidden pr-10 whitespace-nowrap`                                                                                                                                                                                                                   |
 
 `variant` unset renders the plain Input styling. When `variant` is set, the component applies `fieldGroup()` after `input()` on the inner input (ref comment: fieldGroup's default `w-auto` would otherwise override the input's `w-full`).
 
@@ -96,6 +96,8 @@ Slots: `base`, `fieldGroup`, `input`, `labelContainer`, `label`, `container`, `d
 4. **Pending/success placement kept but flagged:** `isPending`/`isSuccess` render in the label row and force that row to exist even when `label` is absent (layout shifts by one row). Kept for ref parity; candidates for a later in-input placement.
 5. **Icon swaps:** the reference loader/check icons become named Phosphor `SpinnerGap` (with `animate-spin`) / `Check` imports.
 6. **Token renames:** `destructive` → `error`, `bg-white` → `bg-card`, `dark:`/`inverted:` input-surface variants dropped in favor of token-level dark axis.
+7. **Inline-field border is `:focus-visible` only (2026-09-02):** the first port painted `border-ring` on `group-focus-within`, so mouse and programmatic focus got a ring-coloured border. The class lives on the input, so it is `focus-visible:border-ring` (Tailwind `has-focus-visible` is `:has(:focus-visible)` and would miss self-focus).
+8. **Label row, description and error move to the shared frame (2026-09-03, field.md §8.9):** the §2 tree is rendered by the package-private `FieldFrame`, which receives the `labelContainer`, `label`, `container` and `description` recipe slots as class arguments. Emitted markup and every part's class set are unchanged; `textFieldVariants` stays the public recipe and PhoneNumberField keeps borrowing it. _(Amended 2026-09-04: `textFieldVariants` composes FieldFrame constants under those public slot names; PhoneNumberField no longer borrows the recipe. `text-pretty` on the description is a frame default, so the public `description` slot includes it. One recipe call per render forwards `label` / `container` / `description` into the frame.)_
 
 ## 9 Test requirements
 
@@ -106,6 +108,7 @@ Slots: `base`, `fieldGroup`, `input`, `labelContainer`, `label`, `container`, `d
 - `filter="numeric"`: typing letters produces no `onChange` and no value change; digits pass; paste of mixed content is rejected wholesale; `inputMode` is `numeric` unless overridden.
 - `isPending`/`isSuccess` render the indicator row without a label; success wins over pending.
 - Keyboard per §7: Tab order label→input; disabled input skipped.
+- Inline variant: keyboard `:focus-visible` paints the ring-coloured border; focus that is not `:focus-visible` does not.
 
 ## 10 Demo requirements
 

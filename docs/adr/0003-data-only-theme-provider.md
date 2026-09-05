@@ -5,7 +5,7 @@ Amended: 2026-08-19 — DOM policy only. Brand remains a controlled host value w
 
 ## Context
 
-Themes (variant × brand × segment) are **server-known and deployment-fixed** — both reference apps set the brand from an env var into the root element server-side with zero client brand state. next-themes was evaluated for vendoring (research 005): it is framework-agnostic, MIT, 1.55 kB — but it exists to solve the opposite problem: applying a theme the server *cannot* know (localStorage + `prefers-color-scheme`) via a blocking inline script and `suppressHydrationWarning`. The one axis where that problem is real — light/dark — is reserved on `data-theme` and ships a functional marker in v1, with no specced dark token values yet.
+Themes (variant × brand × segment) are **server-known and deployment-fixed** — both reference apps set the brand from an env var into the root element server-side with zero client brand state. next-themes was evaluated for vendoring (research 005): it is framework-agnostic, MIT, 1.55 kB — but it exists to solve the opposite problem: applying a theme the server _cannot_ know (localStorage + `prefers-color-scheme`) via a blocking inline script and `suppressHydrationWarning`. The one axis where that problem is real — light/dark — is reserved on `data-theme` and ships a functional marker in v1, with no specced dark token values yet.
 
 The original call treated the provider as data-only (context + helpers, no DOM writes). That remains the right **source-of-truth** decision for brand. It is the wrong **universal first-paint** decision: `_app` cannot stamp `<html>`, Vite `createRoot` `<script>` nodes do not execute, and treating one React provider as a portable no-flash path is false.
 

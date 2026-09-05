@@ -10,64 +10,62 @@
 
 ## 2 Anatomy
 
-| Part | base-ui primitive | data-slot |
-| --- | --- | --- |
-| `ScrollArea.Root` | `ScrollArea.Root` from `@base-ui/react/scroll-area` | `scroll-area` |
-| (internal) viewport | `ScrollArea.Viewport` | `scroll-area-viewport` |
-| (internal) content | `ScrollArea.Content` | `scroll-area-content` |
-| `ScrollArea.Bar` | `ScrollArea.Scrollbar` + `ScrollArea.Thumb` | `scroll-area-scrollbar` / `scroll-area-thumb` |
-| (internal) corner | `ScrollArea.Corner` | — |
+| Part                | base-ui primitive                                   | data-slot                                     |
+| ------------------- | --------------------------------------------------- | --------------------------------------------- |
+| `ScrollArea.Root`   | `ScrollArea.Root` from `@base-ui/react/scroll-area` | `scroll-area`                                 |
+| (internal) viewport | `ScrollArea.Viewport`                               | `scroll-area-viewport`                        |
+| (internal) content  | `ScrollArea.Content`                                | `scroll-area-content`                         |
+| `ScrollArea.Bar`    | `ScrollArea.Scrollbar` + `ScrollArea.Thumb`         | `scroll-area-scrollbar` / `scroll-area-thumb` |
+| (internal) corner   | `ScrollArea.Corner`                                 | —                                             |
 
 `ScrollArea.Root` is batteries-included: it renders Viewport → Content around `children`, one `ScrollArea.Bar` for its `orientation`, and a `Corner`. `ScrollArea.Bar` is exported for consumers composing base-ui primitives directly.
 
 ```tsx
-<ScrollArea.Root className="h-72 rounded-md border">
-  {longContent}
-</ScrollArea.Root>
+<ScrollArea.Root className="h-72 rounded-md border">{longContent}</ScrollArea.Root>
 ```
 
 ## 3 Props
+
+**State classes:** `ScrollArea.Root`, `ScrollArea.Bar` accept either a string or a callback receiving the current Base UI part state. Callback results are merged after library classes with the same conflict resolution as strings. Other parts retain their declared contracts; see [conventions](conventions.md#api-conventions).
 
 ### ScrollArea.Root
 
 `ComponentProps<typeof ScrollAreaPrimitive.Root> & { orientation?; type? }`.
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `orientation` | `"vertical" \| "horizontal"` | `"vertical"` | which single scrollbar Root renders (§8.3 limitation) |
-| `type` | `"auto" \| "always" \| "hover"` | `"hover"` | Radix-style visibility API mapped onto base-ui (§4) |
-| `className` | `string` | — | merged onto `relative overflow-hidden` |
-| `children` | `ReactNode` | — | wrapped in Viewport → Content |
+| Prop          | Type                            | Default      | Notes                                                 |
+| ------------- | ------------------------------- | ------------ | ----------------------------------------------------- |
+| `orientation` | `"vertical" \| "horizontal"`    | `"vertical"` | which single scrollbar Root renders (§8.3 limitation) |
+| `type`        | `"auto" \| "always" \| "hover"` | `"hover"`    | Radix-style visibility API mapped onto base-ui (§4)   |
+| `className`   | `string`                        | —            | merged onto `relative overflow-hidden`                |
+| `children`    | `ReactNode`                     | —            | wrapped in Viewport → Content                         |
 
 ### ScrollArea.Bar
 
 `ComponentProps<typeof ScrollAreaPrimitive.Scrollbar> & { type?: ScrollAreaType }` — pass-through includes `keepMounted` (overridden by `type` mapping), `render`.
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `orientation` | `"vertical" \| "horizontal"` | `"vertical"` | vertical: `w-2.5 border-l`; horizontal: `h-2.5 flex-col border-t` |
-| `type` | `"auto" \| "always" \| "hover"` | `"hover"` | as above |
+| Prop          | Type                            | Default      | Notes                                                             |
+| ------------- | ------------------------------- | ------------ | ----------------------------------------------------------------- |
+| `orientation` | `"vertical" \| "horizontal"`    | `"vertical"` | vertical: `w-2.5 border-l`; horizontal: `h-2.5 flex-col border-t` |
+| `type`        | `"auto" \| "always" \| "hover"` | `"hover"`    | as above                                                          |
 
 ## 4 Variants
 
-No tv recipe (§8.2). One config map, kept with its source comment verbatim:
+Recipe: **`scrollbarTypeVariants`** — **private**, sibling of the component (not a colocated `*-variants.ts`; §8.2 keeps styling in this file). One axis `type`: `"always"` / `"auto"` / `"hover"` (default `"hover"`). `keepMounted` is not a class, so `SCROLLBAR_TYPE` stays the Radix-style map with its source comment, and each `className` is derived from the recipe:
 
 ```ts
 // Base UI has no `type` prop — map the Radix-style API to keepMounted + visibility.
 const SCROLLBAR_TYPE = {
-  always: { keepMounted: true, className: "opacity-100" },
-  auto: { keepMounted: false, className: "opacity-100" },
-  hover: {
-    keepMounted: false,
-    className:
-      "pointer-events-none opacity-0 transition-opacity data-[hovering]:pointer-events-auto data-[hovering]:opacity-100 data-[scrolling]:pointer-events-auto data-[scrolling]:opacity-100 data-[scrolling]:duration-0",
-  },
+  always: { keepMounted: true, className: scrollbarTypeVariants({ type: "always" }) },
+  auto: { keepMounted: false, className: scrollbarTypeVariants({ type: "auto" }) },
+  hover: { keepMounted: false, className: scrollbarTypeVariants({ type: "hover" }) },
 } satisfies Record<ScrollAreaType, { keepMounted: boolean; className: string }>;
 ```
 
-- `always`: bar stays mounted and visible.
-- `auto`: unmounted when no overflow; visible whenever mounted.
+- `always`: bar stays mounted and visible (`opacity-100`).
+- `auto`: unmounted when no overflow; visible whenever mounted (`opacity-100`).
 - `hover` (default): fades in on `data-hovering`/`data-scrolling` (base-ui state attributes), instant (`duration-0`) while scrolling.
+
+_(Amended 2026-09-04.)_
 
 ## 5 Consumed tokens
 

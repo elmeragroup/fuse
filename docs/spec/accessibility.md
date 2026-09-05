@@ -20,15 +20,15 @@ Normative chapter for `@elmeragroup/ui`. Every component spec's §7 (Accessibili
 
 - **Field is the canonical labeling mechanism**: `Field.Root` wires `id`/`htmlFor`, `aria-describedby` (description and `errorMessage`), and error announcement. Every input-like component composed under Field gets its accessible name from `Field.Label` — no component invents its own label wiring.
 - Rule: **every interactive element has a programmatic name — via Field, visible text content, or an explicit `aria-label`.**
-- **Type-level enforcement where mechanical**: icon-only renders require the label in the type. `Button` (and any trigger with an icon-only variant, e.g. `PopoverInfoButton`, overlay close buttons) types the icon-only case as requiring `aria-label` (discriminated union on `size: "icon"` / icon-only content). Everything not mechanically expressible is documented convention enforced in review — **no dev-mode runtime label warnings** (false-positive-prone with portals/async labels, and dead code in prod).
+- **Type-level enforcement where mechanical**: icon-only renders require the label in the type. `Button` types the icon-only case as requiring `aria-label` — a two-branch union where any `icon*` `size` also demands the label (button.md §3). Library triggers built on it satisfy that requirement internally instead of forwarding it: `PopoverInfoButton` omits `aria-label` and writes the localized name itself (`label` overrides it), and the overlay corner close buttons take a `closeLabel` that defaults through the dictionary. _(Amended 2026-09-03 — the earlier text claimed those wrappers also type `aria-label` as required; they own the name instead.)_ Everything not mechanically expressible is documented convention enforced in review — **no dev-mode runtime label warnings** (false-positive-prone with portals/async labels, and dead code in prod).
 - `aria-*` boolean hygiene per [conventions](components/conventions.md): `x || undefined`, never `"false"`; guard conditional spreads so `mergeProps` can't clobber auto-wired aria with `undefined`.
 
 ## 4 Localized strings (i18n)
 
 Adopted architecture: **the react-aria string-dictionary model, adapted to our scale** (ADR [0006](../adr/0006-intl-strings.md)). We take the tiny public runtime and skip Adobe's build machinery entirely.
 
-- **Runtime**: `@internationalized/string` (`LocalizedStringDictionary` + `LocalizedStringFormatter`; ~1 kB, dependency-free, `sideEffects: false`). No glob imports, no JSON, no string-compiler build step, no locale-subsetting plugin — none of it pays off below ~10 locales.
-- **Authoring**: components that render user-visible or AT-only strings own a co-located `intl/` directory of **plain TS modules** — `intl/nb-NO.ts`, `intl/sv-SE.ts`, `intl/en-US.ts`, `intl/fi-FI.ts` — explicitly imported into a per-component dictionary module (`intl/index.ts`). Keys are flat per component. Plural/number cases use `LocalizedStringFormatter`'s `plural`/`number`/`select` helpers with hand-written message functions; we do not ship an ICU parser.
+- **Runtime**: `@internationalized/string` (`LocalizedStringDictionary` + `LocalizedStringFormatter`; ~1 kB, dependency-free, `sideEffects: false`). `useLocalizedStrings` caches one formatter per dictionary identity and locale (ADR [0006](../adr/0006-intl-strings.md), amendment 2026-09-02). No glob imports, no JSON, no string-compiler build step, no locale-subsetting plugin — none of it pays off below ~10 locales. _(Amended 2026-09-02 — ADR 0006 formatter-cache amendment.)_
+- **Authoring**: components that render user-visible or AT-only strings own a co-located `intl/` directory of **plain TS modules** — `intl/nb-NO.ts`, `intl/sv-SE.ts`, `intl/en-US.ts`, `intl/fi-FI.ts` — explicitly imported into a dictionary module (`intl/index.ts`) that assembles them through the package-private `createStringDictionary({ enUS, fiFI, nbNO, svSE })` factory in `intl/create-string-dictionary.ts` — the assembly was byte-identical in every `intl/index.ts`, and naming the four locales as arguments makes a missing locale a type error at the call site. A value import of `LocalizedStringDictionary` outside that factory is a lint error. Keys are flat per owner. _(Amended 2026-09-03 — ADR [0006](../adr/0006-intl-strings.md), amendment 2026-09-03. Amended 2026-09-04 — factory moved out of `hooks/`; ADR [0008](../adr/0008-tests-assert-behaviour-not-source-spelling.md) lint `allow` list.)_ Plural/number cases use `LocalizedStringFormatter`'s `plural`/`number`/`select` helpers with hand-written message functions; we do not ship an ICU parser.
 - **Shipped locales v1**: `nb-NO`, `sv-SE`, `en-US`, `fi-FI` (Finnish market is imminent). All locales ship eagerly — at four locales this is a few hundred bytes per string-bearing component. If the locale set ever approaches ~10, revisit per-locale module splitting + resolver subsetting (the react-aria mitigation) as a roadmap item.
 - **Locale source**: `ElmeraGroupUiProvider` carries `locale: SupportedLocale` (**required**, typed union `"nb-NO" | "sv-SE" | "en-US" | "fi-FI"`). Every string-consuming component reads it from context via a `useLocalizedStrings(dictionary)` internal hook — **apps never pass locale to individual components**. Multilingual whitelabel apps re-render the provider with the user's selected locale; single-country apps set it once. Typed callers select one of the four shipped modules directly; `LocalizedStringDictionary`'s `en-US` fallback is defensive behavior for invalid untyped JavaScript input, not a fifth public locale or a regional-variant promise.
 - **Override precedence**: explicit string props on a component (e.g. combobox's empty-state message, pagination labels, toast close label) always win over the dictionary. Props are optional — the dictionary guarantees a correct-language default, props exist for copy control.
@@ -37,36 +37,40 @@ Adopted architecture: **the react-aria string-dictionary model, adapted to our s
 
 ### 4.1 Locked v1 string manifest
 
-The keys and copy below are implementation data, not examples. Each owner keeps only its rows in a co-located dictionary; this table is the cross-component audit source. `{item}` is a message-function argument, not an ICU string.
+The keys and copy below are implementation data, not examples. Each owner keeps only its rows in a co-located dictionary; this table is the cross-component audit source. `{item}` is a message-function argument, not an ICU string. _(Amended 2026-09-02 — added `combobox.toggle` and `gridList.drag`.)_
 
-| Owner/key | `nb-NO` | `sv-SE` | `en-US` | `fi-FI` |
-| --- | --- | --- | --- | --- |
-| `alertDialog.cancel` | Avbryt | Avbryt | Cancel | Peruuta |
-| `breadcrumb.landmark` | Brødsmuler | Brödsmulor | Breadcrumb | Murupolku |
-| `breadcrumb.more` | Mer | Mer | More | Lisää |
-| `combobox.empty` | Ingen resultater. | Inga resultat. | No results. | Ei tuloksia. |
-| `combobox.clear` | Tøm valg | Rensa val | Clear selection | Tyhjennä valinta |
-| `combobox.removeItem({item})` | Fjern {item} | Ta bort {item} | Remove {item} | Poista {item} |
-| `datePicker.presets` | Datoforvalg | Datumalternativ | Date presets | Päivämäärän pikavalinnat |
-| `dialog.close` | Lukk | Stäng | Close | Sulje |
-| `meter.warning` | Advarsel | Varning | Warning | Varoitus |
-| `meter.success` | Vellykket | Lyckades | Success | Onnistui |
-| `pagination.landmark` | Sidenavigasjon | Sidnavigering | Pagination | Sivutus |
-| `pagination.previous` | Forrige | Föregående | Previous | Edellinen |
-| `pagination.next` | Neste | Nästa | Next | Seuraava |
-| `pagination.goToPrevious` | Gå til forrige side | Gå till föregående sida | Go to previous page | Siirry edelliselle sivulle |
-| `pagination.goToNext` | Gå til neste side | Gå till nästa sida | Go to next page | Siirry seuraavalle sivulle |
-| `pagination.morePages` | Flere sider | Fler sidor | More pages | Lisää sivuja |
-| `phoneNumberField.selectCountry` | Velg land | Välj land | Select country | Valitse maa |
-| `phoneNumberField.searchCountries` | Søk etter land | Sök efter länder | Search countries | Hae maita |
-| `phoneNumberField.noCountries` | Ingen land funnet. | Inga länder hittades. | No countries found. | Maita ei löytynyt. |
-| `popoverInfoButton.moreInformation` | Mer informasjon | Mer information | More information | Lisätietoja |
-| `searchField.clear` | Tøm søket | Rensa sökningen | Clear search | Tyhjennä haku |
-| `sheet.close` | Lukk | Stäng | Close | Sulje |
-| `sidebar.toggle` | Vis eller skjul sidepanelet | Visa eller dölj sidopanelen | Toggle sidebar | Näytä tai piilota sivupalkki |
-| `sidebar.title` | Sidepanel | Sidopanel | Sidebar | Sivupalkki |
-| `sidebar.description` | Viser sidepanelet. | Visar sidopanelen. | Displays the sidebar. | Näyttää sivupalkin. |
-| `toast.close` | Lukk | Stäng | Close | Sulje |
+**Ownership is per owner, and an owner may be a family.** A row belongs to whichever module is the single place the string is authored; that is normally one component, but where several components render the same affordance with the same copy the family owns the row instead. The one v1 case is the overlay dismiss affordance: **Dialog, Sheet, Toast, and the package-private react-aria picker dialog** all render a corner close control whose accessible name is the same word in all four locales, so the three former `dialog.close` / `sheet.close` / `toast.close` rows are **one `overlay.close` row**, authored in `components/overlay/intl` and listed under that key in the table below. Three of the four readers go through the shared `overlayCornerCloseButton`; the fourth, `react-aria/internal/dialog.tsx`, paints its own `dialogVariants().closeButton` because the RAC picker popover has its own chrome — it shares the **copy**, not the markup, which is exactly what a family-owned row means. Each reader's `closeLabel` (Toast: `label`) prop still overrides at the call site. No other row is shared: `alertDialog.cancel` stays with AlertDialog even though it also appears in a dialog. _(Amended 2026-09-03 — ADR [0006](../adr/0006-intl-strings.md), amendment 2026-09-03; [dialog](components/dialog.md) §8.11, [sheet](components/sheet.md) §8.12, [toast](components/toast.md) §8.9; **pending owner confirmation**. The alternative not taken was keeping three per-component `close` rows built through the factory — three files fewer of boilerplate but the same four strings authored three times.)_
+
+| Owner/key                           | `nb-NO`                      | `sv-SE`                     | `en-US`               | `fi-FI`                       |
+| ----------------------------------- | ---------------------------- | --------------------------- | --------------------- | ----------------------------- |
+| `alertDialog.cancel`                | Avbryt                       | Avbryt                      | Cancel                | Peruuta                       |
+| `breadcrumb.landmark`               | Brødsmuler                   | Brödsmulor                  | Breadcrumb            | Murupolku                     |
+| `breadcrumb.more`                   | Mer                          | Mer                         | More                  | Lisää                         |
+| `combobox.empty`                    | Ingen resultater.            | Inga resultat.              | No results.           | Ei tuloksia.                  |
+| `combobox.clear`                    | Tøm valg                     | Rensa val                   | Clear selection       | Tyhjennä valinta              |
+| `combobox.removeItem({item})`       | Fjern {item}                 | Ta bort {item}              | Remove {item}         | Poista {item}                 |
+| `combobox.toggle`                   | Vis eller skjul alternativer | Visa eller dölj alternativ  | Toggle options        | Näytä tai piilota vaihtoehdot |
+| `datePicker.presets`                | Datoforvalg                  | Datumalternativ             | Date presets          | Päivämäärän pikavalinnat      |
+| `gridList.drag`                     | Dra for å endre rekkefølge   | Dra för att ändra ordning   | Drag to reorder       | Vedä järjestääksesi           |
+| `meter.warning`                     | Advarsel                     | Varning                     | Warning               | Varoitus                      |
+| `meter.success`                     | Vellykket                    | Lyckades                    | Success               | Onnistui                      |
+| `overlay.close`                     | Lukk                         | Stäng                       | Close                 | Sulje                         |
+| `pagination.landmark`               | Sidenavigasjon               | Sidnavigering               | Pagination            | Sivutus                       |
+| `pagination.previous`               | Forrige                      | Föregående                  | Previous              | Edellinen                     |
+| `pagination.next`                   | Neste                        | Nästa                       | Next                  | Seuraava                      |
+| `pagination.goToPrevious`           | Gå til forrige side          | Gå till föregående sida     | Go to previous page   | Siirry edelliselle sivulle    |
+| `pagination.goToNext`               | Gå til neste side            | Gå till nästa sida          | Go to next page       | Siirry seuraavalle sivulle    |
+| `pagination.morePages`              | Flere sider                  | Fler sidor                  | More pages            | Lisää sivuja                  |
+| `phoneNumberField.selectCountry`    | Velg land                    | Välj land                   | Select country        | Valitse maa                   |
+| `phoneNumberField.searchCountries`  | Søk etter land               | Sök efter länder            | Search countries      | Hae maita                     |
+| `phoneNumberField.noCountries`      | Ingen land funnet.           | Inga länder hittades.       | No countries found.   | Maita ei löytynyt.            |
+| `popoverInfoButton.moreInformation` | Mer informasjon              | Mer information             | More information      | Lisätietoja                   |
+| `searchField.clear`                 | Tøm søket                    | Rensa sökningen             | Clear search          | Tyhjennä haku                 |
+| `sidebar.toggle`                    | Vis eller skjul sidepanelet  | Visa eller dölj sidopanelen | Toggle sidebar        | Näytä tai piilota sivupalkki  |
+| `sidebar.title`                     | Sidepanel                    | Sidopanel                   | Sidebar               | Sivupalkki                    |
+| `sidebar.description`               | Viser sidepanelet.           | Visar sidopanelen.          | Displays the sidebar. | Näyttää sivupalkin.           |
+
+`overlay.close` is the one family-owned key (see the ownership rule above): Dialog, Sheet, Toast, and the react-aria picker dialog all resolve it, and the retired `dialog.close` / `sheet.close` / `toast.close` spellings resolve to the same four strings. _(Amended 2026-09-03.)_
 
 Visible consumer content is not translated by the library. In particular, preset item labels come from the radio's visible children/value, loader labels remain consumer-supplied because their surrounding pending action provides the wording, and confirm-button confirmation copy remains consumer-owned.
 
@@ -103,7 +107,7 @@ Dense `xs` / `icon-xs` Button is a 24px box (`1.5rem` at a 16px root). Comfortab
 
 ## 9 Testing bar
 
-Per [Testing strategy], restated as the a11y floor. The target-size floor in §8 is verified on the smallest interactive Button rung at each density through the rendered box or documented hit-area expansion.
+Per Testing strategy , restated as the a11y floor. The target-size floor in §8 is verified on the smallest interactive Button rung at each density through the rendered box or documented hit-area expansion.
 
 - All test queries **role/label-based** (no test-ids, no class queries); this makes every test double as a semantics assertion. **No axe** — matches all reference codebases; the role-based bar plus these rules is the gate.
 - Every spec §7 keyboard behavior has a browser-mode test; the `focusRing` recipe has one shared visual assertion (ring present on `:focus-visible`, absent on mouse focus).

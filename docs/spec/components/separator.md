@@ -10,8 +10,8 @@
 
 ## 2 Anatomy
 
-| Part | base-ui primitive | data-slot |
-| --- | --- | --- |
+| Part        | base-ui primitive                           | data-slot   |
+| ----------- | ------------------------------------------- | ----------- |
 | `Separator` | `Separator` from `@base-ui/react/separator` | `separator` |
 
 Renders a single `<div>` (base-ui default) — a visual and semantic divider.
@@ -26,12 +26,14 @@ Renders a single `<div>` (base-ui default) — a visual and semantic divider.
 
 ## 3 Props
 
+**State classes:** `Separator` accepts either a string or a callback receiving the current Base UI part state. Callback results are merged after library classes with the same conflict resolution as strings. Other parts retain their declared contracts; see [conventions](conventions.md#api-conventions).
+
 `ComponentProps<typeof SeparatorPrimitive>` — pass-through includes `render`.
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
+| Prop          | Type                         | Default        | Notes                                                                                                                 |
+| ------------- | ---------------------------- | -------------- | --------------------------------------------------------------------------------------------------------------------- |
 | `orientation` | `"horizontal" \| "vertical"` | `"horizontal"` | forwarded to the primitive, which emits `data-orientation`; sizing is CSS-driven off that attribute, not a JS ternary |
-| `className` | `string` | — | merged via `cn` |
+| `className`   | `string`                     | —              | merged via `cn`                                                                                                       |
 
 Base classes: `shrink-0 bg-border data-horizontal:h-px data-horizontal:w-full data-vertical:w-px data-vertical:self-stretch`.
 
@@ -70,6 +72,7 @@ None — no tv recipe, no axes. Orientation is a prop mapped to data-attribute-d
 - Vertical separator inside a flex row with no explicit height has non-zero rendered height (the `self-stretch` regression guard vs the retired `h-full` version — browser test).
 - A wrapper passing `data-slot="custom"` via props wins over the baked-in value (spread-order guard for SidebarSeparator).
 - `className` merges after base classes (consumer `bg-x`-token override wins via `cn`).
+- Type tests (`*.test-d.tsx`, tooling §7.3): `SeparatorProps["orientation"]` is the two-value primitive axis and stays optional; the polymorphic escape is `useRender`'s `render`, never an `as` prop _(Added 2026-09-03 — [ADR 0008](../../adr/0008-tests-assert-behaviour-not-source-spelling.md).)_
 
 ## 10 Demo requirements
 

@@ -17,12 +17,12 @@ No DOM of its own:
 
 ## 3 Props
 
-| Export | Prop | Type | Notes |
-| --- | --- | --- | --- |
-| `Focusable` | `children` | single focusable-able React element | receives merged props via clone |
-| `Focusable` | `isDisabled`, `autoFocus`, `excludeFromTabOrder` | `boolean` | RAC pass-through |
-| `useFocusable` | `options` | `FocusableOptions` (`isDisabled`, `autoFocus`, `excludeFromTabOrder`, keyboard/focus event handlers) | re-exported type |
-| `useFocusable` | `ref` | `RefObject<Element>` | target element |
+| Export         | Prop                                             | Type                                                                                                 | Notes                           |
+| -------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------- | ------------------------------- |
+| `Focusable`    | `children`                                       | single focusable-able React element                                                                  | receives merged props via clone |
+| `Focusable`    | `isDisabled`, `autoFocus`, `excludeFromTabOrder` | `boolean`                                                                                            | RAC pass-through                |
+| `useFocusable` | `options`                                        | `FocusableOptions` (`isDisabled`, `autoFocus`, `excludeFromTabOrder`, keyboard/focus event handlers) | re-exported type                |
+| `useFocusable` | `ref`                                            | `RefObject<FocusableElement \| null>`                                                                | target element                  |
 
 Everything is a verbatim re-export; this spec adds no props.
 

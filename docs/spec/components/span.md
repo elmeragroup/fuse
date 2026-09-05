@@ -23,17 +23,17 @@ Span is the inline sibling of Text: same recipe surface, `leading` default tight
 
 `SpanProps = React.ComponentPropsWithoutRef<"span"> & VariantProps<typeof spanVariants> & { render?: useRender.RenderProp }` — exported (renamed from the ref's colliding `TextProps`, §8). No `elementType` prop — the ref omitted it and the spec keeps the span-only face (`render` covers escape hatches).
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `variant` | see §4 | `"default"` | tv axis (inherited from `textVariants`) |
-| `size` | see §4 | `"default"` | tv axis; includes the `*:`/`**:` descendant cascade |
-| `leading` | `"none" \| "tight" \| "snug" \| "relaxed" \| "loose"` | `"snug"` | span's own default (Text defaults `relaxed`) |
-| `truncate` | `boolean` | — | adds `truncate` |
-| `weight` | `"normal" \| "medium" \| "bold"` | `"normal"` | `bold` maps to `font-medium` (inherited, see text.md §4) |
-| `align` | `"left" \| "center" \| "right" \| "justify"` | — | inherited recipe axis, surfaced (§8) |
-| `render` | `useRender` render prop | — | polymorphism, ADDED (§8) |
-| `className` | `string` | — | merged via `cn`, wins over recipe |
-| …rest | native `span` props | — | spread onto the element |
+| Prop        | Type                                                  | Default     | Notes                                                    |
+| ----------- | ----------------------------------------------------- | ----------- | -------------------------------------------------------- |
+| `variant`   | see §4                                                | `"default"` | tv axis (inherited from `textVariants`)                  |
+| `size`      | see §4                                                | `"default"` | tv axis; includes the `*:`/`**:` descendant cascade      |
+| `leading`   | `"none" \| "tight" \| "snug" \| "relaxed" \| "loose"` | `"snug"`    | span's own default (Text defaults `relaxed`)             |
+| `truncate`  | `boolean`                                             | —           | adds `truncate`                                          |
+| `weight`    | `"normal" \| "medium" \| "bold"`                      | `"normal"`  | `bold` maps to `font-medium` (inherited, see text.md §4) |
+| `align`     | `"left" \| "center" \| "right" \| "justify"`          | —           | inherited recipe axis, surfaced (§8)                     |
+| `render`    | `useRender` render prop                               | —           | polymorphism, ADDED (§8)                                 |
+| `className` | `string`                                              | —           | merged via `cn`, wins over recipe                        |
+| …rest       | native `span` props                                   | —           | spread onto the element                                  |
 
 The ref's `slot` prop (RAC slot wiring) is **dropped** (§8 — migration note).
 
@@ -41,12 +41,12 @@ The ref's `slot` prop (RAC slot wiring) is **dropped** (§8 — migration note).
 
 Recipe: **`spanVariants`** — **PUBLIC** from `@elmeragroup/ui/span`. Defined as `tv({ extend: textVariants, defaultVariants: { leading: "snug" } })`; it inherits the text axes and overrides only `leading`. Internal composition uses relative source imports; consumers use component entries.
 
-| Axis | Values | Default |
-| --- | --- | --- |
-| `variant` | 9 values, = textVariants | `default` |
-| `size` | `xs`–`2xl` (6), = textVariants incl. `*:`/`**:` cascade | `default` |
-| `leading` | 5 values, = textVariants | **`snug`** (only delta from parent) |
-| `truncate` / `align` / `weight` | = textVariants | — / — / `normal` |
+| Axis                            | Values                                                  | Default                             |
+| ------------------------------- | ------------------------------------------------------- | ----------------------------------- |
+| `variant`                       | 9 values, = textVariants                                | `default`                           |
+| `size`                          | `xs`–`2xl` (6), = textVariants incl. `*:`/`**:` cascade | `default`                           |
+| `leading`                       | 5 values, = textVariants                                | **`snug`** (only delta from parent) |
+| `truncate` / `align` / `weight` | = textVariants                                          | — / — / `normal`                    |
 
 Base: `font-sans` (inherited). `destructive` keeps its value name; class renames to `text-error` in the parent recipe (§8).
 

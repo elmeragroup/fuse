@@ -23,13 +23,13 @@ The connecting line is `Item::before` on every non-last item. Root supplies list
 
 ## 3 Props
 
-| Part | Props | Notes |
-| --- | --- | --- |
-| `Root` | `ComponentPropsWithoutRef<"ol">` | forwards `ref` to `HTMLOListElement` |
-| `Item` | `ComponentPropsWithoutRef<"li">` | forwards `ref` to `HTMLLIElement` |
-| `Title` | `Omit<ComponentPropsWithoutRef<typeof Heading>, "noMargin">` | defaults `level={3}` and forces `noMargin`; explicit props may override `level`, but cannot unset `noMargin` |
-| `Time` | `Omit<ComponentPropsWithoutRef<"time">, "dateTime"> & { date: string \| Date }` | normalizes a valid value with `new Date(date).toISOString()`; every invalid value throws `RangeError("TimelineList.Time received an invalid date")`; the generated `dateTime` is component-owned and applied after remaining props |
-| `Description` | `ComponentPropsWithoutRef<"div">` | forwards `ref` |
+| Part          | Props                                                                           | Notes                                                                                                                                                                                                                              |
+| ------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Root`        | `ComponentPropsWithoutRef<"ol">`                                                | forwards `ref` to `HTMLOListElement`                                                                                                                                                                                               |
+| `Item`        | `ComponentPropsWithoutRef<"li">`                                                | forwards `ref` to `HTMLLIElement`                                                                                                                                                                                                  |
+| `Title`       | `Omit<ComponentPropsWithoutRef<typeof Heading>, "noMargin">`                    | defaults `level={3}` and forces `noMargin`; explicit props may override `level`, but cannot unset `noMargin`                                                                                                                       |
+| `Time`        | `Omit<ComponentPropsWithoutRef<"time">, "dateTime"> & { date: string \| Date }` | normalizes a valid value with `new Date(date).toISOString()`; every invalid value throws `RangeError("TimelineList.Time received an invalid date")`; the generated `dateTime` is component-owned and applied after remaining props |
+| `Description` | `ComponentPropsWithoutRef<"div">`                                               | forwards `ref`                                                                                                                                                                                                                     |
 
 All parts accept `className`; library classes merge first and consumer classes last through the package-private `cn` helper.
 
@@ -65,6 +65,7 @@ Each part emits its slot marker: `data-slot="timeline-list"`, `timeline-list-ite
 5. Fixes the erroneous `ListItemWithTimeline.displayName = "Card"` by using namespace display names.
 6. `date` accepts `Date` as well as string and has an explicit, environment-independent invalid-date `RangeError` contract.
 7. React 19 refs are ordinary props; no new `forwardRef` wrapper.
+8. **`Title` loses the inherited `prose` prop** (ticket 44, 2026-09-03): `TimelineListTitleProps` extends `Heading`, so removing the no-op `prose` axis from `headingVariants` narrows this part's public props too — the decision, its alternative, and the zero-consumer evidence are recorded in [heading](heading.md) §8.8. Nothing this part renders changes.
 
 ## 9 Test requirements
 

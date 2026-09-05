@@ -66,8 +66,6 @@
     ".opencode/**",
     ".pi/**",
     ".roo/**",
-    ".windsurf/**",
-    "docs/**",
-    "CONTEXT.md"
+    ".windsurf/**"
   ]
 }

@@ -10,15 +10,15 @@
 
 ## 2 Anatomy
 
-| Part | Renders | data-slot |
-| --- | --- | --- |
-| `Breadcrumb.Root` | `<nav>` with localized landmark label | `breadcrumb` |
-| `Breadcrumb.List` | `<ol>` | `breadcrumb-list` |
-| `Breadcrumb.Item` | `<li>` | `breadcrumb-item` |
-| `Breadcrumb.Link` | `<a>` via `useRender` (polymorphic) | `breadcrumb-link` (via `state.slot`) |
-| `Breadcrumb.Page` | `<span role="link">` (current page) | `breadcrumb-page` |
-| `Breadcrumb.Separator` | `<li role="presentation">`, default `<CaretRight />` child | `breadcrumb-separator` |
-| `Breadcrumb.Ellipsis` | `<span>` with an aria-hidden `<DotsThree />` + localized sr-only “more” text | `breadcrumb-ellipsis` |
+| Part                   | Renders                                                                      | data-slot                            |
+| ---------------------- | ---------------------------------------------------------------------------- | ------------------------------------ |
+| `Breadcrumb.Root`      | `<nav>` with localized landmark label                                        | `breadcrumb`                         |
+| `Breadcrumb.List`      | `<ol>`                                                                       | `breadcrumb-list`                    |
+| `Breadcrumb.Item`      | `<li>`                                                                       | `breadcrumb-item`                    |
+| `Breadcrumb.Link`      | `<a>` via `useRender` (polymorphic)                                          | `breadcrumb-link` (via `state.slot`) |
+| `Breadcrumb.Page`      | `<span role="link">` (current page)                                          | `breadcrumb-page`                    |
+| `Breadcrumb.Separator` | `<li role="presentation">`, default `<CaretRight />` child                   | `breadcrumb-separator`               |
+| `Breadcrumb.Ellipsis`  | `<span>` with an aria-hidden `<DotsThree />` + localized sr-only “more” text | `breadcrumb-ellipsis`                |
 
 ```tsx
 <Breadcrumb.Root>
@@ -38,15 +38,15 @@
 
 All parts take `className` (merged via `cn`) plus native element pass-through; none hold state.
 
-| Part | Type | Notes |
-| --- | --- | --- |
-| `Breadcrumb.Root` | `ComponentProps<"nav"> & { label?: string }` | `label` defaults to dictionary `landmark`; explicit `aria-label` wins |
-| `Breadcrumb.List` | `ComponentProps<"ol">` | flex-wrap layout, `gap-1.5 sm:gap-2.5` |
-| `Breadcrumb.Item` | `ComponentProps<"li">` | `inline-flex items-center gap-1.5` |
-| `Breadcrumb.Link` | `useRender.ComponentProps<"a">` | `render` prop swaps the element (router links); see §4 note below |
-| `Breadcrumb.Page` | `ComponentProps<"span">` | `role="link" aria-disabled="true" aria-current="page"` baked in |
-| `Breadcrumb.Separator` | `ComponentProps<"li">` | `children` replaces the default `<CaretRight />` |
-| `Breadcrumb.Ellipsis` | `ComponentProps<"span"> & { label?: string }` | `label` defaults to dictionary `more` and renders sr-only |
+| Part                   | Type                                                            | Notes                                                                         |
+| ---------------------- | --------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `Breadcrumb.Root`      | `ComponentProps<"nav"> & { label?: string }`                    | `label` defaults to dictionary `landmark`; explicit `aria-label` wins         |
+| `Breadcrumb.List`      | `ComponentProps<"ol">`                                          | flex-wrap layout, `gap-1.5 sm:gap-2.5`                                        |
+| `Breadcrumb.Item`      | `ComponentProps<"li">`                                          | `inline-flex items-center gap-1.5`                                            |
+| `Breadcrumb.Link`      | `useRender.ComponentProps<"a">`                                 | `render` prop swaps the element (router links); see §4 note below             |
+| `Breadcrumb.Page`      | `ComponentProps<"span">`                                        | `role="link" aria-disabled="true" aria-current="page"` baked in               |
+| `Breadcrumb.Separator` | `ComponentProps<"li">`                                          | `children` replaces the default `<CaretRight />`                              |
+| `Breadcrumb.Ellipsis`  | `Omit<ComponentProps<"span">, "children"> & { label?: string }` | `label` defaults to dictionary `more` and renders sr-only; children are owned |
 
 **`Breadcrumb.Link` is the convention exemplar for polymorphism**: it calls `useRender({ defaultTagName: "a", props: mergeProps<"a">({ className }, props), render, state: { slot: "breadcrumb-link" } })`. The `state.slot` value is how a `useRender`-based part emits its `data-slot` (base-ui serializes state to `data-*`) — parts built on `useRender` must use this pattern rather than a literal `data-slot` prop, so the attribute survives custom `render` elements. Never an `as` prop.
 
@@ -81,6 +81,8 @@ None — no tv recipe; all parts are single-look plain class strings. `Breadcrum
 5. No `dark:` classes, no raw palette classes in the ref — nothing to clean.
 6. Hardcoded English `"breadcrumb"`/`"More"` become provider-locale dictionary defaults with optional prop overrides.
 7. **Focus unified:** `Breadcrumb.Link` composes the canonical self-focus adapter.
+
+8. **The runtime `children` strip on `Breadcrumb.Ellipsis` is gone** (ticket 44, 2026-09-03): `children` is omitted from `BreadcrumbEllipsisProps` at the type level, so the `rest as typeof rest & { children?: unknown }` cast and its SAFETY comment deleted a key no typed caller can pass. The owned glyph and sr-only copy are unchanged.
 
 ## 9 Test requirements
 
