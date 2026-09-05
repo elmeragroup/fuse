@@ -117,7 +117,7 @@ describe("PopoverInfoButton", () => {
       )
     );
     const outlined = roleNamed("button", "More information");
-    expect(getComputedStyle(outlined).borderTopColor).not.toBe("rgba(0, 0, 0, 0)");
+    await expect.poll(() => getComputedStyle(outlined).borderTopColor).not.toBe("rgba(0, 0, 0, 0)");
     expect(outlined).toHaveProperty("disabled", true);
 
     rerender(

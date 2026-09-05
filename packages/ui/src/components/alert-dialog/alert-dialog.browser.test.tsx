@@ -140,7 +140,7 @@ describe("AlertDialog", () => {
     expect(page.getByRole("alertdialog", { name: TITLE }).element()).toBeTruthy();
 
     rerender(withLocale("en-US", <ConfirmDialog onAction={onAction} isAutomaticallyCloseOnActionEnabled />));
-    await openConfirm();
+    expect(page.getByRole("alertdialog", { name: TITLE }).element()).toBeTruthy();
     await userEvent.click(page.getByRole("button", { name: ACTION, exact: true }).element());
     await vi.waitFor(() => {
       expect(page.getByRole("alertdialog").query()).toBeNull();

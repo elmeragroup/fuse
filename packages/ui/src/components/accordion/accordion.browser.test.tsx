@@ -201,17 +201,17 @@ describe("Accordion", () => {
   });
 
   it("keeps closed panels in the DOM for hiddenUntilFound and keepMounted, and unmounts by default", async () => {
-    const { rerender } = renderThemed(<ShippingBilling />);
+    const { rerender } = renderThemed(<ShippingBilling key="unmounted" />);
     expect(page.getByText("Delivered within 3–5 business days.", { exact: false }).query()).toBeNull();
 
-    rerender(<ShippingBilling keepMounted />);
+    rerender(<ShippingBilling key="kept" keepMounted />);
     const kept = page.getByText("Delivered within 3–5 business days.", { exact: false }).element();
     expect(kept.closest('[role="region"]')?.hasAttribute("hidden")).toBe(true);
     expect(
       page.getByRole("button", { name: "Shipping", exact: true }).element().getAttribute("aria-expanded")
     ).toBe("false");
 
-    rerender(<ShippingBilling hiddenUntilFound />);
+    rerender(<ShippingBilling key="searchable" hiddenUntilFound />);
     const searchable = page.getByText("Delivered within 3–5 business days.", { exact: false }).element();
     const panel = searchable.closest('[role="region"]');
     expect(panel).not.toBeNull();
