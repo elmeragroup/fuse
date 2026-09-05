@@ -59,6 +59,48 @@ describe("artifact batch writer", () => {
     }
   });
 
+  it("preserves every committed output when cleanup deletes one backup before failing", async () => {
+    const root = mkdtempSync(join(tmpdir(), "api-extractor-partial-backup-cleanup-"));
+    try {
+      writeFileSync(join(root, "first.json"), "old first");
+      writeFileSync(join(root, "second.json"), "old second");
+      let partialCleanup = false;
+      const write = makeArtifactBatchWriterForTest({
+        runFileSystemOperation: ({ kind, path, run }) => {
+          if (kind === "remove" && existsSync(join(path, "backups", "0"))) {
+            rmSync(join(path, "backups", "0"));
+            partialCleanup = true;
+            throw new Error("cleanup failed after deleting the first backup");
+          }
+          return run();
+        },
+      });
+      const result = await write({
+        outputRoot: root,
+        artifacts: ["first.json", "second.json", "new.json"].map((destination) => ({
+          destination,
+          content: `new ${destination}`,
+          evidence: "generated" as const,
+        })),
+      });
+      expect(partialCleanup).toBe(true);
+      expect(result).toMatchObject({
+        status: "success",
+        cleanup: {
+          temporaryState: "not-removed",
+          message: "The artifact batch was committed, but its transaction state could not be removed.",
+        },
+      });
+      for (const name of ["first.json", "second.json", "new.json"]) {
+        expect(readFileSync(join(root, name), "utf8")).toBe(`new ${name}`);
+      }
+      expect(existsSync(join(root, ".artifact-batch-lock"))).toBe(false);
+      expect(transactionEntries(root)).toHaveLength(1);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   it("reports committed output as successful when final lock cleanup fails", async () => {
     const root = mkdtempSync(join(tmpdir(), "api-extractor-artifact-lock-cleanup-"));
     try {

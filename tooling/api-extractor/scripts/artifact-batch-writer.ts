@@ -751,17 +751,8 @@ async function writeBatch(
       committed.push(artifact);
     }
 
-    try {
-      await runControl(controls.beforeTemporaryCleanup?.({ kind: "transaction" }), deadline);
-    } catch {
-      // A recoverable first cleanup failure is retried through the real
-      // filesystem operation below while the writer still owns the lock.
-    }
-    const completedTransactionPath = transactionPath;
-    await runFileSystem("remove", completedTransactionPath, () =>
-      rm(completedTransactionPath, { recursive: true, force: true })
-    );
-    transactionPath = undefined;
+    // Every replacement is installed. From this commit boundary onward the
+    // backups may be destroyed, so cleanup failures must never trigger rollback.
     result = {
       status: "success",
       artifacts: prepared.artifacts.map(({ destination, evidence }) => ({ destination, evidence })),
@@ -798,6 +789,8 @@ async function writeBatch(
   }
 
   let cleanupFailed = false;
+  let transactionCleanupFailed = false;
+  let lockCleanupFailed = false;
   let cleanupRetried = false;
   const retainRecoveryState =
     result.status === "failure" && result.error.recovery?.originalState === "not-restored";
@@ -819,6 +812,7 @@ async function writeBatch(
         );
       } catch {
         cleanupFailed = true;
+        transactionCleanupFailed = true;
       }
     }
   }
@@ -834,6 +828,7 @@ async function writeBatch(
       await cleanupFileSystem("remove", lockPath, () => rm(lockPath, { recursive: true, force: true }));
     } catch {
       cleanupFailed = true;
+      lockCleanupFailed = true;
     }
   }
   if (cleanupFailed && result.status === "success") {
@@ -841,7 +836,7 @@ async function writeBatch(
       ...result,
       cleanup: {
         temporaryState: "not-removed",
-        message: "The artifact batch was committed, but its lock could not be removed.",
+        message: `The artifact batch was committed, but its ${transactionCleanupFailed ? (lockCleanupFailed ? "transaction state and lock" : "transaction state") : "lock"} could not be removed.`,
       },
     };
   }
@@ -894,9 +889,10 @@ export class ArtifactBatchCommandError extends Error {
 /** Write one batch for a CLI command, throwing without flattening failure details. */
 export async function writeArtifactBatchOrThrow(
   request: ArtifactBatchRequest,
-  operation: string
+  operation: string,
+  writer: (request: ArtifactBatchRequest) => Promise<ArtifactBatchResult> = writeArtifactBatch
 ): Promise<ArtifactBatchSuccess> {
-  const result = await writeArtifactBatch(request);
+  const result = await writer(request);
   if (result.status === "failure") throw new ArtifactBatchCommandError(operation, result.error);
   if (result.cleanup !== undefined) {
     process.stderr.write(`${operation} completed. ${result.cleanup.message}\n`);

@@ -150,8 +150,11 @@ node scripts/conformance/report.ts --write-ts7 <fixture-name> ...
 Every write command requires the appropriate reviewed evidence and uses
 `scripts/artifact-batch-writer.ts`. The writer validates all destinations before writing, rejects
 absolute paths, traversal, duplicates, symlink and hardlink escapes, overlapping writers, and any
-destination that is or aliases immutable `output.json`. A batch either commits in full or restores
-the original files and reports recovery status.
+destination that is or aliases immutable `output.json`. The commit boundary is the successful installation of every replacement, before any backup
+cleanup. Failures before that boundary restore the original files (and remove newly created
+destinations) and report recovery status. After that boundary, cleanup failures preserve every
+committed replacement and return success with a cleanup notice identifying remaining transaction
+state or the lock. Commands report that the write completed and include the cleanup notice.
 
 `report:warnings` derives its allowed destinations and expected warning-code order from the catalog.
 It verifies the pinned upstream checkout before extraction, writes only `warnings.tsgo.json` files
