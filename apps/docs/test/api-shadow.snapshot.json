@@ -7,7 +7,7 @@
     "effectPropCount": 616,
     "currentProblemCount": 0,
     "effectProblemCount": 91,
-    "apiDifferenceCount": 1107,
+    "apiDifferenceCount": 1103,
     "problemDifferenceCount": 91
   },
   "apiDifferences": [
@@ -1732,30 +1732,30 @@
     {
       "component": "combobox",
       "path": "evidence.Combobox.Input.propOrder[0]",
-      "current": "className",
+      "current": "disabled",
       "effect": "children",
-      "reason": "combobox Combobox.Input evidence propOrder[0]: checker className vs Effect children."
+      "reason": "combobox Combobox.Input evidence propOrder[0]: checker disabled vs Effect children."
     },
     {
       "component": "combobox",
       "path": "evidence.Combobox.Input.propOrder[1]",
-      "current": "disabled",
+      "current": "showTrigger",
       "effect": "className",
-      "reason": "combobox Combobox.Input evidence propOrder[1]: checker disabled vs Effect className."
+      "reason": "combobox Combobox.Input evidence propOrder[1]: checker showTrigger vs Effect className."
     },
     {
       "component": "combobox",
       "path": "evidence.Combobox.Input.propOrder[2]",
-      "current": "showTrigger",
+      "current": "showClear",
       "effect": "clearLabel",
-      "reason": "combobox Combobox.Input evidence propOrder[2]: checker showTrigger vs Effect clearLabel."
+      "reason": "combobox Combobox.Input evidence propOrder[2]: checker showClear vs Effect clearLabel."
     },
     {
       "component": "combobox",
       "path": "evidence.Combobox.Input.propOrder[3]",
-      "current": "showClear",
+      "current": "className",
       "effect": "disabled",
-      "reason": "combobox Combobox.Input evidence propOrder[3]: checker showClear vs Effect disabled."
+      "reason": "combobox Combobox.Input evidence propOrder[3]: checker className vs Effect disabled."
     },
     {
       "component": "combobox",
@@ -1776,19 +1776,6 @@
       "path": "evidence.Combobox.Input.propOrder[6]",
       "effect": "showTrigger",
       "reason": "combobox Combobox.Input evidence propOrder[6]: checker omitted vs Effect showTrigger."
-    },
-    {
-      "component": "combobox",
-      "path": "evidence.Combobox.Input.props.className.declarationPaths[0]",
-      "current": "node_modules/.pnpm/@base-ui+react@1.6.0_@types+react@19.2.17_react-dom@19.2.8_react@19.2.8__react@19.2.8/node_modules/@base-ui/react/internals/types.d.mts",
-      "effect": "packages/ui/src/components/combobox/combobox.tsx",
-      "reason": "combobox Combobox.Input.className declarationPaths: checker `node_modules/.pnpm/@base-ui+react@1.6.0_@types+react@19.2.17_react-do…` vs Effect `packages/ui/src/components/combobox/combobox.tsx`."
-    },
-    {
-      "component": "combobox",
-      "path": "evidence.Combobox.Input.props.className.declarationPaths[1]",
-      "current": "packages/ui/src/components/combobox/combobox.tsx",
-      "reason": "combobox Combobox.Input.className declarationPaths: checker `packages/ui/src/components/combobox/combobox.tsx` vs Effect `omitted`."
     },
     {
       "component": "combobox",
@@ -2057,20 +2044,6 @@
       "current": "ReactNode",
       "effect": "ReactNode | undefined",
       "reason": "combobox Combobox.Input.children type: Effect appends `| undefined` to optional `ReactNode`; checker omits the undefined member."
-    },
-    {
-      "component": "combobox",
-      "path": "parts.Combobox.Input.props.className.description",
-      "current": "CSS class applied to the element, or a function that returns a class based on the component's state. Extra classes, applied to the outer InputGroup (`w-auto`), not the input element.",
-      "effect": "Extra classes, applied to the outer InputGroup (`w-auto`), not the input element.",
-      "reason": "combobox Combobox.Input.className description: checker `CSS class applied to the element, or a function that returns a class …` vs Effect `Extra classes, applied to the outer InputGroup (`w-auto`), not the in…`."
-    },
-    {
-      "component": "combobox",
-      "path": "parts.Combobox.Input.props.className.type",
-      "current": "string | (((state: ComboboxInputState) => string | undefined) & string) | undefined",
-      "effect": "string | undefined",
-      "reason": "combobox Combobox.Input.className type: Effect drops the function member `((state: ComboboxInputState) => string | undefined) & string`; checker keeps `string | function`."
     },
     {
       "component": "combobox",

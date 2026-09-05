@@ -431,10 +431,10 @@
         {
           "name": "className",
           "origin": "declared",
-          "type": "string | (((state: ComboboxInputState) => string | undefined) & string) | undefined",
-          "shortType": "function",
+          "type": "string | undefined",
+          "shortType": null,
           "defaultValue": null,
-          "description": "CSS class applied to the element, or a function that returns a class based on the component's state. Extra classes, applied to the outer InputGroup (`w-auto`), not the input element.",
+          "description": "Extra classes, applied to the outer InputGroup (`w-auto`), not the input element.",
           "required": false
         },
         {
