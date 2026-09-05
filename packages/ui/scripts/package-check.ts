@@ -16,6 +16,7 @@ import {
   importPackedModules,
   importSpecifier,
 } from "./package-check-packed";
+import { checkPackedReactCompatibility } from "./package-check-react";
 import { packageRootFromScript } from "./paths";
 import { fail, linkConsumerModules, withExtractedTarball } from "./tarball";
 
@@ -30,6 +31,7 @@ function runInherited(command: string, args: string[]): void {
 
 try {
   withExtractedTarball(packageRoot, "elmera-ui-pack-", (extracted, tarball) => {
+    checkPackedReactCompatibility(tarball);
     runInherited("pnpm", ["exec", "publint", tarball]);
     runInherited("pnpm", [
       "exec",

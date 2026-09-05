@@ -61,6 +61,7 @@ describe("exports map", () => {
       "loader",
       "meter",
       "number-field",
+      "phone-number-field",
       "popover",
       "popover-info-button",
       "radio-group",
@@ -89,7 +90,7 @@ describe("exports map", () => {
 
   it("asserts the deferred list and the shipped bare-component count separately", () => {
     expect(DEFERRED_ENTRIES).toEqual(["chart"]);
-    expect(BARE_COMPONENT_ENTRIES).toHaveLength(49);
+    expect(BARE_COMPONENT_ENTRIES).toHaveLength(50);
     const shippedBare = discovered.jsEntries.filter(
       (entry) => entry.inRootBarrel && entry.subpath !== "." && entry.subpath !== "theme"
     );
@@ -432,6 +433,12 @@ describe("exports map", () => {
     const toast = discovered.jsEntries.find((entry) => entry.subpath === "toast");
     expect(toast?.inRootBarrel).toBe(true);
     expect(toast?.runtimeExports).toEqual(["Toast"]);
+  });
+
+  it("publishes PhoneNumberField from /phone-number-field and the root barrel", () => {
+    const phoneNumberField = discovered.jsEntries.find((entry) => entry.subpath === "phone-number-field");
+    expect(phoneNumberField?.inRootBarrel).toBe(true);
+    expect(phoneNumberField?.runtimeExports).toEqual(["PhoneNumberField"]);
   });
 
   it("publishes Sheet from /sheet and the root barrel", () => {

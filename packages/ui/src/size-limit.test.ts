@@ -57,6 +57,7 @@ describe("size-limit harness", () => {
       "textarea",
       "flags",
       "toast",
+      "phone-number-field",
       "popover-info-button",
       "combobox",
       "toggle-group",

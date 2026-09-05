@@ -68,6 +68,12 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   { name: "flags", entryFile: "flags.js", measuredGzip: 1388 },
   { name: "toast", entryFile: "toast.js", measuredGzip: 42392, ceilingGzip: 63440 },
   {
+    name: "phone-number-field",
+    entryFile: "phone-number-field.js",
+    measuredGzip: 118120,
+    ceilingGzip: 174516,
+  },
+  {
     name: "popover-info-button",
     entryFile: "popover-info-button.js",
     measuredGzip: 60611,

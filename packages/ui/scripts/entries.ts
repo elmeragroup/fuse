@@ -6,7 +6,7 @@ import { requireFlagsDirectory } from "./flag-assets.ts";
 import { parseFacadeValueExports } from "./parse-facade.ts";
 import { packageRootFromScript, toPosix } from "./paths.ts";
 
-/** Appendix A — 48 shipped bare component entries plus 1 deferred (`chart`). */
+/** Appendix A — 49 shipped bare component entries plus 1 deferred (`chart`). */
 export const BARE_COMPONENT_ENTRIES = [
   "alert",
   "alert-dialog",
@@ -35,6 +35,7 @@ export const BARE_COMPONENT_ENTRIES = [
   "loader",
   "meter",
   "number-field",
+  "phone-number-field",
   "popover",
   "popover-info-button",
   "radio-group",

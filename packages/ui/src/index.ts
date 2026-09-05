@@ -31,6 +31,7 @@ export * from "./item";
 export * from "./loader";
 export * from "./meter";
 export * from "./number-field";
+export * from "./phone-number-field";
 export * from "./popover";
 export * from "./popover-info-button";
 export * from "./radio-group";
