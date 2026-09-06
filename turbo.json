@@ -13,6 +13,10 @@
     "//#test:repo-policy": {
       "inputs": [
         "test/**",
+        "plopfile.mjs",
+        "plop-templates/**",
+        "packages/ui/scripts/**",
+        "packages/ui/src/icons/roster.ts",
         ".github/workflows/**",
         "package.json",
         ".oxlintrc.json",

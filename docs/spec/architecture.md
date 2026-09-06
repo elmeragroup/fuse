@@ -37,7 +37,7 @@ The complete, enumerated list of published entries — the single source of trut
 
 Rules:
 
-1. **Bare component path = the winning base-ui tier.** `@elmeragroup/ui/select` is always the canonical component ([component authoring](../component-authoring.md)). The re-homed typography components (`heading`, `text`, `span`) live at bare paths — they left the quarantine .
+1. **Bare component path = the winning base-ui tier.** `@elmeragroup/ui/select` is always the canonical component ([component authoring](../component-authoring.md)). The re-homed typography components (`heading`, `text`, `span`) live at bare paths.
 2. **`react-aria/` quarantine.** The eleven public interim entries — date-picker, date-range-picker, date-field, calendar, range-calendar, search-field, grid-list, link, focusable, file-trigger, and ui-providers — are reachable **only** under `@elmeragroup/ui/react-aria/<name>`. `UiProviders` is a public transition convenience that composes the permanent theme provider with RAC `I18nProvider`/`RouterProvider`; it dies with the tier. Each entry carries the migrate-to-base-ui marker in its spec. `react-aria-components`, `react-aria`, and `@internationalized/date` may be imported only from source modules in the private RAC subtree or these `react-aria/` entry facades (lintable; [performance](performance.md) §5).
 3. **Barrel scope is fixed**: the 55 shipped bare components + theme. `chart` is deferred (Wave 9, 2026-09-02) and is not in the barrel. The eleven interim RAC components remain subpath-only so the quarantine is real; icons and illustrations are likewise subpath-only so per-icon tree-shaking never depends on barrel-shaking. Do not add either group to the barrel.
 4. **No default exports** anywhere; named exports only.
@@ -59,40 +59,13 @@ Rules:
 - **ESM-only**: no CJS output, no `main`/`require` conditions. This also neutralizes Phosphor's ~5 MB CJS monolith — it is unreachable through our ESM-only graph.
 - **Package-shape checks**: `publint`, `arethetypeswrong` (`attw --pack`, `esm-only` profile), the export-path test (§3), the emitted-directive test, and the packed-asset contract run against the one packed artifact in the merge gate and again at publish. [Release §5](release.md#5-publish-time-gates) is the exhaustive publish-gate list; this chapter defines these checks, not a competing release list. The two full consumer fixtures are publish-only ([tooling](tooling.md) §7.5).
 
-### 4.1 tsdown config template
+### 4.1 tsdown build configuration
 
 `entries` is generated from the same manifest as `package.json#exports`; `sourceFiles` is its transitive source-file list with tests, demos, stories, and type tests excluded.
 
-```ts
-import { defineConfig } from "tsdown";
-import { entries } from "./scripts/entries.ts"; // same manifest that drives exports codegen (§3, Appendix A)
+See [the package build](../../packages/ui/scripts/build.ts) for the executable tsdown configuration.
 
-export default defineConfig({
-  entry: entries.sourceFiles,
-  root: "src",
-  outDir: "dist",
-  format: "esm",
-  platform: "browser",
-  unbundle: true,
-  dts: true,
-  clean: true,
-  sourcemap: true,
-  // Keep validateTheme's runtime NODE_ENV branch (theming.md §7.6).
-  define: {
-    "process.env.NODE_ENV": "process.env.NODE_ENV",
-  },
-  deps: {
-    neverBundle: true,
-    onlyImport: [...entries.runtimeDependencies],
-  },
-  // Package-shape gates run against the packed artifact in package-check (§4).
-  // In-repo exports point at src/ for workspace consumers.
-  publint: false,
-  attw: false,
-});
-```
-
-This follows tsdown's documented [unbundle mode](https://tsdown.dev/options/unbundle) and [`deps.neverBundle`](https://tsdown.dev/options/dependencies) contract. `publint` and `attw` stay off in this config: they run in `package-check` against the packed tarball (`publint`, then `attw --pack --profile esm-only`), not during the in-repo compile. `define` keeps `process.env.NODE_ENV` as a runtime lookup so `validateTheme`'s dev-throw/prod-coerce branch survives ([theming](theming.md) §7.6). Do not replace it with per-entry bundles or static banners. _(Amended 2026-09-04.)_
+This follows tsdown's documented [unbundle mode](https://tsdown.dev/options/unbundle) and [`deps.neverBundle`](https://tsdown.dev/options/dependencies) contract. `publint` and `attw` stay off in this config: they run in `package-check` against the packed tarball (`publint`, then `attw --pack --profile esm-only`), not during the in-repo compile. `define` keeps `process.env.NODE_ENV` as a runtime lookup so `validateTheme`'s dev-throw/prod-coerce branch survives ([theming](theming.md) §7.6). Do not replace it with per-entry bundles or static banners.
 
 - **`publishConfig.directory: "dist"`** (base-ui pattern): the in-repo `package.json` keeps source-pointing exports for workspace consumers (§7); `npm publish`/changesets publishes the `dist` directory whose generated `package.json` carries the built exports map. The gates above run against the **published** shape, never the in-repo one.
 
@@ -127,23 +100,11 @@ Both CSS modes ship in the same package version; there is no separate CSS packag
 
 ## 6 Dependency policy
 
-| Dependency                          | Kind                       | Range policy                                                    | Scope                                                                                                                                                         |
-| ----------------------------------- | -------------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `react`, `react-dom`                | **peer**                   | `^19`                                                           | the only unconditional peers                                                                                                                                  |
-| `recharts`                          | **future** (chart, Wave 9) | —                                                               | not in published peer ranges until `chart` ships; then optional peer, wrappers only, never `export * from "recharts"`                                         |
-| `@base-ui/react`                    | regular, **pinned**        | `1.6.0`                                                         | all base-ui-tier components                                                                                                                                   |
-| `react-aria-components`             | regular, **pinned**        | `1.19.0`                                                        | interim tier only; importable only under `react-aria/` (§2.2)                                                                                                 |
-| `react-aria` (the hooks package)    | regular, **pinned**        | `3.50.0`                                                        | used only by `react-aria/focusable`; uninstalls together with the cluster at migration                                                                        |
-| `@internationalized/date`           | regular                    | `^3.12.2`                                                       | **scoped to the date cluster**: imported only by `react-aria/` date entries; uninstalls from the dependency list together with the cluster at migration (024) |
-| `@phosphor-icons/react`             | regular, **pinned**        | `2.1.10` (wrapper surface and SSR subpaths are version-coupled) | `/icons` entries only                                                                                                                                         |
-| `@internationalized/string`         | regular                    | `^3.2.10`                                                       | ~1 kB runtime for built-in localized strings (ADR [0006](../adr/0006-intl-strings.md)); pulled by string-bearing components                                   |
-| `libphonenumber-js`                 | regular                    | `^1.13.9`, default (min metadata) entry                         | phone parsing/formatting for `phone-number-field`; picker countries are the metadata list intersected with `flagAssets` (§6a)                                 |
-| `tailwind-variants`                 | regular                    | `^3.2.2`                                                        | the `tv` recipe runtime; every styled component's variants                                                                                                    |
-| `clsx`, `tailwind-merge`            | regular                    | `^2.1.1`, `^3.6.0`                                              | package-private `cn` implementation                                                                                                                           |
-| `sugar-high`                        | regular                    | `^1.2.1`                                                        | syntax highlighting in `code`                                                                                                                                 |
-| `tw-animate-css`                    | regular                    | `^1.4.0`                                                        | imported by the raw CSS entry                                                                                                                                 |
-| `tailwindcss-react-aria-components` | regular, **pinned**        | `2.2.0`                                                         | RAC state variants; removed with that tier                                                                                                                    |
-| `tailwindcss`                       | optional peer              | `^4`                                                            | required only by raw-source CSS consumers; standalone-CSS consumers do not install it                                                                         |
+Workspace pins live in [the pnpm catalog](../../pnpm-workspace.yaml). Published peer and dependency ranges live in [entries.ts](../../packages/ui/scripts/entries.ts), which generates the published manifest. Update those owners when changing dependencies.
+
+React and React DOM are peers; Tailwind is an optional peer for raw-source CSS consumers. Base UI, React Aria, Phosphor, and the React Aria Tailwind plugin use exact published pins because their wrappers depend on specific behavior. Other runtime dependencies use the reviewed ranges in `entries.ts`.
+
+React Aria and `@internationalized/date` stay in the interim tier; Phosphor stays behind `/icons`. The permanent string runtime serves string-bearing components, and phone parsing uses `libphonenumber-js` default min metadata. Chart adds recharts as an optional peer only when it ships.
 
 Rules:
 
@@ -151,7 +112,7 @@ Rules:
 - **React is the only unconditional peer consumers must already have.** Raw-source CSS consumers install the optional Tailwind peer. Standalone-CSS consumers need neither. When `chart` ships (Wave 9), its consumers will also install the optional `recharts` peer. Implementation libraries (base-ui, RAC, Phosphor, intl runtimes) are regular dependencies — never peers — so consumers do no bookkeeping for our internals and version skew is impossible.
 - Optional-peer discipline (when chart ships): nothing outside `chart` may import `recharts`; the import is lintable and the entry is budgeted excluding recharts ([performance](performance.md) §2).
 - Pinned deps (`@base-ui/react`, `react-aria-components`, `react-aria`, `@phosphor-icons/react`) are bumped in dedicated PRs with the contract test suite as the gate — never by broad range resolution.
-- No dependency on any framework (Next, React Router, TanStack) anywhere in the package — the theme entry is framework-agnostic by design .
+- No dependency on any framework (Next, React Router, TanStack) anywhere in the package — the theme entry is framework-agnostic by design (single `/theme` entry, no `next/` export).
 
 ## 6a Flag assets
 
@@ -172,19 +133,17 @@ Country flags for `phone-number-field` (and any future country UI) ship as **ext
 
 ## 8 Workspace consumers (docs / static-theme)
 
-- In-repo, the generated `package.json#exports` maps `types` and `import` directly to the TypeScript entries under `src/`; there is no custom `source`/`development` condition. The docs app therefore gets instant HMR with no package build step and no `transpilePackages` escape hatch needed for publishing correctness. The docs Next host omits `transpilePackages`; workspace source exports are TypeScript that Next compiles as the app graph. _(Amended 2026-09-02.)_
+- In-repo, the generated `package.json#exports` maps `types` and `import` directly to the TypeScript entries under `src/`; there is no custom `source`/`development` condition. The docs app therefore gets instant HMR with no package build step and no `transpilePackages` escape hatch needed for publishing correctness. The docs Next host omits `transpilePackages`; workspace source exports are TypeScript that Next compiles as the app graph.
 - On publish, `publishConfig.directory` swaps the world to `dist` (§4). Because CI's gates and the export-path test run against the published shape, the source-exports convenience can never mask a broken published package.
-- Workspace consumers import the same public subpaths as external consumers — **no deep imports into `src/` internals** from docs/static-theme application code (lintable), so docs examples are copy-paste-valid for real apps. The docs app imports `THEME_VARIANTS`, `THEME_SEGMENTS`, and `LEGAL_THEMES` from `@elmeragroup/ui/theme`. The docs generate pipeline's theme-catalog scripts import through the workspace-only `@elmeragroup/ui/theme-catalog` tooling entry (`src/theme/catalog.ts`): `LEGAL_THEMES`, `themeSlug`, `themeAttributes`, density helpers, `composeTheme`, `TOKEN_NAMES`, `PRIMITIVES`, and the OKLCH helpers. That facade is server-safe `.ts` only — Node generate cannot load `/theme` because that entry re-exports client TSX. The subpath is in the in-repo `exports` map only; it is not published and is not in the root barrel. _(Amended 2026-09-02.)_
+- Workspace consumers import the same public subpaths as external consumers — **no deep imports into `src/` internals** from docs/static-theme application code (lintable), so docs examples are copy-paste-valid for real apps. The docs app imports `THEME_VARIANTS`, `THEME_SEGMENTS`, and `LEGAL_THEMES` from `@elmeragroup/ui/theme`. The docs generate pipeline's theme-catalog scripts import through the workspace-only `@elmeragroup/ui/theme-catalog` tooling entry (`src/theme/catalog.ts`): `LEGAL_THEMES`, `themeSlug`, `themeAttributes`, density helpers, `composeTheme`, `TOKEN_NAMES`, `PRIMITIVES`, and the OKLCH helpers. That facade is server-safe `.ts` only — Node generate cannot load `/theme` because that entry re-exports client TSX. The subpath is in the in-repo `exports` map only; it is not published and is not in the root barrel.
 - The Vite first-paint fixture's **config** loads the published `/theme` JavaScript (`packages/ui/dist/theme.js`) so `colorSchemeScriptSource`'s `Function#toString()` is the packed closed IIFE rather than workspace TypeScript source. That is the published entry shape, not a `src/` deep import. A bundling Vite config loader must not rewrite that generator. Application modules in that fixture still import `@elmeragroup/ui/theme`.
 
 ## Appendix A — canonical entry manifest
 
-This list is exhaustive. Every **bare** component entry is also re-exported by the root barrel; the eleven interim RAC entries are deliberately excluded from it and remain reachable only through `react-aria/*`. Public recipes and component-specific public hooks come from the same entry as their component. Tooling-only entries exist in the in-repo `exports` map alone: they are not packed, not in the barrel, and not public API (§8). _(Category added 2026-09-02.)_
+[entries.ts](../../packages/ui/scripts/entries.ts) owns the component roster, deferred entries, private tooling entries, public dependency ranges, and export categories. It is the maintained manifest; this chapter does not repeat its inventory.
 
-- **Bare component entries (55 shipped + 1 deferred):** `accordion`, `alert`, `alert-dialog`, `avatar`, `badge`, `breadcrumb`, `button`, `button-group`, `card`, `checkbox`, `checkbox-card`, `code`, `collapsible`, `combobox`, `confirm-button`, `description-list`, `dialog`, `dropdown-menu`, `emoji`, `empty`, `field`, `frame`, `heading`, `input`, `input-group`, `item`, `loader`, `meter`, `number-field`, `pagination`, `phone-number-field`, `popover`, `popover-info-button`, `radio-group`, `scroll-area`, `select`, `selection-item`, `separator`, `sheet`, `show`, `sidebar`, `skeleton`, `span`, `switch`, `table`, `tabs`, `text`, `text-field`, `textarea`, `textarea-field`, `timeline-list`, `toast`, `toggle`, `toggle-group`, `tooltip`. Deferred: `chart` (Wave 9, 2026-09-02; [roadmap](roadmap.md) §11).
-- **Interim RAC entries (11):** `react-aria/calendar`, `react-aria/date-field`, `react-aria/date-picker`, `react-aria/date-range-picker`, `react-aria/file-trigger`, `react-aria/focusable`, `react-aria/grid-list`, `react-aria/link`, `react-aria/range-calendar`, `react-aria/search-field`, `react-aria/ui-providers`.
-- **Non-component JS entries:** `.`, `theme`, `icons`, `illustrations`, `flags`.
-- **Tooling-only JS entries (workspace `exports` map only):** `theme-catalog` (`src/theme/catalog.ts`; `TOOLING_ONLY_JS_ENTRIES` in `scripts/entries.ts`) — the server-safe facade the docs generate pipeline reads `composeTheme`, `TOKEN_NAMES`, `PRIMITIVES`, and the OKLCH helpers through, per §8. Excluded from the packed artifact, the root barrel, packed-name assertions, and size budgets. _(Added 2026-09-02 with the §8 amendment.)_
-- **CSS/assets:** `css`, `styles.css`, `themes.css`, `demo-stage-comfortable.css`, `flags/*.svg`.
+Every bare component entry joins the root barrel. Interim React Aria entries remain reachable only through `react-aria/*`. Public recipes and component-specific hooks come from their component entry. Tooling-only entries stay in workspace exports and never enter the packed package or root barrel.
 
-The manifest codegen rejects duplicate names, missing source files (unless the entry is on the tested `DEFERRED_ENTRIES` list), unexpected source entries, or an entry not represented here. Deferred entries are excluded from the exports map, the barrel, packed-name assertions, and size budgets. `flags/*.svg` is the sole pattern export; every JS/CSS export is enumerated.
+Export generation rejects duplicate runtime names, missing source files, and unexpected source entries. Deferred entries stay out of published exports and budgets until explicitly activated. `flags/*.svg` is the sole pattern export; JS and CSS entries are explicit.
+
+Use `pnpm gen component <name>` for a new component, then follow [component authoring](../component-authoring.md). Run `pnpm --filter @elmeragroup/ui generate:exports` after changing the roster or public facades and review the generated exports and barrel.

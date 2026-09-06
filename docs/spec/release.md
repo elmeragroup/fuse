@@ -1,6 +1,8 @@
-# Release & versioning
+# Release runbook
 
-Normative chapter for how `@elmeragroup/ui` is versioned, published to public npmjs.com, and what infrastructure must exist before the first publish.
+Current state: [version-packages.yml](../../.github/workflows/version-packages.yml) opens and updates a Version Packages PR. It does not publish. The first publish still requires the setup in §7 and a release workflow implementing the gates in §5. Keep the Version Packages PR open until both exist.
+
+Sections 2, 3, and 6 describe the intended publishing flow after activation; they do not claim that publishing or previews are active today.
 
 ## 1 Scope & home
 
@@ -10,7 +12,7 @@ Normative chapter for how `@elmeragroup/ui` is versioned, published to public np
 
 ## 2 Versioning & publish workflow (changesets)
 
-The pipeline is the kumo pattern verbatim: **changesets** + `changesets/action`.
+Versioning uses Changesets and `changesets/action`. The Version Packages PR step is active; publishing and preview steps require activation.
 
 1. **Changeset per user-facing PR.** Every PR that changes published behavior (API, styles, tokens, types, docs strings shipped in the package) includes a changeset file declaring bump level (`patch`/`minor`/`major`) and a human-readable summary. Internal-only PRs (CI, docs site, tests) carry the `no-changeset` label instead. Presence is enforced in the merge gate (see [tooling](tooling.md)): a PR fails without a changeset unless it is labeled `no-changeset`.
 2. **Version-Packages PR.** `changesets/action` maintains a bot-owned "Version Packages" PR on `main` that accumulates pending changesets, bumps `package.json`, and writes `CHANGELOG.md` entries from the changeset summaries.
@@ -59,7 +61,7 @@ The full merge gate (lint, types, unit/browser tests, changeset presence) runs o
 
 ## 7 Org-setup prerequisites (pending)
 
-The following infrastructure work is tracked as an **open HITL task** (027 — npm & GitHub org setup); the human holds the accounts. It **blocks the first publish, not this spec**. Reproduced here so this chapter is self-contained:
+The account owner must complete the following before publishing. Track completion in a shared issue with the resulting org/repo URLs, owner accounts, and any deviations.
 
 1. **npm org**: create/claim the `@elmeragroup` org on npmjs.com; Tommy Barvåg as owner; require 2FA for all members.
 2. **Name-collision check**: verify `@elmeragroup/ui` (and any future public name) does not collide with the internal private `@elmeragroup/*` package names used in the existing monorepos; record a **reserved-names policy** for future public names.
@@ -68,15 +70,13 @@ The following infrastructure work is tracked as an **open HITL task** (027 — n
 5. **Vercel**: create the docs-site project wired to the repo, PR previews on.
 6. **pkg-pr-new**: enable for per-PR preview installs (§3).
 
-Completion is recorded on the task ticket (org/repo URLs, owner accounts, deviations). Until items 1–4 are done, the release workflow cannot publish; until 5–6 are done, docs previews and per-PR installs are unavailable — neither blocks spec-driven implementation work.
+Until items 1–4 are done, publishing is blocked. Items 5–6 enable docs previews and per-PR installs; they do not block library development.
 
-## 8 Post-merge sequence for the v1 integration merge
+## 8 Activate publishing
 
-_(added 2026-09-03 — this §8 entry is the release-sequence record for the v1 merge; §2 stays the general design.)_
+1. Complete and verify the npm/GitHub prerequisites in §7 items 1–4.
+2. Add a release workflow with the §5 artifact gates and §6 Trusted Publishing configuration. Reuse the checked tarball; never publish a separately rebuilt artifact.
+3. Verify the workflow and account binding before merging the bot-owned Version Packages PR. The existing version workflow alone cannot publish a release.
+4. After activation, update this guide's current-state paragraph and the README so contributors can distinguish working release channels from planned ones.
 
-The v1 branch merges before the §7 org setup exists. The order below is what protects a repository whose §2 machinery is live but whose §7 accounts are not.
-
-1. **Merge commit, no squash, no rebase.** The branch is built one component per commit, each with its own changeset; squashing collapses that granularity into one subject and detaches the changesets from the code they describe, and rebasing rewrites a long shared branch for no gain. Two history artefacts are left as-is and recorded here rather than rewritten: the `4d54cac` / `64867fd` add-then-remove pair , and the non-conventional squash subject on `9a0a433`.
-2. **The Version Packages PR opens on its own and is left open.** `changesets/action` opens it as soon as the merge lands and keeps it up to date; it is bot-owned and consuming it is a deliberate act, not maintenance. **Do not merge it until the 027 org-setup items 1–4 in §7 are done.** Merging it earlier bumps `@elmeragroup/ui` to `0.1.0` and writes `CHANGELOG.md` against a package that has no npm org, no Trusted Publisher binding, and no publish workflow — a version number burned with nothing on the registry behind it.
-3. **No publish workflow exists yet.** `version-packages.yml` opens the Version Packages PR and nothing else; the §2.3 "publish on merge" step has no workflow implementing it. It arrives with 027, together with the §5 publish gates and the §6 OIDC binding. Until then the truthful statement, and the one the docs site makes, is that publishing is designed, not active.
-4. **Effect RC → stable is a tracked follow-up**, not part of this merge: see [roadmap](roadmap.md) §12.
+The Effect stable-version follow-up remains in the [roadmap](roadmap.md#12-effect-4-rc--stable).

@@ -15,6 +15,8 @@ Date: 2026-08-17. Status: accepted; amended 2026-08-18 after the accepted shared
 - **Defaults + must-override**: the library ships a complete neutral `:root` default layer; themes override subsets; compose-time, variant-specific must-override sets prevent brand identity from falling through to defaults. External themes supply their brand/surface/interactive/shape identity; internal themes supply the brand pair while inheriting the neutral system. This is an obligation on the composed theme, not on each partial layer module. Locked (not themable): derived radii arithmetic, breakpoints, easing, spacing, `--font-mono`.
 - **Clean break on legacy**: all values oklch; no HSL-triplet wrappers; `--popover` never eager-bound to `var(--card)`; dead tokens (`--surface-text`, `--tertiary*`, `--secondary-variant`, `--inactive`, `--primary-light`) shed. Sole compat concession: `--destructive(-foreground)` shipped as aliases of error.
 
+The [theme contract](../spec/theming.md) §§2–5 owns token semantics and the legacy rename guide, and links to the TypeScript modules that own names and values.
+
 ## Alternatives rejected
 
 - **M3 vocabulary as the base** — contradicted the standing shadcn directive, and the external codebase itself misuses the M3 roles (white "primary-container" as card), so fidelity bought nothing.

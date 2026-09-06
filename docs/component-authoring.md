@@ -40,4 +40,6 @@ Density retargets variables on `:root[data-density="comfortable"]`. Nested densi
 - Maintain `apps/docs/test/fixtures/component-demo-requirements.json` as the reviewed coverage list. It is independent of the page and generated manifest; update expectations deliberately when adding or changing scenarios. A sibling demo reference belongs to the component named in the filename.
 - The docs site's SideNav and QuickNav compose docs-local navigation over ScrollArea. They do not import the library Sidebar.
 
-`pnpm gen component <name>` creates intentionally failing implementation and test placeholders, a public entry, and a docs page with a demo. Choose the anatomy, public props, accessibility behavior, and variants before replacing those placeholders. Run the repository merge checks and regenerate docs artifacts before committing.
+`pnpm gen component <name>` creates intentionally failing implementation and test placeholders, a public entry, and a docs page with a demo. It also registers the new name and an unmeasured budget. Existing, reserved, interim React Aria, and deferred names are rejected before files are written.
+
+Choose the anatomy, public props, accessibility behavior, and variants before replacing the placeholders. Add the independent RSC expectation and public type checks, measure the entry's budget, and follow the generator's steps to regenerate exports and docs artifacts. Finish with `pnpm ci:checks`. [Tooling](spec/tooling.md#6-scaffolding) describes the complete workflow.

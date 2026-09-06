@@ -1,40 +1,20 @@
 /**
- * `pnpm gen component <name>` — the v1 component scaffold (tooling.md §6).
- *
- * Emits the five artifacts a component ticket owns, and nothing else:
- *
- *   1. `packages/ui/src/components/<name>/<name>.tsx` + `<name>-variants.ts`
- *   2. `<name>.test.ts` (unit) and `<name>.browser.test.tsx` (browser)
- *   3. `apps/docs/src/app/(docs)/components/<name>/demos/<name>-basic.tsx`
- *   4. `apps/docs/src/app/(docs)/components/<name>/page.mdx`
- *   5. `packages/ui/src/<name>.ts` — the source entry facade
- *
- * It never touches `package.json#exports` or `src/index.ts`: `pnpm --filter
- * @elmeragroup/ui generate:exports` rewrites those tracked files once the facade
- * exists. The package build still produces `dist` from the discovered entries but
- * never mutates the source exports map.
- * The one injection is the size-limit budget row, which `size-limit` would otherwise
- * skip silently for a brand-new packed entry.
- *
- * This file sits outside any tsconfig project, so `node:child_process` and plop's own
- * (untyped) API resolve as `any`; `.oxlintrc.json` carves the `no-unsafe-*` rules out for
- * it, the same way it does for the oxlint plugins. Templates under `plop-templates/` are
- * not standalone TypeScript and are excluded from oxfmt and oxlint.
- *
- * Every stub is a skeleton that fails until the component is implemented — the component
- * throws, the suites carry an explicit unimplemented marker, the browser stub's role
- * placeholder throws until it is set, and the injected budget row has a 0 ceiling.
- * Nothing here guesses at props or variants.
- *
- * The two docs artifacts fail the same way rather than rendering an empty page: the docs
- * generation pass reads the authored `page.mdx` and hard-fails on an undocumented public
- * prop or an unresolvable type (docs-site.md §8), so `pnpm --filter docs generate` is red
- * with the offending prop named until the component is documented, and the page's
- * `<ApiReference>` throws during prerendering while its committed `api.json` is absent.
+ * `pnpm gen component <name>` creates an unimplemented component, tests, demo,
+ * docs page and facade, and registers its public entry and initial size budget.
+ * Run generate:exports after implementation to update tracked package exports.
  */
 import { execFileSync } from "node:child_process";
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 
-import { BARE_COMPONENT_ENTRIES, RAC_ENTRIES } from "./packages/ui/scripts/entries.ts";
+import {
+  BARE_COMPONENT_ENTRIES,
+  DEFERRED_ENTRIES,
+  RAC_ENTRIES,
+  NON_COMPONENT_JS_ENTRIES,
+  TOOLING_ONLY_JS_ENTRIES,
+  CSS_ENTRY_NAMES,
+} from "./packages/ui/scripts/entries.ts";
 
 const UI = "packages/ui";
 /** One route directory per component page — the page, its demos and its `api.json` (§6). */
@@ -43,34 +23,65 @@ const TEMPLATES = "plop-templates/component";
 const BUDGETS = `${UI}/scripts/size-budgets.ts`;
 const BUDGET_MARKER = "// plop:js-entry-budget";
 
-/** Kebab names sharing a three-character prefix with the typed name, so a typo gets a pointed hint. */
-function nearestEntries(name) {
-  return BARE_COMPONENT_ENTRIES.filter(
-    (entry) => entry.startsWith(name.slice(0, 3)) || name.startsWith(entry.slice(0, 3))
-  );
+const ENTRIES = `${UI}/scripts/entries.ts`;
+const ENTRY_MARKER = "// plop:component-entry";
+const RESERVED_NAMES = new Set([
+  ...NON_COMPONENT_JS_ENTRIES,
+  ...TOOLING_ONLY_JS_ENTRIES.map((entry) => entry.subpath),
+  ...CSS_ENTRY_NAMES,
+  "index",
+  "components",
+  "hooks",
+  "styles",
+  "react-aria",
+  "intl",
+  "test",
+]);
+
+function validateName(name, root) {
+  if (!/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(String(name ?? ""))) {
+    return "Use a lowercase kebab-case component name, starting with a letter.";
+  }
+  if (DEFERRED_ENTRIES.includes(name)) {
+    return `"${name}" is deferred. Implement it through an explicit release change, including its DEFERRED_ENTRIES policy.`;
+  }
+  if (RAC_ENTRIES.includes(name)) {
+    return `"${name}" is a quarantined react-aria entry; use the react-aria authoring workflow.`;
+  }
+  if (BARE_COMPONENT_ENTRIES.includes(name) || RESERVED_NAMES.has(name)) {
+    return `"${name}" is already registered or reserved.`;
+  }
+  const targets = [
+    `${UI}/src/${name}`,
+    ...["ts", "tsx", "js", "jsx"].map((extension) => `${UI}/src/${name}.${extension}`),
+    `${UI}/src/components/${name}`,
+    DOCS_ROUTE.replace("{{name}}", name),
+  ];
+  if (targets.some((target) => existsSync(join(root, target)))) {
+    return `"${name}" already has source or documentation files. No files were generated.`;
+  }
+  return true;
 }
 
-function rejectUnknownName(name) {
-  const trimmed = String(name ?? "").trim();
-  if (trimmed === "") {
-    return "A component name is required.";
+function preflight(answers, _config, plop) {
+  const root = plop.getDestBasePath();
+  const result = validateName(answers.name, root);
+  if (result !== true) {
+    throw new Error(result);
   }
-  if (BARE_COMPONENT_ENTRIES.includes(trimmed)) {
-    return true;
+  for (const [file, marker] of [
+    [ENTRIES, ENTRY_MARKER],
+    [BUDGETS, BUDGET_MARKER],
+  ]) {
+    const source = readFileSync(join(root, file), "utf8");
+    if (source.split(marker).length !== 2) {
+      throw new Error(`Expected one ${marker} marker in ${file}. No files were generated.`);
+    }
+    if (source.includes(`"${answers.name}"`)) {
+      throw new Error(`"${answers.name}" already appears in ${file}. No files were generated.`);
+    }
   }
-  const rac = RAC_ENTRIES.includes(trimmed);
-  const near = nearestEntries(trimmed);
-  return [
-    `"${trimmed}" is not an Appendix A component entry.`,
-    rac
-      ? `It is a quarantined react-aria interim entry (RAC_ENTRIES); those live in ${UI}/src/react-aria/ and are not scaffolded by this generator.`
-      : "",
-    near.length === 0 ? "" : `Did you mean: ${near.join(", ")}?`,
-    `The canonical list is BARE_COMPONENT_ENTRIES in ${UI}/scripts/entries.ts (Appendix A, ${BARE_COMPONENT_ENTRIES.length} entries):`,
-    BARE_COMPONENT_ENTRIES.join(", "),
-  ]
-    .filter((line) => line !== "")
-    .join("\n");
+  return "name and registration targets checked";
 }
 
 function add(templateFile, path) {
@@ -79,16 +90,17 @@ function add(templateFile, path) {
 
 export default function plopfile(plop) {
   plop.setGenerator("component", {
-    description: "Scaffold an Appendix A component: skeleton, recipe, tests, demo, docs page, facade",
+    description: "Scaffold and register a new component: skeleton, recipe, tests, demo, docs page, facade",
     prompts: [
       {
         type: "input",
         name: "name",
-        message: "Component entry name (kebab-case, from the Appendix A manifest)",
-        validate: rejectUnknownName,
+        message: "New component entry name (kebab-case)",
+        validate: (name) => validateName(name, plop.getDestBasePath()),
       },
     ],
     actions: [
+      preflight,
       add("variants.ts.hbs", `${UI}/src/components/{{name}}/{{name}}-variants.ts`),
       add("component.tsx.hbs", `${UI}/src/components/{{name}}/{{name}}.tsx`),
       add("unit-test.ts.hbs", `${UI}/src/components/{{name}}/{{name}}.test.ts`),
@@ -96,6 +108,12 @@ export default function plopfile(plop) {
       add("demo.tsx.hbs", `${DOCS_ROUTE}/demos/{{name}}-basic.tsx`),
       add("page.mdx.hbs", `${DOCS_ROUTE}/page.mdx`),
       add("facade.ts.hbs", `${UI}/src/{{name}}.ts`),
+      {
+        type: "append",
+        path: ENTRIES,
+        pattern: ENTRY_MARKER,
+        template: '  "{{name}}",',
+      },
       {
         type: "append",
         path: BUDGETS,
@@ -117,8 +135,9 @@ export default function plopfile(plop) {
             // Only the demos directory: `page.mdx` is not oxfmt's to format.
             `${DOCS_ROUTE.replace("{{name}}", answers.name)}/demos`,
             BUDGETS,
+            ENTRIES,
           ],
-          { cwd: plop.getPlopfilePath(), stdio: "ignore" }
+          { cwd: plop.getDestBasePath(), stdio: "pipe" }
         );
         return "formatted with oxfmt";
       },
@@ -130,7 +149,9 @@ export default function plopfile(plop) {
           "  3. pnpm --filter @elmeragroup/ui build             # dist + publish manifest; does not rewrite source exports",
           `  4. Author the page and demos; record required scenarios in apps/docs/test/fixtures/component-demo-requirements.json.`,
           "  5. pnpm --filter docs generate                    # writes the committed api.json next to the page",
-          "  6. pnpm turbo run ci:checks --force",
+          "  6. Record measuredGzip in packages/ui/scripts/size-budgets.ts; run pnpm --filter docs shadow:update.",
+          "  7. Add the component to independent RSC expectations and public type/API contract checks.",
+          "  8. pnpm ci:checks",
         ].join("\n"),
     ],
   });

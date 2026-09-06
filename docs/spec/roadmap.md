@@ -82,14 +82,12 @@ Directional chapter for `@elmeragroup/ui`: work deliberately deferred out of v1,
 ## 11 Chart (Wave 9)
 
 - **What**: ship `@elmeragroup/ui/chart` — recharts composition wrappers (`Chart.Container` / tooltip / legend / style). `recharts` becomes an optional peer; the entry is removed from `DEFERRED_ENTRIES` and joins the exports map, barrel, packed-name assertions, and size budgets.
-- **Why deferred**: ruling 2026-09-02 — Chart  moved to Wave 9 and does not gate the v1 publish. No consumer surface requires it for v1.
+- **Why deferred**: No consuming product has committed to a charted surface. Chart is not required for the first publish.
 - **Trigger**: a consuming product committing to a charted surface, with `recharts` accepted as an optional peer.
 - **Already prepared**: `--chart-1..8` tokens, and the exports-codegen deferred-entry seam (`DEFERRED_ENTRIES` in `packages/ui/scripts/entries.ts`). No docs page or nav entry until the component exists.
 - **Completion criteria**: `chart.ts` source; `recharts` in published optional-peer ranges; size-limit row excluding recharts; docs page and reviewed demos; `DEFERRED_ENTRIES` empty or without `chart`.
 
 ## 12 Effect 4 RC → stable
-
-_(added 2026-09-03 — tracked here as the standing follow-up named by [release](release.md) §8.4.)_
 
 - **What**: move `effect` off the pinned prerelease `4.0.0-rc.111` onto the first stable `4.x`, and delete the `minimumReleaseAgeExclude` entry that the pin requires from `pnpm-workspace.yaml`.
 - **Why deferred**: the Effect-based API extractor (`tooling/api-extractor`, [ADR 0007](../adr/0007-docs-api-extraction-pipeline.md)) and the docs generator both build on Effect 4 APIs; no stable 4.x exists yet. The repo-wide `minimumReleaseAge: 4320` (72 hours) supply-chain guard cannot admit a prerelease, so the pin buys itself a single named exclusion — the **only** entry in that list, and the reason the exception is temporary rather than a policy hole.

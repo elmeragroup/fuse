@@ -6,7 +6,7 @@ import { requireFlagsDirectory } from "./flag-assets.ts";
 import { parseFacadeValueExports } from "./parse-facade.ts";
 import { packageRootFromScript, toPosix } from "./paths.ts";
 
-/** Appendix A — 55 shipped bare component entries plus 1 deferred (`chart`). */
+/** Public bare component entries, including explicitly deferred entries below. */
 export const BARE_COMPONENT_ENTRIES = [
   "accordion",
   "alert",
@@ -64,6 +64,7 @@ export const BARE_COMPONENT_ENTRIES = [
   "toggle",
   "toggle-group",
   "tooltip",
+  // plop:component-entry
 ] as const;
 
 /**
@@ -464,7 +465,7 @@ export function discoverEntries(packageRoot: string): DiscoveredEntries {
   const unexpected = unexpectedJsEntryFiles(packageRoot);
   if (unexpected.length > 0) {
     throw new Error(
-      `Unexpected public entry files (not in architecture Appendix A): ${unexpected.join(", ")}`
+      `Unexpected public entry files (not registered in scripts/entries.ts): ${unexpected.join(", ")}`
     );
   }
 

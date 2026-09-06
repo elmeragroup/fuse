@@ -4,13 +4,13 @@ Whitelabel React components for Elmera Group's energy brands and corporate Elmer
 
 Density is a document-level control-metric axis, independent of theme. Variant supplies only the deployment default (`internal → dense`, `external → comfortable`). Brand is host-owned: spread `themeAttributes(theme)` on `<html>`, then stamp density with `densityAttributes(defaultDensityForVariant(theme.variant))`.
 
-The normative specification lives in [docs/spec/](docs/spec/README.md); the glossary is [CONTEXT.md](CONTEXT.md).
+Current cross-component contracts live in [docs/spec/](docs/spec/README.md); the glossary is [CONTEXT.md](CONTEXT.md). Read only the chapter your change affects.
 
 ## Prerequisites
 
 - **Node**: `>=24.13 <25` — the version in [`.node-version`](.node-version) (`24.13.0`). The build, codegen and docs scripts run TypeScript directly through Node's type-stripping flags, so an older major fails.
 - **pnpm 11** — `packageManager` pins the exact version; use Corepack.
-- `.ref/` reference checkouts are needed only to lift new reference implementations or artwork ([docs/spec/README.md](docs/spec/README.md)). They are not needed to build, test, or run the repo.
+- `.ref/` reference checkouts are needed only to lift new reference implementations or artwork ([reference sources](docs/reference-sources.md)). They are not needed to build, test, or run the repo.
 
 ```sh
 pnpm install
@@ -77,4 +77,17 @@ Package-scoped scripts worth knowing:
 
 ## Release
 
-Merging to `main` accumulates changesets into a bot-owned Version Packages PR; nothing publishes yet. The designed flow and the publish gates are [docs/spec/release.md](docs/spec/release.md) §2 and §5; the post-merge sequence for the v1 merge — including which PR must not be merged before the npm/GitHub org setup lands — is §8 of the same chapter.
+The [release runbook](docs/spec/release.md) separates the active Version Packages workflow from the publishing pipeline that still needs setup. Do not merge the bot's Version Packages PR until the npm/GitHub prerequisites and publish workflow are ready.
+
+## Reading by task
+
+| Task                              | Start here                                                                                             |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Change or add a component         | [Component authoring](docs/component-authoring.md), then that component's source, tests, and docs page |
+| Integrate the library into an app | [Package README](packages/ui/README.md) and [theme integration](docs/theming-integration.md)           |
+| Change library-wide behavior      | [Contract index](docs/spec/README.md), which maps changes to one owning chapter                        |
+| Diagnose build or test failures   | [Tooling](docs/spec/tooling.md), the failing workspace's scripts, and its Turbo config                 |
+| Understand a decision             | [ADRs](docs/adr/) and [domain glossary](CONTEXT.md)                                                    |
+| Find unfinished work              | [Roadmap](docs/spec/roadmap.md)                                                                        |
+
+Source and configuration own inventories, versions, values, and measurements. Documentation explains the policies and procedures that govern them.

@@ -124,7 +124,7 @@ Required scenarios live in `apps/docs/test/fixtures/component-demo-requirements.
 
 - **`llms.txt`** at the site root: index of every docs page with one-line descriptions, generated at docs build. It has a Handbook page explaining the surface.
 - **A markdown endpoint per component** (`/components/<name>.md` or equivalent): the component's API reference + demo source, generated from the **same API/demo sources** at docs build — one pipeline, three consumers (HTML docs, VR, AI). The component page's **View as Markdown** link points here.
-- **`GET /api/themes`**: a JSON catalog of the 20 legal themes for AI and tooling. It is a **docs generate-pipeline artifact**, not a published `@elmeragroup/ui/theme` API — `composeTheme`, `TOKEN_NAMES`, and `PRIMITIVES` stay package-private. The catalog builder imports through the workspace-only `@elmeragroup/ui/theme-catalog` tooling entry (architecture.md §8). The generated Figma barrel is a typed const with no assertions. _(Amended 2026-09-02.)_
+- **`GET /api/themes`**: a JSON catalog of the 20 legal themes for AI and tooling. It is a **docs generate-pipeline artifact**, not a published `@elmeragroup/ui/theme` API — `composeTheme`, `TOKEN_NAMES`, and `PRIMITIVES` stay package-private. The catalog builder imports through the workspace-only `@elmeragroup/ui/theme-catalog` tooling entry (architecture.md §8). The generated Figma barrel is a typed const with no assertions.
 - **No shadcn-style registry in v1.** The library is a packaged dependency, not copy-paste source; a registry is a roadmap note only if demand appears.
 
 ### 9.1 Theme catalog endpoint

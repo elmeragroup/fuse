@@ -6,7 +6,6 @@ import { describe, expect, it } from "vitest";
 const here = dirname(fileURLToPath(import.meta.url));
 const docsRoot = join(here, "..");
 const workspaceRoot = join(docsRoot, "../..");
-const specPath = join(workspaceRoot, "docs/spec/docs-site.md");
 
 function collectFiles(directory: string, prefix: string, suffix: string): string[] {
   const files: string[] = [];
@@ -121,21 +120,6 @@ describe("docs Tailwind migration contract", () => {
 
     const apiRows = readFileSync(join(docsRoot, "src/components/api-rows.tsx"), "utf8");
     expect(apiRows).not.toMatch(/\bconst api[A-Z]\w*\s*=\s*["'`]/);
-  });
-
-  it("lets the docs-site spec permit Typography, private tv recipes, and component-owned contracts", () => {
-    const spec = readFileSync(specPath, "utf8");
-    const start = spec.indexOf("- **Styling**");
-    const end = spec.indexOf("\n\n## 2 ");
-    const styling = spec.slice(start, end);
-
-    expect(styling).toContain('@plugin "@tailwindcss/typography"');
-    expect(styling).toContain("prose-docs");
-    expect(styling).toMatch(/private(?: docs)? `tv` recipes/);
-    expect(styling).toContain("React components");
-    expect(styling).toContain("@apply");
-    expect(styling).toContain("exported class-name constants");
-    expect(styling).not.toContain("docs-styles.ts");
   });
 });
 

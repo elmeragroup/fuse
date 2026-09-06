@@ -70,7 +70,7 @@ The keys and copy below are implementation data, not examples. Each owner keeps 
 | `sidebar.title`                     | Sidepanel                    | Sidopanel                   | Sidebar               | Sivupalkki                    |
 | `sidebar.description`               | Viser sidepanelet.           | Visar sidopanelen.          | Displays the sidebar. | Näyttää sivupalkin.           |
 
-`overlay.close` is the one family-owned key (see the ownership rule above): Dialog, Sheet, Toast, and the react-aria picker dialog all resolve it, and the retired `dialog.close` / `sheet.close` / `toast.close` spellings resolve to the same four strings. _(Amended 2026-09-03.)_
+`overlay.close` is the one family-owned key (see the ownership rule above): Dialog, Sheet, Toast, and the react-aria picker dialog all resolve it, and the retired `dialog.close` / `sheet.close` / `toast.close` spellings resolve to the same four strings.
 
 Visible consumer content is not translated by the library. In particular, preset item labels come from the radio's visible children/value, loader labels remain consumer-supplied because their surrounding pending action provides the wording, and confirm-button confirmation copy remains consumer-owned.
 
@@ -83,7 +83,7 @@ Visible consumer content is not translated by the library. In particular, preset
 
 ## 6 Contrast
 
-Token values are **locked** : all mints final); this chapter's job is honest classification, not redesign.
+Token values are **locked** under the [theme value policy](theming.md#5-value-policy-rulings); this chapter's job is honest classification, not redesign.
 
 - **Text-grade roles** — must meet **4.5:1** against their paired surface in all 20 themes: `foreground`/`background`, `card-foreground`/`card`, `card-soft-foreground`/`card-soft`, `muted-foreground`/`muted` and `/background`, every `*-soft-foreground`/`*-soft` pair, `primary-foreground`/`primary`, `secondary-foreground`/`secondary`, status `*-foreground` pairs.
 - **`feature-foreground` is reclassified as accent/decorative** — the external tints (L ≈ 0.80–0.91 on L ≈ 0.55–0.58 feature panels) are kicker/eyebrow-grade, not body-text-grade. **Text on `feature` panels uses white**, which passes 3:1 large-text/non-text everywhere; body text on feature panels is out of contract.
@@ -107,7 +107,7 @@ Dense `xs` / `icon-xs` Button is a 24px box (`1.5rem` at a 16px root). Comfortab
 
 ## 9 Testing bar
 
-Per Testing strategy , restated as the a11y floor. The target-size floor in §8 is verified on the smallest interactive Button rung at each density through the rendered box or documented hit-area expansion.
+These checks are the accessibility floor within the [testing strategy](tooling.md#7-testing-strategy). The target-size floor in §8 is verified on the smallest interactive Button rung at each density through the rendered box or documented hit-area expansion.
 
 - All test queries **role/label-based** (no test-ids, no class queries); this makes every test double as a semantics assertion. **No axe** — matches all reference codebases; the role-based bar plus these rules is the gate.
 - Every documented keyboard behavior has a browser-mode test; the `focusRing` recipe has one shared visual assertion (ring present on `:focus-visible`, absent on mouse focus).

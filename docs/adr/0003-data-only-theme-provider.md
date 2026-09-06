@@ -11,7 +11,7 @@ The original call treated the provider as data-only (context + helpers, no DOM w
 
 ## Decision
 
-`@elmeragroup/ui/theme` ships one kernel (validate, map, resolve, serialize) and **separate first-paint adapters**. There is one public entry — no `/theme/next`, `/theme/vite`, or other per-framework re-exports. Framework integration is documented recipes ([theming](../spec/theming.md) §7.3). next-themes is **not vendored**; MIT-notice text is retained where ideas or source text are copied.
+`@elmeragroup/ui/theme` ships one kernel (validate, map, resolve, serialize) and **separate first-paint adapters**. There is one public entry — no `/theme/next`, `/theme/vite`, or other per-framework re-exports. Framework integration is documented recipes ([theme integration](../theming-integration.md)). next-themes is **not vendored**; MIT-notice text is retained where ideas or source text are copied.
 
 **Brand (controlled, unchanged from the original call):**
 

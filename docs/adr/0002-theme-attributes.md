@@ -4,7 +4,7 @@ Date: 2026-08-17. Status: accepted.
 
 ## Context
 
-Themes are variant × brand × segment (20 permutations); both reference apps select themes with bare classes (`.fkas`, `.fkas-c`, `.v2 .fkas`). The token contract (ADR 0001) reserves `data-theme` for a future light/dark axis. A throwaway prototype  generated all candidate mechanisms' CSS from one value table and compared them live, including scoped-subtree and portal behavior.
+Themes are variant × brand × segment (20 permutations); both reference apps select themes with bare classes (`.fkas`, `.fkas-c`, `.v2 .fkas`). The token contract (ADR 0001) reserves `data-theme` for a future light/dark axis. A prototype generated all candidate mechanisms' CSS from one value table and compared them live, including scoped-subtree and portal behavior.
 
 ## Decision
 

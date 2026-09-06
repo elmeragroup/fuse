@@ -1,10 +1,10 @@
 # 0007 — Docs API extraction pipeline
 
-Date: 2026-09-02. Status: accepted. Records the production cutover landed in `9a0a433`.
+Date: 2026-09-02. Status: accepted.
 
 ## Context
 
-Docs API tables are generated at docs build from TypeScript types and JSDoc ([docs-site](../spec/docs-site.md) §8). The original plan  extracted demos and API surface through AST walks and generated module maps. Ruling 74b (2026-08-24) replaced that with hand-authored `page.mdx`, demos imported as ordinary ESM, and a committed per-component `api.json` produced by an in-repo TypeScript-checker walk — explicitly without `@mui/internal-docs-infra`.
+Docs API tables are generated at docs build from TypeScript types and JSDoc ([docs-site](../spec/docs-site.md) §8). The original design extracted demos and API surface through AST walks and generated module maps. Ruling 74b (2026-08-24) replaced that with hand-authored `page.mdx`, demos imported as ordinary ESM, and a committed per-component `api.json` produced by an in-repo TypeScript-checker walk — explicitly without `@mui/internal-docs-infra`.
 
 The Effect-native extractor (`tooling/api-extractor`, `@elmeragroup/api-extractor`) was added as a workspace package to describe dependency types the checker walk treated as opaque forwarded props. Production generation was then routed through it for selected Base UI props in the same squash that first mentioned the extractor in the docs-site chapter, while that chapter still said extraction "stays the in-repo TS-checker generator". This ADR is the decision record; the chapter describes one pipeline.
 
@@ -72,6 +72,13 @@ override. Every exception is an `oxlint-disable-next-line` on the line it govern
 rule and why that rule cannot hold there (148 of them, 108 for the model's absent-key JSON
 encoding), or the `SAFETY:` comment the rule was asking for rather than a disable (39).
 
+A scoped override for `src/backend/ts7/**` was drafted first, following spec 09's
+implementation decision, and rejected on the evidence. The `typescript/no-unsafe-*` family that
+decision named is no longer violated anywhere in that directory, so exempting it would exempt
+nothing; and the two `anti-slop` rules the raw-compiler seam genuinely trips are tripped on ten
+lines in four of that directory's twenty-three files, which ten next-line disables cover exactly.
+An override would have exempted nineteen files with no demonstrated need, contrary to the requirement for line-specific exceptions.
+
 `test/extractor-lint-exceptions.test.mjs` in the root repo-policy project holds all three
 properties: no file-wide header, no reasonless next-line disable, no override matching the
 package path. Normative text: [tooling](../spec/tooling.md) §4.
@@ -83,3 +90,7 @@ package path. Normative text: [tooling](../spec/tooling.md) §4.
 - **Vendor `@mui/internal-docs-infra`.** Already rejected by ruling 74b, 2026-08-24 (0.x-breaking-by-policy; peers TypeScript 6).
 
 ## Consequences
+
+- Docs generation depends on `@elmeragroup/api-extractor` as a workspace package. Extractor behaviour changes that affect selected Base UI props show up as `api.json` diffs and as shadow-snapshot diffs.
+- Library prop types cannot drift from the checker: merge always rewrites selected props to the walk's type string.
+- This ADR owns the rationale for using separate extraction paths for library and dependency rows.

@@ -8,6 +8,10 @@ Vendored copy of [`dmmulroy/anti-slop`](https://github.com/dmmulroy/anti-slop) `
 
 ## Local divergence
 
+`rules/no-slop-comments.ts` and `rules/no-narration-comments.ts` are local rules, not
+part of upstream — keep them, their `index.ts` registrations, and
+`shared/slop-comments.ts` when refreshing the vendored files.
+
 `no-slop-comments` takes one option, `ticketPattern` (regex source, default
 `[A-Z][A-Z0-9]*-\d+`), for the bare ticket ids that count as a tracker reference.
 The root `.oxlintrc.json` sets it to `ELM-\d+`.
