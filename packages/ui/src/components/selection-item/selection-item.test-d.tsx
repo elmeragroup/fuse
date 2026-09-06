@@ -34,7 +34,7 @@ test("Description and Content are the Item parts so later aliasing keeps object 
   expectTypeOf(SelectionItem.Content).toEqualTypeOf(Item.Content);
 });
 
-test("Shell takes the spec surface and no polymorphic as prop", () => {
+test("Shell takes the public API and no polymorphic as prop", () => {
   expectTypeOf<Parameters<typeof SelectionItem.Shell>[0]["dataSlot"]>().toEqualTypeOf<string>();
   expectTypeOf<Parameters<typeof SelectionItem.Shell>[0]["controlPosition"]>().toEqualTypeOf<
     "start" | "end" | undefined
@@ -76,7 +76,7 @@ test("Shell takes the spec surface and no polymorphic as prop", () => {
   const _noAs = <SelectionItem.Shell dataSlot="checkbox-item" control={<span />} as="section" />;
 });
 
-test("Shell passes Field.Item props through except className and children (selection-item.md §3/§8.7)", () => {
+test("Shell passes Field.Item props through except className and children", () => {
   type ShellProps = Parameters<typeof SelectionItem.Shell>[0];
   expectTypeOf<ShellProps>().toHaveProperty("render");
   expectTypeOf<ShellProps>().toHaveProperty("id");

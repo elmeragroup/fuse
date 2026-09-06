@@ -91,7 +91,7 @@ describe("Textarea", () => {
     expect(heights.size).toBe(1);
   });
 
-  it("ignores a nested data-density stamp in both directions (textarea.md §9)", () => {
+  it("ignores a nested data-density stamp in both directions", () => {
     renderThemed(
       <>
         <Textarea aria-label="Root" />

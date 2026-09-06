@@ -112,9 +112,9 @@ function element(locator: ReturnType<typeof page.getByRole>): HTMLElement {
   return node;
 }
 
-/** spec §9 slot audit: every part stamps its slot; no data-sidebar anywhere. */
+/** DOM audit: every part stamps its slot; no data-sidebar anywhere. */
 function bySlot(slot: string, root: ParentNode = document): HTMLElement {
-  // spec §9 slot audit
+  // DOM audit: verify the component slot contract.
   const node = root.querySelector(`[data-slot="${slot}"]`);
   if (!(node instanceof HTMLElement)) {
     throw new Error(`expected [data-slot="${slot}"]`);
@@ -952,7 +952,7 @@ describe("Sidebar.MenuSubButton", () => {
 
 describe("Sidebar data-slot audit", () => {
   it("stamps every roster slot once composed, with no legacy data-sidebar attribute anywhere", () => {
-    // spec §9 slot audit: every part stamps its slot; no data-sidebar attributes anywhere
+    // DOM audit: every part stamps its slot; no data-sidebar attributes anywhere
     renderThemed(
       withLocale(
         "en-US",
@@ -999,12 +999,12 @@ describe("Sidebar data-slot audit", () => {
       )
     );
     for (const slot of SLOT_ROSTER) {
-      // spec §9 slot audit
+      // DOM audit: verify the component slot contract.
       expect(document.querySelectorAll(`[data-slot="${slot}"]`).length, slot).toBeGreaterThanOrEqual(1);
     }
     expect(document.querySelectorAll("[data-sidebar]")).toHaveLength(0);
     expect(bySlot("sidebar-separator").getAttribute("role")).toBe("separator");
-    // spec §9 slot audit
+    // DOM audit: verify the component slot contract.
     expect(document.querySelectorAll('[data-slot="separator"]')).toHaveLength(0);
     expect(document.querySelectorAll('[data-slot="input"]')).toHaveLength(0);
     expect(bySlot("sidebar-inset").tagName).toBe("MAIN");

@@ -4,14 +4,14 @@ import { stateFocusRingClass, stateFocusRingVisibleClass } from "../../styles/ut
 
 /**
  * Private checkbox chrome for the interim tier — the RAC `GridList` selection cell is
- * its only consumer (date-picker.md §2). The public checkbox is the base-ui
+ * its only consumer. The public checkbox is the base-ui
  * `@elmeragroup/ui/checkbox` entry; this recipe is never exported.
  *
  * Reference `theme(colors.*)` lookups are retokenized onto role tokens, and the
- * reference's `destructive` vocabulary becomes `error` (conventions.md styling).
+ * reference's `destructive` vocabulary becomes `error`.
  * The box is a decorative glyph, not a control box, so it is outside the density
  * ladder and keeps its optical `size-4.5`. There is no `variant` axis: the one
- * consumer renders `<Checkbox slot="selection" />` with no variant (grid-list.md §8.7).
+ * consumer renders `<Checkbox slot="selection" />` with no variant.
  */
 export const checkboxVariants = tv({
   slots: {

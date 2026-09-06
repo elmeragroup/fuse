@@ -2,7 +2,7 @@
 // explicit named re-exports only — no `export *`, no local declarations, no directives.
 // The exports/barrel generators discover this file; never hand-edit package.json#exports
 // or src/index.ts. Faces also ship as named exports for tree-shaking; `Emoji` stays
-// canonical (emoji.md §8.3). No public recipe.
+// canonical. No public recipe.
 export {
   Emoji,
   LoudlyCryingFace,

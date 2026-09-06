@@ -105,7 +105,7 @@ function buttonNamed(name: string): HTMLElement {
 
 /**
  * Chips are focusable `div`s with no role of their own (base-ui), so a focused chip is
- * identified by the remove button it owns — an accessible name, not a slot (combobox.md §7).
+ * identified by the remove button it owns — an accessible name, not a slot.
  */
 function expectChipFocused(removeButtonName: string): void {
   // Identity, not `contains`: any ancestor up to <body> contains the button, so a
@@ -476,7 +476,7 @@ describe("Combobox", () => {
         </Combobox.Root>
       </>
     );
-    // combobox.md §7: the chips container carries role="toolbar" once a chip is
+    // the chips container carries role="toolbar" once a chip is
     // selected, so the invalid chrome is reachable by role and name.
     const invalid = roleNamed("toolbar", "Rejected fruit");
     const valid = roleNamed("toolbar", "Accepted fruit");

@@ -21,7 +21,7 @@ test("public API exports the namespace and recipe, never the flat ref names", ()
   expectTypeOf(ButtonGroup).not.toHaveProperty("Addon");
 });
 
-test("parts take the spec's props, Text render, and no polymorphic as prop", () => {
+test("parts take the public props, Text render, and no polymorphic as prop", () => {
   const _root = (
     <ButtonGroup.Root orientation="horizontal" className="w-full" aria-label="Actions">
       <ButtonGroup.Text>https://</ButtonGroup.Text>

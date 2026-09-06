@@ -1,5 +1,5 @@
 /**
- * Shared `Table.Cell` class string (table.md §2/§6). `VerticalTable.Key` applies the
+ * Shared `Table.Cell` class string. `VerticalTable.Key` applies the
  * same layout and in-frame padding so a `render` host keeps the proven cell geometry.
  * Package-private — not on the `@elmeragroup/ui/table` facade.
  */

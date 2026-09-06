@@ -12,7 +12,7 @@ test("CheckboxCard ships from the checkbox-card entry and the root barrel", () =
   expectTypeOf(CheckboxCard).toBeFunction();
 });
 
-test("the entry exports only the spec names", () => {
+test("the entry exports only the public names", () => {
   expectTypeOf(CheckboxCardModule).toHaveProperty("CheckboxCard");
   expectTypeOf(CheckboxCardModule).not.toHaveProperty("checkboxCardStyles");
   expectTypeOf(CheckboxCardModule).not.toHaveProperty("checkboxCardVariants");
@@ -35,7 +35,7 @@ test("CheckboxCardProps is the labeled-composite face with render and className 
   expectTypeOf<CheckboxCardProps>().not.toHaveProperty("as");
 });
 
-test("the element takes the spec props and rejects render, disabled, className, and as", () => {
+test("the element takes the public props and rejects render, disabled, className, and as", () => {
   const _basic = <CheckboxCard value="insurance" title="Insurance" description="Covers everything." />;
   const _full = (
     <CheckboxCard

@@ -44,7 +44,7 @@ test("METER_CONSTANTS exposes the public mode and level names", () => {
   expectTypeOf(METER_CONSTANTS.LEVELS.EXCEEDED_MAX_VALUE).toEqualTypeOf<"EXCEEDED_MAX_VALUE">();
 });
 
-test("the element takes the spec's props and no locale, size, or primitive aliases", () => {
+test("the element takes the public props and no locale, size, or primitive aliases", () => {
   const _basic = <Meter label="Storage used" value={82} />;
   const _range = (
     <Meter

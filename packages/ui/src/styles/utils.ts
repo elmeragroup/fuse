@@ -81,8 +81,8 @@ export const stateFocusRingClass = focusRing({ target: "state" }).root();
 export const stateFocusRingVisibleClass = focusRing({ target: "state", isFocusVisible: true }).root();
 
 /**
- * Hatch texture and icon-crossfade faces. Exact class values are pinned in
- * conventions.md; `elmera/no-primitive-colors` allowlists the hatch as a whole
+ * Hatch texture and icon-crossfade faces. `elmera/no-primitive-colors` allowlists
+ * the hatch as a whole
  * token, so the string must not split, re-space, or prefix it.
  */
 export const disabledHatch = cn(

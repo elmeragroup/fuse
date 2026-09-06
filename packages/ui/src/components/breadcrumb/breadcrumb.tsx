@@ -15,7 +15,7 @@ import { breadcrumbStrings } from "./intl";
 export type BreadcrumbRootProps = ComponentProps<"nav"> & {
   /**
    * Landmark label. Defaults to the locale dictionary; an explicit `aria-label`
-   * wins over this prop (breadcrumb.md §3).
+   * wins over this prop.
    */
   label?: string;
 };
@@ -29,13 +29,12 @@ export type BreadcrumbSeparatorProps = ComponentProps<"li">;
 export type BreadcrumbEllipsisProps = Omit<ComponentProps<"span">, "children"> & {
   /**
    * Screen-reader-only copy for omitted items. Defaults to the locale dictionary
-   * (breadcrumb.md §3).
    */
   label?: string;
 };
 
 /**
- * Client breadcrumb trail (breadcrumb.md §2/§7). `Breadcrumb.Link` is the library
+ * Client breadcrumb trail. `Breadcrumb.Link` is the library
  * exemplar for `useRender` + `state.slot → data-slot`. Landmark and ellipsis copy
  * come from the provider dictionary.
  */

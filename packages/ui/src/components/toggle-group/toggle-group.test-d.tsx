@@ -22,7 +22,7 @@ test("public API exports only the namespace — never flat ref names or toggleVa
   expectTypeOf(ToggleGroup).not.toHaveProperty("Trigger");
 });
 
-test("Root and Item take the spec's props and no polymorphic as prop", () => {
+test("Root and Item take the public props and no polymorphic as prop", () => {
   expectTypeOf<ToggleGroupRootProps["variant"]>().toEqualTypeOf<"default" | "outline" | undefined>();
   expectTypeOf<ToggleGroupRootProps["size"]>().toEqualTypeOf<"xs" | "sm" | "default" | "lg" | undefined>();
   expectTypeOf<ToggleGroupRootProps["spacing"]>().toEqualTypeOf<number | undefined>();

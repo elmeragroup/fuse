@@ -78,7 +78,7 @@ describe("Twemoji package-file notices", () => {
     }
   });
 
-  it("ships both notice files with the §5 attribution", () => {
+  it("ships both notice files with the required attribution", () => {
     expect(twemojiNoticeFailure(packageRoot)).toBeUndefined();
     expect(readFileSync(join(packageRoot, TWEMOJI_NOTICE_FILE), "utf8")).toContain(
       "Twemoji — Copyright 2019 Twitter, Inc and other contributors"

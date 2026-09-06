@@ -155,14 +155,14 @@ type PromiseStateInput<Value, Data extends object> =
 function isShorthandDescription<Data extends object>(
   value: string | ToastManagerUpdateOptions<Data>
 ): value is string {
-  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- consumer-owned union: the string shorthand for `description` is a documented public contract (toast.md §3), not an internal type guess
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- consumer-owned union: the string shorthand for `description` is a documented public contract, not an internal type guess
   return typeof value === "string";
 }
 
 function isPromiseStateFactory<Value, Data extends object>(
   value: PromiseStateInput<Value, Data>
 ): value is (result: Value) => string | ToastManagerUpdateOptions<Data> {
-  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- consumer-owned union: `promise()` states are documented as a value or a factory over the settled value (toast.md §3), and the callable arm can only be told apart at runtime
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- consumer-owned union: `promise()` states are documented as a value or a factory over the settled value, and the callable arm can only be told apart at runtime
   return typeof value === "function";
 }
 

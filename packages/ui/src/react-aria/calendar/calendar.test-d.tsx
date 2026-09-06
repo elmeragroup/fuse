@@ -65,7 +65,7 @@ test("header parts take no props", () => {
   expectTypeOf(CalendarGridHeader).parameters.toEqualTypeOf<[]>();
 });
 
-test("the elements take the spec's props and reject children, visibleDuration, a size axis, and header props", () => {
+test("the elements take the public props and reject children, visibleDuration, a size axis, and header props", () => {
   const _nodeError = (
     <Calendar errorMessage={<span>Pick a valid day.</span>} isInvalid defaultValue={undefined} />
   );

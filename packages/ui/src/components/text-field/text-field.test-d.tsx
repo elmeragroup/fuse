@@ -40,7 +40,7 @@ test("textFieldVariants is public and slotted", () => {
   expectTypeOf(textFieldVariants()).not.toHaveProperty("textArea");
 });
 
-test("the element takes the spec's props and no polymorphic as prop", () => {
+test("the element takes the public props and no polymorphic as prop", () => {
   const _basic = <TextField label="Email" description="Work address." placeholder="name@example.com" />;
   const _states = (
     <TextField

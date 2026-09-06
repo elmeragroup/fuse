@@ -2,11 +2,11 @@
  * The PhoneNumberField picker contract, written out as the test's own expectation rather
  * than imported from `phone-engine` (ADR 0008: tests assert behaviour, not source
  * spelling — reading the implementation's own Set back made both assertions tautologies).
- * Both lists are normative in phone-number-field.md §3; changing either is a product /
+ * Both lists define the country-picker contract; changing either is a product /
  * compliance decision, and this file is the copy the suites compare against.
  */
 
-/** The 28 product/compliance exclusions (phone-number-field.md §3). */
+/** The 28 product/compliance exclusions. */
 export const EXCLUDED_PRODUCT_COUNTRY_CODES = [
   "AF",
   "BY",

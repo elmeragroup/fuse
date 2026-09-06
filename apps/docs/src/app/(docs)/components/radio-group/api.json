@@ -123,7 +123,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Set directly on the base-ui radio-group primitive, which supports `name`. CheckboxGroup threads `name` through Field instead — same external face, different plumbing (radio-group.md §8.7).",
+          "description": "Set directly on the base-ui radio-group primitive, which supports `name`. CheckboxGroup threads `name` through Field instead — same external face, different plumbing.",
           "required": false
         },
         {
@@ -486,7 +486,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Set directly on the base-ui radio-group primitive, which supports `name`. CheckboxGroup threads `name` through Field instead — same external face, different plumbing (radio-group.md §8.7).",
+          "description": "Set directly on the base-ui radio-group primitive, which supports `name`. CheckboxGroup threads `name` through Field instead — same external face, different plumbing.",
           "required": false
         },
         {

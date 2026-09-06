@@ -12,7 +12,7 @@ const ROOT_CLASSES = cn(
 );
 
 /**
- * Client image-or-initials avatar (avatar.md §2/§7). Base-ui Avatar owns image
+ * Client image-or-initials avatar. Base-ui Avatar owns image
  * loading state (performance.md §RSC classification).
  */
 function AvatarRoot({ className, ...props }: ComponentProps<typeof AvatarPrimitive.Root>): ReactElement {

@@ -35,10 +35,10 @@ describe("badgeVariants", () => {
     const resolved = badgeVariants();
     expect(resolved).toContain("inline-flex");
     expect(resolved).toContain("items-center");
-    // Radius derives from the brand `--radius` scale (badge.md §5).
+    // Radius derives from the brand `--radius` scale.
     expect(resolved).toContain("rounded-lg");
     expect(resolved).toContain("transition-colors");
-    // badge.md §8.5 — the ref's bare `:focus` ring is removed.
+    // The non-interactive badge has no bare `:focus` ring.
     expect(resolved).not.toContain("focus:");
     expect(resolved).not.toContain("focus-visible:");
     expect(resolved).not.toContain("ring-");

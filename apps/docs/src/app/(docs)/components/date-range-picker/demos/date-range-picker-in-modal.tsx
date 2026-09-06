@@ -12,8 +12,7 @@ import { UiProviders } from "@elmeragroup/ui/react-aria/ui-providers";
  * the two endpoints inside it must never dismiss the dialog underneath. The `Dialog` gets
  * that for free — its dismissal logic follows the React tree, so an interaction in the
  * portalled popover still counts as inside the dialog. That is why the picker cluster no
- * longer carries an overlay-container attribute of its own (date-picker.md §6,
- * 2026-09-03); the regression is pinned by the DateRangePicker browser suite, on this
+ * longer carries an overlay-container attribute of its own; the regression is pinned by the DateRangePicker browser suite, on this
  * exact composition. Both overlays portal into the nearest `ThemeScope`, so the popover
  * keeps the dialog's theme.
  */

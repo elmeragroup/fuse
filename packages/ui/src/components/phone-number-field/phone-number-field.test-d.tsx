@@ -53,7 +53,7 @@ test("PhoneNumberFieldProps is the closed composite face", () => {
   expectTypeOf<PhoneNumberFieldProps>().not.toHaveProperty("variant");
 });
 
-test("the element takes the spec's props and rejects unresolved flag codes as defaultCountryCode", () => {
+test("the element takes the public props and rejects unresolved flag codes as defaultCountryCode", () => {
   const _basic = <PhoneNumberField label="Mobile" defaultCountryCode="NO" />;
   const _nordic = (
     <>

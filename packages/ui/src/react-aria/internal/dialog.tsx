@@ -14,7 +14,7 @@ import { cn } from "../../styles/cn";
 import { Button } from "./button";
 
 /**
- * The interim tier's styled dialog chrome (date-picker.md §2): RAC Dialog plus the
+ * The interim tier's styled dialog chrome: RAC Dialog plus the
  * heading/close affordance the DatePicker popover renders with `closeButton={false}`.
  * Package-private — the public dialog family is the base-ui `@elmeragroup/ui/dialog`
  * entry and this module never reaches `package.json#exports`.
@@ -24,10 +24,10 @@ import { Button } from "./button";
  */
 const dialogVariants = tv({
   slots: {
-    // oxlint-disable-next-line elmera/no-local-focus-ring -- dialog.md §7: dialog surface; focusable descendants own the adapter
+    // oxlint-disable-next-line elmera/no-local-focus-ring -- dialog surface; focusable descendants own the adapter
     base: "relative max-h-[inherit] overflow-y-auto p-6 outline-none [[data-placement]>&]:p-4",
     header: "flex items-start justify-between gap-4",
-    // The heading borrows the public Dialog's literal (dialog.md §2) so the interim tier
+    // The heading borrows the public Dialog's literal so the interim tier
     // cannot drift.
     heading: overlayTitleClass,
     content: "flex flex-col gap-4",

@@ -13,7 +13,7 @@ import type { OverlayContainerProps } from "../overlay/overlay-props";
 import { Popover } from "../popover/popover";
 import { popoverInfoButtonStrings } from "./intl";
 
-/** Recipe for the unit test (popover-info-button.md §4). Not re-exported from the public entry. */
+/** Recipe for the unit test. Not re-exported from the public entry. */
 export const popoverInfoButtonStyles = tv({
   slots: {
     icon: "size-4",
@@ -82,7 +82,7 @@ export type PopoverInfoButtonProps = DistributiveOmit<ButtonProps, "children" | 
   };
 
 /**
- * Ghost icon-sm info button that opens a Popover (popover-info-button.md §2/§7).
+ * Ghost icon-sm info button that opens a Popover.
  * Client — Popover state and localized trigger name.
  */
 export function PopoverInfoButton({

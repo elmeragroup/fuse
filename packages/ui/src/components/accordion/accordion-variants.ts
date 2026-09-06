@@ -1,9 +1,9 @@
 /**
- * PUBLIC slot recipe (accordion.md §4). Consumers borrow it from
+ * PUBLIC slot recipe. Consumers borrow it from
  * `@elmeragroup/ui/accordion`. Context-passed `variant` / `radius` stay on Root;
  * parts call this with the published axes for their own slot.
  *
- * Height on `content` is the approved layout exception (accordion.md §8.8): a plain
+ * Height on `content` is the approved layout exception: a plain
  * transition against base-ui's `--accordion-panel-height`, not a control-box rung.
  */
 import { tv } from "tailwind-variants";
@@ -45,7 +45,7 @@ export const accordionVariants = tv({
       },
     },
     radius: {
-      none: {}, // Not dead: the default and a published `radius` value (accordion.md §4).
+      none: {}, // Not dead: the default and a published `radius` value.
       lg: { item: "overflow-hidden rounded-lg" },
       xl: { item: "overflow-hidden rounded-xl" },
     },

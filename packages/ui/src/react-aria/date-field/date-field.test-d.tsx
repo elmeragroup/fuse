@@ -69,7 +69,7 @@ test("DateInput omits children and keeps slot plus open RAC props", () => {
   expectTypeOf<DateInputProps>().toHaveProperty("lang");
 });
 
-test("the elements take the spec's props and reject DateInput children and a size axis", () => {
+test("the elements take the public props and reject DateInput children and a size axis", () => {
   const _nodeError = <DateField label="Invoice date" errorMessage={<span>Required</span>} isInvalid />;
   const _functionError = (
     <DateField

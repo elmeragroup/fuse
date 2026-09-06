@@ -81,7 +81,7 @@ export function usePhoneNumberFieldState({
   }));
 
   // Props are folded in during render so external replacement is visible in the same
-  // pass, including server rendering (§8.16). The store catches up on commit.
+  // pass, including server rendering. The store catches up on commit.
   const state = reconcile(stored, value, configuration);
   if (state !== stored) setState(state);
   const current = visibleSnapshot(state);

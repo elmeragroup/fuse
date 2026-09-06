@@ -1,9 +1,9 @@
 /**
  * SCAFFOLD — browser project. All queries are role/label based; keyboard-interaction
- * tests cover each §7 behaviour of docs/spec/components/{{name}}.md.
+ * tests cover the component's keyboard and accessibility behavior.
  *
  * `ROLE` below is a deliberate placeholder — the scaffold must not guess an accessible
- * role — and every query here throws until you replace it with the role §7 names. Focus
+ * role — and every query here throws until you replace it with the component's accessible role. Focus
  * rings go through `packages/ui/test/assert-focus-ring.ts`, never a hand-rolled ring
  * assertion.
  */
@@ -21,8 +21,8 @@ import {
 import { ThemeScope } from "../../theme";
 import { {{pascalCase name}} } from "./{{name}}";
 
-// TODO({{name}}): replace with the accessible role docs/spec/components/{{name}}.md §7 names.
-const UNSET_ROLE = "TODO-spec-role";
+// TODO({{name}}): replace with the component's accessible role.
+const UNSET_ROLE = "TODO-accessible-role";
 const ROLE: string = UNSET_ROLE;
 
 beforeEach(() => {
@@ -36,7 +36,7 @@ afterEach(() => {
 function named(name: string): HTMLElement {
   if (ROLE === UNSET_ROLE) {
     throw new Error(
-      "{{name}}.browser.test.tsx: set ROLE to the accessible role docs/spec/components/{{name}}.md §7 names."
+      "{{name}}.browser.test.tsx: set ROLE to the component's accessible role."
     );
   }
   const element = page.getByRole(ROLE, { name, exact: true }).element();
@@ -52,17 +52,17 @@ function measure(name: string) {
 }
 
 describe("{{pascalCase name}}", () => {
-  it("exposes its spec §7 role, name and keyboard behaviour", () => {
+  it("exposes its accessible role, name and keyboard behaviour", () => {
     renderThemed(<{{pascalCase name}} size="md">scaffold</{{pascalCase name}}>);
     expect(named("scaffold")).toBeInstanceOf(HTMLElement);
-    // TODO({{name}}): assert the §7 keyboard/aria behaviours; delete this marker.
+    // TODO({{name}}): assert the keyboard/aria behaviors; delete this marker.
     expect.unreachable("{{name}} behaviour tests are not implemented yet");
   });
 });
 
-// Dual-density pattern, per Button (conventions.md § Tests & demos, how-to §3): assert
+// Follow Button's dual-density pattern: assert
 // real computed px under both stamps, and prove a nested stamp does not rescope. Delete
-// this block only if the spec says {{pascalCase name}} carries no control-box metrics.
+// this block only if {{pascalCase name}} carries no control-box metrics.
 describe("{{pascalCase name}} density metrics", () => {
   it("resolves the signed md control rung at both density stamps", () => {
     for (const density of ["dense", "comfortable"] as const) {

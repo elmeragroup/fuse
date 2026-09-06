@@ -5,7 +5,7 @@ import { Item } from "@elmeragroup/ui/item";
 
 /**
  * The external rich card's `CardSectionAnchor` rows land here: real anchors via
- * `Item.Root render={<a/>}` inside `Card.Content` (card.md §8.4).
+ * `Item.Root render={<a/>}` inside `Card.Content`.
  */
 export function CardItemRows() {
   return (

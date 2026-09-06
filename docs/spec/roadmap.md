@@ -9,7 +9,7 @@ Directional chapter for `@elmeragroup/ui`: work deliberately deferred out of v1,
 - **What**: retire the `react-aria/` quarantine tier by re-homing its components on base-ui at bare paths. The tier holds eleven public interim exports: the date five (date-picker, date-range-picker, date-field, calendar, range-calendar) plus search-field, grid-list, link, focusable, file-trigger, ui-providers. Private cluster internals (RAC modal, dialog, button) retire with it.
 - **Why deferred**: base-ui has no date/calendar primitives today; react-aria-components is the honored interim tier precisely to avoid hand-rolling date widgets for v1.
 - **Trigger**: base-ui shipping date-field/calendar primitives of comparable quality (each non-date atom can migrate earlier, piecemeal — link/focusable/file-trigger have no hard react-aria dependency in their contract).
-- **Already prepared**: every interim spec carries a migration-to-base-ui marker; the tier is path-quarantined so no other entry can pull its dependencies ([performance](performance.md) §5); heading/text/span were already re-homed as plain typography, and Disclosure/list-box/alert were already de-RAC'd, so the date cluster is the last island.
+- **Already prepared**: the interim entries carry migration-to-base-ui markers; the tier is path-quarantined so no other entry can pull its dependencies ([performance](performance.md) §5); heading/text/span were already re-homed as plain typography, and Disclosure/list-box/alert were already de-RAC'd, so the date cluster is the last island.
 - **Completion criteria**: all eleven components available at bare paths on base-ui; `react-aria/` subpaths removed (a major version); `react-aria-components`, the `react-aria` hooks package, `@internationalized/date`, and `tailwindcss-react-aria-components` uninstalled (`@internationalized/string`, the permanent intl-dictionary runtime, stays); the 60 kB date-cluster budget entry and the date-cluster lazy-loading recipe deleted.
 
 ## 2 Dark mode rollout
@@ -76,16 +76,16 @@ Directional chapter for `@elmeragroup/ui`: work deliberately deferred out of v1,
 - **Why deferred**: Wave 1 is deployment-fixed. There is no runtime density state, no density bootstrap script, and no product surface asking to persist a user choice. Shipping a `ThemeProvider` density prop now would freeze the public interface before the preference model exists.
 - **Trigger**: a consuming product committing to a user-visible density control (settings, first-run, or equivalent), with a defined persistence store.
 - **Already prepared**: `Density` / `densityAttributes` / `defaultDensityForVariant` are public and server-safe ([theming](theming.md) §7.2). Variant does not select `--control-*` in generated theme CSS. Library metrics stay `:root[data-density]`-anchored. `ThemeProvider` and `ThemeScope` have no `density` prop.
-- **Out of this item**: nested `data-density` in library CSS; a reserved `"system"` density value (there is no system density resolver); table row density (`h-10` / cell `p-2` / in-frame calc — [conventions](components/conventions.md)); OrderModule app migrations.
+- **Out of this item**: nested `data-density` in library CSS; a reserved `"system"` density value (there is no system density resolver); table row density (`h-10` / cell `p-2` / in-frame calc — [component authoring](../component-authoring.md)); OrderModule app migrations.
 - **Cost when triggered**: a host-placed pre-paint density stamp (not a copied IIFE); persistence and storage-failure behaviour; cross-tab sync; scroll/form/overlay preservation on toggle; docs picker only if product wants an override preview. Revisit `ThemeProvider` only if diagnosis/runtime echo is actually required — do not add a prop solely to repeat a server-known primitive.
 
 ## 11 Chart (Wave 9)
 
-- **What**: ship `@elmeragroup/ui/chart` — recharts composition wrappers (`Chart.Container` / tooltip / legend / style) per [chart](components/chart.md). `recharts` becomes an optional peer; the entry is removed from `DEFERRED_ENTRIES` and joins the exports map, barrel, packed-name assertions, and size budgets.
+- **What**: ship `@elmeragroup/ui/chart` — recharts composition wrappers (`Chart.Container` / tooltip / legend / style). `recharts` becomes an optional peer; the entry is removed from `DEFERRED_ENTRIES` and joins the exports map, barrel, packed-name assertions, and size budgets.
 - **Why deferred**: ruling 2026-09-02 — Chart  moved to Wave 9 and does not gate the v1 publish. No consumer surface requires it for v1.
 - **Trigger**: a consuming product committing to a charted surface, with `recharts` accepted as an optional peer.
-- **Already prepared**: the component spec, `--chart-1..8` tokens, and the exports-codegen deferred-entry seam (`DEFERRED_ENTRIES` in `packages/ui/scripts/entries.ts`). No docs page or nav entry until the component exists.
-- **Completion criteria**: `chart.ts` source; `recharts` in published optional-peer ranges; size-limit row excluding recharts; docs page + §10 demos; `DEFERRED_ENTRIES` empty or without `chart`.
+- **Already prepared**: `--chart-1..8` tokens, and the exports-codegen deferred-entry seam (`DEFERRED_ENTRIES` in `packages/ui/scripts/entries.ts`). No docs page or nav entry until the component exists.
+- **Completion criteria**: `chart.ts` source; `recharts` in published optional-peer ranges; size-limit row excluding recharts; docs page and reviewed demos; `DEFERRED_ENTRIES` empty or without `chart`.
 
 ## 12 Effect 4 RC → stable
 

@@ -27,7 +27,7 @@
           "type": "\"default\" | \"sm\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "Optical track size, emitted as `data-size`. Pixel-fixed at both density stamps — not a control-box density rung (switch.md §4).",
+          "description": "Optical track size, emitted as `data-size`. Pixel-fixed at both density stamps — not a control-box density rung.",
           "required": false
         },
         {

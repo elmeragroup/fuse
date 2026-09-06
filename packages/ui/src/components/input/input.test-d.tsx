@@ -21,7 +21,7 @@ test("InputProps is the native input surface, with no recipe axis and no render 
   // `size` stays the native numeric attribute and rejects a rung name.
   // @ts-expect-error native input.size is a number, not a control-rung name
   const _noSizeAxis = <Input size="sm" />;
-  // @ts-expect-error the box is not variant-axed (input.md §4)
+  // @ts-expect-error the box is not variant-axed
   const _noVariant = <Input variant="ghost" />;
   // @ts-expect-error Input takes the native element only — no useRender polymorphism
   const _noRender = <Input render={<textarea />} />;

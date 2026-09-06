@@ -20,26 +20,11 @@ import { stateFocusRingClass, stateFocusRingVisibleClass } from "../../styles/ut
 import { composeTailwindRenderProps } from "./utils";
 
 /**
- * The interim tier's field chrome (date-picker.md §2). All of it is package-private:
- * the public field family is the base-ui `@elmeragroup/ui/field` entry, and none of
- * these names appear in `package.json#exports`.
- *
- * `fieldGroupVariants` is a single-height field box: conventions.md ruling 2 pins the
- * `md` rung (`h-(--control-h-md)`) without growing a `size` axis, so a comfortable
- * DateField box matches a comfortable Button. date-picker.md §8.10 records the swap
- * from the reference's literal `h-9`; §8.9 records `bg-card` replacing `bg-background`.
- * The focus ring is the resolved `state` pair from `styles/utils`
- * (`stateFocusRingClass` plus `stateFocusRingVisibleClass` on the `isFocusVisible` arm),
- * never a local outline.
- *
- * The *chrome* — elevation, radius, border, fill, transition — is not spelled here: it
- * is `fieldBoxChromeClass`, the same constant the base-ui `fieldBox` composes, so a
- * DateField or SearchField box matches an Input box in the same form (spec 08 user
- * story 6; date-field.md §8.9, 2026-09-03). That amendment moved this tier off its own
- * `rounded-lg` and shadowless surface onto Input's `rounded-md shadow-xs`. What stays
- * local is what genuinely differs: the RAC `Group` is not focusable, so the focus
- * adapter is `state` rather than `self`, and disabled/invalid arrive as render props
- * rather than as `:disabled` / `aria-invalid` selectors.
+ * Package-private field chrome for the interim React Aria tier. FieldGroup pins the md
+ * control height without adding a size axis. Its shared `fieldBoxChromeClass` matches
+ * Input's border, fill, radius, and shadow in mixed forms. The RAC Group is not focusable,
+ * so it uses the shared state focus constants and receives disabled/invalid state through
+ * render props. Descendant inputs borrow this surface instead of painting another fill.
  */
 export const fieldGroupVariants = tv({
   base: cn(
@@ -126,12 +111,12 @@ export function Input({ className, ...props }: InputProps): ReactElement {
       data-slot="field-input"
       className={composeTailwindRenderProps(
         className,
-        // The FieldGroup owns the surface (bg-card, §8.9), so the inner control never
+        // The FieldGroup owns the surface (bg-card), so the inner control never
         // paints a second one — that is what keeps the read-only `bg-muted` fill honest.
         cn(
           "min-w-0 flex-1 bg-transparent",
           controlInsetMdClass,
-          // oxlint-disable-next-line elmera/no-local-focus-ring -- conventions.md: within-adapter control outline
+          // oxlint-disable-next-line elmera/no-local-focus-ring -- within-adapter control outline
           "text-foreground outline-none placeholder:text-muted-foreground disabled:text-muted-foreground"
         )
       )}

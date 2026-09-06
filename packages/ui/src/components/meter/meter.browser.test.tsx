@@ -27,7 +27,7 @@ function renderMeter(node: ReactNode, locale: (typeof SUPPORTED_LOCALES)[number]
   return renderThemed(withLocale(locale, node));
 }
 
-/** spec §9 slot audit: the five `data-slot` parts and the `meter-bar-fill` class matrix. */
+/** DOM audit: the five `data-slot` parts and the `meter-bar-fill` class matrix. */
 function slot(name: string, root?: HTMLElement): HTMLElement {
   const element = (root ?? document).querySelector(`[data-slot="${name}"]`);
   if (!(element instanceof HTMLElement)) {
@@ -66,7 +66,7 @@ describe("Meter", () => {
     expect(slot("meter-value", root)).toBeTruthy();
   });
 
-  it("spot-checks each §4 column of bar-fill classes on the live fill", () => {
+  it("spot-checks each tone column of bar-fill classes on the live fill", () => {
     const cases: Array<{
       mode: MeterMode;
       value: number;
@@ -111,7 +111,7 @@ describe("Meter", () => {
     expect(page.getByLabelText("Success").query()).toBeNull();
   });
 
-  it("treats exactly 80% as LOW for both the fill and the icon (meter.md §3/§4 ruling)", () => {
+  it("treats exactly 80% as LOW for both the fill and the icon", () => {
     const { unmount: unmountBoundary } = renderMeter(<Meter label="Boundary" value={80} />);
     expect(slot("meter-bar-fill").className.split(/\s+/)).toContain("bg-success");
     expect(page.getByLabelText("Warning").query()).toBeNull();

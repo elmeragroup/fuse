@@ -23,7 +23,7 @@ function everyEmittedClass(): string {
 }
 
 describe("rangeCalendarVariants", () => {
-  it("takes no card-surface chrome on the root (§8.5 — standalone renders borderless)", () => {
+  it("takes no card-surface chrome on the root (standalone renders borderless)", () => {
     const emitted = everyEmittedClass();
     expect(emitted).not.toContain("bg-card");
     expect(emitted).not.toContain("border-border");
@@ -31,7 +31,7 @@ describe("rangeCalendarVariants", () => {
     expect(emitted).not.toContain("rounded-md");
   });
 
-  it("emits no size axis, no control rung, and no raw palette (§8.5)", () => {
+  it("emits no size axis, no control rung, and no raw palette", () => {
     // The day square is decorative, so nothing reads a `--control-*` variable.
     expect(everyEmittedClass()).not.toContain("--control-");
     expect(everyEmittedClass()).not.toMatch(RAW_PALETTE_RE);
@@ -41,11 +41,11 @@ describe("rangeCalendarVariants", () => {
     expect(rangeCalendarVariants.variantKeys).not.toContain("size");
   });
 
-  it("zeroes the day-column gutter so the range band runs unbroken (§2)", () => {
+  it("zeroes the day-column gutter so the range band runs unbroken", () => {
     expect(rangeCalendarVariants().body()).toContain("[&_td]:px-0");
   });
 
-  it("paints the range band, its caps and the row-edge rounding on the outer band (§2/§5)", () => {
+  it("paints the range band, its caps and the row-edge rounding on the outer band", () => {
     const outerCell = rangeCalendarVariants().outerCell();
     expect(outerCell).toContain("group");
     expect(outerCell).toContain("size-9");
@@ -58,13 +58,13 @@ describe("rangeCalendarVariants", () => {
     expect(outerCell).toContain("outside-month:text-muted-foreground");
   });
 
-  it("keeps the forced-colors fallbacks the reference had (§5)", () => {
+  it("keeps the forced-colors fallbacks the reference had", () => {
     const outerCell = rangeCalendarVariants().outerCell();
     expect(outerCell).toContain("forced-colors:selected:bg-[Highlight]");
     expect(outerCell).toContain("forced-colors:invalid:selected:bg-[Mark]");
   });
 
-  it("gives an un-selected pill the muted/accent interaction family (§5)", () => {
+  it("gives an un-selected pill the muted/accent interaction family", () => {
     const cell = rangeCalendarVariants({ selectionState: "none" }).cell();
     expect(cell).toContain("rounded-full");
     expect(cell).toContain("text-foreground");
@@ -73,7 +73,7 @@ describe("rangeCalendarVariants", () => {
     expect(cell).not.toContain("bg-primary");
   });
 
-  it("steps the middle band's pressed fill one stop above its hover fill (§5)", () => {
+  it("steps the middle band's pressed fill one stop above its hover fill", () => {
     const cell = rangeCalendarVariants({ selectionState: "middle" }).cell();
     expect(cell).toContain("group-hover:bg-primary/30");
     expect(cell).toContain("group-pressed:bg-primary/40");
@@ -81,14 +81,14 @@ describe("rangeCalendarVariants", () => {
     expect(cell).toContain("group-invalid:group-pressed:bg-error/30");
   });
 
-  it("fills the end caps with primary, and with error while invalid (§5)", () => {
+  it("fills the end caps with primary, and with error while invalid", () => {
     const cell = rangeCalendarVariants({ selectionState: "cap" }).cell();
     expect(cell).toContain("bg-primary");
     expect(cell).toContain("text-primary-foreground");
     expect(cell).toContain("group-invalid:bg-error");
   });
 
-  it("greys a disabled pill with the muted-foreground token (§5)", () => {
+  it("greys a disabled pill with the muted-foreground token", () => {
     expect(rangeCalendarVariants({ isDisabled: true }).cell()).toContain("text-muted-foreground");
     expect(rangeCalendarVariants({ isDisabled: false }).cell()).not.toContain("text-muted-foreground");
   });
@@ -100,7 +100,7 @@ describe("rangeCalendarVariants", () => {
     expect(rangeCalendarVariants({ isFocusVisible: false }).cell()).toContain("outline-none");
   });
 
-  it("marks the error copy with the error token and nothing else (§5)", () => {
+  it("marks the error copy with the error token and nothing else", () => {
     expect(rangeCalendarVariants().error()).toContain("text-error");
   });
 });

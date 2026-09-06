@@ -4,9 +4,9 @@ import { useRef } from "react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 // Subpath import (`@base-ui/react/combobox`) type-checks but crashes at runtime with a
-// null React context. Keep the package-root import until upstream fixes it
-// (phone-number-field.md §8.1). Root, Trigger, and the popup's search Input are the raw
-// primitives; the popup surface itself is the library Combobox (§8.15).
+// null React context. Keep the package-root import until upstream fixes it.
+// Root, Trigger, and the popup's search Input are the raw
+// primitives; the popup surface itself is the library Combobox.
 import { Combobox as ComboboxPrimitive } from "@base-ui/react";
 import type { CountryCode, MetadataJson } from "libphonenumber-js/core";
 
@@ -142,7 +142,7 @@ function definedProps<T extends object>(props: T): { [K in keyof T]?: Exclude<T[
 /**
  * Labeled phone composite over Field + InputGroup. The country popup is the library
  * `Combobox.Content/List/Item/Empty`; Root, the flag Trigger, and the popup's search
- * Input stay raw `@base-ui/react` primitives (phone-number-field.md §2/§7/§8.15).
+ * Input stay raw `@base-ui/react` primitives.
  * Client — it owns input and country state, effects, callbacks, focus restoration, and
  * `Intl.DisplayNames`.
  */
@@ -200,7 +200,7 @@ export function PhoneNumberField({
     "aria-describedby": ariaDescribedby,
   });
 
-  // Every native edit path honors both flags together (phone-number-field.md §8.20).
+  // Every native edit path honors both flags together.
   const isEditable = !isDisabled && !isReadOnly;
 
   return (
@@ -240,7 +240,6 @@ export function PhoneNumberField({
             // Detach the country Combobox from the host form so base-ui's own hidden
             // country input never reaches FormData beside `${name}` and
             // `${name}-display-value`. The id names no rendered form on purpose
-            // (phone-number-field.md §8.17).
             form="elmera-ui-phone-country-unbound"
             locale={locale}>
             <InputGroup.Addon className="text-foreground" align="inline-start">
@@ -282,7 +281,6 @@ export function PhoneNumberField({
                       autoComplete="one-time-code"
                       // An empty name keeps the search box out of autofill heuristics and
                       // out of any FormData: a nameless control is never submitted
-                      // (phone-number-field.md §8.17).
                       name=""
                     />
                   }

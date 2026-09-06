@@ -4,17 +4,17 @@ import { cn } from "./cn";
 import { stateFocusRingClass, stateFocusRingVisibleClass } from "./utils";
 
 /**
- * The day-cell recipe (calendar.md §4/§5). Flattened rather than a slot on
+ * The day-cell recipe. Flattened rather than a slot on
  * `calendarVariants` because it is the only part with variant axes of its own: RAC hands
  * `CalendarCell` its render props per date, and the component resolves this recipe once
  * per day while the surrounding slots resolve once per render.
  *
  * Package-private — no entry re-exports it, and the interim tier has no public recipe
  * surface. It lives here rather than beside the component because every RAC entry keeps
- * its recipe in `src/styles/` (range-calendar.md §8.2's locked ruling).
+ * its recipe in `src/styles/`.
  */
 export const cellVariants = tv({
-  // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- calendar.md §4/§5 decorative day-cell circle, not a control-box rung
+  // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- decorative day-cell circle, not a control-box rung
   base: cn(
     "text-sm flex size-9 cursor-default items-center justify-center rounded-full forced-color-adjust-none",
     stateFocusRingClass
@@ -38,10 +38,9 @@ export const cellVariants = tv({
 });
 
 /**
- * Calendar's slotted recipe (calendar.md §4). Package-private, same as `cellVariants`
+ * Calendar's slotted recipe. Package-private, same as `cellVariants`
  * above, and — unlike RangeCalendar's — it owns the card surface: standalone Calendar
  * renders as a bordered card, and the picker strips that border from the call site
- * (date-picker.md §4).
  *
  * Every slot here is invariant, so the component resolves them once per render; the
  * per-date axes all live on `cellVariants`.

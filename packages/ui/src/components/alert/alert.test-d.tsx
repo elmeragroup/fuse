@@ -22,7 +22,7 @@ test("the public namespace is four parts — never the flat ref names or a recip
   expectTypeOf(AlertModule).not.toHaveProperty("alertVariants");
 });
 
-test("parts take the spec surface: required icon variant, heading level, no variant on copy", () => {
+test("parts take the public API: required icon variant, heading level, no variant on copy", () => {
   expectTypeOf<Parameters<typeof Alert.Root>[0]["variant"]>().toEqualTypeOf<
     "default" | "destructive" | "warning" | "success" | undefined
   >();
@@ -48,9 +48,9 @@ test("parts take the spec surface: required icon variant, heading level, no vari
 
   // @ts-expect-error Icon requires the status variant
   const _iconNeedsVariant = <Alert.Icon />;
-  // @ts-expect-error Title has no variant axis (alert.md §8.3)
+  // @ts-expect-error Title has no variant axis
   const _titleVariant = <Alert.Title variant="warning">Title</Alert.Title>;
-  // @ts-expect-error Description has no variant axis (alert.md §8.3)
+  // @ts-expect-error Description has no variant axis
   const _descriptionVariant = <Alert.Description variant="warning">Body</Alert.Description>;
   // @ts-expect-error level is constrained to 1-6
   const _badLevel = <Alert.Title level={7}>Title</Alert.Title>;

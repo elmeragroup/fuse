@@ -223,7 +223,7 @@ describe("VerticalTable", () => {
       throw new Error("expected a loading row");
     }
     expect(loadingRow.textContent.trim()).toBe("");
-    // spec §9: isLoading cells contain the skeleton node (no role; locate by the mandated slot).
+    // DOM audit: isLoading cells contain the skeleton node (no role; locate by the mandated slot).
     expect(loadingRow.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(2);
     expect(page.getByRole("cell", { name: "Name" }).elements()).toHaveLength(0);
   });

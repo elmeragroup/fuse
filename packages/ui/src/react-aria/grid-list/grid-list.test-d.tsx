@@ -65,7 +65,7 @@ test("GridListItemProps forwards the RAC item surface", () => {
   expectTypeOf<GridListItemProps>().not.toHaveProperty("size");
 });
 
-test("the elements take the spec's props, forward a ref, and reject a size axis", () => {
+test("the elements take the public props, forward a ref, and reject a size axis", () => {
   const _static = (
     <GridList aria-label="Meters" selectionMode="multiple" selectionBehavior="toggle">
       <GridListItem id="oslo" textValue="Oslo">

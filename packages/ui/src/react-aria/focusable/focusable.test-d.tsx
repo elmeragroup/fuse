@@ -51,7 +51,7 @@ test("RAC-only names stay off the public surface", () => {
   type _NoProps = FocusableApi.FocusableProps;
 });
 
-test("the elements take the spec's props", () => {
+test("the elements take the public props", () => {
   const _focusable = (
     <Focusable isDisabled autoFocus excludeFromTabOrder onFocus={() => undefined}>
       <span>Offline</span>

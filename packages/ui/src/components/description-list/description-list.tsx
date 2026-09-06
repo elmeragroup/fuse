@@ -10,7 +10,7 @@ export type DescriptionListDetailsProps = ComponentProps<"dd">;
 export type { DescriptionListHeadingProps } from "./description-list-heading";
 
 /**
- * Semantic `<dl>/<dt>/<dd>` composite (description-list.md §2/§7). Server compound —
+ * Semantic `<dl>/<dt>/<dd>` composite. Server compound —
  * it owns no state, no handlers, and no browser APIs (performance.md §RSC
  * classification). `Heading` is a client `useRender` island so other outline levels
  * stay possible without flipping this module to a client boundary.

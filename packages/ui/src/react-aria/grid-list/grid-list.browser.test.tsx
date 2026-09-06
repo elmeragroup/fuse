@@ -238,7 +238,7 @@ describe("GridList", () => {
 
     // Default GridList Tab exits the collection (keyboardNavigationBehavior="arrow").
     // "tab" lets Tab from the row land on the slot="drag" handle so the shared
-    // helper can probe :focus-visible / mouse-absence (grid-list.md §9).
+    // helper can probe :focus-visible / mouse-absence.
     renderList(<DraggableMeters keyboardNavigationBehavior="tab" />);
     const handle = page.getByRole("button", { name: DRAG_COPY["en-US"], exact: true }).element();
     if (!(handle instanceof HTMLElement)) {
@@ -254,13 +254,13 @@ describe("GridList", () => {
 
     for (const density of ["dense", "comfortable"] as const) {
       stampDensity(density);
-      // The handle is the package-private RAC Button at `icon-sm` (grid-list.md §4).
+      // The handle is the package-private RAC Button at `icon-sm`.
       expect(px(getComputedStyle(handle).height)).toBe(CONTROL_SM[density].height);
       const row = getComputedStyle(rowNamed("Oslo"));
       rowPadding.add(`${row.paddingBlockStart}/${row.paddingInlineStart}`);
     }
 
-    // grid-list.md §4: row padding and gap are not a control-box rung, so they read no
+    // row padding and gap are not a control-box rung, so they read no
     // `--control-*` variable and stay identical across both stamps.
     expect(rowPadding.size).toBe(1);
   });

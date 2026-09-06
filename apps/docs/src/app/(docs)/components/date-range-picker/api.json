@@ -37,7 +37,7 @@
           "type": "((validation: ValidationResult) => ReactNode) | ReactNode",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Error copy, rendered as `FieldError` when the range is invalid — an end before its start, or an endpoint outside the allowed dates. Accepts a node or a validation render function (§8.8 widens the reference's string-only face).",
+          "description": "Error copy, rendered as `FieldError` when the range is invalid — an end before its start, or an endpoint outside the allowed dates. Accepts a node or a validation render function.",
           "required": false
         },
         {
@@ -55,7 +55,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "true",
-          "description": "Pads day and month segments with a leading zero in both rows. The reference omits this here while DatePicker and DateField default it on; §8.3 aligns it.",
+          "description": "Pads day and month segments with a leading zero in both rows, matching the default behavior of DatePicker and DateField.",
           "required": false
         }
       ]

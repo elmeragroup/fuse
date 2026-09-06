@@ -28,7 +28,7 @@ export type VerticalTableKeyProps = ComponentProps<"td"> & {
 };
 
 /**
- * Muted key column (table.md §2/§7). Client only because polymorphism is `useRender`;
+ * Muted key column. Client only because polymorphism is `useRender`;
  * the rest of the compound stays server.
  */
 export function VerticalTableKey({

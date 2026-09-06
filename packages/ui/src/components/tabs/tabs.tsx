@@ -10,9 +10,9 @@ import { selfFocusRingClass } from "../../styles/utils";
 import { tabsListVariants } from "./tabs-variants";
 
 /**
- * Client tabbed panel switcher over `@base-ui/react/tabs` (tabs.md §2/§7). Root
+ * Client tabbed panel switcher over `@base-ui/react/tabs`. Root
  * stamps `data-orientation` pre-hydration so the `data-horizontal:flex-col`
- * layout applies on first paint (tabs.md §8.4).
+ * layout applies on first paint.
  */
 function TabsRoot({
   className,
@@ -32,8 +32,8 @@ function TabsRoot({
 
 /**
  * Tab strip. `activateOnFocus` defaults to `true` (the pinned Base UI default is
- * `false`): arrow keys move focus and activate in one step per tabs.md §7, with
- * `activateOnFocus={false}` as the manual-activation opt-out (tabs.md §3/§8.8).
+ * `false`): arrow keys move focus and activate in one step, with
+ * `activateOnFocus={false}` as the manual-activation opt-out.
  */
 function TabsList({
   className,

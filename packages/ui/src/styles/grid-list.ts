@@ -4,13 +4,12 @@ import { cn } from "./cn";
 import { stateFocusRingClass, stateFocusRingVisibleClass } from "./utils";
 
 /**
- * GridList's recipe (grid-list.md §4). Package-private — no entry re-exports it, and
+ * GridList's recipe. Package-private — no entry re-exports it, and
  * the interim tier has no public recipe surface. It lives here rather than beside the
  * component because every RAC entry keeps its recipe in `src/styles/`
- * (range-calendar.md §8.2's locked ruling).
  *
  * The list root is invariant. Empty-state plugin variants from the reference are
- * rewritten as explicit `data-[empty]:` (grid-list.md §8.5).
+ * rewritten as explicit `data-[empty]:`.
  */
 export const gridListVariants = tv({
   slots: {
@@ -19,12 +18,12 @@ export const gridListVariants = tv({
 });
 
 /**
- * Module-private item recipe (grid-list.md §4). Composes
+ * Module-private item recipe. Composes
  * the resolved `state` focus-ring constants from `styles/utils` — RAC hands
  * `isFocusVisible` in as a render prop and this recipe turns it into a variant arm — so
  * `styles/utils` stays the only module that spells or resolves a focus class.
  *
- * Row padding and gap are not a control-box rung (conventions.md §Density ladder),
+ * Row padding and gap are not a control-box rung,
  * so they stay the reference's literals and read no `--control-*` variable.
  */
 export const itemStyles = tv({

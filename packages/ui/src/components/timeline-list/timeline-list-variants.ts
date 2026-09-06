@@ -1,9 +1,9 @@
 /**
- * Module-private slotted recipe (timeline-list.md §4). Not exported from the
- * public entry — there is no proven recipe-borrowing use (§8.3).
+ * Module-private slotted recipe. Not exported from the
+ * public entry — there is no proven recipe-borrowing use.
  *
  * Geometry follows the references. Tokens replace the ref's raw palette:
- * connector `bg-border`, dot `bg-foreground` (§8.4). The final item drops
+ * connector `bg-border`, dot `bg-foreground`. The final item drops
  * bottom margin; the connector is `Item::before` on every non-last item.
  */
 import { tv } from "tailwind-variants";

@@ -1,7 +1,7 @@
 import { tv } from "tailwind-variants";
 
 /**
- * Module-private per input-group.md §4 — the group's addon rail. `align` places
+ * Module-private recipe for the group's addon rail. `align` places
  * the rail inline (leading/trailing) or as a full-width block row; the Root
  * switches to a column and re-pads the input from the emitted `data-align`.
  * The kbd radius keeps the reference's `calc(var(--radius)-5px)` arithmetic.
@@ -24,10 +24,10 @@ export const inputGroupAddonVariants = tv({
 });
 
 /**
- * Module-private per input-group.md §4 — the compact addon-button axis. These
+ * Module-private recipe for the compact addon-button axis. These
  * four values are addon chrome inside the group, NOT the four-rung control box
  * (`xs`/`sm`/`md`/`lg`), so they are an explicit shell-local exemption from the
- * density ladder (input-group.md §4 "Exemption", §8.8) and must never grow a
+ * density ladder and must never grow a
  * fifth `--control-*` rung. `sm` stays empty so Button's own `sm` metrics pass
  * through. The values are applied as extra classes over Button's default size.
  */
@@ -35,12 +35,12 @@ export const inputGroupButtonVariants = tv({
   base: "text-sm flex items-center gap-2 shadow-none",
   variants: {
     size: {
-      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- input-group.md §4 shell-local exemption: compact addon chrome, not a control rung
+      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- compact addon chrome, not a control rung
       xs: "h-6 gap-1 rounded-[calc(var(--radius)-5px)] px-1.5 [&>svg:not([class*='size-'])]:size-3.5",
       sm: "",
-      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- input-group.md §4 shell-local exemption: compact addon chrome, not a control rung
+      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- compact addon chrome, not a control rung
       "icon-xs": "size-6 rounded-[calc(var(--radius)-5px)] p-0 has-[>svg]:p-0",
-      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- input-group.md §4 shell-local exemption: compact addon chrome, not a control rung
+      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- compact addon chrome, not a control rung
       "icon-sm": "size-8 p-0 has-[>svg]:p-0",
     },
   },

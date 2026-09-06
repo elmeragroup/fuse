@@ -5,7 +5,7 @@ import { cn } from "../../styles/cn";
 export type SkeletonProps = ComponentProps<"div">;
 
 /**
- * Shape-only loading placeholder (skeleton.md §2/§7). Server component — it owns no
+ * Shape-only loading placeholder. Server component — it owns no
  * state, no handlers, and no browser APIs (performance.md §RSC classification).
  */
 export function Skeleton({ className, ...props }: SkeletonProps): ReactElement {

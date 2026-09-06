@@ -65,7 +65,7 @@ test("useIsMobile, the private recipe and the flat ref names stay off the public
   expectTypeOf(Sidebar).not.toHaveProperty("useIsMobile");
 });
 
-test("the context surface and part props match spec §2/§3", () => {
+test("the context surface and part props match the public API", () => {
   expectTypeOf<SidebarContextValue["state"]>().toEqualTypeOf<"expanded" | "collapsed">();
   expectTypeOf<SidebarContextValue["setOpen"]>().toEqualTypeOf<
     (open: boolean | ((open: boolean) => boolean)) => void

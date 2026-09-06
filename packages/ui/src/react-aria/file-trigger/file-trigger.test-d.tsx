@@ -49,7 +49,7 @@ test("FileTriggerProps has the composite face plus RAC passthroughs and buttonVa
   expectTypeOf<FileTriggerProps>().toHaveProperty("ref");
 });
 
-test("the element takes the spec's props and forwards a ref to the hidden input", () => {
+test("the element takes the public props and forwards a ref to the hidden input", () => {
   const _open = (
     <FileTrigger
       acceptedFileTypes={["image/png", ".pdf"]}

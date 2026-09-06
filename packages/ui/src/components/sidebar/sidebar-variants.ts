@@ -3,15 +3,15 @@ import { tv } from "tailwind-variants";
 import { selfFocusRingClass } from "../../styles/utils";
 
 /**
- * `Sidebar.MenuButton` recipe (sidebar.md §4) — module-private, never a facade export.
+ * `Sidebar.MenuButton` recipe — module-private, never a facade export.
  * The ref's template strings verbatim (`cva` → `tv`), with two locked rewrites: the
- * `group-has-data-[sidebar=menu-action]` selector keys on `data-slot` (§8.1), and the
- * `ring-sidebar-ring` focus literals are the canonical `focusRing` (§8.13).
+ * `group-has-data-[sidebar=menu-action]` selector keys on `data-slot`, and the
+ * `ring-sidebar-ring` focus literals are the canonical `focusRing`.
  *
  * The `h-8` / `h-7` / `h-12` ladder is shell-local navigation-rail geometry, exempt from
- * the `--control-*` density rungs (sidebar.md §4 "Density exemption", §8.14). Collapse
+ * the `--control-*` density rungs. Collapse
  * motion is color/shadow only; layout keys are not in the shell-width exception
- * (performance.md §6, sidebar.md §8.19).
+ * (performance.md §6).
  */
 export const sidebarMenuButtonVariants = tv({
   base: [
@@ -25,11 +25,11 @@ export const sidebarMenuButtonVariants = tv({
         "bg-background shadow-[0_0_0_1px_var(--sidebar-border)] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:shadow-[0_0_0_1px_var(--sidebar-accent)]",
     },
     size: {
-      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- sidebar.md §4 shell-local exemption: navigation-rail row height, not a control rung
+      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- navigation-rail row height, not a control rung
       default: "text-sm h-8",
-      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- sidebar.md §4 shell-local exemption: navigation-rail row height, not a control rung
+      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- navigation-rail row height, not a control rung
       sm: "text-xs h-7",
-      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- sidebar.md §4 shell-local exemption: navigation-rail row height, not a control rung
+      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- navigation-rail row height, not a control rung
       lg: "text-sm h-12 group-data-[collapsible=icon]:p-0!",
     },
   },
@@ -37,7 +37,7 @@ export const sidebarMenuButtonVariants = tv({
 });
 
 /**
- * `Sidebar.MenuSubButton` size axis (sidebar.md §4) — module-private. `md` pins the md
+ * `Sidebar.MenuSubButton` size axis — module-private. `md` pins the md
  * control rung and the control-type pair; `sm` pins the sm rung with size-owned `text-sm`.
  */
 export const sidebarMenuSubButtonVariants = tv({

@@ -9,7 +9,7 @@ import { loaderVariants } from "./loader-variants";
 export type LoaderProps = HTMLAttributes<HTMLDivElement> & VariantProps<typeof loaderVariants>;
 
 /**
- * Server spinner (loader.md §2/§7). A polite `role="status"` wrapper around a
+ * Server spinner. A polite `role="status"` wrapper around a
  * decorative spinning `SpinnerGap`. Consumers pass a translated `aria-label`;
  * there is no baked English name. Owns no state, handlers, or browser APIs
  * (performance.md §RSC classification).

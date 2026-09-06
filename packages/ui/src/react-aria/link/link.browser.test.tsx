@@ -28,7 +28,7 @@ function buttonNamed(name: string): HTMLElement {
 
 /**
  * The routed mount: `UiProviders` installs the RAC `RouterProvider` a Link's client-side
- * navigation flows through (link.md §2). It also keeps a same-origin `href` from actually
+ * navigation flows through. It also keeps a same-origin `href` from actually
  * navigating the test page, because RAC calls `preventDefault` before handing the URL to
  * `navigate`.
  */

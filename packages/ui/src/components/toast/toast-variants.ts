@@ -1,5 +1,5 @@
 /**
- * Module-private slot recipe (toast.md §4). Not exported from the public entry —
+ * Module-private slot recipe. Not exported from the public entry —
  * there is no proven recipe-borrowing use. `status` is derived from the toast's
  * `type`, not a consumer prop, and is not a density rung.
  */
@@ -20,7 +20,7 @@ export const toastVariants = tv({
     status: {
       // Toast takes the shared popup *fill* only, never the popup edge: it paints its
       // own hairline ring rather than `overlayPopupEdgeClass`'s elevation-plus-ring
-      // pair, which is why the two constants are separate (toast.md §8.10).
+      // pair, which is why the two constants are separate.
       neutral: {
         root: `${overlayPopupFillClass} ring-1 ring-border`,
       },

@@ -26,7 +26,7 @@ import { composeTailwindRenderProps } from "../internal/utils";
 import { gridListStrings } from "./intl";
 
 /**
- * Module-private RAC selection checkbox (grid-list.md §2). RAC GridList requires
+ * Module-private RAC selection checkbox. RAC GridList requires
  * `<Checkbox slot="selection">`; this wrapper is not exported.
  */
 function Checkbox({ children, className, isDisabled, ...other }: CheckboxProps): ReactElement {
@@ -53,7 +53,7 @@ function Checkbox({ children, className, isDisabled, ...other }: CheckboxProps):
 }
 
 /**
- * Interim grid list over RAC `GridList` (grid-list.md §2/§3). Client — the
+ * Interim grid list over RAC `GridList`. Client — the
  * quarantined react-aria cluster owns collection state, selection, and keyboard.
  */
 export type GridListProps<T extends object> = AriaGridListProps<T>;
@@ -74,7 +74,7 @@ export function GridList<T extends object>({
 
 /**
  * A row in `GridList`. `textValue` is derived when `children` is a string so
- * typeahead has a value without an explicit prop (grid-list.md §3).
+ * typeahead has a value without an explicit prop.
  */
 export type GridListItemProps<T extends object = object> = AriaGridListItemProps<T>;
 
@@ -83,7 +83,7 @@ export function GridListItem<T extends object = object>({
   className,
   ...props
 }: GridListItemProps<T> & RefAttributes<HTMLDivElement>): ReactElement {
-  // Spec §3: only a string `children` auto-derives `textValue` for typeahead.
+  // Only a string `children` auto-derives `textValue` for typeahead.
   const textValue = isTextNode(children) ? children : undefined;
   const strings = useLocalizedStrings(gridListStrings);
 

@@ -16,7 +16,7 @@ export type VerticalTableHeaderProps = ComponentProps<"h2"> & {
 };
 
 /**
- * Plain semantic `<h2>` with the ref's level-2 type classes (table.md §8.2).
+ * Plain semantic `<h2>` with the ref's level-2 type classes.
  * Client only because polymorphism is `useRender`; the rest of the compound stays server.
  */
 export function VerticalTableHeader({ className, render, ...props }: VerticalTableHeaderProps): ReactElement {

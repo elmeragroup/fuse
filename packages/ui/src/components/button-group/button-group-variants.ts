@@ -1,9 +1,8 @@
 /**
- * PUBLIC recipe (button-group.md §4). Other package modules import this file
+ * PUBLIC recipe. Other package modules import this file
  * relatively; consumers borrow it from `@elmeragroup/ui/button-group`.
  *
- * `orientation` is a layout axis, not a density control-box rung (conventions.md
- * §Density metrics): it does not read `--control-*`. Nested groups pick up `gap-2`
+ * `orientation` is a layout axis, not a density control-box rung: it does not read `--control-*`. Nested groups pick up `gap-2`
  * through `has-[>[data-slot=button-group]]`; `[data-slot]` children join the
  * silhouette so inner radii and shared borders collapse.
  */

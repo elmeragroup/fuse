@@ -417,7 +417,6 @@ describe("PhoneNumberField", () => {
     // `max-h-[min(300px,calc(var(--available-height)-2.75rem))]`, and CSS `calc` requires
     // whitespace around `-`: the whole `min()` was invalid, the declaration was dropped, the
     // list never scrolled, and the popup grew to the height of every country row
-    // (phone-number-field.md §8.15).
     expect(list.scrollHeight).toBeGreaterThan(list.clientHeight);
     expect(list.clientHeight).toBeLessThan(window.innerHeight);
   });
@@ -455,7 +454,7 @@ describe("PhoneNumberField", () => {
 /**
  * The controlled configurations, which had no coverage before this ticket: the emitted
  * value is fed straight back in as `value`, which is what makes the sync effect run on the
- * hook's own output (phone-number-field.md §8.16).
+ * hook's own output.
  */
 function ControlledField(props: Omit<PhoneNumberFieldProps, "value" | "onChange">): ReactElement {
   const [value, setValue] = useState("");
@@ -474,7 +473,7 @@ describe("PhoneNumberField controlled value", () => {
     renderField(<ControlledField label="Mobile" name="phone" international />);
     await userEvent.fill(page.getByRole("textbox", { name: "Mobile", exact: true }), "41234567");
     await expect.poll(() => hiddenNamed("phone").value).toBe("+4741234567");
-    // §8.16: the display follows the entry in controlled and uncontrolled use alike. Before
+    // The display follows the entry in controlled and uncontrolled use alike. Before
     // this ticket a controlled field rewrote itself to "+4741234567" once the number became
     // valid, and an uncontrolled one never did.
     expect(textboxNamed("Mobile")).toHaveProperty("value", "41234567");

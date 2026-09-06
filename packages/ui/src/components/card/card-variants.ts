@@ -1,9 +1,9 @@
 import { tv } from "tailwind-variants";
 
 /**
- * PUBLIC slot recipe (card.md §4). `text-field`'s `card` variant and
+ * PUBLIC slot recipe. `text-field`'s `card` variant and
  * `CheckboxCard` compose it, so it ships from `@elmeragroup/ui/card`.
- * One axis only — the external ref's surface/padding axes are decomposed away (§8.5).
+ * One axis only — the external ref's surface/padding axes are decomposed away.
  */
 export const cardVariants = tv({
   slots: {
@@ -37,12 +37,12 @@ export const cardVariants = tv({
 });
 
 /**
- * Module-private type-scale recipes for `Card.Title` / `Card.Description`
- * (card.md §4). Not exported from `@elmeragroup/ui/card` — there is no borrow
+ * Module-private type-scale recipes for `Card.Title` / `Card.Description`.
+ * Not exported from `@elmeragroup/ui/card` — there is no borrow
  * pattern. Kept off `cardVariants` because `direction="horizontal"` already
  * sets `cardTitle: "text-xl"`; a second `size` axis on that slot would fight
- * through twMerge. `size` is a type-scale axis, not a density control-box rung
- * (conventions.md §Density metrics): it does not read `--control-*`.
+ * through twMerge. `size` is a type-scale axis, not a density control-box rung:
+ * it does not read `--control-*`.
  */
 export const cardTitleVariants = tv({
   variants: {

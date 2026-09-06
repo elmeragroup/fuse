@@ -68,8 +68,8 @@ Package-scoped scripts worth knowing:
 ## Contribution flow
 
 1. **Scaffold** — `pnpm gen` for a new component; it writes the source, the entry facade, test files and demo stubs.
-2. **Implement** against the component's chapter in [docs/spec/components/](docs/spec/components/), starting from [conventions.md](docs/spec/components/conventions.md). Every deliberate difference from a reference is a §8 Divergence entry in that chapter, dated, landing in the same change as the code.
-3. **Tests and demos** ship in that same change (§9 tests, §10 demos).
+2. **Implement** using [component authoring](docs/component-authoring.md) and the owning library-wide contract in [docs/spec/](docs/spec/README.md). Update public JSDoc and authored docs with the code; record architectural decisions in an ADR.
+3. **Tests and demos** ship in that same change. Maintain the reviewed demo coverage in `apps/docs/test/fixtures/component-demo-requirements.json` and regenerate API artifacts.
 4. **Changeset** — `pnpm changeset` for anything user-facing. Internal-only PRs (CI, docs site, tests) carry the `no-changeset` GitHub label instead. Never edit an existing changeset to move a gate; edit one only to correct what it says shipped.
 5. **Gate** — `pnpm ci:checks` green locally before review. The merge workflow runs the same stages plus the label-aware changeset check.
 

@@ -43,7 +43,7 @@ function renderPicker(node: ReactNode) {
 
 /**
  * The trigger. RAC's `useDateRangePicker` owns the name — "Calendar" plus the field
- * label — so the composite never invents copy for it (date-range-picker.md §7/§8.6).
+ * label — so the composite never invents copy for it.
  */
 function trigger(): HTMLElement {
   const element = page.getByRole("button", { name: /^calendar/i }).element();
@@ -64,7 +64,7 @@ function groupNamed(name: string): HTMLElement {
 /**
  * One segment of one row. RAC prefixes every segment's own name with the row it belongs
  * to — "month, Start Date" / "month, End Date" — which is how the two rows stay tellable
- * apart in the accessibility tree (§7). The rows' own wrappers are deliberately
+ * apart in the accessibility tree. The rows' own wrappers are deliberately
  * `role="presentation"`: RAC drops them from the tree because the picker's single group
  * and these segment names already carry everything, and announcing them again would
  * double up.
@@ -86,10 +86,10 @@ function segmentRows(label: string): HTMLElement[] {
   );
 }
 
-/** The `aria-hidden` en-dash between the rows (§2). */
+/** The `aria-hidden` en-dash between the rows. */
 function separator(label: string): HTMLElement {
   // Scoped to a direct child: the segment rows carry `aria-hidden` literals of their
-  // own (the "/" between month and day), and those belong to DateField, not to §2.
+  // own (the "/" between month and day), and those belong to DateField, not the range separator.
   const element = groupNamed(label).querySelector(':scope > [aria-hidden="true"]');
   if (!(element instanceof HTMLElement)) {
     throw new Error("expected the en-dash separator");
@@ -176,7 +176,7 @@ describe("DateRangePicker", () => {
     }
     expect(describedTextsFor(group)).toContain("When we may deliver.");
 
-    // Both rows live in the one field box, split by the decorative en dash (§2).
+    // Both rows live in the one field box, split by the decorative en dash.
     const rows = segmentRows("Delivery window");
     expect(rows).toHaveLength(2);
     expect(rows[0]?.contains(segment("month, Start Date"))).toBe(true);
@@ -187,7 +187,7 @@ describe("DateRangePicker", () => {
     expect(trigger_).toHaveAttribute("aria-expanded", "false");
     expect(trigger_).toHaveAttribute("aria-haspopup", "dialog");
     expect(page.getByRole("dialog").query()).toBeNull();
-    // The glyph is decoration; the button's own name carries the meaning (§2).
+    // The glyph is decoration; the button's own name carries the meaning.
     expect(trigger_.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
   });
 
@@ -253,7 +253,7 @@ describe("DateRangePicker", () => {
     expect(trigger()).toHaveAttribute("aria-expanded", "true");
     await expect.element(page.getByRole("grid")).toBeVisible();
     expect(dialog.contains(calendarGrid())).toBe(true);
-    // The dialog keeps RAC's own name; an unnamed overlay would be an AT dead end (§7).
+    // The dialog keeps RAC's own name; an unnamed overlay would be an AT dead end.
     await expect.element(page.getByRole("dialog", { name: /calendar/i })).toBeVisible();
     expect(calendarGrid().getAttribute("aria-label")).toMatch(/July\s+2026/i);
     expect(cellNumbered(14)).toHaveAttribute("aria-selected", "true");
@@ -297,7 +297,7 @@ describe("DateRangePicker", () => {
     await openPicker();
 
     // Anchor a new range, then abandon it: the same Escape cancels the anchor and
-    // dismisses the popover, so the committed range is untouched (§7).
+    // dismisses the popover, so the committed range is untouched.
     await userEvent.click(dayNumbered(20));
     await userEvent.keyboard("{Escape}");
     await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
@@ -378,7 +378,7 @@ describe("DateRangePicker", () => {
 
     // The FieldGroup's own `isReadOnly` axis paints the fill, exactly once. The glyph is
     // deliberately untinted: `bg-muted` on the `<svg>` never belonged there and went with
-    // the picker recipe's duplicate arm (§8.13, 2026-09-03).
+    // the picker recipe's duplicate arm.
     expect(getComputedStyle(group).backgroundColor).toBe(cssVarColor(group, "--muted"));
     expect(group.getAttribute("data-readonly")).toBe("true");
     expect(getComputedStyle(glyph).backgroundColor).not.toBe(cssVarColor(group, "--muted"));
@@ -486,7 +486,7 @@ describe("DateRangePicker overlay containment", () => {
     expect(onOpenChange).not.toHaveBeenCalled();
 
     // The anchoring click is the seam's real test: it lands in a portalled popover and
-    // must not read as an interaction outside the host dialog (§6).
+    // must not read as an interaction outside the host dialog.
     await userEvent.click(dayNumbered(3));
     await expect.element(page.getByRole("dialog", { name: /calendar/i })).toBeVisible();
     expect(onOpenChange).not.toHaveBeenCalled();
@@ -569,7 +569,7 @@ describe("DateRangePicker composition surface", () => {
     expect(px(getComputedStyle(root).rowGap)).toBe(16);
   });
 
-  it("floors the field box width and lets only the end row absorb the slack (§2/§4)", async () => {
+  it("floors the field box width and lets only the end row absorb the slack", async () => {
     renderPicker(<DateRangePicker label="Delivery window" defaultValue={julyWeek} />);
     const group = groupNamed("Delivery window");
     await expect.element(page.getByRole("spinbutton", { name: "month, Start Date" })).toBeVisible();
@@ -595,11 +595,11 @@ describe("DateRangePicker composition surface", () => {
     expect(page.getByRole("button", { name: /close/i }).query()).toBeNull();
     expect(root.closest('[role="dialog"]')).toBe(dialog);
     // `closeButton={false}`: the popover is dismissed by Escape or an outside click, so
-    // the dialog chrome renders no dismiss affordance of its own (§8.2).
+    // the dialog chrome renders no dismiss affordance of its own.
     expect(page.getByRole("button", { name: /close/i }).query()).toBeNull();
     expect(getComputedStyle(dialog).paddingTop).toBe("0px");
     expect(getComputedStyle(dialog).paddingLeft).toBe("0px");
-    // RangeCalendar's root is bare by design, so the inset is the recipe's own (§4).
+    // RangeCalendar's root is bare by design, so the inset is the recipe's own.
     expect(getComputedStyle(root).paddingTop).toBe("8px");
     expect(getComputedStyle(root).borderTopWidth).toBe("0px");
   });

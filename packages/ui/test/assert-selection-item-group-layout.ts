@@ -3,7 +3,7 @@ import type { CSSProperties } from "react";
 import { expect } from "vitest";
 import { page } from "vitest/browser";
 
-/** Browser suites load styles.css only; shell radius reads `--radius` (badge.md precedent). */
+/** Browser suites load styles.css only; shell radius reads `--radius`. */
 // SAFETY: React's CSSProperties does not model custom properties; the value is a plain string.
 const radiusToken = { "--radius": "8px" } as CSSProperties;
 

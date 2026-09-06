@@ -12,7 +12,7 @@ import { overlayPopupMotionClass, overlayPositionerClass } from "../overlay/over
 import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps, OverlayPositionerProps } from "../overlay/overlay-props";
 
-/** Shared popup id so the trigger's `aria-describedby` points at the tooltip (tooltip.md §7). */
+/** Shared popup id so the trigger's `aria-describedby` points at the tooltip. */
 type TooltipDescription = {
   generatedId: string;
   mountedId: string | null;
@@ -131,7 +131,7 @@ function TooltipContent({
           id={tooltipId ?? undefined}
           role="tooltip"
           // Tooltip takes the shared motion set but neither the composed popup surface
-          // nor the timing rung: it inverts the fill and flies frameless (tooltip.md §8),
+          // nor the timing rung: it inverts the fill and flies frameless,
           // and `ring-0` could not subtract the surface's `ring-foreground/10` — width and
           // colour are separate tailwind-merge conflict groups. Untimed is deliberate.
           className={mergeClassName(

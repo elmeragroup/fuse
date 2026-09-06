@@ -11,7 +11,7 @@ import { page, userEvent } from "vitest/browser";
  * wait out RAC's asynchronous focus moves.
  */
 
-/** The RAC calendar root. RAC gives it `role="application"` (calendar.md §7). */
+/** The RAC calendar root. RAC gives it `role="application"`. */
 export function calendarRoot(): HTMLElement {
   const element = page.getByRole("application").element();
   if (!(element instanceof HTMLElement)) {

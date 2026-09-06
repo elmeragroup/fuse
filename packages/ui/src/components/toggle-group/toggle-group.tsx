@@ -15,8 +15,8 @@ type ToggleGroupContextValue = VariantProps<typeof toggleVariants> & {
   orientation?: "horizontal" | "vertical";
 };
 
-// All-undefined default: standalone items fall through to toggleVariants defaults
-// (toggle-group.md §8.2). Do not copy the ref's non-undefined createContext values.
+// All-undefined default: standalone items fall through to toggleVariants defaults.
+// Do not copy the ref's non-undefined createContext values.
 const ToggleGroupContext = createContext<ToggleGroupContextValue>({});
 
 export type ToggleGroupRootProps = Omit<ComponentProps<typeof ToggleGroupPrimitive>, "className"> & {
@@ -24,7 +24,6 @@ export type ToggleGroupRootProps = Omit<ComponentProps<typeof ToggleGroupPrimiti
   className?: string;
   /**
    * Tailwind spacing units between items. `0` is segmented-control mode
-   * (toggle-group.md §3/§4).
    * @default 2
    */
   spacing?: number;
@@ -36,7 +35,7 @@ export type ToggleGroupItemProps = Omit<ComponentProps<typeof TogglePrimitive>, 
 } & VariantProps<typeof toggleVariants>;
 
 /**
- * Client toggle group over `@base-ui/react/toggle-group` (toggle-group.md §2/§7).
+ * Client toggle group over `@base-ui/react/toggle-group`.
  * Root publishes `variant` / `size` / `spacing` / `orientation` through
  * module-private context; Item borrows public `toggleVariants`.
  */
@@ -77,7 +76,7 @@ function ToggleGroupRoot({
 
 /**
  * Group-aware toggle. Resolves `variant` / `size` as `itemProp ?? contextValue`
- * so an explicit item-level axis wins (toggle-group.md §8.2).
+ * so an explicit item-level axis wins.
  */
 function ToggleGroupItem({
   className,

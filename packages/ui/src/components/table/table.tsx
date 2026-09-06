@@ -27,7 +27,7 @@ export type VerticalTableItem = {
 export type VerticalTableRootProps = ComponentProps<"div"> & {
   /**
    * Facts-sheet look. `"non-bordered-compact"` drops the wrapper border/background
-   * and tightens cell padding via descendant `data-variant` selectors (table.md §4).
+   * and tightens cell padding via descendant `data-variant` selectors.
    */
   variant?: "default" | "non-bordered-compact";
 };
@@ -43,7 +43,7 @@ export type VerticalTableBodyProps = ComponentProps<"div"> & {
   /**
    * Inner `<table>` (`Table.Root`) props. Association attributes such as
    * `aria-labelledby` belong here — Body's own props, including `aria-*`, stay
-   * on the wrapper only (table.md §8.3). `className` merges with `table-fixed`.
+   * on the wrapper only. `className` merges with `table-fixed`.
    */
   tableProps?: TableRootProps;
 };
@@ -73,7 +73,7 @@ export type VerticalTableValueProps = ComponentProps<"td"> & {
 };
 
 /**
- * Semantic `<table>` composite (table.md §2/§7). Server compound — it owns no state,
+ * Semantic `<table>` composite. Server compound — it owns no state,
  * no handlers, and no browser APIs (performance.md §RSC classification). `Header` and
  * `Key` on `VerticalTable` are client `useRender` islands so other outline levels and
  * row-header hosts stay possible without flipping this module to a client boundary.

@@ -47,7 +47,7 @@ test("textVariants is public and returns a class string", () => {
   expectTypeOf(textVariants()).toBeString();
 });
 
-test("the element takes the spec's props, render, and no as or slot", () => {
+test("the element takes the public props, render, and no as or slot", () => {
   const _basic = <Text>Body copy.</Text>;
   const _span = (
     <Text elementType="span" size="lg" variant="muted">
@@ -61,7 +61,7 @@ test("the element takes the spec's props, render, and no as or slot", () => {
   );
   const _render = <Text render={<span />}>As a span</Text>;
 
-  // @ts-expect-error the RAC slot prop is dropped (text.md §8.2)
+  // @ts-expect-error the RAC slot prop is dropped
   const _noSlot = <Text slot="description">Described</Text>;
   // @ts-expect-error polymorphism is never an `as` prop
   const _noAs = <Text as="span">Inline</Text>;

@@ -38,7 +38,7 @@ test("badgeVariants is public and returns a class string", () => {
   expectTypeOf(badgeVariants()).toBeString();
 });
 
-test("the element takes the spec's props and no polymorphic as prop", () => {
+test("the element takes the public props and no polymorphic as prop", () => {
   const _basic = <Badge>Active</Badge>;
   const _statused = (
     <Badge variant="success" size="sm" className="uppercase">

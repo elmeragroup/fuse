@@ -27,7 +27,7 @@ test("loaderVariants is public and returns base/icon slot functions", () => {
   expectTypeOf(loaderVariants({ size: "xl", variant: "default" }).icon()).toBeString();
 });
 
-test("the element takes the spec's props and no polymorphic as prop", () => {
+test("the element takes the public props and no polymorphic as prop", () => {
   const _basic = <Loader />;
   const _named = <Loader size="medium" variant="default" aria-label="Laster" className="p-0" />;
 

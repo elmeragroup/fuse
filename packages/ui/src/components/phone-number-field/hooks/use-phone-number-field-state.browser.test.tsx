@@ -16,7 +16,7 @@ import type { UsePhoneNumberFieldStateOptions } from "./use-phone-number-field-s
  * the hook touches the parser. Patching the shared prototype counts real parses without
  * mocking the module.
  *
- * The budget is per-path, not one number (phone-number-field.md §8.16): a keystroke costs
+ * The budget is per-path, not one number: a keystroke costs
  * one parse, a paste that carries an international prefix costs three (two in the
  * detection pass, one for the emitted output), and a country change costs one. The figures
  * below are the whole claim; before this ticket the same paths cost six, and between four

@@ -27,7 +27,7 @@ test("SwitchProps is the primitive surface plus the optical size axis", () => {
   expectTypeOf<SwitchProps>().not.toHaveProperty("onChange");
 });
 
-test("the element takes the spec's props and no polymorphic as prop", () => {
+test("the element takes the public props and no polymorphic as prop", () => {
   const _basic = <Switch aria-label="Notifications" />;
   const _sized = <Switch size="sm" className="ms-1" aria-label="Compact" />;
   const _controlled = <Switch checked onCheckedChange={() => undefined} aria-label="Held" />;

@@ -17,7 +17,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Fuse adjacent `Frame.Panel`s into one card (shared radii and hairline). Default `false` keeps a 4px muted gutter between panels (frame.md §4).",
+          "description": "Fuse adjacent `Frame.Panel`s into one card (shared radii and hairline). Default `false` keeps a 4px muted gutter between panels.",
           "required": false
         }
       ]

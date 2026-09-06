@@ -75,7 +75,7 @@ test("LinkProps forwards the RAC link surface", () => {
   expectTypeOf<LinkProps["isDisabled"]>().toEqualTypeOf<boolean | undefined>();
 });
 
-test("className takes the plain string link.md §3 documents", () => {
+test("className takes a plain string", () => {
   const _string: LinkProps = { className: "underline" };
   const _badClassName: LinkProps = {
     // @ts-expect-error className is a class list, never a number
@@ -83,7 +83,7 @@ test("className takes the plain string link.md §3 documents", () => {
   };
 });
 
-test("the element takes the spec's props, forwards a ref, and rejects a size axis", () => {
+test("the element takes the public props, forwards a ref, and rejects a size axis", () => {
   const _anchor = (
     <Link
       href="/orders/1042"
@@ -119,7 +119,7 @@ test("the element takes the spec's props, forwards a ref, and rejects a size axi
 
   // @ts-expect-error a text atom has no control-box size axis
   const _noSize = <Link size="md" href="/orders" />;
-  // @ts-expect-error the reference's status value name is renamed to `error` (§8.2)
+  // @ts-expect-error the reference's status value name is renamed to `error`
   const _noDestructive = <Link variant="destructive" href="/orders" />;
   // @ts-expect-error `medium` is Text's weight value, not Link's two-value axis
   const _noMediumWeight = <Link weight="medium" href="/orders" />;

@@ -1,5 +1,5 @@
 /**
- * PUBLIC recipe (heading.md §4). Other package modules import this file relatively;
+ * PUBLIC recipe. Other package modules import this file relatively;
  * consumers borrow it from `@elmeragroup/ui/heading`.
  *
  * Colour (`variant`) and start/center/end (`align`) come from the package-private
@@ -7,9 +7,8 @@
  * stay here.
  *
  * - `destructive` keeps its ref value name for consumer compat, but the class is
- *   `text-error` (heading.md §8.4) — no `destructive` class appears in library source.
- * - `size` is a type-scale axis, not a density control-box rung (conventions.md
- *   §Density metrics): it does not read `--control-*`.
+ *   `text-error` — no `destructive` class appears in library source.
+ * - `size` is a type-scale axis, not a density control-box rung: it does not read `--control-*`.
  */
 import { tv } from "tailwind-variants";
 

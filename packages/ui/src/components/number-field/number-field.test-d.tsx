@@ -42,7 +42,7 @@ test("NumberFieldProps is the closed composite face", () => {
   expectTypeOf<NumberFieldProps>().not.toHaveProperty("max");
 });
 
-test("the element takes the spec's props and no primitive or locale aliases", () => {
+test("the element takes the public props and no primitive or locale aliases", () => {
   const _basic = (
     <NumberField label="Quantity" description="Whole packs." minValue={0} maxValue={10} step={1} />
   );

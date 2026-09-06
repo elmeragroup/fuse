@@ -8,7 +8,7 @@ import { mergeClassName } from "../../styles/merge-class-name";
 import { selfFocusRingClass } from "../../styles/utils";
 
 /**
- * Client single-disclosure primitive (collapsible.md §2/§7). Visually unstyled
+ * Client single-disclosure primitive. Visually unstyled
  * passthrough over base-ui Collapsible; Accordion is the styled sibling.
  */
 function CollapsibleRoot(props: ComponentProps<typeof CollapsiblePrimitive.Root>): ReactElement {

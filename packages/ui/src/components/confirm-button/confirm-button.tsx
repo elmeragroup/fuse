@@ -22,7 +22,7 @@ export type ConfirmButtonProps = DistributiveOmit<ButtonProps, "onClick" | "chil
 };
 
 /**
- * Two-press confirm wrapper over the library Button (confirm-button.md §2/§7).
+ * Two-press confirm wrapper over the library Button.
  * Client — owns armed state (performance.md §RSC classification).
  */
 export function ConfirmButton({
@@ -41,7 +41,7 @@ export function ConfirmButton({
   const [isArmedRaw, setIsArmedRaw] = useState(false);
   const [wasDisabled, setWasDisabled] = useState(disabled);
 
-  // Derive-with-reset (confirm-button.md §8.5): disabling disarms during the same render
+  // Derive-with-reset: disabling disarms during the same render
   // that flips `disabled`, so re-enabling never restores a stale armed state and no extra
   // effect-driven render commits.
   if (disabled !== wasDisabled) {
@@ -62,7 +62,7 @@ export function ConfirmButton({
     }
   }
 
-  // Spec §3: only a string `armedChildren` participates in the announcement chain.
+  // Only a string `armedChildren` participates in the announcement chain.
   const announcement = armedAriaLabel ?? (isTextNode(armedChildren) ? armedChildren : ariaLabel);
   const resolvedAriaLabel = isArmed ? announcement : ariaLabel;
   const visibleChildren = isArmed && armedChildren !== undefined ? armedChildren : children;

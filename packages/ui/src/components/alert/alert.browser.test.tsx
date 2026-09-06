@@ -31,7 +31,7 @@ function buttonNamed(name: string): HTMLElement {
 }
 
 function iconIn(root: HTMLElement): SVGSVGElement {
-  // spec §9 slot audit: variant icons are asserted via the alert-icon data-slot hook.
+  // DOM audit: variant icons are asserted via the alert-icon data-slot hook.
   const icon = root.querySelector('[data-slot="alert-icon"]');
   if (!(icon instanceof SVGSVGElement)) {
     throw new Error("expected alert-icon");

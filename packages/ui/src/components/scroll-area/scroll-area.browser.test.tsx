@@ -33,7 +33,7 @@ function labeledText(name: string): HTMLElement {
 }
 
 function scrollRootFromText(name: string): HTMLElement {
-  // spec §9: the overflow host has no role; locate it by the mandated data-slot.
+  // DOM audit: the overflow host has no role; locate it by the mandated data-slot.
   const root = labeledText(name).closest("[data-slot=scroll-area]");
   if (!(root instanceof HTMLElement)) {
     throw new Error(`Expected a scroll area around ${name}`);
@@ -42,7 +42,7 @@ function scrollRootFromText(name: string): HTMLElement {
 }
 
 function viewportFromText(name: string): HTMLElement {
-  // spec §9: the viewport has no role; locate it by the mandated data-slot.
+  // DOM audit: the viewport has no role; locate it by the mandated data-slot.
   const viewport = labeledText(name).closest("[data-slot=scroll-area-viewport]");
   if (!(viewport instanceof HTMLElement)) {
     throw new Error(`Expected a viewport around ${name}`);
@@ -51,7 +51,7 @@ function viewportFromText(name: string): HTMLElement {
 }
 
 function barsIn(root: HTMLElement): HTMLElement[] {
-  // spec §9: scrollbars have no role; locate them by the mandated data-slot.
+  // DOM audit: scrollbars have no role; locate them by the mandated data-slot.
   return [...root.querySelectorAll("[data-slot=scroll-area-scrollbar]")].filter(
     (node): node is HTMLElement => node instanceof HTMLElement
   );

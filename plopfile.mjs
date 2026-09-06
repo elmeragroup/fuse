@@ -21,7 +21,7 @@
  * it, the same way it does for the oxlint plugins. Templates under `plop-templates/` are
  * not standalone TypeScript and are excluded from oxfmt and oxlint.
  *
- * Every stub is a skeleton that fails until the spec is implemented — the component
+ * Every stub is a skeleton that fails until the component is implemented — the component
  * throws, the suites carry an explicit unimplemented marker, the browser stub's role
  * placeholder throws until it is set, and the injected budget row has a 0 ceiling.
  * Nothing here guesses at props or variants.
@@ -125,10 +125,10 @@ export default function plopfile(plop) {
       (answers) =>
         [
           "next steps",
-          `  1. Implement docs/spec/components/${answers.name}.md — every stub above fails until you do.`,
+          `  1. Implement ${answers.name} using docs/component-authoring.md; replace every failing placeholder.`,
           "  2. pnpm --filter @elmeragroup/ui generate:exports  # rewrites tracked package.json#exports and src/index.ts",
           "  3. pnpm --filter @elmeragroup/ui build             # dist + publish manifest; does not rewrite source exports",
-          `  4. Author the page: prose, one demo + <Demo> frame per §10 scenario of docs/spec/components/${answers.name}.md.`,
+          `  4. Author the page and demos; record required scenarios in apps/docs/test/fixtures/component-demo-requirements.json.`,
           "  5. pnpm --filter docs generate                    # writes the committed api.json next to the page",
           "  6. pnpm turbo run ci:checks --force",
         ].join("\n"),

@@ -21,12 +21,12 @@ async function openFieldDemo(page: Page, demoName: string): Promise<Locator> {
   return page.getByRole("region", { name: demoName });
 }
 
-describe("Field demos (field.md §10)", () => {
+describe("Field demos", () => {
   it("names the choice card's checkbox from the wrapping Field.Label", async () => {
     const page = await browser.newPage();
     const demo = await openFieldDemo(page, "Choice card");
     // The name proves the card contract: the control is named by the Field.Label that
-    // wraps the nested Field.Root, not by copy of its own (field.md §7).
+    // wraps the nested Field.Root, not by copy of its own.
     const control = demo.getByRole("checkbox", {
       name: "Fixed price Lock the kilowatt-hour rate for twelve months.",
     });

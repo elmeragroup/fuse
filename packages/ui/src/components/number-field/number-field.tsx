@@ -71,7 +71,7 @@ const stepperButton = cn(
 );
 
 /**
- * Labeled number field composite over Field + base-ui NumberField (number-field.md §2/§7).
+ * Labeled number field composite over Field + base-ui NumberField.
  * Client — it owns the change handler and reads locale from the provider
  * (performance.md §RSC classification).
  */
@@ -103,7 +103,7 @@ export function NumberField({
   const controlledValue =
     defaultValue !== undefined ? value : value == null || Number.isNaN(value) ? null : value;
 
-  // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- number-field.md §4: label/control stack gap is layout, not a control rung
+  // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- label/control stack gap is layout, not a control rung
   const rootClassName = cn("gap-1", className);
 
   return (

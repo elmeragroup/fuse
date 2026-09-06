@@ -26,7 +26,7 @@ import type { OverlayContainerProps } from "../overlay/overlay-props";
 const dialogContentVariants = tv({
   // The shared popup surface supplies the fill, the ring, and a radius rung; Dialog
   // raises the elevation to `shadow-lg` and the radius to `rounded-xl` through the
-  // later `cn` argument (dialog.md §4). The keyframe set stays local: Dialog is not an
+  // later `cn` argument. The keyframe set stays local: Dialog is not an
   // anchored popup, so it takes neither the transform origin nor the per-side slide-ins
   // that `overlayPopupMotionClass` carries, and its `duration-100` rides with them.
   base: cn(
@@ -36,7 +36,7 @@ const dialogContentVariants = tv({
     selfFocusRingClass
   ),
   variants: {
-    // The 13-value overlay width axis, shared with Sheet (dialog.md §4).
+    // The 13-value overlay width axis, shared with Sheet.
     size: overlaySizeVariants.variants.size,
   },
   defaultVariants: {

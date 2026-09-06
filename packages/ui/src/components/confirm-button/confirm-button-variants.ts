@@ -1,5 +1,5 @@
 /**
- * Module-private recipe (confirm-button.md §4/§8.3). Empty keys exist so
+ * Module-private recipe. Empty keys exist so
  * `VariantProps` aligns with Button's variant axis; only destructive/success
  * add armed styling. No recipe default — undefined variant adds nothing.
  */

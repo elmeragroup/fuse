@@ -9,7 +9,7 @@ import { iconCrossfadeHidden, iconCrossfadeShown, iconCrossfadeTransition } from
 import { Field } from "./field";
 
 /**
- * Package-private FieldFrame layout (field.md §4 / §8.9). No axes — the frame
+ * Package-private FieldFrame layout. No axes — the frame
  * has one layout; TextField's public recipe composes these slots under its own
  * names. The four exported class names below are the same slots, resolved once.
  */
@@ -90,7 +90,7 @@ export type FieldFrameProps = {
   invalid?: boolean;
   /** Forwarded to `Field.Root`. */
   disabled?: boolean;
-  /** Forwarded to `Field.Root`. CheckboxGroup threads its `name` here (checkbox.md §8.6). */
+  /** Forwarded to `Field.Root`. CheckboxGroup threads its `name` here. */
   name?: string;
   /** Extra classes, merged onto `Field.Root`. */
   className?: string;
@@ -101,8 +101,8 @@ export type FieldFrameProps = {
 };
 
 /**
- * Package-private heading/description/error frame for every labeled composite
- * (field.md §8.9). `heading="legend"` is the fieldset skeleton CheckboxGroup and
+ * Package-private heading/description/error frame for every labeled composite.
+ * `heading="legend"` is the fieldset skeleton CheckboxGroup and
  * RadioGroup used to rebuild beside this module.
  *
  * It is not exported through `package.json#exports` and carries no client directive: it
@@ -110,8 +110,7 @@ export type FieldFrameProps = {
  * would only widen the client graph (performance.md §3; `source-contracts.test.ts` pins
  * the classification).
  *
- * **It does not nest a second `Field.Root`.** The card-style label shape that field.md
- * §7 warns about is exactly one `Field.Root` per composite here, as before.
+ * Keep exactly one `Field.Root` per composite so a nested root cannot break label wiring.
  */
 export function FieldFrame({
   heading = "label",

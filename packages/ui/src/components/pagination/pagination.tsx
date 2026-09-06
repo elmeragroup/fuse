@@ -17,7 +17,7 @@ const { base, content, link, linkIcon, ellipsis, ellipsisIcon } = paginationVari
 
 /**
  * The two edges differ by four values only, so `Pagination.Previous` and
- * `Pagination.Next` are one component parameterised by direction (pagination.md §8.10).
+ * `Pagination.Next` are one component parameterised by direction.
  */
 const EDGES = {
   previous: {
@@ -41,7 +41,7 @@ type PaginationDirection = keyof typeof EDGES;
 export type PaginationRootProps = ComponentProps<"nav"> & {
   /**
    * Landmark label. Defaults to the locale dictionary; an explicit `aria-label`
-   * wins over this prop (pagination.md §3).
+   * wins over this prop.
    */
   label?: string;
 };
@@ -52,7 +52,7 @@ export type PaginationItemProps = ComponentProps<"li">;
 export type PaginationLinkProps = {
   /**
    * Current page. Renders `aria-current="page"` and the outline button variant;
-   * inactive links omit the attribute entirely (pagination.md §3/§7).
+   * inactive links omit the attribute entirely.
    */
   isActive?: boolean;
   /**
@@ -99,7 +99,7 @@ export type PaginationEllipsisProps = Omit<ComponentProps<"span">, "children"> &
 };
 
 /**
- * Client page-navigation compound (pagination.md §2/§7). Anchors are styled via
+ * Client page-navigation compound. Anchors are styled via
  * the borrowed public `buttonVariants`; landmark, Previous/Next, and ellipsis
  * copy come from the provider dictionary (performance.md §RSC classification).
  */

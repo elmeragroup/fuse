@@ -1,10 +1,10 @@
 /**
- * SCAFFOLD — implement docs/spec/components/{{name}}.md (all ten sections).
+ * SCAFFOLD: implement the component using docs/component-authoring.md.
  *
  * This file deliberately does not render: the scaffold must not guess an anatomy, a
  * base-ui primitive, or a prop surface. `{{pascalCase name}}Props` carries only the two members
  * every component has (`className`, `children`) plus the recipe's variant props; add the
- * §3 props table, then delete the throw.
+ * documented public props, then delete the throw.
  *
  * Reminders: `"use client"` only if this module owns state/effects/handlers/context or a
  * browser API (performance.md classification, not intuition); polymorphism is base-ui
@@ -25,7 +25,7 @@ export type {{pascalCase name}}Props = VariantProps<typeof {{camelCase name}}Var
 
 export function {{pascalCase name}}(_props: {{pascalCase name}}Props): ReactElement {
   throw new Error(
-    "{{pascalCase name}} is scaffolded but not implemented — see docs/spec/components/{{name}}.md."
+    "{{pascalCase name}} is scaffolded but not implemented. See docs/component-authoring.md."
   );
 }
 

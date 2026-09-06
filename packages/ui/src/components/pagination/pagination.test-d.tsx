@@ -29,7 +29,7 @@ test("the public namespace is seven parts plus the public recipe — never the f
   expectTypeOf(PaginationModule).not.toHaveProperty("PaginationEllipsis");
 });
 
-test("parts take the spec surface: no locale, no consumer direction, no as prop", () => {
+test("parts take the public API: no locale, no consumer direction, no as prop", () => {
   expectTypeOf<Parameters<typeof Pagination.Root>[0]["label"]>().toEqualTypeOf<string | undefined>();
   expectTypeOf<Parameters<typeof Pagination.Link>[0]["isActive"]>().toEqualTypeOf<boolean | undefined>();
   expectTypeOf<Parameters<typeof Pagination.Link>[0]["size"]>().toEqualTypeOf<

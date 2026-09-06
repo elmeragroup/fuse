@@ -3,13 +3,13 @@ import { tv } from "tailwind-variants";
 import { stateFocusRingClass, stateFocusRingVisibleClass } from "./utils";
 
 /**
- * RangeCalendar's slotted recipe (range-calendar.md §4). Package-private — no entry
+ * RangeCalendar's slotted recipe. Package-private — no entry
  * re-exports it, and there is no public recipe surface for the interim tier.
  *
  * Two things separate it from Calendar's recipe: RangeCalendar hand-rolls its own
  * two-layer cell instead of borrowing the single-day circle, and its root takes no
  * card-surface slot at all — standalone the calendar renders borderless and the picker
- * dialog supplies the chrome (§8.5).
+ * dialog supplies the chrome.
  *
  * Every axis lives on the inner pill; `body` and `outerCell` are invariant, so the
  * component resolves them once and re-resolves only `cell` per date.
@@ -18,14 +18,14 @@ export const rangeCalendarVariants = tv({
   slots: {
     /**
      * The month table. Zeroing the cell gutter is what lets the range band run
-     * unbroken across day columns (§2).
+     * unbroken across day columns.
      */
     body: "[&_td]:px-0",
     /**
      * The square band a day sits in: the layer that paints the range fill, the
      * start/end caps and the row-edge rounding, and the `group` the pill styles
-     * against. `size-9` is the ref's decorative day square, not a control-box rung
-     * (conventions.md §Density metrics), so it stays a literal and reads no
+     * against. `size-9` is the ref's decorative day square, not a control-box rung,
+     * so it stays a literal and reads no
      * `--control-*` variable — the same classification Calendar's day cell has.
      */
     outerCell: [
@@ -44,7 +44,7 @@ export const rangeCalendarVariants = tv({
     error: "text-sm text-error",
   },
   variants: {
-    /** `getSelectionState`'s three faces (§4): outside the range, inside it, or a cap. */
+    /** `getSelectionState`'s three faces: outside the range, inside it, or a cap. */
     selectionState: {
       none: { cell: "group-hover:bg-muted group-pressed:bg-accent" },
       middle: {

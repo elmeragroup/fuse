@@ -359,7 +359,7 @@ describe("DateField hour granularity", () => {
 });
 
 describe("DateField field-box chrome", () => {
-  // spec 08 user story 6 / §8.9 (2026-09-03): DateField's box is Input's box, so a form
+  // DateField's box is Input's box, so a form
   // that mixes the interim tier with the base-ui tier has one field chrome. The file
   // imports `themes.css` alongside `styles.css` so all four computed comparisons resolve
   // to real values rather than to two matching zeroes.

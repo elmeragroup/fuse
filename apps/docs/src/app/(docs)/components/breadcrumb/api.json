@@ -17,7 +17,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Landmark label. Defaults to the locale dictionary; an explicit `aria-label` wins over this prop (breadcrumb.md §3).",
+          "description": "Landmark label. Defaults to the locale dictionary; an explicit `aria-label` wins over this prop.",
           "required": false
         }
       ]
@@ -100,7 +100,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Screen-reader-only copy for omitted items. Defaults to the locale dictionary (breadcrumb.md §3).",
+          "description": "Screen-reader-only copy for omitted items. Defaults to the locale dictionary",
           "required": false
         }
       ]

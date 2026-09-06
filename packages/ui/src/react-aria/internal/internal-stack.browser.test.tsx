@@ -102,7 +102,7 @@ async function openPopover(): Promise<HTMLElement> {
 }
 
 describe("the internal RAC Popover", () => {
-  it("carries no overlay-container stamp now the modal stack is gone (§6, 2026-09-03)", async () => {
+  it("carries no overlay-container stamp now the modal stack is gone", async () => {
     renderThemed(withLocale("en-US", <PopoverFixture />));
     const dialog = await openPopover();
 

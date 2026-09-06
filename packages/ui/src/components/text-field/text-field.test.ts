@@ -17,7 +17,7 @@ describe("textFieldVariants", () => {
     expect(slots.description()).toBe(frame.description());
   });
 
-  it("exposes the spec slots and no textArea slot", () => {
+  it("exposes the public slots and no textArea slot", () => {
     const slots = textFieldVariants();
     expect(slots.base()).toContain("flex-col");
     expect(slots.fieldGroup()).toContain("w-auto");

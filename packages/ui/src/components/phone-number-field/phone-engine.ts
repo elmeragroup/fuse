@@ -9,7 +9,7 @@ import defaultMetadata from "libphonenumber-js/metadata.min.json";
 import { flagAssets } from "../../flags";
 import type { FlagAssetCode } from "../../flags";
 
-/** Product/compliance exclusion copied from the reference (phone-number-field.md §3). */
+/** Product/compliance exclusion copied from the reference. */
 const PRODUCT_EXCLUDED_COUNTRY_CODES = new Set<CountryCode>([
   "AF",
   "BY",
@@ -149,7 +149,7 @@ export function hasInternationalDigits(digits: string): boolean {
   return digits.startsWith(INTERNATIONAL_PREFIX);
 }
 
-/** The full international form of a snapshot, used to re-read it under another catalog (§8.19). */
+/** The full international form of a snapshot, used to re-read it under another catalog. */
 export function toInternationalInput({ digits, country }: ProcessedPhoneInput): string {
   return !digits || hasInternationalDigits(digits) ? digits : country.dialCode + digits;
 }
@@ -195,7 +195,6 @@ function formatOutputValue(
 
 /**
  * The two display switches, passed as one object so the call site cannot transpose them
- * (phone-number-field.md §8.16).
  */
 type PhoneDisplayOptions = {
   international: boolean;
@@ -254,7 +253,7 @@ export type ProcessedPhoneInput = {
   country: PhoneNumberCountry;
 };
 
-/** Options for {@link processInputWithDetection} (phone-number-field.md §8.16). */
+/** Options for {@link processInputWithDetection}. */
 export type ProcessInputOptions = {
   input: string;
   currentCountry: PhoneNumberCountry;
@@ -298,7 +297,7 @@ export type PhoneFieldValues = {
   outputValue: string;
 };
 
-/** Options for {@link resolvePhoneFieldValues} (phone-number-field.md §8.16). */
+/** Options for {@link resolvePhoneFieldValues}. */
 export type ResolvePhoneFieldValuesOptions = {
   digits: string;
   country: CountryCode | undefined;

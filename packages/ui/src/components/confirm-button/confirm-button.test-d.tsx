@@ -46,7 +46,7 @@ test("the element takes Button props except onClick, and onConfirm is required",
   // @ts-expect-error onClick is owned by ConfirmButton
   const _noOnClick = <ConfirmButton onConfirm={() => undefined} onClick={() => undefined} />;
   // @ts-expect-error icon size requires aria-label
-  const _iconMissing = <ConfirmButton size="icon" onConfirm={() => undefined} />; // oxlint-disable-line elmera/require-icon-button-label -- confirm-button.md §3: type-level icon-name contract under test
+  const _iconMissing = <ConfirmButton size="icon" onConfirm={() => undefined} />; // oxlint-disable-line elmera/require-icon-button-label -- type-level icon-name contract under test
   // @ts-expect-error polymorphism is never an as prop
   const _noAs = <ConfirmButton as="div" onConfirm={() => undefined} />;
 });

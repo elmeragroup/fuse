@@ -1,7 +1,7 @@
 // Source entry facade for `@elmeragroup/ui/toast` (Appendix A). Pure re-export file:
 // explicit named re-exports only — no `export *`, no local declarations, no directives.
 // The exports/barrel generators discover this file; never hand-edit package.json#exports
-// or src/index.ts. No public recipe — status chrome stays module-private (toast.md §4).
+// or src/index.ts. No public recipe — status chrome stays module-private.
 export { Toast } from "./components/toast/toast";
 export type {
   CreateToastManagerReturnValue,

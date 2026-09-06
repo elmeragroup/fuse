@@ -73,7 +73,7 @@ export type TextFieldProps = {
 >;
 
 /**
- * Labeled single-line field composite over Field + Input (text-field.md §2/§7).
+ * Labeled single-line field composite over Field + Input.
  * Client — it owns the numeric filter's internal state and change handler
  * (performance.md §RSC classification).
  */

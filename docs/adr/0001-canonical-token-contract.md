@@ -51,4 +51,4 @@ Recorded from the density spec-amendment ticket (ruling 82, 2026-08-22: componen
 1. **Comfortable source.** Dense control metrics come from the internal-ref lift (`:root` defaults; Button §8.5). Comfortable is the signed `--control-*` column in `ui.css`, never derived from the external ref. External deployments render comfortable via `defaultDensityForVariant` only.
 2. **Single-height field boxes pin `md`.** Input-class fixed-height surfaces (no `size` axis) read `h-(--control-h-md)`, `--control-px-md`, and the control-type pair where type is density-owned. They do not gain a `size` axis so density can retarget them.
 
-Normative detail: [conventions](../spec/components/conventions.md) density metrics.
+Normative detail: [component authoring](../component-authoring.md) density metrics.

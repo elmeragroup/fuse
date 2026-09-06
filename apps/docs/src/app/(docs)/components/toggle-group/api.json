@@ -36,7 +36,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": "2",
-          "description": "Tailwind spacing units between items. `0` is segmented-control mode (toggle-group.md §3/§4).",
+          "description": "Tailwind spacing units between items. `0` is segmented-control mode",
           "required": false
         },
         {

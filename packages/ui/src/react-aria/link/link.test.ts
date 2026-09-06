@@ -13,15 +13,15 @@ function classes(rendered: string): string[] {
 }
 
 describe("linkVariants", () => {
-  it("exposes exactly the five typography axes from link.md §4", () => {
+  it("exposes exactly the five typography axes", () => {
     expect(linkVariants.variantKeys).toEqual(["variant", "leading", "truncate", "align", "weight"]);
     expect(linkVariants.variantKeys).not.toContain("size");
     // The focus state is composed at the call site from RAC render props, never an axis a
-    // consumer could set (link.md §4, accessibility.md §2).
+    // consumer could set (accessibility.md §2).
     expect(linkVariants.variantKeys).not.toContain("isFocusVisible");
   });
 
-  it("renders the §4 base plus the default variant and weight, and nothing else", () => {
+  it("renders the base plus the default variant and weight, and nothing else", () => {
     expect(classes(linkVariants())).toEqual(
       classes("font-sans transition-opacity hover:opacity-80 text-inherit font-normal")
     );
@@ -45,12 +45,12 @@ describe("linkVariants", () => {
     }
   });
 
-  it("keeps the recorded quirk that default and inherit are the same variant (§8.3)", () => {
+  it("keeps the recorded quirk that default and inherit are the same variant", () => {
     expect(linkVariants({ variant: "inherit" })).toBe(linkVariants({ variant: "default" }));
     expect(classes(linkVariants({ variant: "inherit" }))).toContain("text-inherit");
   });
 
-  it("keeps the recorded quirk that weight bold renders font-medium (§8.3)", () => {
+  it("keeps the recorded quirk that weight bold renders font-medium", () => {
     expect(classes(linkVariants({ weight: "bold" }))).toContain("font-medium");
     expect(classes(linkVariants({ weight: "bold" }))).not.toContain("font-bold");
     expect(classes(linkVariants({ weight: "normal" }))).toContain("font-normal");

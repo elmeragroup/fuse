@@ -50,7 +50,7 @@ export type MeterProps = {
  * Status icon in the value span. The glyph comes from the same `METER_TONE_TABLE`
  * cell as the fill color, never from the raw percentage, so the icon and the fill
  * always cross the 80% boundary together: exactly 80% is `LOW` and shows no icon in
- * `default` mode (meter.md §3/§4, §8.8, §8.9).
+ * `default` mode.
  */
 function MeterIcon({
   icon,
@@ -75,7 +75,7 @@ function MeterIcon({
 }
 
 /**
- * Labeled meter composite over base-ui Meter (meter.md §2/§7). Read-only value
+ * Labeled meter composite over base-ui Meter. Read-only value
  * display — never an input. Client — it reads locale from the provider
  * (performance.md §RSC classification).
  */

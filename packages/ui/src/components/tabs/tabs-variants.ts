@@ -1,5 +1,5 @@
 /**
- * PUBLIC recipe (tabs.md §4/§8.5). Consumers borrow it from `@elmeragroup/ui/tabs`.
+ * PUBLIC recipe. Consumers borrow it from `@elmeragroup/ui/tabs`.
  *
  * Horizontal list pins the `md` field-box rung (`h-(--control-h-md)`). Vertical stays
  * `h-fit`. `p-[3px]` is optical track padding, not `--control-px-*`. No `size` axis.

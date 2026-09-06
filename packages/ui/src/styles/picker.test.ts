@@ -25,12 +25,12 @@ function everyEmittedClass(): string {
 }
 
 describe("pickerVariants shared slots", () => {
-  it("lays both roots out as a labelled column (date-picker.md §2/§4)", () => {
+  it("lays both roots out as a labelled column", () => {
     expect(pickerVariants().base()).toBe("group flex flex-col gap-1");
     expect(pickerVariants({ range: true }).base()).toBe("group flex flex-col gap-1");
   });
 
-  it("strips the styled Dialog's padding in both of its forms, on both axes (§4)", () => {
+  it("strips the styled Dialog's padding in both of its forms, on both axes", () => {
     for (const range of [false, true]) {
       const dialog = pickerVariants({ range }).dialog();
       expect(dialog).toContain("p-0");
@@ -48,7 +48,7 @@ describe("pickerVariants shared slots", () => {
     }
   });
 
-  it("keeps the segment row on the md rung's padding and type pair at both densities (§4)", () => {
+  it("keeps the segment row on the md rung's padding and type pair at both densities", () => {
     for (const range of [false, true]) {
       const input = pickerVariants({ range }).input();
       expect(input).toContain("px-(--control-px-md)");
@@ -66,7 +66,7 @@ describe("pickerVariants shared slots", () => {
     expect(everyEmittedClass()).not.toMatch(RAW_PALETTE_RE);
   });
 
-  it("owns no surface, border or focus ring of its own (§5)", () => {
+  it("owns no surface, border or focus ring of its own", () => {
     const emitted = everyEmittedClass();
     expect(emitted).not.toContain("bg-card");
     expect(emitted).not.toContain("border-input");
@@ -74,7 +74,7 @@ describe("pickerVariants shared slots", () => {
     expect(emitted).not.toContain("shadow-md");
   });
 
-  it("paints no read-only fill on any slot — FieldGroup owns it (§8.11, 2026-09-03)", () => {
+  it("paints no read-only fill on any slot — FieldGroup owns it", () => {
     // The fill used to be painted twice here — on `group` and again on `icon` — while
     // `fieldGroupVariants` carried an `isReadOnly` axis all along and DateField already
     // routed the state through it. PickerShell now hands `isReadOnly` to the FieldGroup and this recipe has
@@ -86,7 +86,7 @@ describe("pickerVariants shared slots", () => {
 });
 
 describe("pickerVariants range axis", () => {
-  it("floors the single-date field box at 180px and lets its one row grow (§2/§4)", () => {
+  it("floors the single-date field box at 180px and lets its one row grow", () => {
     const slots = pickerVariants();
     expect(slots.group()).toContain("w-auto");
     expect(slots.group()).toContain("min-w-[180px]");
@@ -94,7 +94,7 @@ describe("pickerVariants range axis", () => {
     expect(slots.input()).toContain("min-w-[150px]");
   });
 
-  it("floors the range field box at 208px and keeps its shared row flexless (§4)", () => {
+  it("floors the range field box at 208px and keeps its shared row flexless", () => {
     const slots = pickerVariants({ range: true });
     expect(slots.group()).toContain("w-auto");
     expect(slots.group()).toContain("min-w-[208px]");
@@ -103,15 +103,15 @@ describe("pickerVariants range axis", () => {
     expect(slots.input({ class: "flex-1" }).split(/\s+/)).toContain("flex-1");
   });
 
-  it("strips Calendar's card border and pays RangeCalendar's inset (§4)", () => {
+  it("strips Calendar's card border and pays RangeCalendar's inset", () => {
     // Calendar's root carries its own `p-2` and a card border the popover already
-    // provides; RangeCalendar's root is bare by design (range-calendar.md §8.5) above a
+    // provides; RangeCalendar's root is bare by design above a
     // `p-0` dialog, so the range arm is where that inset comes from.
     expect(pickerVariants().calendar()).toBe("border-none");
     expect(pickerVariants({ range: true }).calendar()).toBe("p-2");
   });
 
-  it("colours the separator with role tokens only on the range axis (§5/§8.4)", () => {
+  it("colours the separator with role tokens only on the range axis", () => {
     const separator = pickerVariants({ range: true }).separator();
     expect(separator).toContain("text-foreground");
     expect(separator).toContain("group-disabled:text-muted-foreground");
@@ -121,7 +121,7 @@ describe("pickerVariants range axis", () => {
     expect(pickerVariants().separator()).toBeUndefined();
   });
 
-  it("gives the dialog its two-pane row only when the caller has presets (§2/§4)", () => {
+  it("gives the dialog its two-pane row only when the caller has presets", () => {
     // The two-pane layout is the divider plus the column gap and the trailing inset; a
     // lone calendar takes none of it, and the slot must be empty rather than absent so
     // the call site can hand the class through unconditionally.

@@ -54,7 +54,7 @@ test("DateRangePickerProps declares the composite face and stays open on the RAC
   expectTypeOf<DateRangePickerProps<CalendarDate>["container"]>().toEqualTypeOf<
     HTMLElement | RefObject<HTMLElement | null> | undefined
   >();
-  // The value surface is RAC's RangeValue, not a bare date (§3).
+  // The value surface is RAC's RangeValue, not a bare date.
   expectTypeOf<NonNullable<DateRangePickerProps<CalendarDate>["value"]>>().toEqualTypeOf<{
     start: CalendarDate;
     end: CalendarDate;
@@ -87,13 +87,13 @@ test("DateRangePickerProps declares the composite face and stays open on the RAC
   ] as const) {
     expectTypeOf<DateRangePickerProps<CalendarDate>>().toHaveProperty(prop);
   }
-  // No preset pane on this side of the cluster, and no size axis anywhere in it (§3/§4).
+  // No preset pane on this side of the cluster, and no size axis anywhere in it.
   expectTypeOf<DateRangePickerProps<CalendarDate>>().not.toHaveProperty("presetGroup");
   expectTypeOf<DateRangePickerProps<CalendarDate>>().not.toHaveProperty("size");
   expectTypeOf<DateRangePickerProps<CalendarDate>>().not.toHaveProperty("visibleDuration");
 });
 
-test("the element takes the spec's props and rejects an invented axis", () => {
+test("the element takes the public props and rejects an invented axis", () => {
   const july = { start: new CalendarDate(2026, 7, 14), end: new CalendarDate(2026, 7, 21) };
   const _basic = (
     <DateRangePicker label="Delivery window" description="When we may deliver." defaultValue={july} />

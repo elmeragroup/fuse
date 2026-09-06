@@ -1,9 +1,9 @@
 /**
- * Module-private recipes (empty.md §4). Not exported from the public entry —
- * there is no proven recipe-borrowing use (§8.4).
+ * Module-private recipes. Not exported from the public entry —
+ * there is no proven recipe-borrowing use.
  *
  * `variant` on Root is the frame; `variant` on Media is the icon/illustration box.
- * Neither axis is a density rung (empty.md §4; conventions.md § Density metrics).
+ * Neither axis is a density rung.
  */
 import { tv } from "tailwind-variants";
 

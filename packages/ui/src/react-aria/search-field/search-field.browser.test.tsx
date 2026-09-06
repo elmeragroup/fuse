@@ -31,7 +31,7 @@ function renderField(node: ReactNode) {
  * The private RAC `FieldGroup` wrapping the named searchbox. It carries `role="group"`
  * but no accessible name of its own, so it is reached from the control it labels — it is
  * the field box that pins the `md` rung and hosts the shared
- * `focusRing({ target: "state" })` ring (search-field.md §9, react-aria/internal/field).
+ * `focusRing({ target: "state" })` ring.
  */
 function fieldGroupFor(name: string): HTMLElement {
   const group = roleNamed("searchbox", name).closest('[role="group"]');
@@ -207,7 +207,6 @@ describe("SearchField", () => {
 
     // Density is a document-root axis: `ui.css` keys the comfortable block on
     // `:root[data-density="comfortable"]`, so a nested attribute rescopes nothing
-    // (search-field.md §9).
     for (const density of ["dense", "comfortable"] as const) {
       stampDensity(density);
       const rung = CONTROL_MD[density].height;

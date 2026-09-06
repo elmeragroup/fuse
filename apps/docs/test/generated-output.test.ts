@@ -27,6 +27,7 @@ import { repoRelative, repoRoot } from "../scripts/lib/paths.ts";
 import { COMPONENT_PAGES } from "../src/generated/component-pages";
 import type { ComponentApiArtifact, ComponentPageEntry } from "../src/lib/docs-model";
 import { dependencyPackageName, normalizeDemoSource } from "../src/lib/docs-model";
+import demoRequirements from "./fixtures/component-demo-requirements.json";
 import { specSectionBody } from "./spec-section.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -88,17 +89,8 @@ function declaredRsc(sourcePath: string): string {
   return readRscStatus(readFileSync(join(repoRoot, sourcePath), "utf8"));
 }
 
-/**
- * The demo files a component spec's §10 requires. A scenario is written as an inline
- * code span, with or without the `.tsx` suffix; §10 may also cross-reference a sibling
- * component's demo, which is why the file name carries the owning component's prefix.
- */
-function specDemoScenarios(slug: string): readonly string[] {
-  const named = [...specSectionBody(`components/${slug}.md`, 10).matchAll(/`([A-Za-z0-9-]+(?:\.tsx)?)`/g)]
-    .map((match) => match[1] ?? "")
-    .map((name) => (name.endsWith(".tsx") ? name : `${name}.tsx`));
-  return [...new Set(named)];
-}
+/** Reviewed demo coverage, maintained independently of pages and generated output. */
+const requiredDemoScenarios: Readonly<Record<string, readonly string[]>> = demoRequirements;
 
 /**
  * The RSC status performance.md §3 assigns each component. That table calls itself the
@@ -240,22 +232,21 @@ describe("component page manifest", () => {
     }
   });
 
-  it("renders one demo per component-spec §10 scenario", () => {
-    // docs-site.md §6: a page's demo set is its component spec's §10 scenario list. The
-    // spec is the source of truth here — checking the manifest against the page it was
-    // generated from would only prove the generator copied its own input.
+  it("renders every required demo scenario without adding unreviewed scenarios", () => {
+    expect(Object.keys(requiredDemoScenarios).sort()).toEqual(
+      COMPONENT_PAGES.map((entry) => entry.slug).sort()
+    );
     for (const entry of COMPONENT_PAGES) {
-      const scenarios = specDemoScenarios(entry.slug);
+      const scenarios = requiredDemoScenarios[entry.slug] ?? [];
       expect(scenarios.length, entry.slug).toBeGreaterThan(0);
       const rendered = authoredPage(entry.slug).parsed.demos.map((demo) => demo.file);
       for (const file of rendered) {
-        expect(scenarios, `${entry.slug} renders ${file}, which §10 does not ask for`).toContain(file);
+        expect(scenarios, `${entry.slug} renders an unreviewed scenario: ${file}`).toContain(file);
       }
       for (const file of scenarios) {
-        // §10 also cross-references a sibling component's demo (Frame cites Table's);
-        // the owning component is the one whose name the file carries.
+        // Sibling scenarios belong to the component named in the filename.
         if (!file.startsWith(`${entry.slug}-`)) continue;
-        expect(rendered, `${entry.slug} §10 asks for ${file}, which no page renders`).toContain(file);
+        expect(rendered, `${entry.slug} is missing required demo ${file}`).toContain(file);
       }
     }
   });

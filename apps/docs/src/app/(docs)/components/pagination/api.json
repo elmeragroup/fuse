@@ -17,7 +17,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Landmark label. Defaults to the locale dictionary; an explicit `aria-label` wins over this prop (pagination.md §3).",
+          "description": "Landmark label. Defaults to the locale dictionary; an explicit `aria-label` wins over this prop.",
           "required": false
         }
       ]
@@ -57,7 +57,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Current page. Renders `aria-current=\"page\"` and the outline button variant; inactive links omit the attribute entirely (pagination.md §3/§7).",
+          "description": "Current page. Renders `aria-current=\"page\"` and the outline button variant; inactive links omit the attribute entirely.",
           "required": false
         },
         {

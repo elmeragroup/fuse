@@ -27,7 +27,7 @@ test("the button takes the local compact size subset and a non-submitting type",
   expectTypeOf<InputGroupButtonProps["type"]>().toEqualTypeOf<"button" | "submit" | "reset" | undefined>();
 });
 
-test("the parts take the spec's props and no polymorphic as prop", () => {
+test("the parts take the public props and no polymorphic as prop", () => {
   const _grouped = (
     <InputGroup.Root>
       <InputGroup.Addon align="inline-start">
@@ -46,12 +46,12 @@ test("the parts take the spec's props and no polymorphic as prop", () => {
     </InputGroup.Root>
   );
 
-  // @ts-expect-error Button's own control-box `size` values are not accepted (§4)
+  // @ts-expect-error Button's own control-box `size` values are not accepted
   const _badSize = <InputGroup.Button size="lg" />;
   // @ts-expect-error icon-sm requires aria-label
-  const _unlabeledIconSm = <InputGroup.Button size="icon-sm" />; // oxlint-disable-line elmera/require-icon-button-label -- input-group.md §3: type-level icon-name contract under test
+  const _unlabeledIconSm = <InputGroup.Button size="icon-sm" />; // oxlint-disable-line elmera/require-icon-button-label -- type-level icon-name contract under test
   // @ts-expect-error icon-xs requires aria-label
-  const _unlabeledIconXs = <InputGroup.Button size="icon-xs" />; // oxlint-disable-line elmera/require-icon-button-label -- input-group.md §3: type-level icon-name contract under test
+  const _unlabeledIconXs = <InputGroup.Button size="icon-xs" />; // oxlint-disable-line elmera/require-icon-button-label -- type-level icon-name contract under test
   // @ts-expect-error `align` is the four-value axis only
   const _badAlign = <InputGroup.Addon align="top" />;
   // @ts-expect-error polymorphism is never an `as` prop

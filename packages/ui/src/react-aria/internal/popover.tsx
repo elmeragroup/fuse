@@ -45,7 +45,7 @@ export type PopoverProps = Omit<AriaPopoverProps, "children" | "UNSTABLE_portalC
 };
 
 /**
- * The interim tier's popover surface (date-picker.md §2). Package-private: the RAC
+ * The interim tier's popover surface. Package-private: the RAC
  * Popover was dropped from the public surface entirely, and the public popover is the
  * base-ui entry.
  *
@@ -56,7 +56,7 @@ export type PopoverProps = Omit<AriaPopoverProps, "children" | "UNSTABLE_portalC
  *
  * It carries no overlay-container stamp. That stamp existed solely so the private RAC
  * `Modal`'s `shouldCloseOnInteractOutside` could recognise its own popovers; the modal
- * stack was deleted with spec 08 (date-picker.md §6, 2026-09-03), and the public base-ui
+ * stack was deleted with spec 08, and the public base-ui
  * `Dialog` that now hosts a picker tracks nesting through the React tree instead.
  */
 export function Popover({

@@ -455,8 +455,7 @@ describe("SelectionItem", () => {
 });
 
 /**
- * The one orientation map (checkbox.md §8.10, radio-group.md §8.11, selection-item.md
- * §8.8). These assertions compare the two families against each other rather than against
+ * The one orientation map. These assertions compare the two families against each other rather than against
  * a class string, so the map cannot be forked back into two copies without one of the two
  * moving and this failing. The fieldset skeleton is FieldFrame `heading="legend"`.
  */
@@ -678,7 +677,7 @@ describe("selection group orientation map", () => {
       </>
     );
 
-    // Every control is named, in the card shape too: the nested-root trap of field.md §7
+    // Every control is named, including inside cards: a nested Field.Root
     // would leave these blank.
     for (const name of ["Plain check", "Card check"]) {
       expect(checkboxNamed(name)).toBeTruthy();

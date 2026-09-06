@@ -42,7 +42,7 @@ test("the public values ship from the radio-group entry and the root barrel", ()
   expectTypeOf(RadioItemGroup).toBeFunction();
 });
 
-test("the entry exports only the spec names", () => {
+test("the entry exports only the public names", () => {
   expectTypeOf(RadioGroupModule).toHaveProperty("Radio");
   expectTypeOf(RadioGroupModule).toHaveProperty("RadioGroup");
   expectTypeOf(RadioGroupModule).toHaveProperty("RadioGroupItem");
@@ -97,7 +97,7 @@ test("RadioGroupItem keeps Base UI's stateful className callback", () => {
   expectTypeOf<ItemClassNameFn>().parameter(0).toHaveProperty("checked");
 });
 
-test("Radio, RadioItem, and RadioIconButton props match the spec axes", () => {
+test("Radio, RadioItem, and RadioIconButton props match the public axes", () => {
   expectTypeOf<RadioProps["value"]>().toEqualTypeOf<string>();
   expectTypeOf<RadioProps["isDisabled"]>().toEqualTypeOf<boolean | undefined>();
   expectTypeOf<RadioItemProps["value"]>().toEqualTypeOf<string>();
@@ -115,7 +115,7 @@ test("Radio, RadioItem, and RadioIconButton props match the spec axes", () => {
   expectTypeOf<RadioIconButtonProps>().not.toHaveProperty("disabled");
 });
 
-test("the elements take the spec props and reject invalid combinations", () => {
+test("the elements take the public props and reject invalid combinations", () => {
   const _group = (
     <RadioGroup
       label="Contract"
@@ -204,7 +204,7 @@ test("the elements take the spec props and reject invalid combinations", () => {
   );
 });
 
-test("RadioIconButton passes Radio.Root props through except the composite-owned keys (radio-group.md §3/§8.12)", () => {
+test("RadioIconButton passes Radio.Root props through except the composite-owned keys", () => {
   expectTypeOf<RadioIconButtonProps>().toHaveProperty("render");
   expectTypeOf<RadioIconButtonProps>().toHaveProperty("readOnly");
   expectTypeOf<RadioIconButtonProps>().toHaveProperty("required");

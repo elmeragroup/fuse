@@ -134,7 +134,7 @@ describe("InputGroup", () => {
     );
   });
 
-  it("leaves the group ring unpainted for mouse focus and for addon buttons (§8.6)", async () => {
+  it("leaves the group ring unpainted for mouse focus and for addon buttons", async () => {
     renderThemed(
       <InputGroup.Root>
         <InputGroup.Input aria-label="Search" />
@@ -145,7 +145,7 @@ describe("InputGroup", () => {
     );
     // Chromium always matches :focus-visible on a clicked text field, so the
     // mouse arm is probed on the addon button — the only non-editable receiver
-    // in the group, and the one §8.6 keeps off the group chrome.
+    // in the group, and the one that must stay off the group chrome.
     await userEvent.click(page.getByRole("button", { name: "Clear", exact: true }));
     expect(roleNamed("button", "Clear").matches(":focus-visible")).toBe(false);
     expectNoFocusRing(rootNamed("Search"), "mouse focus must not paint the group ring");
@@ -157,7 +157,7 @@ describe("InputGroup", () => {
     expectNoFocusRing(rootNamed("Search"), "an addon button must keep its own ring off the group chrome");
   });
 
-  it("keeps the canonical group ring inside a popup surface (§8.7)", async () => {
+  it("keeps the canonical group ring inside a popup surface", async () => {
     renderThemed(
       <>
         <button type="button">Before</button>
@@ -300,7 +300,7 @@ describe("InputGroup", () => {
       compactXs.push(px(getComputedStyle(roleNamed("button", "Copy")).height));
       compactIconXs.push(px(getComputedStyle(roleNamed("button", "Clear")).height));
     }
-    // input-group.md §4 exemption: compact addon chrome is density-independent.
+    // Compact addon chrome is density-independent.
     expect(compactXs[0]).toBe(compactXs[1]);
     expect(compactIconXs[0]).toBe(compactIconXs[1]);
 
@@ -315,7 +315,7 @@ describe("InputGroup", () => {
     expect(px(getComputedStyle(rootNamed("Meter")).height)).toBe(CONTROL_MD.dense.height);
   });
 
-  it("ignores a nested data-density stamp in both directions (input-group.md §9)", () => {
+  it("ignores a nested data-density stamp in both directions", () => {
     renderThemed(
       <>
         <InputGroup.Root>

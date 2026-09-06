@@ -24,7 +24,7 @@ import { Button } from "../internal/button";
 import { composeTailwindRenderProps } from "../internal/utils";
 
 /**
- * Single-month calendar composite over RAC `Calendar` (calendar.md §2/§3).
+ * Single-month calendar composite over RAC `Calendar`.
  * Client — the interim react-aria cluster owns grid state, selection, and focus.
  */
 export type CalendarProps<T extends DateValue> = {

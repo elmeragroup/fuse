@@ -141,7 +141,7 @@ describe("DropdownMenu", () => {
     await openWithArrowDown();
     expect(document.activeElement).toBe(itemNamed("Profile"));
 
-    // dropdown-menu.md §7/§8.11: base-ui keeps a disabled item in the roving sequence so a
+    // base-ui keeps a disabled item in the roving sequence so a
     // screen-reader user hears that the option exists; it announces aria-disabled instead.
     await userEvent.keyboard("{ArrowDown}");
     const settings = itemNamed("Settings");

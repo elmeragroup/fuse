@@ -149,7 +149,7 @@ describe("FileTrigger", () => {
       </>
     );
 
-    // The visible Button defaults to `size="sm"` (file-trigger.md §3). Density is a
+    // The visible Button defaults to `size="sm"`. Density is a
     // document-root axis: `ui.css` keys the comfortable block on
     // `:root[data-density="comfortable"]`, so a nested attribute rescopes nothing.
     for (const density of ["dense", "comfortable"] as const) {

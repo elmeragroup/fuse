@@ -240,7 +240,7 @@ describe("Sheet", () => {
   it("keeps Body as the scroll container and stamps the layout slots", async () => {
     renderThemed(withLocale("en-US", <BasicSheet />));
     const dialog = await openSheet();
-    // spec §9 slot audit
+    // DOM audit: the sheet body slot owns scrolling inside the dialog.
     const body = dialog.querySelector("[data-slot=sheet-body]");
     expect(body).not.toBeNull();
     if (!(body instanceof HTMLElement)) {
@@ -260,7 +260,7 @@ describe("Sheet", () => {
   it("resolves the size axis to the side-gated used max-width on both gated sides", async () => {
     // Asserts the used value the panel is actually capped at, not the class spelling:
     // the axis moves through `--overlay-width`, so a rung is only correct if the two
-    // side-gated `max-w-(--overlay-width)` consumers resolve it (sheet.md §4, §8.13).
+    // side-gated `max-w-(--overlay-width)` consumers resolve it.
     const cases = [
       { size: undefined, cap: () => remToPx(readToken("--container-md")) },
       { size: "sm", cap: () => remToPx(readToken("--container-sm")) },
@@ -293,7 +293,7 @@ describe("Sheet", () => {
 
   it("leaves the size axis inert below the sm breakpoint, where the panel is full-width", async () => {
     // The `sm:` half of the gate: `size` only caps a left/right panel once the viewport
-    // is wide enough, and `w-full` owns the width below that (sheet.md §4).
+    // is wide enough, and `w-full` owns the width below that.
     await page.viewport(500, 768);
     const { unmount } = renderThemed(withLocale("en-US", <BasicSheet side="right" size="sm" />));
     const dialog = await openSheet();

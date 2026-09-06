@@ -1,10 +1,10 @@
 /**
- * Module-private recipe (meter.md §4). Not exported from the public entry —
+ * Module-private recipe. Not exported from the public entry —
  * there is no proven recipe-borrowing use. Status fill/text use the `error`
- * tokens (meter.md §8.3).
+ * tokens.
  *
  * One `tone` axis, four arms. The `mode` × `level` resolution lives in
- * `METER_TONE_TABLE` (meter.md §8.9), so this recipe holds colors only.
+ * `METER_TONE_TABLE`, so this recipe holds colors only.
  */
 import { tv } from "tailwind-variants";
 

@@ -120,7 +120,7 @@ describe("Sidebar namespace", () => {
 });
 
 describe("sidebarMenuButtonVariants", () => {
-  it("covers the spec §4 axes with the shell-local height ladder", () => {
+  it("covers the public axes with the shell-local height ladder", () => {
     const defaults = sidebarMenuButtonVariants();
     expect(defaults).toContain("h-8");
     expect(defaults).toContain("peer/menu-button");

@@ -28,7 +28,7 @@ import { composeTailwindRenderProps } from "../internal/utils";
 import { datePickerStrings } from "./intl";
 
 /**
- * Labeled date-picker composite over RAC `DatePicker` (date-picker.md §2/§3): the public
+ * Labeled date-picker composite over RAC `DatePicker`: the public
  * `DateInput` and `Calendar`, handed to the package-private `PickerShell` that both date
  * pickers wear. Client — the interim react-aria cluster owns segment state, overlay state
  * and the focused-month sync below.
@@ -45,12 +45,12 @@ export type DatePickerProps<T extends DateValue> = {
   description?: string;
   /**
    * Error copy, rendered as `FieldError` when the picker is invalid. Accepts a node or a
-   * validation render function (§8.4 widens the reference's string-only face).
+   * validation render function.
    */
   errorMessage?: ReactNode | ((validation: ValidationResult) => ReactNode);
   /**
    * The default value (uncontrolled). Widened to allow an explicit `null` so a form can
-   * reset the picker to empty without dropping the prop (§8.5).
+   * reset the picker to empty without dropping the prop.
    */
   defaultValue?: T | null;
   /**
@@ -75,7 +75,7 @@ export type DatePickerProps<T extends DateValue> = {
 
 /**
  * The month the popover opens on: the selected date's month, or the current month when
- * there is no value (date-picker.md §2 — the today-fallback is kept from the reference).
+ * there is no value (the today-fallback is kept from the reference).
  */
 function focusedMonthFor<T extends DateValue>(value: T | null | undefined): CalendarDate {
   return toCalendarDate(value ?? today(getLocalTimeZone()));
@@ -85,7 +85,7 @@ function focusedMonthFor<T extends DateValue>(value: T | null | undefined): Cale
  * Whether a node a caller handed us would paint anything. `presetGroup={showPresets &&
  * <DatePickerPresetGroup />}` is the idiomatic conditional, so `false` — like `null`,
  * `undefined` and `""` — has to read as "no preset pane" and leave the dialog in its
- * single-pane layout (§2).
+ * single-pane layout.
  */
 function isRenderableNode(node: ReactNode): boolean {
   return node !== null && node !== undefined && node !== false && node !== "";
@@ -97,12 +97,12 @@ function isRenderableNode(node: ReactNode): boolean {
  * The month the grid shows is local state so paging never rewrites the value, and it is
  * derived from the RAC `DatePickerStateContext` rather than from `props.value` — that is
  * what makes the sync hold for an uncontrolled `defaultValue` picker as well as a
- * controlled one (§8.12), because `state.value` is the committed value in both modes.
- * Two triggers cover §2's stated effect: the popover unmounts its content on close, so
+ * controlled one, because `state.value` is the committed value in both modes.
+ * Two triggers synchronize the focused date: the popover unmounts its content on close, so
  * this component mounts once per open and the `useState` initializer *is* the per-open
  * resync, while the derive-with-reset below follows a value that changes with the dialog
  * still open — a preset pane lives inside the popover. It resyncs during the render that
- * first sees the new value rather than in an effect after paint (§8.15), and the compare
+ * first sees the new value rather than in an effect after paint, and the compare
  * guard keeps a fresh, equal `CalendarDate` from committing anything.
  */
 function PickerCalendar({ className }: { className: string }): ReactElement {
@@ -172,7 +172,7 @@ export type DatePickerPresetGroupProps = ComponentProps<typeof AriaRadioGroup> &
 /**
  * The quick-choice pane beside the calendar: a radio group whose options are dates.
  * Only one preset can be in effect at a time, which is why this is a `radiogroup` and
- * not a row of buttons (§7).
+ * not a row of buttons.
  */
 export function DatePickerPresetGroup({
   className,
@@ -193,7 +193,7 @@ export function DatePickerPresetGroup({
 
 export type DatePickerPresetItemProps = ComponentProps<typeof AriaRadio> & {
   /**
-   * Supporting copy carried alongside the preset, kept from the reference face (§3).
+   * Supporting copy carried alongside the preset, kept from the reference face.
    * RAC `Radio` renders only its children, so this never joins the accessible name.
    */
   description?: string;
@@ -207,8 +207,8 @@ export type DatePickerPresetItemProps = ComponentProps<typeof AriaRadio> & {
 
 /**
  * One preset. Styled as a ghost `sm` button from the shared public `buttonVariants`
- * recipe (§4) so a preset reads as the affordance it is, and named by its visible
- * children — the library never synthesises copy from the item's `value` (§8.8).
+ * recipe so a preset reads as the affordance it is, and named by its visible
+ * children — the library never synthesises copy from the item's `value`.
  */
 export function DatePickerPresetItem({
   className,
@@ -228,7 +228,7 @@ export function DatePickerPresetItem({
           size: "sm",
           variant: "ghost",
           // The radio's own indicator, if a caller's children render one, stays hidden:
-          // the preset is a button-shaped choice, not a bullet list (§3).
+          // the preset is a button-shaped choice, not a bullet list.
           className:
             "justify-start text-left data-disabled:pointer-events-none data-selected:bg-accent *:data-[slot=radio-indicator]:hidden",
         })

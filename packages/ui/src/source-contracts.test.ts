@@ -285,8 +285,8 @@ describe("deleted user-agent and @elmeragroup/lib APIs", () => {
 
 describe("combobox", () => {
   // Why not a lint rule: `@base-ui/react/combobox` type-checks and is the
-  // usual subpath; it crashes at runtime with a null React context
-  // (combobox.md §8). The forbidden specifier is one documented trap, not a
+  // usual subpath; it crashes at runtime with a null React context.
+  // The forbidden specifier is one documented trap, not a
   // grammar.
   it("imports Combobox from the @base-ui/react package root, never the combobox subpath", () => {
     const source = readSrc("components/combobox/combobox.tsx");
@@ -374,8 +374,8 @@ describe("density host interface", () => {
 
 describe("react-aria internal overlay stack", () => {
   // Why not a lint rule: the invariant is the *absence* of two modules plus the
-  // absence of the attribute they coupled on. Spec 08 / date-picker.md §6
-  // (2026-09-03) deleted the private RAC Modal and the overlay-container stamp; a
+  // absence of the attribute they coupled on. The private RAC Modal and
+  // overlay-container stamp were removed; a
   // picker now sits inside the public base-ui Dialog, which tracks nesting through
   // the React tree. This fails the moment either comes back by copy-paste.
   it("ships no Modal and no overlay-container coupling", () => {
@@ -388,8 +388,8 @@ describe("react-aria internal overlay stack", () => {
 
 describe("Twemoji artwork fidelity", () => {
   // Why not a lint rule: the contract is that the bundled third-party artwork
-  // is a verbatim lift of the Twemoji path data the NOTICE file attributes
-  // (emoji.md §5). A lint rule cannot know which literal is the licensed
+  // is a verbatim lift of the Twemoji path data the NOTICE file attributes.
+  // A lint rule cannot know which literal is the licensed
   // original; the path data itself is the contract, so it is pinned here.
   it("keeps the lifted Twemoji path data and fills verbatim", () => {
     const source = readSrc("components/emoji/emoji.tsx");
@@ -403,7 +403,7 @@ describe("Twemoji artwork fidelity", () => {
 describe("overlay layer", () => {
   // Why not a lint rule: the invariant is a count across two places — the
   // shared overlay module spells `z-50` once (theming.md §7.4) and no
-  // component restates it (popover.md §8.4). A lint rule banning the class
+  // component restates it. A lint rule banning the class
   // would need a per-file exemption for exactly the module that owns it, and
   // could not assert the "exactly once" half.
   it("is declared once in overlay-classes.ts and nowhere else in component source", () => {

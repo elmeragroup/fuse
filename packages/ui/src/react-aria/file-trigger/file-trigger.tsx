@@ -14,11 +14,11 @@ import { cn } from "../../styles/cn";
 import { Button } from "../internal/button";
 
 /**
- * Named file-picking button over RAC `FileTrigger` (file-trigger.md §2/§3).
+ * Named file-picking button over RAC `FileTrigger`.
  * Client — RAC owns the hidden file input and press-to-open.
  *
  * `variant`, `size`, `isDisabled`, and `className` route to the visible Button;
- * they never land on the primitive (file-trigger.md §8.3). `ref` is the hidden
+ * they never land on the primitive. `ref` is the hidden
  * `<input type="file">`.
  */
 export type FileTriggerProps = {

@@ -37,7 +37,7 @@ export type TextareaFieldProps = {
 >;
 
 /**
- * Labeled multiline field composite over Field + Textarea (textarea-field.md §2/§7).
+ * Labeled multiline field composite over Field + Textarea.
  * Client — it owns the uncontrolled counter length and the value-not-event change
  * handler (performance.md §RSC classification).
  */

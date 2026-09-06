@@ -11,7 +11,7 @@ import { mergeClassName } from "../../styles/merge-class-name";
 import { selfFocusRingClass } from "../../styles/utils";
 
 /**
- * Visibility face for the Radix-style `type` prop (scroll-area.md §4).
+ * Visibility face for the Radix-style `type` prop.
  * `keepMounted` is not a class, so it stays on {@link SCROLLBAR_KEEP_MOUNTED}.
  */
 export const scrollbarTypeVariants = tv({

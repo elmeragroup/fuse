@@ -6,7 +6,7 @@ import { cssVarColor, headingNamed, renderThemed, textNamed } from "../../../tes
 import { Card } from "./card";
 
 function slot(name: string): HTMLElement {
-  // spec §9 slot audit: all eight parts emit their data-slot values.
+  // DOM audit: all eight parts emit their data-slot values.
   const element = document.querySelector(`[data-slot="${name}"]`);
   if (!(element instanceof HTMLElement)) {
     throw new Error(`expected an element with data-slot="${name}"`);

@@ -21,7 +21,7 @@ import type { OverlayContainerProps, OverlayPositionerProps } from "../overlay/o
 import { dropdownMenuVariants } from "./dropdown-menu-variants";
 
 const dropdownMenuSlots = dropdownMenuVariants();
-/** Shared item face (dropdown-menu.md §4). Module-private — Item, LinkItem, CheckboxItem, RadioItem, and SubTrigger compose it. */
+/** Shared item face. Module-private — Item, LinkItem, CheckboxItem, RadioItem, and SubTrigger compose it. */
 const dropdownMenuItemClassName = dropdownMenuSlots.item();
 
 function DropdownMenuPortal(props: ComponentProps<typeof MenuPrimitive.Portal>): ReactElement {
@@ -29,11 +29,10 @@ function DropdownMenuPortal(props: ComponentProps<typeof MenuPrimitive.Portal>):
 }
 
 /**
- * The one menu popup (dropdown-menu.md §8.3). Content and SubContent are the same
+ * The one menu popup. Content and SubContent are the same
  * `Portal > Positioner > Popup` with different defaults, a different `data-slot`, and a
- * different popup-chrome extra; §8.3's ruling — that SubContent never renders through
- * Content, and each popup carries a single class string — is what this shape enforces,
- * rather than the ref's double-wrap. Both callers resolve their own positioner defaults.
+ * different popup-chrome extra. SubContent calls this helper directly, keeping one popup
+ * and one class string. Both callers resolve their own positioner defaults.
  */
 function DropdownMenuPopup({
   className,
@@ -54,7 +53,7 @@ function DropdownMenuPopup({
   return (
     <OverlayPortal portal={DropdownMenuPortal} container={container}>
       <MenuPrimitive.Positioner
-        // oxlint-disable-next-line elmera/no-local-focus-ring -- dropdown-menu.md §7: positioner is not a focus target
+        // oxlint-disable-next-line elmera/no-local-focus-ring -- positioner is not a focus target
         className={cn(overlayPositionerClass, "outline-none")}
         align={align}
         alignOffset={alignOffset}
@@ -148,7 +147,7 @@ export type DropdownMenuItemProps = ComponentProps<typeof MenuPrimitive.Item> & 
   inset?: boolean;
   /**
    * Visual tone. The value stays `"destructive"` for consumer compat; classes use
-   * `error` tokens (dropdown-menu.md §8).
+   * `error` tokens.
    * @default "default"
    */
   variant?: "default" | "destructive";

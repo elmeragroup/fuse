@@ -9,7 +9,7 @@ type EmptyRootProps = ComponentProps<"div"> & VariantProps<typeof emptyVariants>
 type EmptyMediaProps = ComponentProps<"div"> & VariantProps<typeof emptyMediaVariants>;
 
 /**
- * Centered empty-state layout (empty.md §2/§7). Server component — it owns no state,
+ * Centered empty-state layout. Server component — it owns no state,
  * no handlers, and no browser APIs (performance.md §RSC classification).
  */
 function EmptyRoot({ className, variant = "default", ...props }: EmptyRootProps): ReactElement {

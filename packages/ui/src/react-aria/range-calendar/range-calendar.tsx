@@ -17,11 +17,10 @@ import { rangeCalendarVariants } from "../../styles/range-calendar";
 import { CalendarGridHeader, CalendarHeader } from "../calendar/calendar";
 
 /**
- * Single-month range calendar composite over RAC `RangeCalendar` (range-calendar.md
- * §2/§3). Client — the interim react-aria cluster owns range state, anchoring and focus.
+ * Single-month range calendar composite over RAC `RangeCalendar`. Client — the interim react-aria cluster owns range state, anchoring and focus.
  *
  * The header row and the weekday header row are Calendar's public parts, not copies:
- * they are the reuse seam the calendar spec §2 mints them for.
+ * both calendar components share their header and weekday rendering.
  */
 export type RangeCalendarProps<T extends DateValue> = {
   /**
@@ -34,7 +33,7 @@ export type RangeCalendarProps<T extends DateValue> = {
 type SelectionState = NonNullable<VariantProps<typeof rangeCalendarVariants>["selectionState"]>;
 
 /**
- * Which of the pill's three fills a date wears (§2). A cap is either end of the
+ * Which of the pill's three fills a date wears. A cap is either end of the
  * highlighted range — including the single-day range where both ends are the same date.
  */
 function getSelectionState(

@@ -12,9 +12,9 @@
  * then adds `success` and `justify`. Link does **not** extend: `extend` would merge
  * the `destructive` arm into `LinkProps["variant"]`. Instead it reads
  * `typographyFragments.variants.variant`, omits `destructive`, and re-keys that
- * class as `error` (link.md §8.2). Align is the same read, plus Link's `justify`.
+ * class as `error`. Align is the same read, plus Link's `justify`.
  *
- * `destructive` keeps the ref value name; the class is `text-error` (heading.md §8.4).
+ * `destructive` keeps the ref value name; the class is `text-error`.
  */
 import { tv } from "tailwind-variants";
 

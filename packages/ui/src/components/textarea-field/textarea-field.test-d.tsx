@@ -34,7 +34,7 @@ test("TextareaFieldProps is the composite is* face plus remaining native textare
   expectTypeOf<TextareaFieldProps>().not.toHaveProperty("required");
 });
 
-test("the element takes the spec's props and no TextArea alias or native is* duplicates", () => {
+test("the element takes the public props and no TextArea alias or native is* duplicates", () => {
   const _basic = <TextareaField label="Bio" description="Shown to other users." placeholder="Write a bio." />;
   const _states = (
     <TextareaField

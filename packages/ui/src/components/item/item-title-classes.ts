@@ -1,6 +1,6 @@
 /**
- * Item.Title class string (item.md §2). Shared with Alert.Title so the alert
- * heading keeps the same type while staying an `h*` (alert.md §8.2).
+ * Item.Title class string. Shared with Alert.Title so the alert
+ * heading keeps the same type while staying an `h*`.
  * Package-private — not on the `@elmeragroup/ui/item` facade.
  */
 import { cn } from "../../styles/cn";

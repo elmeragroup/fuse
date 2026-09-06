@@ -1,15 +1,15 @@
 import { tv } from "tailwind-variants";
 
 /**
- * PUBLIC recipe (badge.md §4). `CheckboxCard` borrows it for its tag chips, so it
+ * PUBLIC recipe. `CheckboxCard` borrows it for its tag chips, so it
  * ships from `@elmeragroup/ui/badge`.
  *
  * - `destructive` / `outline-destructive` keep their ref value names for consumer
- *   compat, but their classes resolve to the canonical `error` tokens (§8.1).
+ *   compat, but their classes resolve to the canonical `error` tokens.
  * - The `info` arm's `color-mix(in oklch, var(--info) …)` arbitrary values are the
- *   sanctioned token-derived exception recorded in §4 / §8.3 — no raw palette appears.
- * - Badge is deliberately non-interactive: the ref's bare `:focus` ring is dropped (§8.5).
- * - `size` is a decorative pill axis, not a density rung (conventions.md §Density metrics):
+ *   token-derived exception; no raw palette appears.
+ * - Badge is deliberately non-interactive: the ref's bare `:focus` ring is dropped.
+ * - `size` is a decorative pill axis, not a density rung:
  *   it pins no control box, so it does not read `--control-*`.
  */
 export const badgeVariants = tv({

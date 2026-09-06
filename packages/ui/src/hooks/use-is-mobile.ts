@@ -22,7 +22,7 @@ function getIsMobileServerSnapshot(): boolean {
 }
 
 /**
- * Package-private viewport probe for Sidebar (sidebar.md §2 "Private useIsMobile"):
+ * Package-private viewport probe for Sidebar:
  * a `(max-width: 767px)` media query against the 768px breakpoint. Snapshot is
  * `mql.matches`, so a non-hydrating client first render already reports the real
  * value. Server snapshot is `false`, so SSR and hydration report desktop until the

@@ -24,7 +24,7 @@ import type { Toggle } from "@elmeragroup/ui/toggle";
 import type { Tooltip } from "@elmeragroup/ui/tooltip";
 
 /**
- * className contracts (conventions.md "className contracts"): a part either keeps Base UI's
+ * className contracts: a part either keeps Base UI's
  * string-or-state-callback union or is deliberately narrowed to a string. Each line below is
  * one part, so a failing assertion names the part in its line number.
  */

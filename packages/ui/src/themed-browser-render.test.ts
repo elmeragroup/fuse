@@ -29,7 +29,7 @@ function walk(directory: string): string[] {
 const suiteFiles = suiteRoots.flatMap((root) => walk(root));
 const suiteSources = new Map(suiteFiles.map((file) => [file, readFileSync(file, "utf8")]));
 
-const SLOT_AUDIT_CITE = /§9/;
+const DOM_AUDIT_COMMENT = /(?:\/\/|\/\*\*?|^\s*\*)\s*DOM audit:\s*\w/;
 const DOCUMENT_QUERY = /\bdocument\.querySelector(?:All)?\s*\(/;
 const SLOT_QUERY = /(?:querySelector(?:All)?|closest)\s*\(\s*(['"`])[^'"`]*data-slot/;
 const STAR_QUERY = /querySelectorAll\(\s*(['"`])\*\1\s*\)/;
@@ -54,9 +54,9 @@ function isSlotOrDocumentLocator(line: string): boolean {
   );
 }
 
-function isCitedSlotAudit(lines: string[], index: number): boolean {
+function isDocumentedDomAudit(lines: string[], index: number): boolean {
   const windowStart = Math.max(0, index - 16);
-  return lines.slice(windowStart, index + 1).some((line) => SLOT_AUDIT_CITE.test(line));
+  return lines.slice(windowStart, index + 1).some((line) => DOM_AUDIT_COMMENT.test(line));
 }
 
 function unsanctionedSlotLocators(): string[] {
@@ -65,7 +65,7 @@ function unsanctionedSlotLocators(): string[] {
     const lines = source.split("\n");
     for (let index = 0; index < lines.length; index++) {
       const line = lines[index] ?? "";
-      if (!isSlotOrDocumentLocator(line) || isCitedSlotAudit(lines, index)) {
+      if (!isSlotOrDocumentLocator(line) || isDocumentedDomAudit(lines, index)) {
         continue;
       }
       findings.push(`${relative(sourceRoot, file)}:${index + 1}`);
@@ -96,7 +96,20 @@ describe("themed browser-test harness", () => {
     expect(findings).toEqual([]);
   });
 
-  it("locates by role except cited §9 slot audits and document-root queries", () => {
+  it("requires an explained DOM audit comment within the query window", () => {
+    const query = 'document.querySelector("[data-slot=card]")';
+    expect(isDocumentedDomAudit(["// DOM audit: all card parts expose their slots.", query], 1)).toBe(true);
+    expect(isDocumentedDomAudit([query + " // DOM audit: the card slot is public."], 0)).toBe(true);
+    expect(isDocumentedDomAudit(["/** DOM audit: each card part exposes a slot. */", query], 1)).toBe(true);
+    expect(isDocumentedDomAudit(["// DOM audit:", query], 1)).toBe(false);
+    expect(isDocumentedDomAudit(['const note = "DOM audit: card";', query], 1)).toBe(false);
+    expect(isDocumentedDomAudit(["// Unrelated comment", query], 1)).toBe(false);
+    const lines = ["// DOM audit: all card parts expose their slots.", ...Array<string>(16).fill("")];
+    expect(isDocumentedDomAudit(lines, 16)).toBe(true);
+    expect(isDocumentedDomAudit([...lines, query], 17)).toBe(false);
+  });
+
+  it("locates by role except documented DOM contract checks", () => {
     expect(unsanctionedSlotLocators()).toEqual([]);
   });
 });

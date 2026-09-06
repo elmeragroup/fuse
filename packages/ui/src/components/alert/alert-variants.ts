@@ -1,9 +1,9 @@
 /**
- * Module-private slot recipe (alert.md §4). Not exported from the public entry —
- * there is no proven recipe-borrowing use (§8.7).
+ * Module-private slot recipe. Not exported from the public entry —
+ * there is no proven recipe-borrowing use.
  *
  * `variant` is the status axis only. Item supplies `variant="outline"` / `size="sm"`
- * underneath; this recipe is not a density rung (alert.md §4; conventions.md § Density).
+ * underneath; this recipe is not a density rung.
  */
 import { tv } from "tailwind-variants";
 

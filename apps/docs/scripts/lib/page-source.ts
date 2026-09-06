@@ -17,7 +17,7 @@ import { readFileSync } from "node:fs";
 import type { ContentHeading } from "../../src/lib/docs-model.ts";
 import { slugifyHeading } from "../../src/lib/slug.ts";
 
-/** One demo the page renders, in authored (spec §10 scenario) order. */
+/** One demo the page renders, in authored order. */
 export type PageDemo = {
   /** Anchor id, unique inside the page. */
   id: string;

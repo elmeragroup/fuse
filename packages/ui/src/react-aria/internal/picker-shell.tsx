@@ -13,7 +13,7 @@ import { Description, FieldError, FieldGroup, Label } from "./field";
 import { Popover } from "./popover";
 
 /**
- * The chrome both date pickers wear (date-picker.md §2, date-range-picker.md §2): label,
+ * The chrome both date pickers wear: label,
  * field box, trigger, help text, and the popover/dialog the grid opens into. Only the
  * segment row(s) and the popover body differ between DatePicker and DateRangePicker, so
  * those two are the `children` and `popover` props and everything else lives here once
@@ -33,7 +33,7 @@ import { Popover } from "./popover";
  *    disables at two call sites and is now one.
  *
  * The dialog is the styled private `Dialog` with `closeButton={false}` and no `title`,
- * which is what gives §7's accessible name: an untitled styled Dialog renders no heading,
+ * which supplies the accessible name: an untitled styled Dialog renders no heading,
  * so the name RAC publishes on `DialogContext` reaches the overlay unopposed. See
  * `internal/dialog.tsx` for why a rendered-but-empty heading would take that name instead.
  */
@@ -77,7 +77,7 @@ export function PickerShell({
       {label ? <Label>{label}</Label> : null}
       <FieldGroup className={group()} isReadOnly={isReadOnly}>
         {children}
-        {/* oxlint-disable-next-line elmera/require-icon-button-label -- date-picker.md §7 / date-range-picker.md §7: RAC's DatePicker and DateRangePicker fill this default Button slot and supply the trigger's localized accessible name ("Calendar"); a local label would shadow it. Asserted in both browser suites. */}
+        {/* oxlint-disable-next-line elmera/require-icon-button-label -- RAC's DatePicker and DateRangePicker fill this default Button slot and supply the trigger's localized accessible name ("Calendar"); a local label would shadow it. Asserted in both browser suites. */}
         <Button size="icon-sm" variant="ghost">
           <CalendarBlank aria-hidden className={icon()} />
         </Button>

@@ -1,7 +1,7 @@
 ---
 title: {{pascalCase name}}
 lede: >
-  TODO({{name}}): one or two sentences from §1 of docs/spec/components/{{name}}.md — what it
+  TODO({{name}}): one or two sentences explaining what this component
   is and when to reach for it. Frontmatter declares title and lede, and nothing else.
 ---
 
@@ -16,12 +16,11 @@ export const metadata = componentMetadata("{{name}}");
 <Prose>
 
 SCAFFOLD — a hand-authored component page (docs-site.md §1), composing the §3.4 anatomy in
-the order below: intro, prose, one frame per §10 scenario, API reference, tokens. Only this
+the order below: intro, prose, one frame per reviewed scenario, API reference, tokens. Only this
 prose and the frames are authored; the intro, the reference and the token list read
 generated data, so never hand-write them.
 
-TODO({{name}}): replace this block with the page prose — composition limits, the §8
-divergences a consumer can feel, and anything the generated API reference cannot say. Add
+TODO({{name}}): replace this block with the page prose — composition limits, behavior a consumer needs to understand, and anything the generated API reference cannot say. Add
 one demo import and one frame per scenario below; a frame naming a file that is not in
 `demos/`, and a file in `demos/` that no frame renders, both fail generation.
 

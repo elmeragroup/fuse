@@ -603,7 +603,7 @@
           "type": "\"default\" | \"destructive\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "Visual tone. The value stays `\"destructive\"` for consumer compat; classes use `error` tokens (dropdown-menu.md §8).",
+          "description": "Visual tone. The value stays `\"destructive\"` for consumer compat; classes use `error` tokens.",
           "required": false
         },
         {

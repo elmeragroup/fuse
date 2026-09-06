@@ -53,7 +53,7 @@ tester.run("anti-slop/no-slop-comments", noSlopCommentsRule, {
       name: "TODO with an RFC reference may stay",
       code: "// TODO: blocked on RFC 9110 language around idempotency.\nconst a = 1;",
     },
-    "// Single-height field box: pins the `md` control rung (conventions.md ruling 2,\n// which callers keep).\nconst a = 1;",
+    "// Single-height field box: pins the `md` control rung.\nconst a = 1;",
     "// neutral: primary-colored bar at every level (no good/bad semantics, no icon)\nconst a = 1;",
     "// variant axes (e.g. media image sizes) are not density rungs, so only\n// base is scanned.\nconst a = 1;",
     "// glyph already wins and the important flag it used to carry was noise.\nconst a = 1;",

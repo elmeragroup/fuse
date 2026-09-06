@@ -13,7 +13,7 @@ const FACES = [
   ["PartyingFace", Emoji.PartyingFace],
 ] as const;
 
-/** spec §9 slot audit: each face emits `data-slot="emoji"` on the svg. */
+/** DOM audit: each face emits `data-slot="emoji"` on the svg. */
 function slotSvg(): SVGElement {
   const element = document.querySelector('[data-slot="emoji"]');
   if (!(element instanceof SVGElement)) {

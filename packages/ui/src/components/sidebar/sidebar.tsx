@@ -35,7 +35,7 @@ import { sidebarStrings } from "./intl";
 import { sidebarMenuButtonVariants, sidebarMenuSubButtonVariants } from "./sidebar-variants";
 
 /**
- * Cookie the open state persists to. HARD invariant (sidebar.md §2/§8.6): the funnel
+ * Cookie the open state persists to. HARD invariant: the funnel
  * `layout.tsx` server-reads `cookieStore.get("sidebar:state")` for SSR open-state, so the
  * shadcn template's underscore-separated name would silently break it.
  */
@@ -56,7 +56,7 @@ export type SidebarContextValue = {
   state: "expanded" | "collapsed";
   /** Desktop open state — controlled or internal. */
   open: boolean;
-  /** Writes the cookie on every call, controlled or not; accepts a boolean or an updater (§8.3). */
+  /** Writes the cookie on every call, controlled or not; accepts a boolean or an updater. */
   setOpen: (open: boolean | ((open: boolean) => boolean)) => void;
   /** Mobile Sheet state; session-only, never cookie-persisted. */
   openMobile: boolean;
@@ -93,7 +93,7 @@ function useSidebarInternal(): SidebarInternalContextValue {
 }
 
 /**
- * The Provider's open/mobile state and toggle (sidebar.md §2). Throws outside
+ * The Provider's open/mobile state and toggle. Throws outside
  * `Sidebar.Provider`.
  */
 export function useSidebar(): SidebarContextValue {
@@ -147,7 +147,7 @@ function SidebarProvider({
   const pendingOpen = useRef<boolean | undefined>(undefined);
 
   const setOpen = useCallback((value: boolean | ((value: boolean) => boolean)) => {
-    // oxlint-disable-next-line anti-slop/no-runtime-typeof -- updater-or-boolean is the setter contract (sidebar.md §8.3)
+    // oxlint-disable-next-line anti-slop/no-runtime-typeof -- updater-or-boolean is the setter contract
     const openState = typeof value === "function" ? value(pendingOpen.current ?? latest.current.open) : value;
     if (pendingOpen.current === undefined) {
       // Compose requests within this event, then return authority to committed state.
@@ -266,7 +266,7 @@ function SidebarRoot({
   const { isMobile, state, openMobile, setOpenMobile } = value;
 
   if (collapsible === "none") {
-    // Funnel deviation from the shadcn template (sidebar.md §3): the inset wizard dialogs
+    // Funnel deviation from the shadcn template: the inset wizard dialogs
     // rely on a sibling Inset's `peer-data-[variant=inset]:` and the wrapper's
     // `has-data-[variant=inset]:`, so this branch keeps group/peer + data-state/variant/side.
     return (
@@ -425,9 +425,9 @@ function SidebarInset({ className, ...props }: SidebarInsetProps): ReactElement 
 
 /**
  * Typed as `ComponentProps<"input">` (string `className`) rather than the base-ui Input's
- * props, whose `className` can be a render-prop function `cn` cannot merge (sidebar.md §2).
+ * props, whose `className` can be a render-prop function `cn` cannot merge.
  * Composes the library Input so the shared `focusRing` ships with the field box; `h-8` is
- * the shell-local density exemption (sidebar.md §4/§8.14).
+ * the shell-local density exemption.
  */
 export type SidebarInputProps = ComponentProps<"input">;
 
@@ -574,7 +574,6 @@ export type SidebarMenuButtonProps = useRender.ComponentProps<"button"> &
 /**
  * The collapsed-rail tooltip. It — not `Sidebar.MenuButton` — is the context consumer,
  * so a menu button without a `tooltip` does not re-render when the rail toggles
- * (sidebar.md §8.21).
  */
 function SidebarMenuButtonTooltip(contentProps: TooltipContentProps): ReactElement | null {
   const { isMobile, state } = useSidebar();
@@ -608,7 +607,7 @@ function SidebarMenuButton({
     return button;
   }
 
-  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- string tooltip shorthand is the documented contract (sidebar.md §3)
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- string tooltip shorthand is the documented contract
   const contentProps: TooltipContentProps = typeof tooltip === "string" ? { children: tooltip } : tooltip;
 
   return (
@@ -677,7 +676,7 @@ export type SidebarMenuSkeletonProps = ComponentProps<"div"> & {
 };
 
 /**
- * The text bar's width is CSS-deterministic (sidebar.md §8.4): `--skeleton-width` cycles
+ * The text bar's width is CSS-deterministic: `--skeleton-width` cycles
  * five values in the 50–90% band by the parent row's `:nth-child` position, so two mounts
  * produce identical DOM and server and client agree — the ref randomized the width per mount,
  * a hydration mismatch by construction.

@@ -41,7 +41,7 @@ const sheetContentVariants = tv({
   base: cn(
     overlayPopupFillClass,
     // `--overlay-width` is set by the `size` axis below; these two selectors gate the
-    // cap to left/right at `sm:` rather than repeating every rung (sheet.md §4).
+    // cap to left/right at `sm:` rather than repeating every rung.
     "data-[side=left]:sm:max-w-(--overlay-width) data-[side=right]:sm:max-w-(--overlay-width)",
     "text-sm shadow-lg ease-out pointer-events-auto fixed bg-clip-padding transition-transform duration-200 data-ending-style:duration-[calc(var(--drawer-swipe-strength,1)*150ms)] data-ending-style:ease-[cubic-bezier(0.23,1,0.32,1)] data-swiping:transition-none data-[side=bottom]:inset-x-0 data-[side=bottom]:bottom-0 data-[side=bottom]:h-auto data-[side=bottom]:[transform:translateY(var(--drawer-swipe-movement-y,0px))] data-[side=bottom]:border-t data-[side=bottom]:data-ending-style:[transform:translateY(100%)] data-[side=bottom]:data-starting-style:[transform:translateY(100%)] data-[side=left]:inset-y-0 data-[side=left]:left-0 data-[side=left]:h-full data-[side=left]:w-full data-[side=left]:[transform:translateX(var(--drawer-swipe-movement-x,0px))] data-[side=left]:border-r data-[side=left]:data-ending-style:[transform:translateX(-100%)] data-[side=left]:data-starting-style:[transform:translateX(-100%)] data-[side=right]:inset-y-0 data-[side=right]:right-0 data-[side=right]:h-full data-[side=right]:w-full data-[side=right]:[transform:translateX(var(--drawer-swipe-movement-x,0px))] data-[side=right]:border-l data-[side=right]:data-ending-style:[transform:translateX(100%)] data-[side=right]:data-starting-style:[transform:translateX(100%)] data-[side=top]:inset-x-0 data-[side=top]:top-0 data-[side=top]:h-auto data-[side=top]:[transform:translateY(var(--drawer-swipe-movement-y,0px))] data-[side=top]:border-b data-[side=top]:data-ending-style:[transform:translateY(-100%)] data-[side=top]:data-starting-style:[transform:translateY(-100%)]"
   ),
@@ -154,7 +154,7 @@ function SheetContent({
       <SheetOverlay />
       <SheetPrimitive.Viewport
         data-slot="sheet-viewport"
-        // One stacking level for Overlay and Viewport (sheet.md §8.6): Popup sits inside
+        // One stacking level for Overlay and Viewport: Popup sits inside
         // Viewport, so it does not stamp a third overlay layer.
         className={cn("pointer-events-none fixed inset-0", overlayLayer)}>
         <SheetPrimitive.Popup

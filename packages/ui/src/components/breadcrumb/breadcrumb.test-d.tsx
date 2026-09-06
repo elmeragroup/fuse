@@ -27,7 +27,7 @@ test("the public namespace is seven parts — never the flat ref names or a reci
   expectTypeOf(BreadcrumbModule).not.toHaveProperty("breadcrumbVariants");
 });
 
-test("parts take the spec surface: no locale, no as prop", () => {
+test("parts take the public API: no locale, no as prop", () => {
   expectTypeOf<Parameters<typeof Breadcrumb.Root>[0]["label"]>().toEqualTypeOf<string | undefined>();
   expectTypeOf<Parameters<typeof Breadcrumb.Ellipsis>[0]["label"]>().toEqualTypeOf<string | undefined>();
   expectTypeOf<Parameters<typeof Breadcrumb.Link>[0]["render"]>().not.toEqualTypeOf<undefined>();

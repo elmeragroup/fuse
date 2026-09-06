@@ -5,8 +5,8 @@ import { cn } from "../../styles/cn";
 import { Button } from "../button/button";
 
 /**
- * Package-private close-button rendering shared by every overlay family
- * (dialog.md §8.3, sheet.md §8.3): one canonical close affordance instead of
+ * Package-private close-button rendering shared by every overlay family:
+ * one canonical close affordance instead of
  * per-overlay hand-rolled markup. Sheet reuses these renderers verbatim.
  *
  * The returned elements are meant for the overlay's `Close` part `render` prop:

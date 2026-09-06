@@ -42,7 +42,7 @@ function isSidebarDemo(file: string): boolean {
 const SIDEBAR_IMPORT = /from\s+["']@elmeragroup\/ui\/sidebar["']/u;
 const SIDEBAR_FROM_BARREL = /import\s*\{[^}]*\bSidebar\b[^}]*\}\s*from\s+["']@elmeragroup\/ui["']/u;
 
-describe("docs chrome never composes the library Sidebar (conventions.md, sidebar ticket 73)", () => {
+describe("docs chrome never composes the library Sidebar", () => {
   it("imports @elmeragroup/ui/sidebar only from the Sidebar page's own demos", () => {
     const offenders = docsSourceFiles(path.join(docsRoot, "src"))
       .filter((file) => !isSidebarPage(file))

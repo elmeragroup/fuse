@@ -4,7 +4,7 @@ import { createContext, useContext, useRef, useState } from "react";
 import type { ComponentProps, ReactElement, ReactNode, RefObject } from "react";
 
 // Subpath import (`@base-ui/react/combobox`) type-checks but crashes at runtime with a
-// null React context. Keep the package-root import until upstream fixes it (combobox.md §8).
+// null React context. Keep the package-root import until upstream fixes it.
 import { Combobox as ComboboxPrimitive } from "@base-ui/react";
 import type { ComboboxRoot as ComboboxRootType } from "@base-ui/react";
 
@@ -59,7 +59,7 @@ function ComboboxRoot<Value = unknown, Multiple extends boolean | undefined = fa
           ? undefined
           : (itemValue) => {
               // SAFETY: Chip only calls this with the selected value from this Root,
-              // which is `Value` (combobox.md §3 removeLabel).
+              // which is `Value`.
               return itemToStringLabel(itemValue as Value);
             }
       }>
@@ -165,7 +165,7 @@ function ComboboxInput({
             variant="ghost"
             aria-label={strings.format("toggle")}
             // Field.Label labelledby would win over aria-label; drop it so the
-            // caret stays dictionary `toggle` (combobox.md §7).
+            // caret stays dictionary `toggle`.
             aria-labelledby={undefined}
             render={<ComboboxTrigger />}
             data-slot="input-group-button"
@@ -244,11 +244,11 @@ function ComboboxItem({
   return (
     <ComboboxPrimitive.Item
       data-slot="combobox-item"
-      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- combobox.md §6: option padding is menu layout, not a control rung
+      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- option padding is menu layout, not a control rung
       className={mergeClassName(
         className,
         menuItemClass,
-        // oxlint-disable-next-line elmera/no-local-focus-ring -- combobox.md §7: the highlight face menuItemClass leaves to the family; base-ui spells it `data-highlighted:` on listbox options
+        // oxlint-disable-next-line elmera/no-local-focus-ring -- the highlight face menuItemClass leaves to the family; base-ui spells it `data-highlighted:` on listbox options
         "w-full pr-8 pl-2 data-highlighted:bg-accent data-highlighted:text-accent-foreground data-highlighted:**:text-accent-foreground"
       )}
       {...props}>
@@ -330,7 +330,7 @@ function ComboboxChips({
       </ComboboxPrimitive.Value>
       <ComboboxPrimitive.Chips
         data-slot="combobox-chips"
-        // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- combobox.md §6: chip wrap gap and compact chip padding are layout, not a control rung
+        // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- chip wrap gap and compact chip padding are layout, not a control rung
         className={mergeClassName(
           className,
           "text-sm shadow-xs flex min-h-(--control-h-md) flex-wrap items-center gap-1.5 rounded-md border border-input bg-transparent bg-clip-padding px-(--control-px-md) py-1.5 transition-[color,box-shadow] has-aria-invalid:border-error has-aria-invalid:ring-3 has-aria-invalid:ring-error/20 has-data-[slot=combobox-chip]:px-1.5",
@@ -396,7 +396,7 @@ function ComboboxChip({
     <ComboboxPrimitive.Chip
       ref={mergedRef}
       data-slot="combobox-chip"
-      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- combobox.md §6: chip chrome is compact token, not a control rung
+      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- chip chrome is compact token, not a control rung
       className={mergeClassName(
         className,
         "text-xs font-medium flex h-[calc(--spacing(5.5))] w-fit items-center justify-center gap-1 rounded-sm bg-muted px-1.5 whitespace-nowrap text-foreground has-disabled:pointer-events-none has-disabled:cursor-not-allowed has-disabled:opacity-50 has-data-[slot=combobox-chip-remove]:pr-0"
@@ -453,7 +453,7 @@ function ComboboxChipsInput({
     <ComboboxPrimitive.Input
       data-slot="combobox-chip-input"
       data-focus-ring-control=""
-      // oxlint-disable-next-line elmera/no-local-focus-ring -- combobox.md §7 / input-group.md §8: within-adapter control outline
+      // oxlint-disable-next-line elmera/no-local-focus-ring -- within-adapter control outline
       className={mergeClassName(className, "min-w-16 flex-1 outline-none", withinFocusRingControlClass)}
       {...props}
     />

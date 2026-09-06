@@ -21,7 +21,7 @@ test("cardVariants is public and slotted with a single direction axis", () => {
   expectTypeOf(cardVariants({ direction: "horizontal" }).base()).toBeString();
   expectTypeOf(cardVariants().cardHeader()).toBeString();
 
-  // @ts-expect-error the external ref's surface axes are decomposed away (card.md §8.5)
+  // @ts-expect-error the external ref's surface axes are decomposed away
   cardVariants({ variant: "bright" });
 });
 

@@ -17,14 +17,13 @@ import { composeTailwindRenderProps } from "../internal/utils";
 import { RangeCalendar } from "../range-calendar/range-calendar";
 
 /**
- * Labeled date-range-picker composite over RAC `DateRangePicker` (date-range-picker.md
- * §2/§3): two public `DateInput` rows and the public `RangeCalendar`, handed to the same
- * package-private `PickerShell` DatePicker wears (§8.2/§8.6). Client — the interim
+ * Labeled date-range-picker composite over RAC `DateRangePicker`: two public `DateInput` rows and the public `RangeCalendar`, handed to the same
+ * package-private `PickerShell` DatePicker wears. Client — the interim
  * react-aria cluster owns segment state and overlay state.
  *
  * What is left here is what a *range* picker owns and a single-date picker does not: two
  * segment rows and the en-dash between them. Unlike DatePicker there is no focused-month
- * sync — RAC's range state drives the grid's month on its own, and the spec asks for no
+ * sync — RAC's range state drives the grid's month on its own, and there is no
  * override.
  */
 export type DateRangePickerProps<T extends DateValue> = {
@@ -35,12 +34,12 @@ export type DateRangePickerProps<T extends DateValue> = {
   /**
    * Error copy, rendered as `FieldError` when the range is invalid — an end before its
    * start, or an endpoint outside the allowed dates. Accepts a node or a validation
-   * render function (§8.8 widens the reference's string-only face).
+   * render function.
    */
   errorMessage?: ReactNode | ((validation: ValidationResult) => ReactNode);
   /**
-   * Pads day and month segments with a leading zero in both rows. The reference omits
-   * this here while DatePicker and DateField default it on; §8.3 aligns it.
+   * Pads day and month segments with a leading zero in both rows, matching the default
+   * behavior of DatePicker and DateField.
    * @default true
    */
   shouldForceLeadingZeros?: boolean;
@@ -80,7 +79,7 @@ export function DateRangePicker<T extends DateValue>({
         range>
         <DateInput className={input()} slot="start" />
         {/* Decoration: RAC names the two rows "Start Date" / "End Date" on the segments
-            themselves, so announcing the glyph would only repeat it (§7). */}
+            themselves, so announcing the glyph would only repeat it. */}
         <span aria-hidden="true" className={separator()}>
           –
         </span>

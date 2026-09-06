@@ -26,8 +26,8 @@ export type ButtonGroupTextProps = useRender.ComponentProps<"div">;
 
 /**
  * Layout container that collapses inner radii and shared borders of `data-slot`
- * children into one visual control (button-group.md §2). `orientation` defaults so
- * `data-orientation` is always emitted (§8.2).
+ * children into one visual control. `orientation` defaults so
+ * `data-orientation` is always emitted.
  */
 function ButtonGroupRoot({
   className,
@@ -47,7 +47,7 @@ function ButtonGroupRoot({
 
 /**
  * Hairline divider between segments. Forwards to the canonical library Separator so the
- * group `[data-slot]` join contract stays intact (button-group.md §8.3). Default is
+ * group `[data-slot]` join contract stays intact. Default is
  * `"vertical"` — a horizontal group needs a vertical hairline.
  */
 function ButtonGroupSeparator({
@@ -71,7 +71,6 @@ function ButtonGroupSeparator({
 /**
  * Static label/affix segment styled to sit flush with buttons. Polymorphism is
  * `render` via base-ui `useRender` + `mergeProps` — the convention exemplar
- * (button-group.md §2/§8.4).
  */
 function ButtonGroupText({ className, render, ...props }: ButtonGroupTextProps): ReactElement {
   return useRender({

@@ -119,7 +119,7 @@ describe("RangeCalendar", () => {
     expect(calendarGrid().getAttribute("aria-label")).toMatch(/July\s+2026/i);
   });
 
-  it("renders borderless standalone — the picker dialog supplies the chrome (§8.5)", async () => {
+  it("renders borderless standalone — the picker dialog supplies the chrome", async () => {
     renderRangeCalendar(<RangeCalendar defaultValue={{ start: july14, end: july17 }} />);
     await expect.element(page.getByRole("grid")).toBeVisible();
     const style = getComputedStyle(calendarRoot());

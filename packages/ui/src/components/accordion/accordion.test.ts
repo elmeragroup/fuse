@@ -25,7 +25,7 @@ describe("accordionVariants", () => {
     expect(slots.item()).not.toContain("overflow-hidden");
   });
 
-  it("maps each variant onto the spec slots without leaking the others", () => {
+  it("maps each variant onto the public slots without leaking the others", () => {
     const defaults = accordionVariants({ variant: "default" });
     expect(defaults.item()).toContain("bg-muted");
     expect(defaults.trigger()).toContain("transition-[padding-bottom]");

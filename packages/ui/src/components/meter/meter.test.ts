@@ -12,7 +12,7 @@ import { meterVariants } from "./meter-variants";
 const MODES = Object.values(METER_CONSTANTS.MODES);
 const LEVELS = Object.values(METER_CONSTANTS.LEVELS);
 
-/** meter.md §4: the whole published matrix, one row per mode × level. */
+/** the whole published matrix, one row per mode × level. */
 const MATRIX = {
   default: {
     LOW: { tone: "success", icon: "none" },
@@ -120,7 +120,7 @@ describe("METER_TONE_TABLE", () => {
     }
   });
 
-  it("resolves every §4 cell to the published tone and glyph", () => {
+  it("resolves every tone cell to the published tone and glyph", () => {
     for (const mode of MODES) {
       for (const level of LEVELS) {
         expect(meterToneCell(mode, level), `${mode}/${level}`).toEqual(MATRIX[mode][level]);
@@ -128,7 +128,7 @@ describe("METER_TONE_TABLE", () => {
     }
   });
 
-  it("paints every §4 barFill and labelValue class through the tone axis", () => {
+  it("paints every barFill and labelValue class through the tone axis", () => {
     for (const mode of MODES) {
       for (const level of LEVELS) {
         const { tone } = meterToneCell(mode, level);
@@ -139,7 +139,7 @@ describe("METER_TONE_TABLE", () => {
     }
   });
 
-  it("moves the glyph and the fill across the > 80 boundary in the same cell (§8.8)", () => {
+  it("moves the glyph and the fill across the > 80 boundary in the same cell", () => {
     for (const mode of MODES) {
       const atEighty = meterToneCell(mode, getMeterLevel(80, undefined, meterPercentage(80, 0, 100)));
       const pastEighty = meterToneCell(mode, getMeterLevel(81, undefined, meterPercentage(81, 0, 100)));

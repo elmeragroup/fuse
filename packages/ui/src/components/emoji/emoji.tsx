@@ -3,7 +3,7 @@
  * packages/ui/THIRD_PARTY_NOTICES.md and licenses/twemoji-CC-BY-4.0.txt.
  *
  * Hex fills are brand-independent illustration artwork, intentionally exempt
- * from the tokens-only rule (emoji.md §5). `no-primitive-colors` targets
+ * from the tokens-only rule. `no-primitive-colors` targets
  * Tailwind palette classes, not SVG attribute fills.
  */
 import type { ComponentProps, ReactElement, ReactNode } from "react";

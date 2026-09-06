@@ -48,8 +48,7 @@ export type InputGroupInputProps = ComponentProps<"input">;
 export type InputGroupTextareaProps = ComponentProps<"textarea">;
 
 /**
- * Chrome stripped off the embedded control (input-group.md §8 "Kept
- * faithfully"): the Root owns border, radius, shadow, and rings, so the control
+ * Chrome stripped off the embedded control: the Root owns border, radius, shadow, and rings, so the control
  * contributes nothing but its own box. The focus-visible neutralization comes
  * from the shared `focusRing` adapter, never a local literal.
  */
@@ -64,8 +63,7 @@ function InputGroupRoot({ className, ...props }: InputGroupRootProps): ReactElem
       data-slot="input-group"
       role="group"
       className={cn(
-        // Single-height field box: pins the `md` control rung (conventions.md ruling 2,
-        // input-group.md §4 "Density mapping"); block addons and textareas grow instead.
+        // Single-height field box: pins the `md` control rung; block addons and textareas grow instead.
         "group/input-group shadow-xs relative box-border flex h-(--control-h-md) w-full min-w-0 items-center rounded-md border border-input transition-[color,border-color,box-shadow]",
         "has-disabled:bg-input/50 has-disabled:opacity-50",
         "has-[[data-slot=input-group-control]:focus-visible]:border-ring",
@@ -93,7 +91,7 @@ function InputGroupAddon({
       data-align={align}
       className={cn(inputGroupAddonVariants({ align }), className)}
       onClick={(event) => {
-        // The addon is an extension of the input's hit area (§3), except over a
+        // The addon is an extension of the input's hit area, except over a
         // nested button, which keeps its own click.
         if (!(event.target instanceof HTMLElement) || !event.target.closest("button")) {
           event.currentTarget.parentElement?.querySelector("input")?.focus();
@@ -115,7 +113,7 @@ function InputGroupButton({
   return (
     <Button
       type={type}
-      // The local compact axis is never Button's `size` prop (§4): it is applied
+      // The local compact axis is never Button's `size` prop: it is applied
       // as extra classes and reflected to the DOM as `data-size`.
       data-size={size}
       variant={variant}
@@ -128,10 +126,10 @@ function InputGroupButton({
 function InputGroupText({ className, ...props }: InputGroupTextProps): ReactElement {
   return (
     <span
-      // §8.2 divergence: the reference omits the slot, which breaks the
+      // The reference omits the slot, which breaks the
       // ButtonGroup `[data-slot]` child-selector contract.
       data-slot="input-group-text"
-      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- input-group.md §4: addon text gap is chrome, not a control rung
+      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- addon text gap is chrome, not a control rung
       className={cn(
         "text-sm flex items-center gap-2 text-muted-foreground [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4",
         className

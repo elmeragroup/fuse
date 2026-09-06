@@ -17,7 +17,7 @@ import { selectionGroupOrientationVariants } from "../selection-item/selection-i
 import { radioIconButtonVariants } from "./radio-group-variants";
 
 /**
- * Unlabeled 16px radio over the base-ui primitive (radio-group.md §2/§7). Client —
+ * Unlabeled 16px radio over the base-ui primitive. Client —
  * base-ui Radio owns checked state (performance.md §RSC classification). The
  * indicator is an 8px primary-foreground dot. Labeled usage composes `Radio` or
  * `RadioItem`.
@@ -31,7 +31,7 @@ export function RadioGroupItem({
       data-slot="radio-group-item"
       className={(state) =>
         cn(
-          // oxlint-disable-next-line elmera/no-local-focus-ring -- radio-group.md §7: native outline off; ring comes from the shared adapter
+          // oxlint-disable-next-line elmera/no-local-focus-ring -- native outline off; ring comes from the shared adapter
           "group/radio-group-item peer relative flex aspect-square size-4 shrink-0 rounded-full border border-input transition-[color,box-shadow] outline-none after:absolute after:-inset-x-3 after:-inset-y-2 after:content-[''] disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-error aria-invalid:ring-3 aria-invalid:ring-error/20 aria-invalid:aria-checked:border-primary data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground",
           selfFocusRingClass,
           className instanceof Function ? className(state) : className
@@ -93,7 +93,7 @@ export type RadioGroupProps = {
   /**
    * Set directly on the base-ui radio-group primitive, which supports `name`.
    * CheckboxGroup threads `name` through Field instead — same external face,
-   * different plumbing (radio-group.md §8.7).
+   * different plumbing.
    */
   name?: string;
   /** Forwarded to the group primitive. */
@@ -105,8 +105,8 @@ export type RadioGroupProps = {
 };
 
 /**
- * Labeled radio group composite over Field + base-ui RadioGroup
- * (radio-group.md §2/§7). Client — Field validity wiring and the group primitive
+ * Labeled radio group composite over Field + base-ui RadioGroup.
+ * Client — Field validity wiring and the group primitive
  * (performance.md §RSC classification).
  */
 export function RadioGroup({
@@ -182,8 +182,8 @@ export type RadioProps = {
 };
 
 /**
- * Compact labeled radio row over `Field.Item` + base-ui `Field.Label`
- * (radio-group.md §2/§7). The whole label is the click target.
+ * Compact labeled radio row over `Field.Item` + base-ui `Field.Label`.
+ * The whole label is the click target.
  */
 export function Radio({ value, isDisabled, className, children }: RadioProps): ReactElement {
   return (
@@ -216,7 +216,7 @@ export type RadioItemProps = {
 };
 
 /**
- * Labeled selection row over `SelectionItem.Shell` (radio-group.md §2/§7). Client —
+ * Labeled selection row over `SelectionItem.Shell`. Client —
  * Field.Item / label wiring (performance.md §RSC classification). Namespace
  * aliases `Title` / `Description` / `Content` / `Actions` / `SubSection` are the
  * exact `SelectionItem.*` objects so `child.type` partitioning works across both
@@ -268,7 +268,7 @@ export type RadioIconButtonProps = Omit<
 };
 
 /**
- * Icon-only segmented radio over the base-ui radio root (radio-group.md §2/§7).
+ * Icon-only segmented radio over the base-ui radio root.
  * Client — base-ui Radio owns checked state (performance.md §RSC classification).
  */
 export function RadioIconButton({

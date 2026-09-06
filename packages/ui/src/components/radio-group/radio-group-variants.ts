@@ -1,7 +1,7 @@
 import { tv } from "tailwind-variants";
 
 /**
- * Module-private recipe (radio-group.md §4). Size axis for `RadioIconButton`; default
+ * Module-private recipe. Size axis for `RadioIconButton`; default
  * `icon`. Not exported from `@elmeragroup/ui/radio-group`.
  *
  * Sizes read `size-(--control-h-*)` like Button's icon sizes. `icon-xxs` and `icon-xs`
@@ -9,7 +9,7 @@ import { tv } from "tailwind-variants";
  * `svg:not([class*='size-'])`.
  */
 export const radioIconButtonVariants = tv({
-  // oxlint-disable-next-line elmera/no-local-focus-ring -- radio-group.md §7: native outline off; ring comes from the shared adapter
+  // oxlint-disable-next-line elmera/no-local-focus-ring -- native outline off; ring comes from the shared adapter
   base: "ease-out inline-flex shrink-0 items-center justify-center rounded-lg border border-input bg-card text-foreground transition-[color,background-color,box-shadow,scale] duration-150 outline-none hover:bg-muted active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-50 data-invalid:border-error data-checked:border-primary data-checked:bg-muted",
   variants: {
     size: {

@@ -36,7 +36,7 @@ test("headingVariants is public and returns a class string", () => {
   expectTypeOf(headingVariants()).toBeString();
 });
 
-test("the element takes the spec's props and no polymorphic as prop", () => {
+test("the element takes the public props and no polymorphic as prop", () => {
   const _basic = <Heading>Order overview</Heading>;
   const _levelled = (
     <Heading level={1} size="sm" variant="muted" align="center">

@@ -97,7 +97,7 @@
           "type": "\"default\" | \"non-bordered-compact\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "Facts-sheet look. `\"non-bordered-compact\"` drops the wrapper border/background and tightens cell padding via descendant `data-variant` selectors (table.md §4).",
+          "description": "Facts-sheet look. `\"non-bordered-compact\"` drops the wrapper border/background and tightens cell padding via descendant `data-variant` selectors.",
           "required": false
         }
       ]
@@ -146,7 +146,7 @@
           "type": "DetailedHTMLProps<TableHTMLAttributes<HTMLTableElement>, HTMLTableElement> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Inner `<table>` (`Table.Root`) props. Association attributes such as `aria-labelledby` belong here — Body's own props, including `aria-*`, stay on the wrapper only (table.md §8.3). `className` merges with `table-fixed`.",
+          "description": "Inner `<table>` (`Table.Root`) props. Association attributes such as `aria-labelledby` belong here — Body's own props, including `aria-*`, stay on the wrapper only. `className` merges with `table-fixed`.",
           "required": false
         }
       ]

@@ -49,7 +49,7 @@ export default defineRule({
     },
     messages: {
       fieldPart:
-        "Labeled composites render <Field.{{part}}> through FieldFrame (field.md §8.9). Do not reopen that markup here.",
+        "Labeled composites render <Field.{{part}}> through FieldFrame. Do not reopen that markup here.",
     },
     schema: [],
   },

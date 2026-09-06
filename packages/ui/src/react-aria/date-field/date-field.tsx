@@ -29,7 +29,7 @@ import {
 import { composeTailwindRenderProps } from "../internal/utils";
 
 /**
- * Labeled date field composite over RAC `DateField` (date-field.md §2/§3).
+ * Labeled date field composite over RAC `DateField`.
  * Client — the interim react-aria cluster owns segment state and validation.
  */
 export type DateFieldProps<T extends DateValue> = {
@@ -76,7 +76,7 @@ export function DateField<T extends DateValue>({
 /**
  * Reusable segment-row surface. `children` is omitted; segments always render.
  * `slot` and `className` are the documented face; remaining RAC DateInput props
- * forward through the intersection (date-field.md §3).
+ * forward through the intersection.
  */
 export type DateInputProps = {
   /** Range-picker slot. `"start"` / `"end"` inside DateRangePicker. */

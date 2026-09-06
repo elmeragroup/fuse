@@ -193,7 +193,7 @@ describe("token extraction", () => {
     expect(tokens.find((token) => token.name === "--control-h-md")?.isColor).toBe(false);
   });
 
-  it("reproduces the tokens button.md §5 lists", () => {
+  it("extracts the tokens consumed by Button", () => {
     const recipe = collectRecipeSources(join(repoRoot, "packages/ui/src/components/button"));
     const names = extractTokens({
       sources: recipe.sources,
@@ -219,7 +219,7 @@ describe("token extraction", () => {
     }
   });
 
-  it("reproduces the much smaller set scroll-area.md §5 lists", () => {
+  it("extracts the smaller token set consumed by ScrollArea", () => {
     const recipe = collectRecipeSources(join(repoRoot, "packages/ui/src/components/scroll-area"));
     const names = extractTokens({
       sources: recipe.sources,

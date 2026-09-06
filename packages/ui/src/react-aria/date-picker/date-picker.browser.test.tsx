@@ -40,7 +40,7 @@ function renderPicker(node: ReactNode) {
 
 /**
  * The trigger. RAC's `useDatePicker` owns the name — "Calendar" plus the field label —
- * so the composite never invents copy for it (date-picker.md §7/§8.2).
+ * so the composite never invents copy for it.
  */
 function trigger(): HTMLElement {
   const element = page.getByRole("button", { name: /^calendar/i }).element();
@@ -104,7 +104,7 @@ function presetTargetNamed(name: string): HTMLElement {
   return label;
 }
 
-/** The pane wrapper the composite puts around the preset group and the calendar (§2). */
+/** The pane wrapper the composite puts around the preset group and the calendar. */
 function paneAroundCalendar(): HTMLElement {
   const pane = calendarRoot().parentElement;
   if (!(pane instanceof HTMLElement)) {
@@ -137,7 +137,7 @@ function presets(): ReactElement {
 /**
  * A controlled picker, for the cases that need the value driven from outside the
  * composite. The focused-month sync reads the picker state's committed value, so it
- * behaves the same here as on an uncontrolled `defaultValue` picker (§2/§8.12).
+ * behaves the same here as on an uncontrolled `defaultValue` picker.
  */
 function ControlledPicker(): ReactElement {
   const [value, setValue] = useState<CalendarDate | null>(july14);
@@ -159,7 +159,7 @@ describe("DatePicker", () => {
     expect(trigger_).toHaveAttribute("aria-expanded", "false");
     expect(trigger_).toHaveAttribute("aria-haspopup", "dialog");
     expect(page.getByRole("dialog").query()).toBeNull();
-    // The glyph is decoration; the button's own name carries the meaning (§2).
+    // The glyph is decoration; the button's own name carries the meaning.
     expect(trigger_.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
   });
 
@@ -171,7 +171,7 @@ describe("DatePicker", () => {
     expect(trigger()).toHaveAttribute("aria-expanded", "true");
     await expect.element(page.getByRole("grid")).toBeVisible();
     expect(dialog.contains(calendarGrid())).toBe(true);
-    // The dialog keeps RAC's own name; an unnamed overlay would be an AT dead end (§7).
+    // The dialog keeps RAC's own name; an unnamed overlay would be an AT dead end.
     await expect.element(page.getByRole("dialog", { name: /calendar/i })).toBeVisible();
     expect(cellNamed(/Tuesday, March 10, 2026/i)).toHaveAttribute("aria-selected", "true");
     expect(document.activeElement).toBe(dayNamed(/Tuesday, March 10, 2026/i));
@@ -211,7 +211,7 @@ describe("DatePicker", () => {
 
   it("reopens an uncontrolled picker on its defaultValue's month after paging away", async () => {
     // The sync reads the picker state's committed value, so `defaultValue` alone — with
-    // no `value` prop in sight — still lands the reopen on July (§8.12).
+    // no `value` prop in sight — still lands the reopen on July.
     renderPicker(<DatePicker label="Invoice date" defaultValue={july14} />);
     await openPicker();
     expect(calendarGrid().getAttribute("aria-label")).toMatch(/July\s+2026/i);
@@ -271,7 +271,7 @@ describe("DatePicker", () => {
     expect(calendarGrid().getAttribute("aria-label")).toMatch(/July\s+2026/i);
 
     // A preset lives inside the popover, so the value can change while it stays open —
-    // which is the case the value effect (rather than the per-open mount) exists for (§2).
+    // which is the case the value effect (rather than the per-open mount) exists for.
     await userEvent.click(presetTargetNamed("Early November"));
     await expect.element(page.getByRole("dialog")).toBeVisible();
     expect(calendarGrid().getAttribute("aria-label")).toMatch(/November\s+2026/i);
@@ -350,7 +350,7 @@ describe("DatePicker", () => {
 
     // The FieldGroup's own `isReadOnly` axis paints the fill, exactly once. The glyph is
     // deliberately untinted: `bg-muted` on the `<svg>` never belonged there and went with
-    // the picker recipe's duplicate arm (§8.11, 2026-09-03).
+    // the picker recipe's duplicate arm.
     expect(getComputedStyle(group).backgroundColor).toBe(cssVarColor(group, "--muted"));
     expect(group.getAttribute("data-readonly")).toBe("true");
     expect(getComputedStyle(glyph).backgroundColor).not.toBe(cssVarColor(group, "--muted"));
@@ -373,7 +373,7 @@ describe("DatePicker presets", () => {
     expect(radiogroup.getAttribute("data-slot")).toBe("date-picker-preset-group");
     await expect.element(page.getByRole("radio", { name: "Today", exact: true })).toBeVisible();
     await expect.element(page.getByRole("radio", { name: "In a week", exact: true })).toBeVisible();
-    // The name is the visible copy — never English synthesised from `value` (§8.8).
+    // The name is the visible copy — never English synthesised from `value`.
     expect(page.getByRole("radio", { name: /preset option/i }).query()).toBeNull();
     expect(presetTargetNamed("Today").getAttribute("data-slot")).toBe("date-picker-preset-item");
     expect(pickerDialog().contains(radiogroup)).toBe(true);

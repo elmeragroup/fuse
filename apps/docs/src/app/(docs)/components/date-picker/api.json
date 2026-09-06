@@ -29,7 +29,7 @@
           "type": "T | null | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The default value (uncontrolled). Widened to allow an explicit `null` so a form can reset the picker to empty without dropping the prop (§8.5).",
+          "description": "The default value (uncontrolled). Widened to allow an explicit `null` so a form can reset the picker to empty without dropping the prop.",
           "required": false
         },
         {
@@ -47,7 +47,7 @@
           "type": "((validation: ValidationResult) => ReactNode) | ReactNode",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Error copy, rendered as `FieldError` when the picker is invalid. Accepts a node or a validation render function (§8.4 widens the reference's string-only face).",
+          "description": "Error copy, rendered as `FieldError` when the picker is invalid. Accepts a node or a validation render function.",
           "required": false
         },
         {
@@ -120,7 +120,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Supporting copy carried alongside the preset, kept from the reference face (§3). RAC `Radio` renders only its children, so this never joins the accessible name.",
+          "description": "Supporting copy carried alongside the preset, kept from the reference face. RAC `Radio` renders only its children, so this never joins the accessible name.",
           "required": false
         },
         {

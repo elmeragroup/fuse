@@ -13,7 +13,7 @@ import { Dialog } from "../dialog/dialog";
 import { alertDialogStrings } from "./intl";
 
 /**
- * AlertDialog is Dialog machinery with `role="alertdialog"` (alert-dialog.md §8.2), so
+ * AlertDialog is Dialog machinery with `role="alertdialog"`, so
  * Root and Trigger render through the public Dialog parts rather than reaching for the
  * primitive again — the self-focus ring and every other Dialog behaviour come with them.
  * Each restamps its own `data-slot`: Dialog's parts write theirs before spreading the

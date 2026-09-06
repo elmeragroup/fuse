@@ -1,13 +1,13 @@
 import { tv } from "tailwind-variants";
 
 /**
- * PUBLIC slot recipe (loader.md §4). Consumers composing their own pending
+ * PUBLIC slot recipe. Consumers composing their own pending
  * states borrow it from `@elmeragroup/ui/loader`.
  *
  * - `variant` is intentionally single-valued (`default`) so future arms
- *   (muted/inverse) are additive, not breaking (loader.md §8.4).
- * - `size` is a decorative icon-glyph axis, not a density rung
- *   (conventions.md §Density metrics): wrapper padding stays `p-4`.
+ *   (muted/inverse) are additive, not breaking.
+ * - `size` is a decorative icon-glyph axis, not a density rung:
+ * wrapper padding stays `p-4`.
  */
 export const loaderVariants = tv({
   slots: {
@@ -27,15 +27,15 @@ export const loaderVariants = tv({
       small: {
         icon: "size-3",
       },
-      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- loader.md §4 decorative icon-glyph axis, not a control-box rung
+      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- decorative icon-glyph axis, not a control-box rung
       medium: {
         icon: "size-6",
       },
-      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- loader.md §4 decorative icon-glyph axis, not a control-box rung
+      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- decorative icon-glyph axis, not a control-box rung
       large: {
         icon: "size-8",
       },
-      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- loader.md §4 decorative icon-glyph axis, not a control-box rung
+      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- decorative icon-glyph axis, not a control-box rung
       xl: {
         icon: "size-10",
       },

@@ -34,7 +34,7 @@ type SelectionGroupLayoutProps = {
 
 /**
  * Package-private layout announcer that `CheckboxGroup` and `RadioGroup` wrap their
- * primitive's children in (selection-item.md §8.9). A shell placed directly in a plain
+ * primitive's children in. A shell placed directly in a plain
  * group then follows the group's `orientation` for its edge treatment — connected stack
  * when vertical, individually rounded card when horizontal — instead of always
  * assuming a connected stack. It adds no `role`; only `SelectionItemGroup` is a list.
@@ -139,8 +139,8 @@ type SelectionItemShellProps = Omit<ComponentProps<typeof Field.Item>, "classNam
 };
 
 /**
- * Shared card-row shell that CheckboxItem and RadioItem plug a control into
- * (selection-item.md §2/§7). Client — Field.Item context (performance.md §RSC
+ * Shared card-row shell that CheckboxItem and RadioItem plug a control into.
+ * Client — Field.Item context (performance.md §RSC
  * classification). Control and sub-section columns share one parent grid so the
  * spacer tracks the control slot without measuring it.
  *

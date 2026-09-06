@@ -49,7 +49,7 @@ describe("fieldGroupVariants", () => {
     expect(fieldGroupVariants.variantKeys).not.toContain("size");
   });
 
-  it("uses the input-surface token, not the reference's bg-background (§8.9)", () => {
+  it("uses the input-surface token, not the reference's bg-background", () => {
     expect(fieldGroupVariants()).toContain("bg-card");
     expect(fieldGroupVariants()).not.toContain("bg-background");
   });
@@ -66,7 +66,7 @@ describe("fieldGroupVariants", () => {
 });
 
 describe("field-box chrome parity", () => {
-  // spec 08 user story 6 / date-field.md §8.9 (2026-09-03): the interim tier's field
+  // The interim tier's field
   // box, the base-ui recipe, and NumberField's group are the same chrome, so a DateField,
   // a SearchField, an Input and a NumberField in one form read as one family. A
   // `satisfies` cannot express this — it would pin keys, not the rendered tokens — so

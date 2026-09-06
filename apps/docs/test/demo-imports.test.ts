@@ -10,7 +10,7 @@ const componentsDir = path.join(docsRoot, "src/app/(docs)/components");
 const CONSUMER_SPECIFIERS = [/^react$/u, /^@elmeragroup\/ui\//u, /^@internationalized\/date$/u];
 
 /**
- * The docs-site.md §6 carve-out, verbatim: the demos whose spec §10 scenario the public API
+ * The docs-site.md §6 carve-out, verbatim: the demos whose required scenario the public API
  * cannot express, and the one non-public specifier each may import. Closed list — a new
  * entry amends §6 first.
  */

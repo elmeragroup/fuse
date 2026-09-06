@@ -1,0 +1,472 @@
+{
+  "accordion": [
+    "accordion-basic.tsx",
+    "accordion-multiple.tsx",
+    "multiple.tsx",
+    "defaultValue.tsx",
+    "accordion-variants.tsx",
+    "default.tsx",
+    "card.tsx",
+    "infodropdown.tsx",
+    "radius.tsx",
+    "accordion-controlled.tsx",
+    "value.tsx",
+    "onValueChange.tsx",
+    "accordion-hidden-until-found.tsx",
+    "hiddenUntilFound.tsx"
+  ],
+  "alert-dialog": [
+    "alert-dialog-destructive.tsx",
+    "onAction.tsx",
+    "alert-dialog-neutral.tsx",
+    "isAutomaticallyCloseOnActionEnabled.tsx",
+    "alert-dialog-pending.tsx",
+    "isPerformingAction.tsx",
+    "isActionDisabled.tsx",
+    "alert-dialog-custom-icon.tsx",
+    "icon.tsx",
+    "cancelLabel.tsx"
+  ],
+  "alert": [
+    "alert-variants.tsx",
+    "alert-action.tsx",
+    "onAction.tsx",
+    "actionLabel.tsx",
+    "alert-title-only.tsx",
+    "alert-heading-level.tsx",
+    "level.tsx"
+  ],
+  "avatar": ["avatar-basic.tsx", "avatar-fallback.tsx", "delay.tsx", "avatar-sizes.tsx", "avatar-group.tsx"],
+  "badge": ["badge-basic.tsx", "badge-variants.tsx", "badge-status.tsx", "badge-sizes.tsx"],
+  "breadcrumb": [
+    "breadcrumb-basic.tsx",
+    "breadcrumb-custom-separator.tsx",
+    "breadcrumb-ellipsis.tsx",
+    "breadcrumb-render-link.tsx",
+    "render.tsx"
+  ],
+  "button-group": [
+    "button-group-basic.tsx",
+    "button-group-vertical.tsx",
+    "button-group-split-button.tsx",
+    "CaretDown.tsx",
+    "aria-expanded.tsx",
+    "button-group-text.tsx",
+    "render.tsx",
+    "label.tsx",
+    "button-group-nested.tsx",
+    "gap-2.tsx"
+  ],
+  "button": [
+    "button-variant-matrix.tsx",
+    "button-sizes.tsx",
+    "button-pending.tsx",
+    "isPending.tsx",
+    "SpinnerGap.tsx",
+    "button-visually-disabled.tsx",
+    "isVisuallyDisabled.tsx",
+    "button-predictive-intent.tsx",
+    "onIntent.tsx",
+    "predictionZoneSize.tsx"
+  ],
+  "calendar": [
+    "calendar-basic.tsx",
+    "calendar-controlled.tsx",
+    "calendar-bounds.tsx",
+    "calendar-error.tsx",
+    "calendar-rtl.tsx"
+  ],
+  "card": [
+    "card-basic.tsx",
+    "card-with-action.tsx",
+    "card-tag.tsx",
+    "card-horizontal.tsx",
+    "card-item-rows.tsx"
+  ],
+  "checkbox-card": [
+    "checkbox-card-basic.tsx",
+    "checkbox-card-tags.tsx",
+    "children.tsx",
+    "checkbox-card-right-content.tsx",
+    "rightContent.tsx",
+    "checkbox-card-variants.tsx",
+    "default.tsx",
+    "muted.tsx",
+    "isDisabled.tsx",
+    "checkbox-card-group.tsx"
+  ],
+  "checkbox": [
+    "checkbox-basic.tsx",
+    "checkbox-group.tsx",
+    "Checkbox.tsx",
+    "checkbox-item-group.tsx",
+    "checkbox-tristate.tsx",
+    "allValues.tsx",
+    "CheckboxItemGroup.tsx",
+    "inert.tsx",
+    "checkbox-description.tsx",
+    "CheckboxDescription.tsx",
+    "describedBy.tsx"
+  ],
+  "code": ["code-basic.tsx", "code-scroll.tsx", "max-h-160.tsx", "aria-label.tsx"],
+  "collapsible": [
+    "collapsible-basic.tsx",
+    "defaultOpen.tsx",
+    "--collapsible-panel-height.tsx",
+    "collapsible-controlled.tsx",
+    "open.tsx",
+    "collapsible-hidden-until-found.tsx",
+    "hiddenUntilFound.tsx"
+  ],
+  "combobox": [
+    "combobox-basic.tsx",
+    "combobox-groups.tsx",
+    "combobox-multi-chips.tsx",
+    "multiple.tsx",
+    "useComboboxAnchor.tsx",
+    "combobox-input-group-anchor.tsx"
+  ],
+  "confirm-button": [
+    "confirm-button-destructive.tsx",
+    "armedChildren.tsx",
+    "confirm-button-success.tsx",
+    "confirm-button-icon.tsx",
+    "armedAriaLabel.tsx"
+  ],
+  "date-field": [
+    "date-field-basic.tsx",
+    "date-field-validation.tsx",
+    "date-field-granularity.tsx",
+    "hourCycle.tsx",
+    "date-field-states.tsx",
+    "date-field-date-input.tsx",
+    "DateInput.tsx"
+  ],
+  "date-picker": [
+    "date-picker-basic.tsx",
+    "date-picker-controlled.tsx",
+    "date-picker-presets.tsx",
+    "isCloseDialogOnDoubleClick.tsx",
+    "date-picker-validation.tsx",
+    "date-picker-states.tsx",
+    "date-picker-in-modal.tsx"
+  ],
+  "date-range-picker": [
+    "date-range-picker-basic.tsx",
+    "date-range-picker-controlled.tsx",
+    "date-range-picker-validation.tsx",
+    "date-range-picker-states.tsx",
+    "date-range-picker-in-modal.tsx"
+  ],
+  "description-list": [
+    "description-list-basic.tsx",
+    "description-list-multi-details.tsx",
+    "description-list-responsive.tsx"
+  ],
+  "dialog": [
+    "dialog-basic.tsx",
+    "dialog-sizes.tsx",
+    "dialog-footer-close.tsx",
+    "showCloseButton.tsx",
+    "dialog-no-close-button.tsx",
+    "dialog-scrolling.tsx",
+    "max-h.tsx"
+  ],
+  "dropdown-menu": [
+    "dropdown-menu-basic.tsx",
+    "dropdown-menu-checkboxes.tsx",
+    "dropdown-menu-radio-group.tsx",
+    "dropdown-menu-submenu.tsx",
+    "dropdown-menu-links.tsx",
+    "render.tsx",
+    "dropdown-menu-destructive.tsx"
+  ],
+  "emoji": [
+    "emoji-faces.tsx",
+    "size-8.tsx",
+    "emoji-labeled.tsx",
+    "label.tsx",
+    "emoji-sizing.tsx",
+    "size-4.tsx",
+    "size-5.tsx"
+  ],
+  "empty": [
+    "empty-basic.tsx",
+    "empty-outline.tsx",
+    "empty-with-actions.tsx",
+    "empty-media-variants.tsx",
+    "empty-inline-link.tsx"
+  ],
+  "field": [
+    "field-basic.tsx",
+    "field-error.tsx",
+    "field-orientations.tsx",
+    "field-set.tsx",
+    "field-choice-card.tsx",
+    "field-separator.tsx"
+  ],
+  "file-trigger": [
+    "file-trigger-basic.tsx",
+    "acceptedFileTypes.tsx",
+    "allowsMultiple.tsx",
+    "file-trigger-modes.tsx"
+  ],
+  "focusable": ["focusable-tooltip-trigger.tsx"],
+  "frame": [
+    "frame-basic.tsx",
+    "frame-stacked-panels.tsx",
+    "stackedPanels.tsx",
+    "frame-with-table.tsx",
+    "table-in-frame.tsx"
+  ],
+  "grid-list": ["grid-list-selection.tsx", "grid-list-empty.tsx", "renderEmptyState.tsx"],
+  "heading": ["heading-basic.tsx", "heading-sizes.tsx", "heading-variants.tsx", "heading-modifiers.tsx"],
+  "input-group": [
+    "input-group-icons.tsx",
+    "input-group-buttons.tsx",
+    "xs.tsx",
+    "icon-xs.tsx",
+    "input-group-block.tsx",
+    "input-group-textarea.tsx",
+    "input-group-invalid.tsx",
+    "input-group-kbd.tsx"
+  ],
+  "input": ["input-basic.tsx", "input-types.tsx", "input-states.tsx", "input-in-field.tsx"],
+  "item": [
+    "item-basic.tsx",
+    "item-as-link.tsx",
+    "item-as-button.tsx",
+    "item-group.tsx",
+    "item-media-variants.tsx",
+    "item-footer-reveal.tsx",
+    "item-sizes.tsx"
+  ],
+  "link": ["link-variants.tsx", "truncate.tsx", "weight.tsx", "link-router.tsx"],
+  "loader": ["loader-sizes.tsx", "loader-inline.tsx", "aria-label.tsx"],
+  "meter": [
+    "meter-basic.tsx",
+    "meter-modes.tsx",
+    "meter-value-label.tsx",
+    "valueLabel.tsx",
+    "meter-range.tsx",
+    "minValue.tsx",
+    "maxValue.tsx",
+    "meter-neutral.tsx"
+  ],
+  "number-field": [
+    "number-field-basic.tsx",
+    "number-field-denomination.tsx",
+    "number-field-format.tsx",
+    "formatOptions.tsx",
+    "number-field-error.tsx",
+    "number-field-states.tsx",
+    "number-field-uncontrolled.tsx"
+  ],
+  "pagination": [
+    "pagination-basic.tsx",
+    "pagination-ellipsis.tsx",
+    "pagination-controlled.tsx",
+    "isActive.tsx"
+  ],
+  "phone-number-field": [
+    "phone-number-field-basic.tsx",
+    "phone-number-field-international.tsx",
+    "phone-number-field-detect.tsx",
+    "phone-number-field-form.tsx",
+    "phone-number-field-i18n.tsx",
+    "phone-number-field-states.tsx"
+  ],
+  "popover-info-button": [
+    "popover-info-button-basic.tsx",
+    "popover-info-button-sizes.tsx",
+    "contentSize.tsx",
+    "popover-info-button-i18n.tsx",
+    "label.tsx"
+  ],
+  "popover": [
+    "popover-basic.tsx",
+    "popover-arrow.tsx",
+    "showArrow.tsx",
+    "popover-placement.tsx",
+    "popover-controlled.tsx"
+  ],
+  "radio-group": [
+    "radio-group-basic.tsx",
+    "Radio.tsx",
+    "radio-group-pending.tsx",
+    "isPending.tsx",
+    "radio-item-group.tsx",
+    "RadioItemGroup.tsx",
+    "mode.tsx",
+    "inert.tsx",
+    "radio-icon-button.tsx",
+    "radio-controlled-null.tsx",
+    "value.tsx",
+    "null.tsx"
+  ],
+  "range-calendar": [
+    "range-calendar-basic.tsx",
+    "range-calendar-controlled.tsx",
+    "range-calendar-unavailable.tsx",
+    "range-calendar-error.tsx",
+    "range-calendar-bounds.tsx"
+  ],
+  "scroll-area": [
+    "scroll-area-vertical.tsx",
+    "scroll-area-horizontal.tsx",
+    "scroll-area-always.tsx",
+    "scroll-area-composed.tsx"
+  ],
+  "search-field": [
+    "search-field-basic.tsx",
+    "search-field-validation.tsx",
+    "isRequired.tsx",
+    "errorMessage.tsx"
+  ],
+  "select": [
+    "select-basic.tsx",
+    "select-groups.tsx",
+    "select-sizes.tsx",
+    "select-scrolling.tsx",
+    "alignItemWithTrigger.tsx",
+    "select-invalid.tsx"
+  ],
+  "selection-item": [
+    "selection-item-basic.tsx",
+    "selection-item-subsection.tsx",
+    "mode.tsx",
+    "visible.tsx",
+    "hidden.tsx",
+    "selection-item-control-end.tsx",
+    "control.tsx",
+    "selection-item-stacked.tsx",
+    "selection-item-disabled.tsx"
+  ],
+  "separator": ["separator-horizontal.tsx", "separator-vertical.tsx", "self-stretch.tsx"],
+  "sheet": [
+    "sheet-basic.tsx",
+    "sheet-sides.tsx",
+    "side.tsx",
+    "sheet-sizes.tsx",
+    "top.tsx",
+    "sheet-form.tsx",
+    "sheet-scrolling.tsx"
+  ],
+  "show": ["show-basic.tsx"],
+  "sidebar": [
+    "sidebar-app-frame.tsx",
+    "defaultOpen.tsx",
+    "sidebar-icon-collapse.tsx",
+    "tooltip.tsx",
+    "sidebar-mobile-sheet.tsx",
+    "sidebar-inset-variant.tsx",
+    "sidebar-menu-rich.tsx",
+    "MenuBadge.tsx",
+    "isActive.tsx",
+    "MenuSub.tsx",
+    "MenuSubItem.tsx",
+    "MenuSubButton.tsx",
+    "MenuSkeleton.tsx"
+  ],
+  "skeleton": [
+    "skeleton-basic.tsx",
+    "h-4.tsx",
+    "aria-busy.tsx",
+    "aria-hidden.tsx",
+    "skeleton-card.tsx",
+    "vertical-table-data.tsx",
+    "isLoading.tsx"
+  ],
+  "span": ["span-basic.tsx", "span-sizes.tsx", "span-variants.tsx", "span-truncate.tsx"],
+  "switch": [
+    "switch-basic.tsx",
+    "switch-sizes.tsx",
+    "sm.tsx",
+    "default.tsx",
+    "switch-states.tsx",
+    "switch-in-field.tsx",
+    "switch-form.tsx"
+  ],
+  "table": [
+    "table-basic.tsx",
+    "data-state.tsx",
+    "table-in-frame.tsx",
+    "vertical-table-data.tsx",
+    "data.tsx",
+    "vertical-table-compact.tsx"
+  ],
+  "tabs": [
+    "tabs-basic.tsx",
+    "tabs-line.tsx",
+    "tabs-vertical.tsx",
+    "tabs-with-icons.tsx",
+    "tabs-disabled.tsx"
+  ],
+  "text-field": [
+    "text-field-basic.tsx",
+    "text-field-error.tsx",
+    "text-field-states.tsx",
+    "text-field-pending-success.tsx",
+    "text-field-icon.tsx",
+    "text-field-numeric.tsx",
+    "text-field-card.tsx",
+    "text-field-inline.tsx"
+  ],
+  "text": [
+    "text-basic.tsx",
+    "text-sizes.tsx",
+    "text-variants.tsx",
+    "text-leading-weight.tsx",
+    "text-truncate.tsx"
+  ],
+  "textarea-field": [
+    "textarea-field-basic.tsx",
+    "textarea-field-counter.tsx",
+    "textarea-field-uncontrolled.tsx",
+    "textarea-field-error.tsx",
+    "textarea-field-disabled.tsx"
+  ],
+  "textarea": ["textarea-basic.tsx", "textarea-states.tsx", "textarea-in-field.tsx", "TextareaField.tsx"],
+  "timeline-list": ["timeline-list-basic.tsx", "timeline-list-rich.tsx"],
+  "toast": [
+    "toast-statuses.tsx",
+    "toast-action.tsx",
+    "actionProps.tsx",
+    "toast-promise.tsx",
+    "promise.tsx",
+    "SpinnerGap.tsx",
+    "toast-stacking.tsx",
+    "limit.tsx"
+  ],
+  "toggle-group": [
+    "toggle-group-single.tsx",
+    "toggle-group-multiple.tsx",
+    "toggle-group-outline-segmented.tsx",
+    "toggle-group-vertical.tsx",
+    "toggle-group-sizes.tsx"
+  ],
+  "toggle": [
+    "toggle-basic.tsx",
+    "toggle-variants.tsx",
+    "toggle-sizes.tsx",
+    "toggle-icon-only.tsx",
+    "data-icon.tsx",
+    "toggle-controlled.tsx"
+  ],
+  "tooltip": [
+    "tooltip-basic.tsx",
+    "tooltip-sides.tsx",
+    "tooltip-delay.tsx",
+    "delay.tsx",
+    "tooltip-controlled.tsx",
+    "open.tsx"
+  ],
+  "ui-providers": [
+    "ui-providers-basic.tsx",
+    "navigate.tsx",
+    "locale.tsx",
+    "Link.tsx",
+    "ui-providers-locale-switch.tsx",
+    "ElmeraGroupUiProvider.tsx"
+  ]
+}

@@ -16,7 +16,7 @@ export type ShowProps = {
 };
 
 /**
- * Server render helper with no DOM of its own (show.md §2/§7). Returns children in a
+ * Server render helper with no DOM of its own. Returns children in a
  * fragment when `when` is true, otherwise `null`.
  */
 export function Show({ children, when }: ShowProps): ReactElement | null {

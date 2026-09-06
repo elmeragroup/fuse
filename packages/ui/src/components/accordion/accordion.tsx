@@ -28,7 +28,7 @@ function useAccordion(): AccordionVariantProps {
 }
 
 /**
- * Client accordion over `@base-ui/react/accordion` (accordion.md §2/§7). Root owns
+ * Client accordion over `@base-ui/react/accordion`. Root owns
  * open-item state; `variant` / `radius` publish through module-private context so
  * parts style themselves (performance.md §RSC classification).
  */

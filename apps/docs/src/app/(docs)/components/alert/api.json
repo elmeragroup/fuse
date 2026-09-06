@@ -17,7 +17,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Accessible name and visible children of the action button. Required together with `onAction`; must be self-describing (alert.md §3/§7).",
+          "description": "Accessible name and visible children of the action button. Required together with `onAction`; must be self-describing.",
           "required": false
         },
         {
@@ -26,7 +26,7 @@
           "type": "((event: BaseUIEvent<MouseEvent<HTMLButtonElement, MouseEvent>>) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "When both `onAction` and `actionLabel` are set, renders a `Button` in `Item.Actions`. Forwarded as the button's `onClick` — the client boundary is the consumer's (alert.md §1/§3).",
+          "description": "When both `onAction` and `actionLabel` are set, renders a `Button` in `Item.Actions`. Forwarded as the button's `onClick` — the client boundary is the consumer's.",
           "required": false
         },
         {
@@ -56,7 +56,7 @@
           "type": "AlertVariant",
           "shortType": null,
           "defaultValue": null,
-          "description": "Status glyph. `default → Info`, `warning → Warning`, `destructive → WarningOctagon`, `success → CheckCircle` (alert.md §3).",
+          "description": "Status glyph. `default → Info`, `warning → Warning`, `destructive → WarningOctagon`, `success → CheckCircle`.",
           "required": true
         },
         {
@@ -65,7 +65,7 @@
           "type": "\"fill\" | \"regular\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Phosphor weight. Regular is the library default; `fill` is reserved for selected or active states (conventions.md § Icons).",
+          "description": "Phosphor weight. Regular is the library default; `fill` is reserved for selected or active states.",
           "required": false
         }
       ]

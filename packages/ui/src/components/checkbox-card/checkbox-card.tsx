@@ -63,8 +63,8 @@ export type CheckboxCardProps = Omit<
   };
 
 /**
- * Selectable marketing/product card over the base-ui Checkbox primitive
- * (checkbox-card.md §2/§7). Client — Field.Item / label wiring and the checkbox
+ * Selectable marketing/product card over the base-ui Checkbox primitive.
+ * Client — Field.Item / label wiring and the checkbox
  * primitive (performance.md §RSC classification). Requires a `Field.Root`
  * ancestor and a checkbox-group ancestor for `value` membership.
  */
@@ -83,13 +83,13 @@ export function CheckboxCard({
     <FieldPrimitive.Item>
       <Card.Root className={checkboxCardStyles({ variant, isDisabled })}>
         <Card.Content className="flex items-center justify-between gap-3 px-4 py-3">
-          {/* oxlint-disable-next-line elmera/no-local-focus-ring -- checkbox-card.md §7: label is not the focus target; the checkbox owns the adapter */}
+          {/* oxlint-disable-next-line elmera/no-local-focus-ring -- label is not the focus target; the checkbox owns the adapter */}
           <FieldPrimitive.Label className="group flex grow cursor-pointer items-center gap-3 bg-clip-padding outline-hidden has-disabled:cursor-not-allowed">
             <CheckboxPrimitive.Root
               value={value}
               disabled={isDisabled}
               className={cn(
-                // oxlint-disable-next-line elmera/no-local-focus-ring -- checkbox-card.md §7: native outline off; ring comes from the shared adapter
+                // oxlint-disable-next-line elmera/no-local-focus-ring -- native outline off; ring comes from the shared adapter
                 "flex shrink-0 items-center rounded-full text-foreground outline-hidden select-none",
                 selfFocusRingClass
               )}

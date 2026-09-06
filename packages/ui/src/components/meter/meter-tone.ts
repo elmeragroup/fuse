@@ -1,10 +1,10 @@
 import { METER_CONSTANTS } from "./meter-constants";
 import type { MeterLevel, MeterMode } from "./meter-constants";
 
-/** Color arm the fill and the value label share (meter.md §4). */
+/** Color arm the fill and the value label share. */
 export type MeterTone = "success" | "warning" | "error" | "neutral";
 
-/** Status glyph in the value span; `none` paints nothing (meter.md §4, §8.8). */
+/** Status glyph in the value span; `none` paints nothing. */
 export type MeterIconName = "none" | "warning" | "success";
 
 /** One `mode` × `level` outcome: the recipe arm plus the glyph that goes with it. */
@@ -16,9 +16,9 @@ export type MeterToneCell = {
 const { MODES, LEVELS } = METER_CONSTANTS;
 
 /**
- * The whole `mode` × `level` outcome in one place (meter.md §4, §8.9): the fill/label
+ * The whole `mode` × `level` outcome in one place: the fill/label
  * color arm and the status glyph are read from the same cell, so the two cannot cross
- * the `> 80` boundary at different points (§8.8). Adding a mode is one row.
+ * the `> 80` boundary at different points. Adding a mode is one row.
  */
 export const METER_TONE_TABLE = {
   [MODES.DEFAULT]: {

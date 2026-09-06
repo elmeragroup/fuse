@@ -250,7 +250,7 @@ describe("NumberField", () => {
       </>
     );
 
-    // number-field.md §8.7 (2026-09-03): the two faces crossfade like TextField's
+    // The two faces crossfade like TextField's
     // instead of stacking side by side, so both are always in the DOM and exactly one
     // is opaque.
     expect(fieldRootFrom("Pending").querySelectorAll("label")).toHaveLength(0);

@@ -56,7 +56,7 @@ test("SearchFieldProps has the composite face plus RAC passthroughs and no size 
   expectTypeOf<SearchFieldProps>().not.toHaveProperty("size");
 });
 
-test("the element takes the spec's props, forwards a ref to the input, and rejects a size axis", () => {
+test("the element takes the public props, forwards a ref to the input, and rejects a size axis", () => {
   const _nodeError = <SearchField label="Meter search" errorMessage={<span>Required</span>} isInvalid />;
   const _functionError = (
     <SearchField

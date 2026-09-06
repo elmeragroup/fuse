@@ -18,7 +18,7 @@ import type { ReactNode } from "react";
  *
  * The parameter admits a render function beside the `ReactNode` because the interim RAC
  * tier's children are `ChildrenOrFunction<…>` — a node **or** a function over render
- * props — and GridList asks this question of exactly that union (grid-list.md §3). The
+ * props — and GridList asks this question of exactly that union. The
  * function arm is only ever a `false` answer; widening the input keeps one guard for
  * both tiers instead of a second spelling behind the quarantine boundary.
  */

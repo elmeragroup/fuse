@@ -24,7 +24,7 @@ const LICENSE_SNIPPETS = [
 ] as const;
 
 /**
- * Package-file and packed-artifact gate for the Twemoji CC BY 4.0 notices (emoji.md §5).
+ * Package-file and packed-artifact gate for the Twemoji CC BY 4.0 notices.
  * Returns a failure when either file is absent or missing required attribution.
  */
 export function twemojiNoticeFailure(root: string): string | undefined {

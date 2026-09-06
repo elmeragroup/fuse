@@ -15,7 +15,7 @@ import type {
 } from "./phone-engine";
 
 /**
- * Pure state transitions for `usePhoneNumberFieldState` (phone-number-field.md §8.16, §8.19).
+ * Pure state transitions for `usePhoneNumberFieldState`.
  * Parsed values belong to immutable snapshots; the hook only decides when to call these.
  */
 
@@ -79,7 +79,7 @@ export function visibleSnapshot({ value, accepted, proposal }: PhoneState): Phon
 /**
  * Fold new props into the stored record. An echoed proposal becomes the accepted snapshot;
  * a formatting-only change re-derives values from the existing digits; a catalog
- * replacement preserves the number's international identity (§8.19).
+ * replacement preserves the number's international identity.
  */
 export function reconcile(
   stored: PhoneState,

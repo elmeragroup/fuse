@@ -99,7 +99,7 @@ Normative chapter for `@elmeragroup/ui`.
 ## 3 RSC / client boundaries
 
 - **Default server-safe.** A component carries `"use client"` (at source; tsdown preserves it) only when it owns interactivity — state, effects, event handlers, browser APIs.
-- **Authoritative classification** — every component spec, applying that policy. Each spec's §1 header carries the same status; this table is the audit view, and **on conflict this table wins**:
+- **Authoritative classification** follows the policy above. This table owns the expected status; the generated docs are checked against it. **On conflict this table wins**:
 
   | Component           | RSC status                                                                                                  |
   | ------------------- | ----------------------------------------------------------------------------------------------------------- |
@@ -173,7 +173,7 @@ Normative chapter for `@elmeragroup/ui`.
 
   Bespoke SVG icons, illustrations, logos, emoji, flag assets, and curated Phosphor adapters are server-safe. The adapters import the pinned package's explicit `@phosphor-icons/react/dist/ssr/<Icon>` modules, never its client or root barrel ([icons](icons.md) §2); `/icons` is therefore a server-safe, directive-free facade.
 
-- **RSC status is part of the public contract**: an `RSC` line in every component spec's §1 Header and a matching field in the generated docs API tables.
+- **RSC status is part of the public contract**: the expected status in this table and a matching field in the generated docs API tables.
 - **Composition rule**: a server-safe component may render a client child; a change that flips a server-safe component to client is a **breaking change to its spec** — it must be flagged in §8 Divergence/changelog, never happen silently.
 - The `"use client"` directive is **per source file, not per entry**: a single entry may expose both server modules and client modules — `/theme` does exactly this. Within one module there is still exactly one directive decision: no `-client` wrapper entries, no double exports.
 
@@ -203,18 +203,18 @@ Normative chapter for `@elmeragroup/ui`.
 ## 6 Runtime practices
 
 - Animations touch **`transform` and `opacity` only** by default. Layout-property animations the library itself installs (the reviewed v1 exceptions) are:
-  - **Accordion.Content** panel **height**: `transition-[height] duration-200` against base-ui's `--accordion-panel-height` ([accordion](components/accordion.md) §8.8). Collapsible does **not** install a height transition; it is an unstyled passthrough that exposes `--collapsible-panel-height` / `--collapsible-panel-width` for consumers ([collapsible](components/collapsible.md) §4).
-  - **Accordion** default-variant Trigger **padding-bottom**: `transition-[padding-bottom]` ([accordion](components/accordion.md) §4 / §8.8).
-  - **Sidebar** shell **width** during its 200 ms expand/collapse: gap and container `transition-[width] duration-200 ease-linear`. Offcanvas `left`/`right` offset, Rail position, and GroupLabel `-mt-8` snap ([sidebar](components/sidebar.md) §8.19). MenuButton color/background/box-shadow and GroupLabel opacity are non-layout.
-  - **Item.Footer** content-reveal **grid track**: `grid-rows` `0fr↔1fr` plus `@starting-style` ([item](components/item.md) §4).
-  - **Meter** bar fill: `transition-all` on the absolutely positioned fill (width of the value bar) ([meter](components/meter.md) §4).
+  - **Accordion.Content** panel **height**: `transition-[height] duration-200` against base-ui's `--accordion-panel-height`. Collapsible does **not** install a height transition; it is an unstyled passthrough that exposes `--collapsible-panel-height` / `--collapsible-panel-width` for consumers.
+  - **Accordion** default-variant Trigger **padding-bottom**: `transition-[padding-bottom]`.
+  - **Sidebar** shell **width** during its 200 ms expand/collapse: gap and container `transition-[width] duration-200 ease-linear`. Offcanvas `left`/`right` offset, Rail position, and GroupLabel `-mt-8` snap. MenuButton color/background/box-shadow and GroupLabel opacity are non-layout.
+  - **Item.Footer** content-reveal **grid track**: `grid-rows` `0fr↔1fr` plus `@starting-style`.
+  - **Meter** bar fill: `transition-all` on the absolutely positioned fill (width of the value bar).
 - Each of those exceptions is disabled by the central reduced-motion rule ([accessibility](accessibility.md) §7). New layout-property animation requires a spec amendment and measurement. _(Amended 2026-09-04.)_
 - Context values are **memoized** (`ElmeraGroupUiProvider` already does); no context provider re-renders its subtree on unrelated prop churn.
 - No per-frame CSS-variable writes on shared ancestors (inherited-var recalc storms); transient interaction state writes `style.transform` on the element itself.
 - Tooltips/popovers reuse base-ui's shared positioning; components never install their own scroll/resize listeners. Overlay positioning listeners belong to base-ui internals.
 - **Document-level listeners the library installs** (and no others):
   1. **ThemeProvider** (`theme-provider.tsx`): while mounted, one `window` `storage` listener (filtered on `storageKey`) and, when `enableSystem` is true, one `matchMedia("(prefers-color-scheme: dark)")` `change` listener. Both are removed on cleanup.
-  2. **`useIsMobile`** (package-private, Sidebar only): subscribes to `(max-width: 767px)` through `useSyncExternalStore`; the snapshot is `mql.matches` and the server snapshot is `false` ([sidebar](components/sidebar.md) §8.12).
+  2. **`useIsMobile`** (package-private, Sidebar only): subscribes to `(max-width: 767px)` through `useSyncExternalStore`; the snapshot is `mql.matches` and the server snapshot is `false`.
   3. **Button intent prediction**: one package-private registry installs at most one document `pointermove` listener while at least one `onIntent` registration exists and removes it when the registry empties. `usePredictedEvents` and `useMergedRefs` are not public.
   4. **Sidebar.Provider**: one `window` `keydown` shortcut listener (`cmd`/`ctrl`+B) exists only while the Provider is mounted and is removed on cleanup.
 - `ColorSchemeScript` / `colorSchemeScriptSource` read `matchMedia` once at first paint; they do not subscribe. `prefers-reduced-motion` is a CSS `@media` block in the library stylesheet, not a JS listener. _(Amended 2026-09-04.)_

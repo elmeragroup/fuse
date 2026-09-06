@@ -15,11 +15,11 @@ import { composeTailwindRenderProps } from "../internal/utils";
 import { searchFieldStrings } from "./intl";
 
 /**
- * Labeled search field composite over RAC `SearchField` (search-field.md §2/§3).
+ * Labeled search field composite over RAC `SearchField`.
  * Client — the interim react-aria cluster owns value, clear and submit.
  *
- * `ref` is taken off the RAC root and forwarded to the inner `<input>`
- * (search-field.md §3). RAC still wires `type="search"` / `role="searchbox"`
+ * `ref` is taken off the RAC root and forwarded to the inner `<input>`.
+ * RAC still wires `type="search"` / `role="searchbox"`
  * through the slotted Input.
  */
 export type SearchFieldProps = {

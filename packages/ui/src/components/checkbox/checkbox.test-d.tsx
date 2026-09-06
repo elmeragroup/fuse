@@ -37,7 +37,7 @@ test("the public values ship from the checkbox entry and the root barrel", () =>
   expectTypeOf(CheckboxDescription).toBeFunction();
 });
 
-test("the entry exports only the spec names", () => {
+test("the entry exports only the public names", () => {
   expectTypeOf(CheckboxModule).toHaveProperty("Checkbox");
   expectTypeOf(CheckboxModule).toHaveProperty("CheckboxGroup");
   expectTypeOf(CheckboxModule).toHaveProperty("CheckboxItem");
@@ -88,7 +88,7 @@ test("CheckboxItemProps is the parent-vs-value discriminated union", () => {
   expectTypeOf<CheckboxItemProps>().not.toHaveProperty("as");
 });
 
-test("the elements take the spec props and reject invalid combinations", () => {
+test("the elements take the public props and reject invalid combinations", () => {
   const _primitive = <Checkbox aria-label="Accept" defaultChecked />;
   const _group = (
     <CheckboxGroup

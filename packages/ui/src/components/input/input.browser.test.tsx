@@ -114,7 +114,7 @@ describe("Input", () => {
     expect(px(getComputedStyle(textboxNamed("Meter")).height)).toBe(CONTROL_MD.dense.height);
   });
 
-  it("ignores a nested data-density stamp in both directions (input.md §9)", () => {
+  it("ignores a nested data-density stamp in both directions", () => {
     renderThemed(
       <>
         <Input aria-label="Root" />

@@ -14,14 +14,14 @@ import type { VariantProps } from "tailwind-variants";
 import { cn } from "../../styles/cn";
 
 /**
- * One overlay layer for the whole family (dialog.md §8.4): the ref stamps the level on
+ * One overlay layer for the whole family: the ref stamps the level on
  * both Backdrop and Popup, we declare it once and share it, so DOM order — not a second
  * z-index step — stacks the Backdrop under the Popup.
  */
 export const overlayLayer = "z-50";
 
 /**
- * The 13-value overlay width axis (dialog.md §4), default `md`. `sm`–`7xl` read the
+ * The 13-value overlay width axis, default `md`. `sm`–`7xl` read the
  * Tailwind container variables; no `--container-8xl+` variables exist, so the top three
  * pixel caps stay literal and documented.
  *
@@ -47,7 +47,7 @@ export const overlaySizeVariants = tv({
       "5xl": "[--overlay-width:min(var(--container-5xl),90%)]",
       "6xl": "[--overlay-width:min(var(--container-6xl),90%)]",
       "7xl": "[--overlay-width:min(var(--container-7xl),90%)]",
-      // No --container-8xl+ variables exist; the pixel caps stay literal (dialog.md §4).
+      // No --container-8xl+ variables exist; the pixel caps stay literal.
       "8xl": "[--overlay-width:min(1366px,90%)]",
       "9xl": "[--overlay-width:min(1536px,90%)]",
       "10xl": "[--overlay-width:min(1920px,90%)]",
@@ -62,7 +62,7 @@ export const overlaySizeVariants = tv({
 export type OverlaySize = NonNullable<VariantProps<typeof overlaySizeVariants>["size"]>;
 
 /**
- * Popup-surface slots (dialog.md §5, popover.md §5/§6). Fill and edge stay separate
+ * Popup-surface slots. Fill and edge stay separate
  * slots: Tooltip inverts the fill and paints neither shadow nor ring, and it cannot
  * subtract them from a composed surface — `ring-0` does not remove `ring-foreground/10`,
  * because tailwind-merge (3.6.0) treats ring width and ring colour as separate conflict
@@ -80,35 +80,35 @@ export type OverlaySize = NonNullable<VariantProps<typeof overlaySizeVariants>["
 const overlayPopupVariants = tv({
   slots: {
     /**
-     * The backdrop scrim (dialog.md §5): `bg-black/10` is deliberately not tokenized and
+     * The backdrop scrim: `bg-black/10` is deliberately not tokenized and
      * is allowlisted as a raw palette literal; a dark-mode scrim token is on the roadmap.
      */
     scrim: "bg-black/10 supports-backdrop-filter:backdrop-blur-xs",
-    /** Dialog title typography (dialog.md §2), shared so the interim tier cannot drift. */
+    /** Dialog title typography, shared so the interim tier cannot drift. */
     title: "text-base font-medium font-heading leading-none text-balance",
-    /** Dialog footer action row (dialog.md §2), shared with the interim tier's footer slot. */
+    /** Dialog footer action row, shared with the interim tier's footer slot. */
     footer: "sm:flex-row sm:justify-end flex flex-col-reverse gap-2",
     /**
      * The positioner face of every anchored overlay: one stacking context and the single
-     * overlay layer (popover.md §8.4). Site-specific extras — DropdownMenu's `outline-none`,
+     * overlay layer. Site-specific extras — DropdownMenu's `outline-none`,
      * for one — are passed as the extra `cn` argument.
      */
     positioner: `isolate ${overlayLayer}`,
-    /** The tokenized popup fill and its paired text role (popover.md §5). */
+    /** The tokenized popup fill and its paired text role. */
     fill: "bg-popover text-popover-foreground",
-    /** The popup edge: the `md` elevation rung plus the hairline ring (popover.md §5). */
+    /** The popup edge: the `md` elevation rung plus the hairline ring. */
     edge: "shadow-md ring-1 ring-foreground/10",
     /**
-     * The open/close motion set every anchored popup animates with (popover.md §6): the
+     * The open/close motion set every anchored popup animates with: the
      * transform origin base-ui publishes, the per-side slide-in, and the fade/zoom pair
      * on `data-open`/`data-closed`. The timing rung is deliberately **not** bundled in:
      * the four timed anchored popups compose {@link overlayTimedPopupClass}, and Tooltip
-     * ships the set untimed (tooltip.md §6).
+     * ships the set untimed.
      */
     motion:
       "origin-(--transform-origin) data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
     /**
-     * The shared popup timing rung (popover.md §6). Folded into
+     * The shared popup timing rung. Folded into
      * {@link overlayTimedPopupClass} for the four timed anchored popups; Tooltip ships
      * motion untimed, and Dialog keeps a local `duration-100` beside its own keyframes.
      */
@@ -170,14 +170,14 @@ export const overlayTimedPopupClass = cn(
 const overlayMenuVariants = tv({
   slots: {
     item:
-      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics, elmera/no-local-focus-ring -- select.md §4: option padding is menu layout, not a control rung; select.md §7: `outline-hidden` only clears the UA outline; this constant carries no highlight face and no ring, both of which stay with the consuming family
+      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics, elmera/no-local-focus-ring -- option padding is menu layout, not a control rung; `outline-hidden` only clears the UA outline; this constant carries no highlight face and no ring, both of which stay with the consuming family
       "text-sm relative flex cursor-default items-center gap-2 rounded-sm py-1.5 outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
     /** The trailing check slot on a selectable option row, positioned once for all three menu families. */
     indicator: "pointer-events-none absolute right-2 flex items-center justify-center",
     /** The hairline rule between option groups, shared by Select, Combobox, and DropdownMenu. */
     separator: "-mx-1 my-1 h-px bg-border",
     groupLabel:
-      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- select.md §4: group label padding is menu layout, not a control rung
+      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- group label padding is menu layout, not a control rung
       "text-xs px-2 py-1.5 text-muted-foreground",
   },
 });

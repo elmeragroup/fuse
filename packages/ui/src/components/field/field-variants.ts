@@ -1,5 +1,5 @@
 /**
- * Module-private Field recipes (field.md §4). Not exported from the public
+ * Module-private Field recipes. Not exported from the public
  * entry — there is no proven recipe-borrowing use. `orientation` is the Root
  * axis; `heading` is the Label/Title shared class, resolved once at module
  * scope in `field.tsx`.

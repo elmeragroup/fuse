@@ -58,7 +58,7 @@ test("DatePickerProps declares the composite face and stays open on the RAC surf
   expectTypeOf<DatePickerProps<CalendarDate>["errorMessage"]>().toEqualTypeOf<
     ReactNode | ((validation: ValidationResult) => ReactNode) | undefined
   >();
-  // Widened to allow an explicit null (§8.5).
+  // Widened to allow an explicit null.
   expectTypeOf<DatePickerProps<CalendarDate>["defaultValue"]>().toEqualTypeOf<
     CalendarDate | null | undefined
   >();
@@ -110,7 +110,7 @@ test("the preset parts declare the label, description and double-click faces", (
   expectTypeOf<DatePickerPresetItemProps>().toHaveProperty("children");
 });
 
-test("the elements take the spec's props and reject an invented axis", () => {
+test("the elements take the public props and reject an invented axis", () => {
   const _basic = (
     <DatePicker
       label="Invoice date"

@@ -5,7 +5,7 @@ import { cn } from "../../styles/cn";
 export type FrameRootProps = ComponentProps<"div"> & {
   /**
    * Fuse adjacent `Frame.Panel`s into one card (shared radii and hairline). Default
-   * `false` keeps a 4px muted gutter between panels (frame.md §4).
+   * `false` keeps a 4px muted gutter between panels.
    */
   stackedPanels?: boolean;
 };

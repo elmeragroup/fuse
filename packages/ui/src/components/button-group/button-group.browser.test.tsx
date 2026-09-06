@@ -9,7 +9,7 @@ import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
 import { Button } from "../button/button";
 import { ButtonGroup } from "./button-group";
 
-/** Browser suites load styles.css only; radius collapsing reads `--radius` (badge.md precedent). */
+/** Browser suites load styles.css only; radius collapsing reads `--radius`. */
 // SAFETY: React's CSSProperties does not model custom properties; the value is a plain string.
 const radiusToken = { "--radius": "8px" } as CSSProperties;
 

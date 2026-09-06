@@ -45,7 +45,7 @@ test("spanVariants is public and returns a class string", () => {
   expectTypeOf(spanVariants()).toBeString();
 });
 
-test("the element takes the spec's props, render, and no as, slot, or elementType", () => {
+test("the element takes the public props, render, and no as, slot, or elementType", () => {
   const _basic = <Span>4 of 12</Span>;
   const _styled = (
     <Span size="sm" variant="muted" align="right" weight="bold" leading="tight" truncate>
@@ -54,9 +54,9 @@ test("the element takes the spec's props, render, and no as, slot, or elementTyp
   );
   const _render = <Span render={<strong />}>As strong</Span>;
 
-  // @ts-expect-error the RAC slot prop is dropped (span.md §8.2)
+  // @ts-expect-error the RAC slot prop is dropped
   const _noSlot = <Span slot="description">Described</Span>;
-  // @ts-expect-error the forced-span identity keeps no elementType prop (span.md §8.1)
+  // @ts-expect-error the forced-span identity keeps no elementType prop
   const _noElementType = <Span elementType="p">Block</Span>;
   // @ts-expect-error polymorphism is never an `as` prop
   const _noAs = <Span as="p">Block</Span>;

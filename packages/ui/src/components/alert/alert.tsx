@@ -21,12 +21,12 @@ type AlertActionProps =
       /**
        * When both `onAction` and `actionLabel` are set, renders a `Button` in
        * `Item.Actions`. Forwarded as the button's `onClick` — the client
-       * boundary is the consumer's (alert.md §1/§3).
+       * boundary is the consumer's.
        */
       onAction: AlertActionHandler;
       /**
        * Accessible name and visible children of the action button. Required
-       * together with `onAction`; must be self-describing (alert.md §3/§7).
+       * together with `onAction`; must be self-describing.
        */
       actionLabel: ReactNode;
     }
@@ -47,12 +47,12 @@ export type AlertRootProps = ComponentProps<"div"> & VariantProps<typeof alertVa
 export type AlertIconProps = Omit<ComponentProps<typeof Info>, "weight"> & {
   /**
    * Status glyph. `default → Info`, `warning → Warning`, `destructive → WarningOctagon`,
-   * `success → CheckCircle` (alert.md §3).
+   * `success → CheckCircle`.
    */
   variant: AlertVariant;
   /**
    * Phosphor weight. Regular is the library default; `fill` is reserved for selected
-   * or active states (conventions.md § Icons).
+   * or active states.
    */
   weight?: "regular" | "fill";
 };
@@ -68,7 +68,7 @@ export type AlertTitleProps = ComponentProps<"h3"> & {
 export type AlertDescriptionProps = ComponentProps<"p">;
 
 /**
- * Status alert composite over the library Item family (alert.md §2/§7). Server —
+ * Status alert composite over the library Item family. Server —
  * it owns no state, effects, or browser APIs; `onAction` is a forwarded consumer
  * handler (performance.md §RSC classification).
  */

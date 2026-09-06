@@ -1,18 +1,18 @@
 /**
- * SCAFFOLD — replace with the §4 axis table of docs/spec/components/{{name}}.md.
+ * SCAFFOLD — define the public variant axes using docs/component-authoring.md.
  *
  * The `size` axis below is the canonical control-box ladder: four rungs reading the
- * `--control-*` implementation variables (conventions.md § Density metrics). Keep it
- * only if {{pascalCase name}} encodes a control box. Delete it when the spec's size axis is a
+ * `--control-*` implementation variables. Keep it
+ * only if {{pascalCase name}} encodes a control box. Delete it when the component's size axis is a
  * type-scale axis (Text/Heading), an overlay-width axis (Dialog/Sheet) or a decorative
  * size — those are not density rungs. A single-height field box pins the `md` rung and
- * grows no size axis at all (ruling 2).
+ * grows no size axis at all.
  *
  * Never write a literal `h-9` / `px-2.5` metric ladder here; density retargets the
  * variables on `:root[data-density="comfortable"]`.
  *
- * TODO({{name}}): fill `base`, and compose `focusRing({ target: … })` from
- * `../../styles/utils` if the spec §7 gives this component a focus receiver.
+ * TODO({{name}}): fill `base`, and use the appropriate shared focus constant from
+ * `../../styles/utils` if this component has a focus receiver.
  */
 import { tv } from "tailwind-variants";
 

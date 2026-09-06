@@ -24,7 +24,7 @@ test("toggleVariants is public and returns a class string", () => {
   expectTypeOf(toggleVariants()).toBeString();
 });
 
-test("the element takes the spec's props and no polymorphic as prop", () => {
+test("the element takes the public props and no polymorphic as prop", () => {
   const _basic = <Toggle>Bold</Toggle>;
   const _axes = (
     <Toggle variant="outline" size="xs" className="uppercase">

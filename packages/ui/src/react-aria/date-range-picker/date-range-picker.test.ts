@@ -17,7 +17,7 @@ describe("date-range-picker package surface", () => {
     expect(entry?.sourceFile).toBe("src/react-aria/date-range-picker.ts");
     expect(root?.runtimeExports).not.toContain("DateRangePicker");
     expect(discovered.jsEntries.map((item) => item.subpath)).toContain("react-aria/date-range-picker");
-    // The bare path stays reserved for the base-ui successor (§1 Do-not).
+    // The bare path stays reserved for the base-ui successor.
     expect(discovered.jsEntries.map((item) => item.subpath)).not.toContain("date-range-picker");
   }, 30_000);
 });

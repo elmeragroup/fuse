@@ -11,7 +11,7 @@ const PIXEL =
 const BROKEN = "data:image/png;base64,not-a-png";
 
 function slot(name: string): HTMLElement {
-  // spec §9 slot audit: parts emit data-slot="avatar" | "avatar-image" | "avatar-fallback".
+  // DOM audit: parts emit data-slot="avatar" | "avatar-image" | "avatar-fallback".
   const element = document.querySelector(`[data-slot="${name}"]`);
   if (!(element instanceof HTMLElement)) {
     throw new Error(`expected an element with data-slot="${name}"`);
