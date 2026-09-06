@@ -1,62 +1,59 @@
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
+import { asRecord, asString } from "./json-object.mjs";
+import { readWorkflow, requiredJobSteps, requiredRunStep } from "./workflow.mjs";
 
 describe("merge workflow", () => {
-  const yaml = readFileSync(join(repoRoot, ".github/workflows/merge.yml"), "utf8");
+  const workflow = readWorkflow("merge");
 
-  it("runs oxfmt, the turbo ci:checks gates, changeset presence, and Playwright Chromium", () => {
-    expect(yaml).toContain("oxfmt --check");
-    expect(yaml).toContain("changeset status");
-    expect(yaml).toContain("no-changeset");
-    for (const task of [
-      "'//#lint'",
-      "'//#test:repo-policy'",
-      "type-check test test:types",
-      "package:check",
-      "size-limit",
-      "'docs#test:shadow'",
-    ]) {
-      expect(yaml).toContain(task);
+  it("runs formatting and installs Chromium in their required jobs", () => {
+    const checks = requiredJobSteps(workflow, "checks");
+    const format = requiredRunStep(checks, "pnpm exec oxfmt");
+    expect(format.if).toBeUndefined();
+    expect(format.run).toBe("pnpm exec oxfmt --check");
+
+    const browser = requiredJobSteps(workflow, "browser");
+    const install = requiredRunStep(browser, "pnpm --filter @elmeragroup/ui exec playwright");
+    expect(install.if).toBeUndefined();
+    expect(install.run).toBe("pnpm --filter @elmeragroup/ui exec playwright install --with-deps chromium");
+    const gate = requiredRunStep(browser, "pnpm exec turbo run ");
+    expect(browser.indexOf(install)).toBeLessThan(browser.indexOf(gate));
+  });
+
+  it("runs on pull requests and pushes to main", () => {
+    const events = asRecord(workflow.on, "merge events");
+    expect(Object.hasOwn(events, "pull_request")).toBe(true);
+    expect(events.pull_request).toBeNull();
+    expect(asRecord(events.push, "push trigger")).toEqual({ branches: ["main"] });
+  });
+
+  it("requires changesets for ordinary PRs, exempting only release branches and the exact label", () => {
+    const step = requiredRunStep(requiredJobSteps(workflow, "checks"), "pnpm exec changeset status");
+    expect(step.run).toBe("pnpm exec changeset status --since=origin/${{ github.base_ref }}");
+    // This complete predicate is the policy contract. Substring checks also pass for
+    // disabled steps, inverted exemptions, and conditions on an unrelated step.
+    expect(asString(step.if, "changeset condition").replace(/\s+/g, " ").trim()).toBe(
+      "${{ github.event_name == 'pull_request' && !startsWith(github.head_ref, 'changeset-release/') && !contains(github.event.pull_request.labels.*.name, 'no-changeset') }}"
+    );
+  });
+
+  it("opens a Version Packages PR from main without configuring publication", () => {
+    const version = readWorkflow("version-packages");
+    expect(version.on).toEqual({ push: { branches: ["main"] } });
+    const steps = requiredJobSteps(version, "version");
+    const actions = steps.filter(
+      (step) => step.uses !== undefined && asString(step.uses, "action").startsWith("changesets/action@")
+    );
+    expect(actions).toHaveLength(1);
+    const action = actions[0];
+    expect(action.if).toBeUndefined();
+    expect(action["continue-on-error"]).toBeUndefined();
+    const inputs = asRecord(action.with, "changesets inputs");
+    expect(inputs.version).toBe("pnpm exec changeset version");
+    expect(inputs.publish).toBeUndefined();
+    for (const step of steps) {
+      if (step.run !== undefined)
+        expect(asString(step.run, "version command")).not.toMatch(/\b(?:npm|pnpm)\s+publish\b/);
     }
-    const checks = yaml.split(/^  browser:/m)[0];
-    const browser = yaml.split(/^  browser:/m)[1];
-    expect(browser).toBeDefined();
-    expect(checks).not.toContain("turbo run test:browser");
-    expect(checks).not.toContain("playwright");
-    expect(browser).toContain("playwright install --with-deps chromium");
-    expect(browser).toContain("turbo run test:browser");
-  });
-
-  it("runs the check suite on pull_request and on push to the default branch", () => {
-    expect(yaml).toMatch(/^on:\n(?:  .*\n)*?  pull_request:/m);
-    expect(yaml).toMatch(/^on:\n(?:  .*\n)*?  push:\n(?:    .*\n)*?      - main/m);
-  });
-
-  it("exempts Version-Packages PRs by changeset-release/* head branch without a label", () => {
-    expect(yaml).toContain("changeset-release/");
-    expect(yaml).toContain("startsWith(github.head_ref, 'changeset-release/')");
-  });
-
-  it("matches the no-changeset label by whole name, not a joined-string substring", () => {
-    expect(yaml).not.toContain("join(github.event.pull_request.labels.*.name");
-    expect(yaml).toContain("contains(github.event.pull_request.labels.*.name, 'no-changeset')");
-    expect(yaml).not.toContain("foo-no-changeset-x");
-  });
-
-  it("still runs changeset status on an unlabeled pull_request", () => {
-    expect(yaml).toContain("changeset status --since=");
-    expect(yaml).toMatch(/if:[\s\S]*github\.event_name == 'pull_request'/);
-  });
-
-  it("opens a Version Packages PR from main without publishing", () => {
-    const yaml = readFileSync(join(repoRoot, ".github/workflows/version-packages.yml"), "utf8");
-    expect(yaml).toContain("changesets/action");
-    expect(yaml).toContain("changeset version");
-    expect(yaml).not.toContain("npm publish");
-    expect(yaml).not.toContain("pnpm publish");
   });
 });

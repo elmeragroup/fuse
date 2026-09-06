@@ -140,8 +140,7 @@ export function createSessionFacts(
       declaringParentIsClass(session, symbol)
     ),
     documentationOfSymbol: documentationOfSymbolRead,
-    // Enum facts carry authored warning records and must run for every read site.
-    enumFacts: (type) => enumFacts(session, type, documentationOfSymbolRead),
+    enumFacts: cache.byHandle("enumFacts", (type) => enumFacts(session, type, documentationOfSymbolRead)),
     nodeFacts: cache.byHandle("nodeFacts", (node) =>
       nodeFacts(session, node, (source) => typeNameFromNode(session, source), symbolOriginRead)
     ),

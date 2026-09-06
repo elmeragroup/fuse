@@ -29,7 +29,6 @@ export type ApiPartView = {
   /** Packages whose props this part forwards. */
   forwardedFrom: readonly string[];
   forwardedCount: number;
-  props: readonly ApiPropView[];
   propGroups: readonly ApiPropGroupView[];
 };
 
@@ -92,7 +91,6 @@ export function toPartView(part: ApiPart): ApiPartView {
     rscLabel: rscLabel(part.rsc),
     forwardedFrom: part.forwardedFrom,
     forwardedCount: part.forwardedCount,
-    props: propGroups.flatMap((group) => group.props),
     propGroups,
   };
 }

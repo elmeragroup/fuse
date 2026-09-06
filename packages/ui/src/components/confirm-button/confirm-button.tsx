@@ -39,16 +39,10 @@ export function ConfirmButton({
   ...rest
 }: ConfirmButtonProps): ReactElement {
   const [isArmedRaw, setIsArmedRaw] = useState(false);
-  const [wasDisabled, setWasDisabled] = useState(disabled);
 
-  // Derive-with-reset: disabling disarms during the same render
-  // that flips `disabled`, so re-enabling never restores a stale armed state and no extra
-  // effect-driven render commits.
-  if (disabled !== wasDisabled) {
-    setWasDisabled(disabled);
-    if (disabled && isArmedRaw) {
-      setIsArmedRaw(false);
-    }
+  // Reset during render so re-enabling cannot restore a stale armed state.
+  if (disabled && isArmedRaw) {
+    setIsArmedRaw(false);
   }
 
   const isArmed = isArmedRaw && !disabled;

@@ -16,6 +16,7 @@ import {
 } from "../scripts/package-check-lib";
 import { parseFacadeValueExports } from "../scripts/parse-facade";
 import { ARTIFACTS_DIR } from "../scripts/tarball";
+import { copyTwemojiNotices, TWEMOJI_LICENSE_FILE, TWEMOJI_NOTICE_FILE } from "../scripts/twemoji-notices";
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -35,16 +36,35 @@ describe("shared script helpers", () => {
   });
 });
 
-describe("Twemoji packed notices", () => {
-  it("wires the package-file copy and packed-artifact assertion", () => {
-    expect(readFileSync(join(packageRoot, "scripts/package-check.ts"), "utf8")).toContain(
-      "checkPackedTwemojiNotices"
-    );
-    expect(readFileSync(join(packageRoot, "scripts/package-check-packed.ts"), "utf8")).toContain(
-      "twemojiNoticeFailure"
-    );
-    expect(readFileSync(join(packageRoot, "scripts/generate-exports.ts"), "utf8")).toContain(
-      "copyTwemojiNotices"
+describe("Twemoji notice copying", () => {
+  const scratchDirs: string[] = [];
+
+  afterEach(() => {
+    for (const directory of scratchDirs.splice(0)) rmSync(directory, { recursive: true, force: true });
+  });
+
+  function scratch(): string {
+    const directory = mkdtempSync(join(tmpdir(), "elmera-ui-notices-"));
+    scratchDirs.push(directory);
+    return directory;
+  }
+
+  it("copies both notices byte-for-byte, creating the nested license directory", () => {
+    const destination = scratch();
+    copyTwemojiNotices(packageRoot, destination);
+    for (const file of [TWEMOJI_NOTICE_FILE, TWEMOJI_LICENSE_FILE]) {
+      expect(readFileSync(join(destination, file))).toEqual(readFileSync(join(packageRoot, file)));
+    }
+  });
+
+  it.each([TWEMOJI_NOTICE_FILE, TWEMOJI_LICENSE_FILE])("refuses to copy when %s is missing", (missing) => {
+    const source = scratch();
+    mkdirSync(join(source, "licenses"));
+    for (const file of [TWEMOJI_NOTICE_FILE, TWEMOJI_LICENSE_FILE]) {
+      if (file !== missing) writeFileSync(join(source, file), readFileSync(join(packageRoot, file)));
+    }
+    expect(() => copyTwemojiNotices(source, scratch())).toThrow(
+      `packages/ui Twemoji notices: missing ${missing}`
     );
   });
 });

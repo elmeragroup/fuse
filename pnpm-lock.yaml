@@ -144,6 +144,9 @@ catalogs:
     vitest:
       specifier: 4.1.10
       version: 4.1.10
+    yaml:
+      specifier: 2.9.0
+      version: 2.9.0
 
 importers:
 
@@ -191,6 +194,9 @@ importers:
       vitest:
         specifier: 'catalog:'
         version: 4.1.10(@types/node@25.9.5)(@vitest/browser-playwright@4.1.10)(vite@8.2.1(@types/node@25.9.5)(jiti@2.7.0)(yaml@2.9.0))
+      yaml:
+        specifier: 'catalog:'
+        version: 2.9.0
 
   apps/docs:
     dependencies:
@@ -7517,8 +7523,7 @@ snapshots:
 
   y18n@5.0.8: {}
 
-  yaml@2.9.0:
-    optional: true
+  yaml@2.9.0: {}
 
   yargs-parser@20.2.9: {}
 

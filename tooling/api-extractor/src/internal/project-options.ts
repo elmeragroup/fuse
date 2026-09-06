@@ -36,5 +36,3 @@ export class InternalProjectExtractorTiming extends Context.Service<
   InternalProjectExtractorTiming,
   InternalTimingService
 >()("elmera/api-extractor/InternalProjectExtractorTiming") {}
-
-export type InternalTimingFactory = (method: InternalTimingMethod) => InternalTimingService;

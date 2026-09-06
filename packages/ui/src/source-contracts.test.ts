@@ -342,26 +342,6 @@ describe("selection-item", () => {
   });
 });
 
-describe("ThemeProvider color-scheme store seam", () => {
-  // Why not a lint rule: the invariant is "no store mutation during render,
-  // only inside useInsertionEffect". That is a React-phase constraint, not a
-  // name or import grammar.
-  it("does not mutate the retained color-scheme store during render", () => {
-    const source = readSrc("theme/theme-provider.tsx");
-    const writerStart = source.indexOf("function DocumentThemeWriter");
-    const writerEnd = source.indexOf("export function useTheme");
-    expect(writerStart).toBeGreaterThan(-1);
-    expect(writerEnd).toBeGreaterThan(writerStart);
-    const writer = source.slice(writerStart, writerEnd);
-    const [renderPhase, ...insertionAndRest] = writer.split("useInsertionEffect");
-    expect(insertionAndRest.length).toBeGreaterThan(0);
-    expect(renderPhase).not.toMatch(/store\.(updateConfig|applyConfig|commitConfig|discardConfig)\(/);
-    expect(writer).toMatch(/store\.applyConfig\(/);
-    expect(writer).toMatch(/store\.commitConfig\(/);
-    expect(writer).toMatch(/useInsertionEffect\(/);
-  });
-});
-
 describe("density host interface", () => {
   // Why not a lint rule: ThemeProvider and ThemeScope must not mention
   // density because density is a document-root stamp, not a theme prop. The

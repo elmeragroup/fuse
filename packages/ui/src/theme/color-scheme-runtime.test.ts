@@ -20,31 +20,34 @@ afterEach(() => {
 });
 
 describe("color-scheme runtime store config commit", () => {
-  it("does not let apply-then-discard change later snapshots", () => {
+  it("keeps the snapshot and listeners unchanged for equal committed configuration", async () => {
     const store = createColorSchemeRuntimeStore(config());
     const before = store.getSnapshot();
+    const listener = vi.fn();
+    store.subscribe(listener);
 
-    store.applyConfig(config({ mountForce: "dark", defaultColorScheme: "dark" }));
-    store.discardConfig();
+    store.commitConfig(config());
+    await Promise.resolve();
 
-    expect(store.getSnapshot()).toEqual(before);
-
-    store.markMounted();
-    expect(store.getSnapshot().resolvedColorScheme).toBe("light");
-    expect(store.getSnapshot().preference).toBe("light");
+    expect(store.getSnapshot()).toBe(before);
+    expect(listener).not.toHaveBeenCalled();
   });
 
-  it("applies staged configuration only on commit", () => {
+  it("updates the snapshot synchronously and batches notifications after commit", async () => {
     const store = createColorSchemeRuntimeStore(config());
     store.markMounted();
-    expect(store.getSnapshot().resolvedColorScheme).toBe("light");
+    const listener = vi.fn();
+    store.subscribe(listener);
 
-    store.applyConfig(config({ mountForce: "dark" }));
-    expect(store.getSnapshot().resolvedColorScheme).toBe("light");
-
-    store.commitConfig();
+    store.commitConfig(config({ mountForce: "dark" }));
     expect(store.getSnapshot().resolvedColorScheme).toBe("dark");
     expect(store.getSnapshot().preference).toBe("light");
+    expect(listener).not.toHaveBeenCalled();
+
+    store.commitConfig(config({ mountForce: "light" }));
+    expect(store.getSnapshot().resolvedColorScheme).toBe("light");
+    await Promise.resolve();
+    expect(listener).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -69,8 +72,7 @@ describe("color-scheme runtime snapshot resolution", () => {
     expect(store.getSnapshot().resolvedColorScheme).toBe("dark");
     expect(store.getSnapshot().preference).toBe("dark");
 
-    store.applyConfig(config({ mountForce: "light" }));
-    store.commitConfig();
+    store.commitConfig(config({ mountForce: "light" }));
     expect(store.getSnapshot().resolvedColorScheme).toBe("light");
     expect(store.getSnapshot().preference).toBe("dark");
 

@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import type {
   BackendCompilerOperations,
+  BackendEnumFacts,
   BackendExtractionSession,
   BackendSymbolHandle,
   BackendTypeHandle,
@@ -515,6 +516,67 @@ describe("synthesized properties and missing enums through a replacement backend
       { path: ["Synthesized"], declarations: [], synthesized: true },
       { path: ["Synthesized", "properties", "generated"], declarations: [], synthesized: true },
     ]);
+    expect(Schema.decodeUnknownSync(ExtractionResultSchema)(result)).toEqual(result);
+  });
+
+  it("emits shared enum warnings at each occurrence with its own breadcrumb", async () => {
+    const warning = Object.freeze({
+      code: "missing-enum-declaration" as const,
+      filePath: fakeInputPath,
+      line: 7,
+      column: 3,
+      parsedSymbolStack: Object.freeze([]),
+      enumName: "SharedMode",
+      memberName: "Unknown",
+    });
+    const facts: BackendEnumFacts = Object.freeze({
+      name: "SharedMode",
+      namespaces: Object.freeze([]),
+      members: Object.freeze([]),
+      warnings: Object.freeze([warning]),
+    });
+    const compiler: BackendCompilerOperations = {
+      ...synthesizedCompiler(),
+      typeOfSymbol: () => missingEnumType,
+      typeFacts: () => ({ flags: ["Enum"], isEnum: true, symbol: missingEnumSymbol }),
+      symbolFacts: () => ({ name: "SharedMode", flags: [], declarationPaths: [], declarations: [] }),
+      typeNameFacts: () => ({ name: "SharedMode", namespaces: [] }),
+      enumFacts: () => facts,
+    };
+    const session: BackendExtractionSession = {
+      compiler,
+      readModule: () => ({
+        name: "input",
+        exports: [
+          { name: "First", symbol: missingEnumSymbol },
+          { name: "Second", symbol: missingEnumSymbol },
+        ],
+      }),
+      resolveModule: () => undefined,
+      close: () => undefined,
+    };
+    const backend = Layer.succeed(CompilerBackend, {
+      openProject: () => Effect.succeed({ openExtraction: () => session, close: () => undefined }),
+    });
+    const result = await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const extractor = yield* ProjectExtractor;
+          return yield* extractor.extractModule(fakeInputPath);
+        }).pipe(
+          Effect.provide(
+            projectExtractorLayer({ tsconfigPath: fakeTsconfigPath }).pipe(Layer.provide(backend))
+          )
+        )
+      )
+    );
+
+    expect(result.warnings).toEqual([
+      expect.objectContaining({ ...warning, parsedSymbolStack: [fakeInputPath, "First"] }),
+      expect.objectContaining({ ...warning, parsedSymbolStack: [fakeInputPath, "Second"] }),
+    ]);
+    expect(facts.warnings).toEqual([warning]);
+    expect(warning.parsedSymbolStack).toEqual([]);
     expect(Schema.decodeUnknownSync(ExtractionResultSchema)(result)).toEqual(result);
   });
 

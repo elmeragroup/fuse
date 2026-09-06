@@ -64,6 +64,18 @@ describe("committed api.json read at render time (docs-site.md §8)", () => {
 });
 
 describe("reference row presentation (docs-site.md §8)", () => {
+  it("keeps library and dependency rows in distinct groups", async () => {
+    const view = await partView("button", "Button");
+    expect(view.propGroups.map(({ key, label }) => ({ key, label }))).toEqual([
+      { key: "library", label: null },
+      { key: "@base-ui/react", label: "Base UI primitive props" },
+    ]);
+    expect(view.propGroups[0]?.props.map((prop) => prop.name)).toContain("onIntent");
+    expect(view.propGroups[0]?.props.map((prop) => prop.name)).not.toContain("nativeButton");
+    expect(view.propGroups[1]?.props.map((prop) => prop.name)).toContain("nativeButton");
+    expect(view.propGroups[1]?.props.map((prop) => prop.name)).not.toContain("onIntent");
+  });
+
   it("persists a country union beyond the compiler's diagnostic truncation limit", async () => {
     const api = await readComponentApi("phone-number-field");
     const phone = api.parts.find((part) => part.name === "PhoneNumberField");
@@ -75,7 +87,9 @@ describe("reference row presentation (docs-site.md §8)", () => {
     expect(country?.type).toContain('"SE"');
     expect(country?.type).toContain('"ZW"');
     const view = await partView("phone-number-field", "PhoneNumberField");
-    const row = view.props.find((prop) => prop.name === "defaultCountryCode");
+    const row = view.propGroups
+      .flatMap((group) => group.props)
+      .find((prop) => prop.name === "defaultCountryCode");
     expect(row?.closedType).toBe("Union");
     expect(row?.signature).toMatchObject({ props: { source: country?.type } });
     const markdown = readFileSync(join(markdownOutDir, "phone-number-field.md"), "utf8");
@@ -87,7 +101,7 @@ describe("reference row presentation (docs-site.md §8)", () => {
 
   it("shows the collapsed short type closed and the full signature expanded", async () => {
     const part = await partView("button", "Button");
-    const onIntent = part.props.find((prop) => prop.name === "onIntent");
+    const onIntent = part.propGroups.flatMap((group) => group.props).find((prop) => prop.name === "onIntent");
     expect(onIntent?.closedType).toBe("function");
     // The panel gets a finished element: the server highlighted the printed signature
     // through DocsCodeBlock, so the client module never reaches the highlighter.
@@ -100,13 +114,17 @@ describe("reference row presentation (docs-site.md §8)", () => {
 
   it("keeps the printed type in the closed row when it is short enough to read", async () => {
     const part = await partView("button", "Button");
-    expect(part.props.find((prop) => prop.name === "isPending")?.closedType).toBe("boolean | undefined");
+    expect(
+      part.propGroups.flatMap((group) => group.props).find((prop) => prop.name === "isPending")?.closedType
+    ).toBe("boolean | undefined");
   });
 
   it("gives every row a deep link that survives the prop's casing", async () => {
     const part = await partView("button", "Button");
     expect(part.anchor).toBe("api-button");
-    expect(part.props.map((prop) => prop.id)).toContain("api-button-isVisuallyDisabled");
+    expect(part.propGroups.flatMap((group) => group.props).map((prop) => prop.id)).toContain(
+      "api-button-isVisuallyDisabled"
+    );
   });
 
   it("reports RSC status per part, in the words a reader acts on", async () => {
@@ -116,7 +134,9 @@ describe("reference row presentation (docs-site.md §8)", () => {
 
   it("leaves a missing default as an em-dash rather than an empty cell", async () => {
     const part = await partView("button", "Button");
-    expect(part.props.find((prop) => prop.name === "onIntent")?.defaultValue).toBeNull();
+    expect(
+      part.propGroups.flatMap((group) => group.props).find((prop) => prop.name === "onIntent")?.defaultValue
+    ).toBeNull();
     expect(NO_DEFAULT).toBe("—");
   });
 
@@ -150,10 +170,11 @@ describe("reference row presentation (docs-site.md §8)", () => {
     };
 
     const view = toPartView(part);
-    expect(view.props.at(0)?.label).toBe("Prop: open, required, type: boolean");
-    expect(view.props.at(1)?.label).toBe('Prop: size, type: Union (default: "md")');
+    const props = view.propGroups.flatMap((group) => group.props);
+    expect(props.at(0)?.label).toBe("Prop: open, required, type: boolean");
+    expect(props.at(1)?.label).toBe('Prop: size, type: Union (default: "md")');
     // A recipe axis has no JSDoc to show; its printed union is the documentation.
-    expect(view.props.at(1)?.description).toBe("Recipe axis.");
-    expect(view.props.at(0)?.id).toBe("api-dialog-root-open");
+    expect(props.at(1)?.description).toBe("Recipe axis.");
+    expect(props.at(0)?.id).toBe("api-dialog-root-open");
   });
 });

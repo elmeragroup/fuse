@@ -1,3 +1,5 @@
+import { Suspense, use } from "react";
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { render } from "../../test/browser-render";
@@ -130,25 +132,82 @@ describe("color-scheme bootstrap diagnostics", () => {
   });
 });
 
-describe("color-scheme store commit vs discard", () => {
-  it("does not write data-theme for apply-then-discard, and does for apply-and-commit", () => {
+describe("color-scheme store committed updates", () => {
+  it("writes committed force changes and restores the hidden preference when removed", () => {
     document.documentElement.setAttribute("data-theme", "light");
     const store = createColorSchemeRuntimeStore(runtimeConfig());
     store.markMounted();
 
-    store.applyConfig(runtimeConfig({ mountForce: "dark" }));
-    store.discardConfig();
-    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
-    expect(store.getSnapshot().resolvedColorScheme).toBe("light");
-
-    store.applyConfig(runtimeConfig({ mountForce: "dark" }));
-    store.commitConfig();
+    store.commitConfig(runtimeConfig({ mountForce: "dark" }));
     expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
     expect(store.getSnapshot().resolvedColorScheme).toBe("dark");
+
+    store.setPreference("light");
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    store.commitConfig(runtimeConfig());
+    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+    expect(store.getSnapshot().resolvedColorScheme).toBe("light");
   });
 });
 
 describe("ThemeProvider committed color-scheme options", () => {
+  it("ignores suspended configuration in document writes and later storage events", async () => {
+    writeManifest(resolveColorSchemeOptions({ defaultColorScheme: "light", enableSystem: false }));
+    const pending = new Promise<void>(() => undefined);
+    const attemptedRender = vi.fn();
+    function Suspend() {
+      attemptedRender();
+      use(pending);
+      return null;
+    }
+    const { host, rerender } = render(
+      <Suspense fallback={<span>Waiting</span>}>
+        <ThemeProvider theme={fkasPrivate} defaultColorScheme="light" enableSystem={false}>
+          <ColorSchemeOutput />
+        </ThemeProvider>
+      </Suspense>
+    );
+    await mountedColorScheme(host, "internal-fkas-private:light/light");
+
+    rerender(
+      <Suspense fallback={<span>Waiting</span>}>
+        <ThemeProvider
+          theme={fkasPrivate}
+          defaultColorScheme="light"
+          enableSystem={false}
+          forcedColorScheme="dark">
+          <ColorSchemeOutput />
+          <Suspend />
+        </ThemeProvider>
+      </Suspense>
+    );
+    expect(attemptedRender).toHaveBeenCalled();
+    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+
+    window.dispatchEvent(
+      new StorageEvent("storage", { key: DEFAULT_COLOR_SCHEME_STORAGE_KEY, newValue: "dark" })
+    );
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    window.dispatchEvent(
+      new StorageEvent("storage", { key: DEFAULT_COLOR_SCHEME_STORAGE_KEY, newValue: "light" })
+    );
+    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+
+    rerender(
+      <Suspense fallback={<span>Waiting</span>}>
+        <ThemeProvider
+          theme={fkasPrivate}
+          defaultColorScheme="light"
+          enableSystem={false}
+          forcedColorScheme="dark">
+          <ColorSchemeOutput />
+        </ThemeProvider>
+      </Suspense>
+    );
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    await mountedColorScheme(host, "internal-fkas-private:light/dark");
+  });
+
   it("updates document and consumer resolvedColorScheme when committed options change", async () => {
     writeManifest(resolveColorSchemeOptions({ forcedColorScheme: "dark", enableSystem: false }));
     window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "light");

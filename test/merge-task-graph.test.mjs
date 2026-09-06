@@ -1,18 +1,18 @@
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, it } from "vitest";
 
 import { asRecord, asRecordArray, asString, readJsonObject } from "./json-object.mjs";
+import { readWorkflow, requiredJobSteps, requiredRunStep } from "./workflow.mjs";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
-it("the actual merge command schedules all private extractor gates without browser work", () => {
-  const workflow = readFileSync(join(repoRoot, ".github/workflows/merge.yml"), "utf8");
-  const checks = workflow.split(/^  browser:/m)[0];
-  const command = /^\s+run: (pnpm exec turbo run .+)$/m.exec(checks)?.[1];
-  expect(command, "nonbrowser workflow must have an executable Turbo gate command").toBeDefined();
+/** @param {string} job */
+function scheduledTasks(job) {
+  const step = requiredRunStep(requiredJobSteps(readWorkflow("merge"), job), "pnpm exec turbo run ");
+  expect(step.if, `${job} gate must not be conditional`).toBeUndefined();
+  const command = asString(step.run, `${job} command`);
   const tokens = command.match(/'[^']*'|"[^"]*"|\S+/g).map((token) => token.replace(/^['"]|['"]$/g, ""));
   const graphText = execFileSync(
     join(repoRoot, "node_modules/.bin/turbo"),
@@ -21,11 +21,36 @@ it("the actual merge command schedules all private extractor gates without brows
   );
   // SAFETY: the graph is Turbo's JSON protocol, validated before inspecting its tasks.
   const graph = asRecord(JSON.parse(graphText), "Turbo graph");
-  const tasks = asRecordArray(graph.tasks, "Turbo tasks");
+  return asRecordArray(graph.tasks, "Turbo tasks");
+}
+
+it("the merge checks schedule all required gates without browser work", () => {
+  const tasks = scheduledTasks("checks");
   const ids = tasks.map((task) => asString(task.taskId, "task id"));
-  expect(ids).toContain("@elmeragroup/api-extractor#ci:checks");
-  expect(ids).toContain("@elmeragroup/api-extractor#test");
-  expect(ids).toContain("@elmeragroup/api-extractor#type-check");
+  for (const required of [
+    "//#lint",
+    "//#test:repo-policy",
+    "@elmeragroup/ui#build",
+    "@elmeragroup/ui#type-check",
+    "@elmeragroup/ui#test",
+    "@elmeragroup/ui#test:types",
+    "@elmeragroup/ui#package:check",
+    "@elmeragroup/ui#size-limit",
+    "docs#build",
+    "docs#type-check",
+    "docs#test",
+    "docs#test:shadow",
+    "static-theme#build",
+    "static-theme#type-check",
+    "static-theme#test",
+    "@elmeragroup/oxlint-plugin#test",
+    "@elmeragroup/oxlint-plugin-anti-slop#test",
+    "@elmeragroup/api-extractor#ci:checks",
+    "@elmeragroup/api-extractor#test",
+    "@elmeragroup/api-extractor#type-check",
+  ]) {
+    expect(ids).toContain(required);
+  }
   expect(ids.filter((id) => /#test:(browser|packed-consumer)$/.test(id))).toEqual([]);
   const leaf = tasks.find((task) => task.taskId === "@elmeragroup/api-extractor#ci:checks");
   const manifest = readJsonObject(join(repoRoot, "tooling/api-extractor/package.json"));
@@ -45,6 +70,18 @@ it("the actual merge command schedules all private extractor gates without brows
     "test:timing:external-selection",
   ]);
   for (const gate of privateGates) expect(asString(scripts[gate], gate).length).toBeGreaterThan(0);
+}, 30_000);
+
+it("the browser job schedules the browser and packed-consumer gates", () => {
+  const ids = scheduledTasks("browser").map((task) => asString(task.taskId, "task id"));
+  for (const required of [
+    "@elmeragroup/ui#test:browser",
+    "@elmeragroup/ui#test:packed-consumer",
+    "docs#test:browser",
+    "static-theme#test:browser",
+  ]) {
+    expect(ids).toContain(required);
+  }
 }, 30_000);
 
 it("the local ci aggregate retains extractor unit, type and private checks", () => {

@@ -6,19 +6,9 @@ import { projectExtractorLayerWithTiming } from "../extractor.ts";
 import type { ProjectExtractor } from "../extractor.ts";
 import type { OpenProjectOptions } from "../options.ts";
 import { InternalProjectExtractorTiming } from "./project-options.ts";
-import type {
-  InternalOpenProjectOptions,
-  InternalTimedExtraction,
-  InternalTimingFactory,
-  InternalTimingMethod,
-} from "./project-options.ts";
+import type { InternalOpenProjectOptions, InternalTimedExtraction } from "./project-options.ts";
 
 export type TimedExtraction = InternalTimedExtraction;
-
-/** Private factory used only by the timing layer; no timing state is attached to ProjectExtractor. */
-export const makeInternalTimingService: InternalTimingFactory = (method: InternalTimingMethod) => ({
-  extractModule: method,
-});
 
 /**
  * Internal evidence-only layer.  The public ProjectExtractor layer never
@@ -29,9 +19,7 @@ export function timedProjectExtractorLayer(
   options: OpenProjectOptions
 ): Layer.Layer<ProjectExtractor | InternalProjectExtractorTiming, ConfigError | BackendError> {
   const internalOptions: InternalOpenProjectOptions = { ...options, collectTiming: true };
-  return projectExtractorLayerWithTiming(internalOptions, makeInternalTimingService).pipe(
-    Layer.provide(CompilerBackend.layer)
-  );
+  return projectExtractorLayerWithTiming(internalOptions).pipe(Layer.provide(CompilerBackend.layer));
 }
 
 export { InternalProjectExtractorTiming };

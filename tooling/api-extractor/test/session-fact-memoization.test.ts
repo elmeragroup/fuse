@@ -71,7 +71,7 @@ describe("TypeScript 7 session fact memoization", () => {
     }
   });
 
-  it("does not memoize the warning-producing enum read", () => {
+  it("caches enum facts within each extraction and reads them again in the next extraction", () => {
     const project = openTsgoProject({ tsconfigPath: enumTsconfigPath, collectTiming: true });
     try {
       const session = project.openExtraction();
@@ -88,8 +88,21 @@ describe("TypeScript 7 session fact memoization", () => {
       expect(first?.name).toBe("Side");
       expect(second).toEqual(first);
       expect(afterFirst - beforeFirst).toBeGreaterThan(0);
-      expect(afterSecond - afterFirst).toBeGreaterThan(0);
+      expect(afterSecond).toBe(afterFirst);
+      expect(second).toBe(first);
       session.close();
+      expect(() => session.compiler.enumFacts(type)).toThrow("closed");
+
+      const nextSession = project.openExtraction();
+      const nextSymbol = firstExport(nextSession, enumInputPath);
+      const nextType = nextSession.compiler.typeOfSymbol(nextSymbol, true);
+      if (nextType === undefined) throw new Error("Missing enum type in next extraction");
+      const beforeNext = requestCount(project);
+      const next = nextSession.compiler.enumFacts(nextType);
+      expect(requestCount(project)).toBeGreaterThan(beforeNext);
+      expect(next?.name).toBe("Side");
+      expect(next).not.toBe(first);
+      nextSession.close();
     } finally {
       project.close();
     }

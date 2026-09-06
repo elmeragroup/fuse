@@ -10,11 +10,7 @@ import { CompilerBackend } from "./backend/service.ts";
 import { BackendError, ExtractError, FileNotInProgramError, safeCause } from "./errors.ts";
 import type { ConfigError } from "./errors.ts";
 import { InternalProjectExtractorTiming } from "./internal/project-options.ts";
-import type {
-  InternalOpenProjectOptions,
-  InternalTimedExtraction,
-  InternalTimingFactory,
-} from "./internal/project-options.ts";
+import type { InternalOpenProjectOptions, InternalTimedExtraction } from "./internal/project-options.ts";
 import { ExtractionResultSchema } from "./model.ts";
 import { definedFields } from "./optional-fields.ts";
 import type { ExtractorOptions, OpenProjectOptions } from "./options.ts";
@@ -76,8 +72,7 @@ export function projectExtractorLayer(
 
 /** @internal Evidence-only factory; timing is deliberately absent from the public service. */
 export function projectExtractorLayerWithTiming(
-  options: InternalOpenProjectOptions,
-  timingFactory: InternalTimingFactory
+  options: InternalOpenProjectOptions
 ): Layer.Layer<
   ProjectExtractor | InternalProjectExtractorTiming,
   ConfigError | BackendError,
@@ -85,9 +80,9 @@ export function projectExtractorLayerWithTiming(
 > {
   const timingLayer = Layer.effect(
     InternalProjectExtractorTiming,
-    Effect.map(OpenedProject, (project) =>
-      timingFactory((filePath, extractorOptions) => extractModule(project, filePath, extractorOptions))
-    )
+    Effect.map(OpenedProject, (project) => ({
+      extractModule: (filePath, extractorOptions) => extractModule(project, filePath, extractorOptions),
+    }))
   );
   return Layer.merge(extractorLayer, timingLayer).pipe(Layer.provide(openedProjectLayer(options)));
 }

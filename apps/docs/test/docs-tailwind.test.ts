@@ -1,6 +1,10 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import type { Node } from "typescript/unstable/ast";
+import { isCallExpression, isIdentifier, isTemplateExpression } from "typescript/unstable/ast/is";
+import { createVirtualFileSystem } from "typescript/unstable/fs";
+import { API } from "typescript/unstable/sync";
 import { describe, expect, it } from "vitest";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -34,6 +38,47 @@ function srcTsFiles(): string[] {
     ...collectFiles(join(docsRoot, "src"), "src", ".ts"),
     ...collectFiles(join(docsRoot, "src"), "src", ".tsx"),
   ].sort();
+}
+
+/** Parse only the supplied sources; no library project or type checking is needed. */
+function recipeInterpolationFailures(sources: readonly { file: string; source: string }[]): string[] {
+  const root = "/docs-recipe-check";
+  const config = `${root}/tsconfig.json`;
+  const inputs = sources.map((entry, index) => ({ ...entry, virtualFile: `${root}/${String(index)}.tsx` }));
+  const api = new API({
+    cwd: root,
+    fs: createVirtualFileSystem({
+      [config]: JSON.stringify({
+        compilerOptions: { noLib: true, noResolve: true },
+        files: inputs.map(({ virtualFile }) => virtualFile),
+      }),
+      ...Object.fromEntries(inputs.map(({ source, virtualFile }) => [virtualFile, source])),
+    }),
+  });
+  try {
+    const project = api.updateSnapshot({ openProjects: [config] }).getProject(config);
+    if (project === undefined) throw new Error("Could not open recipe syntax project");
+    return inputs.flatMap(({ file, source, virtualFile }) => {
+      const parsed = project.program.getSourceFile(virtualFile);
+      if (parsed === undefined) throw new Error(`Could not parse ${file}`);
+      const failures: string[] = [];
+      function inspectRecipe(node: Node): void {
+        if (isTemplateExpression(node)) failures.push(`${file}: ${source.slice(node.pos, node.end).trim()}`);
+        node.forEachChild(inspectRecipe);
+      }
+      function visit(node: Node): void {
+        if (isCallExpression(node) && isIdentifier(node.expression) && node.expression.text === "tv") {
+          for (const argument of node.arguments) inspectRecipe(argument);
+          return;
+        }
+        node.forEachChild(visit);
+      }
+      visit(parsed);
+      return failures;
+    });
+  } finally {
+    api.close();
+  }
 }
 
 const EXPORTED_CLASS_NAME = /export\s+(?:const|function|type|class)\s+\w*ClassName\b/;
@@ -106,20 +151,35 @@ describe("docs Tailwind migration contract", () => {
   });
 
   it("inlines complete utility literals in private tv recipes", () => {
-    const offenders = srcTsFiles()
+    const sources = srcTsFiles()
       .filter((relative) => relative.startsWith("src/components/"))
-      .flatMap((relative) => {
-        const source = readFileSync(join(docsRoot, relative), "utf8");
-        if (!/\btv\s*\(/.test(source)) {
-          return [];
-        }
-        return [...source.matchAll(/\$\{(\w+)\}/g)].map((match) => `${relative}: \${${match[1]}}`);
-      });
+      .map((file) => ({ file, source: readFileSync(join(docsRoot, file), "utf8") }));
+    expect(recipeInterpolationFailures(sources)).toEqual([]);
+  });
+});
 
-    expect(offenders).toEqual([]);
+describe("recipe interpolation guard", () => {
+  it("allows static recipes alongside interpolated labels and unrelated API constants", () => {
+    expect(
+      recipeInterpolationFailures([
+        {
+          file: "valid.tsx",
+          source: [
+            'const recipe = tv({ slots: { root: "flex", cell: `text-sm` } });',
+            "const label = `Page ${name}`;",
+            'const apiEndpoint = "/api/themes";',
+          ].join("\n"),
+        },
+      ])
+    ).toEqual([]);
+  });
 
-    const apiRows = readFileSync(join(docsRoot, "src/components/api-rows.tsx"), "utf8");
-    expect(apiRows).not.toMatch(/\bconst api[A-Z]\w*\s*=\s*["'`]/);
+  it.each([
+    "tv({ slots: { root: `bg-${color}` } })",
+    "tv({ slots: { root: `bg-${state.color}` } })",
+    "tv({ variants: { active: { true: `text-${getColor()}` } } })",
+  ])("rejects interpolated recipe utilities: %s", (source) => {
+    expect(recipeInterpolationFailures([{ file: "invalid.tsx", source }])).toHaveLength(1);
   });
 });
 

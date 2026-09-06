@@ -22,7 +22,6 @@ export type ColorSchemeRuntimeSnapshot = {
   preference: ColorScheme;
   runtimeForce: ColorScheme | undefined;
   mounted: boolean;
-  systemRevision: number;
   resolvedColorScheme: "light" | "dark" | undefined;
 };
 
@@ -30,9 +29,7 @@ export type ColorSchemeRuntimeStore = {
   subscribe: (listener: () => void) => () => void;
   getSnapshot: () => ColorSchemeRuntimeSnapshot;
   getServerSnapshot: () => ColorSchemeRuntimeSnapshot;
-  applyConfig: (next: ColorSchemeRuntimeConfig) => void;
-  commitConfig: () => void;
-  discardConfig: () => void;
+  commitConfig: (next: ColorSchemeRuntimeConfig) => void;
   markMounted: () => void;
   hydratePreference: (next: ColorScheme) => void;
   setPreference: (next: ColorScheme) => void;
@@ -71,10 +68,8 @@ export function createColorSchemeRuntimeStore(
   initialConfig: ColorSchemeRuntimeConfig
 ): ColorSchemeRuntimeStore {
   let config = initialConfig;
-  let stagedConfig: ColorSchemeRuntimeConfig | undefined;
   let preference = initialConfig.defaultColorScheme;
   let mounted = false;
-  let systemRevision = 0;
   let systemScheme: "light" | "dark" = "light";
   let systemSchemeRead = false;
   const forceStack: Array<{ id: symbol; value: ColorScheme; depth: number }> = [];
@@ -84,7 +79,6 @@ export function createColorSchemeRuntimeStore(
     preference,
     runtimeForce: undefined,
     mounted,
-    systemRevision,
     resolvedColorScheme: undefined,
   };
 
@@ -136,7 +130,6 @@ export function createColorSchemeRuntimeStore(
       preference,
       runtimeForce: peekRuntimeForce(),
       mounted,
-      systemRevision,
       resolvedColorScheme: resolvedForConsumers(),
     };
   }
@@ -187,15 +180,7 @@ export function createColorSchemeRuntimeStore(
     getServerSnapshot() {
       return snapshot;
     },
-    applyConfig(next) {
-      stagedConfig = next;
-    },
-    commitConfig() {
-      if (stagedConfig === undefined) {
-        return;
-      }
-      const next = stagedConfig;
-      stagedConfig = undefined;
+    commitConfig(next) {
       if (configsEqual(config, next)) {
         return;
       }
@@ -203,9 +188,6 @@ export function createColorSchemeRuntimeStore(
       writeResolvedIfReady();
       refreshSnapshot();
       scheduleNotify();
-    },
-    discardConfig() {
-      stagedConfig = undefined;
     },
     markMounted() {
       mounted = true;
@@ -256,7 +238,6 @@ export function createColorSchemeRuntimeStore(
       }
     },
     bumpSystem() {
-      systemRevision += 1;
       systemScheme = resolveSystemColorScheme();
       systemSchemeRead = true;
       if (resolvedSource() === "system" && config.enableSystem) {

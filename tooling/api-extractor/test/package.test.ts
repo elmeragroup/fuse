@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Layer } from "effect";
 import type { Error as EffectError } from "effect/Effect";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -7,9 +7,12 @@ import { describe, expect, expectTypeOf, it } from "vitest";
 import { ProjectExtractor as PackageProjectExtractor } from "@elmeragroup/api-extractor";
 import type { ExtractionResult, ProjectExtractorService } from "@elmeragroup/api-extractor";
 
+import { CompilerBackend } from "../src/backend/service.ts";
+import { openTsgoProject } from "../src/backend/ts7/project.ts";
+import { projectExtractorLayer } from "../src/extractor.ts";
 import { ProjectExtractor as SourceProjectExtractor } from "../src/index.ts";
 import type { BackendError, ExtractError, FileNotInProgramError } from "../src/index.ts";
-import { InternalProjectExtractorTiming } from "../src/internal/timing.ts";
+import type { InternalOpenProjectOptions } from "../src/internal/project-options.ts";
 
 const fixtureDirectory = resolve(import.meta.dirname, "fixtures/basic");
 const tsconfigPath = resolve(fixtureDirectory, "tsconfig.json");
@@ -53,11 +56,30 @@ describe("package entry point", () => {
     );
   });
 
-  it("does not activate timing from an extra runtime option on the public layer", () => {
-    const runtimeOptions = Object.assign({ tsconfigPath }, { collectTiming: true });
-    const layer = PackageProjectExtractor.live(runtimeOptions);
-    expect(layer).toBeDefined();
-    expect(InternalProjectExtractorTiming).not.toBe(PackageProjectExtractor);
+  it("does not activate timing from an extra runtime option on the public layer", async () => {
+    const fileSystem = { readFile: () => undefined };
+    const runtimeOptions = { tsconfigPath, cwd: fixtureDirectory, fileSystem, collectTiming: true };
+    const acquisitions: InternalOpenProjectOptions[] = [];
+    const backend = Layer.succeed(CompilerBackend, {
+      openProject: (options) =>
+        Effect.acquireRelease(
+          Effect.sync(() => {
+            acquisitions.push(options);
+            return openTsgoProject(options);
+          }),
+          (project) => Effect.sync(() => project.close())
+        ),
+    });
+    await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const extractor = yield* SourceProjectExtractor;
+          yield* extractor.extractModule(inputPath);
+        }).pipe(Effect.provide(projectExtractorLayer(runtimeOptions).pipe(Layer.provide(backend))))
+      )
+    );
+    expect(acquisitions).toEqual([{ tsconfigPath, cwd: fixtureDirectory, fileSystem }]);
+    expect(acquisitions[0]?.fileSystem).toBe(fileSystem);
   });
 
   it("keeps property options out of top-level exports and aligned provenance", async () => {

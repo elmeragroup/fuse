@@ -98,8 +98,7 @@ function DocumentThemeWriter({
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getServerSnapshot);
 
   useInsertionEffect(() => {
-    store.applyConfig(runtimeConfig);
-    store.commitConfig();
+    store.commitConfig(runtimeConfig);
     const attributes = themeAttributes(theme);
     const shouldDiagnose = !diagnosed.current;
     diagnosed.current = true;
