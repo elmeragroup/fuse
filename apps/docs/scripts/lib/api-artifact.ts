@@ -12,13 +12,11 @@
  * what the API did, not how a serialiser felt about ordering.
  */
 
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 import { ApiArtifactsDriftError, ApiArtifactsError, generateApiArtifacts } from "@elmeragroup/internal";
 import type { ApiArtifactDiagnostic, GeneratedApiComponent } from "@elmeragroup/internal";
 
-import type { ComponentApiArtifact } from "../../src/lib/docs-model.ts";
 import { API_REGEN_COMMAND } from "../../src/lib/docs-model.ts";
 import type { DocsApiComponent } from "./docs-inspection.ts";
 import { docsApiInventory } from "./docs-inspection.ts";
@@ -42,20 +40,6 @@ export type GeneratedApi = {
 };
 
 /**
- * A facade with nothing to walk (`apiExportNames: []` in `components.ts`) publishes an
- * artifact with no parts. The package rejects an empty export list
- * (elmeragroup/internal#4), so until it emits this artifact itself, this is the one
- * `api.json` written outside it — with the package's serialisation, and the same
- * write/check semantics as every other artifact.
- */
-function emptyArtifact(component: DocsApiComponent): GeneratedApiComponent {
-  const artifact: ComponentApiArtifact = { $generated: GENERATED_BANNER, slug: component.slug, parts: [] };
-  const text = `${JSON.stringify(artifact, null, 2)}\n`;
-  const changed = !existsSync(component.apiFile) || readFileSync(component.apiFile, "utf8") !== text;
-  return { ...artifact, outputFile: component.apiFile, text, changed };
-}
-
-/**
  * Generates every component's `api.json` through `@elmeragroup/internal`.
  *
  * `write` is the generation pass: a file is written only when its bytes change, and
@@ -70,23 +54,6 @@ export async function generateDocsApiArtifacts(
   inventory: readonly DocsApiComponent[] = docsApiInventory()
 ): Promise<GeneratedApi> {
   const artifacts = new Map<string, GeneratedApiComponent>();
-  const stale: string[] = [];
-  const walked: DocsApiComponent[] = [];
-  for (const component of inventory) {
-    if (component.exportNames.length > 0) {
-      walked.push(component);
-      continue;
-    }
-    const artifact = emptyArtifact(component);
-    artifacts.set(component.slug, artifact);
-    if (!artifact.changed) continue;
-    if (mode === "write") {
-      writeFileSync(artifact.outputFile, artifact.text, "utf8");
-    } else {
-      stale.push(artifact.outputFile);
-    }
-  }
-
   let diagnostics: readonly ApiArtifactDiagnostic[] = [];
   try {
     const result = await generateApiArtifacts({
@@ -94,7 +61,7 @@ export async function generateDocsApiArtifacts(
       tsconfigPath: path.relative(repoRoot, uiTsconfig),
       generatedBy: GENERATED_BANNER,
       mode,
-      components: walked.map((component) => ({
+      components: inventory.map((component) => ({
         slug: component.slug,
         entryFile: component.entryFile,
         exportNames: component.exportNames,
@@ -109,13 +76,12 @@ export async function generateDocsApiArtifacts(
     if (error instanceof ApiArtifactsError) {
       throw new DocsGenerationError(error.problems);
     }
-    if (!(error instanceof ApiArtifactsDriftError)) {
-      throw error;
+    if (error instanceof ApiArtifactsDriftError) {
+      throw new DocsGenerationError(
+        error.files.map((file) => `${repoRelative(file)} is stale. ${STALE_HINT}`)
+      );
     }
-    stale.push(...error.files);
-  }
-  if (stale.length > 0) {
-    throw new DocsGenerationError(stale.map((file) => `${repoRelative(file)} is stale. ${STALE_HINT}`));
+    throw error;
   }
   return { artifacts, diagnostics };
 }

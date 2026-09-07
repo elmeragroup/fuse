@@ -23,7 +23,7 @@
     "tailwind-variants": "catalog:"
   },
   "devDependencies": {
-    "@elmeragroup/internal": "file:../../vendor/internal/elmeragroup-internal-0.1.0-canary.1.tgz",
+    "@elmeragroup/internal": "catalog:",
     "@elmeragroup/typescript-config": "workspace:*",
     "@mdx-js/loader": "catalog:",
     "@tailwindcss/postcss": "catalog:",

@@ -60,7 +60,7 @@ Package-scoped scripts worth knowing:
 | `apps/static-theme`  | `static-theme`                   | Vite host proving standalone-CSS mode and first-paint theme attributes                   |
 | `tooling/typescript` | `@elmeragroup/typescript-config` | Shared tsconfig bases                                                                    |
 
-The API extractor and the `elmera/*` and `anti-slop/*` lint rules come from [`@elmeragroup/internal`](https://github.com/elmeragroup/internal). Until it is on npm, the workspace installs the packed archive under [`vendor/internal/`](vendor/internal/README.md).
+The API extractor and the `elmera/*` and `anti-slop/*` lint rules come from [`@elmeragroup/internal`](https://github.com/elmeragroup/internal). The workspace pins it once in the pnpm catalog.
 
 ## Contribution flow
 

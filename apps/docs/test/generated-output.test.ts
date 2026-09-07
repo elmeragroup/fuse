@@ -299,8 +299,7 @@ describe("committed api.json", () => {
     expect(resolveComponentPaths("file-trigger").apiExportNames).toEqual(["FileTrigger"]);
     expect(resolveComponentPaths("focusable").entry).toBe("@elmeragroup/ui/react-aria/focusable");
     expect(resolveComponentPaths("focusable").exportName).toBe("Focusable");
-    // A dependency re-export facade: nothing to walk, so the page publishes no parts.
-    expect(resolveComponentPaths("focusable").apiExportNames).toEqual([]);
+    expect(resolveComponentPaths("focusable").apiExportNames).toEqual(["Focusable", "useFocusable"]);
     expect(resolveComponentPaths("grid-list").entry).toBe("@elmeragroup/ui/react-aria/grid-list");
     expect(resolveComponentPaths("grid-list").exportName).toBe("GridList");
     expect(resolveComponentPaths("grid-list").apiExportNames).toEqual(["GridList", "GridListItem"]);
@@ -370,10 +369,10 @@ describe("committed api.json", () => {
   it("publishes only parts rooted at a facade export, each named once", () => {
     for (const entry of COMPONENT_PAGES) {
       const committed = api(entry.slug).parts;
-      // Every walked facade export yields at least one part; a facade with nothing to
-      // walk (`apiExportNames: []`, a dependency re-export) publishes none.
+      // Every facade export yields at least one part — a facade that only re-exports a
+      // dependency publishes it as a part with no props and the dependency in `forwardedFrom`.
       const roots = resolveComponentPaths(entry.slug).apiExportNames;
-      expect(committed.length > 0, entry.slug).toBe(roots.length > 0);
+      expect(committed.length, entry.slug).toBeGreaterThan(0);
       expect(new Set(committed.map((part) => part.name)).size, entry.slug).toBe(committed.length);
 
       // A part is either a named facade export or a member of one: an unrequested

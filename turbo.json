@@ -8,7 +8,7 @@
       // colorSchemeScriptSource's Function#toString() has to be the packed IIFE, not re-emitted
       // TypeScript), and import/no-cycle resolves that import — so lint needs the ui build.
       "dependsOn": ["@elmeragroup/ui#build", "docs#generate"],
-      "inputs": ["$TURBO_DEFAULT$", "vendor/internal/**"]
+      "inputs": ["$TURBO_DEFAULT$"]
     },
     "//#test:repo-policy": {
       "inputs": [
@@ -22,8 +22,7 @@
         ".oxlintrc.json",
         "turbo.json",
         "apps/docs/package.json",
-        "pnpm-lock.yaml",
-        "vendor/internal/**"
+        "pnpm-workspace.yaml"
       ]
     },
     "build": {
@@ -31,7 +30,7 @@
       "outputs": ["dist/**", ".next/**"]
     },
     "lint": {
-      "inputs": ["$TURBO_DEFAULT$", "vendor/internal/**"]
+      "inputs": ["$TURBO_DEFAULT$"]
     },
     "type-check": {
       "dependsOn": ["^build"]

@@ -6,6 +6,7 @@ packages:
 catalog:
   "@arethetypeswrong/cli": 0.18.5
   "@changesets/cli": 2.29.7
+  "@elmeragroup/internal": 0.1.1-canary.1
   "@arethetypeswrong/core": 0.18.5
   "@base-ui/react": 1.6.0
   "@internationalized/date": 3.12.3
@@ -62,3 +63,5 @@ minimumReleaseAge: 4320
 
 minimumReleaseAgeExclude:
   - effect@4.0.0-rc.111
+  # Canary line of the in-house tooling package; each bump names the exact version (tooling.md §2).
+  - "@elmeragroup/internal@0.1.1-canary.1"
