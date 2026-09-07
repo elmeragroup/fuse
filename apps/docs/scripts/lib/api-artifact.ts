@@ -2,92 +2,120 @@
  * The committed per-component API artifact (docs-site.md §8).
  *
  * Each component page has an `api.json` next to it, generated from the library's types
- * and JSDoc and **committed**: an API change then shows up as a reviewable diff in the
- * same PR that changes the component, and the page renders the artifact directly rather
- * than re-deriving it. Because the file is committed, it can go stale — so the same
- * serialisation is reachable from the drift check, which regenerates in-memory and
- * compares (`test/api-artifact.test.ts`).
+ * and JSDoc by `@elmeragroup/internal` and **committed**: an API change then shows up as
+ * a reviewable diff in the same PR that changes the component, and the page renders the
+ * artifact directly rather than re-deriving it. Because the file is committed, it can go
+ * stale — so the same generation is reachable in `check` mode from the drift check
+ * (`test/api-artifact.test.ts`), and a stale file fails it naming the regen command.
  *
- * Key order is fixed by the object literals below: a diff should show what the API did,
- * not how a serialiser felt about ordering.
+ * Key order, indentation and the trailing newline are the package's: a diff should show
+ * what the API did, not how a serialiser felt about ordering.
  */
 
-import type { ApiPart, ApiProp, ComponentApiArtifact } from "../../src/lib/docs-model.ts";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import path from "node:path";
+
+import { ApiArtifactsDriftError, ApiArtifactsError, generateApiArtifacts } from "@elmeragroup/internal";
+import type { ApiArtifactDiagnostic, GeneratedApiComponent } from "@elmeragroup/internal";
+
+import type { ComponentApiArtifact } from "../../src/lib/docs-model.ts";
 import { API_REGEN_COMMAND } from "../../src/lib/docs-model.ts";
-import { includeBaseUiPrimitiveProps } from "./api-external.ts";
-import { extractLibraryApi, openLibraryProject } from "./api.ts";
+import type { DocsApiComponent } from "./docs-inspection.ts";
 import { docsApiInventory } from "./docs-inspection.ts";
-import { ProblemLog } from "./errors.ts";
+import { DocsGenerationError } from "./errors.ts";
+import { repoRelative, repoRoot, uiTsconfig } from "./paths.ts";
 
 export { API_REGEN_COMMAND };
+
+/** What every failure that blames a stale or missing `api.json` tells the reader to do. */
+export const STALE_HINT = `Run \`${API_REGEN_COMMAND}\` and commit the updated api.json files.`;
 
 const GENERATED_BANNER =
   `Generated from packages/ui types and JSDoc by ${API_REGEN_COMMAND} (docs-site.md §8). ` +
   "Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.";
 
-function orderProp(prop: ApiProp): ApiProp {
-  return {
-    name: prop.name,
-    origin: prop.origin,
-    type: prop.type,
-    shortType: prop.shortType,
-    defaultValue: prop.defaultValue,
-    description: prop.description,
-    required: prop.required,
-  };
-}
-
-function orderPart(part: ApiPart): ApiPart {
-  return {
-    name: part.name,
-    rsc: part.rsc,
-    sourcePath: part.sourcePath,
-    forwardedFrom: part.forwardedFrom,
-    forwardedCount: part.forwardedCount,
-    props: part.props.map(orderProp),
-  };
-}
-
-export function buildApiArtifact(slug: string, parts: readonly ApiPart[]): ComponentApiArtifact {
-  return { $generated: GENERATED_BANNER, slug, parts: parts.map(orderPart) };
-}
-
-/** The exact bytes of a component's `api.json`, trailing newline included. */
-export function serializeApiArtifact(artifact: ComponentApiArtifact): string {
-  return `${JSON.stringify(artifact, null, 2)}\n`;
-}
-
-export type RegeneratedApi = {
-  /** Serialised `api.json` bytes, keyed by slug. */
-  texts: ReadonlyMap<string, string>;
-  /** Extraction problems — the same ones that fail the docs build. */
-  problems: readonly string[];
+export type GeneratedApi = {
+  /** One artifact per inventory entry, keyed by slug. */
+  readonly artifacts: ReadonlyMap<string, GeneratedApiComponent>;
+  /** Warnings the package accepted rather than failed on; the generation pass prints them. */
+  readonly diagnostics: readonly ApiArtifactDiagnostic[];
 };
 
 /**
- * Regenerates every component's `api.json` content in memory, touching no file.
- *
- * This is the drift check's half of the contract: it runs the *same* extraction and the
- * *same* serialisation the generation pass writes with, so a difference can only mean
- * the committed artifact is stale (or was hand-edited).
+ * A facade with nothing to walk (`apiExportNames: []` in `components.ts`) publishes an
+ * artifact with no parts. The package rejects an empty export list
+ * (elmeragroup/internal#4), so until it emits this artifact itself, this is the one
+ * `api.json` written outside it — with the package's serialisation, and the same
+ * write/check semantics as every other artifact.
  */
-export async function regenerateApiArtifacts(): Promise<RegeneratedApi> {
-  const problems = new ProblemLog();
-  const inventory = docsApiInventory();
-  const context = openLibraryProject();
-  let enriched: ReadonlyMap<string, readonly ApiPart[]>;
+function emptyArtifact(component: DocsApiComponent): GeneratedApiComponent {
+  const artifact: ComponentApiArtifact = { $generated: GENERATED_BANNER, slug: component.slug, parts: [] };
+  const text = `${JSON.stringify(artifact, null, 2)}\n`;
+  const changed = !existsSync(component.apiFile) || readFileSync(component.apiFile, "utf8") !== text;
+  return { ...artifact, outputFile: component.apiFile, text, changed };
+}
+
+/**
+ * Generates every component's `api.json` through `@elmeragroup/internal`.
+ *
+ * `write` is the generation pass: a file is written only when its bytes change, and
+ * `changed` reports which committed artifacts were stale. `check` is the drift check's
+ * half of the contract: it runs the *same* extraction and the *same* serialisation
+ * without touching a file, and fails with a `DocsGenerationError` naming each stale
+ * artifact. Extraction problems (missing JSDoc, unresolvable types) fail both modes the
+ * same way.
+ */
+export async function generateDocsApiArtifacts(
+  mode: "write" | "check",
+  inventory: readonly DocsApiComponent[] = docsApiInventory()
+): Promise<GeneratedApi> {
+  const artifacts = new Map<string, GeneratedApiComponent>();
+  const stale: string[] = [];
+  const walked: DocsApiComponent[] = [];
+  for (const component of inventory) {
+    if (component.exportNames.length > 0) {
+      walked.push(component);
+      continue;
+    }
+    const artifact = emptyArtifact(component);
+    artifacts.set(component.slug, artifact);
+    if (!artifact.changed) continue;
+    if (mode === "write") {
+      writeFileSync(artifact.outputFile, artifact.text, "utf8");
+    } else {
+      stale.push(artifact.outputFile);
+    }
+  }
+
+  let diagnostics: readonly ApiArtifactDiagnostic[] = [];
   try {
-    enriched = await includeBaseUiPrimitiveProps(
-      inventory,
-      extractLibraryApi(context, inventory, problems),
-      context
-    );
-  } finally {
-    context.close();
+    const result = await generateApiArtifacts({
+      projectRoot: repoRoot,
+      tsconfigPath: path.relative(repoRoot, uiTsconfig),
+      generatedBy: GENERATED_BANNER,
+      mode,
+      components: walked.map((component) => ({
+        slug: component.slug,
+        entryFile: component.entryFile,
+        exportNames: component.exportNames,
+        outputFile: component.apiFile,
+      })),
+    });
+    for (const component of result.components) {
+      artifacts.set(component.slug, component);
+    }
+    diagnostics = result.diagnostics;
+  } catch (error) {
+    if (error instanceof ApiArtifactsError) {
+      throw new DocsGenerationError(error.problems);
+    }
+    if (!(error instanceof ApiArtifactsDriftError)) {
+      throw error;
+    }
+    stale.push(...error.files);
   }
-  const texts = new Map<string, string>();
-  for (const { slug } of inventory) {
-    texts.set(slug, serializeApiArtifact(buildApiArtifact(slug, enriched.get(slug) ?? [])));
+  if (stale.length > 0) {
+    throw new DocsGenerationError(stale.map((file) => `${repoRelative(file)} is stale. ${STALE_HINT}`));
   }
-  return { texts, problems: problems.problems };
+  return { artifacts, diagnostics };
 }

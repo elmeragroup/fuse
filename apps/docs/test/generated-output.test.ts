@@ -11,16 +11,8 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-import {
-  extractLibraryApi,
-  openLibraryProject,
-  readPartPropFact,
-  readRscStatus,
-} from "../scripts/lib/api.ts";
-import type { ComponentApi, LibraryProject } from "../scripts/lib/api.ts";
 import { resolveComponentPaths } from "../scripts/lib/components.ts";
-import { docsApiInventory } from "../scripts/lib/docs-inspection.ts";
-import { ProblemLog } from "../scripts/lib/errors.ts";
+import { readRscStatus } from "../scripts/lib/docs-inspection.ts";
 import { parseComponentPage } from "../scripts/lib/page-source.ts";
 import type { ComponentPageSource } from "../scripts/lib/page-source.ts";
 import { repoRelative, repoRoot } from "../scripts/lib/paths.ts";
@@ -66,24 +58,6 @@ function endpoint(slug: string): string {
   return readFileSync(join(docsRoot, "public/components", `${slug}.md`), "utf8");
 }
 
-/**
- * Runs the pass's own extraction — the one `extractLibraryApi` every consumer calls —
- * so an expectation about parts, forwarded counts or accepted props is read off the
- * model the artifacts were written from, never off a second table maintained by hand.
- */
-function withLibraryApi(assert: (model: readonly ComponentApi[], context: LibraryProject) => void): void {
-  const context = openLibraryProject();
-  try {
-    const problems = new ProblemLog();
-    const model = extractLibraryApi(context, docsApiInventory(), problems);
-    // Generation fails on any of these, so the model a passing build produced has none.
-    expect(problems.problems).toEqual([]);
-    assert(model, context);
-  } finally {
-    context.close();
-  }
-}
-
 /** The declaring module's own directive — the fact performance.md §3 classifies on. */
 function declaredRsc(sourcePath: string): string {
   return readRscStatus(readFileSync(join(repoRoot, sourcePath), "utf8"));
@@ -107,17 +81,6 @@ function specRscStatuses(): ReadonlyMap<string, string> {
   }
   return statuses;
 }
-
-/**
- * Known defect, not a contract. `focusable.tsx` carries `"use client"` and
- * performance.md §3 classifies the component `client`, but both of the page's parts
- * resolve into `node_modules` (the RAC re-export declares them), so the manifest's
- * root-part fallback publishes `server`. The page badge is wrong, and it is the only
- * page of the 66 that reaches that fallback. Quarantined rather than asserted as
- * correct: the assertion below inverts for a listed slug, so repairing the classifier
- * fails this test until the slug is removed, and the list can only shrink.
- */
-const RSC_PAGE_STATUS_DEFECTS: readonly string[] = ["focusable"];
 
 describe("component page manifest", () => {
   it("covers every authored component page", () => {
@@ -201,7 +164,6 @@ describe("component page manifest", () => {
     for (const entry of COMPONENT_PAGES) {
       // What the manifest does carry about the API is TOC material — one anchor per part —
       // and it has to name exactly the parts the committed artifact describes.
-      expect(entry.partNames.length, entry.slug).toBeGreaterThan(0);
       expect(entry.partNames, entry.slug).toEqual(api(entry.slug).parts.map((part) => part.name));
     }
   });
@@ -289,17 +251,8 @@ describe("component page manifest", () => {
       // conflict — not what a sibling artifact happens to say.
       const expected = authoritative.get(entry.slug);
       expect(expected, `performance.md §3 does not classify ${entry.slug}`).toBeDefined();
-      if (RSC_PAGE_STATUS_DEFECTS.includes(entry.slug)) {
-        expect(
-          entry.rsc,
-          `${entry.slug} is quarantined as a known defect but now matches §3 — remove it from RSC_PAGE_STATUS_DEFECTS`
-        ).not.toBe(expected);
-        continue;
-      }
       expect(entry.rsc, entry.slug).toBe(expected);
     }
-    // The quarantine is closed: it may shrink, never grow.
-    expect(RSC_PAGE_STATUS_DEFECTS).toEqual(["focusable"]);
   });
 });
 
@@ -346,7 +299,8 @@ describe("committed api.json", () => {
     expect(resolveComponentPaths("file-trigger").apiExportNames).toEqual(["FileTrigger"]);
     expect(resolveComponentPaths("focusable").entry).toBe("@elmeragroup/ui/react-aria/focusable");
     expect(resolveComponentPaths("focusable").exportName).toBe("Focusable");
-    expect(resolveComponentPaths("focusable").apiExportNames).toEqual(["Focusable", "useFocusable"]);
+    // A dependency re-export facade: nothing to walk, so the page publishes no parts.
+    expect(resolveComponentPaths("focusable").apiExportNames).toEqual([]);
     expect(resolveComponentPaths("grid-list").entry).toBe("@elmeragroup/ui/react-aria/grid-list");
     expect(resolveComponentPaths("grid-list").exportName).toBe("GridList");
     expect(resolveComponentPaths("grid-list").apiExportNames).toEqual(["GridList", "GridListItem"]);
@@ -413,65 +367,28 @@ describe("committed api.json", () => {
     }
   });
 
-  it("publishes dependency props only on checker-backed parts that accept them", () => {
-    withLibraryApi((model, context) => {
-      for (const component of model) {
-        const partApiByName = new Map(component.partApis.map((part) => [part.name, part]));
-        for (const part of api(component.slug).parts) {
-          const accepted = partApiByName.get(part.name);
-          for (const prop of part.props) {
-            if (dependencyPackageName(prop.origin) === null) continue;
-            expect(accepted, part.name).toBeDefined();
-            const fact = accepted === undefined ? undefined : readPartPropFact(context, accepted, prop.name);
-            expect(fact, `${part.name}.${prop.name}`).toBeDefined();
-            expect(prop.type, `${part.name}.${prop.name}`).toBe(fact?.type);
-            expect(prop.required, `${part.name}.${prop.name}`).toBe(fact?.required);
-          }
-        }
-      }
-    });
-  });
+  it("publishes only parts rooted at a facade export, each named once", () => {
+    for (const entry of COMPONENT_PAGES) {
+      const committed = api(entry.slug).parts;
+      // Every walked facade export yields at least one part; a facade with nothing to
+      // walk (`apiExportNames: []`, a dependency re-export) publishes none.
+      const roots = resolveComponentPaths(entry.slug).apiExportNames;
+      expect(committed.length > 0, entry.slug).toBe(roots.length > 0);
+      expect(new Set(committed.map((part) => part.name)).size, entry.slug).toBe(committed.length);
 
-  it("publishes exactly the parts the one library walk resolves, rooted at a facade export", () => {
-    withLibraryApi((model) => {
-      expect(model.length).toBe(COMPONENT_PAGES.length);
-      for (const component of model) {
-        const committed = api(component.slug).parts;
-        // The artifact is the model's parts, in walk order — no second inventory.
+      // A part is either a named facade export or a member of one: an unrequested
+      // callable object on the same entry (`buttonVariants`, `METER_CONSTANTS`,
+      // `checkboxCardStyles`) is never walked into the table.
+      for (const part of committed) {
         expect(
-          committed.map((part) => part.name),
-          component.slug
-        ).toEqual(component.parts.map((part) => part.name));
-        expect(committed.length, component.slug).toBeGreaterThan(0);
-        expect(new Set(committed.map((part) => part.name)).size, component.slug).toBe(committed.length);
-
-        // A part is either a named facade export or a member of one: an unrequested
-        // callable object on the same entry (`buttonVariants`, `METER_CONSTANTS`,
-        // `checkboxCardStyles`) is never walked into the table.
-        const roots = resolveComponentPaths(component.slug).apiExportNames;
-        for (const part of committed) {
-          expect(
-            roots.some((root) => part.name === root || part.name.startsWith(`${root}.`)),
-            `${component.slug} ${part.name}`
-          ).toBe(true);
-        }
-
-        // `forwardedCount` is the model's own count less the dependency props the
-        // artifact went on to publish — never a hand-pinned number.
-        const forwardedByName = new Map(
-          component.partApis.map((part) => [part.name, part.forwarded] as const)
-        );
-        for (const part of committed) {
-          const forwarded = forwardedByName.get(part.name);
-          expect(forwarded, part.name).toBeDefined();
-          const published = part.props.filter((prop) => dependencyPackageName(prop.origin) !== null).length;
-          expect(part.forwardedCount, `${component.slug} ${part.name}`).toBe(
-            (forwarded?.count ?? 0) - published
-          );
-          expect(part.forwardedFrom, `${component.slug} ${part.name}`).toEqual(forwarded?.from ?? []);
+          roots.some((root) => part.name === root || part.name.startsWith(`${root}.`)),
+          `${entry.slug} ${part.name}`
+        ).toBe(true);
+        for (const prop of part.props) {
+          expect(prop.type, `${entry.slug} ${part.name}.${prop.name}`).not.toBe("");
         }
       }
-    });
+    }
   });
 
   it("reads defaults out of the implementation's destructuring", () => {

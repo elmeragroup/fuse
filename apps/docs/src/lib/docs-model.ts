@@ -6,6 +6,13 @@
  */
 
 import type {
+  ApiPart,
+  ApiProp,
+  ApiPropOrigin,
+  ComponentApiArtifact,
+  RscStatus,
+} from "@elmeragroup/internal/api-artifacts/model";
+import type {
   Density,
   DensityAttributes,
   ThemeAttributes,
@@ -13,81 +20,33 @@ import type {
   ThemeSlug,
 } from "@elmeragroup/ui/theme";
 
-/** RSC classification of the module that declares a compound part (performance.md §3). */
-export type RscStatus = "client" | "server";
-
 /**
- * Where a documented prop comes from.
+ * The API artifact model is the generator's (`@elmeragroup/internal`), re-exported so the
+ * writer (`scripts/lib/api-artifact.ts`), the drift check and the render-time reader
+ * (`api-source.ts`) share one shape with the package that produces it. In brief:
  *
- * - `declared` — written in `packages/ui` source, so it carries JSDoc and is gated on it.
- * - `recipe-axis` — synthesised by `VariantProps` over a library `tv` recipe. It has no
- *   declaration site to hang JSDoc on; its printed type *is* the documentation.
- * - `{ packageName }` — inherited from the named dependency and documented from that
- *   dependency's declaration. Dependency identity lets consumers present inherited props
- *   separately without making package policy part of the extractor's semantic model.
+ * - `RscStatus` — RSC classification of the module that declares a part (performance.md §3).
+ * - `ApiPropOrigin` — `declared` (written in `packages/ui`, so JSDoc-gated), `recipe-axis`
+ *   (synthesised by `VariantProps` over a `tv` recipe; the printed type *is* the
+ *   documentation) or `{ packageName }` (inherited from that dependency's declaration).
+ * - `ApiProp` — one table row. `shortType` is the one-line stand-in a *closed* row shows
+ *   (`"function"` for handlers, `"Union"` for long unions, `null` when `type` is short
+ *   enough); `defaultValue` is the wrapper's destructuring default, then the dependency's
+ *   JSDoc default, or `null`. Generation fails when a `declared` prop has no `description`.
+ * - `ApiPart` — one compound part (or the single part of a non-compound component), with
+ *   its declaring module's `rsc` and repo-relative `sourcePath`, and the `forwardedFrom`
+ *   packages / `forwardedCount` props the table omits.
+ * - `ComponentApiArtifact` — the committed `api.json`: a `$generated` banner (a note for
+ *   readers, not data), the `slug`, and the `parts`.
  */
-export type ApiPropOrigin = "declared" | "recipe-axis" | { readonly packageName: string };
+export type { ApiPart, ApiProp, ApiPropOrigin, ComponentApiArtifact, RscStatus };
 
 /** Dependency deliberately selected for production API-reference enrichment. */
 export const BASE_UI_PACKAGE_NAME = "@base-ui/react";
 
-/** One public prop row of a generated API table. */
-export type ApiProp = {
-  name: string;
-  origin: ApiPropOrigin;
-  /** Fully resolved type text, as the checker prints it. */
-  type: string;
-  /**
-   * One-line stand-in a *closed* reference row shows instead of `type` — `"function"`
-   * for handlers, `"Union"` for long or many-branched unions (docs-site.md §8). `null`
-   * means the printed type is short enough to show as it is; the expanded panel always
-   * shows `type` either way.
-   */
-  shortType: string | null;
-  /** Wrapper destructuring default, then dependency JSDoc default, or `null` when neither exists. */
-  defaultValue: string | null;
-  /**
-   * JSDoc description. Generation fails when a `declared` prop leaves this empty
-   * (docs-site.md §8); a `recipe-axis` prop has no declaration to document.
-   */
-  description: string;
-  required: boolean;
-};
-
-/** One compound part (or the single part of a non-compound component). */
-export type ApiPart = {
-  /** Display name, e.g. `Dialog.Content` or `Button`. */
-  name: string;
-  /** RSC status of the source module that declares this part. */
-  rsc: RscStatus;
-  /** Path of the declaring source file, repo-relative. */
-  sourcePath: string;
-  props: readonly ApiProp[];
-  /** Packages whose props this part forwards, e.g. `@base-ui/react`. */
-  forwardedFrom: readonly string[];
-  /** How many forwarded props were omitted from the table. */
-  forwardedCount: number;
-};
-
 /** The command that rewrites every committed `api.json` — named by the artifact's own banner
  * and by every failure that blames a stale or missing one (docs-site.md §8). */
 export const API_REGEN_COMMAND = "pnpm --filter docs generate";
-
-/**
- * One component's committed API artifact: the `api.json` next to its `page.mdx`
- * (docs-site.md §8).
- *
- * Generated from the library's types and JSDoc, committed so an API change is a reviewable
- * diff, and read back verbatim by the page's reference — so the shape is shared by the
- * writer (`scripts/lib/api-artifact.ts`), the drift check, and the render-time reader
- * (`api-source.ts`).
- */
-export type ComponentApiArtifact = {
-  /** Says the file is generated and how to regenerate it. Not data — a banner for readers. */
-  $generated: string;
-  slug: string;
-  parts: readonly ApiPart[];
-};
 
 /** A CSS custom property the component's recipe reads. */
 export type TokenRef = {

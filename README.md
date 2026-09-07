@@ -48,22 +48,19 @@ Package-scoped scripts worth knowing:
 | `pnpm --filter @elmeragroup/ui package:check`    | publint / attw / exports-map / emitted-directive checks against that tarball |
 | `pnpm --filter @elmeragroup/ui size-limit`       | Bundle budgets against that tarball                                          |
 | `pnpm --filter docs generate`                    | Regenerates the docs API tables and each component's committed `api.json`    |
-| `pnpm --filter docs test:shadow`                 | Compares the api-extractor shadow pipeline against the committed snapshot    |
-| `pnpm --filter docs shadow:update`               | Rewrites `apps/docs/test/api-shadow.snapshot.json`                           |
 
 `@elmeragroup/ui` has no work of its own to do under `ci:checks`: its gates are separate turbo tasks that the aggregate already depends on. Its `ci:checks` script is therefore a no-op anchor that lets `turbo run ci:checks` fan out, and it says so; the same note is in [`turbo.json`](turbo.json).
 
 ## Package map
 
-| Path                       | Name                                   | What it is                                                                               |
-| -------------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `packages/ui`              | `@elmeragroup/ui`                      | The one published package: components, `/theme`, `/icons`, `/illustrations`, CSS entries |
-| `apps/docs`                | `docs`                                 | Next docs site, generated API reference, demo corpus, llms.txt                           |
-| `apps/static-theme`        | `static-theme`                         | Vite host proving standalone-CSS mode and first-paint theme attributes                   |
-| `tooling/api-extractor`    | `@elmeragroup/api-extractor`           | Effect-based API extractor behind the docs API pipeline                                  |
-| `tooling/oxlint-plugin`    | `@elmeragroup/oxlint-plugin`           | Repo lint rules (density metrics, facade grammar, react-aria quarantine, …)              |
-| `tooling/oxlint-anti-slop` | `@elmeragroup/oxlint-plugin-anti-slop` | The anti-slop rule set                                                                   |
-| `tooling/typescript`       | `@elmeragroup/typescript-config`       | Shared tsconfig bases                                                                    |
+| Path                 | Name                             | What it is                                                                               |
+| -------------------- | -------------------------------- | ---------------------------------------------------------------------------------------- |
+| `packages/ui`        | `@elmeragroup/ui`                | The one published package: components, `/theme`, `/icons`, `/illustrations`, CSS entries |
+| `apps/docs`          | `docs`                           | Next docs site, generated API reference, demo corpus, llms.txt                           |
+| `apps/static-theme`  | `static-theme`                   | Vite host proving standalone-CSS mode and first-paint theme attributes                   |
+| `tooling/typescript` | `@elmeragroup/typescript-config` | Shared tsconfig bases                                                                    |
+
+The API extractor and the `elmera/*` and `anti-slop/*` lint rules come from [`@elmeragroup/internal`](https://github.com/elmeragroup/internal). Until it is on npm, the workspace installs the packed archive under [`vendor/internal/`](vendor/internal/README.md).
 
 ## Contribution flow
 
@@ -73,7 +70,7 @@ Package-scoped scripts worth knowing:
 4. **Changeset** — `pnpm changeset` for anything user-facing. Internal-only PRs (CI, docs site, tests) carry the `no-changeset` GitHub label instead. Never edit an existing changeset to move a gate; edit one only to correct what it says shipped.
 5. **Gate** — `pnpm ci:checks` green locally before review. The merge workflow runs the same stages plus the label-aware changeset check.
 
-**After rebasing, regenerate the generated artifacts before running the gate**: `pnpm --filter docs generate` (the committed per-component `api.json` files) and `pnpm --filter docs shadow:update` (the api-extractor shadow snapshot). Both are committed files derived from the library's public API, so a rebase that picks up an API change leaves them stale and fails `docs#test:shadow` on work that is otherwise correct.
+**After rebasing, regenerate the generated artifacts before running the gate**: `pnpm --filter docs generate` rewrites the committed per-component `api.json` files. They are derived from the library's public API, so a rebase that picks up an API change leaves them stale and fails the docs drift check on work that is otherwise correct.
 
 ## Release
 

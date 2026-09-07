@@ -1,18 +1,17 @@
 /**
  * Writer-free inspection of the docs inputs.
  *
- * The production generator and the shadow comparison consume the same route inventory,
+ * The generation pass and the `api.json` drift check consume the same route inventory,
  * component path resolver, page reader, route policy, and size report. This module is the
  * *only* owner of demo and route validation: the generator imports these helpers rather
- * than keeping a second copy, so a check added here also applies to the shadow run.
+ * than keeping a second copy.
  */
 
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 import { normalizeDemoSource } from "../../src/lib/docs-model.ts";
-import type { DocsDemo } from "../../src/lib/docs-model.ts";
-import type { DocsApiComponent } from "./api-shadow-types.ts";
+import type { DocsDemo, RscStatus } from "../../src/lib/docs-model.ts";
 import { componentSlugs, resolveComponentPaths } from "./components.ts";
 import type { ComponentPaths } from "./components.ts";
 import type { ProblemLog } from "./errors.ts";
@@ -23,6 +22,37 @@ import { missingNavRoutes, staticRouteFile } from "./routes.ts";
 import { readBundleSizes } from "./sizes.ts";
 import type { BundleSizeReport } from "./sizes.ts";
 import { assertDocsUiCssExports } from "./workspace-css.ts";
+
+/**
+ * RSC classification of a module from its own leading directive (performance.md §3).
+ *
+ * Only a directive in the module prologue counts: comments and other directives
+ * (`"use strict"`) may precede it, but the first statement ends the prologue, so a
+ * `"use client"` string expression further down does not make the module a client one.
+ */
+export function readRscStatus(source: string): RscStatus {
+  const prologue = source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+  for (const line of prologue.split("\n")) {
+    const trimmed = line.trim();
+    if (trimmed === "") continue;
+    if (/^["']use client["'];?$/.test(trimmed)) return "client";
+    if (!/^["'][^"']*["'];?$/.test(trimmed)) break;
+  }
+  return "server";
+}
+
+/** One component the API generator extracts: its slug plus the entry surface to walk. */
+export type DocsApiComponent = {
+  readonly slug: string;
+  readonly entryFile: string;
+  /** Primary page export, used for the page's source and display identity. */
+  readonly exportName: string;
+  /** Exact public exports the API generator walks. */
+  readonly exportNames: readonly string[];
+  readonly sourceFile: string;
+  /** The committed `api.json` the generator writes for this page. */
+  readonly apiFile: string;
+};
 
 /** A slug with its resolved inputs — what the API inventory is built from. */
 export type ResolvedComponent = {
@@ -42,9 +72,9 @@ export function componentInspections(): readonly ComponentInspection[] {
 }
 
 /**
- * The one API inventory: exactly the route-local component pages the production
- * generator writes for, in production order. The generator, the `api.json`
- * regenerator and the shadow comparison all extract from this list.
+ * The one API inventory: exactly the route-local component pages the generation pass
+ * writes for, in production order. The pass and the `api.json` drift check both
+ * extract from this list.
  */
 export function docsApiInventory(
   components: readonly ResolvedComponent[] = componentSlugs().map((slug) => ({
@@ -64,6 +94,7 @@ export function docsApiInventory(
       exportName: paths.exportName,
       exportNames: paths.apiExportNames,
       sourceFile: paths.sourceFile,
+      apiFile: paths.apiFile,
     };
   });
 }
@@ -112,7 +143,7 @@ export function inspectComponentDemos(
       continue;
     }
     const raw = readFileSync(absolute, "utf8");
-    if (!/^\s*["']use client["']/.test(raw)) {
+    if (readRscStatus(raw) !== "client") {
       problems.add(`${relative}: a demo must start with a "use client" directive`);
     }
     demos.push({

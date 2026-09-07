@@ -19,10 +19,8 @@
   },
   "devDependencies": {
     "@changesets/cli": "catalog:",
-    "@elmeragroup/oxlint-plugin": "workspace:*",
-    "@elmeragroup/oxlint-plugin-anti-slop": "workspace:*",
+    "@elmeragroup/internal": "file:vendor/internal/elmeragroup-internal-0.1.0-canary.1.tgz",
     "@elmeragroup/typescript-config": "workspace:*",
-    "@oxlint/plugins": "catalog:",
     "@types/node": "catalog:",
     "eslint-plugin-turbo": "catalog:",
     "oxfmt": "catalog:",

@@ -37,7 +37,7 @@ jobs:
       # turbo.json ci:checks minus browser checks — a docs/unit failure should not
       # wait on the Chromium suite.
       - name: turbo ci:checks (no browser)
-        run: pnpm exec turbo run '//#lint' '//#test:repo-policy' type-check test test:types build package:check size-limit 'docs#test:shadow' '@elmeragroup/api-extractor#ci:checks'
+        run: pnpm exec turbo run '//#lint' '//#test:repo-policy' type-check test test:types build package:check size-limit
 
       - name: Changeset presence
         if: ${{ github.event_name == 'pull_request' && !startsWith(github.head_ref, 'changeset-release/') && !contains(github.event.pull_request.labels.*.name, 'no-changeset') }}

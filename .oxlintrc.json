@@ -3,8 +3,14 @@
   "plugins": ["typescript", "oxc", "import", "unicorn"],
   "jsPlugins": [
     "eslint-plugin-turbo",
-    { "name": "elmera", "specifier": "@elmeragroup/oxlint-plugin" },
-    { "name": "anti-slop", "specifier": "@elmeragroup/oxlint-plugin-anti-slop" }
+    {
+      "name": "elmera",
+      "specifier": "@elmeragroup/internal/oxlint"
+    },
+    {
+      "name": "anti-slop",
+      "specifier": "@elmeragroup/internal/oxlint/anti-slop"
+    }
   ],
   "categories": {
     "correctness": "error"
@@ -19,8 +25,20 @@
       }
     ],
     "typescript/no-unnecessary-parameter-property-assignment": "off",
-    "typescript/no-misused-promises": ["error", { "checksVoidReturn": { "attributes": false } }],
-    "typescript/no-unnecessary-condition": ["error", { "allowConstantLoopConditions": true }],
+    "typescript/no-misused-promises": [
+      "error",
+      {
+        "checksVoidReturn": {
+          "attributes": false
+        }
+      }
+    ],
+    "typescript/no-unnecessary-condition": [
+      "error",
+      {
+        "allowConstantLoopConditions": true
+      }
+    ],
     "typescript/no-non-null-assertion": "error",
     "typescript/dot-notation": "error",
     "typescript/prefer-find": "error",
@@ -46,7 +64,10 @@
     "typescript/consistent-type-definitions": ["warn", "type"],
     "typescript/consistent-type-imports": [
       "warn",
-      { "prefer": "type-imports", "fixStyle": "separate-type-imports" }
+      {
+        "prefer": "type-imports",
+        "fixStyle": "separate-type-imports"
+      }
     ],
     "typescript/array-type": "off",
     "typescript/ban-types": "off",
@@ -94,7 +115,12 @@
     "anti-slop/require-safety-comment-for-type-assertion": "warn",
     "anti-slop/no-runtime-typeof": "warn",
     "anti-slop/no-shape-in-symbol-names": "warn",
-    "anti-slop/no-slop-comments": ["warn", { "ticketPattern": "ELM-\\d+" }],
+    "anti-slop/no-slop-comments": [
+      "warn",
+      {
+        "ticketPattern": "ELM-\\d+"
+      }
+    ],
     "anti-slop/no-narration-comments": "warn"
   },
   "env": {
@@ -116,7 +142,6 @@
     "**/.cache/**",
     "**/node_modules/**",
     ".ref/**",
-    "tooling/api-extractor/test/fixtures/**",
     "packages/ui/scripts/*.mjs",
     ".agent/**",
     ".agents/**",
@@ -212,35 +237,6 @@
         "typescript/no-unsafe-call": "off",
         "typescript/no-unsafe-return": "off",
         "typescript/no-unsafe-argument": "off"
-      }
-    },
-    {
-      "files": ["tooling/oxlint-plugin/**"],
-      "rules": {
-        "typescript/no-unsafe-assignment": "off",
-        "typescript/no-unsafe-member-access": "off",
-        "typescript/no-unsafe-call": "off",
-        "typescript/no-unsafe-return": "off",
-        "typescript/no-unsafe-argument": "off",
-        "typescript/no-redundant-type-constituents": "off",
-        "anti-slop/no-runtime-typeof": "off"
-      }
-    },
-    {
-      "files": ["tooling/oxlint-anti-slop/**"],
-      "rules": {
-        "typescript/no-unsafe-assignment": "off",
-        "typescript/no-unsafe-member-access": "off",
-        "typescript/no-unsafe-call": "off",
-        "typescript/no-unsafe-return": "off",
-        "typescript/no-unsafe-argument": "off",
-        "typescript/no-redundant-type-constituents": "off",
-        "typescript/no-unnecessary-condition": "off",
-        "typescript/prefer-optional-chain": "off",
-        "anti-slop/no-runtime-typeof": "off",
-        "anti-slop/no-chained-type-assertions": "off",
-        "anti-slop/no-unknown-parameters": "off",
-        "anti-slop/no-unsafe-dictionary-type": "off"
       }
     }
   ]

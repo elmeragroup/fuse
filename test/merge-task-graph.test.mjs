@@ -3,7 +3,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, it } from "vitest";
 
-import { asRecord, asRecordArray, asString, readJsonObject } from "./json-object.mjs";
+import { asRecord, asRecordArray, asString } from "./json-object.mjs";
 import { readWorkflow, requiredJobSteps, requiredRunStep } from "./workflow.mjs";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -25,8 +25,7 @@ function scheduledTasks(job) {
 }
 
 it("the merge checks schedule all required gates without browser work", () => {
-  const tasks = scheduledTasks("checks");
-  const ids = tasks.map((task) => asString(task.taskId, "task id"));
+  const ids = scheduledTasks("checks").map((task) => asString(task.taskId, "task id"));
   for (const required of [
     "//#lint",
     "//#test:repo-policy",
@@ -39,37 +38,17 @@ it("the merge checks schedule all required gates without browser work", () => {
     "docs#build",
     "docs#type-check",
     "docs#test",
-    "docs#test:shadow",
     "static-theme#build",
     "static-theme#type-check",
     "static-theme#test",
-    "@elmeragroup/oxlint-plugin#test",
-    "@elmeragroup/oxlint-plugin-anti-slop#test",
-    "@elmeragroup/api-extractor#ci:checks",
-    "@elmeragroup/api-extractor#test",
-    "@elmeragroup/api-extractor#type-check",
   ]) {
     expect(ids).toContain(required);
   }
   expect(ids.filter((id) => /#test:(browser|packed-consumer)$/.test(id))).toEqual([]);
-  const leaf = tasks.find((task) => task.taskId === "@elmeragroup/api-extractor#ci:checks");
-  const manifest = readJsonObject(join(repoRoot, "tooling/api-extractor/package.json"));
-  const scripts = asRecord(manifest.scripts, "extractor scripts");
-  expect(leaf.dependencies).toContain("@elmeragroup/api-extractor#build");
-  expect(leaf.command).toBe(scripts["ci:checks"]);
-  const privateGates = asString(scripts["ci:checks"], "extractor private command")
-    .split(/\s*&&\s*/)
-    .map((command) => command.replace(/^pnpm run /, ""));
-  expect(privateGates).toEqual([
-    "check:catalog",
-    "check:boundary",
-    "test:fixtures",
-    "test:conformance",
-    "test:timing",
-    "test:timing:issue14",
-    "test:timing:external-selection",
-  ]);
-  for (const gate of privateGates) expect(asString(scripts[gate], gate).length).toBeGreaterThan(0);
+  // The extractor and lint plugins ship in @elmeragroup/internal; no workspace package
+  // carries their gates any more, so nothing under tooling/* other than the tsconfig
+  // package may appear in the graph.
+  expect(ids.filter((id) => /^@elmeragroup\/(api-extractor|oxlint-plugin)/.test(id))).toEqual([]);
 }, 30_000);
 
 it("the browser job schedules the browser and packed-consumer gates", () => {
@@ -81,20 +60,5 @@ it("the browser job schedules the browser and packed-consumer gates", () => {
     "static-theme#test:browser",
   ]) {
     expect(ids).toContain(required);
-  }
-}, 30_000);
-
-it("the local ci aggregate retains extractor unit, type and private checks", () => {
-  const output = execFileSync(join(repoRoot, "node_modules/.bin/turbo"), ["run", "ci:checks", "--dry=json"], {
-    cwd: repoRoot,
-    encoding: "utf8",
-    maxBuffer: 32 * 1024 * 1024,
-  });
-  // SAFETY: Turbo JSON is validated before inspecting task records.
-  const graph = asRecord(JSON.parse(output), "aggregate graph");
-  const tasks = asRecordArray(graph.tasks, "aggregate tasks");
-  const ids = tasks.map((task) => asString(task.taskId, "task id"));
-  for (const task of ["build", "test", "type-check", "ci:checks"]) {
-    expect(ids).toContain(`@elmeragroup/api-extractor#${task}`);
   }
 }, 30_000);

@@ -1,29 +1,5 @@
 {
   "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
   "slug": "focusable",
-  "parts": [
-    {
-      "name": "Focusable",
-      "rsc": "server",
-      "sourcePath": "node_modules/.pnpm/@types+react@19.2.17/node_modules/@types/react/index.d.ts",
-      "forwardedFrom": [
-        "@react-types/shared",
-        "@types/react",
-        "react-aria"
-      ],
-      "forwardedCount": 12,
-      "props": []
-    },
-    {
-      "name": "useFocusable",
-      "rsc": "server",
-      "sourcePath": "node_modules/.pnpm/react-aria@3.50.0_react-dom@19.2.8_react@19.2.8__react@19.2.8/node_modules/react-aria/dist/types/src/interactions/useFocusable.d.ts",
-      "forwardedFrom": [
-        "@react-types/shared",
-        "react-aria"
-      ],
-      "forwardedCount": 9,
-      "props": []
-    }
-  ]
+  "parts": []
 }

@@ -3,7 +3,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-import { readRscStatus, shortTypeOf } from "../scripts/lib/api.ts";
+import { readRscStatus } from "../scripts/lib/docs-inspection.ts";
 import { renderComponentMarkdown } from "../scripts/lib/markdown.ts";
 import { parseComponentPage } from "../scripts/lib/page-source.ts";
 import { missingNavRoutes, staticRouteFile } from "../scripts/lib/routes.ts";
@@ -135,6 +135,7 @@ describe("RSC classification", () => {
   it("reads a leading directive, not a later string expression", () => {
     expect(readRscStatus('"use client";\n\nexport const a = 1;\n')).toBe("client");
     expect(readRscStatus("// comment\n'use client';\nexport const a = 1;\n")).toBe("client");
+    expect(readRscStatus('/** doc */\n"use strict";\n"use client";\n')).toBe("client");
     expect(readRscStatus('export const a = 1;\n"use client";\n')).toBe("server");
     expect(readRscStatus("export const a = 1;\n")).toBe("server");
   });
@@ -146,27 +147,11 @@ describe("RSC classification", () => {
     expect(
       readRscStatus(readFileSync(join(repoRoot, "packages/ui/src/components/badge/badge.tsx"), "utf8"))
     ).toBe("server");
-  });
-});
-
-describe("closed-row short type", () => {
-  it("collapses handlers, accessors and anything printed as a function", () => {
-    expect(shortTypeOf("onValueChange", "((value: string) => void) | undefined")).toBe("function");
-    expect(shortTypeOf("getItems", "() => readonly string[]")).toBe("function");
-    expect(shortTypeOf("render", "((props: P) => ReactElement) | undefined")).toBe("function");
-  });
-
-  it("does not read a prop that merely begins with those letters as a handler", () => {
-    // `open`, not `onOpen`: the convention is `on`/`get` followed by a capital.
-    expect(shortTypeOf("open", "boolean | undefined")).toBeNull();
-    expect(shortTypeOf("getter", "string | undefined")).toBeNull();
-  });
-
-  it("collapses many-branched or long unions, and leaves short types alone", () => {
-    expect(shortTypeOf("size", '"sm" | "md" | "lg" | undefined')).toBe("Union");
-    expect(shortTypeOf("label", "AVeryLongTypeNameIndeedThatRunsOn | undefined")).toBe("Union");
-    expect(shortTypeOf("disabled", "boolean | undefined")).toBeNull();
-    expect(shortTypeOf("count", "number")).toBeNull();
+    expect(
+      readRscStatus(
+        readFileSync(join(repoRoot, "packages/ui/src/react-aria/focusable/focusable.tsx"), "utf8")
+      )
+    ).toBe("client");
   });
 });
 

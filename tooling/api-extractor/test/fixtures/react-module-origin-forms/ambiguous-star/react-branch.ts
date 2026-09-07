@@ -1,1 +1,0 @@
-export { memo } from "react";

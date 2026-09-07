@@ -13,7 +13,6 @@ catalog:
   "@phosphor-icons/react": 2.1.10
   "@mdx-js/loader": 3.1.1
   "@next/mdx": 16.3.1
-  "@oxlint/plugins": 1.78.0
   "@tailwindcss/cli": 4.3.3
   "@tailwindcss/postcss": 4.3.3
   "@tailwindcss/typography": 0.5.20
@@ -23,7 +22,6 @@ catalog:
   "@vitest/browser-playwright": 4.1.10
   clsx: 2.1.1
   eslint-plugin-turbo: 2.10.2
-  effect: 4.0.0-rc.111
   "libphonenumber-js": 1.13.9
   next: 16.3.1
   oxfmt: 0.60.0

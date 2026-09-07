@@ -6,54 +6,52 @@
  * describes the old API. This is the check that refuses to let that land, and it looks
  * at staleness from both sides:
  *
- *   • the artifacts in the working tree must equal a fresh in-memory regeneration, which
- *     catches a hand-edit and a stale file in any run that has not just generated;
+ *   • a `check`-mode regeneration must find every artifact in the working tree byte-equal
+ *     to what it would write — it fails naming each stale file — which catches a
+ *     hand-edit and a stale file in any run that has not just generated;
  *   • the last generation pass must have rewritten nothing, which catches the case where
  *     generation ran *first* (the `test` task depends on `build`) and quietly repaired the
  *     stale file before this test could see it.
  */
 
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-import { API_REGEN_COMMAND, regenerateApiArtifacts } from "../scripts/lib/api-artifact.ts";
+import { API_REGEN_COMMAND, generateDocsApiArtifacts, STALE_HINT } from "../scripts/lib/api-artifact.ts";
 import { componentSlugs, resolveComponentPaths } from "../scripts/lib/components.ts";
-import { repoRelative } from "../scripts/lib/paths.ts";
 import { API_ARTIFACTS_REWRITTEN } from "../src/generated/api-drift";
 
-const STALE = `Run \`${API_REGEN_COMMAND}\` and commit the updated api.json files.`;
-
 describe("committed api.json", () => {
-  // The long timeout is the regeneration itself: it opens a full TypeScript program over
-  // packages/ui and re-derives every component's API through the checker.
+  // The long timeout is the regeneration itself: the package opens a full TypeScript
+  // program over packages/ui and re-derives every component's API through the checker.
   it("matches a fresh regeneration from the library's types and JSDoc", { timeout: 180_000 }, async () => {
     const slugs = componentSlugs();
     expect(slugs.length).toBeGreaterThan(0);
 
-    const regenerated = await regenerateApiArtifacts();
-    // The missing-JSDoc and unresolvable-type invariants are the same ones that fail the
-    // docs build; a drift run must not be the place they first go unnoticed.
-    expect(regenerated.problems).toEqual([]);
+    // Rejects with a `DocsGenerationError` naming each stale file and the regen command,
+    // or any extraction problem — the same ones that fail the docs build, which a drift
+    // run must not be the place they first go unnoticed.
+    const regenerated = await generateDocsApiArtifacts("check");
 
     for (const slug of slugs) {
-      const file = resolveComponentPaths(slug).apiFile;
-      const relative = repoRelative(file);
-      expect(existsSync(file), `${relative} is missing. ${STALE}`).toBe(true);
-      const expected = regenerated.texts.get(slug);
-      expect(expected, `${slug} was not regenerated`).toBeDefined();
-      expect(JSON.parse(readFileSync(file, "utf8")), `${relative} is stale. ${STALE}`).toEqual(
-        JSON.parse(expected ?? "null")
+      const artifact = regenerated.artifacts.get(slug);
+      expect(artifact, `${slug} was not regenerated`).toBeDefined();
+      expect(artifact?.changed, `${slug}/api.json is stale. ${STALE_HINT}`).toBe(false);
+      expect(readFileSync(resolveComponentPaths(slug).apiFile, "utf8"), slug).toBe(artifact?.text);
+    }
+    // The package accepts `unsupported-type-fallback` for documented shapes and reports
+    // it; anything else it would have failed on. Keep the accepted set visible here.
+    for (const entry of regenerated.diagnostics) {
+      expect(entry.warning.code, `${entry.component}: ${entry.warning.message}`).toBe(
+        "unsupported-type-fallback"
       );
-      // Byte-exact too: key order, indentation and the trailing newline are part of the
-      // artifact, so a reviewer never reads a reordering as an API change.
-      expect(readFileSync(file, "utf8"), `${relative} is stale. ${STALE}`).toBe(expected);
     }
   });
 
   it("was already up to date when the last generation pass ran", () => {
     expect(
       API_ARTIFACTS_REWRITTEN,
-      `The committed api.json of ${API_ARTIFACTS_REWRITTEN.join(", ")} did not match packages/ui. ${STALE}`
+      `The committed api.json of ${API_ARTIFACTS_REWRITTEN.join(", ")} did not match packages/ui. ${STALE_HINT}`
     ).toEqual([]);
   });
 

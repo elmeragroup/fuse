@@ -42,7 +42,9 @@ export type ComponentPaths = {
   exportName: string;
   /**
    * Facade value exports the API generator walks (docs-site.md §8). Explicit names —
-   * never a sweep of every namespace-shaped export on the entry.
+   * never a sweep of every namespace-shaped export on the entry. Empty for a facade
+   * that only re-exports a dependency: there is no authored API to extract, and the
+   * page publishes an artifact with no parts.
    */
   apiExportNames: readonly string[];
   sourceFile: string;
@@ -67,7 +69,9 @@ const EXTRA_API_EXPORT_NAMES = new Map<string, readonly string[]>([
     ["RadioGroup", "RadioGroupItem", "Radio", "RadioItem", "RadioItemGroup", "RadioIconButton"],
   ],
   ["date-field", ["DateField", "DateInput"]],
-  ["focusable", ["Focusable", "useFocusable"]],
+  // Re-exports RAC `Focusable` and `useFocusable` from an authored `"use client"` module;
+  // nothing to extract (elmeragroup/internal#4 tracks the generator side).
+  ["focusable", []],
   ["grid-list", ["GridList", "GridListItem"]],
   ["calendar", ["Calendar", "CalendarHeader", "CalendarGridHeader"]],
   ["date-picker", ["DatePicker", "DatePickerPresetGroup", "DatePickerPresetItem"]],
