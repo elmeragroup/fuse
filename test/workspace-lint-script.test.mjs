@@ -54,13 +54,6 @@ describe("workspace lint script", () => {
     const appsUiOverride = overrides.find((entry) => overrideFiles(entry).includes("apps/**/*.{ts,tsx}"));
     expect(appsUiOverride?.plugins).toEqual(["typescript", "oxc", "react", "unicorn"]);
 
-    const antiSlopOverride = overrides.find((entry) =>
-      overrideFiles(entry).includes("tooling/oxlint-anti-slop/**")
-    );
-    expect(asRecord(antiSlopOverride?.rules, "anti-slop override rules")["anti-slop/no-runtime-typeof"]).toBe(
-      "off"
-    );
-
     const uiSrcOverride = overrides.find((entry) =>
       overrideFiles(entry).includes("packages/ui/src/**/*.{ts,tsx}")
     );

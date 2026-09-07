@@ -9,24 +9,21 @@
     "start": "next start --port 3000",
     "test": "vitest run --project unit",
     "test:browser": "vitest run --project browser",
-    "shadow:update": "node --experimental-strip-types --experimental-transform-types --import ../../packages/ui/scripts/ts-resolve.mjs scripts/api-shadow-snapshot.ts --update",
-    "test:shadow": "vitest run --config vitest.shadow.config.ts test/api-shadow.test.ts",
     "type-check": "next typegen && tsc --noEmit"
   },
   "dependencies": {
     "@base-ui/react": "catalog:",
-    "@elmeragroup/api-extractor": "workspace:*",
     "@elmeragroup/ui": "workspace:*",
+    "@internationalized/date": "catalog:",
     "@next/mdx": "catalog:",
-    "effect": "catalog:",
     "next": "catalog:",
     "react": "catalog:",
-    "@internationalized/date": "catalog:",
     "react-aria-components": "catalog:",
     "react-dom": "catalog:",
     "tailwind-variants": "catalog:"
   },
   "devDependencies": {
+    "@elmeragroup/internal": "catalog:",
     "@elmeragroup/typescript-config": "workspace:*",
     "@mdx-js/loader": "catalog:",
     "@tailwindcss/postcss": "catalog:",

@@ -13,10 +13,9 @@ packages/ui/                  # @elmeragroup/ui — the library (only published 
 apps/docs/                    # Next.js custom-MDX docs site; verified Next App Router first-paint fixture
 apps/static-theme/            # private Vite/CSR first-paint fixture (not fixtures/vite, not a publish gate)
 tooling/typescript/           # @elmeragroup/typescript-config — shared tsconfig bases
-tooling/oxlint-plugin/        # @elmeragroup/oxlint-plugin — elmera/* custom rules
-tooling/oxlint-anti-slop/     # @elmeragroup/oxlint-plugin-anti-slop — vendored anti-slop (§5.3)
-tooling/api-extractor/        # @elmeragroup/api-extractor — Effect-native TypeScript API extraction (docs dependency rows; ADR 0007)
 ```
+
+- The API extractor and the `elmera/*` and `anti-slop/*` lint rules are not workspace packages. They ship in `@elmeragroup/internal` ([ADR 0010](../adr/0010-internal-package-owns-extraction-and-lint.md)); the root and `apps/docs` install it.
 
 - Everything under `tooling/*` and `apps/*` is `"private": true`; `packages/ui` is the sole publish target ([release](release.md)).
 - `pnpm-workspace.yaml` globs: `packages/*`, `apps/*`, `tooling/*`.
@@ -26,10 +25,11 @@ tooling/api-extractor/        # @elmeragroup/api-extractor — Effect-native Typ
 
 - **pnpm 11**, with the exact version pinned by `packageManager` in the root manifest.
 - **pnpm catalog** (`pnpm-workspace.yaml` `catalog:`) is the single version-pinning point for every shared dependency (react, base-ui, tailwind, oxlint, vitest, …). Every catalog entry is an exact version — no range operators. Workspace `package.json`s reference `"catalog:"` — a dependency version literal in a package manifest is a review error. _(Amended 2026-09-02: `@internationalized/date` pinned to `3.12.3` — the previously resolved caret and the version `react-aria-components` already installs — so CalendarDate stays a single identity.)_
+- **`@elmeragroup/internal`** _(amended 2026-09-07)_: the root and the `docs` workspace install the registry package through one catalog entry, pinned to an exact canary version. A canary is younger than the release-age guard below by definition, so the same exact version is named in `minimumReleaseAgeExclude`; a bump edits both lines, and `pnpm test:repo-policy` checks that they agree and that both manifests use `catalog:`. The package pins `typescript` at the catalog version and carries `effect` and `@oxlint/plugins` as its own runtime dependencies; neither is a catalog entry any more.
 - **Release-age guard**: `minimumReleaseAge: 4320` (72 hours) in pnpm settings — no package version installs until it has been on the registry for three days. The refs' `overrides` block carries any forced resolutions; additions to it require a PR comment stating why.
-- **oxlint and `@oxlint/plugins` are pinned to the same minor, ≥ 1.78.0** — the floor the vendored anti-slop code is validated against (§5.3).
-- **Node 24**, with the supported range in root `engines` and the development version in `.node-version`. Node 24 and pnpm 11 majors are normative; patch bumps within those majors are maintenance changes. `@elmeragroup/api-extractor` timing and evidence gates on Node major 24 and records the exact patch as an observation, not an assertion.
-- **TypeScript configs** split in `tooling/typescript` per the internal ref: `base.json`, `react-library.json` (packages/ui), `internal-package.json` (tooling/*); apps extend base + framework preset. `strict` everywhere; no per-package compiler-option drift outside these files, except `@elmeragroup/api-extractor`. That package extends `internal-package.json` and then sets `jsx: "react-jsx"`, `stripInternal: true`, `lib: ["ES2022", "DOM"]`, `skipLibCheck: false` (the shared bases leave `skipLibCheck: true`), a `paths` alias for one module-resolution fixture, and `exclude` of `test/fixtures/module-imports-only/**`. Those options are required by the extractor's type-check of DOM-facing fixtures and by `stripInternal` on its declarations; they are the documented deviation, not permission for further per-package drift.
+- **oxlint stays on the minor `@elmeragroup/internal` was validated against** (≥ 1.78.0): the package pins `@oxlint/plugins` internally, so an oxlint bump here is paired with a package release, not a local plugin edit (§5.3).
+- **Node 24**, with the supported range in root `engines` and the development version in `.node-version`. Node 24 and pnpm 11 majors are normative; patch bumps within those majors are maintenance changes. `@elmeragroup/internal` is built and tested against Node major 24 in its own repository.
+- **TypeScript configs** split in `tooling/typescript` per the internal ref: `base.json`, `react-library.json` (packages/ui), `internal-package.json` (tooling/*); apps extend base + framework preset. `strict` everywhere; no per-package compiler-option drift outside these files.
 
 Exact tool versions are maintained in [the workspace catalog](../../pnpm-workspace.yaml), [package.json](../../package.json), and [.node-version](../../.node-version). Published runtime ranges are owned by [entries.ts](../../packages/ui/scripts/entries.ts). Review version changes there instead of updating a second baseline here.
 
@@ -55,12 +55,12 @@ The ordering requirements are:
   ```json
   "jsPlugins": [
     "eslint-plugin-turbo",
-    { "name": "elmera", "specifier": "@elmeragroup/oxlint-plugin" },
-    { "name": "anti-slop", "specifier": "@elmeragroup/oxlint-plugin-anti-slop" }
+    { "name": "elmera", "specifier": "@elmeragroup/internal/oxlint" },
+    { "name": "anti-slop", "specifier": "@elmeragroup/internal/oxlint/anti-slop" }
   ]
   ```
 
-- `ignorePatterns` in `.oxlintrc.json`: `**/dist/**`, `**/coverage/**`, `**/.turbo/**`, `**/.next/**`, `apps/docs/src/generated/**`, `plop-templates/**`, `**/.artifacts/**`, `**/.cache/**`, `**/node_modules/**`, `.ref/**`, `tooling/api-extractor/test/fixtures/**`, `packages/ui/scripts/*.mjs`, and the agent-dot dirs (`.agent/**`, `.agents/**`, `.claude/**`, `.codex/**`, `.continue/**`, `.cursor/**`, `.gemini/**`, `.opencode/**`, `.pi/**`, `.roo/**`, `.windsurf/**`). _(Added 2026-09-04.)_
+- `ignorePatterns` in `.oxlintrc.json`: `**/dist/**`, `**/coverage/**`, `**/.turbo/**`, `**/.next/**`, `apps/docs/src/generated/**`, `plop-templates/**`, `**/.artifacts/**`, `**/.cache/**`, `**/node_modules/**`, `.ref/**`, `packages/ui/scripts/*.mjs`, and the agent-dot dirs (`.agent/**`, `.agents/**`, `.claude/**`, `.codex/**`, `.continue/**`, `.cursor/**`, `.gemini/**`, `.opencode/**`, `.pi/**`, `.roo/**`, `.windsurf/**`). _(Added 2026-09-04.)_
 - Overrides, in order, scoped exactly as `.oxlintrc.json`:
   - `apps/**/*.{ts,tsx}` and `packages/ui/**/*.{ts,tsx}` — React globals plus the `react` plugin (`react-hooks/rules-of-hooks` and both exhaustive-deps rules at `error`); this override also **replaces** the plugin set with `typescript`, `oxc`, `react`, `unicorn`.
   - `packages/ui/src/**/*.{ts,tsx}` — every `elmera/*` library rule in §5, plus the `LocalizedStringDictionary` `no-restricted-imports` path.
@@ -69,15 +69,13 @@ The ordering requirements are:
   - `packages/ui/scripts/**` — `elmera/restrict-package-root-from-script` at `error`; `scripts/paths.ts` is the owner of `dirname(fileURLToPath(import.meta.url))`.
   - `packages/ui/src/intl/create-string-dictionary.ts` — per-file `allow` that turns `no-restricted-imports` off so the factory can construct `LocalizedStringDictionary` _(added 2026-09-04 — [ADR 0008](../adr/0008-tests-assert-behaviour-not-source-spelling.md))_.
   - `plopfile.mjs` — the five `typescript/no-unsafe-*` rules off.
-  - `tooling/oxlint-plugin/**` — the five `typescript/no-unsafe-*` rules, `typescript/no-redundant-type-constituents`, and `anti-slop/no-runtime-typeof` off (rule-source carve-out).
-  - `tooling/oxlint-anti-slop/**` — the same type-unsafe carve-out, plus `typescript/no-unnecessary-condition`, `typescript/prefer-optional-chain`, `anti-slop/no-chained-type-assertions`, `anti-slop/no-unknown-parameters`, and `anti-slop/no-unsafe-dictionary-type` off.
-- `tooling/api-extractor` deliberately takes none: the extractor's exceptions are all at their use sites — an `oxlint-disable-next-line` naming one rule and the reason it cannot hold on that line, or the `SAFETY:` comment a rule asks for instead of a disable. File-wide `oxlint-disable` headers are forbidden in that package; the root repo-policy project (§7.6) fails on a returning header, on a reasonless next-line disable, on any `.oxlintrc.json` override matching that path, and on a per-rule next-line count above the recorded ceiling. Optional model fields are built with `definedFields` / `flagFields` (`tooling/api-extractor/src/optional-fields.ts`) so absent keys stay absent and call sites stay flat literals. _(Added 2026-09-03 — [ADR 0007](../adr/0007-docs-api-extraction-pipeline.md), “Lint overrides”: the package's 60 file-wide header directives across 37 files are gone. Amended 2026-09-04: the empty-object-spread disable is gone from call sites; next-line disables are capped per rule so that sprawl cannot return.)_
+- No override matches the lint rules' own sources: they arrive compiled inside `@elmeragroup/internal` and are linted upstream. The next-line-disable discipline the retired extractor package followed (one rule per directive, a reason after `--`, no file-wide headers) remains the expectation for any new tooling code in this repository.
 
 ## 5 Custom lint guardrails
 
 ### 5.1 Whitelabel guardrails (kumo pattern) — all v1, `error`
 
-Ship in `@elmeragroup/oxlint-plugin`, scoped to `packages/ui/src/**`:
+Ship as the `elmera` plugin (`@elmeragroup/internal/oxlint`), scoped to `packages/ui/src/**`:
 
 - **`elmera/no-primitive-colors`** — library source styles with role tokens only; raw palette classes (`bg-white`, `text-slate-500`, hex/oklch literals in class strings) are forbidden. Pairs with the token rules in [component authoring](../component-authoring.md) (input-like surfaces use `bg-card`, status names are `error/info/success/warning`).
 - **`elmera/no-tailwind-dark-variant`** — `dark:` is forbidden in library source; the dark axis is token-reserved behind `[data-theme="dark"]`.
@@ -97,19 +95,19 @@ Exactly these existing rules carry over from the internal plugin and run as `err
 
 `elmera/no-primitive-colors` has a narrow reviewed allowlist: backdrop scrims may use the exact black-alpha class documented by Dialog/Sheet; Item image media may use its exact black-alpha optical hairline; and the single package-private `disabledHatch` string may contain its documented `rgb(0 0 0 / 0.02)` repeating-gradient texture. The allowlist compares whole class tokens (variant prefixes are part of the token): `bg-black/10` matches, `bg-black/100` and `hover:bg-black/10` do not. No path-wide, component-wide, or arbitrary-alpha exemption is allowed; private RAC surfaces use role tokens. _(ticket 06, 2026-09-04: `disabledHatch` is a `cn()` string in `styles/utils`; the allowlist still matches the whole token.)_
 
-### 5.3 anti-slop (vendored third plugin)
+### 5.3 anti-slop (third plugin)
 
-`dmmulroy/anti-slop` — 15 AST-only oxlint rules rejecting low-evidence TS patterns (type-assertion laundering, `unknown` escape hatches, module mocking, reflection), vendored from commit `446268e5d15baa968eaec669ff65358d36ae6259`.
+`dmmulroy/anti-slop` — 15 AST-only oxlint rules rejecting low-evidence TS patterns (type-assertion laundering, `unknown` escape hatches, module mocking, reflection). The rules live in `@elmeragroup/internal/oxlint/anti-slop`; the source repository records which upstream commit they track.
 
-- **Vendored, never installed**: the upstream repo is `private: true` and unpublished by design; `oxlint-plugin-anti-slop@0.0.0` on npm is a **third-party name-squat — never install it**. The upstream is days-old, single-author, releaseless: immature as a dependency, acceptable as owned code. We copy `src/` into `tooling/oxlint-anti-slop` as `@elmeragroup/oxlint-plugin-anti-slop` (`private`, `"exports": { ".": "./index.ts" }`, runtime dependency `@oxlint/plugins` at the pinned oxlint minor, plus `oxlint` as a test dependency so RuleTester can import `oxlint/plugins-dev`) and record the vendored upstream commit SHA in that package's README. Upstream refresh = manual diff, opt-in.
-- **Tests**: the 12 vendored RuleTester modules plus 2 local ones (14 total) run under Node 24's test runner (`node --experimental-strip-types --test rules/*.test.ts`) and are part of the root Turbo `test` graph through the package `test` script. An upstream refresh must keep that script green, keep the local rules listed below, and update the documented test count if files are added or removed.
+- **Never install the npm name-squat**: `oxlint-plugin-anti-slop@0.0.0` on npm is a third-party package with no relation to the upstream repo, which is `private: true` and unpublished by design. The only supported source is the `anti-slop` entry of `@elmeragroup/internal`. Upstream refresh happens in that repository, as a manual diff, opt-in.
+- **Tests**: the RuleTester suites for both plugins run in the source repository and in its packed-consumer check. This repository exercises the rules only through `pnpm lint`.
 - **Rule tiers**: `error` — `no-chained-type-assertions`, `no-widen-then-assert`, `no-known-value-widening`, `no-conditional-empty-object-spread` (object spreads and `JSXSpreadAttribute`), `no-reflect-apply`, `no-reflect-get`, `no-object-parameters`, `no-unknown-type-aliases`, `no-unsafe-dictionary-type`, `no-unknown-returns`, `no-unknown-parameters`. `warn` (promote after audit) — `require-safety-comment-for-type-assertion`, `no-runtime-typeof`, `no-shape-in-symbol-names`. _(Amended 2026-09-02: `no-conditional-empty-object-spread` also matches JSX spreads.)_
 - **Local rules** (not upstream; keep across refreshes): `no-slop-comments` (`warn`) rejects banners, commented-out code, panic vocabulary, and TODO/FIXME/HACK/XXX without a tracker or RFC reference. A genuine tracker or RFC reference satisfies only that last check; it does not exempt a banner or a corpse. Its one option, `ticketPattern`, is the regex source for a bare ticket id (matched with word boundaries); the default `[A-Z][A-Z0-9]*-\d+` accepts any Jira-style key, and the repo config narrows it to `ELM-\d+` so `ADR-0002`, `SHA-256`, or `HTTP-2` do not pass as tickets. `no-narration-comments` (`warn`) rejects line comments that restate the next code line, skipping over further comment lines to find it. It is a separate rule because it is a fuzzy heuristic that a team may want to disable on its own; the severity is moot in CI, where `lint` runs with `--deny-warnings`.
 - **`no-module-mocking` stays `error` repo-wide**: the testing strategy (§7) is browser-mode behavior tests against real components — `vi.mock` has no place in this library. No test-dir override.
 
 ### 5.4 `elmera/no-internal-dynamic-import`
 
-Per [performance](performance.md) §5, the library never lazy-loads internally: this rule (in `@elmeragroup/oxlint-plugin`) forbids dynamic `import()` anywhere in `packages/ui/src/**`. Apps own code splitting.
+Per [performance](performance.md) §5, the library never lazy-loads internally: this rule (in the `elmera` plugin) forbids dynamic `import()` anywhere in `packages/ui/src/**`. Apps own code splitting.
 
 ### 5.5 `elmera/no-hardcoded-density-metrics` — `warn`
 
@@ -151,7 +149,7 @@ The generated files intentionally fail until implemented. Choose the anatomy, AP
 2. Run `pnpm --filter @elmeragroup/ui generate:exports` and review the tracked package exports and root barrel.
 3. Build the package, measure the new entry, and record its budget under the [performance policy](performance.md#2-bundle-budgets).
 4. Finish the authored page and demos; register reviewed scenarios in `apps/docs/test/fixtures/component-demo-requirements.json`.
-5. Generate the docs API artifacts and refresh the shadow snapshot, then run `pnpm ci:checks`.
+5. Generate the docs API artifacts (`pnpm --filter docs generate`), then run `pnpm ci:checks`.
 
 [plopfile.mjs](../../plopfile.mjs) and [component templates](../../plop-templates/component/) own the scaffold. Hand-created components must provide the same artifacts and registration.
 
@@ -195,13 +193,13 @@ They are **not** the first-paint proofs. `apps/docs` verifies the Next App Route
 
 ### 7.6 Repo-policy tests
 
-The actual non-browser merge command is dry-run through Turbo in a durable repo-policy test. Its graph must include the extractor private `ci:checks` leaf and its build dependency, retain the existing extractor unit task, and exclude browser/packed-consumer tasks. The private leaf runs all seven package-owned gates: catalog, boundary, complete fixture typechecks, fresh conformance, and the issue02, issue14 and external-selection live timing plans. Its package-specific Turbo definition depends on its build, unit tests and type-check, retaining local aggregate coverage while avoiding the generic aggregate's browser fan-out.
+The actual non-browser merge command is dry-run through Turbo in a durable repo-policy test. Its graph must include the root lint and repo-policy tasks and the library, docs and static-theme gates, exclude browser and packed-consumer tasks, and schedule nothing from the retired tooling packages. A second test pins `@elmeragroup/internal` to one exact catalog version, checks the matching release-age exclusion, and checks the lint plugin specifiers (§2).
 
-Merge-workflow shape and workspace lint-script contracts live in the root `test/` vitest project (`pnpm test:repo-policy`), not inside `@elmeragroup/oxlint-plugin`. `ci:checks` runs them as `//#test:repo-policy`. _(amended 2026-09-02)_
+Merge-workflow shape and workspace lint-script contracts live in the root `test/` vitest project (`pnpm test:repo-policy`), not inside the lint plugin. `ci:checks` runs them as `//#test:repo-policy`. _(amended 2026-09-02)_
 
 ## 8 CI gates
 
-- **Merge workflow** (required on every PR, and on push to `main`) runs three ordered stages: (1) root `oxfmt --check`; (2) turbo `ci:checks`, which fans out to type-check, oxlint (all three plugins), unit tests (including theme/CSS/contrast snapshots), browser tests, type tests, build, one `pnpm pack`, package-shape checks, `size-limit`, `docs#test:shadow`, and the root repo-policy tests; (3) changeset presence. The changeset stage runs only on `pull_request`, fails a PR without a changeset file unless GitHub applies the **`no-changeset`** label (matched as a whole label name, not a substring), and skips Version-Packages PRs whose head branch is `changeset-release/*` so the release PR is not blocked for consuming its own changesets. The root `pnpm ci:checks` script covers stages 1–2 for local reproduction; the label-aware stage is necessarily a workflow check. _(amended 2026-09-02)_
+- **Merge workflow** (required on every PR, and on push to `main`) runs three ordered stages: (1) root `oxfmt --check`; (2) turbo `ci:checks`, which fans out to type-check, oxlint (all three plugins), unit tests (including theme/CSS/contrast snapshots), browser tests, type tests, build, one `pnpm pack`, package-shape checks, `size-limit`, and the root repo-policy tests; (3) changeset presence. The changeset stage runs only on `pull_request`, fails a PR without a changeset file unless GitHub applies the **`no-changeset`** label (matched as a whole label name, not a substring), and skips Version-Packages PRs whose head branch is `changeset-release/*` so the release PR is not blocked for consuming its own changesets. The root `pnpm ci:checks` script covers stages 1–2 for local reproduction; the label-aware stage is necessarily a workflow check. _(amended 2026-09-02)_
 - **Helper-coverage gate:** `src/themed-browser-render.test.ts` and `src/focus-ring-helper.test.ts` run in the `unit` project and walk `src/components/**` and `src/react-aria/**` once per run. They fail on a local re-declaration of `fkasPrivate`, on any use of the retired `theme-browser-fixtures`, on any test-side `--tw-ring-shadow` outside `test/assert-focus-ring.ts`, on `setTimeout(` waits in browser suites, and on unsanctioned locators: `document.querySelector`/`querySelectorAll`, a `data-slot` selector, `dataset.slot`, `querySelectorAll("*")`, or a local `function bySlot`, unless a `DOM audit:` comment explains the contract on the same line or in the sixteen lines above. Tag and attribute selectors on an already-located root do not need this comment. A new component directory is walked automatically. Local `roleNamed` / `headingNamed` / `cssVarColor` / `textNamed` / `textboxNamed` / `stampDensity` / `px` copies are `elmera/restrict-browser-helper-copy`, not this walker; `fkasPrivate` stays here because `theme-browser-fixtures.tsx` is a second legitimate declaration under `packages/ui/test/**`. _(Added 2026-09-03 — [ADR 0008](../adr/0008-tests-assert-behaviour-not-source-spelling.md). Amended 2026-09-04 — ticket 52, 2026-09-04: one walker over both suite roots, one regex, one comment window; helper copies are a lint allow-list.)_
 - **Build-artifact tripwires:** a test reading a `dist/` artifact asserts that the artifact exists; it never guards itself with `it.skipIf(!existsSync(…))`. The artifact is task-graph-guaranteed, so its absence is the regression the test is for and a silent skip only hides it. The guarantee is per workspace, not one global edge: `packages/ui` inherits the root `test` task, which names `@elmeragroup/ui#build` directly (§3); `apps/docs` and `apps/static-theme` **shadow** `test` with their own `dependsOn: ["build"]`, and reach the same build transitively — `docs#test → docs#build → docs#generate → ^build → @elmeragroup/ui#build`, `static-theme#test → static-theme#build → ^build → @elmeragroup/ui#build` — through the `@elmeragroup/ui` workspace dependency each app declares. A workspace that shadows `test` therefore has to re-derive the edge (`turbo run test --dry=json --filter=<workspace>` prints it); the root task's dependency does not reach it, and a shadowing workspace that did not depend on the library would inherit no guarantee at all. _(Added 2026-09-03 — [ADR 0008](../adr/0008-tests-assert-behaviour-not-source-spelling.md); spec 07 user story 11.)_
 - The `pack` task is the single producer: `package:check` and `size-limit` consume its exact tarball rather than measuring raw source facades or repacking independently. `.artifacts/` is ignored; its tarball may be turbo-cached for the run but is never committed.

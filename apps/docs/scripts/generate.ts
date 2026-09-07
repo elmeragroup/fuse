@@ -24,23 +24,21 @@
  * build (§8).
  */
 
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
-import type { ApiPart, DocsComponent, ThemeCatalog } from "../src/lib/docs-model.ts";
-import { API_REGEN_COMMAND, buildApiArtifact, serializeApiArtifact } from "./lib/api-artifact.ts";
-import { includeBaseUiPrimitiveProps } from "./lib/api-external.ts";
-import { extractLibraryApi, openLibraryProject } from "./lib/api.ts";
-import type { ComponentApi } from "./lib/api.ts";
-import type { ComponentPaths } from "./lib/components.ts";
+import type { ApiArtifactDiagnostic, GeneratedApiComponent } from "@elmeragroup/internal";
+
+import type { DocsComponent, DocsDemo, ThemeCatalog } from "../src/lib/docs-model.ts";
+import { API_REGEN_COMMAND, generateDocsApiArtifacts } from "./lib/api-artifact.ts";
 import {
   componentInspections,
   docsApiInventory,
   inspectComponentDemos,
   inspectGlobalDocs,
+  readRscStatus,
 } from "./lib/docs-inspection.ts";
 import type { ComponentInspection } from "./lib/docs-inspection.ts";
-import { nodeDocsWriter } from "./lib/docs-writer.ts";
 import { ProblemLog } from "./lib/errors.ts";
 import { renderLlmsTxt } from "./lib/llms.ts";
 import { renderComponentPages } from "./lib/manifest.ts";
@@ -78,7 +76,7 @@ function writeFile(target: string, contents: string): boolean {
     return false;
   }
   mkdirSync(path.dirname(target), { recursive: true });
-  nodeDocsWriter.writeFile(target, contents);
+  writeFileSync(target, contents, "utf8");
   return true;
 }
 
@@ -92,31 +90,25 @@ function pruneStale(directory: string): void {
     if (statSync(target).isDirectory()) {
       pruneStale(target);
       if (readdirSync(target).length === 0) {
-        nodeDocsWriter.rm(target);
+        rmSync(target, { recursive: true, force: true });
       }
       continue;
     }
     if (!written.has(target)) {
-      nodeDocsWriter.rm(target);
+      rmSync(target, { force: true });
     }
   }
 }
 
 function buildComponent(
   inspection: ComponentInspection,
-  api: ComponentApi,
-  problems: ProblemLog,
+  demos: readonly DocsDemo[],
+  api: GeneratedApiComponent,
   colors: ColorTokenMap
 ): DocsComponent {
   const { slug, page, paths } = inspection;
-  // Demo inventory and `"use client"` validation belong to `docs-inspection`, the one
-  // owner of the docs input checks (docs-site.md §6): the pass consumes them, and the
-  // shadow run therefore applies the very same checks.
-  const demos = inspectComponentDemos(inspection, problems);
   const recipe = collectRecipeSources(paths.componentDir);
   const tokens = extractTokens({ sources: recipe.sources, stylesheets: recipe.stylesheets, colors });
-  const rootPart =
-    api.parts.find((part) => part.sourcePath === repoRelative(paths.sourceFile)) ?? api.parts[0];
 
   return {
     slug,
@@ -127,7 +119,9 @@ function buildComponent(
     sourcePath: repoRelative(paths.sourceFile),
     sourceUrl: `${REPO_BLOB_BASE}/${repoRelative(paths.sourceFile)}`,
     markdownUrl: `/components/${slug}.md`,
-    rsc: rootPart?.rsc ?? "client",
+    // The page's status is the implementation module's own directive (performance.md §3),
+    // whether or not the artifact has a part declared there.
+    rsc: readRscStatus(readFileSync(paths.sourceFile, "utf8")),
     headings: page.headings,
     demos,
     parts: api.parts,
@@ -141,32 +135,19 @@ function emitComponentPages(components: readonly DocsComponent[]): void {
 }
 
 /**
- * The committed per-component `api.json`, written next to its `page.mdx` (§8).
+ * Records which committed `api.json` files the generation pass had to rewrite (§8).
  *
- * These files are tracked, unlike everything under `src/generated`: the point is the
- * reviewable diff. That makes staleness possible, so this also records which artifacts
- * this run had to rewrite — a rewrite means the committed file did *not* match the
- * library, and the drift check turns that into a red test naming the regen command.
- * Recording it is the only way the check survives running after this pass: Turbo
- * `test` depends on `build`, and Turbo `build` / `type-check` depend on the
- * `generate` task — that task is the single regeneration. The package `build`
- * script is `next build` and does not regenerate.
+ * The artifacts are tracked, unlike everything under `src/generated`: the point is the
+ * reviewable diff. That makes staleness possible, so the pass records which artifacts
+ * it rewrote — a rewrite means the committed file did *not* match the library, and the
+ * drift check turns that into a red test naming the regen command. Recording it is the
+ * only way the check survives running after this pass: Turbo `test` depends on `build`,
+ * and Turbo `build` / `type-check` depend on the `generate` task — that task is the
+ * single regeneration. The package `build` script is `next build` and does not
+ * regenerate.
  */
-function emitApiArtifacts(
-  components: readonly DocsComponent[],
-  pathsBySlug: ReadonlyMap<string, ComponentPaths>
-): void {
-  const stale: string[] = [];
-  for (const component of components) {
-    const apiFile = pathsBySlug.get(component.slug)?.apiFile;
-    if (apiFile === undefined) {
-      throw new Error(`no resolved paths for component "${component.slug}"`);
-    }
-    const text = serializeApiArtifact(buildApiArtifact(component.slug, component.parts));
-    if (writeFile(apiFile, text)) {
-      stale.push(component.slug);
-    }
-  }
+function emitApiDrift(artifacts: Iterable<GeneratedApiComponent>): void {
+  const stale = [...artifacts].filter((artifact) => artifact.changed).map((artifact) => artifact.slug);
   writeFile(
     path.join(generatedDir, "api-drift.ts"),
     `${BANNER}/**
@@ -233,39 +214,53 @@ function emitLlmsTxt(components: readonly DocsComponent[]): void {
   writeFile(llmsTxtFile, renderLlmsTxt(components));
 }
 
+/**
+ * Accepted extractor warnings are still worth a line per component: each names a type the
+ * table shows as `any`. The package reports one warning per resolution, so the same site
+ * repeats; the count here is of distinct sites.
+ */
+function reportDiagnostics(diagnostics: readonly ApiArtifactDiagnostic[]): void {
+  const sites = new Map<string, Set<string>>();
+  for (const { component, warning } of diagnostics) {
+    const key = `${component}: ${warning.code}`;
+    const site = `${repoRelative(warning.filePath)}:${String(warning.line)}`;
+    sites.set(key, (sites.get(key) ?? new Set<string>()).add(site));
+  }
+  for (const [key, where] of sites) {
+    process.stderr.write(`docs: ${key} at ${[...where].join(", ")}\n`);
+  }
+}
+
 async function main(): Promise<void> {
+  // Every input check runs before anything is written, so a failing run leaves the
+  // committed api.json files and the generated site exactly as it found them. Global
+  // inputs (workspace CSS exports, nav destinations, bundle sizes), demo inventory and
+  // `"use client"` validation all belong to `docs-inspection`, the one owner of the docs
+  // input checks (docs-site.md §6).
   const problems = new ProblemLog();
-  // Global inputs (workspace CSS exports, nav destinations, bundle sizes) are validated
-  // by the same `docs-inspection` module the shadow run uses.
   const sizes = inspectGlobalDocs(problems);
   const colors = readColorTokenMapFromFile(path.join(uiSrc, "styles/ui.css"));
   const inspections = componentInspections();
-  const pathsBySlug = new Map(inspections.map((entry) => [entry.slug, entry.paths]));
-  const inventory = docsApiInventory(inspections);
-  const context = openLibraryProject();
-  let currentComponents: readonly DocsComponent[];
-  let partsBySlug: ReadonlyMap<string, readonly ApiPart[]>;
-  try {
-    const model = extractLibraryApi(context, inventory, problems);
-    currentComponents = inspections.map((inspection, index) => {
-      const api = model[index];
-      if (api === undefined) {
-        throw new Error(`no extracted API model for component "${inspection.slug}"`);
-      }
-      return buildComponent(inspection, api, problems, colors);
-    });
-    problems.throwIfFailed();
-    partsBySlug = await includeBaseUiPrimitiveProps(inventory, model, context);
-  } finally {
-    context.close();
-  }
-
-  const components = currentComponents.map((component) => ({
-    ...component,
-    parts: partsBySlug.get(component.slug) ?? component.parts,
+  const inspected = inspections.map((inspection) => ({
+    inspection,
+    demos: inspectComponentDemos(inspection, problems),
   }));
+  problems.throwIfFailed();
+
+  // Extraction writes the committed api.json files itself, only where the bytes change,
+  // and throws a DocsGenerationError on any extraction problem.
+  const generated = await generateDocsApiArtifacts("write", docsApiInventory(inspections));
+  reportDiagnostics(generated.diagnostics);
+  const components = inspected.map(({ inspection, demos }) => {
+    const api = generated.artifacts.get(inspection.slug);
+    if (api === undefined) {
+      throw new Error(`no generated API artifact for component "${inspection.slug}"`);
+    }
+    return buildComponent(inspection, demos, api, colors);
+  });
+
   emitComponentPages(components);
-  emitApiArtifacts(components, pathsBySlug);
+  emitApiDrift(generated.artifacts.values());
   emitBundleSizes(sizes);
   emitTokenReference(colors);
   const catalog = buildThemeCatalog();
@@ -291,5 +286,5 @@ try {
   process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
   process.exitCode = 1;
   // Leave no half-written manifest behind for the bundler to pick up.
-  nodeDocsWriter.rm(path.join(generatedDir, "component-pages.ts"));
+  rmSync(path.join(generatedDir, "component-pages.ts"), { force: true });
 }

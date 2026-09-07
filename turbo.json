@@ -8,7 +8,7 @@
       // colorSchemeScriptSource's Function#toString() has to be the packed IIFE, not re-emitted
       // TypeScript), and import/no-cycle resolves that import — so lint needs the ui build.
       "dependsOn": ["@elmeragroup/ui#build", "docs#generate"],
-      "inputs": ["$TURBO_DEFAULT$", "tooling/oxlint-plugin/**", "tooling/oxlint-anti-slop/**"]
+      "inputs": ["$TURBO_DEFAULT$"]
     },
     "//#test:repo-policy": {
       "inputs": [
@@ -21,7 +21,8 @@
         "package.json",
         ".oxlintrc.json",
         "turbo.json",
-        "tooling/api-extractor/package.json"
+        "apps/docs/package.json",
+        "pnpm-workspace.yaml"
       ]
     },
     "build": {
@@ -29,7 +30,7 @@
       "outputs": ["dist/**", ".next/**"]
     },
     "lint": {
-      "inputs": ["$TURBO_DEFAULT$", "tooling/oxlint-plugin/**", "tooling/oxlint-anti-slop/**"]
+      "inputs": ["$TURBO_DEFAULT$"]
     },
     "type-check": {
       "dependsOn": ["^build"]
@@ -45,9 +46,6 @@
       "dependsOn": ["pack"]
     },
     "test:types": {
-      "dependsOn": ["build"]
-    },
-    "test:shadow": {
       "dependsOn": ["build"]
     },
     "pack": {
@@ -67,11 +65,7 @@
     },
     // Aggregate leaf. Every real gate below is its own task, so a package's own `ci:checks`
     // script has nothing left to run: `@elmeragroup/ui` defines it as a self-describing no-op
-    // that exists only so `turbo run ci:checks` fans out to this dependency list. Only
-    // `@elmeragroup/api-extractor` has private gates of its own to run under the leaf.
-    "@elmeragroup/api-extractor#ci:checks": {
-      "dependsOn": ["build", "test", "type-check"]
-    },
+    // that exists only so `turbo run ci:checks` fans out to this dependency list.
     "ci:checks": {
       "dependsOn": [
         "//#lint",
@@ -83,8 +77,7 @@
         "test:types",
         "build",
         "package:check",
-        "size-limit",
-        "docs#test:shadow"
+        "size-limit"
       ]
     }
   }

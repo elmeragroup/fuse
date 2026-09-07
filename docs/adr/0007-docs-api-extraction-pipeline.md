@@ -1,6 +1,6 @@
 # 0007 — Docs API extraction pipeline
 
-Date: 2026-09-02. Status: accepted.
+Date: 2026-09-02. Status: superseded by [ADR 0010](0010-internal-package-owns-extraction-and-lint.md) on 2026-09-07. The hybrid pipeline, the shadow comparison, and the workspace extractor package described here no longer exist in this repository.
 
 ## Context
 

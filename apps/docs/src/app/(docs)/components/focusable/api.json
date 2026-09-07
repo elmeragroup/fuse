@@ -4,8 +4,8 @@
   "parts": [
     {
       "name": "Focusable",
-      "rsc": "server",
-      "sourcePath": "node_modules/.pnpm/@types+react@19.2.17/node_modules/@types/react/index.d.ts",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/react-aria/focusable/focusable.tsx",
       "forwardedFrom": [
         "@react-types/shared",
         "@types/react",
@@ -16,8 +16,8 @@
     },
     {
       "name": "useFocusable",
-      "rsc": "server",
-      "sourcePath": "node_modules/.pnpm/react-aria@3.50.0_react-dom@19.2.8_react@19.2.8__react@19.2.8/node_modules/react-aria/dist/types/src/interactions/useFocusable.d.ts",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/react-aria/focusable/focusable.tsx",
       "forwardedFrom": [
         "@react-types/shared",
         "react-aria"

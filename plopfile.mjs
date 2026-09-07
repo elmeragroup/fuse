@@ -149,7 +149,7 @@ export default function plopfile(plop) {
           "  3. pnpm --filter @elmeragroup/ui build             # dist + publish manifest; does not rewrite source exports",
           `  4. Author the page and demos; record required scenarios in apps/docs/test/fixtures/component-demo-requirements.json.`,
           "  5. pnpm --filter docs generate                    # writes the committed api.json next to the page",
-          "  6. Record measuredGzip in packages/ui/scripts/size-budgets.ts; run pnpm --filter docs shadow:update.",
+          "  6. Record measuredGzip in packages/ui/scripts/size-budgets.ts.",
           "  7. Add the component to independent RSC expectations and public type/API contract checks.",
           "  8. pnpm ci:checks",
         ].join("\n"),

@@ -32,9 +32,6 @@
     "test:browser": {
       "dependsOn": ["build"],
       "env": ["DOCS_BASE_URL"]
-    },
-    "test:shadow": {
-      "dependsOn": ["build"]
     }
   }
 }

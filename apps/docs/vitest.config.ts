@@ -18,7 +18,7 @@ export default defineConfig({
         test: {
           name: "unit",
           include: ["test/**/*.test.ts"],
-          exclude: ["**/test/api-shadow.test.ts", "**/*.browser.test.*"],
+          exclude: ["**/*.browser.test.*"],
           ...shared,
         },
       },
