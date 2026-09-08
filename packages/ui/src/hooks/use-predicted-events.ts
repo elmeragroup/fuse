@@ -61,7 +61,9 @@ function registerIntent(registration: IntentRegistration): void {
 }
 
 function unregisterIntent(registration: IntentRegistration): void {
-  registrations.delete(registration);
+  if (!registrations.delete(registration)) {
+    return;
+  }
   if (registrations.size === 0) {
     document.removeEventListener("pointermove", onDocumentPointerMove);
   }
@@ -98,6 +100,7 @@ export function usePredictedEvents({
           return;
         }
         firedRef.current = true;
+        unregisterIntent(registration);
         onIntentRef.current?.();
       },
     };

@@ -155,6 +155,169 @@ describe("Button", () => {
     expect(visual).not.toHaveBeenCalled();
   });
 
+  it("stops measuring a fired registration and removes the last pointermove listener", async () => {
+    const live = vi.fn();
+    renderThemed(<Button onIntent={live}>Prefetch</Button>);
+    await flushEffects();
+
+    const liveButton = buttonNamed("Prefetch");
+    const rect = liveButton.getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
+
+    const measure = vi.spyOn(liveButton, "getBoundingClientRect");
+    const remove = vi.spyOn(document, "removeEventListener");
+
+    try {
+      dispatchPredictedPointer(x, y);
+      expect(live).toHaveBeenCalledTimes(1);
+      expect(remove.mock.calls.filter((call) => call[0] === "pointermove").length).toBeGreaterThanOrEqual(1);
+
+      measure.mockClear();
+      dispatchPredictedPointer(x, y);
+      dispatchPredictedPointer(x, y);
+      expect(measure).not.toHaveBeenCalled();
+      expect(live).toHaveBeenCalledTimes(1);
+    } finally {
+      measure.mockRestore();
+      remove.mockRestore();
+    }
+  });
+
+  it("keeps the shared pointermove listener while a sibling registration is still pending", async () => {
+    const first = vi.fn();
+    const second = vi.fn();
+    const add = vi.spyOn(document, "addEventListener");
+    const remove = vi.spyOn(document, "removeEventListener");
+
+    renderThemed(
+      <div style={{ display: "flex", gap: 120 }}>
+        <Button onIntent={first}>First</Button>
+        <Button onIntent={second}>Second</Button>
+      </div>
+    );
+    await flushEffects();
+
+    const firstButton = buttonNamed("First");
+    const secondButton = buttonNamed("Second");
+    const firstRect = firstButton.getBoundingClientRect();
+    const secondRect = secondButton.getBoundingClientRect();
+    const firstX = firstRect.left + firstRect.width / 2;
+    const firstY = firstRect.top + firstRect.height / 2;
+    const secondX = secondRect.left + secondRect.width / 2;
+    const secondY = secondRect.top + secondRect.height / 2;
+
+    try {
+      dispatchPredictedPointer(firstX, firstY);
+      expect(first).toHaveBeenCalledTimes(1);
+      expect(second).not.toHaveBeenCalled();
+      expect(remove.mock.calls.filter((call) => call[0] === "pointermove")).toHaveLength(0);
+
+      const measureFirst = vi.spyOn(firstButton, "getBoundingClientRect");
+      try {
+        dispatchPredictedPointer(secondX, secondY);
+        expect(second).toHaveBeenCalledTimes(1);
+        expect(measureFirst).not.toHaveBeenCalled();
+        expect(remove.mock.calls.filter((call) => call[0] === "pointermove").length).toBeGreaterThanOrEqual(
+          1
+        );
+      } finally {
+        measureFirst.mockRestore();
+      }
+    } finally {
+      add.mockRestore();
+      remove.mockRestore();
+    }
+  });
+
+  it("unmounts safely from inside onIntent without double-removing the listener", async () => {
+    let calls = 0;
+    let unmount: () => void = () => {
+      throw new Error("unmount was called before render completed");
+    };
+    ({ unmount } = renderThemed(
+      <Button
+        onIntent={() => {
+          calls += 1;
+          unmount();
+        }}>
+        Gone
+      </Button>
+    ));
+    await flushEffects();
+
+    const goneButton = buttonNamed("Gone");
+    const rect = goneButton.getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
+
+    dispatchPredictedPointer(x, y);
+    dispatchPredictedPointer(x, y);
+    dispatchPredictedPointer(x, y);
+
+    expect(calls).toBe(1);
+    expect(document.contains(goneButton)).toBe(false);
+  });
+
+  it("uses the latest onIntent before the first hit and does not rearm afterwards", async () => {
+    const stale = vi.fn();
+    const fresh = vi.fn();
+    const third = vi.fn();
+    const { rerender } = renderThemed(<Button onIntent={stale}>Prefetch</Button>);
+    await flushEffects();
+
+    rerender(<Button onIntent={fresh}>Prefetch</Button>);
+    await flushEffects();
+
+    const liveButton = buttonNamed("Prefetch");
+    const rect = liveButton.getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
+
+    dispatchPredictedPointer(x, y);
+    expect(fresh).toHaveBeenCalledTimes(1);
+    expect(stale).not.toHaveBeenCalled();
+
+    rerender(<Button onIntent={third}>Prefetch</Button>);
+    await flushEffects();
+    dispatchPredictedPointer(x, y);
+    expect(third).not.toHaveBeenCalled();
+    expect(fresh).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not accumulate pointermove listeners across a predictionZoneSize rerender", async () => {
+    const add = vi.spyOn(document, "addEventListener");
+    const remove = vi.spyOn(document, "removeEventListener");
+    const { rerender, unmount } = renderThemed(
+      <Button predictionZoneSize={30} onIntent={() => undefined}>
+        Prefetch
+      </Button>
+    );
+    await flushEffects();
+
+    rerender(
+      <Button predictionZoneSize={60} onIntent={() => undefined}>
+        Prefetch
+      </Button>
+    );
+    await flushEffects();
+
+    try {
+      const liveButton = buttonNamed("Prefetch");
+      const rect = liveButton.getBoundingClientRect();
+      dispatchPredictedPointer(rect.left + rect.width / 2, rect.top + rect.height / 2);
+      unmount();
+
+      const additions = add.mock.calls.filter((call) => call[0] === "pointermove");
+      const removals = remove.mock.calls.filter((call) => call[0] === "pointermove");
+      expect(additions.length).toBeLessThanOrEqual(2);
+      expect(additions).toHaveLength(removals.length);
+    } finally {
+      add.mockRestore();
+      remove.mockRestore();
+    }
+  });
+
   it("merges an external ref when onIntent is set and shares one pointermove listener", async () => {
     const firstRef = createRef<HTMLButtonElement>();
     const secondRef = createRef<HTMLButtonElement>();

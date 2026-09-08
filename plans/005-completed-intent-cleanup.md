@@ -13,7 +13,7 @@
 - **Category**: perf
 - **Planned at**: commit `f14057be`, 2026-09-08
 - **Audit finding**: 5
-- **Status**: TODO
+- **Status**: DONE
 
 ## Why this matters
 
