@@ -31,6 +31,9 @@ Forms submit the hidden `name` input (E.164 by default). The visible input is na
 intersected with packaged flag assets, minus the product exclusion set — `AC`, `BQ`,
 `EH`, and `TA` never appear.
 
+A native form reset clears an uncontrolled field's number, keeps the selected country, and
+fires neither `onChange` nor `onCountryChange`. A controlled `value` stays parent-owned.
+
 </Prose>
 
 <Demo slug="phone-number-field" id="basic" title="Basic" file="phone-number-field-basic.tsx">
