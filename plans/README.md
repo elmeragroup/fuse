@@ -20,7 +20,7 @@ Recommended order follows the table. Plans are technically independent. Each exe
 | [007](/Users/tommy.lunde.barvag/src/work/elmera/ui/plans/007-empty-artwork-title.md)         | Render artwork with an empty title as decorative                  | P2       | S      | None       | DONE   |
 | [008](/Users/tommy.lunde.barvag/src/work/elmera/ui/plans/008-figma-route-own-slugs.md)       | Return 404 for inherited-property Figma theme slugs               | P2       | S      | None       | DONE   |
 | [009](/Users/tommy.lunde.barvag/src/work/elmera/ui/plans/009-flag-source-provenance.md)      | Verify the pinned flag checkout before copying assets             | P2       | M      | None       | DONE   |
-| [010](/Users/tommy.lunde.barvag/src/work/elmera/ui/plans/010-keyboard-spec-exceptions.md)    | Document the existing menu and tab keyboard defaults              | P3       | S      | None       | TODO   |
+| [010](/Users/tommy.lunde.barvag/src/work/elmera/ui/plans/010-keyboard-spec-exceptions.md)    | Document the existing menu and tab keyboard defaults              | P3       | S      | None       | DONE   |
 
 Status values: TODO, IN PROGRESS, DONE, BLOCKED with a reason, or REJECTED with a rationale.
 
