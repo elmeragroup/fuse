@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
   copyFileSync,
@@ -5,6 +6,7 @@ import {
   mkdirSync,
   readdirSync,
   readFileSync,
+  realpathSync,
   statSync,
   writeFileSync,
 } from "node:fs";
@@ -139,7 +141,55 @@ export function writeFlagManifest(packageRoot: string): void {
   );
 }
 
-export function vendorFlags(repoRoot: string, packageRoot: string): void {
+function gitOutput(sourceRoot: string, args: readonly string[]): string {
+  const result = spawnSync("git", args, { cwd: sourceRoot, encoding: "utf8" });
+  if (result.error !== undefined || result.status !== 0) {
+    throw new Error(`git ${args.join(" ")} failed in ${sourceRoot}: ${result.stderr}`);
+  }
+  return result.stdout;
+}
+
+export function assertFlagSourceCheckout(sourceRoot: string, expectedCommit: string): void {
+  if (!existsSync(sourceRoot) || !statSync(sourceRoot).isDirectory()) {
+    throw new Error(
+      `Flag source ${sourceRoot} is missing; clone the pinned reference described in docs/reference-sources.md`
+    );
+  }
+
+  const toplevel = gitOutput(sourceRoot, ["rev-parse", "--show-toplevel"]).trim();
+  // Git walks upward to a parent .git; realpath both sides because macOS tmpdir() is a symlink.
+  if (realpathSync(toplevel) !== realpathSync(sourceRoot)) {
+    throw new Error(`Flag source ${sourceRoot} is not the root of a Git checkout (git resolved ${toplevel})`);
+  }
+
+  const head = gitOutput(sourceRoot, ["rev-parse", "HEAD"]).trim();
+  if (head !== expectedCommit) {
+    throw new Error(
+      `Flag source is at ${head}, expected ${expectedCommit}; check out the pinned commit before regenerating`
+    );
+  }
+
+  const porcelain = gitOutput(sourceRoot, [
+    "status",
+    "--porcelain",
+    "--untracked-files=all",
+    "--",
+    "svg",
+    "LICENSE",
+  ]);
+  if (porcelain.trim() !== "") {
+    throw new Error(
+      `Flag source has local changes under svg/ or LICENSE; restore the checkout before regenerating:\n${porcelain}`
+    );
+  }
+}
+
+export function vendorFlags(
+  repoRoot: string,
+  packageRoot: string,
+  expectedCommit = FLAG_SOURCE_COMMIT
+): void {
+  assertFlagSourceCheckout(join(repoRoot, ".ref/flag-icons"), expectedCommit);
   const sourceDir = join(repoRoot, ".ref/flag-icons/svg");
   const destDir = join(packageRoot, "src/flags");
   mkdirSync(destDir, { recursive: true });
@@ -160,7 +210,7 @@ export function vendorFlags(repoRoot: string, packageRoot: string): void {
     `# Flag asset provenance
 
 - Source: ${FLAG_SOURCE_REPO} (MIT, copyright Yefferson)
-- Commit: \`${FLAG_SOURCE_COMMIT}\`
+- Commit: \`${expectedCommit}\`
 - Selection: exactly the ${FLAG_SVG_COUNT} two-letter country SVGs. Subdivision/collection artwork is not copied.
 - Aggregate ceiling: ${FLAG_RAW_CEILING_BYTES / 1024} KiB.
 

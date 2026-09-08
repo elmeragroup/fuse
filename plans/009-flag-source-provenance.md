@@ -13,7 +13,7 @@
 - **Category**: dx
 - **Planned at**: commit `f14057be`, 2026-09-08 (reviewed and tightened 2026-09-08 against the same commit)
 - **Audit finding**: 9
-- **Status**: TODO
+- **Status**: DONE
 
 ## Why this matters
 

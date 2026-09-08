@@ -15,6 +15,10 @@
 
 References supply code and immutable source artwork only. They do **not** decide package paths, public API, tokens, focus styling, localization, client boundaries, dependency policy, or test expectations; the [current contracts](spec/README.md) do. Lifted files retain applicable license/copyright notices, and no `.ref/` path may appear in package source, generated declarations, or the packed artifact.
 
+## Regenerating flags
+
+`generate-flags` refuses to copy assets unless `.ref/flag-icons` is a Git checkout at the commit in the table above, with no staged, unstaged, or untracked changes under `svg/` or to `LICENSE`. The generator never fetches, checks out, or otherwise modifies that checkout. To recover, inspect with `git -C .ref/flag-icons status --porcelain` and `git -C .ref/flag-icons diff`, then restore with `git -C .ref/flag-icons checkout --detach <commit from the table>` and, after human review of `git -C .ref/flag-icons restore .` or `git -C .ref/flag-icons clean -n`, rerun generation.
+
 ## Porting styles
 
 The [token contract](spec/theming.md#26-legacy-bridging-clean-break) explains how to translate legacy token names. Keep applicable source notices with copied code and artwork. Current library contracts take precedence over reference implementation choices.
