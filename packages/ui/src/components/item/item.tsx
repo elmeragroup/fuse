@@ -168,6 +168,7 @@ function ItemFooter({
   children,
   className,
   mode = "default",
+  inert,
   ...props
 }: ComponentProps<"div"> &
   VariantProps<typeof itemFooterVariants> & {
@@ -182,7 +183,8 @@ function ItemFooter({
       data-slot="item-footer"
       data-mode={mode}
       className={cn(itemFooterVariants({ mode }), className)}
-      {...props}>
+      {...props}
+      inert={mode === "hidden" || inert ? true : undefined}>
       <div data-slot="item-footer-content" className="flex min-h-0 flex-col gap-3">
         {children}
       </div>

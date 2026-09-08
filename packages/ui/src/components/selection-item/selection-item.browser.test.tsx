@@ -69,6 +69,35 @@ function subsectionHost(from: HTMLElement): HTMLElement {
   return host;
 }
 
+function nestedSubsectionButton(label: string): HTMLElement {
+  const text = page.getByText(label, { exact: true }).element();
+  if (!(text instanceof HTMLElement)) {
+    throw new Error(`expected text ${label}`);
+  }
+  const button = subsectionHost(text).querySelector("button");
+  if (!(button instanceof HTMLElement)) {
+    throw new Error(`expected a button inside the ${label} subsection`);
+  }
+  return button;
+}
+
+function SubSectionTree({ mode }: { mode: "hidden" | "visible" | "default" }) {
+  return (
+    <>
+      <button type="button">Before</button>
+      <Field.Root>
+        <SelectionItem.Shell dataSlot="checkbox-item" control={<span role="img" aria-label="Indicator" />}>
+          <RowTitle>Fixed price</RowTitle>
+          <SelectionItem.SubSection mode={mode}>
+            <button type="button">Hidden details</button>
+          </SelectionItem.SubSection>
+        </SelectionItem.Shell>
+      </Field.Root>
+      <button type="button">After</button>
+    </>
+  );
+}
+
 function subsectionSpacer(label: string): HTMLElement {
   const footer = extraNamed(label).parentElement;
   let current = footer?.parentElement ?? null;
@@ -220,11 +249,7 @@ describe("SelectionItem", () => {
       </Field.Root>
     );
 
-    const details = page.getByRole("button", { name: "Hidden details", exact: true });
-    const detailsEl = details.element();
-    if (!(detailsEl instanceof HTMLElement)) {
-      throw new Error("expected hidden details button");
-    }
+    const detailsEl = nestedSubsectionButton("Hidden details");
     const footer = subsectionHost(detailsEl);
     expect(footer.getAttribute("data-mode")).toBe("hidden");
     expect(getComputedStyle(footer).pointerEvents).toBe("none");
@@ -239,6 +264,30 @@ describe("SelectionItem", () => {
       await userEvent.click(hit);
     }
     expect(extraClicks).toBe(0);
+  });
+
+  it("removes hidden SubSection content from tab order and programmatic focus", async () => {
+    const { rerender } = renderThemed(<SubSectionTree mode="hidden" />);
+    const nestedButton = nestedSubsectionButton("Hidden details");
+
+    const before = page.getByRole("button", { name: "Before", exact: true }).element();
+    if (!(before instanceof HTMLElement)) {
+      throw new Error("expected before button");
+    }
+    before.focus();
+    await userEvent.keyboard("{Tab}");
+    const after = page.getByRole("button", { name: "After", exact: true }).element();
+    expect(document.activeElement, "Tab must skip the hidden subsection").toBe(after);
+
+    nestedButton.focus();
+    expect(document.activeElement, "programmatic focus must not enter the hidden subsection").not.toBe(
+      nestedButton
+    );
+
+    rerender(<SubSectionTree mode="visible" />);
+    before.focus();
+    await userEvent.keyboard("{Tab}");
+    expect(document.activeElement, "a visible subsection must return to tab order").toBe(nestedButton);
   });
 
   it("places the control after the row at end and matches spacer width in both positions", () => {

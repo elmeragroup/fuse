@@ -14,6 +14,29 @@ function footerHost(name: string): HTMLElement {
   return host;
 }
 
+function footerButton(name: string): HTMLElement {
+  const button = footerHost(name).querySelector("button");
+  if (!(button instanceof HTMLElement)) {
+    throw new Error(`expected a button inside the ${name} footer`);
+  }
+  return button;
+}
+
+function FooterTree({ mode, inert }: { mode: "hidden" | "visible" | "default"; inert?: boolean }) {
+  return (
+    <>
+      <button type="button">Before</button>
+      <Item.Root>
+        <Item.Title>Order</Item.Title>
+        <Item.Footer mode={mode} inert={inert}>
+          <button type="button">Nested</button>
+        </Item.Footer>
+      </Item.Root>
+      <button type="button">After</button>
+    </>
+  );
+}
+
 describe("Item", () => {
   it("keeps data-slot, data-variant, and data-size on a link render", () => {
     renderThemed(
@@ -86,6 +109,47 @@ describe("Item", () => {
     expect(getComputedStyle(hidden).pointerEvents).toBe("none");
     expect(getComputedStyle(hidden).opacity).toBe("0");
     expect(getComputedStyle(visible).pointerEvents).not.toBe("none");
+  });
+
+  it("removes hidden footer content from tab order and programmatic focus", async () => {
+    const { rerender } = renderThemed(<FooterTree mode="hidden" />);
+    const nestedButton = footerButton("Nested");
+
+    roleNamed("button", "Before").focus();
+    await userEvent.keyboard("{Tab}");
+    expect(document.activeElement, "Tab must skip the hidden footer").toBe(roleNamed("button", "After"));
+
+    nestedButton.focus();
+    expect(document.activeElement, "programmatic focus must not enter the hidden footer").not.toBe(
+      nestedButton
+    );
+
+    rerender(<FooterTree mode="visible" />);
+    roleNamed("button", "Before").focus();
+    await userEvent.keyboard("{Tab}");
+    expect(document.activeElement, "a visible footer must return to tab order").toBe(nestedButton);
+  });
+
+  it("keeps default and visible footer controls in tab order", async () => {
+    for (const mode of ["default", "visible"] as const) {
+      const { unmount } = renderThemed(<FooterTree mode={mode} />);
+      roleNamed("button", "Before").focus();
+      await userEvent.keyboard("{Tab}");
+      expect(document.activeElement, mode).toBe(roleNamed("button", "Nested"));
+      unmount();
+    }
+  });
+
+  it("honors an explicit inert on a visible footer", async () => {
+    renderThemed(<FooterTree mode="visible" inert />);
+    const nestedButton = footerButton("Nested");
+
+    roleNamed("button", "Before").focus();
+    await userEvent.keyboard("{Tab}");
+    expect(document.activeElement).toBe(roleNamed("button", "After"));
+
+    nestedButton.focus();
+    expect(document.activeElement).not.toBe(nestedButton);
   });
 
   it("makes a link-rendered item keyboard-activatable with the shared focus ring", async () => {
