@@ -16,7 +16,7 @@ import {
   DEFAULT_COLOR_SCHEME,
   DEFAULT_COLOR_SCHEME_STORAGE_KEY,
   DEFAULT_ENABLE_SYSTEM,
-  parseColorScheme,
+  localStorageArea,
   readStoredColorScheme,
   resolveColorSchemeOptions,
 } from "./color-scheme";
@@ -122,20 +122,10 @@ function DocumentThemeWriter({
       if (event.key !== null && event.key !== options.storageKey) {
         return;
       }
-      let localArea: Storage;
-      try {
-        localArea = window.localStorage;
-      } catch {
+      if (event.storageArea !== localStorageArea()) {
         return;
       }
-      if (event.storageArea !== localArea) {
-        return;
-      }
-      if (event.key === null) {
-        store.receivePreference(readStoredColorScheme(options.storageKey, options.defaultColorScheme));
-        return;
-      }
-      store.receivePreference(parseColorScheme(event.newValue, options.defaultColorScheme));
+      store.receivePreference(readStoredColorScheme(options.storageKey, options.defaultColorScheme));
     };
 
     const onMedia = () => {

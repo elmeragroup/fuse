@@ -13,6 +13,7 @@ import {
   expectNoFocusRing,
 } from "../../../test/assert-focus-ring";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
+import { searchNamed } from "../../../test/phone-browser-queries";
 import { EXCLUDED_PRODUCT_COUNTRY_CODES, FLAG_GAP_COUNTRY_CODES } from "../../../test/phone-picker-contract";
 import { renderThemed, roleNamed, textboxNamed } from "../../../test/themed-browser-render";
 import { flagAssets } from "../../flags";
@@ -49,14 +50,6 @@ function listboxNamed(): HTMLElement {
     throw new Error("expected a listbox");
   }
   return element;
-}
-
-function searchNamed(name = "Search countries"): HTMLInputElement {
-  const named = document.body.querySelector(`input[aria-label="${name}"]`);
-  if (named instanceof HTMLInputElement) {
-    return named;
-  }
-  throw new Error(`expected search ${name}`);
 }
 
 function hiddenNamed(name: string): HTMLInputElement {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 // Subpath import (`@base-ui/react/combobox`) type-checks but crashes at runtime with a
@@ -11,6 +11,7 @@ import { Combobox as ComboboxPrimitive } from "@base-ui/react";
 import type { CountryCode, MetadataJson } from "libphonenumber-js/core";
 
 import type { FlagAssetCode } from "../../flags";
+import { useFormReset } from "../../hooks/use-form-reset";
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { MagnifyingGlass } from "../../icons/generated/magnifying-glass";
@@ -193,25 +194,7 @@ export function PhoneNumberField({
     ...stateOptions,
     locale,
   });
-  const resetRef = useRef(phone.resetUncontrolled);
-  resetRef.current = phone.resetUncontrolled;
-  const isControlled = stateOptions.value !== undefined;
-  useLayoutEffect(() => {
-    const form = numberInput?.form;
-    if (!numberInput || !form || isControlled) return;
-    let subscribed = true;
-    function handleReset(event: Event): void {
-      // A task runs after native reset, including reset-button default actions.
-      setTimeout(() => {
-        if (subscribed && !event.defaultPrevented) resetRef.current();
-      });
-    }
-    form.addEventListener("reset", handleReset);
-    return () => {
-      subscribed = false;
-      form.removeEventListener("reset", handleReset);
-    };
-  }, [numberInput, isControlled]);
+  useFormReset(numberInput, phone.resetUncontrolled);
 
   // Base UI Input is a Field.Control; a present-but-undefined ARIA key clobbers the
   // auto-wired label/description via mergeProps (no undefined-guard). Forward only defined keys.

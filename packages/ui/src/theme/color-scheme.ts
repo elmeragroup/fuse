@@ -121,6 +121,14 @@ export function resolveColorScheme(preference: ColorScheme, enableSystem: boolea
   return resolveSystemColorScheme();
 }
 
+export function localStorageArea(): Storage | undefined {
+  try {
+    return window.localStorage;
+  } catch {
+    return undefined;
+  }
+}
+
 export function readStoredColorScheme(storageKey: string, fallback: ColorScheme): ColorScheme {
   try {
     return parseColorScheme(localStorage.getItem(storageKey), fallback);

@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 
+import { useFormReset } from "../../hooks/use-form-reset";
 import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { cn } from "../../styles/cn";
 import { isThemeDevelopment } from "../../theme/validate-theme";
@@ -106,24 +107,12 @@ export function TextField({
   const [internalValue, setInternalValue] = useState(() => defaultValue ?? "");
   const [inputElement, setInputElement] = useState<HTMLInputElement | null>(null);
   const mergedRef = useMergedRefs(ref, setInputElement);
-  const formId = props.form;
   const ownsNumericState = filter === "numeric" && !isControlled;
-  useLayoutEffect(() => {
-    const form = inputElement?.form;
-    if (!inputElement || !form || !ownsNumericState) return;
-    let subscribed = true;
-    function handleReset(event: Event): void {
-      // A task runs after native reset, including reset-button default actions.
-      setTimeout(() => {
-        if (subscribed && !event.defaultPrevented) setInternalValue(defaultValue ?? "");
-      });
-    }
-    form.addEventListener("reset", handleReset);
-    return () => {
-      subscribed = false;
-      form.removeEventListener("reset", handleReset);
-    };
-  }, [inputElement, ownsNumericState, formId, defaultValue]);
+  useFormReset(
+    inputElement,
+    ownsNumericState ? () => setInternalValue(defaultValue ?? "") : null,
+    props.form
+  );
 
   useEffect(() => {
     if (filter !== "numeric") {

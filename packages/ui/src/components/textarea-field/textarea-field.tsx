@@ -1,8 +1,9 @@
 "use client";
 
-import { useLayoutEffect, useState } from "react";
+import { useState } from "react";
 import type { ChangeEvent, ComponentProps, ReactElement, ReactNode } from "react";
 
+import { useFormReset } from "../../hooks/use-form-reset";
 import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { Field } from "../field/field";
 import { FieldFrame } from "../field/field-frame";
@@ -60,24 +61,15 @@ export function TextareaField({
   const [uncontrolledLength, setUncontrolledLength] = useState(() => (defaultValue ?? "").length);
   const [textarea, setTextarea] = useState<HTMLTextAreaElement | null>(null);
   const mergedRef = useMergedRefs(ref, setTextarea);
-  const formId = props.form;
-  useLayoutEffect(() => {
-    const form = textarea?.form;
-    if (!textarea || !form || isControlled) return;
-    const control = textarea;
-    let subscribed = true;
-    function handleReset(event: Event): void {
-      // A task runs after native reset, including reset-button default actions.
-      setTimeout(() => {
-        if (subscribed && !event.defaultPrevented) setUncontrolledLength(control.value.length);
-      });
-    }
-    form.addEventListener("reset", handleReset);
-    return () => {
-      subscribed = false;
-      form.removeEventListener("reset", handleReset);
-    };
-  }, [textarea, isControlled, formId]);
+  useFormReset(
+    textarea,
+    isControlled
+      ? null
+      : () => {
+          setUncontrolledLength(textarea?.value.length ?? 0);
+        },
+    props.form
+  );
   const currentLength = value === undefined ? uncontrolledLength : value.length;
 
   function handleChange(event: ChangeEvent<HTMLTextAreaElement>): void {

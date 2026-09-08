@@ -184,13 +184,15 @@ export function assertFlagSourceCheckout(sourceRoot: string, expectedCommit: str
   }
 }
 
+/** `expectedCommit` exists so tests can inject a fixture HEAD; production omits it. */
 export function vendorFlags(
   repoRoot: string,
   packageRoot: string,
   expectedCommit = FLAG_SOURCE_COMMIT
 ): void {
-  assertFlagSourceCheckout(join(repoRoot, ".ref/flag-icons"), expectedCommit);
-  const sourceDir = join(repoRoot, ".ref/flag-icons/svg");
+  const sourceRoot = join(repoRoot, ".ref/flag-icons");
+  assertFlagSourceCheckout(sourceRoot, expectedCommit);
+  const sourceDir = join(sourceRoot, "svg");
   const destDir = join(packageRoot, "src/flags");
   mkdirSync(destDir, { recursive: true });
 
@@ -204,7 +206,7 @@ export function vendorFlags(
     hashes.push(`${file} ${sha256(readFileSync(join(sourceDir, file)))}`);
   }
 
-  copyFileSync(join(repoRoot, ".ref/flag-icons/LICENSE"), join(destDir, "LICENSE"));
+  copyFileSync(join(sourceRoot, "LICENSE"), join(destDir, "LICENSE"));
   writeFileSync(
     join(destDir, "PROVENANCE.md"),
     `# Flag asset provenance

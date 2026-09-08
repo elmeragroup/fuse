@@ -140,6 +140,7 @@ describe("useColorScheme", () => {
     );
     await mountedColorScheme(host, "internal-fkas-private:system/light");
 
+    window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "dark");
     window.dispatchEvent(
       new StorageEvent("storage", {
         key: DEFAULT_COLOR_SCHEME_STORAGE_KEY,
@@ -622,6 +623,7 @@ describe("forced color-scheme", () => {
     expect(window.localStorage.getItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY)).toBe("light");
     await mountedColorScheme(host, "internal-fkas-private:light/dark");
 
+    window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "system");
     window.dispatchEvent(
       new StorageEvent("storage", {
         key: DEFAULT_COLOR_SCHEME_STORAGE_KEY,

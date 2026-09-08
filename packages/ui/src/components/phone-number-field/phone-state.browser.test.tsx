@@ -9,6 +9,7 @@ import { userEvent } from "vitest/browser";
 import { PhoneNumberField } from "@elmeragroup/ui/phone-number-field";
 
 import { withLocale } from "../../../test/locale-matrix";
+import { inputNamed } from "../../../test/phone-browser-queries";
 import { renderThemed as render, roleNamed } from "../../../test/themed-browser-render";
 import { defaultMetadata } from "./phone-engine";
 
@@ -17,12 +18,6 @@ const swedishMetadata: MetadataJson = {
   countries: { SE: defaultMetadata.countries.SE },
   country_calling_codes: { "46": ["SE"] },
 };
-
-function inputNamed(name = "Mobile"): HTMLInputElement {
-  const input = roleNamed("textbox", name);
-  if (!(input instanceof HTMLInputElement)) throw new Error("Expected phone input");
-  return input;
-}
 
 function submission(): FormData {
   const form = roleNamed("form", "Phone form");
