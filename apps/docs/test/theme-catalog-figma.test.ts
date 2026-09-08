@@ -5,6 +5,7 @@ import {
   figmaDocumentFromCatalog,
   renderFigmaThemeCatalog,
 } from "../scripts/lib/theme-catalog-figma.ts";
+import { GET as getFigmaThemeFile } from "../src/app/api/themes/figma/[slug]/route.ts";
 import { THEME_CATALOG } from "../src/generated/theme-catalog";
 import { FIGMA_THEME_FILES, FIGMA_THEME_INDEX } from "../src/generated/theme-catalog-figma";
 import type {
@@ -29,6 +30,12 @@ function catalogTheme(slug: string): ThemeCatalogEntry {
     throw new Error(`missing theme ${slug}`);
   }
   return theme;
+}
+
+async function getThemeFileDirect(slug: string): Promise<Response> {
+  return await getFigmaThemeFile(new Request(`http://docs.test/api/themes/figma/${slug}`), {
+    params: Promise.resolve({ slug }),
+  });
 }
 
 function token<T extends { $type: string; $value: unknown }>(
@@ -161,8 +168,44 @@ describe("GET /api/themes/figma", () => {
     expect(body).toEqual(FIGMA_THEME_FILES["external-fkas-private"]);
   });
 
-  it("404s an illegal slug", async () => {
-    const response = await fetch(new URL("/api/themes/figma/internal-fkab-private", docsBaseUrl()));
+  it.each(["internal-fkab-private", "constructor", "toString", "__proto__", "not-a-theme"] as const)(
+    "404s %s over HTTP",
+    async (slug) => {
+      const response = await fetch(new URL(`/api/themes/figma/${slug}`, docsBaseUrl()));
+      expect(response.status).toBe(404);
+    }
+  );
+
+  it.each(FIGMA_THEME_INDEX.files.map((file) => file.slug))("serves %s over HTTP", async (slug) => {
+    const response = await fetch(new URL(`/api/themes/figma/${slug}`, docsBaseUrl()));
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toContain("application/design-tokens+json");
+    expect(response.headers.get("content-disposition")).toBe(`attachment; filename="${slug}.tokens.json"`);
+    const body: unknown = await response.json();
+    expect(body).toEqual(FIGMA_THEME_FILES[slug]);
+  });
+});
+
+describe("GET /api/themes/figma/[slug] handler", () => {
+  it.each([
+    "constructor",
+    "toString",
+    "__proto__",
+    "hasOwnProperty",
+    "not-a-theme",
+    "internal-fkab-private",
+  ] as const)("404s %s with an empty body", async (slug) => {
+    const response = await getThemeFileDirect(slug);
     expect(response.status).toBe(404);
+    expect(await response.text()).toBe("");
+  });
+
+  it.each(FIGMA_THEME_INDEX.files.map((file) => file.slug))("serves %s", async (slug) => {
+    const response = await getThemeFileDirect(slug);
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toContain("application/design-tokens+json");
+    expect(response.headers.get("content-disposition")).toBe(`attachment; filename="${slug}.tokens.json"`);
+    const body: unknown = await response.json();
+    expect(body).toEqual(FIGMA_THEME_FILES[slug]);
   });
 });
