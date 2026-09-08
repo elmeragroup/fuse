@@ -15,7 +15,7 @@ Recommended order follows the table. Plans are technically independent. Each exe
 | [011](/Users/tommy.lunde.barvag/src/work/elmera/ui/plans/011-phone-number-field-reset.md)    | Clear uncontrolled phone values on native form reset              | P1       | M      | None       | DONE   |
 | [004](/Users/tommy.lunde.barvag/src/work/elmera/ui/plans/004-packed-consumer-release-age.md) | Enforce the release-age guard in isolated React consumer installs | P2       | M      | None       | DONE   |
 | [005](/Users/tommy.lunde.barvag/src/work/elmera/ui/plans/005-completed-intent-cleanup.md)    | Unregister predictive intent after its callback fires             | P2       | S      | None       | DONE   |
-| [002](/Users/tommy.lunde.barvag/src/work/elmera/ui/plans/002-number-field-localization.md)   | Localize NumberField stepper labels and expose copy overrides     | P2       | S      | None       | TODO   |
+| [002](/Users/tommy.lunde.barvag/src/work/elmera/ui/plans/002-number-field-localization.md)   | Localize NumberField stepper labels and expose copy overrides     | P2       | S      | None       | DONE   |
 | [006](/Users/tommy.lunde.barvag/src/work/elmera/ui/plans/006-theme-storage-events.md)        | Synchronize theme preferences after local-storage clears          | P2       | S      | None       | TODO   |
 | [007](/Users/tommy.lunde.barvag/src/work/elmera/ui/plans/007-empty-artwork-title.md)         | Render artwork with an empty title as decorative                  | P2       | S      | None       | TODO   |
 | [008](/Users/tommy.lunde.barvag/src/work/elmera/ui/plans/008-figma-route-own-slugs.md)       | Return 404 for inherited-property Figma theme slugs               | P2       | S      | None       | TODO   |

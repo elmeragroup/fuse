@@ -21,6 +21,14 @@ import {
 import { ThemeScope } from "../../theme";
 import { NumberField } from "./number-field";
 
+const INCREASE_COPY = { "nb-NO": "Øk", "sv-SE": "Öka", "en-US": "Increase", "fi-FI": "Lisää" } as const;
+const DECREASE_COPY = {
+  "nb-NO": "Reduser",
+  "sv-SE": "Minska",
+  "en-US": "Decrease",
+  "fi-FI": "Vähennä",
+} as const;
+
 function renderField(node: ReactNode, locale: (typeof SUPPORTED_LOCALES)[number] = "en-US") {
   return renderThemed(withLocale(locale, node));
 }
@@ -317,6 +325,59 @@ describe("NumberField", () => {
     expect(document.activeElement).toBe(increment);
     expect(increment.matches(":focus-visible")).toBe(false);
     expectNoFocusRing(groupFrom("Quantity"), "mouse focus on a stepper must not paint the group ring");
+  });
+
+  it("names the steppers from the provider locale and updates them on locale rerender", () => {
+    for (const locale of SUPPORTED_LOCALES) {
+      const { unmount } = renderField(<NumberField label="Quantity" defaultValue={2} />, locale);
+      expect(
+        page.getByRole("button", { name: INCREASE_COPY[locale], exact: true }).query(),
+        locale
+      ).toBeTruthy();
+      expect(
+        page.getByRole("button", { name: DECREASE_COPY[locale], exact: true }).query(),
+        locale
+      ).toBeTruthy();
+      unmount();
+    }
+
+    const { rerender } = renderField(<NumberField label="Amount" defaultValue={1234.5} />, "en-US");
+    expect(page.getByRole("button", { name: INCREASE_COPY["en-US"], exact: true }).query()).toBeTruthy();
+    expect(page.getByRole("button", { name: DECREASE_COPY["en-US"], exact: true }).query()).toBeTruthy();
+    expect(textboxNamed("Amount")).toHaveProperty("value", new Intl.NumberFormat("en-US").format(1234.5));
+
+    rerender(withLocale("nb-NO", <NumberField label="Amount" defaultValue={1234.5} />));
+    expect(page.getByRole("button", { name: INCREASE_COPY["nb-NO"], exact: true }).query()).toBeTruthy();
+    expect(page.getByRole("button", { name: DECREASE_COPY["nb-NO"], exact: true }).query()).toBeTruthy();
+    expect(textboxNamed("Amount")).toHaveProperty("value", new Intl.NumberFormat("nb-NO").format(1234.5));
+  });
+
+  it("lets increaseLabel and decreaseLabel override dictionary names and survive a locale change", () => {
+    const { rerender } = renderField(
+      <NumberField label="Quantity" defaultValue={2} increaseLabel="Add one" decreaseLabel="Remove one" />,
+      "nb-NO"
+    );
+    expect(page.getByRole("button", { name: "Add one", exact: true }).query()).toBeTruthy();
+    expect(page.getByRole("button", { name: "Remove one", exact: true }).query()).toBeTruthy();
+    expect(page.getByRole("button", { name: "Øk", exact: true }).query()).toBeNull();
+    expect(page.getByRole("button", { name: "Reduser", exact: true }).query()).toBeNull();
+
+    rerender(
+      withLocale(
+        "fi-FI",
+        <NumberField label="Quantity" defaultValue={2} increaseLabel="Add one" decreaseLabel="Remove one" />
+      )
+    );
+    expect(page.getByRole("button", { name: "Add one", exact: true }).query()).toBeTruthy();
+    expect(page.getByRole("button", { name: "Remove one", exact: true }).query()).toBeTruthy();
+    expect(page.getByRole("button", { name: "Lisää", exact: true }).query()).toBeNull();
+    expect(page.getByRole("button", { name: "Vähennä", exact: true }).query()).toBeNull();
+  });
+
+  it("overrides stepper names independently", () => {
+    renderField(<NumberField label="Quantity" defaultValue={2} increaseLabel="Add one" />, "sv-SE");
+    expect(page.getByRole("button", { name: "Add one", exact: true }).query()).toBeTruthy();
+    expect(page.getByRole("button", { name: DECREASE_COPY["sv-SE"], exact: true }).query()).toBeTruthy();
   });
 });
 

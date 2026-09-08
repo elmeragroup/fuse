@@ -37,6 +37,15 @@
           "required": false
         },
         {
+          "name": "decreaseLabel",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Accessible name of the decrement stepper. Defaults to the locale dictionary.",
+          "required": false
+        },
+        {
           "name": "defaultValue",
           "origin": "declared",
           "type": "number | undefined",
@@ -88,6 +97,15 @@
           "shortType": null,
           "defaultValue": null,
           "description": "Forwarded to `NumberField.Root`.",
+          "required": false
+        },
+        {
+          "name": "increaseLabel",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Accessible name of the increment stepper. Defaults to the locale dictionary.",
           "required": false
         },
         {

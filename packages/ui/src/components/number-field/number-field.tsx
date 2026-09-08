@@ -4,6 +4,7 @@ import type { ReactElement, ReactNode } from "react";
 
 import { NumberField as NumberFieldPrimitive } from "@base-ui/react/number-field";
 
+import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { CaretDown } from "../../icons/generated/caret-down";
 import { CaretUp } from "../../icons/generated/caret-up";
 import { cn } from "../../styles/cn";
@@ -12,6 +13,7 @@ import { numberFieldGroupClass } from "../../styles/field-box";
 import { withinFocusRingControlClass } from "../../styles/utils";
 import { useElmeraGroupUi } from "../../theme/elmera-group-ui";
 import { FieldFrame } from "../field/field-frame";
+import { numberFieldStrings } from "./intl";
 
 export type NumberFieldProps = {
   /** Visible label, rendered as `Field.Label`. */
@@ -60,6 +62,10 @@ export type NumberFieldProps = {
   className?: string;
   /** Accessible name forwarded to the input for label-less usage. */
   "aria-label"?: string;
+  /** Accessible name of the increment stepper. Defaults to the locale dictionary. */
+  increaseLabel?: string;
+  /** Accessible name of the decrement stepper. Defaults to the locale dictionary. */
+  decreaseLabel?: string;
   /** Native `autoFocus` forwarded to the input. */
   autoFocus?: boolean;
   /** Forwarded to `NumberField.Root`. */
@@ -98,8 +104,11 @@ export function NumberField({
   id,
   autoFocus,
   "aria-label": ariaLabel,
+  increaseLabel,
+  decreaseLabel,
 }: NumberFieldProps): ReactElement {
   const { locale } = useElmeraGroupUi();
+  const strings = useLocalizedStrings(numberFieldStrings);
   const controlledValue =
     defaultValue !== undefined ? value : value == null || Number.isNaN(value) ? null : value;
 
@@ -149,10 +158,14 @@ export function NumberField({
             <div className="text-sm px-2 py-1 text-muted-foreground">{denomination}</div>
           ) : null}
           <div className="flex h-full flex-col border-s">
-            <NumberFieldPrimitive.Increment className={cn(stepperButton, "border-b")}>
+            <NumberFieldPrimitive.Increment
+              className={cn(stepperButton, "border-b")}
+              aria-label={increaseLabel ?? strings.format("increase")}>
               <CaretUp aria-hidden className="size-4" />
             </NumberFieldPrimitive.Increment>
-            <NumberFieldPrimitive.Decrement className={stepperButton}>
+            <NumberFieldPrimitive.Decrement
+              className={stepperButton}
+              aria-label={decreaseLabel ?? strings.format("decrease")}>
               <CaretDown aria-hidden className="size-4" />
             </NumberFieldPrimitive.Decrement>
           </div>

@@ -23,6 +23,7 @@ export const metadata = componentMetadata("number-field");
 The composite face is `isDisabled` / `isInvalid` / `isPending` / `isSuccess`,
 `onChange(value)`, `minValue` / `maxValue` / `formatOptions`, and `errorMessage` as a
 `ReactNode`. There is no `locale` prop — formatting follows `ElmeraGroupUiProvider`.
+The stepper names come from the locale dictionary; `increaseLabel` / `decreaseLabel` override them.
 Clearing the input reports `NaN`. The field box pins the `md` density rung; there is
 no size axis.
 

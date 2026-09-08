@@ -32,6 +32,8 @@ test("NumberFieldProps is the closed composite face", () => {
   expectTypeOf<NumberFieldProps>().toHaveProperty("name");
   expectTypeOf<NumberFieldProps>().toHaveProperty("className");
   expectTypeOf<NumberFieldProps>().toHaveProperty("aria-label");
+  expectTypeOf<NumberFieldProps["increaseLabel"]>().toEqualTypeOf<string | undefined>();
+  expectTypeOf<NumberFieldProps["decreaseLabel"]>().toEqualTypeOf<string | undefined>();
   expectTypeOf<NumberFieldProps>().toHaveProperty("autoFocus");
   expectTypeOf<NumberFieldProps>().toHaveProperty("id");
   expectTypeOf<NumberFieldProps>().not.toHaveProperty("locale");
@@ -62,7 +64,12 @@ test("the element takes the public props and no primitive or locale aliases", ()
     />
   );
   const _labelLess = <NumberField aria-label="Count" autoFocus id="count" name="count" />;
+  const _stepperLabels = <NumberField label="Quantity" increaseLabel="Add one" decreaseLabel="Remove one" />;
 
+  // @ts-expect-error stepper labels are strings
+  const _noNumericIncrease = <NumberField increaseLabel={1} />;
+  // @ts-expect-error stepper labels are strings
+  const _noNumericDecrease = <NumberField decreaseLabel={1} />;
   // @ts-expect-error locale is provider-only
   const _noLocale = <NumberField locale="nb-NO" />;
   // @ts-expect-error no size axis
