@@ -185,11 +185,19 @@ describe("ThemeProvider committed color-scheme options", () => {
     expect(document.documentElement.getAttribute("data-theme")).toBe("light");
 
     window.dispatchEvent(
-      new StorageEvent("storage", { key: DEFAULT_COLOR_SCHEME_STORAGE_KEY, newValue: "dark" })
+      new StorageEvent("storage", {
+        key: DEFAULT_COLOR_SCHEME_STORAGE_KEY,
+        newValue: "dark",
+        storageArea: window.localStorage,
+      })
     );
     expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
     window.dispatchEvent(
-      new StorageEvent("storage", { key: DEFAULT_COLOR_SCHEME_STORAGE_KEY, newValue: "light" })
+      new StorageEvent("storage", {
+        key: DEFAULT_COLOR_SCHEME_STORAGE_KEY,
+        newValue: "light",
+        storageArea: window.localStorage,
+      })
     );
     expect(document.documentElement.getAttribute("data-theme")).toBe("light");
 

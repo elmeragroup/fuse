@@ -119,7 +119,20 @@ function DocumentThemeWriter({
     store.recoverDocument();
 
     const onStorage = (event: StorageEvent) => {
-      if (event.key !== options.storageKey) {
+      if (event.key !== null && event.key !== options.storageKey) {
+        return;
+      }
+      let localArea: Storage;
+      try {
+        localArea = window.localStorage;
+      } catch {
+        return;
+      }
+      if (event.storageArea !== localArea) {
+        return;
+      }
+      if (event.key === null) {
+        store.receivePreference(readStoredColorScheme(options.storageKey, options.defaultColorScheme));
         return;
       }
       store.receivePreference(parseColorScheme(event.newValue, options.defaultColorScheme));
