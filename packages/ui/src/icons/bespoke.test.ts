@@ -69,6 +69,69 @@ describe("bespoke icons", () => {
     expect(decorative).not.toContain("<title>");
   });
 
+  it("treats an empty title as decorative", () => {
+    const emptyVipps = renderToStaticMarkup(createElement(Vipps, { title: "" }));
+    expect(emptyVipps).toContain('aria-hidden="true"');
+    expect(emptyVipps).toContain('focusable="false"');
+    expect(emptyVipps).not.toContain('role="img"');
+    expect(emptyVipps).not.toContain("<title>");
+
+    const omittedVipps = renderToStaticMarkup(createElement(Vipps));
+    expect(omittedVipps).toContain('aria-hidden="true"');
+    expect(omittedVipps).toContain('focusable="false"');
+    expect(omittedVipps).not.toContain('role="img"');
+    expect(omittedVipps).not.toContain("<title>");
+
+    const titledVipps = renderToStaticMarkup(createElement(Vipps, { title: "Vipps" }));
+    expect(titledVipps).toContain('role="img"');
+    expect(titledVipps).toContain("<title>Vipps</title>");
+    expect(titledVipps).not.toContain("aria-hidden");
+
+    // Nonempty means meaningful: whitespace-only is still a titled image, not decorative.
+    const whitespaceVipps = renderToStaticMarkup(createElement(Vipps, { title: " " }));
+    expect(whitespaceVipps).toContain('role="img"');
+    expect(whitespaceVipps).toContain("<title> </title>");
+
+    const emptyTelinet = renderToStaticMarkup(createElement(logosByName.TelinetLogo, { title: "" }));
+    expect(emptyTelinet).toContain('aria-hidden="true"');
+    expect(emptyTelinet).toContain('focusable="false"');
+    expect(emptyTelinet).not.toContain('role="img"');
+    expect(emptyTelinet).not.toContain("<title>");
+
+    const omittedTelinet = renderToStaticMarkup(createElement(logosByName.TelinetLogo));
+    expect(omittedTelinet).toContain('aria-hidden="true"');
+    expect(omittedTelinet).toContain('focusable="false"');
+    expect(omittedTelinet).not.toContain('role="img"');
+    expect(omittedTelinet).not.toContain("<title>");
+
+    const titledTelinet = renderToStaticMarkup(createElement(logosByName.TelinetLogo, { title: "Telinet" }));
+    expect(titledTelinet).toContain('role="img"');
+    expect(titledTelinet).toContain("<title>Telinet</title>");
+    expect(titledTelinet).not.toContain("aria-hidden");
+
+    const whitespaceTelinet = renderToStaticMarkup(createElement(logosByName.TelinetLogo, { title: " " }));
+    expect(whitespaceTelinet).toContain('role="img"');
+    expect(whitespaceTelinet).toContain("<title> </title>");
+  });
+
+  it("lets caller SVG attributes override decorativeSvgProps", () => {
+    const hiddenWhileTitled = renderToStaticMarkup(
+      createElement(Vipps, { title: "Vipps", "aria-hidden": true })
+    );
+    expect(hiddenWhileTitled).toContain('role="img"');
+    expect(hiddenWhileTitled).toContain('aria-hidden="true"');
+
+    const visibleWhileDecorative = renderToStaticMarkup(createElement(Vipps, { "aria-hidden": false }));
+    expect(visibleWhileDecorative).toContain('aria-hidden="false"');
+
+    const labeledUntitled = renderToStaticMarkup(
+      createElement(Vipps, { "aria-label": "Pay with Vipps", role: "img" })
+    );
+    expect(labeledUntitled).toContain('role="img"');
+    expect(labeledUntitled).toContain('aria-label="Pay with Vipps"');
+    expect(labeledUntitled).toContain('aria-hidden="true"');
+  });
+
   it("uses canonical Signing fill classes and rejects Material leftovers", () => {
     const html = renderToStaticMarkup(createElement(Signing));
     expect(html).toContain("fill-secondary-soft");
@@ -213,5 +276,12 @@ describe("illustrations", () => {
     const decorative = renderToStaticMarkup(createElement(FkasMeter));
     expect(decorative).toContain("aria-hidden");
     expect(decorative).not.toContain("<title>");
+  });
+
+  it("treats an empty title as decorative", () => {
+    const empty = renderToStaticMarkup(createElement(FkasMeter, { title: "" }));
+    expect(empty).toContain('aria-hidden="true"');
+    expect(empty).not.toContain('role="img"');
+    expect(empty).not.toContain("<title>");
   });
 });

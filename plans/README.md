@@ -17,7 +17,7 @@ Recommended order follows the table. Plans are technically independent. Each exe
 | [005](/Users/tommy.lunde.barvag/src/work/elmera/ui/plans/005-completed-intent-cleanup.md)    | Unregister predictive intent after its callback fires             | P2       | S      | None       | DONE   |
 | [002](/Users/tommy.lunde.barvag/src/work/elmera/ui/plans/002-number-field-localization.md)   | Localize NumberField stepper labels and expose copy overrides     | P2       | S      | None       | DONE   |
 | [006](/Users/tommy.lunde.barvag/src/work/elmera/ui/plans/006-theme-storage-events.md)        | Synchronize theme preferences after local-storage clears          | P2       | S      | None       | DONE   |
-| [007](/Users/tommy.lunde.barvag/src/work/elmera/ui/plans/007-empty-artwork-title.md)         | Render artwork with an empty title as decorative                  | P2       | S      | None       | TODO   |
+| [007](/Users/tommy.lunde.barvag/src/work/elmera/ui/plans/007-empty-artwork-title.md)         | Render artwork with an empty title as decorative                  | P2       | S      | None       | DONE   |
 | [008](/Users/tommy.lunde.barvag/src/work/elmera/ui/plans/008-figma-route-own-slugs.md)       | Return 404 for inherited-property Figma theme slugs               | P2       | S      | None       | TODO   |
 | [009](/Users/tommy.lunde.barvag/src/work/elmera/ui/plans/009-flag-source-provenance.md)      | Verify the pinned flag checkout before copying assets             | P2       | M      | None       | TODO   |
 | [010](/Users/tommy.lunde.barvag/src/work/elmera/ui/plans/010-keyboard-spec-exceptions.md)    | Document the existing menu and tab keyboard defaults              | P3       | S      | None       | TODO   |

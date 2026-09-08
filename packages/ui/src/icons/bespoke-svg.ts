@@ -9,8 +9,9 @@ export type LogoProps = BespokeSvgProps & {
 };
 
 /**
- * Accessible name is only the optional `title` prop (role=img + a prop-driven
- * `<title>`). Decorative otherwise. Never ship a static `<title>`.
+ * Accessible name is only a nonempty `title` prop (role=img + a prop-driven
+ * `<title>`). Omitted or empty title renders decorative (`aria-hidden`).
+ * Never ship a static `<title>`.
  * Fixed-palette artwork is permitted for illustrations (multi-color hex or
  * theme fill classes). Bespoke assets are server-safe: no hooks, no
  * "use client". Referenced clip-path / mask / gradient ids are namespaced
@@ -19,7 +20,7 @@ export type LogoProps = BespokeSvgProps & {
  * the namespace exists to prevent CROSS-asset collisions.
  */
 export function decorativeSvgProps(title: string | undefined) {
-  if (title !== undefined) {
+  if (title) {
     return { role: "img" as const };
   }
   return { "aria-hidden": true as const, focusable: false as const };
