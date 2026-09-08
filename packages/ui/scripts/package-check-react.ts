@@ -4,12 +4,19 @@ import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { npmInstallArgs, releaseAgeCutoff } from "./packed-consumer-install-policy";
 import { packageRootFromScript } from "./paths";
 
 const require = createRequire(import.meta.url);
 const packageRoot = packageRootFromScript(import.meta.url);
 
 type ReactPair = { react: string; reactDom: string };
+
+type Spawn = (
+  command: string,
+  args: readonly string[],
+  options: { cwd: string; encoding: "utf8"; timeout: number }
+) => { status: number | null; stdout: string; stderr: string };
 
 function installedVersion(name: string): string {
   // SAFETY: Node resolves the installed dependency's package manifest.
@@ -20,7 +27,13 @@ function installedVersion(name: string): string {
 }
 
 /** Install the tarball with real peer pairs, without workspace symlinks or aliases. */
-export function checkPackedReactCompatibility(tarball: string): void {
+export function checkPackedReactCompatibility(
+  tarball: string,
+  options: { spawn?: Spawn; now?: Date } = {}
+): void {
+  const spawn: Spawn = options.spawn ?? spawnSync;
+  const now = options.now ?? new Date();
+  const cutoff = releaseAgeCutoff(now);
   const pairs: ReactPair[] = [
     { react: "19.0.0", reactDom: "19.0.0" },
     { react: "19.1.1", reactDom: "19.1.1" },
@@ -41,11 +54,11 @@ export function checkPackedReactCompatibility(tarball: string): void {
           },
         })
       );
-      const install = spawnSync(
-        "npm",
-        ["install", "--ignore-scripts", "--no-audit", "--no-fund", "--package-lock=false"],
-        { cwd: consumer, encoding: "utf8", timeout: 180_000 }
-      );
+      const install = spawn("npm", npmInstallArgs(cutoff), {
+        cwd: consumer,
+        encoding: "utf8",
+        timeout: 180_000,
+      });
       if (install.status !== 0) {
         throw new Error(`Packed React ${pair.react} install failed:\n${install.stderr || install.stdout}`);
       }
@@ -53,7 +66,7 @@ export function checkPackedReactCompatibility(tarball: string): void {
         join(consumer, "probe.ts"),
         readFileSync(join(packageRoot, "test/packed-consumer/react-probe.ts"))
       );
-      const probe = spawnSync(process.execPath, ["probe.ts", pair.react, pair.reactDom], {
+      const probe = spawn(process.execPath, ["probe.ts", pair.react, pair.reactDom], {
         cwd: consumer,
         encoding: "utf8",
         timeout: 30_000,
