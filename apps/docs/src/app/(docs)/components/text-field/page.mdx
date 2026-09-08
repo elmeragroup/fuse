@@ -26,8 +26,9 @@ The composite face is `isDisabled` / `isInvalid` / `isPending` / `isSuccess`,
 `onChange(value)`, and `errorMessage` as a `ReactNode`. `isDisabled` disables the inner
 input natively. `filter="numeric"` absorbs the old numeric-only wrapper: non-digits never
 reach `onChange`, and `inputMode="numeric"` is applied unless you pass `inputMode`
-yourself. `variant="card"` composes `cardVariants`; `variant="inline"` restyles the input
-chrome. Unset `variant` is the plain Input.
+yourself. An uncontrolled numeric field restores its `defaultValue` on native form reset
+without calling `onChange`. `variant="card"` composes `cardVariants`; `variant="inline"`
+restyles the input chrome. Unset `variant` is the plain Input.
 
 </Prose>
 

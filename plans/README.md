@@ -11,7 +11,7 @@ Recommended order follows the table. Plans are technically independent. Each exe
 | Plan                                                                                         | Title                                                             | Priority | Effort | Depends on | Status |
 | -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | -------- | ------ | ---------- | ------ |
 | [001](/Users/tommy.lunde.barvag/src/work/elmera/ui/plans/001-hidden-content-focus.md)        | Remove hidden sidebar and footer content from keyboard navigation | P1       | M      | None       | DONE   |
-| [003](/Users/tommy.lunde.barvag/src/work/elmera/ui/plans/003-numeric-text-field-reset.md)    | Restore native reset for uncontrolled numeric TextField           | P1       | M      | None       | TODO   |
+| [003](/Users/tommy.lunde.barvag/src/work/elmera/ui/plans/003-numeric-text-field-reset.md)    | Restore native reset for uncontrolled numeric TextField           | P1       | M      | None       | DONE   |
 | [011](/Users/tommy.lunde.barvag/src/work/elmera/ui/plans/011-phone-number-field-reset.md)    | Clear uncontrolled phone values on native form reset              | P1       | M      | None       | TODO   |
 | [004](/Users/tommy.lunde.barvag/src/work/elmera/ui/plans/004-packed-consumer-release-age.md) | Enforce the release-age guard in isolated React consumer installs | P2       | M      | None       | TODO   |
 | [005](/Users/tommy.lunde.barvag/src/work/elmera/ui/plans/005-completed-intent-cleanup.md)    | Unregister predictive intent after its callback fires             | P2       | S      | None       | TODO   |

@@ -13,7 +13,7 @@
 - **Category**: bug
 - **Planned at**: commit `f14057be`, 2026-09-08
 - **Audit finding**: 3
-- **Status**: TODO
+- **Status**: DONE
 
 ## Why this matters
 
