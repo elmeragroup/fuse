@@ -184,6 +184,7 @@ describe("ThemeProvider committed color-scheme options", () => {
     expect(attemptedRender).toHaveBeenCalled();
     expect(document.documentElement.getAttribute("data-theme")).toBe("light");
 
+    window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "dark");
     window.dispatchEvent(
       new StorageEvent("storage", {
         key: DEFAULT_COLOR_SCHEME_STORAGE_KEY,
@@ -192,6 +193,7 @@ describe("ThemeProvider committed color-scheme options", () => {
       })
     );
     expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "light");
     window.dispatchEvent(
       new StorageEvent("storage", {
         key: DEFAULT_COLOR_SCHEME_STORAGE_KEY,
