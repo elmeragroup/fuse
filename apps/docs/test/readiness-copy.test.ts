@@ -17,11 +17,16 @@ describe("release readiness copy", () => {
     expect(html, "releases must name pending org/repository setup rather than implying it is done").toContain(
       "pending org and repository setup"
     );
-    expect(html, "releases must separate designed flow from current readiness").toContain("Designed flow");
-    expect(
-      html,
-      "releases must say merging the Version Packages PR does not yet publish automatically"
-    ).toContain("does not yet publish automatically");
+    expect(html, "releases must describe manual release preparation").toContain("Manual release flow");
+    expect(html, "releases must say merging a release PR does not publish").toContain(
+      "does not publish to npm"
+    );
+    expect(html, "releases must explain how to apply pending changesets").toContain(
+      "pnpm exec changeset version"
+    );
+    expect(html, "releases must keep publishing separate from merging").toContain(
+      "Merging a PR will not trigger"
+    );
     expect(
       html,
       "releases must label latest as a designed/target dist-tag, not a live npm channel"
@@ -48,10 +53,9 @@ describe("release readiness copy", () => {
 
   it("does not keep the old unconditional publish, preview, or Trusted Publisher claims", async () => {
     const html = await fetchText("/releases");
-    expect(
-      html,
-      "releases must not claim that merging the Version Packages PR publishes today"
-    ).not.toContain(OLD_RELEASE_CLAIMS[0]);
+    expect(html, "releases must not claim that merging a release PR publishes today").not.toContain(
+      OLD_RELEASE_CLAIMS[0]
+    );
     expect(html, "releases must not claim every PR gets an installable build today").not.toContain(
       OLD_RELEASE_CLAIMS[1]
     );

@@ -1,8 +1,8 @@
 # Release runbook
 
-Current state: [version-packages.yml](../../.github/workflows/version-packages.yml) opens and updates a Version Packages PR. It does not publish. The first publish still requires the setup in §7 and a release workflow implementing the gates in §5. Keep the Version Packages PR open until both exist.
+Current state: maintainers manually prepare release PRs from accumulated changesets. No workflow automatically opens a version PR or publishes to npm. Merging a release PR records the version and changelog only.
 
-Sections 2, 3, and 6 describe the intended publishing flow after activation; they do not claim that publishing or previews are active today.
+Publishing and previews remain pending. Sections 3 and 6 describe the intended setup after activation; the first publish requires §7 items 1–4 and a manually triggered publishing workflow implementing §5.
 
 ## 1 Scope & home
 
@@ -10,18 +10,38 @@ Sections 2, 3, and 6 describe the intended publishing flow after activation; the
 - **Home**: a **public repository in the existing Elmera GitHub org**. CI is **GitHub Actions**. Publishes go to **public npmjs.com** under the `@elmeragroup` org, with the maintainer (Tommy Barvåg) as npm org owner — he holds the open-distribution authority (§4).
 - Versioning follows **semver**; the changelog is generated from changesets (§2), never hand-edited.
 
-## 2 Versioning & publish workflow (changesets)
+## 2 Manual release preparation
 
-Versioning uses Changesets and `changesets/action`. The Version Packages PR step is active; publishing and preview steps require activation.
+Changesets collect release notes and calculate versions. The maintainer decides when to prepare a release and opens the PR manually.
 
-1. **Changeset per user-facing PR.** Every PR that changes published behavior (API, styles, tokens, types, docs strings shipped in the package) includes a changeset file declaring bump level (`patch`/`minor`/`major`) and a human-readable summary. Internal-only PRs (CI, docs site, tests) carry the `no-changeset` label instead. Presence is enforced in the merge gate (see [tooling](tooling.md)): a PR fails without a changeset unless it is labeled `no-changeset`.
-2. **Version-Packages PR.** `changesets/action` maintains a bot-owned "Version Packages" PR on `main` that accumulates pending changesets, bumps `package.json`, and writes `CHANGELOG.md` entries from the changeset summaries.
-3. **Publish on merge.** Merging the Version-Packages PR triggers the release workflow, which builds, runs the publish gates (§5), and publishes to npm. **Publishing happens only from this workflow** — never from a developer machine; local `npm publish` is unauthorized by construction because no token exists (§6).
-4. Git tags and GitHub Releases are created by the action per published version.
+1. **Collect changesets during development.** Every PR that changes published behavior (API, styles, tokens, types, doc strings shipped in the package) includes a changeset created with `pnpm changeset`. Choose `patch` for fixes, `minor` for compatible additions, or `major` for breaking changes. Write the summary for package consumers. One file can cover related changes; separate files can describe independent changes within the same PR. Internal-only PRs (CI, docs site, tests) carry the `no-changeset` label instead.
+2. **Merge as many PRs as needed.** Their changeset files accumulate on `main` without changing the package version or publishing anything. The highest pending bump determines the next version; multiple patch or minor changesets do not each increment the version separately.
+3. **Start a release branch from the latest `main`.** Use a clean checkout and a branch such as `codex/release-ui`. Install the pinned dependencies, inspect the pending release, then apply it:
+
+   ```sh
+   pnpm install --frozen-lockfile
+   pnpm exec changeset status
+   pnpm exec changeset version
+   pnpm install --lockfile-only
+   pnpm ci:checks
+   ```
+
+   `pnpm changeset` adds a note; `pnpm exec changeset version` consumes the pending notes. Versioning updates `packages/ui/package.json`, generates `packages/ui/CHANGELOG.md`, and deletes the consumed changeset files. The lockfile command refreshes any affected workspace metadata. The CLI does not commit these changes automatically.
+
+4. **Review and open the release PR.** Check the version, generated changelog, changeset deletions, and any lockfile changes. Correct inaccurate source changeset summaries before regenerating; never hand-edit the generated changelog. Commit the resulting changes and open a PR targeting `main`, with a title such as `chore: release @elmeragroup/ui <version>`. Apply the `no-changeset` label because this PR consumes changesets rather than adding one. All other merge checks still apply; there is no branch-name exemption.
+5. **Merge after review and CI pass.** This records the version and changelog. It does not publish to npm, create a release tag, or create a GitHub Release. Changesets merged after the release branch was prepared can remain pending for the next release. To include them in this release, recreate the versioning changes from the updated `main` instead of layering another version bump onto the prepared one.
+
+There is no need to add a changeset describing the release procedure itself. Do not run versioning on every feature branch or manually bump the package version alongside each change.
+
+## 2.1 Publishing is a separate manual action (pending)
+
+After the prerequisites and publishing workflow are implemented, a maintainer will explicitly trigger publishing for the reviewed release commit on `main`. Merging a feature PR or release PR will not trigger publishing. The workflow must build and check the artifact using §5, authenticate using §6, and publish the checked tarball. Git tags and GitHub Releases should be created only after a successful publish.
+
+Publishing remains a CI operation, never a local `npm publish`. Preparing a version PR locally does not require npm publishing credentials.
 
 ## 3 Channels & previews
 
-- **`latest`**: stable releases from `main` via the §2 flow.
+- **`latest`**: stable releases from `main` via the manually triggered publishing flow in §2.1.
 - **`beta`**: prerelease channel via **changesets pre-mode** (`changeset pre enter beta` / `exit`), published under the `beta` dist-tag. Its designated use is the **OrderModuleWeb base-ui adoption period**; the channel exists for any future migration window on the same mechanics. Pre-mode versions never move the `latest` tag.
 - **Per-PR previews**: **pkg-pr-new** publishes an installable build of every PR (`npm i https://pkg.pr.new/...`), so consuming apps can trial a change before merge. Preview builds are ephemeral, carry no dist-tag, and are not releases — no changeset, no changelog entry, no provenance claim.
 
@@ -57,7 +77,7 @@ The full merge gate (lint, types, unit/browser tests, changeset presence) runs o
 - **npm Trusted Publishing (OIDC).** The `@elmeragroup/ui` package is bound to the repo's release workflow as a Trusted Publisher. GitHub Actions authenticates via OIDC per run; **no npm token exists in repository or org secrets** — nothing long-lived to leak or rotate.
 - **Provenance**: the release workflow sets `NPM_CONFIG_PROVENANCE: true`, attaching a signed provenance attestation (source repo, commit, workflow) to every published version, verifiable via `npm audit signatures`.
 - **2FA is required for all members** of the npm `@elmeragroup` org.
-- Publishes occur **only** from the release workflow on `main` (§2.3). The beta channel (§3) publishes through the same workflow in pre-mode — same OIDC identity, same gates.
+- Publishes will occur **only** from the manually triggered release workflow for a reviewed release commit on `main` (§2.1). The beta channel (§3) publishes through the same workflow in pre-mode — same OIDC identity, same gates.
 
 ## 7 Org-setup prerequisites (pending)
 
@@ -75,8 +95,8 @@ Until items 1–4 are done, publishing is blocked. Items 5–6 enable docs previ
 ## 8 Activate publishing
 
 1. Complete and verify the npm/GitHub prerequisites in §7 items 1–4.
-2. Add a release workflow with the §5 artifact gates and §6 Trusted Publishing configuration. Reuse the checked tarball; never publish a separately rebuilt artifact.
-3. Verify the workflow and account binding before merging the bot-owned Version Packages PR. The existing version workflow alone cannot publish a release.
+2. Add a manually triggered release workflow with the §5 artifact gates and §6 Trusted Publishing configuration. Require a reviewed release commit on `main`; do not trigger publishing on push or PR merge. Reuse the checked tarball; never publish a separately rebuilt artifact.
+3. Verify the workflow and account binding before the first manual publish. A merged release PR prepares the version and changelog but does not publish it.
 4. After activation, update this guide's current-state paragraph and the README so contributors can distinguish working release channels from planned ones.
 
 The Effect stable-version follow-up remains in the [roadmap](roadmap.md#12-effect-4-rc--stable).

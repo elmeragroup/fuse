@@ -14,29 +14,43 @@ export default function ReleasesPage(): ReactElement {
       <h2 id="current-readiness">Current readiness</h2>
       <p>
         Automated npm publishing and per-PR preview infrastructure are <strong>not active yet</strong>.
-        Changesets currently maintain the Version Packages PR; merging it does not yet publish automatically.
-        Automated publishing is planned after the pending org and repository setup — npm package and scope
-        ownership, OIDC Trusted Publishing, and required org 2FA. Per-PR installable package previews and docs
-        previews are planned, not available for every PR today; they wait on Vercel and pkg-pr-new.
+        Maintainers prepare release PRs manually from accumulated changesets. Merging a release PR records the
+        version and changelog; it does not publish to npm. A manually triggered publishing workflow is planned
+        after the pending org and repository setup: npm package and scope ownership, OIDC Trusted Publishing,
+        and required org 2FA. Per-PR installable package previews and docs previews are planned, not available
+        for every PR today; they wait on Vercel and pkg-pr-new.
       </p>
 
-      <h2 id="designed-flow">Designed flow</h2>
+      <h2 id="designed-flow">Manual release flow</h2>
       <ol>
         <li>
-          <strong>A changeset per user-facing PR.</strong> Any change to published behaviour — API, styles,
-          tokens, types, shipped strings — carries a changeset declaring its bump level and a human-readable
-          summary. Internal-only PRs are labelled instead. The merge gate enforces this.
+          <strong>Add changesets while working.</strong> Run <code>pnpm changeset</code> for changes to
+          published behaviour, including API, styles, tokens, types, and shipped strings. Select the bump
+          level and write a summary for consumers. Internal-only PRs use the <code>no-changeset</code> label.
         </li>
         <li>
-          <strong>A bot-owned Version Packages PR</strong> accumulates the pending changesets, bumps the
-          version and writes the changelog from those summaries. The changelog is never hand-edited.
+          <strong>Merge several PRs.</strong> Their changesets accumulate on <code>main</code>. No workflow
+          automatically opens a release PR or publishes the package.
         </li>
         <li>
-          <strong>Publish on merge (target).</strong> After that setup lands, merging the Version Packages PR
-          is designed to run a release workflow that builds, runs the publish gates and pushes to npm.
-          Publishing is intended to happen only from that workflow. The designed flow uses OIDC so no
-          long-lived npm token should exist on a developer machine, and a local publish is intended to remain
-          unauthorised.
+          <strong>Prepare a release when ready.</strong> Create a branch from the latest <code>main</code>,
+          install dependencies, and run <code>pnpm exec changeset status</code> to review the pending release.
+          Run <code>pnpm exec changeset version</code> to bump the version, generate the changelog, and remove
+          consumed changesets. The highest pending bump wins. Refresh the lockfile with{" "}
+          <code>pnpm install --lockfile-only</code> and run <code>pnpm ci:checks</code>.
+        </li>
+        <li>
+          <strong>Review and merge the release PR.</strong> Commit the version, generated changelog, changeset
+          deletions, and any lockfile changes. Apply the <code>no-changeset</code> label because the PR
+          consumes release notes. Merge after review and CI pass. This records the release version only; it
+          does not publish to npm. The changelog is never hand-edited.
+        </li>
+        <li>
+          <strong>Publish separately (planned).</strong> After the pending setup is complete, a maintainer
+          will explicitly trigger a workflow for the reviewed release commit on <code>main</code>. It will
+          build, run the publish gates, and publish the checked package to npm. Merging a PR will not trigger
+          publishing. The designed flow uses OIDC so no long-lived npm token should exist on a developer
+          machine, and local publishing remains outside this flow.
         </li>
       </ol>
 

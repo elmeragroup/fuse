@@ -74,7 +74,9 @@ The API extractor and the `elmera/*` and `anti-slop/*` lint rules come from [`@e
 
 ## Release
 
-The [release runbook](docs/spec/release.md) separates the active Version Packages workflow from the publishing pipeline that still needs setup. Do not merge the bot's Version Packages PR until the npm/GitHub prerequisites and publish workflow are ready.
+Releases are prepared manually. Merge user-facing PRs with their changesets, then create a release branch from the latest `main` when ready. Run `pnpm exec changeset status`, followed by `pnpm exec changeset version`, to combine the pending notes into a version bump and generated changelog. Refresh the lockfile with `pnpm install --lockfile-only`, run `pnpm ci:checks`, and commit the result in a release PR with the `no-changeset` label.
+
+Merging that PR records the version and changelog; it does not publish to npm. No workflow automatically opens release PRs. The [release runbook](docs/spec/release.md) covers the manual procedure and the separate publishing workflow that still needs setup.
 
 ## Reading by task
 
