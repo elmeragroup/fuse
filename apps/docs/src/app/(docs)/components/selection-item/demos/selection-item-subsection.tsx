@@ -17,7 +17,7 @@ export function SelectionItemSubsection() {
           <SelectionItem.Title>Spot price</SelectionItem.Title>
           <SelectionItem.Description>Follows the hourly market rate.</SelectionItem.Description>
         </SelectionItem.Content>
-        <SelectionItem.SubSection mode={selected ? "visible" : "hidden"} inert={selected ? undefined : true}>
+        <SelectionItem.SubSection mode={selected ? "visible" : "hidden"}>
           <button type="button">Edit meter details</button>
         </SelectionItem.SubSection>
       </SelectionItem.Shell>
