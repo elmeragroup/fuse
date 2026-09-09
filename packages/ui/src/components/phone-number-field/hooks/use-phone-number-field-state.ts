@@ -20,7 +20,7 @@ import type {
   PhoneNumberFormat,
   ProcessedPhoneInput,
 } from "../phone-engine";
-import { receiveValue, reconcile, snapshot, visibleSnapshot } from "../phone-field-state";
+import { clearedForReset, receiveValue, reconcile, snapshot, visibleSnapshot } from "../phone-field-state";
 import type { PhoneState } from "../phone-field-state";
 
 export type UsePhoneNumberFieldStateOptions = {
@@ -46,7 +46,8 @@ export type UsePhoneNumberFieldStateReturn = {
   selectedCountry: PhoneNumberCountry;
   countries: PhoneNumberCountry[];
   getCountryName: (countryCode: CountryCode) => string;
-  resetUncontrolled: () => void;
+  /** Native form-reset handler, or null when the parent owns `value`. */
+  resetUncontrolled: (() => void) | null;
 };
 
 export function usePhoneNumberFieldState({
@@ -124,18 +125,6 @@ export function usePhoneNumberFieldState({
     handleInputChange(event.clipboardData.getData("text"));
   };
 
-  const resetUncontrolled = () => {
-    setState((previous) => {
-      if (previous.value !== undefined) return previous;
-      const { country } = visibleSnapshot(previous);
-      return {
-        ...previous,
-        accepted: snapshot({ digits: "", country }, previous.configuration),
-        proposal: null,
-      };
-    });
-  };
-
   const getCountryName = useMemo(() => countryNameResolver(locale), [locale]);
   return {
     ...values,
@@ -145,6 +134,11 @@ export function usePhoneNumberFieldState({
     selectedCountry,
     countries,
     getCountryName,
-    resetUncontrolled,
+    resetUncontrolled:
+      value === undefined
+        ? () => {
+            setState(clearedForReset);
+          }
+        : null,
   };
 }

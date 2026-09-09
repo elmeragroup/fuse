@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { defaultMetadata, getCountries, resolveSelectedCountry } from "./phone-engine";
 import type { PhoneNumberCountry } from "./phone-engine";
-import { receiveValue, reconcile, snapshot, visibleSnapshot } from "./phone-field-state";
+import { clearedForReset, receiveValue, reconcile, snapshot, visibleSnapshot } from "./phone-field-state";
 import type { PhoneConfiguration, PhoneState } from "./phone-field-state";
 
 const swedishMetadata: MetadataJson = {
@@ -188,5 +188,23 @@ describe("reconcile", () => {
     expect(next.accepted.country.code).toBe("SE");
     expect(next.accepted.values.displayValue).toBe("+4741234567");
     expect(next.accepted.values.outputValue).toBe("+4741234567");
+  });
+});
+
+describe("clearedForReset", () => {
+  it("clears digits and the proposal while keeping the visible country", () => {
+    const configuration = configure(defaultMetadata);
+    const stored = stateWith(configuration, undefined, "41234567");
+    const next = clearedForReset(stored);
+    expect(next.accepted.digits).toBe("");
+    expect(next.accepted.country).toBe(visibleSnapshot(stored).country);
+    expect(next.proposal).toBeNull();
+    expect(next.value).toBeUndefined();
+    expect(next.configuration).toBe(configuration);
+  });
+
+  it("is a no-op when the value is parent-owned", () => {
+    const stored = stateWith(configure(defaultMetadata), "+4741234567", "41234567");
+    expect(clearedForReset(stored)).toBe(stored);
   });
 });

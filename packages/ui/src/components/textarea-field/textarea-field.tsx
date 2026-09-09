@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { ChangeEvent, ComponentProps, ReactElement, ReactNode } from "react";
 
 import { useFormReset } from "../../hooks/use-form-reset";
@@ -59,16 +59,15 @@ export function TextareaField({
 }: TextareaFieldProps): ReactElement {
   const isControlled = value !== undefined;
   const [uncontrolledLength, setUncontrolledLength] = useState(() => (defaultValue ?? "").length);
-  const [textarea, setTextarea] = useState<HTMLTextAreaElement | null>(null);
-  const mergedRef = useMergedRefs(ref, setTextarea);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const mergedRef = useMergedRefs(ref, textareaRef);
   useFormReset(
-    textarea,
+    textareaRef,
     isControlled
       ? null
       : () => {
-          setUncontrolledLength(textarea?.value.length ?? 0);
-        },
-    props.form
+          setUncontrolledLength(textareaRef.current?.value.length ?? 0);
+        }
   );
   const currentLength = value === undefined ? uncontrolledLength : value.length;
 

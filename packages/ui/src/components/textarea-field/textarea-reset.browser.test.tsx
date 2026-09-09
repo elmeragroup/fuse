@@ -44,7 +44,7 @@ it("preserves a canceled reset and removes the form subscription on unmount", as
   );
   const form = host.querySelector("form");
   if (!form) throw new Error("Expected form");
-  const remove = vi.spyOn(form, "removeEventListener");
+  const remove = vi.spyOn(document, "removeEventListener");
   await userEvent.fill(page.getByRole("textbox", { name: "Notes" }), "Edited");
   form.reset();
   await expect.element(page.getByRole("textbox", { name: "Notes" })).toHaveValue("Edited");

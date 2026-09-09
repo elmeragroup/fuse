@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 import { useFormReset } from "../../hooks/use-form-reset";
@@ -105,14 +105,10 @@ export function TextField({
 }: TextFieldProps): ReactElement {
   const isControlled = value !== undefined;
   const [internalValue, setInternalValue] = useState(() => defaultValue ?? "");
-  const [inputElement, setInputElement] = useState<HTMLInputElement | null>(null);
-  const mergedRef = useMergedRefs(ref, setInputElement);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const mergedRef = useMergedRefs(ref, inputRef);
   const ownsNumericState = filter === "numeric" && !isControlled;
-  useFormReset(
-    inputElement,
-    ownsNumericState ? () => setInternalValue(defaultValue ?? "") : null,
-    props.form
-  );
+  useFormReset(inputRef, ownsNumericState ? () => setInternalValue(defaultValue ?? "") : null);
 
   useEffect(() => {
     if (filter !== "numeric") {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 // Subpath import (`@base-ui/react/combobox`) type-checks but crashes at runtime with a
@@ -13,7 +13,6 @@ import type { CountryCode, MetadataJson } from "libphonenumber-js/core";
 import type { FlagAssetCode } from "../../flags";
 import { useFormReset } from "../../hooks/use-form-reset";
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
-import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { MagnifyingGlass } from "../../icons/generated/magnifying-glass";
 import { cn } from "../../styles/cn";
 import { selfFocusRingClass } from "../../styles/utils";
@@ -176,8 +175,6 @@ export function PhoneNumberField({
   ...stateOptions
 }: PhoneNumberFieldProps): ReactElement {
   const numberInputRef = useRef<HTMLInputElement>(null);
-  const [numberInput, setNumberInput] = useState<HTMLInputElement | null>(null);
-  const mergedNumberInputRef = useMergedRefs(numberInputRef, setNumberInput);
   // Anchor the country popover to the whole field box (InputGroup), not the flag
   // trigger, so its left edge lines up with the field rather than inset to the flag.
   const inputGroupRef = useRef<HTMLDivElement>(null);
@@ -194,7 +191,7 @@ export function PhoneNumberField({
     ...stateOptions,
     locale,
   });
-  useFormReset(numberInput, phone.resetUncontrolled);
+  useFormReset(numberInputRef, phone.resetUncontrolled);
 
   // Base UI Input is a Field.Control; a present-but-undefined ARIA key clobbers the
   // auto-wired label/description via mergeProps (no undefined-guard). Forward only defined keys.
@@ -310,7 +307,7 @@ export function PhoneNumberField({
             </Combobox.Content>
           </ComboboxPrimitive.Root>
           <InputGroup.Input
-            ref={mergedNumberInputRef}
+            ref={numberInputRef}
             readOnly={isReadOnly}
             name={name ? `${name}-display-value` : "phone-number-display-value"}
             value={phone.displayValue}

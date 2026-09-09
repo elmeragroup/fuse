@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef } from "react";
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -14,37 +14,44 @@ function resetCalls(spy: { mock: { calls: unknown[][] } }): unknown[][] {
 }
 
 describe("useFormReset", () => {
-  it("does not subscribe without an element or a form", () => {
-    const add = vi.spyOn(HTMLFormElement.prototype, "addEventListener");
+  it("ignores a reset when the control belongs to no form", async () => {
     const onReset = vi.fn();
 
-    function Detached() {
-      const [element, setElement] = useState<HTMLInputElement | null>(null);
+    function Probe() {
+      const element = useRef<HTMLInputElement>(null);
       useFormReset(element, onReset);
-      return <input aria-label="Detached" ref={setElement} />;
+      return (
+        <>
+          <form aria-label="Elsewhere" />
+          <input aria-label="Detached" ref={element} />
+        </>
+      );
     }
 
-    function Absent() {
-      useFormReset(null, onReset);
-      return <form aria-label="Empty" />;
+    const { host } = render(<Probe />);
+    const form = host.querySelector("form");
+    if (!(form instanceof HTMLFormElement)) {
+      throw new Error("expected a form");
     }
-
-    render(<Detached />);
-    expect(resetCalls(add)).toEqual([]);
-
-    render(<Absent />);
-    expect(resetCalls(add)).toEqual([]);
+    vi.useFakeTimers();
+    try {
+      form.reset();
+      await vi.runOnlyPendingTimersAsync();
+      expect(onReset).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("does not subscribe when the callback is null", () => {
-    const add = vi.spyOn(HTMLFormElement.prototype, "addEventListener");
+    const add = vi.spyOn(document, "addEventListener");
 
     function Probe() {
-      const [element, setElement] = useState<HTMLInputElement | null>(null);
+      const element = useRef<HTMLInputElement>(null);
       useFormReset(element, null);
       return (
         <form aria-label="Owned">
-          <input aria-label="Field" ref={setElement} />
+          <input aria-label="Field" ref={element} />
         </form>
       );
     }
@@ -53,15 +60,35 @@ describe("useFormReset", () => {
     expect(resetCalls(add)).toEqual([]);
   });
 
+  it("subscribes on the first commit without a state-driven extra render", () => {
+    const add = vi.spyOn(document, "addEventListener");
+    let renders = 0;
+
+    function Probe() {
+      renders += 1;
+      const element = useRef<HTMLInputElement>(null);
+      useFormReset(element, () => undefined);
+      return (
+        <form aria-label="Probe">
+          <input aria-label="Field" ref={element} />
+        </form>
+      );
+    }
+
+    render(<Probe />);
+    expect(renders).toBe(1);
+    expect(resetCalls(add)).toHaveLength(1);
+  });
+
   it("invokes the callback after native form.reset()", async () => {
     const onReset = vi.fn();
 
     function Probe() {
-      const [element, setElement] = useState<HTMLInputElement | null>(null);
+      const element = useRef<HTMLInputElement>(null);
       useFormReset(element, onReset);
       return (
         <form aria-label="Probe">
-          <input aria-label="Field" ref={setElement} defaultValue="start" />
+          <input aria-label="Field" ref={element} defaultValue="start" />
         </form>
       );
     }
@@ -85,7 +112,7 @@ describe("useFormReset", () => {
     const onReset = vi.fn();
 
     function Probe() {
-      const [element, setElement] = useState<HTMLInputElement | null>(null);
+      const element = useRef<HTMLInputElement>(null);
       useFormReset(element, onReset);
       return (
         <form
@@ -93,7 +120,7 @@ describe("useFormReset", () => {
           onReset={(event) => {
             event.preventDefault();
           }}>
-          <input aria-label="Field" ref={setElement} defaultValue="start" />
+          <input aria-label="Field" ref={element} defaultValue="start" />
         </form>
       );
     }
@@ -115,22 +142,69 @@ describe("useFormReset", () => {
 
   it("removes the reset listener on unmount", () => {
     function Probe() {
-      const [element, setElement] = useState<HTMLInputElement | null>(null);
+      const element = useRef<HTMLInputElement>(null);
       useFormReset(element, () => undefined);
       return (
         <form aria-label="Probe">
-          <input aria-label="Field" ref={setElement} />
+          <input aria-label="Field" ref={element} />
         </form>
       );
     }
 
-    const { host, unmount } = render(<Probe />);
-    const form = host.querySelector("form");
-    if (!(form instanceof HTMLFormElement)) {
-      throw new Error("expected a form");
-    }
-    const remove = vi.spyOn(form, "removeEventListener");
+    const { unmount } = render(<Probe />);
+    const remove = vi.spyOn(document, "removeEventListener");
     unmount();
-    expect(remove.mock.calls.some(([type]) => type === "reset")).toBe(true);
+    expect(resetCalls(remove)).toHaveLength(1);
+  });
+
+  it("follows the control's form association without resubscribing", async () => {
+    const onReset = vi.fn();
+
+    function Probe({ formId }: { formId: string }) {
+      const element = useRef<HTMLInputElement>(null);
+      useFormReset(element, onReset);
+      return (
+        <>
+          <form id="a" aria-label="First" />
+          <form id="b" aria-label="Second" />
+          <input aria-label="Field" ref={element} form={formId} defaultValue="start" />
+        </>
+      );
+    }
+
+    const { host, rerender } = render(<Probe formId="a" />);
+    const input = host.querySelector("input");
+    const first = host.querySelector("#a");
+    const second = host.querySelector("#b");
+    if (
+      !(input instanceof HTMLInputElement) ||
+      !(first instanceof HTMLFormElement) ||
+      !(second instanceof HTMLFormElement)
+    ) {
+      throw new Error("expected associated forms");
+    }
+    expect(input.form).toBe(first);
+
+    // A reset on the form the control is not associated with must never reach the callback.
+    second.reset();
+    first.reset();
+    await vi.waitFor(() => {
+      expect(onReset).toHaveBeenCalledTimes(1);
+    });
+
+    // The `form` attribute moves; the element and its subscription are never replaced.
+    const add = vi.spyOn(document, "addEventListener");
+    rerender(<Probe formId="b" />);
+    expect(host.querySelector("input")).toBe(input);
+    expect(resetCalls(add)).toEqual([]);
+    expect(input.form).toBe(second);
+
+    // Both forms reset in the same task: only the live association may add a call.
+    first.reset();
+    second.reset();
+    await vi.waitFor(() => {
+      expect(onReset).toHaveBeenCalledTimes(2);
+    });
+    expect(onReset).toHaveBeenCalledTimes(2);
   });
 });

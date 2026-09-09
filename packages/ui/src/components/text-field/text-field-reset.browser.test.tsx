@@ -64,7 +64,7 @@ it("preserves a canceled reset and removes the form subscription on unmount", as
   );
   const form = host.querySelector("form");
   if (!form) throw new Error("Expected form");
-  const remove = vi.spyOn(form, "removeEventListener");
+  const remove = vi.spyOn(document, "removeEventListener");
   await userEvent.fill(page.getByRole("textbox", { name: "Digits" }), "456");
   form.reset();
   await expect.element(page.getByRole("textbox", { name: "Digits" })).toHaveValue("456");
@@ -116,7 +116,7 @@ it("restores defaultValue when associated with an external form", async () => {
   await expect.element(textbox).toHaveValue("123");
 });
 
-it("re-subscribes when the form attribute changes", async () => {
+it("follows the form attribute when it changes", async () => {
   const { rerender } = render(
     <>
       <form id="a">
