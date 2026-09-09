@@ -42,3 +42,15 @@ export function render(node: ReactNode): BrowserRenderResult {
   cleanups.push(unmount);
   return { host, rerender: mount, unmount };
 }
+
+/**
+ * Resolves after the next frame, so a just-rendered tree's layout effects and the
+ * registrations they make (listeners, observers) have run before a suite acts on it.
+ */
+export function flushEffects(): Promise<void> {
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => {
+      resolve();
+    });
+  });
+}
