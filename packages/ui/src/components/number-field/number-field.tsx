@@ -37,8 +37,7 @@ export type NumberFieldProps = {
   /** Unit suffix rendered between the input and the steppers (visual only). */
   denomination?: string;
   /**
-   * Controlled value. Without `defaultValue`, `null`/`NaN` is passed to the primitive as
-   * `null` (empty). With `defaultValue`, `value` is passed through untouched.
+   * Controlled value. Omit for uncontrolled editing. `NaN` is empty.
    */
   value?: number;
   /** Uncontrolled initial value. */
@@ -109,8 +108,7 @@ export function NumberField({
 }: NumberFieldProps): ReactElement {
   const { locale } = useElmeraGroupUi();
   const strings = useLocalizedStrings(numberFieldStrings);
-  const controlledValue =
-    defaultValue !== undefined ? value : value == null || Number.isNaN(value) ? null : value;
+  const controlledValue = value === undefined ? undefined : Number.isNaN(value) ? null : value;
 
   // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- label/control stack gap is layout, not a control rung
   const rootClassName = cn("gap-1", className);

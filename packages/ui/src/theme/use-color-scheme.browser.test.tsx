@@ -194,29 +194,27 @@ describe("useColorScheme", () => {
     expect(window.localStorage.getItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY)).toBeNull();
   });
 
-  it("ignores session-storage events that reuse the preference key", async () => {
-    stubPrefersColorScheme(false);
-    window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "dark");
-
-    const { host } = render(
-      <ThemeProvider theme={fkasPrivate}>
-        <ColorSchemeOutput />
-      </ThemeProvider>
-    );
-    await mountedColorScheme(host, "internal-fkas-private:dark/dark");
-
-    window.dispatchEvent(
-      new StorageEvent("storage", {
+  // Three ways a `storage` event can look like a preference change and not be one. The
+  // mount, the stored `dark` preference and the ignored outcome are identical; only the
+  // event init differs, so the matrix is the whole difference between the cases.
+  it.each([
+    {
+      name: "session storage reusing the preference key",
+      init: {
         key: DEFAULT_COLOR_SCHEME_STORAGE_KEY,
         newValue: "light",
         storageArea: window.sessionStorage,
-      })
-    );
-    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
-    await mountedColorScheme(host, "internal-fkas-private:dark/dark");
-  });
-
-  it("ignores local-storage events for unrelated keys", async () => {
+      },
+    },
+    {
+      name: "local storage under an unrelated key",
+      init: { key: "other-key", newValue: "light", storageArea: window.localStorage },
+    },
+    {
+      name: "a null storageArea",
+      init: { key: DEFAULT_COLOR_SCHEME_STORAGE_KEY, newValue: "light", storageArea: null },
+    },
+  ])("ignores a storage event from $name", async ({ init }) => {
     stubPrefersColorScheme(false);
     window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "dark");
 
@@ -227,35 +225,7 @@ describe("useColorScheme", () => {
     );
     await mountedColorScheme(host, "internal-fkas-private:dark/dark");
 
-    window.dispatchEvent(
-      new StorageEvent("storage", {
-        key: "other-key",
-        newValue: "light",
-        storageArea: window.localStorage,
-      })
-    );
-    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
-    await mountedColorScheme(host, "internal-fkas-private:dark/dark");
-  });
-
-  it("ignores storage events with a null storageArea", async () => {
-    stubPrefersColorScheme(false);
-    window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "dark");
-
-    const { host } = render(
-      <ThemeProvider theme={fkasPrivate}>
-        <ColorSchemeOutput />
-      </ThemeProvider>
-    );
-    await mountedColorScheme(host, "internal-fkas-private:dark/dark");
-
-    window.dispatchEvent(
-      new StorageEvent("storage", {
-        key: DEFAULT_COLOR_SCHEME_STORAGE_KEY,
-        newValue: "light",
-        storageArea: null,
-      })
-    );
+    window.dispatchEvent(new StorageEvent("storage", init));
     expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
     await mountedColorScheme(host, "internal-fkas-private:dark/dark");
   });
@@ -688,6 +658,7 @@ describe("forced color-scheme", () => {
 
 describe("color-scheme transition suppression", () => {
   function transitionStyleCount() {
+    // DOM audit: disable-transition injects a role-less <style>; count by its text.
     return [...document.head.querySelectorAll("style")].filter((style) =>
       style.textContent.includes("transition:none")
     ).length;
@@ -708,6 +679,7 @@ describe("color-scheme transition suppression", () => {
     host.querySelector("button")?.click();
     expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
     expect(transitionStyleCount()).toBe(1);
+    // DOM audit: the injected transition lock is a <style> with nonce, no role.
     const injected = [...document.head.querySelectorAll("style")].find((style) =>
       style.textContent.includes("transition:none")
     );

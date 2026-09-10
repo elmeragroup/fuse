@@ -1,15 +1,16 @@
-import { roleNamed } from "./themed-browser-render";
+import { roleNamed, textboxNamed } from "./themed-browser-render";
 
+/** The canonical textbox query, narrowed: phone suites read `.value` off the input itself. */
 export function inputNamed(name = "Mobile"): HTMLInputElement {
-  const input = roleNamed("textbox", name);
+  const input = textboxNamed(name);
   if (!(input instanceof HTMLInputElement)) throw new Error("Expected phone input");
   return input;
 }
 
 export function searchNamed(name = "Search countries"): HTMLInputElement {
-  const named = document.body.querySelector(`input[aria-label="${name}"]`);
-  if (named instanceof HTMLInputElement) {
-    return named;
+  const named = roleNamed("combobox", name);
+  if (!(named instanceof HTMLInputElement)) {
+    throw new Error(`expected search ${name}`);
   }
-  throw new Error(`expected search ${name}`);
+  return named;
 }

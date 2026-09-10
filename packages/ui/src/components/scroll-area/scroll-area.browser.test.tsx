@@ -8,6 +8,7 @@ import { renderThemed } from "../../../test/themed-browser-render";
 import { ScrollArea } from "./scroll-area";
 
 afterEach(() => {
+  // DOM audit: injected test styles have no role; remove them by the marker attribute.
   for (const styles of document.head.querySelectorAll("[data-scroll-area-test-styles]")) {
     styles.remove();
   }

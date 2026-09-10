@@ -46,8 +46,8 @@ export type UsePhoneNumberFieldStateReturn = {
   selectedCountry: PhoneNumberCountry;
   countries: PhoneNumberCountry[];
   getCountryName: (countryCode: CountryCode) => string;
-  /** Native form-reset handler, or null when the parent owns `value`. */
-  resetUncontrolled: (() => void) | null;
+  /** Native form-reset handler restoring the initial state, or null when the parent owns `value`. */
+  onReset: (() => void) | null;
 };
 
 export function usePhoneNumberFieldState({
@@ -134,7 +134,9 @@ export function usePhoneNumberFieldState({
     selectedCountry,
     countries,
     getCountryName,
-    resetUncontrolled:
+    // Reset only when this hook owns the value. A parent-owned `value` is the parent's
+    // to keep: `clearedForReset` would no-op, but the ownership line is the null.
+    onReset:
       value === undefined
         ? () => {
             setState(clearedForReset);

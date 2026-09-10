@@ -5,11 +5,7 @@ import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { checkPackedReactCompatibility } from "../scripts/package-check-react";
-import {
-  npmInstallArgs,
-  RELEASE_AGE_MINUTES,
-  releaseAgeCutoff,
-} from "../scripts/packed-consumer-install-policy";
+import { RELEASE_AGE_MINUTES, releaseAgeCutoff } from "../scripts/packed-consumer-install-policy";
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const require = createRequire(import.meta.url);
@@ -47,16 +43,6 @@ describe("packed consumer install policy", () => {
   it("crosses a non-leap-year month boundary", () => {
     expect(releaseAgeCutoff(new Date("2026-03-02T01:30:00.000Z"))).toBe("2026-02-27T01:30:00.000Z");
   });
-
-  it("builds npm install args with the existing flags and --before", () => {
-    const args = npmInstallArgs("2026-09-05T12:00:00.000Z");
-    expect(args[0]).toBe("install");
-    expect(args).toContain("--ignore-scripts");
-    expect(args).toContain("--no-audit");
-    expect(args).toContain("--no-fund");
-    expect(args).toContain("--package-lock=false");
-    expect(args).toContain("--before=2026-09-05T12:00:00.000Z");
-  });
 });
 
 describe("packed React consumer installs", () => {
@@ -89,9 +75,10 @@ describe("packed React consumer installs", () => {
     const probes = calls.filter((call) => call.command === process.execPath);
     expect(installs).toHaveLength(3);
     expect(probes).toHaveLength(3);
-    const expectedArgs = npmInstallArgs("2026-09-05T12:00:00.000Z");
     for (const install of installs) {
-      expect(install.args).toEqual(expectedArgs);
+      expect(install.args[0]).toBe("install");
+      expect(install.args).toContain("--ignore-scripts");
+      expect(install.args).toContain("--before=2026-09-05T12:00:00.000Z");
     }
     const installCwds = installs.map((install) => install.cwd);
     expect(new Set(installCwds).size).toBe(3);

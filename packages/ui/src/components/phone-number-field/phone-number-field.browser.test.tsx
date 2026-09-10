@@ -53,6 +53,7 @@ function listboxNamed(): HTMLElement {
 }
 
 function hiddenNamed(name: string): HTMLInputElement {
+  // DOM audit: the E.164 submit control is type=hidden, so it has no role.
   const match = document.body.querySelector(`input[type="hidden"][name="${name}"]`);
   if (!(match instanceof HTMLInputElement)) {
     throw new Error(`expected hidden input ${name}`);
@@ -112,6 +113,43 @@ describe("PhoneNumberField", () => {
     expect(page.getByRole("button", { name: "Mobile", exact: true }).query()).toBeNull();
     expect(textboxNamed("Mobile")).toBeTruthy();
     expect(textboxNamed("Mobile")).toHaveProperty("inputMode", "tel");
+  });
+
+  it("names the country search independently of the Field label", async () => {
+    renderField(<PhoneNumberField label="Mobile" />);
+    await openPicker();
+    const search = searchNamed();
+    expect(search).toBeInstanceOf(HTMLInputElement);
+    expect(search.getAttribute("aria-labelledby")).toBeFalsy();
+    expect(page.getByRole("combobox", { name: "Search countries", exact: true }).query()).not.toBeNull();
+    expect(page.getByRole("combobox", { name: "Mobile", exact: true }).query()).toBeNull();
+  });
+
+  it("insets the country search from the popup edge", async () => {
+    renderField(<PhoneNumberField label="Mobile" />);
+    await openPicker();
+    const search = searchNamed();
+    // DOM audit: popup chrome has no role; inset is the search group's box against the content slot.
+    const group = search.closest("[data-slot=input-group]");
+    const popup = group?.closest("[data-slot=combobox-content]");
+    if (!(group instanceof HTMLElement) || !(popup instanceof HTMLElement)) {
+      throw new Error("expected search group inside the country popup");
+    }
+    const groupBox = group.getBoundingClientRect();
+    const popupBox = popup.getBoundingClientRect();
+    const styles = getComputedStyle(group);
+    const observed = {
+      slot: group.getAttribute("data-slot"),
+      margin: [styles.marginTop, styles.marginRight, styles.marginBottom, styles.marginLeft],
+      inset: {
+        top: groupBox.top - popupBox.top,
+        left: groupBox.left - popupBox.left,
+        right: popupBox.right - groupBox.right,
+      },
+    };
+    expect(observed.inset.top, JSON.stringify(observed)).toBeGreaterThan(0);
+    expect(observed.inset.left, JSON.stringify(observed)).toBeGreaterThan(0);
+    expect(observed.inset.right, JSON.stringify(observed)).toBeGreaterThan(0);
   });
 
   it("does not call Intl.DisplayNames.of until the country popup opens", async () => {

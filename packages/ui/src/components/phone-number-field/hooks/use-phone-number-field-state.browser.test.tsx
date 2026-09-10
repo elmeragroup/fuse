@@ -57,7 +57,12 @@ function ControlledProbe({
   onSelectSweden?: (select: (code: "SE") => void) => void;
 }): ReactElement {
   const [value, setValue] = useState("");
-  const phone = usePhoneNumberFieldState({ ...options, value, onChange: setValue, locale: "en-US" });
+  const phone = usePhoneNumberFieldState({
+    ...options,
+    value,
+    onChange: setValue,
+    locale: "en-US",
+  });
   onSelectSweden?.(phone.selectCountry);
   return (
     <input
@@ -178,6 +183,27 @@ describe("usePhoneNumberFieldState controlled restore", () => {
     await userEvent.click(page.getByRole("button", { name: "Restore", exact: true }));
     await expect.poll(() => numberInput().value).toBe(digits);
   });
+});
+
+describe("usePhoneNumberFieldState reset ownership", () => {
+  it.each([undefined, "+4741234567"] as const)(
+    "exposes onReset only when the value is uncontrolled: %s",
+    (value) => {
+      let phone: ReturnType<typeof usePhoneNumberFieldState> | undefined;
+
+      function Probe() {
+        phone = usePhoneNumberFieldState({ locale: "en-US", value });
+        return <input value={phone.displayValue} readOnly />;
+      }
+
+      renderThemed(<Probe />);
+      if (value === undefined) {
+        expect(phone?.onReset).toBeTypeOf("function");
+      } else {
+        expect(phone?.onReset).toBeNull();
+      }
+    }
+  );
 });
 
 it.each([false, true])(

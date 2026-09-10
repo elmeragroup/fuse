@@ -56,21 +56,17 @@ it("resets a nonnumeric TextField to its defaultValue", async () => {
   expect(new FormData(form).get("plain")).toBe("abc");
 });
 
-it("preserves a canceled reset and removes the form subscription on unmount", async () => {
-  const { host, unmount } = render(
+it("preserves a canceled reset", async () => {
+  const { host } = render(
     <form onReset={(event) => event.preventDefault()}>
       <TextField label="Digits" name="digits" filter="numeric" defaultValue="123" />
     </form>
   );
   const form = host.querySelector("form");
   if (!form) throw new Error("Expected form");
-  const remove = vi.spyOn(document, "removeEventListener");
   await userEvent.fill(page.getByRole("textbox", { name: "Digits" }), "456");
   form.reset();
   await expect.element(page.getByRole("textbox", { name: "Digits" })).toHaveValue("456");
-  unmount();
-  expect(remove.mock.calls.some(([type]) => type === "reset")).toBe(true);
-  remove.mockRestore();
 });
 
 it("keeps controlled digits and callbacks owned by the parent after reset", async () => {

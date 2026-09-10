@@ -222,7 +222,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Controlled value. Without `defaultValue`, `null`/`NaN` is passed to the primitive as `null` (empty). With `defaultValue`, `value` is passed through untouched.",
+          "description": "Controlled value. Omit for uncontrolled editing. `NaN` is empty.",
           "required": false
         }
       ]

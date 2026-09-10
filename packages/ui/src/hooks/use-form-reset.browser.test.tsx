@@ -157,6 +157,35 @@ describe("useFormReset", () => {
     expect(resetCalls(remove)).toHaveLength(1);
   });
 
+  it("does not invoke the callback when unmounted before the deferred task", async () => {
+    const onReset = vi.fn();
+
+    function Probe() {
+      const element = useRef<HTMLInputElement>(null);
+      useFormReset(element, onReset);
+      return (
+        <form aria-label="Probe">
+          <input aria-label="Field" ref={element} defaultValue="start" />
+        </form>
+      );
+    }
+
+    const { host, unmount } = render(<Probe />);
+    const form = host.querySelector("form");
+    if (!(form instanceof HTMLFormElement)) {
+      throw new Error("expected a form");
+    }
+    vi.useFakeTimers();
+    try {
+      form.reset();
+      unmount();
+      await vi.runOnlyPendingTimersAsync();
+      expect(onReset).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("follows the control's form association without resubscribing", async () => {
     const onReset = vi.fn();
 

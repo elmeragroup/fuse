@@ -91,27 +91,29 @@ describe("bespoke icons", () => {
     const whitespaceVipps = renderToStaticMarkup(createElement(Vipps, { title: " " }));
     expect(whitespaceVipps).toContain('role="img"');
     expect(whitespaceVipps).toContain("<title> </title>");
+  });
 
-    const emptyTelinet = renderToStaticMarkup(createElement(logosByName.TelinetLogo, { title: "" }));
-    expect(emptyTelinet).toContain('aria-hidden="true"');
-    expect(emptyTelinet).toContain('focusable="false"');
-    expect(emptyTelinet).not.toContain('role="img"');
-    expect(emptyTelinet).not.toContain("<title>");
+  // Each logo spells the guard twice — `decorativeSvgProps(title)` and its own
+  // `{title ? <title>…</title> : null}` — so the two can only stay in step by being
+  // checked together, for every logo, rather than for whichever one a case names.
+  it.each(Object.entries(logosByName))("keeps %s's title guard and props in step", (name, Logo) => {
+    for (const title of ["", undefined]) {
+      const decorative = renderToStaticMarkup(createElement(Logo, { title }));
+      expect(decorative, name).toContain('aria-hidden="true"');
+      expect(decorative, name).toContain('focusable="false"');
+      expect(decorative, name).not.toContain('role="img"');
+      expect(decorative, name).not.toContain("<title>");
+    }
 
-    const omittedTelinet = renderToStaticMarkup(createElement(logosByName.TelinetLogo));
-    expect(omittedTelinet).toContain('aria-hidden="true"');
-    expect(omittedTelinet).toContain('focusable="false"');
-    expect(omittedTelinet).not.toContain('role="img"');
-    expect(omittedTelinet).not.toContain("<title>");
+    const titled = renderToStaticMarkup(createElement(Logo, { title: name }));
+    expect(titled, name).toContain('role="img"');
+    expect(titled, name).toContain(`<title>${name}</title>`);
+    expect(titled, name).not.toContain("aria-hidden");
 
-    const titledTelinet = renderToStaticMarkup(createElement(logosByName.TelinetLogo, { title: "Telinet" }));
-    expect(titledTelinet).toContain('role="img"');
-    expect(titledTelinet).toContain("<title>Telinet</title>");
-    expect(titledTelinet).not.toContain("aria-hidden");
-
-    const whitespaceTelinet = renderToStaticMarkup(createElement(logosByName.TelinetLogo, { title: " " }));
-    expect(whitespaceTelinet).toContain('role="img"');
-    expect(whitespaceTelinet).toContain("<title> </title>");
+    // Nonempty means meaningful: whitespace-only is still a titled image, not decorative.
+    const whitespace = renderToStaticMarkup(createElement(Logo, { title: " " }));
+    expect(whitespace, name).toContain('role="img"');
+    expect(whitespace, name).toContain("<title> </title>");
   });
 
   it("lets caller SVG attributes override decorativeSvgProps", () => {

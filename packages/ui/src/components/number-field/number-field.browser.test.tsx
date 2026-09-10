@@ -107,6 +107,33 @@ describe("NumberField", () => {
     expect(onChange).toHaveBeenLastCalledWith(0);
   });
 
+  it("steps from the empty basic example via the increment and decrement buttons", async () => {
+    const onChange = vi.fn();
+    renderField(
+      <NumberField
+        label="Quantity"
+        description="Whole packs."
+        minValue={0}
+        maxValue={20}
+        step={1}
+        onChange={onChange}
+      />
+    );
+    const input = page.getByRole("textbox", { name: "Quantity", exact: true });
+    const increase = page.getByRole("button", { name: "Increase", exact: true });
+    const decrease = page.getByRole("button", { name: "Decrease", exact: true });
+    await expect.element(input).toHaveValue("");
+    await userEvent.click(increase);
+    expect(onChange).toHaveBeenLastCalledWith(0);
+    await expect.element(input).toHaveValue("0");
+    await userEvent.click(increase);
+    expect(onChange).toHaveBeenLastCalledWith(1);
+    await expect.element(input).toHaveValue("1");
+    await userEvent.click(decrease);
+    expect(onChange).toHaveBeenLastCalledWith(0);
+    await expect.element(input).toHaveValue("0");
+  });
+
   it("commits a typed value on blur and reports NaN when the input is cleared", async () => {
     const onChange = vi.fn();
     renderField(<NumberField label="Quantity" onChange={onChange} />);
@@ -378,6 +405,21 @@ describe("NumberField", () => {
     renderField(<NumberField label="Quantity" defaultValue={2} increaseLabel="Add one" />, "sv-SE");
     expect(page.getByRole("button", { name: "Add one", exact: true }).query()).toBeTruthy();
     expect(page.getByRole("button", { name: DECREASE_COPY["sv-SE"], exact: true }).query()).toBeTruthy();
+  });
+
+  it("paints stepper dividers with the field-box border color", () => {
+    renderField(<NumberField label="Quantity" defaultValue={1} />);
+    const group = groupFrom("Quantity");
+    const chrome = getComputedStyle(group).borderTopColor;
+    const column = stepperIn("Quantity", "Increase").parentElement;
+    if (!(column instanceof HTMLElement)) {
+      throw new Error("expected stepper column");
+    }
+    expect(getComputedStyle(column).borderInlineStartColor).toBe(chrome);
+    expect(getComputedStyle(stepperIn("Quantity", "Increase")).borderBottomColor).toBe(chrome);
+    expect(getComputedStyle(stepperIn("Quantity", "Increase")).backgroundColor).toBe(
+      getComputedStyle(group).backgroundColor
+    );
   });
 });
 

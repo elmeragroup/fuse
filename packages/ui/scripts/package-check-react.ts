@@ -1,10 +1,11 @@
 import { spawnSync } from "node:child_process";
+import type { SpawnSyncOptionsWithStringEncoding, SpawnSyncReturns } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { npmInstallArgs, releaseAgeCutoff } from "./packed-consumer-install-policy";
+import { releaseAgeCutoff } from "./packed-consumer-install-policy";
 import { packageRootFromScript } from "./paths";
 
 const require = createRequire(import.meta.url);
@@ -12,11 +13,15 @@ const packageRoot = packageRootFromScript(import.meta.url);
 
 type ReactPair = { react: string; reactDom: string };
 
+/**
+ * The slice of `spawnSync` this script uses, derived from the real signature so the seam
+ * cannot drift from it. `cwd` is narrowed to a string: every call here passes a tmpdir path.
+ */
 type Spawn = (
   command: string,
   args: readonly string[],
-  options: { cwd: string; encoding: "utf8"; timeout: number }
-) => { status: number | null; stdout: string; stderr: string };
+  options: Pick<SpawnSyncOptionsWithStringEncoding, "encoding" | "timeout"> & { cwd: string }
+) => Pick<SpawnSyncReturns<string>, "status" | "stdout" | "stderr">;
 
 function installedVersion(name: string): string {
   // SAFETY: Node resolves the installed dependency's package manifest.
@@ -32,8 +37,9 @@ export function checkPackedReactCompatibility(
   options: { spawn?: Spawn; now?: Date } = {}
 ): void {
   const spawn: Spawn = options.spawn ?? spawnSync;
-  const now = options.now ?? new Date();
-  const cutoff = releaseAgeCutoff(now);
+  // One cutoff for the whole run: three consumers resolving against different instants
+  // could disagree about which versions exist.
+  const cutoff = releaseAgeCutoff(options.now ?? new Date());
   const pairs: ReactPair[] = [
     { react: "19.0.0", reactDom: "19.0.0" },
     { react: "19.1.1", reactDom: "19.1.1" },
@@ -54,11 +60,19 @@ export function checkPackedReactCompatibility(
           },
         })
       );
-      const install = spawn("npm", npmInstallArgs(cutoff), {
-        cwd: consumer,
-        encoding: "utf8",
-        timeout: 180_000,
-      });
+      const install = spawn(
+        "npm",
+        [
+          "install",
+          "--ignore-scripts",
+          "--no-audit",
+          "--no-fund",
+          "--package-lock=false",
+          // Mirrors pnpm's `minimumReleaseAge` for the npm-installed consumers (tooling.md §2).
+          `--before=${cutoff}`,
+        ],
+        { cwd: consumer, encoding: "utf8", timeout: 180_000 }
+      );
       if (install.status !== 0) {
         throw new Error(`Packed React ${pair.react} install failed:\n${install.stderr || install.stdout}`);
       }

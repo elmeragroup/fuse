@@ -33,8 +33,8 @@ for (const defaultValue of ["Original", ""]) {
   }
 }
 
-it("preserves a canceled reset and removes the form subscription on unmount", async () => {
-  const { host, unmount } = render(
+it("preserves a canceled reset", async () => {
+  const { host } = render(
     withLocale(
       "en-US",
       <form onReset={(event) => event.preventDefault()}>
@@ -44,14 +44,10 @@ it("preserves a canceled reset and removes the form subscription on unmount", as
   );
   const form = host.querySelector("form");
   if (!form) throw new Error("Expected form");
-  const remove = vi.spyOn(document, "removeEventListener");
   await userEvent.fill(page.getByRole("textbox", { name: "Notes" }), "Edited");
   form.reset();
   await expect.element(page.getByRole("textbox", { name: "Notes" })).toHaveValue("Edited");
   await expect.element(page.getByText("6/100", { exact: true })).toBeVisible();
-  unmount();
-  expect(remove.mock.calls.some(([type]) => type === "reset")).toBe(true);
-  remove.mockRestore();
 });
 
 it("keeps controlled text and callbacks owned by the parent after reset", async () => {

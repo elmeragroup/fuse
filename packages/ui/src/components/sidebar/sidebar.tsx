@@ -330,6 +330,9 @@ function SidebarRoot({
         data-side={side}
         className={cn(
           "md:flex fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[width] duration-200 ease-linear data-[side=left]:left-0 data-[side=left]:group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)] data-[side=right]:right-0 data-[side=right]:group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
+          // Offcanvas hides the whole container, so any child that must stay interactive
+          // while collapsed has to re-assert `group-data-[collapsible=offcanvas]:visible`
+          // for itself — Rail below is the one that does.
           "group-data-[collapsible=offcanvas]:invisible",
           variant === "floating" || variant === "inset"
             ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]"

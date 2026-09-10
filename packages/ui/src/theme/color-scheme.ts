@@ -121,12 +121,27 @@ export function resolveColorScheme(preference: ColorScheme, enableSystem: boolea
   return resolveSystemColorScheme();
 }
 
-export function localStorageArea(): Storage | undefined {
+function localStorageArea(): Storage | undefined {
   try {
     return window.localStorage;
   } catch {
     return undefined;
   }
+}
+
+/**
+ * Whether a `storage` event should be read as a change to the color-scheme preference.
+ *
+ * Both absent-value cases are explicit rather than implied by their types: unreachable
+ * local storage (`undefined`) never matches an event's `storageArea` (`Storage | null`),
+ * and a `null` event key is a whole-store clear, which does affect the preference.
+ */
+export function isColorSchemeStorageEvent(event: StorageEvent, storageKey: string): boolean {
+  const area = localStorageArea();
+  if (area === undefined || event.storageArea !== area) {
+    return false;
+  }
+  return event.key === null || event.key === storageKey;
 }
 
 export function readStoredColorScheme(storageKey: string, fallback: ColorScheme): ColorScheme {

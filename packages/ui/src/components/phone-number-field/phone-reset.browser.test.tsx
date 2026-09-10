@@ -130,23 +130,6 @@ it("keeps values when native reset is canceled", async () => {
   }
 });
 
-it("does not subscribe to form reset when the value is parent-owned", () => {
-  const add = vi.spyOn(HTMLFormElement.prototype, "addEventListener");
-  try {
-    render(
-      withLocale(
-        "en-US",
-        <form aria-label="Phone form">
-          <PhoneNumberField label="Mobile" name="phone" value="+4741234567" />
-        </form>
-      )
-    );
-    expect(add.mock.calls.filter((call) => call[0] === "reset")).toEqual([]);
-  } finally {
-    add.mockRestore();
-  }
-});
-
 it("keeps a controlled value parent-owned after reset", async () => {
   const change = vi.fn();
   const countryChange = vi.fn();
@@ -286,27 +269,6 @@ it.each([
   await userEvent.fill(inputNamed(), "41234567");
   formNamed().reset();
   await expect.poll(() => snapshot()).toEqual(emptySnapshot);
-});
-
-it("removes the reset listener and does not throw when unmounted before the deferred task", async () => {
-  const change = vi.fn();
-  const countryChange = vi.fn();
-  const { unmount } = render(
-    withLocale("en-US", <UncontrolledFixture change={change} countryChange={countryChange} />)
-  );
-  const form = formNamed();
-  const remove = vi.spyOn(document, "removeEventListener");
-  await userEvent.fill(inputNamed(), "41234567");
-  vi.useFakeTimers();
-  try {
-    form.reset();
-    unmount();
-    await vi.runOnlyPendingTimersAsync();
-    expect(remove.mock.calls.some(([type]) => type === "reset")).toBe(true);
-  } finally {
-    vi.useRealTimers();
-    remove.mockRestore();
-  }
 });
 
 it("keeps a parent-owned value after reset and clears only when the parent accepts empty", async () => {

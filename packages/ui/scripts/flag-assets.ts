@@ -184,14 +184,13 @@ export function assertFlagSourceCheckout(sourceRoot: string, expectedCommit: str
   }
 }
 
-/** `expectedCommit` exists so tests can inject a fixture HEAD; production omits it. */
-export function vendorFlags(
-  repoRoot: string,
-  packageRoot: string,
-  expectedCommit = FLAG_SOURCE_COMMIT
-): void {
-  const sourceRoot = join(repoRoot, ".ref/flag-icons");
-  assertFlagSourceCheckout(sourceRoot, expectedCommit);
+/**
+ * Verify the checkout, then copy the flag SVGs, LICENSE, provenance and manifest across.
+ * `pin` is the commit the checkout must be at and the one PROVENANCE.md names — the two
+ * are the same value by construction, which is the guarantee this step exists to keep.
+ */
+export function copyFlagAssets(sourceRoot: string, packageRoot: string, pin: string): void {
+  assertFlagSourceCheckout(sourceRoot, pin);
   const sourceDir = join(sourceRoot, "svg");
   const destDir = join(packageRoot, "src/flags");
   mkdirSync(destDir, { recursive: true });
@@ -212,7 +211,7 @@ export function vendorFlags(
     `# Flag asset provenance
 
 - Source: ${FLAG_SOURCE_REPO} (MIT, copyright Yefferson)
-- Commit: \`${expectedCommit}\`
+- Commit: \`${pin}\`
 - Selection: exactly the ${FLAG_SVG_COUNT} two-letter country SVGs. Subdivision/collection artwork is not copied.
 - Aggregate ceiling: ${FLAG_RAW_CEILING_BYTES / 1024} KiB.
 
@@ -223,4 +222,9 @@ ${hashes.join("\n")}
   );
 
   writeFlagManifest(packageRoot);
+}
+
+/** The production entry point. The pin is not a parameter, so no caller can name another commit. */
+export function vendorFlags(repoRoot: string, packageRoot: string): void {
+  copyFlagAssets(join(repoRoot, ".ref/flag-icons"), packageRoot, FLAG_SOURCE_COMMIT);
 }

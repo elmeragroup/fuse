@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 
-import { assertFlagSourceCheckout, listFlagFiles, vendorFlags } from "../scripts/flag-assets";
+import { assertFlagSourceCheckout, copyFlagAssets, listFlagFiles, vendorFlags } from "../scripts/flag-assets";
 import { FLAG_SVG_COUNT } from "../scripts/flag-payload";
 
 const PRODUCTION_PIN = "a3d5adcf4fe650536d7694ca6d93c607ebf16c4e";
@@ -205,7 +205,7 @@ describe("assertFlagSourceCheckout", () => {
   }, 30_000);
 });
 
-describe("vendorFlags with an injected pin", () => {
+describe("copyFlagAssets with an injected pin", () => {
   let fixture: FlagSourceFixture | undefined;
 
   // Timeout: building a 249-file git fixture is slow under full-gate parallel load.
@@ -226,7 +226,7 @@ describe("vendorFlags with an injected pin", () => {
   // Timeout: vendoring 249 SVGs and spawning git is slow under full-gate parallel load.
   it("copies assets when HEAD matches the injected pin", () => {
     const current = requireFixture(fixture);
-    vendorFlags(current.repoRoot, current.packageRoot, current.head);
+    copyFlagAssets(current.sourceRoot, current.packageRoot, current.head);
     const destDir = join(current.packageRoot, "src/flags");
     expect(listFlagFiles(destDir)).toHaveLength(FLAG_SVG_COUNT);
     expect(existsSync(join(destDir, "LICENSE"))).toBe(true);
@@ -238,7 +238,9 @@ describe("vendorFlags with an injected pin", () => {
   it("refuses a dirty svg and does not create the destination", () => {
     const current = requireFixture(fixture);
     writeFileSync(join(current.sourceRoot, "svg/AA.svg"), `${FIXTURE_SVG}<!--dirty-->`);
-    expect(() => vendorFlags(current.repoRoot, current.packageRoot, current.head)).toThrow(/local changes/);
+    expect(() => copyFlagAssets(current.sourceRoot, current.packageRoot, current.head)).toThrow(
+      /local changes/
+    );
     expect(existsSync(join(current.packageRoot, "src/flags"))).toBe(false);
   }, 30_000);
 });

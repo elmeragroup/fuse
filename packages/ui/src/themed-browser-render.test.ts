@@ -11,26 +11,40 @@ const sourceRoot = dirname(fileURLToPath(import.meta.url));
  */
 const suiteRoots = ["components", "react-aria"].map((tier) => join(sourceRoot, tier));
 
-function walk(directory: string): string[] {
+/**
+ * Shared browser fixtures live outside `src`, so the suite-shape gates below do not apply to
+ * them — but a locator extracted into one is the same locator it was in the suite, and would
+ * otherwise leave the gate the moment it moved (tooling §8).
+ */
+const sharedFixtureRoot = join(sourceRoot, "../test");
+
+function walk(directory: string, matches: (path: string) => boolean): string[] {
   const files: string[] = [];
   for (const entry of readdirSync(directory)) {
     const path = join(directory, entry);
     if (statSync(path).isDirectory()) {
-      files.push(...walk(path));
+      files.push(...walk(path, matches));
       continue;
     }
-    if (path.endsWith(".browser.test.tsx")) {
+    if (matches(path)) {
       files.push(path);
     }
   }
   return files;
 }
 
-const suiteFiles = suiteRoots.flatMap((root) => walk(root));
-const suiteSources = new Map(suiteFiles.map((file) => [file, readFileSync(file, "utf8")]));
+function readAll(files: readonly string[]): [string, string][] {
+  return files.map((file) => [file, readFileSync(file, "utf8")]);
+}
+
+const suiteFiles = suiteRoots.flatMap((root) => walk(root, (path) => path.endsWith(".browser.test.tsx")));
+const suiteSources = new Map(readAll(suiteFiles));
+
+const fixtureFiles = walk(sharedFixtureRoot, (path) => path.endsWith(".ts") || path.endsWith(".tsx"));
+const locatorSources = new Map([...suiteSources, ...readAll(fixtureFiles)]);
 
 const DOM_AUDIT_COMMENT = /(?:\/\/|\/\*\*?|^\s*\*)\s*DOM audit:\s*\w/;
-const DOCUMENT_QUERY = /\bdocument\.querySelector(?:All)?\s*\(/;
+const DOCUMENT_QUERY = /\bdocument(?:\.(?:body|head|documentElement))?\.querySelector(?:All)?\s*\(/;
 const SLOT_QUERY = /(?:querySelector(?:All)?|closest)\s*\(\s*(['"`])[^'"`]*data-slot/;
 const STAR_QUERY = /querySelectorAll\(\s*(['"`])\*\1\s*\)/;
 const BY_SLOT = /function bySlot\b/;
@@ -61,7 +75,7 @@ function isDocumentedDomAudit(lines: string[], index: number): boolean {
 
 function unsanctionedSlotLocators(): string[] {
   const findings: string[] = [];
-  for (const [file, source] of suiteSources) {
+  for (const [file, source] of locatorSources) {
     const lines = source.split("\n");
     for (let index = 0; index < lines.length; index++) {
       const line = lines[index] ?? "";
@@ -109,7 +123,22 @@ describe("themed browser-test harness", () => {
     expect(isDocumentedDomAudit([...lines, query], 17)).toBe(false);
   });
 
+  it("classifies document-root querySelector calls as locators", () => {
+    expect(isSlotOrDocumentLocator('document.querySelector("[data-slot=card]")')).toBe(true);
+    expect(isSlotOrDocumentLocator('document.querySelectorAll("[data-slot=card]")')).toBe(true);
+    expect(isSlotOrDocumentLocator('document.body.querySelector(`input[aria-label="${name}"]`)')).toBe(true);
+    expect(isSlotOrDocumentLocator('document.head.querySelectorAll("[data-scroll-area-test-styles]")')).toBe(
+      true
+    );
+    expect(isSlotOrDocumentLocator('document.documentElement.querySelector("style")')).toBe(true);
+    expect(isSlotOrDocumentLocator('document.documentElement.querySelectorAll("style")')).toBe(true);
+    expect(isSlotOrDocumentLocator('// document.body.querySelector("x")')).toBe(false);
+  });
+
   it("locates by role except documented DOM contract checks", () => {
+    // The shared fixtures under test/ are in this gate even though they are in neither suite root.
+    expect(fixtureFiles.length).toBeGreaterThan(0);
+    expect(locatorSources.size).toBe(suiteFiles.length + fixtureFiles.length);
     expect(unsanctionedSlotLocators()).toEqual([]);
   });
 });

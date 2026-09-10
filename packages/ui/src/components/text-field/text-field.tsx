@@ -1,30 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 import { useFormReset } from "../../hooks/use-form-reset";
 import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { cn } from "../../styles/cn";
-import { isThemeDevelopment } from "../../theme/validate-theme";
 import { FieldFrame } from "../field/field-frame";
 import { Input } from "../input/input";
 import { textFieldVariants } from "./text-field-variants";
-
-const DIGITS_ONLY = /^\d+$/;
-
-function containsOnlyDigits(value: string): boolean {
-  return DIGITS_ONLY.test(value);
-}
-
-function warnIfNotNumeric(prop: "value" | "defaultValue", value: string | null | undefined): void {
-  if (!isThemeDevelopment()) {
-    return;
-  }
-  if (value && !containsOnlyDigits(value)) {
-    console.warn(`TextField: ${prop} is not a number`);
-  }
-}
+import { useNumericTextField } from "./use-numeric-text-field";
 
 export type TextFieldProps = {
   /** Visible label, rendered as `Field.Label`. */
@@ -103,20 +88,10 @@ export function TextField({
   ref,
   ...props
 }: TextFieldProps): ReactElement {
-  const isControlled = value !== undefined;
-  const [internalValue, setInternalValue] = useState(() => defaultValue ?? "");
+  const numeric = useNumericTextField({ value, defaultValue, filter, onChange });
   const inputRef = useRef<HTMLInputElement>(null);
   const mergedRef = useMergedRefs(ref, inputRef);
-  const ownsNumericState = filter === "numeric" && !isControlled;
-  useFormReset(inputRef, ownsNumericState ? () => setInternalValue(defaultValue ?? "") : null);
-
-  useEffect(() => {
-    if (filter !== "numeric") {
-      return;
-    }
-    warnIfNotNumeric("defaultValue", defaultValue);
-    warnIfNotNumeric("value", value);
-  }, [defaultValue, filter, value]);
+  useFormReset(inputRef, numeric.onReset);
 
   const {
     base,
@@ -131,19 +106,6 @@ export function TextField({
     hidden,
     isIconActive: Boolean(icon),
   });
-
-  function handleChange(next: string): void {
-    if (filter === "numeric" && next !== "" && !containsOnlyDigits(next)) {
-      return;
-    }
-    if (filter === "numeric" && !isControlled) {
-      setInternalValue(next);
-    }
-    onChange?.(next);
-  }
-
-  const resolvedValue = filter === "numeric" ? (isControlled ? value : internalValue) : value;
-  const resolvedDefaultValue = filter === "numeric" ? undefined : (defaultValue ?? undefined);
 
   return (
     <FieldFrame
@@ -163,13 +125,13 @@ export function TextField({
       <div className="relative">
         <Input
           name={name}
-          value={resolvedValue}
-          defaultValue={resolvedDefaultValue}
+          value={numeric.value}
+          defaultValue={numeric.defaultValue}
           onChange={(event) => {
-            handleChange(event.currentTarget.value);
+            numeric.onChange(event.currentTarget.value);
           }}
           placeholder={placeholder}
-          inputMode={inputMode ?? (filter === "numeric" ? "numeric" : undefined)}
+          inputMode={inputMode ?? numeric.inputMode}
           // fieldGroup's default would override the input's w-full.
           className={cn(input(), variant ? fieldGroup() : null)}
           ref={mergedRef}
