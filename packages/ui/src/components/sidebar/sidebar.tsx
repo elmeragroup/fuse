@@ -338,10 +338,7 @@ function SidebarRoot({
         {...props}>
         <div
           data-slot="sidebar-inner"
-          // Offcanvas collapse hides the panel with `visibility` rather than `inert`, so the
-          // Rail can opt back in from inside. Hidden descendants are out of the accessibility
-          // tree and tab order and take no pointer events; `inert` would also hide the Rail
-          // and can only be undone by moving it in the DOM.
+          // `invisible`, not `inert`: Rail opts back in with `visible` (see SidebarRail).
           className="group-data-[variant=floating]:shadow-sm flex size-full flex-col bg-sidebar group-data-[collapsible=offcanvas]:invisible group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:ring-1 group-data-[variant=floating]:ring-sidebar-border">
           {children}
         </div>
