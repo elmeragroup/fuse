@@ -1,3 +1,5 @@
+import { createRef } from "react";
+
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -114,6 +116,74 @@ describe("TextField", () => {
 
     expect(warn).toHaveBeenCalledWith("TextField: value is not a number");
     warn.mockRestore();
+  });
+
+  it("refuses a pasted non-digit run under filter=numeric and accepts a digit run", async () => {
+    const onChange = vi.fn();
+    renderThemed(
+      <>
+        <TextField aria-label="Clipboard source" defaultValue="12a3" />
+        <TextField label="Pin" filter="numeric" onChange={onChange} />
+      </>
+    );
+    const source = textboxNamed("Clipboard source");
+    if (!(source instanceof HTMLInputElement)) {
+      throw new Error("expected the clipboard source input");
+    }
+    source.focus();
+    source.select();
+    await userEvent.copy();
+
+    const pin = textboxNamed("Pin");
+    pin.focus();
+    await userEvent.paste();
+    expect(pin).toHaveProperty("value", "");
+    expect(onChange).not.toHaveBeenCalled();
+
+    source.value = "456";
+    source.focus();
+    source.select();
+    await userEvent.copy();
+    pin.focus();
+    await userEvent.paste();
+    expect(pin).toHaveProperty("value", "456");
+    expect(onChange).toHaveBeenLastCalledWith("456");
+  });
+
+  it("strips non-digits from values that bypass beforeinput", () => {
+    const onChange = vi.fn();
+    renderThemed(<TextField label="Pin" filter="numeric" onChange={onChange} />);
+    const pin = textboxNamed("Pin");
+    if (!(pin instanceof HTMLInputElement)) {
+      throw new Error("expected the pin input");
+    }
+
+    // Autofill and programmatic writes do not run `beforeinput`; the change backstop does.
+    // oxlint-disable-next-line typescript/unbound-method -- bound with .call below to bypass React's value tracker
+    const nativeValueSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+    if (!nativeValueSetter) {
+      throw new Error("expected the native input value setter");
+    }
+    nativeValueSetter.call(pin, "12a3");
+    pin.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(pin.value).toBe("123");
+    expect(onChange).toHaveBeenLastCalledWith("123");
+  });
+
+  it("forwards object and callback refs to the inner input", () => {
+    const objectRef = createRef<HTMLInputElement>();
+    const callbackRef = vi.fn();
+    const { unmount } = renderThemed(
+      <>
+        <TextField label="Object" defaultValue="123" ref={objectRef} />
+        <TextField label="Callback" defaultValue="123" ref={callbackRef} />
+      </>
+    );
+    expect(objectRef.current).toBeInstanceOf(HTMLInputElement);
+    expect(callbackRef).toHaveBeenCalledWith(expect.any(HTMLInputElement));
+    unmount();
+    expect(objectRef.current).toBeNull();
+    expect(callbackRef).toHaveBeenCalledWith(null);
   });
 
   it("renders the pending/success indicator row without a label, and success wins", () => {

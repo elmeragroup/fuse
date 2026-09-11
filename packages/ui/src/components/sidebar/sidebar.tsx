@@ -1,8 +1,11 @@
 "use client";
 
-import type { ComponentProps, CSSProperties, Dispatch, ReactElement, SetStateAction } from "react";
+import type { ComponentProps, CSSProperties, Dispatch, ReactElement, ReactNode, SetStateAction } from "react";
 import {
+  Children,
   createContext,
+  Fragment,
+  isValidElement,
   use,
   useCallback,
   useEffect,
@@ -253,6 +256,41 @@ export type SidebarRootProps = ComponentProps<"div"> & {
   dir?: string;
 };
 
+/** Children split into the hideable panel and the Rail parts that must escape it. */
+type SidebarRootChildren = {
+  panel: ReactNode[];
+  rails: ReactNode[];
+};
+
+/**
+ * Rail stays outside the hideable panel: when offcanvas collapses, `sidebar-inner` goes
+ * `inert`, and `inert` cannot be escaped from within. Root splits Rail out of the
+ * caller's `children` (fragments included) so it can render beside the panel with
+ * composition unchanged. The match is by identity (`type === SidebarRail`); a wrapper
+ * component or DOM host around Rail stays inside the inert panel.
+ */
+function splitRail(children: ReactNode): SidebarRootChildren {
+  const panel: ReactNode[] = [];
+  const rails: ReactNode[] = [];
+  for (const child of Children.toArray(children)) {
+    const element = isValidElement<{ children?: ReactNode }>(child) ? child : null;
+    if (element?.type === SidebarRail) {
+      rails.push(element);
+      continue;
+    }
+    if (element?.type === Fragment) {
+      const nested = splitRail(element.props.children);
+      if (nested.panel.length > 0) {
+        panel.push(<Fragment key={element.key ?? undefined}>{nested.panel}</Fragment>);
+      }
+      rails.push(...nested.rails);
+      continue;
+    }
+    panel.push(child);
+  }
+  return { panel, rails };
+}
+
 function SidebarRoot({
   side = "left",
   variant = "sidebar",
@@ -306,6 +344,9 @@ function SidebarRoot({
     );
   }
 
+  const isOffcanvasCollapsed = state === "collapsed" && collapsible === "offcanvas";
+  const { panel, rails } = splitRail(children);
+
   return (
     <div
       className="group peer md:block hidden text-sidebar-foreground"
@@ -330,10 +371,6 @@ function SidebarRoot({
         data-side={side}
         className={cn(
           "md:flex fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[width] duration-200 ease-linear data-[side=left]:left-0 data-[side=left]:group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)] data-[side=right]:right-0 data-[side=right]:group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
-          // Offcanvas hides the whole container, so any child that must stay interactive
-          // while collapsed has to re-assert `group-data-[collapsible=offcanvas]:visible`
-          // for itself — Rail below is the one that does.
-          "group-data-[collapsible=offcanvas]:invisible",
           variant === "floating" || variant === "inset"
             ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]"
             : "group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l",
@@ -342,9 +379,11 @@ function SidebarRoot({
         {...props}>
         <div
           data-slot="sidebar-inner"
+          inert={isOffcanvasCollapsed ? true : undefined}
           className="group-data-[variant=floating]:shadow-sm flex size-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:ring-1 group-data-[variant=floating]:ring-sidebar-border">
-          {children}
+          {panel}
         </div>
+        {rails}
       </div>
     </div>
   );
@@ -402,7 +441,7 @@ function SidebarRail({ className, ...props }: SidebarRailProps): ReactElement {
         "sm:flex absolute inset-y-0 z-20 hidden w-4 group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:start-1/2 after:w-[2px] after:transition-colors hover:after:bg-sidebar-border ltr:-translate-x-1/2 rtl:-translate-x-1/2",
         "in-data-[side=left]:cursor-w-resize in-data-[side=right]:cursor-e-resize",
         "[[data-side=left][data-state=collapsed]_&]:cursor-e-resize [[data-side=right][data-state=collapsed]_&]:cursor-w-resize",
-        "group-data-[collapsible=offcanvas]:visible group-data-[collapsible=offcanvas]:translate-x-0 group-data-[collapsible=offcanvas]:after:left-full hover:group-data-[collapsible=offcanvas]:bg-sidebar",
+        "group-data-[collapsible=offcanvas]:translate-x-0 group-data-[collapsible=offcanvas]:after:left-full hover:group-data-[collapsible=offcanvas]:bg-sidebar",
         "[[data-side=left][data-collapsible=offcanvas]_&]:-right-2",
         "[[data-side=right][data-collapsible=offcanvas]_&]:-left-2",
         className

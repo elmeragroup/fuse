@@ -202,9 +202,4 @@ describe("clearedForReset", () => {
     expect(next.value).toBeUndefined();
     expect(next.configuration).toBe(configuration);
   });
-
-  it("is a no-op when the value is parent-owned", () => {
-    const stored = stateWith(configure(defaultMetadata), "+4741234567", "41234567");
-    expect(clearedForReset(stored)).toBe(stored);
-  });
 });

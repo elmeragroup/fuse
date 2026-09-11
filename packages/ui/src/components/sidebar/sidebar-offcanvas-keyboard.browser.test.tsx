@@ -2,10 +2,12 @@ import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { withLocale } from "../../../test/locale-matrix";
 import {
   ContextProbe,
   Frame,
   MOBILE,
+  bySlot,
   railNamed,
   setupSidebarBrowser,
   sidebarRoot,
@@ -62,6 +64,13 @@ describe("Sidebar collapsed offcanvas keyboard", () => {
       expect(sidebarRoot().getAttribute("data-collapsible")).toBe("offcanvas");
       expect(sidebarRoot().getAttribute("data-side")).toBe(side);
 
+      // DOM audit: the inert panel is the structural hide; Rail must sit outside it.
+      const inner = bySlot("sidebar-inner");
+      const rail = railNamed("Toggle sidebar");
+      expect(inner.inert).toBe(true);
+      expect(rail.closest('[data-slot="sidebar-inner"]'), "Rail escapes the inert panel").toBeNull();
+      expect(rail.parentElement).toBe(inner.parentElement);
+
       const { link, extra } = offcanvasMenuControls();
       const after = roleNamed("button", "After");
 
@@ -101,6 +110,7 @@ describe("Sidebar collapsed offcanvas keyboard", () => {
     await vi.waitFor(() => {
       expect(sidebarRoot().getAttribute("data-state")).toBe("collapsed");
     });
+    expect(bySlot("sidebar-inner").inert).toBe(true);
     expect(sidebarRoot().contains(document.activeElement)).toBe(false);
 
     await userEvent.keyboard("{Tab}");
@@ -110,6 +120,7 @@ describe("Sidebar collapsed offcanvas keyboard", () => {
     await vi.waitFor(() => {
       expect(sidebarRoot().getAttribute("data-state")).toBe("expanded");
     });
+    expect(bySlot("sidebar-inner").inert).toBe(false);
 
     roleNamed("button", "Toggle sidebar").focus();
     await userEvent.keyboard("{Shift>}{Tab}{/Shift}");
@@ -119,15 +130,48 @@ describe("Sidebar collapsed offcanvas keyboard", () => {
   it("reopens from the pointer rail while collapsed offcanvas", async () => {
     renderThemed(<Frame provider={{ defaultOpen: false }}>{ordersMenuItem()}</Frame>);
     expect(sidebarRoot().getAttribute("data-state")).toBe("collapsed");
+    // DOM audit: the inert panel is the structural hide; Rail must sit outside it.
+    const inner = bySlot("sidebar-inner");
+    expect(inner.inert).toBe(true);
+    expect(railNamed("Toggle sidebar").closest('[data-slot="sidebar-inner"]')).toBeNull();
 
     await userEvent.click(railNamed("Toggle sidebar"));
     await vi.waitFor(() => {
       expect(sidebarRoot().getAttribute("data-state")).toBe("expanded");
     });
+    expect(inner.inert).toBe(false);
 
     roleNamed("button", "Toggle sidebar").focus();
     await userEvent.keyboard("{Shift>}{Tab}{/Shift}");
     expect(document.activeElement).toBe(ordersLink());
+  });
+
+  it("hoists a fragment-wrapped Rail outside the inert panel", async () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <Sidebar.Provider defaultOpen={false}>
+          <Sidebar.Root>
+            <Sidebar.Content>
+              <Sidebar.Menu>{ordersMenuItem()}</Sidebar.Menu>
+            </Sidebar.Content>
+            <>
+              <Sidebar.Rail />
+            </>
+          </Sidebar.Root>
+        </Sidebar.Provider>
+      )
+    );
+
+    // DOM audit: the inert panel is the structural hide; Rail must sit outside it.
+    expect(bySlot("sidebar-inner").inert).toBe(true);
+    const rail = railNamed("Toggle sidebar");
+    expect(rail.closest('[data-slot="sidebar-inner"]')).toBeNull();
+
+    await userEvent.click(rail);
+    await vi.waitFor(() => {
+      expect(sidebarRoot().getAttribute("data-state")).toBe("expanded");
+    });
   });
 
   it("keeps icon-collapsed menu buttons tabbable", async () => {
@@ -137,6 +181,7 @@ describe("Sidebar collapsed offcanvas keyboard", () => {
       </Frame>
     );
     expect(sidebarRoot().getAttribute("data-collapsible")).toBe("icon");
+    expect(bySlot("sidebar-inner").inert, "icon collapse keeps the panel interactive").toBe(false);
 
     const link = ordersLink();
     link.focus();

@@ -135,7 +135,7 @@ export function usePhoneNumberFieldState({
     countries,
     getCountryName,
     // Reset only when this hook owns the value. A parent-owned `value` is the parent's
-    // to keep: `clearedForReset` would no-op, but the ownership line is the null.
+    // to keep; a reset handler on this side would fight it.
     onReset:
       value === undefined
         ? () => {
