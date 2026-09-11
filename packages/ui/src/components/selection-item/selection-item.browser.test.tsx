@@ -4,7 +4,7 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { assertHorizontalItemList, radiusToken } from "../../../test/assert-selection-item-group-layout";
-import { renderThemed } from "../../../test/themed-browser-render";
+import { headingNamed, renderThemed, roleNamed, textNamed } from "../../../test/themed-browser-render";
 import { disabledHatch } from "../../styles/utils";
 import { Checkbox as UiCheckbox, CheckboxGroup, CheckboxItem, CheckboxItemGroup } from "../checkbox/checkbox";
 import { Field } from "../field/field";
@@ -19,24 +19,8 @@ function checkboxNamed(name: string, checked?: boolean): HTMLElement {
   return element;
 }
 
-function titled(name: string): HTMLElement {
-  const element = page.getByRole("heading", { name, exact: true }).element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error(`expected heading named ${name}`);
-  }
-  return element;
-}
-
-function extraNamed(name: string): HTMLElement {
-  const element = page.getByRole("region", { name, exact: true }).element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error(`expected region named ${name}`);
-  }
-  return element;
-}
-
 function shellFrom(name: string): HTMLElement {
-  const heading = titled(name);
+  const heading = headingNamed(name);
   const shell = heading.closest("[data-selection-item]");
   if (shell instanceof HTMLElement) {
     return shell;
@@ -70,11 +54,7 @@ function subsectionHost(from: HTMLElement): HTMLElement {
 }
 
 function nestedSubsectionButton(label: string): HTMLElement {
-  const text = page.getByText(label, { exact: true }).element();
-  if (!(text instanceof HTMLElement)) {
-    throw new Error(`expected text ${label}`);
-  }
-  const button = subsectionHost(text).querySelector("button");
+  const button = subsectionHost(textNamed(label)).querySelector("button");
   if (!(button instanceof HTMLElement)) {
     throw new Error(`expected a button inside the ${label} subsection`);
   }
@@ -99,7 +79,7 @@ function SubSectionTree({ mode }: { mode: "hidden" | "visible" | "default" }) {
 }
 
 function subsectionSpacer(label: string): HTMLElement {
-  const footer = extraNamed(label).parentElement;
+  const footer = roleNamed("region", label).parentElement;
   let current = footer?.parentElement ?? null;
   while (current) {
     const spacer = [...current.children].find((child) => child.getAttribute("aria-hidden") === "true");
@@ -168,7 +148,7 @@ describe("SelectionItem", () => {
         </SelectionItem.Shell>
       </Field.Root>
     );
-    const article = titled("Article row").closest("article");
+    const article = headingNamed("Article row").closest("article");
     expect(article?.getAttribute("data-slot")).toBe("checkbox-item");
   });
 
@@ -189,7 +169,7 @@ describe("SelectionItem", () => {
     const details = page.getByRole("button", { name: "Details", exact: true }).element();
     expect(details.closest("label")).toBeNull();
 
-    await userEvent.click(titled("Fixed price"));
+    await userEvent.click(headingNamed("Fixed price"));
     expect(checkboxNamed("Fixed price", true).getAttribute("aria-checked")).toBe("true");
 
     await userEvent.click(page.getByRole("button", { name: "Details", exact: true }));
@@ -266,28 +246,13 @@ describe("SelectionItem", () => {
     expect(extraClicks).toBe(0);
   });
 
-  it("removes hidden SubSection content from tab order and programmatic focus", async () => {
+  it("passes mode through to Item.Footer: hidden renders the band inert, visible does not", () => {
+    // The focus choreography behind `inert` is Item.Footer's, covered in item.browser.test.tsx.
     const { rerender } = renderThemed(<SubSectionTree mode="hidden" />);
-    const nestedButton = nestedSubsectionButton("Hidden details");
-
-    const before = page.getByRole("button", { name: "Before", exact: true }).element();
-    if (!(before instanceof HTMLElement)) {
-      throw new Error("expected before button");
-    }
-    before.focus();
-    await userEvent.keyboard("{Tab}");
-    const after = page.getByRole("button", { name: "After", exact: true }).element();
-    expect(document.activeElement, "Tab must skip the hidden subsection").toBe(after);
-
-    nestedButton.focus();
-    expect(document.activeElement, "programmatic focus must not enter the hidden subsection").not.toBe(
-      nestedButton
-    );
+    expect(subsectionHost(nestedSubsectionButton("Hidden details")).inert).toBe(true);
 
     rerender(<SubSectionTree mode="visible" />);
-    before.focus();
-    await userEvent.keyboard("{Tab}");
-    expect(document.activeElement, "a visible subsection must return to tab order").toBe(nestedButton);
+    expect(subsectionHost(nestedSubsectionButton("Hidden details")).inert).toBe(false);
   });
 
   it("places the control after the row at end and matches spacer width in both positions", () => {
@@ -336,11 +301,11 @@ describe("SelectionItem", () => {
     const end = shellFrom("End row");
     const wide = shellFrom("Wide row");
     const startControl = checkboxNamed("Start row").getBoundingClientRect();
-    const startTitle = titled("Start row").getBoundingClientRect();
+    const startTitle = headingNamed("Start row").getBoundingClientRect();
     expect(startControl.left).toBeLessThan(startTitle.left);
 
     const endControl = checkboxNamed("End row").getBoundingClientRect();
-    const endTitle = titled("End row").getBoundingClientRect();
+    const endTitle = headingNamed("End row").getBoundingClientRect();
     expect(endControl.left).toBeGreaterThan(endTitle.left);
 
     expect(getComputedStyle(start).display).toBe("grid");
@@ -381,9 +346,9 @@ describe("SelectionItem", () => {
       startSpacer.getBoundingClientRect().width
     );
 
-    const endExtra = extraNamed("End extra").getBoundingClientRect();
+    const endExtra = roleNamed("region", "End extra").getBoundingClientRect();
     expect(endSpacer.getBoundingClientRect().left).toBeGreaterThan(endExtra.left);
-    const startExtra = extraNamed("Start extra").getBoundingClientRect();
+    const startExtra = roleNamed("region", "Start extra").getBoundingClientRect();
     expect(startSpacer.getBoundingClientRect().left).toBeLessThan(startExtra.left);
   });
 
@@ -405,7 +370,7 @@ describe("SelectionItem", () => {
     expect(shellStyle.backgroundImage).toBe(tokenBackgroundImage(shell, disabledHatch));
     expect(shellStyle.backgroundImage).not.toBe("none");
 
-    titled("Fixed price").click();
+    headingNamed("Fixed price").click();
     expect(checkboxNamed("Fixed price", false).getAttribute("aria-checked")).toBe("false");
   });
 
@@ -471,7 +436,7 @@ describe("SelectionItem", () => {
     expect(getComputedStyle(shell).borderTopWidth).toBe("0px");
     expect(getComputedStyle(shell).marginTop).not.toBe("-1px");
 
-    await userEvent.click(titled("Shell row"));
+    await userEvent.click(headingNamed("Shell row"));
     expect(checkboxNamed("Shell row", true).getAttribute("aria-checked")).toBe("true");
     expect(getComputedStyle(shell).backgroundColor).toBe(tokenBackgroundColor(shell, "bg-muted"));
     expect(getComputedStyle(shell).borderTopColor).toBe(tokenBorderColor(shell, "border-primary"));

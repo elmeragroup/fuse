@@ -1,14 +1,16 @@
+// Focus containment while the Sidebar panel is collapsed, across the collapsible modes.
+// Toggling, layout, cookies, the mobile Sheet and the slot roster stay in sidebar.browser.test.tsx.
 import type { ReactNode, Ref } from "react";
 import { createRef } from "react";
 
 import { describe, expect, it, vi } from "vitest";
-import { page, userEvent } from "vitest/browser";
+import { userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import {
   ContextProbe,
   Frame,
-  MOBILE,
+  OrdersLink,
   bySlot,
   railNamed,
   setupSidebarBrowser,
@@ -24,31 +26,16 @@ function panelVisibility(): string {
   return getComputedStyle(bySlot("sidebar-inner")).visibility;
 }
 
-function offcanvasMenuControls() {
-  // DOM audit: a `visibility: hidden` panel is out of the accessibility tree, so role
-  // queries cannot find its controls; keep the menu controls by slot and label.
-  const link = document.querySelector('[data-slot="sidebar-menu-button"]');
+/**
+ * The menu link inside a collapsed offcanvas panel. A `visibility: hidden` panel is out of the
+ * accessibility tree, so no role query reaches it; the slot is the handle that remains.
+ */
+function collapsedMenuLink(): HTMLAnchorElement {
+  const link = bySlot("sidebar-menu-button");
   if (!(link instanceof HTMLAnchorElement)) {
     throw new Error("expected the sidebar menu link");
   }
-  const extra = [...document.querySelectorAll("button")].find(
-    (node): node is HTMLButtonElement =>
-      node instanceof HTMLButtonElement &&
-      node.textContent === "Extra" &&
-      node.getAttribute("data-slot") !== "sidebar-rail"
-  );
-  if (!extra) {
-    throw new Error("expected the extra menu button");
-  }
-  return { link, extra };
-}
-
-function ordersMenuItem() {
-  return (
-    <Sidebar.MenuItem>
-      <Sidebar.MenuButton render={<a href="#x" />}>Orders</Sidebar.MenuButton>
-    </Sidebar.MenuItem>
-  );
+  return link;
 }
 
 function ordersLink(): HTMLElement {
@@ -60,26 +47,30 @@ function RailShell({ children }: { children: ReactNode }) {
   return <div>{children}</div>;
 }
 
-function OffcanvasFrame({ side, rootRef }: { side?: "left" | "right"; rootRef?: Ref<HTMLDivElement> }) {
+/** `extraRef` hands out the second control: like the link, the collapsed panel hides it from role queries. */
+function OffcanvasFrame({ side, extraRef }: { side?: "left" | "right"; extraRef?: Ref<HTMLButtonElement> }) {
   return (
     <Frame
       provider={{ defaultOpen: false }}
-      root={{ side, ref: rootRef }}
+      root={{ side }}
       rail={
         <RailShell>
           <Sidebar.Rail />
         </RailShell>
       }>
-      {ordersMenuItem()}
-      <button type="button">Extra</button>
+      <OrdersLink />
+      <button ref={extraRef} type="button">
+        Extra
+      </button>
     </Frame>
   );
 }
 
-describe("Sidebar collapsed offcanvas keyboard", () => {
+describe("Sidebar collapsed focus containment", () => {
   for (const side of ["left", "right"] as const) {
     it(`skips collapsed offcanvas menu controls on the ${side}`, async () => {
-      renderThemed(<OffcanvasFrame side={side} />);
+      const extraRef = createRef<HTMLButtonElement>();
+      renderThemed(<OffcanvasFrame side={side} extraRef={extraRef} />);
       expect(sidebarRoot().getAttribute("data-collapsible")).toBe("offcanvas");
       expect(sidebarRoot().getAttribute("data-side")).toBe(side);
       expect(panelVisibility(), "the collapsed panel is hidden, not unmounted").toBe("hidden");
@@ -87,7 +78,11 @@ describe("Sidebar collapsed offcanvas keyboard", () => {
         "visible"
       );
 
-      const { link, extra } = offcanvasMenuControls();
+      const link = collapsedMenuLink();
+      const extra = extraRef.current;
+      if (extra === null) {
+        throw new Error("expected the extra menu button");
+      }
       const after = roleNamed("button", "After");
 
       roleNamed("button", "Toggle sidebar").focus();
@@ -114,7 +109,7 @@ describe("Sidebar collapsed offcanvas keyboard", () => {
             }}
           />
         }>
-        {ordersMenuItem()}
+        <OrdersLink />
       </Frame>
     );
 
@@ -144,11 +139,7 @@ describe("Sidebar collapsed offcanvas keyboard", () => {
   });
 
   it("keeps the Rail clickable while the collapsed panel is hidden, whatever wraps it", async () => {
-    const rootRef = createRef<HTMLDivElement>();
-    renderThemed(<OffcanvasFrame rootRef={rootRef} />);
-    expect(rootRef.current?.getAttribute("data-slot"), "the caller's ref reaches the container").toBe(
-      "sidebar-container"
-    );
+    renderThemed(<OffcanvasFrame />);
     expect(panelVisibility()).toBe("hidden");
 
     const rail = railNamed("Toggle sidebar");
@@ -163,7 +154,7 @@ describe("Sidebar collapsed offcanvas keyboard", () => {
   it("keeps icon-collapsed menu buttons tabbable", async () => {
     renderThemed(
       <Frame provider={{ defaultOpen: false }} root={{ collapsible: "icon" }}>
-        {ordersMenuItem()}
+        <OrdersLink />
       </Frame>
     );
     expect(sidebarRoot().getAttribute("data-collapsible")).toBe("icon");
@@ -176,15 +167,5 @@ describe("Sidebar collapsed offcanvas keyboard", () => {
     roleNamed("button", "Toggle sidebar").focus();
     await userEvent.keyboard("{Shift>}{Tab}{/Shift}");
     expect(document.activeElement).toBe(link);
-  });
-
-  it("does not expose menu controls while the mobile sheet is closed", async () => {
-    await page.viewport(MOBILE.width, MOBILE.height);
-    renderThemed(<Frame>{ordersMenuItem()}</Frame>);
-
-    expect(page.getByRole("link", { name: "Orders", exact: true }).query()).toBeNull();
-    roleNamed("button", "Toggle sidebar").focus();
-    await userEvent.keyboard("{Tab}");
-    expect(document.activeElement).toBe(roleNamed("button", "After"));
   });
 });

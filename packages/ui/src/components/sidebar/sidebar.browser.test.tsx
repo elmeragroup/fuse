@@ -15,6 +15,7 @@ import {
   DESKTOP,
   Frame,
   MOBILE,
+  OrdersLink,
   bySlot,
   captureCookieWrites,
   emulateReducedMotion,
@@ -409,13 +410,7 @@ describe("Sidebar.MenuButton tooltip", () => {
     return (
       <Tooltip.Provider delay={0}>
         <Frame provider={{ defaultOpen }} root={{ collapsible: "icon" }}>
-          <Sidebar.MenuItem>
-            <Sidebar.MenuButton
-              tooltip={tooltip === "string" ? "Orders" : { children: "Orders", sideOffset: 12 }}
-              render={<a href="/orders" />}>
-              <span>Orders</span>
-            </Sidebar.MenuButton>
-          </Sidebar.MenuItem>
+          <OrdersLink tooltip={tooltip === "string" ? "Orders" : { children: "Orders", sideOffset: 12 }} />
         </Frame>
       </Tooltip.Provider>
     );
@@ -428,7 +423,12 @@ describe("Sidebar.MenuButton tooltip", () => {
     await vi.waitFor(() => {
       expect(link.matches(":hover")).toBe(true);
     });
-    await new Promise(requestAnimationFrame);
+    await vi.waitFor(() => {
+      expect(
+        link.hasAttribute("data-popup-open"),
+        "the hover opens the root; only the content is withheld"
+      ).toBe(true);
+    });
     expect(page.getByRole("tooltip", { name: "Orders", exact: true }).query()).toBeNull();
   });
 
@@ -583,11 +583,7 @@ describe("Sidebar.MenuButton", () => {
   it("threads render polymorphism: an anchor keeps its href and the button's state attributes", () => {
     renderThemed(
       <Frame>
-        <Sidebar.MenuItem>
-          <Sidebar.MenuButton isActive render={<a href="/orders" />}>
-            Orders
-          </Sidebar.MenuButton>
-        </Sidebar.MenuItem>
+        <OrdersLink isActive />
       </Frame>
     );
     const link = roleNamed("link", "Orders");
@@ -775,9 +771,13 @@ describe("Sidebar.MenuSubButton", () => {
   });
 });
 
+/** DOM audit: the roster audit counts slot stamps directly; every part stamps its slot and no legacy `data-sidebar` survives. */
+function countMatching(selector: string): number {
+  return document.querySelectorAll(selector).length;
+}
+
 describe("Sidebar data-slot audit", () => {
   it("stamps every roster slot once composed, with no legacy data-sidebar attribute anywhere", () => {
-    // DOM audit: every part stamps its slot; no data-sidebar attributes anywhere
     renderThemed(
       withLocale(
         "en-US",
@@ -824,14 +824,12 @@ describe("Sidebar data-slot audit", () => {
       )
     );
     for (const slot of SLOT_ROSTER) {
-      // DOM audit: verify the component slot contract.
-      expect(document.querySelectorAll(`[data-slot="${slot}"]`).length, slot).toBeGreaterThanOrEqual(1);
+      expect(countMatching(`[data-slot="${slot}"]`), slot).toBeGreaterThanOrEqual(1);
     }
-    expect(document.querySelectorAll("[data-sidebar]")).toHaveLength(0);
+    expect(countMatching("[data-sidebar]")).toBe(0);
     expect(bySlot("sidebar-separator").getAttribute("role")).toBe("separator");
-    // DOM audit: verify the component slot contract.
-    expect(document.querySelectorAll('[data-slot="separator"]')).toHaveLength(0);
-    expect(document.querySelectorAll('[data-slot="input"]')).toHaveLength(0);
+    expect(countMatching('[data-slot="separator"]'), "sidebar parts never reuse the bare slot names").toBe(0);
+    expect(countMatching('[data-slot="input"]')).toBe(0);
     expect(bySlot("sidebar-inset").tagName).toBe("MAIN");
     expect(bySlot("sidebar-menu").tagName).toBe("UL");
     expect(bySlot("sidebar-menu-item").tagName).toBe("LI");

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { flushEffects, render } from "../../test/browser-render";
+import { render } from "../../test/browser-render";
 import { dispatchPredictedPointer } from "../../test/predicted-pointer";
 import { roleNamed } from "../../test/themed-browser-render";
 import { usePredictedEvents } from "./use-predicted-events";
@@ -29,11 +29,14 @@ function center(element: HTMLElement) {
   return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
 }
 
+function pointermoveCalls(spy: { mock: { calls: unknown[][] } }): unknown[][] {
+  return spy.mock.calls.filter((call) => call[0] === "pointermove");
+}
+
 describe("usePredictedEvents", () => {
-  it("fires onIntent once from a predicted path", async () => {
+  it("fires onIntent once from a predicted path", () => {
     const live = vi.fn();
     render(<Probe label="Prefetch" onIntent={live} />);
-    await flushEffects();
 
     const { x, y } = center(roleNamed("button", "Prefetch"));
     dispatchPredictedPointer(x, y);
@@ -41,10 +44,9 @@ describe("usePredictedEvents", () => {
     expect(live).toHaveBeenCalledTimes(1);
   });
 
-  it("stops measuring a fired registration and removes the last pointermove listener", async () => {
+  it("stops measuring a fired registration and removes the last pointermove listener", () => {
     const live = vi.fn();
     render(<Probe label="Prefetch" onIntent={live} />);
-    await flushEffects();
 
     const target = roleNamed("button", "Prefetch");
     const { x, y } = center(target);
@@ -54,7 +56,7 @@ describe("usePredictedEvents", () => {
     try {
       dispatchPredictedPointer(x, y);
       expect(live).toHaveBeenCalledTimes(1);
-      expect(remove.mock.calls.filter((call) => call[0] === "pointermove").length).toBeGreaterThanOrEqual(1);
+      expect(pointermoveCalls(remove).length).toBeGreaterThanOrEqual(1);
 
       measure.mockClear();
       dispatchPredictedPointer(x, y);
@@ -67,7 +69,7 @@ describe("usePredictedEvents", () => {
     }
   });
 
-  it("keeps the shared pointermove listener while a sibling registration is still pending", async () => {
+  it("keeps the shared pointermove listener while a sibling registration is still pending", () => {
     const first = vi.fn();
     const second = vi.fn();
     const add = vi.spyOn(document, "addEventListener");
@@ -79,25 +81,24 @@ describe("usePredictedEvents", () => {
         <Probe label="Second" onIntent={second} />
       </div>
     );
-    await flushEffects();
 
     const firstPoint = center(roleNamed("button", "First"));
     const secondPoint = center(roleNamed("button", "Second"));
 
     try {
+      expect(pointermoveCalls(add), "two registrations share one listener").toHaveLength(1);
+
       dispatchPredictedPointer(firstPoint.x, firstPoint.y);
       expect(first).toHaveBeenCalledTimes(1);
       expect(second).not.toHaveBeenCalled();
-      expect(remove.mock.calls.filter((call) => call[0] === "pointermove")).toHaveLength(0);
+      expect(pointermoveCalls(remove)).toHaveLength(0);
 
       const measureFirst = vi.spyOn(roleNamed("button", "First"), "getBoundingClientRect");
       try {
         dispatchPredictedPointer(secondPoint.x, secondPoint.y);
         expect(second).toHaveBeenCalledTimes(1);
         expect(measureFirst).not.toHaveBeenCalled();
-        expect(remove.mock.calls.filter((call) => call[0] === "pointermove").length).toBeGreaterThanOrEqual(
-          1
-        );
+        expect(pointermoveCalls(remove).length).toBeGreaterThanOrEqual(1);
       } finally {
         measureFirst.mockRestore();
       }
@@ -107,11 +108,12 @@ describe("usePredictedEvents", () => {
     }
   });
 
-  it("unmounts safely from inside onIntent without double-removing the listener", async () => {
+  it("unmounts safely from inside onIntent without double-removing the listener", () => {
     let calls = 0;
     let unmount: () => void = () => {
       throw new Error("unmount was called before render completed");
     };
+    const remove = vi.spyOn(document, "removeEventListener");
     ({ unmount } = render(
       <Probe
         label="Gone"
@@ -121,28 +123,33 @@ describe("usePredictedEvents", () => {
         }}
       />
     ));
-    await flushEffects();
 
     const gone = roleNamed("button", "Gone");
     const { x, y } = center(gone);
 
-    dispatchPredictedPointer(x, y);
-    dispatchPredictedPointer(x, y);
-    dispatchPredictedPointer(x, y);
+    try {
+      dispatchPredictedPointer(x, y);
+      dispatchPredictedPointer(x, y);
+      dispatchPredictedPointer(x, y);
 
-    expect(calls).toBe(1);
-    expect(document.contains(gone)).toBe(false);
+      expect(calls).toBe(1);
+      expect(document.contains(gone)).toBe(false);
+      expect(
+        pointermoveCalls(remove),
+        "the fired registration removes the listener; the unmount cleanup must not remove it again"
+      ).toHaveLength(1);
+    } finally {
+      remove.mockRestore();
+    }
   });
 
-  it("uses the latest onIntent before the first hit and does not rearm afterwards", async () => {
+  it("uses the latest onIntent before the first hit and does not rearm afterwards", () => {
     const stale = vi.fn();
     const fresh = vi.fn();
     const third = vi.fn();
     const { rerender } = render(<Probe label="Prefetch" onIntent={stale} />);
-    await flushEffects();
 
     rerender(<Probe label="Prefetch" onIntent={fresh} />);
-    await flushEffects();
 
     const { x, y } = center(roleNamed("button", "Prefetch"));
     dispatchPredictedPointer(x, y);
@@ -150,30 +157,27 @@ describe("usePredictedEvents", () => {
     expect(stale).not.toHaveBeenCalled();
 
     rerender(<Probe label="Prefetch" onIntent={third} />);
-    await flushEffects();
     dispatchPredictedPointer(x, y);
     expect(third).not.toHaveBeenCalled();
     expect(fresh).toHaveBeenCalledTimes(1);
   });
 
-  it("does not accumulate pointermove listeners across a predictionZoneSize rerender", async () => {
+  it("does not accumulate pointermove listeners across a predictionZoneSize rerender", () => {
     const add = vi.spyOn(document, "addEventListener");
     const remove = vi.spyOn(document, "removeEventListener");
     const { rerender, unmount } = render(
       <Probe label="Prefetch" predictionZoneSize={30} onIntent={() => undefined} />
     );
-    await flushEffects();
 
     rerender(<Probe label="Prefetch" predictionZoneSize={60} onIntent={() => undefined} />);
-    await flushEffects();
 
     try {
       const { x, y } = center(roleNamed("button", "Prefetch"));
       dispatchPredictedPointer(x, y);
       unmount();
 
-      const additions = add.mock.calls.filter((call) => call[0] === "pointermove");
-      const removals = remove.mock.calls.filter((call) => call[0] === "pointermove");
+      const additions = pointermoveCalls(add);
+      const removals = pointermoveCalls(remove);
       expect(additions.length).toBeLessThanOrEqual(2);
       expect(additions).toHaveLength(removals.length);
     } finally {

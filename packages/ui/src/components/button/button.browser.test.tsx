@@ -4,7 +4,6 @@ import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { flushEffects } from "../../../test/browser-render";
 import { dispatchPredictedPointer } from "../../../test/predicted-pointer";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { Button } from "./button";
@@ -93,7 +92,7 @@ describe("Button", () => {
     expect(onClick).toHaveBeenCalledTimes(2);
   });
 
-  it("fires onIntent once from a predicted path and never when disabled, pending, or visually disabled", async () => {
+  it("forwards a predicted path to onIntent only while live: not disabled, pending, or visually disabled", () => {
     const live = vi.fn();
     const disabled = vi.fn();
     const pending = vi.fn();
@@ -113,14 +112,12 @@ describe("Button", () => {
         </Button>
       </>
     );
-    await flushEffects();
 
     const liveButton = roleNamed("button", "Prefetch");
     const rect = liveButton.getBoundingClientRect();
     const x = rect.left + rect.width / 2;
     const y = rect.top + rect.height / 2;
 
-    dispatchPredictedPointer(x, y);
     dispatchPredictedPointer(x, y);
     expect(live).toHaveBeenCalledTimes(1);
 
@@ -133,7 +130,7 @@ describe("Button", () => {
     expect(visual).not.toHaveBeenCalled();
   });
 
-  it("merges an external ref when onIntent is set and shares one pointermove listener", async () => {
+  it("merges an external ref when onIntent is set and shares one pointermove listener", () => {
     const firstRef = createRef<HTMLButtonElement>();
     const secondRef = createRef<HTMLButtonElement>();
     const add = vi.spyOn(document, "addEventListener");
@@ -148,7 +145,6 @@ describe("Button", () => {
         </Button>
       </>
     );
-    await flushEffects();
 
     expect(firstRef.current).toBeInstanceOf(HTMLButtonElement);
     expect(secondRef.current).toBeInstanceOf(HTMLButtonElement);

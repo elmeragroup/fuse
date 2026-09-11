@@ -1,16 +1,15 @@
 import { startTransition, StrictMode, Suspense, use, useLayoutEffect, useState } from "react";
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { page, userEvent } from "vitest/browser";
+import { describe, expect, it, vi } from "vitest";
+import { userEvent } from "vitest/browser";
 
 import { Sidebar, useSidebar } from "@elmeragroup/ui/sidebar";
 
 import { withLocale } from "../../../test/locale-matrix";
+import { captureCookieWrites, setupSidebarBrowser } from "../../../test/sidebar-browser-fixtures";
 import { renderThemed as render, roleNamed } from "../../../test/themed-browser-render";
 
-beforeEach(async () => {
-  await page.viewport(1280, 900);
-});
+setupSidebarBrowser();
 
 function OpenStatus() {
   const sidebar = useSidebar();
@@ -56,17 +55,14 @@ describe("Sidebar committed state and update queue", () => {
           </StrictMode>
         )
       );
-      const cookie = vi.spyOn(document, "cookie", "set");
-      try {
+      const writes = await captureCookieWrites(async () => {
         await userEvent.click(roleNamed("button", button));
-        expect(roleNamed("status", "Open state").textContent).toBe("true");
-        expect(cookie.mock.calls.map(([value]) => value)).toEqual([
-          "sidebar:state=false; path=/; max-age=604800",
-          "sidebar:state=true; path=/; max-age=604800",
-        ]);
-      } finally {
-        cookie.mockRestore();
-      }
+      });
+      expect(roleNamed("status", "Open state").textContent).toBe("true");
+      expect(writes).toEqual([
+        "sidebar:state=false; path=/; max-age=604800",
+        "sidebar:state=true; path=/; max-age=604800",
+      ]);
     }
   );
 

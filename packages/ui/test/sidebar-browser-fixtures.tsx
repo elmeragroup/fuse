@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { useEffect, useRef } from "react";
 
 import { afterEach, beforeEach, vi } from "vitest";
@@ -50,7 +50,6 @@ export function setupSidebarBrowser(): void {
 
 /** DOM audit: every part stamps its slot; no data-sidebar anywhere. */
 export function bySlot(slot: string, root: ParentNode = document): HTMLElement {
-  // DOM audit: verify the component slot contract.
   const node = root.querySelector(`[data-slot="${slot}"]`);
   if (!(node instanceof HTMLElement)) {
     throw new Error(`expected [data-slot="${slot}"]`);
@@ -130,6 +129,23 @@ export function Frame({
         {probe}
       </Sidebar.Inset>
     </Sidebar.Provider>
+  );
+}
+
+/**
+ * The menu link most sidebar suites need: a `MenuButton` rendered as an anchor named Orders,
+ * inside its `MenuItem`. `href` and the remaining MenuButton props pass through.
+ */
+export function OrdersLink({
+  href = "/orders",
+  ...props
+}: Omit<ComponentProps<typeof Sidebar.MenuButton>, "render" | "children"> & { href?: string }) {
+  return (
+    <Sidebar.MenuItem>
+      <Sidebar.MenuButton {...props} render={<a href={href} />}>
+        Orders
+      </Sidebar.MenuButton>
+    </Sidebar.MenuItem>
   );
 }
 
