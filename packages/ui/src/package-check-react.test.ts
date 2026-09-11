@@ -4,8 +4,11 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { checkPackedReactCompatibility } from "../scripts/package-check-react";
-import { RELEASE_AGE_MINUTES, releaseAgeCutoff } from "../scripts/packed-consumer-install-policy";
+import {
+  checkPackedReactCompatibility,
+  RELEASE_AGE_MINUTES,
+  releaseAgeCutoff,
+} from "../scripts/package-check-react";
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const require = createRequire(import.meta.url);
