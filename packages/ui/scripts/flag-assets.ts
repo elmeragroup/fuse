@@ -224,7 +224,7 @@ ${hashes.join("\n")}
   writeFlagManifest(packageRoot);
 }
 
-/** The production entry point. The pin is not a parameter, so no caller can name another commit. */
+/** Production entry point; the pin is `FLAG_SOURCE_COMMIT`. */
 export function vendorFlags(repoRoot: string, packageRoot: string): void {
   copyFlagAssets(join(repoRoot, ".ref/flag-icons"), packageRoot, FLAG_SOURCE_COMMIT);
 }
