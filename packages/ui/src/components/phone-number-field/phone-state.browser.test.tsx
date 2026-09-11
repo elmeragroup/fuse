@@ -9,7 +9,7 @@ import { userEvent } from "vitest/browser";
 import { PhoneNumberField } from "@elmeragroup/ui/phone-number-field";
 
 import { withLocale } from "../../../test/locale-matrix";
-import { formNamed, inputNamed, submission } from "../../../test/phone-browser-queries";
+import { phoneForm, phoneInput, phoneSubmission } from "../../../test/phone-browser-queries";
 import { renderThemed as render, roleNamed } from "../../../test/themed-browser-render";
 import { defaultMetadata } from "./phone-engine";
 
@@ -22,7 +22,7 @@ const swedishMetadata: MetadataJson = {
 function paste(text: string) {
   const clipboard = new DataTransfer();
   clipboard.setData("text/plain", text);
-  inputNamed().dispatchEvent(
+  phoneInput().dispatchEvent(
     new ClipboardEvent("paste", { bubbles: true, cancelable: true, clipboardData: clipboard })
   );
 }
@@ -45,19 +45,19 @@ describe("PhoneNumberField identity and authoritative value", () => {
           </form>
         );
       const { rerender } = render(field(true));
-      expect(submission().get("phone")).toBe(value);
-      expect(inputNamed().value).toBe(value === "+46701234567" ? "701234567" : value);
+      expect(phoneSubmission().get("phone")).toBe(value);
+      expect(phoneInput().value).toBe(value === "+46701234567" ? "701234567" : value);
       rerender(field(false));
       paste(value);
       await expect.poll(() => change.mock.calls.at(-1)?.[0]).toBe(value);
-      expect(submission().get("phone")).toBe(value);
+      expect(phoneSubmission().get("phone")).toBe(value);
       expect(roleNamed("button", "Select country").textContent).toContain(
         value === "+46701234567" ? "+46" : "+47"
       );
     }
   );
 
-  it("keeps rejected proposals out of the display and actual submission, then accepts a delayed echo", async () => {
+  it("keeps rejected proposals out of the display and actual phoneSubmission, then accepts a delayed echo", async () => {
     const proposals: string[] = [];
     function Parent() {
       const [value, setValue] = useState("+4741234567");
@@ -83,19 +83,19 @@ describe("PhoneNumberField identity and authoritative value", () => {
       );
     }
     render(withLocale("en-US", <Parent />));
-    await userEvent.fill(inputNamed(), "99887766");
+    await userEvent.fill(phoneInput(), "99887766");
     expect(proposals).toEqual(["+4799887766"]);
-    expect(inputNamed().value).toBe("+4741234567");
-    expect(submission().get("phone")).toBe("+4741234567");
+    expect(phoneInput().value).toBe("+4741234567");
+    expect(phoneSubmission().get("phone")).toBe("+4741234567");
     await userEvent.click(roleNamed("button", "Accept"));
-    expect(inputNamed().value).toBe("99887766");
-    expect(submission().get("phone")).toBe("+4799887766");
+    expect(phoneInput().value).toBe("99887766");
+    expect(phoneSubmission().get("phone")).toBe("+4799887766");
     await userEvent.click(roleNamed("button", "Replace"));
-    expect(inputNamed().value).toBe("+46701234567");
-    expect(submission().get("phone")).toBe("+46701234567");
+    expect(phoneInput().value).toBe("+46701234567");
+    expect(phoneSubmission().get("phone")).toBe("+46701234567");
     await userEvent.click(roleNamed("button", "Clear"));
-    expect(inputNamed().value).toBe("");
-    expect(submission().get("phone")).toBe("");
+    expect(phoneInput().value).toBe("");
+    expect(phoneSubmission().get("phone")).toBe("");
   });
 
   it("keeps a controlled value parent-owned through a native reset until the parent accepts empty", async () => {
@@ -121,17 +121,17 @@ describe("PhoneNumberField identity and authoritative value", () => {
       );
     }
     render(withLocale("en-US", <Parent />));
-    await userEvent.fill(inputNamed(), "41234567");
-    expect(submission().get("phone")).toBe("+4741234567");
+    await userEvent.fill(phoneInput(), "41234567");
+    expect(phoneSubmission().get("phone")).toBe("+4741234567");
     const changeCalls = change.mock.calls.length;
 
-    formNamed().reset();
+    phoneForm().reset();
 
-    await expect.poll(() => submission().get("phone")).toBe("+4741234567");
+    await expect.poll(() => phoneSubmission().get("phone")).toBe("+4741234567");
     expect(change).toHaveBeenCalledTimes(changeCalls);
     await userEvent.click(roleNamed("button", "Clear"));
-    await expect.poll(() => inputNamed().value).toBe("");
-    expect(submission().get("phone")).toBe("");
+    await expect.poll(() => phoneInput().value).toBe("");
+    expect(phoneSubmission().get("phone")).toBe("");
   });
 
   it("submits immediately accepted drafts and keeps accepted country identity on rejected paste", async () => {
@@ -154,14 +154,14 @@ describe("PhoneNumberField identity and authoritative value", () => {
       );
     }
     render(withLocale("en-US", <Parent />));
-    await userEvent.fill(inputNamed(), "41234567");
-    expect(inputNamed().value).toBe("41234567");
-    expect(submission().get("phone")).toBe("+4741234567");
+    await userEvent.fill(phoneInput(), "41234567");
+    expect(phoneInput().value).toBe("41234567");
+    expect(phoneSubmission().get("phone")).toBe("+4741234567");
     paste("+46701234567");
     await expect.poll(() => proposals.at(-1)).toBe("+46701234567");
-    expect(inputNamed().value).toBe("41234567");
+    expect(phoneInput().value).toBe("41234567");
     expect(roleNamed("button", "Select country").textContent).toContain("+47");
-    expect(submission().get("phone")).toBe("+4741234567");
+    expect(phoneSubmission().get("phone")).toBe("+4741234567");
   });
 
   it("preserves a controlled number when its country leaves the metadata", async () => {
@@ -181,12 +181,12 @@ describe("PhoneNumberField identity and authoritative value", () => {
     }
     const { rerender } = render(withLocale("en-US", <Parent metadata={defaultMetadata} />));
     rerender(withLocale("en-US", <Parent metadata={swedishMetadata} />));
-    expect(inputNamed().value).toBe("+4741234567");
-    expect(submission().get("phone")).toBe("+4741234567");
+    expect(phoneInput().value).toBe("+4741234567");
+    expect(phoneSubmission().get("phone")).toBe("+4741234567");
     expect(roleNamed("button", "Select country").textContent).toContain("+46");
-    await userEvent.fill(inputNamed(), "701234567");
-    expect(inputNamed().value).toBe("701234567");
-    expect(submission().get("phone")).toBe("+46701234567");
+    await userEvent.fill(phoneInput(), "701234567");
+    expect(phoneInput().value).toBe("701234567");
+    expect(phoneSubmission().get("phone")).toBe("+46701234567");
   });
 
   it.each([false, true])("reconciles metadata with existing digits: %s", async (existing) => {
@@ -199,15 +199,15 @@ describe("PhoneNumberField identity and authoritative value", () => {
         </form>
       );
     const { rerender } = render(field(defaultMetadata));
-    if (existing) await userEvent.fill(inputNamed(), "41234567");
+    if (existing) await userEvent.fill(phoneInput(), "41234567");
     rerender(field(swedishMetadata));
     expect(roleNamed("button", "Select country").textContent).toContain("+46");
     // Metadata replacement keeps existing international identity, even if the catalog cannot parse it.
-    expect(inputNamed().value).toBe(existing ? "+4741234567" : "");
-    expect(submission().get("phone")).toBe(existing ? "+4741234567" : "");
-    await userEvent.fill(inputNamed(), "701234567");
+    expect(phoneInput().value).toBe(existing ? "+4741234567" : "");
+    expect(phoneSubmission().get("phone")).toBe(existing ? "+4741234567" : "");
+    await userEvent.fill(phoneInput(), "701234567");
     expect(change).toHaveBeenLastCalledWith("+46701234567");
-    expect(submission().get("phone")).toBe("+46701234567");
+    expect(phoneSubmission().get("phone")).toBe("+46701234567");
   });
 
   it("keeps an uncontrolled international draft when only the output format changes", async () => {
@@ -219,11 +219,11 @@ describe("PhoneNumberField identity and authoritative value", () => {
         </form>
       );
     const { rerender } = render(field("e164"));
-    await userEvent.fill(inputNamed(), "41234567");
-    expect(submission().get("phone")).toBe("+4741234567");
+    await userEvent.fill(phoneInput(), "41234567");
+    expect(phoneSubmission().get("phone")).toBe("+4741234567");
     rerender(field("raw"));
-    expect(inputNamed().value).toBe("41234567");
-    expect(submission().get("phone")).toBe("41234567");
+    expect(phoneInput().value).toBe("41234567");
+    expect(phoneSubmission().get("phone")).toBe("41234567");
     expect(roleNamed("button", "Select country").textContent).toContain("+47");
   });
 
@@ -249,7 +249,7 @@ describe("PhoneNumberField identity and authoritative value", () => {
     const root = hydrateRoot(host, element, { onRecoverableError: recover });
     try {
       await expect.poll(() => hydrated.mock.calls.length).toBe(1);
-      await expect.poll(() => inputNamed("Server mobile").value).toBe("41234567");
+      await expect.poll(() => phoneInput("Server mobile").value).toBe("41234567");
       expect(new FormData(form).get("phone")).toBe("+4741234567");
       expect(recover).not.toHaveBeenCalled();
     } finally {
@@ -280,39 +280,39 @@ describe("PhoneNumberField native editing boundaries", () => {
         </form>
       );
     const { rerender } = render(field(false));
-    await userEvent.fill(inputNamed(), "41234567");
+    await userEvent.fill(phoneInput(), "41234567");
     change.mockClear();
     countryChange.mockClear();
     rerender(field(true));
-    const source = inputNamed("Clipboard source");
+    const source = phoneInput("Clipboard source");
     source.focus();
     source.select();
     await userEvent.copy();
-    inputNamed("Paste witness").focus();
+    phoneInput("Paste witness").focus();
     await userEvent.paste();
-    expect(inputNamed("Paste witness").value).toBe("+46701234567");
+    expect(phoneInput("Paste witness").value).toBe("+46701234567");
     const trusted: boolean[] = [];
-    inputNamed().addEventListener("paste", (event) => trusted.push(event.isTrusted));
-    inputNamed().focus();
+    phoneInput().addEventListener("paste", (event) => trusted.push(event.isTrusted));
+    phoneInput().focus();
     await userEvent.paste();
     expect(trusted).toEqual([true]);
-    expect(document.activeElement).toBe(inputNamed());
-    expect(inputNamed().value).toBe("41234567");
-    expect(submission().get("phone")).toBe("+4741234567");
+    expect(document.activeElement).toBe(phoneInput());
+    expect(phoneInput().value).toBe("41234567");
+    expect(phoneSubmission().get("phone")).toBe("+4741234567");
     expect(roleNamed("button", "Select country").textContent).toContain("+47");
     expect(change).not.toHaveBeenCalled();
     expect(countryChange).not.toHaveBeenCalled();
     rerender(field(false, true));
     paste("+46701234567");
-    expect(submission().has("phone")).toBe(false);
-    expect(submission().has("phone-display-value")).toBe(false);
-    expect(inputNamed().value).toBe("41234567");
+    expect(phoneSubmission().has("phone")).toBe(false);
+    expect(phoneSubmission().has("phone-display-value")).toBe(false);
+    expect(phoneInput().value).toBe("41234567");
     expect(change).not.toHaveBeenCalled();
     rerender(field(false));
-    inputNamed().focus();
+    phoneInput().focus();
     await userEvent.paste();
-    expect(inputNamed().value).toBe("701234567");
-    expect(submission().get("phone")).toBe("+46701234567");
+    expect(phoneInput().value).toBe("701234567");
+    expect(phoneSubmission().get("phone")).toBe("+46701234567");
     expect(change).toHaveBeenCalledExactlyOnceWith("+46701234567");
     expect(countryChange).toHaveBeenCalledTimes(1);
   });

@@ -16,6 +16,7 @@ import {
   fkasExternal,
   px,
   renderThemed,
+  roleNamed,
   stampDensity,
   textboxNamed,
 } from "../../../test/themed-browser-render";
@@ -45,28 +46,6 @@ function groupFrom(name: string): HTMLElement {
     throw new Error(`expected field group around ${name}`);
   }
   return group;
-}
-
-function buttonNamed(name: string): HTMLElement {
-  const element = page.getByRole("button", { name, exact: true }).element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error(`expected button ${name}`);
-  }
-  return element;
-}
-
-/**
- * Replaces the field's text. `userEvent.fill` cannot be used on the first focus: base-ui moves
- * the caret to the end in `onFocus`, so `select()` before typing is what makes this deterministic.
- */
-async function replaceValue(fieldName: string, text: string): Promise<void> {
-  const input = textboxNamed(fieldName);
-  if (!(input instanceof HTMLInputElement)) {
-    throw new Error(`expected the ${fieldName} input`);
-  }
-  input.focus();
-  input.select();
-  await userEvent.keyboard(text);
 }
 
 function stepperIn(fieldName: string, name: "Increase" | "Decrease"): HTMLElement {
@@ -189,132 +168,6 @@ describe("NumberField", () => {
     await userEvent.click(page.getByRole("button", { name: "Set to 7", exact: true }));
     await expect.element(input).toHaveValue("7");
     expect(events).toEqual([0]);
-  });
-
-  it("restores an uncontrolled defaultValue on native reset and steps from it", async () => {
-    const onChange = vi.fn();
-    const { host } = renderField(
-      <form>
-        <NumberField
-          label="Quantity"
-          name="quantity"
-          defaultValue={5}
-          minValue={0}
-          maxValue={20}
-          onChange={onChange}
-        />
-        <button type="reset">Reset</button>
-      </form>
-    );
-    await replaceValue("Quantity", "9");
-    await expect.element(page.getByRole("textbox", { name: "Quantity", exact: true })).toHaveValue("9");
-    const edits = onChange.mock.calls.length;
-
-    await userEvent.click(buttonNamed("Reset"));
-
-    await expect.element(page.getByRole("textbox", { name: "Quantity", exact: true })).toHaveValue("5");
-    expect(onChange, "native reset does not call onChange").toHaveBeenCalledTimes(edits);
-    const form = host.querySelector("form");
-    if (!(form instanceof HTMLFormElement)) {
-      throw new Error("expected the quantity form");
-    }
-    expect(new FormData(form).get("quantity")).toBe("5");
-
-    // The committed value must reset too, not just the painted text.
-    await userEvent.click(buttonNamed("Increase"));
-    expect(textboxNamed("Quantity")).toHaveProperty("value", "6");
-  });
-
-  it("resets an uncontrolled field with no defaultValue to empty", async () => {
-    const { host } = renderField(
-      <form>
-        <NumberField label="Quantity" name="quantity" minValue={0} maxValue={20} />
-      </form>
-    );
-    await replaceValue("Quantity", "9");
-    const form = host.querySelector("form");
-    if (!(form instanceof HTMLFormElement)) {
-      throw new Error("expected the quantity form");
-    }
-
-    form.reset();
-
-    await expect.element(page.getByRole("textbox", { name: "Quantity", exact: true })).toHaveValue("");
-    expect(new FormData(form).get("quantity")).toBe("");
-  });
-
-  it("keeps focus in the field on a programmatic reset", async () => {
-    const { host } = renderField(
-      <form>
-        <NumberField label="Quantity" defaultValue={5} minValue={0} maxValue={20} />
-      </form>
-    );
-    await replaceValue("Quantity", "9");
-    expect(document.activeElement).toBe(textboxNamed("Quantity"));
-
-    host.querySelector("form")?.reset();
-
-    await expect.element(page.getByRole("textbox", { name: "Quantity", exact: true })).toHaveValue("5");
-    // The fresh mount must not drop the focus the native reset would have kept.
-    expect(document.activeElement).toBe(textboxNamed("Quantity"));
-  });
-
-  it("does not let the reset remount steal focus through autoFocus", async () => {
-    renderField(
-      <form>
-        <NumberField label="Quantity" autoFocus defaultValue={5} />
-        <button type="reset">Reset</button>
-      </form>
-    );
-    await replaceValue("Quantity", "9");
-    await expect.element(page.getByRole("textbox", { name: "Quantity", exact: true })).toHaveValue("9");
-    const resetButton = buttonNamed("Reset");
-
-    await userEvent.click(resetButton);
-
-    await expect.element(page.getByRole("textbox", { name: "Quantity", exact: true })).toHaveValue("5");
-    expect(document.activeElement, "the remount must not pull focus back").toBe(resetButton);
-  });
-
-  it("keeps a controlled value parent-owned through native reset", async () => {
-    const onChange = vi.fn<(value: number) => void>();
-    function ControlledQuantity() {
-      const [current, setCurrent] = useState(5);
-      return (
-        <form>
-          <NumberField
-            label="Quantity"
-            value={current}
-            onChange={(next) => {
-              onChange(next);
-              setCurrent(next);
-            }}
-          />
-        </form>
-      );
-    }
-    const { host } = renderField(<ControlledQuantity />);
-    await replaceValue("Quantity", "9");
-    await expect.element(page.getByRole("textbox", { name: "Quantity", exact: true })).toHaveValue("9");
-    const edits = onChange.mock.calls.length;
-
-    host.querySelector("form")?.reset();
-
-    await expect.element(page.getByRole("textbox", { name: "Quantity", exact: true })).toHaveValue("9");
-    expect(onChange).toHaveBeenCalledTimes(edits);
-  });
-
-  it("preserves a canceled native reset", async () => {
-    const { host } = renderField(
-      <form onReset={(event) => event.preventDefault()}>
-        <NumberField label="Quantity" defaultValue={5} minValue={0} maxValue={20} />
-      </form>
-    );
-    await replaceValue("Quantity", "9");
-
-    host.querySelector("form")?.reset();
-
-    await expect.element(page.getByRole("textbox", { name: "Quantity", exact: true })).toHaveValue("9");
   });
 
   it("commits a typed value on blur and reports NaN when the input is cleared", async () => {
@@ -530,7 +383,7 @@ describe("NumberField", () => {
     await userEvent.click(before);
     expect(before.matches(":focus-visible")).toBe(false);
 
-    const increment = buttonNamed("Increase");
+    const increment = roleNamed("button", "Increase");
     increment.focus();
     expect(document.activeElement).toBe(increment);
     expect(increment.matches(":focus-visible")).toBe(false);

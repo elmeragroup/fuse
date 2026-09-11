@@ -1,4 +1,4 @@
-import { createRef } from "react";
+import { createRef, useState } from "react";
 
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
@@ -8,6 +8,8 @@ import {
   CONTROL_MD,
   fieldRootFrom,
   fkasExternal,
+  formNamed,
+  inputNamed,
   px,
   renderThemed,
   stampDensity,
@@ -126,18 +128,12 @@ describe("TextField", () => {
         <TextField label="Pin" filter="numeric" onChange={onChange} />
       </>
     );
-    const source = textboxNamed("Clipboard source");
-    if (!(source instanceof HTMLInputElement)) {
-      throw new Error("expected the clipboard source input");
-    }
+    const source = inputNamed("Clipboard source");
     source.focus();
     source.select();
     await userEvent.copy();
 
-    const pin = textboxNamed("Pin");
-    if (!(pin instanceof HTMLInputElement)) {
-      throw new Error("expected the pin input");
-    }
+    const pin = inputNamed("Pin");
     pin.focus();
     await userEvent.paste();
     expect(pin).toHaveProperty("value", "123");
@@ -157,10 +153,7 @@ describe("TextField", () => {
   it("strips non-digits arriving through programmatic and autofill-style input events", () => {
     const onChange = vi.fn();
     renderThemed(<TextField label="Pin" filter="numeric" onChange={onChange} />);
-    const pin = textboxNamed("Pin");
-    if (!(pin instanceof HTMLInputElement)) {
-      throw new Error("expected the pin input");
-    }
+    const pin = inputNamed("Pin");
 
     // Autofill and programmatic writes bypass keystroke handling; the change handler covers them.
     // oxlint-disable-next-line typescript/unbound-method -- bound with .call below to bypass React's value tracker
@@ -172,6 +165,57 @@ describe("TextField", () => {
     pin.dispatchEvent(new Event("input", { bubbles: true }));
     expect(pin.value).toBe("123");
     expect(onChange).toHaveBeenLastCalledWith("123");
+  });
+
+  it("restores an uncontrolled numeric defaultValue on native reset without calling onChange", async () => {
+    // The numeric filter is a change handler on a plain uncontrolled input: a native reset
+    // restores the default on its own. The old controlled wrapper painted its state back over it.
+    const onChange = vi.fn();
+    renderThemed(
+      <form aria-label="Pin form">
+        <TextField label="Pin" name="pin" filter="numeric" defaultValue="123" onChange={onChange} />
+      </form>
+    );
+    const pin = page.getByRole("textbox", { name: "Pin", exact: true });
+    await userEvent.fill(pin, "456");
+    await expect.element(pin).toHaveValue("456");
+    const edits = onChange.mock.calls.length;
+
+    formNamed("Pin form").reset();
+
+    await expect.element(pin).toHaveValue("123");
+    expect(new FormData(formNamed("Pin form")).get("pin")).toBe("123");
+    expect(onChange, "native reset does not call onChange").toHaveBeenCalledTimes(edits);
+  });
+
+  it("keeps controlled digits and callbacks owned by the parent across native reset", async () => {
+    const onChange = vi.fn();
+    function Fixture() {
+      const [value, setValue] = useState("123");
+      return (
+        <form aria-label="Pin form">
+          <TextField
+            label="Pin"
+            name="pin"
+            filter="numeric"
+            value={value}
+            onChange={(next) => {
+              setValue(next);
+              onChange(next);
+            }}
+          />
+        </form>
+      );
+    }
+    renderThemed(<Fixture />);
+    const pin = page.getByRole("textbox", { name: "Pin", exact: true });
+    await userEvent.fill(pin, "456");
+    const edits = onChange.mock.calls.length;
+
+    formNamed("Pin form").reset();
+
+    await expect.element(pin).toHaveValue("456");
+    expect(onChange).toHaveBeenCalledTimes(edits);
   });
 
   it("forwards object and callback refs to the inner input", () => {

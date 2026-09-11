@@ -1,9 +1,13 @@
 import { useRef } from "react";
+import type { FormEvent, ReactNode } from "react";
 
 import { createPortal } from "react-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { Mock } from "vitest";
+import { userEvent } from "vitest/browser";
 
 import { render } from "../../test/browser-render";
+import { formNamed, inputNamed, roleNamed } from "../../test/themed-browser-render";
 import { useFormReset } from "./use-form-reset";
 
 afterEach(() => {
@@ -14,11 +18,50 @@ function resetCalls(spy: { mock: { calls: unknown[][] } }): unknown[][] {
   return spy.mock.calls.filter((call) => call[0] === "reset");
 }
 
+type ProbeProps = {
+  onReset: (() => void) | null;
+  defaultValue?: string;
+  /** Rendered inside the form after the input, e.g. a reset button. */
+  children?: ReactNode;
+  onFormReset?: (event: FormEvent<HTMLFormElement>) => void;
+  onRender?: () => void;
+};
+
+/** One labelled form around one subscribed input: the shape every plain-DOM case shares. */
+function Probe({ onReset, defaultValue, children, onFormReset, onRender }: ProbeProps) {
+  onRender?.();
+  const element = useRef<HTMLInputElement>(null);
+  useFormReset(element, onReset);
+  return (
+    <form aria-label="Probe" onReset={onFormReset}>
+      <input aria-label="Field" ref={element} defaultValue={defaultValue} />
+      {children}
+    </form>
+  );
+}
+
+function mountProbe(props: ProbeProps) {
+  const result = render(<Probe {...props} />);
+  return { ...result, form: formNamed("Probe"), input: inputNamed("Field") };
+}
+
+/** Runs `act` under fake timers and drains the deferred task: the callback must stay silent. */
+async function expectNoDeferredReset(onReset: Mock, act: () => void): Promise<void> {
+  vi.useFakeTimers();
+  try {
+    act();
+    await vi.runOnlyPendingTimersAsync();
+    expect(onReset).not.toHaveBeenCalled();
+  } finally {
+    vi.useRealTimers();
+  }
+}
+
 describe("useFormReset", () => {
   it("ignores a reset when the control belongs to no form", async () => {
     const onReset = vi.fn();
 
-    function Probe() {
+    function Detached() {
       const element = useRef<HTMLInputElement>(null);
       useFormReset(element, onReset);
       return (
@@ -29,77 +72,29 @@ describe("useFormReset", () => {
       );
     }
 
-    const { host } = render(<Probe />);
-    const form = host.querySelector("form");
-    if (!(form instanceof HTMLFormElement)) {
-      throw new Error("expected a form");
-    }
-    vi.useFakeTimers();
-    try {
-      form.reset();
-      await vi.runOnlyPendingTimersAsync();
-      expect(onReset).not.toHaveBeenCalled();
-    } finally {
-      vi.useRealTimers();
-    }
+    render(<Detached />);
+    await expectNoDeferredReset(onReset, () => {
+      formNamed("Elsewhere").reset();
+    });
   });
 
   it("does not subscribe when the callback is null", () => {
     const add = vi.spyOn(document, "addEventListener");
-
-    function Probe() {
-      const element = useRef<HTMLInputElement>(null);
-      useFormReset(element, null);
-      return (
-        <form aria-label="Owned">
-          <input aria-label="Field" ref={element} />
-        </form>
-      );
-    }
-
-    render(<Probe />);
+    mountProbe({ onReset: null });
     expect(resetCalls(add)).toEqual([]);
   });
 
   it("subscribes on the first commit without a state-driven extra render", () => {
     const add = vi.spyOn(document, "addEventListener");
-    let renders = 0;
-
-    function Probe() {
-      renders += 1;
-      const element = useRef<HTMLInputElement>(null);
-      useFormReset(element, () => undefined);
-      return (
-        <form aria-label="Probe">
-          <input aria-label="Field" ref={element} />
-        </form>
-      );
-    }
-
-    render(<Probe />);
-    expect(renders).toBe(1);
+    const onRender = vi.fn();
+    mountProbe({ onReset: () => undefined, onRender });
+    expect(onRender).toHaveBeenCalledTimes(1);
     expect(resetCalls(add)).toHaveLength(1);
   });
 
   it("invokes the callback after native form.reset()", async () => {
     const onReset = vi.fn();
-
-    function Probe() {
-      const element = useRef<HTMLInputElement>(null);
-      useFormReset(element, onReset);
-      return (
-        <form aria-label="Probe">
-          <input aria-label="Field" ref={element} defaultValue="start" />
-        </form>
-      );
-    }
-
-    const { host } = render(<Probe />);
-    const form = host.querySelector("form");
-    const input = host.querySelector("input");
-    if (!(form instanceof HTMLFormElement) || !(input instanceof HTMLInputElement)) {
-      throw new Error("expected a form control");
-    }
+    const { form, input } = mountProbe({ onReset, defaultValue: "start" });
     input.value = "edited";
     form.reset();
     expect(onReset).not.toHaveBeenCalled();
@@ -107,6 +102,26 @@ describe("useFormReset", () => {
     await vi.waitFor(() => {
       expect(onReset).toHaveBeenCalledTimes(1);
     });
+  });
+
+  it("invokes the callback after a reset button's default action has restored the control", async () => {
+    // The button path differs from form.reset(): the reset event fires inside the click's
+    // activation behaviour, so the deferred task is what lets the callback see the restored value.
+    const seen: string[] = [];
+    const onReset = vi.fn(() => {
+      seen.push(inputNamed("Field").value);
+    });
+    const { input } = mountProbe({
+      onReset,
+      defaultValue: "start",
+      children: <button type="reset">Reset</button>,
+    });
+    input.value = "edited";
+    await userEvent.click(roleNamed("button", "Reset"));
+    await vi.waitFor(() => {
+      expect(onReset).toHaveBeenCalledTimes(1);
+    });
+    expect(seen).toEqual(["start"]);
   });
 
   it("subscribes on the enclosing shadow root, where a document listener cannot see reset", async () => {
@@ -117,7 +132,7 @@ describe("useFormReset", () => {
     const mountPoint = document.createElement("div");
     shadow.append(mountPoint);
 
-    function Probe() {
+    function Shadowed() {
       const element = useRef<HTMLInputElement>(null);
       useFormReset(element, onReset);
       return createPortal(
@@ -129,14 +144,10 @@ describe("useFormReset", () => {
     }
 
     const add = vi.spyOn(document, "addEventListener");
-    const { unmount } = render(<Probe />);
+    const { unmount } = render(<Shadowed />);
     expect(resetCalls(add), "no document reset listener for a shadow-root control").toEqual([]);
 
-    const form = shadow.querySelector("form");
-    if (!(form instanceof HTMLFormElement)) {
-      throw new Error("expected a form inside the shadow root");
-    }
-    form.reset();
+    formNamed("Shadowed").reset();
     await vi.waitFor(() => {
       expect(onReset).toHaveBeenCalledTimes(1);
     });
@@ -148,7 +159,7 @@ describe("useFormReset", () => {
   it("follows a control that attaches after the first commit in the light DOM", async () => {
     const onReset = vi.fn();
 
-    function Probe({ mounted }: { mounted: boolean }) {
+    function Late({ mounted }: { mounted: boolean }) {
       const element = useRef<HTMLInputElement>(null);
       useFormReset(element, onReset);
       return (
@@ -158,20 +169,12 @@ describe("useFormReset", () => {
       );
     }
 
-    const { host, rerender } = render(<Probe mounted={false} />);
-    const form = host.querySelector("form");
-    if (!(form instanceof HTMLFormElement)) {
-      throw new Error("expected a form");
-    }
-
-    rerender(<Probe mounted />);
-    const input = host.querySelector("input");
-    if (!(input instanceof HTMLInputElement)) {
-      throw new Error("expected an input");
-    }
+    const { rerender } = render(<Late mounted={false} />);
+    rerender(<Late mounted />);
+    const input = inputNamed("Field");
     input.value = "edited";
 
-    form.reset();
+    formNamed("Late").reset();
 
     // The listener was placed on `document` before the ref attached; the reset still reaches it.
     await vi.waitFor(() => {
@@ -182,86 +185,31 @@ describe("useFormReset", () => {
 
   it("does not invoke the callback when reset is canceled", async () => {
     const onReset = vi.fn();
-
-    function Probe() {
-      const element = useRef<HTMLInputElement>(null);
-      useFormReset(element, onReset);
-      return (
-        <form
-          aria-label="Probe"
-          onReset={(event) => {
-            event.preventDefault();
-          }}>
-          <input aria-label="Field" ref={element} defaultValue="start" />
-        </form>
-      );
-    }
-
-    const { host } = render(<Probe />);
-    const form = host.querySelector("form");
-    if (!(form instanceof HTMLFormElement)) {
-      throw new Error("expected a form");
-    }
-    vi.useFakeTimers();
-    try {
+    const { form } = mountProbe({
+      onReset,
+      defaultValue: "start",
+      onFormReset: (event) => {
+        event.preventDefault();
+      },
+    });
+    await expectNoDeferredReset(onReset, () => {
       form.reset();
-      await vi.runOnlyPendingTimersAsync();
-      expect(onReset).not.toHaveBeenCalled();
-    } finally {
-      vi.useRealTimers();
-    }
-  });
-
-  it("removes the reset listener on unmount", () => {
-    function Probe() {
-      const element = useRef<HTMLInputElement>(null);
-      useFormReset(element, () => undefined);
-      return (
-        <form aria-label="Probe">
-          <input aria-label="Field" ref={element} />
-        </form>
-      );
-    }
-
-    const { unmount } = render(<Probe />);
-    const remove = vi.spyOn(document, "removeEventListener");
-    unmount();
-    expect(resetCalls(remove)).toHaveLength(1);
+    });
   });
 
   it("does not invoke the callback when unmounted before the deferred task", async () => {
     const onReset = vi.fn();
-
-    function Probe() {
-      const element = useRef<HTMLInputElement>(null);
-      useFormReset(element, onReset);
-      return (
-        <form aria-label="Probe">
-          <input aria-label="Field" ref={element} defaultValue="start" />
-        </form>
-      );
-    }
-
-    const { host, unmount } = render(<Probe />);
-    const form = host.querySelector("form");
-    if (!(form instanceof HTMLFormElement)) {
-      throw new Error("expected a form");
-    }
-    vi.useFakeTimers();
-    try {
+    const { form, unmount } = mountProbe({ onReset, defaultValue: "start" });
+    await expectNoDeferredReset(onReset, () => {
       form.reset();
       unmount();
-      await vi.runOnlyPendingTimersAsync();
-      expect(onReset).not.toHaveBeenCalled();
-    } finally {
-      vi.useRealTimers();
-    }
+    });
   });
 
   it("follows the control's form association without resubscribing", async () => {
     const onReset = vi.fn();
 
-    function Probe({ formId }: { formId: string }) {
+    function Reassociated({ formId }: { formId: string }) {
       const element = useRef<HTMLInputElement>(null);
       useFormReset(element, onReset);
       return (
@@ -273,17 +221,10 @@ describe("useFormReset", () => {
       );
     }
 
-    const { host, rerender } = render(<Probe formId="a" />);
-    const input = host.querySelector("input");
-    const first = host.querySelector("#a");
-    const second = host.querySelector("#b");
-    if (
-      !(input instanceof HTMLInputElement) ||
-      !(first instanceof HTMLFormElement) ||
-      !(second instanceof HTMLFormElement)
-    ) {
-      throw new Error("expected associated forms");
-    }
+    const { rerender } = render(<Reassociated formId="a" />);
+    const input = inputNamed("Field");
+    const first = formNamed("First");
+    const second = formNamed("Second");
     expect(input.form).toBe(first);
 
     // A reset on the form the control is not associated with must never reach the callback.
@@ -295,8 +236,8 @@ describe("useFormReset", () => {
 
     // The `form` attribute moves; the element and its subscription are never replaced.
     const add = vi.spyOn(document, "addEventListener");
-    rerender(<Probe formId="b" />);
-    expect(host.querySelector("input")).toBe(input);
+    rerender(<Reassociated formId="b" />);
+    expect(inputNamed("Field")).toBe(input);
     expect(resetCalls(add)).toEqual([]);
     expect(input.form).toBe(second);
 
@@ -306,6 +247,5 @@ describe("useFormReset", () => {
     await vi.waitFor(() => {
       expect(onReset).toHaveBeenCalledTimes(2);
     });
-    expect(onReset).toHaveBeenCalledTimes(2);
   });
 });

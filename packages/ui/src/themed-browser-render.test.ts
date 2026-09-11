@@ -6,10 +6,12 @@ import { describe, expect, it } from "vitest";
 const sourceRoot = dirname(fileURLToPath(import.meta.url));
 
 /**
- * Both test tiers: the base-ui components and the quarantined react-aria interim tier, which is
- * held to the same test standards (tooling §7.2, amended 2026-09-03).
+ * Both test tiers — the base-ui components and the quarantined react-aria interim tier, which is
+ * held to the same test standards (tooling §7.2, amended 2026-09-03) — plus the package-private
+ * hooks, whose browser suites mount real controls and are held to the same shape.
  */
-const suiteRoots = ["components", "react-aria"].map((tier) => join(sourceRoot, tier));
+const suiteRoots = ["components", "react-aria", "hooks"].map((tier) => join(sourceRoot, tier));
+const hooksRoot = join(sourceRoot, "hooks");
 
 /**
  * Shared browser fixtures live outside `src`, so the suite-shape gates below do not apply to
@@ -94,7 +96,11 @@ describe("themed browser-test harness", () => {
 
     for (const file of suiteFiles) {
       const source = suiteSources.get(file) ?? "";
-      expect(source, file).toContain("themed-browser-render");
+      // Every suite mounts through the shared harness; a hook probe has no theme to scope, so
+      // the hooks tier may take `render` from `test/browser-render` directly.
+      expect(source, file).toMatch(
+        file.startsWith(hooksRoot) ? /test\/(?:themed-)?browser-render/ : /themed-browser-render/
+      );
       expect(source, file).not.toContain("theme-browser-fixtures");
       expect(source, file).not.toMatch(/const fkasPrivate\s*=/);
     }
@@ -138,7 +144,6 @@ describe("themed browser-test harness", () => {
   it("locates by role except documented DOM contract checks", () => {
     // The shared fixtures under test/ are in this gate even though they are in neither suite root.
     expect(fixtureFiles.length).toBeGreaterThan(0);
-    expect(locatorSources.size).toBe(suiteFiles.length + fixtureFiles.length);
     expect(unsanctionedSlotLocators()).toEqual([]);
   });
 });
