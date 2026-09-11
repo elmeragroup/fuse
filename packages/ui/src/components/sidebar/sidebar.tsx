@@ -1,11 +1,8 @@
 "use client";
 
-import type { ComponentProps, CSSProperties, Dispatch, ReactElement, ReactNode, SetStateAction } from "react";
+import type { ComponentProps, CSSProperties, Dispatch, ReactElement, SetStateAction } from "react";
 import {
-  Children,
   createContext,
-  Fragment,
-  isValidElement,
   use,
   useCallback,
   useEffect,
@@ -17,10 +14,12 @@ import {
 
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
+import { createPortal } from "react-dom";
 import type { VariantProps } from "tailwind-variants";
 
 import { useIsMobile } from "../../hooks/use-is-mobile";
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
+import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { SidebarSimple } from "../../icons/generated/sidebar-simple";
 import { cn } from "../../styles/cn";
 import { mergeClassName } from "../../styles/merge-class-name";
@@ -256,40 +255,12 @@ export type SidebarRootProps = ComponentProps<"div"> & {
   dir?: string;
 };
 
-/** Children split into the hideable panel and the Rail parts that must escape it. */
-type SidebarRootChildren = {
-  panel: ReactNode[];
-  rails: ReactNode[];
-};
-
 /**
- * Rail stays outside the hideable panel: when offcanvas collapses, `sidebar-inner` goes
- * `inert`, and `inert` cannot be escaped from within. Root splits Rail out of the
- * caller's `children` (fragments included) so it can render beside the panel with
- * composition unchanged. The match is by identity (`type === SidebarRail`); a wrapper
- * component or DOM host around Rail stays inside the inert panel.
+ * Desktop Root's panel container, published so `Sidebar.Rail` can portal out of the
+ * hideable panel. `null` before the ref attaches and on the branches without a
+ * container (the mobile Sheet and `collapsible="none"`), where Rail renders in place.
  */
-function splitRail(children: ReactNode): SidebarRootChildren {
-  const panel: ReactNode[] = [];
-  const rails: ReactNode[] = [];
-  for (const child of Children.toArray(children)) {
-    const element = isValidElement<{ children?: ReactNode }>(child) ? child : null;
-    if (element?.type === SidebarRail) {
-      rails.push(element);
-      continue;
-    }
-    if (element?.type === Fragment) {
-      const nested = splitRail(element.props.children);
-      if (nested.panel.length > 0) {
-        panel.push(<Fragment key={element.key ?? undefined}>{nested.panel}</Fragment>);
-      }
-      rails.push(...nested.rails);
-      continue;
-    }
-    panel.push(child);
-  }
-  return { panel, rails };
-}
+const SidebarContainerContext = createContext<HTMLDivElement | null>(null);
 
 function SidebarRoot({
   side = "left",
@@ -298,10 +269,15 @@ function SidebarRoot({
   className,
   children,
   dir,
+  ref,
   ...props
 }: SidebarRootProps): ReactElement {
   const { value, labels } = useSidebarInternal();
   const { isMobile, state, openMobile, setOpenMobile } = value;
+  const [container, setContainer] = useState<HTMLDivElement | null>(null);
+  // The caller's ref must not replace the host callback, or a caller ref would silently
+  // keep the Rail inside the inert panel.
+  const containerRef = useMergedRefs(ref, setContainer);
 
   if (collapsible === "none") {
     // Funnel deviation from the shadcn template: the inset wizard dialogs
@@ -345,47 +321,48 @@ function SidebarRoot({
   }
 
   const isOffcanvasCollapsed = state === "collapsed" && collapsible === "offcanvas";
-  const { panel, rails } = splitRail(children);
 
   return (
-    <div
-      className="group peer md:block hidden text-sidebar-foreground"
-      data-state={state}
-      data-collapsible={state === "collapsed" ? collapsible : ""}
-      data-variant={variant}
-      data-side={side}
-      data-slot="sidebar">
+    <SidebarContainerContext.Provider value={container}>
       <div
-        data-slot="sidebar-gap"
-        className={cn(
-          "relative w-(--sidebar-width) bg-transparent transition-[width] duration-200 ease-linear",
-          "group-data-[collapsible=offcanvas]:w-0",
-          "group-data-[side=right]:rotate-180",
-          variant === "floating" || variant === "inset"
-            ? "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]"
-            : "group-data-[collapsible=icon]:w-(--sidebar-width-icon)"
-        )}
-      />
-      <div
-        data-slot="sidebar-container"
+        className="group peer md:block hidden text-sidebar-foreground"
+        data-state={state}
+        data-collapsible={state === "collapsed" ? collapsible : ""}
+        data-variant={variant}
         data-side={side}
-        className={cn(
-          "md:flex fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[width] duration-200 ease-linear data-[side=left]:left-0 data-[side=left]:group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)] data-[side=right]:right-0 data-[side=right]:group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
-          variant === "floating" || variant === "inset"
-            ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]"
-            : "group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l",
-          className
-        )}
-        {...props}>
+        data-slot="sidebar">
         <div
-          data-slot="sidebar-inner"
-          inert={isOffcanvasCollapsed ? true : undefined}
-          className="group-data-[variant=floating]:shadow-sm flex size-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:ring-1 group-data-[variant=floating]:ring-sidebar-border">
-          {panel}
+          data-slot="sidebar-gap"
+          className={cn(
+            "relative w-(--sidebar-width) bg-transparent transition-[width] duration-200 ease-linear",
+            "group-data-[collapsible=offcanvas]:w-0",
+            "group-data-[side=right]:rotate-180",
+            variant === "floating" || variant === "inset"
+              ? "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]"
+              : "group-data-[collapsible=icon]:w-(--sidebar-width-icon)"
+          )}
+        />
+        <div
+          data-slot="sidebar-container"
+          ref={containerRef}
+          data-side={side}
+          className={cn(
+            "md:flex fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[width] duration-200 ease-linear data-[side=left]:left-0 data-[side=left]:group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)] data-[side=right]:right-0 data-[side=right]:group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
+            variant === "floating" || variant === "inset"
+              ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]"
+              : "group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l",
+            className
+          )}
+          {...props}>
+          <div
+            data-slot="sidebar-inner"
+            inert={isOffcanvasCollapsed ? true : undefined}
+            className="group-data-[variant=floating]:shadow-sm flex size-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:ring-1 group-data-[variant=floating]:ring-sidebar-border">
+            {children}
+          </div>
         </div>
-        {rails}
       </div>
-    </div>
+    </SidebarContainerContext.Provider>
   );
 }
 
@@ -426,10 +403,17 @@ function SidebarTrigger({
 
 export type SidebarRailProps = ComponentProps<"button">;
 
+/**
+ * Reopen control. It portals into Root's desktop container after mount so the panel's
+ * `inert` cannot swallow it, whatever the caller wraps around it. With no container —
+ * server and first client render, the mobile Sheet, `collapsible="none"` — it renders
+ * in place, so neither the server output nor the first client render moves it.
+ */
 function SidebarRail({ className, ...props }: SidebarRailProps): ReactElement {
   const { value, labels } = useSidebarInternal();
+  const container = use(SidebarContainerContext);
 
-  return (
+  const rail = (
     <button
       type="button"
       data-slot="sidebar-rail"
@@ -449,6 +433,8 @@ function SidebarRail({ className, ...props }: SidebarRailProps): ReactElement {
       {...props}
     />
   );
+
+  return container === null ? rail : createPortal(rail, container);
 }
 
 export type SidebarInsetProps = ComponentProps<"main">;

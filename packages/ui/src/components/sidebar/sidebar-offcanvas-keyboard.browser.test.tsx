@@ -1,3 +1,6 @@
+import type { ReactNode } from "react";
+import { createRef } from "react";
+
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -46,6 +49,11 @@ function ordersMenuItem() {
 
 function ordersLink(): HTMLElement {
   return roleNamed("link", "Orders");
+}
+
+/** A caller wrapper around Rail; the escape must not depend on Rail's position or identity. */
+function RailShell({ children }: { children: ReactNode }) {
+  return <div>{children}</div>;
 }
 
 function OffcanvasFrame({ side }: { side?: "left" | "right" }) {
@@ -146,7 +154,7 @@ describe("Sidebar collapsed offcanvas keyboard", () => {
     expect(document.activeElement).toBe(ordersLink());
   });
 
-  it("hoists a fragment-wrapped Rail outside the inert panel", async () => {
+  it("keeps a fragment-wrapped Rail outside the inert panel", async () => {
     renderThemed(
       withLocale(
         "en-US",
@@ -167,6 +175,67 @@ describe("Sidebar collapsed offcanvas keyboard", () => {
     expect(bySlot("sidebar-inner").inert).toBe(true);
     const rail = railNamed("Toggle sidebar");
     expect(rail.closest('[data-slot="sidebar-inner"]')).toBeNull();
+
+    await userEvent.click(rail);
+    await vi.waitFor(() => {
+      expect(sidebarRoot().getAttribute("data-state")).toBe("expanded");
+    });
+  });
+
+  it("keeps a wrapper-rendered Rail outside the inert panel", async () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <Sidebar.Provider defaultOpen={false}>
+          <Sidebar.Root>
+            <Sidebar.Content>
+              <Sidebar.Menu>{ordersMenuItem()}</Sidebar.Menu>
+            </Sidebar.Content>
+            <RailShell>
+              <Sidebar.Rail />
+            </RailShell>
+          </Sidebar.Root>
+        </Sidebar.Provider>
+      )
+    );
+
+    // DOM audit: the inert panel is the structural hide; Rail must sit outside it.
+    const inner = bySlot("sidebar-inner");
+    expect(inner.inert).toBe(true);
+    const rail = railNamed("Toggle sidebar");
+    expect(rail.closest('[data-slot="sidebar-inner"]')).toBeNull();
+    expect(rail.parentElement).toBe(inner.parentElement);
+
+    await userEvent.click(rail);
+    await vi.waitFor(() => {
+      expect(sidebarRoot().getAttribute("data-state")).toBe("expanded");
+    });
+  });
+
+  it("keeps the Rail escape when the caller refs Root", async () => {
+    const rootRef = createRef<HTMLDivElement>();
+    renderThemed(
+      withLocale(
+        "en-US",
+        <Sidebar.Provider defaultOpen={false}>
+          <Sidebar.Root ref={rootRef}>
+            <Sidebar.Content>
+              <Sidebar.Menu>{ordersMenuItem()}</Sidebar.Menu>
+            </Sidebar.Content>
+            <Sidebar.Rail />
+          </Sidebar.Root>
+        </Sidebar.Provider>
+      )
+    );
+
+    // The caller's ref reaches the container; the host callback survives the merge.
+    expect(rootRef.current?.getAttribute("data-slot")).toBe("sidebar-container");
+    // DOM audit: the inert panel is the structural hide; Rail must sit outside it.
+    const inner = bySlot("sidebar-inner");
+    expect(inner.inert).toBe(true);
+    const rail = railNamed("Toggle sidebar");
+    expect(rail.closest('[data-slot="sidebar-inner"]')).toBeNull();
+    expect(rail.parentElement).toBe(inner.parentElement);
 
     await userEvent.click(rail);
     await vi.waitFor(() => {
