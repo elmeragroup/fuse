@@ -129,6 +129,29 @@ describe("useColorScheme", () => {
     await mountedColorScheme(host, "internal-fkas-private:dark/dark");
   });
 
+  it("keeps the document write and subscriber notification when localStorage.setItem throws", async () => {
+    window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "light");
+    const setItem = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new DOMException("full", "QuotaExceededError");
+    });
+
+    const { host } = render(
+      <ThemeProvider theme={fkasPrivate}>
+        <ColorSchemeOutput />
+        <ColorSchemeSetter value="dark" />
+      </ThemeProvider>
+    );
+    await mountedColorScheme(host, "internal-fkas-private:light/light");
+
+    host.querySelector("button")?.click();
+
+    // The write failed, but the in-memory preference still lands: data-theme flips and
+    // subscribers fire, matching the old all-in-one-try/catch behaviour on main.
+    expect(setItem).toHaveBeenCalledWith(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "dark");
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    await mountedColorScheme(host, "internal-fkas-private:dark/dark");
+  });
+
   it("applies storage and media events in the same turn", async () => {
     const media = stubPrefersColorScheme(false);
     window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "system");

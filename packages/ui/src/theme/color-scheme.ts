@@ -121,9 +121,16 @@ export function resolveColorScheme(preference: ColorScheme, enableSystem: boolea
   return resolveSystemColorScheme();
 }
 
-function localStorageArea(): Storage | undefined {
+/**
+ * Runs `get` against `window.localStorage`, returning `undefined` when the area is
+ * unreachable or the operation throws. The property access can throw `SecurityError`
+ * when storage is blocked, and `setItem` can throw `QuotaExceededError` on an
+ * otherwise readable area (quota full; legacy Safari private mode), so the try/catch
+ * has to wrap the operation, not just the access.
+ */
+function withLocalStorage<T>(get: (area: Storage) => T): T | undefined {
   try {
-    return window.localStorage;
+    return get(window.localStorage);
   } catch {
     return undefined;
   }
@@ -134,7 +141,7 @@ function localStorageArea(): Storage | undefined {
  * A `null` event key is a whole-store clear, which does affect the preference.
  */
 export function isColorSchemeStorageEvent(event: StorageEvent, storageKey: string): boolean {
-  const area = localStorageArea();
+  const area = withLocalStorage((storage) => storage);
   if (area === undefined || event.storageArea !== area) {
     return false;
   }
@@ -142,11 +149,16 @@ export function isColorSchemeStorageEvent(event: StorageEvent, storageKey: strin
 }
 
 export function readStoredColorScheme(storageKey: string, fallback: ColorScheme): ColorScheme {
-  return parseColorScheme(localStorageArea()?.getItem(storageKey), fallback);
+  return parseColorScheme(
+    withLocalStorage((area) => area.getItem(storageKey)),
+    fallback
+  );
 }
 
 export function writeStoredColorScheme(storageKey: string, value: ColorScheme): void {
-  localStorageArea()?.setItem(storageKey, value);
+  withLocalStorage((area) => {
+    area.setItem(storageKey, value);
+  });
 }
 
 export function readDocumentColorScheme(): "light" | "dark" | undefined {
