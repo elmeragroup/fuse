@@ -9,7 +9,7 @@ import { userEvent } from "vitest/browser";
 import { PhoneNumberField } from "@elmeragroup/ui/phone-number-field";
 
 import { withLocale } from "../../../test/locale-matrix";
-import { inputNamed } from "../../../test/phone-browser-queries";
+import { formNamed, inputNamed, submission } from "../../../test/phone-browser-queries";
 import { renderThemed as render, roleNamed } from "../../../test/themed-browser-render";
 import { defaultMetadata } from "./phone-engine";
 
@@ -18,12 +18,6 @@ const swedishMetadata: MetadataJson = {
   countries: { SE: defaultMetadata.countries.SE },
   country_calling_codes: { "46": ["SE"] },
 };
-
-function submission(): FormData {
-  const form = roleNamed("form", "Phone form");
-  if (!(form instanceof HTMLFormElement)) throw new Error("Expected phone form");
-  return new FormData(form);
-}
 
 function paste(text: string) {
   const clipboard = new DataTransfer();
@@ -101,6 +95,42 @@ describe("PhoneNumberField identity and authoritative value", () => {
     expect(submission().get("phone")).toBe("+46701234567");
     await userEvent.click(roleNamed("button", "Clear"));
     expect(inputNamed().value).toBe("");
+    expect(submission().get("phone")).toBe("");
+  });
+
+  it("keeps a controlled value parent-owned through a native reset until the parent accepts empty", async () => {
+    const change = vi.fn<(value: string) => void>();
+    function Parent() {
+      const [value, setValue] = useState("");
+      return (
+        <form aria-label="Phone form">
+          <PhoneNumberField
+            label="Mobile"
+            name="phone"
+            value={value}
+            onChange={(next) => {
+              change(next);
+              setValue(next);
+            }}
+          />
+          <button type="reset">Reset</button>
+          <button type="button" onClick={() => setValue("")}>
+            Clear
+          </button>
+        </form>
+      );
+    }
+    render(withLocale("en-US", <Parent />));
+    await userEvent.fill(inputNamed(), "41234567");
+    expect(submission().get("phone")).toBe("+4741234567");
+    const changeCalls = change.mock.calls.length;
+
+    formNamed().reset();
+
+    await expect.poll(() => submission().get("phone")).toBe("+4741234567");
+    expect(change).toHaveBeenCalledTimes(changeCalls);
+    await userEvent.click(roleNamed("button", "Clear"));
+    await expect.poll(() => inputNamed().value).toBe("");
     expect(submission().get("phone")).toBe("");
   });
 
