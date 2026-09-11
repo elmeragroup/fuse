@@ -1,9 +1,11 @@
 "use client";
 
+import { useLayoutEffect, useRef, useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 
 import { NumberField as NumberFieldPrimitive } from "@base-ui/react/number-field";
 
+import { useFormReset } from "../../hooks/use-form-reset";
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { CaretDown } from "../../icons/generated/caret-down";
 import { CaretUp } from "../../icons/generated/caret-up";
@@ -78,8 +80,8 @@ const stepperButton = cn(
 
 /**
  * Labeled number field composite over Field + base-ui NumberField.
- * Client — it owns the change handler and reads locale from the provider
- * (performance.md §RSC classification).
+ * Client — it owns the reset epoch and change handler, and reads locale
+ * from the provider (performance.md §RSC classification).
  */
 export function NumberField({
   label,
@@ -109,6 +111,30 @@ export function NumberField({
 }: NumberFieldProps): ReactElement {
   const { locale } = useElmeraGroupUi();
   const strings = useLocalizedStrings(numberFieldStrings);
+  const numberInputRef = useRef<HTMLInputElement>(null);
+  const restoreFocusRef = useRef(false);
+  const isControlled = value !== undefined;
+  // base-ui holds an uncontrolled value itself and does not observe native form reset, so the
+  // wrapper remounts the primitive on reset. That is what discards the committed value and any
+  // in-progress text together; `defaultValue` is read again on the fresh mount, as React's own
+  // uncontrolled inputs read it only on mount. A controlled value is the parent's to keep.
+  const [resetEpoch, setResetEpoch] = useState(0);
+  useFormReset(
+    numberInputRef,
+    isControlled
+      ? null
+      : () => {
+          // The remount replaces the focused node; remember whether to hand focus back.
+          restoreFocusRef.current = document.activeElement === numberInputRef.current;
+          setResetEpoch((epoch) => epoch + 1);
+        }
+  );
+  useLayoutEffect(() => {
+    // Runs on the remount commit, before paint, so the reset never drops focus.
+    if (!restoreFocusRef.current) return;
+    restoreFocusRef.current = false;
+    numberInputRef.current?.focus();
+  }, [resetEpoch]);
   const controlledValue = value === undefined ? undefined : Number.isNaN(value) ? null : value;
 
   // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- label/control stack gap is layout, not a control rung
@@ -125,6 +151,7 @@ export function NumberField({
       description={description}
       errorMessage={errorMessage}>
       <NumberFieldPrimitive.Root
+        key={resetEpoch}
         name={name}
         value={controlledValue}
         defaultValue={defaultValue}
@@ -144,8 +171,12 @@ export function NumberField({
             "bg-muted": isDisabled || isReadOnly,
           })}>
           <NumberFieldPrimitive.Input
+            // The reset hook needs the visible control; Root's `inputRef` prop is the
+            // validation input, not this one.
+            ref={numberInputRef}
             aria-label={ariaLabel}
-            autoFocus={autoFocus}
+            // A reset remount is a fresh mount: re-applying autoFocus would steal focus back.
+            autoFocus={autoFocus && resetEpoch === 0}
             data-focus-ring-control=""
             className={cn(
               "box-border h-full w-full min-w-0 flex-1 border-0 bg-transparent py-0 tabular-nums",

@@ -145,6 +145,41 @@ describe("useFormReset", () => {
     shadowHost.remove();
   });
 
+  it("follows a control that attaches after the first commit in the light DOM", async () => {
+    const onReset = vi.fn();
+
+    function Probe({ mounted }: { mounted: boolean }) {
+      const element = useRef<HTMLInputElement>(null);
+      useFormReset(element, onReset);
+      return (
+        <form aria-label="Late">
+          {mounted ? <input aria-label="Field" ref={element} defaultValue="start" /> : null}
+        </form>
+      );
+    }
+
+    const { host, rerender } = render(<Probe mounted={false} />);
+    const form = host.querySelector("form");
+    if (!(form instanceof HTMLFormElement)) {
+      throw new Error("expected a form");
+    }
+
+    rerender(<Probe mounted />);
+    const input = host.querySelector("input");
+    if (!(input instanceof HTMLInputElement)) {
+      throw new Error("expected an input");
+    }
+    input.value = "edited";
+
+    form.reset();
+
+    // The listener was placed on `document` before the ref attached; the reset still reaches it.
+    await vi.waitFor(() => {
+      expect(onReset).toHaveBeenCalledTimes(1);
+    });
+    expect(input.value).toBe("start");
+  });
+
   it("does not invoke the callback when reset is canceled", async () => {
     const onReset = vi.fn();
 

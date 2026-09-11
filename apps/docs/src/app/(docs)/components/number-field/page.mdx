@@ -25,8 +25,9 @@ The composite face is `isDisabled` / `isInvalid` / `isPending` / `isSuccess`,
 `ReactNode`. There is no `locale` prop — formatting follows `ElmeraGroupUiProvider`.
 The stepper names come from the locale dictionary; `increaseLabel` / `decreaseLabel` override them.
 Clearing the input reports `NaN`. `value` follows React's own convention: `undefined` means
-uncontrolled, so a controlled empty field passes `NaN` (`useState<number>(NaN)`). The field
-box pins the `md` density rung; there is no size axis.
+uncontrolled, so a controlled empty field passes `NaN` (`useState<number>(NaN)`). A native form
+reset restores an uncontrolled field's `defaultValue` without calling `onChange`; a controlled
+`value` stays parent-owned. The field box pins the `md` density rung; there is no size axis.
 
 </Prose>
 

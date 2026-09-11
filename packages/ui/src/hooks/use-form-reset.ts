@@ -13,11 +13,13 @@ import type { RefObject } from "react";
  * The native `reset` event bubbles to the control's root with the form as its target.
  * `reset` is not composed, so a document listener never sees a control inside a shadow
  * root; subscribe on `element.current.getRootNode()` instead — the document or the
- * enclosing shadow root. One listener resolves the association at event time: the
- * callback runs when the resetting form is whatever `element.current.form` is at that
- * moment. A control that mounts late in the same root, moves between forms, or changes
- * its `form` attribute is therefore followed without a resubscribe, and a reset on any
- * other form is ignored.
+ * enclosing shadow root. The root is resolved once, on the first commit; the document
+ * fallback covers a control that attaches later in the light DOM, while one that first
+ * appears inside a shadow root after this effect has run is not covered. One listener
+ * then resolves the association at event time: the callback runs when the resetting form
+ * is whatever `element.current.form` is at that moment, so a control that moves between
+ * forms or changes its `form` attribute is followed without a resubscribe, and a reset on
+ * any other form is ignored.
  */
 export function useFormReset(
   element: RefObject<HTMLInputElement | HTMLTextAreaElement | null>,
@@ -29,8 +31,8 @@ export function useFormReset(
 
   useLayoutEffect(() => {
     if (!ownsReset) return;
-    // Layout effects run after mount, so the node exists; the document fallback only
-    // covers a ref that never attached.
+    // Layout effects run after mount, so an attached control resolves its real root here;
+    // the document fallback covers a ref that attaches later in the light DOM.
     const root = element.current?.getRootNode() ?? document;
     let subscribed = true;
     function handleReset(event: Event): void {
