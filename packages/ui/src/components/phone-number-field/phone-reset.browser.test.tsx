@@ -140,10 +140,11 @@ it("clears a disabled uncontrolled field on programmatic reset", async () => {
 
   formNamed().reset();
 
+  await expect.poll(() => inputNamed().value).toBe("");
+  // The reset task has landed; the counts now prove it stayed silent.
   expect(change).toHaveBeenCalledTimes(changeCalls);
   expect(countryChange).toHaveBeenCalledTimes(countryCalls);
   // A disabled field owns no submittable value until it is enabled again.
-  await expect.poll(() => inputNamed().value).toBe("");
   expect(submission().has("phone")).toBe(false);
   rerender(field(false));
   expect(submission().get("phone")).toBe("");
