@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import type { ComponentProps, ReactElement, ReactNode } from "react";
+import type { ChangeEvent, ComponentProps, ReactElement, ReactNode } from "react";
 
 import { cn } from "../../styles/cn";
 import { isThemeDevelopment } from "../../theme/validate-theme";
@@ -43,11 +43,11 @@ export type TextFieldProps = {
   /** Trailing inline icon. Activates the `isIconActive` recipe axis. */
   icon?: ReactNode;
   /**
-   * Digits-only guard (absorbs the external numeric-only wrapper). Non-digit insertions are
-   * refused at `beforeinput`; a sanitizing `onChange` backstop covers paths that bypass it.
-   * Non-digit characters never reach `onChange`. Sets `inputMode="numeric"` unless the
-   * caller passes `inputMode` explicitly. An uncontrolled numeric field restores its
-   * `defaultValue` on native form reset without calling `onChange`.
+   * Digits-only guard (absorbs the external numeric-only wrapper). Non-digit characters are
+   * stripped from every path — typing, paste, autofill — so only digits reach `onChange`.
+   * Sets `inputMode="numeric"` unless the caller passes `inputMode` explicitly. An
+   * uncontrolled numeric field restores its `defaultValue` on native form reset without
+   * calling `onChange`.
    */
   filter?: "numeric";
   /** `card` composes `cardVariants`; `inline` restyles the input chrome. Unset is the plain Input. */
@@ -59,18 +59,13 @@ export type TextFieldProps = {
   "value" | "defaultValue" | "onChange" | "name" | "className" | "disabled" | "readOnly" | "required"
 >;
 
-const DIGITS_ONLY = /^\d+$/;
-
-function containsOnlyDigits(value: string): boolean {
-  return DIGITS_ONLY.test(value);
+/** One normalizer for the warning guards and the change handler, so they cannot drift. */
+function stripNonDigits(value: string): string {
+  return value.replace(/\D/g, "");
 }
 
-/**
- * `beforeinput` carries the proposed insertion in `data`; refusing it keeps the field
- * uncontrolled. A null or empty `data` is a deletion or caret-only edit and must pass.
- */
-function acceptsNumericInsertion(data: string | null): boolean {
-  return data === null || data === "" || containsOnlyDigits(data);
+function containsOnlyDigits(value: string): boolean {
+  return stripNonDigits(value) === value;
 }
 
 function warnIfNotNumeric(prop: "value" | "defaultValue", value: string | null | undefined): void {
@@ -82,19 +77,10 @@ function warnIfNotNumeric(prop: "value" | "defaultValue", value: string | null |
   }
 }
 
-/** Mounted only in numeric mode, so a plain TextField pays no warning effect. */
-function NumericPropWarning({ value, defaultValue }: Pick<TextFieldProps, "value" | "defaultValue">): null {
-  useEffect(() => {
-    warnIfNotNumeric("defaultValue", defaultValue);
-    warnIfNotNumeric("value", value);
-  }, [defaultValue, value]);
-  return null;
-}
-
 /**
  * Labeled single-line field composite over Field + Input.
- * Client — it refuses non-digit insertions and sanitizes the change backstop
- * (performance.md §RSC classification).
+ * Client — it normalizes numeric input in its change handler
+ * (performance.md §3 RSC / client boundaries).
  */
 export function TextField({
   label,
@@ -117,11 +103,17 @@ export function TextField({
   variant,
   className,
   inputMode,
-  onBeforeInput,
-  ref,
   ...props
 }: TextFieldProps): ReactElement {
   const isNumeric = filter === "numeric";
+
+  useEffect(() => {
+    if (!isNumeric) {
+      return;
+    }
+    warnIfNotNumeric("defaultValue", defaultValue);
+    warnIfNotNumeric("value", value);
+  }, [isNumeric, defaultValue, value]);
 
   const {
     base,
@@ -136,6 +128,21 @@ export function TextField({
     hidden,
     isIconActive: Boolean(icon),
   });
+
+  function handleChange(event: ChangeEvent<HTMLInputElement>): void {
+    const next = event.currentTarget.value;
+    if (!isNumeric) {
+      onChange?.(next);
+      return;
+    }
+    const digits = stripNonDigits(next);
+    if (digits !== next) {
+      // Hand the digits back to the input so an uncontrolled field drops the rejected
+      // characters even when the caller has no `onChange` to re-render it.
+      event.currentTarget.value = digits;
+    }
+    onChange?.(digits);
+  }
 
   return (
     <FieldFrame
@@ -152,40 +159,17 @@ export function TextField({
       isSuccess={isSuccess}
       description={description}
       errorMessage={errorMessage}>
-      {isNumeric ? <NumericPropWarning value={value} defaultValue={defaultValue} /> : null}
       <div className="relative">
         <Input
           name={name}
           value={value}
           defaultValue={defaultValue ?? undefined}
-          onChange={(event) => {
-            const next = event.currentTarget.value;
-            if (isNumeric) {
-              const digits = next.replace(/\D/g, "");
-              if (digits !== next) {
-                // Backstop for paths `beforeinput` misses (autofill, programmatic writes).
-                event.currentTarget.value = digits;
-              }
-              onChange?.(digits);
-              return;
-            }
-            onChange?.(next);
-          }}
+          onChange={handleChange}
           placeholder={placeholder}
           inputMode={inputMode ?? (isNumeric ? "numeric" : undefined)}
           // fieldGroup's default would override the input's w-full.
           className={cn(input(), variant ? fieldGroup() : null)}
-          ref={ref}
           {...props}
-          onBeforeInput={(event) => {
-            onBeforeInput?.(event);
-            if (!isNumeric || event.defaultPrevented) {
-              return;
-            }
-            if (!acceptsNumericInsertion(event.data)) {
-              event.preventDefault();
-            }
-          }}
           readOnly={isReadOnly}
           required={isRequired}
           hidden={hidden}

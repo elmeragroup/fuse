@@ -87,7 +87,7 @@ describe("TextField", () => {
     expect(input).toHaveProperty("value", "Stay");
   });
 
-  it("rejects non-digits under filter=numeric and auto-sets inputMode", async () => {
+  it("strips non-digits under filter=numeric and auto-sets inputMode", async () => {
     const onChange = vi.fn();
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     renderThemed(
@@ -103,12 +103,12 @@ describe("TextField", () => {
     expect(textboxNamed("Phone")).toHaveProperty("inputMode", "tel");
 
     await userEvent.type(page.getByRole("textbox", { name: "Pin", exact: true }), "ab");
-    expect(onChange).not.toHaveBeenCalled();
+    expect(onChange).toHaveBeenLastCalledWith("");
     expect(pin).toHaveProperty("value", "");
 
     await userEvent.fill(page.getByRole("textbox", { name: "Pin", exact: true }), "12a3");
-    expect(onChange).not.toHaveBeenCalled();
-    expect(pin).toHaveProperty("value", "");
+    expect(onChange).toHaveBeenLastCalledWith("123");
+    expect(pin).toHaveProperty("value", "123");
 
     await userEvent.fill(page.getByRole("textbox", { name: "Pin", exact: true }), "123");
     expect(onChange.mock.calls.at(-1)?.[0]).toBe("123");
@@ -118,7 +118,7 @@ describe("TextField", () => {
     warn.mockRestore();
   });
 
-  it("refuses a pasted non-digit run under filter=numeric and accepts a digit run", async () => {
+  it("strips a pasted mixed run under filter=numeric and accepts a digit run", async () => {
     const onChange = vi.fn();
     renderThemed(
       <>
@@ -135,22 +135,26 @@ describe("TextField", () => {
     await userEvent.copy();
 
     const pin = textboxNamed("Pin");
+    if (!(pin instanceof HTMLInputElement)) {
+      throw new Error("expected the pin input");
+    }
     pin.focus();
     await userEvent.paste();
-    expect(pin).toHaveProperty("value", "");
-    expect(onChange).not.toHaveBeenCalled();
+    expect(pin).toHaveProperty("value", "123");
+    expect(onChange).toHaveBeenLastCalledWith("123");
 
     source.value = "456";
     source.focus();
     source.select();
     await userEvent.copy();
     pin.focus();
+    pin.select();
     await userEvent.paste();
     expect(pin).toHaveProperty("value", "456");
     expect(onChange).toHaveBeenLastCalledWith("456");
   });
 
-  it("strips non-digits from values that bypass beforeinput", () => {
+  it("strips non-digits arriving through programmatic and autofill-style input events", () => {
     const onChange = vi.fn();
     renderThemed(<TextField label="Pin" filter="numeric" onChange={onChange} />);
     const pin = textboxNamed("Pin");
@@ -158,7 +162,7 @@ describe("TextField", () => {
       throw new Error("expected the pin input");
     }
 
-    // Autofill and programmatic writes do not run `beforeinput`; the change backstop does.
+    // Autofill and programmatic writes bypass keystroke handling; the change handler covers them.
     // oxlint-disable-next-line typescript/unbound-method -- bound with .call below to bypass React's value tracker
     const nativeValueSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
     if (!nativeValueSetter) {

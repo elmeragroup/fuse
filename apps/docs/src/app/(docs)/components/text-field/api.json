@@ -53,7 +53,7 @@
           "type": "\"numeric\" | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Digits-only guard (absorbs the external numeric-only wrapper). Non-digit insertions are refused at `beforeinput`; a sanitizing `onChange` backstop covers paths that bypass it. Non-digit characters never reach `onChange`. Sets `inputMode=\"numeric\"` unless the caller passes `inputMode` explicitly. An uncontrolled numeric field restores its `defaultValue` on native form reset without calling `onChange`.",
+          "description": "Digits-only guard (absorbs the external numeric-only wrapper). Non-digit characters are stripped from every path — typing, paste, autofill — so only digits reach `onChange`. Sets `inputMode=\"numeric\"` unless the caller passes `inputMode` explicitly. An uncontrolled numeric field restores its `defaultValue` on native form reset without calling `onChange`.",
           "required": false
         },
         {
