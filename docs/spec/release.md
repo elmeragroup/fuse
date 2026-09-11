@@ -16,7 +16,7 @@ Changesets collect release notes and calculate versions. The maintainer decides 
 
 1. **Collect changesets during development.** Every PR that changes published behavior (API, styles, tokens, types, doc strings shipped in the package) includes a changeset created with `pnpm changeset`. Choose `patch` for fixes, `minor` for compatible additions, or `major` for breaking changes. Write the summary for package consumers. One file can cover related changes; separate files can describe independent changes within the same PR. Internal-only PRs (CI, docs site, tests) carry the `no-changeset` label instead.
 2. **Merge as many PRs as needed.** Their changeset files accumulate on `main` without changing the package version or publishing anything. The highest pending bump determines the next version; multiple patch or minor changesets do not each increment the version separately.
-3. **Start a release branch from the latest `main`.** Use a clean checkout and a branch such as `codex/release-ui`. Install the pinned dependencies, inspect the pending release, then apply it:
+3. **Start a release branch from the latest `main`.** Use a clean checkout and a branch such as `release/ui-<version>`. Install the pinned dependencies, inspect the pending release, then apply it:
 
    ```sh
    pnpm install --frozen-lockfile
@@ -43,7 +43,7 @@ Publishing remains a CI operation, never a local `npm publish`. Preparing a vers
 
 - **`latest`**: stable releases from `main` via the manually triggered publishing flow in §2.1.
 - **`beta`**: prerelease channel via **changesets pre-mode** (`changeset pre enter beta` / `exit`), published under the `beta` dist-tag. Its designated use is the **OrderModuleWeb base-ui adoption period**; the channel exists for any future migration window on the same mechanics. Pre-mode versions never move the `latest` tag.
-- **Per-PR previews**: **pkg-pr-new** publishes an installable build of every PR (`npm i https://pkg.pr.new/...`), so consuming apps can trial a change before merge. Preview builds are ephemeral, carry no dist-tag, and are not releases — no changeset, no changelog entry, no provenance claim.
+- **Per-PR previews (pending)**: once **pkg-pr-new** is enabled (§7 item 6), it will publish an installable build of every PR (`npm i https://pkg.pr.new/...`), so consuming apps can trial a change before merge. Preview builds are ephemeral, carry no dist-tag, and are not releases — no changeset, no changelog entry, no provenance claim.
 
 ## 4 Licensing constraints on publishing
 

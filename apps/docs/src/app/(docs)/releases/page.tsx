@@ -22,37 +22,24 @@ export default function ReleasesPage(): ReactElement {
       </p>
 
       <h2 id="designed-flow">Manual release flow</h2>
-      <ol>
-        <li>
-          <strong>Add changesets while working.</strong> Run <code>pnpm changeset</code> for changes to
-          published behaviour, including API, styles, tokens, types, and shipped strings. Select the bump
-          level and write a summary for consumers. Internal-only PRs use the <code>no-changeset</code> label.
-        </li>
-        <li>
-          <strong>Merge several PRs.</strong> Their changesets accumulate on <code>main</code>. No workflow
-          automatically opens a release PR or publishes the package.
-        </li>
-        <li>
-          <strong>Prepare a release when ready.</strong> Create a branch from the latest <code>main</code>,
-          install dependencies, and run <code>pnpm exec changeset status</code> to review the pending release.
-          Run <code>pnpm exec changeset version</code> to bump the version, generate the changelog, and remove
-          consumed changesets. The highest pending bump wins. Refresh the lockfile with{" "}
-          <code>pnpm install --lockfile-only</code> and run <code>pnpm ci:checks</code>.
-        </li>
-        <li>
-          <strong>Review and merge the release PR.</strong> Commit the version, generated changelog, changeset
-          deletions, and any lockfile changes. Apply the <code>no-changeset</code> label because the PR
-          consumes release notes. Merge after review and CI pass. This records the release version only; it
-          does not publish to npm. The changelog is never hand-edited.
-        </li>
-        <li>
-          <strong>Publish separately (planned).</strong> After the pending setup is complete, a maintainer
-          will explicitly trigger a workflow for the reviewed release commit on <code>main</code>. It will
-          build, run the publish gates, and publish the checked package to npm. Merging a PR will not trigger
-          publishing. The designed flow uses OIDC so no long-lived npm token should exist on a developer
-          machine, and local publishing remains outside this flow.
-        </li>
-      </ol>
+      <p>
+        Add a changeset with <code>pnpm changeset</code> for every PR that changes published behaviour,
+        including API, styles, tokens, types, and shipped strings. Internal-only PRs use the{" "}
+        <code>no-changeset</code> label instead. Pending notes accumulate on <code>main</code>; no workflow
+        automatically opens a release PR or publishes the package. When a maintainer prepares the next
+        release, the five-step procedure — <code>pnpm exec changeset status</code>,{" "}
+        <code>pnpm exec changeset version</code>, the lockfile refresh, <code>pnpm ci:checks</code>, and the
+        release PR with the <code>no-changeset</code> label — lives in the release runbook. Merging the
+        release PR records the version and changelog; it does not publish to npm, and the changelog is never
+        hand-edited.
+      </p>
+      <p>
+        <strong>Publishing is a separate, planned action.</strong> After the pending setup is complete, a
+        maintainer will explicitly trigger a workflow for the reviewed release commit on <code>main</code>. It
+        will build, run the publish gates, and publish the checked package to npm. Merging a PR will not
+        trigger publishing. The designed flow uses OIDC so no long-lived npm token should exist on a developer
+        machine, and local publishing remains outside this flow.
+      </p>
 
       <h2 id="channels">Channels</h2>
       <ul>
