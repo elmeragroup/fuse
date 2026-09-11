@@ -135,21 +135,29 @@ describe("NumberField", () => {
     await expect.element(input).toHaveValue("0");
   });
 
-  it("stays controlled from a NaN empty state: the parent drives stepping and typing", async () => {
+  it("stays controlled from a NaN empty state: only the parent moves the value", async () => {
     const events: number[] = [];
     function ControlledQuantity() {
       const [value, setValue] = useState<number>(NaN);
       return (
-        <NumberField
-          label="Quantity"
-          minValue={0}
-          maxValue={20}
-          value={value}
-          onChange={(next) => {
-            events.push(next);
-            setValue(next);
-          }}
-        />
+        <>
+          <NumberField
+            label="Quantity"
+            minValue={0}
+            maxValue={20}
+            value={value}
+            onChange={(next) => {
+              events.push(next);
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => {
+              setValue(7);
+            }}>
+            Set to 7
+          </button>
+        </>
       );
     }
     renderField(<ControlledQuantity />);
@@ -157,13 +165,16 @@ describe("NumberField", () => {
     const input = page.getByRole("textbox", { name: "Quantity", exact: true });
     await expect.element(input).toHaveValue("");
     await userEvent.click(page.getByRole("button", { name: "Increase", exact: true }));
-    expect(events).toEqual([0]);
-    await expect.element(input).toHaveValue("0");
 
-    await userEvent.fill(input, "12");
-    textboxNamed("Quantity").blur();
-    expect(events.at(-1)).toBe(12);
-    await expect.element(input).toHaveValue("12");
+    // The step reports upward, but the parent did not accept it. An uncontrolled field
+    // would have painted its own "0" here; the DOM staying empty is the controlled
+    // contract, and the external set below proves the parent can still drive the input.
+    expect(events).toEqual([0]);
+    await expect.element(input).toHaveValue("");
+
+    await userEvent.click(page.getByRole("button", { name: "Set to 7", exact: true }));
+    await expect.element(input).toHaveValue("7");
+    expect(events).toEqual([0]);
   });
 
   it("commits a typed value on blur and reports NaN when the input is cleared", async () => {

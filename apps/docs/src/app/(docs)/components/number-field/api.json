@@ -222,7 +222,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Controlled value. Omit — or pass `undefined` — for uncontrolled editing; a controlled empty field passes `NaN` (an absent prop can never be told apart from an explicit `undefined`, so it cannot mean controlled-empty).",
+          "description": "Controlled value; `NaN` is the controlled empty state. `undefined` — passed or omitted — is uncontrolled, as with React's own inputs.",
           "required": false
         }
       ]

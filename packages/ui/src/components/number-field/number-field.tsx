@@ -37,9 +37,8 @@ export type NumberFieldProps = {
   /** Unit suffix rendered between the input and the steppers (visual only). */
   denomination?: string;
   /**
-   * Controlled value. Omit — or pass `undefined` — for uncontrolled editing; a controlled
-   * empty field passes `NaN` (an absent prop can never be told apart from an explicit
-   * `undefined`, so it cannot mean controlled-empty).
+   * Controlled value; `NaN` is the controlled empty state. `undefined` — passed or
+   * omitted — is uncontrolled, as with React's own inputs.
    */
   value?: number;
   /** Uncontrolled initial value. */
