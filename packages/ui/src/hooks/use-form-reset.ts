@@ -5,19 +5,19 @@ import type { RefObject } from "react";
 
 /**
  * Package-private native form-reset subscription for uncontrolled field composites.
- * Observable only through those composites, never a public export. `onReset` is `null`
- * — this hook family's "off" signal, matching `usePhoneNumberFieldState` — when the
- * caller does not own reset. The latest callback is held in a ref so identity changes
- * do not resubscribe.
+ * Observable only through those composites, never a public export. `onReset` is a
+ * required `(() => void) | null`: each caller states the ownership decision explicitly,
+ * so omitting the argument is a type error rather than a silent opt-out. The latest
+ * callback is held in a ref so identity changes do not resubscribe.
  *
  * The native `reset` event bubbles to the control's root with the form as its target.
  * `reset` is not composed, so a document listener never sees a control inside a shadow
  * root; subscribe on `element.current.getRootNode()` instead — the document or the
  * enclosing shadow root. One listener resolves the association at event time: the
  * callback runs when the resetting form is whatever `element.current.form` is at that
- * moment. A control that mounts late, moves between forms, or changes its `form`
- * attribute is therefore followed without a resubscribe, and a reset on any other form
- * is ignored.
+ * moment. A control that mounts late in the same root, moves between forms, or changes
+ * its `form` attribute is therefore followed without a resubscribe, and a reset on any
+ * other form is ignored.
  */
 export function useFormReset(
   element: RefObject<HTMLInputElement | HTMLTextAreaElement | null>,
