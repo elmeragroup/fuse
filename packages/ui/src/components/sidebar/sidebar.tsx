@@ -14,12 +14,10 @@ import {
 
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
-import { createPortal } from "react-dom";
 import type { VariantProps } from "tailwind-variants";
 
 import { useIsMobile } from "../../hooks/use-is-mobile";
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
-import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { SidebarSimple } from "../../icons/generated/sidebar-simple";
 import { cn } from "../../styles/cn";
 import { mergeClassName } from "../../styles/merge-class-name";
@@ -255,13 +253,6 @@ export type SidebarRootProps = ComponentProps<"div"> & {
   dir?: string;
 };
 
-/**
- * Desktop Root's panel container, published so `Sidebar.Rail` can portal out of the
- * hideable panel. `null` before the ref attaches and on the branches without a
- * container (the mobile Sheet and `collapsible="none"`), where Rail renders in place.
- */
-const SidebarContainerContext = createContext<HTMLDivElement | null>(null);
-
 function SidebarRoot({
   side = "left",
   variant = "sidebar",
@@ -269,15 +260,10 @@ function SidebarRoot({
   className,
   children,
   dir,
-  ref,
   ...props
 }: SidebarRootProps): ReactElement {
   const { value, labels } = useSidebarInternal();
   const { isMobile, state, openMobile, setOpenMobile } = value;
-  const [container, setContainer] = useState<HTMLDivElement | null>(null);
-  // The caller's ref must not replace the host callback, or a caller ref would silently
-  // keep the Rail inside the inert panel.
-  const containerRef = useMergedRefs(ref, setContainer);
 
   if (collapsible === "none") {
     // Funnel deviation from the shadcn template: the inset wizard dialogs
@@ -320,49 +306,47 @@ function SidebarRoot({
     );
   }
 
-  const isOffcanvasCollapsed = state === "collapsed" && collapsible === "offcanvas";
-
   return (
-    <SidebarContainerContext.Provider value={container}>
+    <div
+      className="group peer md:block hidden text-sidebar-foreground"
+      data-state={state}
+      data-collapsible={state === "collapsed" ? collapsible : ""}
+      data-variant={variant}
+      data-side={side}
+      data-slot="sidebar">
       <div
-        className="group peer md:block hidden text-sidebar-foreground"
-        data-state={state}
-        data-collapsible={state === "collapsed" ? collapsible : ""}
-        data-variant={variant}
+        data-slot="sidebar-gap"
+        className={cn(
+          "relative w-(--sidebar-width) bg-transparent transition-[width] duration-200 ease-linear",
+          "group-data-[collapsible=offcanvas]:w-0",
+          "group-data-[side=right]:rotate-180",
+          variant === "floating" || variant === "inset"
+            ? "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]"
+            : "group-data-[collapsible=icon]:w-(--sidebar-width-icon)"
+        )}
+      />
+      <div
+        data-slot="sidebar-container"
         data-side={side}
-        data-slot="sidebar">
+        className={cn(
+          "md:flex fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[width] duration-200 ease-linear data-[side=left]:left-0 data-[side=left]:group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)] data-[side=right]:right-0 data-[side=right]:group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
+          variant === "floating" || variant === "inset"
+            ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]"
+            : "group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l",
+          className
+        )}
+        {...props}>
         <div
-          data-slot="sidebar-gap"
-          className={cn(
-            "relative w-(--sidebar-width) bg-transparent transition-[width] duration-200 ease-linear",
-            "group-data-[collapsible=offcanvas]:w-0",
-            "group-data-[side=right]:rotate-180",
-            variant === "floating" || variant === "inset"
-              ? "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]"
-              : "group-data-[collapsible=icon]:w-(--sidebar-width-icon)"
-          )}
-        />
-        <div
-          data-slot="sidebar-container"
-          ref={containerRef}
-          data-side={side}
-          className={cn(
-            "md:flex fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[width] duration-200 ease-linear data-[side=left]:left-0 data-[side=left]:group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)] data-[side=right]:right-0 data-[side=right]:group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
-            variant === "floating" || variant === "inset"
-              ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]"
-              : "group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l",
-            className
-          )}
-          {...props}>
-          <div
-            data-slot="sidebar-inner"
-            inert={isOffcanvasCollapsed ? true : undefined}
-            className="group-data-[variant=floating]:shadow-sm flex size-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:ring-1 group-data-[variant=floating]:ring-sidebar-border">
-            {children}
-          </div>
+          data-slot="sidebar-inner"
+          // Offcanvas collapse hides the panel with `visibility` rather than `inert`, so the
+          // Rail can opt back in from inside. Hidden descendants are out of the accessibility
+          // tree and tab order and take no pointer events; `inert` would also hide the Rail
+          // and can only be undone by moving it in the DOM.
+          className="group-data-[variant=floating]:shadow-sm flex size-full flex-col bg-sidebar group-data-[collapsible=offcanvas]:invisible group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:ring-1 group-data-[variant=floating]:ring-sidebar-border">
+          {children}
         </div>
       </div>
-    </SidebarContainerContext.Provider>
+    </div>
   );
 }
 
@@ -404,16 +388,15 @@ function SidebarTrigger({
 export type SidebarRailProps = ComponentProps<"button">;
 
 /**
- * Reopen control. It portals into Root's desktop container after mount so the panel's
- * `inert` cannot swallow it, whatever the caller wraps around it. With no container —
- * server and first client render, the mobile Sheet, `collapsible="none"` — it renders
- * in place, so neither the server output nor the first client render moves it.
+ * Reopen control. `visible` re-enables it under the collapsed offcanvas panel's
+ * `visibility: hidden`: a hidden ancestor leaves it out of the accessibility tree and tab
+ * order, but a `visible` descendant is painted and clickable again. (`inert` cannot be
+ * undone from inside, which is why the panel does not use it.)
  */
 function SidebarRail({ className, ...props }: SidebarRailProps): ReactElement {
   const { value, labels } = useSidebarInternal();
-  const container = use(SidebarContainerContext);
 
-  const rail = (
+  return (
     <button
       type="button"
       data-slot="sidebar-rail"
@@ -422,7 +405,7 @@ function SidebarRail({ className, ...props }: SidebarRailProps): ReactElement {
       onClick={value.toggleSidebar}
       title={labels.toggle}
       className={cn(
-        "sm:flex absolute inset-y-0 z-20 hidden w-4 group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:start-1/2 after:w-[2px] after:transition-colors hover:after:bg-sidebar-border ltr:-translate-x-1/2 rtl:-translate-x-1/2",
+        "sm:flex visible absolute inset-y-0 z-20 hidden w-4 group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:start-1/2 after:w-[2px] after:transition-colors hover:after:bg-sidebar-border ltr:-translate-x-1/2 rtl:-translate-x-1/2",
         "in-data-[side=left]:cursor-w-resize in-data-[side=right]:cursor-e-resize",
         "[[data-side=left][data-state=collapsed]_&]:cursor-e-resize [[data-side=right][data-state=collapsed]_&]:cursor-w-resize",
         "group-data-[collapsible=offcanvas]:translate-x-0 group-data-[collapsible=offcanvas]:after:left-full hover:group-data-[collapsible=offcanvas]:bg-sidebar",
@@ -433,8 +416,6 @@ function SidebarRail({ className, ...props }: SidebarRailProps): ReactElement {
       {...props}
     />
   );
-
-  return container === null ? rail : createPortal(rail, container);
 }
 
 export type SidebarInsetProps = ComponentProps<"main">;

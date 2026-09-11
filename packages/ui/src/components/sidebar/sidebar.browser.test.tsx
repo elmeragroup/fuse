@@ -1,4 +1,5 @@
 import type { ComponentProps, ReactElement } from "react";
+import { createRef } from "react";
 
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
@@ -452,9 +453,12 @@ describe("Sidebar.MenuButton tooltip", () => {
 });
 
 describe("Sidebar.Root branches", () => {
-  it("collapsible=none renders a static peer with state attributes and no dialog", async () => {
-    renderThemed(<Frame root={{ collapsible: "none", variant: "inset", side: "right" }} />);
+  it("collapsible=none renders a static peer with state attributes, a forwarded ref, and no dialog", async () => {
+    const rootRef = createRef<HTMLDivElement>();
+    renderThemed(<Frame root={{ collapsible: "none", variant: "inset", side: "right" }} rootRef={rootRef} />);
     const root = sidebarRoot();
+    // DOM audit: the caller's ref reaches the static branch's `sidebar` slot.
+    expect(rootRef.current?.dataset.slot, "the caller's ref reaches the static branch's div").toBe("sidebar");
     expect(root.getAttribute("data-state")).toBe("expanded");
     expect(root.getAttribute("data-variant")).toBe("inset");
     expect(root.getAttribute("data-side")).toBe("right");

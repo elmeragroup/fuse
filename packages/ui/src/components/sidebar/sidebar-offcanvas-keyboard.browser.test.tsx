@@ -1,11 +1,10 @@
-import type { ReactNode } from "react";
+import type { ReactNode, Ref } from "react";
 import { createRef } from "react";
 
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { withLocale } from "../../../test/locale-matrix";
 import {
   ContextProbe,
   Frame,
@@ -21,8 +20,13 @@ import { Sidebar } from "./sidebar";
 
 setupSidebarBrowser();
 
+function panelVisibility(): string {
+  return getComputedStyle(bySlot("sidebar-inner")).visibility;
+}
+
 function offcanvasMenuControls() {
-  // DOM audit: collapsed offcanvas contents leave the accessibility tree; retain the menu controls by slot and label.
+  // DOM audit: a `visibility: hidden` panel is out of the accessibility tree, so role
+  // queries cannot find its controls; keep the menu controls by slot and label.
   const link = document.querySelector('[data-slot="sidebar-menu-button"]');
   if (!(link instanceof HTMLAnchorElement)) {
     throw new Error("expected the sidebar menu link");
@@ -51,14 +55,22 @@ function ordersLink(): HTMLElement {
   return roleNamed("link", "Orders");
 }
 
-/** A caller wrapper around Rail; the escape must not depend on Rail's position or identity. */
+/** A caller wrapper around Rail; the visibility opt-in must not depend on Rail's position. */
 function RailShell({ children }: { children: ReactNode }) {
   return <div>{children}</div>;
 }
 
-function OffcanvasFrame({ side }: { side?: "left" | "right" }) {
+function OffcanvasFrame({ side, rootRef }: { side?: "left" | "right"; rootRef?: Ref<HTMLDivElement> }) {
   return (
-    <Frame provider={{ defaultOpen: false }} root={side ? { side } : undefined}>
+    <Frame
+      provider={{ defaultOpen: false }}
+      root={side ? { side } : undefined}
+      rootRef={rootRef}
+      rail={
+        <RailShell>
+          <Sidebar.Rail />
+        </RailShell>
+      }>
       {ordersMenuItem()}
       <button type="button">Extra</button>
     </Frame>
@@ -71,13 +83,10 @@ describe("Sidebar collapsed offcanvas keyboard", () => {
       renderThemed(<OffcanvasFrame side={side} />);
       expect(sidebarRoot().getAttribute("data-collapsible")).toBe("offcanvas");
       expect(sidebarRoot().getAttribute("data-side")).toBe(side);
-
-      // DOM audit: the inert panel is the structural hide; Rail must sit outside it.
-      const inner = bySlot("sidebar-inner");
-      const rail = railNamed("Toggle sidebar");
-      expect(inner.inert).toBe(true);
-      expect(rail.closest('[data-slot="sidebar-inner"]'), "Rail escapes the inert panel").toBeNull();
-      expect(rail.parentElement).toBe(inner.parentElement);
+      expect(panelVisibility(), "the collapsed panel is hidden, not unmounted").toBe("hidden");
+      expect(getComputedStyle(railNamed("Toggle sidebar")).visibility, "the Rail opts back in").toBe(
+        "visible"
+      );
 
       const { link, extra } = offcanvasMenuControls();
       const after = roleNamed("button", "After");
@@ -118,7 +127,7 @@ describe("Sidebar collapsed offcanvas keyboard", () => {
     await vi.waitFor(() => {
       expect(sidebarRoot().getAttribute("data-state")).toBe("collapsed");
     });
-    expect(bySlot("sidebar-inner").inert).toBe(true);
+    expect(panelVisibility()).toBe("hidden");
     expect(sidebarRoot().contains(document.activeElement)).toBe(false);
 
     await userEvent.keyboard("{Tab}");
@@ -128,119 +137,28 @@ describe("Sidebar collapsed offcanvas keyboard", () => {
     await vi.waitFor(() => {
       expect(sidebarRoot().getAttribute("data-state")).toBe("expanded");
     });
-    expect(bySlot("sidebar-inner").inert).toBe(false);
+    expect(panelVisibility()).toBe("visible");
 
     roleNamed("button", "Toggle sidebar").focus();
     await userEvent.keyboard("{Shift>}{Tab}{/Shift}");
     expect(document.activeElement).toBe(ordersLink());
   });
 
-  it("reopens from the pointer rail while collapsed offcanvas", async () => {
-    renderThemed(<Frame provider={{ defaultOpen: false }}>{ordersMenuItem()}</Frame>);
-    expect(sidebarRoot().getAttribute("data-state")).toBe("collapsed");
-    // DOM audit: the inert panel is the structural hide; Rail must sit outside it.
-    const inner = bySlot("sidebar-inner");
-    expect(inner.inert).toBe(true);
-    expect(railNamed("Toggle sidebar").closest('[data-slot="sidebar-inner"]')).toBeNull();
-
-    await userEvent.click(railNamed("Toggle sidebar"));
-    await vi.waitFor(() => {
-      expect(sidebarRoot().getAttribute("data-state")).toBe("expanded");
-    });
-    expect(inner.inert).toBe(false);
-
-    roleNamed("button", "Toggle sidebar").focus();
-    await userEvent.keyboard("{Shift>}{Tab}{/Shift}");
-    expect(document.activeElement).toBe(ordersLink());
-  });
-
-  it("keeps a fragment-wrapped Rail outside the inert panel", async () => {
-    renderThemed(
-      withLocale(
-        "en-US",
-        <Sidebar.Provider defaultOpen={false}>
-          <Sidebar.Root>
-            <Sidebar.Content>
-              <Sidebar.Menu>{ordersMenuItem()}</Sidebar.Menu>
-            </Sidebar.Content>
-            <>
-              <Sidebar.Rail />
-            </>
-          </Sidebar.Root>
-        </Sidebar.Provider>
-      )
-    );
-
-    // DOM audit: the inert panel is the structural hide; Rail must sit outside it.
-    expect(bySlot("sidebar-inner").inert).toBe(true);
-    const rail = railNamed("Toggle sidebar");
-    expect(rail.closest('[data-slot="sidebar-inner"]')).toBeNull();
-
-    await userEvent.click(rail);
-    await vi.waitFor(() => {
-      expect(sidebarRoot().getAttribute("data-state")).toBe("expanded");
-    });
-  });
-
-  it("keeps a wrapper-rendered Rail outside the inert panel", async () => {
-    renderThemed(
-      withLocale(
-        "en-US",
-        <Sidebar.Provider defaultOpen={false}>
-          <Sidebar.Root>
-            <Sidebar.Content>
-              <Sidebar.Menu>{ordersMenuItem()}</Sidebar.Menu>
-            </Sidebar.Content>
-            <RailShell>
-              <Sidebar.Rail />
-            </RailShell>
-          </Sidebar.Root>
-        </Sidebar.Provider>
-      )
-    );
-
-    // DOM audit: the inert panel is the structural hide; Rail must sit outside it.
-    const inner = bySlot("sidebar-inner");
-    expect(inner.inert).toBe(true);
-    const rail = railNamed("Toggle sidebar");
-    expect(rail.closest('[data-slot="sidebar-inner"]')).toBeNull();
-    expect(rail.parentElement).toBe(inner.parentElement);
-
-    await userEvent.click(rail);
-    await vi.waitFor(() => {
-      expect(sidebarRoot().getAttribute("data-state")).toBe("expanded");
-    });
-  });
-
-  it("keeps the Rail escape when the caller refs Root", async () => {
+  it("keeps the Rail clickable while the collapsed panel is hidden, whatever wraps it", async () => {
     const rootRef = createRef<HTMLDivElement>();
-    renderThemed(
-      withLocale(
-        "en-US",
-        <Sidebar.Provider defaultOpen={false}>
-          <Sidebar.Root ref={rootRef}>
-            <Sidebar.Content>
-              <Sidebar.Menu>{ordersMenuItem()}</Sidebar.Menu>
-            </Sidebar.Content>
-            <Sidebar.Rail />
-          </Sidebar.Root>
-        </Sidebar.Provider>
-      )
+    renderThemed(<OffcanvasFrame rootRef={rootRef} />);
+    expect(rootRef.current?.getAttribute("data-slot"), "the caller's ref reaches the container").toBe(
+      "sidebar-container"
     );
+    expect(panelVisibility()).toBe("hidden");
 
-    // The caller's ref reaches the container; the host callback survives the merge.
-    expect(rootRef.current?.getAttribute("data-slot")).toBe("sidebar-container");
-    // DOM audit: the inert panel is the structural hide; Rail must sit outside it.
-    const inner = bySlot("sidebar-inner");
-    expect(inner.inert).toBe(true);
     const rail = railNamed("Toggle sidebar");
-    expect(rail.closest('[data-slot="sidebar-inner"]')).toBeNull();
-    expect(rail.parentElement).toBe(inner.parentElement);
-
+    expect(getComputedStyle(rail).visibility).toBe("visible");
     await userEvent.click(rail);
     await vi.waitFor(() => {
       expect(sidebarRoot().getAttribute("data-state")).toBe("expanded");
     });
+    expect(panelVisibility()).toBe("visible");
   });
 
   it("keeps icon-collapsed menu buttons tabbable", async () => {
@@ -250,7 +168,7 @@ describe("Sidebar collapsed offcanvas keyboard", () => {
       </Frame>
     );
     expect(sidebarRoot().getAttribute("data-collapsible")).toBe("icon");
-    expect(bySlot("sidebar-inner").inert, "icon collapse keeps the panel interactive").toBe(false);
+    expect(panelVisibility(), "icon collapse keeps the panel interactive").toBe("visible");
 
     const link = ordersLink();
     link.focus();

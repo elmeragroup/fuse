@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode, Ref } from "react";
 import { useEffect, useRef } from "react";
 
 import { afterEach, beforeEach, vi } from "vitest";
@@ -99,12 +99,18 @@ export function railNamed(name: string): HTMLButtonElement {
 export function Frame({
   provider,
   root,
+  rootRef,
+  rail = <Sidebar.Rail />,
   children,
   probe,
   locale = "en-US",
 }: {
   provider?: Partial<SidebarProviderProps>;
   root?: Partial<SidebarRootProps>;
+  /** Caller ref to Root; forwarded through the branch's usual ref surface. */
+  rootRef?: Ref<HTMLDivElement>;
+  /** Replaces the default `<Sidebar.Rail />`; pass a fragment or wrapper to vary its position. */
+  rail?: ReactNode;
   children?: ReactNode;
   /** Rendered in the Inset, so it survives the mobile branch (Root's children live inside the closed Sheet). */
   probe?: ReactNode;
@@ -113,13 +119,13 @@ export function Frame({
   return withLocale(
     locale,
     <Sidebar.Provider {...provider}>
-      <Sidebar.Root {...root}>
+      <Sidebar.Root ref={rootRef} {...root}>
         <Sidebar.Content>
           <Sidebar.Group>
             <Sidebar.Menu>{children}</Sidebar.Menu>
           </Sidebar.Group>
         </Sidebar.Content>
-        <Sidebar.Rail />
+        {rail}
       </Sidebar.Root>
       <Sidebar.Inset>
         <Sidebar.Trigger />
