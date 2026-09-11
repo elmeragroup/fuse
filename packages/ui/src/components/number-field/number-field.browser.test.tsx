@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useState } from "react";
 
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
@@ -132,6 +133,37 @@ describe("NumberField", () => {
     await userEvent.click(decrease);
     expect(onChange).toHaveBeenLastCalledWith(0);
     await expect.element(input).toHaveValue("0");
+  });
+
+  it("stays controlled from a NaN empty state: the parent drives stepping and typing", async () => {
+    const events: number[] = [];
+    function ControlledQuantity() {
+      const [value, setValue] = useState<number>(NaN);
+      return (
+        <NumberField
+          label="Quantity"
+          minValue={0}
+          maxValue={20}
+          value={value}
+          onChange={(next) => {
+            events.push(next);
+            setValue(next);
+          }}
+        />
+      );
+    }
+    renderField(<ControlledQuantity />);
+
+    const input = page.getByRole("textbox", { name: "Quantity", exact: true });
+    await expect.element(input).toHaveValue("");
+    await userEvent.click(page.getByRole("button", { name: "Increase", exact: true }));
+    expect(events).toEqual([0]);
+    await expect.element(input).toHaveValue("0");
+
+    await userEvent.fill(input, "12");
+    textboxNamed("Quantity").blur();
+    expect(events.at(-1)).toBe(12);
+    await expect.element(input).toHaveValue("12");
   });
 
   it("commits a typed value on blur and reports NaN when the input is cleared", async () => {

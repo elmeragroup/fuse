@@ -37,7 +37,9 @@ export type NumberFieldProps = {
   /** Unit suffix rendered between the input and the steppers (visual only). */
   denomination?: string;
   /**
-   * Controlled value. Omit for uncontrolled editing. `NaN` is empty.
+   * Controlled value. Omit — or pass `undefined` — for uncontrolled editing; a controlled
+   * empty field passes `NaN` (an absent prop can never be told apart from an explicit
+   * `undefined`, so it cannot mean controlled-empty).
    */
   value?: number;
   /** Uncontrolled initial value. */
