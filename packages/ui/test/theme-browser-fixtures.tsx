@@ -63,6 +63,32 @@ export async function mountedColorScheme(host: HTMLElement, expected: string) {
   await expect.poll(() => host.querySelector("output")?.textContent).toBe(expected);
 }
 
+/**
+ * Writes `value` under `key` and dispatches the `storage` event another same-origin
+ * document would receive for that write. The browser only fires the event in *other*
+ * documents, so a test has to stand in for the second tab itself.
+ */
+export function emitStorageChange(key: string, value: string) {
+  const oldValue = window.localStorage.getItem(key);
+  window.localStorage.setItem(key, value);
+  window.dispatchEvent(
+    new StorageEvent("storage", { key, oldValue, newValue: value, storageArea: window.localStorage })
+  );
+}
+
+/** Clears local storage and dispatches the whole-store `storage` event (`key` is `null`). */
+export function emitStorageClear() {
+  window.localStorage.clear();
+  window.dispatchEvent(
+    new StorageEvent("storage", {
+      key: null,
+      oldValue: null,
+      newValue: null,
+      storageArea: window.localStorage,
+    })
+  );
+}
+
 export function stubPrefersColorScheme(prefersDark: boolean) {
   let matches = prefersDark;
   const listeners = new Set<(event: MediaQueryListEvent) => void>();

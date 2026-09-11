@@ -17,6 +17,7 @@ import {
   DEFAULT_COLOR_SCHEME_STORAGE_KEY,
   DEFAULT_ENABLE_SYSTEM,
   isColorSchemeStorageEvent,
+  parseColorScheme,
   readStoredColorScheme,
   resolveColorSchemeOptions,
 } from "./color-scheme";
@@ -120,7 +121,7 @@ function DocumentThemeWriter({
 
     const onStorage = (event: StorageEvent) => {
       if (!isColorSchemeStorageEvent(event, options.storageKey)) return;
-      store.receivePreference(readStoredColorScheme(options.storageKey, options.defaultColorScheme));
+      store.receivePreference(parseColorScheme(event.newValue, options.defaultColorScheme));
     };
 
     const onMedia = () => {

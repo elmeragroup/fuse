@@ -6,6 +6,7 @@ import { render } from "../../test/browser-render";
 import {
   ColorSchemeOutput,
   defaultManifest,
+  emitStorageChange,
   fkasPrivate,
   mountedColorScheme,
   stubPrefersColorScheme,
@@ -184,23 +185,9 @@ describe("ThemeProvider committed color-scheme options", () => {
     expect(attemptedRender).toHaveBeenCalled();
     expect(document.documentElement.getAttribute("data-theme")).toBe("light");
 
-    window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "dark");
-    window.dispatchEvent(
-      new StorageEvent("storage", {
-        key: DEFAULT_COLOR_SCHEME_STORAGE_KEY,
-        newValue: "dark",
-        storageArea: window.localStorage,
-      })
-    );
+    emitStorageChange(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "dark");
     expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
-    window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "light");
-    window.dispatchEvent(
-      new StorageEvent("storage", {
-        key: DEFAULT_COLOR_SCHEME_STORAGE_KEY,
-        newValue: "light",
-        storageArea: window.localStorage,
-      })
-    );
+    emitStorageChange(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "light");
     expect(document.documentElement.getAttribute("data-theme")).toBe("light");
 
     rerender(
