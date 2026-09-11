@@ -14,7 +14,7 @@ import { join } from "node:path";
 
 import { FLAG_RAW_CEILING_BYTES, FLAG_SVG_COUNT } from "./flag-payload.ts";
 
-const FLAG_SOURCE_COMMIT = "a3d5adcf4fe650536d7694ca6d93c607ebf16c4e";
+export const FLAG_SOURCE_COMMIT = "a3d5adcf4fe650536d7694ca6d93c607ebf16c4e";
 const FLAG_SOURCE_REPO = "https://github.com/yammadev/flag-icons";
 
 const GENERATED_HEADER = `/**
@@ -144,7 +144,9 @@ export function writeFlagManifest(packageRoot: string): void {
 function gitOutput(sourceRoot: string, args: readonly string[]): string {
   const result = spawnSync("git", args, { cwd: sourceRoot, encoding: "utf8" });
   if (result.error !== undefined || result.status !== 0) {
-    throw new Error(`git ${args.join(" ")} failed in ${sourceRoot}: ${result.stderr}`);
+    throw new Error(
+      `git ${args.join(" ")} failed in ${sourceRoot}: ${result.error?.message ?? result.stderr}`
+    );
   }
   return result.stdout;
 }
