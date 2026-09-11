@@ -131,10 +131,7 @@ function localStorageArea(): Storage | undefined {
 
 /**
  * Whether a `storage` event should be read as a change to the color-scheme preference.
- *
- * Both absent-value cases are explicit rather than implied by their types: unreachable
- * local storage (`undefined`) never matches an event's `storageArea` (`Storage | null`),
- * and a `null` event key is a whole-store clear, which does affect the preference.
+ * A `null` event key is a whole-store clear, which does affect the preference.
  */
 export function isColorSchemeStorageEvent(event: StorageEvent, storageKey: string): boolean {
   const area = localStorageArea();
@@ -145,19 +142,11 @@ export function isColorSchemeStorageEvent(event: StorageEvent, storageKey: strin
 }
 
 export function readStoredColorScheme(storageKey: string, fallback: ColorScheme): ColorScheme {
-  try {
-    return parseColorScheme(localStorage.getItem(storageKey), fallback);
-  } catch {
-    return parseColorScheme(null, fallback);
-  }
+  return parseColorScheme(localStorageArea()?.getItem(storageKey), fallback);
 }
 
 export function writeStoredColorScheme(storageKey: string, value: ColorScheme): void {
-  try {
-    localStorage.setItem(storageKey, value);
-  } catch {
-    // storage unavailable
-  }
+  localStorageArea()?.setItem(storageKey, value);
 }
 
 export function readDocumentColorScheme(): "light" | "dark" | undefined {
