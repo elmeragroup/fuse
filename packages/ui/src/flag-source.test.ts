@@ -10,6 +10,12 @@ import { FLAG_SVG_COUNT } from "../scripts/flag-payload";
 const PRODUCTION_PIN = "a3d5adcf4fe650536d7694ca6d93c607ebf16c4e";
 const FIXTURE_SVG = '<svg xmlns="http://www.w3.org/2000/svg"/>';
 
+/**
+ * Building the 249-file git fixture and spawning git against it is slow under full-gate
+ * parallel load, so every suite in this file raises the default.
+ */
+const FIXTURE_TIMEOUT = 30_000;
+
 type FlagSourceFixture = {
   root: string;
   repoRoot: string;
@@ -86,161 +92,127 @@ function requireFixture(fixture: FlagSourceFixture | undefined): FlagSourceFixtu
   return fixture;
 }
 
-function restoreSource(fixture: FlagSourceFixture): void {
-  runFixtureGit(fixture.sourceRoot, ["reset", "--hard", fixture.head]);
-  runFixtureGit(fixture.sourceRoot, ["clean", "-fd"]);
+/**
+ * One fixture for the whole file: the checkout is only ever inspected or reset, and every
+ * suite's destination writes are cleaned up by the file-level `afterEach`.
+ */
+function setupFlagFixture(): () => FlagSourceFixture {
+  let fixture: FlagSourceFixture | undefined;
+  beforeAll(() => {
+    fixture = makeFixture();
+  }, FIXTURE_TIMEOUT);
+  afterAll(() => {
+    rmSync(requireFixture(fixture).root, { recursive: true, force: true });
+  });
+  return () => requireFixture(fixture);
 }
 
-describe("flag source provenance", () => {
-  // Timeout: building a 249-file git fixture and spawning git is slow under full-gate parallel load.
-  it("refuses to vendor when the checkout is not at the production pin", () => {
-    const fixture = makeFixture();
-    try {
-      expect(() => vendorFlags(fixture.repoRoot, fixture.packageRoot)).toThrow(new RegExp(PRODUCTION_PIN));
-      expect(existsSync(join(fixture.packageRoot, "src/flags"))).toBe(false);
-    } finally {
-      rmSync(fixture.root, { recursive: true, force: true });
-    }
-  }, 30_000);
+const flagFixture = setupFlagFixture();
 
-  // Timeout: building a 249-file git fixture and spawning git is slow under full-gate parallel load.
-  it("leaves a pre-existing destination untouched when the pin does not match", () => {
-    const fixture = makeFixture();
-    try {
-      const destDir = join(fixture.packageRoot, "src/flags");
-      mkdirSync(destDir, { recursive: true });
-      const sentinel = join(destDir, "sentinel.txt");
-      writeFileSync(sentinel, "do-not-touch");
-      expect(() => vendorFlags(fixture.repoRoot, fixture.packageRoot)).toThrow(new RegExp(PRODUCTION_PIN));
-      expect(readFileSync(sentinel, "utf8")).toBe("do-not-touch");
-      expect(existsSync(join(destDir, "PROVENANCE.md"))).toBe(false);
-    } finally {
-      rmSync(fixture.root, { recursive: true, force: true });
-    }
-  }, 30_000);
+afterEach(() => {
+  const fixture = flagFixture();
+  runFixtureGit(fixture.sourceRoot, ["reset", "--hard", fixture.head]);
+  runFixtureGit(fixture.sourceRoot, ["clean", "-fd"]);
+  rmSync(join(fixture.packageRoot, "src/flags"), { recursive: true, force: true });
 });
 
-describe("assertFlagSourceCheckout", () => {
-  let fixture: FlagSourceFixture | undefined;
-
-  // Timeout: building a 249-file git fixture is slow under full-gate parallel load.
-  beforeAll(() => {
-    fixture = makeFixture();
-  }, 30_000);
-
-  afterEach(() => {
-    restoreSource(requireFixture(fixture));
+describe("flag source provenance", { timeout: FIXTURE_TIMEOUT }, () => {
+  it("refuses to vendor when the checkout is not at the production pin", () => {
+    const fixture = flagFixture();
+    expect(() => vendorFlags(fixture.repoRoot, fixture.packageRoot)).toThrow(new RegExp(PRODUCTION_PIN));
+    expect(existsSync(join(fixture.packageRoot, "src/flags"))).toBe(false);
   });
 
-  afterAll(() => {
-    rmSync(requireFixture(fixture).root, { recursive: true, force: true });
+  it("leaves a pre-existing destination untouched when the pin does not match", () => {
+    const fixture = flagFixture();
+    const destDir = join(fixture.packageRoot, "src/flags");
+    mkdirSync(destDir, { recursive: true });
+    const sentinel = join(destDir, "sentinel.txt");
+    writeFileSync(sentinel, "do-not-touch");
+    expect(() => vendorFlags(fixture.repoRoot, fixture.packageRoot)).toThrow(new RegExp(PRODUCTION_PIN));
+    expect(readFileSync(sentinel, "utf8")).toBe("do-not-touch");
+    expect(existsSync(join(destDir, "PROVENANCE.md"))).toBe(false);
   });
+});
 
-  // Timeout: spawning git against the 249-file fixture is slow under full-gate parallel load.
+describe("assertFlagSourceCheckout", { timeout: FIXTURE_TIMEOUT }, () => {
   it("accepts a clean checkout at the expected commit", () => {
-    const current = requireFixture(fixture);
-    expect(() => assertFlagSourceCheckout(current.sourceRoot, current.head)).not.toThrow();
-  }, 30_000);
+    const fixture = flagFixture();
+    expect(() => assertFlagSourceCheckout(fixture.sourceRoot, fixture.head)).not.toThrow();
+  });
 
-  // Timeout: spawning git against the 249-file fixture is slow under full-gate parallel load.
   it("rejects a later commit", () => {
-    const current = requireFixture(fixture);
-    writeFileSync(join(current.sourceRoot, "README.md"), "moved\n");
-    runFixtureGit(current.sourceRoot, ["add", "-A"]);
-    runFixtureGit(current.sourceRoot, ["commit", "-q", "-m", "later"]);
-    expect(() => assertFlagSourceCheckout(current.sourceRoot, current.head)).toThrow(/expected [0-9a-f]{40}/);
-    expect(() => assertFlagSourceCheckout(current.sourceRoot, current.head)).toThrow(current.head);
-  }, 30_000);
+    const fixture = flagFixture();
+    writeFileSync(join(fixture.sourceRoot, "README.md"), "moved\n");
+    runFixtureGit(fixture.sourceRoot, ["add", "-A"]);
+    runFixtureGit(fixture.sourceRoot, ["commit", "-q", "-m", "later"]);
+    expect(() => assertFlagSourceCheckout(fixture.sourceRoot, fixture.head)).toThrow(/expected [0-9a-f]{40}/);
+    expect(() => assertFlagSourceCheckout(fixture.sourceRoot, fixture.head)).toThrow(fixture.head);
+  });
 
-  // Timeout: spawning git against the 249-file fixture is slow under full-gate parallel load.
   it("rejects an unstaged svg edit", () => {
-    const current = requireFixture(fixture);
-    writeFileSync(join(current.sourceRoot, "svg/AA.svg"), `${FIXTURE_SVG}<!--edit-->`);
-    expect(() => assertFlagSourceCheckout(current.sourceRoot, current.head)).toThrow(/local changes/);
-  }, 30_000);
+    const fixture = flagFixture();
+    writeFileSync(join(fixture.sourceRoot, "svg/AA.svg"), `${FIXTURE_SVG}<!--edit-->`);
+    expect(() => assertFlagSourceCheckout(fixture.sourceRoot, fixture.head)).toThrow(/local changes/);
+  });
 
-  // Timeout: spawning git against the 249-file fixture is slow under full-gate parallel load.
   it("rejects a staged svg edit", () => {
-    const current = requireFixture(fixture);
-    writeFileSync(join(current.sourceRoot, "svg/AA.svg"), `${FIXTURE_SVG}<!--staged-->`);
-    runFixtureGit(current.sourceRoot, ["add", "svg/AA.svg"]);
-    expect(() => assertFlagSourceCheckout(current.sourceRoot, current.head)).toThrow(/local changes/);
-  }, 30_000);
+    const fixture = flagFixture();
+    writeFileSync(join(fixture.sourceRoot, "svg/AA.svg"), `${FIXTURE_SVG}<!--staged-->`);
+    runFixtureGit(fixture.sourceRoot, ["add", "svg/AA.svg"]);
+    expect(() => assertFlagSourceCheckout(fixture.sourceRoot, fixture.head)).toThrow(/local changes/);
+  });
 
-  // Timeout: spawning git against the 249-file fixture is slow under full-gate parallel load.
   it("rejects a LICENSE edit", () => {
-    const current = requireFixture(fixture);
-    writeFileSync(join(current.sourceRoot, "LICENSE"), "changed\n");
-    expect(() => assertFlagSourceCheckout(current.sourceRoot, current.head)).toThrow(/local changes/);
-  }, 30_000);
+    const fixture = flagFixture();
+    writeFileSync(join(fixture.sourceRoot, "LICENSE"), "changed\n");
+    expect(() => assertFlagSourceCheckout(fixture.sourceRoot, fixture.head)).toThrow(/local changes/);
+  });
 
-  // Timeout: spawning git against the 249-file fixture is slow under full-gate parallel load.
   it("rejects an untracked svg", () => {
-    const current = requireFixture(fixture);
-    writeFileSync(join(current.sourceRoot, "svg/ZZ.svg"), FIXTURE_SVG);
-    expect(() => assertFlagSourceCheckout(current.sourceRoot, current.head)).toThrow(/local changes/);
-  }, 30_000);
+    const fixture = flagFixture();
+    writeFileSync(join(fixture.sourceRoot, "svg/ZZ.svg"), FIXTURE_SVG);
+    expect(() => assertFlagSourceCheckout(fixture.sourceRoot, fixture.head)).toThrow(/local changes/);
+  });
 
-  // Timeout: spawning git against the 249-file fixture is slow under full-gate parallel load.
   it("ignores an unrelated README edit", () => {
-    const current = requireFixture(fixture);
-    writeFileSync(join(current.sourceRoot, "README.md"), "still unrelated\n");
-    expect(() => assertFlagSourceCheckout(current.sourceRoot, current.head)).not.toThrow();
-  }, 30_000);
+    const fixture = flagFixture();
+    writeFileSync(join(fixture.sourceRoot, "README.md"), "still unrelated\n");
+    expect(() => assertFlagSourceCheckout(fixture.sourceRoot, fixture.head)).not.toThrow();
+  });
 
-  // Timeout: spawning git against the 249-file fixture is slow under full-gate parallel load.
   it("rejects a nested directory that is not the checkout root", () => {
-    const current = requireFixture(fixture);
+    const fixture = flagFixture();
     expect(() =>
-      assertFlagSourceCheckout(join(current.repoRoot, ".ref/flag-icons/svg"), current.head)
+      assertFlagSourceCheckout(join(fixture.repoRoot, ".ref/flag-icons/svg"), fixture.head)
     ).toThrow(/not the root of a Git checkout/);
-  }, 30_000);
+  });
 
-  // Timeout: spawning git against the 249-file fixture is slow under full-gate parallel load.
   it("rejects a missing source root", () => {
-    const current = requireFixture(fixture);
-    expect(() => assertFlagSourceCheckout(join(current.sourceRoot, "missing"), current.head)).toThrow(
+    const fixture = flagFixture();
+    expect(() => assertFlagSourceCheckout(join(fixture.sourceRoot, "missing"), fixture.head)).toThrow(
       /is missing/
     );
-  }, 30_000);
+  });
 });
 
-describe("copyFlagAssets with an injected pin", () => {
-  let fixture: FlagSourceFixture | undefined;
-
-  // Timeout: building a 249-file git fixture is slow under full-gate parallel load.
-  beforeAll(() => {
-    fixture = makeFixture();
-  }, 30_000);
-
-  afterEach(() => {
-    const current = requireFixture(fixture);
-    restoreSource(current);
-    rmSync(join(current.packageRoot, "src/flags"), { recursive: true, force: true });
-  });
-
-  afterAll(() => {
-    rmSync(requireFixture(fixture).root, { recursive: true, force: true });
-  });
-
-  // Timeout: vendoring 249 SVGs and spawning git is slow under full-gate parallel load.
+describe("copyFlagAssets with an injected pin", { timeout: FIXTURE_TIMEOUT }, () => {
   it("copies assets when HEAD matches the injected pin", () => {
-    const current = requireFixture(fixture);
-    copyFlagAssets(current.sourceRoot, current.packageRoot, current.head);
-    const destDir = join(current.packageRoot, "src/flags");
+    const fixture = flagFixture();
+    copyFlagAssets(fixture.sourceRoot, fixture.packageRoot, fixture.head);
+    const destDir = join(fixture.packageRoot, "src/flags");
     expect(listFlagFiles(destDir)).toHaveLength(FLAG_SVG_COUNT);
     expect(existsSync(join(destDir, "LICENSE"))).toBe(true);
     expect(existsSync(join(destDir, "manifest.ts"))).toBe(true);
-    expect(readFileSync(join(destDir, "PROVENANCE.md"), "utf8")).toContain(`Commit: \`${current.head}\``);
-  }, 30_000);
+    expect(readFileSync(join(destDir, "PROVENANCE.md"), "utf8")).toContain(`Commit: \`${fixture.head}\``);
+  });
 
-  // Timeout: spawning git against the 249-file fixture is slow under full-gate parallel load.
   it("refuses a dirty svg and does not create the destination", () => {
-    const current = requireFixture(fixture);
-    writeFileSync(join(current.sourceRoot, "svg/AA.svg"), `${FIXTURE_SVG}<!--dirty-->`);
-    expect(() => copyFlagAssets(current.sourceRoot, current.packageRoot, current.head)).toThrow(
+    const fixture = flagFixture();
+    writeFileSync(join(fixture.sourceRoot, "svg/AA.svg"), `${FIXTURE_SVG}<!--dirty-->`);
+    expect(() => copyFlagAssets(fixture.sourceRoot, fixture.packageRoot, fixture.head)).toThrow(
       /local changes/
     );
-    expect(existsSync(join(current.packageRoot, "src/flags"))).toBe(false);
-  }, 30_000);
+    expect(existsSync(join(fixture.packageRoot, "src/flags"))).toBe(false);
+  });
 });
