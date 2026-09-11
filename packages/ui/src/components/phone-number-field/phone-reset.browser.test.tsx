@@ -103,10 +103,8 @@ it.each([
   expect(roleNamed("button", "Select country").textContent).toContain("+46");
 });
 
-it.each([
-  { label: "read-only", props: { isReadOnly: true } },
-  { label: "disabled", props: { isDisabled: true } },
-])("clears a $label uncontrolled field on programmatic reset", async ({ label, props }) => {
+/** The shared lock/unlock harness: populate while editable, then reset while locked. */
+function lockedField(props: Partial<PhoneNumberFieldProps>) {
   const change = vi.fn();
   const countryChange = vi.fn();
   const field = (locked: boolean) =>
@@ -114,6 +112,11 @@ it.each([
       "en-US",
       <PhoneForm onChange={change} onCountryChange={countryChange} {...(locked ? props : undefined)} />
     );
+  return { change, countryChange, field };
+}
+
+it("clears a read-only uncontrolled field on programmatic reset", async () => {
+  const { change, countryChange, field } = lockedField({ isReadOnly: true });
   const { rerender } = render(field(false));
   await userEvent.fill(inputNamed(), "41234567");
   const changeCalls = change.mock.calls.length;
@@ -122,17 +125,28 @@ it.each([
 
   formNamed().reset();
 
-  if (label === "disabled") {
-    // A disabled field owns no submittable value until it is enabled again.
-    await expect.poll(() => inputNamed().value).toBe("");
-    expect(submission().has("phone")).toBe(false);
-    rerender(field(false));
-    expect(submission().get("phone")).toBe("");
-    return;
-  }
   await expect.poll(() => snapshot()).toEqual(emptySnapshot);
   expect(change).toHaveBeenCalledTimes(changeCalls);
   expect(countryChange).toHaveBeenCalledTimes(countryCalls);
+});
+
+it("clears a disabled uncontrolled field on programmatic reset", async () => {
+  const { change, countryChange, field } = lockedField({ isDisabled: true });
+  const { rerender } = render(field(false));
+  await userEvent.fill(inputNamed(), "41234567");
+  const changeCalls = change.mock.calls.length;
+  const countryCalls = countryChange.mock.calls.length;
+  rerender(field(true));
+
+  formNamed().reset();
+
+  expect(change).toHaveBeenCalledTimes(changeCalls);
+  expect(countryChange).toHaveBeenCalledTimes(countryCalls);
+  // A disabled field owns no submittable value until it is enabled again.
+  await expect.poll(() => inputNamed().value).toBe("");
+  expect(submission().has("phone")).toBe(false);
+  rerender(field(false));
+  expect(submission().get("phone")).toBe("");
 });
 
 it.each([

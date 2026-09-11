@@ -455,7 +455,7 @@ describe("Sidebar.MenuButton tooltip", () => {
 describe("Sidebar.Root branches", () => {
   it("collapsible=none renders a static peer with state attributes, a forwarded ref, and no dialog", async () => {
     const rootRef = createRef<HTMLDivElement>();
-    renderThemed(<Frame root={{ collapsible: "none", variant: "inset", side: "right" }} rootRef={rootRef} />);
+    renderThemed(<Frame root={{ collapsible: "none", variant: "inset", side: "right", ref: rootRef }} />);
     const root = sidebarRoot();
     // DOM audit: the caller's ref reaches the static branch's `sidebar` slot.
     expect(rootRef.current?.dataset.slot, "the caller's ref reaches the static branch's div").toBe("sidebar");

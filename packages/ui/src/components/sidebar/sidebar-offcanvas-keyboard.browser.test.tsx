@@ -64,8 +64,7 @@ function OffcanvasFrame({ side, rootRef }: { side?: "left" | "right"; rootRef?: 
   return (
     <Frame
       provider={{ defaultOpen: false }}
-      root={side ? { side } : undefined}
-      rootRef={rootRef}
+      root={{ side, ref: rootRef }}
       rail={
         <RailShell>
           <Sidebar.Rail />
