@@ -27,11 +27,13 @@ export default function ReleasesPage(): ReactElement {
         including API, styles, tokens, types, and shipped strings. Internal-only PRs use the{" "}
         <code>no-changeset</code> label instead. Pending notes accumulate on <code>main</code>; no workflow
         automatically opens a release PR or publishes the package. When a maintainer prepares the next
-        release, the five-step procedure — <code>pnpm exec changeset status</code>,{" "}
-        <code>pnpm exec changeset version</code>, the lockfile refresh, <code>pnpm ci:checks</code>, and the
-        release PR with the <code>no-changeset</code> label — lives in the release runbook. Merging the
-        release PR records the version and changelog; it does not publish to npm, and the changelog is never
-        hand-edited.
+        release, <code>pnpm exec changeset version</code> applies the pending notes; the rest of the procedure
+        lives in the{" "}
+        <Link href="https://github.com/elmeragroup/ui/blob/main/docs/spec/release.md" rel="noreferrer">
+          release runbook
+        </Link>
+        . Merging the release PR records the version and changelog; it does not publish to npm, and the
+        changelog is never hand-edited.
       </p>
       <p>
         <strong>Publishing is a separate, planned action.</strong> After the pending setup is complete, a
