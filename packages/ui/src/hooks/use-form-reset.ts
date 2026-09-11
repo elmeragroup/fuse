@@ -5,18 +5,19 @@ import type { RefObject } from "react";
 
 /**
  * Package-private native form-reset subscription for uncontrolled field composites.
- * Observable only through those composites, never a public export. `onReset` is null
- * when the caller does not own reset. The latest callback is held in a ref so identity
- * changes do not resubscribe.
+ * Observable only through those composites, never a public export. `onReset` is `null`
+ * — this hook family's "off" signal, matching `usePhoneNumberFieldState` — when the
+ * caller does not own reset. The latest callback is held in a ref so identity changes
+ * do not resubscribe.
  *
- * The native `reset` event bubbles to the document with the form as its target, so one
- * document listener resolves the association at event time: the callback runs when the
- * resetting form is whatever `element.current.form` is at that moment. A control that
- * mounts late, moves between forms, or changes its `form` attribute is therefore followed
- * without a resubscribe, and a reset on any other form is ignored.
- *
- * `element` is in the dependency list only because the effect reads it; a `RefObject` is
- * stable, so `ownsReset` is the one key that resubscribes.
+ * The native `reset` event bubbles to the control's root with the form as its target.
+ * `reset` is not composed, so a document listener never sees a control inside a shadow
+ * root; subscribe on `element.current.getRootNode()` instead — the document or the
+ * enclosing shadow root. One listener resolves the association at event time: the
+ * callback runs when the resetting form is whatever `element.current.form` is at that
+ * moment. A control that mounts late, moves between forms, or changes its `form`
+ * attribute is therefore followed without a resubscribe, and a reset on any other form
+ * is ignored.
  */
 export function useFormReset(
   element: RefObject<HTMLInputElement | HTMLTextAreaElement | null>,
@@ -28,6 +29,9 @@ export function useFormReset(
 
   useLayoutEffect(() => {
     if (!ownsReset) return;
+    // Layout effects run after mount, so the node exists; the document fallback only
+    // covers a ref that never attached.
+    const root = element.current?.getRootNode() ?? document;
     let subscribed = true;
     function handleReset(event: Event): void {
       const node = element.current;
@@ -38,10 +42,10 @@ export function useFormReset(
         if (subscribed && !event.defaultPrevented) onResetRef.current?.();
       });
     }
-    document.addEventListener("reset", handleReset);
+    root.addEventListener("reset", handleReset);
     return () => {
       subscribed = false;
-      document.removeEventListener("reset", handleReset);
+      root.removeEventListener("reset", handleReset);
     };
   }, [element, ownsReset]);
 }

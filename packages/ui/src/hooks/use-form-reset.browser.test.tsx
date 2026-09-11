@@ -1,5 +1,6 @@
 import { useRef } from "react";
 
+import { createPortal } from "react-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { render } from "../../test/browser-render";
@@ -106,6 +107,42 @@ describe("useFormReset", () => {
     await vi.waitFor(() => {
       expect(onReset).toHaveBeenCalledTimes(1);
     });
+  });
+
+  it("subscribes on the enclosing shadow root, where a document listener cannot see reset", async () => {
+    const onReset = vi.fn();
+    const shadowHost = document.createElement("div");
+    document.body.append(shadowHost);
+    const shadow = shadowHost.attachShadow({ mode: "open" });
+    const mountPoint = document.createElement("div");
+    shadow.append(mountPoint);
+
+    function Probe() {
+      const element = useRef<HTMLInputElement>(null);
+      useFormReset(element, onReset);
+      return createPortal(
+        <form aria-label="Shadowed">
+          <input aria-label="Field" ref={element} defaultValue="start" />
+        </form>,
+        mountPoint
+      );
+    }
+
+    const add = vi.spyOn(document, "addEventListener");
+    const { unmount } = render(<Probe />);
+    expect(resetCalls(add), "no document reset listener for a shadow-root control").toEqual([]);
+
+    const form = shadow.querySelector("form");
+    if (!(form instanceof HTMLFormElement)) {
+      throw new Error("expected a form inside the shadow root");
+    }
+    form.reset();
+    await vi.waitFor(() => {
+      expect(onReset).toHaveBeenCalledTimes(1);
+    });
+
+    unmount();
+    shadowHost.remove();
   });
 
   it("does not invoke the callback when reset is canceled", async () => {
