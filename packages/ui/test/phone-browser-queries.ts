@@ -54,7 +54,8 @@ export async function selectCountry(
   await openPicker(labels.trigger);
   await userEvent.fill(countrySearch(labels.search), country);
   await vi.waitFor(() => {
-    expect(page.getByRole("option", { name: country }).query()).not.toBeNull();
+    // Substring match on purpose: the option's accessible name appends the calling code.
+    expect(page.getByRole("option", { name: country, exact: false }).query()).not.toBeNull();
   });
   await userEvent.keyboard("{ArrowDown}{Enter}");
   await vi.waitFor(() => {

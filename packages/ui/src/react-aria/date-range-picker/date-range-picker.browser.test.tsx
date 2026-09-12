@@ -72,7 +72,7 @@ function groupNamed(name: string): HTMLElement {
 function segment(name: string): HTMLElement {
   // Substring match on purpose: RAC appends the picker's own label to every segment's
   // name, and the "<part>, <row>" prefix is the part that identifies the segment.
-  const element = page.getByRole("spinbutton", { name }).element();
+  const element = page.getByRole("spinbutton", { name, exact: false }).element();
   if (!(element instanceof HTMLElement)) {
     throw new Error(`expected spinbutton ${name}`);
   }
@@ -171,7 +171,9 @@ describe("DateRangePicker", () => {
     expect(group.getAttribute("data-slot")).toBe("field-group");
     for (const row of ["Start Date", "End Date"] as const) {
       for (const part of ["month", "day", "year"] as const) {
-        await expect.element(page.getByRole("spinbutton", { name: `${part}, ${row}` })).toBeVisible();
+        await expect
+          .element(page.getByRole("spinbutton", { name: `${part}, ${row}`, exact: false }))
+          .toBeVisible();
       }
     }
     expect(describedTextsFor(group)).toContain("When we may deliver.");
@@ -194,7 +196,9 @@ describe("DateRangePicker", () => {
   it("reports a range only once both rows are complete", async () => {
     const onChange = rangeChangeSpy();
     renderPicker(<DateRangePicker label="Delivery window" onChange={onChange} />);
-    await expect.element(page.getByRole("spinbutton", { name: "month, Start Date" })).toBeVisible();
+    await expect
+      .element(page.getByRole("spinbutton", { name: "month, Start Date", exact: false }))
+      .toBeVisible();
 
     await userEvent.click(segment("month, Start Date"));
     await userEvent.keyboard("07142026");
@@ -222,7 +226,9 @@ describe("DateRangePicker", () => {
 
   it("renders leading zeros on day and month in both rows by default", async () => {
     renderPicker(<DateRangePicker label="Delivery window" defaultValue={{ start: july4, end: july9 }} />);
-    await expect.element(page.getByRole("spinbutton", { name: "month, Start Date" })).toBeVisible();
+    await expect
+      .element(page.getByRole("spinbutton", { name: "month, Start Date", exact: false }))
+      .toBeVisible();
 
     expect(segment("month, Start Date").textContent).toBe("07");
     expect(segment("day, Start Date").textContent).toBe("04");
@@ -238,7 +244,9 @@ describe("DateRangePicker", () => {
         shouldForceLeadingZeros={false}
       />
     );
-    await expect.element(page.getByRole("spinbutton", { name: "month, Start Date" })).toBeVisible();
+    await expect
+      .element(page.getByRole("spinbutton", { name: "month, Start Date", exact: false }))
+      .toBeVisible();
 
     expect(segment("month, Start Date").textContent).toBe("7");
     expect(segment("day, Start Date").textContent).toBe("4");
@@ -320,7 +328,9 @@ describe("DateRangePicker", () => {
         errorMessage={errorCopy}
       />
     );
-    await expect.element(page.getByRole("spinbutton", { name: "month, Start Date" })).toBeVisible();
+    await expect
+      .element(page.getByRole("spinbutton", { name: "month, Start Date", exact: false }))
+      .toBeVisible();
     const group = groupNamed("Delivery window");
     const root = group.parentElement;
     if (!(root instanceof HTMLElement)) {
@@ -365,7 +375,9 @@ describe("DateRangePicker", () => {
     renderPicker(
       <DateRangePicker label="Delivery window" defaultValue={julyWeek} errorMessage={<span>Required</span>} />
     );
-    await expect.element(page.getByRole("spinbutton", { name: "month, Start Date" })).toBeVisible();
+    await expect
+      .element(page.getByRole("spinbutton", { name: "month, Start Date", exact: false }))
+      .toBeVisible();
 
     expect(document.body.textContent).not.toContain("Required");
   });
@@ -412,7 +424,9 @@ describe("DateRangePicker", () => {
         <button type="submit">Save</button>
       </form>
     );
-    await expect.element(page.getByRole("spinbutton", { name: "month, Start Date" })).toBeVisible();
+    await expect
+      .element(page.getByRole("spinbutton", { name: "month, Start Date", exact: false }))
+      .toBeVisible();
 
     await userEvent.click(buttonNamed("Save"));
     expect(onSubmit).toHaveBeenCalledTimes(1);
@@ -574,7 +588,9 @@ describe("DateRangePicker composition surface", () => {
   it("floors the field box width and lets only the end row absorb the slack", async () => {
     renderPicker(<DateRangePicker label="Delivery window" defaultValue={julyWeek} />);
     const group = groupNamed("Delivery window");
-    await expect.element(page.getByRole("spinbutton", { name: "month, Start Date" })).toBeVisible();
+    await expect
+      .element(page.getByRole("spinbutton", { name: "month, Start Date", exact: false }))
+      .toBeVisible();
     const [startRow, endRow] = segmentRows("Delivery window");
     if (startRow === undefined || endRow === undefined) {
       throw new Error("expected both segment rows");
@@ -608,7 +624,9 @@ describe("DateRangePicker composition surface", () => {
 
   it("sizes the trigger glyph from the recipe rather than the Button's fallback", async () => {
     renderPicker(<DateRangePicker label="Delivery window" defaultValue={julyWeek} />);
-    await expect.element(page.getByRole("spinbutton", { name: "month, Start Date" })).toBeVisible();
+    await expect
+      .element(page.getByRole("spinbutton", { name: "month, Start Date", exact: false }))
+      .toBeVisible();
     const glyph = trigger().querySelector("svg");
     if (!(glyph instanceof SVGElement)) {
       throw new Error("expected the trigger glyph");

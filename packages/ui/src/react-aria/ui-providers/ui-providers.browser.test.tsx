@@ -126,10 +126,10 @@ describe("UiProviders", () => {
       );
 
       await expect.element(page.getByRole("status", { name: "RAC locale" })).toHaveTextContent("nb-NO");
-      await expect.element(page.getByRole("spinbutton", { name: "måned" })).toBeVisible();
-      await expect.element(page.getByRole("spinbutton", { name: "dag" })).toBeVisible();
-      await expect.element(page.getByRole("spinbutton", { name: "år" })).toBeVisible();
-      expect(page.getByRole("spinbutton", { name: "month" }).query()).toBeNull();
+      await expect.element(page.getByRole("spinbutton", { name: "måned", exact: false })).toBeVisible();
+      await expect.element(page.getByRole("spinbutton", { name: "dag", exact: false })).toBeVisible();
+      await expect.element(page.getByRole("spinbutton", { name: "år", exact: false })).toBeVisible();
+      expect(page.getByRole("spinbutton", { name: "month", exact: false }).query()).toBeNull();
       expect(window.navigator.language).toBe("en-US");
     } finally {
       if (navigatorLanguage === undefined) {

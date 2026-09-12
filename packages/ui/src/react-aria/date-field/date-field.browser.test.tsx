@@ -44,7 +44,8 @@ function groupNamed(name: string): HTMLElement {
 }
 
 function spinbuttonNamed(name: string): HTMLElement {
-  const element = page.getByRole("spinbutton", { name }).element();
+  // Substring match on purpose: RAC appends the field label to every segment's name.
+  const element = page.getByRole("spinbutton", { name, exact: false }).element();
   if (!(element instanceof HTMLElement)) {
     throw new Error(`expected spinbutton ${name}`);
   }
@@ -110,9 +111,9 @@ describe("DateField", () => {
   it("names the segment group from the label and exposes day/month/year spinbuttons", async () => {
     renderField(<DateField label="Invoice date" description="Billing date." defaultValue={july14} />);
     expect(groupNamed("Invoice date")).toBeTruthy();
-    await expect.element(page.getByRole("spinbutton", { name: "month" })).toBeVisible();
-    await expect.element(page.getByRole("spinbutton", { name: "day" })).toBeVisible();
-    await expect.element(page.getByRole("spinbutton", { name: "year" })).toBeVisible();
+    await expect.element(page.getByRole("spinbutton", { name: "month", exact: false })).toBeVisible();
+    await expect.element(page.getByRole("spinbutton", { name: "day", exact: false })).toBeVisible();
+    await expect.element(page.getByRole("spinbutton", { name: "year", exact: false })).toBeVisible();
     expect(spinbuttonsIn("Invoice date")).toHaveLength(3);
     expect(describedTextsForField("Invoice date")).toContain("Billing date.");
   });
@@ -158,7 +159,7 @@ describe("DateField", () => {
 
   it("renders leading zeros on day and month by default", async () => {
     renderField(<DateField label="Invoice date" defaultValue={new CalendarDate(2026, 7, 4)} />);
-    await expect.element(page.getByRole("spinbutton", { name: "month" })).toBeVisible();
+    await expect.element(page.getByRole("spinbutton", { name: "month", exact: false })).toBeVisible();
     expect(spinbuttonNamed("month").textContent).toBe("07");
     expect(spinbuttonNamed("day").textContent).toBe("04");
   });
@@ -166,7 +167,7 @@ describe("DateField", () => {
   it("fires onChange with a DateValue, not an event", async () => {
     const onChange = vi.fn();
     renderField(<DateField label="Invoice date" defaultValue={july14} onChange={onChange} />);
-    await expect.element(page.getByRole("spinbutton", { name: "month" })).toBeVisible();
+    await expect.element(page.getByRole("spinbutton", { name: "month", exact: false })).toBeVisible();
     spinbuttonNamed("month").focus();
     await userEvent.keyboard("{ArrowUp}");
     expect(onChange).toHaveBeenCalled();
@@ -308,7 +309,7 @@ describe("DateField", () => {
         <DateField label="Invoice date" defaultValue={july14} />
       </>
     );
-    await expect.element(page.getByRole("spinbutton", { name: "month" })).toBeVisible();
+    await expect.element(page.getByRole("spinbutton", { name: "month", exact: false })).toBeVisible();
     await assertStateFocusRingAtBothDensities(
       buttonNamed("Before"),
       spinbuttonNamed("month"),
@@ -353,7 +354,7 @@ describe("DateField hour granularity", () => {
         defaultValue={new CalendarDateTime(2026, 7, 14, 15)}
       />
     );
-    await expect.element(page.getByRole("spinbutton", { name: "hour" })).toBeVisible();
+    await expect.element(page.getByRole("spinbutton", { name: "hour", exact: false })).toBeVisible();
     expect(spinbuttonsIn("Appointment").length).toBeGreaterThan(3);
   });
 });

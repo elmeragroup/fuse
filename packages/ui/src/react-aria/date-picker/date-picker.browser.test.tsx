@@ -68,7 +68,8 @@ function dateInputRow(name: string): HTMLElement {
 }
 
 function spinbuttonNamed(name: string): HTMLElement {
-  const element = page.getByRole("spinbutton", { name }).element();
+  // Substring match on purpose: RAC appends the field label to every segment's name.
+  const element = page.getByRole("spinbutton", { name, exact: false }).element();
   if (!(element instanceof HTMLElement)) {
     throw new Error(`expected spinbutton ${name}`);
   }
@@ -150,9 +151,9 @@ describe("DatePicker", () => {
     const group = groupNamed("Invoice date");
 
     expect(group.getAttribute("data-slot")).toBe("field-group");
-    await expect.element(page.getByRole("spinbutton", { name: "month" })).toBeVisible();
-    await expect.element(page.getByRole("spinbutton", { name: "day" })).toBeVisible();
-    await expect.element(page.getByRole("spinbutton", { name: "year" })).toBeVisible();
+    await expect.element(page.getByRole("spinbutton", { name: "month", exact: false })).toBeVisible();
+    await expect.element(page.getByRole("spinbutton", { name: "day", exact: false })).toBeVisible();
+    await expect.element(page.getByRole("spinbutton", { name: "year", exact: false })).toBeVisible();
     expect(describedTextsFor(group)).toContain("Billing date.");
 
     const trigger_ = trigger();
@@ -191,7 +192,8 @@ describe("DatePicker", () => {
     await userEvent.keyboard("{Escape}");
     await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
     expect(onChange).not.toHaveBeenCalled();
-    expect(document.activeElement).toBe(trigger());
+    // Focus restoration lands after the dismissal commits; poll instead of racing it.
+    await expect.poll(() => document.activeElement).toBe(trigger());
     expect(trigger()).toHaveAttribute("aria-expanded", "false");
   });
 
@@ -280,7 +282,7 @@ describe("DatePicker", () => {
 
   it("renders leading zeros on day and month by default", async () => {
     renderPicker(<DatePicker label="Invoice date" defaultValue={july4} />);
-    await expect.element(page.getByRole("spinbutton", { name: "month" })).toBeVisible();
+    await expect.element(page.getByRole("spinbutton", { name: "month", exact: false })).toBeVisible();
 
     expect(spinbuttonNamed("month").textContent).toBe("07");
     expect(spinbuttonNamed("day").textContent).toBe("04");
@@ -288,7 +290,7 @@ describe("DatePicker", () => {
 
   it("drops the leading zeros when a caller turns them off", async () => {
     renderPicker(<DatePicker label="Invoice date" defaultValue={july4} shouldForceLeadingZeros={false} />);
-    await expect.element(page.getByRole("spinbutton", { name: "month" })).toBeVisible();
+    await expect.element(page.getByRole("spinbutton", { name: "month", exact: false })).toBeVisible();
 
     expect(spinbuttonNamed("month").textContent).toBe("7");
     expect(spinbuttonNamed("day").textContent).toBe("4");
@@ -335,7 +337,7 @@ describe("DatePicker", () => {
     renderPicker(
       <DatePicker label="Invoice date" defaultValue={july14} errorMessage={<span>Required</span>} />
     );
-    await expect.element(page.getByRole("spinbutton", { name: "month" })).toBeVisible();
+    await expect.element(page.getByRole("spinbutton", { name: "month", exact: false })).toBeVisible();
 
     expect(document.body.textContent).not.toContain("Required");
   });
