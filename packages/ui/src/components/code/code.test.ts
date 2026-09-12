@@ -19,7 +19,7 @@ const SNIPPET = "const answer = 42;";
 const XSS_PAYLOAD = '<img onerror="alert(1)" src="x">';
 
 describe("code sugar-high pin", () => {
-  it("depends on the existing sugar-high catalog pin without bumping the published range", () => {
+  it("depends on the sugar-high catalog pin and publishes the matching range", () => {
     const parsed: unknown = JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8"));
     if (parsed === null || Array.isArray(parsed)) {
       throw new Error("package.json is not an object");
@@ -27,7 +27,7 @@ describe("code sugar-high pin", () => {
     // SAFETY: this test only reads the workspace sugar-high dependency pin.
     const pkg = parsed as { dependencies: Record<string, string> };
     expect(pkg.dependencies["sugar-high"]).toBe("catalog:");
-    expect(PUBLISHED_DEPENDENCY_RANGES["sugar-high"]).toBe("^1.2.1");
+    expect(PUBLISHED_DEPENDENCY_RANGES["sugar-high"]).toBe("^2.4.0");
     expect(
       publishedDependencies({
         "@base-ui/react": "catalog:",
@@ -38,9 +38,9 @@ describe("code sugar-high pin", () => {
         "tailwindcss-react-aria-components": "catalog:",
         "tw-animate-css": "catalog:",
       })["sugar-high"]
-    ).toBe("^1.2.1");
+    ).toBe("^2.4.0");
     expect(readFileSync(join(packageRoot, "../../pnpm-workspace.yaml"), "utf8")).toContain(
-      '"sugar-high": 1.2.1'
+      '"sugar-high": 2.4.0'
     );
   });
 });

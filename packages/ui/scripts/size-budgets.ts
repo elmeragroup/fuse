@@ -103,7 +103,7 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   { name: "loader", entryFile: "loader.js", measuredGzip: 16748 },
   { name: "empty", entryFile: "empty.js", measuredGzip: 21356 },
   { name: "frame", entryFile: "frame.js", measuredGzip: 9059 },
-  { name: "code", entryFile: "code.js", measuredGzip: 11756 },
+  { name: "code", entryFile: "code.js", measuredGzip: 18405 },
   { name: "span", entryFile: "span.js", measuredGzip: 17324 },
   { name: "timeline-list", entryFile: "timeline-list.js", measuredGzip: 23552, ceilingGzip: 35330 },
   { name: "sheet", entryFile: "sheet.js", measuredGzip: 57266, ceilingGzip: 85812 },

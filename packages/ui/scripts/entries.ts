@@ -136,7 +136,7 @@ export const PUBLISHED_DEPENDENCY_RANGES = {
   "@phosphor-icons/react": "2.1.10",
   "@internationalized/string": "^3.2.10",
   "libphonenumber-js": "^1.13.9",
-  "sugar-high": "^1.2.1",
+  "sugar-high": "^2.4.0",
 } as const;
 
 function isBareComponent(subpath: string): boolean {
