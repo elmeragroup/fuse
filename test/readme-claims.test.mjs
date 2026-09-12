@@ -9,7 +9,7 @@ const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const readme = readFileSync(join(repoRoot, "README.md"), "utf8");
 
 /** pnpm invocations the README shows that are not repo scripts. */
-const NOT_A_SCRIPT = new Set(["install", "changeset"]);
+const NOT_A_SCRIPT = new Set(["install", "changeset", "exec"]);
 
 /**
  * Every `pnpm …` command the README shows in backticks, minus the `pnpm ` prefix.

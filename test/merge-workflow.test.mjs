@@ -27,33 +27,13 @@ describe("merge workflow", () => {
     expect(asRecord(events.push, "push trigger")).toEqual({ branches: ["main"] });
   });
 
-  it("requires changesets for ordinary PRs, exempting only release branches and the exact label", () => {
+  it("requires changesets for ordinary PRs, exempting only the exact no-changeset label", () => {
     const step = requiredRunStep(requiredJobSteps(workflow, "checks"), "pnpm exec changeset status");
     expect(step.run).toBe("pnpm exec changeset status --since=origin/${{ github.base_ref }}");
     // This complete predicate is the policy contract. Substring checks also pass for
     // disabled steps, inverted exemptions, and conditions on an unrelated step.
     expect(asString(step.if, "changeset condition").replace(/\s+/g, " ").trim()).toBe(
-      "${{ github.event_name == 'pull_request' && !startsWith(github.head_ref, 'changeset-release/') && !contains(github.event.pull_request.labels.*.name, 'no-changeset') }}"
+      "${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'no-changeset') }}"
     );
-  });
-
-  it("opens a Version Packages PR from main without configuring publication", () => {
-    const version = readWorkflow("version-packages");
-    expect(version.on).toEqual({ push: { branches: ["main"] } });
-    const steps = requiredJobSteps(version, "version");
-    const actions = steps.filter(
-      (step) => step.uses !== undefined && asString(step.uses, "action").startsWith("changesets/action@")
-    );
-    expect(actions).toHaveLength(1);
-    const action = actions[0];
-    expect(action.if).toBeUndefined();
-    expect(action["continue-on-error"]).toBeUndefined();
-    const inputs = asRecord(action.with, "changesets inputs");
-    expect(inputs.version).toBe("pnpm exec changeset version");
-    expect(inputs.publish).toBeUndefined();
-    for (const step of steps) {
-      if (step.run !== undefined)
-        expect(asString(step.run, "version command")).not.toMatch(/\b(?:npm|pnpm)\s+publish\b/);
-    }
   });
 });

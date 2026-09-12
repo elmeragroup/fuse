@@ -11,6 +11,7 @@ import { Combobox as ComboboxPrimitive } from "@base-ui/react";
 import type { CountryCode, MetadataJson } from "libphonenumber-js/core";
 
 import type { FlagAssetCode } from "../../flags";
+import { useFormReset } from "../../hooks/use-form-reset";
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { MagnifyingGlass } from "../../icons/generated/magnifying-glass";
 import { cn } from "../../styles/cn";
@@ -190,6 +191,7 @@ export function PhoneNumberField({
     ...stateOptions,
     locale,
   });
+  useFormReset(numberInputRef, phone.onReset);
 
   // Base UI Input is a Field.Control; a present-but-undefined ARIA key clobbers the
   // auto-wired label/description via mergeProps (no undefined-guard). Forward only defined keys.
@@ -278,15 +280,16 @@ export function PhoneNumberField({
                   render={
                     <InputGroup.Input
                       aria-label={resolvedSearchCountriesLabel}
+                      // Field.Label labelledby would win over aria-label; drop it so the
+                      // search keeps dictionary `searchCountries`.
+                      aria-labelledby={undefined}
                       autoComplete="one-time-code"
                       // An empty name keeps the search box out of autofill heuristics and
                       // out of any FormData: a nameless control is never submitted
                       name=""
                     />
                   }
-                  aria-label={resolvedSearchCountriesLabel}
                   aria-autocomplete="none"
-                  autoComplete="one-time-code"
                   aria-haspopup="false"
                 />
               </InputGroup.Root>

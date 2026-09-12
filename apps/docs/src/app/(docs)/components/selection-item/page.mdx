@@ -31,6 +31,10 @@ reference, not fixed.
 indent spacer derives its width from the actual control slot so a trailing or wide
 custom `control` still lines the extra content up with the text column.
 
+`SelectionItem.SubSection mode="hidden"` renders the band `inert`, so its content is
+removed from tab order, pointer events, and the accessibility tree until the mode
+changes.
+
 Stacked shells drop the shared top border (`not-first:border-t-0`) and a checked
 non-first row repaints that edge in `primary` by pulling itself up one pixel
 (`-mt-px`) instead of a z-index lift. A `className` margin override can break the

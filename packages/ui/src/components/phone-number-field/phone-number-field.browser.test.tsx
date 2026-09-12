@@ -13,6 +13,12 @@ import {
   expectNoFocusRing,
 } from "../../../test/assert-focus-ring";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
+import {
+  countryListbox,
+  countrySearch,
+  openPicker,
+  selectCountry,
+} from "../../../test/phone-browser-queries";
 import { EXCLUDED_PRODUCT_COUNTRY_CODES, FLAG_GAP_COUNTRY_CODES } from "../../../test/phone-picker-contract";
 import { renderThemed, roleNamed, textboxNamed } from "../../../test/themed-browser-render";
 import { flagAssets } from "../../flags";
@@ -43,23 +49,8 @@ function renderField(node: ReactNode, locale: (typeof SUPPORTED_LOCALES)[number]
   return renderThemed(withLocale(locale, node));
 }
 
-function listboxNamed(): HTMLElement {
-  const element = page.getByRole("listbox").element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error("expected a listbox");
-  }
-  return element;
-}
-
-function searchNamed(name = "Search countries"): HTMLInputElement {
-  const named = document.body.querySelector(`input[aria-label="${name}"]`);
-  if (named instanceof HTMLInputElement) {
-    return named;
-  }
-  throw new Error(`expected search ${name}`);
-}
-
 function hiddenNamed(name: string): HTMLInputElement {
+  // DOM audit: the E.164 submit control is type=hidden, so it has no role.
   const match = document.body.querySelector(`input[type="hidden"][name="${name}"]`);
   if (!(match instanceof HTMLInputElement)) {
     throw new Error(`expected hidden input ${name}`);
@@ -89,7 +80,7 @@ function flagCodeFromSrc(src: string): string | undefined {
 }
 
 function optionFlagCodes(): string[] {
-  return [...listboxNamed().querySelectorAll("img")].flatMap((img) => {
+  return [...countryListbox().querySelectorAll("img")].flatMap((img) => {
     const code = flagCodeFromSrc(img.getAttribute("src") ?? "");
     return code ? [code] : [];
   });
@@ -103,15 +94,6 @@ function inputGroupRoot(name: string): HTMLElement {
   return group;
 }
 
-async function openPicker(name = "Select country"): Promise<HTMLElement> {
-  roleNamed("button", name).focus();
-  await userEvent.keyboard("{Enter}");
-  await vi.waitFor(() => {
-    expect(page.getByRole("listbox").query()).not.toBeNull();
-  });
-  return listboxNamed();
-}
-
 describe("PhoneNumberField", () => {
   it("names the country trigger independently of the Field label", () => {
     renderField(<PhoneNumberField label="Mobile" />);
@@ -119,6 +101,44 @@ describe("PhoneNumberField", () => {
     expect(page.getByRole("button", { name: "Mobile", exact: true }).query()).toBeNull();
     expect(textboxNamed("Mobile")).toBeTruthy();
     expect(textboxNamed("Mobile")).toHaveProperty("inputMode", "tel");
+  });
+
+  it("names the country search independently of the Field label and opts it out of autofill", async () => {
+    renderField(<PhoneNumberField label="Mobile" />);
+    await openPicker();
+    const search = countrySearch();
+    expect(search).toBeInstanceOf(HTMLInputElement);
+    expect(search.getAttribute("aria-labelledby")).toBeFalsy();
+    expect(search.getAttribute("autocomplete")).toBe("one-time-code");
+    expect(page.getByRole("combobox", { name: "Search countries", exact: true }).query()).not.toBeNull();
+    expect(page.getByRole("combobox", { name: "Mobile", exact: true }).query()).toBeNull();
+  });
+
+  it("insets the country search from the popup edge", async () => {
+    renderField(<PhoneNumberField label="Mobile" />);
+    await openPicker();
+    const search = countrySearch();
+    // DOM audit: popup chrome has no role; inset is the search group's box against the content slot.
+    const group = search.closest("[data-slot=input-group]");
+    const popup = group?.closest("[data-slot=combobox-content]");
+    if (!(group instanceof HTMLElement) || !(popup instanceof HTMLElement)) {
+      throw new Error("expected search group inside the country popup");
+    }
+    const groupBox = group.getBoundingClientRect();
+    const popupBox = popup.getBoundingClientRect();
+    const styles = getComputedStyle(group);
+    const observed = {
+      slot: group.getAttribute("data-slot"),
+      margin: [styles.marginTop, styles.marginRight, styles.marginBottom, styles.marginLeft],
+      inset: {
+        top: groupBox.top - popupBox.top,
+        left: groupBox.left - popupBox.left,
+        right: popupBox.right - groupBox.right,
+      },
+    };
+    expect(observed.inset.top, JSON.stringify(observed)).toBeGreaterThan(0);
+    expect(observed.inset.left, JSON.stringify(observed)).toBeGreaterThan(0);
+    expect(observed.inset.right, JSON.stringify(observed)).toBeGreaterThan(0);
   });
 
   it("does not call Intl.DisplayNames.of until the country popup opens", async () => {
@@ -138,7 +158,7 @@ describe("PhoneNumberField", () => {
   it("keeps filtered country options through the close transition", async () => {
     renderField(<PhoneNumberField label="Mobile" />);
     await openPicker();
-    await userEvent.fill(searchNamed(), "swe");
+    await userEvent.fill(countrySearch(), "swe");
     await vi.waitFor(() => {
       expect(page.getByRole("option", { name: /Sweden/ }).query()).not.toBeNull();
     });
@@ -152,17 +172,7 @@ describe("PhoneNumberField", () => {
   it("selects a country from the keyboard, closes, updates the dial code, and focuses the number input", async () => {
     renderField(<PhoneNumberField label="Mobile" />);
     expect(roleNamed("button", "Select country").textContent).toContain("+47");
-    await openPicker();
-    const search = searchNamed();
-    expect(search.getAttribute("autocomplete")).toBe("one-time-code");
-    await userEvent.fill(search, "Sweden");
-    await vi.waitFor(() => {
-      expect(page.getByRole("option", { name: /Sweden/ }).query()).not.toBeNull();
-    });
-    await userEvent.keyboard("{ArrowDown}{Enter}");
-    await vi.waitFor(() => {
-      expect(page.getByRole("listbox").query()).toBeNull();
-    });
+    await selectCountry("Sweden");
     expect(roleNamed("button", "Select country").textContent).toContain("+46");
     expect(document.activeElement).toBe(textboxNamed("Mobile"));
   });
@@ -205,15 +215,7 @@ describe("PhoneNumberField", () => {
     );
     await userEvent.fill(page.getByRole("textbox", { name: "Mobile", exact: true }), "41234567");
     expect(onChange).toHaveBeenLastCalledWith("+4741234567");
-    await openPicker();
-    await userEvent.fill(searchNamed(), "Sweden");
-    await vi.waitFor(() => {
-      expect(page.getByRole("option", { name: /Sweden/ }).query()).not.toBeNull();
-    });
-    await userEvent.keyboard("{ArrowDown}{Enter}");
-    await vi.waitFor(() => {
-      expect(page.getByRole("listbox").query()).toBeNull();
-    });
+    await selectCountry("Sweden");
     expect(onChange).toHaveBeenLastCalledWith("");
     expect(textboxNamed("Mobile")).toHaveProperty("value", "");
 
@@ -230,15 +232,7 @@ describe("PhoneNumberField", () => {
       )
     );
     await userEvent.fill(page.getByRole("textbox", { name: "Mobile", exact: true }), "41234567");
-    await openPicker();
-    await userEvent.fill(searchNamed(), "Sweden");
-    await vi.waitFor(() => {
-      expect(page.getByRole("option", { name: /Sweden/ }).query()).not.toBeNull();
-    });
-    await userEvent.keyboard("{ArrowDown}{Enter}");
-    await vi.waitFor(() => {
-      expect(page.getByRole("listbox").query()).toBeNull();
-    });
+    await selectCountry("Sweden");
     expect(onChange.mock.calls.at(-1)?.[0]).not.toBe("");
     expect(textboxNamed("Mobile")).not.toHaveProperty("value", "");
   });
@@ -309,7 +303,7 @@ describe("PhoneNumberField", () => {
       await vi.waitFor(() => {
         expect(page.getByRole("listbox").query()).not.toBeNull();
       });
-      expect(searchNamed(SEARCH_COUNTRIES_COPY[locale])).toBeTruthy();
+      expect(countrySearch(SEARCH_COUNTRIES_COPY[locale])).toBeTruthy();
       unmount();
     }
 
@@ -325,8 +319,8 @@ describe("PhoneNumberField", () => {
     expect(page.getByRole("button", { name: "Pick a country", exact: true }).query()).not.toBeNull();
     expect(page.getByRole("button", { name: "Velg land", exact: true }).query()).toBeNull();
     await openPicker("Pick a country");
-    expect(searchNamed("Filter countries")).toBeTruthy();
-    await userEvent.fill(searchNamed("Filter countries"), "zzzz");
+    expect(countrySearch("Filter countries")).toBeTruthy();
+    await userEvent.fill(countrySearch("Filter countries"), "zzzz");
     await vi.waitFor(() => {
       expect(page.getByText("Nothing here.", { exact: true }).query()).not.toBeNull();
     });
@@ -335,7 +329,7 @@ describe("PhoneNumberField", () => {
   it("shows the empty-search copy for the active locale", async () => {
     renderField(<PhoneNumberField label="Mobile" />);
     await openPicker();
-    await userEvent.fill(searchNamed(), "zzzz");
+    await userEvent.fill(countrySearch(), "zzzz");
     await vi.waitFor(() => {
       expect(page.getByText(NO_COUNTRIES_COPY["en-US"], { exact: true }).query()).not.toBeNull();
     });
@@ -407,7 +401,7 @@ describe("PhoneNumberField", () => {
     renderField(<ExplicitContainer />);
     await openPicker();
     const island = page.getByRole("region", { name: "Theme island", exact: true }).element();
-    expect(island.contains(listboxNamed())).toBe(true);
+    expect(island.contains(countryListbox())).toBe(true);
   });
 
   it("keeps the list clamped inside the popup instead of growing it to the full country list", async () => {

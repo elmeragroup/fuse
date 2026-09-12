@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { SUPPORTED_LOCALES } from "../../../test/locale-matrix";
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
+import { DESCRIPTION_COPY, TITLE_COPY, TOGGLE_COPY } from "../../../test/sidebar-contract";
 import { sidebarStrings } from "./intl";
 import {
   SIDEBAR_COOKIE_MAX_AGE,
@@ -17,27 +18,6 @@ import {
   useSidebar,
 } from "./sidebar";
 import { sidebarMenuButtonVariants, sidebarMenuSubButtonVariants } from "./sidebar-variants";
-
-const TOGGLE_COPY = {
-  "nb-NO": "Vis eller skjul sidepanelet",
-  "sv-SE": "Visa eller dölj sidopanelen",
-  "en-US": "Toggle sidebar",
-  "fi-FI": "Näytä tai piilota sivupalkki",
-} as const;
-
-const TITLE_COPY = {
-  "nb-NO": "Sidepanel",
-  "sv-SE": "Sidopanel",
-  "en-US": "Sidebar",
-  "fi-FI": "Sivupalkki",
-} as const;
-
-const DESCRIPTION_COPY = {
-  "nb-NO": "Viser sidepanelet.",
-  "sv-SE": "Visar sidopanelen.",
-  "en-US": "Displays the sidebar.",
-  "fi-FI": "Näyttää sivupalkin.",
-} as const;
 
 const PART_NAMES = [
   "Provider",

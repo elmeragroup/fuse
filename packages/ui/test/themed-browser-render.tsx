@@ -75,6 +75,24 @@ export function textboxNamed(name: string): HTMLElement {
   return roleNamed("textbox", name);
 }
 
+/** `textboxNamed`, narrowed to the native input so a suite can read `.value` off it. */
+export function inputNamed(name: string): HTMLInputElement {
+  const input = textboxNamed(name);
+  if (!(input instanceof HTMLInputElement)) {
+    throw new Error(`expected an <input> named ${name}`);
+  }
+  return input;
+}
+
+/** The labelled `<form>`: forms are queried by accessible name like any other element. */
+export function formNamed(name: string): HTMLFormElement {
+  const form = roleNamed("form", name);
+  if (!(form instanceof HTMLFormElement)) {
+    throw new Error(`expected a <form> named ${name}`);
+  }
+  return form;
+}
+
 /** `roleNamed("heading", …)` with the optional heading level, which carries its own ARIA meaning. */
 export function headingNamed(name: string, level?: 1 | 2 | 3 | 4 | 5 | 6): HTMLElement {
   const element = page.getByRole("heading", { name, exact: true, level }).element();

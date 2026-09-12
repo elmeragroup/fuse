@@ -5,6 +5,7 @@ import {
   figmaDocumentFromCatalog,
   renderFigmaThemeCatalog,
 } from "../scripts/lib/theme-catalog-figma.ts";
+import { GET as getFigmaThemeFile } from "../src/app/api/themes/figma/[slug]/route.ts";
 import { THEME_CATALOG } from "../src/generated/theme-catalog";
 import { FIGMA_THEME_FILES, FIGMA_THEME_INDEX } from "../src/generated/theme-catalog-figma";
 import type {
@@ -22,6 +23,19 @@ const ILLEGAL_SLUGS = [
   "external-fkse-company",
 ] as const;
 
+/** Object.prototype names: a plain `in`/index lookup on the file map would find these. */
+const INHERITED_SLUGS = ["constructor", "toString", "__proto__", "hasOwnProperty"] as const;
+
+const LEGAL_SLUGS = FIGMA_THEME_INDEX.files.map((file) => file.slug);
+
+async function expectThemeFile(response: Response, slug: string) {
+  expect(response.status).toBe(200);
+  expect(response.headers.get("content-type")).toContain("application/design-tokens+json");
+  expect(response.headers.get("content-disposition")).toBe(`attachment; filename="${slug}.tokens.json"`);
+  const body: unknown = await response.json();
+  expect(body).toEqual(FIGMA_THEME_FILES[slug]);
+}
+
 function catalogTheme(slug: string): ThemeCatalogEntry {
   const theme = THEME_CATALOG.themes.find((entry) => entry.slug === slug);
   expect(theme, slug).toBeDefined();
@@ -29,6 +43,12 @@ function catalogTheme(slug: string): ThemeCatalogEntry {
     throw new Error(`missing theme ${slug}`);
   }
   return theme;
+}
+
+async function getThemeFileDirect(slug: string): Promise<Response> {
+  return await getFigmaThemeFile(new Request(`http://docs.test/api/themes/figma/${slug}`), {
+    params: Promise.resolve({ slug }),
+  });
 }
 
 function token<T extends { $type: string; $value: unknown }>(
@@ -44,12 +64,10 @@ function token<T extends { $type: string; $value: unknown }>(
 
 describe("Figma DTCG documents", () => {
   it("emits one file per legal theme with a shared token name set", () => {
-    const slugs = FIGMA_THEME_INDEX.files.map((file) => file.slug);
-    expect(slugs).toHaveLength(20);
-    expect(FIGMA_THEME_INDEX.files).toHaveLength(20);
+    expect(LEGAL_SLUGS).toHaveLength(20);
     expect(FIGMA_THEME_INDEX.format).toBe("figma");
     for (const slug of ILLEGAL_SLUGS) {
-      expect(slugs).not.toContain(slug);
+      expect(LEGAL_SLUGS).not.toContain(slug);
     }
 
     const internal = FIGMA_THEME_FILES["internal-fkas-private"];
@@ -59,7 +77,7 @@ describe("Figma DTCG documents", () => {
     }
     const names = Object.keys(internal.color).filter((key) => key !== "$type");
     expect(names.length).toBeGreaterThan(70);
-    for (const slug of slugs) {
+    for (const slug of LEGAL_SLUGS) {
       const file = FIGMA_THEME_FILES[slug];
       expect(file).toBeDefined();
       if (file === undefined) {
@@ -150,19 +168,30 @@ describe("GET /api/themes/figma", () => {
     expect(FIGMA_THEME_INDEX.files[0]?.href).toBe("/api/themes/figma/internal-fkas-private");
   });
 
+  // The route is exercised per slug against the handler below; over HTTP one legal and one
+  // inherited slug prove the Next wiring (headers, 404 mapping) without repeating the loop.
   it("returns DTCG JSON for a legal slug", async () => {
-    const response = await fetch(new URL("/api/themes/figma/external-fkas-private", docsBaseUrl()));
-    expect(response.status).toBe(200);
-    expect(response.headers.get("content-type")).toContain("application/design-tokens+json");
-    expect(response.headers.get("content-disposition")).toBe(
-      'attachment; filename="external-fkas-private.tokens.json"'
-    );
-    const body: unknown = await response.json();
-    expect(body).toEqual(FIGMA_THEME_FILES["external-fkas-private"]);
+    const slug = "external-fkas-private";
+    await expectThemeFile(await fetch(new URL(`/api/themes/figma/${slug}`, docsBaseUrl())), slug);
   });
 
-  it("404s an illegal slug", async () => {
-    const response = await fetch(new URL("/api/themes/figma/internal-fkab-private", docsBaseUrl()));
+  it("404s an inherited slug", async () => {
+    const response = await fetch(new URL(`/api/themes/figma/${INHERITED_SLUGS[0]}`, docsBaseUrl()));
     expect(response.status).toBe(404);
+  });
+});
+
+describe("GET /api/themes/figma/[slug] handler", () => {
+  it.each([...INHERITED_SLUGS, ...ILLEGAL_SLUGS, "not-a-theme"])(
+    "404s %s with an empty body",
+    async (slug) => {
+      const response = await getThemeFileDirect(slug);
+      expect(response.status).toBe(404);
+      expect(await response.text()).toBe("");
+    }
+  );
+
+  it.each(LEGAL_SLUGS)("serves %s", async (slug) => {
+    await expectThemeFile(await getThemeFileDirect(slug), slug);
   });
 });

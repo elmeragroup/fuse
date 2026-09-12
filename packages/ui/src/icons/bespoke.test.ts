@@ -47,6 +47,21 @@ function definedIds(text: string): string[] {
   return [...text.matchAll(/\bid="([^"]+)"/g)].flatMap((match) => match[1] ?? []);
 }
 
+/** The decorative half of the bespoke SVG contract: hidden, unfocusable, no role, no title. */
+function expectDecorative(markup: string, label?: string) {
+  expect(markup, label).toContain('aria-hidden="true"');
+  expect(markup, label).toContain('focusable="false"');
+  expect(markup, label).not.toContain('role="img"');
+  expect(markup, label).not.toContain("<title>");
+}
+
+/** The titled half: announced as an image with the title element and never hidden. */
+function expectTitled(markup: string, title: string, label?: string) {
+  expect(markup, label).toContain('role="img"');
+  expect(markup, label).toContain(`<title>${title}</title>`);
+  expect(markup, label).not.toContain("aria-hidden");
+}
+
 function assetSources(): AssetSource[] {
   const dirs = [join(here, "bespoke"), join(here, "../illustrations")];
   return dirs.flatMap((dir) =>
@@ -57,16 +72,42 @@ function assetSources(): AssetSource[] {
 }
 
 describe("bespoke icons", () => {
-  it("renders a titled SVG as role=img and a decorative SVG as aria-hidden", () => {
-    const titled = renderToStaticMarkup(createElement(Vipps, { title: "Vipps" }));
-    expect(titled).toContain('role="img"');
-    expect(titled).toContain("<title>Vipps</title>");
-    expect(titled).not.toContain("aria-hidden");
+  it("renders a titled SVG as role=img and an untitled or empty-titled SVG as aria-hidden", () => {
+    expectTitled(renderToStaticMarkup(createElement(Vipps, { title: "Vipps" })), "Vipps");
+    expectDecorative(renderToStaticMarkup(createElement(Vipps)));
+    expectDecorative(renderToStaticMarkup(createElement(Vipps, { title: "" })));
+    // Nonempty means meaningful: whitespace-only is still a titled image, not decorative.
+    expectTitled(renderToStaticMarkup(createElement(Vipps, { title: " " })), " ");
+  });
 
-    const decorative = renderToStaticMarkup(createElement(Vipps));
-    expect(decorative).toContain("aria-hidden");
-    expect(decorative).toContain("focusable");
-    expect(decorative).not.toContain("<title>");
+  // Each logo spells the guard twice — `decorativeSvgProps(title)` and its own
+  // `{title ? <title>…</title> : null}` — so the two can only stay in step by being
+  // checked together, for every logo, rather than for whichever one a case names.
+  it.each(Object.entries(logosByName))("keeps %s's title guard and props in step", (name, Logo) => {
+    for (const title of ["", undefined]) {
+      expectDecorative(renderToStaticMarkup(createElement(Logo, { title })), name);
+    }
+    expectTitled(renderToStaticMarkup(createElement(Logo, { title: name })), name, name);
+    // Nonempty means meaningful: whitespace-only is still a titled image, not decorative.
+    expectTitled(renderToStaticMarkup(createElement(Logo, { title: " " })), " ", name);
+  });
+
+  it("lets caller SVG attributes override decorativeSvgProps", () => {
+    const hiddenWhileTitled = renderToStaticMarkup(
+      createElement(Vipps, { title: "Vipps", "aria-hidden": true })
+    );
+    expect(hiddenWhileTitled).toContain('role="img"');
+    expect(hiddenWhileTitled).toContain('aria-hidden="true"');
+
+    const visibleWhileDecorative = renderToStaticMarkup(createElement(Vipps, { "aria-hidden": false }));
+    expect(visibleWhileDecorative).toContain('aria-hidden="false"');
+
+    const labeledUntitled = renderToStaticMarkup(
+      createElement(Vipps, { "aria-label": "Pay with Vipps", role: "img" })
+    );
+    expect(labeledUntitled).toContain('role="img"');
+    expect(labeledUntitled).toContain('aria-label="Pay with Vipps"');
+    expect(labeledUntitled).toContain('aria-hidden="true"');
   });
 
   it("uses canonical Signing fill classes and rejects Material leftovers", () => {
@@ -206,12 +247,9 @@ describe("illustrations", () => {
     }
   });
 
-  it("uses the titled vs decorative SVG contract", () => {
-    const titled = renderToStaticMarkup(createElement(FkasMeter, { title: "Meter" }));
-    expect(titled).toContain('role="img"');
-    expect(titled).toContain("<title>Meter</title>");
-    const decorative = renderToStaticMarkup(createElement(FkasMeter));
-    expect(decorative).toContain("aria-hidden");
-    expect(decorative).not.toContain("<title>");
+  it("uses the titled vs decorative SVG contract, treating an empty title as decorative", () => {
+    expectTitled(renderToStaticMarkup(createElement(FkasMeter, { title: "Meter" })), "Meter");
+    expectDecorative(renderToStaticMarkup(createElement(FkasMeter)));
+    expectDecorative(renderToStaticMarkup(createElement(FkasMeter, { title: "" })));
   });
 });

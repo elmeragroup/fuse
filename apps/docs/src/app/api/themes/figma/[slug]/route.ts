@@ -11,7 +11,7 @@ export async function GET(
   context: { params: Promise<{ slug: string }> }
 ): Promise<Response> {
   const { slug } = await context.params;
-  const document = FIGMA_THEME_FILES[slug];
+  const document = Object.hasOwn(FIGMA_THEME_FILES, slug) ? FIGMA_THEME_FILES[slug] : undefined;
   if (document === undefined) {
     return new Response(null, { status: 404 });
   }

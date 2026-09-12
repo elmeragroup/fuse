@@ -1,8 +1,8 @@
-import type { ComponentProps, ReactElement, ReactNode } from "react";
-import { useEffect, useRef } from "react";
+import type { ComponentProps, ReactElement } from "react";
+import { createRef } from "react";
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cdp, page, userEvent } from "vitest/browser";
+import { describe, expect, it, vi } from "vitest";
+import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import {
@@ -11,7 +11,24 @@ import {
 } from "../../../test/assert-focus-ring";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
 import {
+  ContextProbe,
+  DESKTOP,
+  Frame,
+  MOBILE,
+  OrdersLink,
+  bySlot,
+  captureCookieWrites,
+  emulateReducedMotion,
+  layoutChildren,
+  menuList,
+  railNamed,
+  setupSidebarBrowser,
+  sidebarRoot,
+} from "../../../test/sidebar-browser-fixtures";
+import { DESCRIPTION_COPY, SLOT_ROSTER, TITLE_COPY, TOGGLE_COPY } from "../../../test/sidebar-contract";
+import {
   CONTROL_MD,
+  CONTROL_SM,
   px,
   renderThemed,
   roleNamed,
@@ -19,205 +36,10 @@ import {
   textboxNamed,
 } from "../../../test/themed-browser-render";
 import { Tooltip } from "../tooltip/tooltip";
-import { Sidebar, useSidebar } from "./sidebar";
-import type { SidebarContextValue, SidebarProviderProps, SidebarRootProps } from "./sidebar";
+import { Sidebar } from "./sidebar";
+import type { SidebarContextValue } from "./sidebar";
 
-const DESKTOP = { width: 1024, height: 768 } as const;
-const MOBILE = { width: 500, height: 800 } as const;
-const CONTROL_SM = { dense: 32, comfortable: 36 } as const;
-
-type ReducedMotionCdp = {
-  send: (
-    method: "Emulation.setEmulatedMedia",
-    params: { features: { name: "prefers-reduced-motion"; value: "reduce" | "no-preference" }[] }
-  ) => Promise<void>;
-};
-
-async function emulateReducedMotion(value: "reduce" | "no-preference"): Promise<void> {
-  // SAFETY: vitest types CDPSession as {}; Playwright's session implements send.
-  const session: ReducedMotionCdp = cdp() as ReducedMotionCdp;
-  await session.send("Emulation.setEmulatedMedia", {
-    features: [{ name: "prefers-reduced-motion", value }],
-  });
-}
-
-const TOGGLE_COPY = {
-  "nb-NO": "Vis eller skjul sidepanelet",
-  "sv-SE": "Visa eller dölj sidopanelen",
-  "en-US": "Toggle sidebar",
-  "fi-FI": "Näytä tai piilota sivupalkki",
-} as const;
-
-const TITLE_COPY = {
-  "nb-NO": "Sidepanel",
-  "sv-SE": "Sidopanel",
-  "en-US": "Sidebar",
-  "fi-FI": "Sivupalkki",
-} as const;
-
-const DESCRIPTION_COPY = {
-  "nb-NO": "Viser sidepanelet.",
-  "sv-SE": "Visar sidopanelen.",
-  "en-US": "Displays the sidebar.",
-  "fi-FI": "Näyttää sivupalkin.",
-} as const;
-
-const SLOT_ROSTER = [
-  "sidebar-wrapper",
-  "sidebar",
-  "sidebar-gap",
-  "sidebar-container",
-  "sidebar-inner",
-  "sidebar-trigger",
-  "sidebar-rail",
-  "sidebar-inset",
-  "sidebar-input",
-  "sidebar-header",
-  "sidebar-footer",
-  "sidebar-separator",
-  "sidebar-content",
-  "sidebar-group",
-  "sidebar-group-label",
-  "sidebar-group-action",
-  "sidebar-group-content",
-  "sidebar-menu",
-  "sidebar-menu-item",
-  "sidebar-menu-button",
-  "sidebar-menu-action",
-  "sidebar-menu-badge",
-  "sidebar-menu-skeleton",
-  "sidebar-menu-skeleton-icon",
-  "sidebar-menu-skeleton-text",
-  "sidebar-menu-sub",
-  "sidebar-menu-sub-item",
-  "sidebar-menu-sub-button",
-  "sidebar-icon",
-] as const;
-
-beforeEach(async () => {
-  await page.viewport(DESKTOP.width, DESKTOP.height);
-});
-
-afterEach(async () => {
-  document.cookie = "sidebar:state=; path=/; max-age=0";
-  await page.viewport(DESKTOP.width, DESKTOP.height);
-  await emulateReducedMotion("no-preference");
-});
-
-function element(locator: ReturnType<typeof page.getByRole>): HTMLElement {
-  const node = locator.element();
-  if (!(node instanceof HTMLElement)) {
-    throw new Error("expected an HTML element");
-  }
-  return node;
-}
-
-/** DOM audit: every part stamps its slot; no data-sidebar anywhere. */
-function bySlot(slot: string, root: ParentNode = document): HTMLElement {
-  // DOM audit: verify the component slot contract.
-  const node = root.querySelector(`[data-slot="${slot}"]`);
-  if (!(node instanceof HTMLElement)) {
-    throw new Error(`expected [data-slot="${slot}"]`);
-  }
-  return node;
-}
-
-function sidebarRoot(): HTMLElement {
-  const dialog = page.getByRole("dialog").query();
-  if (dialog instanceof HTMLElement) {
-    return dialog;
-  }
-  for (const title of Object.values(TOGGLE_COPY)) {
-    const rail = page.getByTitle(title, { exact: true }).query();
-    if (rail instanceof HTMLElement) {
-      const root = rail.closest("[data-state]");
-      if (root instanceof HTMLElement) {
-        return root;
-      }
-    }
-  }
-  throw new Error("expected sidebar root");
-}
-
-function layoutChildren(root: HTMLElement): HTMLElement[] {
-  return [...root.children].filter((child): child is HTMLElement => child instanceof HTMLElement);
-}
-
-function menuList(): HTMLElement {
-  const element = page.getByRole("list").element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error("expected a menu list");
-  }
-  return element;
-}
-
-/** Trigger is the only tab-stop named from sidebar.toggle; Rail is aria-hidden. */
-function railNamed(name: string): HTMLButtonElement {
-  const rail = page.getByTitle(name, { exact: true }).element();
-  if (!(rail instanceof HTMLButtonElement)) {
-    throw new Error(`expected a sidebar rail titled ${name}`);
-  }
-  return rail;
-}
-
-function buttonNamed(name: string): HTMLElement {
-  return element(page.getByRole("button", { name, exact: true }));
-}
-
-function Frame({
-  provider,
-  root,
-  children,
-  probe,
-  locale = "en-US",
-}: {
-  provider?: Partial<SidebarProviderProps>;
-  root?: Partial<SidebarRootProps>;
-  children?: ReactNode;
-  /** Rendered in the Inset, so it survives the mobile branch (Root's children live inside the closed Sheet). */
-  probe?: ReactNode;
-  locale?: (typeof SUPPORTED_LOCALES)[number];
-}) {
-  return withLocale(
-    locale,
-    <Sidebar.Provider {...provider}>
-      <Sidebar.Root {...root}>
-        <Sidebar.Content>
-          <Sidebar.Group>
-            <Sidebar.Menu>{children}</Sidebar.Menu>
-          </Sidebar.Group>
-        </Sidebar.Content>
-        <Sidebar.Rail />
-      </Sidebar.Root>
-      <Sidebar.Inset>
-        <Sidebar.Trigger />
-        <button type="button">After</button>
-        {probe}
-      </Sidebar.Inset>
-    </Sidebar.Provider>
-  );
-}
-
-function ContextProbe({ onValue }: { onValue: (value: SidebarContextValue) => void }) {
-  const context = useSidebar();
-  const latest = useRef(onValue);
-  latest.current = onValue;
-  useEffect(() => {
-    latest.current(context);
-  }, [context]);
-  return null;
-}
-
-/** Records every `document.cookie` write while `run` executes; the real setter still runs. */
-async function captureCookieWrites(run: () => Promise<void>): Promise<string[]> {
-  const setter = vi.spyOn(document, "cookie", "set");
-  try {
-    await run();
-    return setter.mock.calls.map(([value]) => value);
-  } finally {
-    setter.mockRestore();
-  }
-}
+setupSidebarBrowser();
 
 describe("Sidebar toggle paths", () => {
   it("toggles data-state from cmd+B and ctrl+B and prevents the browser default", async () => {
@@ -351,7 +173,7 @@ describe("Sidebar locale copy", () => {
       renderThemed(<Frame locale={locale} />);
       await userEvent.click(roleNamed("button", TOGGLE_COPY[locale]));
       await expect.element(page.getByRole("dialog", { name: TITLE_COPY[locale] })).toBeVisible();
-      const dialog = element(page.getByRole("dialog", { name: TITLE_COPY[locale] }));
+      const dialog = roleNamed("dialog", TITLE_COPY[locale]);
       const description = page.getByText(DESCRIPTION_COPY[locale], { exact: true }).element();
       expect(dialog.getAttribute("aria-describedby")).toBe(description.id);
     });
@@ -490,10 +312,10 @@ describe("Sidebar density exemption", () => {
         )
       );
       heights[density] = [
-        px(getComputedStyle(buttonNamed("Default row")).height),
-        px(getComputedStyle(buttonNamed("Small row")).height),
-        px(getComputedStyle(buttonNamed("Large row")).height),
-        px(getComputedStyle(element(page.getByRole("textbox", { name: "Search" }))).height),
+        px(getComputedStyle(roleNamed("button", "Default row")).height),
+        px(getComputedStyle(roleNamed("button", "Small row")).height),
+        px(getComputedStyle(roleNamed("button", "Large row")).height),
+        px(getComputedStyle(textboxNamed("Search")).height),
       ];
       unmount();
     }
@@ -517,7 +339,7 @@ describe("Sidebar.Input focus ring", () => {
         </Sidebar.Provider>
       )
     );
-    await assertKeyboardFocusRingAtBothDensities(buttonNamed("Before"), textboxNamed("Search"));
+    await assertKeyboardFocusRingAtBothDensities(roleNamed("button", "Before"), textboxNamed("Search"));
   });
 });
 
@@ -545,7 +367,7 @@ describe("Sidebar group and menu action targets", () => {
       )
     );
     for (const name of ["Add", "More"] as const) {
-      const box = buttonNamed(name).getBoundingClientRect();
+      const box = roleNamed("button", name).getBoundingClientRect();
       expect(box.width, name).toBeGreaterThanOrEqual(24);
       expect(box.height, name).toBeGreaterThanOrEqual(24);
     }
@@ -588,13 +410,7 @@ describe("Sidebar.MenuButton tooltip", () => {
     return (
       <Tooltip.Provider delay={0}>
         <Frame provider={{ defaultOpen }} root={{ collapsible: "icon" }}>
-          <Sidebar.MenuItem>
-            <Sidebar.MenuButton
-              tooltip={tooltip === "string" ? "Orders" : { children: "Orders", sideOffset: 12 }}
-              render={<a href="/orders" />}>
-              <span>Orders</span>
-            </Sidebar.MenuButton>
-          </Sidebar.MenuItem>
+          <OrdersLink tooltip={tooltip === "string" ? "Orders" : { children: "Orders", sideOffset: 12 }} />
         </Frame>
       </Tooltip.Provider>
     );
@@ -602,12 +418,17 @@ describe("Sidebar.MenuButton tooltip", () => {
 
   it("renders no tooltip while expanded", async () => {
     renderThemed(<TooltipFrame defaultOpen tooltip="string" />);
-    const link = element(page.getByRole("link", { name: "Orders", exact: true }));
+    const link = roleNamed("link", "Orders");
     await userEvent.hover(link);
     await vi.waitFor(() => {
       expect(link.matches(":hover")).toBe(true);
     });
-    await new Promise(requestAnimationFrame);
+    await vi.waitFor(() => {
+      expect(
+        link.hasAttribute("data-popup-open"),
+        "the hover opens the root; only the content is withheld"
+      ).toBe(true);
+    });
     expect(page.getByRole("tooltip", { name: "Orders", exact: true }).query()).toBeNull();
   });
 
@@ -615,7 +436,7 @@ describe("Sidebar.MenuButton tooltip", () => {
     it(`reveals the ${form} tooltip to the right when collapsed, on the very same element as the button`, async () => {
       renderThemed(<TooltipFrame defaultOpen={false} tooltip={form} />);
       expect(sidebarRoot().getAttribute("data-collapsible")).toBe("icon");
-      const link = element(page.getByRole("link", { name: "Orders", exact: true }));
+      const link = roleNamed("link", "Orders");
       expect(link.getAttribute("data-slot")).toBe("sidebar-menu-button");
       expect(link.getAttribute("href")).toBe("/orders");
 
@@ -623,7 +444,7 @@ describe("Sidebar.MenuButton tooltip", () => {
       await vi.waitFor(() => {
         expect(page.getByRole("tooltip", { name: "Orders", exact: true }).query()).not.toBeNull();
       });
-      const tooltip = element(page.getByRole("tooltip", { name: "Orders", exact: true }));
+      const tooltip = roleNamed("tooltip", "Orders");
       expect(tooltip.getAttribute("data-side")).toBe("right");
       expect(link.getAttribute("aria-describedby")).toBe(tooltip.id);
       expect(page.getByRole("link", { name: "Orders", exact: true }).elements()).toHaveLength(1);
@@ -632,9 +453,12 @@ describe("Sidebar.MenuButton tooltip", () => {
 });
 
 describe("Sidebar.Root branches", () => {
-  it("collapsible=none renders a static peer with state attributes and no dialog", async () => {
-    renderThemed(<Frame root={{ collapsible: "none", variant: "inset", side: "right" }} />);
+  it("collapsible=none renders a static peer with state attributes, a forwarded ref, and no dialog", async () => {
+    const rootRef = createRef<HTMLDivElement>();
+    renderThemed(<Frame root={{ collapsible: "none", variant: "inset", side: "right", ref: rootRef }} />);
     const root = sidebarRoot();
+    // DOM audit: the caller's ref reaches the static branch's `sidebar` slot.
+    expect(rootRef.current?.dataset.slot, "the caller's ref reaches the static branch's div").toBe("sidebar");
     expect(root.getAttribute("data-state")).toBe("expanded");
     expect(root.getAttribute("data-variant")).toBe("inset");
     expect(root.getAttribute("data-side")).toBe("right");
@@ -697,7 +521,7 @@ describe("Sidebar.Root branches", () => {
 
     await userEvent.click(roleNamed("button", "Toggle sidebar"));
     await expect.element(page.getByRole("dialog", { name: "Sidebar" })).toBeVisible();
-    const dialog = element(page.getByRole("dialog", { name: "Sidebar" }));
+    const dialog = roleNamed("dialog", "Sidebar");
     expect(dialog.getAttribute("data-slot")).toBe("sidebar");
     expect(dialog.getAttribute("data-mobile")).toBe("true");
     expect(dialog.getAttribute("data-side")).toBe("left");
@@ -734,19 +558,19 @@ describe("Sidebar.MenuButton", () => {
         </Sidebar.MenuItem>
       </Frame>
     );
-    const active = buttonNamed("Active");
+    const active = roleNamed("button", "Active");
     expect(active.getAttribute("data-active")).toBe("");
     expect(active.getAttribute("data-size")).toBe("default");
     expect(active.getAttribute("data-slot")).toBe("sidebar-menu-button");
     expect(active.classList.contains("bg-background")).toBe(true);
     expect(getComputedStyle(active).fontWeight).toBe("500");
-    expect(buttonNamed("Large").getAttribute("data-size")).toBe("lg");
-    expect(buttonNamed("Small").getAttribute("data-size")).toBe("sm");
-    expect(buttonNamed("Large").hasAttribute("data-active")).toBe(false);
+    expect(roleNamed("button", "Large").getAttribute("data-size")).toBe("lg");
+    expect(roleNamed("button", "Small").getAttribute("data-size")).toBe("sm");
+    expect(roleNamed("button", "Large").hasAttribute("data-active")).toBe(false);
 
-    expect(px(getComputedStyle(buttonNamed("Default action")).top)).toBe(6);
-    expect(px(getComputedStyle(buttonNamed("Large action")).top)).toBe(10);
-    expect(px(getComputedStyle(buttonNamed("Small action")).top)).toBe(4);
+    expect(px(getComputedStyle(roleNamed("button", "Default action")).top)).toBe(6);
+    expect(px(getComputedStyle(roleNamed("button", "Large action")).top)).toBe(10);
+    expect(px(getComputedStyle(roleNamed("button", "Small action")).top)).toBe(4);
     const badge = page.getByText("3", { exact: true }).element();
     if (!(badge instanceof HTMLElement)) {
       throw new Error("expected a menu badge");
@@ -759,14 +583,10 @@ describe("Sidebar.MenuButton", () => {
   it("threads render polymorphism: an anchor keeps its href and the button's state attributes", () => {
     renderThemed(
       <Frame>
-        <Sidebar.MenuItem>
-          <Sidebar.MenuButton isActive render={<a href="/orders" />}>
-            Orders
-          </Sidebar.MenuButton>
-        </Sidebar.MenuItem>
+        <OrdersLink isActive />
       </Frame>
     );
-    const link = element(page.getByRole("link", { name: "Orders", exact: true }));
+    const link = roleNamed("link", "Orders");
     expect(link.tagName).toBe("A");
     expect(link.getAttribute("href")).toBe("/orders");
     expect(link.getAttribute("data-slot")).toBe("sidebar-menu-button");
@@ -785,7 +605,7 @@ describe("Sidebar.MenuButton", () => {
         </Sidebar.MenuItem>
       </Frame>
     );
-    await assertFocusRingOnKeyboardAbsentOnMouse(buttonNamed("First"), buttonNamed("Second"));
+    await assertFocusRingOnKeyboardAbsentOnMouse(roleNamed("button", "First"), roleNamed("button", "Second"));
   });
 });
 
@@ -807,23 +627,24 @@ describe("Sidebar.MenuAction showOnHover", () => {
         </Sidebar.MenuItem>
       </Frame>
     );
-    const action = buttonNamed("Orders actions");
+    const action = roleNamed("button", "Orders actions");
     expect(getComputedStyle(action).opacity).toBe("0");
-    expect(getComputedStyle(buttonNamed("Reports actions")).opacity, "aria-expanded keeps it visible").toBe(
-      "1"
-    );
+    expect(
+      getComputedStyle(roleNamed("button", "Reports actions")).opacity,
+      "aria-expanded keeps it visible"
+    ).toBe("1");
 
-    await userEvent.hover(buttonNamed("Orders"));
+    await userEvent.hover(roleNamed("button", "Orders"));
     await vi.waitFor(() => {
       expect(getComputedStyle(action).opacity, "hovered item").toBe("1");
     });
 
-    await userEvent.hover(buttonNamed("After"));
+    await userEvent.hover(roleNamed("button", "After"));
     await vi.waitFor(() => {
       expect(getComputedStyle(action).opacity, "pointer left the item").toBe("0");
     });
 
-    buttonNamed("Orders").focus();
+    roleNamed("button", "Orders").focus();
     await vi.waitFor(() => {
       expect(getComputedStyle(action).opacity, "focus within the item").toBe("1");
     });
@@ -904,12 +725,12 @@ describe("Sidebar.MenuSubButton", () => {
         </Sidebar.MenuItem>
       </Frame>
     );
-    const open = element(page.getByRole("link", { name: "Open", exact: true }));
+    const open = roleNamed("link", "Open");
     expect(open.tagName).toBe("A");
     expect(open.getAttribute("data-slot")).toBe("sidebar-menu-sub-button");
     expect(open.getAttribute("data-size")).toBe("md");
     expect(open.getAttribute("data-active")).toBe("");
-    const closed = element(page.getByRole("link", { name: "Closed", exact: true }));
+    const closed = roleNamed("link", "Closed");
     expect(closed.getAttribute("data-size")).toBe("sm");
     expect(closed.hasAttribute("data-active")).toBe(false);
     expect(open.closest("ul")?.tagName).toBe("UL");
@@ -940,19 +761,23 @@ describe("Sidebar.MenuSubButton", () => {
         </Frame>
       );
       heights[density] = [
-        px(getComputedStyle(element(page.getByRole("link", { name: "Open", exact: true }))).height),
-        px(getComputedStyle(element(page.getByRole("link", { name: "Closed", exact: true }))).height),
+        px(getComputedStyle(roleNamed("link", "Open")).height),
+        px(getComputedStyle(roleNamed("link", "Closed")).height),
       ];
       unmount();
     }
-    expect(heights.dense).toEqual([CONTROL_MD.dense.height, CONTROL_SM.dense]);
-    expect(heights.comfortable).toEqual([CONTROL_MD.comfortable.height, CONTROL_SM.comfortable]);
+    expect(heights.dense).toEqual([CONTROL_MD.dense.height, CONTROL_SM.dense.height]);
+    expect(heights.comfortable).toEqual([CONTROL_MD.comfortable.height, CONTROL_SM.comfortable.height]);
   });
 });
 
+/** DOM audit: the roster audit counts slot stamps directly; every part stamps its slot and no legacy `data-sidebar` survives. */
+function countMatching(selector: string): number {
+  return document.querySelectorAll(selector).length;
+}
+
 describe("Sidebar data-slot audit", () => {
   it("stamps every roster slot once composed, with no legacy data-sidebar attribute anywhere", () => {
-    // DOM audit: every part stamps its slot; no data-sidebar attributes anywhere
     renderThemed(
       withLocale(
         "en-US",
@@ -999,14 +824,12 @@ describe("Sidebar data-slot audit", () => {
       )
     );
     for (const slot of SLOT_ROSTER) {
-      // DOM audit: verify the component slot contract.
-      expect(document.querySelectorAll(`[data-slot="${slot}"]`).length, slot).toBeGreaterThanOrEqual(1);
+      expect(countMatching(`[data-slot="${slot}"]`), slot).toBeGreaterThanOrEqual(1);
     }
-    expect(document.querySelectorAll("[data-sidebar]")).toHaveLength(0);
+    expect(countMatching("[data-sidebar]")).toBe(0);
     expect(bySlot("sidebar-separator").getAttribute("role")).toBe("separator");
-    // DOM audit: verify the component slot contract.
-    expect(document.querySelectorAll('[data-slot="separator"]')).toHaveLength(0);
-    expect(document.querySelectorAll('[data-slot="input"]')).toHaveLength(0);
+    expect(countMatching('[data-slot="separator"]'), "sidebar parts never reuse the bare slot names").toBe(0);
+    expect(countMatching('[data-slot="input"]')).toBe(0);
     expect(bySlot("sidebar-inset").tagName).toBe("MAIN");
     expect(bySlot("sidebar-menu").tagName).toBe("UL");
     expect(bySlot("sidebar-menu-item").tagName).toBe("LI");

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useState } from "react";
 
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
@@ -15,11 +16,20 @@ import {
   fkasExternal,
   px,
   renderThemed,
+  roleNamed,
   stampDensity,
   textboxNamed,
 } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme";
 import { NumberField } from "./number-field";
+
+const INCREASE_COPY = { "nb-NO": "Øk", "sv-SE": "Öka", "en-US": "Increase", "fi-FI": "Lisää" } as const;
+const DECREASE_COPY = {
+  "nb-NO": "Reduser",
+  "sv-SE": "Minska",
+  "en-US": "Decrease",
+  "fi-FI": "Vähennä",
+} as const;
 
 function renderField(node: ReactNode, locale: (typeof SUPPORTED_LOCALES)[number] = "en-US") {
   return renderThemed(withLocale(locale, node));
@@ -36,14 +46,6 @@ function groupFrom(name: string): HTMLElement {
     throw new Error(`expected field group around ${name}`);
   }
   return group;
-}
-
-function buttonNamed(name: string): HTMLElement {
-  const element = page.getByRole("button", { name, exact: true }).element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error(`expected button ${name}`);
-  }
-  return element;
 }
 
 function stepperIn(fieldName: string, name: "Increase" | "Decrease"): HTMLElement {
@@ -97,6 +99,75 @@ describe("NumberField", () => {
     expect(onChange).toHaveBeenLastCalledWith(10);
     await userEvent.keyboard("{Home}");
     expect(onChange).toHaveBeenLastCalledWith(0);
+  });
+
+  it("steps from the empty basic example via the increment and decrement buttons", async () => {
+    const onChange = vi.fn();
+    renderField(
+      <NumberField
+        label="Quantity"
+        description="Whole packs."
+        minValue={0}
+        maxValue={20}
+        step={1}
+        onChange={onChange}
+      />
+    );
+    const input = page.getByRole("textbox", { name: "Quantity", exact: true });
+    const increase = page.getByRole("button", { name: "Increase", exact: true });
+    const decrease = page.getByRole("button", { name: "Decrease", exact: true });
+    await expect.element(input).toHaveValue("");
+    await userEvent.click(increase);
+    expect(onChange).toHaveBeenLastCalledWith(0);
+    await expect.element(input).toHaveValue("0");
+    await userEvent.click(increase);
+    expect(onChange).toHaveBeenLastCalledWith(1);
+    await expect.element(input).toHaveValue("1");
+    await userEvent.click(decrease);
+    expect(onChange).toHaveBeenLastCalledWith(0);
+    await expect.element(input).toHaveValue("0");
+  });
+
+  it("stays controlled from a NaN empty state: only the parent moves the value", async () => {
+    const events: number[] = [];
+    function ControlledQuantity() {
+      const [value, setValue] = useState<number>(NaN);
+      return (
+        <>
+          <NumberField
+            label="Quantity"
+            minValue={0}
+            maxValue={20}
+            value={value}
+            onChange={(next) => {
+              events.push(next);
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => {
+              setValue(7);
+            }}>
+            Set to 7
+          </button>
+        </>
+      );
+    }
+    renderField(<ControlledQuantity />);
+
+    const input = page.getByRole("textbox", { name: "Quantity", exact: true });
+    await expect.element(input).toHaveValue("");
+    await userEvent.click(page.getByRole("button", { name: "Increase", exact: true }));
+
+    // The step reports upward, but the parent did not accept it. An uncontrolled field
+    // would have painted its own "0" here; the DOM staying empty is the controlled
+    // contract, and the external set below proves the parent can still drive the input.
+    expect(events).toEqual([0]);
+    await expect.element(input).toHaveValue("");
+
+    await userEvent.click(page.getByRole("button", { name: "Set to 7", exact: true }));
+    await expect.element(input).toHaveValue("7");
+    expect(events).toEqual([0]);
   });
 
   it("commits a typed value on blur and reports NaN when the input is cleared", async () => {
@@ -312,11 +383,79 @@ describe("NumberField", () => {
     await userEvent.click(before);
     expect(before.matches(":focus-visible")).toBe(false);
 
-    const increment = buttonNamed("Increase");
+    const increment = roleNamed("button", "Increase");
     increment.focus();
     expect(document.activeElement).toBe(increment);
     expect(increment.matches(":focus-visible")).toBe(false);
     expectNoFocusRing(groupFrom("Quantity"), "mouse focus on a stepper must not paint the group ring");
+  });
+
+  it("names the steppers from the provider locale and updates them on locale rerender", () => {
+    for (const locale of SUPPORTED_LOCALES) {
+      const { unmount } = renderField(<NumberField label="Quantity" defaultValue={2} />, locale);
+      expect(
+        page.getByRole("button", { name: INCREASE_COPY[locale], exact: true }).query(),
+        locale
+      ).toBeTruthy();
+      expect(
+        page.getByRole("button", { name: DECREASE_COPY[locale], exact: true }).query(),
+        locale
+      ).toBeTruthy();
+      unmount();
+    }
+
+    const { rerender } = renderField(<NumberField label="Amount" defaultValue={1234.5} />, "en-US");
+    expect(page.getByRole("button", { name: INCREASE_COPY["en-US"], exact: true }).query()).toBeTruthy();
+    expect(page.getByRole("button", { name: DECREASE_COPY["en-US"], exact: true }).query()).toBeTruthy();
+    expect(textboxNamed("Amount")).toHaveProperty("value", new Intl.NumberFormat("en-US").format(1234.5));
+
+    rerender(withLocale("nb-NO", <NumberField label="Amount" defaultValue={1234.5} />));
+    expect(page.getByRole("button", { name: INCREASE_COPY["nb-NO"], exact: true }).query()).toBeTruthy();
+    expect(page.getByRole("button", { name: DECREASE_COPY["nb-NO"], exact: true }).query()).toBeTruthy();
+    expect(textboxNamed("Amount")).toHaveProperty("value", new Intl.NumberFormat("nb-NO").format(1234.5));
+  });
+
+  it("lets increaseLabel and decreaseLabel override dictionary names and survive a locale change", () => {
+    const { rerender } = renderField(
+      <NumberField label="Quantity" defaultValue={2} increaseLabel="Add one" decreaseLabel="Remove one" />,
+      "nb-NO"
+    );
+    expect(page.getByRole("button", { name: "Add one", exact: true }).query()).toBeTruthy();
+    expect(page.getByRole("button", { name: "Remove one", exact: true }).query()).toBeTruthy();
+    expect(page.getByRole("button", { name: "Øk", exact: true }).query()).toBeNull();
+    expect(page.getByRole("button", { name: "Reduser", exact: true }).query()).toBeNull();
+
+    rerender(
+      withLocale(
+        "fi-FI",
+        <NumberField label="Quantity" defaultValue={2} increaseLabel="Add one" decreaseLabel="Remove one" />
+      )
+    );
+    expect(page.getByRole("button", { name: "Add one", exact: true }).query()).toBeTruthy();
+    expect(page.getByRole("button", { name: "Remove one", exact: true }).query()).toBeTruthy();
+    expect(page.getByRole("button", { name: "Lisää", exact: true }).query()).toBeNull();
+    expect(page.getByRole("button", { name: "Vähennä", exact: true }).query()).toBeNull();
+  });
+
+  it("overrides stepper names independently", () => {
+    renderField(<NumberField label="Quantity" defaultValue={2} increaseLabel="Add one" />, "sv-SE");
+    expect(page.getByRole("button", { name: "Add one", exact: true }).query()).toBeTruthy();
+    expect(page.getByRole("button", { name: DECREASE_COPY["sv-SE"], exact: true }).query()).toBeTruthy();
+  });
+
+  it("paints stepper dividers with the field-box border color", () => {
+    renderField(<NumberField label="Quantity" defaultValue={1} />);
+    const group = groupFrom("Quantity");
+    const chrome = getComputedStyle(group).borderTopColor;
+    const column = stepperIn("Quantity", "Increase").parentElement;
+    if (!(column instanceof HTMLElement)) {
+      throw new Error("expected stepper column");
+    }
+    expect(getComputedStyle(column).borderInlineStartColor).toBe(chrome);
+    expect(getComputedStyle(stepperIn("Quantity", "Increase")).borderBottomColor).toBe(chrome);
+    expect(getComputedStyle(stepperIn("Quantity", "Increase")).backgroundColor).toBe(
+      getComputedStyle(group).backgroundColor
+    );
   });
 });
 

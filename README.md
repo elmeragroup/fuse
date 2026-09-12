@@ -74,7 +74,7 @@ The API extractor and the `elmera/*` and `anti-slop/*` lint rules come from [`@e
 
 ## Release
 
-The [release runbook](docs/spec/release.md) separates the active Version Packages workflow from the publishing pipeline that still needs setup. Do not merge the bot's Version Packages PR until the npm/GitHub prerequisites and publish workflow are ready.
+Releases are prepared manually. Merge user-facing PRs with their changesets; internal-only PRs carry the `no-changeset` label instead. Pending notes accumulate on `main` until a maintainer prepares a release PR, which records the version and changelog without publishing to npm. The [release runbook](docs/spec/release.md) owns the five-step versioning procedure and the separate publishing workflow that still needs setup.
 
 ## Reading by task
 

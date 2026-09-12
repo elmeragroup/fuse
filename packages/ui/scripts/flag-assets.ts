@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
   copyFileSync,
@@ -5,6 +6,7 @@ import {
   mkdirSync,
   readdirSync,
   readFileSync,
+  realpathSync,
   statSync,
   writeFileSync,
 } from "node:fs";
@@ -12,7 +14,7 @@ import { join } from "node:path";
 
 import { FLAG_RAW_CEILING_BYTES, FLAG_SVG_COUNT } from "./flag-payload.ts";
 
-const FLAG_SOURCE_COMMIT = "a3d5adcf4fe650536d7694ca6d93c607ebf16c4e";
+export const FLAG_SOURCE_COMMIT = "a3d5adcf4fe650536d7694ca6d93c607ebf16c4e";
 const FLAG_SOURCE_REPO = "https://github.com/yammadev/flag-icons";
 
 const GENERATED_HEADER = `/**
@@ -139,8 +141,59 @@ export function writeFlagManifest(packageRoot: string): void {
   );
 }
 
-export function vendorFlags(repoRoot: string, packageRoot: string): void {
-  const sourceDir = join(repoRoot, ".ref/flag-icons/svg");
+function gitOutput(sourceRoot: string, args: readonly string[]): string {
+  const result = spawnSync("git", args, { cwd: sourceRoot, encoding: "utf8" });
+  if (result.error !== undefined || result.status !== 0) {
+    throw new Error(
+      `git ${args.join(" ")} failed in ${sourceRoot}: ${result.error?.message ?? result.stderr}`
+    );
+  }
+  return result.stdout;
+}
+
+export function assertFlagSourceCheckout(sourceRoot: string, expectedCommit: string): void {
+  if (!existsSync(sourceRoot) || !statSync(sourceRoot).isDirectory()) {
+    throw new Error(
+      `Flag source ${sourceRoot} is missing; clone the pinned reference described in docs/reference-sources.md`
+    );
+  }
+
+  const toplevel = gitOutput(sourceRoot, ["rev-parse", "--show-toplevel"]).trim();
+  // Git walks upward to a parent .git; realpath both sides because macOS tmpdir() is a symlink.
+  if (realpathSync(toplevel) !== realpathSync(sourceRoot)) {
+    throw new Error(`Flag source ${sourceRoot} is not the root of a Git checkout (git resolved ${toplevel})`);
+  }
+
+  const head = gitOutput(sourceRoot, ["rev-parse", "HEAD"]).trim();
+  if (head !== expectedCommit) {
+    throw new Error(
+      `Flag source is at ${head}, expected ${expectedCommit}; check out the pinned commit before regenerating`
+    );
+  }
+
+  const porcelain = gitOutput(sourceRoot, [
+    "status",
+    "--porcelain",
+    "--untracked-files=all",
+    "--",
+    "svg",
+    "LICENSE",
+  ]);
+  if (porcelain.trim() !== "") {
+    throw new Error(
+      `Flag source has local changes under svg/ or LICENSE; restore the checkout before regenerating:\n${porcelain}`
+    );
+  }
+}
+
+/**
+ * Verify the checkout, then copy the flag SVGs, LICENSE, provenance and manifest across.
+ * `pin` is the commit the checkout must be at and the one PROVENANCE.md names — the two
+ * are the same value by construction, which is the guarantee this step exists to keep.
+ */
+export function copyFlagAssets(sourceRoot: string, packageRoot: string, pin: string): void {
+  assertFlagSourceCheckout(sourceRoot, pin);
+  const sourceDir = join(sourceRoot, "svg");
   const destDir = join(packageRoot, "src/flags");
   mkdirSync(destDir, { recursive: true });
 
@@ -154,13 +207,13 @@ export function vendorFlags(repoRoot: string, packageRoot: string): void {
     hashes.push(`${file} ${sha256(readFileSync(join(sourceDir, file)))}`);
   }
 
-  copyFileSync(join(repoRoot, ".ref/flag-icons/LICENSE"), join(destDir, "LICENSE"));
+  copyFileSync(join(sourceRoot, "LICENSE"), join(destDir, "LICENSE"));
   writeFileSync(
     join(destDir, "PROVENANCE.md"),
     `# Flag asset provenance
 
 - Source: ${FLAG_SOURCE_REPO} (MIT, copyright Yefferson)
-- Commit: \`${FLAG_SOURCE_COMMIT}\`
+- Commit: \`${pin}\`
 - Selection: exactly the ${FLAG_SVG_COUNT} two-letter country SVGs. Subdivision/collection artwork is not copied.
 - Aggregate ceiling: ${FLAG_RAW_CEILING_BYTES / 1024} KiB.
 
@@ -171,4 +224,9 @@ ${hashes.join("\n")}
   );
 
   writeFlagManifest(packageRoot);
+}
+
+/** Production entry point; the pin is `FLAG_SOURCE_COMMIT`. */
+export function vendorFlags(repoRoot: string, packageRoot: string): void {
+  copyFlagAssets(join(repoRoot, ".ref/flag-icons"), packageRoot, FLAG_SOURCE_COMMIT);
 }

@@ -121,20 +121,44 @@ export function resolveColorScheme(preference: ColorScheme, enableSystem: boolea
   return resolveSystemColorScheme();
 }
 
-export function readStoredColorScheme(storageKey: string, fallback: ColorScheme): ColorScheme {
+/**
+ * Runs `operation` against `window.localStorage`, returning `undefined` when the area is
+ * unreachable or the operation throws. The property access can throw `SecurityError`
+ * when storage is blocked, and `setItem` can throw `QuotaExceededError` on an
+ * otherwise readable area (quota full; legacy Safari private mode), so the try/catch
+ * has to wrap the operation, not just the access.
+ */
+function withLocalStorage<T>(operation: (area: Storage) => T): T | undefined {
   try {
-    return parseColorScheme(localStorage.getItem(storageKey), fallback);
+    return operation(window.localStorage);
   } catch {
-    return parseColorScheme(null, fallback);
+    return undefined;
   }
 }
 
-export function writeStoredColorScheme(storageKey: string, value: ColorScheme): void {
-  try {
-    localStorage.setItem(storageKey, value);
-  } catch {
-    // storage unavailable
+/**
+ * Whether a `storage` event should be read as a change to the color-scheme preference:
+ * it comes from `localStorage` and names the key, or is a whole-store clear (`key` is
+ * `null`), which affects the preference too. `event.newValue` then carries the change.
+ */
+export function isColorSchemeStorageEvent(event: StorageEvent, storageKey: string): boolean {
+  if (event.key !== null && event.key !== storageKey) {
+    return false;
   }
+  return withLocalStorage((area) => event.storageArea === area) === true;
+}
+
+export function readStoredColorScheme(storageKey: string, fallback: ColorScheme): ColorScheme {
+  return parseColorScheme(
+    withLocalStorage((area) => area.getItem(storageKey)),
+    fallback
+  );
+}
+
+export function writeStoredColorScheme(storageKey: string, value: ColorScheme): void {
+  withLocalStorage((area) => {
+    area.setItem(storageKey, value);
+  });
 }
 
 export function readDocumentColorScheme(): "light" | "dark" | undefined {

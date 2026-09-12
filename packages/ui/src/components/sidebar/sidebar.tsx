@@ -338,7 +338,8 @@ function SidebarRoot({
         {...props}>
         <div
           data-slot="sidebar-inner"
-          className="group-data-[variant=floating]:shadow-sm flex size-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:ring-1 group-data-[variant=floating]:ring-sidebar-border">
+          // `invisible`, not `inert`: Rail opts back in with `visible` (see SidebarRail).
+          className="group-data-[variant=floating]:shadow-sm flex size-full flex-col bg-sidebar group-data-[collapsible=offcanvas]:invisible group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:ring-1 group-data-[variant=floating]:ring-sidebar-border">
           {children}
         </div>
       </div>
@@ -383,6 +384,12 @@ function SidebarTrigger({
 
 export type SidebarRailProps = ComponentProps<"button">;
 
+/**
+ * Reopen control. `visible` re-enables it under the collapsed offcanvas panel's
+ * `visibility: hidden`: a hidden ancestor leaves it out of the accessibility tree and tab
+ * order, but a `visible` descendant is painted and clickable again. (`inert` cannot be
+ * undone from inside, which is why the panel does not use it.)
+ */
 function SidebarRail({ className, ...props }: SidebarRailProps): ReactElement {
   const { value, labels } = useSidebarInternal();
 
@@ -395,7 +402,7 @@ function SidebarRail({ className, ...props }: SidebarRailProps): ReactElement {
       onClick={value.toggleSidebar}
       title={labels.toggle}
       className={cn(
-        "sm:flex absolute inset-y-0 z-20 hidden w-4 group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:start-1/2 after:w-[2px] after:transition-colors hover:after:bg-sidebar-border ltr:-translate-x-1/2 rtl:-translate-x-1/2",
+        "sm:flex visible absolute inset-y-0 z-20 hidden w-4 group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:start-1/2 after:w-[2px] after:transition-colors hover:after:bg-sidebar-border ltr:-translate-x-1/2 rtl:-translate-x-1/2",
         "in-data-[side=left]:cursor-w-resize in-data-[side=right]:cursor-e-resize",
         "[[data-side=left][data-state=collapsed]_&]:cursor-e-resize [[data-side=right][data-state=collapsed]_&]:cursor-w-resize",
         "group-data-[collapsible=offcanvas]:translate-x-0 group-data-[collapsible=offcanvas]:after:left-full hover:group-data-[collapsible=offcanvas]:bg-sidebar",

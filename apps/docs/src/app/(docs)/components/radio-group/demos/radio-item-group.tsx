@@ -19,8 +19,7 @@ export function RadioItemGroupDemo() {
         <RadioItem.SubSection
           role="region"
           aria-label="Fixed price details"
-          mode={fixedSelected ? "visible" : "hidden"}
-          inert={fixedSelected ? undefined : true}>
+          mode={fixedSelected ? "visible" : "hidden"}>
           Includes a price-freeze guarantee.
         </RadioItem.SubSection>
       </RadioItem>

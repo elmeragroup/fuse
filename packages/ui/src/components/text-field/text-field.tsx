@@ -1,28 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import type { ComponentProps, ReactElement, ReactNode } from "react";
+import { useEffect } from "react";
+import type { ChangeEvent, ComponentProps, ReactElement, ReactNode } from "react";
 
 import { cn } from "../../styles/cn";
 import { isThemeDevelopment } from "../../theme/validate-theme";
 import { FieldFrame } from "../field/field-frame";
 import { Input } from "../input/input";
 import { textFieldVariants } from "./text-field-variants";
-
-const DIGITS_ONLY = /^\d+$/;
-
-function containsOnlyDigits(value: string): boolean {
-  return DIGITS_ONLY.test(value);
-}
-
-function warnIfNotNumeric(prop: "value" | "defaultValue", value: string | null | undefined): void {
-  if (!isThemeDevelopment()) {
-    return;
-  }
-  if (value && !containsOnlyDigits(value)) {
-    console.warn(`TextField: ${prop} is not a number`);
-  }
-}
 
 export type TextFieldProps = {
   /** Visible label, rendered as `Field.Label`. */
@@ -58,9 +43,11 @@ export type TextFieldProps = {
   /** Trailing inline icon. Activates the `isIconActive` recipe axis. */
   icon?: ReactNode;
   /**
-   * Digits-only guard (absorbs the external numeric-only wrapper). Rejected changes never
-   * reach `onChange` or uncontrolled state. Sets `inputMode="numeric"` unless the caller
-   * passes `inputMode` explicitly.
+   * Digits-only guard (absorbs the external numeric-only wrapper). Non-digit characters are
+   * stripped from every path — typing, paste, autofill — so only digits reach `onChange`.
+   * Sets `inputMode="numeric"` unless the caller passes `inputMode` explicitly. An
+   * uncontrolled numeric field restores its `defaultValue` on native form reset without
+   * calling `onChange`.
    */
   filter?: "numeric";
   /** `card` composes `cardVariants`; `inline` restyles the input chrome. Unset is the plain Input. */
@@ -72,10 +59,28 @@ export type TextFieldProps = {
   "value" | "defaultValue" | "onChange" | "name" | "className" | "disabled" | "readOnly" | "required"
 >;
 
+/** One normalizer for the warning guards and the change handler, so they cannot drift. */
+function stripNonDigits(value: string): string {
+  return value.replace(/\D/g, "");
+}
+
+function containsOnlyDigits(value: string): boolean {
+  return stripNonDigits(value) === value;
+}
+
+function warnIfNotNumeric(prop: "value" | "defaultValue", value: string | null | undefined): void {
+  if (!isThemeDevelopment()) {
+    return;
+  }
+  if (value && !containsOnlyDigits(value)) {
+    console.warn(`TextField: ${prop} is not a number`);
+  }
+}
+
 /**
  * Labeled single-line field composite over Field + Input.
- * Client — it owns the numeric filter's internal state and change handler
- * (performance.md §RSC classification).
+ * Client — it normalizes numeric input in its change handler
+ * (performance.md §3 RSC / client boundaries).
  */
 export function TextField({
   label,
@@ -100,16 +105,15 @@ export function TextField({
   inputMode,
   ...props
 }: TextFieldProps): ReactElement {
-  const isControlled = value !== undefined;
-  const [internalValue, setInternalValue] = useState(() => defaultValue ?? "");
+  const isNumeric = filter === "numeric";
 
   useEffect(() => {
-    if (filter !== "numeric") {
+    if (!isNumeric) {
       return;
     }
     warnIfNotNumeric("defaultValue", defaultValue);
     warnIfNotNumeric("value", value);
-  }, [defaultValue, filter, value]);
+  }, [isNumeric, defaultValue, value]);
 
   const {
     base,
@@ -125,18 +129,20 @@ export function TextField({
     isIconActive: Boolean(icon),
   });
 
-  function handleChange(next: string): void {
-    if (filter === "numeric" && next !== "" && !containsOnlyDigits(next)) {
+  function handleChange(event: ChangeEvent<HTMLInputElement>): void {
+    const next = event.currentTarget.value;
+    if (!isNumeric) {
+      onChange?.(next);
       return;
     }
-    if (filter === "numeric" && !isControlled) {
-      setInternalValue(next);
+    const digits = stripNonDigits(next);
+    if (digits !== next) {
+      // Hand the digits back to the input so an uncontrolled field drops the rejected
+      // characters even when the caller has no `onChange` to re-render it.
+      event.currentTarget.value = digits;
     }
-    onChange?.(next);
+    onChange?.(digits);
   }
-
-  const resolvedValue = filter === "numeric" ? (isControlled ? value : internalValue) : value;
-  const resolvedDefaultValue = filter === "numeric" ? undefined : (defaultValue ?? undefined);
 
   return (
     <FieldFrame
@@ -156,13 +162,11 @@ export function TextField({
       <div className="relative">
         <Input
           name={name}
-          value={resolvedValue}
-          defaultValue={resolvedDefaultValue}
-          onChange={(event) => {
-            handleChange(event.currentTarget.value);
-          }}
+          value={value}
+          defaultValue={defaultValue ?? undefined}
+          onChange={handleChange}
           placeholder={placeholder}
-          inputMode={inputMode ?? (filter === "numeric" ? "numeric" : undefined)}
+          inputMode={inputMode ?? (isNumeric ? "numeric" : undefined)}
           // fieldGroup's default would override the input's w-full.
           className={cn(input(), variant ? fieldGroup() : null)}
           {...props}

@@ -7,6 +7,8 @@ import {
   ColorSchemeOutput,
   ColorSchemeSetter,
   defaultManifest,
+  emitStorageChange,
+  emitStorageClear,
   fkasPrivate,
   mountedColorScheme,
   readDocumentBrand,
@@ -16,6 +18,7 @@ import {
   writeManifest,
 } from "../../test/theme-browser-fixtures";
 import { DEFAULT_COLOR_SCHEME_STORAGE_KEY, resolveColorSchemeOptions } from "./color-scheme";
+import type { ColorSchemeOptions } from "./color-scheme";
 import { ForceColorScheme } from "./force-color-scheme";
 import { ThemeProvider, useTheme } from "./theme-provider";
 import { ThemeScope } from "./theme-scope";
@@ -129,6 +132,29 @@ describe("useColorScheme", () => {
     await mountedColorScheme(host, "internal-fkas-private:dark/dark");
   });
 
+  it("keeps the document write and subscriber notification when localStorage.setItem throws", async () => {
+    window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "light");
+    const setItem = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new DOMException("full", "QuotaExceededError");
+    });
+
+    const { host } = render(
+      <ThemeProvider theme={fkasPrivate}>
+        <ColorSchemeOutput />
+        <ColorSchemeSetter value="dark" />
+      </ThemeProvider>
+    );
+    await mountedColorScheme(host, "internal-fkas-private:light/light");
+
+    host.querySelector("button")?.click();
+
+    // The write failed, but the in-memory preference still lands: data-theme flips and
+    // subscribers fire, matching the old all-in-one-try/catch behaviour on main.
+    expect(setItem).toHaveBeenCalledWith(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "dark");
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    await mountedColorScheme(host, "internal-fkas-private:dark/dark");
+  });
+
   it("applies storage and media events in the same turn", async () => {
     const media = stubPrefersColorScheme(false);
     window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "system");
@@ -140,24 +166,11 @@ describe("useColorScheme", () => {
     );
     await mountedColorScheme(host, "internal-fkas-private:system/light");
 
-    window.dispatchEvent(
-      new StorageEvent("storage", {
-        key: DEFAULT_COLOR_SCHEME_STORAGE_KEY,
-        newValue: "dark",
-        storageArea: window.localStorage,
-      })
-    );
+    emitStorageChange(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "dark");
     expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
     await mountedColorScheme(host, "internal-fkas-private:dark/dark");
 
-    window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "system");
-    window.dispatchEvent(
-      new StorageEvent("storage", {
-        key: DEFAULT_COLOR_SCHEME_STORAGE_KEY,
-        newValue: "system",
-        storageArea: window.localStorage,
-      })
-    );
+    emitStorageChange(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "system");
     expect(document.documentElement.getAttribute("data-theme")).toBe("light");
     await mountedColorScheme(host, "internal-fkas-private:system/light");
 
@@ -166,6 +179,108 @@ describe("useColorScheme", () => {
     await mountedColorScheme(host, "internal-fkas-private:system/dark");
     expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkas", segment: "private" });
     expect(document.documentElement.style.colorScheme).toBe("");
+  });
+
+  // A whole-store clear reaches the provider as a `storage` event with a null key and a
+  // null newValue, so the configured fallback wins regardless of the key. The mount and
+  // the stored `dark` preference are identical; only the provider props differ.
+  it.each<{ name: string; props: ColorSchemeOptions; storageKey: string; expected: string }>([
+    {
+      name: "the default key and fallback",
+      props: {},
+      storageKey: DEFAULT_COLOR_SCHEME_STORAGE_KEY,
+      expected: "internal-fkas-private:system/light",
+    },
+    {
+      name: "a custom key and defaultColorScheme",
+      props: { storageKey: "app-color-scheme", defaultColorScheme: "light" },
+      storageKey: "app-color-scheme",
+      expected: "internal-fkas-private:light/light",
+    },
+  ])(
+    "restores the configured fallback when another document clears local storage with $name",
+    async ({ props, storageKey, expected }) => {
+      stubPrefersColorScheme(false);
+      window.localStorage.setItem(storageKey, "dark");
+
+      const { host } = render(
+        <ThemeProvider theme={fkasPrivate} {...props}>
+          <ColorSchemeOutput />
+        </ThemeProvider>
+      );
+      await mountedColorScheme(host, "internal-fkas-private:dark/dark");
+
+      emitStorageClear();
+      expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+      await mountedColorScheme(host, expected);
+      expect(window.localStorage.getItem(storageKey)).toBeNull();
+    }
+  );
+
+  // Three ways a `storage` event can look like a preference change and not be one. The
+  // mount, the stored `dark` preference and the ignored outcome are identical; only the
+  // event init differs, so the matrix is the whole difference between the cases.
+  it.each([
+    {
+      name: "session storage reusing the preference key",
+      init: {
+        key: DEFAULT_COLOR_SCHEME_STORAGE_KEY,
+        newValue: "light",
+        storageArea: window.sessionStorage,
+      },
+    },
+    {
+      name: "local storage under an unrelated key",
+      init: { key: "other-key", newValue: "light", storageArea: window.localStorage },
+    },
+    {
+      name: "a null storageArea",
+      init: { key: DEFAULT_COLOR_SCHEME_STORAGE_KEY, newValue: "light", storageArea: null },
+    },
+  ])("ignores a storage event from $name", async ({ init }) => {
+    stubPrefersColorScheme(false);
+    window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "dark");
+
+    const { host } = render(
+      <ThemeProvider theme={fkasPrivate}>
+        <ColorSchemeOutput />
+      </ThemeProvider>
+    );
+    await mountedColorScheme(host, "internal-fkas-private:dark/dark");
+
+    window.dispatchEvent(new StorageEvent("storage", init));
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    await mountedColorScheme(host, "internal-fkas-private:dark/dark");
+  });
+
+  it("ignores storage events when localStorage is inaccessible", async () => {
+    stubPrefersColorScheme(false);
+    window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "dark");
+
+    const { host } = render(
+      <ThemeProvider theme={fkasPrivate}>
+        <ColorSchemeOutput />
+      </ThemeProvider>
+    );
+    await mountedColorScheme(host, "internal-fkas-private:dark/dark");
+
+    const area = window.localStorage;
+    const getter = vi.spyOn(window, "localStorage", "get").mockImplementation(() => {
+      throw new DOMException("blocked", "SecurityError");
+    });
+    try {
+      window.dispatchEvent(
+        new StorageEvent("storage", {
+          key: DEFAULT_COLOR_SCHEME_STORAGE_KEY,
+          newValue: "light",
+          storageArea: area,
+        })
+      );
+      expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+      await mountedColorScheme(host, "internal-fkas-private:dark/dark");
+    } finally {
+      getter.mockRestore();
+    }
   });
 
   it("shares one state machine and configuration across consumers", async () => {
@@ -451,19 +566,32 @@ describe("forced color-scheme", () => {
     expect(window.localStorage.getItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY)).toBe("light");
     await mountedColorScheme(host, "internal-fkas-private:light/dark");
 
-    window.dispatchEvent(
-      new StorageEvent("storage", {
-        key: DEFAULT_COLOR_SCHEME_STORAGE_KEY,
-        newValue: "system",
-        storageArea: window.localStorage,
-      })
-    );
+    emitStorageChange(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "system");
     expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
     await mountedColorScheme(host, "internal-fkas-private:system/dark");
 
     media.setPrefersDark(true);
     expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
     await mountedColorScheme(host, "internal-fkas-private:system/dark");
+  });
+
+  it("keeps a descendant force while a whole-store clear restores the fallback preference", async () => {
+    stubPrefersColorScheme(false);
+    window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "dark");
+
+    const { host } = render(
+      <ThemeProvider theme={fkasPrivate}>
+        <ForceColorScheme value="light">
+          <ColorSchemeOutput />
+        </ForceColorScheme>
+      </ThemeProvider>
+    );
+    await mountedColorScheme(host, "internal-fkas-private:dark/light");
+
+    emitStorageClear();
+    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+    await mountedColorScheme(host, "internal-fkas-private:system/light");
+    expect(window.localStorage.getItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY)).toBeNull();
   });
 
   it("follows prefers-color-scheme while a descendant forced system is active", async () => {
@@ -488,6 +616,7 @@ describe("forced color-scheme", () => {
 
 describe("color-scheme transition suppression", () => {
   function transitionStyleCount() {
+    // DOM audit: disable-transition injects a role-less <style>; count by its text.
     return [...document.head.querySelectorAll("style")].filter((style) =>
       style.textContent.includes("transition:none")
     ).length;
@@ -508,6 +637,7 @@ describe("color-scheme transition suppression", () => {
     host.querySelector("button")?.click();
     expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
     expect(transitionStyleCount()).toBe(1);
+    // DOM audit: the injected transition lock is a <style> with nonce, no role.
     const injected = [...document.head.querySelectorAll("style")].find((style) =>
       style.textContent.includes("transition:none")
     );

@@ -237,6 +237,7 @@ describe("VerticalTable", () => {
         </VerticalTable.Row>
       </VerticalTable.Body>
     );
+    // DOM audit: Body's id stays on the wrapper exactly once; it must not copy onto the inner table.
     expect(document.body.querySelectorAll("#facts")).toHaveLength(1);
     const wrapper = document.getElementById("facts");
     expect(wrapper?.getAttribute("data-slot")).toBe("vertical-table");
@@ -264,6 +265,7 @@ describe("VerticalTable", () => {
     );
 
     expect(htmlTable("Customer")).toBeTruthy();
+    // DOM audit: wrapper id and tableProps id are distinct, each unique; ids have no role.
     expect(document.body.querySelectorAll("#facts")).toHaveLength(1);
     expect(document.body.querySelectorAll("#facts-table")).toHaveLength(1);
     expect(document.getElementById("facts")?.getAttribute("aria-labelledby")).toBe("wrapper-only");

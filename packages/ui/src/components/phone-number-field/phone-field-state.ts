@@ -77,6 +77,19 @@ export function visibleSnapshot({ value, accepted, proposal }: PhoneState): Phon
 }
 
 /**
+ * Native form reset for an uncontrolled field: empty digits, the country that was
+ * visible, no proposal. The hook calls it only while it owns the value.
+ */
+export function clearedForReset(stored: PhoneState): PhoneState {
+  const { country } = visibleSnapshot(stored);
+  return {
+    ...stored,
+    accepted: snapshot({ digits: "", country }, stored.configuration),
+    proposal: null,
+  };
+}
+
+/**
  * Fold new props into the stored record. An echoed proposal becomes the accepted snapshot;
  * a formatting-only change re-derives values from the existing digits; a catalog
  * replacement preserves the number's international identity.

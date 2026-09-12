@@ -1,9 +1,12 @@
 "use client";
 
+import { useRef } from "react";
 import type { ReactElement, ReactNode } from "react";
 
 import { NumberField as NumberFieldPrimitive } from "@base-ui/react/number-field";
 
+import { useLocalizedStrings } from "../../hooks/use-localized-strings";
+import { useResetRemount } from "../../hooks/use-reset-remount";
 import { CaretDown } from "../../icons/generated/caret-down";
 import { CaretUp } from "../../icons/generated/caret-up";
 import { cn } from "../../styles/cn";
@@ -12,6 +15,7 @@ import { numberFieldGroupClass } from "../../styles/field-box";
 import { withinFocusRingControlClass } from "../../styles/utils";
 import { useElmeraGroupUi } from "../../theme/elmera-group-ui";
 import { FieldFrame } from "../field/field-frame";
+import { numberFieldStrings } from "./intl";
 
 export type NumberFieldProps = {
   /** Visible label, rendered as `Field.Label`. */
@@ -35,8 +39,8 @@ export type NumberFieldProps = {
   /** Unit suffix rendered between the input and the steppers (visual only). */
   denomination?: string;
   /**
-   * Controlled value. Without `defaultValue`, `null`/`NaN` is passed to the primitive as
-   * `null` (empty). With `defaultValue`, `value` is passed through untouched.
+   * Controlled value; `NaN` is the controlled empty state. `undefined` — passed or
+   * omitted — is uncontrolled, as with React's own inputs.
    */
   value?: number;
   /** Uncontrolled initial value. */
@@ -60,6 +64,10 @@ export type NumberFieldProps = {
   className?: string;
   /** Accessible name forwarded to the input for label-less usage. */
   "aria-label"?: string;
+  /** Accessible name of the increment stepper. Defaults to the locale dictionary. */
+  increaseLabel?: string;
+  /** Accessible name of the decrement stepper. Defaults to the locale dictionary. */
+  decreaseLabel?: string;
   /** Native `autoFocus` forwarded to the input. */
   autoFocus?: boolean;
   /** Forwarded to `NumberField.Root`. */
@@ -72,8 +80,8 @@ const stepperButton = cn(
 
 /**
  * Labeled number field composite over Field + base-ui NumberField.
- * Client — it owns the change handler and reads locale from the provider
- * (performance.md §RSC classification).
+ * Client — it owns the reset remount and change handler, and reads locale
+ * from the provider (performance.md §RSC classification).
  */
 export function NumberField({
   label,
@@ -98,10 +106,16 @@ export function NumberField({
   id,
   autoFocus,
   "aria-label": ariaLabel,
+  increaseLabel,
+  decreaseLabel,
 }: NumberFieldProps): ReactElement {
   const { locale } = useElmeraGroupUi();
-  const controlledValue =
-    defaultValue !== undefined ? value : value == null || Number.isNaN(value) ? null : value;
+  const strings = useLocalizedStrings(numberFieldStrings);
+  const numberInputRef = useRef<HTMLInputElement>(null);
+  const isControlled = value !== undefined;
+  // base-ui does not observe native form reset; the hook remounts the primitive instead.
+  const reset = useResetRemount(numberInputRef, !isControlled);
+  const controlledValue = value === undefined ? undefined : Number.isNaN(value) ? null : value;
 
   // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- label/control stack gap is layout, not a control rung
   const rootClassName = cn("gap-1", className);
@@ -117,6 +131,7 @@ export function NumberField({
       description={description}
       errorMessage={errorMessage}>
       <NumberFieldPrimitive.Root
+        key={reset.key}
         name={name}
         value={controlledValue}
         defaultValue={defaultValue}
@@ -136,8 +151,11 @@ export function NumberField({
             "bg-muted": isDisabled || isReadOnly,
           })}>
           <NumberFieldPrimitive.Input
+            // The reset hook needs the visible control; Root's `inputRef` prop is the
+            // validation input, not this one.
+            ref={numberInputRef}
             aria-label={ariaLabel}
-            autoFocus={autoFocus}
+            autoFocus={autoFocus && reset.isInitialMount}
             data-focus-ring-control=""
             className={cn(
               "box-border h-full w-full min-w-0 flex-1 border-0 bg-transparent py-0 tabular-nums",
@@ -149,10 +167,14 @@ export function NumberField({
             <div className="text-sm px-2 py-1 text-muted-foreground">{denomination}</div>
           ) : null}
           <div className="flex h-full flex-col border-s">
-            <NumberFieldPrimitive.Increment className={cn(stepperButton, "border-b")}>
+            <NumberFieldPrimitive.Increment
+              className={cn(stepperButton, "border-b")}
+              aria-label={increaseLabel ?? strings.format("increase")}>
               <CaretUp aria-hidden className="size-4" />
             </NumberFieldPrimitive.Increment>
-            <NumberFieldPrimitive.Decrement className={stepperButton}>
+            <NumberFieldPrimitive.Decrement
+              className={stepperButton}
+              aria-label={decreaseLabel ?? strings.format("decrease")}>
               <CaretDown aria-hidden className="size-4" />
             </NumberFieldPrimitive.Decrement>
           </div>

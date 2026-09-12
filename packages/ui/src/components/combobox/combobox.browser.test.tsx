@@ -514,6 +514,56 @@ describe("Combobox", () => {
     expect(comboboxContent().getAttribute("data-external-anchor")).toBe("true");
   });
 
+  it("keeps a search-group-less popup flush and the list at the menu-family inset", async () => {
+    renderCombobox(<FruitCombobox />);
+    const list = await openWithClick();
+    const content = comboboxContent();
+    const contentStyles = getComputedStyle(content);
+    expect(px(contentStyles.paddingLeft)).toBe(0);
+    expect(px(contentStyles.paddingTop)).toBe(0);
+    // Menu-family rows sit in a single p-1 list box; popup padding must not double it.
+    expect(px(getComputedStyle(list).paddingLeft)).toBe(4);
+    expect(px(getComputedStyle(list).paddingTop)).toBe(4);
+  });
+
+  it("insets a popup that owns a search group without letting the group overflow it", async () => {
+    function AnchoredSearch() {
+      const anchor = useComboboxAnchor();
+      return (
+        <Combobox.Root items={[...FRUITS]}>
+          <Combobox.Chips ref={anchor} aria-label="Selected fruit">
+            <Combobox.ChipsInput aria-label="Fruit" />
+          </Combobox.Chips>
+          <Combobox.Content anchor={anchor}>
+            {/* w-full mirrors the phone field's search group, the box the old child margin overflowed. */}
+            <Combobox.Input showTrigger={false} aria-label="Filter fruit" className="w-full" />
+            <Combobox.List>
+              <Combobox.Item value="Apple">Apple</Combobox.Item>
+            </Combobox.List>
+          </Combobox.Content>
+        </Combobox.Root>
+      );
+    }
+    renderCombobox(<AnchoredSearch />);
+    await openWithClick();
+
+    const content = comboboxContent();
+    const search = comboboxNamed("Filter fruit");
+    const group = search.closest('[role="group"]');
+    if (!(group instanceof HTMLElement)) {
+      throw new Error("expected the search input group");
+    }
+    const contentStyles = getComputedStyle(content);
+    expect(px(contentStyles.paddingLeft)).toBe(4);
+    expect(px(contentStyles.paddingTop)).toBe(6);
+
+    // `w-full` inside `px-1` must stay within the popup box (the regression the inset fixes).
+    const contentBox = content.getBoundingClientRect();
+    const groupBox = group.getBoundingClientRect();
+    expect(groupBox.left).toBeGreaterThanOrEqual(contentBox.left);
+    expect(groupBox.right).toBeLessThanOrEqual(contentBox.right);
+  });
+
   it("portals Content into the enclosing ThemeScope instead of the document body", async () => {
     const { host } = renderCombobox(<FruitCombobox />);
     const scope = host.querySelector("[data-theme-brand]");

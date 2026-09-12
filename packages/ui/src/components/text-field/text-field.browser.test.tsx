@@ -1,3 +1,5 @@
+import { createRef, useState } from "react";
+
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -6,6 +8,8 @@ import {
   CONTROL_MD,
   fieldRootFrom,
   fkasExternal,
+  formNamed,
+  inputNamed,
   px,
   renderThemed,
   stampDensity,
@@ -85,7 +89,7 @@ describe("TextField", () => {
     expect(input).toHaveProperty("value", "Stay");
   });
 
-  it("rejects non-digits under filter=numeric and auto-sets inputMode", async () => {
+  it("strips non-digits under filter=numeric and auto-sets inputMode", async () => {
     const onChange = vi.fn();
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     renderThemed(
@@ -101,12 +105,12 @@ describe("TextField", () => {
     expect(textboxNamed("Phone")).toHaveProperty("inputMode", "tel");
 
     await userEvent.type(page.getByRole("textbox", { name: "Pin", exact: true }), "ab");
-    expect(onChange).not.toHaveBeenCalled();
+    expect(onChange).toHaveBeenLastCalledWith("");
     expect(pin).toHaveProperty("value", "");
 
     await userEvent.fill(page.getByRole("textbox", { name: "Pin", exact: true }), "12a3");
-    expect(onChange).not.toHaveBeenCalled();
-    expect(pin).toHaveProperty("value", "");
+    expect(onChange).toHaveBeenLastCalledWith("123");
+    expect(pin).toHaveProperty("value", "123");
 
     await userEvent.fill(page.getByRole("textbox", { name: "Pin", exact: true }), "123");
     expect(onChange.mock.calls.at(-1)?.[0]).toBe("123");
@@ -114,6 +118,120 @@ describe("TextField", () => {
 
     expect(warn).toHaveBeenCalledWith("TextField: value is not a number");
     warn.mockRestore();
+  });
+
+  it("strips a pasted mixed run under filter=numeric and accepts a digit run", async () => {
+    const onChange = vi.fn();
+    renderThemed(
+      <>
+        <TextField aria-label="Clipboard source" defaultValue="12a3" />
+        <TextField label="Pin" filter="numeric" onChange={onChange} />
+      </>
+    );
+    const source = inputNamed("Clipboard source");
+    source.focus();
+    source.select();
+    await userEvent.copy();
+
+    const pin = inputNamed("Pin");
+    pin.focus();
+    await userEvent.paste();
+    expect(pin).toHaveProperty("value", "123");
+    expect(onChange).toHaveBeenLastCalledWith("123");
+
+    source.value = "456";
+    source.focus();
+    source.select();
+    await userEvent.copy();
+    pin.focus();
+    pin.select();
+    await userEvent.paste();
+    expect(pin).toHaveProperty("value", "456");
+    expect(onChange).toHaveBeenLastCalledWith("456");
+  });
+
+  it("strips non-digits arriving through programmatic and autofill-style input events", () => {
+    const onChange = vi.fn();
+    renderThemed(<TextField label="Pin" filter="numeric" onChange={onChange} />);
+    const pin = inputNamed("Pin");
+
+    // Autofill and programmatic writes bypass keystroke handling; the change handler covers them.
+    // oxlint-disable-next-line typescript/unbound-method -- bound with .call below to bypass React's value tracker
+    const nativeValueSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+    if (!nativeValueSetter) {
+      throw new Error("expected the native input value setter");
+    }
+    nativeValueSetter.call(pin, "12a3");
+    pin.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(pin.value).toBe("123");
+    expect(onChange).toHaveBeenLastCalledWith("123");
+  });
+
+  it("restores an uncontrolled numeric defaultValue on native reset without calling onChange", async () => {
+    // The numeric filter is a change handler on a plain uncontrolled input: a native reset
+    // restores the default on its own. The old controlled wrapper painted its state back over it.
+    const onChange = vi.fn();
+    renderThemed(
+      <form aria-label="Pin form">
+        <TextField label="Pin" name="pin" filter="numeric" defaultValue="123" onChange={onChange} />
+      </form>
+    );
+    const pin = page.getByRole("textbox", { name: "Pin", exact: true });
+    await userEvent.fill(pin, "456");
+    await expect.element(pin).toHaveValue("456");
+    const edits = onChange.mock.calls.length;
+
+    formNamed("Pin form").reset();
+
+    await expect.element(pin).toHaveValue("123");
+    expect(new FormData(formNamed("Pin form")).get("pin")).toBe("123");
+    expect(onChange, "native reset does not call onChange").toHaveBeenCalledTimes(edits);
+  });
+
+  it("keeps controlled digits and callbacks owned by the parent across native reset", async () => {
+    const onChange = vi.fn();
+    function Fixture() {
+      const [value, setValue] = useState("123");
+      return (
+        <form aria-label="Pin form">
+          <TextField
+            label="Pin"
+            name="pin"
+            filter="numeric"
+            value={value}
+            onChange={(next) => {
+              setValue(next);
+              onChange(next);
+            }}
+          />
+        </form>
+      );
+    }
+    renderThemed(<Fixture />);
+    const pin = page.getByRole("textbox", { name: "Pin", exact: true });
+    await userEvent.fill(pin, "456");
+    const edits = onChange.mock.calls.length;
+
+    formNamed("Pin form").reset();
+
+    await expect.element(pin).toHaveValue("456");
+    expect(onChange).toHaveBeenCalledTimes(edits);
+  });
+
+  it("forwards object and callback refs to the inner input", () => {
+    const objectRef = createRef<HTMLInputElement>();
+    const callbackRef = vi.fn();
+    const { unmount } = renderThemed(
+      <>
+        <TextField label="Object" defaultValue="123" ref={objectRef} />
+        <TextField label="Callback" defaultValue="123" ref={callbackRef} />
+      </>
+    );
+    expect(objectRef.current).toBeInstanceOf(HTMLInputElement);
+    expect(callbackRef).toHaveBeenCalledWith(expect.any(HTMLInputElement));
+    unmount();
+    expect(objectRef.current).toBeNull();
+    expect(callbackRef).toHaveBeenCalledWith(null);
   });
 
   it("renders the pending/success indicator row without a label, and success wins", () => {

@@ -214,7 +214,10 @@ function ComboboxContent({
           className={mergeClassName(
             className,
             overlayTimedPopupClass,
-            "group/combobox-content relative max-h-(--available-height) w-(--anchor-width) max-w-(--available-width) min-w-[calc(var(--anchor-width)+--spacing(7))] overflow-hidden data-[external-anchor=true]:min-w-(--anchor-width) *:data-[slot=input-group]:m-1 *:data-[slot=input-group]:mb-0 *:data-[slot=input-group]:h-(--control-h-sm) *:data-[slot=input-group]:border-input/30 *:data-[slot=input-group]:bg-input/30 *:data-[slot=input-group]:shadow-none"
+            // Popup padding insets a search group; a child margin plus the group's w-full
+            // overflowed the box. Scope it to popups that directly own one, so a plain list
+            // keeps the menu family's single p-1 inset instead of double-insetting.
+            "group/combobox-content relative max-h-(--available-height) w-(--anchor-width) max-w-(--available-width) min-w-[calc(var(--anchor-width)+--spacing(7))] overflow-hidden has-[>[data-slot=input-group]]:px-1 has-[>[data-slot=input-group]]:pt-1.5 data-[external-anchor=true]:min-w-(--anchor-width) *:data-[slot=input-group]:h-(--control-h-sm) *:data-[slot=input-group]:border-input/30 *:data-[slot=input-group]:bg-input/30 *:data-[slot=input-group]:shadow-none"
           )}
           {...props}
         />

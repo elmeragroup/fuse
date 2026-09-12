@@ -20,7 +20,7 @@ import type {
   PhoneNumberFormat,
   ProcessedPhoneInput,
 } from "../phone-engine";
-import { receiveValue, reconcile, snapshot, visibleSnapshot } from "../phone-field-state";
+import { clearedForReset, receiveValue, reconcile, snapshot, visibleSnapshot } from "../phone-field-state";
 import type { PhoneState } from "../phone-field-state";
 
 export type UsePhoneNumberFieldStateOptions = {
@@ -46,6 +46,8 @@ export type UsePhoneNumberFieldStateReturn = {
   selectedCountry: PhoneNumberCountry;
   countries: PhoneNumberCountry[];
   getCountryName: (countryCode: CountryCode) => string;
+  /** Native form-reset handler restoring the initial state, or null when the parent owns `value`. */
+  onReset: (() => void) | null;
 };
 
 export function usePhoneNumberFieldState({
@@ -132,5 +134,13 @@ export function usePhoneNumberFieldState({
     selectedCountry,
     countries,
     getCountryName,
+    // Reset only when this hook owns the value. A parent-owned `value` is the parent's
+    // to keep; a reset handler on this side would fight it.
+    onReset:
+      value === undefined
+        ? () => {
+            setState(clearedForReset);
+          }
+        : null,
   };
 }

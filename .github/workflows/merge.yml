@@ -40,7 +40,7 @@ jobs:
         run: pnpm exec turbo run '//#lint' '//#test:repo-policy' type-check test test:types build package:check size-limit
 
       - name: Changeset presence
-        if: ${{ github.event_name == 'pull_request' && !startsWith(github.head_ref, 'changeset-release/') && !contains(github.event.pull_request.labels.*.name, 'no-changeset') }}
+        if: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'no-changeset') }}
         run: pnpm exec changeset status --since=origin/${{ github.base_ref }}
 
   browser:
