@@ -294,6 +294,7 @@ describe("useFormReset", () => {
 
     function App() {
       const [controlled, setControlled] = useState(false);
+      // oxlint-disable-next-line react/globals -- test probe swaps the captured callback during a transition
       changeOwnership = () => {
         startTransition(() => {
           setControlled(true);

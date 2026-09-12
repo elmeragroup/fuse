@@ -152,6 +152,7 @@ export function OrdersLink({
 export function ContextProbe({ onValue }: { onValue: (value: SidebarContextValue) => void }) {
   const context = useSidebar();
   const latest = useRef(onValue);
+  // oxlint-disable-next-line react/refs -- latest-ref write; the fixture reads it only inside the effect
   latest.current = onValue;
   useEffect(() => {
     latest.current(context);

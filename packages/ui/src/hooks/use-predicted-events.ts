@@ -81,6 +81,7 @@ export function usePredictedEvents({
   const elementRef = useRef<HTMLElement | null>(null);
   const firedRef = useRef(false);
   const onIntentRef = useRef(onIntent);
+  // oxlint-disable-next-line react/refs -- latest-ref write; the ref is read only from the document pointermove listener, after commit
   onIntentRef.current = onIntent;
 
   const setRef = useCallback((element: HTMLElement | null) => {

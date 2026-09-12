@@ -162,7 +162,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "true",
-          "description": "Determines if the select enters a modal state when open. - `true`: user interaction is limited to the select: document page scroll is locked and pointer interactions on outside elements are disabled. - `false`: user interaction with the rest of the document is allowed.",
+          "description": "Determines if the select enters a modal state when open. - `true`: user interaction is limited to the select: document page scroll is locked and pointer interactions on outside elements are disabled. - `false`: user interaction with the rest of the document is allowed. On touch devices, a `true` modal blocks outside taps but leaves the page scrollable unless the popup spans nearly the full viewport width, matching native iOS behavior.",
           "required": false
         },
         {
@@ -360,7 +360,7 @@
           "type": "((value: any) => ReactNode) | ReactNode",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Accepts a function that returns a `ReactNode` to format the selected value.",
+          "description": "Accepts a function that returns a `ReactNode` to format the selected value. Treat the value as read-only: in `multiple` mode it may be a shared frozen array when nothing is selected.",
           "required": false
         },
         {
@@ -713,7 +713,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "string | ((state: SeparatorState) => string | undefined) | undefined",
+          "type": "string | ((state: SelectSeparatorState) => string | undefined) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
@@ -735,7 +735,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "ComponentRenderFn<HTMLProps, SeparatorState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "type": "ComponentRenderFn<HTMLProps, SelectSeparatorState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
           "shortType": "Union",
           "defaultValue": null,
           "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
@@ -746,7 +746,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "CSSProperties | ((state: SeparatorState) => CSSProperties | undefined) | undefined",
+          "type": "CSSProperties | ((state: SelectSeparatorState) => CSSProperties | undefined) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "Style applied to the element, or a function that returns a style object based on the component's state.",

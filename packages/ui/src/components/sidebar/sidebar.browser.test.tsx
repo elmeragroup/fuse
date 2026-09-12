@@ -136,6 +136,7 @@ describe("Sidebar callback stability", () => {
   it("does not re-render a MenuButton when the rail toggles", async () => {
     let renders = 0;
     function CountedHost(props: ComponentProps<"button">): ReactElement {
+      // oxlint-disable-next-line react/globals -- render counter read synchronously after render()
       renders += 1;
       return <button type="button" {...props} />;
     }

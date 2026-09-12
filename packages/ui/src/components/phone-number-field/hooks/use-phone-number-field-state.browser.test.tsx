@@ -192,6 +192,7 @@ describe("usePhoneNumberFieldState reset ownership", () => {
       let phone: ReturnType<typeof usePhoneNumberFieldState> | undefined;
 
       function Probe() {
+        // oxlint-disable-next-line react/globals -- test probe reads the capture synchronously after render()
         phone = usePhoneNumberFieldState({ locale: "en-US", value });
         return <input value={phone.displayValue} readOnly />;
       }
@@ -213,6 +214,7 @@ it.each([false, true])(
     function Host({ autoDetectCountry = true }: { autoDetectCountry?: boolean }) {
       const [value, setValue] = useState("");
       const [detect, setDetect] = useState(true);
+      // oxlint-disable-next-line react/globals -- test probe reads the capture synchronously after render()
       state = usePhoneNumberFieldState({
         value,
         onChange(next) {

@@ -69,6 +69,17 @@
           "required": false
         },
         {
+          "name": "keepMounted",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the image element stays mounted and loads in place instead of being preloaded. Supports `loading=\"lazy\"` and optimized image components such as `next/image`.",
+          "required": false
+        },
+        {
           "name": "onLoadingStatusChange",
           "origin": {
             "packageName": "@base-ui/react"
@@ -84,7 +95,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "ComponentRenderFn<HTMLProps, AvatarImageState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "type": "ComponentRenderFn<DetailedHTMLProps<ImgHTMLAttributes<HTMLImageElement>, HTMLImageElement>, AvatarImageState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
           "shortType": "Union",
           "defaultValue": null,
           "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
@@ -131,7 +142,7 @@
           },
           "type": "number | undefined",
           "shortType": null,
-          "defaultValue": null,
+          "defaultValue": "0",
           "description": "How long to wait before showing the fallback. Specified in milliseconds.",
           "required": false
         },

@@ -30,7 +30,7 @@
           "type": "PayloadChildRenderFunction<unknown> | ReactNode",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The content of the popover. This can be a regular React node or a render function that receives the `payload` of the active trigger.",
+          "description": "The content of the menu. This can be a regular React node or a render function that receives the `payload` of the active trigger.",
           "required": false
         },
         {
@@ -63,7 +63,7 @@
           "type": "string | null | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "ID of the trigger that the popover is associated with. This is useful in conjunction with the `defaultOpen` prop to create an initially open popover.",
+          "description": "ID of the trigger that the menu is associated with. This is useful in conjunction with the `defaultOpen` prop to create an initially open menu.",
           "required": false
         },
         {
@@ -118,7 +118,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "true",
-          "description": "Determines if the menu enters a modal state when open. - `true`: user interaction is limited to the menu: document page scroll is locked and pointer interactions on outside elements are disabled. - `false`: user interaction with the rest of the document is allowed.",
+          "description": "Determines if the menu enters a modal state when open. - `true`: user interaction is limited to the menu: document page scroll is locked and pointer interactions on outside elements are disabled. - `false`: user interaction with the rest of the document is allowed. On touch devices, a `true` modal blocks outside taps but leaves the page scrollable unless the popup spans nearly the full viewport width, matching native iOS behavior. Nested menus ignore this prop, and menus opened by hover are never modal.",
           "required": false
         },
         {
@@ -140,7 +140,7 @@
           "type": "((open: boolean) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Event handler called after any animations complete when the menu is closed.",
+          "description": "Event handler called after any animations complete when the menu is opened or closed.",
           "required": false
         },
         {
@@ -173,7 +173,7 @@
           "type": "string | null | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "ID of the trigger that the popover is associated with. This is useful in conjunction with the `open` prop to create a controlled popover. There's no need to specify this prop when the popover is uncontrolled (that is, when the `open` prop is not set).",
+          "description": "ID of the trigger that the menu is associated with. This is useful in conjunction with the `open` prop to create a controlled menu. There's no need to specify this prop when the menu is uncontrolled (that is, when the `open` prop is not set).",
           "required": false
         }
       ]
@@ -744,7 +744,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "ComponentRenderFn<HTMLProps, MenuLinkItemState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "type": "ComponentRenderFn<DetailedHTMLProps<AnchorHTMLAttributes<HTMLAnchorElement>, HTMLAnchorElement>, MenuLinkItemState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
           "shortType": "Union",
           "defaultValue": null,
           "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
@@ -1296,7 +1296,7 @@
           "type": "((open: boolean) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Event handler called after any animations complete when the menu is closed.",
+          "description": "Event handler called after any animations complete when the menu is opened or closed.",
           "required": false
         },
         {
@@ -1415,7 +1415,7 @@
           },
           "type": "boolean | undefined",
           "shortType": null,
-          "defaultValue": null,
+          "defaultValue": "true",
           "description": "Whether the menu should also open when the trigger is hovered.",
           "required": false
         },

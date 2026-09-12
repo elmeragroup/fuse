@@ -141,6 +141,7 @@ describe("docs ⌘K palette (docs-site.md §3.2)", () => {
     const page = await openDocsPage();
     await page.keyboard.press("Meta+k");
     await waitForPalette(page, "visible");
+    await waitForSearchFieldFocus(page);
 
     const initial = await optionTitles(page);
     expect(initial.some((title) => title.includes("Theme matrix"))).toBe(true);
@@ -159,6 +160,7 @@ describe("docs ⌘K palette (docs-site.md §3.2)", () => {
     const page = await openDocsPage();
     await page.keyboard.press("Meta+k");
     await waitForPalette(page, "visible");
+    await waitForSearchFieldFocus(page);
     await page.keyboard.type("theme");
 
     const first = await readActiveOption(page);
@@ -276,6 +278,7 @@ describe("docs ⌘K palette (docs-site.md §3.2)", () => {
     const page = await openDocsPage();
     await page.keyboard.press("Meta+k");
     await waitForPalette(page, "visible");
+    await waitForSearchFieldFocus(page);
     await page.keyboard.type("zzzz-no-such-page");
     await waitForOptionCount(page, 0);
     expect(await page.locator('[role="status"]').innerText()).toContain("No pages match");

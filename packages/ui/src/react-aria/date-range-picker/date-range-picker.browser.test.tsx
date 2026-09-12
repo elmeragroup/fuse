@@ -302,7 +302,9 @@ describe("DateRangePicker", () => {
     await userEvent.keyboard("{Escape}");
     await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
     expect(onChange).not.toHaveBeenCalled();
-    expect(document.activeElement).toBe(trigger());
+    // Focus restoration lands after the dismissal commits; under full-gate load the
+    // synchronous read can observe the frame before it.
+    await expect.poll(() => document.activeElement).toBe(trigger());
     expect(trigger()).toHaveAttribute("aria-expanded", "false");
     expect(segment("day, Start Date").textContent).toBe("14");
     expect(segment("day, End Date").textContent).toBe("17");

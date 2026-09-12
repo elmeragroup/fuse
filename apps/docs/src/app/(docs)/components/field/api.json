@@ -125,10 +125,10 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((value: unknown, formValues: Record<string, any>) => string | string[] | Promise<string | string[] | null> | null) | undefined",
+          "type": "((value: unknown, formValues: Record<string, any>) => void | string | string[] | Promise<void | string | string[] | null> | null) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "A function for custom validation. Return a string or an array of strings with the error message(s) if the value is invalid, or `null` if the value is valid. Asynchronous functions are supported, but they do not prevent form submission when using `validationMode=\"onSubmit\"`.",
+          "description": "A function for custom validation. Return a string or an array of strings with the error message(s) if the value is invalid. Returning nothing, `null`, an empty string, or an empty array means the value is valid. Asynchronous functions are supported, but they do not prevent form submission when using `validationMode=\"onSubmit\"`.",
           "required": false
         },
         {
