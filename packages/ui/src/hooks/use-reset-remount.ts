@@ -22,9 +22,11 @@ export type ResetRemount = {
  *
  * The remount replaces the focused node, so the hook remembers whether the control had focus
  * when reset fired and hands it back in a layout effect on the remount commit — before paint,
- * so the reset never drops focus. A reset remount is also a fresh mount from React's point of
- * view: re-applying `autoFocus` there would steal focus back, so callers gate it on
- * `isInitialMount`.
+ * so the reset never drops focus. Focus is read from the control's own root, not the global
+ * document: a document reports only the host for a control inside a shadow root, where the
+ * shadow root itself holds the focused element. A reset remount is also a fresh mount from
+ * React's point of view: re-applying `autoFocus` there would steal focus back, so callers
+ * gate it on `isInitialMount`.
  */
 export function useResetRemount(
   element: RefObject<HTMLInputElement | HTMLTextAreaElement | null>,
@@ -36,7 +38,11 @@ export function useResetRemount(
     element,
     enabled
       ? () => {
-          restoreFocusRef.current = document.activeElement === element.current;
+          const node = element.current;
+          const root = node?.getRootNode();
+          const activeElement =
+            root instanceof Document || root instanceof ShadowRoot ? root.activeElement : null;
+          restoreFocusRef.current = activeElement === node;
           setResetEpoch((epoch) => epoch + 1);
         }
       : null

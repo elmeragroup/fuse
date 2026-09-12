@@ -8,7 +8,8 @@ import type { RefObject } from "react";
  * Observable only through those composites, never a public export. `onReset` is a
  * required `(() => void) | null`: each caller states the ownership decision explicitly,
  * so omitting the argument is a type error rather than a silent opt-out. The latest
- * callback is held in a ref so identity changes do not resubscribe.
+ * callback is held in a ref and published in a layout effect, so a suspended or discarded
+ * render cannot clear a committed subscription while identity changes do not resubscribe.
  *
  * The native `reset` event bubbles to the control's root with the form as its target.
  * `reset` is not composed, so a document listener never sees a control inside a shadow
@@ -19,14 +20,18 @@ import type { RefObject } from "react";
  * then resolves the association at event time: the callback runs when the resetting form
  * is whatever `element.current.form` is at that moment, so a control that moves between
  * forms or changes its `form` attribute is followed without a resubscribe, and a reset on
- * any other form is ignored.
+ * any other form is ignored. The listener is registered in capture phase, so a form that
+ * stops propagation during dispatch cannot hide its own reset. The subscription lifecycle
+ * is part of the runtime listener policy (performance.md §6).
  */
 export function useFormReset(
   element: RefObject<HTMLInputElement | HTMLTextAreaElement | null>,
   onReset: (() => void) | null
 ): void {
   const onResetRef = useRef(onReset);
-  onResetRef.current = onReset;
+  useLayoutEffect(() => {
+    onResetRef.current = onReset;
+  });
   const ownsReset = onReset !== null;
 
   useLayoutEffect(() => {
@@ -44,10 +49,10 @@ export function useFormReset(
         if (subscribed && !event.defaultPrevented) onResetRef.current?.();
       });
     }
-    root.addEventListener("reset", handleReset);
+    root.addEventListener("reset", handleReset, true);
     return () => {
       subscribed = false;
-      root.removeEventListener("reset", handleReset);
+      root.removeEventListener("reset", handleReset, true);
     };
   }, [element, ownsReset]);
 }

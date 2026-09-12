@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { Suspense, startTransition, use, useRef, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 
 import { createPortal } from "react-dom";
@@ -197,6 +197,27 @@ describe("useFormReset", () => {
     });
   });
 
+  it("still invokes the callback when a form handler stops propagation", async () => {
+    const onReset = vi.fn();
+    const { form, input } = mountProbe({
+      onReset,
+      defaultValue: "start",
+      onFormReset: (event) => {
+        event.stopPropagation();
+      },
+    });
+    input.value = "edited";
+    vi.useFakeTimers();
+    try {
+      form.reset();
+      await vi.runOnlyPendingTimersAsync();
+    } finally {
+      vi.useRealTimers();
+    }
+    expect(input.value, "the native reset still applied").toBe("start");
+    expect(onReset).toHaveBeenCalledTimes(1);
+  });
+
   it("does not invoke the callback when unmounted before the deferred task", async () => {
     const onReset = vi.fn();
     const { form, unmount } = mountProbe({ onReset, defaultValue: "start" });
@@ -247,5 +268,61 @@ describe("useFormReset", () => {
     await vi.waitFor(() => {
       expect(onReset).toHaveBeenCalledTimes(2);
     });
+  });
+
+  it("keeps the committed callback when a suspended update changes ownership", async () => {
+    const onReset = vi.fn();
+    const attempted = vi.fn();
+    const never = new Promise<void>(() => undefined);
+    let changeOwnership: () => void = () => undefined;
+
+    function Suspended() {
+      attempted();
+      use(never);
+      return null;
+    }
+
+    function Field({ controlled }: { controlled: boolean }) {
+      const element = useRef<HTMLInputElement>(null);
+      useFormReset(element, controlled ? null : onReset);
+      return (
+        <form aria-label="Probe">
+          <input aria-label="Field" ref={element} defaultValue="start" />
+        </form>
+      );
+    }
+
+    function App() {
+      const [controlled, setControlled] = useState(false);
+      changeOwnership = () => {
+        startTransition(() => {
+          setControlled(true);
+        });
+      };
+      return (
+        <Suspense fallback={<span>Waiting</span>}>
+          <Field controlled={controlled} />
+          {controlled ? <Suspended /> : null}
+        </Suspense>
+      );
+    }
+
+    render(<App />);
+    const committedForm = formNamed("Probe");
+    changeOwnership();
+    await vi.waitFor(() => {
+      expect(attempted).toHaveBeenCalled();
+    });
+    expect(formNamed("Probe"), "the committed field stays visible").toBe(committedForm);
+    expect(committedForm.isConnected).toBe(true);
+
+    vi.useFakeTimers();
+    try {
+      committedForm.reset();
+      await vi.runOnlyPendingTimersAsync();
+    } finally {
+      vi.useRealTimers();
+    }
+    expect(onReset).toHaveBeenCalledTimes(1);
   });
 });
