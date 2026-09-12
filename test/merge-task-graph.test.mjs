@@ -51,6 +51,23 @@ it("the merge checks schedule all required gates without browser work", () => {
   expect(ids.filter((id) => /^@elmeragroup\/(api-extractor|oxlint-plugin)/.test(id))).toEqual([]);
 }, 30_000);
 
+it("runs docs build before type-check, not against the same .next", () => {
+  const tasks = scheduledTasks("checks");
+  const task = asRecord(
+    tasks.find((entry) => entry.taskId === "docs#type-check"),
+    "docs#type-check"
+  );
+  const dependencies = task.dependencies;
+  if (!Array.isArray(dependencies)) {
+    throw new Error("docs#type-check dependencies is not an array");
+  }
+  // `next build` deletes everything in .next except cache/dev/lock/trace before it
+  // compiles, while `next typegen` creates .next/types and then writes into it. With no
+  // edge between the two tasks, the build's clean can land in that window and typegen
+  // dies with ENOENT on routes.d.ts (merge run 34702372072). One edge removes the race.
+  expect(dependencies).toContain("docs#build");
+});
+
 it("the browser job schedules the browser and packed-consumer gates", () => {
   const ids = scheduledTasks("browser").map((task) => asString(task.taskId, "task id"));
   for (const required of [
