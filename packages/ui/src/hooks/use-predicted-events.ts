@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 import type { RefCallback } from "react";
 
 type IntentRegistration = {
@@ -81,8 +81,9 @@ export function usePredictedEvents({
   const elementRef = useRef<HTMLElement | null>(null);
   const firedRef = useRef(false);
   const onIntentRef = useRef(onIntent);
-  // oxlint-disable-next-line react/refs -- latest-ref write; the ref is read only from the document pointermove listener, after commit
-  onIntentRef.current = onIntent;
+  useLayoutEffect(() => {
+    onIntentRef.current = onIntent;
+  });
 
   const setRef = useCallback((element: HTMLElement | null) => {
     elementRef.current = element;

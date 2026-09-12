@@ -13,7 +13,7 @@ import "../../../dist/styles.css";
 // the chrome-parity assertions would pass on nothing.
 import "../../../dist/themes.css";
 import { assertStateFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
-import { describedTextsFor } from "../../../test/rac-calendar-testing";
+import { describedTextsFor, segmentLocator, segmentNamed } from "../../../test/rac-calendar-testing";
 import {
   CONTROL_MD,
   cssVarColor,
@@ -39,15 +39,6 @@ function groupNamed(name: string): HTMLElement {
   const element = page.getByRole("group", { name, exact: true }).element();
   if (!(element instanceof HTMLElement)) {
     throw new Error(`expected group ${name}`);
-  }
-  return element;
-}
-
-function spinbuttonNamed(name: string): HTMLElement {
-  // Substring match on purpose: RAC appends the field label to every segment's name.
-  const element = page.getByRole("spinbutton", { name, exact: false }).element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error(`expected spinbutton ${name}`);
   }
   return element;
 }
@@ -111,18 +102,18 @@ describe("DateField", () => {
   it("names the segment group from the label and exposes day/month/year spinbuttons", async () => {
     renderField(<DateField label="Invoice date" description="Billing date." defaultValue={july14} />);
     expect(groupNamed("Invoice date")).toBeTruthy();
-    await expect.element(page.getByRole("spinbutton", { name: "month", exact: false })).toBeVisible();
-    await expect.element(page.getByRole("spinbutton", { name: "day", exact: false })).toBeVisible();
-    await expect.element(page.getByRole("spinbutton", { name: "year", exact: false })).toBeVisible();
+    await expect.element(segmentLocator("month")).toBeVisible();
+    await expect.element(segmentLocator("day")).toBeVisible();
+    await expect.element(segmentLocator("year")).toBeVisible();
     expect(spinbuttonsIn("Invoice date")).toHaveLength(3);
     expect(describedTextsForField("Invoice date")).toContain("Billing date.");
   });
 
   it("traverses segments with arrows, increments, and backspaces to a placeholder", async () => {
     renderField(<DateField label="Invoice date" defaultValue={july14} />);
-    const month = spinbuttonNamed("month");
-    const day = spinbuttonNamed("day");
-    const year = spinbuttonNamed("year");
+    const month = segmentNamed("month");
+    const day = segmentNamed("day");
+    const year = segmentNamed("year");
     month.focus();
     expect(document.activeElement).toBe(month);
     await userEvent.keyboard("{ArrowRight}");
@@ -147,8 +138,8 @@ describe("DateField", () => {
         <DateField label="Invoice date" />
       </I18nProvider>
     );
-    const day = spinbuttonNamed("day");
-    const month = spinbuttonNamed("month");
+    const day = segmentNamed("day");
+    const month = segmentNamed("month");
     expect(day.hasAttribute("data-placeholder")).toBe(true);
     expect(day.getAttribute("aria-valuenow")).not.toBe("14");
     day.focus();
@@ -159,16 +150,16 @@ describe("DateField", () => {
 
   it("renders leading zeros on day and month by default", async () => {
     renderField(<DateField label="Invoice date" defaultValue={new CalendarDate(2026, 7, 4)} />);
-    await expect.element(page.getByRole("spinbutton", { name: "month", exact: false })).toBeVisible();
-    expect(spinbuttonNamed("month").textContent).toBe("07");
-    expect(spinbuttonNamed("day").textContent).toBe("04");
+    await expect.element(segmentLocator("month")).toBeVisible();
+    expect(segmentNamed("month").textContent).toBe("07");
+    expect(segmentNamed("day").textContent).toBe("04");
   });
 
   it("fires onChange with a DateValue, not an event", async () => {
     const onChange = vi.fn();
     renderField(<DateField label="Invoice date" defaultValue={july14} onChange={onChange} />);
-    await expect.element(page.getByRole("spinbutton", { name: "month", exact: false })).toBeVisible();
-    spinbuttonNamed("month").focus();
+    await expect.element(segmentLocator("month")).toBeVisible();
+    segmentNamed("month").focus();
     await userEvent.keyboard("{ArrowUp}");
     expect(onChange).toHaveBeenCalled();
     expect(onChange.mock.calls.at(-1)?.[0]).toEqual(
@@ -309,10 +300,10 @@ describe("DateField", () => {
         <DateField label="Invoice date" defaultValue={july14} />
       </>
     );
-    await expect.element(page.getByRole("spinbutton", { name: "month", exact: false })).toBeVisible();
+    await expect.element(segmentLocator("month")).toBeVisible();
     await assertStateFocusRingAtBothDensities(
       buttonNamed("Before"),
-      spinbuttonNamed("month"),
+      segmentNamed("month"),
       groupNamed("Invoice date")
     );
   });
@@ -354,7 +345,7 @@ describe("DateField hour granularity", () => {
         defaultValue={new CalendarDateTime(2026, 7, 14, 15)}
       />
     );
-    await expect.element(page.getByRole("spinbutton", { name: "hour", exact: false })).toBeVisible();
+    await expect.element(segmentLocator("hour")).toBeVisible();
     expect(spinbuttonsIn("Appointment").length).toBeGreaterThan(3);
   });
 });

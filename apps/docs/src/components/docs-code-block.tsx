@@ -1,6 +1,7 @@
 import type { ComponentProps, ReactElement } from "react";
 
-import { highlight } from "sugar-high";
+import { parse, render } from "sugar-high/core";
+import { tokenize } from "sugar-high/lang/javascript";
 import { tv } from "tailwind-variants";
 
 const docsCodeBlock = tv({
@@ -19,6 +20,20 @@ const docsCodeBlock = tv({
     variant: "standalone",
   },
 });
+
+/**
+ * The JavaScript/JSX highlighter, composed from sugar-high's granular entries. The
+ * package root statically pulls every language preset; the docs render no `lang` axis,
+ * so the JavaScript tokenizer is the whole requirement.
+ *
+ * The preset is called without parse-level overrides: its own defaults carry JSX, regex
+ * and template scanning, and its packaged types do not accept `parse`'s options object.
+ * Mirrors packages/ui/src/components/code/code.tsx — delete both copies when sugar-high
+ * fixes its tokenize types.
+ */
+function highlight(source: string): string {
+  return render(parse(source, { tokenize: (code) => tokenize(code, undefined) }));
+}
 
 export type DocsCodeBlockProps = Omit<ComponentProps<"pre">, "children"> & {
   /** Raw source. Highlighted here, by the one highlighter the docs use (docs-site.md §8). */

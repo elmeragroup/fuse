@@ -21,8 +21,8 @@ exclusively from the `code` string — there is no `children` slot, and the inne
 `<code>` is not independently addressable.
 
 Highlighter markup is injected with `dangerouslySetInnerHTML`. That HTML is
-`sugar-high`'s `highlight()` output over the caller-supplied string;
-`highlight()` escapes token text. The trust boundary is the calling component,
+`sugar-high`'s JavaScript tokenizer output over the caller-supplied string; the
+highlighter escapes token text. The trust boundary is the calling component,
 same as ordinary children. Syntax colors come from the theme's `--sh-*` tokens;
 the component itself paints no colors.
 

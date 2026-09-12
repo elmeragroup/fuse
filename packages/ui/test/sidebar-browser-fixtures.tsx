@@ -1,5 +1,5 @@
 import type { ComponentProps, ReactNode } from "react";
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 
 import { afterEach, beforeEach, vi } from "vitest";
 import { cdp, page } from "vitest/browser";
@@ -152,8 +152,9 @@ export function OrdersLink({
 export function ContextProbe({ onValue }: { onValue: (value: SidebarContextValue) => void }) {
   const context = useSidebar();
   const latest = useRef(onValue);
-  // oxlint-disable-next-line react/refs -- latest-ref write; the fixture reads it only inside the effect
-  latest.current = onValue;
+  useLayoutEffect(() => {
+    latest.current = onValue;
+  });
   useEffect(() => {
     latest.current(context);
   }, [context]);

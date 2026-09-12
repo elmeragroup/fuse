@@ -76,7 +76,9 @@ function reachableFrom(entry: string): Set<string> {
 }
 
 function importsHighlighter(file: string): boolean {
-  return [...readFileSync(file, "utf8").matchAll(BARE_IMPORT)].some((match) => match[1] === HIGHLIGHTER);
+  return [...readFileSync(file, "utf8").matchAll(BARE_IMPORT)].some(
+    (match) => match[1] === HIGHLIGHTER || (match[1]?.startsWith(`${HIGHLIGHTER}/`) ?? false)
+  );
 }
 
 describe("the docs client graph never reaches the highlighter (docs-site.md §8, ADR 0009)", () => {

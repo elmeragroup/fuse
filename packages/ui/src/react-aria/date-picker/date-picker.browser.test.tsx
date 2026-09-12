@@ -16,6 +16,8 @@ import {
   dayNamed,
   describedTextsFor,
   navButtonNamed,
+  segmentLocator,
+  segmentNamed,
 } from "../../../test/rac-calendar-testing";
 import {
   CONTROL_MD,
@@ -59,21 +61,12 @@ function groupNamed(name: string): HTMLElement {
 }
 
 function dateInputRow(name: string): HTMLElement {
-  const segment = spinbuttonNamed("month");
+  const segment = segmentNamed("month");
   const row = segment.parentElement;
   if (!(row instanceof HTMLElement) || !groupNamed(name).contains(row)) {
     throw new Error(`expected DateInput around ${name}`);
   }
   return row;
-}
-
-function spinbuttonNamed(name: string): HTMLElement {
-  // Substring match on purpose: RAC appends the field label to every segment's name.
-  const element = page.getByRole("spinbutton", { name, exact: false }).element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error(`expected spinbutton ${name}`);
-  }
-  return element;
 }
 
 function pickerDialog(): HTMLElement {
@@ -151,9 +144,9 @@ describe("DatePicker", () => {
     const group = groupNamed("Invoice date");
 
     expect(group.getAttribute("data-slot")).toBe("field-group");
-    await expect.element(page.getByRole("spinbutton", { name: "month", exact: false })).toBeVisible();
-    await expect.element(page.getByRole("spinbutton", { name: "day", exact: false })).toBeVisible();
-    await expect.element(page.getByRole("spinbutton", { name: "year", exact: false })).toBeVisible();
+    await expect.element(segmentLocator("month")).toBeVisible();
+    await expect.element(segmentLocator("day")).toBeVisible();
+    await expect.element(segmentLocator("year")).toBeVisible();
     expect(describedTextsFor(group)).toContain("Billing date.");
 
     const trigger_ = trigger();
@@ -235,7 +228,7 @@ describe("DatePicker", () => {
     // picker's own, and reopening has to follow it rather than the initial default.
     await userEvent.keyboard("{PageDown}{PageDown}{Enter}");
     await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
-    expect(spinbuttonNamed("month").textContent).toBe("09");
+    expect(segmentNamed("month").textContent).toBe("09");
 
     await openPicker();
     expect(calendarGrid().getAttribute("aria-label")).toMatch(/September\s+2026/i);
@@ -277,23 +270,23 @@ describe("DatePicker", () => {
     await userEvent.click(presetTargetNamed("Early November"));
     await expect.element(page.getByRole("dialog")).toBeVisible();
     expect(calendarGrid().getAttribute("aria-label")).toMatch(/November\s+2026/i);
-    expect(spinbuttonNamed("month").textContent).toBe("11");
+    expect(segmentNamed("month").textContent).toBe("11");
   });
 
   it("renders leading zeros on day and month by default", async () => {
     renderPicker(<DatePicker label="Invoice date" defaultValue={july4} />);
-    await expect.element(page.getByRole("spinbutton", { name: "month", exact: false })).toBeVisible();
+    await expect.element(segmentLocator("month")).toBeVisible();
 
-    expect(spinbuttonNamed("month").textContent).toBe("07");
-    expect(spinbuttonNamed("day").textContent).toBe("04");
+    expect(segmentNamed("month").textContent).toBe("07");
+    expect(segmentNamed("day").textContent).toBe("04");
   });
 
   it("drops the leading zeros when a caller turns them off", async () => {
     renderPicker(<DatePicker label="Invoice date" defaultValue={july4} shouldForceLeadingZeros={false} />);
-    await expect.element(page.getByRole("spinbutton", { name: "month", exact: false })).toBeVisible();
+    await expect.element(segmentLocator("month")).toBeVisible();
 
-    expect(spinbuttonNamed("month").textContent).toBe("7");
-    expect(spinbuttonNamed("day").textContent).toBe("4");
+    expect(segmentNamed("month").textContent).toBe("7");
+    expect(segmentNamed("day").textContent).toBe("4");
   });
 
   it("renders a function errorMessage from the ValidationResult and associates it", async () => {
@@ -337,7 +330,7 @@ describe("DatePicker", () => {
     renderPicker(
       <DatePicker label="Invoice date" defaultValue={july14} errorMessage={<span>Required</span>} />
     );
-    await expect.element(page.getByRole("spinbutton", { name: "month", exact: false })).toBeVisible();
+    await expect.element(segmentLocator("month")).toBeVisible();
 
     expect(document.body.textContent).not.toContain("Required");
   });
@@ -538,7 +531,7 @@ describe("DatePicker overlay containment", () => {
     // Selecting a day dismisses the picker's own popover — and nothing else.
     await userEvent.click(dayNamed(/Wednesday, August 12, 2026/i));
     await expect.element(page.getByRole("dialog", { name: /calendar/i })).not.toBeInTheDocument();
-    expect(spinbuttonNamed("day").textContent).toBe("12");
+    expect(segmentNamed("day").textContent).toBe("12");
     expect(onOpenChange).not.toHaveBeenCalled();
     await expect.element(page.getByRole("dialog", { name: "Order" })).toBeVisible();
   });
