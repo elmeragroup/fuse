@@ -22,8 +22,12 @@
     "build": {
       "dependsOn": ["generate"]
     },
+    // `next build` deletes everything in .next except cache/dev/lock/trace before it
+    // compiles, while `next typegen` creates .next/types and then writes into it. Running
+    // both at once lets the build's clean land between those two steps, failing typegen
+    // with ENOENT on routes.d.ts (merge run 34702372072). Order type-check after build.
     "type-check": {
-      "dependsOn": ["generate"]
+      "dependsOn": ["generate", "build"]
     },
     "test": {
       "dependsOn": ["build"],
