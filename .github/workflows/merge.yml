@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
@@ -37,11 +38,15 @@ jobs:
       # turbo.json ci:checks minus browser checks — a docs/unit failure should not
       # wait on the Chromium suite.
       - name: turbo ci:checks (no browser)
-        run: pnpm exec turbo run '//#lint' '//#test:repo-policy' type-check test test:types build package:check size-limit
+        run: pnpm exec turbo run '//#lint' '//#test:repo-policy' '//#type-check:scripts' type-check test test:types build package:check size-limit
 
       - name: Changeset presence
-        if: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'no-changeset') }}
+        if: ${{ github.event_name == 'pull_request' && !startsWith(github.head_ref, 'changeset-release/') && !contains(github.event.pull_request.labels.*.name, 'no-changeset') }}
         run: pnpm exec changeset status --since=origin/${{ github.base_ref }}
+
+      - name: Validate stable release PR
+        if: github.head_ref == 'changeset-release/main' || github.ref == 'refs/heads/changeset-release/main'
+        run: pnpm release:check-pr
 
   browser:
     runs-on: ubuntu-latest
@@ -68,3 +73,28 @@ jobs:
 
       - name: turbo browser checks
         run: pnpm exec turbo run test:browser test:packed-consumer
+
+  # Every push to main publishes a canary for the merged commit; a merged Version Packages PR
+  # carries the stable bump and publishes the stable line (release.md §2, §3). Publishing stays
+  # off until activation sets RELEASE_ENABLED (release.md §8).
+  release:
+    needs: checks
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.RELEASE_ENABLED == 'true'
+    permissions:
+      contents: write
+      pull-requests: read
+    uses: ./.github/workflows/publish-release.yml
+    with:
+      source_commit: ${{ github.sha }}
+    secrets:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      RELEASE_GITHUB_TOKEN: ${{ secrets.RELEASE_GITHUB_TOKEN }}
+
+  version:
+    needs: checks
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    uses: ./.github/workflows/version-packages.yml

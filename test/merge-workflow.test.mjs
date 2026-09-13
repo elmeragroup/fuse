@@ -27,13 +27,28 @@ describe("merge workflow", () => {
     expect(asRecord(events.push, "push trigger")).toEqual({ branches: ["main"] });
   });
 
-  it("requires changesets for ordinary PRs, exempting only the exact no-changeset label", () => {
+  it("requires changesets for ordinary PRs, exempting only the bot release branch and the no-changeset label", () => {
     const step = requiredRunStep(requiredJobSteps(workflow, "checks"), "pnpm exec changeset status");
     expect(step.run).toBe("pnpm exec changeset status --since=origin/${{ github.base_ref }}");
     // This complete predicate is the policy contract. Substring checks also pass for
-    // disabled steps, inverted exemptions, and conditions on an unrelated step.
+    // disabled steps, inverted exemptions, and conditions on an unrelated step. The
+    // changesets/action bot cannot label its own PR, so its branch is exempt by name.
     expect(asString(step.if, "changeset condition").replace(/\s+/g, " ").trim()).toBe(
-      "${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'no-changeset') }}"
+      "${{ github.event_name == 'pull_request' && !startsWith(github.head_ref, 'changeset-release/') && !contains(github.event.pull_request.labels.*.name, 'no-changeset') }}"
     );
+  });
+
+  it("publishes from a push to main once activated, and defers the version PR to the bot workflow", () => {
+    const jobs = asRecord(workflow.jobs, "merge jobs");
+    const release = asRecord(jobs.release, "release job");
+    expect(release.needs).toBe("checks");
+    expect(release.if).toBe(
+      "github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.RELEASE_ENABLED == 'true'"
+    );
+    expect(release.uses).toBe("./.github/workflows/publish-release.yml");
+    const version = asRecord(jobs.version, "version job");
+    expect(version.needs).toBe("checks");
+    expect(version.if).toBe("github.event_name == 'push' && github.ref == 'refs/heads/main'");
+    expect(version.uses).toBe("./.github/workflows/version-packages.yml");
   });
 });

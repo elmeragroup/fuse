@@ -16,7 +16,9 @@
         "plopfile.mjs",
         "plop-templates/**",
         "packages/ui/scripts/**",
+        "scripts/**",
         "packages/ui/src/icons/roster.ts",
+        ".changeset/config.json",
         ".github/workflows/**",
         "package.json",
         ".oxlintrc.json",
@@ -24,6 +26,9 @@
         "apps/docs/package.json",
         "pnpm-workspace.yaml"
       ]
+    },
+    "//#type-check:scripts": {
+      "inputs": ["$TURBO_DEFAULT$", "scripts/**", "tooling/typescript/**", "pnpm-workspace.yaml"]
     },
     "build": {
       "dependsOn": ["^build"],
@@ -70,6 +75,7 @@
       "dependsOn": [
         "//#lint",
         "//#test:repo-policy",
+        "//#type-check:scripts",
         "type-check",
         "test",
         "test:browser",
