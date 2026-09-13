@@ -90,7 +90,15 @@ Directional chapter for `@elmeragroup/ui`: work deliberately deferred out of v1,
 ## 12 Effect 4 RC → stable
 
 - **What**: move `effect` off the pinned prerelease `4.0.0-rc.115` onto the first stable `4.x`, and delete the `minimumReleaseAgeExclude` entry that the pin requires from `pnpm-workspace.yaml`.
-- **Why deferred**: `@elmeragroup/internal` pins `effect` to the prerelease as a runtime dependency ([ADR 0010](../adr/0010-internal-package-owns-extraction-and-lint.md)); no stable 4.x exists yet. The repo-wide `minimumReleaseAge: 4320` (72 hours) supply-chain guard cannot admit a prerelease, so the pin buys itself a named exclusion. The list's only other entry is the exact `@elmeragroup/internal` canary the catalog pins ([tooling](tooling.md) §2); both are per exact version, which is what keeps the exceptions temporary rather than a policy hole.
+- **Why deferred**: `@elmeragroup/internal` pins `effect` to the prerelease as a runtime dependency ([ADR 0010](../adr/0010-internal-package-owns-extraction-and-lint.md)), and this repository's release scripts import it directly ([ADR 0011](../adr/0011-release-runs-on-the-internal-engine.md)); no stable 4.x exists yet. The repo-wide `minimumReleaseAge: 4320` (72 hours) supply-chain guard cannot admit a prerelease, so the pin buys itself a named exclusion. The list's other entry is the exact `@elmeragroup/internal` canary the catalog pins ([tooling](tooling.md) §2); both are per exact version, which is what keeps the exceptions temporary rather than a policy hole.
 - **Trigger**: Effect 4.0.0 stable on the registry, aged past the 72-hour guard on its own.
-- **Already prepared**: this repository no longer depends on `effect` directly. The version moves when `@elmeragroup/internal` releases against stable Effect and the docs drift check (`apps/docs/test/api-artifact.test.ts`) is the regression net for taking that release.
+- **Already prepared**: the version moves when `@elmeragroup/internal` releases against stable Effect and the docs drift check (`apps/docs/test/api-artifact.test.ts`) is the regression net for taking that release.
 - **Completion criteria**: an `@elmeragroup/internal` release on stable `4.x` installed here; `minimumReleaseAgeExclude` removed entirely (not merely emptied of this entry) unless a new exception is separately justified; `pnpm ci:checks` green on Node 24.
+
+## 13 Token-free publishing (OIDC + provenance)
+
+- **What**: replace the `NPM_TOKEN` publish secret with npm **Trusted Publishing** (OIDC) and turn on provenance from a public repository.
+- **Why deferred**: the release engine promotes the checked version with `npm dist-tag add`, which npm's OIDC trusted publishing cannot authenticate ([npm/cli#8547](https://github.com/npm/cli/issues/8547), open). Provenance also requires a public repository, and a trusted publisher can only be configured once the package exists.
+- **Trigger**: the engine gains an OIDC-compatible promotion path and the repository is public.
+- **Already prepared**: [release](release.md) §6 records the token as temporary; the pack adapter and the record protocol are auth-agnostic; the publish workflow's GitHub token already falls back to `github.token`.
+- **Completion criteria**: `publish-release.yml` requests `id-token: write` and sets provenance; the `NPM_TOKEN` secret is deleted; [release](release.md) §6–§7 updated.

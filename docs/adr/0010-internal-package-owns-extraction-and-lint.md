@@ -1,6 +1,6 @@
 # 0010 — `@elmeragroup/internal` owns API extraction and the lint rules
 
-Date: 2026-09-07. Status: accepted; amended 2026-09-13 — the pinned `effect` release follows the `@elmeragroup/internal` canary. Supersedes [ADR 0007](0007-docs-api-extraction-pipeline.md).
+Date: 2026-09-07. Status: accepted; amended 2026-09-13 — the pinned `effect` release follows the `@elmeragroup/internal` canary, and `effect` returns to the catalog for the release scripts ([0011](0011-release-runs-on-the-internal-engine.md)). Supersedes [ADR 0007](0007-docs-api-extraction-pipeline.md).
 
 ## Context
 
