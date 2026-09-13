@@ -89,7 +89,7 @@ Directional chapter for `@elmeragroup/ui`: work deliberately deferred out of v1,
 
 ## 12 Effect 4 RC → stable
 
-- **What**: move `effect` off the pinned prerelease `4.0.0-rc.111` onto the first stable `4.x`, and delete the `minimumReleaseAgeExclude` entry that the pin requires from `pnpm-workspace.yaml`.
+- **What**: move `effect` off the pinned prerelease `4.0.0-rc.115` onto the first stable `4.x`, and delete the `minimumReleaseAgeExclude` entry that the pin requires from `pnpm-workspace.yaml`.
 - **Why deferred**: `@elmeragroup/internal` pins `effect` to the prerelease as a runtime dependency ([ADR 0010](../adr/0010-internal-package-owns-extraction-and-lint.md)); no stable 4.x exists yet. The repo-wide `minimumReleaseAge: 4320` (72 hours) supply-chain guard cannot admit a prerelease, so the pin buys itself a named exclusion. The list's only other entry is the exact `@elmeragroup/internal` canary the catalog pins ([tooling](tooling.md) §2); both are per exact version, which is what keeps the exceptions temporary rather than a policy hole.
 - **Trigger**: Effect 4.0.0 stable on the registry, aged past the 72-hour guard on its own.
 - **Already prepared**: this repository no longer depends on `effect` directly. The version moves when `@elmeragroup/internal` releases against stable Effect and the docs drift check (`apps/docs/test/api-artifact.test.ts`) is the regression net for taking that release.

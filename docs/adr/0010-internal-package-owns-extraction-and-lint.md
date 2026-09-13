@@ -1,6 +1,6 @@
 # 0010 — `@elmeragroup/internal` owns API extraction and the lint rules
 
-Date: 2026-09-07. Status: accepted. Supersedes [ADR 0007](0007-docs-api-extraction-pipeline.md).
+Date: 2026-09-07. Status: accepted; amended 2026-09-13 — the pinned `effect` release follows the `@elmeragroup/internal` canary. Supersedes [ADR 0007](0007-docs-api-extraction-pipeline.md).
 
 ## Context
 
@@ -19,6 +19,6 @@ The same code now ships from [elmeragroup/internal](https://github.com/elmeragro
 
 ## Consequences
 
-- `apps/docs` no longer depends on `effect` or on a workspace extractor. The catalog entries for `effect` and `@oxlint/plugins` are gone; both are pinned runtime dependencies inside the package and still resolve to the versions the catalog used to pin, so the lockfile keeps one copy of each. The `minimumReleaseAgeExclude` entry for `effect@4.0.0-rc.111` stays until the package moves to a stable release ([roadmap](../spec/roadmap.md) §12).
+- `apps/docs` no longer depends on `effect` or on a workspace extractor. The catalog entries for `effect` and `@oxlint/plugins` are gone; both are pinned runtime dependencies inside the package and still resolve to the versions the catalog used to pin, so the lockfile keeps one copy of each. The `minimumReleaseAgeExclude` entry for `effect@4.0.0-rc.115` stays until the package moves to a stable release ([roadmap](../spec/roadmap.md) §12).
 - `ci:checks` loses `docs#test:shadow` and the extractor's private gates. The drift check, the generated-output tests, and the repo-policy tests are the regression net for an `@elmeragroup/internal` upgrade.
 - Extractor and rule changes happen in the source repository and reach this one through a version bump. A rule the library needs that does not exist upstream is a change request there, not a local plugin.
