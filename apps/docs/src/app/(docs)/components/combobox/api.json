@@ -93,10 +93,10 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((itemValue: Value, query: string, itemToString?: ((itemValue: Value) => string) | undefined) => boolean) | null | undefined",
+          "type": "((item: Value, query: string, itemToString?: ((item: Value) => string) | undefined) => boolean) | null | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Filter function used to match items vs input query.",
+          "description": "Filter function used to match items vs input query. Receives the source item, which is the derived value's item when `items` is a `createItems()` collection, and the item itself otherwise.",
           "required": false
         },
         {
@@ -104,10 +104,10 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "readonly any[] | readonly Group<any>[] | undefined",
+          "type": "readonly Value[] | readonly Group<Value>[] | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Filtered items to display in the list. When provided, the list will use these items instead of filtering the `items` prop internally. Use when you want to control filtering logic externally with the `useFilter()` hook.",
+          "description": "Filtered items to display in the list. When provided, the list uses these items instead of filtering the `items` prop internally. When `items` is also provided, this array must preserve its flat or grouped structure. With a `createItems()` collection, pass source items rather than derived values. Nullish entries are not supported, as in `items`. Use when you want to control filtering logic externally with the `useFilter()` hook.",
           "required": false
         },
         {
@@ -195,7 +195,7 @@
           "type": "((itemValue: Value, value: Value) => boolean) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Custom comparison logic used to determine if a combobox item value matches the current selected value. Useful when item values are objects without matching referentially. Defaults to `Object.is` comparison.",
+          "description": "Custom comparison logic used to determine if a combobox item value matches the current selected value. Useful when item values are objects without matching referentially. With a `createItems()` collection, both arguments are derived values. Defaults to `Object.is` comparison.",
           "required": false
         },
         {
@@ -203,10 +203,10 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "readonly any[] | readonly Group<any>[] | undefined",
+          "type": "ComboboxItemCollection<Value, Value> | readonly any[] | readonly Group<any>[] | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The items to be displayed in the list. Can be either a flat array of items or an array of groups with items.",
+          "description": "The items to be displayed in the list. Can be a flat array of items, an array of groups with items, or a collection created by the `createItems()` function, which derives each item's selection value and label. Nullish entries are not supported: remove them from the data before passing it.",
           "required": false
         },
         {
@@ -217,7 +217,7 @@
           "type": "((itemValue: Value) => string) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "When the item values are objects (`<Combobox.Item value={object}>`), this function converts the object value to a string representation for display in the input. If the shape of the object is `{ value, label }`, the label will be used automatically without needing to specify this prop.",
+          "description": "When the item values are objects (`<Combobox.Item value={object}>`), this function converts the object value to a string representation for display in the input. If the shape of the object is `{ value, label }`, the label will be used automatically without needing to specify this prop. With a `createItems()` collection, this receives the derived value, and the collection's `getLabel` takes precedence for values it can resolve.",
           "required": false
         },
         {
@@ -228,7 +228,7 @@
           "type": "((itemValue: Value) => string) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "When the item values are objects (`<Combobox.Item value={object}>`), this function converts the object value to a string representation for form submission. If the shape of the object is `{ value, label }`, the value will be used automatically without needing to specify this prop.",
+          "description": "When the item values are objects (`<Combobox.Item value={object}>`), this function converts the object value to a string representation for form submission. If the shape of the object is `{ value, label }`, the value will be used automatically without needing to specify this prop. With a `createItems()` collection, this receives the derived value.",
           "required": false
         },
         {
@@ -261,7 +261,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Determines if the popup enters a modal state when open. - `true`: user interaction is limited to the popup: document page scroll is locked and pointer interactions on outside elements are disabled. - `false`: user interaction with the rest of the document is allowed.",
+          "description": "Determines if the popup enters a modal state when open. - `true`: user interaction is limited to the popup: document page scroll is locked and pointer interactions on outside elements are disabled. - `false`: user interaction with the rest of the document is allowed. On touch devices, a `true` modal blocks outside taps but leaves the page scrollable unless the popup spans nearly the full viewport width, matching native iOS behavior.",
           "required": false
         },
         {
@@ -1088,7 +1088,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "string | ((state: SeparatorState) => string | undefined) | undefined",
+          "type": "string | ((state: ComboboxSeparatorState) => string | undefined) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
@@ -1110,7 +1110,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "ComponentRenderFn<HTMLProps, SeparatorState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "type": "ComponentRenderFn<HTMLProps, ComboboxSeparatorState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
           "shortType": "Union",
           "defaultValue": null,
           "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
@@ -1121,7 +1121,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "CSSProperties | ((state: SeparatorState) => CSSProperties | undefined) | undefined",
+          "type": "CSSProperties | ((state: ComboboxSeparatorState) => CSSProperties | undefined) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
@@ -1300,8 +1300,19 @@
       "forwardedFrom": [
         "@base-ui/react"
       ],
-      "forwardedCount": 1,
+      "forwardedCount": 0,
       "props": [
+        {
+          "name": "children",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((selectedValue: any) => ReactNode) | ReactNode",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Accepts a function that returns a `ReactNode` to format the selected value. Treat the value as read-only: in `multiple` mode it may be a shared frozen array when nothing is selected.",
+          "required": false
+        },
         {
           "name": "placeholder",
           "origin": {

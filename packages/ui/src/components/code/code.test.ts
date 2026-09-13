@@ -16,10 +16,11 @@ const packageRoot = join(here, "..", "..", "..");
 
 const BASE_CLASSES = "text-xs leading-relaxed max-h-160 overflow-auto font-mono";
 const SNIPPET = "const answer = 42;";
+const CONCAT_SNIPPET = 'const html = "<div>" + a + "</div>";';
 const XSS_PAYLOAD = '<img onerror="alert(1)" src="x">';
 
 describe("code sugar-high pin", () => {
-  it("depends on the existing sugar-high catalog pin without bumping the published range", () => {
+  it("depends on the sugar-high catalog pin and publishes the matching range", () => {
     const parsed: unknown = JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8"));
     if (parsed === null || Array.isArray(parsed)) {
       throw new Error("package.json is not an object");
@@ -27,7 +28,7 @@ describe("code sugar-high pin", () => {
     // SAFETY: this test only reads the workspace sugar-high dependency pin.
     const pkg = parsed as { dependencies: Record<string, string> };
     expect(pkg.dependencies["sugar-high"]).toBe("catalog:");
-    expect(PUBLISHED_DEPENDENCY_RANGES["sugar-high"]).toBe("^1.2.1");
+    expect(PUBLISHED_DEPENDENCY_RANGES["sugar-high"]).toBe("^2.4.0");
     expect(
       publishedDependencies({
         "@base-ui/react": "catalog:",
@@ -38,9 +39,9 @@ describe("code sugar-high pin", () => {
         "tailwindcss-react-aria-components": "catalog:",
         "tw-animate-css": "catalog:",
       })["sugar-high"]
-    ).toBe("^1.2.1");
+    ).toBe("^2.4.0");
     expect(readFileSync(join(packageRoot, "../../pnpm-workspace.yaml"), "utf8")).toContain(
-      '"sugar-high": 1.2.1'
+      '"sugar-high": 2.4.0'
     );
   });
 });
@@ -72,6 +73,17 @@ describe("Code highlight output", () => {
     const html = renderToStaticMarkup(createElement(Code, { code: XSS_PAYLOAD }));
     expect(html).not.toMatch(/<img\b/);
     expect(html).toContain("&lt;");
+  });
+
+  it("pins v2's property classification of a bare name beside string concatenation", () => {
+    const html = renderToStaticMarkup(createElement(Code, { code: CONCAT_SNIPPET }));
+    // sugar-high v2 reclassifies `a` here; v1 rendered it as `sh__token--identifier`.
+    expect(html).toMatch(/<span class="sh__token--property"[^>]*>a<\/span>/);
+  });
+
+  it("keeps the identifier classification for an ordinary declaration", () => {
+    const html = renderToStaticMarkup(createElement(Code, { code: SNIPPET }));
+    expect(html).toMatch(/<span class="sh__token--identifier"[^>]*>answer<\/span>/);
   });
 
   it("merges className onto the pre and forwards id and aria-label", () => {

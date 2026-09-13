@@ -247,7 +247,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": "600",
-          "description": "How long to wait before opening the tooltip. Specified in milliseconds.",
+          "description": "How long to wait before opening the tooltip on hover. Specified in milliseconds.",
           "required": false
         },
         {

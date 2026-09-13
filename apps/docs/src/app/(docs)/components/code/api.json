@@ -17,7 +17,7 @@
           "type": "string",
           "shortType": null,
           "defaultValue": null,
-          "description": "Raw source text, passed through `sugar-high`'s `highlight()`. Do not pass pre-built HTML — `highlight()` HTML-escapes token text. The trust boundary is the calling component, same as ordinary children.",
+          "description": "Raw source text, highlighted by sugar-high's JavaScript tokenizer. Do not pass pre-built HTML — the highlighter HTML-escapes token text. The trust boundary is the calling component, same as ordinary children.",
           "required": true
         }
       ]

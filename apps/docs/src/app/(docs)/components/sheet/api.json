@@ -89,7 +89,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "DialogHandle<unknown> | undefined",
+          "type": "DrawerHandle<unknown> | undefined",
           "shortType": "Union",
           "defaultValue": null,
           "description": "A handle to associate the drawer with a trigger. If specified, allows detached triggers to control the drawer's open state. Can be created with the Drawer.createHandle() method.",
@@ -222,7 +222,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "DialogHandle<unknown> | undefined",
+          "type": "DrawerHandle<unknown> | undefined",
           "shortType": "Union",
           "defaultValue": null,
           "description": "A handle to associate the trigger with a drawer. Can be created with the Drawer.createHandle() method.",

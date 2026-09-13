@@ -124,19 +124,19 @@ export const PUBLISHED_PEER_RANGES = {
 } as const;
 
 export const PUBLISHED_DEPENDENCY_RANGES = {
-  "@base-ui/react": "1.6.0",
+  "@base-ui/react": "1.8.0",
   clsx: "^2.1.1",
   "tailwind-merge": "^3.6.0",
   "tailwind-variants": "^3.2.2",
   "tailwindcss-react-aria-components": "2.2.0",
   "tw-animate-css": "^1.4.0",
-  "react-aria-components": "1.19.0",
-  "react-aria": "3.50.0",
+  "react-aria-components": "1.21.1",
+  "react-aria": "3.52.1",
   "@internationalized/date": "^3.12.2",
   "@phosphor-icons/react": "2.1.10",
   "@internationalized/string": "^3.2.10",
   "libphonenumber-js": "^1.13.9",
-  "sugar-high": "^1.2.1",
+  "sugar-high": "^2.4.0",
 } as const;
 
 function isBareComponent(subpath: string): boolean {

@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { segmentLocator } from "../../../test/rac-calendar-testing";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { Pagination } from "../../components/pagination/pagination";
 import { UiProviders } from "./ui-providers";
@@ -126,10 +127,10 @@ describe("UiProviders", () => {
       );
 
       await expect.element(page.getByRole("status", { name: "RAC locale" })).toHaveTextContent("nb-NO");
-      await expect.element(page.getByRole("spinbutton", { name: "måned" })).toBeVisible();
-      await expect.element(page.getByRole("spinbutton", { name: "dag" })).toBeVisible();
-      await expect.element(page.getByRole("spinbutton", { name: "år" })).toBeVisible();
-      expect(page.getByRole("spinbutton", { name: "month" }).query()).toBeNull();
+      await expect.element(segmentLocator("måned")).toBeVisible();
+      await expect.element(segmentLocator("dag")).toBeVisible();
+      await expect.element(segmentLocator("år")).toBeVisible();
+      expect(segmentLocator("month").query()).toBeNull();
       expect(window.navigator.language).toBe("en-US");
     } finally {
       if (navigatorLanguage === undefined) {

@@ -9,7 +9,8 @@ import { CheckboxGroup } from "../checkbox/checkbox";
 import { CheckboxCard } from "./checkbox-card";
 
 function checkboxNamed(name: string, checked?: boolean): HTMLElement {
-  const element = page.getByRole("checkbox", { name, checked }).element();
+  // Substring match on purpose: the card's accessible name appends the description/tags.
+  const element = page.getByRole("checkbox", { name, checked, exact: false }).element();
   if (!(element instanceof HTMLElement)) {
     throw new Error(`expected checkbox named ${name}`);
   }
@@ -108,7 +109,7 @@ describe("CheckboxCard", () => {
 
     await userEvent.keyboard("{Tab}");
     expect(document.activeElement).not.toBe(checkboxNamed("Roadside", false));
-    await expect.element(page.getByRole("checkbox", { name: "Roadside" })).toBeDisabled();
+    await expect.element(page.getByRole("checkbox", { name: "Roadside", exact: false })).toBeDisabled();
     checkboxNamed("Roadside").click();
     await userEvent.keyboard(" ");
     expect(checkboxNamed("Roadside", false).getAttribute("aria-checked")).toBe("false");
@@ -124,7 +125,7 @@ describe("CheckboxCard", () => {
 
     expect(checkboxNamed("Insurance", true).getAttribute("aria-checked")).toBe("true");
     expect(checkboxNamed("Roadside", false).getAttribute("aria-checked")).toBe("false");
-    await userEvent.click(page.getByRole("checkbox", { name: "Roadside" }));
+    await userEvent.click(page.getByRole("checkbox", { name: "Roadside", exact: false }));
     expect(checkboxNamed("Insurance", true).getAttribute("aria-checked")).toBe("true");
     expect(checkboxNamed("Roadside", false).getAttribute("aria-checked")).toBe("false");
   });
@@ -175,7 +176,7 @@ describe("CheckboxCard", () => {
     expect(getComputedStyle(uncheckedCircle).opacity).toBe("1");
     expect(getComputedStyle(uncheckedCheck).opacity).toBe("0");
 
-    await userEvent.click(page.getByRole("checkbox", { name: "Insurance" }));
+    await userEvent.click(page.getByRole("checkbox", { name: "Insurance", exact: false }));
     expect(checkboxNamed("Insurance", true).getAttribute("aria-checked")).toBe("true");
     await expect.poll(() => getComputedStyle(indicatorSvgs("Insurance")[0]).opacity).toBe("0");
     await expect.poll(() => getComputedStyle(indicatorSvgs("Insurance")[1]).opacity).toBe("1");

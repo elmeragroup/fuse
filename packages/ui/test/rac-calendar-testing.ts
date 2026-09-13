@@ -1,11 +1,12 @@
 import { expect, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
+import type { Locator } from "vitest/browser";
 
 /**
- * Shared browser-test vocabulary for the RAC calendar surfaces — Calendar, RangeCalendar
- * and the two pickers that put one of them inside a popover. Every suite reaches the same
- * DOM through the same role queries, so the mechanism notes below live here once instead
- * of once per suite.
+ * Shared browser-test vocabulary for the RAC calendar surfaces — Calendar, RangeCalendar,
+ * the two pickers that put one of them inside a popover, and the date/time fields they
+ * are built on. Every suite reaches the same DOM through the same role queries, so the
+ * mechanism notes below live here once instead of once per suite.
  *
  * Nothing here asserts; these are locators plus the two interaction helpers that have to
  * wait out RAC's asynchronous focus moves.
@@ -16,6 +17,23 @@ export function calendarRoot(): HTMLElement {
   const element = page.getByRole("application").element();
   if (!(element instanceof HTMLElement)) {
     throw new Error("expected the RAC calendar root");
+  }
+  return element;
+}
+
+/**
+ * One date/time segment locator. The match is a substring on purpose: RAC appends the
+ * owning field's label (and, in the range pickers, the row's) to every segment's name.
+ */
+export function segmentLocator(name: string): Locator {
+  return page.getByRole("spinbutton", { name, exact: false });
+}
+
+/** One date/time segment, narrowed to its element. */
+export function segmentNamed(name: string): HTMLElement {
+  const element = segmentLocator(name).element();
+  if (!(element instanceof HTMLElement)) {
+    throw new Error(`expected segment ${name}`);
   }
   return element;
 }

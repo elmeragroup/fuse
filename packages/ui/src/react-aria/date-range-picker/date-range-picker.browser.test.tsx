@@ -19,6 +19,8 @@ import {
   dayNumbered,
   describedTextsFor,
   navButtonNamed,
+  segmentLocator,
+  segmentNamed,
 } from "../../../test/rac-calendar-testing";
 import {
   CONTROL_MD,
@@ -62,24 +64,13 @@ function groupNamed(name: string): HTMLElement {
 }
 
 /**
- * One segment of one row. RAC prefixes every segment's own name with the row it belongs
- * to — "month, Start Date" / "month, End Date" — which is how the two rows stay tellable
- * apart in the accessibility tree. The rows' own wrappers are deliberately
- * `role="presentation"`: RAC drops them from the tree because the picker's single group
- * and these segment names already carry everything, and announcing them again would
- * double up.
+ * The two `role="presentation"` segment rows inside the field box, in reading order.
+ * RAC prefixes every segment's own name with the row it belongs to — "month, Start Date"
+ * / "month, End Date" — which is how the two rows stay tellable apart in the
+ * accessibility tree. The rows' own wrappers are deliberately `role="presentation"`: RAC
+ * drops them from the tree because the picker's single group and these segment names
+ * already carry everything, and announcing them again would double up.
  */
-function segment(name: string): HTMLElement {
-  // Substring match on purpose: RAC appends the picker's own label to every segment's
-  // name, and the "<part>, <row>" prefix is the part that identifies the segment.
-  const element = page.getByRole("spinbutton", { name }).element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error(`expected spinbutton ${name}`);
-  }
-  return element;
-}
-
-/** The two `role="presentation"` segment rows inside the field box, in reading order. */
 function segmentRows(label: string): HTMLElement[] {
   return [...groupNamed(label).querySelectorAll('[role="presentation"]')].filter(
     (element): element is HTMLElement => element instanceof HTMLElement
@@ -171,7 +162,7 @@ describe("DateRangePicker", () => {
     expect(group.getAttribute("data-slot")).toBe("field-group");
     for (const row of ["Start Date", "End Date"] as const) {
       for (const part of ["month", "day", "year"] as const) {
-        await expect.element(page.getByRole("spinbutton", { name: `${part}, ${row}` })).toBeVisible();
+        await expect.element(segmentLocator(`${part}, ${row}`)).toBeVisible();
       }
     }
     expect(describedTextsFor(group)).toContain("When we may deliver.");
@@ -179,8 +170,8 @@ describe("DateRangePicker", () => {
     // Both rows live in the one field box, split by the decorative en dash.
     const rows = segmentRows("Delivery window");
     expect(rows).toHaveLength(2);
-    expect(rows[0]?.contains(segment("month, Start Date"))).toBe(true);
-    expect(rows[1]?.contains(segment("month, End Date"))).toBe(true);
+    expect(rows[0]?.contains(segmentNamed("month, Start Date"))).toBe(true);
+    expect(rows[1]?.contains(segmentNamed("month, End Date"))).toBe(true);
     expect(separator("Delivery window").textContent.trim()).toBe("–");
 
     const trigger_ = trigger();
@@ -194,17 +185,17 @@ describe("DateRangePicker", () => {
   it("reports a range only once both rows are complete", async () => {
     const onChange = rangeChangeSpy();
     renderPicker(<DateRangePicker label="Delivery window" onChange={onChange} />);
-    await expect.element(page.getByRole("spinbutton", { name: "month, Start Date" })).toBeVisible();
+    await expect.element(segmentLocator("month, Start Date")).toBeVisible();
 
-    await userEvent.click(segment("month, Start Date"));
+    await userEvent.click(segmentNamed("month, Start Date"));
     await userEvent.keyboard("07142026");
-    expect(segment("day, Start Date").textContent).toBe("14");
+    expect(segmentNamed("day, Start Date").textContent).toBe("14");
     // A half-filled range is not a range: RAC holds `onChange` until both ends exist.
     expect(onChange).not.toHaveBeenCalled();
 
-    await userEvent.click(segment("month, End Date"));
+    await userEvent.click(segmentNamed("month, End Date"));
     await userEvent.keyboard("0717");
-    expect(segment("day, End Date").textContent).toBe("17");
+    expect(segmentNamed("day, End Date").textContent).toBe("17");
     expect(onChange).not.toHaveBeenCalled();
 
     await userEvent.keyboard("2026");
@@ -222,12 +213,12 @@ describe("DateRangePicker", () => {
 
   it("renders leading zeros on day and month in both rows by default", async () => {
     renderPicker(<DateRangePicker label="Delivery window" defaultValue={{ start: july4, end: july9 }} />);
-    await expect.element(page.getByRole("spinbutton", { name: "month, Start Date" })).toBeVisible();
+    await expect.element(segmentLocator("month, Start Date")).toBeVisible();
 
-    expect(segment("month, Start Date").textContent).toBe("07");
-    expect(segment("day, Start Date").textContent).toBe("04");
-    expect(segment("month, End Date").textContent).toBe("07");
-    expect(segment("day, End Date").textContent).toBe("09");
+    expect(segmentNamed("month, Start Date").textContent).toBe("07");
+    expect(segmentNamed("day, Start Date").textContent).toBe("04");
+    expect(segmentNamed("month, End Date").textContent).toBe("07");
+    expect(segmentNamed("day, End Date").textContent).toBe("09");
   });
 
   it("drops the leading zeros when a caller turns them off", async () => {
@@ -238,11 +229,11 @@ describe("DateRangePicker", () => {
         shouldForceLeadingZeros={false}
       />
     );
-    await expect.element(page.getByRole("spinbutton", { name: "month, Start Date" })).toBeVisible();
+    await expect.element(segmentLocator("month, Start Date")).toBeVisible();
 
-    expect(segment("month, Start Date").textContent).toBe("7");
-    expect(segment("day, Start Date").textContent).toBe("4");
-    expect(segment("day, End Date").textContent).toBe("9");
+    expect(segmentNamed("month, Start Date").textContent).toBe("7");
+    expect(segmentNamed("day, Start Date").textContent).toBe("4");
+    expect(segmentNamed("day, End Date").textContent).toBe("9");
   });
 
   it("opens a named dialog holding the range grid and commits two clicked endpoints", async () => {
@@ -270,8 +261,8 @@ describe("DateRangePicker", () => {
     expect(isSameDay(committed.start, july20)).toBe(true);
     expect(isSameDay(committed.end, july24)).toBe(true);
     await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
-    expect(segment("day, Start Date").textContent).toBe("20");
-    expect(segment("day, End Date").textContent).toBe("24");
+    expect(segmentNamed("day, Start Date").textContent).toBe("20");
+    expect(segmentNamed("day, End Date").textContent).toBe("24");
   });
 
   it("anchors and commits a range from the keyboard", async () => {
@@ -302,10 +293,12 @@ describe("DateRangePicker", () => {
     await userEvent.keyboard("{Escape}");
     await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
     expect(onChange).not.toHaveBeenCalled();
-    expect(document.activeElement).toBe(trigger());
+    // Focus restoration lands after the dismissal commits; under full-gate load the
+    // synchronous read can observe the frame before it.
+    await expect.poll(() => document.activeElement).toBe(trigger());
     expect(trigger()).toHaveAttribute("aria-expanded", "false");
-    expect(segment("day, Start Date").textContent).toBe("14");
-    expect(segment("day, End Date").textContent).toBe("17");
+    expect(segmentNamed("day, Start Date").textContent).toBe("14");
+    expect(segmentNamed("day, End Date").textContent).toBe("17");
   });
 
   it("marks a reversed range invalid and associates a string errorMessage", async () => {
@@ -318,7 +311,7 @@ describe("DateRangePicker", () => {
         errorMessage={errorCopy}
       />
     );
-    await expect.element(page.getByRole("spinbutton", { name: "month, Start Date" })).toBeVisible();
+    await expect.element(segmentLocator("month, Start Date")).toBeVisible();
     const group = groupNamed("Delivery window");
     const root = group.parentElement;
     if (!(root instanceof HTMLElement)) {
@@ -363,7 +356,7 @@ describe("DateRangePicker", () => {
     renderPicker(
       <DateRangePicker label="Delivery window" defaultValue={julyWeek} errorMessage={<span>Required</span>} />
     );
-    await expect.element(page.getByRole("spinbutton", { name: "month, Start Date" })).toBeVisible();
+    await expect.element(segmentLocator("month, Start Date")).toBeVisible();
 
     expect(document.body.textContent).not.toContain("Required");
   });
@@ -384,9 +377,9 @@ describe("DateRangePicker", () => {
     expect(getComputedStyle(glyph).backgroundColor).not.toBe(cssVarColor(group, "--muted"));
     expect(trigger()).toBeDisabled();
 
-    await userEvent.click(segment("day, Start Date"));
+    await userEvent.click(segmentNamed("day, Start Date"));
     await userEvent.keyboard("09");
-    expect(segment("day, Start Date").textContent).toBe("14");
+    expect(segmentNamed("day, Start Date").textContent).toBe("14");
 
     await userEvent.click(trigger(), { force: true });
     expect(page.getByRole("dialog").query()).toBeNull();
@@ -410,7 +403,7 @@ describe("DateRangePicker", () => {
         <button type="submit">Save</button>
       </form>
     );
-    await expect.element(page.getByRole("spinbutton", { name: "month, Start Date" })).toBeVisible();
+    await expect.element(segmentLocator("month, Start Date")).toBeVisible();
 
     await userEvent.click(buttonNamed("Save"));
     expect(onSubmit).toHaveBeenCalledTimes(1);
@@ -494,9 +487,9 @@ describe("DateRangePicker overlay containment", () => {
     // Committing dismisses the picker's own popover — and nothing else.
     await userEvent.click(dayNumbered(6));
     await expect.element(page.getByRole("dialog", { name: /calendar/i })).not.toBeInTheDocument();
-    expect(segment("month, Start Date").textContent).toBe("08");
-    expect(segment("day, Start Date").textContent).toBe("03");
-    expect(segment("day, End Date").textContent).toBe("06");
+    expect(segmentNamed("month, Start Date").textContent).toBe("08");
+    expect(segmentNamed("day, Start Date").textContent).toBe("03");
+    expect(segmentNamed("day, End Date").textContent).toBe("06");
     expect(onOpenChange).not.toHaveBeenCalled();
     await expect.element(page.getByRole("dialog", { name: "Order" })).toBeVisible();
   });
@@ -508,11 +501,11 @@ describe("DateRangePicker overlay containment", () => {
         <DateRangePicker label="Meter" defaultValue={julyWeek} />
       </>
     );
-    await expect.element(page.getByRole("spinbutton", { name: /month, Start Date/ })).toBeVisible();
+    await expect.element(segmentLocator("month, Start Date")).toBeVisible();
 
     await assertStateFocusRingAtBothDensities(
       buttonNamed("Before"),
-      segment("month, Start Date"),
+      segmentNamed("month, Start Date"),
       groupNamed("Meter")
     );
   });
@@ -524,7 +517,7 @@ describe("DateRangePicker density metrics", () => {
     for (const density of ["dense", "comfortable"] as const) {
       stampDensity(density);
       expect(px(getComputedStyle(groupNamed("Meter")).height)).toBe(CONTROL_MD[density].height);
-      const row = segment("month, Start Date").parentElement;
+      const row = segmentNamed("month, Start Date").parentElement;
       if (!(row instanceof HTMLElement)) {
         throw new Error("expected the start DateInput");
       }
@@ -572,7 +565,7 @@ describe("DateRangePicker composition surface", () => {
   it("floors the field box width and lets only the end row absorb the slack", async () => {
     renderPicker(<DateRangePicker label="Delivery window" defaultValue={julyWeek} />);
     const group = groupNamed("Delivery window");
-    await expect.element(page.getByRole("spinbutton", { name: "month, Start Date" })).toBeVisible();
+    await expect.element(segmentLocator("month, Start Date")).toBeVisible();
     const [startRow, endRow] = segmentRows("Delivery window");
     if (startRow === undefined || endRow === undefined) {
       throw new Error("expected both segment rows");
@@ -606,7 +599,7 @@ describe("DateRangePicker composition surface", () => {
 
   it("sizes the trigger glyph from the recipe rather than the Button's fallback", async () => {
     renderPicker(<DateRangePicker label="Delivery window" defaultValue={julyWeek} />);
-    await expect.element(page.getByRole("spinbutton", { name: "month, Start Date" })).toBeVisible();
+    await expect.element(segmentLocator("month, Start Date")).toBeVisible();
     const glyph = trigger().querySelector("svg");
     if (!(glyph instanceof SVGElement)) {
       throw new Error("expected the trigger glyph");
