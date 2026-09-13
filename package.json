@@ -1,6 +1,7 @@
 {
   "name": "elmera-group-ui",
   "private": true,
+  "type": "module",
   "scripts": {
     "build": "turbo run build",
     "changeset": "changeset",

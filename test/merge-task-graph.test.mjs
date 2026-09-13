@@ -29,6 +29,7 @@ it("the merge checks schedule all required gates without browser work", () => {
   for (const required of [
     "//#lint",
     "//#test:repo-policy",
+    "//#type-check:scripts",
     "@elmeragroup/ui#build",
     "@elmeragroup/ui#type-check",
     "@elmeragroup/ui#test",

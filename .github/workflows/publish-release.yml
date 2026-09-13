@@ -9,8 +9,6 @@ on:
     secrets:
       NPM_TOKEN:
         required: true
-      RELEASE_GITHUB_TOKEN:
-        required: false
   workflow_dispatch:
     inputs:
       record_tag:
@@ -48,10 +46,10 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
-      # The publish checkout uses the token until the OIDC pivot lands (release.md §6).
+      # GH_TOKEN authenticates the engine's GitHub API calls; NPM_TOKEN remains until the OIDC pivot (release.md §6).
       - name: Publish checked commit or retry recorded archive
         env:
-          GH_TOKEN: ${{ secrets.RELEASE_GITHUB_TOKEN || github.token }}
+          GH_TOKEN: ${{ github.token }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           SOURCE_COMMIT: ${{ inputs.source_commit }}
           RECORD_TAG: ${{ inputs.record_tag }}

@@ -16,6 +16,7 @@
         "plopfile.mjs",
         "plop-templates/**",
         "packages/ui/scripts/**",
+        "packages/ui/package.json",
         "scripts/**",
         "packages/ui/src/icons/roster.ts",
         ".changeset/config.json",
@@ -28,7 +29,13 @@
       ]
     },
     "//#type-check:scripts": {
-      "inputs": ["$TURBO_DEFAULT$", "scripts/**", "tooling/typescript/**", "pnpm-workspace.yaml"]
+      "inputs": [
+        "scripts/**",
+        "packages/ui/scripts/**",
+        "tooling/typescript/**",
+        "package.json",
+        "pnpm-workspace.yaml"
+      ]
     },
     "build": {
       "dependsOn": ["^build"],

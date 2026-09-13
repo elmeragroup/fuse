@@ -100,5 +100,5 @@ Directional chapter for `@elmeragroup/ui`: work deliberately deferred out of v1,
 - **What**: replace the `NPM_TOKEN` publish secret with npm **Trusted Publishing** (OIDC) and turn on provenance from a public repository.
 - **Why deferred**: the release engine promotes the checked version with `npm dist-tag add`, which npm's OIDC trusted publishing cannot authenticate ([npm/cli#8547](https://github.com/npm/cli/issues/8547), open). Provenance also requires a public repository, and a trusted publisher can only be configured once the package exists.
 - **Trigger**: the engine gains an OIDC-compatible promotion path and the repository is public.
-- **Already prepared**: [release](release.md) §6 records the token as temporary; the pack adapter and the record protocol are auth-agnostic; the publish workflow's GitHub token already falls back to `github.token`.
+- **Already prepared**: [release](release.md) §6 records the token as temporary; the pack adapter and the record protocol are auth-agnostic; the publish workflow's GitHub token is already `github.token`.
 - **Completion criteria**: `publish-release.yml` requests `id-token: write` and sets provenance; the `NPM_TOKEN` secret is deleted; [release](release.md) §6–§7 updated.

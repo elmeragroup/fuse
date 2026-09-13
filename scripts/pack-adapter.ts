@@ -1,17 +1,26 @@
 import { Schema } from "effect";
 import { spawnSync } from "node:child_process";
-import { readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import type { PackAndVerify, ReleaseIntent } from "@elmeragroup/internal/release";
 
-import { decodeJson } from "./lib/json.ts";
+import { findTarball } from "../packages/ui/scripts/tarball.ts";
 import { releasePackage } from "./release.ts";
 
 const packageManifestPath = join(releasePackage.packageDirectory, "dist/package.json");
-const artifactsDirectory = join(releasePackage.packageDirectory, ".artifacts");
 
 const PackedManifest = Schema.Record(Schema.String, Schema.Unknown);
+
+/** Mirrors the release engine's own JSON boundary: decode external text, never assert it. */
+function decodePackedManifest(text: string) {
+  try {
+    return Schema.decodeUnknownSync(PackedManifest)(JSON.parse(text));
+  } catch (error) {
+    const problem = error instanceof SyntaxError ? "is not valid JSON" : "is invalid";
+    throw new Error(`${packageManifestPath} ${problem}`, { cause: error });
+  }
+}
 
 function runPackageScript(script: string): void {
   const result = spawnSync("pnpm", ["--filter", releasePackage.packageName, "run", script], {
@@ -25,24 +34,22 @@ function runPackageScript(script: string): void {
 }
 
 function tarballBytes(): Uint8Array {
-  const tarballs = readdirSync(artifactsDirectory).filter((name) => name.endsWith(".tgz"));
-  const tarball = tarballs[0];
-  if (tarballs.length !== 1 || tarball === undefined) {
-    throw new Error(
-      `Expected exactly one tarball in ${artifactsDirectory}, found ${tarballs.join(", ") || "none"}`
-    );
-  }
-  return new Uint8Array(readFileSync(join(artifactsDirectory, tarball)));
+  return new Uint8Array(readFileSync(findTarball(releasePackage.packageDirectory)));
+}
+
+/** Serializes the packed manifest with the release version and identity stamped in. */
+export function stampManifest(original: string, intent: ReleaseIntent): string {
+  // Decoded records are readonly; spread into a mutable copy before stamping.
+  const manifest = { ...decodePackedManifest(original) };
+  manifest.version = intent.version;
+  manifest.elmeraRelease = { commit: intent.commit, channel: intent.channel };
+  return `${JSON.stringify(manifest, null, 2)}\n`;
 }
 
 /** Stamps packed identity and the release version into the publish manifest; returns the bytes to restore. */
 function stampRelease(intent: ReleaseIntent): string {
   const original = readFileSync(packageManifestPath, "utf8");
-  // Decoded records are readonly; spread into a mutable copy before stamping.
-  const manifest = { ...decodeJson(original, PackedManifest, packageManifestPath) };
-  manifest.version = intent.version;
-  manifest.elmeraRelease = { commit: intent.commit, channel: intent.channel };
-  writeFileSync(packageManifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+  writeFileSync(packageManifestPath, stampManifest(original, intent));
   return original;
 }
 

@@ -58,7 +58,6 @@ allowBuilds:
   esbuild: true
   "@swc/core": true
   "@parcel/watcher": true
-  msgpackr-extract: false
 
 minimumReleaseAge: 4320
 

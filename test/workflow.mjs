@@ -16,11 +16,20 @@ export function readWorkflow(name) {
  * @param {Record<string, unknown>} workflow
  * @param {string} name
  */
+export function jobSteps(workflow, name) {
+  const job = asRecord(asRecord(workflow.jobs, "workflow jobs")[name], name);
+  return asRecordArray(job.steps, `${name} steps`);
+}
+
+/**
+ * @param {Record<string, unknown>} workflow
+ * @param {string} name
+ */
 export function requiredJobSteps(workflow, name) {
   const job = asRecord(asRecord(workflow.jobs, "workflow jobs")[name], name);
   expect(job.if, `${name} must run for every workflow event`).toBeUndefined();
   expect(job["continue-on-error"]).toBeUndefined();
-  return asRecordArray(job.steps, `${name} steps`);
+  return jobSteps(workflow, name);
 }
 
 /**

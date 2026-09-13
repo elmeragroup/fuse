@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { asRecord, asString, readJsonObject } from "./json-object.mjs";
-import { readWorkflow, requiredJobSteps, requiredRunStep } from "./workflow.mjs";
+import { jobSteps, readWorkflow, requiredJobSteps, requiredRunStep } from "./workflow.mjs";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -17,15 +17,37 @@ describe("release wiring", () => {
     const step = requiredRunStep(requiredJobSteps(readWorkflow("merge"), "checks"), "pnpm release:check-pr");
     expect(step.run).toBe("pnpm release:check-pr");
     expect(step.if).toBe(
-      "github.head_ref == 'changeset-release/main' || github.ref == 'refs/heads/changeset-release/main'"
+      "(github.head_ref == 'changeset-release/main' && github.event.pull_request.head.repo.full_name == github.repository) || github.ref == 'refs/heads/changeset-release/main'"
     );
   });
 
-  it("exposes the three engine entry points as root scripts", () => {
+  it("pins the engine entry points as exact root scripts", () => {
     const scripts = asRecord(readJsonObject(join(repoRoot, "package.json")).scripts, "scripts");
-    for (const name of ["release:version", "release:run", "release:check-pr", "type-check:scripts"]) {
-      expect(asString(scripts[name], `scripts.${name}`)).toBeTruthy();
-    }
+    expect(asString(scripts["release:version"], "scripts.release:version")).toBe(
+      "pnpm exec changeset version && pnpm install --lockfile-only"
+    );
+    expect(asString(scripts["release:run"], "scripts.release:run")).toBe(
+      "node --experimental-strip-types --experimental-transform-types scripts/publish-release.ts"
+    );
+    expect(asString(scripts["release:check-pr"], "scripts.release:check-pr")).toBe(
+      "node --experimental-strip-types --experimental-transform-types scripts/check-release-pr.ts"
+    );
+    expect(asString(scripts["type-check:scripts"], "scripts.type-check:scripts")).toBe(
+      "tsc --noEmit -p scripts/tsconfig.json"
+    );
+  });
+
+  it("invokes the release engine from the publish workflow", () => {
+    // The publish job carries its own `if`, so read its steps through jobSteps rather than
+    // through requiredJobSteps, which asserts an unconditional job.
+    const steps = jobSteps(readWorkflow("publish-release"), "publish");
+    const engine = steps.find(
+      (step) => step.run !== undefined && asString(step.run, "publish run").includes("pnpm release:run")
+    );
+    if (engine === undefined) throw new Error("publish job does not run the release engine");
+    const command = asString(engine.run, "publish run");
+    expect(command).toContain('pnpm release:run retry "$RECORD_TAG"');
+    expect(command).toContain('pnpm release:run main "$SOURCE_COMMIT"');
   });
 
   it("publish workflow takes a checked commit on call and a record tag on dispatch", () => {

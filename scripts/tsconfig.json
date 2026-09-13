@@ -1,7 +1,9 @@
 {
   "extends": "@elmeragroup/typescript-config/internal-package.json",
   "compilerOptions": {
-    "noEmit": true
+    "noEmit": true,
+    // The release adapter imports packages/ui/scripts/tarball.ts, so the program root is the checkout.
+    "rootDir": ".."
   },
   "include": ["**/*.ts"]
 }

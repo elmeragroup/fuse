@@ -32,13 +32,13 @@ describe("merge workflow", () => {
     expect(step.run).toBe("pnpm exec changeset status --since=origin/${{ github.base_ref }}");
     // This complete predicate is the policy contract. Substring checks also pass for
     // disabled steps, inverted exemptions, and conditions on an unrelated step. The
-    // changesets/action bot cannot label its own PR, so its branch is exempt by name.
+    // changesets/action bot cannot label its own PR, so its branch is exempt by name and repository.
     expect(asString(step.if, "changeset condition").replace(/\s+/g, " ").trim()).toBe(
-      "${{ github.event_name == 'pull_request' && !startsWith(github.head_ref, 'changeset-release/') && !contains(github.event.pull_request.labels.*.name, 'no-changeset') }}"
+      "${{ github.event_name == 'pull_request' && (github.head_ref != 'changeset-release/main' || github.event.pull_request.head.repo.full_name != github.repository) && !contains(github.event.pull_request.labels.*.name, 'no-changeset') }}"
     );
   });
 
-  it("publishes from a push to main once activated, and defers the version PR to the bot workflow", () => {
+  it("publishes and prepares the version PR only from an activated push to main", () => {
     const jobs = asRecord(workflow.jobs, "merge jobs");
     const release = asRecord(jobs.release, "release job");
     expect(release.needs).toBe("checks");
@@ -48,7 +48,9 @@ describe("merge workflow", () => {
     expect(release.uses).toBe("./.github/workflows/publish-release.yml");
     const version = asRecord(jobs.version, "version job");
     expect(version.needs).toBe("checks");
-    expect(version.if).toBe("github.event_name == 'push' && github.ref == 'refs/heads/main'");
+    expect(version.if).toBe(
+      "github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.RELEASE_ENABLED == 'true'"
+    );
     expect(version.uses).toBe("./.github/workflows/version-packages.yml");
   });
 });
