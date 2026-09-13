@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { scrollbarTypeVariants } from "./scroll-area";
+import { scrollbarTypeVariants } from "./scroll-area-variants";
 
 describe("scroll-area hover scrollbar", () => {
   it("reveals on hovering with opacity and pointer-events", () => {
