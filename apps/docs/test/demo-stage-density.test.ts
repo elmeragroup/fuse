@@ -26,6 +26,6 @@ describe("DemoStage comfortable density", () => {
     // docs#test -> docs#build -> docs#generate -> ^build -> @elmeragroup/ui#build, through
     // the workspace dependency in package.json. Its absence is the regression, not a skip.
     expect(existsSync(artifactPath), artifactPath).toBe(true);
-    expect(readFileSync(artifactPath, "utf8")).toContain('.DemoStage[data-density="comfortable"]');
+    expect(readFileSync(artifactPath, "utf8")).toContain('[data-demo-stage][data-density="comfortable"]');
   });
 });

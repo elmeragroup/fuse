@@ -16,8 +16,7 @@ export type DemoStageProps = {
 
 const demoStage = tv({
   slots: {
-    stage:
-      "DemoStage flex flex-wrap items-center justify-center gap-3 bg-background bg-[radial-gradient(color-mix(in_oklab,var(--foreground)_14%,transparent)_1px,transparent_1px)] bg-size-[18px_18px] p-[2.8rem_2rem] text-foreground",
+    stage: "flex flex-wrap items-center justify-center gap-3 bg-background p-[2.8rem_2rem] text-foreground",
     meta: "border-docs-line bg-docs-soft font-docs-mono text-docs-sub flex items-center border-t p-[0.45rem_0.9rem] text-[11.5px]",
     slug: "text-docs-ink",
     density: "text-docs-ink",
@@ -36,7 +35,7 @@ const {
 } = demoStage();
 
 /**
- * The two theme-dependent regions of a §3.5 frame: the dotted, theme-tinted stage and the
+ * The two theme-dependent regions of a §3.5 frame: the theme-tinted stage and the
  * meta row naming the coordinate it renders under.
  *
  * This is the client half of the frame — the only part that consumes the docs-local

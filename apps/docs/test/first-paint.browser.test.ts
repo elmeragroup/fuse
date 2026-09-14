@@ -249,7 +249,7 @@ describe("docs picker vs document theme", () => {
 
     const initial = await page.evaluate(() => {
       const root = document.documentElement;
-      const stage = document.querySelector(".DemoStage");
+      const stage = document.querySelector("[data-demo-stage]");
       return {
         documentBrand: root.getAttribute("data-theme-brand"),
         documentVariant: root.getAttribute("data-theme-variant"),
@@ -280,7 +280,7 @@ describe("docs picker vs document theme", () => {
 
     const next = await page.evaluate(() => {
       const root = document.documentElement;
-      const stage = document.querySelector(".DemoStage");
+      const stage = document.querySelector("[data-demo-stage]");
       return {
         documentBrand: root.getAttribute("data-theme-brand"),
         documentVariant: root.getAttribute("data-theme-variant"),
@@ -315,7 +315,7 @@ describe("docs picker vs document theme", () => {
 
     const initial = await page.evaluate(() => {
       const root = document.documentElement;
-      const stage = document.querySelector(".DemoStage");
+      const stage = document.querySelector("[data-demo-stage]");
       const button = stage?.querySelector("button");
       return {
         documentDensity: root.getAttribute("data-density"),
@@ -341,7 +341,7 @@ describe("docs picker vs document theme", () => {
 
     const next = await page.evaluate(() => {
       const root = document.documentElement;
-      const stage = document.querySelector(".DemoStage");
+      const stage = document.querySelector("[data-demo-stage]");
       const button = stage?.querySelector("button");
       return {
         documentVariant: root.getAttribute("data-theme-variant"),

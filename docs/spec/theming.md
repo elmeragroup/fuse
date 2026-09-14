@@ -271,7 +271,7 @@ type ThemeAttributes = {
 
 It validates untyped input before returning the three attributes. The headline brand recipe is spreading it on `<html>` from one host-owned configuration that is also passed to `ThemeProvider.theme`. Brand first paint is those attributes, never a script and never provider injection.
 
-Document roots compose `themeAttributes(theme)` with `densityAttributes(defaultDensityForVariant(theme.variant))`. Both density values are stamped explicitly, including `dense`. `ThemeProvider` and `ThemeScope` have no `density` prop. `ThemeScope` does not compute density, does not own it, and has no `density` prop. Hosts may still spread `densityAttributes(...)` onto the ThemeScope host element as a DOM attribute (the docs `DemoFrame` sandbox does this). Library CSS ignores nested `data-density`; that sandbox imports the generated `@elmeragroup/ui/demo-stage-comfortable.css` artifact, which re-scopes the library comfortable block onto `.DemoStage` ([docs-site](docs-site.md) §4).
+Document roots compose `themeAttributes(theme)` with `densityAttributes(defaultDensityForVariant(theme.variant))`. Both density values are stamped explicitly, including `dense`. `ThemeProvider` and `ThemeScope` have no `density` prop. `ThemeScope` does not compute density, does not own it, and has no `density` prop. Hosts may still spread `densityAttributes(...)` onto the ThemeScope host element as a DOM attribute (the docs `DemoFrame` sandbox does this). Library CSS ignores nested `data-density`; that sandbox imports the generated `@elmeragroup/ui/demo-stage-comfortable.css` artifact, which re-scopes the library comfortable block onto `[data-demo-stage]` ([docs-site](docs-site.md) §4).
 
 ```ts
 type Density = "dense" | "comfortable";

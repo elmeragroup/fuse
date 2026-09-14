@@ -24,7 +24,7 @@ describe("component page anatomy (docs-site.md §3.4)", () => {
   it("renders one demo frame per scenario, with stage, meta row and extracted source", async () => {
     const html = await fetchText("/components/button");
     expect([...html.matchAll(/<section[^>]*data-demo-frame/g)]).toHaveLength(5);
-    expect(html).toContain("DemoStage");
+    expect(html).toContain("data-demo-stage");
     expect(html).toContain("data-demo-slug");
     expect(html).toContain("data-demo-density");
     expect(html).toContain("data-demo-source");
@@ -110,7 +110,7 @@ describe("component page anatomy (docs-site.md §3.4)", () => {
 
   it("keeps the docs chrome light-only — brand colour stays inside demo stages", async () => {
     const html = await fetchText("/components/dialog");
-    const stage = html.indexOf("DemoStage");
+    const stage = html.indexOf("data-demo-stage");
     expect(stage).toBeGreaterThan(-1);
     expect(html).toContain('data-theme-brand="fkas"');
   });

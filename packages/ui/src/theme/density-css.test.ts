@@ -131,7 +131,7 @@ function controlPairs(css: string, selector: string): string[] {
 }
 
 describe("DemoStage comfortable density artifact", () => {
-  it("re-scopes the library comfortable block onto .DemoStage", () => {
+  it("re-scopes the library comfortable block onto [data-demo-stage]", () => {
     const derived = generateDemoStageComfortableCss(uiCss);
     expect(controlPairs(derived, DEMO_STAGE_COMFORTABLE_SELECTOR)).toEqual(
       controlPairs(uiCss, LIBRARY_COMFORTABLE_SELECTOR)

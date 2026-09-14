@@ -1,12 +1,13 @@
 import { parseStyleRules } from "./css-rules";
 
 export const LIBRARY_COMFORTABLE_SELECTOR = ':root[data-density="comfortable"]';
-export const DEMO_STAGE_COMFORTABLE_SELECTOR = '.DemoStage[data-density="comfortable"]';
+// Stamped by apps/docs/src/components/demo-stage.tsx; the docs browser first-paint test verifies the pairing against the shipped CSS.
+export const DEMO_STAGE_COMFORTABLE_SELECTOR = '[data-demo-stage][data-density="comfortable"]';
 
 const GENERATED_FILE_HEADER = `/**
  * AUTO-GENERATED FILE — DO NOT EDIT DIRECTLY.
  *
- * Re-scopes the library :root[data-density="comfortable"] block onto .DemoStage.
+ * Re-scopes the library :root[data-density="comfortable"] block onto [data-demo-stage].
  */
 
 `;

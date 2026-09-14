@@ -2,7 +2,12 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Node } from "typescript/unstable/ast";
-import { isCallExpression, isIdentifier, isTemplateExpression } from "typescript/unstable/ast/is";
+import {
+  isCallExpression,
+  isIdentifier,
+  isStringLiteral,
+  isTemplateExpression,
+} from "typescript/unstable/ast/is";
 import { createVirtualFileSystem } from "typescript/unstable/fs";
 import { API } from "typescript/unstable/sync";
 import { describe, expect, it } from "vitest";
@@ -64,6 +69,9 @@ function recipeInterpolationFailures(sources: readonly { file: string; source: s
       const failures: string[] = [];
       function inspectRecipe(node: Node): void {
         if (isTemplateExpression(node)) failures.push(`${file}: ${source.slice(node.pos, node.end).trim()}`);
+        // A slot string carries utilities only; a leading PascalCase token is a marker class name.
+        if (isStringLiteral(node) && /^[A-Z][a-z]/.test(node.text))
+          failures.push(`${file}: marker class ${node.text}`);
         node.forEachChild(inspectRecipe);
       }
       function visit(node: Node): void {
@@ -85,7 +93,7 @@ const EXPORTED_CLASS_NAME = /export\s+(?:const|function|type|class)\s+\w*ClassNa
 const EXPORTED_TV_RECIPE = /export\s+const\s+\w+\s*=\s*tv\s*\(/;
 
 describe("docs Tailwind migration contract", () => {
-  it("keeps globals.css as the Tailwind entry with DemoStage as the density hook", () => {
+  it("keeps globals.css as the Tailwind entry with the library and demo-stage imports", () => {
     const globals = readFileSync(join(docsRoot, "src/styles/globals.css"), "utf8");
     expect(globals).toContain('@import "tailwindcss";');
     expect(globals).toContain('@import "@elmeragroup/ui/css";');
@@ -95,9 +103,6 @@ describe("docs Tailwind migration contract", () => {
     expect(globals).toContain('@source "../../src";');
     expect(globals).not.toContain("@apply");
     expect(globals).not.toMatch(/--control-/);
-
-    const demoStage = readFileSync(join(docsRoot, "src/components/demo-stage.tsx"), "utf8");
-    expect(demoStage).toContain('"DemoStage ');
   });
 
   it("registers the Typography plugin and a docs prose theme after the Tailwind import", () => {
