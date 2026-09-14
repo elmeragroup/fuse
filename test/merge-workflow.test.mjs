@@ -28,13 +28,18 @@ describe("merge workflow", () => {
   });
 
   it("requires changesets for ordinary PRs, exempting only the bot release branch and the no-changeset label", () => {
+    const checks = asRecord(asRecord(workflow.jobs, "merge jobs").checks, "checks job");
+    // The hoisted predicate is shared by the changeset gate (negated) and the validate step;
+    // it is the policy contract. GitHub stringifies the value, so both gates compare it to
+    // 'true' explicitly. Substring checks also pass for disabled or inverted steps.
+    // The changesets/action bot cannot label its own PR, so its branch is exempt by name and repository.
+    expect(asString(asRecord(checks.env, "checks env").IS_SELF_RELEASE_PR, "self release predicate")).toBe(
+      "${{ github.head_ref == 'changeset-release/main' && github.event.pull_request.head.repo.full_name == github.repository }}"
+    );
     const step = requiredRunStep(requiredJobSteps(workflow, "checks"), "pnpm exec changeset status");
     expect(step.run).toBe("pnpm exec changeset status --since=origin/${{ github.base_ref }}");
-    // This complete predicate is the policy contract. Substring checks also pass for
-    // disabled steps, inverted exemptions, and conditions on an unrelated step. The
-    // changesets/action bot cannot label its own PR, so its branch is exempt by name and repository.
     expect(asString(step.if, "changeset condition").replace(/\s+/g, " ").trim()).toBe(
-      "${{ github.event_name == 'pull_request' && (github.head_ref != 'changeset-release/main' || github.event.pull_request.head.repo.full_name != github.repository) && !contains(github.event.pull_request.labels.*.name, 'no-changeset') }}"
+      "${{ github.event_name == 'pull_request' && env.IS_SELF_RELEASE_PR != 'true' && !contains(github.event.pull_request.labels.*.name, 'no-changeset') }}"
     );
   });
 

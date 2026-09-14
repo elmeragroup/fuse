@@ -14,6 +14,11 @@ concurrency:
 jobs:
   checks:
     runs-on: ubuntu-latest
+    env:
+      # This repo's changesets bot branch. GitHub stringifies job env values, so the steps
+      # compare against 'true' explicitly; a bare `env.IS_SELF_RELEASE_PR` would be truthy
+      # even when its value is the string "false".
+      IS_SELF_RELEASE_PR: ${{ github.head_ref == 'changeset-release/main' && github.event.pull_request.head.repo.full_name == github.repository }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -41,11 +46,11 @@ jobs:
         run: pnpm exec turbo run '//#lint' '//#test:repo-policy' '//#type-check:scripts' type-check test test:types build package:check size-limit
 
       - name: Changeset presence
-        if: ${{ github.event_name == 'pull_request' && (github.head_ref != 'changeset-release/main' || github.event.pull_request.head.repo.full_name != github.repository) && !contains(github.event.pull_request.labels.*.name, 'no-changeset') }}
+        if: ${{ github.event_name == 'pull_request' && env.IS_SELF_RELEASE_PR != 'true' && !contains(github.event.pull_request.labels.*.name, 'no-changeset') }}
         run: pnpm exec changeset status --since=origin/${{ github.base_ref }}
 
       - name: Validate stable release PR
-        if: (github.head_ref == 'changeset-release/main' && github.event.pull_request.head.repo.full_name == github.repository) || github.ref == 'refs/heads/changeset-release/main'
+        if: env.IS_SELF_RELEASE_PR == 'true' || github.ref == 'refs/heads/changeset-release/main'
         run: pnpm release:check-pr
 
   browser:

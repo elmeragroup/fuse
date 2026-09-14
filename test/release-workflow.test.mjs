@@ -14,10 +14,15 @@ describe("release wiring", () => {
   });
 
   it("validates the stable release PR in the merge checks", () => {
-    const step = requiredRunStep(requiredJobSteps(readWorkflow("merge"), "checks"), "pnpm release:check-pr");
+    const merge = readWorkflow("merge");
+    const step = requiredRunStep(requiredJobSteps(merge, "checks"), "pnpm release:check-pr");
     expect(step.run).toBe("pnpm release:check-pr");
+    // The predicate is hoisted into the checks job env so the changeset gate negates the
+    // same check (merge-workflow.test.mjs pins the hoisted expression itself).
+    const checks = asRecord(asRecord(merge.jobs, "merge jobs").checks, "checks job");
+    expect(Object.hasOwn(asRecord(checks.env, "checks env"), "IS_SELF_RELEASE_PR")).toBe(true);
     expect(step.if).toBe(
-      "(github.head_ref == 'changeset-release/main' && github.event.pull_request.head.repo.full_name == github.repository) || github.ref == 'refs/heads/changeset-release/main'"
+      "env.IS_SELF_RELEASE_PR == 'true' || github.ref == 'refs/heads/changeset-release/main'"
     );
   });
 
