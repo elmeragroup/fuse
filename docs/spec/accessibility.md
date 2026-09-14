@@ -95,6 +95,7 @@ Token values are **locked** under the [theme value policy](theming.md#5-value-po
   1. Default `--muted-foreground` `oklch(0.5555 0 0)` on white sits at ≈ 4.5:1 — at the AA line, no margin. Do not use `muted-foreground` below 14px.
   2. The brand-independent violet `--ring` falls below 3:1 non-text contrast against some strong external `--feature`/`--primary` fills; the mandatory `ring-offset-2` (white gap) is the mitigation. A per-brand ring re-mint is a **roadmap item**.
   3. External `feature-foreground` tints fail 4.5:1 by design — covered by the reclassification above.
+  4. External `--muted-foreground` is the brand `--foreground` at 70% alpha in every external palette (fkas, fkab, tkas, guen, fkse, elma), measuring ≈ 2.7–2.9:1 against `background` and `muted`. The contrast test therefore exempts external `muted-foreground` and checks only the internal value. Classification: **non-essential text only** — placeholders, helper copy, secondary metadata — never the sole carrier of required information, never below 14px, and never for disabled-state text that a user must read to recover. Re-minting the external muted foregrounds is a roadmap item alongside the ring re-mint.
 - **Deliverable at implementation**: a generated per-theme **contrast matrix** (all text-grade pairs × 20 themes) checked as a snapshot test next to the token pipeline's CSS snapshot; new themes/brands must pass the text-grade rules or extend the documented-deviation list explicitly.
 
 ## 7 Motion

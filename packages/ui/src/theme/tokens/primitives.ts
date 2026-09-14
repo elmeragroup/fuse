@@ -54,6 +54,6 @@ export const PRIMITIVES = {
   "brand-fkab-foreground": WHITE,
   "brand-fkse": "oklch(0.4816 0.0908 240.16)",
   "brand-fkse-foreground": WHITE,
-  "brand-elma": "oklch(0.29 0.05 220.14)",
+  "brand-elma": "oklch(0.28898 0.051828 217.7)",
   "brand-elma-foreground": WHITE,
 } as const satisfies PrimitiveTokens;

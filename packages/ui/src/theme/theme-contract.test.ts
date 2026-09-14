@@ -124,9 +124,9 @@ describe("elma identity", () => {
   const elmaThemes = LEGAL_THEMES.filter((theme) => theme.brand === "elma");
   const elmaRules = parseStyleRules(generateThemesCss());
 
-  it("accepts the four legal elma slugs and copies grayscale defaults plus the brand pair", () => {
+  it("accepts the four legal elma slugs and pins the Elmera brand pair", () => {
     expect(elmaThemes).toHaveLength(4);
-    expect(PRIMITIVES["brand-elma"]).toBe("oklch(0.29 0.05 220.14)");
+    expect(PRIMITIVES["brand-elma"]).toBe("oklch(0.28898 0.051828 217.7)");
     expect(PRIMITIVES["brand-elma-foreground"]).toBe("oklch(1 0 0)");
     expect(PRIMITIVES).not.toHaveProperty("brand-steddi");
     expect(PRIMITIVES).not.toHaveProperty("brand-ngef");
@@ -138,18 +138,19 @@ describe("elma identity", () => {
       expect(composed.brand).toBe("var(--brand-elma)");
       expect(composed["brand-foreground"]).toBe("var(--brand-elma-foreground)");
       for (const key of EXTERNAL_RESET_KEYS) {
-        expect(composed[key], `${themeSlug(theme)} ${key}`).toBe(DEFAULTS[key]);
+        const expected = theme.variant === "internal" ? DEFAULTS[key] : EXTERNAL_PALETTES.elma[key];
+        expect(composed[key], `${themeSlug(theme)} ${key}`).toBe(expected);
       }
     }
   });
 
-  it("emits an isolation external rule that is a default-copy, not a customer palette", () => {
+  it("emits a full external palette sourced from the Elmera sheet, not a default copy", () => {
     expect(
       assignedTokenNames(EXTERNAL_PALETTES.elma).toSorted((left, right) => left.localeCompare(right))
     ).toEqual([...EXTERNAL_RESET_KEYS].toSorted((left, right) => left.localeCompare(right)));
-    for (const key of EXTERNAL_RESET_KEYS) {
-      expect(EXTERNAL_PALETTES.elma[key]).toBe(DEFAULTS[key]);
-    }
+    expect(EXTERNAL_PALETTES.elma.foreground).toBe(PRIMITIVES["brand-elma"]);
+    expect(EXTERNAL_PALETTES.elma.foreground).not.toBe(DEFAULTS.foreground);
+    expect(EXTERNAL_PALETTES.elma.primary).not.toBe(DEFAULTS.primary);
 
     const externalRule = elmaRules.find(
       (rule) => rule.selector === '[data-theme-variant="external"][data-theme-brand="elma"]'
@@ -157,9 +158,20 @@ describe("elma identity", () => {
     expect(externalRule).toBeDefined();
     for (const key of EXTERNAL_RESET_KEYS) {
       expect(externalRule?.declarations.find((declaration) => declaration.name === key)?.value).toBe(
-        DEFAULTS[key]
+        EXTERNAL_PALETTES.elma[key]
       );
     }
+  });
+});
+
+describe("external soft tones", () => {
+  it("uses P-95 for primary-soft wherever the brand sheet supplies it, the same tone as secondary-soft", () => {
+    for (const brand of ["fkas", "tkas", "fkse", "elma"] as const) {
+      expect(EXTERNAL_PALETTES[brand]["primary-soft"], brand).toBe(
+        EXTERNAL_PALETTES[brand]["secondary-soft"]
+      );
+    }
+    expect(FKAS_COMPANY_DELTA["primary-soft"]).toBe(FKAS_COMPANY_DELTA["secondary-soft"]);
   });
 });
 
