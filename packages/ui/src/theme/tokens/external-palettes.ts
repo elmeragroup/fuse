@@ -1,6 +1,4 @@
-import { EXTERNAL_RESET_KEYS, pickTokenKeys } from "./contract";
 import type { TokenContract } from "./contract";
-import { DEFAULTS } from "./defaults";
 import { WHITE } from "./primitives";
 import type { BrandCode } from "./themes";
 
@@ -18,7 +16,7 @@ export const EXTERNAL_PALETTES = {
     "muted-foreground": "oklch(0.3209 0.10325 38.8 / 0.7)",
     primary: "oklch(0.4848 0.16637 35.92)",
     "primary-foreground": WHITE,
-    "primary-soft": "oklch(0.94 0.03 45)",
+    "primary-soft": "oklch(0.8861 0.05413 50.48)",
     "primary-soft-foreground": "oklch(0.23274 0.07506 38.69)",
     secondary: "oklch(0.3209 0.10325 38.8)",
     "secondary-foreground": WHITE,
@@ -44,7 +42,7 @@ export const EXTERNAL_PALETTES = {
     "muted-foreground": "oklch(0.30407 0.05238 190.82 / 0.7)",
     primary: "oklch(0.47316 0.08165 190.23)",
     "primary-foreground": WHITE,
-    "primary-soft": "oklch(0.94 0.04 191)",
+    "primary-soft": "oklch(0.94764 0.07736 190.94)",
     "primary-soft-foreground": "oklch(0.22003 0.0378 191.8)",
     secondary: "oklch(0.30407 0.05238 190.82)",
     "secondary-foreground": WHITE,
@@ -111,9 +109,35 @@ export const EXTERNAL_PALETTES = {
     "radius-button": "1.8125rem",
     "font-heading": "var(--font-sans)",
   },
-  // Reviewed exception: grayscale default-copy for isolation/must-override, not a
-  // template for inventing other customer palettes. No segment delta.
-  elma: pickTokenKeys(DEFAULTS, EXTERNAL_RESET_KEYS),
+  // Elmera Figma "Farger" sheet (file dWv89e4X0DXeCKMsJwD5zL, node 2106:18246). card-soft (P-99)
+  // and feature-bright (P-75) are interpolated tones between neighbouring sheet stops; radius is
+  // not yet specified by design, so it keeps the default. No segment delta.
+  elma: {
+    background: "oklch(0.98177 0.011862 223.5)",
+    foreground: "oklch(0.28898 0.051828 217.7)",
+    card: WHITE,
+    "card-foreground": "oklch(0.22089 0.039707 218.1)",
+    "card-soft": "oklch(0.99085 0.0059393 223.5)",
+    "card-soft-foreground": "oklch(0.28898 0.051828 217.7)",
+    muted: "oklch(0.97 0.0013 106.42)",
+    "muted-foreground": "oklch(0.28898 0.051828 217.7 / 0.7)",
+    primary: "oklch(0.47851 0.048934 219)",
+    "primary-foreground": WHITE,
+    "primary-soft": "oklch(0.95359 0.031306 222)",
+    "primary-soft-foreground": "oklch(0.22089 0.039707 218.1)",
+    secondary: "oklch(0.28898 0.051828 217.7)",
+    "secondary-foreground": WHITE,
+    "secondary-soft": "oklch(0.95359 0.031306 222)",
+    "secondary-soft-foreground": "oklch(0.28898 0.051828 217.7)",
+    feature: "oklch(0.56464 0.048167 218.5)",
+    "feature-bright": "oklch(0.77976 0.047959 220.7)",
+    "feature-foreground": "oklch(0.9094 0.046626 220.6)",
+    border: "oklch(0.9219 0 0)",
+    input: "oklch(0.9219 0 0)",
+    radius: "0.375rem",
+    "radius-button": "0.375rem",
+    "font-heading": "var(--font-sans)",
+  },
 } as const satisfies Record<ExternalBrandCode, Partial<TokenContract>>;
 
 export function externalPalette(brand: BrandCode): Partial<TokenContract> {
