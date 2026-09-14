@@ -3,9 +3,11 @@ name: Version Packages
 on:
   workflow_call:
 
+# A newer push to main cancels a stale queued or running version run; this replaces the old manual
+# superseded-commit check. changesets/action force-pushes its branch, so the next run recovers it.
 concurrency:
   group: version-packages
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   version:
@@ -21,39 +23,19 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Check for a superseded main commit
-        id: current
-        env:
-          SOURCE_COMMIT: ${{ github.sha }}
-        run: |
-          MAIN_COMMIT=$(git ls-remote origin refs/heads/main | cut -f1)
-          if [ -z "$MAIN_COMMIT" ]; then
-            echo "git ls-remote returned no main commit" >&2
-            exit 1
-          fi
-          if [ "$SOURCE_COMMIT" = "$MAIN_COMMIT" ]; then
-            echo "current=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "Skipping versioning: $SOURCE_COMMIT is superseded by $MAIN_COMMIT"
-          fi
-
       - name: Setup pnpm
-        if: steps.current.outputs.current == 'true'
         uses: pnpm/action-setup@v4
 
       - name: Setup Node
-        if: steps.current.outputs.current == 'true'
         uses: actions/setup-node@v4
         with:
           node-version-file: .node-version
           cache: pnpm
 
       - name: Install
-        if: steps.current.outputs.current == 'true'
         run: pnpm install --frozen-lockfile
 
       - name: Version Packages PR
-        if: steps.current.outputs.current == 'true'
         id: changesets
         # Keep the root action: it skips `version-script` entirely when there are no changesets, so
         # Changesets CLI v3 is never asked to version an empty release (which exits 1). Do not switch

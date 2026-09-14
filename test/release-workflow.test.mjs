@@ -1,6 +1,7 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { join, relative } from "node:path";
+import picomatch from "picomatch";
 import { describe, expect, it } from "vitest";
 
 import { PUBLISH_GATES } from "../packages/ui/scripts/release-pack.ts";
@@ -13,22 +14,6 @@ import {
   requiredRunStep,
   turboTasks,
 } from "./workflow.mjs";
-
-/**
- * Matches a Turbo input pattern against a program file: `**` crosses path segments and `*` stays
- * within one. The tasks only declare directory globs, one exact file, and `!` negations of those.
- * @param {string} pattern
- * @param {string} path
- */
-function matchesInput(pattern, path) {
-  const source = pattern
-    .split("/")
-    .map((segment) =>
-      segment === "**" ? ".*" : segment.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, "[^/]*")
-    )
-    .join("/");
-  return new RegExp(`^${source}$`).test(path);
-}
 
 function rootScripts() {
   return asRecord(readJsonObject(join(repoRoot, "package.json")).scripts, "scripts");
@@ -96,11 +81,11 @@ describe("release wiring", () => {
     for (const { taskId, positives, negatives } of resolvedInputs) {
       for (const file of programFiles) {
         expect(
-          positives.some((pattern) => matchesInput(pattern, file)),
+          positives.some((pattern) => picomatch(pattern, { dot: true })(file)),
           `${file} is outside the turbo inputs of ${taskId}`
         ).toBe(true);
         expect(
-          negatives.some((pattern) => matchesInput(pattern, file)),
+          negatives.some((pattern) => picomatch(pattern, { dot: true })(file)),
           `${file} is excluded from the turbo inputs of ${taskId}`
         ).toBe(false);
       }
@@ -216,34 +201,18 @@ describe("release wiring", () => {
   });
 
   it("version workflow versions through the root script and triggers the release PR checks", () => {
-    const steps = requiredJobSteps(readWorkflow("version-packages"), "version");
-    // The version action and the dispatch step both skip unless this step produces its output,
-    // so a dropped or renamed producer would stop versioning with every test green.
-    const current = steps.find((step) => step.id === "current");
-    if (current === undefined) throw new Error("version job has no `current` step");
-    // Normalize the run block scalar so a wrap cannot hide a dropped comparison or write.
-    const currentRun = asString(current.run, "current run").replace(/\s+/g, " ").trim();
-    expect(currentRun).toContain("git ls-remote origin refs/heads/main");
-    // An empty lookup must fail the step instead of reading as a superseded commit.
-    expect(currentRun).toContain('if [ -z "$MAIN_COMMIT" ]; then');
-    expect(currentRun).toContain('echo "current=true" >> "$GITHUB_OUTPUT"');
-    expect(currentRun).toContain('if [ "$SOURCE_COMMIT" = "$MAIN_COMMIT" ]; then');
-    // Setup and install repeat the current gate so a superseded run pays for none of them.
-    for (const name of ["Setup pnpm", "Setup Node", "Install"]) {
-      const gated = steps.find((step) => step.name === name);
-      if (gated === undefined) throw new Error(`version job has no ${name} step`);
-      expect(asString(gated.if, `${name} condition`)).toBe("steps.current.outputs.current == 'true'");
-    }
-    // A superseded run must not pay for the install; this pins the order too.
-    const install = requiredRunStep(steps, "pnpm install --frozen-lockfile");
-    expect(steps.indexOf(current)).toBeLessThan(steps.indexOf(install));
+    const workflow = readWorkflow("version-packages");
+    // A newer push to main cancels a stale version run instead of the old manual commit comparison.
+    const concurrency = asRecord(workflow.concurrency, "version concurrency");
+    expect(asString(concurrency.group, "concurrency group")).toBe("version-packages");
+    expect(concurrency["cancel-in-progress"]).toBe(true);
+    const steps = requiredJobSteps(workflow, "version");
     const action = steps.find((step) => step.uses === "changesets/action@v2");
     if (action === undefined) throw new Error("version job does not use changesets/action@v2");
     const withInput = asRecord(action.with, "changesets action inputs");
     expect(withInput["version-script"]).toBe("pnpm release:version");
     // The release engine is the only publisher; a `publish-script` would bypass its records and gates.
     expect(withInput["publish-script"]).toBeUndefined();
-    expect(asString(action.if, "version condition")).toBe("steps.current.outputs.current == 'true'");
     const dispatch = requiredRunStep(steps, "gh workflow run merge.yml");
     expect(dispatch.if).toBe("steps.changesets.outputs.pr-number");
   });
