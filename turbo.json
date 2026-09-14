@@ -20,6 +20,7 @@
         "packages/ui/package.json",
         "scripts/**",
         "packages/ui/src/icons/roster.ts",
+        "packages/ui/src/theme/**",
         ".changeset/config.json",
         ".github/workflows/**",
         "package.json",
@@ -37,8 +38,10 @@
       "inputs": [
         "scripts/**",
         "packages/ui/scripts/**",
-        // entries.ts imports the roster, so a roster edit must miss this task's cache.
+        // entries.ts imports the roster and build-css.ts imports the theme generators, so a
+        // roster or theme edit must miss this task's cache.
         "packages/ui/src/icons/roster.ts",
+        "packages/ui/src/theme/**",
         "tooling/typescript/**",
         "package.json",
         "pnpm-workspace.yaml"

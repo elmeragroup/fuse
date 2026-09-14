@@ -13,7 +13,7 @@
     "lint": "oxlint . --deny-warnings",
     "lint:fix": "oxlint --fix .",
     "release:check-pr": "node --experimental-strip-types --experimental-transform-types scripts/check-release-pr.ts",
-    "release:run": "node --experimental-strip-types --experimental-transform-types scripts/publish-release.ts",
+    "release:run": "node --experimental-strip-types --experimental-transform-types --import ./packages/ui/scripts/ts-resolve.mjs scripts/publish-release.ts",
     "release:version": "pnpm exec changeset version && pnpm install --lockfile-only",
     "test": "turbo run test",
     "test:browser": "turbo run test:browser",

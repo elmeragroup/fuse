@@ -356,6 +356,9 @@ importers:
       '@arethetypeswrong/core':
         specifier: 'catalog:'
         version: 0.18.5
+      '@elmeragroup/internal':
+        specifier: 'catalog:'
+        version: 0.2.0-canary.1
       '@elmeragroup/typescript-config':
         specifier: workspace:*
         version: link:../../tooling/typescript

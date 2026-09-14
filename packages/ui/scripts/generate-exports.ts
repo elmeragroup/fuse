@@ -1,6 +1,8 @@
 import { copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import type { ReleaseIntent } from "@elmeragroup/internal/release";
+
 import {
   discoverEntries,
   exportKey,
@@ -11,11 +13,10 @@ import {
   sourceCssTarget,
   sourceExportTarget,
   TOOLING_ONLY_JS_ENTRIES,
-} from "./entries.ts";
-import type { CssExportEntry, DiscoveredEntries, ExportCondition, JsExportEntry } from "./entries.ts";
-import type { ReleaseStamp } from "./release-stamp.ts";
-import { ARTIFACTS_DIR } from "./tarball.ts";
-import { copyTwemojiNotices } from "./twemoji-notices.ts";
+} from "./entries";
+import type { CssExportEntry, DiscoveredEntries, ExportCondition, JsExportEntry } from "./entries";
+import { ARTIFACTS_DIR } from "./tarball";
+import { copyTwemojiNotices } from "./twemoji-notices";
 
 export type { ExportCondition };
 
@@ -207,6 +208,9 @@ function writePublishPackageJson(path: string, manifest: PublishManifest): void 
   writeFileSync(path, `${JSON.stringify(manifest, null, 2)}\n`);
 }
 
+/** The release identity the engine reads back from the packed `elmeraRelease` field. */
+export type ReleaseSource = Pick<ReleaseIntent, "commit" | "channel">;
+
 type PublishManifest = {
   name: string;
   version: string;
@@ -218,7 +222,7 @@ type PublishManifest = {
   peerDependenciesMeta: WorkspaceManifest["peerDependenciesMeta"];
   dependencies: WorkspaceDependencies;
   publishConfig: { access: "public" };
-  elmeraRelease?: Pick<ReleaseStamp, "commit" | "channel">;
+  elmeraRelease?: ReleaseSource;
 };
 
 function publishedPeerDependencies(): WorkspacePeers {
@@ -282,7 +286,7 @@ export function writeSourceExports(packageRoot: string): DiscoveredEntries {
  * workspace version and records the packed identity; an ordinary build keeps the workspace
  * version and no stamp, so the release engine's identity check stays meaningful.
  */
-export function writePublishManifest(packageRoot: string, release?: ReleaseStamp): void {
+export function writePublishManifest(packageRoot: string, release?: ReleaseIntent): void {
   const discovered = discoverEntries(packageRoot);
   const workspace = readWorkspaceManifest(join(packageRoot, "package.json"));
   const licensePath = join(packageRoot, "LICENSE");

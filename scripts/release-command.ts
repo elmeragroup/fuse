@@ -3,8 +3,8 @@ export type ReleaseCommand = { mode: "main"; commit: string } | { mode: "retry";
 const usage = "Usage: pnpm release:run main <commit> | retry <record-tag>";
 
 export function parseReleaseCommand(argv: readonly string[]): ReleaseCommand {
-  const [mode, target] = argv;
-  if (argv.length !== 2 || mode === undefined || target === undefined || target.length === 0) {
+  const [mode, target = ""] = argv;
+  if (argv.length !== 2 || target.length === 0) {
     throw new Error(usage);
   }
   if (mode === "main") return { mode: "main", commit: target };

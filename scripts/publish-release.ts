@@ -7,8 +7,7 @@ import { pack } from "../packages/ui/scripts/release-pack.ts";
 import { parseReleaseCommand } from "./release-command.ts";
 import { releasePackage } from "./release.ts";
 
-// `pack` is typed against the package's own release stamp; the assignment checks it structurally
-// against the engine's `PackAndVerify` seam (ReleaseIntent).
+// `pack` implements the engine's `PackAndVerify` seam.
 const packAndVerify: PackAndVerify = { pack };
 
 const command = parseReleaseCommand(process.argv.slice(2));

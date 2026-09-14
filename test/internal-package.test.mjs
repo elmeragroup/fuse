@@ -22,7 +22,11 @@ function catalogEntry(name) {
 describe("@elmeragroup/internal", () => {
   it("is pinned once, in the catalog, to an exact version", () => {
     expect(catalogEntry("@elmeragroup/internal")).toMatch(/^\d+\.\d+\.\d+(-canary\.\d+)?$/);
-    for (const manifest of ["package.json", join("apps", "docs", "package.json")]) {
+    for (const manifest of [
+      "package.json",
+      join("apps", "docs", "package.json"),
+      join("packages", "ui", "package.json"),
+    ]) {
       const devDependencies = asRecord(readJsonObject(join(repoRoot, manifest)).devDependencies, manifest);
       expect(asString(devDependencies["@elmeragroup/internal"], manifest)).toBe("catalog:");
     }
