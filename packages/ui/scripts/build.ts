@@ -4,11 +4,9 @@ import { join } from "node:path";
 import { buildCss } from "./build-css";
 import { writePublishManifest } from "./generate-exports";
 import { packageRootFromScript } from "./paths";
-import { releaseStampFromEnv } from "./release-stamp";
 import { runCommand } from "./run-command";
 
 const packageRoot = packageRootFromScript(import.meta.url);
-const release = releaseStampFromEnv(process.env);
 
 runCommand("pnpm", ["exec", "tsdown"], packageRoot);
 
@@ -23,4 +21,4 @@ for (const name of readdirSync(flagsSource)) {
   }
 }
 
-writePublishManifest(packageRoot, release);
+writePublishManifest(packageRoot);

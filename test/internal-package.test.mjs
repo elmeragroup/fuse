@@ -1,24 +1,27 @@
 import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { parse } from "yaml";
 
 import { asRecord, asRecordArray, asString, isString, readJsonObject } from "./json-object.mjs";
+import { repoRoot } from "./workflow.mjs";
 
-const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
-const workspace = readFileSync(join(repoRoot, "pnpm-workspace.yaml"), "utf8");
+const workspace = asRecord(
+  parse(readFileSync(join(repoRoot, "pnpm-workspace.yaml"), "utf8")),
+  "pnpm-workspace.yaml"
+);
 
-/** The one catalog entry for the in-house tooling package (tooling.md §2). */
-function catalogVersion() {
-  const match = /^  "@elmeragroup\/internal": (\S+)$/m.exec(workspace);
-  if (match?.[1] === undefined)
-    throw new Error("pnpm-workspace.yaml has no catalog entry for @elmeragroup/internal");
-  return match[1];
+/**
+ * The catalog entry for a dependency (tooling.md §2).
+ * @param {string} name
+ */
+function catalogEntry(name) {
+  return asString(asRecord(workspace.catalog, "catalog")[name], `catalog.${name}`);
 }
 
 describe("@elmeragroup/internal", () => {
   it("is pinned once, in the catalog, to an exact version", () => {
-    expect(catalogVersion()).toMatch(/^\d+\.\d+\.\d+(-canary\.\d+)?$/);
+    expect(catalogEntry("@elmeragroup/internal")).toMatch(/^\d+\.\d+\.\d+(-canary\.\d+)?$/);
     for (const manifest of ["package.json", join("apps", "docs", "package.json")]) {
       const devDependencies = asRecord(readJsonObject(join(repoRoot, manifest)).devDependencies, manifest);
       expect(asString(devDependencies["@elmeragroup/internal"], manifest)).toBe("catalog:");
@@ -28,10 +31,26 @@ describe("@elmeragroup/internal", () => {
   it("names the pinned canary in the release-age exclusion list, and nothing else of its own", () => {
     // A canary is younger than the 72-hour guard by definition; the exclusion is per exact
     // version so a bump has to be written down here too, next to the catalog pin.
-    const exclusions = [...workspace.matchAll(/^  - "?@elmeragroup\/internal@(\S+?)"?$/gm)].map(
-      (match) => match[1]
+    const exclusions = workspace.minimumReleaseAgeExclude;
+    if (!Array.isArray(exclusions)) throw new Error("minimumReleaseAgeExclude is not an array");
+    const internalExclusions = exclusions
+      .filter(isString)
+      .filter((entry) => entry.startsWith("@elmeragroup/internal@"))
+      .map((entry) => entry.slice("@elmeragroup/internal@".length));
+    expect(internalExclusions).toEqual([catalogEntry("@elmeragroup/internal")]);
+  });
+
+  it("pins effect to the exact version the engine declares", () => {
+    const engine = asRecord(
+      readJsonObject(join(repoRoot, "node_modules", "@elmeragroup", "internal", "package.json")).dependencies,
+      "@elmeragroup/internal dependencies"
     );
-    expect(exclusions).toEqual([catalogVersion()]);
+    expect(catalogEntry("effect")).toBe(asString(engine.effect, "@elmeragroup/internal dependencies.effect"));
+    const devDependencies = asRecord(
+      readJsonObject(join(repoRoot, "package.json")).devDependencies,
+      "package.json devDependencies"
+    );
+    expect(asString(devDependencies.effect, "package.json devDependencies.effect")).toBe("catalog:");
   });
 
   it("provides both lint plugins .oxlintrc.json loads", () => {

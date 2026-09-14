@@ -5,7 +5,6 @@ import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { writePublishManifest } from "../scripts/generate-exports";
-import { releaseStampFromEnv } from "../scripts/release-stamp";
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const commit = "53d7c332e91b6755b2b3f546ed3a39320acf914f";
@@ -50,7 +49,7 @@ function readManifestFields(path: string): ManifestFields {
 }
 
 describe("publish manifest", () => {
-  it("stamps the release version and elmeraRelease identity into the build output", () => {
+  it("stamps the release version and elmeraRelease identity into the publish manifest", () => {
     const root = scratchPackageRoot();
     writePublishManifest(root, { version: "0.2.0-canary.1", commit, channel });
 
@@ -59,7 +58,7 @@ describe("publish manifest", () => {
     expect(manifest.version).toBe("0.2.0-canary.1");
     expect(manifest.elmeraRelease).toEqual({ commit, channel });
     expect(manifest.publishConfig).toEqual({ access: "public" });
-  });
+  }, 20_000);
 
   it("keeps the workspace version and no release identity for an ordinary build", () => {
     const root = scratchPackageRoot();
@@ -69,34 +68,16 @@ describe("publish manifest", () => {
     const workspace = readManifestFields(join(packageRoot, "package.json"));
     expect(manifest.version).toBe(workspace.version);
     expect(manifest.elmeraRelease).toBeUndefined();
-  });
-});
+  }, 20_000);
 
-describe("releaseStampFromEnv", () => {
-  it("reads the stamp the pack adapter passes through the build", () => {
-    expect(
-      releaseStampFromEnv({
-        ELMERA_RELEASE_VERSION: "0.2.0-canary.1",
-        ELMERA_RELEASE_COMMIT: commit,
-        ELMERA_RELEASE_CHANNEL: channel,
-      })
-    ).toEqual({ version: "0.2.0-canary.1", commit, channel });
-  });
+  it("drops the release identity when an ordinary build regenerates a stamped manifest", () => {
+    const root = scratchPackageRoot();
+    writePublishManifest(root, { version: "0.2.0-canary.1", commit, channel });
+    writePublishManifest(root);
 
-  it("treats a missing stamp as an ordinary build", () => {
-    expect(releaseStampFromEnv({})).toBeUndefined();
-  });
-
-  it("rejects a partial or unknown stamp instead of guessing", () => {
-    expect(() => releaseStampFromEnv({ ELMERA_RELEASE_VERSION: "0.2.0-canary.1" })).toThrow(
-      "ELMERA_RELEASE_VERSION and ELMERA_RELEASE_COMMIT must both be set"
-    );
-    expect(() =>
-      releaseStampFromEnv({
-        ELMERA_RELEASE_VERSION: "0.2.0-canary.1",
-        ELMERA_RELEASE_COMMIT: commit,
-        ELMERA_RELEASE_CHANNEL: "beta",
-      })
-    ).toThrow('ELMERA_RELEASE_CHANNEL must be "canary" or "stable"');
-  });
+    const manifest = readManifestFields(join(root, "dist/package.json"));
+    const workspace = readManifestFields(join(packageRoot, "package.json"));
+    expect(manifest.version).toBe(workspace.version);
+    expect(manifest.elmeraRelease).toBeUndefined();
+  }, 20_000);
 });

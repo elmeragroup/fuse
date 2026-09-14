@@ -10,8 +10,8 @@ describe("parseReleaseCommand", () => {
     expect(parseReleaseCommand(["retry", "canary-1234"])).toEqual({ mode: "retry", tag: "canary-1234" });
   });
 
-  it("rejects a missing target or an unknown mode", () => {
-    for (const argv of [[], ["main"], ["promote", "v1.0.0"]]) {
+  it("rejects a missing, empty, extra, or unknown target", () => {
+    for (const argv of [[], ["main"], ["main", ""], ["main", commit, "junk"], ["promote", "v1.0.0"]]) {
       expect(() => parseReleaseCommand(argv)).toThrow(
         "Usage: pnpm release:run main <commit> | retry <record-tag>"
       );

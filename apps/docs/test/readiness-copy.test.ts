@@ -24,8 +24,8 @@ describe("release readiness copy", () => {
     expect(html, "releases must explain how pending notes are applied").toContain(
       "pnpm exec changeset version"
     );
-    expect(html, "releases must say ordinary PR merges never publish").toContain(
-      "Merging ordinary PRs never publishes"
+    expect(html, "releases must say activated ordinary merges publish canaries").toContain(
+      "every ordinary merge publishes a canary"
     );
     expect(html, "releases must scope the stable publish to activation").toContain(
       "Once publishing is activated"

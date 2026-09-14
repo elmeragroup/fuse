@@ -1,8 +1,14 @@
+import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { expect } from "vitest";
 import { parse } from "yaml";
 
 import { asRecord, asRecordArray, asString } from "./json-object.mjs";
+
+/** Repository root, shared by the workflow suites. */
+export const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 
 /** @param {string} name */
 export function readWorkflow(name) {
@@ -10,6 +16,22 @@ export function readWorkflow(name) {
     parse(readFileSync(new URL(`../.github/workflows/${name}.yml`, import.meta.url), "utf8")),
     name
   );
+}
+
+/**
+ * Resolves the given Turbo arguments with `--dry=json` and returns the scheduled tasks.
+ * @param {string[]} args
+ * @returns {Record<string, unknown>[]}
+ */
+export function turboTasks(args) {
+  const graphText = execFileSync(join(repoRoot, "node_modules/.bin/turbo"), [...args, "--dry=json"], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    maxBuffer: 32 * 1024 * 1024,
+  });
+  // SAFETY: the graph is Turbo's JSON protocol, validated before inspecting its tasks.
+  const graph = asRecord(JSON.parse(graphText), "Turbo graph");
+  return asRecordArray(graph.tasks, "Turbo tasks");
 }
 
 /**

@@ -11,11 +11,11 @@ import {
   sourceCssTarget,
   sourceExportTarget,
   TOOLING_ONLY_JS_ENTRIES,
-} from "./entries";
-import type { CssExportEntry, DiscoveredEntries, ExportCondition, JsExportEntry } from "./entries";
-import type { ReleaseStamp } from "./release-stamp";
-import { ARTIFACTS_DIR } from "./tarball";
-import { copyTwemojiNotices } from "./twemoji-notices";
+} from "./entries.ts";
+import type { CssExportEntry, DiscoveredEntries, ExportCondition, JsExportEntry } from "./entries.ts";
+import type { ReleaseStamp } from "./release-stamp.ts";
+import { ARTIFACTS_DIR } from "./tarball.ts";
+import { copyTwemojiNotices } from "./twemoji-notices.ts";
 
 export type { ExportCondition };
 
@@ -218,7 +218,7 @@ type PublishManifest = {
   peerDependenciesMeta: WorkspaceManifest["peerDependenciesMeta"];
   dependencies: WorkspaceDependencies;
   publishConfig: { access: "public" };
-  elmeraRelease?: { commit: string; channel: ReleaseStamp["channel"] };
+  elmeraRelease?: Pick<ReleaseStamp, "commit" | "channel">;
 };
 
 function publishedPeerDependencies(): WorkspacePeers {

@@ -15,10 +15,10 @@ export default function ReleasesPage(): ReactElement {
       <p>
         Automated npm publishing and per-PR preview infrastructure are <strong>not active yet</strong>.
         Publishing stays off until activation: the repository needs its npm token secret and the{" "}
-        <code>RELEASE_ENABLED</code> variable, alongside the pending org and repository setup (npm package and
-        scope ownership, the repository going public, and required org 2FA). Until then nothing publishes and
-        no release PR is opened. Per-PR installable package previews and docs previews are planned, not
-        available for every PR today; they wait on Vercel and pkg-pr-new.
+        <code>RELEASE_ENABLED</code> variable, alongside the pending org and repository setup (the{" "}
+        <code>@elmeragroup/ui</code> name claim, the repository going public, and required org 2FA). Until
+        then nothing publishes and no release PR is opened. Per-PR installable package previews and docs
+        previews are planned, not available for every PR today; they wait on Vercel and pkg-pr-new.
       </p>
 
       <h2 id="release-flow">Release flow</h2>
@@ -36,11 +36,11 @@ export default function ReleasesPage(): ReactElement {
         .
       </p>
       <p>
-        <strong>Publishing is a CI action, gated on activation.</strong> Once activated, canaries publish
-        automatically on every merge to <code>main</code> and stable releases ship by merging the Version
-        Packages PR; a failed publication is retried from its recorded archive. Merging ordinary PRs never
-        publishes. The pipeline authenticates with a scoped npm token today; OIDC Trusted Publishing with
-        signed provenance is the target, and local publishing remains outside this flow.
+        <strong>Publishing is a CI action, gated on activation.</strong> Once activated, every ordinary merge
+        publishes a canary, and stable releases ship by merging the Version Packages PR; a failed publication
+        is retried from its recorded archive. The pipeline authenticates with a scoped npm token today; OIDC
+        Trusted Publishing with signed provenance is the target, and local publishing remains outside this
+        flow.
       </p>
 
       <h2 id="channels">Channels</h2>
@@ -67,7 +67,10 @@ export default function ReleasesPage(): ReactElement {
       </ul>
 
       <h2 id="publish-gates">Publish gates</h2>
-      <p>The release workflow publishes only when all of these hold against the packed artifact:</p>
+      <p>
+        Once activated, the release workflow publishes only when all of these hold against the packed
+        artifact:
+      </p>
       <ul>
         <li>
           <strong>publint</strong> and <strong>arethetypeswrong</strong> — the published package shape and its

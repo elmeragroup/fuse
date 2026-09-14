@@ -1,9 +1,9 @@
 import { mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
-import { packageRootFromScript } from "./paths";
-import { runCommand } from "./run-command";
-import { ARTIFACTS_DIR, findTarball } from "./tarball";
+import { packageRootFromScript } from "./paths.ts";
+import { runCommand } from "./run-command.ts";
+import { ARTIFACTS_DIR, findTarball } from "./tarball.ts";
 
 const packageRoot = packageRootFromScript(import.meta.url);
 const dist = join(packageRoot, "dist");

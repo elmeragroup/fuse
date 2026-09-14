@@ -1,9 +1,14 @@
 {
-  "extends": "@elmeragroup/typescript-config/internal-package.json",
+  "extends": "@elmeragroup/typescript-config/base.json",
   "compilerOptions": {
-    "noEmit": true,
-    // The release entry point imports packages/ui/scripts/release-pack.ts, so the program root is the checkout.
-    "rootDir": ".."
+    // The release entry point imports packages/ui/scripts/release-pack.ts, so the program root is
+    // the checkout and its transitive adapter files are checked here with `["ESNext"]` only. That
+    // is stricter than the UI package program's `["dom","dom.iterable","esnext"]` and correct for
+    // Node-executed scripts. This is a type-check-only program: base.json already sets `noEmit`
+    // and no incremental state is configured. Those files are deliberately checked both by this
+    // program and by the UI package's program.
+    "rootDir": "..",
+    "lib": ["ESNext"]
   },
   "include": ["**/*.ts"]
 }

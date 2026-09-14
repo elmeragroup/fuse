@@ -1,5 +1,7 @@
 name: Publish Release
 
+# A workflow_call publishes a checked commit and never retries; a workflow_dispatch retries a
+# recorded archive and never publishes (record_tag is empty on the call path).
 on:
   workflow_call:
     inputs:
@@ -26,8 +28,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     concurrency:
+      # `queue: max` keeps waiting publications instead of replacing the newest one, so a
+      # stable Version Packages merge cannot be silently dropped by a later canary commit.
       group: npm-release
       cancel-in-progress: false
+      queue: max
     steps:
       - uses: actions/checkout@v4
         with:
@@ -45,6 +50,13 @@ jobs:
 
       - name: Install
         run: pnpm install --frozen-lockfile
+
+      # test:packed-consumer launches Playwright Chromium; this fresh runner has none installed. A
+      # retry dispatch carries a record tag and restores recorded bytes, so only the publishing
+      # path needs the browser.
+      - name: Install Playwright Chromium
+        if: inputs.record_tag == ''
+        run: pnpm --filter @elmeragroup/ui exec playwright install --with-deps chromium
 
       # GH_TOKEN authenticates the engine's GitHub API calls; NPM_TOKEN remains until the OIDC pivot (release.md §6).
       - name: Publish checked commit or retry recorded archive

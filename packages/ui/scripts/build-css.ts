@@ -1,4 +1,3 @@
-import { spawnSync } from "node:child_process";
 import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -6,6 +5,7 @@ import { pathToFileURL } from "node:url";
 import { generateThemesCss } from "../src/theme/generate-css";
 import { generateDemoStageComfortableCss } from "../src/theme/generate-demo-stage-css";
 import { packageRootFromScript } from "./paths";
+import { runCommand } from "./run-command";
 
 export function buildCss(packageRoot: string): void {
   const distDir = join(packageRoot, "dist");
@@ -19,7 +19,7 @@ export function buildCss(packageRoot: string): void {
   writeFileSync(join(distDir, "demo-stage-comfortable.css"), generateDemoStageComfortableCss(uiCss));
   copyFileSync(uiCssPath, join(distDir, "styles/ui.css"));
 
-  const compiled = spawnSync(
+  runCommand(
     "pnpm",
     [
       "exec",
@@ -29,12 +29,8 @@ export function buildCss(packageRoot: string): void {
       "-o",
       join(distDir, "styles.css"),
     ],
-    { cwd: packageRoot, stdio: "inherit" }
+    packageRoot
   );
-
-  if (compiled.status !== 0) {
-    process.exit(compiled.status ?? 1);
-  }
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {

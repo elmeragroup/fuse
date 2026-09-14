@@ -1,12 +1,7 @@
-import { execFileSync } from "node:child_process";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { expect, it } from "vitest";
 
-import { asRecord, asRecordArray, asString } from "./json-object.mjs";
-import { readWorkflow, requiredJobSteps, requiredRunStep } from "./workflow.mjs";
-
-const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
+import { asRecord, asString } from "./json-object.mjs";
+import { readWorkflow, requiredJobSteps, requiredRunStep, turboTasks } from "./workflow.mjs";
 
 /** @param {string} job */
 function scheduledTasks(job) {
@@ -14,14 +9,7 @@ function scheduledTasks(job) {
   expect(step.if, `${job} gate must not be conditional`).toBeUndefined();
   const command = asString(step.run, `${job} command`);
   const tokens = command.match(/'[^']*'|"[^"]*"|\S+/g).map((token) => token.replace(/^['"]|['"]$/g, ""));
-  const graphText = execFileSync(
-    join(repoRoot, "node_modules/.bin/turbo"),
-    [...tokens.slice(3), "--dry=json"],
-    { cwd: repoRoot, encoding: "utf8", maxBuffer: 32 * 1024 * 1024 }
-  );
-  // SAFETY: the graph is Turbo's JSON protocol, validated before inspecting its tasks.
-  const graph = asRecord(JSON.parse(graphText), "Turbo graph");
-  return asRecordArray(graph.tasks, "Turbo tasks");
+  return turboTasks(tokens.slice(3));
 }
 
 it("the merge checks schedule all required gates without browser work", () => {

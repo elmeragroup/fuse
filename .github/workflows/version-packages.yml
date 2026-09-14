@@ -10,6 +10,7 @@ concurrency:
 jobs:
   version:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: write
       pull-requests: write
@@ -20,27 +21,36 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: .node-version
-          cache: pnpm
-
-      - name: Install
-        run: pnpm install --frozen-lockfile
-
       - name: Check for a superseded main commit
         id: current
         env:
           SOURCE_COMMIT: ${{ github.sha }}
         run: |
           MAIN_COMMIT=$(git ls-remote origin refs/heads/main | cut -f1)
+          if [ -z "$MAIN_COMMIT" ]; then
+            echo "git ls-remote returned no main commit" >&2
+            exit 1
+          fi
           if [ "$SOURCE_COMMIT" = "$MAIN_COMMIT" ]; then
             echo "current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Skipping versioning: $SOURCE_COMMIT is superseded by $MAIN_COMMIT"
           fi
+
+      - name: Setup pnpm
+        if: steps.current.outputs.current == 'true'
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        if: steps.current.outputs.current == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install
+        if: steps.current.outputs.current == 'true'
+        run: pnpm install --frozen-lockfile
 
       - name: Version Packages PR
         if: steps.current.outputs.current == 'true'
