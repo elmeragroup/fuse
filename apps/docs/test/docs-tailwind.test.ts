@@ -46,7 +46,7 @@ function srcTsFiles(): string[] {
 }
 
 /** Parse only the supplied sources; no library project or type checking is needed. */
-function recipeInterpolationFailures(sources: readonly { file: string; source: string }[]): string[] {
+function recipeSlotFailures(sources: readonly { file: string; source: string }[]): string[] {
   const root = "/docs-recipe-check";
   const config = `${root}/tsconfig.json`;
   const inputs = sources.map((entry, index) => ({ ...entry, virtualFile: `${root}/${String(index)}.tsx` }));
@@ -159,14 +159,14 @@ describe("docs Tailwind migration contract", () => {
     const sources = srcTsFiles()
       .filter((relative) => relative.startsWith("src/components/"))
       .map((file) => ({ file, source: readFileSync(join(docsRoot, file), "utf8") }));
-    expect(recipeInterpolationFailures(sources)).toEqual([]);
+    expect(recipeSlotFailures(sources)).toEqual([]);
   });
 });
 
 describe("recipe interpolation guard", () => {
   it("allows static recipes alongside interpolated labels and unrelated API constants", () => {
     expect(
-      recipeInterpolationFailures([
+      recipeSlotFailures([
         {
           file: "valid.tsx",
           source: [
@@ -184,7 +184,7 @@ describe("recipe interpolation guard", () => {
     "tv({ slots: { root: `bg-${state.color}` } })",
     "tv({ variants: { active: { true: `text-${getColor()}` } } })",
   ])("rejects interpolated recipe utilities: %s", (source) => {
-    expect(recipeInterpolationFailures([{ file: "invalid.tsx", source }])).toHaveLength(1);
+    expect(recipeSlotFailures([{ file: "invalid.tsx", source }])).toHaveLength(1);
   });
 });
 

@@ -27,8 +27,8 @@ describe("merge workflow", () => {
   it("validates the stable release PR in the merge checks", () => {
     // Moved here from release-workflow.test.mjs so the merge job's step predicates live in one
     // place; the hoisted env predicate itself is asserted in the changesets test below.
-    const step = requiredRunStep(requiredJobSteps(workflow, "checks"), "pnpm release:check-pr");
-    expect(step.run).toBe("pnpm release:check-pr");
+    const step = requiredRunStep(requiredJobSteps(workflow, "checks"), "pnpm release check-pr");
+    expect(step.run).toBe("pnpm release check-pr");
     expect(step.if).toBe(
       "env.IS_SELF_RELEASE_PR == 'true' || github.ref == 'refs/heads/changeset-release/main'"
     );

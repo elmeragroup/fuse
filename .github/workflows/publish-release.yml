@@ -67,7 +67,7 @@ jobs:
           RECORD_TAG: ${{ inputs.record_tag }}
         run: |
           if [ -n "$RECORD_TAG" ]; then
-            pnpm release:run retry "$RECORD_TAG"
+            pnpm release retry "$RECORD_TAG"
           else
-            pnpm release:run main "$SOURCE_COMMIT"
+            pnpm release publish "$SOURCE_COMMIT"
           fi

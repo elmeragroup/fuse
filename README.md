@@ -23,25 +23,24 @@ Docs: `pnpm --filter docs dev` → http://localhost:3000.
 
 Root scripts fan out through turbo unless noted.
 
-| Script                    | Does                                                                                           |
-| ------------------------- | ---------------------------------------------------------------------------------------------- |
-| `pnpm build`              | Builds every package (`@elmeragroup/ui` via tsdown, the Next apps, static-theme)               |
-| `pnpm dev`                | Runs the dev servers                                                                           |
-| `pnpm lint`               | `oxlint . --deny-warnings` over the tree, including the two local plugins                      |
-| `pnpm lint:fix`           | The same with `--fix`                                                                          |
-| `pnpm format`             | `oxfmt` write; `pnpm format:check` is the CI form                                              |
-| `pnpm test`               | Unit tests (vitest) in every package                                                           |
-| `pnpm test:browser`       | Browser-mode vitest projects                                                                   |
-| `pnpm test:types`         | Type-level tests (`*.test-d.tsx`)                                                              |
-| `pnpm test:repo-policy`   | Root-only vitest project in [`test/`](test) — merge-workflow shape, lint script, README claims |
-| `pnpm type-check`         | `tsc --noEmit` per package                                                                     |
-| `pnpm gen`                | plop scaffolder — new component (source, entry facade, tests, demos)                           |
-| `pnpm changeset`          | Adds a changeset; see [Contribution flow](#contribution-flow)                                  |
-| `pnpm release:version`    | `changeset version` + lockfile refresh; the Version Packages PR script                         |
-| `pnpm release:check-pr`   | Validates a Version Packages PR (stable bump, changelog, consumed changesets)                  |
-| `pnpm release:run`        | Release-engine entry point: publish a checked commit or retry a record tag (CI)                |
-| `pnpm type-check:scripts` | `tsc --noEmit` for the root release scripts                                                    |
-| `pnpm ci:checks`          | The merge gate locally: `oxfmt --check` then `turbo run ci:checks`                             |
+| Script                    | Does                                                                                                                  |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `pnpm build`              | Builds every package (`@elmeragroup/ui` via tsdown, the Next apps, static-theme)                                      |
+| `pnpm dev`                | Runs the dev servers                                                                                                  |
+| `pnpm lint`               | `oxlint . --deny-warnings` over the tree, including the two local plugins                                             |
+| `pnpm lint:fix`           | The same with `--fix`                                                                                                 |
+| `pnpm format`             | `oxfmt` write; `pnpm format:check` is the CI form                                                                     |
+| `pnpm test`               | Unit tests (vitest) in every package                                                                                  |
+| `pnpm test:browser`       | Browser-mode vitest projects                                                                                          |
+| `pnpm test:types`         | Type-level tests (`*.test-d.tsx`)                                                                                     |
+| `pnpm test:repo-policy`   | Root-only vitest project in [`test/`](test) — merge-workflow shape, lint script, README claims                        |
+| `pnpm type-check`         | `tsc --noEmit` per package                                                                                            |
+| `pnpm gen`                | plop scaffolder — new component (source, entry facade, tests, demos)                                                  |
+| `pnpm changeset`          | Adds a changeset; see [Contribution flow](#contribution-flow)                                                         |
+| `pnpm release:version`    | `changeset version` + lockfile refresh; the Version Packages PR script                                                |
+| `pnpm release`            | Release-engine CLI: `check-pr` validates a Version Packages PR; `publish <commit>` and `retry <record-tag>` run in CI |
+| `pnpm type-check:scripts` | `tsc --noEmit` for the root release scripts                                                                           |
+| `pnpm ci:checks`          | The merge gate locally: `oxfmt --check` then `turbo run ci:checks`                                                    |
 
 Package-scoped scripts worth knowing:
 

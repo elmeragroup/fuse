@@ -5,15 +5,9 @@ import picomatch from "picomatch";
 import { describe, expect, it } from "vitest";
 
 import { PUBLISH_GATES } from "../packages/ui/scripts/release-pack.ts";
+import { USAGE } from "../scripts/release.ts";
 import { asRecord, asString, readJsonObject } from "./json-object.mjs";
-import {
-  jobSteps,
-  readWorkflow,
-  repoRoot,
-  requiredJobSteps,
-  requiredRunStep,
-  turboTasks,
-} from "./workflow.mjs";
+import { jobSteps, readWorkflow, repoRoot, requiredRunStep, turboTasks } from "./workflow.mjs";
 
 function rootScripts() {
   return asRecord(readJsonObject(join(repoRoot, "package.json")).scripts, "scripts");
@@ -31,20 +25,16 @@ describe("release wiring", () => {
     expect(asString(scripts["release:version"], "scripts.release:version")).toBe(
       "pnpm exec changeset version && pnpm install --lockfile-only"
     );
-    for (const [name, entryPoint] of [
-      ["release:run", "scripts/publish-release.ts"],
-      ["release:check-pr", "scripts/check-release-pr.ts"],
-    ]) {
-      expect(existsSync(join(repoRoot, entryPoint)), `${name} must have a committed entry point`).toBe(true);
-      const tokens = asString(scripts[name], `scripts.${name}`).split(/\s+/);
-      expect(tokens[0], `${name} must launch node`).toBe("node");
-      expect(tokens.at(-1), `${name} must run its committed entry point`).toBe(entryPoint);
-      // Both root release scripts preload the package loader so extension-less imports under
-      // packages/ui/scripts resolve; dropping it would only fail on the bot branch in CI.
-      const loader = tokens.indexOf("--import");
-      expect(loader, `${name} must preload the package loader`).toBeGreaterThan(0);
-      expect(tokens[loader + 1]).toBe("./packages/ui/scripts/ts-resolve.mjs");
-    }
+    const entryPoint = "scripts/release.ts";
+    expect(existsSync(join(repoRoot, entryPoint)), "release must have a committed entry point").toBe(true);
+    const tokens = asString(scripts.release, "scripts.release").split(/\s+/);
+    expect(tokens[0], "release must launch node").toBe("node");
+    expect(tokens.at(-1), "release must run its committed entry point").toBe(entryPoint);
+    // The release CLI preloads the package loader so extension-less imports under
+    // packages/ui/scripts resolve; dropping it would only fail on the bot branch in CI.
+    const loader = tokens.indexOf("--import");
+    expect(loader, "release must preload the package loader").toBeGreaterThan(0);
+    expect(tokens[loader + 1]).toBe("./packages/ui/scripts/ts-resolve.mjs");
     const typeCheck = asString(scripts["type-check:scripts"], "scripts.type-check:scripts").split(/\s+/);
     expect(typeCheck[0], "script checking must run tsc").toBe("tsc");
     expect(typeCheck, "script checking must not emit").toContain("--noEmit");
@@ -99,8 +89,8 @@ describe("release wiring", () => {
     }
   }, 60_000);
 
-  it("loads the publication entry point to its usage error without publishing", () => {
-    const tokens = asString(rootScripts()["release:run"], "scripts.release:run").split(/\s+/);
+  it("loads the release CLI to its usage error without publishing", () => {
+    const tokens = asString(rootScripts().release, "scripts.release").split(/\s+/);
     const probe = spawnSync(tokens[0], tokens.slice(1), {
       cwd: repoRoot,
       encoding: "utf8",
@@ -108,7 +98,7 @@ describe("release wiring", () => {
     });
     expect(probe.error, "release entry point probe should not time out or fail to spawn").toBeUndefined();
     expect(probe.status, probe.stderr).not.toBe(0);
-    expect(probe.stderr).toContain("Usage: pnpm release:run main <commit> | retry <record-tag>");
+    expect(probe.stderr).toContain(USAGE);
   }, 30_000);
 
   it("schedules every publish gate through the ci:checks aggregate", () => {
@@ -134,13 +124,13 @@ describe("release wiring", () => {
     // through requiredJobSteps, which asserts an unconditional job.
     const steps = jobSteps(readWorkflow("publish-release"), "publish");
     const engineSteps = steps.filter(
-      (step) => step.run !== undefined && asString(step.run, "publish run").includes("pnpm release:run")
+      (step) => step.run !== undefined && asString(step.run, "publish run").includes("pnpm release ")
     );
     expect(engineSteps).toHaveLength(1);
     const engine = engineSteps[0];
     const command = asString(engine.run, "publish run");
-    expect(command).toContain('pnpm release:run retry "$RECORD_TAG"');
-    expect(command).toContain('pnpm release:run main "$SOURCE_COMMIT"');
+    expect(command).toContain('pnpm release retry "$RECORD_TAG"');
+    expect(command).toContain('pnpm release publish "$SOURCE_COMMIT"');
     // The engine's GitHub and npm authentication and its command inputs are env-driven; a dropped
     // or renamed expression would stay invisible until a real publication.
     expect(asRecord(engine.env, "publish env")).toEqual({
@@ -191,46 +181,12 @@ describe("release wiring", () => {
     expect(asRecord(dispatchInputs.record_tag, "record_tag").required).toBe(true);
   });
 
-  it("grants the publish and version workflows the permissions the release path needs", () => {
-    // Both workflows run only after activation, so a dropped grant would stay invisible until
+  it("grants the publish workflow the permissions the release path needs", () => {
+    // The workflow runs only after activation, so a dropped grant would stay invisible until
     // the first real publication; the caller cannot elevate the called workflow above these.
     expect(readWorkflow("publish-release").permissions).toEqual({
       contents: "write",
       "pull-requests": "read",
     });
-    const version = readWorkflow("version-packages");
-    const versionJob = asRecord(asRecord(version.jobs, "version jobs").version, "version job");
-    expect(versionJob.permissions).toEqual({
-      contents: "write",
-      "pull-requests": "write",
-      actions: "write",
-    });
-  });
-
-  it("version workflow versions through the root script and triggers the release PR checks", () => {
-    const workflow = readWorkflow("version-packages");
-    // Checks can finish out of push order. An older job must neither cancel a running update
-    // nor replace a queued one; the job checks main again before it writes the release branch.
-    const job = asRecord(asRecord(workflow.jobs, "version jobs").version, "version job");
-    const concurrency = asRecord(job.concurrency, "version concurrency");
-    expect(asString(concurrency.group, "concurrency group")).toBe("version-packages");
-    expect(concurrency["cancel-in-progress"]).toBe(false);
-    expect(concurrency.queue).toBe("max");
-    const steps = requiredJobSteps(workflow, "version");
-    const action = steps.find((step) => step.uses === "changesets/action@v2");
-    if (action === undefined) throw new Error("version job does not use changesets/action@v2");
-    const guard = steps.find((step) => step.id === "current-main");
-    if (guard === undefined) throw new Error("version job does not check the current main commit");
-    expect(guard.if).toBeUndefined();
-    expect(guard["continue-on-error"]).toBeUndefined();
-    expect(guard.env).toEqual({ GH_TOKEN: "${{ github.token }}" });
-    expect(steps.indexOf(guard)).toBeLessThan(steps.indexOf(action));
-    expect(action.if).toBe("steps.current-main.outputs.current == 'true'");
-    const withInput = asRecord(action.with, "changesets action inputs");
-    expect(withInput["version-script"]).toBe("pnpm release:version");
-    // The release engine is the only publisher; a `publish-script` would bypass its records and gates.
-    expect(withInput["publish-script"]).toBeUndefined();
-    const dispatch = requiredRunStep(steps, "gh workflow run merge.yml");
-    expect(dispatch.if).toBe("steps.changesets.outputs.pr-number");
   });
 });

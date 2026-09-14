@@ -51,7 +51,7 @@ jobs:
 
       - name: Validate stable release PR
         if: env.IS_SELF_RELEASE_PR == 'true' || github.ref == 'refs/heads/changeset-release/main'
-        run: pnpm release:check-pr
+        run: pnpm release check-pr
 
   browser:
     runs-on: ubuntu-latest
