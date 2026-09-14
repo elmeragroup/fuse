@@ -8,11 +8,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     concurrency:
-      # A newer push to main cancels a stale queued or running version run; this replaces the old
-      # manual superseded-commit check. changesets/action force-pushes its branch, so the next run
-      # recovers it.
+      # Checks can finish out of push order. Keep every waiting job and never let an older
+      # completion cancel a newer update; stale jobs skip the action after checking main below.
       group: version-packages
-      cancel-in-progress: true
+      cancel-in-progress: false
+      queue: max
     permissions:
       contents: write
       pull-requests: write
@@ -35,8 +35,21 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
+      - name: Check current main commit
+        id: current-main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          main_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')"
+          if [ "$GITHUB_SHA" = "$main_sha" ]; then
+            echo "current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Skipping version preparation for superseded commit $GITHUB_SHA"
+          fi
+
       - name: Version Packages PR
         id: changesets
+        if: steps.current-main.outputs.current == 'true'
         # Keep the root action: it skips `version-script` entirely when there are no changesets, so
         # Changesets CLI v3 is never asked to version an empty release (which exits 1). Do not switch
         # to `changesets/action/version@v2` without an equivalent guard.

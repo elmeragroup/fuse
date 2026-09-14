@@ -209,15 +209,23 @@ describe("release wiring", () => {
 
   it("version workflow versions through the root script and triggers the release PR checks", () => {
     const workflow = readWorkflow("version-packages");
-    // A newer push to main cancels a stale version run instead of the old manual commit comparison;
-    // the block sits on the called job, like publish-release's, so it bounds that job's runs only.
+    // Checks can finish out of push order. An older job must neither cancel a running update
+    // nor replace a queued one; the job checks main again before it writes the release branch.
     const job = asRecord(asRecord(workflow.jobs, "version jobs").version, "version job");
     const concurrency = asRecord(job.concurrency, "version concurrency");
     expect(asString(concurrency.group, "concurrency group")).toBe("version-packages");
-    expect(concurrency["cancel-in-progress"]).toBe(true);
+    expect(concurrency["cancel-in-progress"]).toBe(false);
+    expect(concurrency.queue).toBe("max");
     const steps = requiredJobSteps(workflow, "version");
     const action = steps.find((step) => step.uses === "changesets/action@v2");
     if (action === undefined) throw new Error("version job does not use changesets/action@v2");
+    const guard = steps.find((step) => step.id === "current-main");
+    if (guard === undefined) throw new Error("version job does not check the current main commit");
+    expect(guard.if).toBeUndefined();
+    expect(guard["continue-on-error"]).toBeUndefined();
+    expect(guard.env).toEqual({ GH_TOKEN: "${{ github.token }}" });
+    expect(steps.indexOf(guard)).toBeLessThan(steps.indexOf(action));
+    expect(action.if).toBe("steps.current-main.outputs.current == 'true'");
     const withInput = asRecord(action.with, "changesets action inputs");
     expect(withInput["version-script"]).toBe("pnpm release:version");
     // The release engine is the only publisher; a `publish-script` would bypass its records and gates.
