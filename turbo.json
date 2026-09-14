@@ -39,7 +39,10 @@
     },
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", ".next/**"]
+      "outputs": ["dist/**", ".next/**"],
+      // The release stamp reaches the UI build through the environment and changes the packed
+      // manifest, so it belongs in the cache key whenever a build runs through turbo.
+      "env": ["ELMERA_RELEASE_CHANNEL", "ELMERA_RELEASE_COMMIT", "ELMERA_RELEASE_VERSION"]
     },
     "lint": {
       "inputs": ["$TURBO_DEFAULT$"]

@@ -13,6 +13,7 @@ import {
   TOOLING_ONLY_JS_ENTRIES,
 } from "./entries";
 import type { CssExportEntry, DiscoveredEntries, ExportCondition, JsExportEntry } from "./entries";
+import type { ReleaseStamp } from "./release-stamp";
 import { ARTIFACTS_DIR } from "./tarball";
 import { copyTwemojiNotices } from "./twemoji-notices";
 
@@ -217,6 +218,7 @@ type PublishManifest = {
   peerDependenciesMeta: WorkspaceManifest["peerDependenciesMeta"];
   dependencies: WorkspaceDependencies;
   publishConfig: { access: "public" };
+  elmeraRelease?: { commit: string; channel: ReleaseStamp["channel"] };
 };
 
 function publishedPeerDependencies(): WorkspacePeers {
@@ -275,7 +277,12 @@ export function writeSourceExports(packageRoot: string): DiscoveredEntries {
   return discovered;
 }
 
-export function writePublishManifest(packageRoot: string): void {
+/**
+ * Writes `dist/package.json` plus the packaging side files. A release stamp overrides the
+ * workspace version and records the packed identity; an ordinary build keeps the workspace
+ * version and no stamp, so the release engine's identity check stays meaningful.
+ */
+export function writePublishManifest(packageRoot: string, release?: ReleaseStamp): void {
   const discovered = discoverEntries(packageRoot);
   const workspace = readWorkspaceManifest(join(packageRoot, "package.json"));
   const licensePath = join(packageRoot, "LICENSE");
@@ -286,7 +293,7 @@ export function writePublishManifest(packageRoot: string): void {
 
   const published: PublishManifest = {
     name: workspace.name,
-    version: workspace.version,
+    version: release?.version ?? workspace.version,
     license: workspace.license,
     type: "module",
     sideEffects: ["**/*.css"],
@@ -296,6 +303,9 @@ export function writePublishManifest(packageRoot: string): void {
     dependencies: publishedDependencies(workspace.dependencies),
     publishConfig: { access: "public" },
   };
+  if (release !== undefined) {
+    published.elmeraRelease = { commit: release.commit, channel: release.channel };
+  }
 
   writePublishPackageJson(join(packageRoot, "dist/package.json"), published);
   copyFileSync(licensePath, join(packageRoot, "dist/LICENSE"));

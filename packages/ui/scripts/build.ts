@@ -1,20 +1,16 @@
-import { spawnSync } from "node:child_process";
 import { copyFileSync, mkdirSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 import { buildCss } from "./build-css";
 import { writePublishManifest } from "./generate-exports";
 import { packageRootFromScript } from "./paths";
+import { releaseStampFromEnv } from "./release-stamp";
+import { runCommand } from "./run-command";
 
 const packageRoot = packageRootFromScript(import.meta.url);
+const release = releaseStampFromEnv(process.env);
 
-const tsdown = spawnSync("pnpm", ["exec", "tsdown"], {
-  cwd: packageRoot,
-  stdio: "inherit",
-});
-if (tsdown.status !== 0) {
-  process.exit(tsdown.status ?? 1);
-}
+runCommand("pnpm", ["exec", "tsdown"], packageRoot);
 
 buildCss(packageRoot);
 
@@ -27,4 +23,4 @@ for (const name of readdirSync(flagsSource)) {
   }
 }
 
-writePublishManifest(packageRoot);
+writePublishManifest(packageRoot, release);

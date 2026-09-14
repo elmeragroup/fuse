@@ -7,7 +7,7 @@ Current state: once publishing is activated, every push to `main` publishes a ca
 - **One public package, one version.** `@elmeragroup/ui` is a single package (see [architecture](architecture.md)); `/theme`, `/icons`, `/illustrations`, per-component subpaths, and the CSS entries are exports of it. There is no independent-versioning question — no cross-package skew is possible. `tooling/*` packages are internal and are **not** published by this pipeline.
 - **Home**: a **public repository in the existing Elmera GitHub org**. CI is **GitHub Actions**. Publishes go to **public npmjs.com** under the `@elmeragroup` org, with the maintainer (Tommy Barvåg) as npm org owner — he holds the open-distribution authority (§4).
 - Versioning follows **semver**; the changelog is generated from changesets (§2), never hand-edited.
-- The release engine ships in `@elmeragroup/internal` as its `release` export, not as a workspace package ([ADR 0011](../adr/0011-release-runs-on-the-internal-engine.md)). It owns eligibility, canary allocation, GitHub release records, archive verification, promotion, and retry. This repository owns the [pack adapter](../../scripts/pack-adapter.ts) and the workflows.
+- The release engine ships in `@elmeragroup/internal` as its `release` export, not as a workspace package ([ADR 0011](../adr/0011-release-runs-on-the-internal-engine.md)). It owns eligibility, canary allocation, GitHub release records, archive verification, promotion, and retry. This repository owns the [pack adapter](../../packages/ui/scripts/release-pack.ts) and the workflows.
 
 ## 2 Versioning: changesets and the Version Packages PR
 
@@ -47,7 +47,7 @@ These facts bound what the published tarball may contain; they are settled, not 
 
 ## 5 Publish-time gates
 
-The publish workflow publishes only when the pack adapter completes. The adapter builds, stamps the release version and `elmeraRelease` identity onto the packed manifest, runs `pnpm pack`, and runs the gate scripts against that exact tarball before returning its bytes; the engine verifies the archive against the recorded intent and uploads those bytes. The table below is the **single exhaustive publish-gate list**; owning chapters define each check but must link here instead of maintaining competing release lists.
+The publish workflow publishes only when the pack adapter completes. The adapter runs the package build with the release version and `elmeraRelease` identity stamped into the publish manifest, runs `pnpm pack`, and runs the gate scripts against that exact tarball before returning its bytes; the engine verifies the archive against the recorded intent and uploads those bytes. The table below is the **single exhaustive publish-gate list**; owning chapters define each check but must link here instead of maintaining competing release lists.
 
 | Gate                                            | Asserts                                                                                                                                                           | Owner                                              |
 | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
