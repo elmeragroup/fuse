@@ -8,7 +8,7 @@ import {
   resolveReleasePackage,
   retryRelease,
 } from "@elmeragroup/internal/release";
-import type { PackAndVerify, ReleaseError, ReleasePackage } from "@elmeragroup/internal/release";
+import type { ReleaseError, ReleasePackage } from "@elmeragroup/internal/release";
 
 import { pack } from "../packages/ui/scripts/release-pack.ts";
 
@@ -35,15 +35,13 @@ function releasePackage(): ReleasePackage {
   return resolveReleasePackage(checkoutRoot, resolve(checkoutRoot, "packages/ui"), "@elmeragroup/ui");
 }
 
-// `pack` implements the engine's `PackAndVerify` seam.
-const packAndVerify: PackAndVerify = { pack };
-
 function run(command: ReleaseCommand, pkg: ReleasePackage): Effect.Effect<void, ReleaseError> {
   switch (command.mode) {
     case "check-pr":
       return checkReleasePr(pkg);
     case "publish":
-      return releaseCheckedCommit(pkg, packAndVerify, command.commit);
+      // `pack` implements the engine's `PackAndVerify` seam.
+      return releaseCheckedCommit(pkg, { pack }, command.commit);
     case "retry":
       return retryRelease(pkg, command.tag);
   }

@@ -3,9 +3,9 @@ import { readFileSync } from "node:fs";
 import type { ReleaseIntent } from "@elmeragroup/internal/release";
 
 import { buildPackage } from "./build";
+import { packTarball } from "./pack";
 import { packageRootFromScript } from "./paths";
 import { runCommand } from "./run-command";
-import { findTarball } from "./tarball";
 
 const packageRoot = packageRootFromScript(import.meta.url);
 
@@ -23,9 +23,9 @@ export const PUBLISH_GATES = ["package:check", "size-limit", "test:packed-consum
  */
 export function pack(intent: ReleaseIntent): Uint8Array {
   buildPackage(packageRoot, intent);
-  runCommand("pnpm", ["run", "pack"], packageRoot);
+  const tarball = packTarball(packageRoot);
   for (const script of PUBLISH_GATES) {
     runCommand("pnpm", ["run", script], packageRoot);
   }
-  return readFileSync(findTarball(packageRoot));
+  return readFileSync(tarball);
 }
