@@ -39,6 +39,11 @@ describe("release wiring", () => {
       const tokens = asString(scripts[name], `scripts.${name}`).split(/\s+/);
       expect(tokens[0], `${name} must launch node`).toBe("node");
       expect(tokens.at(-1), `${name} must run its committed entry point`).toBe(entryPoint);
+      // Both root release scripts preload the package loader so extension-less imports under
+      // packages/ui/scripts resolve; dropping it would only fail on the bot branch in CI.
+      const loader = tokens.indexOf("--import");
+      expect(loader, `${name} must preload the package loader`).toBeGreaterThan(0);
+      expect(tokens[loader + 1]).toBe("./packages/ui/scripts/ts-resolve.mjs");
     }
     const typeCheck = asString(scripts["type-check:scripts"], "scripts.type-check:scripts").split(/\s+/);
     expect(typeCheck[0], "script checking must run tsc").toBe("tsc");
