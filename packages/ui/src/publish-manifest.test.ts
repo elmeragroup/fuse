@@ -70,7 +70,7 @@ describe("publish manifest", () => {
     expect(manifest.elmeraRelease).toBeUndefined();
   }, 20_000);
 
-  it("drops the release identity when an ordinary build regenerates a stamped manifest", () => {
+  it("an unstamped write never carries a stale release identity", () => {
     const root = scratchPackageRoot();
     writePublishManifest(root, { version: "0.2.0-canary.1", commit, channel });
     writePublishManifest(root);

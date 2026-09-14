@@ -3,16 +3,16 @@ name: Version Packages
 on:
   workflow_call:
 
-# A newer push to main cancels a stale queued or running version run; this replaces the old manual
-# superseded-commit check. changesets/action force-pushes its branch, so the next run recovers it.
-concurrency:
-  group: version-packages
-  cancel-in-progress: true
-
 jobs:
   version:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    concurrency:
+      # A newer push to main cancels a stale queued or running version run; this replaces the old
+      # manual superseded-commit check. changesets/action force-pushes its branch, so the next run
+      # recovers it.
+      group: version-packages
+      cancel-in-progress: true
     permissions:
       contents: write
       pull-requests: write

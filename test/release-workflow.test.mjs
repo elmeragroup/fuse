@@ -79,13 +79,15 @@ describe("release wiring", () => {
       .map((line) => relative(repoRoot, line));
     expect(programFiles.length, "the scripts program must list its source files").toBeGreaterThan(0);
     for (const { taskId, positives, negatives } of resolvedInputs) {
+      const positive = positives.map((pattern) => picomatch(pattern, { dot: true }));
+      const negative = negatives.map((pattern) => picomatch(pattern, { dot: true }));
       for (const file of programFiles) {
         expect(
-          positives.some((pattern) => picomatch(pattern, { dot: true })(file)),
+          positive.some((matcher) => matcher(file)),
           `${file} is outside the turbo inputs of ${taskId}`
         ).toBe(true);
         expect(
-          negatives.some((pattern) => picomatch(pattern, { dot: true })(file)),
+          negative.some((matcher) => matcher(file)),
           `${file} is excluded from the turbo inputs of ${taskId}`
         ).toBe(false);
       }
@@ -202,8 +204,10 @@ describe("release wiring", () => {
 
   it("version workflow versions through the root script and triggers the release PR checks", () => {
     const workflow = readWorkflow("version-packages");
-    // A newer push to main cancels a stale version run instead of the old manual commit comparison.
-    const concurrency = asRecord(workflow.concurrency, "version concurrency");
+    // A newer push to main cancels a stale version run instead of the old manual commit comparison;
+    // the block sits on the called job, like publish-release's, so it bounds that job's runs only.
+    const job = asRecord(asRecord(workflow.jobs, "version jobs").version, "version job");
+    const concurrency = asRecord(job.concurrency, "version concurrency");
     expect(asString(concurrency.group, "concurrency group")).toBe("version-packages");
     expect(concurrency["cancel-in-progress"]).toBe(true);
     const steps = requiredJobSteps(workflow, "version");

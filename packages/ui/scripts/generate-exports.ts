@@ -209,7 +209,7 @@ function writePublishPackageJson(path: string, manifest: PublishManifest): void 
 }
 
 /** The release identity the engine reads back from the packed `elmeraRelease` field. */
-export type ReleaseSource = Pick<ReleaseIntent, "commit" | "channel">;
+type ReleaseSource = Pick<ReleaseIntent, "commit" | "channel">;
 
 type PublishManifest = {
   name: string;

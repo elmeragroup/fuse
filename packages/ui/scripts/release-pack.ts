@@ -2,8 +2,6 @@ import { readFileSync } from "node:fs";
 
 import type { ReleaseIntent } from "@elmeragroup/internal/release";
 
-// The root `release:run` script preloads `ts-resolve.mjs`, so this closure resolves
-// extension-less imports the same way the package's own scripts do.
 import { buildPackage } from "./build";
 import { packageRootFromScript } from "./paths";
 import { runCommand } from "./run-command";
