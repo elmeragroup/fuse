@@ -1,8 +1,7 @@
 ---
 title: Checkbox
 lede: >
-  A 16px checkbox primitive, a labeled Field group, and a SelectionItem row
-  (`CheckboxItem`) that aliases the shell parts by object identity.
+  A checkbox, with a labeled group and a selectable row variant.
 ---
 
 import { CheckboxBasic } from "./demos/checkbox-basic";
@@ -16,32 +15,6 @@ import { componentMetadata } from "../../../../lib/component-page";
 export const metadata = componentMetadata("checkbox");
 
 <ComponentIntro slug="checkbox" />
-
-<Prose>
-
-`Checkbox` is the unlabeled primitive. `CheckboxGroup` is the labeled composite:
-`label` / `description` / `errorMessage` (`ReactNode`), `isDisabled` / `isInvalid`,
-and `onChange(value)` as `string[]`. Base-ui's CheckboxGroup primitive has no
-`name`, so the group sets `name` on `Field.Root` and Field context threads it to
-member hidden inputs. `RadioGroup` puts `name` on its primitive; both faces still
-expose `name?: string`.
-
-`allValues` plus a `parent` `CheckboxItem` is the tri-state select-all. A proper
-non-empty subset reports `aria-checked="mixed"`. `controlPosition` passes through
-to `SelectionItem.Shell`.
-
-`CheckboxItem.Title`, `.Description`, `.Content`, `.Actions`, and `.SubSection`
-are the **same objects** as `SelectionItem.*`. Direct `CheckboxItem.SubSection`
-children stay outside the row label so interactive content does not toggle the
-control. Wrapping one in a Fragment hides it from that filter.
-
-The 16px box expands its hit target with `after:-inset-x-3 after:-inset-y-2` —
-adjacent interactive elements need clearance. A checked box in an invalid group
-keeps the primary border (`aria-invalid:aria-checked:border-primary`).
-`CheckboxDescription`'s note is visual-only; use Field description wiring when
-the note must be an accessible description.
-
-</Prose>
 
 <Demo slug="checkbox" id="basic" title="Basic" file="checkbox-basic.tsx">
   <CheckboxBasic />

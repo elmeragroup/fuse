@@ -1,8 +1,7 @@
 ---
 title: Empty
 lede: >
-  A centered empty-state layout. `Empty.Root` frames the block; media, title, description,
-  and content compose plain elements, so the whole compound is server-safe.
+  A placeholder for an area that has nothing to show yet.
 ---
 
 import { EmptyBasic } from "./demos/empty-basic";
@@ -16,19 +15,6 @@ import { componentMetadata } from "../../../../lib/component-page";
 export const metadata = componentMetadata("empty");
 
 <ComponentIntro slug="empty" />
-
-<Prose>
-
-Empty has no base-ui primitive behind it. `Title` is a `div`, not a heading — empty states
-are transient placeholders and must not perturb the page outline. `Description` is a real
-`p` so inline links remain ordinary tab stops. The frame and media recipes stay
-module-private.
-
-Actions belong in `Empty.Content`; the compound adds no focus management, roles, or live
-region. If the empty state replaces async results, the consumer owns the `aria-live`
-announcement.
-
-</Prose>
 
 <Demo slug="empty" id="basic" title="Basic" file="empty-basic.tsx">
   <EmptyBasic />

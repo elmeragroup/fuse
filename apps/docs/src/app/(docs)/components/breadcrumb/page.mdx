@@ -1,9 +1,7 @@
 ---
 title: Breadcrumb
 lede: >
-  A localized trail of links ending at the current page. Link is the library
-  exemplar for `useRender` polymorphism; landmark and ellipsis copy follow the
-  provider dictionary.
+  A trail of links that shows where the current page sits.
 ---
 
 import { BreadcrumbBasic } from "./demos/breadcrumb-basic";
@@ -16,17 +14,6 @@ import { componentMetadata } from "../../../../lib/component-page";
 export const metadata = componentMetadata("breadcrumb");
 
 <ComponentIntro slug="breadcrumb" />
-
-<Prose>
-
-`Breadcrumb.Root` is a localized `<nav>` landmark. The trail is an ordered list;
-separators are presentational and omitted from the accessibility tree. There is
-no `locale` prop — dictionary defaults follow `ElmeraGroupUiProvider`. Explicit
-`aria-label` wins over the `label` prop over the dictionary. `Breadcrumb.Link`
-swaps its host through `render` (`useRender` + `state.slot`); there is no `as`
-prop. `Breadcrumb.Page` keeps the WAI-ARIA current-page trio on a `<span>`.
-
-</Prose>
 
 <Demo slug="breadcrumb" id="basic" title="Basic" file="breadcrumb-basic.tsx">
   <BreadcrumbBasic />

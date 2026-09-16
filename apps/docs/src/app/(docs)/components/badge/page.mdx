@@ -1,8 +1,7 @@
 ---
 title: Badge
 lede: >
-  A small status marker. A plain `div` styled by the public `badgeVariants` recipe — no
-  base-ui primitive, no interactivity, server-safe.
+  A small label for statuses, counts, and tags.
 ---
 
 import { BadgeVariants } from "./demos/badge-variants";
@@ -15,14 +14,6 @@ import { componentMetadata } from "../../../../lib/component-page";
 export const metadata = componentMetadata("badge");
 
 <ComponentIntro slug="badge" />
-
-<Prose>
-
-Badge carries no semantics of its own: it renders whatever children it is given inside a
-styled box. When the badge communicates a live state, the surrounding region owns the
-announcement.
-
-</Prose>
 
 <Demo slug="badge" id="variants" title="Variants" file="badge-variants.tsx">
   <BadgeVariants />

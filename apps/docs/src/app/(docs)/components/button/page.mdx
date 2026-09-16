@@ -1,8 +1,7 @@
 ---
 title: Button
 lede: >
-  Triggers an action. Renders a native `button` through the base-ui primitive; compose
-  with links or router primitives through the `render` prop.
+  Triggers an action.
 ---
 
 import { ButtonVariantMatrix } from "./demos/button-variant-matrix";
@@ -16,14 +15,6 @@ import { componentMetadata } from "../../../../lib/component-page";
 export const metadata = componentMetadata("button");
 
 <ComponentIntro slug="button" />
-
-<Prose>
-
-`isVisuallyDisabled` looks disabled but stays interactive, so the button can explain
-itself on activation; `isPending` disables the element outright and stamps
-`data-pending`. Effective disabled is `disabled || isPending`.
-
-</Prose>
 
 <Demo slug="button" id="variants" title="Variants" file="button-variant-matrix.tsx">
   <ButtonVariantMatrix />

@@ -1,8 +1,7 @@
 ---
 title: Switch
 lede: >
-  An unlabeled two-state control over the base-ui switch primitive. Labeled
-  usage composes `Field.Root` + `Field.Label`.
+  A two-state control for turning an option on or off.
 ---
 
 import { SwitchBasic } from "./demos/switch-basic";
@@ -16,14 +15,6 @@ import { componentMetadata } from "../../../../lib/component-page";
 export const metadata = componentMetadata("switch");
 
 <ComponentIntro slug="switch" />
-
-<Prose>
-
-`checked`, `defaultChecked`, and `onCheckedChange` pass through to the primitive.
-There is no label prop — compose `Field` for a visible name, description, or
-error. `size` is an optical track (`sm` / `default`), not a density rung.
-
-</Prose>
 
 <Demo slug="switch" id="basic" title="Basic" file="switch-basic.tsx">
   <SwitchBasic />

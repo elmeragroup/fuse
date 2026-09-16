@@ -1,9 +1,7 @@
 ---
 title: DateRangePicker
 lede: >
-  An interim labeled date-range picker over React Aria Components. Two segmented
-  rows share one field box, and the popover holds the same range calendar the
-  standalone entry ships.
+  Start and end date fields with a range calendar popover.
 ---
 
 import { DateRangePickerBasic } from "./demos/date-range-picker-basic";
@@ -20,36 +18,11 @@ export const metadata = componentMetadata("date-range-picker");
 
 <Prose>
 
-`DateRangePicker` lives at `@elmeragroup/ui/react-aria/date-range-picker`. The
-`react-aria/` prefix is the quarantine marker: this module is replaced alongside
-`DatePicker` when base-ui ships a popover-backed range picker, and the bare path is
-reserved for that successor. The composite face is optional `label` /
-`description`, `errorMessage` as a `ReactNode` or `(ValidationResult) => ReactNode`,
-and `shouldForceLeadingZeros` defaulting to `true`. `value`, `defaultValue` and
-`onChange` speak the RAC range shape, `{ start, end }`, and the remaining RAC
-DateRangePicker props (`minValue` / `maxValue`, `granularity`,
-`isDateUnavailable`, `allowsNonContiguousRanges`, `startName` / `endName`,
-`isOpen` / `onOpenChange`, …) pass through. There is no preset pane here — that
-stays a `DatePicker` feature.
+Values are `{ start, end }` ranges of `CalendarDate` objects from `@internationalized/date`, which you install separately; the library does not re-export it.
 
-The two rows are the same `DateInput` segment row `DateField` renders, and the
-popover holds the same `RangeCalendar` grid — so segment editing, keyboard range
-selection and RTL behaviour all match those entries. The en dash between the rows
-is decoration: React Aria names the rows on the segments themselves ("month, Start
-Date" / "month, End Date"), so nothing is announced twice. Wrap locale-dependent
-usage in `UiProviders` from `@elmeragroup/ui/react-aria/ui-providers`.
+`onChange` fires only once a range is complete, so a partly typed range reports nothing.
 
-Values are `@internationalized/date` objects — `CalendarDate` and friends — not
-`Date`. That package is a direct install for consumers (`pnpm add
-@internationalized/date`): the demos below import it by name, and the copy shipped
-inside `@elmeragroup/ui` is an implementation detail of the quarantined tier, not a
-re-export.
-
-`onChange` reports whole ranges only, so typing one row and stopping reports
-nothing. In the calendar the first click anchors the range and the second commits
-it and closes the popover; Escape cancels an in-progress selection, dismisses the
-popover and returns focus to the trigger. A read-only picker keeps its popover
-shut and fills the field with the muted surface.
+Wrap locale-dependent usage in `UiProviders` so it follows the app locale.
 
 </Prose>
 
@@ -61,14 +34,6 @@ shut and fills the field with the muted surface.
   <DateRangePickerControlled />
 </Demo>
 
-<Prose>
-
-An end before its start is invalid on its own, as are endpoints outside `minValue`
-/ `maxValue` or on an unavailable date. All of them drive `FieldError`, which takes
-either a node or a function of the `ValidationResult`.
-
-</Prose>
-
 <Demo slug="date-range-picker" id="validation" title="Validation" file="date-range-picker-validation.tsx">
   <DateRangePickerValidation />
 </Demo>
@@ -76,15 +41,6 @@ either a node or a function of the `ValidationResult`.
 <Demo slug="date-range-picker" id="states" title="States" file="date-range-picker-states.tsx">
   <DateRangePickerStates />
 </Demo>
-
-<Prose>
-
-The popover portals into the nearest `ThemeScope`, so it inherits the theme of the
-surface that opened it, and `container` overrides that target when you need a
-specific one. Interacting with the popover never dismisses the overlay hosting the
-picker: anchoring and committing a range inside a dialog leaves the dialog open.
-
-</Prose>
 
 <Demo slug="date-range-picker" id="in-modal" title="Inside a dialog" file="date-range-picker-in-modal.tsx">
   <DateRangePickerInModal />

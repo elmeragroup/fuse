@@ -1,9 +1,7 @@
 ---
 title: Card
 lede: >
-  A layout surface. `Card.Root` sets the surface and its parts — header, tag, title,
-  description, action, content, footer — compose plain elements, so the whole compound is
-  server-safe.
+  A surface that groups related content and actions.
 ---
 
 import { CardBasic } from "./demos/card-basic";
@@ -17,13 +15,6 @@ import { componentMetadata } from "../../../../lib/component-page";
 export const metadata = componentMetadata("card");
 
 <ComponentIntro slug="card" />
-
-<Prose>
-
-Card has no base-ui primitive behind it. Every part is a styled element, and the recipe
-`cardVariants` is public so an app can restyle a bespoke surface on the same axes.
-
-</Prose>
 
 <Demo slug="card" id="basic" title="Basic" file="card-basic.tsx">
   <CardBasic />

@@ -1,8 +1,7 @@
 ---
 title: InputGroup
 lede: >
-  A structural primitive that joins a control with addons — icons, text, buttons, a
-  keyboard hint — into one bordered group that owns the focus ring for the whole cluster.
+  A control with icons, buttons, or text joined into one bordered group.
 ---
 
 import { InputGroupIcons } from "./demos/input-group-icons";
@@ -17,13 +16,6 @@ import { componentMetadata } from "../../../../lib/component-page";
 export const metadata = componentMetadata("input-group");
 
 <ComponentIntro slug="input-group" />
-
-<Prose>
-
-The group is the focus-ring owner: the nested control's own ring is neutralised so a
-keyboard user sees one ring around the cluster, not two.
-
-</Prose>
 
 <Demo slug="input-group" id="icons" title="Icon addons" file="input-group-icons.tsx">
   <InputGroupIcons />

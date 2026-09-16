@@ -1,9 +1,7 @@
 ---
 title: Toast
 lede: >
-  Stacked notifications on `@base-ui/react/toast`. Wrap the app with `Toast.Provider`,
-  place one `Toast.Viewport`, and dispatch with `Toast.useToastManager()` or a
-  module-scope `Toast.createToastManager()`.
+  Brief notifications that appear and dismiss on their own.
 ---
 
 import { ToastStatuses } from "./demos/toast-statuses";
@@ -16,23 +14,6 @@ import { componentMetadata } from "../../../../lib/component-page";
 export const metadata = componentMetadata("toast");
 
 <ComponentIntro slug="toast" />
-
-<Prose>
-
-There is no sonner `Toaster` / `toast.*` shim. Call `toastManager.add({ description, type })`
-for success, error, info, warning, or a plain neutral toast; `promise()` walks
-loading → success or loading → error. Status `-soft` chrome is always on, and every toast
-ships a locale-labeled close button.
-
-`container` on `Toast.Viewport` portals into the nearest `ThemeScope` (or an explicit
-element). The viewport waits while that target is still `null` rather than escaping to
-`document.body`. Positioner and Arrow stay unexported — stacked toasts only.
-
-Locale comes from `ElmeraGroupUiProvider` only. Close copy defaults to `toast.close`;
-`label` overrides it. `priority` is type-aware (error is high, everything else is low)
-unless the caller sets it.
-
-</Prose>
 
 <Demo slug="toast" id="statuses" title="Statuses" file="toast-statuses.tsx">
   <ToastStatuses />

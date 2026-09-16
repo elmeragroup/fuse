@@ -1,8 +1,7 @@
 ---
 title: Emoji
 lede: >
-  Five hand-inlined Twemoji faces as a server-safe namespace. Decorative by default;
-  pass `label` when the face is the only carrier of meaning.
+  A small set of Twemoji faces rendered as inline SVG.
 ---
 
 import { EmojiFaces } from "./demos/emoji-faces";
@@ -14,25 +13,6 @@ import { componentMetadata } from "../../../../lib/component-page";
 export const metadata = componentMetadata("emoji");
 
 <ComponentIntro slug="emoji" />
-
-<Prose>
-
-The five faces are separate components, not a `face` variant axis — that keeps
-per-face tree-shaking and matches the app call sites that consume `Emoji.PartyingFace`.
-Named exports (`SlightlySmilingFace`, …) exist for the same reason; the `Emoji`
-namespace stays canonical.
-
-There is no default size. Consumers size with `className` (`size-4` / `size-5` /
-`size-8`). Hex fills are illustration artwork and do not follow theme tokens.
-
-Without `label` the svg is `aria-hidden` so it is not announced next to adjacent
-text. With `label` it becomes `role="img"`. The component ships no default copy —
-`label` is already localized at the call site.
-
-Graphics remain CC BY 4.0 Twemoji artwork (U+1F641, U+1F642, U+1F610, U+1F62D,
-U+1F973). Attribution ships in the published tarball.
-
-</Prose>
 
 <Demo slug="emoji" id="faces" title="Faces" file="emoji-faces.tsx">
   <EmojiFaces />

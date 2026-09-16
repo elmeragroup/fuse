@@ -1,8 +1,7 @@
 ---
 title: Show
 lede: >
-  A server render helper with no DOM of its own. When `when` is true it returns
-  children in a fragment; otherwise it returns `null`.
+  Renders children when a condition is true.
 ---
 
 import { ShowBasic } from "./demos/show-basic";
@@ -12,15 +11,6 @@ import { componentMetadata } from "../../../../lib/component-page";
 export const metadata = componentMetadata("show");
 
 <ComponentIntro slug="show" />
-
-<Prose>
-
-`children` is an ordinary prop: the JSX is evaluated by the parent before `Show`
-decides anything; only rendering is skipped. Guarding expressions that throw when
-the condition is false (`data!.name`) is not safe here — use an inline ternary or
-optional chaining. There is no lazy render-prop overload and no `fallback`.
-
-</Prose>
 
 <Demo slug="show" id="basic" title="Basic" file="show-basic.tsx">
   <ShowBasic />

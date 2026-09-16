@@ -1,8 +1,7 @@
 ---
 title: Alert
 lede: >
-  A status message on the Item family. Root owns the variant and the live region;
-  Title is a real heading; an optional action is a forwarded Button handler.
+  A short status message with an icon, a title, and an optional action.
 ---
 
 import { AlertVariants } from "./demos/alert-variants";
@@ -15,17 +14,6 @@ import { componentMetadata } from "../../../../lib/component-page";
 export const metadata = componentMetadata("alert");
 
 <ComponentIntro slug="alert" />
-
-<Prose>
-
-`Alert.Root` is a server composite over `Item` (`variant="outline"` `size="sm"`) with an
-explicit `role="alert"`. The status icon is rendered automatically inside `Item.Media`
-and is decorative (`aria-hidden`). `Alert.Title` is its own `h3` by default — pass
-`level` to fit an existing outline. `onAction` is a forwarded consumer handler, so the
-client boundary sits at the caller, not in this module. The `destructive` variant value
-is kept; its classes use `error*` tokens.
-
-</Prose>
 
 <Demo slug="alert" id="variants" title="Variants" file="alert-variants.tsx">
   <AlertVariants />

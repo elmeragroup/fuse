@@ -1,8 +1,7 @@
 ---
 title: ScrollArea
 lede: >
-  Styled custom scrollbars over native scrolling. `ScrollArea.Root` ships one bar for
-  its orientation; the viewport stays a real scroll container.
+  Custom scrollbars over native scrolling.
 ---
 
 import { ScrollAreaVertical } from "./demos/scroll-area-vertical";
@@ -20,9 +19,7 @@ export const metadata = componentMetadata("scroll-area");
 
 ## Composition limits
 
-`Root` renders exactly one scrollbar. For two-axis scrolling, compose the base-ui
-primitives directly and mount two `ScrollArea.Bar`s — the last demo shows that escape
-hatch.
+`Root` renders exactly one scrollbar. For two-axis scrolling, mount two `ScrollArea.Bar`s yourself; the last demo shows the composition.
 
 </Prose>
 

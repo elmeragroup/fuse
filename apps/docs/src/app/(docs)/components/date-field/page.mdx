@@ -1,9 +1,7 @@
 ---
 title: DateField
 lede: >
-  An interim labeled date field over React Aria Components. Segments are
-  individually editable; DateInput is the reusable segment row for custom
-  compositions and future pickers.
+  A segmented input for typing a date.
 ---
 
 import { DateFieldBasic } from "./demos/date-field-basic";
@@ -20,23 +18,11 @@ export const metadata = componentMetadata("date-field");
 
 <Prose>
 
-`DateField` lives at `@elmeragroup/ui/react-aria/date-field`. The `react-aria/`
-prefix is the quarantine marker: this module is replaced when base-ui ships a
-date field, and the bare path is reserved for that successor. The composite face
-is optional `label` / `description`, `errorMessage` as a `ReactNode` or
-`(ValidationResult) => ReactNode`, and `shouldForceLeadingZeros` defaulting to
-`true`. Remaining RAC DateField props (`value`, `granularity`, `hourCycle`,
-`minValue` / `maxValue`, `isDisabled`, `isReadOnly`, …) pass through.
+Values are `CalendarDate` objects from `@internationalized/date`, which you install separately; the library does not re-export it.
 
-`DateInput` is public and reusable. It always renders RAC date segments — it
-does not accept `children` — and keeps `slot` for start/end range pickers. Wrap
-locale-dependent usage in `UiProviders` from `@elmeragroup/ui/react-aria/ui-providers`.
+`DateInput` is the segment row on its own, for custom field compositions.
 
-Values are `@internationalized/date` objects — `CalendarDate` and friends — not
-`Date`. That package is a direct install for consumers (`pnpm add
-@internationalized/date`): the demos below import it by name, and the copy shipped
-inside `@elmeragroup/ui` is an implementation detail of the quarantined tier, not a
-re-export.
+Wrap locale-dependent usage in `UiProviders` so it follows the app locale.
 
 </Prose>
 

@@ -1,8 +1,7 @@
 ---
 title: TextareaField
 lede: >
-  A labeled multiline field composite over Field + Textarea, with an optional
-  character counter. Uncontrolled typing works; `isDisabled` disables through Field.
+  A labeled multiline text input with an optional character counter.
 ---
 
 import { TextareaFieldBasic } from "./demos/textarea-field-basic";
@@ -16,16 +15,6 @@ import { componentMetadata } from "../../../../lib/component-page";
 export const metadata = componentMetadata("textarea-field");
 
 <ComponentIntro slug="textarea-field" />
-
-<Prose>
-
-The composite face is `isDisabled` / `isInvalid` / `isRequired`, `onChange(value)`, and
-`errorMessage` as a `ReactNode`. Supplying `value` makes the field controlled;
-`defaultValue` (or neither) is uncontrolled. `maxLength` is forwarded natively and
-drives the `current/max` counter. There is no own recipe — `min-h-16` comes from the
-`Textarea` primitive.
-
-</Prose>
 
 <Demo slug="textarea-field" id="basic" title="Basic" file="textarea-field-basic.tsx">
   <TextareaFieldBasic />

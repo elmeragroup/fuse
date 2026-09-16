@@ -16,9 +16,9 @@ describe("component page anatomy (docs-site.md §3.4)", () => {
   });
 
   it("renders the MDX shell's own prose", async () => {
-    const html = await fetchText("/components/button");
-    expect(html).toContain("isVisuallyDisabled</code> looks disabled but stays interactive");
-    expect(html).toContain("itself on activation");
+    const html = await fetchText("/components/input");
+    expect(html).toContain("A bare input has no accessible name");
+    expect(html).toContain("Field.Root</code> with a");
   });
 
   it("renders one demo frame per scenario, with stage, meta row and extracted source", async () => {

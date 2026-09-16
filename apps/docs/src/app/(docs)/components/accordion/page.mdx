@@ -1,8 +1,7 @@
 ---
 title: Accordion
 lede: >
-  A set of collapsible sections. Single mode is always collapsible; `multiple` keeps
-  items independent. Panels animate height against `--accordion-panel-height`.
+  Collapsible sections stacked in one control.
 ---
 
 import { AccordionBasic } from "./demos/accordion-basic";
@@ -16,16 +15,6 @@ import { componentMetadata } from "../../../../lib/component-page";
 export const metadata = componentMetadata("accordion");
 
 <ComponentIntro slug="accordion" />
-
-<Prose>
-
-`value`, `defaultValue`, and `onValueChange` are always arrays — even with one open item.
-`multiple` replaces radix `type`; there is no `collapsible` prop. Compose `Header` around
-`Trigger` explicitly; `Content` is base-ui's `Panel`. Find-in-page can open closed panels
-when `hiddenUntilFound` is set. `orientation` and `loopFocus` pass through but no longer
-move focus — Tab and Shift+Tab are the only trigger-to-trigger keys.
-
-</Prose>
 
 <Demo slug="accordion" id="basic" title="Basic" file="accordion-basic.tsx">
   <AccordionBasic />

@@ -1,8 +1,7 @@
 ---
 title: FileTrigger
 lede: >
-  An interim file-picking trigger over React Aria Components. A named button
-  opens the native picker; the hidden file input stays the ref target.
+  A button that opens the file picker.
 ---
 
 import { FileTriggerBasic } from "./demos/file-trigger-basic";
@@ -13,25 +12,6 @@ import { componentMetadata } from "../../../../lib/component-page";
 export const metadata = componentMetadata("file-trigger");
 
 <ComponentIntro slug="file-trigger" />
-
-<Prose>
-
-`FileTrigger` lives at `@elmeragroup/ui/react-aria/file-trigger`. The
-`react-aria/` prefix is the quarantine marker: this atom is replaced by a
-hidden-input plus Button composition when the interim tier retires, and the
-bare path is reserved for that successor. The visible control is a real
-button. RAC hides the `<input type="file">` and clicks it on press, so Space
-and Enter open the native picker. `children` is the accessible name; the
-leading icon is decorative.
-
-`acceptedFileTypes`, `allowsMultiple`, `acceptDirectory`, `defaultCamera`, and
-`onSelect` pass through to the hidden input. `variant` and `size` are the
-public `buttonVariants` axes (size defaults to `"sm"`); `isDisabled` and
-`className` route to the button, never the primitive. `withIcon` defaults to
-on and switches the glyph: Camera when `defaultCamera` is set, Folder when
-`acceptDirectory`, Paperclip otherwise.
-
-</Prose>
 
 <Demo slug="file-trigger" id="basic" title="Basic" file="file-trigger-basic.tsx">
   <FileTriggerBasic />

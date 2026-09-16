@@ -1,9 +1,7 @@
 ---
 title: Dialog
 lede: >
-  A modal overlay. `Dialog.Root` owns the open state, `Dialog.Content` sizes the popup
-  and ships the corner close button, and the portal targets the nearest `ThemeScope`
-  so overlays stay inside the theme that opened them.
+  A modal window that sits above the page and blocks interaction behind it.
 ---
 
 import { DialogBasic } from "./demos/dialog-basic";
@@ -17,14 +15,6 @@ import { componentMetadata } from "../../../../lib/component-page";
 export const metadata = componentMetadata("dialog");
 
 <ComponentIntro slug="dialog" />
-
-<Prose>
-
-`Dialog.Content`'s `showCloseButton` controls the corner dismiss affordance;
-`Dialog.Footer`'s `showCloseButton` appends a labelled footer action. They are separate
-jobs and both stay.
-
-</Prose>
 
 <Demo slug="dialog" id="basic" title="Basic" file="dialog-basic.tsx">
   <DialogBasic />

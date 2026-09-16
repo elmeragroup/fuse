@@ -1,9 +1,7 @@
 ---
 title: GridList
 lede: >
-  An interim interactive list over React Aria Components. Rows support keyboard
-  navigation, typeahead, and optional selection checkboxes. A facet-filter
-  remnant until the listbox rewrite.
+  A keyboard-navigable list with optional selection.
 ---
 
 import { GridListSelection } from "./demos/grid-list-selection";
@@ -14,23 +12,6 @@ import { componentMetadata } from "../../../../lib/component-page";
 export const metadata = componentMetadata("grid-list");
 
 <ComponentIntro slug="grid-list" />
-
-<Prose>
-
-`GridList` lives at `@elmeragroup/ui/react-aria/grid-list`. The `react-aria/`
-prefix is the quarantine marker: this module is replaced when the listbox/filter
-rewrite lands, and the bare path is reserved for that successor. The public pair
-is `GridList` and `GridListItem` — no namespace. Collection props (`items` /
-`children`), `selectionMode`, `selectionBehavior`, selected keys,
-`disabledKeys`, `onAction`, `renderEmptyState`, and `dragAndDropHooks` pass
-through from RAC. `textValue` is derived when a row's `children` is a string.
-
-`selectionMode="multiple"` with `selectionBehavior="toggle"` (the default)
-renders a module-private selection checkbox per row. The checkbox is not a
-public export. Wrap locale-dependent usage in `UiProviders` from
-`@elmeragroup/ui/react-aria/ui-providers`.
-
-</Prose>
 
 <Demo slug="grid-list" id="selection" title="Selection" file="grid-list-selection.tsx">
   <GridListSelection />
