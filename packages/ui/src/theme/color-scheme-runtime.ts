@@ -5,7 +5,7 @@ import {
   writeDocumentColorScheme,
   writeStoredColorScheme,
 } from "./color-scheme";
-import type { ColorScheme } from "./color-scheme";
+import type { ColorScheme, ResolvedColorScheme } from "./color-scheme-types";
 import { disableColorSchemeTransitions } from "./disable-transition";
 
 export type ColorSchemeRuntimeConfig = {
@@ -22,7 +22,7 @@ export type ColorSchemeRuntimeSnapshot = {
   preference: ColorScheme;
   runtimeForce: ColorScheme | undefined;
   mounted: boolean;
-  resolvedColorScheme: "light" | "dark" | undefined;
+  resolvedColorScheme: ResolvedColorScheme | undefined;
 };
 
 export type ColorSchemeRuntimeStore = {
@@ -41,7 +41,7 @@ export type ColorSchemeRuntimeStore = {
 };
 
 function applyDocumentColorScheme(
-  value: "light" | "dark",
+  value: ResolvedColorScheme,
   disableTransitionOnChange: boolean,
   nonce: string | undefined
 ): void {
@@ -70,7 +70,7 @@ export function createColorSchemeRuntimeStore(
   let config = initialConfig;
   let preference = initialConfig.defaultColorScheme;
   let mounted = false;
-  let systemScheme: "light" | "dark" = "light";
+  let systemScheme: ResolvedColorScheme = "light";
   let systemSchemeRead = false;
   const forceStack: Array<{ id: symbol; value: ColorScheme; depth: number }> = [];
   const listeners = new Set<() => void>();
@@ -100,7 +100,7 @@ export function createColorSchemeRuntimeStore(
     return activeForce() ?? preference;
   }
 
-  function currentSystemScheme(): "light" | "dark" {
+  function currentSystemScheme(): ResolvedColorScheme {
     if (!systemSchemeRead) {
       systemScheme = resolveSystemColorScheme();
       systemSchemeRead = true;
@@ -108,7 +108,7 @@ export function createColorSchemeRuntimeStore(
     return systemScheme;
   }
 
-  function resolveFromCachedSystem(source: ColorScheme): "light" | "dark" {
+  function resolveFromCachedSystem(source: ColorScheme): ResolvedColorScheme {
     if (source === "light" || source === "dark") {
       return source;
     }
@@ -118,7 +118,7 @@ export function createColorSchemeRuntimeStore(
     return currentSystemScheme();
   }
 
-  function resolvedForConsumers(): "light" | "dark" | undefined {
+  function resolvedForConsumers(): ResolvedColorScheme | undefined {
     if (!mounted) {
       return undefined;
     }

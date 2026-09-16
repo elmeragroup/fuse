@@ -1,11 +1,12 @@
-import { composeTheme } from "./compose-theme";
+import type { ResolvedColorScheme } from "./color-scheme-types";
+import { composeTheme, internalReset } from "./compose-theme";
 import { brandPointer } from "./tokens/brand-pointers";
 import { EXTERNAL_RESET_KEYS, TOKEN_NAMES } from "./tokens/contract";
-import type { TokenContract } from "./tokens/contract";
+import type { TokenContract, TokenName } from "./tokens/contract";
 import { DEFAULTS } from "./tokens/defaults";
-import { externalPalette } from "./tokens/external-palettes";
+import { INTERNAL_DARK_PALETTE } from "./tokens/internal-dark-palette";
 import { PRIMITIVE_NAMES, PRIMITIVES } from "./tokens/primitives";
-import { FKAS_COMPANY_DELTA } from "./tokens/segment-deltas";
+import { THEME_RESET_KEYS } from "./tokens/reset-keys";
 import { BRAND_CODES, LEGAL_THEMES } from "./tokens/themes";
 
 const GENERATED_FILE_HEADER = `/**
@@ -16,20 +17,37 @@ const GENERATED_FILE_HEADER = `/**
 
 `;
 
-const DARK_PLACEHOLDER = `/* Reserved color-scheme axis. Values land with the dark-mode roadmap item.
-   Do not add an empty rule node here.
-   [data-theme="dark"] {
-   }
- */
-`;
-
 function cssCustomProperty(name: string, value: string): string {
   return `  --${name}: ${value};`;
 }
 
-function cssRule(selector: string, declarations: readonly (readonly [string, string])[]): string {
-  const body = declarations.map(([name, value]) => cssCustomProperty(name, value)).join("\n");
-  return `${selector} {\n${body}\n}`;
+function cssRule(
+  selectors: readonly string[],
+  declarations: readonly (readonly [string, string])[],
+  colorScheme?: ResolvedColorScheme
+): string {
+  const body = declarations.map(([name, value]) => cssCustomProperty(name, value));
+  if (colorScheme !== undefined) body.push(`  color-scheme: ${colorScheme};`);
+  return `${selectors.join(",\n")} {\n${body.join("\n")}\n}`;
+}
+
+/**
+ * Light rules target one selector; dark rules carry the direct and the descendant
+ * form in one selector list so a palette body is emitted once, not twice.
+ */
+function themeRule(
+  selector: string,
+  declarations: readonly (readonly [string, string])[],
+  colorScheme: ResolvedColorScheme
+): string {
+  if (colorScheme === "dark") {
+    return cssRule(
+      [`[data-theme="dark"]${selector}`, `[data-theme="dark"] ${selector}`],
+      declarations,
+      "dark"
+    );
+  }
+  return cssRule([selector], declarations, "light");
 }
 
 function rootDeclarations(): (readonly [string, string])[] {
@@ -38,60 +56,115 @@ function rootDeclarations(): (readonly [string, string])[] {
   return [...primitives, ...roles];
 }
 
-function resetDeclarations(overrides: Partial<TokenContract>): (readonly [string, string])[] {
-  return EXTERNAL_RESET_KEYS.map((key) => {
+/**
+ * Light layers declare `EXTERNAL_RESET_KEYS` only, so a host override of a role no
+ * palette owns (`--ring`, `--popover`, `--chart-*`) inherits through the scope. Dark
+ * layers materialize `THEME_RESET_KEYS`, every key any dark palette can change.
+ */
+function resetDeclarations(
+  overrides: Partial<TokenContract>,
+  keys: readonly TokenName[]
+): (readonly [string, string])[] {
+  return keys.map((key) => {
     const value = overrides[key] ?? DEFAULTS[key];
     return [key, value] as const;
   });
 }
 
+function resetKeys(colorScheme: ResolvedColorScheme): readonly TokenName[] {
+  return colorScheme === "dark" ? THEME_RESET_KEYS : EXTERNAL_RESET_KEYS;
+}
+
 function emitRoot(): string {
-  return cssRule(":root", rootDeclarations());
+  return cssRule([":root"], rootDeclarations());
 }
 
 function emitBrandPointers(): string {
   return BRAND_CODES.map((code) => {
     const pointer = brandPointer(code);
-    return cssRule(`[data-theme-brand="${code}"]`, [
-      ["brand", pointer.brand],
-      ["brand-foreground", pointer["brand-foreground"]],
-      ["sidebar-brand", DEFAULTS["sidebar-brand"]],
-      ["sidebar-brand-foreground", DEFAULTS["sidebar-brand-foreground"]],
-    ]);
+    return cssRule(
+      [`[data-theme-brand="${code}"]`],
+      [
+        ["brand", pointer.brand],
+        ["brand-foreground", pointer["brand-foreground"]],
+        ["sidebar-brand", DEFAULTS["sidebar-brand"]],
+        ["sidebar-brand-foreground", DEFAULTS["sidebar-brand-foreground"]],
+      ]
+    );
   }).join("\n\n");
 }
 
 function emitInternalReset(): string {
-  return cssRule(`[data-theme-variant="internal"]`, resetDeclarations({}));
-}
-
-function emitExternalPalettes(): string {
-  return BRAND_CODES.map((code) => {
-    const selector = `[data-theme-variant="external"][data-theme-brand="${code}"]`;
-    return cssRule(selector, resetDeclarations(externalPalette(code)));
-  }).join("\n\n");
-}
-
-function emitSegmentDelta(): string {
-  return cssRule(
-    `[data-theme-variant="external"][data-theme-brand="fkas"][data-theme-segment="company"]`,
-    Object.entries(FKAS_COMPANY_DELTA)
+  return themeRule(
+    `[data-theme-variant="internal"]`,
+    resetDeclarations(internalReset(), resetKeys("light")),
+    "light"
   );
 }
 
-export function generateThemesCss(): string {
+function emitInternalDarkPalette(): string {
+  return themeRule(
+    `[data-theme-variant="internal"]`,
+    resetDeclarations(INTERNAL_DARK_PALETTE, resetKeys("dark")),
+    "dark"
+  );
+}
+
+/**
+ * One mechanism per scheme: emit the brand rule from its composed base theme, then a
+ * segment rule only where the composed segment theme differs from that base.
+ */
+function emitBrandPalettes(colorScheme: ResolvedColorScheme): string {
+  const keys = resetKeys(colorScheme);
+  const rules: string[] = [];
+  for (const brand of BRAND_CODES) {
+    const themes = LEGAL_THEMES.filter((theme) => theme.variant === "external" && theme.brand === brand);
+    // `themes[0]` is the brand's base permutation (private where one exists; fkab is
+    // company-only). Its rule carries no `data-theme-segment`, so it is the fallback an
+    // element without a segment — or with a segment that has no delta — resolves.
+    const baseTheme = themes[0];
+    if (baseTheme === undefined) {
+      throw new Error(`Brand ${brand} has no legal external themes`);
+    }
+    const base = composeTheme(baseTheme, colorScheme);
+    const selector = `[data-theme-variant="external"][data-theme-brand="${brand}"]`;
+    rules.push(themeRule(selector, resetDeclarations(base, keys), colorScheme));
+    for (const theme of themes.slice(1)) {
+      const tokens = composeTheme(theme, colorScheme);
+      const delta = TOKEN_NAMES.filter((key) => tokens[key] !== base[key]).map(
+        (key) => [key, tokens[key]] as const
+      );
+      if (delta.length > 0) {
+        rules.push(themeRule(`${selector}[data-theme-segment="${theme.segment}"]`, delta, colorScheme));
+      }
+    }
+  }
+  return rules.join("\n\n");
+}
+
+/**
+ * Composing every theme is a guard, not a computation: `composeTheme` throws when a
+ * theme is missing its must-override tokens, so generation fails loudly on the same
+ * contract the theme tests assert.
+ */
+function assertAllThemesCompose(): void {
   for (const theme of LEGAL_THEMES) {
     composeTheme(theme);
+    composeTheme(theme, "dark");
   }
+}
+
+export function generateThemesCss(): string {
+  assertAllThemesCompose();
 
   return [
     GENERATED_FILE_HEADER.trimEnd(),
     emitRoot(),
     emitBrandPointers(),
     emitInternalReset(),
-    emitExternalPalettes(),
-    emitSegmentDelta(),
-    DARK_PLACEHOLDER.trimEnd(),
+    emitBrandPalettes("light"),
+    emitInternalDarkPalette(),
+    emitBrandPalettes("dark"),
     "",
   ].join("\n\n");
 }

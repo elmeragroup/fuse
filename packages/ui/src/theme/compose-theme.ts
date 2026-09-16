@@ -1,3 +1,4 @@
+import type { ResolvedColorScheme } from "./color-scheme-types";
 import { brandPointer } from "./tokens/brand-pointers";
 import {
   assignedTokenNames,
@@ -9,7 +10,9 @@ import {
 } from "./tokens/contract";
 import type { TokenContract, TokenName } from "./tokens/contract";
 import { DEFAULTS } from "./tokens/defaults";
+import { externalDarkPalette } from "./tokens/external-dark-palettes";
 import { externalPalette } from "./tokens/external-palettes";
+import { INTERNAL_DARK_PALETTE } from "./tokens/internal-dark-palette";
 import { segmentDelta } from "./tokens/segment-deltas";
 import { themeSlug } from "./tokens/themes";
 import type { ThemeInput, ThemeVariant } from "./tokens/themes";
@@ -73,8 +76,13 @@ export function assertMustOverrideCoverage(
   }
 }
 
-export function composeTheme(theme: ThemeInput): TokenContract {
+export function composeTheme(theme: ThemeInput, colorScheme: ResolvedColorScheme = "light"): TokenContract {
   const slug = themeSlug(theme);
   assertMustOverrideCoverage(suppliedNonDefaultKeys(theme), theme.variant, slug);
-  return overlayTokenLayers(DEFAULTS, ...nonDefaultLayers(theme));
+  const light = overlayTokenLayers(DEFAULTS, ...nonDefaultLayers(theme));
+  if (colorScheme === "dark") {
+    const dark = theme.variant === "internal" ? INTERNAL_DARK_PALETTE : externalDarkPalette(theme);
+    return overlayTokenLayers(light, dark);
+  }
+  return light;
 }

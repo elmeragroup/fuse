@@ -3,8 +3,11 @@ import type { ReactNode } from "react";
 import { afterEach } from "vitest";
 import { page } from "vitest/browser";
 
+import type { ResolvedColorScheme } from "../src/theme/color-scheme";
 import type { Density } from "../src/theme/density";
+import { themeAttributes } from "../src/theme/theme-attributes";
 import { ThemeScope } from "../src/theme/theme-scope";
+import type { ThemeInput } from "../src/theme/tokens/themes";
 import { render } from "./browser-render";
 
 export const fkasPrivate = { variant: "internal", brand: "fkas", segment: "private" } as const;
@@ -46,6 +49,44 @@ export function renderThemed(node: ReactNode) {
 
 export function stampDensity(density: Density): void {
   document.documentElement.setAttribute("data-density", density);
+}
+
+/** The document attributes a theme stamp owns. `data-density` is separate. */
+const DOCUMENT_THEME_ATTRIBUTES = [
+  "data-theme",
+  "data-theme-variant",
+  "data-theme-brand",
+  "data-theme-segment",
+] as const;
+
+/** Stamp a theme's three axes onto any element, the way `ThemeScope` writes them. */
+export function stampTheme(element: HTMLElement, theme: ThemeInput): void {
+  for (const [name, value] of Object.entries(themeAttributes(theme))) element.setAttribute(name, value);
+}
+
+/** Stamp the document: the theme axes plus the `data-theme` scheme marker. */
+export function stampDocumentTheme(theme: ThemeInput, colorScheme: ResolvedColorScheme): void {
+  stampTheme(document.documentElement, theme);
+  document.documentElement.setAttribute("data-theme", colorScheme);
+}
+
+/**
+ * Snapshot the document's theme attributes and return the restore. Suites call this in
+ * `beforeEach` and the result in `afterEach`, so a test that stamps the document cannot
+ * leak its theme into the next one.
+ */
+export function snapshotDocumentTheme(): () => void {
+  const saved = DOCUMENT_THEME_ATTRIBUTES.map((name) => document.documentElement.getAttribute(name));
+  return (): void => {
+    for (const [index, name] of DOCUMENT_THEME_ATTRIBUTES.entries()) {
+      const value = saved[index];
+      if (value == null) {
+        document.documentElement.removeAttribute(name);
+      } else {
+        document.documentElement.setAttribute(name, value);
+      }
+    }
+  };
 }
 
 export function px(value: string): number {
