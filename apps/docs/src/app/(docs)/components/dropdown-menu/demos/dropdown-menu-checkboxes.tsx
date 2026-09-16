@@ -13,13 +13,15 @@ export function DropdownMenuCheckboxes() {
     <DropdownMenu.Root>
       <DropdownMenu.Trigger render={<Button variant="outline" />}>View</DropdownMenu.Trigger>
       <DropdownMenu.Content>
-        <DropdownMenu.Label>Editor</DropdownMenu.Label>
-        <DropdownMenu.CheckboxItem checked={showToolbar} onCheckedChange={setShowToolbar}>
-          Show toolbar
-        </DropdownMenu.CheckboxItem>
-        <DropdownMenu.CheckboxItem checked={showMinimap} onCheckedChange={setShowMinimap}>
-          Show minimap
-        </DropdownMenu.CheckboxItem>
+        <DropdownMenu.Group>
+          <DropdownMenu.Label>Editor</DropdownMenu.Label>
+          <DropdownMenu.CheckboxItem checked={showToolbar} onCheckedChange={setShowToolbar}>
+            Show toolbar
+          </DropdownMenu.CheckboxItem>
+          <DropdownMenu.CheckboxItem checked={showMinimap} onCheckedChange={setShowMinimap}>
+            Show minimap
+          </DropdownMenu.CheckboxItem>
+        </DropdownMenu.Group>
       </DropdownMenu.Content>
     </DropdownMenu.Root>
   );

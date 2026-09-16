@@ -12,8 +12,8 @@ export function DropdownMenuRadioGroup() {
     <DropdownMenu.Root>
       <DropdownMenu.Trigger render={<Button variant="outline" />}>Panel</DropdownMenu.Trigger>
       <DropdownMenu.Content>
-        <DropdownMenu.Label>Visible panel</DropdownMenu.Label>
         <DropdownMenu.RadioGroup value={panel} onValueChange={setPanel}>
+          <DropdownMenu.Label>Visible panel</DropdownMenu.Label>
           <DropdownMenu.RadioItem value="status">Status bar</DropdownMenu.RadioItem>
           <DropdownMenu.RadioItem value="activity">Activity bar</DropdownMenu.RadioItem>
           <DropdownMenu.RadioItem value="panel">Panel</DropdownMenu.RadioItem>
