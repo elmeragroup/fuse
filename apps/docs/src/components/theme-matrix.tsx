@@ -12,22 +12,24 @@ import { Badge } from "@elmeragroup/ui/badge";
 import { Button } from "@elmeragroup/ui/button";
 import { Dialog } from "@elmeragroup/ui/dialog";
 import { Separator } from "@elmeragroup/ui/separator";
-import { ThemeScope, themeSlug } from "@elmeragroup/ui/theme";
+import { ThemeScope, themeSlug, useColorScheme } from "@elmeragroup/ui/theme";
 import type { ThemeInput } from "@elmeragroup/ui/theme";
 
-import { LEGAL_THEMES } from "../lib/theme";
+import { COLOR_SCHEME_LABELS, COLOR_SCHEMES, LEGAL_THEMES } from "../lib/theme";
 
 const themeMatrix = tv({
   slots: {
-    grid: "not-prose border-docs-line bg-docs-line m-[1.4rem_0_2rem] grid grid-cols-[repeat(auto-fill,minmax(210px,1fr))] gap-px overflow-hidden rounded-[8px] border",
+    grid: "not-prose m-[1.4rem_0_2rem] grid grid-cols-[repeat(auto-fill,minmax(210px,1fr))] gap-px overflow-hidden rounded-xl border border-border bg-border",
     cell: "flex min-w-0 flex-col bg-background",
-    slug: "font-docs-mono overflow-hidden border-b border-border px-3 py-2 text-[0.66rem] tracking-[0.01em] text-ellipsis whitespace-nowrap text-muted-foreground",
+    slug: "text-xs overflow-hidden border-b border-border px-3 py-2 font-mono tracking-[0.01em] text-ellipsis whitespace-nowrap text-muted-foreground",
     surface: "flex flex-col gap-[0.55rem] p-[0.85rem_0.75rem_1rem] text-foreground",
     row: "flex flex-wrap items-center gap-[0.4rem]",
+    controls: "not-prose flex flex-wrap items-center gap-2",
+    control: "min-h-10",
   },
 });
 
-const { grid, cell, slug: slugClass, surface, row } = themeMatrix();
+const { grid, cell, slug: slugClass, surface, row, controls, control } = themeMatrix();
 
 /**
  * The whitelabel pitch grid (docs-site.md §5).
@@ -84,11 +86,26 @@ function MatrixCell({ theme }: { theme: ThemeInput }): ReactElement {
 }
 
 export function ThemeMatrix(): ReactElement {
+  const { colorScheme, setColorScheme } = useColorScheme();
   return (
-    <div className={grid()} data-theme-matrix>
-      {LEGAL_THEMES.map((theme) => (
-        <MatrixCell key={themeSlug(theme)} theme={theme} />
-      ))}
-    </div>
+    <>
+      <div className={controls()} role="group" aria-label="Color scheme">
+        {COLOR_SCHEMES.map((scheme) => (
+          <Button
+            key={scheme}
+            className={control()}
+            variant={colorScheme === scheme ? "secondary" : "outline"}
+            aria-pressed={colorScheme === scheme}
+            onClick={() => setColorScheme(scheme)}>
+            {COLOR_SCHEME_LABELS[scheme]}
+          </Button>
+        ))}
+      </div>
+      <div className={grid()} data-theme-matrix>
+        {LEGAL_THEMES.map((theme) => (
+          <MatrixCell key={themeSlug(theme)} theme={theme} />
+        ))}
+      </div>
+    </>
   );
 }

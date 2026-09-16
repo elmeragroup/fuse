@@ -22,7 +22,7 @@ export type DemoFrameProps = {
 const demoFrame = tv({
   slots: {
     root: "mt-8",
-    card: "border-docs-line overflow-hidden rounded-[10px] border",
+    card: "overflow-hidden rounded-xl border border-border",
   },
 });
 

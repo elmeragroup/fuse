@@ -5,11 +5,11 @@ import { tv } from "tailwind-variants";
 const docsTable = tv({
   slots: {
     wrap: "not-prose mb-[1.2rem] overflow-x-auto",
-    root: "w-full border-collapse text-[0.8rem]",
+    root: "text-sm w-full border-collapse",
     headerCell:
-      "border-docs-line text-docs-sub border-b py-[0.45rem] pl-0 align-top text-[0.72rem] font-[550] normal-case",
-    bodyCell: "border-docs-line border-b py-[0.45rem] pl-0 align-top",
-    caption: "text-docs-sub caption-top pb-2 text-left text-[0.72rem]",
+      "text-xs font-medium border-b border-border py-[0.45rem] pl-0 align-top text-muted-foreground normal-case",
+    bodyCell: "border-b border-border py-[0.45rem] pl-0 align-top",
+    caption: "text-xs caption-top pb-2 text-left text-muted-foreground",
   },
   variants: {
     numeric: {
@@ -18,8 +18,8 @@ const docsTable = tv({
         bodyCell: "pr-[0.7rem] text-left",
       },
       true: {
-        headerCell: "font-docs-mono pr-0 text-right whitespace-nowrap tabular-nums",
-        bodyCell: "font-docs-mono pr-0 text-right text-[0.72rem] whitespace-nowrap tabular-nums",
+        headerCell: "pr-0 text-right font-mono whitespace-nowrap tabular-nums",
+        bodyCell: "text-xs pr-0 text-right font-mono whitespace-nowrap tabular-nums",
       },
     },
   },

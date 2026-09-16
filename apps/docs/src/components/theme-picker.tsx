@@ -4,10 +4,13 @@ import type { ChangeEvent, ReactElement } from "react";
 
 import { tv } from "tailwind-variants";
 
-import { BRANDS, coerceTheme } from "@elmeragroup/ui/theme";
+import { BRANDS, coerceTheme, useColorScheme } from "@elmeragroup/ui/theme";
 import type { ThemeInput, ThemeSegment } from "@elmeragroup/ui/theme";
 
 import {
+  COLOR_SCHEME_LABELS,
+  COLOR_SCHEMES,
+  parseColorScheme,
   parseThemeBrand,
   parseThemeSegment,
   parseThemeVariant,
@@ -18,7 +21,7 @@ import {
 
 const themePicker = tv({
   slots: {
-    root: "[&_select]:border-docs-line [&_select]:bg-docs-soft [&_select]:font-docs-mono [&_select]:text-docs-ink [&_select:focus-visible]:outline-docs-ink ml-auto flex items-center [&_select]:cursor-pointer [&_select]:appearance-none [&_select]:border [&_select]:px-[9px] [&_select]:py-[5px] [&_select]:text-[11.5px] [&_select]:font-[500] [&_select+select]:border-l-0 [&_select:first-child]:rounded-[6px_0_0_6px] [&_select:focus-visible]:relative [&_select:focus-visible]:z-[1] [&_select:focus-visible]:outline-2 [&_select:focus-visible]:outline-offset-[-1px] [&_select:last-child]:rounded-[0_6px_6px_0]",
+    root: "[&_select]:font-medium sm:order-none sm:w-auto order-last ml-auto flex w-full items-center justify-end [&_select]:h-(--control-h-sm) [&_select]:cursor-pointer [&_select]:appearance-none [&_select]:border [&_select]:border-input [&_select]:bg-card [&_select]:px-(--control-px-sm) [&_select]:font-mono [&_select]:[font-size:var(--control-text)] [&_select]:[line-height:var(--control-leading)] [&_select]:text-card-foreground [&_select+select]:border-l-0 [&_select:first-child]:rounded-l-lg [&_select:focus-visible]:relative [&_select:focus-visible]:z-[1] [&_select:focus-visible]:outline-2 [&_select:focus-visible]:outline-offset-[-1px] [&_select:focus-visible]:outline-ring [&_select:last-child]:rounded-r-lg",
   },
 });
 
@@ -30,6 +33,7 @@ export type ThemePickerProps = {
 };
 
 export function ThemePicker({ theme, onThemeChange }: ThemePickerProps): ReactElement {
+  const { colorScheme, setColorScheme } = useColorScheme();
   const allowedSegments = BRANDS[theme.brand].segments;
 
   const handleVariantChange = (event: ChangeEvent<HTMLSelectElement>): void => {
@@ -56,6 +60,14 @@ export function ThemePicker({ theme, onThemeChange }: ThemePickerProps): ReactEl
     commitTheme({ variant: theme.variant, brand: theme.brand, segment }, onThemeChange);
   };
 
+  const handleColorSchemeChange = (event: ChangeEvent<HTMLSelectElement>): void => {
+    const scheme = parseColorScheme(event.target.value);
+    if (scheme === null) {
+      return;
+    }
+    setColorScheme(scheme);
+  };
+
   return (
     <div className={root()}>
       <select aria-label="Variant" value={theme.variant} onChange={handleVariantChange}>
@@ -76,6 +88,13 @@ export function ThemePicker({ theme, onThemeChange }: ThemePickerProps): ReactEl
         {THEME_SEGMENTS.map((segment) => (
           <option key={segment} value={segment} disabled={!isSegmentAllowed(allowedSegments, segment)}>
             {segment}
+          </option>
+        ))}
+      </select>
+      <select aria-label="Color scheme" value={colorScheme} onChange={handleColorSchemeChange}>
+        {COLOR_SCHEMES.map((scheme) => (
+          <option key={scheme} value={scheme}>
+            {COLOR_SCHEME_LABELS[scheme]}
           </option>
         ))}
       </select>

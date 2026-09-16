@@ -11,9 +11,9 @@ import { ThemePicker } from "./theme-picker";
 
 const header = tv({
   slots: {
-    root: "h-docs-header border-docs-line bg-white/[92%] sticky top-0 z-10 flex items-center gap-6 border-b px-6 backdrop-blur-[8px]",
+    root: "h-docs-header sm:flex-nowrap sm:px-6 sticky top-0 z-10 flex flex-wrap items-center gap-x-6 border-b border-border bg-background/95 px-4 backdrop-blur-[8px]",
     wordmark:
-      "text-docs-ink [&_span]:font-normal [&_span]:text-docs-sub focus-visible:outline-docs-ink text-[0.95rem] font-[650] tracking-[-0.01em] no-underline focus-visible:rounded-[6px] focus-visible:outline-2 focus-visible:outline-offset-2",
+      "[&_span]:font-normal text-base font-semibold tracking-[-0.01em] text-foreground no-underline focus-visible:rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring [&_span]:text-muted-foreground",
   },
 });
 

@@ -19,6 +19,34 @@ function quoteContent(value: string): boolean {
 }
 
 describe("docs prose (Typography)", () => {
+  it("switches both matrix variants and the docs chrome together", async () => {
+    const page = await browser.newPage({ colorScheme: "light" });
+    await page.goto(`${docsBaseUrl()}/handbook/theme-matrix`, { waitUntil: "load" });
+    const external = page.locator('[data-theme-matrix-cell][data-theme-variant="external"]').first();
+    const internal = page.locator('[data-theme-matrix-cell][data-theme-variant="internal"]').first();
+    const paint = async (): Promise<string[]> => [
+      await external.evaluate((el) => getComputedStyle(el).backgroundColor),
+      await internal.evaluate((el) => getComputedStyle(el).backgroundColor),
+      await page.locator("body").evaluate((el) => getComputedStyle(el).backgroundColor),
+    ];
+    const light = await paint();
+    await page.getByRole("button", { name: "Dark", exact: true }).click();
+    await page.waitForFunction(() => document.documentElement.getAttribute("data-theme") === "dark");
+    const dark = await paint();
+    expect(dark[0]).not.toBe(light[0]);
+    expect(dark[1]).not.toBe(light[1]);
+    expect(dark[2]).not.toBe(light[2]);
+    expect(await page.getByRole("button", { name: "Dark", exact: true }).getAttribute("aria-pressed")).toBe(
+      "true"
+    );
+    expect(await external.evaluate((el) => getComputedStyle(el).colorScheme)).toBe("dark");
+    expect(await internal.evaluate((el) => getComputedStyle(el).colorScheme)).toBe("dark");
+    await page.getByRole("button", { name: "Light", exact: true }).click();
+    await page.waitForFunction(() => document.documentElement.getAttribute("data-theme") === "light");
+    expect(await paint()).toEqual(light);
+    await page.close();
+  });
+
   it("applies prose-sm to authored handbook copy", async () => {
     const page = await browser.newPage();
     await page.setViewportSize({ width: 1280, height: 720 });

@@ -17,7 +17,7 @@ Theme markers are **three data attributes** — `data-theme-variant`, `data-them
 
 ## Consequences
 
-- 15 rules cover 20 permutations; adding a brand adds ~2 rules (accent pointer + external palette), satisfying "adding brands must be cheap".
+- 15 rules cover 20 permutations; adding a brand adds ~2 rules (accent pointer + external palette), satisfying "adding brands must be cheap". _(Amended 2026-09-15 — the sheet now emits 23 rule bodies: 15 light plus 8 dark selected by `[data-theme="dark"]`, each dark body carrying a direct and a descendant selector. A new brand adds a brand pointer plus a light and a dark palette body. Dark layers materialize `THEME_RESET_KEYS` so a nested scope cannot inherit an outer palette. §3.2 of [theming](../spec/theming.md) owns the current layer model.)_
 - Works unchanged with Tailwind v4 `@theme inline` (utilities reference `var(--token)` at the use site, re-resolving per scope).
 - Portals must render _inside_ the themed scope or they silently take the outer theme — the theme-provider API owns that discipline.
 - Each axis is independently visible on the element and independently switchable at runtime.

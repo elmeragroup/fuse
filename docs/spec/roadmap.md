@@ -12,13 +12,12 @@ Directional chapter for `@elmeragroup/ui`: work deliberately deferred out of v1,
 - **Already prepared**: the interim entries carry migration-to-base-ui markers; the tier is path-quarantined so no other entry can pull its dependencies ([performance](performance.md) §5); heading/text/span were already re-homed as plain typography, and Disclosure/list-box/alert were already de-RAC'd, so the date cluster is the last island.
 - **Completion criteria**: all eleven components available at bare paths on base-ui; `react-aria/` subpaths removed (a major version); `react-aria-components`, the `react-aria` hooks package, `@internationalized/date`, and `tailwindcss-react-aria-components` uninstalled (`@internationalized/string`, the permanent intl-dictionary runtime, stays); the 60 kB date-cluster budget entry and the date-cluster lazy-loading recipe deleted.
 
-## 2 Dark mode rollout
+## 2 Dark palette review items
 
-- **What**: mint and ship dark token values across the theme matrix, activated by the `data-theme="dark"` axis.
-- **Why deferred**: no product surface requires dark today; minting 20 permutations of dark values without design demand would be speculative. The out-of-scope ruling covers **values only** — the axis itself is v1 architecture.
-- **Trigger**: a consuming product committing to a dark surface; design supplying (or commissioning) dark palettes.
-- **Already prepared**: `data-theme` is reserved for dark in the attribute cascade (ADR [0002](../adr/0002-theme-attributes.md) — variant/brand/segment use their own attributes, leaving `data-theme` free); the token pipeline ends `themes.css` with a **commented dark-axis placeholder** (not an empty CSS rule); host-placed `ColorSchemeScript` / `colorSchemeScriptSource` plus provider-owned `useColorScheme` / `ForceColorScheme` already set the reserved marker before and after paint ([theming](theming.md) §7.8); `style.colorScheme` stays off until those values exist; the `no-tailwind-dark-variant` lint rule keeps components token-driven so dark lands by values alone. The external ref's `.guen-dark` block is recorded as reference input (token extraction §1.2) — recorded, not specced, and of limited quality (double-gated, never applied by any code, hex not oklch, status-containers only).
-- **Cost when triggered**: dark values per theme layer in the codegen modules, an extended contrast-matrix snapshot ([accessibility](accessibility.md) §6 applies unchanged), docs picker gains the axis.
+- **What**: GE's external palette, the shared support-role mappings, and the complete chart ordering remain provisional. Product-level state, artwork and chart distinguishability review remains open.
+- **Why deferred**: the dark layers shipped the values the available Figma sources support; these items need designer acceptance rather than more implementation.
+- **Trigger**: design review resolving the provisional choices, or a product surface that exercises charts, states or artwork in a dark theme.
+- **Already prepared**: the [external matrix](../notes/dark-theme/external-dark-theme-matrix.md) and [internal mapping](../notes/dark-theme/internal-dark-theme-matrix.md) record source evidence, implementation and the remaining review work.
 
 ## 3 Visual-regression testing
 

@@ -3,7 +3,7 @@ import type { ComponentProps, ReactElement } from "react";
 import { tv } from "tailwind-variants";
 
 const docsPageTitle = tv({
-  base: "m-0 mb-[0.6rem] text-[2rem] font-[650] tracking-[-0.02em]",
+  base: "text-3xl font-semibold m-0 mb-[0.6rem] font-heading tracking-[-0.02em]",
 });
 
 export type DocsPageTitleProps = ComponentProps<"h1">;

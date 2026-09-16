@@ -5,15 +5,15 @@ import { tokenize } from "sugar-high/lang/javascript";
 import { tv } from "tailwind-variants";
 
 const docsCodeBlock = tv({
-  base: "font-docs-mono overflow-x-auto [tab-size:2] text-[var(--sh-identifier,var(--color-docs-ink))] [&_.sh__line]:block [&_.sh__line]:min-h-[1lh] [&_code]:block [&_code]:border-0 [&_code]:p-0 [&_code]:[background:none] [&_code]:[font:inherit]",
+  base: "overflow-x-auto font-mono [tab-size:2] text-sh-identifier [&_.sh__line]:block [&_.sh__line]:min-h-[1lh] [&_code]:block [&_code]:border-0 [&_code]:p-0 [&_code]:[background:none] [&_code]:[font:inherit]",
   variants: {
     variant: {
       standalone:
-        "bg-docs-code border-docs-line my-[1.1rem] rounded-[8px] border p-[0.9rem_1rem] text-[12px] leading-[1.65] [&_code]:min-w-max",
+        "text-xs my-[1.1rem] rounded-xl border border-border bg-card p-[0.9rem_1rem] leading-[1.65] [&_code]:min-w-max",
       embedded:
-        "bg-docs-code border-docs-line m-0 border-t p-[1rem_1.1rem] text-[12px] leading-[1.65] [&_code]:min-w-max",
+        "text-xs m-0 border-t border-border bg-card p-[1rem_1.1rem] leading-[1.65] [&_code]:min-w-max",
       signature:
-        "bg-docs-soft border-docs-line m-0 rounded-[6px] border px-[0.6rem] py-2 text-[11.5px] leading-[1.6] [&_code]:wrap-anywhere [&_code]:whitespace-pre-wrap",
+        "text-xs m-0 rounded-lg border border-border bg-muted px-[0.6rem] py-2 leading-[1.6] [&_code]:wrap-anywhere [&_code]:whitespace-pre-wrap",
     },
   },
   defaultVariants: {

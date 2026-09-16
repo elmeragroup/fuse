@@ -29,6 +29,7 @@ type FirstPaintProbe = {
   manifest: ColorSchemeBootstrapManifest | undefined;
   background: string;
   colorScheme: string;
+  computedColorScheme: string;
   reactHydrated: boolean;
 };
 
@@ -69,6 +70,7 @@ async function probeFirstPaint(page: Page): Promise<FirstPaintProbe> {
   return await page.evaluate(() => {
     const root = document.documentElement;
     const manifest = globalThis.__ELMERA_COLOR_SCHEME_BOOTSTRAP__;
+    const styles = getComputedStyle(root);
     return {
       variant: root.getAttribute("data-theme-variant"),
       brand: root.getAttribute("data-theme-brand"),
@@ -84,8 +86,9 @@ async function probeFirstPaint(page: Page): Promise<FirstPaintProbe> {
               enableSystem: manifest.enableSystem,
               forcedColorScheme: manifest.forcedColorScheme,
             },
-      background: getComputedStyle(root).backgroundColor,
+      background: styles.backgroundColor,
       colorScheme: root.style.colorScheme,
+      computedColorScheme: styles.colorScheme,
       reactHydrated: document.querySelector("next-route-announcer") !== null,
     };
   });
@@ -118,7 +121,7 @@ async function readComputedProperty(page: Page, selector: string, property: stri
 
 describe("docs first paint with hydration delayed", () => {
   it.each(delayedCases)(
-    "$name sets the expected pre-React marker, brand, manifest, and light canvas",
+    "$name sets the expected pre-React marker, brand, manifest, and matching canvas",
     async ({ stored, colorScheme, expectedTheme }) => {
       const context = await browser.newContext({ colorScheme });
       await context.addInitScript(
@@ -140,7 +143,8 @@ describe("docs first paint with hydration delayed", () => {
       expectDenseDocument(probe);
       expect(probe.dataTheme).toBe(expectedTheme);
       expect(probe.manifest).toEqual(EXPECTED_BOOTSTRAP_MANIFEST);
-      expect(isLightCanvas(probe.background)).toBe(true);
+      expect(isLightCanvas(probe.background)).toBe(expectedTheme === "light");
+      expect(probe.computedColorScheme).toBe(expectedTheme);
       expect(probe.colorScheme).toBe("");
       expect(probe.reactHydrated).toBe(false);
 
@@ -153,7 +157,8 @@ describe("docs JavaScript-disabled brand", () => {
   it("keeps brand attributes and the Elmera token surface without JavaScript", async () => {
     const context = await browser.newContext({ javaScriptEnabled: false });
     const page = await context.newPage();
-    await page.goto(`${docsBaseUrl()}/`, { waitUntil: "domcontentloaded" });
+    // CDP reads can otherwise race the external stylesheet and see an empty brand.
+    await page.goto(`${docsBaseUrl()}/`, { waitUntil: "load" });
 
     const html = page.locator("html");
     expect(await html.getAttribute("data-theme-variant")).toBe(DOCUMENT_BRAND.variant);

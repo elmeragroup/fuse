@@ -12,7 +12,7 @@ import { MAIN_CONTENT_ID } from "./skip-nav";
 
 const docsShell = tv({
   slots: {
-    root: "text-docs-ink min-h-dvh bg-background",
+    root: "min-h-dvh bg-background text-foreground",
     columns:
       "mx-auto grid max-w-[1200px] grid-cols-1 min-[45rem]:grid-cols-[240px_minmax(0,1fr)] min-[60rem]:grid-cols-[240px_minmax(0,1fr)_180px]",
     main: "w-full max-w-[720px] min-w-0 px-6 pt-10 pb-24 min-[45rem]:px-12",

@@ -13,7 +13,7 @@ const HREF = "/handbook/brands-and-segments";
 
 const brandsAndSegments = tv({
   slots: {
-    mono: "font-docs-mono text-[0.75rem]",
+    mono: "text-xs font-mono",
   },
 });
 

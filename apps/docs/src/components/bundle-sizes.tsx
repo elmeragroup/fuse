@@ -18,7 +18,7 @@ function percent(fraction: number): string {
 
 const bundleSizes = tv({
   slots: {
-    note: "text-docs-sub m-[-0.4rem_0_1.4rem] text-[0.78rem]",
+    note: "text-xs m-[-0.4rem_0_1.4rem] text-muted-foreground",
   },
 });
 

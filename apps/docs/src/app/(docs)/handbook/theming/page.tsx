@@ -109,12 +109,19 @@ export default function ThemingPage(): ReactElement {
 
       <h2 id="in-these-docs">In these docs</h2>
       <p>
+        <code>data-theme="dark"</code> activates dark palettes on both the document and nested theme scopes.
+        Internal themes use neutral colors; external themes use their brand palettes. The{" "}
+        <Link href="/handbook/theme-matrix">theme matrix</Link> has light, dark, and system controls for
+        comparing them. Colour scheme does not change theme slugs, density, fonts, or brand primitives.
+      </p>
+      <p>
         This site is a worked example of the split. Its own document theme is fixed at{" "}
-        <code>internal-elma-private</code> and the chrome you are reading is light-only and unbranded. The
-        picker in the header does <strong>not</strong> re-render the document provider or touch{" "}
-        <code>&lt;html&gt;</code>; it writes docs-local preview state that only demo stages and theme scopes
-        consume. That is why every demo can be viewed in all twenty permutations without the page around it
-        changing colour.
+        <code>internal-elma-private</code> and the chrome you are reading consumes that theme's light and dark
+        tokens. The variant, brand and segment selects in the header write docs-local preview state that only
+        demo stages and theme scopes consume. Every demo can be viewed in all twenty permutations while the
+        page keeps its Elmera identity. The header's colour-scheme select changes the whole document through
+        the library's colour-scheme API, offers light, dark and system, and remembers your choice. The matrix
+        mirrors the same three-way control.
       </p>
     </DocsPage>
   );

@@ -4,28 +4,28 @@ import { tv } from "tailwind-variants";
 
 const apiRows = tv({
   slots: {
-    root: "border-docs-line grid grid-cols-[var(--api-cols)] rounded-[10px] border [--api-cols:minmax(0,1fr)] [contain-intrinsic-height:auto_calc((var(--api-rows,8)_+_1)*(2.5rem_+_1px)_-_1px)] [content-visibility:auto] min-[34rem]:[--api-cols:11rem_minmax(0,1fr)_2.5rem] min-[52rem]:[--api-cols:5fr_7fr_4fr_2.5rem]",
+    root: "grid grid-cols-[var(--api-cols)] rounded-xl border border-border [--api-cols:minmax(0,1fr)] [contain-intrinsic-height:auto_calc((var(--api-rows,8)_+_1)*(2.5rem_+_1px)_-_1px)] [content-visibility:auto] min-[34rem]:[--api-cols:11rem_minmax(0,1fr)_2.5rem] min-[52rem]:[--api-cols:5fr_7fr_4fr_2.5rem]",
     header:
-      "border-docs-line bg-docs-soft col-span-full flex min-h-[2.5rem] items-center rounded-t-[9px] border-b min-[34rem]:col-span-full min-[34rem]:grid min-[34rem]:grid-cols-subgrid min-[34rem]:items-center",
-    headerCell: "text-docs-sub font-medium px-[0.8rem] text-[0.75rem] tracking-[0.02em] whitespace-nowrap",
-    row: "group border-docs-line col-span-full border-b last:border-b-0 min-[34rem]:col-span-full min-[34rem]:grid min-[34rem]:grid-cols-subgrid min-[34rem]:items-center min-[34rem]:[&::details-content]:col-span-full min-[34rem]:[&::details-content]:grid min-[34rem]:[&::details-content]:grid-cols-subgrid min-[34rem]:[&::details-content]:items-center",
+      "col-span-full flex min-h-[2.5rem] items-center rounded-t-[calc(var(--radius)_+_3px)] border-b border-border bg-card min-[34rem]:col-span-full min-[34rem]:grid min-[34rem]:grid-cols-subgrid min-[34rem]:items-center",
+    headerCell: "font-medium text-xs px-[0.8rem] tracking-[0.02em] whitespace-nowrap text-muted-foreground",
+    row: "group col-span-full border-b border-border last:border-b-0 min-[34rem]:col-span-full min-[34rem]:grid min-[34rem]:grid-cols-subgrid min-[34rem]:items-center min-[34rem]:[&::details-content]:col-span-full min-[34rem]:[&::details-content]:grid min-[34rem]:[&::details-content]:grid-cols-subgrid min-[34rem]:[&::details-content]:items-center",
     summary:
-      "hover:bg-docs-code focus-visible:outline-docs-ink flex min-h-[2.5rem] cursor-pointer scroll-mt-[calc(var(--spacing-docs-header)_+_1rem)] list-none items-center focus-visible:outline-2 focus-visible:outline-offset-[-2px] min-[34rem]:col-span-full min-[34rem]:grid min-[34rem]:grid-cols-subgrid min-[34rem]:items-center [&::-webkit-details-marker]:hidden",
-    cell: "[&_code]:font-docs-mono min-w-0 overflow-x-auto px-[0.8rem] py-2 whitespace-nowrap [&_code]:text-[11.5px]",
+      "flex min-h-[2.5rem] cursor-pointer scroll-mt-[calc(var(--spacing-docs-header)_+_1rem)] list-none items-center hover:bg-accent hover:text-accent-foreground focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring min-[34rem]:col-span-full min-[34rem]:grid min-[34rem]:grid-cols-subgrid min-[34rem]:items-center [&::-webkit-details-marker]:hidden",
+    cell: "[&_code]:text-xs min-w-0 overflow-x-auto px-[0.8rem] py-2 whitespace-nowrap [&_code]:font-mono",
     panel:
-      "border-docs-line bg-docs-code border-t border-dashed min-[34rem]:col-span-full min-[34rem]:grid min-[34rem]:grid-cols-subgrid min-[34rem]:items-center",
+      "border-t border-dashed border-border bg-card min-[34rem]:col-span-full min-[34rem]:grid min-[34rem]:grid-cols-subgrid min-[34rem]:items-center",
     panelList:
-      "m-0 flex flex-col gap-[0.55rem] px-[0.8rem] py-[0.75rem] text-[0.82rem] min-[34rem]:col-span-full min-[34rem]:grid min-[34rem]:grid-cols-subgrid min-[34rem]:items-center min-[34rem]:gap-0 min-[34rem]:px-0 min-[34rem]:py-2",
+      "text-sm m-0 flex flex-col gap-[0.55rem] px-[0.8rem] py-[0.75rem] min-[34rem]:col-span-full min-[34rem]:grid min-[34rem]:grid-cols-subgrid min-[34rem]:items-center min-[34rem]:gap-0 min-[34rem]:px-0 min-[34rem]:py-2",
     panelItem:
       "min-[34rem]:col-span-full min-[34rem]:grid min-[34rem]:grid-cols-subgrid min-[34rem]:items-baseline min-[34rem]:py-1",
-    term: "font-medium text-docs-sub text-[0.72rem] tracking-[0.02em] min-[34rem]:col-start-1 min-[34rem]:px-[0.8rem] min-[34rem]:text-right",
+    term: "font-medium text-xs tracking-[0.02em] text-muted-foreground min-[34rem]:col-start-1 min-[34rem]:px-[0.8rem] min-[34rem]:text-right",
     definition:
-      "text-docs-body [&_code]:border-docs-line [&_code]:bg-docs-soft [&_code]:font-docs-mono mt-[0.15rem] min-w-0 leading-[1.6] min-[34rem]:col-start-2 min-[34rem]:col-end-[-1] min-[34rem]:m-0 min-[34rem]:pr-[0.8rem] [&_code]:rounded-[4px] [&_code]:border [&_code]:px-[0.35em] [&_code]:py-[0.1em] [&_code]:text-[11.5px]",
+      "[&_code]:text-xs mt-[0.15rem] min-w-0 leading-[1.6] text-foreground min-[34rem]:col-start-2 min-[34rem]:col-end-[-1] min-[34rem]:m-0 min-[34rem]:pr-[0.8rem] [&_code]:rounded-md [&_code]:border [&_code]:border-border [&_code]:bg-muted [&_code]:px-[0.35em] [&_code]:py-[0.1em] [&_code]:font-mono",
     chevronCell:
-      "text-docs-sub ml-auto flex items-center overflow-visible px-[0.8rem] py-2 min-[34rem]:ml-0 min-[34rem]:justify-center",
+      "ml-auto flex items-center overflow-visible px-[0.8rem] py-2 text-muted-foreground min-[34rem]:ml-0 min-[34rem]:justify-center",
     chevron: "[transition:rotate_120ms_ease] group-open:rotate-180 motion-reduce:transition-none",
-    required: "text-docs-required relative top-[-0.3em] text-[0.8em]",
-    noDefault: "font-docs-mono text-docs-sub text-[11.5px]",
+    required: "relative top-[-0.3em] text-[0.8em] text-error",
+    noDefault: "text-xs font-mono text-muted-foreground",
     propLink: "text-inherit",
   },
   variants: {
@@ -35,9 +35,9 @@ const apiRows = tv({
       default: { headerCell: "hidden min-[52rem]:block" },
     },
     cellColumn: {
-      name: { cell: "[&_code]:font-medium [&_code]:text-docs-ink block" },
-      type: { cell: "[&_code]:text-docs-sub hidden min-[34rem]:block" },
-      default: { cell: "[&_code]:text-docs-sub hidden min-[52rem]:block" },
+      name: { cell: "[&_code]:font-medium block [&_code]:text-foreground" },
+      type: { cell: "hidden min-[34rem]:block [&_code]:text-muted-foreground" },
+      default: { cell: "hidden min-[52rem]:block [&_code]:text-muted-foreground" },
     },
   },
   defaultVariants: {
@@ -74,7 +74,7 @@ function ApiRowsRoot({ className, ...props }: ApiRowsRootProps): ReactElement {
 }
 
 function ApiRowsHeader({ className, ...props }: ApiRowsHeaderProps): ReactElement {
-  return <div className={apiRowSlots.header({ className })} {...props} />;
+  return <div className={apiRowSlots.header({ className })} data-api-rows-header {...props} />;
 }
 
 function ApiRowsHeaderCell({ className, column = "prop", ...props }: ApiRowsHeaderCellProps): ReactElement {

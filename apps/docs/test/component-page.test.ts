@@ -108,10 +108,13 @@ describe("component page anatomy (docs-site.md §3.4)", () => {
     expect(markdown).not.toContain("| RSC |");
   });
 
-  it("keeps the docs chrome light-only — brand colour stays inside demo stages", async () => {
+  it("keeps the document on internal Elmera while demo stages select other brands", async () => {
     const html = await fetchText("/components/dialog");
     const stage = html.indexOf("data-demo-stage");
     expect(stage).toBeGreaterThan(-1);
     expect(html).toContain('data-theme-brand="fkas"');
+    expect(html).toMatch(
+      /<html[^>]+data-theme-variant="internal"[^>]+data-theme-brand="elma"[^>]+data-theme-segment="private"/
+    );
   });
 });

@@ -12,7 +12,7 @@ Cross-links: package layout, exports, and where `themes.css` ships → [architec
   - **Segment** — customer class: `private` (B2C) or `company` (B2B).
 - **Pinned brands**: `fkab` is pinned to `company`; `fkse` is pinned to `private`. The other four brands span both segments. This yields **20 legal themes** at v1 (10 internal, 10 external). Illegal permutations (`*-fkab-private`, `*-fkse-company`) are handled per §6.
 - **Theme slug**: the canonical string name of a theme, `<variant>-<brand>-<segment>` — e.g. `internal-fkas-company`, `external-tkas-private`. Slugs are derived, never authoritative: the decomposed axes are the primary representation (§7.1).
-- **Dark is not an axis of the theme.** Color scheme (light/dark) is an orthogonal, layered axis reserved on the `data-theme` attribute (§3.6, §7.8). No dark values are specced at v1; the machinery ships functional and valueless.
+- **Color scheme is separate from the theme.** The `data-theme` attribute selects light or dark (§3.6, §7.8). All twenty themes have dark values. Internal themes share the supplied neutral shadcn base and retain brand accents; external themes use their custom brand palettes.
 
 ## 2 Token contract
 
@@ -83,7 +83,7 @@ The library ships a **complete neutral default layer at `:root`** — every cont
 
 - **External themes must supply**, across their composed non-default layers: `--background`, `--foreground`, the complete card, muted, primary, and secondary families; the feature triple; `--border`, `--input`; `--radius`, `--radius-button`; and `--brand`, `--brand-foreground`. Typography is optional in the source palette: all brands use the default `--font-sans`, and only fkas overrides `--font-heading`. The generator still materializes the default heading value in every other emitted external rule so a nested scope cannot inherit an outer fkas font (§3.2).
 - **Internal themes must supply**: `--brand` and `--brand-foreground`, satisfied by the brand-pointer layer. `--sidebar-brand` and `--sidebar-brand-foreground` are complete defaults that resolve through that pair and therefore are not separate coverage obligations.
-- Statuses, ring, charts, and syntax colors stay shared-by-default; themes _may_ override them but none does at v1.
+- Statuses, ring, charts, and syntax colors stay shared-by-default in the light layers; themes _may_ override them but no light theme does at v1. The dark layers ship shared dark defaults for the statuses, the charts and the nine `sh-*` syntax roles, and the internal dark palette additionally adjusts `--error`, `--input`/`--ring` and `--chart-1..5` (§5). The dated [internal dark mapping](../notes/dark-theme/internal-dark-theme-matrix.md) and [external dark matrix](../notes/dark-theme/external-dark-theme-matrix.md) record those adjustments.
 
 Must-override is a **theme-level** obligation, not a per-module one. Individual layer modules are `Partial<TokenContract>` and never have to carry the full set themselves (internal themes, for instance, satisfy their brand-pair obligation via the brand-pointer layer). Enforcement happens at **compose time** in the token pipeline — each of the 20 themes is resolved through its layers and the build fails if a resolved theme lacks any must-override token (§8) — and is re-checked at the CSS level by the theme-contract test.
 
@@ -134,17 +134,21 @@ Theme markers are three data attributes, **placeable on any element** — no sel
 
 Rejected alternatives (ADR 0002): a single slug attribute (needs `^=`/`*=` substring selectors for axis rules and occupies the reserved `data-theme`); classes (equal power, but bare `.company`/`.private` collide with app CSS and are illegible in DevTools). Each axis is independently visible on the element and independently switchable at runtime.
 
-### 3.2 Layer structure — 15 theme rules cover 20 themes
+### 3.2 Layer structure
 
-The emitted theme CSS has exactly five layers:
+The emitted theme CSS has seven layers:
 
 1. **`:root` defaults** (1 rule) — the complete neutral default layer (§4). This layer _is_ the internal look, by design.
 2. **Brand pointers** (6 rules) are keyed on brand alone and serve both variants. Each branded element declares `--brand`, `--brand-foreground`, and the aliases `--sidebar-brand: var(--brand)` / `--sidebar-brand-foreground: var(--brand-foreground)`. Declaring aliases on that element makes nested scopes resolve their own pair rather than inherit a value already resolved at the document root. Hosts may override the brand pair on the branded target scope, or override the sidebar aliases on that scope or its descendants, using normal CSS specificity/order or inline styles. An outer scope's resolved alias does not override a newly branded inner scope.
-3. **Internal reset** (1 rule) — `[data-theme-variant="internal"]` re-declares the exact `EXTERNAL_RESET_KEYS` set with values copied from defaults: `background`, `foreground`; all card, muted, primary, and secondary tokens; all feature tokens; `border`, `input`; `radius`, `radius-button`; and `font-heading`. It does **not** reset primitives, the brand pair, or roles external palettes never override. This is what makes an internal scope nested under an external scope return to internal values while still receiving its layer-2 brand pointer.
-4. **External brand palettes** (6 rules) — `[data-theme-variant="external"][data-theme-brand="<code>"]`; each emitted rule contains every `EXTERNAL_RESET_KEYS` declaration, taking a brand value where its source palette supplies one and the `DEFAULTS` value otherwise. This materialization is mandatory scope isolation: an inner external scope must reset every value an outer external/segment layer could have changed. fkab gets its **own selector** carrying a generator-level copy of the fkas value set (permanent alias, §5). `elma` gets its **own selector** carrying the Elmera palette sourced from the Elmera Figma "Farger" sheet (§5), materialized like every other external brand.
-5. **Segment deltas** (1 rule) — only where values genuinely differ: `[data-theme-variant="external"][data-theme-brand="fkas"][data-theme-segment="company"]` is the sole delta at v1. `elma` has no segment delta.
+3. **Internal reset** (1 rule) declares the exact `EXTERNAL_RESET_KEYS` set from defaults on `[data-theme-variant="internal"]`. It does **not** reset primitives, the brand pair, or roles external palettes never override, so a host override of `--ring`, `--popover`, `--chart-*`, or any other dark-only role keeps inheriting through a nested internal scope in light mode. This establishes the light baseline before the document scheme selects either variant's dark overlay.
+4. **External brand palettes** (6 rules) use `[data-theme-variant="external"][data-theme-brand="<code>"]`. Each rule materializes `EXTERNAL_RESET_KEYS` from the brand's composed light theme. `fkab` has its own selector with the Fjordkraft private values. Every nested scope resets inherited palette values before applying its own colors.
+5. **Segment deltas** (1 rule at v1) are emitted next to their brand rule and only where the composed segment theme differs from the composed base: `[data-theme-variant="external"][data-theme-brand="fkas"][data-theme-segment="company"]` is the sole delta. `elma` has no segment delta. The segment-delta module owns the palette values; the generator emits only the differences.
 
-The count is exact: 1 + 6 + 1 + 6 + 1 = **15 emitted theme rules**, the now-full internal rule counting as 1. Every rule owns its selector — the generator never merges layers or brands into shared selectors; deduplication is allowed only in the TS source modules (§8). Rules grow with **value differences, not permutations**. Adding a brand adds ~2 rules (accent pointer + external palette). The reserved dark-axis placeholder (§7.8) is a comment, not a sixteenth CSS rule.
+6. **Internal dark palette** (1 rule) adds direct and descendant `[data-theme="dark"]` selectors scoped to `[data-theme-variant="internal"]`, materializing `THEME_RESET_KEYS`: every role a light or dark palette can change, plus the dependent aliases. The brand-pointer roles are deliberately not in that set; brand and sidebar-brand pointers keep their own layer. All brands and segments share these neutral roles. The [internal dark mapping](../notes/dark-theme/internal-dark-theme-matrix.md) records the supplied values, missing-role mappings and approved contrast adjustments.
+
+7. **External dark palettes** (6 brand rules plus the company delta) append direct and descendant selectors for each brand. Each brand rule materializes `THEME_RESET_KEYS` from the brand's composed dark theme; the company delta rule carries only the keys that differ from its brand base. Direct selectors match `[data-theme="dark"][data-theme-variant="external"][data-theme-brand="<code>"]`. Descendant selectors match `[data-theme="dark"] [data-theme-variant="external"][data-theme-brand="<code>"]`, so nested scopes follow the document scheme without owning a second scheme writer. Company rules also require `[data-theme-segment="company"]`.
+
+There are 15 light rules and 8 dark rules. Each dark body is emitted once under a selector list holding both its direct and descendant form. Brands retain separate selectors, including the `fkab` alias. Internal, external palette and segment rules declare `color-scheme: light`; both variants' dark rules declare `color-scheme: dark`. These CSS declarations follow scope boundaries. JavaScript still writes only the document's `data-theme` marker.
 
 ### 3.3 Fallback by absence
 
@@ -168,28 +172,33 @@ Markers on any element re-theme that subtree (the OrderModuleWeb per-track `<mai
 
 ### 3.6 `data-theme` stays free
 
-None of the three attributes is `data-theme`. That attribute is reserved for the light/dark color-scheme axis. A host-placed closed bootstrap (`ColorSchemeScript` or `colorSchemeScriptSource`, §7.3 / §7.8) writes the resolved `"light"` or `"dark"` marker before paint; `ThemeProvider` owns the same marker at runtime. The attribute is given CSS meaning only when dark values land.
+None of the three attributes is `data-theme`. That attribute selects the document's light/dark color scheme. A host-placed bootstrap, `ColorSchemeScript` or `colorSchemeScriptSource`, writes the resolved marker before paint; `ThemeProvider` owns it at runtime. Dark values apply to both variants under the document's `data-theme="dark"` marker, and scopes follow the document scheme. `ThemeScope` does not fork color-scheme state.
 
 ## 4 Token values and reference
 
 TypeScript is the source of truth for token names, values, and composition. Edit the owning module and review the generated CSS snapshot; do not maintain a second value table in Markdown.
 
-| Data                                                     | Owner                                                                        |
-| -------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| Role names, types, reset keys, and override requirements | [Token contract](../../packages/ui/src/theme/tokens/contract.ts)             |
-| Neutral and brand primitives                             | [Primitives](../../packages/ui/src/theme/tokens/primitives.ts)               |
-| Complete neutral defaults                                | [Defaults](../../packages/ui/src/theme/tokens/defaults.ts)                   |
-| Brand aliases and accent pointers                        | [Brand pointers](../../packages/ui/src/theme/tokens/brand-pointers.ts)       |
-| External palettes                                        | [External palettes](../../packages/ui/src/theme/tokens/external-palettes.ts) |
-| Segment overrides                                        | [Segment deltas](../../packages/ui/src/theme/tokens/segment-deltas.ts)       |
-| Brand names and allowed segments                         | [Theme metadata](../../packages/ui/src/theme/tokens/themes.ts)               |
-| Reviewed emitted CSS                                     | [CSS snapshot](../../packages/ui/src/theme/__snapshots__/themes.css)         |
+| Data                                                                            | Owner                                                                                |
+| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Role names, types, the literal `EXTERNAL_RESET_KEYS`, and override requirements | [Token contract](../../packages/ui/src/theme/tokens/contract.ts)                     |
+| Neutral and brand primitives                                                    | [Primitives](../../packages/ui/src/theme/tokens/primitives.ts)                       |
+| Complete neutral defaults                                                       | [Defaults](../../packages/ui/src/theme/tokens/defaults.ts)                           |
+| Brand aliases and accent pointers                                               | [Brand pointers](../../packages/ui/src/theme/tokens/brand-pointers.ts)               |
+| External palettes                                                               | [External palettes](../../packages/ui/src/theme/tokens/external-palettes.ts)         |
+| External dark palettes                                                          | [Dark palettes](../../packages/ui/src/theme/tokens/external-dark-palettes.ts)        |
+| Internal dark palette                                                           | [Internal dark palette](../../packages/ui/src/theme/tokens/internal-dark-palette.ts) |
+| Shared dark support roles                                                       | [Dark defaults](../../packages/ui/src/theme/tokens/dark-defaults.ts)                 |
+| Derived dark-inclusive `THEME_RESET_KEYS` (the complete scope reset set)        | [Reset keys](../../packages/ui/src/theme/tokens/reset-keys.ts)                       |
+| fkas-company palette in both schemes                                            | [Segment deltas](../../packages/ui/src/theme/tokens/segment-deltas.ts)               |
+| Brand names and allowed segments                                                | [Theme metadata](../../packages/ui/src/theme/tokens/themes.ts)                       |
+| Reviewed emitted CSS                                                            | [CSS snapshot](../../packages/ui/src/theme/__snapshots__/themes.css)                 |
 
-The docs site's Tokens page and theme matrix are generated from this data. [Theme contract tests](../../packages/ui/src/theme/theme-contract.test.ts) check the complete theme set and nested-scope combinations; [contrast tests](../../packages/ui/src/theme/contrast-matrix.test.ts) check the separate accessibility obligations. Changing a value still requires those reviews. Source ownership does not make an accidental value change acceptable.
+The docs site's Tokens page and theme matrix are generated from this data. [Theme contract tests](../../packages/ui/src/theme/theme-contract.test.ts) check the emitted layer structure and reset-key coverage; the [browser matrix](../../packages/ui/src/theme/dark-theme.browser.test.tsx) checks computed values for all 20 themes in both schemes and all 400 nested outer/inner combinations. [Contrast tests](../../packages/ui/src/theme/contrast-matrix.test.ts) check the separate accessibility obligations. Changing a value still requires those reviews. Source ownership does not make an accidental value change acceptable.
 
 ## 5 Value policy rulings
 
-- **All minted values are final** (fkse accents, light-sidebar fills, guen's primary-soft tint) — no provisional flags, no pending design review. Where a brand sheet supplies one, `--primary-soft` is P-95, the same tone as `--secondary-soft` (fkas, tkas, fkse, elma, and the fkas company delta). Contrast consequences of these locked values are classified, not redesigned, in [accessibility](accessibility.md) §6.
+- **Existing light values remain final**, including fkse accents, light-sidebar fills and guen's primary-soft tint. Where a brand sheet supplies one, light `--primary-soft` is P-95, the same tone as `--secondary-soft`. Contrast consequences of those locked values remain classified in [accessibility](accessibility.md) §6.
+- **External dark source order** is the custom Figma color collection in Dark mode, then suggested schematics, then an explicitly documented inference. GE is provisional and derives from screenshot references. Shared support-role mappings also require design review. The dated [dark-theme matrix](../notes/dark-theme/external-dark-theme-matrix.md) records source conflicts, mappings and confidence. Existing light values, fonts, radii and brand primitives do not change.
 - **fkab is a permanent, deliberate alias of fkas** — "100% how it should be for the foreseeable future". Not a gap, no design task, no flag. (This superseded ADR 0001's original "design-input gap" framing; the ADR is amended.)
 - **fkse** keeps code `fkse` everywhere; only presentation metadata (`displayName: "Telinet"`, Telinet logo) differs.
 - **elma** is corporate Elmera, not pinned, four legal themes. External `elma` is a normal external palette derived from the Elmera Figma "Farger" role sheet by the same M3-role recipe as the other brands (Surface → `background`, On Surface → `foreground`/`secondary`, Primary → `primary`, Secondary Container → the soft tones, Surface Variant family → `feature*`); `card-soft` (P-99) and `feature-bright` (P-75) are interpolated between neighbouring sheet tones, and `radius`/`radius-button` keep the defaults until design specifies them. `--brand-elma` is the sheet's On Surface tone (P-20). No segment delta.
@@ -219,7 +228,7 @@ Brand and color scheme are separate writers. Treating `ThemeProvider` as a porta
 
 The host constructs **one** resolved brand configuration and **one** color-scheme configuration. The same brand object is passed to `themeAttributes` and `ThemeProvider.theme`. The same color-scheme literals (`storageKey`, `defaultColorScheme`, `enableSystem`, optional `forcedColorScheme`) are passed to the host bootstrap and to `ThemeProvider`. `injectColorSchemeScript` defaults to **`false`**: a host adapter is always the declared bootstrap owner.
 
-Until dark token values land, “correct color scheme” means the correct pre-paint `data-theme` marker (`light` or `dark`). The painted canvas **intentionally remains light**. Do not set `document.documentElement.style.colorScheme`, do not add `<meta name="color-scheme">`, and do not enable Tailwind `class="dark"`. Hash-based CSP is not promised; a `nonce` on `ColorSchemeScript` is.
+The pre-paint `data-theme` marker selects the matching light or dark palette for both variants before content is painted. Do not set `document.documentElement.style.colorScheme`, add a color-scheme meta tag, or enable Tailwind `class="dark"`; generated scoped CSS supplies native `color-scheme`. Hash-based CSP is not promised; a `nonce` on `ColorSchemeScript` is.
 
 Package/export mechanics and which `/theme` names are server-safe vs client → [architecture](architecture.md) and [performance](performance.md) §3.
 
@@ -321,7 +330,7 @@ Escape hatch for per-request/multi-theme subtrees (the sms-accept per-customer p
 
 `ElmeraGroupUiProvider` is permanent and exported from `/theme`: `{ locale: SupportedLocale; children: ReactNode }`. It provides a memoized `{ locale }` value; `useElmeraGroupUi()` returns it and throws outside the provider. It performs no browser or user-agent detection. The interim `UiProviders` wrapper is documented by its public JSDoc and the authored docs page under `apps/docs/src/app/(docs)/components/ui-providers/`.
 
-### 7.8 Color-scheme axis: wired, valueless
+### 7.8 Color-scheme axis
 
 `<ColorSchemeScript>`, `colorSchemeScriptSource`, `useColorScheme()`, and `<ForceColorScheme>` ship functional in v1 — adapted from next-themes' script with its MIT notice retained. They write only reserved `data-theme`. They do not write brand attributes, `style.colorScheme`, or a color-scheme meta tag.
 
@@ -361,14 +370,14 @@ function useColorScheme(): UseColorSchemeResult;
   2. **Descendant `<ForceColorScheme value="dark">` (runtime-only).** Writes into the document-writer context after hydration. First paint is **not** forced unless the host also used layer 1. Innermost tree depth wins. Nested providers do not fork this stack.
 - While either force is active: document `data-theme` follows the forced resolution; `resolvedColorScheme` reports that value; `setColorScheme` updates **storage only**. Storage events update hidden preference and do not write the document. Media-query changes write the document when the resolved source is `"system"` (including a `"system"` force) and `enableSystem` is true; a non-system force ignores those events. Removing the force applies the stored preference synchronously. Forcing never changes brand attributes.
 - `ThemeInput` has **no dark field** — color scheme is an orthogonal, layered axis, never part of the brand theme.
-- The emitted theme CSS ends with a ready-to-go **commented `[data-theme="dark"]` placeholder**, not an empty rule node. Values land there with the dark-mode roadmap item. When they do, nothing about the brand-theme API changes, and this wave still does not enable `style.colorScheme`.
+- The final generated layers supply internal and external dark values. `composeTheme(theme, "dark")` selects the neutral internal palette or the matching external brand palette. Omitting the second argument preserves the light composition used by existing tooling. The brand-theme API and slugs are unchanged.
 
 ## 8 Token pipeline (codegen)
 
 Codegen across the board — hand-authored theme CSS is prohibited. The TypeScript modules linked in §4 own token data; the CSS snapshot is the reviewable generated reference.
 
-1. **Source shape**: `TokenContract` contains all role tokens except locked values. `DEFAULTS` is `Required<TokenContract>`; every other layer module is `Partial<TokenContract>`. `EXTERNAL_RESET_KEYS` is the literal tuple from §3.2 and must contain every key any external palette or segment delta can override; a contract test compares that computed union to the tuple so a new override cannot bypass scope isolation. Brand pointers, external palettes, and segment deltas are separate data modules. Locked tokens (§2.4) are not accepted by layer types.
-2. **Coverage before fallback**: `composeTheme(theme)` first records the keys supplied by all non-default layers, validates the appropriate must-override set from §2.5 against that record, and only then overlays those layers on `DEFAULTS`. Applying defaults first and checking the final object is forbidden because it masks missing brand data. The internal reset is generated by picking `EXTERNAL_RESET_KEYS` from `DEFAULTS`; it is never hand-maintained.
-3. **Generator**: emits the 15-rule, five-layer structure of §3.2 — defaults → brand pointers → internal reset → external palettes → segment deltas, fallback by absence — followed by the commented `[data-theme="dark"]` placeholder (§7.8). The internal reset emits `pick(DEFAULTS, EXTERNAL_RESET_KEYS)`; every external brand rule emits that same default pick overlaid with its source palette; segment deltas remain partial final overrides. Every selector remains separate, including fkab's copied external palette.
-4. **Execution**: generation runs in the turbo build task; **generated output is not committed**. The committed, reviewable artifact is a CSS snapshot. Contract tests cover all 20 themes and every outer/inner combination of the 20 themes (**400 nested-scope cases**), asserting computed reset-key values, the inner brand pointer, exactly 15 CSS rule nodes, the terminal dark-placeholder comment, and the per-theme contrast matrix.
-5. **Distribution**: a **single `themes.css` entry** containing all 20 permutations (tiny by construction — 15 CSS rules plus one comment), included in both distribution modes ([architecture](architecture.md)). Per-theme file splitting is rejected as premature at this size; size budget → [performance](performance.md).
+1. **Source shape**: `DEFAULTS` supplies the complete `TokenContract`; palette layers are partial. `EXTERNAL_RESET_KEYS` covers the light palette union. `THEME_RESET_KEYS` adds every dark override and aliases whose source role changes, so new dark roles cannot silently leak through nested scopes.
+2. **Coverage before fallback**: composition validates the variant's must-override set before overlaying defaults. `composeTheme(theme, "dark")` then overlays the palette for that variant. Base scope resets come from light defaults; each dark overlay materializes the same complete reset set.
+3. **Generator**: emits defaults, brand pointers, internal reset, light brand palettes with their segment deltas, then the internal dark palette and the dark brand palettes. Light layers materialize `EXTERNAL_RESET_KEYS`; dark layers materialize `THEME_RESET_KEYS`. Brand and segment selectors remain independent.
+4. **Execution**: generated distribution files remain uncommitted; the CSS snapshot is reviewed. Chromium covers all 20 themes in both scheme settings and all 400 outer/inner theme combinations, checking computed values through light, dark and light again, native color scheme, aliases and a scoped dialog. Dark text pairs and input/focus contrast have separate assertions.
+5. **Distribution**: one `themes.css` contains all theme and external color-scheme values. It ships in both distribution modes. Size budget remains governed by [performance](performance.md).

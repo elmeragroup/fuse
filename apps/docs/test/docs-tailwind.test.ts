@@ -92,6 +92,40 @@ function recipeSlotFailures(sources: readonly { file: string; source: string }[]
 const EXPORTED_CLASS_NAME = /export\s+(?:const|function|type|class)\s+\w*ClassName\b/;
 const EXPORTED_TV_RECIPE = /export\s+const\s+\w+\s*=\s*tv\s*\(/;
 
+/**
+ * The utilities the docs migration retired, plus forced light/dark schemes. Neither is a
+ * lint rule, and oxlint never lints MDX, so this test is their only guard there.
+ */
+const RETIRED_DOCS_UTILITY =
+  /(?:bg|text|border|outline|ring|fill|stroke|font)-docs-(?:ink|body|sub|line|soft|code|required|rsc|sans|mono)\b|\bscheme-(?:light|dark)\b/;
+
+/**
+ * The palette utilities `elmera/no-primitive-colors` rejects, re-read from the packed rule
+ * so the MDX-only guard below cannot drift from what lint enforces in TS/TSX: the utility
+ * prefixes come from the rule's `TOKEN_RE`, the colour families from its family table.
+ */
+function primitivePaletteUtility(): RegExp {
+  const bundlePath = join(workspaceRoot, "node_modules/@elmeragroup/internal/dist/oxlint.mjs");
+  const bundle = readFileSync(bundlePath, "utf8");
+  const regionStart = bundle.indexOf("//#region ../oxlint-plugin/rules/no-primitive-colors.js");
+  const regionEnd = bundle.indexOf("//#endregion", regionStart + 1);
+  const region = regionStart === -1 || regionEnd === -1 ? "" : bundle.slice(regionStart, regionEnd);
+  const tokenPattern = /const TOKEN_RE = \/([^\n]+)\/gim;/.exec(region)?.[1];
+  // The utility-prefix alternation sits directly before the colour-family capture group.
+  const prefixes =
+    tokenPattern === undefined
+      ? undefined
+      : /\(\?:([^()]*(?:\([^()]*\)[^()]*)*)\)-\(\[a-z\]\[a-z0-9-\]\*\)/.exec(tokenPattern)?.[1];
+  const familyBlock = /const TAILWIND_COLOR_FAMILIES = [\s\S]*?new Set\(\[([\s\S]*?)\]\);/.exec(region)?.[1];
+  const families = familyBlock?.match(/"([a-z]+)"/g)?.map((name) => name.slice(1, -1));
+  if (prefixes === undefined || families === undefined || families.length === 0) {
+    throw new Error(`Could not read the primitive-colour vocabulary from ${bundlePath}`);
+  }
+  return new RegExp(`(?:${prefixes})-(?:${families.join("|")})(?:-\\d{2,3})?\\b`);
+}
+
+const PRIMITIVE_PALETTE_UTILITY = primitivePaletteUtility();
+
 describe("docs Tailwind migration contract", () => {
   it("keeps globals.css as the Tailwind entry with the library and demo-stage imports", () => {
     const globals = readFileSync(join(docsRoot, "src/styles/globals.css"), "utf8");
@@ -115,7 +149,33 @@ describe("docs Tailwind migration contract", () => {
     expect(plugin).toBeGreaterThan(tailwindImport);
     expect(utility).toBeGreaterThan(plugin);
     expect(globals).toContain("--tw-prose-");
-    expect(globals).toContain("--font-docs-mono");
+    expect(globals).toContain("--font-mono");
+    expect(globals).toContain("--tw-prose-body: var(--foreground)");
+    expect(globals).toContain("--tw-prose-pre-bg: var(--card)");
+    expect(globals).not.toMatch(/--(?:color|font)-docs-/);
+  });
+
+  it("keeps route and shared-component utilities on the library theme", () => {
+    const inScope = (file: string): boolean =>
+      file.startsWith("src/app/(docs)/") || file.startsWith("src/components/");
+    const mdxFiles = collectFiles(join(docsRoot, "src/app/(docs)"), "src/app/(docs)", ".mdx").filter(inScope);
+    const failures = [
+      // `elmera/no-primitive-colors` owns Tailwind palette utilities and arbitrary colour
+      // literals in `apps/docs/src/**/*.{ts,tsx}` at lint time. This test owns the gaps
+      // lint cannot see: the retired `-docs-*` names in TS/TSX and MDX, and `scheme-*` plus
+      // the palette utilities in MDX, which oxlint does not lint. The palette vocabulary is
+      // re-read from the packed rule so it cannot drift.
+      ...srcTsFiles()
+        .filter(inScope)
+        .flatMap((file) =>
+          RETIRED_DOCS_UTILITY.test(readFileSync(join(docsRoot, file), "utf8")) ? [file] : []
+        ),
+      ...mdxFiles.flatMap((file) => {
+        const source = readFileSync(join(docsRoot, file), "utf8");
+        return RETIRED_DOCS_UTILITY.test(source) || PRIMITIVE_PALETTE_UTILITY.test(source) ? [file] : [];
+      }),
+    ];
+    expect(failures).toEqual([]);
   });
 
   it("owns exactly one stylesheet under src", () => {

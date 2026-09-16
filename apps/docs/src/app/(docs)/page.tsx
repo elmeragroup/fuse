@@ -16,8 +16,8 @@ export const metadata: Metadata = {
 
 const docsHome = tv({
   slots: {
-    groupHeading: "font-medium text-docs-sub m-[2rem_0_-0.9rem] text-[0.72rem]",
-    list: "[&_a]:text-docs-ink [&_a:hover]:text-docs-sub m-[1.4rem_0_0] list-none p-0 text-[0.88rem]",
+    groupHeading: "font-medium text-xs m-[2rem_0_-0.9rem] text-muted-foreground",
+    list: "text-sm m-[1.4rem_0_0] list-none p-0 [&_a]:text-foreground [&_a:hover]:text-muted-foreground",
   },
 });
 

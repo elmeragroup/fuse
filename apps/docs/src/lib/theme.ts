@@ -1,6 +1,7 @@
 import { isBrandCode } from "@elmeragroup/ui/theme";
 import type {
   BrandCode,
+  ColorScheme,
   ColorSchemeOptions,
   ThemeInput,
   ThemeSegment,
@@ -31,6 +32,21 @@ export const DEFAULT_THEME = {
   brand: "fkas",
   segment: "private",
 } as const satisfies ThemeInput;
+
+export const COLOR_SCHEMES = ["light", "dark", "system"] as const satisfies readonly ColorScheme[];
+
+export const COLOR_SCHEME_LABELS = {
+  light: "Light",
+  dark: "Dark",
+  system: "System",
+} satisfies Record<ColorScheme, string>;
+
+export function parseColorScheme(value: string): ColorScheme | null {
+  if (value === "light" || value === "dark" || value === "system") {
+    return value;
+  }
+  return null;
+}
 
 export function parseThemeVariant(value: string): ThemeVariant | null {
   if (value === "internal" || value === "external") {

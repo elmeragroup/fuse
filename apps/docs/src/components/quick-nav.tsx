@@ -12,10 +12,10 @@ import { docsNavList } from "./docs-nav-list";
 
 const quickNav = tv({
   slots: {
-    root: "min-[60rem]:top-docs-header min-[60rem]:text-docs-sub hidden min-[60rem]:sticky min-[60rem]:block min-[60rem]:h-[calc(100vh_-_var(--spacing-docs-header))] min-[60rem]:px-4 min-[60rem]:py-10 min-[60rem]:text-[0.78rem]",
+    root: "min-[60rem]:top-docs-header min-[60rem]:text-xs hidden min-[60rem]:sticky min-[60rem]:block min-[60rem]:h-[calc(100vh_-_var(--spacing-docs-header))] min-[60rem]:px-4 min-[60rem]:py-10 min-[60rem]:text-muted-foreground",
     scroll: "h-full",
-    title: "font-semibold text-docs-sub m-0 mb-[0.6rem] block text-[0.66rem] tracking-[0.09em] uppercase",
-    link: "text-docs-sub hover:text-docs-ink focus-visible:outline-docs-ink block py-[0.22rem] no-underline focus-visible:rounded-[4px] focus-visible:outline-2 focus-visible:outline-offset-2",
+    title: "font-semibold text-xs m-0 mb-[0.6rem] block tracking-[0.09em] text-muted-foreground uppercase",
+    link: "block py-[0.22rem] text-muted-foreground no-underline hover:text-foreground focus-visible:rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
   },
 });
 
