@@ -65,8 +65,8 @@ it.each(["/", "/handbook/theming", "/handbook/theme-matrix", "/components/button
         "color",
         "muted-foreground"
       );
-      await expectRole(page, 'button[aria-label="Theme settings"]', "background-color", "background");
-      await expectRole(page, 'button[aria-label="Theme settings"]', "border-top-color", "border");
+      // The trigger is a ghost Button: it paints no background or border, so the
+      // inherited foreground is the only theme token it carries.
       await expectRole(page, 'button[aria-label="Theme settings"]', "color", "foreground");
       if (path === "/handbook/theming") {
         await expectRole(page, "main pre", "background-color", "card");

@@ -168,7 +168,7 @@ export function SearchPalette(): ReactElement {
         ref={triggerRef}
         type="button"
         size="sm"
-        variant="outline"
+        variant="ghost"
         className={trigger()}
         aria-keyshortcuts="Meta+K Control+K"
         onClick={openPalette}>

@@ -55,7 +55,7 @@ export function ThemePicker({ theme, onThemeChange }: ThemePickerProps): ReactEl
     <DropdownMenu.Root>
       <DropdownMenu.Trigger
         className={styles.trigger()}
-        render={<Button variant="outline" size="icon-sm" aria-label="Theme settings" />}>
+        render={<Button variant="ghost" size="icon-sm" aria-label="Theme settings" />}>
         <SlidersHorizontal className={styles.icon()} />
       </DropdownMenu.Trigger>
       <DropdownMenu.Content align="end" sideOffset={8} className={styles.content()}>
