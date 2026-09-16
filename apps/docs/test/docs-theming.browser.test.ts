@@ -40,6 +40,11 @@ it.each(["/", "/handbook/theming", "/handbook/theme-matrix", "/components/button
     await page.goto(`${docsBaseUrl()}${path}`, { waitUntil: "networkidle" });
     for (const scheme of ["light", "dark", "light"] as const) {
       await page.evaluate((value) => document.documentElement.setAttribute("data-theme", value), scheme);
+      await page
+        .getByRole("button", { name: "Theme settings", exact: true })
+        .evaluate((element) =>
+          Promise.all(element.getAnimations().map((animation) => animation.finished.catch(() => undefined)))
+        );
       const html = page.locator("html");
       expect(await html.getAttribute("data-theme-variant")).toBe("internal");
       expect(await html.getAttribute("data-theme-brand")).toBe("elma");
@@ -60,9 +65,9 @@ it.each(["/", "/handbook/theming", "/handbook/theme-matrix", "/components/button
         "color",
         "muted-foreground"
       );
-      await expectRole(page, 'select[aria-label="Brand"]', "background-color", "card");
-      await expectRole(page, 'select[aria-label="Brand"]', "border-top-color", "input");
-      await expectRole(page, 'select[aria-label="Brand"]', "color", "card-foreground");
+      await expectRole(page, 'button[aria-label="Theme settings"]', "background-color", "background");
+      await expectRole(page, 'button[aria-label="Theme settings"]', "border-top-color", "border");
+      await expectRole(page, 'button[aria-label="Theme settings"]', "color", "foreground");
       if (path === "/handbook/theming") {
         await expectRole(page, "main pre", "background-color", "card");
         await expectRole(page, "main pre", "font-family", "font-mono");

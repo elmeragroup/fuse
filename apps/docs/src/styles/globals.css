@@ -10,13 +10,7 @@
 @source "../../src";
 
 @theme {
-  --spacing-docs-header: 6rem;
-}
-
-@media (width >= 40rem) {
-  :root {
-    --spacing-docs-header: 3.5rem;
-  }
+  --spacing-docs-header: 3.5rem;
 }
 
 @utility prose-docs {

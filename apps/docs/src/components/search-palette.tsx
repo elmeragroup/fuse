@@ -13,7 +13,7 @@ import { matchSearchEntries } from "../lib/search";
 
 const searchPalette = tv({
   slots: {
-    trigger: "sm:ml-0 ml-auto font-mono",
+    trigger: "font-mono",
     keys: "text-muted-foreground [font:inherit]",
     palette:
       "top-[10vh] block w-[min(34rem,calc(100vw_-_2rem))] translate-y-0 gap-0 overflow-hidden p-0 font-sans",

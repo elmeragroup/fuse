@@ -281,7 +281,8 @@ describe("docs picker vs document theme", () => {
     expect(initial.slug).toContain("fkas");
     expect(initial.documentToken).not.toBe(initial.stageToken);
 
-    await page.getByLabel("Brand").selectOption("tkas");
+    await page.getByRole("button", { name: "Theme settings", exact: true }).click();
+    await page.getByRole("menuitemradio", { name: "TrøndelagKraft tkas", exact: true }).click();
 
     const next = await page.evaluate(() => {
       const root = document.documentElement;
@@ -342,7 +343,8 @@ describe("docs picker vs document theme", () => {
     expect(initial.buttonHeight).toBe("36px");
     expect(initial.densityLabel).toBe("dense");
 
-    await page.getByRole("combobox", { name: "Variant" }).selectOption("external");
+    await page.getByRole("button", { name: "Theme settings", exact: true }).click();
+    await page.getByRole("menuitemradio", { name: "External", exact: true }).click();
 
     const next = await page.evaluate(() => {
       const root = document.documentElement;

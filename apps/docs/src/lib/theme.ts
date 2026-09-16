@@ -1,12 +1,4 @@
-import { isBrandCode } from "@elmeragroup/ui/theme";
-import type {
-  BrandCode,
-  ColorScheme,
-  ColorSchemeOptions,
-  ThemeInput,
-  ThemeSegment,
-  ThemeVariant,
-} from "@elmeragroup/ui/theme";
+import type { ColorScheme, ColorSchemeOptions, ThemeInput } from "@elmeragroup/ui/theme";
 
 export {
   BRAND_CODES as THEME_BRANDS,
@@ -40,28 +32,3 @@ export const COLOR_SCHEME_LABELS = {
   dark: "Dark",
   system: "System",
 } satisfies Record<ColorScheme, string>;
-
-export function parseColorScheme(value: string): ColorScheme | null {
-  if (value === "light" || value === "dark" || value === "system") {
-    return value;
-  }
-  return null;
-}
-
-export function parseThemeVariant(value: string): ThemeVariant | null {
-  if (value === "internal" || value === "external") {
-    return value;
-  }
-  return null;
-}
-
-export function parseThemeBrand(value: string): BrandCode | null {
-  return isBrandCode(value) ? value : null;
-}
-
-export function parseThemeSegment(value: string): ThemeSegment | null {
-  if (value === "private" || value === "company") {
-    return value;
-  }
-  return null;
-}
