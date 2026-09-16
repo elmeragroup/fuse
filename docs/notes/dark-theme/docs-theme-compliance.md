@@ -47,8 +47,3 @@ The source guard checks route TS/TSX/MDX and shared components for docs palette 
 - Visual review confirmed light and dark component pages and the search dialog. At viewport widths of 320, 390 and 640 pixels, document scroll width equals viewport width and every header control stays visible.
 
 The audit verifies docs token use and theme integration. Browser assertions sample the home page, theming handbook, theme matrix and Button page; source guards and route checks cover the wider tree.
-
-## Previews
-
-- [Light docs](../../../notes/docs-internal-elma-light.png)
-- [Dark docs](../../../notes/docs-internal-elma-dark.png)

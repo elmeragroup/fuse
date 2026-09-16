@@ -2,9 +2,9 @@
 
 Implemented 2026-09-15 from the user-supplied shadcn neutral dark base. This extends the preceding [external dark rollout](external-dark-theme-matrix.md). Both variants now support the document's `data-theme="dark"` selection.
 
-[Rendered matrix preview](../../../notes/internal-dark-theme-preview.png) records the original palette rollout with light docs chrome. The subsequent [docs theme audit](docs-theme-compliance.md) replaces that chrome with the library's internal Elmera light/dark theme.
+The original palette rollout was reviewed with light docs chrome. The subsequent [docs theme audit](docs-theme-compliance.md) replaces that chrome with the library's internal Elmera light/dark theme.
 
-[Input preview](../../../notes/internal-dark-input-preview.png) shows the actual library input with the approved 40% white border on its dark card surface.
+The library input carries the approved 40% white border on its dark card surface.
 
 ## Is the supplied palette complete?
 
@@ -47,7 +47,7 @@ The [shadcn theming documentation](https://ui.shadcn.com/docs/theming) describes
 
 The chart sequence keeps the supplied three brightest greens and lightens the final two. Slots 6–8 remain provisional fallback colors. Contrast against the panel does not establish distinction between adjacent series, and the green sequence should not be treated as a validated categorical palette. Charts still need labels, legends and context-specific review.
 
-The [complete resolved export](../../../notes/internal-dark-theme-tokens.json) lists all 77 roles, selectors and measured contrast for each internal permutation.
+The implementation resolves all 77 roles, selectors and measured contrast for each internal permutation.
 
 ## Permutations and selectors
 

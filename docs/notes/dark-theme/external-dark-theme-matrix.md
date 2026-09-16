@@ -12,7 +12,7 @@ The directly sourced colors match Figma after conversion to the library's OKLCH 
 
 I estimate **95% confidence in theme configuration**, based on CSS, browser, portal and contrast checks. Estimated visual fidelity is **90–95% for Fjordkraft, Bedrift, TrøndelagKraft, Elmera and the fkab alias**, **85–90% for Telinet**, and **60–70% for GE**. These are engineering judgments, not statistical measurements. GE, shared support roles and complete product screens have more uncertainty than the tested selector behavior.
 
-[Rendered external matrix preview](../../../notes/external-dark-theme-preview.png) shows all ten implemented combinations. The docs handbook matrix also supports Light, Dark and System selection.
+All ten implemented combinations render in the docs handbook matrix, which also supports Light, Dark and System selection.
 
 ## Decisions confirmed for this work
 
@@ -39,7 +39,7 @@ Figma MCP read the supplied nodes, resolved custom variable aliases by the named
 | Elmera         | [Suggested schematics](https://www.figma.com/design/dWv89e4X0DXeCKMsJwD5zL/Elmera?node-id=129-12419)                                                                                                             | [Farger / Dark, 2106:18317](https://www.figma.com/design/dWv89e4X0DXeCKMsJwD5zL/Elmera?node-id=2106-18317)         | Elmera - Colors. Same values for both segments.                                                                                                                            |
 | GE             | [Variant, 27:2](https://www.figma.com/design/NQXVCgZ9HVC6TVhUIXxw8h/GE-fargepalett?node-id=27-2) and [image 73, 115:35788](https://www.figma.com/design/NQXVCgZ9HVC6TVhUIXxw8h/GE-fargepalett?node-id=115-35788) | Sampled image palette                                                                                              | No local color variables or paint styles. The repeated 115:35788 URL is one source, not independent confirmation.                                                          |
 
-[Captured Figma color data](../../../notes/external-dark-theme-figma.json) records custom light and dark values, page/node IDs and unresolved aliases. [Resolved implementation export](../../../notes/external-dark-theme-tokens.json) contains all 77 tokens, matching attributes and contrast ratios for every external permutation.
+The implementation resolves all 77 tokens, matching attributes and contrast ratios for every external permutation.
 
 ## Permutation matrix
 
