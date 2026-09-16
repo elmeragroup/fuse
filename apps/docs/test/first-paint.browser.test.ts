@@ -282,7 +282,7 @@ describe("docs picker vs document theme", () => {
     expect(initial.documentToken).not.toBe(initial.stageToken);
 
     await page.getByRole("button", { name: "Theme settings", exact: true }).click();
-    await page.getByRole("menuitemradio", { name: "TrøndelagKraft tkas", exact: true }).click();
+    await page.getByRole("menuitemradio", { name: "TrøndelagKraft", exact: true }).click();
 
     const next = await page.evaluate(() => {
       const root = document.documentElement;

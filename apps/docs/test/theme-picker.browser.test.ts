@@ -71,7 +71,7 @@ describe("docs theme settings", () => {
       height: getComputedStyle(element).getPropertyValue("--control-h-sm"),
     }));
     await choice(menu, "External").click();
-    await choice(menu, "TrøndelagKraft tkas").click();
+    await choice(menu, "TrøndelagKraft").click();
     await choice(menu, "Company").click();
     await expectPreview(page, "external", "tkas", "company");
     expect(await menu.isVisible()).toBe(true);
@@ -94,19 +94,19 @@ describe("docs theme settings", () => {
     const menu = await openSettings(page);
     await choice(menu, "Dark").click();
     await choice(menu, "External").click();
-    await choice(menu, "Fjordkraft Företag fkab").click();
+    await choice(menu, "Fjordkraft Företag").click();
     await expectPreview(page, "external", "fkab", "company");
-    expect(await choice(menu, "Private Unavailable").getAttribute("aria-disabled")).toBe("true");
+    expect(await choice(menu, "Private").getAttribute("aria-disabled")).toBe("true");
     expect(await choice(menu, "Company").getAttribute("aria-checked")).toBe("true");
     expect(await menu.getByText("This brand supports Company only.", { exact: false }).count()).toBe(1);
-    await choice(menu, "Private Unavailable").focus();
+    await choice(menu, "Private").focus();
     await page.keyboard.press("Enter");
     await page.keyboard.press("Space");
     await expectPreview(page, "external", "fkab", "company");
-    await choice(menu, "Telinet fkse").click();
+    await choice(menu, "Telinet").click();
     await expectPreview(page, "external", "fkse", "private");
-    expect(await choice(menu, "Company Unavailable").getAttribute("aria-disabled")).toBe("true");
-    await choice(menu, "Fjordkraft fkas").click();
+    expect(await choice(menu, "Company").getAttribute("aria-disabled")).toBe("true");
+    await choice(menu, "Fjordkraft").click();
     expect(await choice(menu, "Company").getAttribute("aria-disabled")).not.toBe("true");
     await choice(menu, "Company").click();
     await menu.getByRole("menuitem", { name: "Reset preview theme", exact: true }).click();
@@ -132,8 +132,8 @@ describe("docs theme settings", () => {
     expect(await choice(menu, "Dark").getAttribute("aria-checked")).toBe("true");
     await page.keyboard.press("ArrowDown");
     await page.keyboard.press("Space");
-    await expectFocused(choice(menu, "System Follow device"));
-    expect(await choice(menu, "System Follow device").getAttribute("aria-checked")).toBe("true");
+    await expectFocused(choice(menu, "System"));
+    expect(await choice(menu, "System").getAttribute("aria-checked")).toBe("true");
     await page.keyboard.press("Escape");
     await expect.poll(() => menu.count()).toBe(0);
     await expectFocused(trigger);
@@ -150,7 +150,7 @@ describe("docs theme settings", () => {
   it("persists appearance and keeps System selected as the device scheme changes", async () => {
     const page = await browser.newPage({ colorScheme: "light" });
     let menu = await openSettings(page);
-    expect(await choice(menu, "System Follow device").getAttribute("aria-checked")).toBe("true");
+    expect(await choice(menu, "System").getAttribute("aria-checked")).toBe("true");
     const lightPaint = await menu.evaluate((element) => getComputedStyle(element).backgroundColor);
     await choice(menu, "Dark").click();
     await expect.poll(() => page.locator("html").getAttribute("data-theme")).toBe("dark");
@@ -161,11 +161,11 @@ describe("docs theme settings", () => {
     menu = page.getByRole("menu", { name: "Theme settings", exact: true });
     await menu.waitFor();
     expect(await choice(menu, "Dark").getAttribute("aria-checked")).toBe("true");
-    await choice(menu, "System Follow device").click();
+    await choice(menu, "System").click();
     await expect.poll(() => page.locator("html").getAttribute("data-theme")).toBe("light");
     await page.emulateMedia({ colorScheme: "dark" });
     await expect.poll(() => page.locator("html").getAttribute("data-theme")).toBe("dark");
-    expect(await choice(menu, "System Follow device").getAttribute("aria-checked")).toBe("true");
+    expect(await choice(menu, "System").getAttribute("aria-checked")).toBe("true");
     await choice(menu, "Light").click();
     expect(await page.locator("html").getAttribute("data-theme")).toBe("light");
     await page.close();

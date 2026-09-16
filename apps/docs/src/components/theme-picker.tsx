@@ -23,18 +23,14 @@ const themePicker = tv({
   slots: {
     trigger: "shrink-0 data-popup-open:bg-accent",
     icon: "size-4.5",
-    content: "w-82 max-w-[calc(100vw-2rem)]",
+    content: "w-70 max-w-[calc(100vw-2rem)]",
     introduction: "flex flex-col gap-1 px-3 pt-3 pb-2.5",
     title: "text-sm font-semibold",
     description: "text-xs leading-4.5 text-muted-foreground",
     previewHeading: "flex flex-col gap-1 px-3 pt-3 pb-1",
     previewTitle: "text-sm font-semibold",
     label: "px-3 leading-4.5",
-    appearanceLabel: "flex items-center justify-between pr-3",
-    hint: "text-xs font-normal text-muted-foreground",
-    item: "gap-3 pr-10 pl-3",
-    itemLabel: "min-w-0 flex-1",
-    brandCode: "text-xs w-9 shrink-0 font-mono text-muted-foreground",
+    item: "pl-3",
     separator: "mx-0 my-0",
     segmentHelp: "text-xs px-3 pt-2 pb-2.5 leading-4.5 text-muted-foreground",
     reset: "text-sm gap-2.5 px-3 py-2",
@@ -70,18 +66,14 @@ export function ThemePicker({ theme, onThemeChange }: ThemePickerProps): ReactEl
         <DropdownMenu.RadioGroup
           value={colorScheme}
           onValueChange={(value: ColorScheme) => setColorScheme(value)}>
-          <div className={styles.appearanceLabel()}>
-            <DropdownMenu.Label className={styles.label()}>Appearance</DropdownMenu.Label>
-            <span className={styles.hint()}>Docs &amp; previews</span>
-          </div>
+          <DropdownMenu.Label className={styles.label()}>Appearance</DropdownMenu.Label>
           {COLOR_SCHEMES.map((scheme) => (
             <DropdownMenu.RadioItem
               key={scheme}
               value={scheme}
               closeOnClick={false}
               className={styles.item()}>
-              <span className={styles.itemLabel()}>{COLOR_SCHEME_LABELS[scheme]}</span>
-              {scheme === "system" ? <span className={styles.hint()}>Follow device</span> : null}
+              {COLOR_SCHEME_LABELS[scheme]}
             </DropdownMenu.RadioItem>
           ))}
         </DropdownMenu.RadioGroup>
@@ -100,7 +92,7 @@ export function ThemePicker({ theme, onThemeChange }: ThemePickerProps): ReactEl
               value={variant}
               closeOnClick={false}
               className={styles.item()}>
-              <span className={styles.itemLabel()}>{VARIANT_LABELS[variant]}</span>
+              {VARIANT_LABELS[variant]}
             </DropdownMenu.RadioItem>
           ))}
         </DropdownMenu.RadioGroup>
@@ -111,8 +103,7 @@ export function ThemePicker({ theme, onThemeChange }: ThemePickerProps): ReactEl
           <DropdownMenu.Label className={styles.label()}>Brand</DropdownMenu.Label>
           {THEME_BRANDS.map((brand) => (
             <DropdownMenu.RadioItem key={brand} value={brand} closeOnClick={false} className={styles.item()}>
-              <span className={styles.itemLabel()}>{BRANDS[brand].displayName}</span>
-              <span className={styles.brandCode()}>{brand}</span>
+              {BRANDS[brand].displayName}
             </DropdownMenu.RadioItem>
           ))}
         </DropdownMenu.RadioGroup>
@@ -128,8 +119,7 @@ export function ThemePicker({ theme, onThemeChange }: ThemePickerProps): ReactEl
               disabled={!allowedSegments.includes(segment)}
               closeOnClick={false}
               className={styles.item()}>
-              <span className={styles.itemLabel()}>{SEGMENT_LABELS[segment]}</span>
-              {allowedSegments.includes(segment) ? null : <span className={styles.hint()}>Unavailable</span>}
+              {SEGMENT_LABELS[segment]}
             </DropdownMenu.RadioItem>
           ))}
         </DropdownMenu.RadioGroup>
