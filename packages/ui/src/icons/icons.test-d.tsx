@@ -15,6 +15,7 @@ test("public adapters accept regular and fill and reject other weights", () => {
   expectTypeOf<ComponentProps<(typeof Icons)["Check"]>>().toEqualTypeOf<
     ComponentProps<(typeof Icons)["X"]>
   >();
+  expectTypeOf<ComponentProps<(typeof Icons)["SlidersHorizontal"]>>().toEqualTypeOf<ElmeraIconProps>();
 
   const _regular: ElmeraIconProps = { weight: "regular" };
   const _fill: ElmeraIconProps = { weight: "fill" };

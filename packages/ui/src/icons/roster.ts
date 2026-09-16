@@ -89,6 +89,7 @@ export const PHOSPHOR_ICON_NAMES = [
   "Sidebar",
   "SidebarSimple",
   "SignOut",
+  "SlidersHorizontal",
   "SpinnerGap",
   "Stack",
   "Star",
