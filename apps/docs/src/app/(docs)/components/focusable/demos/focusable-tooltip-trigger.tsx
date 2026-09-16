@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@elmeragroup/ui/button";
 import { Focusable } from "@elmeragroup/ui/react-aria/focusable";
 import { Tooltip } from "@elmeragroup/ui/tooltip";
 
@@ -10,9 +11,9 @@ export function FocusableTooltipTrigger() {
         <Tooltip.Trigger
           render={
             <Focusable>
-              <span className="cursor-help text-muted-foreground underline decoration-dotted">
+              <Button variant="outline" isVisuallyDisabled aria-disabled="true">
                 Closed meter
-              </span>
+              </Button>
             </Focusable>
           }
         />

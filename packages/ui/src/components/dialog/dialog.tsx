@@ -172,7 +172,7 @@ function DialogTitle({ className, ...props }: ComponentProps<typeof DialogPrimit
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
-      className={mergeClassName(className, overlayTitleClass)}
+      className={mergeClassName(className, overlayTitleClass, selfFocusRingClass)}
       {...props}
     />
   );

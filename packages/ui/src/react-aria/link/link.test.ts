@@ -32,7 +32,7 @@ describe("linkVariants", () => {
       default: "text-inherit",
       foreground: "text-foreground",
       primary: "text-primary",
-      secondary: "text-secondary",
+      secondary: "text-foreground",
       brand: "text-brand",
       muted: "text-muted-foreground",
       inherit: "text-inherit",

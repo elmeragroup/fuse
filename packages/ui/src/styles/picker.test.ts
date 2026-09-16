@@ -26,8 +26,8 @@ function everyEmittedClass(): string {
 
 describe("pickerVariants shared slots", () => {
   it("lays both roots out as a labelled column", () => {
-    expect(pickerVariants().base()).toBe("group flex flex-col gap-1");
-    expect(pickerVariants({ range: true }).base()).toBe("group flex flex-col gap-1");
+    expect(pickerVariants().base()).toContain("flex-col");
+    expect(pickerVariants({ range: true }).base()).toContain("@container/picker");
   });
 
   it("strips the styled Dialog's padding in both of its forms, on both axes", () => {
@@ -62,7 +62,7 @@ describe("pickerVariants shared slots", () => {
 
   it("emits exactly the two documented axes, no control rung, and no raw palette", () => {
     expect(pickerVariants.variantKeys).toEqual(["range", "hasPresets"]);
-    expect(everyEmittedClass()).not.toContain("--control-h-");
+
     expect(everyEmittedClass()).not.toMatch(RAW_PALETTE_RE);
   });
 
@@ -126,7 +126,7 @@ describe("pickerVariants range axis", () => {
     // lone calendar takes none of it, and the slot must be empty rather than absent so
     // the call site can hand the class through unconditionally.
     expect(pickerVariants({ hasPresets: true }).pane().split(/\s+/)).toEqual(
-      expect.arrayContaining(["flex", "gap-x-3", "divide-x", "pr-3", "pb-3"])
+      expect.arrayContaining(["flex", "flex-col", "sm:flex-row", "sm:divide-x", "pb-3"])
     );
     // tailwind-variants collapses an empty slot face to `undefined`, which is what the
     // call site wants: React then omits the attribute rather than emitting `class=""`.

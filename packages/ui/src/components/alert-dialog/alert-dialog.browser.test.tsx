@@ -84,7 +84,7 @@ describe("AlertDialog", () => {
     expect(dialog.getAttribute("aria-describedby")).toBe(description.id);
   });
 
-  it("focuses the action button on open, traps focus, and restores the trigger on Escape", async () => {
+  it("focuses Cancel for destructive confirmation, traps focus, and restores the trigger on Escape", async () => {
     renderThemed(
       withLocale(
         "en-US",
@@ -97,8 +97,8 @@ describe("AlertDialog", () => {
     const trigger = page.getByRole("button", { name: "Delete order", exact: true }).element();
     const behind = page.getByRole("button", { name: "Behind", exact: true }).element();
     const dialog = await openConfirm();
-    const action = page.getByRole("button", { name: ACTION, exact: true }).element();
-    expect(document.activeElement).toBe(action);
+    const cancel = page.getByRole("button", { name: "Cancel", exact: true }).element();
+    expect(document.activeElement).toBe(cancel);
 
     const tabbables = [...dialog.querySelectorAll<HTMLElement>("button")];
     expect(tabbables.length).toBeGreaterThan(1);
@@ -129,6 +129,12 @@ describe("AlertDialog", () => {
       expect(page.getByRole("alertdialog").query()).toBeNull();
     });
     expect(document.activeElement).toBe(trigger);
+  });
+
+  it("focuses the primary action for a neutral confirmation", async () => {
+    renderThemed(withLocale("en-US", <ConfirmDialog variant="neutral" />));
+    await openConfirm();
+    expect(document.activeElement).toBe(page.getByRole("button", { name: ACTION, exact: true }).element());
   });
 
   it("fires onAction without closing by default, and closes when close-on-action is enabled", async () => {

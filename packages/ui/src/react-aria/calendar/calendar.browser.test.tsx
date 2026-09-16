@@ -196,7 +196,8 @@ describe("Calendar", () => {
     ).toBeTruthy();
   });
 
-  it("renders CaretRight inside the previous button under an RTL locale", async () => {
+  it("lays out RTL columns and mirrors navigation and keyboard date movement", async () => {
+    const onChange = vi.fn();
     renderCalendar(
       <>
         <span role="img" aria-label="CaretLeft glyph">
@@ -206,7 +207,7 @@ describe("Calendar", () => {
           <CaretRight aria-hidden />
         </span>
         <I18nProvider locale="ar-EG">
-          <Calendar defaultValue={july14} />
+          <Calendar defaultValue={july14} onChange={onChange} />
         </I18nProvider>
       </>
     );
@@ -219,6 +220,20 @@ describe("Calendar", () => {
     expect(previous.innerHTML).not.toBe(glyphNamed("CaretLeft glyph"));
     expect(next.innerHTML).toBe(glyphNamed("CaretLeft glyph"));
     expect(previous.querySelector("[aria-hidden='true']")).not.toBeNull();
+    expect(getComputedStyle(calendarGrid()).direction).toBe("rtl");
+    // DOM audit: RAC marks weekday headings as presentation; inspect their rendered column order.
+    const headers = [...calendarGrid().querySelectorAll("thead th")];
+    expect(headers).toHaveLength(7);
+    expect(headers[0]?.getBoundingClientRect().left).toBeGreaterThan(
+      headers[6]?.getBoundingClientRect().left ?? 0
+    );
+    // The selected cell's button receives ArrowLeft, which must advance one day in RTL.
+    const selected = cells().find((cell) => cell.getAttribute("aria-selected") === "true");
+    const day = selected?.querySelector('[role="button"]');
+    if (!(day instanceof HTMLElement)) throw new Error("Expected the selected day button");
+    day.focus();
+    await userEvent.keyboard("{ArrowLeft}{Enter}");
+    expect(onChange).toHaveBeenLastCalledWith(july14.add({ days: 1 }));
   });
 
   it("renders a ReactNode error and references it through aria-describedby when invalid", async () => {

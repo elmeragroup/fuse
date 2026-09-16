@@ -15,11 +15,11 @@ export function BreadcrumbEllipsis() {
         </Breadcrumb.Item>
         <Breadcrumb.Separator />
         <Breadcrumb.Item>
-          <Breadcrumb.Link href="/orders">Orders</Breadcrumb.Link>
+          <Breadcrumb.Link href="/quick-start">Quick start</Breadcrumb.Link>
         </Breadcrumb.Item>
         <Breadcrumb.Separator />
         <Breadcrumb.Item>
-          <Breadcrumb.Page>Invoice 1042</Breadcrumb.Page>
+          <Breadcrumb.Page>Breadcrumb</Breadcrumb.Page>
         </Breadcrumb.Item>
       </Breadcrumb.List>
     </Breadcrumb.Root>

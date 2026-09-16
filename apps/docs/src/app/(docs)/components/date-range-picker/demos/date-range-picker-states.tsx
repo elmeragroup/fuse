@@ -10,7 +10,7 @@ const deliveryWindow = { start: new CalendarDate(2026, 7, 14), end: new Calendar
 export function DateRangePickerStates() {
   return (
     <UiProviders locale="en-US" navigate={() => undefined}>
-      <div className="flex flex-col gap-3">
+      <div className="flex w-full min-w-0 flex-col gap-3">
         <DateRangePicker label="Disabled" isDisabled defaultValue={deliveryWindow} />
         <DateRangePicker label="Read only" isReadOnly defaultValue={deliveryWindow} />
         <DateRangePicker label="Required" isRequired defaultValue={deliveryWindow} />

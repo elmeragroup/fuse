@@ -16,7 +16,8 @@ export type DemoStageProps = {
 
 const demoStage = tv({
   slots: {
-    stage: "flex flex-wrap items-center justify-center gap-3 bg-background p-[2.8rem_2rem] text-foreground",
+    stage:
+      "sm:px-8 flex flex-wrap items-center justify-center gap-3 bg-background px-0 py-[2.8rem] text-foreground min-[360px]:px-3",
     meta: "text-xs flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-border bg-card p-[0.45rem_0.9rem] font-mono text-muted-foreground",
     slug: "text-foreground",
     density: "text-foreground",

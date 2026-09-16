@@ -23,9 +23,9 @@ export function DatePickerValidation() {
         minValue={minValue}
         validationBehavior="aria"
         errorMessage={(result) =>
-          result.validationErrors.length > 0
-            ? result.validationErrors.join(" ")
-            : "Pick a date on or after 1 July 2026."
+          result.validationDetails.rangeUnderflow
+            ? "Pick a date on or after 1 July 2026."
+            : "Enter a valid invoice date."
         }
       />
     </UiProviders>

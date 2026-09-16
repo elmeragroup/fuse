@@ -20,7 +20,7 @@ export function DateRangePickerControlled() {
 
   return (
     <UiProviders locale="en-US" navigate={() => undefined}>
-      <div className="flex flex-col gap-2">
+      <div className="flex w-full min-w-0 flex-col gap-2">
         <DateRangePicker label="Delivery window" value={value} onChange={setValue} />
         <Text size="sm" variant="muted">
           {value === null ? "No range selected." : `${value.start.toString()} — ${value.end.toString()}`}

@@ -1,5 +1,7 @@
 "use client";
 
+import { Fragment } from "react";
+
 import { Combobox } from "@elmeragroup/ui/combobox";
 
 const groups = [
@@ -16,9 +18,9 @@ export function ComboboxGroups() {
         <Combobox.List>
           <Combobox.Collection>
             {(group: (typeof groups)[number], index: number) => (
-              <>
+              <Fragment key={group.value}>
                 {index > 0 ? <Combobox.Separator /> : null}
-                <Combobox.Group key={group.value} items={[...group.items]}>
+                <Combobox.Group items={[...group.items]}>
                   <Combobox.Label>{group.value}</Combobox.Label>
                   <Combobox.Collection>
                     {(item: string) => (
@@ -28,7 +30,7 @@ export function ComboboxGroups() {
                     )}
                   </Combobox.Collection>
                 </Combobox.Group>
-              </>
+              </Fragment>
             )}
           </Combobox.Collection>
         </Combobox.List>

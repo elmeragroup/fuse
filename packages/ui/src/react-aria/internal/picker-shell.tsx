@@ -78,7 +78,10 @@ export function PickerShell({
       <FieldGroup className={group()} isReadOnly={isReadOnly}>
         {children}
         {/* oxlint-disable-next-line elmera/require-icon-button-label -- RAC's DatePicker and DateRangePicker fill this default Button slot and supply the trigger's localized accessible name ("Calendar"); a local label would shadow it. Asserted in both browser suites. */}
-        <Button size="icon-sm" variant="ghost">
+        <Button
+          size="icon-sm"
+          variant="ghost"
+          className={range ? "col-start-2 row-span-2 row-start-1" : undefined}>
           <CalendarBlank aria-hidden className={icon()} />
         </Button>
       </FieldGroup>

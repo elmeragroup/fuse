@@ -24,7 +24,8 @@ import { Button } from "../internal/button";
 import { composeTailwindRenderProps } from "../internal/utils";
 
 /**
- * Single-month calendar composite over RAC `Calendar`.
+ * Single-month calendar composite over RAC `Calendar`. The locale controls layout
+ * direction. RTL calendars use narrow weekday labels with full accessible names.
  * Client — the interim react-aria cluster owns grid state, selection, and focus.
  */
 export type CalendarProps<T extends DateValue> = {
@@ -41,11 +42,12 @@ export function Calendar<T extends DateValue>({
   ...props
 }: CalendarProps<T>): ReactElement {
   const { base, body, error } = calendarVariants();
+  const { direction } = useLocale();
 
   return (
-    <AriaCalendar {...props} className={composeTailwindRenderProps(className, base())}>
+    <AriaCalendar dir={direction} {...props} className={composeTailwindRenderProps(className, base())}>
       <CalendarHeader />
-      <CalendarGrid className={body()} weekdayStyle="short">
+      <CalendarGrid className={body()} weekdayStyle={direction === "rtl" ? "narrow" : "short"}>
         <CalendarGridHeader />
         <CalendarGridBody>
           {(date) => <CalendarCell date={date} className={(values) => cellVariants(values)} />}

@@ -292,7 +292,7 @@ function SidebarRoot({
           dir={dir}
           data-slot="sidebar"
           data-mobile="true"
-          showCloseButton={false}
+          showCloseButton
           className={cn("w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground", className)}
           // SAFETY: React's CSSProperties does not model custom properties; the width is a plain length.
           style={{ "--sidebar-width": SIDEBAR_WIDTH_MOBILE } as CSSProperties}>
@@ -300,7 +300,7 @@ function SidebarRoot({
             <Sheet.Title>{labels.title}</Sheet.Title>
             <Sheet.Description>{labels.description}</Sheet.Description>
           </Sheet.Header>
-          <div className="flex h-full w-full flex-col">{children}</div>
+          <div className="flex h-full w-full flex-col pt-12">{children}</div>
         </Sheet.Content>
       </Sheet.Root>
     );

@@ -528,12 +528,13 @@ describe("Sidebar.Root branches", () => {
     expect(dialog.getAttribute("data-side")).toBe("left");
     expect(dialog.classList.contains("mobile-shell")).toBe(true);
     expect(dialog.style.getPropertyValue("--sidebar-width")).toBe("18rem");
-    expect(page.getByRole("button", { name: "Close", exact: true }).query()).toBeNull();
+    await expect.element(page.getByRole("button", { name: "Close", exact: true })).toBeVisible();
     expect(page.getByRole("button", { name: "Orders", exact: true }).query()).not.toBeNull();
     expect(latest?.openMobile).toBe(true);
 
-    latest?.setOpenMobile(false);
+    await userEvent.click(roleNamed("button", "Close"));
     await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
+    expect(document.activeElement).toBe(roleNamed("button", "Toggle sidebar"));
     expect(document.cookie).not.toContain("sidebar:state");
   });
 });

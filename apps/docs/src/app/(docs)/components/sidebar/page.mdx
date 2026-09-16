@@ -16,6 +16,8 @@ export const metadata = componentMetadata("sidebar");
 
 <ComponentIntro slug="sidebar" />
 
+On mobile, the navigation sheet includes a visible close button above its content.
+
 <Prose>
 
 `Sidebar.Provider` writes the desktop open state to the `sidebar:state` cookie on every change, so a server layout can read it with `cookies()` and pass `defaultOpen` for a first paint that matches.

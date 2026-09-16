@@ -17,7 +17,7 @@ const popoverVariants = tv({
     // hairline ring, and twMerge cannot subtract `ring-foreground/10` (overlay-classes.ts).
     base: cn(
       overlayPopupFillClass,
-      "shadow-md min-w-32 origin-(--trigger-anchor-point) rounded-md border border-border bg-clip-padding",
+      "shadow-md max-w-[calc(100vw-2rem)] min-w-32 origin-(--trigger-anchor-point) rounded-md border border-border bg-clip-padding",
       overlayLayer
     ),
     arrow: "group my-0!",

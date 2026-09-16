@@ -36,7 +36,8 @@ export type AlertDialogContentProps = Omit<DialogContentProps, "showCloseButton"
    */
   icon?: ReactNode;
   /**
-   * Drives the action-button variant and the fallback icon.
+   * Drives the action-button variant and the fallback icon. Destructive dialogs
+   * initially focus Cancel; neutral dialogs initially focus the primary action.
    * @default "destructive"
    */
   variant?: "destructive" | "neutral";
@@ -105,7 +106,7 @@ function AlertDialogContent({
     <Button
       size="sm"
       variant={variant === "destructive" ? "destructive" : "default"}
-      autoFocus
+      autoFocus={variant === "neutral"}
       isPending={isPerformingAction}
       disabled={isActionDisabled}
       onClick={onAction}
@@ -123,7 +124,14 @@ function AlertDialogContent({
       <Dialog.Description>{children}</Dialog.Description>
       <Dialog.Footer>
         <DialogPrimitive.Close
-          render={<Button size="sm" variant="ghost" data-dialog-action-type="secondary" />}
+          render={
+            <Button
+              size="sm"
+              variant="ghost"
+              autoFocus={variant === "destructive"}
+              data-dialog-action-type="secondary"
+            />
+          }
           onClick={onCancel}>
           {cancelLabel ?? strings.format("cancel")}
         </DialogPrimitive.Close>

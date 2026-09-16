@@ -48,8 +48,8 @@ describe("cardVariants", () => {
   it("resolves every slot for the horizontal direction", () => {
     const slots = cardVariants({ direction: "horizontal" });
     expect(slots.base()).toContain("flex-row");
-    expect(slots.base()).toContain("space-x-6");
-    expect(slots.cardHeader()).toContain("space-y-1.5");
+    expect(slots.base()).toContain("flex-wrap");
+    expect(slots.cardHeader()).toContain("grid");
     expect(slots.cardTitle()).toContain("text-xl");
     expect(cn(slots.cardContent())).not.toContain("p-6");
   });
