@@ -137,6 +137,26 @@ describe("AlertDialog", () => {
     expect(document.activeElement).toBe(page.getByRole("button", { name: ACTION, exact: true }).element());
   });
 
+  it("lets a caller's initialFocus win over the variant default", async () => {
+    function CustomFocus() {
+      const targetRef = useRef<HTMLSpanElement>(null);
+      return (
+        <AlertDialog.Root>
+          <AlertDialog.Trigger>Delete order</AlertDialog.Trigger>
+          <AlertDialog.Content title={TITLE} actionLabel={ACTION} initialFocus={targetRef}>
+            <span ref={targetRef} tabIndex={-1}>
+              Custom focus target
+            </span>{" "}
+            {BODY}
+          </AlertDialog.Content>
+        </AlertDialog.Root>
+      );
+    }
+    renderThemed(withLocale("en-US", <CustomFocus />));
+    await openConfirm();
+    expect(document.activeElement).toBe(page.getByText("Custom focus target", { exact: true }).element());
+  });
+
   it("fires onAction without closing by default, and closes when close-on-action is enabled", async () => {
     const onAction = vi.fn();
     const { rerender } = renderThemed(withLocale("en-US", <ConfirmDialog onAction={onAction} />));

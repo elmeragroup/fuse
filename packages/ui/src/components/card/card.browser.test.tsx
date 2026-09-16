@@ -165,4 +165,44 @@ describe("Card", () => {
     expect(styles.backgroundColor).toBe(cssVarColor(root, "--card"));
     expect(styles.borderTopWidth).toBe("1px");
   });
+
+  it("keeps the four horizontal sections inside the card without overlaps in a narrow container", () => {
+    renderThemed(
+      <div style={{ width: 320 }}>
+        <Card.Root direction="horizontal">
+          <Card.Header direction="horizontal">
+            <Card.Title direction="horizontal">Meter 707057500012345678</Card.Title>
+            <Card.Description direction="horizontal">Storgata 1, 0155 Oslo.</Card.Description>
+          </Card.Header>
+          <Card.Content direction="horizontal">
+            <p>Active since 1 January.</p>
+          </Card.Content>
+          <Card.Footer direction="horizontal">
+            <p>Spot price</p>
+          </Card.Footer>
+        </Card.Root>
+      </div>
+    );
+    const card = slot("card");
+    const bounds = card.getBoundingClientRect();
+    const parts = [...card.children].filter((child): child is HTMLElement => child instanceof HTMLElement);
+    expect(parts).toHaveLength(3);
+    for (const part of parts) {
+      const rect = part.getBoundingClientRect();
+      expect(rect.left).toBeGreaterThanOrEqual(bounds.left - 1);
+      expect(rect.right).toBeLessThanOrEqual(bounds.right + 1);
+    }
+    for (const [index, part] of parts.entries()) {
+      const rect = part.getBoundingClientRect();
+      for (const other of parts.slice(index + 1)) {
+        const otherRect = other.getBoundingClientRect();
+        expect(
+          rect.right <= otherRect.left ||
+            otherRect.right <= rect.left ||
+            rect.bottom <= otherRect.top ||
+            otherRect.bottom <= rect.top
+        ).toBe(true);
+      }
+    }
+  });
 });

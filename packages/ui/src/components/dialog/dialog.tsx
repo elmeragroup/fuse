@@ -19,7 +19,7 @@ import {
   overlaySizeVariants,
   overlayTitleClass,
 } from "../overlay/overlay-classes";
-import { overlayCornerCloseButton, overlayFooterCloseButton } from "../overlay/overlay-close-button";
+import { OverlayCloseButton, overlayFooterCloseButton } from "../overlay/overlay-close-button";
 import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps } from "../overlay/overlay-props";
 
@@ -117,9 +117,6 @@ function DialogContent({
   closeLabel,
   ...props
 }: DialogContentProps): ReactElement | null {
-  const strings = useLocalizedStrings(overlayCloseStrings);
-  const label = closeLabel ?? strings.format("close");
-
   return (
     <OverlayPortal portal={DialogPortal} container={container}>
       <DialogOverlay />
@@ -129,7 +126,10 @@ function DialogContent({
         {...props}>
         {children}
         {showCloseButton ? (
-          <DialogPrimitive.Close data-slot="dialog-close" render={overlayCornerCloseButton({ label })} />
+          <DialogPrimitive.Close
+            data-slot="dialog-close"
+            render={<OverlayCloseButton label={closeLabel} className="absolute top-4 right-4" />}
+          />
         ) : null}
       </DialogPrimitive.Popup>
     </OverlayPortal>
@@ -168,12 +168,24 @@ function DialogFooter({
   );
 }
 
-function DialogTitle({ className, ...props }: ComponentProps<typeof DialogPrimitive.Title>): ReactElement {
+export type DialogTitleProps = ComponentProps<typeof DialogPrimitive.Title> & {
+  /**
+   * Makes the heading a programmatic focus target: stamps `tabIndex={-1}` and paints the
+   * shared self focus ring so the focused title is visible. For dialogs that pass the
+   * title to `initialFocus` and open on its content.
+   * @default false
+   */
+  isFocusable?: boolean;
+};
+
+function DialogTitle({ className, isFocusable = false, ...props }: DialogTitleProps): ReactElement {
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
-      className={mergeClassName(className, overlayTitleClass, selfFocusRingClass)}
+      className={mergeClassName(className, overlayTitleClass, isFocusable && selfFocusRingClass)}
       {...props}
+      // isFocusable owns the tab stop when set; otherwise the caller's tabIndex stands.
+      tabIndex={isFocusable ? -1 : props.tabIndex}
     />
   );
 }

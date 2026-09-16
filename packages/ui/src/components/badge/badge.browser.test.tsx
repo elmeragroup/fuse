@@ -160,6 +160,9 @@ describe("badge and secondary typography contrast", () => {
           "Small secondary span",
         ]) {
           const copy = badgeNamed(label);
+          // `secondary` typography is a deprecated identity alias of `foreground`:
+          // `--secondary` is a surface token, and `muted-foreground` fails 4.5:1 at `xs`
+          // in several themes, so the alias stays until a major removes it.
           expect(getComputedStyle(copy).color, context).toBe(cssVarColor(copy, "--foreground"));
           expect(contrastRatio(tokens.foreground, tokens.background), context).toBeGreaterThanOrEqual(4.5);
         }

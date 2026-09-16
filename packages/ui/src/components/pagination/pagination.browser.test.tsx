@@ -1,7 +1,8 @@
+import { useState } from "react";
 import type { ReactNode } from "react";
 
 import { describe, expect, it } from "vitest";
-import { page } from "vitest/browser";
+import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
@@ -183,5 +184,66 @@ describe("Pagination", () => {
     expect(inactive.getAttribute("data-slot")).toBe("pagination-link");
     expect(getComputedStyle(active).borderTopColor).not.toBe(getComputedStyle(inactive).borderTopColor);
     expect(getComputedStyle(active).boxShadow).not.toBe(getComputedStyle(inactive).boxShadow);
+  });
+
+  it("keeps every link inside the navigation when the row has to wrap", () => {
+    renderPagination(
+      <div style={{ width: 200 }}>
+        <BasicPages />
+      </div>
+    );
+    const navigation = roleNamed("navigation", "Pagination");
+    const bounds = navigation.getBoundingClientRect();
+    const links = page
+      .getByRole("link")
+      .elements()
+      .filter((element): element is HTMLElement => element instanceof HTMLElement);
+    // Previous, both page links and Next; the ellipsis is not a link.
+    expect(links).toHaveLength(4);
+    for (const link of links) {
+      const rect = link.getBoundingClientRect();
+      expect(rect.left).toBeGreaterThanOrEqual(bounds.left - 1);
+      expect(rect.right).toBeLessThanOrEqual(bounds.right + 1);
+    }
+  });
+
+  it("moves aria-current with a controlled next-page click", async () => {
+    function Controlled() {
+      const [current, setCurrent] = useState(2);
+      return (
+        <Pagination.Root>
+          <Pagination.Content>
+            {[1, 2, 3].map((number) => (
+              <Pagination.Item key={number}>
+                <Pagination.Link
+                  href={`#page-${String(number)}`}
+                  isActive={number === current}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    setCurrent(number);
+                  }}>
+                  {number}
+                </Pagination.Link>
+              </Pagination.Item>
+            ))}
+            <Pagination.Item>
+              <Pagination.Next
+                href="#next"
+                onClick={(event) => {
+                  event.preventDefault();
+                  setCurrent((page_) => Math.min(3, page_ + 1));
+                }}
+              />
+            </Pagination.Item>
+          </Pagination.Content>
+        </Pagination.Root>
+      );
+    }
+    renderPagination(<Controlled />);
+    expect(roleNamed("link", "2").getAttribute("aria-current")).toBe("page");
+
+    await userEvent.click(roleNamed("link", "Go to next page"));
+    await expect.poll(() => roleNamed("link", "3").getAttribute("aria-current")).toBe("page");
+    expect(roleNamed("link", "2").getAttribute("aria-current")).toBeNull();
   });
 });

@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "@elmeragroup/ui/button";
 import { Focusable } from "@elmeragroup/ui/react-aria/focusable";
 import { Tooltip } from "@elmeragroup/ui/tooltip";
 
@@ -11,9 +10,15 @@ export function FocusableTooltipTrigger() {
         <Tooltip.Trigger
           render={
             <Focusable>
-              <Button variant="outline" isVisuallyDisabled aria-disabled="true">
+              {/* A non-interactive element: Focusable is what gives it the tab stop the
+                  tooltip needs. `aria-disabled` states that the action is unavailable, and
+                  the role keeps it in the widget vocabulary assistive tech expects. */}
+              <span
+                role="button"
+                aria-disabled="true"
+                className="cursor-help text-muted-foreground underline decoration-dotted">
                 Closed meter
-              </Button>
+              </span>
             </Focusable>
           }
         />

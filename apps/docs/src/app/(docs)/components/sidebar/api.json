@@ -139,7 +139,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Renders the disabled treatment (`opacity-70`) and suppresses focus-on-press while the button stays fully interactive — click, keyboard and focus-visible all still work. For \"looks disabled but explains itself on activation\" flows.",
+          "description": "Renders the disabled treatment (`opacity-70`), stamps `aria-disabled` (an explicit consumer value wins), and suppresses focus-on-press while the button stays fully interactive — click, keyboard and focus-visible all still work. For \"looks disabled but explains itself on activation\" flows.",
           "required": false
         },
         {

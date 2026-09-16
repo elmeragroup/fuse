@@ -15,6 +15,9 @@
  * class as `error`. Align is the same read, plus Link's `justify`.
  *
  * `destructive` keeps the ref value name; the class is `text-error`.
+ *
+ * `secondary` is an identity alias of `foreground`, kept for consumer compatibility and
+ * deprecated: `--secondary` is a surface token, never a text role. See the arm itself.
  */
 import { tv } from "tailwind-variants";
 
@@ -24,6 +27,12 @@ export const typographyFragments = tv({
       default: "text-inherit",
       foreground: "text-foreground",
       primary: "text-primary",
+      /**
+       * @deprecated Identity alias of `foreground` — `--secondary` is a surface token, not
+       * a text role (a `muted-foreground` remap fails 4.5:1 at `xs` in several themes).
+       * Use `foreground`, or `muted` where a softer tone is wanted; the arm is kept for
+       * consumer compatibility and can only be removed in a major.
+       */
       secondary: "text-foreground",
       brand: "text-brand",
       muted: "text-muted-foreground",

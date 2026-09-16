@@ -5,9 +5,9 @@ import { controlInsetMdClass } from "./control-inset";
 /**
  * Shared layout recipe for the two date pickers. The `range` axis selects one segment
  * row or two; both variants borrow their field box, popup, and grid surfaces from the
- * composed components. FieldGroup owns the read-only fill and pins the md control
- * height for a single row. A narrow range stacks two density-sized rows; this recipe
- * adds no size axis or glyph background. The input inset keeps
+ * composed components. FieldGroup owns the read-only fill and the md control height —
+ * this recipe emits no control-height rung. A narrow range stacks two content-sized
+ * rows; this recipe adds no size axis or glyph background. The input inset keeps
  * segmented rows aligned with Input at both densities.
  */
 export const pickerVariants = tv({
@@ -32,6 +32,12 @@ export const pickerVariants = tv({
      * `!` would just be noise.
      */
     icon: "size-4 transition-colors",
+    /**
+     * The calendar trigger's placement inside the field box. One grid model in both
+     * states — only the column template and the separator toggle at 24rem — so the
+     * range arm's placements are live at every width.
+     */
+    trigger: "",
     /**
      * The styled Dialog inside the popover. Both padding utilities are needed: the dialog
      * recipe sets `p-6` on its base and `p-4` under `[data-placement]`, which is exactly the
@@ -63,15 +69,20 @@ export const pickerVariants = tv({
       },
       true: {
         base: "@container/picker w-full",
-        // Each row retains its density-owned height. Below 24rem the dates stack,
-        // and the calendar trigger spans both rows beside them.
+        // One grid template in both states; 24rem changes only the column count. Below
+        // it the dates stack in the first column beside the row-spanning trigger and the
+        // box opts out of FieldGroup's md height so the two rows size to their content.
+        // Above it the dates run in one row — start, en-dash, end, trigger — and the end
+        // column absorbs the slack.
         group:
-          "grid h-auto min-w-[208px] grid-cols-[minmax(0,1fr)_auto] @min-[24rem]/picker:flex @min-[24rem]/picker:h-(--control-h-md)",
-        input: "col-start-1 flex h-(--control-h-md) items-center @min-[24rem]/picker:h-auto",
-        // Two rows share the box and only the end row grows, so the call site — not this
-        // slot — adds `flex-1` to the end input.
+          "grid min-w-[208px] grid-cols-[minmax(0,1fr)_auto] @max-[24rem]/picker:h-auto @min-[24rem]/picker:grid-cols-[auto_auto_minmax(0,1fr)_auto]",
+        input: "flex items-center",
+        // Two rows share the box and only the end row grows; the wide template's
+        // `minmax(0,1fr)` end column is what hands it the slack.
         separator:
-          "hidden text-foreground group-disabled:text-muted-foreground @min-[24rem]/picker:inline forced-colors:text-[ButtonText] forced-colors:group-disabled:text-[GrayText]",
+          "hidden text-foreground group-disabled:text-muted-foreground @min-[24rem]/picker:col-start-2 @min-[24rem]/picker:inline forced-colors:text-[ButtonText] forced-colors:group-disabled:text-[GrayText]",
+        trigger:
+          "col-start-2 row-span-2 row-start-1 @min-[24rem]/picker:col-start-4 @min-[24rem]/picker:row-span-1",
         // RangeCalendar's root is bare and this dialog is `p-0`, so the grid would otherwise
         // sit flush against the popover border.
         calendar: "p-2",
@@ -81,6 +92,11 @@ export const pickerVariants = tv({
      * Whether the caller handed over a preset pane that would actually paint. The call site
      * decides that (`presetGroup={showPresets && <Group />}` collapses to `false`, not
      * `undefined`), so this axis takes the answer, never the node. Single-date only.
+     *
+     * The stack-to-row flip stays a viewport `sm:` query: the pane lives in the portalled
+     * popover, outside the picker root's `@container/picker`, and the popover sizes to its
+     * own content, so a local container query would be circular. The range field's own
+     * breakpoint is a genuine container query because its box is inside the picker root.
      */
     hasPresets: {
       true: {

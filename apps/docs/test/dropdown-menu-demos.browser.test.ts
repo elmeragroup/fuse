@@ -1,26 +1,8 @@
-import { chromium } from "playwright";
-import type { Browser, Locator, Page } from "playwright";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
-import { docsBaseUrl } from "./docs-server";
+import { DESKTOP_VIEWPORT, launchSuiteBrowser, openDemo } from "./demo-page";
 
-let browser: Browser;
-
-beforeAll(async () => {
-  browser = await chromium.launch({ headless: true });
-});
-
-afterAll(async () => {
-  await browser.close();
-});
-
-async function openDemo(page: Page, title: string): Promise<Locator> {
-  await page.setViewportSize({ width: 1280, height: 720 });
-  await page.goto(`${docsBaseUrl()}/components/dropdown-menu`, { waitUntil: "load" });
-  const region = page.getByRole("region", { name: title, exact: true });
-  await region.getByRole("heading", { name: title, exact: true }).waitFor();
-  return region;
-}
+const browser = launchSuiteBrowser();
 
 /**
  * Every demo on the page, the trigger that opens it, and the group/items it must
@@ -39,8 +21,8 @@ const demos = [
 
 describe("DropdownMenu demos", () => {
   it.each(demos)("opens the $title demo's menu", async ({ title, trigger, group, firstItem }) => {
-    const page = await browser.newPage();
-    const demo = await openDemo(page, title);
+    const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT });
+    const demo = await openDemo(page, "dropdown-menu", title);
 
     await demo.getByRole("button", { name: trigger, exact: true }).click();
     const menu = demo.getByRole("menu");

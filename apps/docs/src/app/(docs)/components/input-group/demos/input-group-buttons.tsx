@@ -18,7 +18,7 @@ export function InputGroupButtons() {
       await navigator.clipboard.writeText(meter);
       setStatus("Meter number copied.");
     } catch {
-      setStatus("Copy unavailable. Select the meter number and copy it manually.");
+      setStatus(`Copy unavailable. Meter number: ${meter}`);
     }
   }
 
@@ -50,16 +50,18 @@ export function InputGroupButtons() {
         </InputGroup.Addon>
       </InputGroup.Root>
       <p role="status">{status}</p>
-      <Button
-        className="self-start"
-        size="sm"
-        variant="outline"
-        onClick={() => {
-          setMeter(initialMeter);
-          setStatus("");
-        }}>
-        Reset example
-      </Button>
+      {status ? (
+        <Button
+          variant="outline"
+          size="sm"
+          className="self-start"
+          onClick={() => {
+            setMeter(initialMeter);
+            setStatus("");
+          }}>
+          Reset example
+        </Button>
+      ) : null}
     </div>
   );
 }

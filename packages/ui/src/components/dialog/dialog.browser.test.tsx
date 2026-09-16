@@ -4,7 +4,11 @@ import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { assertFocusRingOnKeyboardAbsentOnMouse, expectFocusRing } from "../../../test/assert-focus-ring";
+import {
+  assertFocusRingOnKeyboardAbsentOnMouse,
+  expectFocusRing,
+  expectNoFocusRing,
+} from "../../../test/assert-focus-ring";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme/theme-scope";
@@ -139,6 +143,59 @@ describe("Dialog", () => {
       throw new Error("expected the popup");
     }
     expectFocusRing(dialog, "fallback focus on the popup must paint the shared ring");
+  });
+
+  it("turns a Title into a focus target only with isFocusable", async () => {
+    function TitleDialog({ isFocusable }: { isFocusable?: boolean }) {
+      const titleRef = useRef<HTMLHeadingElement>(null);
+      return (
+        <Dialog.Root>
+          <Dialog.Trigger>Open terms</Dialog.Trigger>
+          <Dialog.Content showCloseButton={false} initialFocus={titleRef}>
+            <Dialog.Header>
+              <Dialog.Title isFocusable={isFocusable} ref={titleRef}>
+                Full terms
+              </Dialog.Title>
+            </Dialog.Header>
+          </Dialog.Content>
+        </Dialog.Root>
+      );
+    }
+    async function openAtTitle() {
+      const trigger = page.getByRole("button", { name: "Open terms", exact: true }).element();
+      if (!(trigger instanceof HTMLElement)) {
+        throw new Error("expected the trigger");
+      }
+      trigger.focus();
+      await userEvent.keyboard("{Enter}");
+      const heading = page.getByRole("heading", { name: "Full terms", exact: true }).element();
+      if (!(heading instanceof HTMLElement)) {
+        throw new Error("expected the title");
+      }
+      return heading;
+    }
+
+    const { rerender } = renderThemed(withLocale("en-US", <TitleDialog isFocusable />));
+    const focusable = await openAtTitle();
+    expect(focusable.getAttribute("tabindex")).toBe("-1");
+    expect(document.activeElement).toBe(focusable);
+    expectFocusRing(focusable, "a focusable title paints the shared ring");
+    await userEvent.keyboard("{Escape}");
+    await vi.waitFor(() => {
+      expect(page.getByRole("dialog").query()).toBeNull();
+    });
+
+    rerender(withLocale("en-US", <TitleDialog />));
+    const plain = await openAtTitle();
+    // Without `isFocusable` the title has no tab stop, so the same `initialFocus` ref
+    // cannot land on it and it never looks focusable.
+    expect(plain.getAttribute("tabindex")).toBeNull();
+    expect(document.activeElement).not.toBe(plain);
+    expectNoFocusRing(plain, "a plain title paints no ring");
+    await userEvent.keyboard("{Escape}");
+    await vi.waitFor(() => {
+      expect(page.getByRole("dialog").query()).toBeNull();
+    });
   });
 
   it("closes from the corner button and drops it when showCloseButton is false", async () => {

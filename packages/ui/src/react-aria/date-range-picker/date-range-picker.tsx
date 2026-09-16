@@ -84,7 +84,7 @@ export function DateRangePicker<T extends DateValue>({
         <span aria-hidden="true" className={separator()}>
           –
         </span>
-        <DateInput className={input({ class: "flex-1" })} slot="end" />
+        <DateInput className={input()} slot="end" />
       </PickerShell>
     </AriaDateRangePicker>
   );

@@ -25,7 +25,7 @@ export function AlertDialogCustomIcon() {
       </AlertDialog.Root>
       <p role="status">{removed ? "Contract removed from this demo." : ""}</p>
       {removed ? (
-        <Button variant="outline" onClick={() => setRemoved(false)}>
+        <Button variant="outline" size="sm" className="self-start" onClick={() => setRemoved(false)}>
           Restore contract
         </Button>
       ) : null}

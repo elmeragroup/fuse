@@ -20,7 +20,7 @@ export function EmptyWithActions() {
             <li key={order}>{order}</li>
           ))}
         </ul>
-        <Button variant="outline" onClick={() => setOrders([])}>
+        <Button variant="outline" size="sm" className="self-start" onClick={() => setOrders([])}>
           Reset example
         </Button>
       </div>

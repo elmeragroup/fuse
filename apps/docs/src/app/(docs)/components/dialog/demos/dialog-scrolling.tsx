@@ -14,7 +14,7 @@ export function DialogScrolling() {
       <Dialog.Trigger render={<Button variant="outline" />}>Open the full terms</Dialog.Trigger>
       <Dialog.Content size="lg" initialFocus={titleRef}>
         <Dialog.Header>
-          <Dialog.Title ref={titleRef} tabIndex={-1}>
+          <Dialog.Title ref={titleRef} isFocusable>
             Full terms
           </Dialog.Title>
           <Dialog.Description>

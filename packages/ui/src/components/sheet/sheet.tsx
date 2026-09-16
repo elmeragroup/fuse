@@ -7,18 +7,16 @@ import { Drawer as SheetPrimitive } from "@base-ui/react/drawer";
 import { tv } from "tailwind-variants";
 import type { VariantProps } from "tailwind-variants";
 
-import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { cn } from "../../styles/cn";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { selfFocusRingClass } from "../../styles/utils";
-import { overlayCloseStrings } from "../overlay/intl";
 import {
   overlayLayer,
   overlayPopupFillClass,
   overlayScrimClass,
   overlaySizeVariants,
 } from "../overlay/overlay-classes";
-import { overlayCornerCloseButton } from "../overlay/overlay-close-button";
+import { OverlayCloseButton } from "../overlay/overlay-close-button";
 import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps } from "../overlay/overlay-props";
 
@@ -146,8 +144,6 @@ function SheetContent({
   ...props
 }: SheetContentProps): ReactElement | null {
   const side = use(SheetSideContext);
-  const strings = useLocalizedStrings(overlayCloseStrings);
-  const label = closeLabel ?? strings.format("close");
 
   return (
     <OverlayPortal portal={SheetPortal} container={container}>
@@ -167,7 +163,10 @@ function SheetContent({
             className="flex h-full w-full flex-col gap-4">
             {children}
             {showCloseButton ? (
-              <SheetPrimitive.Close data-slot="sheet-close" render={overlayCornerCloseButton({ label })} />
+              <SheetPrimitive.Close
+                data-slot="sheet-close"
+                render={<OverlayCloseButton label={closeLabel} className="absolute top-4 right-4" />}
+              />
             ) : null}
           </SheetPrimitive.Content>
         </SheetPrimitive.Popup>

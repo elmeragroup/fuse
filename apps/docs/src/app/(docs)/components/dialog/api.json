@@ -555,6 +555,15 @@
       "forwardedCount": 275,
       "props": [
         {
+          "name": "isFocusable",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Makes the heading a programmatic focus target: stamps `tabIndex={-1}` and paints the shared self focus ring so the focused title is visible. For dialogs that pass the title to `initialFocus` and open on its content.",
+          "required": false
+        },
+        {
           "name": "className",
           "origin": {
             "packageName": "@base-ui/react"

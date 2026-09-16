@@ -11,13 +11,21 @@ import type { OverlayContainerProps } from "../../components/overlay/overlay-pro
 import { cn } from "../../styles/cn";
 import { useResolvedPortalContainer } from "../../theme/theme-scope-container";
 
+/**
+ * React Aria's `useOverlayPosition` gutter, in px per side. The popover portals out of
+ * the picker root, so a container query cannot see the field's width and React Aria's
+ * positioning gutter is the one honest number; the CSS clamp below must reserve exactly
+ * this gutter on both sides.
+ */
+const CONTAINER_PADDING = 12;
+
 const popoverVariants = tv({
   slots: {
     // Fill from the spine; border stays local — overlayPopupSurfaceClass paints the
     // hairline ring, and twMerge cannot subtract `ring-foreground/10` (overlay-classes.ts).
     base: cn(
       overlayPopupFillClass,
-      "shadow-md max-w-[calc(100vw-2rem)] min-w-32 origin-(--trigger-anchor-point) rounded-md border border-border bg-clip-padding",
+      "shadow-md max-w-[calc(100vw-1.5rem)] min-w-32 origin-(--trigger-anchor-point) rounded-md border border-border bg-clip-padding",
       overlayLayer
     ),
     arrow: "group my-0!",
@@ -76,6 +84,7 @@ export function Popover({
   return (
     <AriaPopover
       offset={offset}
+      containerPadding={CONTAINER_PADDING}
       UNSTABLE_portalContainer={resolvedContainer}
       {...props}
       className={composeRenderProps(className, (resolved: string | undefined, renderProps) =>

@@ -1,30 +1,13 @@
-import { chromium } from "playwright";
-import type { Browser, Locator, Page } from "playwright";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
-import { docsBaseUrl } from "./docs-server";
+import { DESKTOP_VIEWPORT, launchSuiteBrowser, openDemo } from "./demo-page";
 
-let browser: Browser;
-
-beforeAll(async () => {
-  browser = await chromium.launch({ headless: true });
-});
-
-afterAll(async () => {
-  await browser.close();
-});
-
-async function openFieldDemo(page: Page, demoName: string): Promise<Locator> {
-  await page.setViewportSize({ width: 1280, height: 720 });
-  await page.goto(`${docsBaseUrl()}/components/field`, { waitUntil: "load" });
-  await page.getByRole("heading", { name: demoName, exact: true }).waitFor();
-  return page.getByRole("region", { name: demoName });
-}
+const browser = launchSuiteBrowser();
 
 describe("Field demos", () => {
   it("names the choice card's checkbox from the wrapping Field.Label", async () => {
-    const page = await browser.newPage();
-    const demo = await openFieldDemo(page, "Choice card");
+    const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT });
+    const demo = await openDemo(page, "field", "Choice card");
     // The name proves the card contract: the control is named by the Field.Label that
     // wraps the nested Field.Root, not by copy of its own.
     const control = demo.getByRole("checkbox", {
@@ -41,8 +24,8 @@ describe("Field demos", () => {
   });
 
   it("toggles the error message from validation state outside the field", async () => {
-    const page = await browser.newPage();
-    const demo = await openFieldDemo(page, "Error message");
+    const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT });
+    const demo = await openDemo(page, "field", "Error message");
     const input = demo.getByRole("textbox", { name: "Email" });
 
     const message = demo.getByRole("alert");
@@ -58,8 +41,8 @@ describe("Field demos", () => {
   });
 
   it("groups the field set's library checkboxes under the legend", async () => {
-    const page = await browser.newPage();
-    const demo = await openFieldDemo(page, "Field set");
+    const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT });
+    const demo = await openDemo(page, "field", "Field set");
     const group = demo.getByRole("group", { name: "Notifications" });
 
     await group.waitFor();

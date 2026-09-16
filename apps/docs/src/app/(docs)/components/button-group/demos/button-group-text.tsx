@@ -10,6 +10,16 @@ import { Input } from "@elmeragroup/ui/input";
 export function ButtonGroupText() {
   const [amount, setAmount] = useState("120");
   const [result, setResult] = useState("");
+
+  async function copyUrl() {
+    try {
+      await navigator.clipboard.writeText("https://example.com");
+      setResult("Example URL copied.");
+    } catch {
+      setResult("Copy unavailable. Example URL: https://example.com");
+    }
+  }
+
   return (
     <div className="max-w-sm flex w-full flex-col gap-3">
       <ButtonGroup.Root aria-label="Copy URL">
@@ -17,14 +27,7 @@ export function ButtonGroupText() {
           <MagnifyingGlass />
           https://
         </ButtonGroup.Text>
-        <Button
-          variant="outline"
-          onClick={() => {
-            void navigator.clipboard.writeText("https://example.com").then(
-              () => setResult("Example URL copied."),
-              () => setResult("Copy unavailable. Example URL: https://example.com")
-            );
-          }}>
+        <Button variant="outline" onClick={() => void copyUrl()}>
           Copy
         </Button>
       </ButtonGroup.Root>
@@ -46,6 +49,8 @@ export function ButtonGroupText() {
       {result ? (
         <Button
           variant="outline"
+          size="sm"
+          className="self-start"
           onClick={() => {
             setAmount("120");
             setResult("");

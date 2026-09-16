@@ -600,7 +600,8 @@ describe("DateRangePicker composition surface", () => {
     }
 
     expect(px(getComputedStyle(group).width)).toBeGreaterThanOrEqual(208);
-    // The end row carries `flex-1`, so it is the wider of two identically formatted rows.
+    // Only the wide template's end column grows, so the end row is the wider of two
+    // identically formatted rows.
     expect(px(getComputedStyle(endRow).width)).toBeGreaterThan(px(getComputedStyle(startRow).width));
   });
 

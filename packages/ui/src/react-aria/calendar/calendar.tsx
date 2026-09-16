@@ -5,7 +5,7 @@ import type { ReactElement, ReactNode } from "react";
 import {
   Calendar as AriaCalendar,
   CalendarCell,
-  CalendarGrid,
+  CalendarGrid as AriaCalendarGrid,
   CalendarGridBody,
   CalendarGridHeader as AriaCalendarGridHeader,
   CalendarHeaderCell,
@@ -22,11 +22,12 @@ import { CaretRight } from "../../icons/generated/caret-right";
 import { calendarVariants, cellVariants } from "../../styles/calendar";
 import { Button } from "../internal/button";
 import { composeTailwindRenderProps } from "../internal/utils";
+import { weekdayStyle } from "../internal/weekday-style";
 
 /**
  * Single-month calendar composite over RAC `Calendar`. The locale controls layout
- * direction. RTL calendars use narrow weekday labels with full accessible names.
- * Client — the interim react-aria cluster owns grid state, selection, and focus.
+ * direction, and the locale's weekday label width selects short or narrow column
+ * headers. Client — the interim react-aria cluster owns grid state, selection, and focus.
  */
 export type CalendarProps<T extends DateValue> = {
   /**
@@ -35,6 +36,31 @@ export type CalendarProps<T extends DateValue> = {
    */
   errorMessage?: ReactNode;
 } & Omit<AriaCalendarProps<T>, "children" | "visibleDuration">;
+
+/** Props for the locale-aware weekday grid both calendar composites render. */
+export type LocaleCalendarGridProps = {
+  /** Classes for RAC's grid, normally the calendar recipe's `body` slot. */
+  className?: string;
+  /** The grid body element — `CalendarGridBody` and its cell renderer. */
+  children: ReactElement;
+};
+
+/**
+ * The weekday grid of both calendar composites, owning the locale wiring its siblings
+ * would otherwise each repeat: reads the active locale, selects the short or narrow
+ * weekday label style from it, and renders the shared `CalendarGridHeader`. Reused by
+ * RangeCalendar.
+ */
+export function LocaleCalendarGrid({ className, children }: LocaleCalendarGridProps): ReactElement {
+  const { locale } = useLocale();
+
+  return (
+    <AriaCalendarGrid className={className} weekdayStyle={weekdayStyle(locale)}>
+      <CalendarGridHeader />
+      {children}
+    </AriaCalendarGrid>
+  );
+}
 
 export function Calendar<T extends DateValue>({
   errorMessage,
@@ -47,12 +73,11 @@ export function Calendar<T extends DateValue>({
   return (
     <AriaCalendar dir={direction} {...props} className={composeTailwindRenderProps(className, base())}>
       <CalendarHeader />
-      <CalendarGrid className={body()} weekdayStyle={direction === "rtl" ? "narrow" : "short"}>
-        <CalendarGridHeader />
+      <LocaleCalendarGrid className={body()}>
         <CalendarGridBody>
           {(date) => <CalendarCell date={date} className={(values) => cellVariants(values)} />}
         </CalendarGridBody>
-      </CalendarGrid>
+      </LocaleCalendarGrid>
       {errorMessage ? (
         <Text className={error()} render={<AriaText slot="errorMessage" />}>
           {errorMessage}
@@ -99,3 +124,4 @@ export function CalendarGridHeader(): ReactElement {
 Calendar.displayName = "Calendar";
 CalendarHeader.displayName = "CalendarHeader";
 CalendarGridHeader.displayName = "CalendarGridHeader";
+LocaleCalendarGrid.displayName = "LocaleCalendarGrid";
