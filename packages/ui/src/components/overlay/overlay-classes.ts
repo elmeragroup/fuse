@@ -65,7 +65,7 @@ export type OverlaySize = NonNullable<VariantProps<typeof overlaySizeVariants>["
  * Popup-surface slots. Fill and edge stay separate
  * slots: Tooltip inverts the fill and paints neither shadow nor ring, and it cannot
  * subtract them from a composed surface — `ring-0` does not remove `ring-foreground/10`,
- * because tailwind-merge (3.6.0) treats ring width and ring colour as separate conflict
+ * because tailwind-merge (3.7.0) treats ring width and ring colour as separate conflict
  * groups. Tooltip composes {@link overlayPopupMotionClass} only; it does not take
  * {@link overlayPopupSurfaceClass} or {@link overlayTimedPopupClass}.
  *
@@ -137,7 +137,7 @@ export const overlayPopupDurationClass = overlayPopupSlots.duration();
  *
  * **Not Tooltip.** Tooltip inverts the fill (`bg-foreground text-background`) and paints
  * neither shadow nor ring, and it cannot subtract them here: `ring-0` does not remove
- * `ring-foreground/10`, because tailwind-merge (3.6.0) treats ring width and ring colour
+ * `ring-foreground/10`, because tailwind-merge (3.7.0) treats ring width and ring colour
  * as separate conflict groups, so overriding would leave a live token and change
  * Tooltip's rendered set. Tooltip composes {@link overlayPopupMotionClass} only, and
  * takes {@link overlayPopupFillClass}/{@link overlayPopupEdgeClass} as the seam if a

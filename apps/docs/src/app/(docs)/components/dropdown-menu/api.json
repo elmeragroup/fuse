@@ -396,33 +396,6 @@
           "required": false
         },
         {
-          "name": "container",
-          "origin": "declared",
-          "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
-          "shortType": "Union",
-          "defaultValue": null,
-          "description": "Portal target for this overlay. Defaults to the nearest enclosing `ThemeScope` element, so it never escapes the theme that opened it.",
-          "required": false
-        },
-        {
-          "name": "side",
-          "origin": "declared",
-          "type": "Side | undefined",
-          "shortType": null,
-          "defaultValue": "\"bottom\"",
-          "description": "Which side of the trigger the popup is placed on.",
-          "required": false
-        },
-        {
-          "name": "sideOffset",
-          "origin": "declared",
-          "type": "number | OffsetFunction | undefined",
-          "shortType": "Union",
-          "defaultValue": "4",
-          "description": "Distance from the trigger, in pixels.",
-          "required": false
-        },
-        {
           "name": "className",
           "origin": {
             "packageName": "@base-ui/react"
@@ -431,6 +404,15 @@
           "shortType": "function",
           "defaultValue": null,
           "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "container",
+          "origin": "declared",
+          "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Portal target for this overlay. Defaults to the nearest enclosing `ThemeScope` element, so it never escapes the theme that opened it.",
           "required": false
         },
         {
@@ -453,6 +435,24 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "side",
+          "origin": "declared",
+          "type": "Side | undefined",
+          "shortType": null,
+          "defaultValue": "\"bottom\"",
+          "description": "Which side of the trigger the popup is placed on.",
+          "required": false
+        },
+        {
+          "name": "sideOffset",
+          "origin": "declared",
+          "type": "number | OffsetFunction | undefined",
+          "shortType": "Union",
+          "defaultValue": "4",
+          "description": "Distance from the trigger, in pixels.",
           "required": false
         },
         {
@@ -535,15 +535,6 @@
       "forwardedCount": 275,
       "props": [
         {
-          "name": "inset",
-          "origin": "declared",
-          "type": "boolean | undefined",
-          "shortType": null,
-          "defaultValue": null,
-          "description": "Pads the label to align with indicator-bearing items. Emitted as `data-inset`.",
-          "required": false
-        },
-        {
           "name": "className",
           "origin": {
             "packageName": "@base-ui/react"
@@ -552,6 +543,15 @@
           "shortType": "function",
           "defaultValue": null,
           "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "inset",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Pads the label to align with indicator-bearing items. Emitted as `data-inset`.",
           "required": false
         },
         {
@@ -589,24 +589,6 @@
       "forwardedCount": 274,
       "props": [
         {
-          "name": "inset",
-          "origin": "declared",
-          "type": "boolean | undefined",
-          "shortType": null,
-          "defaultValue": null,
-          "description": "Pads the item to align with indicator-bearing items. Emitted as `data-inset`.",
-          "required": false
-        },
-        {
-          "name": "variant",
-          "origin": "declared",
-          "type": "\"default\" | \"destructive\" | undefined",
-          "shortType": "Union",
-          "defaultValue": "\"default\"",
-          "description": "Visual tone. The value stays `\"destructive\"` for consumer compat; classes use `error` tokens.",
-          "required": false
-        },
-        {
           "name": "className",
           "origin": {
             "packageName": "@base-ui/react"
@@ -637,6 +619,15 @@
           "shortType": null,
           "defaultValue": "false",
           "description": "Whether the component should ignore user interaction.",
+          "required": false
+        },
+        {
+          "name": "inset",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Pads the item to align with indicator-bearing items. Emitted as `data-inset`.",
           "required": false
         },
         {
@@ -692,6 +683,15 @@
           "shortType": "function",
           "defaultValue": null,
           "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "declared",
+          "type": "\"default\" | \"destructive\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "Visual tone. The value stays `\"destructive\"` for consumer compat; classes use `error` tokens.",
           "required": false
         }
       ]
@@ -774,15 +774,6 @@
       "forwardedCount": 274,
       "props": [
         {
-          "name": "inset",
-          "origin": "declared",
-          "type": "boolean | undefined",
-          "shortType": null,
-          "defaultValue": null,
-          "description": "Pads the item to align with indicator-bearing items. Emitted as `data-inset`.",
-          "required": false
-        },
-        {
           "name": "checked",
           "origin": {
             "packageName": "@base-ui/react"
@@ -835,6 +826,15 @@
           "shortType": null,
           "defaultValue": "false",
           "description": "Whether the component should ignore user interaction.",
+          "required": false
+        },
+        {
+          "name": "inset",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Pads the item to align with indicator-bearing items. Emitted as `data-inset`.",
           "required": false
         },
         {
@@ -916,33 +916,6 @@
       "forwardedCount": 274,
       "props": [
         {
-          "name": "defaultValue",
-          "origin": "declared",
-          "type": "T | undefined",
-          "shortType": null,
-          "defaultValue": null,
-          "description": "Uncontrolled initially selected value: one member of the group's string union.",
-          "required": false
-        },
-        {
-          "name": "onValueChange",
-          "origin": "declared",
-          "type": "((value: T, eventDetails: MenuRootChangeEventDetails) => void) | undefined",
-          "shortType": "function",
-          "defaultValue": null,
-          "description": "Called with the selected value, narrowed to `T`, and base-ui's change details.",
-          "required": false
-        },
-        {
-          "name": "value",
-          "origin": "declared",
-          "type": "T | undefined",
-          "shortType": null,
-          "defaultValue": null,
-          "description": "Controlled selected value: one member of the group's string union.",
-          "required": false
-        },
-        {
           "name": "children",
           "origin": {
             "packageName": "@base-ui/react"
@@ -965,6 +938,15 @@
           "required": false
         },
         {
+          "name": "defaultValue",
+          "origin": "declared",
+          "type": "T | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Uncontrolled initially selected value: one member of the group's string union.",
+          "required": false
+        },
+        {
           "name": "disabled",
           "origin": {
             "packageName": "@base-ui/react"
@@ -973,6 +955,15 @@
           "shortType": null,
           "defaultValue": "false",
           "description": "Whether the component should ignore user interaction.",
+          "required": false
+        },
+        {
+          "name": "onValueChange",
+          "origin": "declared",
+          "type": "((value: T, eventDetails: MenuRootChangeEventDetails) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Called with the selected value, narrowed to `T`, and base-ui's change details.",
           "required": false
         },
         {
@@ -996,6 +987,15 @@
           "defaultValue": null,
           "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
           "required": false
+        },
+        {
+          "name": "value",
+          "origin": "declared",
+          "type": "T | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Controlled selected value: one member of the group's string union.",
+          "required": false
         }
       ]
     },
@@ -1009,15 +1009,6 @@
       ],
       "forwardedCount": 274,
       "props": [
-        {
-          "name": "inset",
-          "origin": "declared",
-          "type": "boolean | undefined",
-          "shortType": null,
-          "defaultValue": null,
-          "description": "Pads the item to align with indicator-bearing items. Emitted as `data-inset`.",
-          "required": false
-        },
         {
           "name": "className",
           "origin": {
@@ -1049,6 +1040,15 @@
           "shortType": null,
           "defaultValue": "false",
           "description": "Whether the component should ignore user interaction.",
+          "required": false
+        },
+        {
+          "name": "inset",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Pads the item to align with indicator-bearing items. Emitted as `data-inset`.",
           "required": false
         },
         {
@@ -1328,15 +1328,6 @@
       "forwardedCount": 275,
       "props": [
         {
-          "name": "inset",
-          "origin": "declared",
-          "type": "boolean | undefined",
-          "shortType": null,
-          "defaultValue": null,
-          "description": "Pads the trigger to align with indicator-bearing items. Emitted as `data-inset`.",
-          "required": false
-        },
-        {
           "name": "className",
           "origin": {
             "packageName": "@base-ui/react"
@@ -1378,6 +1369,15 @@
           "shortType": null,
           "defaultValue": "false",
           "description": "Whether the component should ignore user interaction.",
+          "required": false
+        },
+        {
+          "name": "inset",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Pads the trigger to align with indicator-bearing items. Emitted as `data-inset`.",
           "required": false
         },
         {
@@ -1466,33 +1466,6 @@
           "required": false
         },
         {
-          "name": "container",
-          "origin": "declared",
-          "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
-          "shortType": "Union",
-          "defaultValue": null,
-          "description": "Portal target for this overlay. Defaults to the nearest enclosing `ThemeScope` element, so it never escapes the theme that opened it.",
-          "required": false
-        },
-        {
-          "name": "side",
-          "origin": "declared",
-          "type": "Side | undefined",
-          "shortType": null,
-          "defaultValue": "\"right\"",
-          "description": "Which side of the SubTrigger the popup is placed on.",
-          "required": false
-        },
-        {
-          "name": "sideOffset",
-          "origin": "declared",
-          "type": "number | OffsetFunction | undefined",
-          "shortType": "Union",
-          "defaultValue": "0",
-          "description": "Distance from the SubTrigger, in pixels. Flush against the parent menu by default.",
-          "required": false
-        },
-        {
           "name": "className",
           "origin": {
             "packageName": "@base-ui/react"
@@ -1501,6 +1474,15 @@
           "shortType": "function",
           "defaultValue": null,
           "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "container",
+          "origin": "declared",
+          "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Portal target for this overlay. Defaults to the nearest enclosing `ThemeScope` element, so it never escapes the theme that opened it.",
           "required": false
         },
         {
@@ -1523,6 +1505,24 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "side",
+          "origin": "declared",
+          "type": "Side | undefined",
+          "shortType": null,
+          "defaultValue": "\"right\"",
+          "description": "Which side of the SubTrigger the popup is placed on.",
+          "required": false
+        },
+        {
+          "name": "sideOffset",
+          "origin": "declared",
+          "type": "number | OffsetFunction | undefined",
+          "shortType": "Union",
+          "defaultValue": "0",
+          "description": "Distance from the SubTrigger, in pixels. Flush against the parent menu by default.",
           "required": false
         },
         {

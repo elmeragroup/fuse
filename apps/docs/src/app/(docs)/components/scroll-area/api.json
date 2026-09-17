@@ -13,24 +13,6 @@
       "forwardedCount": 275,
       "props": [
         {
-          "name": "orientation",
-          "origin": "declared",
-          "type": "\"horizontal\" | \"vertical\" | undefined",
-          "shortType": "Union",
-          "defaultValue": "\"vertical\"",
-          "description": "Which single scrollbar `Root` renders. For two-axis scrolling, compose the base-ui primitives directly and mount two `ScrollArea.Bar`s.",
-          "required": false
-        },
-        {
-          "name": "type",
-          "origin": "declared",
-          "type": "ScrollAreaType | undefined",
-          "shortType": null,
-          "defaultValue": "\"hover\"",
-          "description": "Scrollbar visibility, mapped onto base-ui's `keepMounted` plus opacity: `hover` reveals on hover or scroll, `always` keeps the bar mounted and visible, `auto` mounts it only while the content overflows.",
-          "required": false
-        },
-        {
           "name": "className",
           "origin": {
             "packageName": "@base-ui/react"
@@ -39,6 +21,15 @@
           "shortType": "function",
           "defaultValue": null,
           "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "orientation",
+          "origin": "declared",
+          "type": "\"horizontal\" | \"vertical\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"vertical\"",
+          "description": "Which single scrollbar `Root` renders. For two-axis scrolling, compose the base-ui primitives directly and mount two `ScrollArea.Bar`s.",
           "required": false
         },
         {
@@ -73,6 +64,15 @@
           "defaultValue": null,
           "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
           "required": false
+        },
+        {
+          "name": "type",
+          "origin": "declared",
+          "type": "ScrollAreaType | undefined",
+          "shortType": null,
+          "defaultValue": "\"hover\"",
+          "description": "Scrollbar visibility, mapped onto base-ui's `keepMounted` plus opacity: `hover` reveals on hover or scroll, `always` keeps the bar mounted and visible, `auto` mounts it only while the content overflows.",
+          "required": false
         }
       ]
     },
@@ -86,15 +86,6 @@
       ],
       "forwardedCount": 275,
       "props": [
-        {
-          "name": "type",
-          "origin": "declared",
-          "type": "ScrollAreaType | undefined",
-          "shortType": null,
-          "defaultValue": "\"hover\"",
-          "description": "Scrollbar visibility, as on `ScrollArea.Root`.",
-          "required": false
-        },
         {
           "name": "className",
           "origin": {
@@ -148,6 +139,15 @@
           "shortType": "function",
           "defaultValue": null,
           "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "type",
+          "origin": "declared",
+          "type": "ScrollAreaType | undefined",
+          "shortType": null,
+          "defaultValue": "\"hover\"",
+          "description": "Scrollbar visibility, as on `ScrollArea.Root`.",
           "required": false
         }
       ]

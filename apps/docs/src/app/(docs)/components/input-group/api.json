@@ -61,6 +61,17 @@
           "required": false
         },
         {
+          "name": "focusableWhenDisabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the button should be focusable when disabled.",
+          "required": false
+        },
+        {
           "name": "isPending",
           "origin": "declared",
           "type": "boolean | undefined",
@@ -76,6 +87,17 @@
           "shortType": null,
           "defaultValue": null,
           "description": "Renders the disabled treatment (`opacity-70`), stamps `aria-disabled` (an explicit consumer value wins), and suppresses focus-on-press while the button stays fully interactive — click, keyboard and focus-visible all still work. For \"looks disabled but explains itself on activation\" flows.",
+          "required": false
+        },
+        {
+          "name": "nativeButton",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Whether the component renders a native `<button>` element when replacing it via the `render` prop. Set to `false` if the rendered element is not a button (for example, `<div>`).",
           "required": false
         },
         {
@@ -97,12 +119,34 @@
           "required": false
         },
         {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, ButtonState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
           "name": "size",
           "origin": "declared",
           "type": "IconInputGroupButtonSize | LabelInputGroupButtonSize | undefined",
           "shortType": "Union",
           "defaultValue": "\"xs\"",
           "description": "Local compact size axis, not Button's `size`. Labelled values; icon sizes require `aria-label`. Local compact size axis, not Button's `size`. Icon sizes require `aria-label`.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: ButtonState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
           "required": false
         },
         {
@@ -121,50 +165,6 @@
           "shortType": "Union",
           "defaultValue": "\"ghost\"",
           "description": "",
-          "required": false
-        },
-        {
-          "name": "focusableWhenDisabled",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "boolean | undefined",
-          "shortType": null,
-          "defaultValue": "false",
-          "description": "Whether the button should be focusable when disabled.",
-          "required": false
-        },
-        {
-          "name": "nativeButton",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "boolean | undefined",
-          "shortType": null,
-          "defaultValue": "true",
-          "description": "Whether the component renders a native `<button>` element when replacing it via the `render` prop. Set to `false` if the rendered element is not a button (for example, `<div>`).",
-          "required": false
-        },
-        {
-          "name": "render",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "ComponentRenderFn<HTMLProps, ButtonState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
-          "shortType": "Union",
-          "defaultValue": null,
-          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
-          "required": false
-        },
-        {
-          "name": "style",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "CSSProperties | ((state: ButtonState) => CSSProperties | undefined) | undefined",
-          "shortType": "function",
-          "defaultValue": null,
-          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
           "required": false
         }
       ]

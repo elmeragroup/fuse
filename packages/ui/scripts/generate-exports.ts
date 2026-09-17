@@ -1,8 +1,6 @@
 import { copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import type { ReleaseIntent } from "@elmeragroup/internal/release";
-
 import {
   discoverEntries,
   exportKey,
@@ -208,8 +206,22 @@ function writePublishPackageJson(path: string, manifest: PublishManifest): void 
   writeFileSync(path, `${JSON.stringify(manifest, null, 2)}\n`);
 }
 
-/** The release identity the engine reads back from the packed `elmeraRelease` field. */
-type ReleaseSource = Pick<ReleaseIntent, "commit" | "channel">;
+/** The release identity written to, and read back from, the packed `elmeraRelease` field. */
+type ReleaseSource = {
+  readonly commit: string;
+  readonly channel: "canary" | "stable";
+};
+
+/**
+ * The release stamp `writePublishManifest` records. The engine's branded `ReleaseIntent`
+ * satisfies it; the stamping path only serializes these fields, so it depends on the shape,
+ * not on the engine's identity types.
+ */
+export type ReleaseStamp = {
+  readonly version: string;
+  readonly commit: string;
+  readonly channel: "canary" | "stable";
+};
 
 type PublishManifest = {
   name: string;
@@ -286,7 +298,7 @@ export function writeSourceExports(packageRoot: string): DiscoveredEntries {
  * workspace version and records the packed identity; an ordinary build keeps the workspace
  * version and no stamp, so the release engine's identity check stays meaningful.
  */
-export function writePublishManifest(packageRoot: string, release?: ReleaseIntent): void {
+export function writePublishManifest(packageRoot: string, release?: ReleaseStamp): void {
   const discovered = discoverEntries(packageRoot);
   const workspace = readWorkspaceManifest(join(packageRoot, "package.json"));
   const licensePath = join(packageRoot, "LICENSE");

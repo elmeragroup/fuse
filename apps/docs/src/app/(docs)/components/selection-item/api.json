@@ -58,15 +58,6 @@
           "required": true
         },
         {
-          "name": "isDisabled",
-          "origin": "declared",
-          "type": "boolean | undefined",
-          "shortType": null,
-          "defaultValue": null,
-          "description": "Applies `cursor-not-allowed bg-muted` plus the shared `disabledHatch` overlay. Does not disable the control — the control or group owns that.",
-          "required": false
-        },
-        {
           "name": "disabled",
           "origin": {
             "packageName": "@base-ui/react"
@@ -75,6 +66,15 @@
           "shortType": null,
           "defaultValue": "false",
           "description": "Whether the wrapped control should ignore user interaction. The `disabled` prop on `<Field.Root>` takes precedence over this.",
+          "required": false
+        },
+        {
+          "name": "isDisabled",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Applies `cursor-not-allowed bg-muted` plus the shared `disabledHatch` overlay. Does not disable the control — the control or group owns that.",
           "required": false
         },
         {

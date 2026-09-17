@@ -199,17 +199,6 @@
           "required": false
         },
         {
-          "name": "items",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "ComboboxItemCollection<Value, Value> | readonly any[] | readonly Group<any>[] | undefined",
-          "shortType": "Union",
-          "defaultValue": null,
-          "description": "The items to be displayed in the list. Can be a flat array of items, an array of groups with items, or a collection created by the `createItems()` function, which derives each item's selection value and label. Nullish entries are not supported: remove them from the data before passing it.",
-          "required": false
-        },
-        {
           "name": "itemToStringLabel",
           "origin": {
             "packageName": "@base-ui/react"
@@ -229,6 +218,17 @@
           "shortType": "function",
           "defaultValue": null,
           "description": "When the item values are objects (`<Combobox.Item value={object}>`), this function converts the object value to a string representation for form submission. If the shape of the object is `{ value, label }`, the value will be used automatically without needing to specify this prop. With a `createItems()` collection, this receives the derived value.",
+          "required": false
+        },
+        {
+          "name": "items",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComboboxItemCollection<Value, Value> | readonly any[] | readonly Group<any>[] | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The items to be displayed in the list. Can be a flat array of items, an array of groups with items, or a collection created by the `createItems()` function, which derives each item's selection value and label. Nullish entries are not supported: remove them from the data before passing it.",
           "required": false
         },
         {
@@ -456,6 +456,17 @@
           "required": false
         },
         {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, ComboboxInputState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
           "name": "showClear",
           "origin": "declared",
           "type": "boolean | undefined",
@@ -471,17 +482,6 @@
           "shortType": null,
           "defaultValue": "true",
           "description": "Renders the caret trigger button in the inline-end addon. Hidden at runtime whenever a clear button is present in the group.",
-          "required": false
-        },
-        {
-          "name": "render",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "ComponentRenderFn<HTMLProps, ComboboxInputState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
-          "shortType": "Union",
-          "defaultValue": null,
-          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
           "required": false
         },
         {
@@ -575,15 +575,6 @@
       "forwardedCount": 284,
       "props": [
         {
-          "name": "label",
-          "origin": "declared",
-          "type": "string | undefined",
-          "shortType": null,
-          "defaultValue": null,
-          "description": "Accessible name for the icon-only clear button. Defaults to the locale dictionary.",
-          "required": false
-        },
-        {
           "name": "className",
           "origin": {
             "packageName": "@base-ui/react"
@@ -614,6 +605,15 @@
           "shortType": null,
           "defaultValue": "false",
           "description": "Whether the component should remain mounted in the DOM when not visible.",
+          "required": false
+        },
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Accessible name for the icon-only clear button. Defaults to the locale dictionary.",
           "required": false
         },
         {
@@ -689,33 +689,6 @@
           "required": false
         },
         {
-          "name": "container",
-          "origin": "declared",
-          "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
-          "shortType": "Union",
-          "defaultValue": null,
-          "description": "Portal target for this overlay. Defaults to the nearest enclosing `ThemeScope` element, so it never escapes the theme that opened it.",
-          "required": false
-        },
-        {
-          "name": "side",
-          "origin": "declared",
-          "type": "Side | undefined",
-          "shortType": null,
-          "defaultValue": "\"bottom\"",
-          "description": "Which side of the trigger the popup is placed on.",
-          "required": false
-        },
-        {
-          "name": "sideOffset",
-          "origin": "declared",
-          "type": "number | OffsetFunction | undefined",
-          "shortType": "Union",
-          "defaultValue": "6",
-          "description": "Distance from the trigger, in pixels.",
-          "required": false
-        },
-        {
           "name": "className",
           "origin": {
             "packageName": "@base-ui/react"
@@ -724,6 +697,15 @@
           "shortType": "function",
           "defaultValue": null,
           "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "container",
+          "origin": "declared",
+          "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Portal target for this overlay. Defaults to the nearest enclosing `ThemeScope` element, so it never escapes the theme that opened it.",
           "required": false
         },
         {
@@ -757,6 +739,24 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "side",
+          "origin": "declared",
+          "type": "Side | undefined",
+          "shortType": null,
+          "defaultValue": "\"bottom\"",
+          "description": "Which side of the trigger the popup is placed on.",
+          "required": false
+        },
+        {
+          "name": "sideOffset",
+          "origin": "declared",
+          "type": "number | OffsetFunction | undefined",
+          "shortType": "Union",
+          "defaultValue": "6",
+          "description": "Distance from the trigger, in pixels.",
           "required": false
         },
         {
@@ -1185,24 +1185,6 @@
       "forwardedCount": 275,
       "props": [
         {
-          "name": "removeLabel",
-          "origin": "declared",
-          "type": "string | undefined",
-          "shortType": null,
-          "defaultValue": null,
-          "description": "Accessible name for the remove button. Defaults to dictionary `removeItem` formatted with the chip's string children, then `itemToStringLabel(value)`. When neither yields text, the localized \"Remove\" string with no trailing space.",
-          "required": false
-        },
-        {
-          "name": "showRemove",
-          "origin": "declared",
-          "type": "boolean | undefined",
-          "shortType": null,
-          "defaultValue": "true",
-          "description": "Renders the chip-remove button with an `X`.",
-          "required": false
-        },
-        {
           "name": "className",
           "origin": {
             "packageName": "@base-ui/react"
@@ -1214,6 +1196,15 @@
           "required": false
         },
         {
+          "name": "removeLabel",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Accessible name for the remove button. Defaults to dictionary `removeItem` formatted with the chip's string children, then `itemToStringLabel(value)`. When neither yields text, the localized \"Remove\" string with no trailing space.",
+          "required": false
+        },
+        {
           "name": "render",
           "origin": {
             "packageName": "@base-ui/react"
@@ -1222,6 +1213,15 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "showRemove",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Renders the chip-remove button with an `X`.",
           "required": false
         },
         {

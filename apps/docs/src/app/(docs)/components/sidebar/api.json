@@ -125,6 +125,17 @@
           "required": false
         },
         {
+          "name": "focusableWhenDisabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the button should be focusable when disabled.",
+          "required": false
+        },
+        {
           "name": "isPending",
           "origin": "declared",
           "type": "boolean | undefined",
@@ -140,6 +151,17 @@
           "shortType": null,
           "defaultValue": null,
           "description": "Renders the disabled treatment (`opacity-70`), stamps `aria-disabled` (an explicit consumer value wins), and suppresses focus-on-press while the button stays fully interactive — click, keyboard and focus-visible all still work. For \"looks disabled but explains itself on activation\" flows.",
+          "required": false
+        },
+        {
+          "name": "nativeButton",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Whether the component renders a native `<button>` element when replacing it via the `render` prop. Set to `false` if the rendered element is not a button (for example, `<div>`).",
           "required": false
         },
         {
@@ -161,46 +183,6 @@
           "required": false
         },
         {
-          "name": "size",
-          "origin": "declared",
-          "type": "IconButtonSize | LabelButtonSize | undefined",
-          "shortType": "Union",
-          "defaultValue": null,
-          "description": "Recipe size axis. The `icon*` sizes are square and additionally require an `aria-label`.",
-          "required": false
-        },
-        {
-          "name": "variant",
-          "origin": "recipe-axis",
-          "type": "\"default\" | \"destructive\" | \"ghost\" | \"link\" | \"outline\" | \"secondary\" | \"success\" | undefined",
-          "shortType": "Union",
-          "defaultValue": "\"ghost\"",
-          "description": "",
-          "required": false
-        },
-        {
-          "name": "focusableWhenDisabled",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "boolean | undefined",
-          "shortType": null,
-          "defaultValue": "false",
-          "description": "Whether the button should be focusable when disabled.",
-          "required": false
-        },
-        {
-          "name": "nativeButton",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "boolean | undefined",
-          "shortType": null,
-          "defaultValue": "true",
-          "description": "Whether the component renders a native `<button>` element when replacing it via the `render` prop. Set to `false` if the rendered element is not a button (for example, `<div>`).",
-          "required": false
-        },
-        {
           "name": "render",
           "origin": {
             "packageName": "@base-ui/react"
@@ -212,6 +194,15 @@
           "required": false
         },
         {
+          "name": "size",
+          "origin": "declared",
+          "type": "IconButtonSize | LabelButtonSize | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Recipe size axis. The `icon*` sizes are square and additionally require an `aria-label`.",
+          "required": false
+        },
+        {
           "name": "style",
           "origin": {
             "packageName": "@base-ui/react"
@@ -220,6 +211,15 @@
           "shortType": "function",
           "defaultValue": null,
           "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "recipe-axis",
+          "type": "\"default\" | \"destructive\" | \"ghost\" | \"link\" | \"outline\" | \"secondary\" | \"success\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"ghost\"",
+          "description": "",
           "required": false
         }
       ]
@@ -446,6 +446,17 @@
           "required": false
         },
         {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
           "name": "size",
           "origin": "recipe-axis",
           "type": "\"default\" | \"lg\" | \"sm\" | undefined",
@@ -471,17 +482,6 @@
           "defaultValue": "\"default\"",
           "description": "",
           "required": false
-        },
-        {
-          "name": "render",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
-          "shortType": "Union",
-          "defaultValue": null,
-          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
-          "required": false
         }
       ]
     },
@@ -496,15 +496,6 @@
       "forwardedCount": 290,
       "props": [
         {
-          "name": "showOnHover",
-          "origin": "declared",
-          "type": "boolean | undefined",
-          "shortType": null,
-          "defaultValue": "false",
-          "description": "Hides the action at `md:` and up until the menu item is hovered or focused within, or the action reports `aria-expanded` (an open dropdown keeps it visible).",
-          "required": false
-        },
-        {
           "name": "render",
           "origin": {
             "packageName": "@base-ui/react"
@@ -513,6 +504,15 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "showOnHover",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Hides the action at `md:` and up until the menu item is hovered or focused within, or the action reports `aria-expanded` (an open dropdown keeps it visible).",
           "required": false
         }
       ]
@@ -587,15 +587,6 @@
           "required": false
         },
         {
-          "name": "size",
-          "origin": "declared",
-          "type": "\"md\" | \"sm\" | undefined",
-          "shortType": "Union",
-          "defaultValue": "\"md\"",
-          "description": "Row size, emitted as `data-size`. `md` pins the md control rung and the control-type pair; `sm` pins the sm rung with size-owned `text-sm`.",
-          "required": false
-        },
-        {
           "name": "render",
           "origin": {
             "packageName": "@base-ui/react"
@@ -604,6 +595,15 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "size",
+          "origin": "declared",
+          "type": "\"md\" | \"sm\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"md\"",
+          "description": "Row size, emitted as `data-size`. `md` pins the md control rung and the control-type pair; `sm` pins the sm rung with size-owned `text-sm`.",
           "required": false
         }
       ]

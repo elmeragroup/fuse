@@ -22,33 +22,6 @@
           "required": false
         },
         {
-          "name": "size",
-          "origin": "recipe-axis",
-          "type": "\"default\" | \"lg\" | \"sm\" | \"xs\" | undefined",
-          "shortType": "Union",
-          "defaultValue": null,
-          "description": "",
-          "required": false
-        },
-        {
-          "name": "spacing",
-          "origin": "declared",
-          "type": "number | undefined",
-          "shortType": null,
-          "defaultValue": "2",
-          "description": "Tailwind spacing units between items. `0` is segmented-control mode",
-          "required": false
-        },
-        {
-          "name": "variant",
-          "origin": "recipe-axis",
-          "type": "\"default\" | \"outline\" | undefined",
-          "shortType": "Union",
-          "defaultValue": null,
-          "description": "",
-          "required": false
-        },
-        {
           "name": "defaultValue",
           "origin": {
             "packageName": "@base-ui/react"
@@ -115,6 +88,24 @@
           "required": false
         },
         {
+          "name": "size",
+          "origin": "recipe-axis",
+          "type": "\"default\" | \"lg\" | \"sm\" | \"xs\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        },
+        {
+          "name": "spacing",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": "2",
+          "description": "Tailwind spacing units between items. `0` is segmented-control mode",
+          "required": false
+        },
+        {
           "name": "style",
           "origin": {
             "packageName": "@base-ui/react"
@@ -134,6 +125,15 @@
           "shortType": null,
           "defaultValue": null,
           "description": "The pressed state of the toggle group represented by an array of the values of all pressed toggle buttons. This is the controlled counterpart of `defaultValue`.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "recipe-axis",
+          "type": "\"default\" | \"outline\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
           "required": false
         }
       ]
@@ -155,24 +155,6 @@
           "shortType": null,
           "defaultValue": null,
           "description": "Extra classes, merged after group overrides + `toggleVariants`.",
-          "required": false
-        },
-        {
-          "name": "size",
-          "origin": "recipe-axis",
-          "type": "\"default\" | \"lg\" | \"sm\" | \"xs\" | undefined",
-          "shortType": "Union",
-          "defaultValue": null,
-          "description": "",
-          "required": false
-        },
-        {
-          "name": "variant",
-          "origin": "recipe-axis",
-          "type": "\"default\" | \"outline\" | undefined",
-          "shortType": "Union",
-          "defaultValue": null,
-          "description": "",
           "required": false
         },
         {
@@ -242,6 +224,15 @@
           "required": false
         },
         {
+          "name": "size",
+          "origin": "recipe-axis",
+          "type": "\"default\" | \"lg\" | \"sm\" | \"xs\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        },
+        {
           "name": "style",
           "origin": {
             "packageName": "@base-ui/react"
@@ -261,6 +252,15 @@
           "shortType": null,
           "defaultValue": null,
           "description": "A unique string that identifies the toggle when used inside a toggle group.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "recipe-axis",
+          "type": "\"default\" | \"outline\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
           "required": false
         }
       ]

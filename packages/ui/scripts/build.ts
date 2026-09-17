@@ -1,14 +1,13 @@
 import { copyFileSync, mkdirSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
-import type { ReleaseIntent } from "@elmeragroup/internal/release";
-
 import { buildCss } from "./build-css";
 import { writePublishManifest } from "./generate-exports";
+import type { ReleaseStamp } from "./generate-exports";
 import { packageRootFromScript } from "./paths";
 import { runCommand } from "./run-command";
 
-export function buildPackage(packageRoot: string, release?: ReleaseIntent): void {
+export function buildPackage(packageRoot: string, release?: ReleaseStamp): void {
   runCommand("pnpm", ["exec", "tsdown"], packageRoot);
 
   buildCss(packageRoot);

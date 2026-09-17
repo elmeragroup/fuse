@@ -13,15 +13,6 @@
       "forwardedCount": 275,
       "props": [
         {
-          "name": "orientation",
-          "origin": "recipe-axis",
-          "type": "\"horizontal\" | \"responsive\" | \"vertical\" | undefined",
-          "shortType": "Union",
-          "defaultValue": "\"vertical\"",
-          "description": "",
-          "required": false
-        },
-        {
           "name": "actionsRef",
           "origin": {
             "packageName": "@base-ui/react"
@@ -85,6 +76,15 @@
           "shortType": null,
           "defaultValue": null,
           "description": "Identifies the field when a form is submitted. Takes precedence over the `name` prop on the `<Field.Control>` component.",
+          "required": false
+        },
+        {
+          "name": "orientation",
+          "origin": "recipe-axis",
+          "type": "\"horizontal\" | \"responsive\" | \"vertical\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"vertical\"",
+          "description": "",
           "required": false
         },
         {
@@ -500,15 +500,6 @@
       "forwardedCount": 275,
       "props": [
         {
-          "name": "variant",
-          "origin": "declared",
-          "type": "\"label\" | \"legend\" | undefined",
-          "shortType": "Union",
-          "defaultValue": "\"legend\"",
-          "description": "Emitted as `data-variant` and drives the text size: `\"legend\"` (default) titles the fieldset, `\"label\"` sizes it down to match a `Field.Label`.",
-          "required": false
-        },
-        {
           "name": "className",
           "origin": {
             "packageName": "@base-ui/react"
@@ -539,6 +530,15 @@
           "shortType": "function",
           "defaultValue": null,
           "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "declared",
+          "type": "\"label\" | \"legend\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"legend\"",
+          "description": "Emitted as `data-variant` and drives the text size: `\"legend\"` (default) titles the fieldset, `\"label\"` sizes it down to match a `Field.Label`.",
           "required": false
         }
       ]

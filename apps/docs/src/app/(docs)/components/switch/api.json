@@ -13,24 +13,6 @@
       "forwardedCount": 273,
       "props": [
         {
-          "name": "className",
-          "origin": "declared",
-          "type": "string | undefined",
-          "shortType": null,
-          "defaultValue": null,
-          "description": "Extra classes, merged via `cn` after the base classes.",
-          "required": false
-        },
-        {
-          "name": "size",
-          "origin": "declared",
-          "type": "\"default\" | \"sm\" | undefined",
-          "shortType": "Union",
-          "defaultValue": "\"default\"",
-          "description": "Optical track size, emitted as `data-size`. Pixel-fixed at both density stamps — not a control-box density rung.",
-          "required": false
-        },
-        {
           "name": "checked",
           "origin": {
             "packageName": "@base-ui/react"
@@ -39,6 +21,15 @@
           "shortType": null,
           "defaultValue": null,
           "description": "Whether the switch is currently active. To render an uncontrolled switch, use the `defaultChecked` prop instead.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes, merged via `cn` after the base classes.",
           "required": false
         },
         {
@@ -160,6 +151,15 @@
           "shortType": null,
           "defaultValue": "false",
           "description": "Whether the user must activate the switch before submitting a form.",
+          "required": false
+        },
+        {
+          "name": "size",
+          "origin": "declared",
+          "type": "\"default\" | \"sm\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "Optical track size, emitted as `data-size`. Pixel-fixed at both density stamps — not a control-box density rung.",
           "required": false
         },
         {
