@@ -64,3 +64,20 @@ test("Content and SubContent take positioner props and container, Item takes ins
   // @ts-expect-error polymorphism is never an `as` prop
   const _noAs = <DropdownMenu.Trigger as="div" />;
 });
+
+test("RadioGroup ties value, defaultValue and onValueChange to one union", () => {
+  type Panel = "status" | "activity";
+
+  const _controlled = (
+    <DropdownMenu.RadioGroup<Panel>
+      value="status"
+      onValueChange={(next) => expectTypeOf(next).toEqualTypeOf<Panel>()}
+    />
+  );
+  const _uncontrolled = <DropdownMenu.RadioGroup<Panel> defaultValue="activity" />;
+
+  // @ts-expect-error the controlled value must be a member of the group's union
+  const _invalidValue = <DropdownMenu.RadioGroup<Panel> value="settings" />;
+  // @ts-expect-error a group is controlled or uncontrolled, never both
+  const _both = <DropdownMenu.RadioGroup<Panel> value="status" defaultValue="activity" />;
+});

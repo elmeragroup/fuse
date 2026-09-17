@@ -1,8 +1,8 @@
-import { chromium } from "playwright";
-import type { Browser, CDPSession, Page, Route } from "playwright";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import type { CDPSession, Page, Route } from "playwright";
+import { describe, expect, it } from "vitest";
 
 import { DEFAULT_THEME, DOCUMENT_COLOR_SCHEME } from "../src/lib/theme";
+import { launchSuiteBrowser } from "./demo-page";
 import { docsBaseUrl } from "./docs-server";
 import {
   COLOR_SCHEME_BOOTSTRAP_FAILURE_SENTINEL,
@@ -29,6 +29,7 @@ type FirstPaintProbe = {
   manifest: ColorSchemeBootstrapManifest | undefined;
   background: string;
   colorScheme: string;
+  computedColorScheme: string;
   reactHydrated: boolean;
 };
 
@@ -46,15 +47,7 @@ const delayedCases: DelayedHydrationCase[] = [
   { name: "system dark", stored: null, colorScheme: "dark", expectedTheme: "dark" },
 ];
 
-let browser: Browser;
-
-beforeAll(async () => {
-  browser = await chromium.launch({ headless: true });
-});
-
-afterAll(async () => {
-  await browser.close();
-});
+const browser = launchSuiteBrowser();
 
 async function abortNextScripts(route: Route): Promise<void> {
   const url = route.request().url();
@@ -69,6 +62,7 @@ async function probeFirstPaint(page: Page): Promise<FirstPaintProbe> {
   return await page.evaluate(() => {
     const root = document.documentElement;
     const manifest = globalThis.__ELMERA_COLOR_SCHEME_BOOTSTRAP__;
+    const styles = getComputedStyle(root);
     return {
       variant: root.getAttribute("data-theme-variant"),
       brand: root.getAttribute("data-theme-brand"),
@@ -84,8 +78,9 @@ async function probeFirstPaint(page: Page): Promise<FirstPaintProbe> {
               enableSystem: manifest.enableSystem,
               forcedColorScheme: manifest.forcedColorScheme,
             },
-      background: getComputedStyle(root).backgroundColor,
+      background: styles.backgroundColor,
       colorScheme: root.style.colorScheme,
+      computedColorScheme: styles.colorScheme,
       reactHydrated: document.querySelector("next-route-announcer") !== null,
     };
   });
@@ -118,9 +113,9 @@ async function readComputedProperty(page: Page, selector: string, property: stri
 
 describe("docs first paint with hydration delayed", () => {
   it.each(delayedCases)(
-    "$name sets the expected pre-React marker, brand, manifest, and light canvas",
+    "$name sets the expected pre-React marker, brand, manifest, and matching canvas",
     async ({ stored, colorScheme, expectedTheme }) => {
-      const context = await browser.newContext({ colorScheme });
+      const context = await browser().newContext({ colorScheme });
       await context.addInitScript(
         ({ key, value }) => {
           if (value === null) {
@@ -140,7 +135,8 @@ describe("docs first paint with hydration delayed", () => {
       expectDenseDocument(probe);
       expect(probe.dataTheme).toBe(expectedTheme);
       expect(probe.manifest).toEqual(EXPECTED_BOOTSTRAP_MANIFEST);
-      expect(isLightCanvas(probe.background)).toBe(true);
+      expect(isLightCanvas(probe.background)).toBe(expectedTheme === "light");
+      expect(probe.computedColorScheme).toBe(expectedTheme);
       expect(probe.colorScheme).toBe("");
       expect(probe.reactHydrated).toBe(false);
 
@@ -151,9 +147,10 @@ describe("docs first paint with hydration delayed", () => {
 
 describe("docs JavaScript-disabled brand", () => {
   it("keeps brand attributes and the Elmera token surface without JavaScript", async () => {
-    const context = await browser.newContext({ javaScriptEnabled: false });
+    const context = await browser().newContext({ javaScriptEnabled: false });
     const page = await context.newPage();
-    await page.goto(`${docsBaseUrl()}/`, { waitUntil: "domcontentloaded" });
+    // CDP reads can otherwise race the external stylesheet and see an empty brand.
+    await page.goto(`${docsBaseUrl()}/`, { waitUntil: "load" });
 
     const html = page.locator("html");
     expect(await html.getAttribute("data-theme-variant")).toBe(DOCUMENT_BRAND.variant);
@@ -181,7 +178,7 @@ describe("docs enforcing nonce", () => {
   // No hash-CSP claim is made.
 
   async function openWithCsp(scriptNonce: string | null, cspNonce: string): Promise<Page> {
-    const page = await browser.newPage();
+    const page = await browser().newPage();
     await page.route("**/*", async (route) => {
       if (route.request().resourceType() !== "document") {
         await route.continue();
@@ -236,7 +233,7 @@ describe("docs enforcing nonce", () => {
 
 describe("docs picker vs document theme", () => {
   it("themes only preview scopes and leaves the document on internal/elma/private", async () => {
-    const page = await browser.newPage();
+    const page = await browser().newPage();
     const hydrationWarnings: string[] = [];
     page.on("console", (message) => {
       const text = message.text();
@@ -249,7 +246,7 @@ describe("docs picker vs document theme", () => {
 
     const initial = await page.evaluate(() => {
       const root = document.documentElement;
-      const stage = document.querySelector(".DemoStage");
+      const stage = document.querySelector("[data-demo-stage]");
       return {
         documentBrand: root.getAttribute("data-theme-brand"),
         documentVariant: root.getAttribute("data-theme-variant"),
@@ -276,11 +273,12 @@ describe("docs picker vs document theme", () => {
     expect(initial.slug).toContain("fkas");
     expect(initial.documentToken).not.toBe(initial.stageToken);
 
-    await page.getByLabel("Brand").selectOption("tkas");
+    await page.getByRole("button", { name: "Theme settings", exact: true }).click();
+    await page.getByRole("menuitemradio", { name: "TrøndelagKraft", exact: true }).click();
 
     const next = await page.evaluate(() => {
       const root = document.documentElement;
-      const stage = document.querySelector(".DemoStage");
+      const stage = document.querySelector("[data-demo-stage]");
       return {
         documentBrand: root.getAttribute("data-theme-brand"),
         documentVariant: root.getAttribute("data-theme-variant"),
@@ -309,13 +307,13 @@ describe("docs picker vs document theme", () => {
   });
 
   it("retargets demo-stage control metrics to the preview variant default without restamping the document", async () => {
-    const page = await browser.newPage();
+    const page = await browser().newPage();
     await page.goto(`${docsBaseUrl()}/components/button`, { waitUntil: "networkidle" });
     await page.getByRole("heading", { name: "Button", exact: true, level: 1 }).waitFor();
 
     const initial = await page.evaluate(() => {
       const root = document.documentElement;
-      const stage = document.querySelector(".DemoStage");
+      const stage = document.querySelector("[data-demo-stage]");
       const button = stage?.querySelector("button");
       return {
         documentDensity: root.getAttribute("data-density"),
@@ -337,11 +335,12 @@ describe("docs picker vs document theme", () => {
     expect(initial.buttonHeight).toBe("36px");
     expect(initial.densityLabel).toBe("dense");
 
-    await page.getByRole("combobox", { name: "Variant" }).selectOption("external");
+    await page.getByRole("button", { name: "Theme settings", exact: true }).click();
+    await page.getByRole("menuitemradio", { name: "External", exact: true }).click();
 
     const next = await page.evaluate(() => {
       const root = document.documentElement;
-      const stage = document.querySelector(".DemoStage");
+      const stage = document.querySelector("[data-demo-stage]");
       const button = stage?.querySelector("button");
       return {
         documentVariant: root.getAttribute("data-theme-variant"),

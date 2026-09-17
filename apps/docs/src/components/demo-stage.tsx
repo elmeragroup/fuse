@@ -17,26 +17,18 @@ export type DemoStageProps = {
 const demoStage = tv({
   slots: {
     stage:
-      "DemoStage flex flex-wrap items-center justify-center gap-3 bg-background bg-[radial-gradient(color-mix(in_oklab,var(--foreground)_14%,transparent)_1px,transparent_1px)] bg-size-[18px_18px] p-[2.8rem_2rem] text-foreground",
-    meta: "border-docs-line bg-docs-soft font-docs-mono text-docs-sub flex items-center border-t p-[0.45rem_0.9rem] text-[11.5px]",
-    slug: "text-docs-ink",
-    density: "text-docs-ink",
-    spacer: "flex-auto",
-    sourcePath: "text-docs-sub max-w-[290px] overflow-hidden text-ellipsis whitespace-nowrap",
+      "sm:px-8 flex flex-wrap items-center justify-center gap-3 bg-background px-0 py-[2.8rem] text-foreground min-[360px]:px-3",
+    meta: "text-xs flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-border bg-card p-[0.45rem_0.9rem] font-mono text-muted-foreground",
+    slug: "text-foreground",
+    density: "text-foreground",
+    sourcePath: "ml-auto max-w-full truncate text-muted-foreground lg:max-w-[290px]",
   },
 });
 
-const {
-  stage,
-  meta,
-  slug: slugClass,
-  density: densityClass,
-  spacer,
-  sourcePath: sourcePathClass,
-} = demoStage();
+const { stage, meta, slug: slugClass, density: densityClass, sourcePath: sourcePathClass } = demoStage();
 
 /**
- * The two theme-dependent regions of a §3.5 frame: the dotted, theme-tinted stage and the
+ * The two theme-dependent regions of a §3.5 frame: the theme-tinted stage and the
  * meta row naming the coordinate it renders under.
  *
  * This is the client half of the frame — the only part that consumes the docs-local
@@ -55,17 +47,20 @@ export function DemoStage({ sourcePath, children }: DemoStageProps): ReactElemen
       <ThemeScope theme={theme} className={stage()} data-demo-stage {...densityAttributes(density)}>
         {children}
       </ThemeScope>
-      <div className={meta()}>
-        theme ={" "}
-        <span className={slugClass()} data-demo-slug>
-          {slug}
+      <div className={meta()} data-demo-meta>
+        <span>
+          theme ={" "}
+          <span className={slugClass()} data-demo-slug>
+            {slug}
+          </span>
         </span>
         <span aria-hidden="true"> · </span>
-        density ={" "}
-        <span className={densityClass()} data-demo-density>
-          {density}
+        <span>
+          density ={" "}
+          <span className={densityClass()} data-demo-density>
+            {density}
+          </span>
         </span>
-        <span className={spacer()} />
         <span className={sourcePathClass()}>{sourcePath}</span>
       </div>
     </>

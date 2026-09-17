@@ -5,15 +5,16 @@ import { controlInsetMdClass } from "./control-inset";
 /**
  * Shared layout recipe for the two date pickers. The `range` axis selects one segment
  * row or two; both variants borrow their field box, popup, and grid surfaces from the
- * composed components. FieldGroup owns the read-only fill and pins the md control
- * height, so this recipe adds no size axis or glyph background. The input inset keeps
+ * composed components. FieldGroup owns the read-only fill and the md control height —
+ * this recipe emits no control-height rung. A narrow range stacks two content-sized
+ * rows; this recipe adds no size axis or glyph background. The input inset keeps
  * segmented rows aligned with Input at both densities.
  */
 export const pickerVariants = tv({
   slots: {
     /** The RAC picker root: label, field box, help text and popover in a column. */
     // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- label/field stack gap is layout, not a control rung
-    base: "group flex flex-col gap-1",
+    base: "group flex max-w-full min-w-0 flex-col gap-1",
     /** The private FieldGroup around the segment row(s) and the trigger. */
     group: "w-auto",
     /** A public DateInput inside the field box. */
@@ -32,6 +33,12 @@ export const pickerVariants = tv({
      */
     icon: "size-4 transition-colors",
     /**
+     * The calendar trigger's placement inside the field box. One grid model in both
+     * states — only the column template and the separator toggle at 24rem — so the
+     * range arm's placements are live at every width.
+     */
+    trigger: "",
+    /**
      * The styled Dialog inside the popover. Both padding utilities are needed: the dialog
      * recipe sets `p-6` on its base and `p-4` under `[data-placement]`, which is exactly the
      * popover case.
@@ -40,7 +47,8 @@ export const pickerVariants = tv({
     /** The public Calendar / RangeCalendar inside the dialog — see the `range` axis. */
     calendar: "",
     /**
-     * The row inside the dialog holding the optional preset pane and the calendar. Empty
+     * The responsive pane holding presets above the calendar on small viewports and
+     * beside it on larger ones. Empty
      * unless there are presets: a lone calendar is a single pane, so it must not inherit the
      * divider, the column gap or the trailing inset the two-pane layout needs
      */
@@ -60,11 +68,25 @@ export const pickerVariants = tv({
         calendar: "border-none",
       },
       true: {
-        group: "min-w-[208px]",
-        // Two rows share the box and only the end row grows, so the call site — not this
-        // slot — adds `flex-1` to the end input.
+        base: "@container/picker w-full",
+        // One grid template in both states; 24rem changes only the column count. Below
+        // it the dates stack in the first column beside the row-spanning trigger and the
+        // box opts out of FieldGroup's md height so the two rows size to their content.
+        // Above it the dates run in one row — start, en-dash, end, trigger — and the end
+        // column absorbs the slack.
+        //
+        // The breakpoint is spelled into each class string rather than hoisted into a
+        // constant: Tailwind scans the built JS text, and an interpolated candidate
+        // generates no utility. `picker.test.ts` names it once and pins every slot.
+        group:
+          "grid min-w-[208px] grid-cols-[minmax(0,1fr)_auto] @max-[24rem]/picker:h-auto @min-[24rem]/picker:grid-cols-[auto_auto_minmax(0,1fr)_auto]",
+        input: "flex items-center",
+        // Two rows share the box and only the end row grows; the wide template's
+        // `minmax(0,1fr)` end column is what hands it the slack.
         separator:
-          "text-foreground group-disabled:text-muted-foreground forced-colors:text-[ButtonText] forced-colors:group-disabled:text-[GrayText]",
+          "hidden text-foreground group-disabled:text-muted-foreground @min-[24rem]/picker:col-start-2 @min-[24rem]/picker:inline forced-colors:text-[ButtonText] forced-colors:group-disabled:text-[GrayText]",
+        trigger:
+          "col-start-2 row-span-2 row-start-1 @min-[24rem]/picker:col-start-4 @min-[24rem]/picker:row-span-1",
         // RangeCalendar's root is bare and this dialog is `p-0`, so the grid would otherwise
         // sit flush against the popover border.
         calendar: "p-2",
@@ -74,10 +96,15 @@ export const pickerVariants = tv({
      * Whether the caller handed over a preset pane that would actually paint. The call site
      * decides that (`presetGroup={showPresets && <Group />}` collapses to `false`, not
      * `undefined`), so this axis takes the answer, never the node. Single-date only.
+     *
+     * The stack-to-row flip stays a viewport `sm:` query: the pane lives in the portalled
+     * popover, outside the picker root's `@container/picker`, and the popover sizes to its
+     * own content, so a local container query would be circular. The range field's own
+     * breakpoint is a genuine container query because its box is inside the picker root.
      */
     hasPresets: {
       true: {
-        pane: "flex gap-x-3 divide-x pr-3 pb-3",
+        pane: "sm:flex-row sm:divide-x sm:divide-y-0 sm:pr-3 flex flex-col gap-3 divide-y pb-3",
       },
       false: {
         pane: "",

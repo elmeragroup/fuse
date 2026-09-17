@@ -1,6 +1,5 @@
-import { isBrandCode } from "@elmeragroup/ui/theme";
 import type {
-  BrandCode,
+  ColorScheme,
   ColorSchemeOptions,
   ThemeInput,
   ThemeSegment,
@@ -9,6 +8,7 @@ import type {
 
 export {
   BRAND_CODES as THEME_BRANDS,
+  COLOR_SCHEMES,
   LEGAL_THEMES,
   THEME_SEGMENTS,
   THEME_VARIANTS,
@@ -32,20 +32,20 @@ export const DEFAULT_THEME = {
   segment: "private",
 } as const satisfies ThemeInput;
 
-export function parseThemeVariant(value: string): ThemeVariant | null {
-  if (value === "internal" || value === "external") {
-    return value;
-  }
-  return null;
-}
+export const COLOR_SCHEME_LABELS = {
+  light: "Light",
+  dark: "Dark",
+  system: "System",
+} satisfies Record<ColorScheme, string>;
 
-export function parseThemeBrand(value: string): BrandCode | null {
-  return isBrandCode(value) ? value : null;
-}
+/** Display labels for the theme-variant axis. */
+export const VARIANT_LABELS = {
+  internal: "Internal",
+  external: "External",
+} satisfies Record<ThemeVariant, string>;
 
-export function parseThemeSegment(value: string): ThemeSegment | null {
-  if (value === "private" || value === "company") {
-    return value;
-  }
-  return null;
-}
+/** Display labels for the theme-segment axis. */
+export const SEGMENT_LABELS = {
+  private: "Private",
+  company: "Company",
+} satisfies Record<ThemeSegment, string>;

@@ -1,8 +1,7 @@
 ---
 title: TimelineList
 lede: >
-  A dated event list. `TimelineList.Root` is a semantic ordered list; each item
-  carries a title, a machine-readable time, and an optional description.
+  A dated list of events.
 ---
 
 import { TimelineListBasic } from "./demos/timeline-list-basic";
@@ -13,19 +12,6 @@ import { componentMetadata } from "../../../../lib/component-page";
 export const metadata = componentMetadata("timeline-list");
 
 <ComponentIntro slug="timeline-list" />
-
-<Prose>
-
-The compound is server-safe: it owns no state, handlers, or browser APIs. `Title` renders
-the client `Heading` without flipping this module to `"use client"`. `Time` always emits
-an ISO `dateTime` from a `Date` or string; invalid values throw
-`RangeError("TimelineList.Time received an invalid date")`. Links and actions belong in
-consumer content inside `Description` — TimelineList itself has no interactivity.
-
-The recipe is module-private. The connecting line is `Item::before` on every non-last
-item, so consumers must not interleave non-Item children.
-
-</Prose>
 
 <Demo slug="timeline-list" id="basic" title="Basic" file="timeline-list-basic.tsx">
   <TimelineListBasic />

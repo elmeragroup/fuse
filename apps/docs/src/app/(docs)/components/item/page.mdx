@@ -1,8 +1,7 @@
 ---
 title: Item
 lede: >
-  A row composite — media, content, actions — with a polymorphic root, so the same row
-  renders as a `div`, a link or a button without changing its layout.
+  A row with media, content, and actions.
 ---
 
 import { ItemBasic } from "./demos/item-basic";
@@ -19,15 +18,6 @@ export const metadata = componentMetadata("item");
 
 <ComponentIntro slug="item" />
 
-<Prose>
-
-## List semantics
-
-`Item.Group` renders `role="list"`, and an `Item` inside it adopts `role="listitem"`
-automatically so the list is never half-announced. The `role` prop overrides that.
-
-</Prose>
-
 <Demo slug="item" id="basic" title="Basic" file="item-basic.tsx">
   <ItemBasic />
 </Demo>
@@ -43,15 +33,6 @@ automatically so the list is never half-announced. The `role` prop overrides tha
 <Demo slug="item" id="group" title="Group" file="item-group.tsx">
   <ItemGroupDemo />
 </Demo>
-
-<Prose>
-
-## Footer reveal
-
-`mode="hidden"` renders the footer `inert`, so its content is removed from tab order, pointer
-events, and the accessibility tree until the mode changes.
-
-</Prose>
 
 <Demo slug="item" id="footer-reveal" title="Footer reveal" file="item-footer-reveal.tsx">
   <ItemFooterReveal />

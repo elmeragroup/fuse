@@ -12,7 +12,8 @@ export function EmptyInlineLink() {
         </Empty.Media>
         <Empty.Title>No orders yet</Empty.Title>
         <Empty.Description>
-          Orders you create will show up here. Read the <a href="#help">help article</a> to get started.
+          Orders you create will show up here. Read the <a href="/quick-start">quick-start guide</a> to get
+          started.
         </Empty.Description>
       </Empty.Header>
     </Empty.Root>

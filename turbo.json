@@ -15,13 +15,35 @@
         "test/**",
         "plopfile.mjs",
         "plop-templates/**",
+        "README.md",
         "packages/ui/scripts/**",
+        "packages/ui/package.json",
+        "scripts/**",
         "packages/ui/src/icons/roster.ts",
+        "packages/ui/src/theme/**",
+        ".changeset/config.json",
         ".github/workflows/**",
         "package.json",
         ".oxlintrc.json",
         "turbo.json",
         "apps/docs/package.json",
+        "apps/docs/turbo.json",
+        "apps/static-theme/package.json",
+        "apps/static-theme/turbo.json",
+        "tooling/typescript/**",
+        "pnpm-workspace.yaml"
+      ]
+    },
+    "//#type-check:scripts": {
+      "inputs": [
+        "scripts/**",
+        "packages/ui/scripts/**",
+        // entries.ts imports the roster and build-css.ts imports the theme generators, so a
+        // roster or theme edit must miss this task's cache.
+        "packages/ui/src/icons/roster.ts",
+        "packages/ui/src/theme/**",
+        "tooling/typescript/**",
+        "package.json",
         "pnpm-workspace.yaml"
       ]
     },
@@ -70,6 +92,7 @@
       "dependsOn": [
         "//#lint",
         "//#test:repo-policy",
+        "//#type-check:scripts",
         "type-check",
         "test",
         "test:browser",

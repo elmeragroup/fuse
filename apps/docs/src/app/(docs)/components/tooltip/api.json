@@ -12,15 +12,6 @@
       "forwardedCount": 1,
       "props": [
         {
-          "name": "delay",
-          "origin": "declared",
-          "type": "number | undefined",
-          "shortType": null,
-          "defaultValue": "0",
-          "description": "Shared open delay for every tooltip in this group, in milliseconds. Instant by default — the ref overrides base-ui's 600ms. Tooltips in this group also share skip-delay hand-off: after one opens, moving to a neighbor skips the wait.",
-          "required": false
-        },
-        {
           "name": "closeDelay",
           "origin": {
             "packageName": "@base-ui/react"
@@ -29,6 +20,15 @@
           "shortType": null,
           "defaultValue": null,
           "description": "How long to wait before closing a tooltip. Specified in milliseconds.",
+          "required": false
+        },
+        {
+          "name": "delay",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": "0",
+          "description": "Shared open delay for every tooltip in this group, in milliseconds. Instant by default — the ref overrides base-ui's 600ms. Tooltips in this group also share skip-delay hand-off: after one opens, moving to a neighbor skips the wait.",
           "required": false
         },
         {
@@ -53,15 +53,6 @@
       ],
       "forwardedCount": 0,
       "props": [
-        {
-          "name": "delay",
-          "origin": "declared",
-          "type": "number | undefined",
-          "shortType": null,
-          "defaultValue": null,
-          "description": "When set, wraps this Root in a nested scoped Provider with that delay. That tooltip then forms its own provider group: it no longer participates in the outer Provider's shared delay or skip-delay hand-off.",
-          "required": false
-        },
         {
           "name": "actionsRef",
           "origin": {
@@ -107,14 +98,12 @@
           "required": false
         },
         {
-          "name": "disabled",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "boolean | undefined",
+          "name": "delay",
+          "origin": "declared",
+          "type": "number | undefined",
           "shortType": null,
-          "defaultValue": "false",
-          "description": "Whether the tooltip is disabled.",
+          "defaultValue": null,
+          "description": "When set, wraps this Root in a nested scoped Provider with that delay. That tooltip then forms its own provider group: it no longer participates in the outer Provider's shared delay or skip-delay hand-off.",
           "required": false
         },
         {
@@ -126,6 +115,17 @@
           "shortType": null,
           "defaultValue": "false",
           "description": "Whether the tooltip contents can be hovered without closing the tooltip.",
+          "required": false
+        },
+        {
+          "name": "disabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the tooltip is disabled.",
           "required": false
         },
         {
@@ -336,6 +336,17 @@
           "required": false
         },
         {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: TooltipPopupState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
           "name": "container",
           "origin": "declared",
           "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
@@ -354,6 +365,17 @@
           "required": false
         },
         {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, TooltipPopupState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
           "name": "side",
           "origin": "declared",
           "type": "Side | undefined",
@@ -369,28 +391,6 @@
           "shortType": "Union",
           "defaultValue": "4",
           "description": "Distance from the trigger, in pixels.",
-          "required": false
-        },
-        {
-          "name": "className",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "string | ((state: TooltipPopupState) => string | undefined) | undefined",
-          "shortType": "function",
-          "defaultValue": null,
-          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
-          "required": false
-        },
-        {
-          "name": "render",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "ComponentRenderFn<HTMLProps, TooltipPopupState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
-          "shortType": "Union",
-          "defaultValue": null,
-          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
           "required": false
         },
         {

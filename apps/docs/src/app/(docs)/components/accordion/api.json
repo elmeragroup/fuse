@@ -22,24 +22,6 @@
           "required": false
         },
         {
-          "name": "radius",
-          "origin": "recipe-axis",
-          "type": "\"lg\" | \"none\" | \"xl\" | undefined",
-          "shortType": "Union",
-          "defaultValue": "\"none\"",
-          "description": "",
-          "required": false
-        },
-        {
-          "name": "variant",
-          "origin": "recipe-axis",
-          "type": "\"card\" | \"default\" | \"infodropdown\" | undefined",
-          "shortType": "Union",
-          "defaultValue": "\"default\"",
-          "description": "",
-          "required": false
-        },
-        {
           "name": "defaultValue",
           "origin": {
             "packageName": "@base-ui/react"
@@ -128,6 +110,15 @@
           "required": false
         },
         {
+          "name": "radius",
+          "origin": "recipe-axis",
+          "type": "\"lg\" | \"none\" | \"xl\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"none\"",
+          "description": "",
+          "required": false
+        },
+        {
           "name": "render",
           "origin": {
             "packageName": "@base-ui/react"
@@ -158,6 +149,15 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "The controlled value of the item(s) that should be expanded. To render an uncontrolled accordion, use the `defaultValue` prop instead.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "recipe-axis",
+          "type": "\"card\" | \"default\" | \"infodropdown\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "",
           "required": false
         }
       ]

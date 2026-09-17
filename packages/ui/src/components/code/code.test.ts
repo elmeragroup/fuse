@@ -41,7 +41,7 @@ describe("code sugar-high pin", () => {
       })["sugar-high"]
     ).toBe("^2.4.0");
     expect(readFileSync(join(packageRoot, "../../pnpm-workspace.yaml"), "utf8")).toContain(
-      '"sugar-high": 2.4.0'
+      '"sugar-high": 2.4.1'
     );
   });
 });

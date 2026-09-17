@@ -10,7 +10,13 @@ export function FocusableTooltipTrigger() {
         <Tooltip.Trigger
           render={
             <Focusable>
-              <span className="cursor-help text-muted-foreground underline decoration-dotted">
+              {/* A non-interactive element: Focusable is what gives it the tab stop the
+                  tooltip needs. `aria-disabled` states that the action is unavailable, and
+                  the role keeps it in the widget vocabulary assistive tech expects. */}
+              <span
+                role="button"
+                aria-disabled="true"
+                className="cursor-help text-muted-foreground underline decoration-dotted">
                 Closed meter
               </span>
             </Focusable>

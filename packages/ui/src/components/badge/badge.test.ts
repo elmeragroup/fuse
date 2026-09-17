@@ -69,12 +69,12 @@ describe("badgeVariants", () => {
     expect(outline).not.toContain("destructive");
   });
 
-  it("keeps the sanctioned token-derived color-mix values on the info variant", () => {
+  it("pairs the info soft surface with its foreground", () => {
     const resolved = badgeVariants({ variant: "info" });
-    expect(resolved).toContain("bg-[color-mix(in_oklch,var(--info)_8%,transparent)]");
-    expect(resolved).toContain("border-[color-mix(in_oklch,var(--info)_16%,transparent)]");
-    expect(resolved).toContain("hover:bg-[color-mix(in_oklch,var(--info)_16%,transparent)]");
-    expect(resolved).toContain("text-info-foreground");
+    expect(resolved).toContain("bg-info-soft");
+    expect(resolved).toContain("border-info/20");
+    expect(resolved).toContain("hover:border-info/40");
+    expect(resolved).toContain("text-info-soft-foreground");
   });
 
   it("gives outline its bare border and foreground text", () => {

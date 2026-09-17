@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import { CalendarDate, isSameDay, isWeekend } from "@internationalized/date";
 import type { DateValue } from "@internationalized/date";
+import { I18nProvider } from "react-aria-components";
 import { describe, expect, it, vi } from "vitest";
 import type { Mock } from "vitest";
 import { page, userEvent } from "vitest/browser";
@@ -100,9 +101,9 @@ describe("RangeCalendar", () => {
     // because every day's own label already names its weekday. Its seven cells are the
     // only observable proof the shared part rendered.
     expect(calendarGrid().querySelectorAll("thead th")).toHaveLength(7);
-    expect(
-      [...calendarGrid().querySelectorAll("thead th")].map((cell) => cell.textContent.trim()).join("")
-    ).toBe("SMTWTFS");
+    // The locale's short names are compact enough for a grid column, so they are kept.
+    expect(calendarGrid().textContent).toContain("Sun");
+    expect(calendarGrid().textContent).not.toContain("Sunday");
     await expect.element(navButtonNamed(/previous/i)).toBeVisible();
     await expect.element(navButtonNamed(/next/i)).toBeVisible();
     expect(dayNumbered(14).getAttribute("aria-label")).toMatch(/Tuesday, July 14, 2026/i);
@@ -117,6 +118,26 @@ describe("RangeCalendar", () => {
     expect(accessibleRange).not.toBe(visibleTitle);
     expect(accessibleRange.textContent).toMatch(/July\s+2026/i);
     expect(calendarGrid().getAttribute("aria-label")).toMatch(/July\s+2026/i);
+  });
+
+  it("follows the locale direction and its weekday label width", async () => {
+    renderRangeCalendar(
+      <I18nProvider locale="ar-EG">
+        <RangeCalendar defaultValue={{ start: july14, end: july17 }} />
+      </I18nProvider>
+    );
+    await expect.element(page.getByRole("application")).toBeVisible();
+    expect(getComputedStyle(calendarGrid()).direction).toBe("rtl");
+    // DOM audit: RAC marks weekday headings as presentation; inspect their rendered column order.
+    const headers = [...calendarGrid().querySelectorAll("thead th")];
+    expect(headers).toHaveLength(7);
+    expect(headers[0]?.getBoundingClientRect().left).toBeGreaterThan(
+      headers[6]?.getBoundingClientRect().left ?? 0
+    );
+    // Arabic short weekday names are wider than a grid column, so the locale's label width
+    // — not its direction — selects the narrow fallback.
+    const labels = headers.map((cell) => cell.textContent.trim());
+    expect(labels.every((label) => Array.from(label).length === 1)).toBe(true);
   });
 
   it("renders borderless standalone — the picker dialog supplies the chrome", async () => {

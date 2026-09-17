@@ -31,7 +31,7 @@ export default function DocsLayout({ children }: DocsLayoutProps): ReactElement 
           enableSystem={DOCUMENT_COLOR_SCHEME.enableSystem}
         />
       </head>
-      <body className="font-docs-sans text-docs-ink m-0 min-w-80 bg-background antialiased">
+      <body className="m-0 min-w-80 bg-background font-sans text-foreground antialiased">
         <ThemeProvider
           theme={DOCUMENT_THEME}
           storageKey={DOCUMENT_COLOR_SCHEME.storageKey}

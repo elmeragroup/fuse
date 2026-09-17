@@ -1,8 +1,7 @@
 ---
 title: DropdownMenu
 lede: >
-  A menu anchored to its trigger. Groups, checkboxes, radios, links, and nested submenus
-  share one item face; portals land in the nearest ThemeScope.
+  Actions and options in a menu that opens from a trigger.
 ---
 
 import { DropdownMenuBasic } from "./demos/dropdown-menu-basic";
@@ -18,21 +17,6 @@ export const metadata = componentMetadata("dropdown-menu");
 
 <ComponentIntro slug="dropdown-menu" />
 
-<Prose>
-
-Positioner props (`side`, `align`, `sideOffset`, `alignOffset`) and `container` surface on
-both `DropdownMenu.Content` and `DropdownMenu.SubContent`. Content defaults to
-`start / 0 / bottom / 4`; SubContent tucks against its trigger at `start / -3 / right / 0`
-and renders its own thin popup — it does not wrap Content. The standalone
-`DropdownMenu.Portal` part stays exported for advanced composition.
-
-`Item.variant` keeps the value `"destructive"` and emits `data-variant="destructive"` so
-existing callers keep working; the classes themselves read `error` tokens.
-`LinkItem` is the navigational face — pass `render={<Link href=… />}` for a router link.
-Radio items use a check indicator, matching the Funnel face rather than a filled dot.
-
-</Prose>
-
 <Demo slug="dropdown-menu" id="basic" title="Basic" file="dropdown-menu-basic.tsx">
   <DropdownMenuBasic />
 </Demo>
@@ -44,6 +28,14 @@ Radio items use a check indicator, matching the Funnel face rather than a filled
 <Demo slug="dropdown-menu" id="radio-group" title="Radio group" file="dropdown-menu-radio-group.tsx">
   <DropdownMenuRadioGroup />
 </Demo>
+
+`DropdownMenu.RadioGroup` is generic over the selected value's string union, so `value` and
+`onValueChange` agree by type. Item values are **not** checked against that union:
+`DropdownMenu.RadioItem` keeps the primitive's own value type, so a mistyped item value still
+compiles.
+
+`DropdownMenu.Label` renders the primitive's group label, so it must sit inside a
+`DropdownMenu.Group`; it labels the items of the group it belongs to.
 
 <Demo slug="dropdown-menu" id="submenu" title="Submenu" file="dropdown-menu-submenu.tsx">
   <DropdownMenuSubmenu />

@@ -274,42 +274,6 @@
           "required": false
         },
         {
-          "name": "container",
-          "origin": "declared",
-          "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
-          "shortType": "Union",
-          "defaultValue": null,
-          "description": "Portal target for this overlay. Defaults to the nearest enclosing `ThemeScope` element, so it never escapes the theme that opened it.",
-          "required": false
-        },
-        {
-          "name": "showArrow",
-          "origin": "declared",
-          "type": "boolean | undefined",
-          "shortType": null,
-          "defaultValue": "false",
-          "description": "Renders the placement arrow after `children`. Off by default.",
-          "required": false
-        },
-        {
-          "name": "side",
-          "origin": "declared",
-          "type": "Side | undefined",
-          "shortType": null,
-          "defaultValue": "\"bottom\"",
-          "description": "Which side of the trigger the popup is placed on.",
-          "required": false
-        },
-        {
-          "name": "sideOffset",
-          "origin": "declared",
-          "type": "number | OffsetFunction | undefined",
-          "shortType": "Union",
-          "defaultValue": "4",
-          "description": "Distance from the trigger, in pixels.",
-          "required": false
-        },
-        {
           "name": "className",
           "origin": {
             "packageName": "@base-ui/react"
@@ -318,6 +282,15 @@
           "shortType": "function",
           "defaultValue": null,
           "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "container",
+          "origin": "declared",
+          "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Portal target for this overlay. Defaults to the nearest enclosing `ThemeScope` element, so it never escapes the theme that opened it.",
           "required": false
         },
         {
@@ -351,6 +324,33 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "showArrow",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Renders the placement arrow after `children`. Off by default.",
+          "required": false
+        },
+        {
+          "name": "side",
+          "origin": "declared",
+          "type": "Side | undefined",
+          "shortType": null,
+          "defaultValue": "\"bottom\"",
+          "description": "Which side of the trigger the popup is placed on.",
+          "required": false
+        },
+        {
+          "name": "sideOffset",
+          "origin": "declared",
+          "type": "number | OffsetFunction | undefined",
+          "shortType": "Union",
+          "defaultValue": "4",
+          "description": "Distance from the trigger, in pixels.",
           "required": false
         },
         {

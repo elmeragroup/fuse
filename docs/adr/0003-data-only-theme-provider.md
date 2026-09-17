@@ -28,7 +28,7 @@ The original call treated the provider as data-only (context + helpers, no DOM w
 - **A host-placed closed script owns client-known pre-paint color scheme.** `colorSchemeScriptSource` / `ColorSchemeScript` run before paintable content. `injectColorSchemeScript` defaults **false**. The provider is not the universal first-paint writer.
 - Callers pass **one** brand configuration to HTML and provider, and **matching** color-scheme literals to bootstrap and provider.
 
-The dark axis ships **wired but valueless**: the closed bootstrap sets reserved `data-theme` to `"light"` or `"dark"` before paint; `useColorScheme()` and `<ForceColorScheme>` are functional at runtime; theme CSS carries a terminal comment reserving the future `[data-theme="dark"]` block (not an empty CSS rule node) until dark values are specced. This wave does not write `style.colorScheme` or a color-scheme meta tag. Descendant `ForceColorScheme` is runtime-only; no-flash force requires a document adapter.
+The dark axis ships **with values for both variants**: the closed bootstrap sets reserved `data-theme` to `"light"` or `"dark"` before paint; `useColorScheme()` and `<ForceColorScheme>` are functional at runtime; theme CSS carries generated internal and external dark layers under `[data-theme="dark"]`. This wave does not write `style.colorScheme` or a color-scheme meta tag. Descendant `ForceColorScheme` is runtime-only; no-flash force requires a document adapter. _(Amended 2026-09-15 — dark values ship for both variants; the reserved placeholder is replaced by generated internal and external dark layers. The `style.colorScheme` and meta-tag policy is unchanged. §7.8 of theming.md owns the current contract.)_
 
 ## Alternatives rejected
 
@@ -44,5 +44,5 @@ The dark axis ships **wired but valueless**: the closed bootstrap sets reserved 
 
 - Framework support is documentation, not code entries — Next App Router, Next Pages, TanStack Start, React Router 7, and Vite each place brand attributes and the classic bootstrap in a host-owned location. Next App Router and Vite are fixture-verified; the other three are written recipes, not verified no-flash claims.
 - Apps still ship no brand persistence. The only inline script in the system is the color-scheme one, which earns it (genuinely client-known). Hosts, not the provider, place it.
-- When dark values land, nothing about the brand-theme API changes — `data-theme` is already being set by the shipped script. `style.colorScheme` is revisited then.
+- Dark values now ship for both variants; nothing about the brand-theme API changed — `data-theme` is already being set by the shipped script. `style.colorScheme` and the meta-tag policy are unchanged.
 - The `useRender` polymorphism convention set here binds all future library components (no `as` props).

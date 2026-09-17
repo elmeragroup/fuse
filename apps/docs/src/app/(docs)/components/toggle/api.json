@@ -22,24 +22,6 @@
           "required": false
         },
         {
-          "name": "size",
-          "origin": "recipe-axis",
-          "type": "\"default\" | \"lg\" | \"sm\" | \"xs\" | undefined",
-          "shortType": "Union",
-          "defaultValue": "\"default\"",
-          "description": "",
-          "required": false
-        },
-        {
-          "name": "variant",
-          "origin": "recipe-axis",
-          "type": "\"default\" | \"outline\" | undefined",
-          "shortType": "Union",
-          "defaultValue": "\"default\"",
-          "description": "",
-          "required": false
-        },
-        {
           "name": "defaultPressed",
           "origin": {
             "packageName": "@base-ui/react"
@@ -106,6 +88,15 @@
           "required": false
         },
         {
+          "name": "size",
+          "origin": "recipe-axis",
+          "type": "\"default\" | \"lg\" | \"sm\" | \"xs\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "",
+          "required": false
+        },
+        {
           "name": "style",
           "origin": {
             "packageName": "@base-ui/react"
@@ -125,6 +116,15 @@
           "shortType": null,
           "defaultValue": null,
           "description": "A unique string that identifies the toggle when used inside a toggle group.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "recipe-axis",
+          "type": "\"default\" | \"outline\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "",
           "required": false
         }
       ]

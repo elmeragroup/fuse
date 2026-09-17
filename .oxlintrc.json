@@ -208,6 +208,7 @@
     {
       "files": ["apps/docs/src/**/*.{ts,tsx}"],
       "rules": {
+        "elmera/no-primitive-colors": "error",
         "elmera/no-raw-class-map": "error"
       }
     },

@@ -31,6 +31,13 @@ export default function ThemeMatrixPage(): ReactElement {
 
       <ThemeMatrix />
 
+      <p>
+        Dark palettes apply to all twenty themes. Internal themes share a neutral palette and retain their
+        brand accents. Fjordkraft company uses the Bedrift palette; Fjordkraft Företag keeps the Fjordkraft
+        private palette. Gudbrandsdal Energi&apos;s dark palette is provisional, derived from the GE design
+        references.
+      </p>
+
       <h2 id="overlays">Overlays stay in their cell</h2>
       <p>
         Open the <strong>Overlay</strong> button in any cell. The popup is portalled, and a portal rendered

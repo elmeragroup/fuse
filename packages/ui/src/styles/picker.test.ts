@@ -15,6 +15,7 @@ function everyEmittedClass(): string {
           slots.input(),
           slots.separator(),
           slots.icon(),
+          slots.trigger(),
           slots.dialog(),
           slots.calendar(),
           slots.pane(),
@@ -24,10 +25,17 @@ function everyEmittedClass(): string {
     .join(" ");
 }
 
+/**
+ * The range field's container-query breakpoint, named once for the expectations below.
+ * Production spells it into each class string because Tailwind's source scan resolves no
+ * interpolation; this constant is where the test tier keeps one name for it.
+ */
+const RANGE_BREAKPOINT = "24rem";
+
 describe("pickerVariants shared slots", () => {
   it("lays both roots out as a labelled column", () => {
-    expect(pickerVariants().base()).toBe("group flex flex-col gap-1");
-    expect(pickerVariants({ range: true }).base()).toBe("group flex flex-col gap-1");
+    expect(pickerVariants().base()).toContain("flex-col");
+    expect(pickerVariants({ range: true }).base()).toContain("@container/picker");
   });
 
   it("strips the styled Dialog's padding in both of its forms, on both axes", () => {
@@ -62,6 +70,10 @@ describe("pickerVariants shared slots", () => {
 
   it("emits exactly the two documented axes, no control rung, and no raw palette", () => {
     expect(pickerVariants.variantKeys).toEqual(["range", "hasPresets"]);
+
+    // FieldGroup owns the md control height (`fieldGroupVariants` in
+    // react-aria/internal/field.tsx). The recipe may opt the narrow two-row box out with
+    // `h-auto`, but naming any control-height rung here would make it a second owner.
     expect(everyEmittedClass()).not.toContain("--control-h-");
     expect(everyEmittedClass()).not.toMatch(RAW_PALETTE_RE);
   });
@@ -98,9 +110,21 @@ describe("pickerVariants range axis", () => {
     const slots = pickerVariants({ range: true });
     expect(slots.group()).toContain("w-auto");
     expect(slots.group()).toContain("min-w-[208px]");
-    // Two rows share the box and only the end row grows, so the call site adds the class.
+    // Only the wide template's end column grows; neither row carries a growth class.
     expect(slots.input()).not.toContain("flex-1");
-    expect(slots.input({ class: "flex-1" }).split(/\s+/)).toContain("flex-1");
+    expect(slots.input()).not.toContain("--control-h-");
+  });
+
+  it("keeps one grid model across the 24rem breakpoint and only retemplates columns", () => {
+    const group = pickerVariants({ range: true }).group();
+    expect(group).toContain("grid");
+    expect(group).not.toContain("flex");
+    expect(group).toContain("grid-cols-[minmax(0,1fr)_auto]");
+    expect(group).toContain(`@min-[${RANGE_BREAKPOINT}]/picker:grid-cols-[auto_auto_minmax(0,1fr)_auto]`);
+    // FieldGroup's md height stands above 24rem; below it the two stacked rows size to
+    // their content instead.
+    expect(group).toContain(`@max-[${RANGE_BREAKPOINT}]/picker:h-auto`);
+    expect(group).not.toContain("--control-h-");
   });
 
   it("strips Calendar's card border and pays RangeCalendar's inset", () => {
@@ -121,12 +145,25 @@ describe("pickerVariants range axis", () => {
     expect(pickerVariants().separator()).toBeUndefined();
   });
 
+  it("hands the shell the trigger's grid placement on the range axis only", () => {
+    const trigger = pickerVariants({ range: true }).trigger();
+    // Narrow: the trigger spans both stacked rows in the second column.
+    expect(trigger).toContain("col-start-2");
+    expect(trigger).toContain("row-span-2");
+    expect(trigger).toContain("row-start-1");
+    // Wide: the trigger is the fourth column of the single row, no longer spanning rows.
+    expect(trigger).toContain(`@min-[${RANGE_BREAKPOINT}]/picker:col-start-4`);
+    expect(trigger).toContain(`@min-[${RANGE_BREAKPOINT}]/picker:row-span-1`);
+    // Single-date: no placement class at all, so React omits the attribute.
+    expect(pickerVariants().trigger()).toBeUndefined();
+  });
+
   it("gives the dialog its two-pane row only when the caller has presets", () => {
     // The two-pane layout is the divider plus the column gap and the trailing inset; a
     // lone calendar takes none of it, and the slot must be empty rather than absent so
     // the call site can hand the class through unconditionally.
     expect(pickerVariants({ hasPresets: true }).pane().split(/\s+/)).toEqual(
-      expect.arrayContaining(["flex", "gap-x-3", "divide-x", "pr-3", "pb-3"])
+      expect.arrayContaining(["flex", "flex-col", "sm:flex-row", "sm:divide-x", "pb-3"])
     );
     // tailwind-variants collapses an empty slot face to `undefined`, which is what the
     // call site wants: React then omits the attribute rather than emitting `class=""`.

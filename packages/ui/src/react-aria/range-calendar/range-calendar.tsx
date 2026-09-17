@@ -4,23 +4,26 @@ import type { ReactElement, ReactNode } from "react";
 
 import {
   CalendarCell,
-  CalendarGrid,
   CalendarGridBody,
   RangeCalendar as AriaRangeCalendar,
   Text as AriaText,
+  useLocale,
 } from "react-aria-components";
 import type { DateValue, RangeCalendarProps as AriaRangeCalendarProps } from "react-aria-components";
 import type { VariantProps } from "tailwind-variants";
 
 import { Text } from "../../components/text/text";
 import { rangeCalendarVariants } from "../../styles/range-calendar";
-import { CalendarGridHeader, CalendarHeader } from "../calendar/calendar";
+import { CalendarHeader } from "../calendar/calendar";
+import { LocaleCalendarGrid } from "../internal/calendar-grid";
 
 /**
- * Single-month range calendar composite over RAC `RangeCalendar`. Client — the interim react-aria cluster owns range state, anchoring and focus.
+ * Single-month range calendar composite over RAC `RangeCalendar`. The locale controls
+ * layout direction, exactly as on Calendar. Client — the interim
+ * react-aria cluster owns range state, anchoring and focus.
  *
- * The header row and the weekday header row are Calendar's public parts, not copies:
- * both calendar components share their header and weekday rendering.
+ * The header row and the weekday grid are Calendar's public parts, not copies:
+ * both calendar components share their header and locale wiring.
  */
 export type RangeCalendarProps<T extends DateValue> = {
   /**
@@ -55,12 +58,12 @@ export function RangeCalendar<T extends DateValue>({
   ...props
 }: RangeCalendarProps<T>): ReactElement {
   const { body, outerCell, error } = rangeCalendarVariants();
+  const { direction } = useLocale();
 
   return (
-    <AriaRangeCalendar {...props}>
+    <AriaRangeCalendar dir={direction} {...props}>
       <CalendarHeader />
-      <CalendarGrid className={body()}>
-        <CalendarGridHeader />
+      <LocaleCalendarGrid className={body()}>
         <CalendarGridBody>
           {(date) => (
             <CalendarCell date={date} className={outerCell()}>
@@ -84,7 +87,7 @@ export function RangeCalendar<T extends DateValue>({
             </CalendarCell>
           )}
         </CalendarGridBody>
-      </CalendarGrid>
+      </LocaleCalendarGrid>
       {errorMessage ? (
         <Text className={error()} render={<AriaText slot="errorMessage" />}>
           {errorMessage}

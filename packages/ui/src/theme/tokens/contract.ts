@@ -143,21 +143,14 @@ export const MUST_OVERRIDE_EXTERNAL = [
 
 export const MUST_OVERRIDE_INTERNAL = ["brand", "brand-foreground"] as const;
 
-export type MustOverrideKey =
-  | (typeof MUST_OVERRIDE_EXTERNAL)[number]
-  | (typeof MUST_OVERRIDE_INTERNAL)[number];
-
-export function pickTokenKeys<const Keys extends readonly TokenName[]>(
-  tokens: TokenContract,
-  keys: Keys
-): Pick<TokenContract, Keys[number]> {
-  const picked: Partial<TokenContract> = {};
-  for (const key of keys) {
-    picked[key] = tokens[key];
-  }
-  // SAFETY: every key in `keys` was copied from `tokens`, so the pick is complete.
-  return picked as Pick<TokenContract, Keys[number]>;
-}
+/**
+ * The roles every dark palette must override. Geometry and typography (`radius`,
+ * `radius-button`, `font-heading`) intentionally keep their light values, so they are the
+ * only `EXTERNAL_RESET_KEYS` entries a dark palette need not supply.
+ */
+export const MUST_OVERRIDE_DARK = EXTERNAL_RESET_KEYS.filter(
+  (key) => key !== "radius" && key !== "radius-button" && key !== "font-heading"
+);
 
 export function assignedTokenNames(layer: Partial<TokenContract>): TokenName[] {
   const names: TokenName[] = [];

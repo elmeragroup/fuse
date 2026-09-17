@@ -13,78 +13,6 @@
       "forwardedCount": 271,
       "props": [
         {
-          "name": "children",
-          "origin": "declared",
-          "type": "ReactNode",
-          "shortType": null,
-          "defaultValue": null,
-          "description": "Extra content below the description, inside the label.",
-          "required": false
-        },
-        {
-          "name": "description",
-          "origin": "declared",
-          "type": "string",
-          "shortType": null,
-          "defaultValue": null,
-          "description": "Supporting line under the title (`text-sm text-pretty`).",
-          "required": true
-        },
-        {
-          "name": "isDisabled",
-          "origin": "declared",
-          "type": "boolean | undefined",
-          "shortType": null,
-          "defaultValue": null,
-          "description": "Applies `opacity-75` on the card and `disabled` on the checkbox primitive. Primitive `disabled` is omitted from the pass-through.",
-          "required": false
-        },
-        {
-          "name": "rightContent",
-          "origin": "declared",
-          "type": "ReactNode",
-          "shortType": null,
-          "defaultValue": null,
-          "description": "Trailing slot outside the label — clicks there do not toggle the checkbox.",
-          "required": false
-        },
-        {
-          "name": "tags",
-          "origin": "declared",
-          "type": "string[] | undefined",
-          "shortType": null,
-          "defaultValue": null,
-          "description": "Badge chips above the title. The row is omitted when `tags` is empty or absent.",
-          "required": false
-        },
-        {
-          "name": "title",
-          "origin": "declared",
-          "type": "ReactNode",
-          "shortType": null,
-          "defaultValue": null,
-          "description": "Visible title. The native string `title` attribute is omitted so this `ReactNode` is not narrowed to `string`.",
-          "required": true
-        },
-        {
-          "name": "value",
-          "origin": "declared",
-          "type": "string | undefined",
-          "shortType": null,
-          "defaultValue": null,
-          "description": "The checkbox's value. Identifies it within a [Checkbox Group](https://base-ui.com/react/components/checkbox-group), falling back to `name` when omitted. When submitting a form, a checked box submits `value`; with no `value`, it submits the native \"on\". Checkbox group membership value.",
-          "required": false
-        },
-        {
-          "name": "variant",
-          "origin": "recipe-axis",
-          "type": "\"default\" | \"muted\" | undefined",
-          "shortType": "Union",
-          "defaultValue": "\"default\"",
-          "description": "",
-          "required": false
-        },
-        {
           "name": "checked",
           "origin": {
             "packageName": "@base-ui/react"
@@ -93,6 +21,15 @@
           "shortType": null,
           "defaultValue": "undefined",
           "description": "Whether the checkbox is currently ticked. To render an uncontrolled checkbox, use the `defaultChecked` prop instead.",
+          "required": false
+        },
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra content below the description, inside the label.",
           "required": false
         },
         {
@@ -105,6 +42,15 @@
           "defaultValue": "false",
           "description": "Whether the checkbox is initially ticked. To render a controlled checkbox, use the `checked` prop instead.",
           "required": false
+        },
+        {
+          "name": "description",
+          "origin": "declared",
+          "type": "string",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Supporting line under the title (`text-sm text-pretty`).",
+          "required": true
         },
         {
           "name": "form",
@@ -148,6 +94,15 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "A ref to access the hidden `<input>` element.",
+          "required": false
+        },
+        {
+          "name": "isDisabled",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Applies `opacity-75` on the card and `disabled` on the checkbox primitive. Primitive `disabled` is omitted from the pass-through.",
           "required": false
         },
         {
@@ -217,6 +172,15 @@
           "required": false
         },
         {
+          "name": "rightContent",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Trailing slot outside the label — clicks there do not toggle the checkbox.",
+          "required": false
+        },
+        {
           "name": "style",
           "origin": {
             "packageName": "@base-ui/react"
@@ -228,6 +192,24 @@
           "required": false
         },
         {
+          "name": "tags",
+          "origin": "declared",
+          "type": "string[] | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Badge chips above the title. The row is omitted when `tags` is empty or absent.",
+          "required": false
+        },
+        {
+          "name": "title",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Visible title. The native string `title` attribute is omitted so this `ReactNode` is not narrowed to `string`.",
+          "required": true
+        },
+        {
           "name": "uncheckedValue",
           "origin": {
             "packageName": "@base-ui/react"
@@ -236,6 +218,24 @@
           "shortType": null,
           "defaultValue": null,
           "description": "The value submitted with the form when the checkbox is unchecked. By default, unchecked checkboxes do not submit any value, matching native checkbox behavior.",
+          "required": false
+        },
+        {
+          "name": "value",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The checkbox's value. Identifies it within a [Checkbox Group](https://base-ui.com/react/components/checkbox-group), falling back to `name` when omitted. When submitting a form, a checked box submits `value`; with no `value`, it submits the native \"on\". Checkbox group membership value.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "recipe-axis",
+          "type": "\"default\" | \"muted\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "",
           "required": false
         }
       ]

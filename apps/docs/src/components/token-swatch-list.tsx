@@ -16,10 +16,10 @@ export type TokenSwatchListProps = {
 const tokenSwatchList = tv({
   slots: {
     list: "not-prose m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(190px,1fr))] gap-[0.35rem_1rem] p-0",
-    item: "[&_code]:font-docs-mono [&_code]:text-docs-ink flex min-w-0 items-center gap-2 [&_code]:overflow-hidden [&_code]:text-[11.5px] [&_code]:text-ellipsis [&_code]:whitespace-nowrap",
-    swatch: "border-docs-ink/18 size-[0.85rem] flex-none rounded-[3px] border",
+    item: "[&_code]:text-xs flex min-w-0 items-center gap-2 [&_code]:overflow-hidden [&_code]:font-mono [&_code]:text-ellipsis [&_code]:whitespace-nowrap [&_code]:text-foreground",
+    swatch: "size-[0.85rem] flex-none rounded-md border border-foreground/18",
     swatchEmpty:
-      "border-docs-ink/18 size-[0.85rem] flex-none rounded-[3px] border bg-[repeating-linear-gradient(45deg,transparent,transparent_3px,color-mix(in_oklab,var(--color-docs-ink)_14%,transparent)_3px,color-mix(in_oklab,var(--color-docs-ink)_14%,transparent)_6px)]",
+      "size-[0.85rem] flex-none rounded-md border border-foreground/18 bg-[repeating-linear-gradient(45deg,transparent,transparent_3px,color-mix(in_oklab,var(--foreground)_14%,transparent)_3px,color-mix(in_oklab,var(--foreground)_14%,transparent)_6px)]",
   },
 });
 

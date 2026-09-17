@@ -1,25 +1,9 @@
-import { chromium } from "playwright";
-import type { Browser, Locator, Page } from "playwright";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import type { Locator, Page } from "playwright";
+import { describe, expect, it } from "vitest";
 
-import { docsBaseUrl } from "./docs-server";
+import { DESKTOP_VIEWPORT, launchSuiteBrowser, openDemo } from "./demo-page";
 
-let browser: Browser;
-
-beforeAll(async () => {
-  browser = await chromium.launch({ headless: true });
-});
-
-afterAll(async () => {
-  await browser.close();
-});
-
-async function openComponentPage(page: Page, slug: string): Promise<Locator> {
-  await page.setViewportSize({ width: 1280, height: 720 });
-  await page.goto(`${docsBaseUrl()}/components/${slug}`, { waitUntil: "load" });
-  await page.getByRole("heading", { name: "Item group", exact: true }).waitFor();
-  return page.getByRole("region", { name: "Item group" });
-}
+const browser = launchSuiteBrowser();
 
 async function hasInertAncestor(locator: Locator): Promise<boolean> {
   return locator.evaluate((el) => {
@@ -62,8 +46,8 @@ async function proveHiddenCopyIsBlocked(page: Page, extra: Locator): Promise<voi
 
 describe("Selection-family item-group demos", () => {
   it("hides the CheckboxItemGroup Fixed-price subsection behind inert after unchecking", async () => {
-    const page = await browser.newPage();
-    const demo = await openComponentPage(page, "checkbox");
+    const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT });
+    const demo = await openDemo(page, "checkbox", "Item group");
     const group = demo.getByRole("group", { name: "Price plans" });
     const extra = group.getByRole("region", { name: "Fixed price details", exact: true });
     const fixed = group.getByRole("checkbox", { name: "Fixed price" });
@@ -88,8 +72,8 @@ describe("Selection-family item-group demos", () => {
   });
 
   it("hides the RadioItemGroup Fixed-price subsection behind inert after choosing Spot", async () => {
-    const page = await browser.newPage();
-    const demo = await openComponentPage(page, "radio-group");
+    const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT });
+    const demo = await openDemo(page, "radio-group", "Item group");
     const group = demo.getByRole("radiogroup", { name: "Price plans" });
     const extra = group.getByRole("region", { name: "Fixed price details", exact: true });
     const fixed = group.getByRole("radio", { name: "Fixed price" });

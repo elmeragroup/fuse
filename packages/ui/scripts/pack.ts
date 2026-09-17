@@ -1,23 +1,19 @@
-import { spawnSync } from "node:child_process";
 import { mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
 import { packageRootFromScript } from "./paths.ts";
+import { runCommand } from "./run-command.ts";
 import { ARTIFACTS_DIR, findTarball } from "./tarball.ts";
 
-const packageRoot = packageRootFromScript(import.meta.url);
-const dist = join(packageRoot, "dist");
-const artifacts = join(packageRoot, ARTIFACTS_DIR);
-
-rmSync(artifacts, { recursive: true, force: true });
-mkdirSync(artifacts, { recursive: true });
-
-const packed = spawnSync("pnpm", ["pack", "--pack-destination", artifacts], {
-  cwd: dist,
-  stdio: "inherit",
-});
-if (packed.status !== 0) {
-  process.exit(packed.status ?? 1);
+/** Packs `dist/` into a fresh `.artifacts/` directory and returns the tarball path. */
+export function packTarball(packageRoot: string): string {
+  const artifacts = join(packageRoot, ARTIFACTS_DIR);
+  rmSync(artifacts, { recursive: true, force: true });
+  mkdirSync(artifacts, { recursive: true });
+  runCommand("pnpm", ["pack", "--pack-destination", artifacts], join(packageRoot, "dist"));
+  return findTarball(packageRoot);
 }
 
-findTarball(packageRoot);
+if (import.meta.main) {
+  packTarball(packageRootFromScript(import.meta.url));
+}

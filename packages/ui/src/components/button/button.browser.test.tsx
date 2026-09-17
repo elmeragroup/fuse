@@ -74,22 +74,43 @@ describe("Button", () => {
     const other = page.getByRole("button", { name: "Other" }).element();
     const button = roleNamed("button", "Looks off");
 
-    await expect.element(page.getByRole("button", { name: "Looks off" })).not.toBeDisabled();
+    // `aria-disabled` reads as disabled to assistive tech (and to Playwright's enabled
+    // check) while the native `disabled` attribute stays off, so the button still works.
+    await expect
+      .element(page.getByRole("button", { name: "Looks off" }))
+      .toHaveAttribute("aria-disabled", "true");
     expect(Number.parseFloat(getComputedStyle(button).opacity)).toBeCloseTo(0.7);
     expect(button.hasAttribute("disabled")).toBe(false);
-    expect(button.getAttribute("aria-disabled")).toBeNull();
 
     other.focus();
     button.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true }));
     expect(document.activeElement).toBe(other);
     expect(onMouseDown).toHaveBeenCalledTimes(1);
 
-    await userEvent.click(page.getByRole("button", { name: "Looks off" }));
+    // Playwright's actionability check reads `aria-disabled` as disabled, like assistive
+    // tech does; the native click still works, so the test forces through the check.
+    await userEvent.click(page.getByRole("button", { name: "Looks off" }), { force: true });
     expect(onClick).toHaveBeenCalledTimes(1);
 
     button.focus();
     await userEvent.keyboard("{Enter}");
     expect(onClick).toHaveBeenCalledTimes(2);
+  });
+
+  it("stamps aria-disabled for isVisuallyDisabled and lets an explicit value win", () => {
+    renderThemed(
+      <>
+        <Button isVisuallyDisabled>Visual</Button>
+        <Button isVisuallyDisabled aria-disabled="false">
+          Explicit
+        </Button>
+        <Button aria-disabled="true">Plain</Button>
+      </>
+    );
+
+    expect(roleNamed("button", "Visual").getAttribute("aria-disabled")).toBe("true");
+    expect(roleNamed("button", "Explicit").getAttribute("aria-disabled")).toBe("false");
+    expect(roleNamed("button", "Plain").getAttribute("aria-disabled")).toBe("true");
   });
 
   it("forwards a predicted path to onIntent only while live: not disabled, pending, or visually disabled", () => {

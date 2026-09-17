@@ -1,11 +1,9 @@
 import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { asRecord, asRecordArray, asString, isString, readJsonObject } from "./json-object.mjs";
-
-const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
+import { repoRoot } from "./workflow.mjs";
 
 /**
  * @param {Record<string, unknown>} override

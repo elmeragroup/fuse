@@ -512,6 +512,34 @@ describe("DateRangePicker overlay containment", () => {
 });
 
 describe("DateRangePicker density metrics", () => {
+  it("keeps both dates and the trigger inside a narrow container at both densities", async () => {
+    renderPicker(
+      <div style={{ width: 240 }}>
+        <DateRangePicker label="Narrow range" defaultValue={julyWeek} />
+      </div>
+    );
+    for (const density of ["dense", "comfortable"] as const) {
+      stampDensity(density);
+      const group = groupNamed("Narrow range");
+      const bounds = group.getBoundingClientRect();
+      expect(bounds.width).toBeLessThanOrEqual(240);
+      for (const part of [...segmentRows("Narrow range"), trigger()]) {
+        const rect = part.getBoundingClientRect();
+        expect(rect.left).toBeGreaterThanOrEqual(bounds.left);
+        expect(rect.right).toBeLessThanOrEqual(bounds.right);
+        expect(rect.bottom).toBeLessThanOrEqual(bounds.bottom);
+      }
+      const [start, end] = segmentRows("Narrow range");
+      if (!start || !end) throw new Error("expected both dates");
+      expect(end.getBoundingClientRect().top).toBeGreaterThan(start.getBoundingClientRect().top);
+    }
+    await userEvent.click(segmentNamed("day, Start Date"));
+    await userEvent.keyboard("{ArrowUp}");
+    expect(segmentNamed("day, Start Date").getAttribute("aria-valuenow")).toBe("15");
+    await userEvent.click(trigger());
+    await expect.element(page.getByRole("dialog")).toBeVisible();
+    await userEvent.keyboard("{Escape}");
+  });
   it("pins the field box to the signed md rung at both densities and does not rescope", () => {
     const { rerender } = renderPicker(<DateRangePicker label="Meter" defaultValue={julyWeek} />);
     for (const density of ["dense", "comfortable"] as const) {
@@ -572,7 +600,8 @@ describe("DateRangePicker composition surface", () => {
     }
 
     expect(px(getComputedStyle(group).width)).toBeGreaterThanOrEqual(208);
-    // The end row carries `flex-1`, so it is the wider of two identically formatted rows.
+    // Only the wide template's end column grows, so the end row is the wider of two
+    // identically formatted rows.
     expect(px(getComputedStyle(endRow).width)).toBeGreaterThan(px(getComputedStyle(startRow).width));
   });
 

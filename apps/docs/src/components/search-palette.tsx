@@ -6,25 +6,25 @@ import type { ChangeEvent, KeyboardEvent, ReactElement } from "react";
 import { useRouter } from "next/navigation";
 import { tv } from "tailwind-variants";
 
+import { Button } from "@elmeragroup/ui/button";
 import { Dialog } from "@elmeragroup/ui/dialog";
 
 import { matchSearchEntries } from "../lib/search";
 
 const searchPalette = tv({
   slots: {
-    trigger:
-      "border-docs-line bg-docs-soft font-docs-mono font-medium text-docs-sub hover:text-docs-ink focus-visible:outline-docs-ink inline-flex min-h-[26px] cursor-pointer items-center gap-2 rounded-[6px] border p-[4px_8px] text-[11.5px] focus-visible:outline-2 focus-visible:outline-offset-2",
-    keys: "text-docs-sub [font:inherit]",
+    trigger: "font-mono",
+    keys: "text-muted-foreground [font:inherit]",
     palette:
-      "font-docs-sans top-[10vh] block w-[min(34rem,calc(100vw_-_2rem))] translate-y-0 gap-0 overflow-hidden p-0",
+      "top-[10vh] block w-[min(34rem,calc(100vw_-_2rem))] translate-y-0 gap-0 overflow-hidden p-0 font-sans",
     input:
-      "border-docs-line text-docs-ink placeholder:text-docs-sub block w-full border-0 border-b bg-transparent p-[0.9rem_1rem] text-[0.95rem] focus:outline-none",
+      "text-base block w-full border-0 border-b border-border bg-transparent p-[0.9rem_1rem] text-foreground placeholder:text-muted-foreground focus:outline-none",
     results: "m-0 max-h-[22rem] list-none overflow-y-auto p-[0.35rem]",
     option:
-      "text-docs-sub data-active:bg-docs-soft data-active:text-docs-ink flex cursor-pointer items-baseline justify-between gap-4 rounded-[6px] p-[0.4rem_0.65rem] text-[0.85rem]",
-    optionTitle: "font-medium text-docs-ink",
-    optionGroup: "font-docs-mono font-medium text-docs-sub text-[11px]",
-    empty: "text-docs-sub m-0 p-4 text-[0.85rem]",
+      "text-sm flex cursor-pointer items-baseline justify-between gap-4 rounded-lg p-[0.4rem_0.65rem] text-muted-foreground data-active:bg-accent data-active:text-accent-foreground",
+    optionTitle: "font-medium text-foreground",
+    optionGroup: "font-medium text-xs font-mono text-muted-foreground",
+    empty: "text-sm m-0 p-4 text-muted-foreground",
   },
 });
 
@@ -164,15 +164,17 @@ export function SearchPalette(): ReactElement {
 
   return (
     <>
-      <button
+      <Button
         ref={triggerRef}
         type="button"
+        size="sm"
+        variant="ghost"
         className={trigger()}
         aria-keyshortcuts="Meta+K Control+K"
         onClick={openPalette}>
         <span>Search</span>
         <kbd className={keys()}>⌘K</kbd>
-      </button>
+      </Button>
       <Dialog.Root
         open={open}
         onOpenChange={(nextOpen) => {

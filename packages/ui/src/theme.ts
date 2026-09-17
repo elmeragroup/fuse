@@ -6,6 +6,7 @@ export type {
   ColorSchemeScriptProps,
   UseColorSchemeResult,
 } from "./theme/color-scheme";
+export { COLOR_SCHEMES } from "./theme/color-scheme-types";
 export { ElmeraGroupUiProvider, useElmeraGroupUi } from "./theme/elmera-group-ui";
 export type {
   ElmeraGroupUiContextValue,

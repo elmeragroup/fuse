@@ -1,8 +1,7 @@
 ---
 title: Span
 lede: >
-  Inline copy. A forced `span` styled by the public `spanVariants` recipe — no RAC, no
-  `elementType`, polymorphic only through `render`.
+  Inline text.
 ---
 
 import { SpanBasic } from "./demos/span-basic";
@@ -15,20 +14,6 @@ import { componentMetadata } from "../../../../lib/component-page";
 export const metadata = componentMetadata("span");
 
 <ComponentIntro slug="span" />
-
-<Prose>
-
-Span is the inline sibling of Text: the same recipe surface, with `leading` defaulting to
-`snug` instead of `relaxed`. `spanVariants` is public from this entry and extends
-`textVariants` — it does not redeclare colour or align maps. `align` is a first-class prop
-(`left`, `center`, `right`, `justify`). `weight="bold"` renders `font-medium`, matching
-the inherited body-copy cap.
-
-There is no `elementType` prop: the host is always a `span` unless `render` replaces it.
-The RAC `slot` prop is gone. Description labelling now comes from the field family's own
-Description part.
-
-</Prose>
 
 <Demo slug="span" id="basic" title="Basic" file="span-basic.tsx">
   <SpanBasic />

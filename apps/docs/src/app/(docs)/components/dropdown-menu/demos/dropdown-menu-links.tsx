@@ -14,10 +14,12 @@ export function DropdownMenuLinks() {
     <DropdownMenu.Root>
       <DropdownMenu.Trigger render={<Button variant="outline" />}>Navigate</DropdownMenu.Trigger>
       <DropdownMenu.Content>
-        <DropdownMenu.Label>Pages</DropdownMenu.Label>
-        <DropdownMenu.LinkItem href="/profile">Profile</DropdownMenu.LinkItem>
-        <DropdownMenu.LinkItem render={<Link href="/settings" />}>Settings</DropdownMenu.LinkItem>
-        <DropdownMenu.LinkItem render={<Link href="/billing" />}>Billing</DropdownMenu.LinkItem>
+        <DropdownMenu.Group>
+          <DropdownMenu.Label>Pages</DropdownMenu.Label>
+          <DropdownMenu.LinkItem href="/profile">Profile</DropdownMenu.LinkItem>
+          <DropdownMenu.LinkItem render={<Link href="/settings" />}>Settings</DropdownMenu.LinkItem>
+          <DropdownMenu.LinkItem render={<Link href="/billing" />}>Billing</DropdownMenu.LinkItem>
+        </DropdownMenu.Group>
       </DropdownMenu.Content>
     </DropdownMenu.Root>
   );

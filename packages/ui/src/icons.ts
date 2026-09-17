@@ -94,6 +94,7 @@ export { ShoppingCart } from "./icons/generated/shopping-cart";
 export { Sidebar } from "./icons/generated/sidebar";
 export { SidebarSimple } from "./icons/generated/sidebar-simple";
 export { SignOut } from "./icons/generated/sign-out";
+export { SlidersHorizontal } from "./icons/generated/sliders-horizontal";
 export { SpinnerGap } from "./icons/generated/spinner-gap";
 export { Stack } from "./icons/generated/stack";
 export { Star } from "./icons/generated/star";

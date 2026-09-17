@@ -1,6 +1,10 @@
 import type { ScriptHTMLAttributes } from "react";
 
-export type ColorScheme = "light" | "dark" | "system";
+import { COLOR_SCHEMES } from "./color-scheme-types";
+import type { ColorScheme, ResolvedColorScheme } from "./color-scheme-types";
+
+// Types live in ./color-scheme-types so the Node-only scripts program never pulls in this DOM module.
+export type { ColorScheme, ResolvedColorScheme } from "./color-scheme-types";
 
 export const COLOR_SCHEME_BOOTSTRAP_MANIFEST_KEY = "__ELMERA_COLOR_SCHEME_BOOTSTRAP__";
 export const COLOR_SCHEME_BOOTSTRAP_SOURCE_DESCRIPTION = "elmera.colorScheme.bootstrapSource";
@@ -40,7 +44,7 @@ export type ColorSchemeScriptProps = ColorSchemeOptions & {
 
 export type UseColorSchemeResult = {
   colorScheme: ColorScheme;
-  resolvedColorScheme: "light" | "dark" | undefined;
+  resolvedColorScheme: ResolvedColorScheme | undefined;
   setColorScheme: (value: ColorScheme) => void;
 };
 
@@ -48,11 +52,8 @@ export const DEFAULT_COLOR_SCHEME_STORAGE_KEY = "elmera-color-scheme";
 export const DEFAULT_COLOR_SCHEME: ColorScheme = "system";
 export const DEFAULT_ENABLE_SYSTEM = true;
 
-export function closedColorScheme(value: string | null | undefined): ColorScheme | undefined {
-  if (value === "light" || value === "dark" || value === "system") {
-    return value;
-  }
-  return undefined;
+function closedColorScheme(value: string | null | undefined): ColorScheme | undefined {
+  return COLOR_SCHEMES.find((scheme) => scheme === value);
 }
 
 export function resolveColorSchemeOptions({
@@ -97,13 +98,10 @@ export function serializeScriptData(value: string | boolean): string {
 }
 
 export function parseColorScheme(value: string | null | undefined, fallback: ColorScheme): ColorScheme {
-  if (value === "light" || value === "dark" || value === "system") {
-    return value;
-  }
-  return fallback;
+  return closedColorScheme(value) ?? fallback;
 }
 
-export function resolveSystemColorScheme(): "light" | "dark" {
+export function resolveSystemColorScheme(): ResolvedColorScheme {
   try {
     return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   } catch {
@@ -111,7 +109,7 @@ export function resolveSystemColorScheme(): "light" | "dark" {
   }
 }
 
-export function resolveColorScheme(preference: ColorScheme, enableSystem: boolean): "light" | "dark" {
+export function resolveColorScheme(preference: ColorScheme, enableSystem: boolean): ResolvedColorScheme {
   if (preference === "light" || preference === "dark") {
     return preference;
   }
@@ -161,7 +159,7 @@ export function writeStoredColorScheme(storageKey: string, value: ColorScheme): 
   });
 }
 
-export function readDocumentColorScheme(): "light" | "dark" | undefined {
+export function readDocumentColorScheme(): ResolvedColorScheme | undefined {
   try {
     const value = document.documentElement.getAttribute("data-theme");
     if (value === "light" || value === "dark") {
@@ -173,7 +171,7 @@ export function readDocumentColorScheme(): "light" | "dark" | undefined {
   }
 }
 
-export function writeDocumentColorScheme(value: "light" | "dark"): void {
+export function writeDocumentColorScheme(value: ResolvedColorScheme): void {
   try {
     document.documentElement.setAttribute("data-theme", value);
   } catch {

@@ -1,8 +1,7 @@
 ---
 title: Skeleton
 lede: >
-  A shape-only loading placeholder. A single server `div` with no intrinsic size —
-  consumers size it with `className` to match the content it stands in for.
+  A placeholder shape shown while content loads.
 ---
 
 import { SkeletonBasic } from "./demos/skeleton-basic";
@@ -16,8 +15,7 @@ export const metadata = componentMetadata("skeleton");
 
 <Prose>
 
-It is decorative: no role, no text, no keyboard behavior. The component emits
-`aria-hidden="true"`; set `aria-busy` on the region being loaded.
+The skeleton is hidden from screen readers; mark the region that is loading with `aria-busy`.
 
 </Prose>
 

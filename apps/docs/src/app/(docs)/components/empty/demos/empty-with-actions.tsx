@@ -1,10 +1,31 @@
 "use client";
 
+import { useState } from "react";
+
 import { Button } from "@elmeragroup/ui/button";
 import { Empty } from "@elmeragroup/ui/empty";
 import { Tray } from "@elmeragroup/ui/icons";
 
+/** Replaces the empty state with local sample orders and supports reset. */
 export function EmptyWithActions() {
+  const [orders, setOrders] = useState<string[]>([]);
+  if (orders.length > 0) {
+    return (
+      <div className="flex flex-col gap-3">
+        <p role="status">
+          {orders.length} sample {orders.length === 1 ? "order" : "orders"} added.
+        </p>
+        <ul>
+          {orders.map((order) => (
+            <li key={order}>{order}</li>
+          ))}
+        </ul>
+        <Button variant="outline" size="sm" className="self-start" onClick={() => setOrders([])}>
+          Reset example
+        </Button>
+      </div>
+    );
+  }
   return (
     <Empty.Root>
       <Empty.Header>
@@ -15,8 +36,10 @@ export function EmptyWithActions() {
         <Empty.Description>Orders you create will show up here.</Empty.Description>
       </Empty.Header>
       <Empty.Content>
-        <Button>Create order</Button>
-        <Button variant="secondary">Import orders</Button>
+        <Button onClick={() => setOrders(["Sample order 1001"])}>Create order</Button>
+        <Button variant="secondary" onClick={() => setOrders(["Sample order 1001", "Sample order 1002"])}>
+          Import orders
+        </Button>
       </Empty.Content>
     </Empty.Root>
   );

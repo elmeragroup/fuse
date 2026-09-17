@@ -1,8 +1,14 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Node } from "typescript/unstable/ast";
-import { isCallExpression, isIdentifier, isTemplateExpression } from "typescript/unstable/ast/is";
+import {
+  isCallExpression,
+  isIdentifier,
+  isStringLiteral,
+  isTemplateExpression,
+} from "typescript/unstable/ast/is";
 import { createVirtualFileSystem } from "typescript/unstable/fs";
 import { API } from "typescript/unstable/sync";
 import { describe, expect, it } from "vitest";
@@ -41,7 +47,7 @@ function srcTsFiles(): string[] {
 }
 
 /** Parse only the supplied sources; no library project or type checking is needed. */
-function recipeInterpolationFailures(sources: readonly { file: string; source: string }[]): string[] {
+function recipeSlotFailures(sources: readonly { file: string; source: string }[]): string[] {
   const root = "/docs-recipe-check";
   const config = `${root}/tsconfig.json`;
   const inputs = sources.map((entry, index) => ({ ...entry, virtualFile: `${root}/${String(index)}.tsx` }));
@@ -64,6 +70,9 @@ function recipeInterpolationFailures(sources: readonly { file: string; source: s
       const failures: string[] = [];
       function inspectRecipe(node: Node): void {
         if (isTemplateExpression(node)) failures.push(`${file}: ${source.slice(node.pos, node.end).trim()}`);
+        // A slot string carries utilities only; a leading PascalCase token is a marker class name.
+        if (isStringLiteral(node) && /^[A-Z][a-z]/.test(node.text))
+          failures.push(`${file}: marker class ${node.text}`);
         node.forEachChild(inspectRecipe);
       }
       function visit(node: Node): void {
@@ -84,8 +93,25 @@ function recipeInterpolationFailures(sources: readonly { file: string; source: s
 const EXPORTED_CLASS_NAME = /export\s+(?:const|function|type|class)\s+\w*ClassName\b/;
 const EXPORTED_TV_RECIPE = /export\s+const\s+\w+\s*=\s*tv\s*\(/;
 
+/**
+ * The utilities the docs migration retired, plus forced light/dark schemes. Neither is a
+ * lint rule, and oxlint never lints MDX, so this test is their only guard there.
+ */
+const RETIRED_DOCS_UTILITY =
+  /(?:bg|text|border|outline|ring|fill|stroke|font)-docs-(?:ink|body|sub|line|soft|code|required|rsc|sans|mono)\b|\bscheme-(?:light|dark)\b/;
+
+/**
+ * The palette utilities `elmera/no-primitive-colors` rejects. The rule guards TS/TSX at
+ * lint time; oxlint never lints MDX, so this mirror is the MDX-only guard's vocabulary.
+ * It tracks the rule's `TOKEN_RE` prefixes and `TAILWIND_COLOR_FAMILIES` table, and a
+ * rule change that adds a family or utility must update this table in the same step.
+ * `@elmeragroup/internal` does not export the vocabulary, so it is hand-maintained.
+ */
+const PRIMITIVE_PALETTE_UTILITY =
+  /(?:(?:bg|border|text|ring(?:-offset)?|fill|stroke|placeholder|caret|accent|decoration|divide|outline|from|via|to))-(?:red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|slate|gray|zinc|neutral|stone|black|white)(?:-\d{2,3})?\b/;
+
 describe("docs Tailwind migration contract", () => {
-  it("keeps globals.css as the Tailwind entry with DemoStage as the density hook", () => {
+  it("keeps globals.css as the Tailwind entry with the library and demo-stage imports", () => {
     const globals = readFileSync(join(docsRoot, "src/styles/globals.css"), "utf8");
     expect(globals).toContain('@import "tailwindcss";');
     expect(globals).toContain('@import "@elmeragroup/ui/css";');
@@ -95,9 +121,6 @@ describe("docs Tailwind migration contract", () => {
     expect(globals).toContain('@source "../../src";');
     expect(globals).not.toContain("@apply");
     expect(globals).not.toMatch(/--control-/);
-
-    const demoStage = readFileSync(join(docsRoot, "src/components/demo-stage.tsx"), "utf8");
-    expect(demoStage).toContain('"DemoStage ');
   });
 
   it("registers the Typography plugin and a docs prose theme after the Tailwind import", () => {
@@ -110,7 +133,33 @@ describe("docs Tailwind migration contract", () => {
     expect(plugin).toBeGreaterThan(tailwindImport);
     expect(utility).toBeGreaterThan(plugin);
     expect(globals).toContain("--tw-prose-");
-    expect(globals).toContain("--font-docs-mono");
+    expect(globals).toContain("--font-mono");
+    expect(globals).toContain("--tw-prose-body: var(--foreground)");
+    expect(globals).toContain("--tw-prose-pre-bg: var(--card)");
+    expect(globals).not.toMatch(/--(?:color|font)-docs-/);
+  });
+
+  it("keeps route and shared-component utilities on the library theme", () => {
+    const inScope = (file: string): boolean =>
+      file.startsWith("src/app/(docs)/") || file.startsWith("src/components/");
+    const mdxFiles = collectFiles(join(docsRoot, "src/app/(docs)"), "src/app/(docs)", ".mdx").filter(inScope);
+    const failures = [
+      // `elmera/no-primitive-colors` owns Tailwind palette utilities and arbitrary colour
+      // literals in `apps/docs/src/**/*.{ts,tsx}` at lint time. This test owns the gaps
+      // lint cannot see: the retired `-docs-*` names in TS/TSX and MDX, and `scheme-*` plus
+      // the palette utilities in MDX, which oxlint does not lint. The mirror above carries
+      // the palette vocabulary.
+      ...srcTsFiles()
+        .filter(inScope)
+        .flatMap((file) =>
+          RETIRED_DOCS_UTILITY.test(readFileSync(join(docsRoot, file), "utf8")) ? [file] : []
+        ),
+      ...mdxFiles.flatMap((file) => {
+        const source = readFileSync(join(docsRoot, file), "utf8");
+        return RETIRED_DOCS_UTILITY.test(source) || PRIMITIVE_PALETTE_UTILITY.test(source) ? [file] : [];
+      }),
+    ];
+    expect(failures).toEqual([]);
   });
 
   it("owns exactly one stylesheet under src", () => {
@@ -154,14 +203,14 @@ describe("docs Tailwind migration contract", () => {
     const sources = srcTsFiles()
       .filter((relative) => relative.startsWith("src/components/"))
       .map((file) => ({ file, source: readFileSync(join(docsRoot, file), "utf8") }));
-    expect(recipeInterpolationFailures(sources)).toEqual([]);
+    expect(recipeSlotFailures(sources)).toEqual([]);
   });
 });
 
 describe("recipe interpolation guard", () => {
   it("allows static recipes alongside interpolated labels and unrelated API constants", () => {
     expect(
-      recipeInterpolationFailures([
+      recipeSlotFailures([
         {
           file: "valid.tsx",
           source: [
@@ -179,7 +228,7 @@ describe("recipe interpolation guard", () => {
     "tv({ slots: { root: `bg-${state.color}` } })",
     "tv({ variants: { active: { true: `text-${getColor()}` } } })",
   ])("rejects interpolated recipe utilities: %s", (source) => {
-    expect(recipeInterpolationFailures([{ file: "invalid.tsx", source }])).toHaveLength(1);
+    expect(recipeSlotFailures([{ file: "invalid.tsx", source }])).toHaveLength(1);
   });
 });
 
@@ -212,8 +261,10 @@ describe("docs component CSS variables", () => {
   it("references only defined custom properties", () => {
     const globals = readFileSync(join(docsRoot, "src/styles/globals.css"), "utf8");
     const uiCss = readFileSync(join(workspaceRoot, "packages/ui/src/styles/ui.css"), "utf8");
+    // The role vocabulary comes from the sheet the app actually imports, not from the
+    // library's vitest snapshot: `turbo test` builds `@elmeragroup/ui` first.
     const themesCss = readFileSync(
-      join(workspaceRoot, "packages/ui/src/theme/__snapshots__/themes.css"),
+      createRequire(import.meta.url).resolve("@elmeragroup/ui/themes.css"),
       "utf8"
     );
     const defined = new Set([

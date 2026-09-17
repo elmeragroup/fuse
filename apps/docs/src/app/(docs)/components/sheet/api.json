@@ -12,24 +12,6 @@
       "forwardedCount": 0,
       "props": [
         {
-          "name": "children",
-          "origin": "declared",
-          "type": "ReactNode",
-          "shortType": null,
-          "defaultValue": null,
-          "description": "Contents of the sheet. Rendered inside `VirtualKeyboardProvider` so the panel stays usable when the on-screen keyboard opens.",
-          "required": false
-        },
-        {
-          "name": "side",
-          "origin": "declared",
-          "type": "\"bottom\" | \"left\" | \"right\" | \"top\" | undefined",
-          "shortType": "Union",
-          "defaultValue": "\"right\"",
-          "description": "Edge the panel anchors to. Also selects the swipe-to-dismiss direction (`top` → up, `right` → right, `bottom` → down, `left` → left).",
-          "required": false
-        },
-        {
           "name": "actionsRef",
           "origin": {
             "packageName": "@base-ui/react"
@@ -38,6 +20,15 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "A ref to imperative actions. - `unmount`: Manually unmounts the drawer. Call this after any externally controlled closing animation finishes. - `close`: Closes the drawer imperatively when called.",
+          "required": false
+        },
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Contents of the sheet. Rendered inside `VirtualKeyboardProvider` so the panel stays usable when the on-screen keyboard opens.",
           "required": false
         },
         {
@@ -148,6 +139,15 @@
           "shortType": null,
           "defaultValue": null,
           "description": "Whether the drawer is currently open.",
+          "required": false
+        },
+        {
+          "name": "side",
+          "origin": "declared",
+          "type": "\"bottom\" | \"left\" | \"right\" | \"top\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"right\"",
+          "description": "Edge the panel anchors to. Also selects the swipe-to-dismiss direction (`top` → up, `right` → right, `bottom` → down, `left` → left).",
           "required": false
         },
         {
@@ -475,6 +475,17 @@
       "forwardedCount": 275,
       "props": [
         {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: DrawerPopupState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
           "name": "closeLabel",
           "origin": "declared",
           "type": "string | undefined",
@@ -490,35 +501,6 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "Portal target for this overlay. Defaults to the nearest enclosing `ThemeScope` element, so it never escapes the theme that opened it.",
-          "required": false
-        },
-        {
-          "name": "showCloseButton",
-          "origin": "declared",
-          "type": "boolean | undefined",
-          "shortType": null,
-          "defaultValue": "true",
-          "description": "Renders the built-in corner dismiss affordance — the shared overlay close helper (`Button variant=\"ghost\" size=\"icon-sm\"`) as a `Sheet.Close`.",
-          "required": false
-        },
-        {
-          "name": "size",
-          "origin": "recipe-axis",
-          "type": "\"10xl\" | \"2xl\" | \"3xl\" | \"4xl\" | \"5xl\" | \"6xl\" | \"7xl\" | \"8xl\" | \"9xl\" | \"lg\" | \"md\" | \"sm\" | \"xl\" | undefined",
-          "shortType": "Union",
-          "defaultValue": null,
-          "description": "",
-          "required": false
-        },
-        {
-          "name": "className",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "string | ((state: DrawerPopupState) => string | undefined) | undefined",
-          "shortType": "function",
-          "defaultValue": null,
-          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
           "required": false
         },
         {
@@ -552,6 +534,24 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "showCloseButton",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Renders the built-in corner dismiss affordance — the shared overlay close helper (`Button variant=\"ghost\" size=\"icon-sm\"`) as a `Sheet.Close`.",
+          "required": false
+        },
+        {
+          "name": "size",
+          "origin": "recipe-axis",
+          "type": "\"10xl\" | \"2xl\" | \"3xl\" | \"4xl\" | \"5xl\" | \"6xl\" | \"7xl\" | \"8xl\" | \"9xl\" | \"lg\" | \"md\" | \"sm\" | \"xl\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
           "required": false
         },
         {

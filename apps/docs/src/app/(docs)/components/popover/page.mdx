@@ -1,9 +1,7 @@
 ---
 title: Popover
 lede: >
-  A non-modal overlay anchored to its trigger. `Popover.Content` owns placement and the
-  portal target; `showArrow` is opt-in so the popup can sit flush or grow a tokenized
-  arrow.
+  A panel anchored to a trigger. The page underneath stays usable.
 ---
 
 import { PopoverBasic } from "./demos/popover-basic";
@@ -16,16 +14,6 @@ import { componentMetadata } from "../../../../lib/component-page";
 export const metadata = componentMetadata("popover");
 
 <ComponentIntro slug="popover" />
-
-<Prose>
-
-Positioner props (`side`, `align`, `sideOffset`, `alignOffset`) surface on
-`Popover.Content`. Portal, Positioner and Popup stay unexported — `container` on Content
-is the only portal-control surface, and it defaults to the nearest `ThemeScope`. The
-arrow is off unless `showArrow` is set; that is deliberate and is not unified with
-Tooltip.
-
-</Prose>
 
 <Demo slug="popover" id="basic" title="Basic" file="popover-basic.tsx">
   <PopoverBasic />

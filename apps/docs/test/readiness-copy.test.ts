@@ -17,30 +17,33 @@ describe("release readiness copy", () => {
     expect(html, "releases must name pending org/repository setup rather than implying it is done").toContain(
       "pending org and repository setup"
     );
-    expect(html, "releases must describe manual release preparation").toContain("Manual release flow");
-    expect(html, "releases must say merging a release PR does not publish").toContain(
-      "does not publish to npm"
+    expect(html, "releases must describe the release flow as gated on activation").toContain(
+      "gated on activation"
     );
-    expect(html, "releases must explain how to apply pending changesets").toContain(
+    expect(html, "releases must name the activation switch").toContain("RELEASE_ENABLED");
+    expect(html, "releases must explain how pending notes are applied").toContain(
       "pnpm exec changeset version"
     );
-    expect(html, "releases must keep publishing separate from merging").toContain(
-      "Merging a PR will not trigger"
+    expect(html, "releases must say activated ordinary merges publish canaries").toContain(
+      "every ordinary merge publishes a canary"
+    );
+    expect(html, "releases must scope the stable publish to activation").toContain(
+      "Once publishing is activated"
     );
     expect(
       html,
       "releases must label latest as a designed/target dist-tag, not a live npm channel"
     ).toContain("latest</code> (designed)");
-    expect(html, "releases must label beta as a designed/target dist-tag, not a live npm channel").toContain(
-      "beta</code> (designed)"
-    );
+    expect(
+      html,
+      "releases must label canary as a designed/target dist-tag, not a live npm channel"
+    ).toContain("canary</code> (designed)");
     expect(html, "releases must label per-PR previews as planned, not available today").toContain(
       "Per-PR previews (planned)"
     );
-    expect(
-      html,
-      "releases must keep the no-token / no-local-publish rule in intended/designed language"
-    ).toContain("no long-lived npm token should exist");
+    expect(html, "releases must keep the token temporary and singular until the OIDC pivot").toContain(
+      "only long-lived credential"
+    );
     expect(
       html,
       "releases must frame packed-consumer checks as intended gates, not an active release workflow"

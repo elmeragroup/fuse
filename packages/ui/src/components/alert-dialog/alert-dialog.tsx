@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
@@ -36,7 +37,8 @@ export type AlertDialogContentProps = Omit<DialogContentProps, "showCloseButton"
    */
   icon?: ReactNode;
   /**
-   * Drives the action-button variant and the fallback icon.
+   * Drives the action-button variant and the fallback icon. Destructive dialogs
+   * initially focus Cancel; neutral dialogs initially focus the primary action.
    * @default "destructive"
    */
   variant?: "destructive" | "neutral";
@@ -91,9 +93,16 @@ function AlertDialogContent({
   isActionDisabled = false,
   isAutomaticallyCloseOnActionEnabled = false,
   className,
+  initialFocus,
   ...props
 }: AlertDialogContentProps): ReactElement | null {
   const strings = useLocalizedStrings(alertDialogStrings);
+  // One `initialFocus` on the popup, not two mirroring `autoFocus` booleans: destructive
+  // confirmations land on Cancel, neutral ones on the primary action, and a caller's own
+  // `initialFocus` wins over both.
+  const actionRef = useRef<HTMLButtonElement>(null);
+  const cancelRef = useRef<HTMLButtonElement>(null);
+  const fallbackFocus = variant === "destructive" ? cancelRef : actionRef;
   const fallbackIcon =
     variant === "destructive" ? (
       <WarningOctagon className="size-5 shrink-0 text-error" />
@@ -103,9 +112,9 @@ function AlertDialogContent({
 
   const actionButton = (
     <Button
+      ref={actionRef}
       size="sm"
       variant={variant === "destructive" ? "destructive" : "default"}
-      autoFocus
       isPending={isPerformingAction}
       disabled={isActionDisabled}
       onClick={onAction}
@@ -115,7 +124,12 @@ function AlertDialogContent({
   );
 
   return (
-    <Dialog.Content className={className} {...props} role="alertdialog" showCloseButton={false}>
+    <Dialog.Content
+      className={className}
+      initialFocus={initialFocus ?? fallbackFocus}
+      {...props}
+      role="alertdialog"
+      showCloseButton={false}>
       <Dialog.Header className="flex-row items-start justify-between gap-4">
         <Dialog.Title className="text-balance">{title}</Dialog.Title>
         {icon ?? fallbackIcon}
@@ -123,7 +137,7 @@ function AlertDialogContent({
       <Dialog.Description>{children}</Dialog.Description>
       <Dialog.Footer>
         <DialogPrimitive.Close
-          render={<Button size="sm" variant="ghost" data-dialog-action-type="secondary" />}
+          render={<Button ref={cancelRef} size="sm" variant="ghost" data-dialog-action-type="secondary" />}
           onClick={onCancel}>
           {cancelLabel ?? strings.format("cancel")}
         </DialogPrimitive.Close>

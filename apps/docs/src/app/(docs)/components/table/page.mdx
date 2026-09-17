@@ -1,9 +1,7 @@
 ---
 title: Table
 lede: >
-  Semantic table composites. `Table` is the spreadsheet layout; `VerticalTable` is the
-  key/value facts sheet. Both ship from `@elmeragroup/ui/table`. Selection is a
-  consumer `data-state` on the row — there is no sortable API in v1.
+  Tables for data grids and key/value facts.
 ---
 
 import { TableBasic } from "./demos/table-basic";
@@ -19,20 +17,7 @@ export const metadata = componentMetadata("table");
 
 <Prose>
 
-`Table.Root` wraps a native `<table>` in a horizontal scroll container. Props and
-`className` go to the table; the scroll div is fixed. Header, body, footer, row, head,
-cell, and caption are the matching HTML elements. Put `data-state="selected"` on
-`Table.Row` when a row model marks it selected — the library never stamps that
-attribute.
-
-Inside `Frame.Root` the body restyles itself: separate borders, rounded corner cells,
-`bg-background` cells, and an inner hairline. That reshape is selector-driven. There is
-no `inFrame` prop.
-
-`VerticalTable` is the facts-sheet layout. `Root` carries `data-variant`. `Header` is a
-plain `<h2>` — polymorphic through `render`, not react-aria Heading. `Body` maps a
-`data` array to rows first, then renders children. All Body props including `className`
-stay on the bordered wrapper.
+The library never marks rows selected; set `data-state="selected"` on `Table.Row` when your row model says so.
 
 </Prose>
 

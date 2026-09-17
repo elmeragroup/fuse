@@ -58,9 +58,10 @@ export default function AboutPage(): ReactElement {
         docs build rather than rendering an empty cell, so a table on this site is either correct or absent.
       </p>
       <p>
-        The docs chrome is deliberately light-only and unbranded; all the colour on this site lives inside
-        demo surfaces. Use the picker in the header to view any demo under any of the twenty themes, or the{" "}
-        <Link href="/handbook/theme-matrix">Theme matrix</Link> to see them all at once.
+        The docs chrome uses the library's internal Elmera theme in both light and dark mode. Demo surfaces
+        keep their own brand and segment scopes. Use the picker in the header to view any demo under any of
+        the twenty themes, or the <Link href="/handbook/theme-matrix">Theme matrix</Link> to see them all at
+        once.
       </p>
 
       <h2 id="scope">Scope</h2>

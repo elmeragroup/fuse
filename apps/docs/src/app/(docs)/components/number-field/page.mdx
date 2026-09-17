@@ -1,8 +1,7 @@
 ---
 title: NumberField
 lede: >
-  A labeled number field composite over `@base-ui/react/number-field` with stepper
-  buttons. Locale comes from the provider; an empty input reports `NaN`.
+  A number input with step buttons and locale-aware formatting.
 ---
 
 import { NumberFieldBasic } from "./demos/number-field-basic";
@@ -17,19 +16,6 @@ import { componentMetadata } from "../../../../lib/component-page";
 export const metadata = componentMetadata("number-field");
 
 <ComponentIntro slug="number-field" />
-
-<Prose>
-
-The composite face is `isDisabled` / `isInvalid` / `isPending` / `isSuccess`,
-`onChange(value)`, `minValue` / `maxValue` / `formatOptions`, and `errorMessage` as a
-`ReactNode`. There is no `locale` prop — formatting follows `ElmeraGroupUiProvider`.
-The stepper names come from the locale dictionary; `increaseLabel` / `decreaseLabel` override them.
-Clearing the input reports `NaN`. `value` follows React's own convention: `undefined` means
-uncontrolled, so a controlled empty field passes `NaN` (`useState<number>(NaN)`). A native form
-reset restores an uncontrolled field's `defaultValue` without calling `onChange`; a controlled
-`value` stays parent-owned. The field box pins the `md` density rung; there is no size axis.
-
-</Prose>
 
 <Demo slug="number-field" id="basic" title="Basic" file="number-field-basic.tsx">
   <NumberFieldBasic />

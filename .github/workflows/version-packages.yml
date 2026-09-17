@@ -1,0 +1,70 @@
+name: Version Packages
+
+on:
+  workflow_call:
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      # Checks can finish out of push order. Keep every waiting job and never let an older
+      # completion cancel a newer update; stale jobs skip the action after checking main first.
+      group: version-packages
+      cancel-in-progress: false
+      queue: max
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    steps:
+      # The guard runs before checkout and install: a superseded job has no work to do, and
+      # `gh` is preinstalled on the runner, so nothing is gained by provisioning the repo first.
+      - name: Check current main commit
+        id: current-main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          main_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')"
+          if [ "$GITHUB_SHA" = "$main_sha" ]; then
+            echo "current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Skipping version preparation for superseded commit $GITHUB_SHA"
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Version Packages PR
+        id: changesets
+        if: steps.current-main.outputs.current == 'true'
+        # Keep the root action: it skips `version-script` entirely when there are no changesets, so
+        # Changesets CLI v3 is never asked to version an empty release (which exits 1). Do not switch
+        # to `changesets/action/version@v2` without an equivalent guard.
+        uses: changesets/action@v2
+        with:
+          version-script: pnpm release:version
+          pr-title: Version Packages
+          commit-message: "chore: version packages"
+          github-token: ${{ github.token }}
+
+      # The PR was opened with GITHUB_TOKEN, so its push did not start a merge run; dispatch one.
+      - name: Run checks on the bot-created release PR
+        if: steps.changesets.outputs.pr-number
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run merge.yml --ref changeset-release/main

@@ -1,8 +1,7 @@
 ---
 title: TextField
 lede: >
-  A labeled single-line field composite over Field + Input. `textFieldVariants` ships
-  from the same entry so later composites can borrow the look.
+  A labeled single-line text input.
 ---
 
 import { TextFieldBasic } from "./demos/text-field-basic";
@@ -19,19 +18,6 @@ import { componentMetadata } from "../../../../lib/component-page";
 export const metadata = componentMetadata("text-field");
 
 <ComponentIntro slug="text-field" />
-
-<Prose>
-
-The composite face is `isDisabled` / `isInvalid` / `isPending` / `isSuccess`,
-`onChange(value)`, and `errorMessage` as a `ReactNode`. `isDisabled` disables the inner
-input natively. `filter="numeric"` absorbs the old numeric-only wrapper: non-digits are
-stripped from every path (typing, paste, autofill) and never reach `onChange`, and
-`inputMode="numeric"` is applied unless you pass `inputMode` yourself. An uncontrolled
-numeric field restores its `defaultValue` on native form reset without calling `onChange`.
-`variant="card"` composes `cardVariants`; `variant="inline"` restyles the input chrome.
-Unset `variant` is the plain Input.
-
-</Prose>
 
 <Demo slug="text-field" id="basic" title="Basic" file="text-field-basic.tsx">
   <TextFieldBasic />

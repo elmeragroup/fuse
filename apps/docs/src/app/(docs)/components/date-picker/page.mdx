@@ -1,9 +1,7 @@
 ---
 title: DatePicker
 lede: >
-  An interim labeled date picker over React Aria Components. The segmented field
-  and the month grid are the public DateField and Calendar entries, joined by a
-  popover that stays contained inside whatever overlay opened it.
+  A date field with a calendar popover.
 ---
 
 import { DatePickerBasic } from "./demos/date-picker-basic";
@@ -21,32 +19,9 @@ export const metadata = componentMetadata("date-picker");
 
 <Prose>
 
-`DatePicker` lives at `@elmeragroup/ui/react-aria/date-picker`. The `react-aria/`
-prefix is the quarantine marker: this module is replaced when base-ui ships a
-popover-backed date picker, and the bare path is reserved for that successor. The
-composite face is optional `label` / `description`, `errorMessage` as a
-`ReactNode` or `(ValidationResult) => ReactNode`, `presetGroup`, and
-`shouldForceLeadingZeros` defaulting to `true`. `defaultValue` accepts an explicit
-`null`, and the remaining RAC DatePicker props (`value`, `minValue` / `maxValue`,
-`granularity`, `isDateUnavailable`, `isOpen` / `onOpenChange`, …) pass through.
+Values are `CalendarDate` objects from `@internationalized/date`, which you install separately; the library does not re-export it.
 
-The field is the same `DateInput` segment row `DateField` renders, and the popover
-holds the same `Calendar` grid — so segment editing, keyboard grid navigation and
-RTL behaviour all match those entries. The month the popover opens on follows the
-picker's `value`: paging away and closing without choosing anything is forgotten,
-and the next open lands on the selected date's month again (or the current month
-when there is no value). Wrap locale-dependent usage in `UiProviders` from
-`@elmeragroup/ui/react-aria/ui-providers`.
-
-Values are `@internationalized/date` objects — `CalendarDate` and friends — not
-`Date`. That package is a direct install for consumers (`pnpm add
-@internationalized/date`): the demos below import it by name, and the copy shipped
-inside `@elmeragroup/ui` is an implementation detail of the quarantined tier, not a
-re-export.
-
-Escape closes the popover without a change and returns focus to the trigger;
-choosing a day commits it and closes. A read-only picker keeps its popover shut
-and fills the field with the muted surface.
+Wrap locale-dependent usage in `UiProviders` so it follows the app locale.
 
 </Prose>
 
@@ -58,17 +33,7 @@ and fills the field with the muted surface.
   <DatePickerControlled />
 </Demo>
 
-<Prose>
-
-`DatePickerPresetGroup` and `DatePickerPresetItem` add a shortcut pane beside the
-calendar. They are a radio group, so exactly one shortcut is in effect at a time;
-the group's accessible name comes from the locale dictionary unless you pass
-`label`, and each item is named by its own visible copy — the library never
-invents wording from `value`. `isCloseDialogOnDoubleClick` adds a pointer
-shortcut: a double-click selects and dismisses, while a single click (or Space)
-selects and leaves the dialog open.
-
-</Prose>
+Presets stack above the calendar on small screens. A popup with limited vertical space scrolls to keep every date reachable.
 
 <Demo slug="date-picker" id="presets" title="Presets" file="date-picker-presets.tsx">
   <DatePickerPresets />
@@ -81,15 +46,6 @@ selects and leaves the dialog open.
 <Demo slug="date-picker" id="states" title="States" file="date-picker-states.tsx">
   <DatePickerStates />
 </Demo>
-
-<Prose>
-
-The popover portals into the nearest `ThemeScope`, so it inherits the theme of
-the surface that opened it, and `container` overrides that target when you need
-a specific one. Interacting with the popover never dismisses the overlay hosting
-the picker: picking a date inside a dialog leaves the dialog open.
-
-</Prose>
 
 <Demo slug="date-picker" id="in-modal" title="Inside a dialog" file="date-picker-in-modal.tsx">
   <DatePickerInModal />

@@ -1,6 +1,7 @@
 {
   "name": "elmera-group-ui",
   "private": true,
+  "type": "module",
   "scripts": {
     "build": "turbo run build",
     "changeset": "changeset",
@@ -11,21 +12,27 @@
     "gen": "plop --plopfile plopfile.mjs",
     "lint": "oxlint . --deny-warnings",
     "lint:fix": "oxlint --fix .",
+    "release": "node --experimental-strip-types --experimental-transform-types --import ./packages/ui/scripts/ts-resolve.mjs scripts/release.ts",
+    "release:version": "pnpm exec changeset version && pnpm install --lockfile-only",
     "test": "turbo run test",
     "test:browser": "turbo run test:browser",
     "test:repo-policy": "vitest run --config test/vitest.config.mjs",
     "test:types": "turbo run test:types",
-    "type-check": "turbo run type-check"
+    "type-check": "turbo run type-check",
+    "type-check:scripts": "tsc --noEmit -p scripts/tsconfig.json"
   },
   "devDependencies": {
     "@changesets/cli": "catalog:",
     "@elmeragroup/internal": "catalog:",
     "@elmeragroup/typescript-config": "workspace:*",
     "@types/node": "catalog:",
+    "@types/picomatch": "catalog:",
+    "effect": "catalog:",
     "eslint-plugin-turbo": "catalog:",
     "oxfmt": "catalog:",
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",
+    "picomatch": "catalog:",
     "plop": "catalog:",
     "turbo": "catalog:",
     "typescript": "catalog:",

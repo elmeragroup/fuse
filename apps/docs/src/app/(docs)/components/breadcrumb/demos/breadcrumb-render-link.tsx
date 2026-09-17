@@ -17,11 +17,11 @@ export function BreadcrumbRenderLink() {
         </Breadcrumb.Item>
         <Breadcrumb.Separator />
         <Breadcrumb.Item>
-          <Breadcrumb.Link render={<RouterLink href="/orders" />}>Orders</Breadcrumb.Link>
+          <Breadcrumb.Link render={<RouterLink href="/quick-start" />}>Quick start</Breadcrumb.Link>
         </Breadcrumb.Item>
         <Breadcrumb.Separator />
         <Breadcrumb.Item>
-          <Breadcrumb.Page>Invoice 1042</Breadcrumb.Page>
+          <Breadcrumb.Page>Breadcrumb</Breadcrumb.Page>
         </Breadcrumb.Item>
       </Breadcrumb.List>
     </Breadcrumb.Root>

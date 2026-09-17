@@ -1,9 +1,7 @@
 ---
 title: Combobox
 lede: >
-  A searchable select over base-ui Combobox. Input wraps InputGroup chrome; Content
-  portals into the nearest ThemeScope. Chips cover multi-select, and
-  `useComboboxAnchor` pins the popup to an external element.
+  A searchable select for one or several options.
 ---
 
 import { ComboboxBasic } from "./demos/combobox-basic";
@@ -16,23 +14,6 @@ import { componentMetadata } from "../../../../lib/component-page";
 export const metadata = componentMetadata("combobox");
 
 <ComponentIntro slug="combobox" />
-
-<Prose>
-
-Positioner props (`side`, `align`, `sideOffset`, `alignOffset`, `anchor`) and `container`
-surface on `Combobox.Content`. Portal, Positioner and Popup stay unexported —
-`container` on Content is the only portal-control surface. Pass `useComboboxAnchor()`'s
-ref as `anchor` to hug an outer `InputGroup.Root` or `Combobox.Chips`; that also flips
-`data-external-anchor` on the popup.
-
-`showTrigger` and `showClear` on `Combobox.Input` share the inline-end addon. Whenever a
-clear button is present, the trigger is hidden via
-`group-has-data-[slot=combobox-clear]/input-group:hidden`. `Combobox.Clear` is a public
-namespace part. Locale comes from `ElmeraGroupUiProvider` only — there is no `locale`
-prop. Empty, clear, and chip-remove copy default to the four-locale dictionary;
-`children`, `clearLabel`, `label`, and `removeLabel` override them.
-
-</Prose>
 
 <Demo slug="combobox" id="basic" title="Basic" file="combobox-basic.tsx">
   <ComboboxBasic />

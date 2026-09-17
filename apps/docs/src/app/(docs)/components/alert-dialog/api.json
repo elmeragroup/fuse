@@ -261,6 +261,17 @@
           "required": true
         },
         {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: DialogPopupState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
           "name": "closeLabel",
           "origin": "declared",
           "type": "string | undefined",
@@ -279,12 +290,34 @@
           "required": false
         },
         {
+          "name": "finalFocus",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | RefObject<HTMLElement | null> | ((closeType: InteractionType) => void | boolean | HTMLElement | null) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Determines the element to focus when the dialog is closed. - `false`: Do not move focus. - `true`: Move focus based on the default behavior (trigger or previously focused element). - `RefObject`: Move focus to the ref element. - `function`: Called with the interaction type (`mouse`, `touch`, `pen`, or `keyboard`). Return an element to focus, `true` to use the default behavior, `null` to fall back to the default behavior, or `false`/`undefined` to do nothing.",
+          "required": false
+        },
+        {
           "name": "icon",
           "origin": "declared",
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
           "description": "Icon rendered to the right of the title. Defaults to `WarningOctagon` (destructive) or `Info` (neutral).",
+          "required": false
+        },
+        {
+          "name": "initialFocus",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | RefObject<HTMLElement | null> | ((openType: InteractionType) => void | boolean | HTMLElement | null) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Determines the element to focus when the dialog is opened. By default, focus moves to the first tabbable element inside the popup, except when the dialog is opened by touch — then the popup itself is focused to avoid opening the virtual keyboard. - `false`: Do not move focus. - `true`: Move focus based on the default behavior (first tabbable element or popup). - `RefObject`: Move focus to the ref element. - `function`: Called with the interaction type (`mouse`, `touch`, `pen`, or `keyboard`). Return an element to focus, `true` to use the default behavior, `null` to fall back to the default behavior, or `false`/`undefined` to do nothing.",
           "required": false
         },
         {
@@ -333,12 +366,34 @@
           "required": false
         },
         {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, DialogPopupState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
           "name": "size",
           "origin": "recipe-axis",
           "type": "\"10xl\" | \"2xl\" | \"3xl\" | \"4xl\" | \"5xl\" | \"6xl\" | \"7xl\" | \"8xl\" | \"9xl\" | \"lg\" | \"md\" | \"sm\" | \"xl\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
           "description": "",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: DialogPopupState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
           "required": false
         },
         {
@@ -356,62 +411,7 @@
           "type": "\"destructive\" | \"neutral\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"destructive\"",
-          "description": "Drives the action-button variant and the fallback icon.",
-          "required": false
-        },
-        {
-          "name": "className",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "string | ((state: DialogPopupState) => string | undefined) | undefined",
-          "shortType": "function",
-          "defaultValue": null,
-          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
-          "required": false
-        },
-        {
-          "name": "finalFocus",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "boolean | RefObject<HTMLElement | null> | ((closeType: InteractionType) => void | boolean | HTMLElement | null) | undefined",
-          "shortType": "function",
-          "defaultValue": null,
-          "description": "Determines the element to focus when the dialog is closed. - `false`: Do not move focus. - `true`: Move focus based on the default behavior (trigger or previously focused element). - `RefObject`: Move focus to the ref element. - `function`: Called with the interaction type (`mouse`, `touch`, `pen`, or `keyboard`). Return an element to focus, `true` to use the default behavior, `null` to fall back to the default behavior, or `false`/`undefined` to do nothing.",
-          "required": false
-        },
-        {
-          "name": "initialFocus",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "boolean | RefObject<HTMLElement | null> | ((openType: InteractionType) => void | boolean | HTMLElement | null) | undefined",
-          "shortType": "function",
-          "defaultValue": null,
-          "description": "Determines the element to focus when the dialog is opened. By default, focus moves to the first tabbable element inside the popup, except when the dialog is opened by touch — then the popup itself is focused to avoid opening the virtual keyboard. - `false`: Do not move focus. - `true`: Move focus based on the default behavior (first tabbable element or popup). - `RefObject`: Move focus to the ref element. - `function`: Called with the interaction type (`mouse`, `touch`, `pen`, or `keyboard`). Return an element to focus, `true` to use the default behavior, `null` to fall back to the default behavior, or `false`/`undefined` to do nothing.",
-          "required": false
-        },
-        {
-          "name": "render",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "ComponentRenderFn<HTMLProps, DialogPopupState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
-          "shortType": "Union",
-          "defaultValue": null,
-          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
-          "required": false
-        },
-        {
-          "name": "style",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "CSSProperties | ((state: DialogPopupState) => CSSProperties | undefined) | undefined",
-          "shortType": "function",
-          "defaultValue": null,
-          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "description": "Drives the action-button variant and the fallback icon. Destructive dialogs initially focus Cancel; neutral dialogs initially focus the primary action.",
           "required": false
         }
       ]

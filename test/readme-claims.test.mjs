@@ -1,11 +1,10 @@
 import { existsSync, readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { asRecord, asString, readJsonObject } from "./json-object.mjs";
+import { repoRoot } from "./workflow.mjs";
 
-const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const readme = readFileSync(join(repoRoot, "README.md"), "utf8");
 
 /** pnpm invocations the README shows that are not repo scripts. */

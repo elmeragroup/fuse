@@ -1,8 +1,7 @@
 ---
 title: PhoneNumberField
 lede: >
-  A labeled phone composite with a country picker of packaged SVG flags, a
-  formatted display input, and a hidden E.164 submit value.
+  A phone input with a country picker that submits the number in international format.
 ---
 
 import { PhoneNumberFieldBasic } from "./demos/phone-number-field-basic";
@@ -17,24 +16,6 @@ import { componentMetadata } from "../../../../lib/component-page";
 export const metadata = componentMetadata("phone-number-field");
 
 <ComponentIntro slug="phone-number-field" />
-
-<Prose>
-
-The country trigger is a `role="button"` so the Field label never bleeds onto it;
-`selectCountryLabel` / `searchCountriesLabel` / `noCountriesFoundText` default to the
-four-locale dictionary and win when passed. Locale comes from
-`ElmeraGroupUiProvider` only — there is no `locale` prop.
-
-Forms submit the hidden `name` input (E.164 by default). The visible input is named
-`${name}-display-value` and holds the formatted display string. `Flag` and
-`usePhoneNumberFieldState` stay package-private. The picker is `getCountries(metadata)`
-intersected with packaged flag assets, minus the product exclusion set — `AC`, `BQ`,
-`EH`, and `TA` never appear.
-
-A native form reset clears an uncontrolled field's number, keeps the selected country, and
-fires neither `onChange` nor `onCountryChange`. A controlled `value` stays parent-owned.
-
-</Prose>
 
 <Demo slug="phone-number-field" id="basic" title="Basic" file="phone-number-field-basic.tsx">
   <PhoneNumberFieldBasic />

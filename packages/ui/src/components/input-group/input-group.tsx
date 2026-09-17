@@ -11,6 +11,7 @@ import { Input } from "../input/input";
 import { Textarea } from "../textarea/textarea";
 import { inputGroupAddonVariants, inputGroupButtonVariants } from "./input-group-variants";
 
+/** Group chrome follows the disabled state of its input or textarea, independently of addon buttons. */
 export type InputGroupRootProps = ComponentProps<"div">;
 export type InputGroupAddonProps = ComponentProps<"div"> & VariantProps<typeof inputGroupAddonVariants>;
 
@@ -65,7 +66,7 @@ function InputGroupRoot({ className, ...props }: InputGroupRootProps): ReactElem
       className={cn(
         // Single-height field box: pins the `md` control rung; block addons and textareas grow instead.
         "group/input-group shadow-xs relative box-border flex h-(--control-h-md) w-full min-w-0 items-center rounded-md border border-input transition-[color,border-color,box-shadow]",
-        "has-disabled:bg-input/50 has-disabled:opacity-50",
+        "has-[[data-slot=input-group-control]:disabled]:bg-input/50 has-[[data-slot=input-group-control]:disabled]:opacity-50",
         "has-[[data-slot=input-group-control]:focus-visible]:border-ring",
         "has-[[data-slot][aria-invalid=true]]:border-error has-[[data-slot][aria-invalid=true]]:ring-3 has-[[data-slot][aria-invalid=true]]:ring-error/20",
         "has-[>[data-align=block-end]]:h-auto has-[>[data-align=block-end]]:flex-col has-[>[data-align=block-start]]:h-auto has-[>[data-align=block-start]]:flex-col has-[>textarea]:h-auto",

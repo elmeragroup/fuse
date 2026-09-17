@@ -413,6 +413,17 @@
       "forwardedCount": 275,
       "props": [
         {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: DialogPopupState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
           "name": "closeLabel",
           "origin": "declared",
           "type": "string | undefined",
@@ -428,35 +439,6 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "Portal target for this overlay. Defaults to the nearest enclosing `ThemeScope` element, so it never escapes the theme that opened it.",
-          "required": false
-        },
-        {
-          "name": "showCloseButton",
-          "origin": "declared",
-          "type": "boolean | undefined",
-          "shortType": null,
-          "defaultValue": "true",
-          "description": "Renders the built-in corner dismiss affordance — a `Dialog.Close` styled as a ghost icon button in the popup's top-right corner.",
-          "required": false
-        },
-        {
-          "name": "size",
-          "origin": "recipe-axis",
-          "type": "\"10xl\" | \"2xl\" | \"3xl\" | \"4xl\" | \"5xl\" | \"6xl\" | \"7xl\" | \"8xl\" | \"9xl\" | \"lg\" | \"md\" | \"sm\" | \"xl\" | undefined",
-          "shortType": "Union",
-          "defaultValue": null,
-          "description": "",
-          "required": false
-        },
-        {
-          "name": "className",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "string | ((state: DialogPopupState) => string | undefined) | undefined",
-          "shortType": "function",
-          "defaultValue": null,
-          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
           "required": false
         },
         {
@@ -490,6 +472,24 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "showCloseButton",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Renders the built-in corner dismiss affordance — a `Dialog.Close` styled as a ghost icon button in the popup's top-right corner.",
+          "required": false
+        },
+        {
+          "name": "size",
+          "origin": "recipe-axis",
+          "type": "\"10xl\" | \"2xl\" | \"3xl\" | \"4xl\" | \"5xl\" | \"6xl\" | \"7xl\" | \"8xl\" | \"9xl\" | \"lg\" | \"md\" | \"sm\" | \"xl\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
           "required": false
         },
         {
@@ -563,6 +563,15 @@
           "shortType": "function",
           "defaultValue": null,
           "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "isFocusable",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Makes the heading a programmatic focus target: stamps `tabIndex={-1}` and paints the shared self focus ring so the focused title is visible. For dialogs that pass the title to `initialFocus` and open on its content.",
           "required": false
         },
         {

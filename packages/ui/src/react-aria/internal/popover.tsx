@@ -11,6 +11,21 @@ import type { OverlayContainerProps } from "../../components/overlay/overlay-pro
 import { cn } from "../../styles/cn";
 import { useResolvedPortalContainer } from "../../theme/theme-scope-container";
 
+/**
+ * React Aria's `useOverlayPosition` gutter, in px per side. The popover portals out of
+ * the picker root, so a container query cannot see the field's width and React Aria's
+ * positioning gutter is the one honest number; the CSS clamp below must reserve exactly
+ * this gutter on both sides.
+ */
+export const CONTAINER_PADDING = 12;
+
+/**
+ * The width clamp, reserving one `CONTAINER_PADDING` gutter per side. The arbitrary value
+ * is a literal because Tailwind's source scan resolves no interpolation; `popover.test.ts`
+ * pins the literal to `CONTAINER_PADDING` so the pair can only change together.
+ */
+export const POPOVER_MAX_WIDTH_CLASS = cn("max-w-[calc(100vw-24px)]");
+
 const popoverVariants = tv({
   slots: {
     // Fill from the spine; border stays local — overlayPopupSurfaceClass paints the
@@ -18,6 +33,7 @@ const popoverVariants = tv({
     base: cn(
       overlayPopupFillClass,
       "shadow-md min-w-32 origin-(--trigger-anchor-point) rounded-md border border-border bg-clip-padding",
+      POPOVER_MAX_WIDTH_CLASS,
       overlayLayer
     ),
     arrow: "group my-0!",
@@ -38,7 +54,10 @@ const popoverArrowSvgClass = popoverSlots.arrowSvg();
 const popoverEnteringClass = popoverSlots.entering();
 const popoverExitingClass = popoverSlots.exiting();
 
-export type PopoverProps = Omit<AriaPopoverProps, "children" | "UNSTABLE_portalContainer"> & {
+export type PopoverProps = Omit<
+  AriaPopoverProps,
+  "children" | "containerPadding" | "UNSTABLE_portalContainer"
+> & {
   showArrow?: boolean;
   children: ReactNode;
   container?: OverlayContainerProps["container"];
@@ -78,6 +97,7 @@ export function Popover({
       offset={offset}
       UNSTABLE_portalContainer={resolvedContainer}
       {...props}
+      containerPadding={CONTAINER_PADDING}
       className={composeRenderProps(className, (resolved: string | undefined, renderProps) =>
         cn(
           popoverBaseClass,

@@ -206,6 +206,23 @@ function writePublishPackageJson(path: string, manifest: PublishManifest): void 
   writeFileSync(path, `${JSON.stringify(manifest, null, 2)}\n`);
 }
 
+/** The release identity written to, and read back from, the packed `elmeraRelease` field. */
+type ReleaseSource = {
+  readonly commit: string;
+  readonly channel: "canary" | "stable";
+};
+
+/**
+ * The release stamp `writePublishManifest` records. The engine's branded `ReleaseIntent`
+ * satisfies it; the stamping path only serializes these fields, so it depends on the shape,
+ * not on the engine's identity types.
+ */
+export type ReleaseStamp = {
+  readonly version: string;
+  readonly commit: string;
+  readonly channel: "canary" | "stable";
+};
+
 type PublishManifest = {
   name: string;
   version: string;
@@ -217,6 +234,7 @@ type PublishManifest = {
   peerDependenciesMeta: WorkspaceManifest["peerDependenciesMeta"];
   dependencies: WorkspaceDependencies;
   publishConfig: { access: "public" };
+  elmeraRelease?: ReleaseSource;
 };
 
 function publishedPeerDependencies(): WorkspacePeers {
@@ -275,7 +293,12 @@ export function writeSourceExports(packageRoot: string): DiscoveredEntries {
   return discovered;
 }
 
-export function writePublishManifest(packageRoot: string): void {
+/**
+ * Writes `dist/package.json` plus the packaging side files. A release stamp overrides the
+ * workspace version and records the packed identity; an ordinary build keeps the workspace
+ * version and no stamp, so the release engine's identity check stays meaningful.
+ */
+export function writePublishManifest(packageRoot: string, release?: ReleaseStamp): void {
   const discovered = discoverEntries(packageRoot);
   const workspace = readWorkspaceManifest(join(packageRoot, "package.json"));
   const licensePath = join(packageRoot, "LICENSE");
@@ -286,7 +309,7 @@ export function writePublishManifest(packageRoot: string): void {
 
   const published: PublishManifest = {
     name: workspace.name,
-    version: workspace.version,
+    version: release?.version ?? workspace.version,
     license: workspace.license,
     type: "module",
     sideEffects: ["**/*.css"],
@@ -296,6 +319,9 @@ export function writePublishManifest(packageRoot: string): void {
     dependencies: publishedDependencies(workspace.dependencies),
     publishConfig: { access: "public" },
   };
+  if (release !== undefined) {
+    published.elmeraRelease = { commit: release.commit, channel: release.channel };
+  }
 
   writePublishPackageJson(join(packageRoot, "dist/package.json"), published);
   copyFileSync(licensePath, join(packageRoot, "dist/LICENSE"));

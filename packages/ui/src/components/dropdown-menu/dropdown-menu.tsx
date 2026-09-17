@@ -3,6 +3,7 @@
 import type { ComponentProps, ReactElement } from "react";
 
 import { Menu as MenuPrimitive } from "@base-ui/react/menu";
+import type { MenuRadioGroupChangeEventDetails } from "@base-ui/react/menu";
 
 import { CaretRight } from "../../icons/generated/caret-right";
 import { Check } from "../../icons/generated/check";
@@ -214,7 +215,34 @@ function DropdownMenuCheckboxItem({
   );
 }
 
-function DropdownMenuRadioGroup(props: ComponentProps<typeof MenuPrimitive.RadioGroup>): ReactElement {
+/**
+ * Narrows the group's selected value to one string union. Base UI types `value` and
+ * `onValueChange` as `any`; the generic ties the group's three props together, not the
+ * items — `RadioItem.value` stays `any`, so membership is still checked at runtime.
+ */
+export type DropdownMenuRadioGroupProps<T extends string> = Omit<
+  ComponentProps<typeof MenuPrimitive.RadioGroup>,
+  "value" | "defaultValue" | "onValueChange"
+> &
+  (
+    | {
+        /** Controlled selected value: one member of the group's string union. */
+        value?: T;
+        /** Uncontrolled initially selected value: one member of the group's string union. */
+        defaultValue?: never;
+      }
+    | {
+        /** Controlled selected value: one member of the group's string union. */
+        value?: never;
+        /** Uncontrolled initially selected value: one member of the group's string union. */
+        defaultValue?: T;
+      }
+  ) & {
+    /** Called with the selected value, narrowed to `T`, and base-ui's change details. */
+    onValueChange?: (value: T, eventDetails: MenuRadioGroupChangeEventDetails) => void;
+  };
+
+function DropdownMenuRadioGroup<T extends string>(props: DropdownMenuRadioGroupProps<T>): ReactElement {
   return <MenuPrimitive.RadioGroup data-slot="dropdown-menu-radio-group" {...props} />;
 }
 

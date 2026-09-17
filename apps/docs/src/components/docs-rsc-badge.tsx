@@ -5,11 +5,11 @@ import { tv } from "tailwind-variants";
 import type { RscStatus } from "../lib/docs-model";
 
 const docsRscBadge = tv({
-  base: "font-docs-mono text-docs-sub border-docs-line rounded-[999px] border px-[0.55em] py-[0.15em] text-[10.5px]",
+  base: "text-xs rounded-full border border-border px-[0.55em] py-[0.15em] font-mono text-muted-foreground",
   variants: {
     variant: {
       intro: "",
-      part: "data-[rsc=server]:border-docs-rsc-line data-[rsc=server]:bg-docs-rsc-soft data-[rsc=server]:text-docs-rsc whitespace-nowrap",
+      part: "whitespace-nowrap data-[rsc=server]:border-success/30 data-[rsc=server]:bg-success-soft data-[rsc=server]:text-success-soft-foreground",
     },
   },
   defaultVariants: {

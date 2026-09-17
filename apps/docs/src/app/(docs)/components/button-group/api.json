@@ -33,15 +33,6 @@
       "forwardedCount": 275,
       "props": [
         {
-          "name": "orientation",
-          "origin": "declared",
-          "type": "Orientation | undefined",
-          "shortType": null,
-          "defaultValue": "\"vertical\"",
-          "description": "Hairline axis. Flipped from the canonical Separator: a horizontal group needs a vertical hairline.",
-          "required": false
-        },
-        {
           "name": "className",
           "origin": {
             "packageName": "@base-ui/react"
@@ -50,6 +41,15 @@
           "shortType": "function",
           "defaultValue": null,
           "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "orientation",
+          "origin": "declared",
+          "type": "Orientation | undefined",
+          "shortType": null,
+          "defaultValue": "\"vertical\"",
+          "description": "Hairline axis. Flipped from the canonical Separator: a horizontal group needs a vertical hairline.",
           "required": false
         },
         {

@@ -1,8 +1,7 @@
 ---
 title: Toggle
 lede: >
-  A two-state pressed button over the base-ui primitive. Grouped usage belongs on
-  `ToggleGroup.Item`, which borrows the public `toggleVariants` recipe.
+  A button that stays pressed until it is pressed again.
 ---
 
 import { ToggleBasic } from "./demos/toggle-basic";
@@ -16,14 +15,6 @@ import { componentMetadata } from "../../../../lib/component-page";
 export const metadata = componentMetadata("toggle");
 
 <ComponentIntro slug="toggle" />
-
-<Prose>
-
-`pressed`, `defaultPressed`, and `onPressedChange` pass through to the primitive. Icon-only
-usage needs a consumer-supplied `aria-label`; tag icon children with
-`data-icon="inline-start"` or `data-icon="inline-end"` to tighten padding on that side.
-
-</Prose>
 
 <Demo slug="toggle" id="basic" title="Basic" file="toggle-basic.tsx">
   <ToggleBasic />

@@ -5,10 +5,7 @@ import type { ReactElement, ReactNode } from "react";
 import {
   Calendar as AriaCalendar,
   CalendarCell,
-  CalendarGrid,
   CalendarGridBody,
-  CalendarGridHeader as AriaCalendarGridHeader,
-  CalendarHeaderCell,
   Heading as AriaHeading,
   Text as AriaText,
   useLocale,
@@ -21,11 +18,15 @@ import { CaretLeft } from "../../icons/generated/caret-left";
 import { CaretRight } from "../../icons/generated/caret-right";
 import { calendarVariants, cellVariants } from "../../styles/calendar";
 import { Button } from "../internal/button";
+import { LocaleCalendarGrid } from "../internal/calendar-grid";
 import { composeTailwindRenderProps } from "../internal/utils";
 
+export { CalendarGridHeader } from "../internal/calendar-grid";
+
 /**
- * Single-month calendar composite over RAC `Calendar`.
- * Client — the interim react-aria cluster owns grid state, selection, and focus.
+ * Single-month calendar composite over RAC `Calendar`. The locale controls layout
+ * direction, and the locale's weekday label width selects short or narrow column
+ * headers. Client — the interim react-aria cluster owns grid state, selection, and focus.
  */
 export type CalendarProps<T extends DateValue> = {
   /**
@@ -41,16 +42,16 @@ export function Calendar<T extends DateValue>({
   ...props
 }: CalendarProps<T>): ReactElement {
   const { base, body, error } = calendarVariants();
+  const { direction } = useLocale();
 
   return (
-    <AriaCalendar {...props} className={composeTailwindRenderProps(className, base())}>
+    <AriaCalendar dir={direction} {...props} className={composeTailwindRenderProps(className, base())}>
       <CalendarHeader />
-      <CalendarGrid className={body()} weekdayStyle="short">
-        <CalendarGridHeader />
+      <LocaleCalendarGrid className={body()}>
         <CalendarGridBody>
           {(date) => <CalendarCell date={date} className={(values) => cellVariants(values)} />}
         </CalendarGridBody>
-      </CalendarGrid>
+      </LocaleCalendarGrid>
       {errorMessage ? (
         <Text className={error()} render={<AriaText slot="errorMessage" />}>
           {errorMessage}
@@ -82,18 +83,5 @@ export function CalendarHeader(): ReactElement {
   );
 }
 
-/**
- * Weekday column-header row. Reused by RangeCalendar.
- */
-export function CalendarGridHeader(): ReactElement {
-  const { headerCell } = calendarVariants();
-  return (
-    <AriaCalendarGridHeader>
-      {(day) => <CalendarHeaderCell className={headerCell()}>{day}</CalendarHeaderCell>}
-    </AriaCalendarGridHeader>
-  );
-}
-
 Calendar.displayName = "Calendar";
 CalendarHeader.displayName = "CalendarHeader";
-CalendarGridHeader.displayName = "CalendarGridHeader";

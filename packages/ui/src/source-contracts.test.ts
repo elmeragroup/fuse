@@ -238,10 +238,10 @@ describe("RSC classification", () => {
 
   // Why not a lint rule: "does this module own client state?" is a judgment the spec
   // table answers per module, not a syntactic pattern. The shared overlay close button
-  // renders a Button and holds nothing, and both consumers (Dialog, Sheet) are already
-  // client modules, so a directive here would only widen the client graph.
-  it("leaves the shared overlay close button directive-free — it owns no state", () => {
-    expectRsc("components/overlay/overlay-close-button.tsx", "server");
+  // resolves its own label from the overlay dictionary, so it owns client state and
+  // carries the directive; Dialog, Sheet and Sidebar were already client modules.
+  it("keeps the shared overlay close button client-side — it resolves its own label", () => {
+    expectRsc("components/overlay/overlay-close-button.tsx", "client");
   });
 
   // Why not a lint rule: same judgment as the close button above. FieldFrame holds no

@@ -1,8 +1,7 @@
 ---
 title: Loader
 lede: >
-  A server spinner. A polite status region wrapping a spinning Phosphor SpinnerGap —
-  consumers pass a translated accessible name; the icon itself is decorative.
+  A spinner that marks a pending state.
 ---
 
 import { LoaderSizes } from "./demos/loader-sizes";
@@ -13,16 +12,6 @@ import { componentMetadata } from "../../../../lib/component-page";
 export const metadata = componentMetadata("loader");
 
 <ComponentIntro slug="loader" />
-
-<Prose>
-
-The wrapper is a `div` with `role="status"` and constant `p-4` centering. `size` only
-changes the icon (`default` through `xl`); it is not a density rung. `loaderVariants` is
-public from this same entry so other pending surfaces can borrow the recipe without wrapping
-the component. There is no baked English `aria-label` — pass a translated name, as the
-inline demo does with Norwegian _Laster_.
-
-</Prose>
 
 <Demo slug="loader" id="sizes" title="Sizes" file="loader-sizes.tsx">
   <LoaderSizes />

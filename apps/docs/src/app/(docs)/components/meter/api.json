@@ -13,12 +13,45 @@
       "forwardedCount": 274,
       "props": [
         {
+          "name": "aria-valuetext",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "A string value that provides a user-friendly name for `aria-valuenow`, the current value of the meter.",
+          "required": false
+        },
+        {
           "name": "className",
           "origin": "declared",
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
           "description": "Extra classes, merged onto the root via `cn`.",
+          "required": false
+        },
+        {
+          "name": "format",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "NumberFormatOptions | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Options to format the value.",
+          "required": false
+        },
+        {
+          "name": "getAriaValueText",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((formattedValue: string, value: number) => string) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "A function that returns a string value that provides a human-readable text alternative for `aria-valuenow`, the current value of the meter.",
           "required": false
         },
         {
@@ -58,6 +91,28 @@
           "required": false
         },
         {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, MeterRootState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: MeterRootState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        },
+        {
           "name": "successLabel",
           "origin": "declared",
           "type": "string | undefined",
@@ -91,61 +146,6 @@
           "shortType": null,
           "defaultValue": null,
           "description": "Accessible name for the Warning icon. Defaults to the locale dictionary.",
-          "required": false
-        },
-        {
-          "name": "aria-valuetext",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "string | undefined",
-          "shortType": null,
-          "defaultValue": null,
-          "description": "A string value that provides a user-friendly name for `aria-valuenow`, the current value of the meter.",
-          "required": false
-        },
-        {
-          "name": "format",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "NumberFormatOptions | undefined",
-          "shortType": "Union",
-          "defaultValue": null,
-          "description": "Options to format the value.",
-          "required": false
-        },
-        {
-          "name": "getAriaValueText",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "((formattedValue: string, value: number) => string) | undefined",
-          "shortType": "function",
-          "defaultValue": null,
-          "description": "A function that returns a string value that provides a human-readable text alternative for `aria-valuenow`, the current value of the meter.",
-          "required": false
-        },
-        {
-          "name": "render",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "ComponentRenderFn<HTMLProps, MeterRootState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
-          "shortType": "Union",
-          "defaultValue": null,
-          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
-          "required": false
-        },
-        {
-          "name": "style",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "CSSProperties | ((state: MeterRootState) => CSSProperties | undefined) | undefined",
-          "shortType": "function",
-          "defaultValue": null,
-          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
           "required": false
         }
       ]

@@ -3,6 +3,8 @@ import { tv } from "tailwind-variants";
 /**
  * PUBLIC slot recipe. `text-field`'s `card` variant and
  * `CheckboxCard` compose it, so it ships from `@elmeragroup/ui/card`.
+ * Horizontal cards keep their header text in a grid and wrap whole sections when
+ * the container cannot fit them side by side.
  * One axis only — the external ref's surface/padding axes are decomposed away.
  */
 export const cardVariants = tv({
@@ -25,8 +27,10 @@ export const cardVariants = tv({
         cardFooter: "p-6 pt-0",
       },
       horizontal: {
-        base: "flex-row items-center space-x-6 p-6",
-        cardHeader: "flex items-start justify-start space-y-1.5",
+        base: "flex-row flex-wrap items-start gap-6 p-6",
+        cardHeader: "min-w-0 flex-[2_1_16rem] wrap-anywhere",
+        cardContent: "min-w-0 flex-[1_1_12rem] wrap-anywhere",
+        cardFooter: "min-w-0 flex-[1_1_8rem] wrap-anywhere",
         cardTitle: "text-xl",
       },
     },

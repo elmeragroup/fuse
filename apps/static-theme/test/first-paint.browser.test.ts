@@ -1,6 +1,5 @@
-import { chromium } from "playwright";
-import type { Browser, BrowserContext, ConsoleMessage, Page, Route } from "playwright";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import type { BrowserContext, ConsoleMessage, Page, Route } from "playwright";
+import { describe, expect, it } from "vitest";
 
 import { DOCUMENT_COLOR_SCHEME } from "../src/theme";
 import {
@@ -11,6 +10,7 @@ import {
 } from "./html";
 import type { ColorSchemeBootstrapManifest } from "./html";
 import { staticThemeBaseUrl } from "./server";
+import { launchSuiteBrowser } from "./suite-browser";
 
 type FirstPaintProbe = {
   variant: string | null;
@@ -46,15 +46,7 @@ const firstPaintCases: FirstPaintCase[] = [
   { name: "invalid storage, system dark", stored: "{}", colorScheme: "dark", expectedTheme: "dark" },
 ];
 
-let browser: Browser;
-
-beforeAll(async () => {
-  browser = await chromium.launch({ headless: true });
-});
-
-afterAll(async () => {
-  await browser.close();
-});
+const browser = launchSuiteBrowser();
 
 function isJavaScriptAsset(route: Route): boolean {
   try {
@@ -147,10 +139,11 @@ function expectDocumentDensity(
   expect(probe.density).toBe(density);
 }
 
-function expectLightTokenCanvas(probe: FirstPaintProbe): void {
-  expect(isLightCanvas(probe.background)).toBe(true);
+function expectTokenCanvas(probe: FirstPaintProbe): void {
+  const scheme = probe.dataTheme === "dark" ? "dark" : "light";
+  expect(isLightCanvas(probe.background)).toBe(scheme === "light");
   expect(probe.colorScheme).toBe("");
-  expect(probe.computedColorScheme === "dark").toBe(false);
+  expect(probe.computedColorScheme).toBe(scheme);
   expect(probe.brandElma.length).toBeGreaterThan(0);
   expect(probe.brandToken).toBe(probe.brandElma);
 }
@@ -176,9 +169,9 @@ function collectThemeWarnings(page: Page): string[] {
 
 describe("static theme first paint with React blocked", () => {
   it.each(firstPaintCases)(
-    "$name sets brand, marker, manifest, and a light canvas before the module bundle",
+    "$name sets brand, marker, manifest, and the matching canvas before the module bundle",
     async ({ stored, colorScheme, expectedTheme }) => {
-      const context = await browser.newContext({ colorScheme });
+      const context = await browser().newContext({ colorScheme });
       await seedStorage(context, stored);
       const page = await context.newPage();
       await page.route("**/*", abortModuleScripts);
@@ -190,7 +183,7 @@ describe("static theme first paint with React blocked", () => {
       expectDocumentDensity(probe, "dense");
       expect(probe.dataTheme).toBe(expectedTheme);
       expect(probe.manifest).toEqual(EXPECTED_BOOTSTRAP_MANIFEST);
-      expectLightTokenCanvas(probe);
+      expectTokenCanvas(probe);
       expect(probe.bootstrapScriptCount).toBe(1);
       expect(probe.reactMounted).toBe(false);
 
@@ -199,7 +192,7 @@ describe("static theme first paint with React blocked", () => {
   );
 
   it("writes forced dark before React while storage is light", async () => {
-    const context = await browser.newContext({ colorScheme: "light" });
+    const context = await browser().newContext({ colorScheme: "light" });
     await seedStorage(context, "light");
     const page = await context.newPage();
     await page.route("**/*", abortModuleScripts);
@@ -211,7 +204,7 @@ describe("static theme first paint with React blocked", () => {
     expectDocumentDensity(probe, "dense");
     expect(probe.dataTheme).toBe("dark");
     expect(probe.manifest).toEqual(EXPECTED_FORCED_DARK_MANIFEST);
-    expectLightTokenCanvas(probe);
+    expectTokenCanvas(probe);
     expect(probe.bootstrapScriptCount).toBe(1);
     expect(probe.reactMounted).toBe(false);
 
@@ -219,7 +212,7 @@ describe("static theme first paint with React blocked", () => {
   });
 
   it("stamps comfortable density on the isolated preview before React", async () => {
-    const context = await browser.newContext({ colorScheme: "light" });
+    const context = await browser().newContext({ colorScheme: "light" });
     const page = await context.newPage();
     await page.route("**/*", abortModuleScripts);
     await page.goto(`${staticThemeBaseUrl()}/comfortable.html`, { waitUntil: "commit" });
@@ -241,7 +234,7 @@ describe("static theme delayed React mount", () => {
       releaseModules = resolve;
     });
 
-    const context = await browser.newContext({ colorScheme: "dark" });
+    const context = await browser().newContext({ colorScheme: "dark" });
     await seedStorage(context, "light");
     const page = await context.newPage();
     const warnings = collectThemeWarnings(page);
@@ -260,7 +253,7 @@ describe("static theme delayed React mount", () => {
     expectDocumentDensity(beforeReact, "dense");
     expect(beforeReact.dataTheme).toBe("light");
     expect(beforeReact.manifest).toEqual(EXPECTED_BOOTSTRAP_MANIFEST);
-    expectLightTokenCanvas(beforeReact);
+    expectTokenCanvas(beforeReact);
     expect(beforeReact.reactMounted).toBe(false);
     expect(beforeReact.bootstrapScriptCount).toBe(1);
 
@@ -272,7 +265,7 @@ describe("static theme delayed React mount", () => {
     expectDocumentDensity(afterMount, "dense");
     expect(afterMount.dataTheme).toBe("light");
     expect(afterMount.manifest).toEqual(EXPECTED_BOOTSTRAP_MANIFEST);
-    expectLightTokenCanvas(afterMount);
+    expectTokenCanvas(afterMount);
     expect(afterMount.reactMounted).toBe(true);
     expect(afterMount.bootstrapScriptCount).toBe(1);
     expect(warnings.filter((text) => isThemeWarning(text))).toEqual([]);
@@ -282,7 +275,7 @@ describe("static theme delayed React mount", () => {
     expectFixedDocumentBrand(afterToggle);
     expectDocumentDensity(afterToggle, "dense");
     expect(afterToggle.dataTheme).toBe("dark");
-    expectLightTokenCanvas(afterToggle);
+    expectTokenCanvas(afterToggle);
     expect(afterToggle.bootstrapScriptCount).toBe(1);
     await page.getByText("Color scheme preference dark").waitFor();
     await page.getByText("Resolved color scheme dark").waitFor();
@@ -296,7 +289,7 @@ describe("static theme delayed React mount", () => {
       releaseModules = resolve;
     });
 
-    const context = await browser.newContext({ colorScheme: "light" });
+    const context = await browser().newContext({ colorScheme: "light" });
     await seedStorage(context, "light");
     const page = await context.newPage();
     const warnings = collectThemeWarnings(page);
@@ -323,7 +316,7 @@ describe("static theme delayed React mount", () => {
     expectDocumentDensity(afterMount, "dense");
     expect(afterMount.dataTheme).toBe("dark");
     expect(afterMount.manifest).toEqual(EXPECTED_FORCED_DARK_MANIFEST);
-    expectLightTokenCanvas(afterMount);
+    expectTokenCanvas(afterMount);
     expect(afterMount.reactMounted).toBe(true);
     expect(warnings.filter((text) => isThemeWarning(text))).toEqual([]);
 

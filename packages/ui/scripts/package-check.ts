@@ -1,4 +1,3 @@
-import { spawnSync } from "node:child_process";
 import { mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 
@@ -18,33 +17,31 @@ import {
 } from "./package-check-packed";
 import { checkPackedReactCompatibility } from "./package-check-react";
 import { packageRootFromScript } from "./paths";
+import { runCommand } from "./run-command";
 import { fail, linkConsumerModules, withExtractedTarball } from "./tarball";
 
 const packageRoot = packageRootFromScript(import.meta.url);
 
-function runInherited(command: string, args: string[]): void {
-  const result = spawnSync(command, args, { cwd: packageRoot, stdio: "inherit" });
-  if (result.status !== 0) {
-    throw new Error(`${command} ${args.join(" ")} exited with status ${String(result.status ?? "null")}`);
-  }
-}
-
 try {
   withExtractedTarball(packageRoot, "elmera-ui-pack-", (extracted, tarball) => {
     checkPackedReactCompatibility(tarball);
-    runInherited("pnpm", ["exec", "publint", tarball]);
-    runInherited("pnpm", [
-      "exec",
-      "attw",
-      tarball,
-      "--profile",
-      "esm-only",
-      "--exclude-entrypoints",
-      "css",
-      "demo-stage-comfortable.css",
-      "styles.css",
-      "themes.css",
-    ]);
+    runCommand("pnpm", ["exec", "publint", tarball], packageRoot);
+    runCommand(
+      "pnpm",
+      [
+        "exec",
+        "attw",
+        tarball,
+        "--profile",
+        "esm-only",
+        "--exclude-entrypoints",
+        "css",
+        "demo-stage-comfortable.css",
+        "styles.css",
+        "themes.css",
+      ],
+      packageRoot
+    );
     const consumerRoot = join(dirname(extracted), "consumer");
     mkdirSync(consumerRoot, { recursive: true });
     linkConsumerModules(consumerRoot, extracted, packageRoot);

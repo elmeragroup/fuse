@@ -10,44 +10,42 @@
 @source "../../src";
 
 @theme {
-  --color-docs-ink: #1a1b1e;
-  --color-docs-body: #3f434a;
-  --color-docs-sub: #6b7078;
-  --color-docs-line: #e8e9eb;
-  --color-docs-soft: #f6f7f8;
-  --color-docs-code: #fbfbfc;
-  --color-docs-required: #b3261e;
-  --color-docs-rsc: #3f6b4a;
-  --color-docs-rsc-line: #cfe3d5;
-  --color-docs-rsc-soft: #f4faf6;
-  --font-docs-sans: -apple-system, "Segoe UI", system-ui, sans-serif;
-  --font-docs-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --spacing-docs-header: 3.5rem;
 }
 
 @utility prose-docs {
-  --tw-prose-body: var(--color-docs-body);
-  --tw-prose-headings: var(--color-docs-ink);
-  --tw-prose-lead: var(--color-docs-body);
-  --tw-prose-links: var(--color-docs-ink);
-  --tw-prose-bold: var(--color-docs-ink);
-  --tw-prose-counters: var(--color-docs-sub);
-  --tw-prose-bullets: var(--color-docs-sub);
-  --tw-prose-hr: var(--color-docs-line);
-  --tw-prose-quotes: var(--color-docs-ink);
-  --tw-prose-quote-borders: var(--color-docs-line);
-  --tw-prose-captions: var(--color-docs-sub);
-  --tw-prose-kbd: var(--color-docs-ink);
-  --tw-prose-code: var(--color-docs-ink);
-  --tw-prose-pre-code: var(--color-docs-ink);
-  --tw-prose-pre-bg: var(--color-docs-code);
-  --tw-prose-th-borders: var(--color-docs-line);
-  --tw-prose-td-borders: var(--color-docs-line);
+  --tw-prose-body: var(--foreground);
+  --tw-prose-headings: var(--foreground);
+  --tw-prose-lead: var(--foreground);
+  --tw-prose-links: var(--foreground);
+  --tw-prose-bold: var(--foreground);
+  --tw-prose-counters: var(--muted-foreground);
+  --tw-prose-bullets: var(--muted-foreground);
+  --tw-prose-hr: var(--border);
+  --tw-prose-quotes: var(--foreground);
+  --tw-prose-quote-borders: var(--border);
+  --tw-prose-captions: var(--muted-foreground);
+  --tw-prose-kbd: var(--foreground);
+  --tw-prose-kbd-shadows: var(--border);
+  --tw-prose-code: var(--foreground);
+  --tw-prose-pre-code: var(--foreground);
+  --tw-prose-pre-bg: var(--card);
+  --tw-prose-th-borders: var(--border);
+  --tw-prose-td-borders: var(--border);
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-heading);
+  }
 
   code,
   kbd,
   samp,
   pre {
-    font-family: var(--font-docs-mono);
+    font-family: var(--font-mono);
   }
 }

@@ -16,7 +16,7 @@ export type ComponentIntroProps = {
 const componentIntro = tv({
   slots: {
     importLine:
-      "[&_code]:font-docs-mono [&_code]:bg-docs-soft [&_code]:border-docs-line m-[1rem_0_0] flex flex-wrap items-center gap-[0.55rem] [&_code]:rounded-[6px] [&_code]:border [&_code]:px-[0.6em] [&_code]:py-[0.4em] [&_code]:text-[11.5px]",
+      "[&_code]:text-xs m-[1rem_0_0] flex flex-wrap items-center gap-[0.55rem] [&_code]:rounded-lg [&_code]:border [&_code]:border-border [&_code]:bg-muted [&_code]:px-[0.6em] [&_code]:py-[0.4em] [&_code]:font-mono",
   },
 });
 

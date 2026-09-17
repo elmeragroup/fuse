@@ -13,7 +13,10 @@ export const toastVariants = tv({
     content:
       "isolate flex flex-col gap-1 transition-opacity [transition-duration:250ms] data-[behind]:pointer-events-none data-[behind]:opacity-0 data-[expanded]:pointer-events-auto data-[expanded]:opacity-100",
     title: "font-medium leading-5",
-    description: "leading-5 text-muted-foreground",
+    // The root publishes `--toast-copy` per status; the fallback keeps the neutral
+    // and loading copy on `muted-foreground`. A consumer className still merges over
+    // this slot, unlike an internal descendant selector.
+    description: "leading-5 text-[var(--toast-copy,var(--muted-foreground))]",
     icon: "mt-0.5 size-4 shrink-0",
   },
   variants: {
@@ -29,19 +32,19 @@ export const toastVariants = tv({
         icon: "animate-spin",
       },
       error: {
-        root: "bg-error-soft text-error-soft-foreground ring-1 ring-error/20 [&_[data-slot=toast-title]]:text-error",
+        root: "bg-error-soft text-error-soft-foreground ring-1 ring-error/20 [--toast-copy:var(--error-soft-foreground)]",
         icon: "text-error",
       },
       info: {
-        root: "bg-info-soft text-info-soft-foreground ring-1 ring-info/20 [&_[data-slot=toast-title]]:text-info",
+        root: "bg-info-soft text-info-soft-foreground ring-1 ring-info/20 [--toast-copy:var(--info-soft-foreground)]",
         icon: "text-info",
       },
       success: {
-        root: "bg-success-soft text-success-soft-foreground ring-1 ring-success/20 [&_[data-slot=toast-title]]:text-success",
+        root: "bg-success-soft text-success-soft-foreground ring-1 ring-success/20 [--toast-copy:var(--success-soft-foreground)]",
         icon: "text-success",
       },
       warning: {
-        root: "bg-warning-soft text-warning-soft-foreground ring-1 ring-warning/20 [&_[data-slot=toast-title]]:text-warning",
+        root: "bg-warning-soft text-warning-soft-foreground ring-1 ring-warning/20 [--toast-copy:var(--warning-soft-foreground)]",
         icon: "text-warning",
       },
     },

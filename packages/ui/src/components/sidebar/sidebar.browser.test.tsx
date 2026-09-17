@@ -528,12 +528,19 @@ describe("Sidebar.Root branches", () => {
     expect(dialog.getAttribute("data-side")).toBe("left");
     expect(dialog.classList.contains("mobile-shell")).toBe(true);
     expect(dialog.style.getPropertyValue("--sidebar-width")).toBe("18rem");
-    expect(page.getByRole("button", { name: "Close", exact: true }).query()).toBeNull();
+    const close = page.getByRole("button", { name: "Close", exact: true }).element();
+    if (!(close instanceof HTMLElement)) {
+      throw new Error("expected the mobile close button");
+    }
+    await expect.element(page.getByRole("button", { name: "Close", exact: true })).toBeVisible();
+    // The close sits in a normal-flow header row, not absolute over the panel content.
+    expect(getComputedStyle(close).position).not.toBe("absolute");
     expect(page.getByRole("button", { name: "Orders", exact: true }).query()).not.toBeNull();
     expect(latest?.openMobile).toBe(true);
 
-    latest?.setOpenMobile(false);
+    await userEvent.click(roleNamed("button", "Close"));
     await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
+    expect(document.activeElement).toBe(roleNamed("button", "Toggle sidebar"));
     expect(document.cookie).not.toContain("sidebar:state");
   });
 });

@@ -102,15 +102,6 @@
       "forwardedCount": 275,
       "props": [
         {
-          "name": "variant",
-          "origin": "recipe-axis",
-          "type": "\"default\" | \"line\" | undefined",
-          "shortType": "Union",
-          "defaultValue": "\"default\"",
-          "description": "",
-          "required": false
-        },
-        {
           "name": "activateOnFocus",
           "origin": {
             "packageName": "@base-ui/react"
@@ -163,6 +154,15 @@
           "shortType": "function",
           "defaultValue": null,
           "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "recipe-axis",
+          "type": "\"default\" | \"line\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "",
           "required": false
         }
       ]

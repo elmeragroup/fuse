@@ -122,17 +122,6 @@
           "required": false
         },
         {
-          "name": "items",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "readonly Group<any>[] | readonly { label: ReactNode; value: any; }[] | Record<string, ReactNode> | undefined",
-          "shortType": "Union",
-          "defaultValue": null,
-          "description": "Data structure of the items rendered in the select popup. When specified, `<Select.Value>` renders the label of the selected item instead of the raw value.",
-          "required": false
-        },
-        {
           "name": "itemToStringLabel",
           "origin": {
             "packageName": "@base-ui/react"
@@ -152,6 +141,17 @@
           "shortType": "function",
           "defaultValue": null,
           "description": "When the item values are objects (`<Select.Item value={object}>`), this function converts the object value to a string representation for form submission. If the shape of the object is `{ value, label }`, the value will be used automatically without needing to specify this prop.",
+          "required": false
+        },
+        {
+          "name": "items",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "readonly Group<any>[] | readonly { label: ReactNode; value: any; }[] | Record<string, ReactNode> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Data structure of the items rendered in the select popup. When specified, `<Select.Value>` renders the label of the selected item instead of the raw value.",
           "required": false
         },
         {
@@ -277,15 +277,6 @@
       "forwardedCount": 284,
       "props": [
         {
-          "name": "size",
-          "origin": "declared",
-          "type": "\"default\" | \"sm\" | undefined",
-          "shortType": "Union",
-          "defaultValue": "\"default\"",
-          "description": "Control-box height. Emitted as `data-size`. `\"default\"` maps to the `md` density rung; `\"sm\"` maps to the `sm` rung.",
-          "required": false
-        },
-        {
           "name": "className",
           "origin": {
             "packageName": "@base-ui/react"
@@ -327,6 +318,15 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "size",
+          "origin": "declared",
+          "type": "\"default\" | \"sm\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "Control-box height. Emitted as `data-size`. `\"default\"` maps to the `md` density rung; `\"sm\"` maps to the `sm` rung.",
           "required": false
         },
         {
@@ -447,33 +447,6 @@
           "required": false
         },
         {
-          "name": "container",
-          "origin": "declared",
-          "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
-          "shortType": "Union",
-          "defaultValue": null,
-          "description": "Portal target for this overlay. Defaults to the nearest enclosing `ThemeScope` element, so it never escapes the theme that opened it.",
-          "required": false
-        },
-        {
-          "name": "side",
-          "origin": "declared",
-          "type": "Side | undefined",
-          "shortType": null,
-          "defaultValue": "\"bottom\"",
-          "description": "Which side of the trigger the popup is placed on.",
-          "required": false
-        },
-        {
-          "name": "sideOffset",
-          "origin": "declared",
-          "type": "number | OffsetFunction | undefined",
-          "shortType": "Union",
-          "defaultValue": "4",
-          "description": "Distance from the trigger, in pixels.",
-          "required": false
-        },
-        {
           "name": "className",
           "origin": {
             "packageName": "@base-ui/react"
@@ -482,6 +455,15 @@
           "shortType": "function",
           "defaultValue": null,
           "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "container",
+          "origin": "declared",
+          "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Portal target for this overlay. Defaults to the nearest enclosing `ThemeScope` element, so it never escapes the theme that opened it.",
           "required": false
         },
         {
@@ -504,6 +486,24 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "side",
+          "origin": "declared",
+          "type": "Side | undefined",
+          "shortType": null,
+          "defaultValue": "\"bottom\"",
+          "description": "Which side of the trigger the popup is placed on.",
+          "required": false
+        },
+        {
+          "name": "sideOffset",
+          "origin": "declared",
+          "type": "number | OffsetFunction | undefined",
+          "shortType": "Union",
+          "defaultValue": "4",
+          "description": "Distance from the trigger, in pixels.",
           "required": false
         },
         {

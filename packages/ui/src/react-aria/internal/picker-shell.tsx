@@ -49,7 +49,7 @@ export type PickerShellProps = {
   /** Portal target for the popover, forwarded to the private RAC `Popover`. */
   container?: OverlayContainerProps["container"];
   /**
-   * The picker's `range` axis. The shell resolves its own three slots from
+   * The picker's `range` axis. The shell resolves its own four slots from
    * `pickerVariants` rather than taking them as class strings: they always come from one
    * recipe call with one axis, so the axis is the honest parameter.
    */
@@ -70,7 +70,7 @@ export function PickerShell({
   popover,
   range,
 }: PickerShellProps): ReactElement {
-  const { dialog, group, icon } = pickerVariants({ range });
+  const { dialog, group, icon, trigger } = pickerVariants({ range });
 
   return (
     <>
@@ -78,7 +78,7 @@ export function PickerShell({
       <FieldGroup className={group()} isReadOnly={isReadOnly}>
         {children}
         {/* oxlint-disable-next-line elmera/require-icon-button-label -- RAC's DatePicker and DateRangePicker fill this default Button slot and supply the trigger's localized accessible name ("Calendar"); a local label would shadow it. Asserted in both browser suites. */}
-        <Button size="icon-sm" variant="ghost">
+        <Button size="icon-sm" variant="ghost" className={trigger()}>
           <CalendarBlank aria-hidden className={icon()} />
         </Button>
       </FieldGroup>

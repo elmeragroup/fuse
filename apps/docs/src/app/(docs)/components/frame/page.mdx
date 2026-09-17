@@ -1,9 +1,7 @@
 ---
 title: Frame
 lede: >
-  A server-safe shell for grouped and stacked panels on a muted ground. Card owns the
-  standalone-card look; Frame owns the grouped-panel look — a documented split with no
-  API coupling.
+  A shell for grouped or stacked panels. Use Card when the surface stands alone.
 ---
 
 import { FrameBasic } from "./demos/frame-basic";
@@ -15,22 +13,6 @@ import { componentMetadata } from "../../../../lib/component-page";
 export const metadata = componentMetadata("frame");
 
 <ComponentIntro slug="frame" />
-
-<Prose>
-
-Frame has no base-ui primitive and no recipe. Every part is a styled element, so the
-compound stays server-safe. `Header` and `Footer` sit on the muted ground as siblings of
-`Panel`, not inside it. `Title` is a `div` on purpose — frames nest at arbitrary depths,
-so heading level is the consumer's call (wrap a heading as children).
-
-`stackedPanels` is the only axis: adjacent panels either sit on a 4px muted gutter or
-fuse into one card. The `frame-panel-*` slot prefix is the ref's selector contract, not a
-typo — `Table` (and any `in-data-[slot=frame]:` consumer) keys off these values.
-
-Card and Frame do not share props, variants, or imports. Reach for Card when the surface
-stands alone; reach for Frame when panels group or stack on muted ground.
-
-</Prose>
 
 <Demo slug="frame" id="basic" title="Basic" file="frame-basic.tsx">
   <FrameBasic />

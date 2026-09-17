@@ -237,6 +237,21 @@ describe("InputGroup", () => {
     expect(getComputedStyle(invalidRoot).boxShadow).not.toBe(getComputedStyle(rootNamed("Valid")).boxShadow);
   });
 
+  it("keeps an enabled field editable and undimmed beside a disabled addon", async () => {
+    renderThemed(
+      <InputGroup.Root>
+        <InputGroup.Input aria-label="Editable meter" />
+        <InputGroup.Addon align="inline-end">
+          <InputGroup.Button disabled>Copy meter</InputGroup.Button>
+        </InputGroup.Addon>
+      </InputGroup.Root>
+    );
+    expect(getComputedStyle(rootNamed("Editable meter")).opacity).toBe("1");
+    await userEvent.fill(page.getByRole("textbox", { name: "Editable meter" }), "12345");
+    await expect.element(page.getByRole("textbox", { name: "Editable meter" })).toHaveValue("12345");
+    expect(roleNamed("button", "Copy meter").matches(":disabled")).toBe(true);
+  });
+
   it("dims the group and its addon when the control is disabled", () => {
     renderThemed(
       <InputGroup.Root>

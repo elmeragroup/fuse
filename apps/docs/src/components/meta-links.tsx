@@ -12,7 +12,7 @@ export type MetaLinksProps = {
 
 const metaLinks = tv({
   slots: {
-    root: "text-docs-sub [&_a]:text-docs-sub [&_a]:border-docs-line [&_a:hover]:text-docs-ink m-[0.9rem_0_0] flex items-center gap-[0.55rem] text-[0.8rem] [&_a]:border-b [&_a]:no-underline [&_a:hover]:border-current",
+    root: "text-sm m-[0.9rem_0_0] flex items-center gap-[0.55rem] text-muted-foreground [&_a]:border-b [&_a]:border-border [&_a]:text-muted-foreground [&_a]:no-underline [&_a:hover]:border-current [&_a:hover]:text-foreground",
   },
 });
 

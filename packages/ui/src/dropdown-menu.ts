@@ -4,6 +4,7 @@ export type {
   DropdownMenuContentProps,
   DropdownMenuItemProps,
   DropdownMenuLabelProps,
+  DropdownMenuRadioGroupProps,
   DropdownMenuRadioItemProps,
   DropdownMenuSubContentProps,
   DropdownMenuSubTriggerProps,

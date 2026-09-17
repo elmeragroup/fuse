@@ -13,11 +13,11 @@ import { docsNavList } from "./docs-nav-list";
 
 const sideNav = tv({
   slots: {
-    root: "border-docs-line min-[45rem]:top-docs-header border-r px-4 pt-6 pb-16 text-[0.82rem] min-[45rem]:sticky min-[45rem]:h-[calc(100vh_-_var(--spacing-docs-header))] min-[45rem]:overflow-hidden",
+    root: "min-[45rem]:top-docs-header text-sm border-r border-border px-4 pt-6 pb-16 min-[45rem]:sticky min-[45rem]:h-[calc(100vh_-_var(--spacing-docs-header))] min-[45rem]:overflow-hidden",
     scroll: "h-auto max-h-48 min-[45rem]:h-full min-[45rem]:max-h-none",
     section: "mb-[1.4rem]",
-    heading: "text-docs-sub mb-[0.4rem] block pl-[0.6rem] text-[0.82rem] font-[450]",
-    link: "text-docs-sub hover:bg-docs-soft hover:text-docs-ink data-active:bg-docs-soft data-active:text-docs-ink focus-visible:outline-docs-ink block rounded-[6px] px-[0.6rem] py-[0.28rem] no-underline focus-visible:outline-2 focus-visible:outline-offset-[-2px] data-active:font-[550]",
+    heading: "text-sm font-normal mb-[0.4rem] block pl-[0.6rem] text-muted-foreground",
+    link: "data-active:font-medium block rounded-lg px-[0.6rem] py-[0.28rem] text-muted-foreground no-underline hover:bg-accent hover:text-accent-foreground focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring data-active:bg-accent data-active:text-accent-foreground",
   },
 });
 

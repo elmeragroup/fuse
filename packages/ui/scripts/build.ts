@@ -1,30 +1,29 @@
-import { spawnSync } from "node:child_process";
 import { copyFileSync, mkdirSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 import { buildCss } from "./build-css";
 import { writePublishManifest } from "./generate-exports";
+import type { ReleaseStamp } from "./generate-exports";
 import { packageRootFromScript } from "./paths";
+import { runCommand } from "./run-command";
 
-const packageRoot = packageRootFromScript(import.meta.url);
+export function buildPackage(packageRoot: string, release?: ReleaseStamp): void {
+  runCommand("pnpm", ["exec", "tsdown"], packageRoot);
 
-const tsdown = spawnSync("pnpm", ["exec", "tsdown"], {
-  cwd: packageRoot,
-  stdio: "inherit",
-});
-if (tsdown.status !== 0) {
-  process.exit(tsdown.status ?? 1);
-}
+  buildCss(packageRoot);
 
-buildCss(packageRoot);
-
-const flagsSource = join(packageRoot, "src/flags");
-const flagsDest = join(packageRoot, "dist/flags");
-mkdirSync(flagsDest, { recursive: true });
-for (const name of readdirSync(flagsSource)) {
-  if (name.endsWith(".svg") || name === "LICENSE" || name === "PROVENANCE.md") {
-    copyFileSync(join(flagsSource, name), join(flagsDest, name));
+  const flagsSource = join(packageRoot, "src/flags");
+  const flagsDest = join(packageRoot, "dist/flags");
+  mkdirSync(flagsDest, { recursive: true });
+  for (const name of readdirSync(flagsSource)) {
+    if (name.endsWith(".svg") || name === "LICENSE" || name === "PROVENANCE.md") {
+      copyFileSync(join(flagsSource, name), join(flagsDest, name));
+    }
   }
+
+  writePublishManifest(packageRoot, release);
 }
 
-writePublishManifest(packageRoot);
+if (import.meta.main) {
+  buildPackage(packageRootFromScript(import.meta.url));
+}

@@ -5,7 +5,7 @@ import { Skeleton } from "@elmeragroup/ui/skeleton";
 
 export function SkeletonCard() {
   return (
-    <div aria-busy="true">
+    <div aria-busy="true" className="max-w-sm w-full">
       <Card.Root>
         <Card.Header>
           <Skeleton className="h-4 w-24" />

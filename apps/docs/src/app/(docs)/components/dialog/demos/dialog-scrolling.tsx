@@ -1,17 +1,22 @@
 "use client";
 
+import { useRef } from "react";
+
 import { Button } from "@elmeragroup/ui/button";
 import { Dialog } from "@elmeragroup/ui/dialog";
 
 const clauses = Array.from({ length: 24 }, (_, index) => index + 1);
 
 export function DialogScrolling() {
+  const titleRef = useRef<HTMLHeadingElement>(null);
   return (
     <Dialog.Root>
       <Dialog.Trigger render={<Button variant="outline" />}>Open the full terms</Dialog.Trigger>
-      <Dialog.Content size="lg">
+      <Dialog.Content size="lg" initialFocus={titleRef}>
         <Dialog.Header>
-          <Dialog.Title>Full terms</Dialog.Title>
+          <Dialog.Title ref={titleRef} isFocusable>
+            Full terms
+          </Dialog.Title>
           <Dialog.Description>
             The popup caps its height and scrolls its own content instead of the page.
           </Dialog.Description>

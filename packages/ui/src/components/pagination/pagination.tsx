@@ -46,6 +46,7 @@ export type PaginationRootProps = ComponentProps<"nav"> & {
   label?: string;
 };
 
+/** Wrapping row of page links; edge controls stay reachable in narrow containers. */
 export type PaginationContentProps = ComponentProps<"ul">;
 export type PaginationItemProps = ComponentProps<"li">;
 

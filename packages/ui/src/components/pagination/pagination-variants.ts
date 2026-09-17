@@ -15,7 +15,7 @@ import { tv } from "tailwind-variants";
 export const paginationVariants = tv({
   slots: {
     base: "mx-auto flex w-full flex-col items-center justify-center space-y-4",
-    content: "flex flex-row items-center gap-1",
+    content: "flex max-w-full flex-row flex-wrap items-center justify-center gap-1",
     link: "gap-1",
     linkIcon: "size-4",
     ellipsis: "flex size-9 items-center justify-center",

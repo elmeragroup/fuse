@@ -2,14 +2,12 @@ import { expect, vi } from "vitest";
 
 import { resolveColorSchemeOptions } from "../src/theme/color-scheme";
 import type { ColorScheme, ColorSchemeBootstrapManifest } from "../src/theme/color-scheme";
-import { themeAttributes } from "../src/theme/theme-attributes";
 import { useTheme } from "../src/theme/theme-provider";
 import type { ThemeInput } from "../src/theme/tokens/themes";
 import { useColorScheme } from "../src/theme/use-color-scheme";
+import { stampTheme } from "./theme-fixtures";
 
-export const fkasPrivate = { variant: "internal", brand: "fkas", segment: "private" } as const;
-export const tkasCompany = { variant: "external", brand: "tkas", segment: "company" } as const;
-export const guenPrivate = { variant: "internal", brand: "guen", segment: "private" } as const;
+export { fkasPrivate, guenPrivate, tkasCompany } from "./theme-fixtures";
 
 export const defaultManifest = resolveColorSchemeOptions();
 
@@ -22,10 +20,7 @@ export function writeManifest(manifest: ColorSchemeBootstrapManifest | undefined
 }
 
 export function stampDocumentBrand(theme: ThemeInput) {
-  const attributes = themeAttributes(theme);
-  document.documentElement.setAttribute("data-theme-variant", attributes["data-theme-variant"]);
-  document.documentElement.setAttribute("data-theme-brand", attributes["data-theme-brand"]);
-  document.documentElement.setAttribute("data-theme-segment", attributes["data-theme-segment"]);
+  stampTheme(document.documentElement, theme);
 }
 
 export function readDocumentBrand() {

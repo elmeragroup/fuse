@@ -1,8 +1,7 @@
 ---
 title: Text
 lede: >
-  Body copy. A plain `p` by default, styled by the public `textVariants` recipe — no
-  RAC, polymorphic through `elementType` and `render`.
+  Body paragraphs.
 ---
 
 import { TextBasic } from "./demos/text-basic";
@@ -16,18 +15,6 @@ import { componentMetadata } from "../../../../lib/component-page";
 export const metadata = componentMetadata("text");
 
 <ComponentIntro slug="text" />
-
-<Prose>
-
-`elementType` defaults to `"p"` and stays beside `render` so existing `"span"` / `"div"`
-call sites keep working. `align` is a first-class prop (`left`, `center`, `right`,
-`justify`) — not a className-only axis. `weight="bold"` renders `font-medium`: body copy
-is capped at medium, matching the ref.
-
-The RAC `slot` prop is gone. Description labelling now comes from the field family's
-own Description part.
-
-</Prose>
 
 <Demo slug="text" id="basic" title="Basic" file="text-basic.tsx">
   <TextBasic />

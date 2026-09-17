@@ -1,8 +1,7 @@
 ---
 title: Tooltip
 lede: >
-  A descriptive overlay anchored to its trigger. The arrow is always rendered, portals
-  land in the nearest ThemeScope, and `Tooltip.Provider` opens instantly by default.
+  A short label that appears when a control is hovered or focused.
 ---
 
 import { TooltipBasic } from "./demos/tooltip-basic";
@@ -15,20 +14,6 @@ import { componentMetadata } from "../../../../lib/component-page";
 export const metadata = componentMetadata("tooltip");
 
 <ComponentIntro slug="tooltip" />
-
-<Prose>
-
-Positioner props (`side`, `align`, `sideOffset`, `alignOffset`) surface on
-`Tooltip.Content`. Portal, Positioner and Popup stay unexported — `container` on Content
-is the only portal-control surface, and it defaults to the nearest `ThemeScope`. The
-arrow is always rendered; that is deliberate and is not unified with Popover's opt-in
-`showArrow`.
-
-`Tooltip.Provider` defaults `delay` to `0`. Setting `delay` on `Tooltip.Root` wraps that
-tooltip in a nested scoped provider, so it forms its own group and no longer
-participates in the outer Provider's shared delay or skip-delay hand-off.
-
-</Prose>
 
 <Demo slug="tooltip" id="basic" title="Basic" file="tooltip-basic.tsx">
   <TooltipBasic />

@@ -1,12 +1,20 @@
 import { useRef, useState } from "react";
 import type { ReactNode } from "react";
 
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+// Role tokens live in themes.css only; styles.css defines none of them.
+import "../../../dist/themes.css";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
-import { renderThemed } from "../../../test/themed-browser-render";
+import {
+  cssVarColor,
+  fkasPrivate,
+  renderThemed,
+  snapshotDocumentTheme,
+  stampDocumentTheme,
+} from "../../../test/themed-browser-render";
 import { Toast } from "./toast";
 
 const CLOSE_COPY = {
@@ -389,6 +397,63 @@ describe("Toast chrome", () => {
     const hold = page.getByRole("button", { name: "Hold", exact: true }).element();
     expect(hold.getAttribute("data-base-ui-swipe-ignore")).not.toBeNull();
   });
+});
+
+describe("Toast contrast", () => {
+  let restoreDocumentTheme: () => void;
+
+  beforeEach(() => {
+    restoreDocumentTheme = snapshotDocumentTheme();
+  });
+
+  afterEach(() => {
+    restoreDocumentTheme();
+  });
+
+  it.each(["error", "info", "success", "warning"] as const)(
+    "paints the %s title and description with the paired soft foreground in internal dark",
+    async (status) => {
+      stampDocumentTheme(fkasPrivate, "dark");
+
+      const { manager } = renderToast();
+      manager.add({ type: status, title: "Outage", description: "Grid is down.", timeout: 0 });
+      const root = await waitForToast("Outage");
+      const title = toastCopy("Outage");
+      const description = toastCopy("Grid is down.");
+
+      const softProbe = document.createElement("span");
+      softProbe.style.color = `var(--${status}-soft-foreground)`;
+      const statusProbe = document.createElement("span");
+      statusProbe.style.color = `var(--${status})`;
+      root.append(softProbe, statusProbe);
+      const softColor = getComputedStyle(softProbe).color;
+      const statusColor = getComputedStyle(statusProbe).color;
+      softProbe.remove();
+      statusProbe.remove();
+
+      expect(softColor, "the soft pair must differ from the raw status role").not.toBe(statusColor);
+      expect(getComputedStyle(title).color).toBe(softColor);
+      expect(getComputedStyle(description).color).toBe(softColor);
+    }
+  );
+
+  it.each(["neutral", "loading"] as const)(
+    "keeps the %s description on the muted-foreground fallback in internal dark",
+    async (status) => {
+      stampDocumentTheme(fkasPrivate, "dark");
+
+      const { manager } = renderToast();
+      manager.add(
+        status === "loading"
+          ? { type: "loading", title: "Notice", description: "Nothing to report.", timeout: 0 }
+          : { title: "Notice", description: "Nothing to report.", timeout: 0 }
+      );
+      const root = await waitForToast("Notice");
+      const description = toastCopy("Nothing to report.");
+
+      expect(getComputedStyle(description).color).toBe(cssVarColor(root, "--muted-foreground"));
+    }
+  );
 });
 
 describe("Toast motion", () => {

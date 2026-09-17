@@ -1,8 +1,7 @@
 ---
 title: Textarea
 lede: >
-  An unlabeled multi-line text control. A plain native `textarea` carrying the library's
-  control tokens; labeled usage composes it under `Field.Root`.
+  A multiline text input.
 ---
 
 import { TextareaBasic } from "./demos/textarea-basic";
@@ -17,8 +16,7 @@ export const metadata = componentMetadata("textarea");
 
 <Prose>
 
-Like `Input`, a bare `Textarea` has no accessible name of its own. Compose it under
-`Field.Root`, or inside `InputGroup` when it needs adornments.
+A bare textarea has no accessible name; compose it under `Field.Root` with a `Field.Label`.
 
 </Prose>
 

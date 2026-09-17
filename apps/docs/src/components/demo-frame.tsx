@@ -22,14 +22,14 @@ export type DemoFrameProps = {
 const demoFrame = tv({
   slots: {
     root: "mt-8",
-    card: "border-docs-line overflow-hidden rounded-[10px] border",
+    card: "overflow-hidden rounded-xl border border-border",
   },
 });
 
 const { root, card } = demoFrame();
 
 /**
- * The §3.5 demo frame: a theme-tinted dotted stage, the active theme coordinate and its
+ * The §3.5 demo frame: a theme-tinted stage, the active theme coordinate and its
  * deployment-default density in mono, and the source of the very file that rendered the
  * stage.
  *

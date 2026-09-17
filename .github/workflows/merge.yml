@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
@@ -13,6 +14,11 @@ concurrency:
 jobs:
   checks:
     runs-on: ubuntu-latest
+    env:
+      # This repo's changesets bot branch. GitHub stringifies job env values, so the steps
+      # compare against 'true' explicitly; a bare `env.IS_SELF_RELEASE_PR` would be truthy
+      # even when its value is the string "false".
+      IS_SELF_RELEASE_PR: ${{ github.head_ref == 'changeset-release/main' && github.event.pull_request.head.repo.full_name == github.repository }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -37,11 +43,15 @@ jobs:
       # turbo.json ci:checks minus browser checks — a docs/unit failure should not
       # wait on the Chromium suite.
       - name: turbo ci:checks (no browser)
-        run: pnpm exec turbo run '//#lint' '//#test:repo-policy' type-check test test:types build package:check size-limit
+        run: pnpm exec turbo run '//#lint' '//#test:repo-policy' '//#type-check:scripts' type-check test test:types build package:check size-limit
 
       - name: Changeset presence
-        if: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'no-changeset') }}
+        if: ${{ github.event_name == 'pull_request' && env.IS_SELF_RELEASE_PR != 'true' && !contains(github.event.pull_request.labels.*.name, 'no-changeset') }}
         run: pnpm exec changeset status --since=origin/${{ github.base_ref }}
+
+      - name: Validate stable release PR
+        if: env.IS_SELF_RELEASE_PR == 'true' || github.ref == 'refs/heads/changeset-release/main'
+        run: pnpm release check-pr
 
   browser:
     runs-on: ubuntu-latest
@@ -68,3 +78,30 @@ jobs:
 
       - name: turbo browser checks
         run: pnpm exec turbo run test:browser test:packed-consumer
+
+  # Every activated push to main publishes a canary for the merged commit; a merged Version
+  # Packages PR carries the stable bump and publishes the stable line (release.md §2, §3).
+  # Publishing and versioning stay off until activation sets RELEASE_ENABLED (release.md §8).
+  # Gating versioning too matters: a Version Packages PR merged while publishing is off would
+  # land its stable bump and consume its changesets, and the skipped release job would never
+  # publish that version.
+  release:
+    needs: checks
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.RELEASE_ENABLED == 'true'
+    permissions:
+      contents: write
+      pull-requests: read
+    uses: ./.github/workflows/publish-release.yml
+    with:
+      source_commit: ${{ github.sha }}
+    secrets:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  version:
+    needs: checks
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.RELEASE_ENABLED == 'true'
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    uses: ./.github/workflows/version-packages.yml

@@ -25,6 +25,7 @@ import { selfFocusRingClass } from "../../styles/utils";
 import { Button } from "../button/button";
 import type { ButtonProps } from "../button/button";
 import { Input } from "../input/input";
+import { OverlayCloseButton } from "../overlay/overlay-close-button";
 import { Separator } from "../separator/separator";
 import type { SeparatorProps } from "../separator/separator";
 import { Sheet } from "../sheet/sheet";
@@ -300,7 +301,14 @@ function SidebarRoot({
             <Sheet.Title>{labels.title}</Sheet.Title>
             <Sheet.Description>{labels.description}</Sheet.Description>
           </Sheet.Header>
-          <div className="flex h-full w-full flex-col">{children}</div>
+          <div className="flex h-full w-full flex-col">
+            {/* The close sits in a normal-flow header row rather than absolute over the
+                content, so no section reserves a magic offset for it. */}
+            <div className="flex shrink-0 justify-end p-2">
+              <Sheet.Close render={<OverlayCloseButton />} />
+            </div>
+            <div className="flex min-h-0 w-full flex-1 flex-col">{children}</div>
+          </div>
         </Sheet.Content>
       </Sheet.Root>
     );
