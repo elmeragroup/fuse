@@ -13,7 +13,7 @@ import { DEFAULTS } from "./tokens/defaults";
 import { externalDarkPalette } from "./tokens/external-dark-palettes";
 import { externalPalette } from "./tokens/external-palettes";
 import { INTERNAL_DARK_PALETTE } from "./tokens/internal-dark-palette";
-import { segmentDelta } from "./tokens/segment-deltas";
+import { segmentSheet } from "./tokens/segment-sheets";
 import { themeSlug } from "./tokens/themes";
 import type { ThemeInput, ThemeVariant } from "./tokens/themes";
 
@@ -35,9 +35,9 @@ export function nonDefaultLayers(theme: ThemeInput): Partial<TokenContract>[] {
     return layers;
   }
   layers.push(externalResetLayer(theme));
-  const delta = segmentDelta(theme);
-  if (delta) {
-    layers.push(delta);
+  const light = segmentSheet(theme)?.light;
+  if (light) {
+    layers.push(light);
   }
   return layers;
 }
@@ -51,9 +51,9 @@ export function suppliedNonDefaultKeys(theme: ThemeInput): Set<TokenName> {
     for (const name of assignedTokenNames(externalPalette(theme.brand))) {
       supplied.add(name);
     }
-    const delta = segmentDelta(theme);
-    if (delta) {
-      for (const name of assignedTokenNames(delta)) {
+    const light = segmentSheet(theme)?.light;
+    if (light) {
+      for (const name of assignedTokenNames(light)) {
         supplied.add(name);
       }
     }

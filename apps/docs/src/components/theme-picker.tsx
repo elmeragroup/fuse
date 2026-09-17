@@ -6,17 +6,20 @@ import { tv } from "tailwind-variants";
 
 import { Button } from "@elmeragroup/ui/button";
 import { DropdownMenu } from "@elmeragroup/ui/dropdown-menu";
+import type { DropdownMenuRadioGroupProps } from "@elmeragroup/ui/dropdown-menu";
 import { ArrowsClockwise, SlidersHorizontal } from "@elmeragroup/ui/icons";
 import { BRANDS, coerceTheme, useColorScheme } from "@elmeragroup/ui/theme";
-import type { BrandCode, ColorScheme, ThemeInput, ThemeSegment, ThemeVariant } from "@elmeragroup/ui/theme";
+import type { ThemeInput, ThemeSegment } from "@elmeragroup/ui/theme";
 
 import {
   COLOR_SCHEME_LABELS,
   COLOR_SCHEMES,
   DEFAULT_THEME,
+  SEGMENT_LABELS,
   THEME_BRANDS,
   THEME_SEGMENTS,
   THEME_VARIANTS,
+  VARIANT_LABELS,
 } from "../lib/theme";
 
 const themePicker = tv({
@@ -24,23 +27,59 @@ const themePicker = tv({
     trigger: "shrink-0 data-popup-open:bg-accent",
     icon: "size-4.5",
     content: "w-70 max-w-[calc(100vw-2rem)]",
-    introduction: "flex flex-col gap-1 px-3 pt-3 pb-2.5",
-    title: "text-sm font-semibold",
+    section: "flex flex-col gap-1 px-3 pt-3 pb-2.5",
+    heading: "text-sm font-semibold",
     description: "text-xs leading-4.5 text-muted-foreground",
-    previewHeading: "flex flex-col gap-1 px-3 pt-3 pb-1",
-    previewTitle: "text-sm font-semibold",
     label: "px-3 leading-4.5",
     item: "pl-3",
     separator: "mx-0 my-0",
     segmentHelp: "text-xs px-3 pt-2 pb-2.5 leading-4.5 text-muted-foreground",
     reset: "text-sm gap-2.5 px-3 py-2",
   },
+  variants: {
+    spacing: {
+      tight: {
+        section: "pb-1",
+      },
+    },
+  },
 });
 
 const styles = themePicker();
 
-const VARIANT_LABELS = { internal: "Internal", external: "External" } as const;
-const SEGMENT_LABELS = { private: "Private", company: "Company" } as const;
+type PickerRadioGroupProps<T extends string> = Required<
+  Pick<DropdownMenuRadioGroupProps<T>, "value" | "onValueChange">
+> & {
+  label: string;
+  options: readonly T[];
+  optionLabel: (option: T) => string;
+  isOptionDisabled?: (option: T) => boolean;
+};
+
+function PickerRadioGroup<T extends string>({
+  label,
+  value,
+  options,
+  optionLabel,
+  onValueChange,
+  isOptionDisabled,
+}: PickerRadioGroupProps<T>): ReactElement {
+  return (
+    <DropdownMenu.RadioGroup value={value} onValueChange={onValueChange}>
+      <DropdownMenu.Label className={styles.label()}>{label}</DropdownMenu.Label>
+      {options.map((option) => (
+        <DropdownMenu.RadioItem
+          key={option}
+          value={option}
+          disabled={isOptionDisabled?.(option)}
+          closeOnClick={false}
+          className={styles.item()}>
+          {optionLabel(option)}
+        </DropdownMenu.RadioItem>
+      ))}
+    </DropdownMenu.RadioGroup>
+  );
+}
 
 export type ThemePickerProps = {
   theme: ThemeInput;
@@ -59,70 +98,46 @@ export function ThemePicker({ theme, onThemeChange }: ThemePickerProps): ReactEl
         <SlidersHorizontal className={styles.icon()} />
       </DropdownMenu.Trigger>
       <DropdownMenu.Content align="end" sideOffset={8} className={styles.content()}>
-        <div className={styles.introduction()}>
-          <p className={styles.title()}>Theme settings</p>
+        <div className={styles.section()}>
+          <p className={styles.heading()}>Theme settings</p>
           <p className={styles.description()}>Appearance and component previews</p>
         </div>
-        <DropdownMenu.RadioGroup
+        <PickerRadioGroup
+          label="Appearance"
           value={colorScheme}
-          onValueChange={(value: ColorScheme) => setColorScheme(value)}>
-          <DropdownMenu.Label className={styles.label()}>Appearance</DropdownMenu.Label>
-          {COLOR_SCHEMES.map((scheme) => (
-            <DropdownMenu.RadioItem
-              key={scheme}
-              value={scheme}
-              closeOnClick={false}
-              className={styles.item()}>
-              {COLOR_SCHEME_LABELS[scheme]}
-            </DropdownMenu.RadioItem>
-          ))}
-        </DropdownMenu.RadioGroup>
+          options={COLOR_SCHEMES}
+          optionLabel={(scheme) => COLOR_SCHEME_LABELS[scheme]}
+          onValueChange={setColorScheme}
+        />
         <DropdownMenu.Separator className={styles.separator()} />
-        <div className={styles.previewHeading()}>
-          <p className={styles.previewTitle()}>Component previews</p>
+        <div className={styles.section({ spacing: "tight" })}>
+          <p className={styles.heading()}>Component previews</p>
           <p className={styles.description()}>Only changes the examples on this page.</p>
         </div>
-        <DropdownMenu.RadioGroup
+        <PickerRadioGroup
+          label="Variant"
           value={theme.variant}
-          onValueChange={(variant: ThemeVariant) => commitTheme({ ...theme, variant }, onThemeChange)}>
-          <DropdownMenu.Label className={styles.label()}>Variant</DropdownMenu.Label>
-          {THEME_VARIANTS.map((variant) => (
-            <DropdownMenu.RadioItem
-              key={variant}
-              value={variant}
-              closeOnClick={false}
-              className={styles.item()}>
-              {VARIANT_LABELS[variant]}
-            </DropdownMenu.RadioItem>
-          ))}
-        </DropdownMenu.RadioGroup>
+          options={THEME_VARIANTS}
+          optionLabel={(variant) => VARIANT_LABELS[variant]}
+          onValueChange={(variant) => commitTheme({ ...theme, variant }, onThemeChange)}
+        />
         <DropdownMenu.Separator className={styles.separator()} />
-        <DropdownMenu.RadioGroup
+        <PickerRadioGroup
+          label="Brand"
           value={theme.brand}
-          onValueChange={(brand: BrandCode) => commitTheme({ ...theme, brand }, onThemeChange)}>
-          <DropdownMenu.Label className={styles.label()}>Brand</DropdownMenu.Label>
-          {THEME_BRANDS.map((brand) => (
-            <DropdownMenu.RadioItem key={brand} value={brand} closeOnClick={false} className={styles.item()}>
-              {BRANDS[brand].displayName}
-            </DropdownMenu.RadioItem>
-          ))}
-        </DropdownMenu.RadioGroup>
+          options={THEME_BRANDS}
+          optionLabel={(brand) => BRANDS[brand].displayName}
+          onValueChange={(brand) => commitTheme({ ...theme, brand }, onThemeChange)}
+        />
         <DropdownMenu.Separator className={styles.separator()} />
-        <DropdownMenu.RadioGroup
+        <PickerRadioGroup
+          label="Segment"
           value={theme.segment}
-          onValueChange={(segment: ThemeSegment) => commitTheme({ ...theme, segment }, onThemeChange)}>
-          <DropdownMenu.Label className={styles.label()}>Segment</DropdownMenu.Label>
-          {THEME_SEGMENTS.map((segment) => (
-            <DropdownMenu.RadioItem
-              key={segment}
-              value={segment}
-              disabled={!allowedSegments.includes(segment)}
-              closeOnClick={false}
-              className={styles.item()}>
-              {SEGMENT_LABELS[segment]}
-            </DropdownMenu.RadioItem>
-          ))}
-        </DropdownMenu.RadioGroup>
+          options={THEME_SEGMENTS}
+          optionLabel={(segment) => SEGMENT_LABELS[segment]}
+          onValueChange={(segment) => commitTheme({ ...theme, segment }, onThemeChange)}
+          isOptionDisabled={(segment) => !allowedSegments.includes(segment)}
+        />
         {allowedSegments.length === 1 ? (
           <p className={styles.segmentHelp()}>
             This brand supports {SEGMENT_LABELS[theme.segment]} only.

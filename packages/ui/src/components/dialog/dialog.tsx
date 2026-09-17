@@ -19,7 +19,11 @@ import {
   overlaySizeVariants,
   overlayTitleClass,
 } from "../overlay/overlay-classes";
-import { OverlayCloseButton, overlayFooterCloseButton } from "../overlay/overlay-close-button";
+import {
+  OverlayCloseButton,
+  overlayCornerCloseClass,
+  overlayFooterCloseButton,
+} from "../overlay/overlay-close-button";
 import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps } from "../overlay/overlay-props";
 
@@ -128,7 +132,7 @@ function DialogContent({
         {showCloseButton ? (
           <DialogPrimitive.Close
             data-slot="dialog-close"
-            render={<OverlayCloseButton label={closeLabel} className="absolute top-4 right-4" />}
+            render={<OverlayCloseButton label={closeLabel} className={overlayCornerCloseClass} />}
           />
         ) : null}
       </DialogPrimitive.Popup>
@@ -178,14 +182,14 @@ export type DialogTitleProps = ComponentProps<typeof DialogPrimitive.Title> & {
   isFocusable?: boolean;
 };
 
-function DialogTitle({ className, isFocusable = false, ...props }: DialogTitleProps): ReactElement {
+function DialogTitle({ className, isFocusable = false, tabIndex, ...props }: DialogTitleProps): ReactElement {
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
       className={mergeClassName(className, overlayTitleClass, isFocusable && selfFocusRingClass)}
       {...props}
       // isFocusable owns the tab stop when set; otherwise the caller's tabIndex stands.
-      tabIndex={isFocusable ? -1 : props.tabIndex}
+      tabIndex={isFocusable ? -1 : tabIndex}
     />
   );
 }

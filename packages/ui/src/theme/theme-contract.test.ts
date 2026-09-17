@@ -8,14 +8,24 @@ import { contrastRatio } from "./contrast";
 import { parseStyleRules } from "./css-rules";
 import { generateThemesCss } from "./generate-css";
 import { assignedTokenNames, EXTERNAL_RESET_KEYS, TOKEN_NAMES } from "./tokens/contract";
+import type { TokenContract } from "./tokens/contract";
 import { DEFAULTS } from "./tokens/defaults";
 import { externalDarkPalette } from "./tokens/external-dark-palettes";
 import { EXTERNAL_PALETTES } from "./tokens/external-palettes";
 import { INTERNAL_DARK_PALETTE } from "./tokens/internal-dark-palette";
 import { PRIMITIVES } from "./tokens/primitives";
 import { aliasTarget, THEME_RESET_KEYS } from "./tokens/reset-keys";
-import { FKAS_COMPANY_DELTA } from "./tokens/segment-deltas";
+import { segmentSheet } from "./tokens/segment-sheets";
 import { LEGAL_THEMES, themeSlug } from "./tokens/themes";
+
+/** fkas-company's light sheet through the real accessor; the sheet table must keep it. */
+function fkasCompanyLight(): Partial<TokenContract> {
+  const sheet = segmentSheet({ variant: "external", brand: "fkas", segment: "company" });
+  if (sheet === undefined) {
+    throw new Error("fkas-company has no segment sheet");
+  }
+  return sheet.light;
+}
 
 const EXPECTED_SELECTORS = [
   ":root",
@@ -75,7 +85,6 @@ describe("theme contract", () => {
       ).toEqual([...EXTERNAL_RESET_KEYS, "color-scheme"]);
     }
     for (const rule of rules.filter((entry) => entry.selector.includes('[data-theme="dark"]'))) {
-      if (rule.selector.includes("[data-theme-segment=")) continue;
       expect(
         rule.declarations.map((declaration) => declaration.name),
         rule.selector
@@ -137,6 +146,13 @@ describe("theme contract", () => {
     await expect(css).toMatchFileSnapshot("./__snapshots__/themes.css");
   });
 
+  it("selects a segment sheet only for an external theme with one", () => {
+    expect(fkasCompanyLight().background).toBe("oklch(0.9823 0.01428 213.1)");
+    expect(segmentSheet({ variant: "internal", brand: "fkas", segment: "company" })).toBeUndefined();
+    expect(segmentSheet({ variant: "external", brand: "fkas", segment: "private" })).toBeUndefined();
+    expect(segmentSheet({ variant: "external", brand: "tkas", segment: "company" })).toBeUndefined();
+  });
+
   it("covers every key any external palette or segment delta can override", () => {
     const supplied = new Set<string>();
     for (const palette of Object.values(EXTERNAL_PALETTES)) {
@@ -144,7 +160,7 @@ describe("theme contract", () => {
         supplied.add(name);
       }
     }
-    for (const name of assignedTokenNames(FKAS_COMPANY_DELTA)) {
+    for (const name of assignedTokenNames(fkasCompanyLight())) {
       supplied.add(name);
     }
 
@@ -264,7 +280,8 @@ describe("external soft tones", () => {
         EXTERNAL_PALETTES[brand]["secondary-soft"]
       );
     }
-    expect(FKAS_COMPANY_DELTA["primary-soft"]).toBe(FKAS_COMPANY_DELTA["secondary-soft"]);
+    const company = fkasCompanyLight();
+    expect(company["primary-soft"]).toBe(company["secondary-soft"]);
   });
 });
 

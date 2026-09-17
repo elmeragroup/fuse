@@ -1,8 +1,18 @@
-import type { ResolvedColorScheme } from "../color-scheme-types";
 import type { TokenContract } from "./contract";
-import type { ThemeInput } from "./themes";
+import type { BrandCode, ThemeInput, ThemeSegment } from "./themes";
 
-export const FKAS_COMPANY_DELTA = {
+/** Both schemes' sheets for one brand/segment pair that departs from its brand base. */
+export type SegmentSheets = {
+  /** The light overrides applied on top of the brand's base palette. */
+  readonly light: Partial<TokenContract>;
+
+  /** The dark sheet that replaces the brand's dark palette. */
+  readonly dark: Partial<TokenContract>;
+};
+
+// fkas-company's light overrides on top of the fkas base palette. The generator emits only
+// the keys that differ from the base theme.
+const FKAS_COMPANY_DELTA = {
   background: "oklch(0.9823 0.01428 213.1)",
   foreground: "oklch(0.30579 0.03693 215.45)",
   "card-foreground": "oklch(0.25285 0.03792 212.52)",
@@ -20,8 +30,9 @@ export const FKAS_COMPANY_DELTA = {
   "feature-foreground": "oklch(0.90856 0.05958 225.03)",
 } as const satisfies Partial<TokenContract>;
 
-// Bedrift UF9t0CyeKAwPEypCW3S41m. Only fkas-company uses this palette.
-export const FKAS_COMPANY_DARK_PALETTE = {
+// Bedrift UF9t0CyeKAwPEypCW3S41m. Only fkas-company uses this sheet, and it replaces
+// the fkas dark sheet key for key rather than layering on top of it.
+const FKAS_COMPANY_DARK_SHEET = {
   background: "oklch(0.1749487 0.003804 164.5613)", // #0F1110
   foreground: "oklch(0.9822955 0.0142785 213.0969)", // #EFFCFF
   card: "oklch(0.2661671 0.0034366 164.8011)", // #242625
@@ -41,12 +52,25 @@ export const FKAS_COMPANY_DARK_PALETTE = {
   "feature-foreground": "oklch(0.3921674 0.071463 220.1224)", // #004E60
 } as const satisfies Partial<TokenContract>;
 
-export function segmentDelta(
-  theme: ThemeInput,
-  colorScheme: ResolvedColorScheme = "light"
-): Partial<TokenContract> | undefined {
-  if (theme.variant === "external" && theme.brand === "fkas" && theme.segment === "company") {
-    return colorScheme === "dark" ? FKAS_COMPANY_DARK_PALETTE : FKAS_COMPANY_DELTA;
-  }
-  return undefined;
+// `as const satisfies` keeps the literal key; the accessor narrows the composite key to
+// it with `Object.hasOwn`, so the lookup needs no open-dictionary annotation (which
+// `anti-slop/no-known-value-widening` rejects).
+const SEGMENT_SHEETS = {
+  "fkas-company": { light: FKAS_COMPANY_DELTA, dark: FKAS_COMPANY_DARK_SHEET },
+} as const satisfies Partial<Record<`${BrandCode}-${ThemeSegment}`, SegmentSheets>>;
+
+/** True when a composite brand/segment key names an entry in `SEGMENT_SHEETS`. */
+function isSegmentSheetKey(key: string): key is keyof typeof SEGMENT_SHEETS {
+  return Object.hasOwn(SEGMENT_SHEETS, key);
+}
+
+/**
+ * Both schemes' sheets for one theme that departs from its brand base, or `undefined`
+ * when it has none. Internal themes never consult a segment sheet, so an internal
+ * `fkas-company` is a no-sheet theme by construction.
+ */
+export function segmentSheet(theme: ThemeInput): SegmentSheets | undefined {
+  if (theme.variant !== "external") return undefined;
+  const key = `${theme.brand}-${theme.segment}`;
+  return isSegmentSheetKey(key) ? SEGMENT_SHEETS[key] : undefined;
 }

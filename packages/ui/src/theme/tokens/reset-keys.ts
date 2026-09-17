@@ -1,17 +1,11 @@
-import { assignedTokenNames, EXTERNAL_RESET_KEYS, TOKEN_NAMES } from "./contract";
+import { assignedTokenNames, TOKEN_NAMES } from "./contract";
+import type { TokenContract, TokenName } from "./contract";
 import { DEFAULTS } from "./defaults";
 import { externalDarkPalette } from "./external-dark-palettes";
+import { externalPalette } from "./external-palettes";
 import { INTERNAL_DARK_PALETTE } from "./internal-dark-palette";
+import { segmentSheet } from "./segment-sheets";
 import { LEGAL_THEMES } from "./themes";
-
-const changedKeys = new Set<string>(EXTERNAL_RESET_KEYS);
-for (const name of assignedTokenNames(INTERNAL_DARK_PALETTE)) changedKeys.add(name);
-for (const theme of LEGAL_THEMES) {
-  if (theme.variant !== "external") continue;
-  for (const name of assignedTokenNames(externalDarkPalette(theme))) {
-    changedKeys.add(name);
-  }
-}
 
 const VARIABLE_REFERENCE = /^var\(--([a-z0-9-]+)\)$/;
 
@@ -20,21 +14,51 @@ export function aliasTarget(value: string): string | undefined {
   return VARIABLE_REFERENCE.exec(value)?.[1];
 }
 
-// An inherited alias has already resolved against its parent's variables. Rebind it
-// wherever a scope resets the role it references. No `DEFAULTS` alias targets another
-// alias today, so this iteration is defensive: it keeps the closure correct if one is
-// ever added, independent of `TOKEN_NAMES` order.
-let addedAlias = true;
-while (addedAlias) {
-  addedAlias = false;
-  for (const name of TOKEN_NAMES) {
-    if (changedKeys.has(name)) continue;
-    const target = aliasTarget(DEFAULTS[name]);
-    if (target !== undefined && changedKeys.has(target)) {
+/**
+ * Every token name the given layers can change, in `TOKEN_NAMES` order. An `undefined`
+ * layer — a theme with no segment sheet — is skipped rather than replaced with an empty
+ * object.
+ */
+function resetKeysFor(layers: readonly (Partial<TokenContract> | undefined)[]): readonly TokenName[] {
+  const changedKeys = new Set<string>();
+  for (const layer of layers) {
+    if (layer === undefined) continue;
+    for (const name of assignedTokenNames(layer)) {
       changedKeys.add(name);
-      addedAlias = true;
     }
   }
+
+  // An inherited alias has already resolved against its parent's variables. Rebind it
+  // wherever a scope resets the role it references. No `DEFAULTS` alias targets another
+  // alias today, so this iteration is defensive: it keeps the closure correct if one is
+  // ever added, independent of `TOKEN_NAMES` order.
+  let addedAlias = true;
+  while (addedAlias) {
+    addedAlias = false;
+    for (const name of TOKEN_NAMES) {
+      if (changedKeys.has(name)) continue;
+      const target = aliasTarget(DEFAULTS[name]);
+      if (target !== undefined && changedKeys.has(target)) {
+        changedKeys.add(name);
+        addedAlias = true;
+      }
+    }
+  }
+
+  return TOKEN_NAMES.filter((name) => changedKeys.has(name));
 }
 
-export const THEME_RESET_KEYS = TOKEN_NAMES.filter((name) => changedKeys.has(name));
+// Seed from the palette layers themselves, so this module cannot claim a key no layer
+// supplies. The theme tests pin the light layers' key union to the documented
+// `EXTERNAL_RESET_KEYS` literal.
+const externalThemes = LEGAL_THEMES.filter((theme) => theme.variant === "external");
+
+const lightLayers = externalThemes.flatMap((theme) => [
+  externalPalette(theme.brand),
+  segmentSheet(theme)?.light,
+]);
+
+const darkLayers = [INTERNAL_DARK_PALETTE, ...externalThemes.map((theme) => externalDarkPalette(theme))];
+
+/** Every token name a light or dark palette can change, in `TOKEN_NAMES` order. */
+export const THEME_RESET_KEYS = resetKeysFor([...lightLayers, ...darkLayers]);

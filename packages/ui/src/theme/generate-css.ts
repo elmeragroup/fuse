@@ -7,7 +7,7 @@ import { DEFAULTS } from "./tokens/defaults";
 import { INTERNAL_DARK_PALETTE } from "./tokens/internal-dark-palette";
 import { PRIMITIVE_NAMES, PRIMITIVES } from "./tokens/primitives";
 import { THEME_RESET_KEYS } from "./tokens/reset-keys";
-import { BRAND_CODES, LEGAL_THEMES } from "./tokens/themes";
+import { BRAND_CODES, BRANDS, LEGAL_THEMES } from "./tokens/themes";
 
 const GENERATED_FILE_HEADER = `/**
  * AUTO-GENERATED FILE — DO NOT EDIT DIRECTLY.
@@ -110,33 +110,48 @@ function emitInternalDarkPalette(): string {
   );
 }
 
+function changedKeys(base: TokenContract, tokens: TokenContract): TokenName[] {
+  return TOKEN_NAMES.filter((key) => tokens[key] !== base[key]);
+}
+
 /**
- * One mechanism per scheme: emit the brand rule from its composed base theme, then a
- * segment rule only where the composed segment theme differs from that base.
+ * Emit each brand's rule from its composed base theme, then a segment rule only where
+ * the composed segment theme differs from that base. Light segment rules carry only those
+ * differences; dark segment rules materialize the full reset set like every other dark
+ * rule, so the cascade never depends on emission order.
  */
 function emitBrandPalettes(colorScheme: ResolvedColorScheme): string {
   const keys = resetKeys(colorScheme);
   const rules: string[] = [];
   for (const brand of BRAND_CODES) {
     const themes = LEGAL_THEMES.filter((theme) => theme.variant === "external" && theme.brand === brand);
-    // `themes[0]` is the brand's base permutation (private where one exists; fkab is
-    // company-only). Its rule carries no `data-theme-segment`, so it is the fallback an
-    // element without a segment — or with a segment that has no delta — resolves.
-    const baseTheme = themes[0];
+    // Resolve the base by the brand's first segment rather than `themes[0]`, so base
+    // selection does not depend on `LEGAL_THEMES` ordering. Its rule carries no
+    // `data-theme-segment`, so it is the fallback an element without a segment — or
+    // with a segment that has no sheet — resolves.
+    const [baseSegment] = BRANDS[brand].segments;
+    const baseTheme = themes.find((theme) => theme.segment === baseSegment);
     if (baseTheme === undefined) {
       throw new Error(`Brand ${brand} has no legal external themes`);
     }
     const base = composeTheme(baseTheme, colorScheme);
     const selector = `[data-theme-variant="external"][data-theme-brand="${brand}"]`;
     rules.push(themeRule(selector, resetDeclarations(base, keys), colorScheme));
-    for (const theme of themes.slice(1)) {
+    for (const theme of themes.filter((candidate) => candidate !== baseTheme)) {
       const tokens = composeTheme(theme, colorScheme);
-      const delta = TOKEN_NAMES.filter((key) => tokens[key] !== base[key]).map(
-        (key) => [key, tokens[key]] as const
-      );
-      if (delta.length > 0) {
-        rules.push(themeRule(`${selector}[data-theme-segment="${theme.segment}"]`, delta, colorScheme));
-      }
+      const changed = changedKeys(base, tokens);
+      // A segment rule exists only where the segment differs from its brand base. tkas,
+      // guen and elma have a company segment but no sheet, so they get no rule in either
+      // scheme.
+      if (changed.length === 0) continue;
+      // Dark segment rules materialize the full reset set like every other dark rule, so
+      // specificity — never emission order — decides against the light segment rule, whose
+      // selector ties the dark brand selector.
+      const declarations =
+        colorScheme === "dark"
+          ? resetDeclarations(tokens, keys)
+          : changed.map((key) => [key, tokens[key]] as const);
+      rules.push(themeRule(`${selector}[data-theme-segment="${theme.segment}"]`, declarations, colorScheme));
     }
   }
   return rules.join("\n\n");

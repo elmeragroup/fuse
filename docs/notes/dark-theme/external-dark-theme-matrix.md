@@ -58,7 +58,7 @@ Every row requires `data-theme-variant="external"` and resolves dark when the do
 | `external-elma-private` | elma  | private | Elmera custom dark         | 90–95%                       | High, 95%                       |
 | `external-elma-company` | elma  | company | Same as private            | 90–95%                       | High, 95%                       |
 
-`fkab-private` and `fkse-company` remain illegal. The ten internal themes still exist; in this external-only rollout, selecting dark did not invent an internal dark palette. Brand/segment policy comes from [theme metadata](../../../packages/ui/src/theme/tokens/themes.ts), [segment deltas](../../../packages/ui/src/theme/tokens/segment-deltas.ts) and [CONTEXT](../../../CONTEXT.md).
+`fkab-private` and `fkse-company` remain illegal. The ten internal themes still exist; in this external-only rollout, selecting dark did not invent an internal dark palette. Brand/segment policy comes from [theme metadata](../../../packages/ui/src/theme/tokens/themes.ts), [segment deltas](../../../packages/ui/src/theme/tokens/segment-sheets.ts) and [CONTEXT](../../../CONTEXT.md).
 
 ## Core color matrix
 

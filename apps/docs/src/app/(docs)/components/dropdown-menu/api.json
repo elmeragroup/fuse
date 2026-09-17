@@ -916,6 +916,33 @@
       "forwardedCount": 274,
       "props": [
         {
+          "name": "defaultValue",
+          "origin": "declared",
+          "type": "T | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Uncontrolled initially selected value: one member of the group's string union.",
+          "required": false
+        },
+        {
+          "name": "onValueChange",
+          "origin": "declared",
+          "type": "((value: T, eventDetails: MenuRootChangeEventDetails) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Called with the selected value, narrowed to `T`, and base-ui's change details.",
+          "required": false
+        },
+        {
+          "name": "value",
+          "origin": "declared",
+          "type": "T | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Controlled selected value: one member of the group's string union.",
+          "required": false
+        },
+        {
           "name": "children",
           "origin": {
             "packageName": "@base-ui/react"
@@ -938,17 +965,6 @@
           "required": false
         },
         {
-          "name": "defaultValue",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "any",
-          "shortType": null,
-          "defaultValue": null,
-          "description": "The uncontrolled value of the radio item that should be initially selected. To render a controlled radio group, use the `value` prop instead.",
-          "required": false
-        },
-        {
           "name": "disabled",
           "origin": {
             "packageName": "@base-ui/react"
@@ -957,17 +973,6 @@
           "shortType": null,
           "defaultValue": "false",
           "description": "Whether the component should ignore user interaction.",
-          "required": false
-        },
-        {
-          "name": "onValueChange",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "((value: any, eventDetails: MenuRootChangeEventDetails) => void) | undefined",
-          "shortType": "function",
-          "defaultValue": null,
-          "description": "Function called when the selected value changes.",
           "required": false
         },
         {
@@ -990,17 +995,6 @@
           "shortType": "function",
           "defaultValue": null,
           "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
-          "required": false
-        },
-        {
-          "name": "value",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "any",
-          "shortType": null,
-          "defaultValue": null,
-          "description": "The controlled value of the radio item that should be currently selected. To render an uncontrolled radio group, use the `defaultValue` prop instead.",
           "required": false
         }
       ]

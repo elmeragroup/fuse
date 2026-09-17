@@ -29,6 +29,11 @@ export const metadata = componentMetadata("dropdown-menu");
   <DropdownMenuRadioGroup />
 </Demo>
 
+`DropdownMenu.RadioGroup` is generic over the selected value's string union, so `value` and
+`onValueChange` agree by type. Item values are **not** checked against that union:
+`DropdownMenu.RadioItem` keeps the primitive's own value type, so a mistyped item value still
+compiles.
+
 <Demo slug="dropdown-menu" id="submenu" title="Submenu" file="dropdown-menu-submenu.tsx">
   <DropdownMenuSubmenu />
 </Demo>

@@ -192,7 +192,10 @@ export const CSS_BUDGETS: readonly CssBudget[] = derive([
   // keeping headroom: themes.css 6786 − 370 = 6416, styles.css 24575 − 109 = 24466.
   // styles.css re-measured at 22965 after the toast description took the root's `--toast-copy`
   // pair (+79 bytes, within the standing ceiling).
-  { name: "themes.css", file: "themes.css", measuredGzip: 4443, ceilingGzip: 6416 },
+  // 2026-09-17: dark external company rules materialize the full reset set, so the cascade no
+  // longer depends on emission order. themes.css re-measured at 4472 (+29 gzip over the
+  // 2026-09-15 record); no token values changed and the ceiling stays at 6416.
+  { name: "themes.css", file: "themes.css", measuredGzip: 4472, ceilingGzip: 6416 },
   { name: "styles.css", file: "styles.css", measuredGzip: 22965, ceilingGzip: 24466 },
 ] satisfies readonly Measured<CssBudget>[]);
 

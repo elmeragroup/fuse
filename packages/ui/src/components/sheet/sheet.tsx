@@ -16,7 +16,7 @@ import {
   overlayScrimClass,
   overlaySizeVariants,
 } from "../overlay/overlay-classes";
-import { OverlayCloseButton } from "../overlay/overlay-close-button";
+import { OverlayCloseButton, overlayCornerCloseClass } from "../overlay/overlay-close-button";
 import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps } from "../overlay/overlay-props";
 
@@ -165,7 +165,7 @@ function SheetContent({
             {showCloseButton ? (
               <SheetPrimitive.Close
                 data-slot="sheet-close"
-                render={<OverlayCloseButton label={closeLabel} className="absolute top-4 right-4" />}
+                render={<OverlayCloseButton label={closeLabel} className={overlayCornerCloseClass} />}
               />
             ) : null}
           </SheetPrimitive.Content>

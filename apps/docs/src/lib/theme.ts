@@ -1,7 +1,14 @@
-import type { ColorScheme, ColorSchemeOptions, ThemeInput } from "@elmeragroup/ui/theme";
+import type {
+  ColorScheme,
+  ColorSchemeOptions,
+  ThemeInput,
+  ThemeSegment,
+  ThemeVariant,
+} from "@elmeragroup/ui/theme";
 
 export {
   BRAND_CODES as THEME_BRANDS,
+  COLOR_SCHEMES,
   LEGAL_THEMES,
   THEME_SEGMENTS,
   THEME_VARIANTS,
@@ -25,10 +32,20 @@ export const DEFAULT_THEME = {
   segment: "private",
 } as const satisfies ThemeInput;
 
-export const COLOR_SCHEMES = ["light", "dark", "system"] as const satisfies readonly ColorScheme[];
-
 export const COLOR_SCHEME_LABELS = {
   light: "Light",
   dark: "Dark",
   system: "System",
 } satisfies Record<ColorScheme, string>;
+
+/** Display labels for the theme-variant axis. */
+export const VARIANT_LABELS = {
+  internal: "Internal",
+  external: "External",
+} satisfies Record<ThemeVariant, string>;
+
+/** Display labels for the theme-segment axis. */
+export const SEGMENT_LABELS = {
+  private: "Private",
+  company: "Company",
+} satisfies Record<ThemeSegment, string>;

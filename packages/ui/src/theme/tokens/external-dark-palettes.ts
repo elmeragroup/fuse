@@ -2,7 +2,7 @@ import type { TokenContract } from "./contract";
 import { DARK_DEFAULTS } from "./dark-defaults";
 import { paletteBrand } from "./external-palettes";
 import type { ExternalBrandCode } from "./external-palettes";
-import { segmentDelta } from "./segment-deltas";
+import { segmentSheet } from "./segment-sheets";
 import type { ThemeInput } from "./themes";
 
 // Custom Figma color collections in Dark mode, read 2026-09-15.
@@ -111,15 +111,16 @@ export const EXTERNAL_DARK_PALETTES = {
   },
 } as const satisfies Record<ExternalBrandCode, Partial<TokenContract>>;
 
+/**
+ * The dark palette layer for one external theme, with the roles the Figma sheets do not
+ * name derived from the selected sheet. Internal themes have no external dark palette;
+ * dark internal themes compose `INTERNAL_DARK_PALETTE` instead.
+ */
 export function externalDarkPalette(theme: ThemeInput): Partial<TokenContract> {
   if (theme.variant !== "external") return {};
-  // Derive the unnamed roles after merging the company delta: fkas-company's
-  // popover/muted/accent/sidebar surfaces must follow the Bedrift sheet, not the
-  // private fkas sheet.
-  const palette = {
-    ...EXTERNAL_DARK_PALETTES[paletteBrand(theme.brand)],
-    ...segmentDelta(theme, "dark"),
-  };
+  // A segment sheet fully replaces its brand's dark sheet; the unnamed roles below derive
+  // from whichever sheet was selected.
+  const palette = segmentSheet(theme)?.dark ?? EXTERNAL_DARK_PALETTES[paletteBrand(theme.brand)];
   return {
     ...DARK_DEFAULTS,
     ...palette,

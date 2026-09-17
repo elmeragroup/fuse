@@ -1,5 +1,6 @@
 import type { ScriptHTMLAttributes } from "react";
 
+import { COLOR_SCHEMES } from "./color-scheme-types";
 import type { ColorScheme, ResolvedColorScheme } from "./color-scheme-types";
 
 // Types live in ./color-scheme-types so the Node-only scripts program never pulls in this DOM module.
@@ -51,11 +52,8 @@ export const DEFAULT_COLOR_SCHEME_STORAGE_KEY = "elmera-color-scheme";
 export const DEFAULT_COLOR_SCHEME: ColorScheme = "system";
 export const DEFAULT_ENABLE_SYSTEM = true;
 
-export function closedColorScheme(value: string | null | undefined): ColorScheme | undefined {
-  if (value === "light" || value === "dark" || value === "system") {
-    return value;
-  }
-  return undefined;
+function closedColorScheme(value: string | null | undefined): ColorScheme | undefined {
+  return COLOR_SCHEMES.find((scheme) => scheme === value);
 }
 
 export function resolveColorSchemeOptions({
@@ -100,10 +98,7 @@ export function serializeScriptData(value: string | boolean): string {
 }
 
 export function parseColorScheme(value: string | null | undefined, fallback: ColorScheme): ColorScheme {
-  if (value === "light" || value === "dark" || value === "system") {
-    return value;
-  }
-  return fallback;
+  return closedColorScheme(value) ?? fallback;
 }
 
 export function resolveSystemColorScheme(): ResolvedColorScheme {

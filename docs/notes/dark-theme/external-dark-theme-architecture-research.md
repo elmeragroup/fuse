@@ -8,7 +8,7 @@ Research date: 2026-09-15. Sections below record the baseline inspected before i
 
 The library already resolves and persists light, dark, and system preferences and writes `data-theme="light"` or `data-theme="dark"` before paint. The CSS deliberately has no dark declarations. Dark implementation therefore needs token composition, CSS generation, scope isolation, documentation, and visual validation. It does not need a new theme provider. [Color-scheme contract](../../../packages/ui/src/theme/color-scheme.ts), [provider](../../../packages/ui/src/theme/theme-provider.tsx), [CSS generator](../../../packages/ui/src/theme/generate-css.ts), [theming specification §7.8](../../../docs/spec/theming.md#78-color-scheme-axis).
 
-There are 10 legal external permutations and six distinct effective light palettes. The following table records current behavior, not an assumption that dark palettes should be identical. [Theme types and brand table](../../../packages/ui/src/theme/tokens/themes.ts), [external palettes](../../../packages/ui/src/theme/tokens/external-palettes.ts), [segment delta](../../../packages/ui/src/theme/tokens/segment-deltas.ts).
+There are 10 legal external permutations and six distinct effective light palettes. The following table records current behavior, not an assumption that dark palettes should be identical. [Theme types and brand table](../../../packages/ui/src/theme/tokens/themes.ts), [external palettes](../../../packages/ui/src/theme/tokens/external-palettes.ts), [segment delta](../../../packages/ui/src/theme/tokens/segment-sheets.ts).
 
 | Variant  | Brand | Display name        | Segment | Current palette source                    |
 | -------- | ----- | ------------------- | ------- | ----------------------------------------- |
@@ -23,7 +23,7 @@ There are 10 legal external permutations and six distinct effective light palett
 | external | elma  | Elmera              | private | elma base                                 |
 | external | elma  | Elmera              | company | elma base                                 |
 
-`fkab-private` and `fkse-company` are illegal. `fkab` is a permanent visual alias of Fjordkraft, but today its value set is specifically the fkas base, not fkas company. A Figma file named Bedrift must not silently be treated as the source for fkab. Its role needs to be identified from the design evidence. [Domain glossary](../../../CONTEXT.md), [alias implementation](../../../packages/ui/src/theme/tokens/external-palettes.ts), [delta predicate](../../../packages/ui/src/theme/tokens/segment-deltas.ts).
+`fkab-private` and `fkse-company` are illegal. `fkab` is a permanent visual alias of Fjordkraft, but today its value set is specifically the fkas base, not fkas company. A Figma file named Bedrift must not silently be treated as the source for fkab. Its role needs to be identified from the design evidence. [Domain glossary](../../../CONTEXT.md), [alias implementation](../../../packages/ui/src/theme/tokens/external-palettes.ts), [delta predicate](../../../packages/ui/src/theme/tokens/segment-sheets.ts).
 
 ## Token ownership and work size
 
@@ -40,7 +40,7 @@ The theming implementation lives in `packages/ui/src/theme/`. There is no `packa
 | Fjordkraft company delta    | 15           | A separate dark company delta must be checked against its own source                                    |
 | Current contrast pairs      | 17           | All 20 light themes produce 340 pair measurements                                                       |
 
-Counts derive from the literal tuples and objects in the [contract](../../../packages/ui/src/theme/tokens/contract.ts), [primitives](../../../packages/ui/src/theme/tokens/primitives.ts), [company delta](../../../packages/ui/src/theme/tokens/segment-deltas.ts), and [contrast implementation](../../../packages/ui/src/theme/contrast.ts).
+Counts derive from the literal tuples and objects in the [contract](../../../packages/ui/src/theme/tokens/contract.ts), [primitives](../../../packages/ui/src/theme/tokens/primitives.ts), [company delta](../../../packages/ui/src/theme/tokens/segment-sheets.ts), and [contrast implementation](../../../packages/ui/src/theme/contrast.ts).
 
 The practical audit is 10 external rows × 77 roles, or 770 role cells. That is not 770 independently chosen colors: aliases, shared roles, segment fallbacks, shape, and fonts reduce the authored data considerably. A useful matrix labels each cell as directly sourced, mapped from a Figma role, inherited unchanged, shared dark value, or unresolved.
 
