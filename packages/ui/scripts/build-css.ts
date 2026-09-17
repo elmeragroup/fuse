@@ -1,6 +1,5 @@
 import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { pathToFileURL } from "node:url";
 
 import { generateThemesCss } from "../src/theme/generate-css";
 import { generateDemoStageComfortableCss } from "../src/theme/generate-demo-stage-css";
@@ -33,6 +32,6 @@ export function buildCss(packageRoot: string): void {
   );
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
+if (import.meta.main) {
   buildCss(packageRootFromScript(import.meta.url));
 }

@@ -1,18 +1,10 @@
-import { chromium } from "playwright";
-import type { Browser, Page } from "playwright";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import type { Page } from "playwright";
+import { describe, expect, it } from "vitest";
 
+import { launchSuiteBrowser } from "./demo-page";
 import { docsBaseUrl } from "./docs-server";
 
-let browser: Browser;
-
-beforeAll(async () => {
-  browser = await chromium.launch({ headless: true });
-});
-
-afterAll(async () => {
-  await browser.close();
-});
+const browser = launchSuiteBrowser();
 
 /**
  * The `hashchange` listeners registered on `window`, counted by the browser itself through
@@ -49,7 +41,7 @@ const SECOND_ROW = "api-button-onIntent";
 
 describe("API prop rows share one hash listener (docs-site.md §8)", () => {
   it("registers one hashchange listener per prop group, however many rows the page mounts", async () => {
-    const page = await browser.newPage();
+    const page = await browser().newPage();
 
     // A page without an API reference: whatever else on the site listens to the hash.
     await page.goto(`${docsBaseUrl()}/handbook/tokens`, { waitUntil: "networkidle" });
@@ -71,7 +63,7 @@ describe("API prop rows share one hash listener (docs-site.md §8)", () => {
   });
 
   it("opens the row the hash names after an in-page navigation", async () => {
-    const page = await browser.newPage();
+    const page = await browser().newPage();
     await page.goto(`${docsBaseUrl()}${BUTTON_API}#${DEEP_LINK}`, { waitUntil: "load" });
     await expect.poll(() => rowIsOpen(page, DEEP_LINK)).toBe(true);
     expect(await rowIsOpen(page, SECOND_ROW)).toBe(false);

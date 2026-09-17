@@ -25,6 +25,13 @@ function everyEmittedClass(): string {
     .join(" ");
 }
 
+/**
+ * The range field's container-query breakpoint, named once for the expectations below.
+ * Production spells it into each class string because Tailwind's source scan resolves no
+ * interpolation; this constant is where the test tier keeps one name for it.
+ */
+const RANGE_BREAKPOINT = "24rem";
+
 describe("pickerVariants shared slots", () => {
   it("lays both roots out as a labelled column", () => {
     expect(pickerVariants().base()).toContain("flex-col");
@@ -113,10 +120,10 @@ describe("pickerVariants range axis", () => {
     expect(group).toContain("grid");
     expect(group).not.toContain("flex");
     expect(group).toContain("grid-cols-[minmax(0,1fr)_auto]");
-    expect(group).toContain("@min-[24rem]/picker:grid-cols-[auto_auto_minmax(0,1fr)_auto]");
+    expect(group).toContain(`@min-[${RANGE_BREAKPOINT}]/picker:grid-cols-[auto_auto_minmax(0,1fr)_auto]`);
     // FieldGroup's md height stands above 24rem; below it the two stacked rows size to
     // their content instead.
-    expect(group).toContain("@max-[24rem]/picker:h-auto");
+    expect(group).toContain(`@max-[${RANGE_BREAKPOINT}]/picker:h-auto`);
     expect(group).not.toContain("--control-h-");
   });
 
@@ -145,8 +152,8 @@ describe("pickerVariants range axis", () => {
     expect(trigger).toContain("row-span-2");
     expect(trigger).toContain("row-start-1");
     // Wide: the trigger is the fourth column of the single row, no longer spanning rows.
-    expect(trigger).toContain("@min-[24rem]/picker:col-start-4");
-    expect(trigger).toContain("@min-[24rem]/picker:row-span-1");
+    expect(trigger).toContain(`@min-[${RANGE_BREAKPOINT}]/picker:col-start-4`);
+    expect(trigger).toContain(`@min-[${RANGE_BREAKPOINT}]/picker:row-span-1`);
     // Single-date: no placement class at all, so React omits the attribute.
     expect(pickerVariants().trigger()).toBeUndefined();
   });

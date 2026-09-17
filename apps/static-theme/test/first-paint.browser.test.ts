@@ -1,6 +1,5 @@
-import { chromium } from "playwright";
-import type { Browser, BrowserContext, ConsoleMessage, Page, Route } from "playwright";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import type { BrowserContext, ConsoleMessage, Page, Route } from "playwright";
+import { describe, expect, it } from "vitest";
 
 import { DOCUMENT_COLOR_SCHEME } from "../src/theme";
 import {
@@ -11,6 +10,7 @@ import {
 } from "./html";
 import type { ColorSchemeBootstrapManifest } from "./html";
 import { staticThemeBaseUrl } from "./server";
+import { launchSuiteBrowser } from "./suite-browser";
 
 type FirstPaintProbe = {
   variant: string | null;
@@ -46,15 +46,7 @@ const firstPaintCases: FirstPaintCase[] = [
   { name: "invalid storage, system dark", stored: "{}", colorScheme: "dark", expectedTheme: "dark" },
 ];
 
-let browser: Browser;
-
-beforeAll(async () => {
-  browser = await chromium.launch({ headless: true });
-});
-
-afterAll(async () => {
-  await browser.close();
-});
+const browser = launchSuiteBrowser();
 
 function isJavaScriptAsset(route: Route): boolean {
   try {
@@ -179,7 +171,7 @@ describe("static theme first paint with React blocked", () => {
   it.each(firstPaintCases)(
     "$name sets brand, marker, manifest, and the matching canvas before the module bundle",
     async ({ stored, colorScheme, expectedTheme }) => {
-      const context = await browser.newContext({ colorScheme });
+      const context = await browser().newContext({ colorScheme });
       await seedStorage(context, stored);
       const page = await context.newPage();
       await page.route("**/*", abortModuleScripts);
@@ -200,7 +192,7 @@ describe("static theme first paint with React blocked", () => {
   );
 
   it("writes forced dark before React while storage is light", async () => {
-    const context = await browser.newContext({ colorScheme: "light" });
+    const context = await browser().newContext({ colorScheme: "light" });
     await seedStorage(context, "light");
     const page = await context.newPage();
     await page.route("**/*", abortModuleScripts);
@@ -220,7 +212,7 @@ describe("static theme first paint with React blocked", () => {
   });
 
   it("stamps comfortable density on the isolated preview before React", async () => {
-    const context = await browser.newContext({ colorScheme: "light" });
+    const context = await browser().newContext({ colorScheme: "light" });
     const page = await context.newPage();
     await page.route("**/*", abortModuleScripts);
     await page.goto(`${staticThemeBaseUrl()}/comfortable.html`, { waitUntil: "commit" });
@@ -242,7 +234,7 @@ describe("static theme delayed React mount", () => {
       releaseModules = resolve;
     });
 
-    const context = await browser.newContext({ colorScheme: "dark" });
+    const context = await browser().newContext({ colorScheme: "dark" });
     await seedStorage(context, "light");
     const page = await context.newPage();
     const warnings = collectThemeWarnings(page);
@@ -297,7 +289,7 @@ describe("static theme delayed React mount", () => {
       releaseModules = resolve;
     });
 
-    const context = await browser.newContext({ colorScheme: "light" });
+    const context = await browser().newContext({ colorScheme: "light" });
     await seedStorage(context, "light");
     const page = await context.newPage();
     const warnings = collectThemeWarnings(page);

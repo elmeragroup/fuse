@@ -53,16 +53,23 @@ export function OverlayCloseButton({ label, className, ...props }: OverlayCloseB
   );
 }
 
-/** Footer close action: outline Button carrying the resolved label as visible children. */
-export function overlayFooterCloseButton({
-  label,
-  className,
-}: {
+/** Props for the footer close action, a labelled outline Button. */
+export type OverlayFooterCloseButtonProps = Omit<
+  ButtonProps,
+  "aria-label" | "children" | "variant" | "size"
+> & {
+  /** Visible close copy, already resolved by the host from the shared overlay dictionary. */
   label: string;
-  className?: string;
-}): ReactElement {
+};
+
+/**
+ * Footer close action: outline Button carrying the resolved label as visible children.
+ * Forwards the rest of the Button surface, so a host's `render` prop can inject its own
+ * close behavior the same way the corner affordance does.
+ */
+export function OverlayFooterCloseButton({ label, ...props }: OverlayFooterCloseButtonProps): ReactElement {
   return (
-    <Button variant="outline" className={className}>
+    <Button variant="outline" {...props}>
       {label}
     </Button>
   );

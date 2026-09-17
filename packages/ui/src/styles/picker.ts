@@ -74,6 +74,10 @@ export const pickerVariants = tv({
         // box opts out of FieldGroup's md height so the two rows size to their content.
         // Above it the dates run in one row — start, en-dash, end, trigger — and the end
         // column absorbs the slack.
+        //
+        // The breakpoint is spelled into each class string rather than hoisted into a
+        // constant: Tailwind scans the built JS text, and an interpolated candidate
+        // generates no utility. `picker.test.ts` names it once and pins every slot.
         group:
           "grid min-w-[208px] grid-cols-[minmax(0,1fr)_auto] @max-[24rem]/picker:h-auto @min-[24rem]/picker:grid-cols-[auto_auto_minmax(0,1fr)_auto]",
         input: "flex items-center",

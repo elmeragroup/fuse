@@ -4,8 +4,6 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { cssVarColor, renderThemed, stampDensity } from "../../../test/themed-browser-render";
-import { composeTheme } from "../../theme/compose-theme";
-import { contrastRatio } from "../../theme/contrast";
 import { ThemeScope } from "../../theme/theme-scope";
 import { LEGAL_THEMES, themeSlug } from "../../theme/tokens/themes";
 import { Heading } from "../heading/heading";
@@ -131,26 +129,22 @@ describe("badge and secondary typography contrast", () => {
             </ThemeScope>
           </div>
         );
-        const tokens = composeTheme(theme, scheme);
         const context = `${themeSlug(theme)} ${scheme}`;
-        for (const [label, foreground, background] of [
-          ["Info sample", "info-soft-foreground", "info-soft"],
-          ["Muted sample", "foreground", "muted"],
-          ["Outline sample", "foreground", "background"],
+        // This suite owns which rendered role each variant paints; the theme contrast matrix
+        // owns the floors those roles must meet, so no ratio is recomputed here.
+        for (const [label, foreground] of [
+          ["Info sample", "info-soft-foreground"],
+          ["Muted sample", "foreground"],
+          ["Outline sample", "foreground"],
         ] as const) {
           const badge = badgeNamed(label);
           expect(getComputedStyle(badge).color, context).toBe(cssVarColor(badge, `--${foreground}`));
-          expect(contrastRatio(tokens[foreground], tokens[background]), context).toBeGreaterThanOrEqual(4.5);
         }
         const outline = badgeNamed("Outline sample");
         await userEvent.hover(outline);
         await vi.waitFor(() =>
           expect(getComputedStyle(outline).color).toBe(cssVarColor(outline, "--secondary-foreground"))
         );
-        expect(
-          contrastRatio(tokens["secondary-foreground"], tokens.secondary),
-          context
-        ).toBeGreaterThanOrEqual(4.5);
         await userEvent.unhover(outline);
         for (const label of [
           "Secondary heading",
@@ -164,7 +158,6 @@ describe("badge and secondary typography contrast", () => {
           // `--secondary` is a surface token, and `muted-foreground` fails 4.5:1 at `xs`
           // in several themes, so the alias stays until a major removes it.
           expect(getComputedStyle(copy).color, context).toBe(cssVarColor(copy, "--foreground"));
-          expect(contrastRatio(tokens.foreground, tokens.background), context).toBeGreaterThanOrEqual(4.5);
         }
       }
     }

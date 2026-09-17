@@ -1,6 +1,5 @@
 import { copyFileSync, mkdirSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import { pathToFileURL } from "node:url";
 
 import type { ReleaseIntent } from "@elmeragroup/internal/release";
 
@@ -26,6 +25,6 @@ export function buildPackage(packageRoot: string, release?: ReleaseIntent): void
   writePublishManifest(packageRoot, release);
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
+if (import.meta.main) {
   buildPackage(packageRootFromScript(import.meta.url));
 }

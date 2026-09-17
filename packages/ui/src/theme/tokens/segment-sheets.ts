@@ -1,5 +1,6 @@
 import type { TokenContract } from "./contract";
-import type { BrandCode, ThemeInput, ThemeSegment } from "./themes";
+import type { ExternalDarkSheet } from "./external-dark-sheet";
+import type { BrandCode, ThemeSegment } from "./themes";
 
 /** Both schemes' sheets for one brand/segment pair that departs from its brand base. */
 export type SegmentSheets = {
@@ -7,7 +8,7 @@ export type SegmentSheets = {
   readonly light: Partial<TokenContract>;
 
   /** The dark sheet that replaces the brand's dark palette. */
-  readonly dark: Partial<TokenContract>;
+  readonly dark: ExternalDarkSheet;
 };
 
 // fkas-company's light overrides on top of the fkas base palette. The generator emits only
@@ -50,27 +51,21 @@ const FKAS_COMPANY_DARK_SHEET = {
   feature: "oklch(0.5573786 0.0697862 216.2687)", // #3E7E8E
   "feature-bright": "oklch(0.2661671 0.0034366 164.8011)", // #242625
   "feature-foreground": "oklch(0.3921674 0.071463 220.1224)", // #004E60
-} as const satisfies Partial<TokenContract>;
+} as const satisfies ExternalDarkSheet;
 
-// `as const satisfies` keeps the literal key; the accessor narrows the composite key to
-// it with `Object.hasOwn`, so the lookup needs no open-dictionary annotation (which
-// `anti-slop/no-known-value-widening` rejects).
-const SEGMENT_SHEETS = {
-  "fkas-company": { light: FKAS_COMPANY_DELTA, dark: FKAS_COMPANY_DARK_SHEET },
-} as const satisfies Partial<Record<`${BrandCode}-${ThemeSegment}`, SegmentSheets>>;
-
-/** True when a composite brand/segment key names an entry in `SEGMENT_SHEETS`. */
-function isSegmentSheetKey(key: string): key is keyof typeof SEGMENT_SHEETS {
-  return Object.hasOwn(SEGMENT_SHEETS, key);
-}
+const SEGMENT_SHEETS: ReadonlyMap<BrandCode, ReadonlyMap<ThemeSegment, SegmentSheets>> = new Map([
+  [
+    "fkas",
+    new Map<ThemeSegment, SegmentSheets>([
+      ["company", { light: FKAS_COMPANY_DELTA, dark: FKAS_COMPANY_DARK_SHEET }],
+    ]),
+  ],
+]);
 
 /**
- * Both schemes' sheets for one theme that departs from its brand base, or `undefined`
- * when it has none. Internal themes never consult a segment sheet, so an internal
- * `fkas-company` is a no-sheet theme by construction.
+ * Both schemes' sheets for one brand/segment pair that departs from its brand base, or
+ * `undefined` when it has none.
  */
-export function segmentSheet(theme: ThemeInput): SegmentSheets | undefined {
-  if (theme.variant !== "external") return undefined;
-  const key = `${theme.brand}-${theme.segment}`;
-  return isSegmentSheetKey(key) ? SEGMENT_SHEETS[key] : undefined;
+export function segmentSheet(brand: BrandCode, segment: ThemeSegment): SegmentSheets | undefined {
+  return SEGMENT_SHEETS.get(brand)?.get(segment);
 }

@@ -6,6 +6,7 @@ import type { ThemeSlug } from "./tokens/themes";
 
 export const TEXT_GRADE_PAIRS = [
   ["foreground", "background"],
+  ["foreground", "muted"],
   ["card-foreground", "card"],
   ["card-soft-foreground", "card-soft"],
   ["muted-foreground", "muted"],
@@ -117,6 +118,12 @@ export function relativeLuminance(color: LinearRgb): number {
   return 0.2126 * clipChannel(color.r) + 0.7152 * clipChannel(color.g) + 0.0722 * clipChannel(color.b);
 }
 
+/**
+ * The WCAG contrast ratio between two OKLCH values. A translucent foreground composites
+ * over the background; the background itself is assumed opaque, which every surface the
+ * theme contract measures satisfies — a translucent surface would need an explicit
+ * backdrop to composite against.
+ */
 export function contrastRatio(foregroundValue: string, backgroundValue: string): number {
   const foreground = parseOklch(foregroundValue);
   const backgroundRgb = oklchToLinearSrgb(backgroundValue);

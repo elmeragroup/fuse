@@ -1,8 +1,8 @@
-import { chromium } from "playwright";
-import type { Browser, CDPSession, Page, Route } from "playwright";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import type { CDPSession, Page, Route } from "playwright";
+import { describe, expect, it } from "vitest";
 
 import { DEFAULT_THEME, DOCUMENT_COLOR_SCHEME } from "../src/lib/theme";
+import { launchSuiteBrowser } from "./demo-page";
 import { docsBaseUrl } from "./docs-server";
 import {
   COLOR_SCHEME_BOOTSTRAP_FAILURE_SENTINEL,
@@ -47,15 +47,7 @@ const delayedCases: DelayedHydrationCase[] = [
   { name: "system dark", stored: null, colorScheme: "dark", expectedTheme: "dark" },
 ];
 
-let browser: Browser;
-
-beforeAll(async () => {
-  browser = await chromium.launch({ headless: true });
-});
-
-afterAll(async () => {
-  await browser.close();
-});
+const browser = launchSuiteBrowser();
 
 async function abortNextScripts(route: Route): Promise<void> {
   const url = route.request().url();
@@ -123,7 +115,7 @@ describe("docs first paint with hydration delayed", () => {
   it.each(delayedCases)(
     "$name sets the expected pre-React marker, brand, manifest, and matching canvas",
     async ({ stored, colorScheme, expectedTheme }) => {
-      const context = await browser.newContext({ colorScheme });
+      const context = await browser().newContext({ colorScheme });
       await context.addInitScript(
         ({ key, value }) => {
           if (value === null) {
@@ -155,7 +147,7 @@ describe("docs first paint with hydration delayed", () => {
 
 describe("docs JavaScript-disabled brand", () => {
   it("keeps brand attributes and the Elmera token surface without JavaScript", async () => {
-    const context = await browser.newContext({ javaScriptEnabled: false });
+    const context = await browser().newContext({ javaScriptEnabled: false });
     const page = await context.newPage();
     // CDP reads can otherwise race the external stylesheet and see an empty brand.
     await page.goto(`${docsBaseUrl()}/`, { waitUntil: "load" });
@@ -186,7 +178,7 @@ describe("docs enforcing nonce", () => {
   // No hash-CSP claim is made.
 
   async function openWithCsp(scriptNonce: string | null, cspNonce: string): Promise<Page> {
-    const page = await browser.newPage();
+    const page = await browser().newPage();
     await page.route("**/*", async (route) => {
       if (route.request().resourceType() !== "document") {
         await route.continue();
@@ -241,7 +233,7 @@ describe("docs enforcing nonce", () => {
 
 describe("docs picker vs document theme", () => {
   it("themes only preview scopes and leaves the document on internal/elma/private", async () => {
-    const page = await browser.newPage();
+    const page = await browser().newPage();
     const hydrationWarnings: string[] = [];
     page.on("console", (message) => {
       const text = message.text();
@@ -315,7 +307,7 @@ describe("docs picker vs document theme", () => {
   });
 
   it("retargets demo-stage control metrics to the preview variant default without restamping the document", async () => {
-    const page = await browser.newPage();
+    const page = await browser().newPage();
     await page.goto(`${docsBaseUrl()}/components/button`, { waitUntil: "networkidle" });
     await page.getByRole("heading", { name: "Button", exact: true, level: 1 }).waitFor();
 

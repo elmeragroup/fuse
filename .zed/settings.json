@@ -26,11 +26,6 @@
       "settings": {
         "classFunctions": ["tv", "cn"]
       }
-    },
-    "typescript-ls": {
-      "settings": {
-        "package_version": "7.0.2"
-      }
     }
   },
   "languages": {

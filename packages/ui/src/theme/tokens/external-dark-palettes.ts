@@ -1,9 +1,10 @@
 import type { TokenContract } from "./contract";
 import { DARK_DEFAULTS } from "./dark-defaults";
+import type { ExternalDarkSheet } from "./external-dark-sheet";
 import { paletteBrand } from "./external-palettes";
 import type { ExternalBrandCode } from "./external-palettes";
 import { segmentSheet } from "./segment-sheets";
-import type { ThemeInput } from "./themes";
+import type { BrandCode, ThemeSegment } from "./themes";
 
 // Custom Figma color collections in Dark mode, read 2026-09-15.
 // Exact sRGB colors are retained in comments; OKLCH is the library's color format.
@@ -109,33 +110,36 @@ export const EXTERNAL_DARK_PALETTES = {
     "feature-bright": "oklch(0.2675764 0.0014668 197.0689)", // #252626
     "feature-foreground": "oklch(0.3923005 0.0500012 219.4304)", // #234C58
   },
-} as const satisfies Record<ExternalBrandCode, Partial<TokenContract>>;
+} as const satisfies Record<ExternalBrandCode, ExternalDarkSheet>;
+
+/** The dark sheet for one brand and segment, preferring a segment sheet over the brand base. */
+function darkSheet(brand: BrandCode, segment: ThemeSegment): ExternalDarkSheet {
+  return segmentSheet(brand, segment)?.dark ?? EXTERNAL_DARK_PALETTES[paletteBrand(brand)];
+}
 
 /**
- * The dark palette layer for one external theme, with the roles the Figma sheets do not
- * name derived from the selected sheet. Internal themes have no external dark palette;
- * dark internal themes compose `INTERNAL_DARK_PALETTE` instead.
+ * The dark palette layer for one external brand and segment. A segment sheet replaces its
+ * brand's dark sheet; the roles the selected sheet does not name derive from it, and a
+ * role a sheet does name is never clobbered. Internal themes compose
+ * `INTERNAL_DARK_PALETTE` instead.
  */
-export function externalDarkPalette(theme: ThemeInput): Partial<TokenContract> {
-  if (theme.variant !== "external") return {};
-  // A segment sheet fully replaces its brand's dark sheet; the unnamed roles below derive
-  // from whichever sheet was selected.
-  const palette = segmentSheet(theme)?.dark ?? EXTERNAL_DARK_PALETTES[paletteBrand(theme.brand)];
+export function externalDarkPalette(brand: BrandCode, segment: ThemeSegment): Partial<TokenContract> {
+  const palette = darkSheet(brand, segment);
   return {
     ...DARK_DEFAULTS,
     ...palette,
     // Carry the brand's dark surfaces into roles the Figma sheets do not name.
-    popover: palette.card,
-    "popover-foreground": palette["card-foreground"],
-    muted: palette.card,
-    accent: palette["primary-soft"],
-    "accent-foreground": palette["primary-soft-foreground"],
-    sidebar: palette.background,
-    "sidebar-foreground": palette.foreground,
-    "sidebar-accent": palette.card,
-    "sidebar-accent-foreground": palette["card-foreground"],
-    "sidebar-border": DARK_DEFAULTS.border,
-    "right-panel": palette.card,
-    "right-panel-foreground": palette["card-foreground"],
+    popover: palette.popover ?? palette.card,
+    "popover-foreground": palette["popover-foreground"] ?? palette["card-foreground"],
+    muted: palette.muted ?? palette.card,
+    accent: palette.accent ?? palette["primary-soft"],
+    "accent-foreground": palette["accent-foreground"] ?? palette["primary-soft-foreground"],
+    sidebar: palette.sidebar ?? palette.background,
+    "sidebar-foreground": palette["sidebar-foreground"] ?? palette.foreground,
+    "sidebar-accent": palette["sidebar-accent"] ?? palette.card,
+    "sidebar-accent-foreground": palette["sidebar-accent-foreground"] ?? palette["card-foreground"],
+    "sidebar-border": palette["sidebar-border"] ?? DARK_DEFAULTS.border,
+    "right-panel": palette["right-panel"] ?? palette.card,
+    "right-panel-foreground": palette["right-panel-foreground"] ?? palette["card-foreground"],
   };
 }

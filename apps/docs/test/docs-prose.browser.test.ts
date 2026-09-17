@@ -1,54 +1,18 @@
-import { chromium } from "playwright";
-import type { Browser, Page } from "playwright";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import type { Page } from "playwright";
+import { describe, expect, it } from "vitest";
 
+import { launchSuiteBrowser } from "./demo-page";
 import { docsBaseUrl } from "./docs-server";
 
-let browser: Browser;
-
-beforeAll(async () => {
-  browser = await chromium.launch({ headless: true });
-});
-
-afterAll(async () => {
-  await browser.close();
-});
+const browser = launchSuiteBrowser();
 
 function quoteContent(value: string): boolean {
   return value.includes("`");
 }
 
 describe("docs prose (Typography)", () => {
-  it("switches both matrix variants and the docs chrome together", async () => {
-    const page = await browser.newPage({ colorScheme: "light" });
-    await page.goto(`${docsBaseUrl()}/handbook/theme-matrix`, { waitUntil: "load" });
-    const external = page.locator('[data-theme-matrix-cell][data-theme-variant="external"]').first();
-    const internal = page.locator('[data-theme-matrix-cell][data-theme-variant="internal"]').first();
-    const paint = async (): Promise<string[]> => [
-      await external.evaluate((el) => getComputedStyle(el).backgroundColor),
-      await internal.evaluate((el) => getComputedStyle(el).backgroundColor),
-      await page.locator("body").evaluate((el) => getComputedStyle(el).backgroundColor),
-    ];
-    const light = await paint();
-    await page.getByRole("button", { name: "Dark", exact: true }).click();
-    await page.waitForFunction(() => document.documentElement.getAttribute("data-theme") === "dark");
-    const dark = await paint();
-    expect(dark[0]).not.toBe(light[0]);
-    expect(dark[1]).not.toBe(light[1]);
-    expect(dark[2]).not.toBe(light[2]);
-    expect(await page.getByRole("button", { name: "Dark", exact: true }).getAttribute("aria-pressed")).toBe(
-      "true"
-    );
-    expect(await external.evaluate((el) => getComputedStyle(el).colorScheme)).toBe("dark");
-    expect(await internal.evaluate((el) => getComputedStyle(el).colorScheme)).toBe("dark");
-    await page.getByRole("button", { name: "Light", exact: true }).click();
-    await page.waitForFunction(() => document.documentElement.getAttribute("data-theme") === "light");
-    expect(await paint()).toEqual(light);
-    await page.close();
-  });
-
   it("applies prose-sm to authored handbook copy", async () => {
-    const page = await browser.newPage();
+    const page = await browser().newPage();
     await page.setViewportSize({ width: 1280, height: 720 });
     await page.goto(`${docsBaseUrl()}/handbook/tokens`, { waitUntil: "load" });
 
@@ -62,7 +26,7 @@ describe("docs prose (Typography)", () => {
   });
 
   it("lets Typography style authored inline code while isolating generated widgets", async () => {
-    const page = await browser.newPage();
+    const page = await browser().newPage();
     await page.setViewportSize({ width: 1280, height: 720 });
     await page.goto(`${docsBaseUrl()}/handbook/tokens`, { waitUntil: "load" });
 
@@ -87,7 +51,7 @@ describe("docs prose (Typography)", () => {
   });
 
   it("paints token swatch borders and empty-token hatches", async () => {
-    const tokensPage = await browser.newPage();
+    const tokensPage = await browser().newPage();
     await tokensPage.setViewportSize({ width: 1280, height: 720 });
     await tokensPage.goto(`${docsBaseUrl()}/handbook/tokens`, { waitUntil: "load" });
 
@@ -104,7 +68,7 @@ describe("docs prose (Typography)", () => {
     expect(colorBorder.color).not.toBe("transparent");
     await tokensPage.close();
 
-    const buttonPage = await browser.newPage();
+    const buttonPage = await browser().newPage();
     await buttonPage.setViewportSize({ width: 1280, height: 720 });
     await buttonPage.goto(`${docsBaseUrl()}/components/button`, { waitUntil: "load" });
 
@@ -126,7 +90,7 @@ describe("docs prose (Typography)", () => {
   });
 
   it("isolates docs tables and the theme matrix from prose element styles", async () => {
-    const page: Page = await browser.newPage();
+    const page: Page = await browser().newPage();
     await page.setViewportSize({ width: 1280, height: 720 });
 
     await page.goto(`${docsBaseUrl()}/handbook/tokens`, { waitUntil: "load" });

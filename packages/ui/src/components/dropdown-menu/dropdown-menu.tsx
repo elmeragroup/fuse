@@ -223,14 +223,24 @@ function DropdownMenuCheckboxItem({
 export type DropdownMenuRadioGroupProps<T extends string> = Omit<
   ComponentProps<typeof MenuPrimitive.RadioGroup>,
   "value" | "defaultValue" | "onValueChange"
-> & {
-  /** Controlled selected value: one member of the group's string union. */
-  value?: T;
-  /** Uncontrolled initially selected value: one member of the group's string union. */
-  defaultValue?: T;
-  /** Called with the selected value, narrowed to `T`, and base-ui's change details. */
-  onValueChange?: (value: T, eventDetails: MenuRadioGroupChangeEventDetails) => void;
-};
+> &
+  (
+    | {
+        /** Controlled selected value: one member of the group's string union. */
+        value?: T;
+        /** Uncontrolled initially selected value: one member of the group's string union. */
+        defaultValue?: never;
+      }
+    | {
+        /** Controlled selected value: one member of the group's string union. */
+        value?: never;
+        /** Uncontrolled initially selected value: one member of the group's string union. */
+        defaultValue?: T;
+      }
+  ) & {
+    /** Called with the selected value, narrowed to `T`, and base-ui's change details. */
+    onValueChange?: (value: T, eventDetails: MenuRadioGroupChangeEventDetails) => void;
+  };
 
 function DropdownMenuRadioGroup<T extends string>(props: DropdownMenuRadioGroupProps<T>): ReactElement {
   return <MenuPrimitive.RadioGroup data-slot="dropdown-menu-radio-group" {...props} />;

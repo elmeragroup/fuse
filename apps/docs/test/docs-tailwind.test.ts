@@ -1,4 +1,5 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Node } from "typescript/unstable/ast";
@@ -100,31 +101,14 @@ const RETIRED_DOCS_UTILITY =
   /(?:bg|text|border|outline|ring|fill|stroke|font)-docs-(?:ink|body|sub|line|soft|code|required|rsc|sans|mono)\b|\bscheme-(?:light|dark)\b/;
 
 /**
- * The palette utilities `elmera/no-primitive-colors` rejects, re-read from the packed rule
- * so the MDX-only guard below cannot drift from what lint enforces in TS/TSX: the utility
- * prefixes come from the rule's `TOKEN_RE`, the colour families from its family table.
+ * The palette utilities `elmera/no-primitive-colors` rejects. The rule guards TS/TSX at
+ * lint time; oxlint never lints MDX, so this mirror is the MDX-only guard's vocabulary.
+ * It tracks the rule's `TOKEN_RE` prefixes and `TAILWIND_COLOR_FAMILIES` table, and a
+ * rule change that adds a family or utility must update this table in the same step.
+ * `@elmeragroup/internal` does not export the vocabulary, so it is hand-maintained.
  */
-function primitivePaletteUtility(): RegExp {
-  const bundlePath = join(workspaceRoot, "node_modules/@elmeragroup/internal/dist/oxlint.mjs");
-  const bundle = readFileSync(bundlePath, "utf8");
-  const regionStart = bundle.indexOf("//#region ../oxlint-plugin/rules/no-primitive-colors.js");
-  const regionEnd = bundle.indexOf("//#endregion", regionStart + 1);
-  const region = regionStart === -1 || regionEnd === -1 ? "" : bundle.slice(regionStart, regionEnd);
-  const tokenPattern = /const TOKEN_RE = \/([^\n]+)\/gim;/.exec(region)?.[1];
-  // The utility-prefix alternation sits directly before the colour-family capture group.
-  const prefixes =
-    tokenPattern === undefined
-      ? undefined
-      : /\(\?:([^()]*(?:\([^()]*\)[^()]*)*)\)-\(\[a-z\]\[a-z0-9-\]\*\)/.exec(tokenPattern)?.[1];
-  const familyBlock = /const TAILWIND_COLOR_FAMILIES = [\s\S]*?new Set\(\[([\s\S]*?)\]\);/.exec(region)?.[1];
-  const families = familyBlock?.match(/"([a-z]+)"/g)?.map((name) => name.slice(1, -1));
-  if (prefixes === undefined || families === undefined || families.length === 0) {
-    throw new Error(`Could not read the primitive-colour vocabulary from ${bundlePath}`);
-  }
-  return new RegExp(`(?:${prefixes})-(?:${families.join("|")})(?:-\\d{2,3})?\\b`);
-}
-
-const PRIMITIVE_PALETTE_UTILITY = primitivePaletteUtility();
+const PRIMITIVE_PALETTE_UTILITY =
+  /(?:(?:bg|border|text|ring(?:-offset)?|fill|stroke|placeholder|caret|accent|decoration|divide|outline|from|via|to))-(?:red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|slate|gray|zinc|neutral|stone|black|white)(?:-\d{2,3})?\b/;
 
 describe("docs Tailwind migration contract", () => {
   it("keeps globals.css as the Tailwind entry with the library and demo-stage imports", () => {
@@ -163,8 +147,8 @@ describe("docs Tailwind migration contract", () => {
       // `elmera/no-primitive-colors` owns Tailwind palette utilities and arbitrary colour
       // literals in `apps/docs/src/**/*.{ts,tsx}` at lint time. This test owns the gaps
       // lint cannot see: the retired `-docs-*` names in TS/TSX and MDX, and `scheme-*` plus
-      // the palette utilities in MDX, which oxlint does not lint. The palette vocabulary is
-      // re-read from the packed rule so it cannot drift.
+      // the palette utilities in MDX, which oxlint does not lint. The mirror above carries
+      // the palette vocabulary.
       ...srcTsFiles()
         .filter(inScope)
         .flatMap((file) =>
@@ -277,8 +261,10 @@ describe("docs component CSS variables", () => {
   it("references only defined custom properties", () => {
     const globals = readFileSync(join(docsRoot, "src/styles/globals.css"), "utf8");
     const uiCss = readFileSync(join(workspaceRoot, "packages/ui/src/styles/ui.css"), "utf8");
+    // The role vocabulary comes from the sheet the app actually imports, not from the
+    // library's vitest snapshot: `turbo test` builds `@elmeragroup/ui` first.
     const themesCss = readFileSync(
-      join(workspaceRoot, "packages/ui/src/theme/__snapshots__/themes.css"),
+      createRequire(import.meta.url).resolve("@elmeragroup/ui/themes.css"),
       "utf8"
     );
     const defined = new Set([

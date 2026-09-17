@@ -1,16 +1,14 @@
 import { Effect } from "effect";
 import { resolve } from "node:path";
-import { pathToFileURL } from "node:url";
 
 import {
   checkReleasePr,
+  ReleaseError,
   releaseCheckedCommit,
   resolveReleasePackage,
   retryRelease,
 } from "@elmeragroup/internal/release";
-import type { ReleaseError, ReleasePackage } from "@elmeragroup/internal/release";
-
-import { pack } from "../packages/ui/scripts/release-pack.ts";
+import type { PackAndVerify, ReleasePackage } from "@elmeragroup/internal/release";
 
 export type ReleaseCommand =
   | { mode: "check-pr" }
@@ -35,19 +33,33 @@ function releasePackage(): ReleasePackage {
   return resolveReleasePackage(checkoutRoot, resolve(checkoutRoot, "packages/ui"), "@elmeragroup/ui");
 }
 
+/**
+ * The pack adapter, loaded only by `publish`: `check-pr` and `retry` must not load the
+ * build and theme toolchain, and `retry` never packs.
+ */
+function loadPackAdapter(): Effect.Effect<PackAndVerify, ReleaseError> {
+  return Effect.tryPromise({
+    try: () => import("../packages/ui/scripts/release-pack.ts").then(({ pack }) => ({ pack })),
+    catch: (cause) => new ReleaseError({ message: "Could not load the release-pack adapter", cause }),
+  });
+}
+
 function run(command: ReleaseCommand, pkg: ReleasePackage): Effect.Effect<void, ReleaseError> {
   switch (command.mode) {
     case "check-pr":
       return checkReleasePr(pkg);
     case "publish":
-      // `pack` implements the engine's `PackAndVerify` seam.
-      return releaseCheckedCommit(pkg, { pack }, command.commit);
+      return Effect.gen(function* () {
+        // `pack` implements the engine's `PackAndVerify` seam.
+        const adapter = yield* loadPackAdapter();
+        return yield* releaseCheckedCommit(pkg, adapter, command.commit);
+      });
     case "retry":
       return retryRelease(pkg, command.tag);
   }
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
+if (import.meta.main) {
   const command = parseReleaseCommand(process.argv.slice(2));
   await Effect.runPromise(run(command, releasePackage()));
 }

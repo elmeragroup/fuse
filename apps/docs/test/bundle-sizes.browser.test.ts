@@ -1,18 +1,10 @@
-import { chromium } from "playwright";
-import type { Browser, Page } from "playwright";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import type { Page } from "playwright";
+import { describe, expect, it } from "vitest";
 
+import { launchSuiteBrowser } from "./demo-page";
 import { docsBaseUrl } from "./docs-server";
 
-let browser: Browser;
-
-beforeAll(async () => {
-  browser = await chromium.launch({ headless: true });
-});
-
-afterAll(async () => {
-  await browser.close();
-});
+const browser = launchSuiteBrowser();
 
 type CellBox = {
   paddingRight: string;
@@ -63,7 +55,7 @@ async function numericBundleSizeBoxes(page: Page): Promise<{
 
 describe("bundle size table numeric cells", () => {
   it("gives numeric headers and body cells zero right padding and right alignment", async () => {
-    const page = await browser.newPage();
+    const page = await browser().newPage();
     const boxes = await numericBundleSizeBoxes(page);
     const numeric = [boxes.measuredHeader, boxes.ceilingHeader, boxes.usedHeader, boxes.measuredBody];
 

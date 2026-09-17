@@ -3,16 +3,18 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-import { composeTheme } from "./compose-theme";
+import { assertMustOverrideCoverage, composeTheme, coverageSchemes } from "./compose-theme";
 import { contrastRatio } from "./contrast";
 import { parseStyleRules } from "./css-rules";
 import { generateThemesCss } from "./generate-css";
-import { assignedTokenNames, EXTERNAL_RESET_KEYS, TOKEN_NAMES } from "./tokens/contract";
-import type { TokenContract } from "./tokens/contract";
+import { brandPointer } from "./tokens/brand-pointers";
+import { assignedTokenNames, EXTERNAL_RESET_KEYS, MUST_OVERRIDE_DARK, TOKEN_NAMES } from "./tokens/contract";
+import type { TokenContract, TokenName } from "./tokens/contract";
 import { DEFAULTS } from "./tokens/defaults";
 import { externalDarkPalette } from "./tokens/external-dark-palettes";
 import { EXTERNAL_PALETTES } from "./tokens/external-palettes";
 import { INTERNAL_DARK_PALETTE } from "./tokens/internal-dark-palette";
+import { paletteLayers } from "./tokens/palette-layers";
 import { PRIMITIVES } from "./tokens/primitives";
 import { aliasTarget, THEME_RESET_KEYS } from "./tokens/reset-keys";
 import { segmentSheet } from "./tokens/segment-sheets";
@@ -20,7 +22,7 @@ import { LEGAL_THEMES, themeSlug } from "./tokens/themes";
 
 /** fkas-company's light sheet through the real accessor; the sheet table must keep it. */
 function fkasCompanyLight(): Partial<TokenContract> {
-  const sheet = segmentSheet({ variant: "external", brand: "fkas", segment: "company" });
+  const sheet = segmentSheet("fkas", "company");
   if (sheet === undefined) {
     throw new Error("fkas-company has no segment sheet");
   }
@@ -146,11 +148,51 @@ describe("theme contract", () => {
     await expect(css).toMatchFileSnapshot("./__snapshots__/themes.css");
   });
 
-  it("selects a segment sheet only for an external theme with one", () => {
+  it("selects a segment sheet only for a brand/segment pair that has one", () => {
     expect(fkasCompanyLight().background).toBe("oklch(0.9823 0.01428 213.1)");
-    expect(segmentSheet({ variant: "internal", brand: "fkas", segment: "company" })).toBeUndefined();
-    expect(segmentSheet({ variant: "external", brand: "fkas", segment: "private" })).toBeUndefined();
-    expect(segmentSheet({ variant: "external", brand: "tkas", segment: "company" })).toBeUndefined();
+    expect(segmentSheet("fkas", "private")).toBeUndefined();
+    expect(segmentSheet("tkas", "company")).toBeUndefined();
+    expect(segmentSheet("elma", "company")).toBeUndefined();
+  });
+
+  it("gives every external dark palette the full set of must-override roles", () => {
+    for (const theme of LEGAL_THEMES) {
+      if (theme.variant !== "external") continue;
+      const supplied = new Set(assignedTokenNames(externalDarkPalette(theme.brand, theme.segment)));
+      const missing = MUST_OVERRIDE_DARK.filter((key) => !supplied.has(key));
+      expect(missing, themeSlug(theme)).toEqual([]);
+    }
+    const internal = new Set(assignedTokenNames(INTERNAL_DARK_PALETTE));
+    expect(MUST_OVERRIDE_DARK.filter((key) => !internal.has(key))).toEqual([]);
+  });
+
+  it("gates the light layers on dark compositions too", () => {
+    expect(coverageSchemes("light")).toEqual(["light"]);
+    expect(coverageSchemes("dark")).toEqual(["light", "dark"]);
+    // The dark layer alone never names the light-only geometry roles, so this is the set a
+    // dark composition carries if it skips the light gate; the light gate rejects it.
+    const theme = { variant: "external", brand: "fkas", segment: "private" } as const;
+    const darkOnly = new Set<TokenName>([
+      ...assignedTokenNames(brandPointer(theme.brand)),
+      ...paletteLayers(theme, "dark").flatMap((layer) => assignedTokenNames(layer)),
+    ]);
+    expect(() => assertMustOverrideCoverage(darkOnly, "external", "light", themeSlug(theme))).toThrow(
+      /missing must-override tokens: .*radius/
+    );
+  });
+
+  it("emits a dark segment rule for every light segment rule", () => {
+    const lightSegments = rules
+      .filter((rule) => !rule.selector.includes('[data-theme="dark"]'))
+      .filter((rule) => rule.selector.includes("[data-theme-segment="))
+      .map((rule) => rule.selector);
+    expect(lightSegments.length).toBeGreaterThan(0);
+    for (const selector of lightSegments) {
+      expect(
+        rules.some((rule) => rule.selector.includes(`[data-theme="dark"]${selector}`)),
+        selector
+      ).toBe(true);
+    }
   });
 
   it("covers every key any external palette or segment delta can override", () => {
@@ -175,7 +217,7 @@ describe("theme contract", () => {
     }
     for (const theme of LEGAL_THEMES) {
       if (theme.variant !== "external") continue;
-      for (const name of assignedTokenNames(externalDarkPalette(theme))) {
+      for (const name of assignedTokenNames(externalDarkPalette(theme.brand, theme.segment))) {
         expect(THEME_RESET_KEYS, `${themeSlug(theme)} ${name}`).toContain(name);
       }
     }
@@ -187,7 +229,16 @@ describe("theme contract", () => {
         expect(reset.has(name), `${name} rebinds to ${target}`).toBe(true);
       }
     }
-    expect(THEME_RESET_KEYS).toHaveLength(72);
+    // The brand pair, its sidebar aliases, and the locked sans stack are the brand-pointer
+    // layer's and the defaults'; every other role is a key some palette can change.
+    const brandPointerRoles = new Set<string>([
+      "brand",
+      "brand-foreground",
+      "sidebar-brand",
+      "sidebar-brand-foreground",
+      "font-sans",
+    ]);
+    expect(THEME_RESET_KEYS).toEqual(TOKEN_NAMES.filter((name) => !brandPointerRoles.has(name)));
   });
 
   it("uses neutral internal dark surfaces with brand accents and preserves the fkab external alias", () => {

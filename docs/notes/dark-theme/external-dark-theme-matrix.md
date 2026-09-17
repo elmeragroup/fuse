@@ -235,7 +235,7 @@ Native controls follow scoped CSS `color-scheme: dark` for external dark surface
 
 For React, keep the current `ThemeProvider` and `ColorSchemeScript` configuration; use `defaultColorScheme="dark"` for a dark default or the existing `useColorScheme().setColorScheme("dark")` setter for a user action. A forced first paint still requires the same `forcedColorScheme` on the bootstrap and provider. See [integration recipes](../../../docs/theming-integration.md).
 
-The docs matrix now has Light, Dark and System controls. The existing `/api/themes` and Figma export routes remain light-token exports; the complete dark review export is linked above. Dark export API modes are a separate follow-up, not a second runtime palette.
+The docs matrix now has Light, Dark and System controls. The existing `/api/themes` and Figma export routes remain light-token exports. Dark export API modes are a separate follow-up, not a second runtime palette.
 
 ## Validation and practical limits
 

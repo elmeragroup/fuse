@@ -17,7 +17,14 @@ import { useResolvedPortalContainer } from "../../theme/theme-scope-container";
  * positioning gutter is the one honest number; the CSS clamp below must reserve exactly
  * this gutter on both sides.
  */
-const CONTAINER_PADDING = 12;
+export const CONTAINER_PADDING = 12;
+
+/**
+ * The width clamp, reserving one `CONTAINER_PADDING` gutter per side. The arbitrary value
+ * is a literal because Tailwind's source scan resolves no interpolation; `popover.test.ts`
+ * pins the literal to `CONTAINER_PADDING` so the pair can only change together.
+ */
+export const POPOVER_MAX_WIDTH_CLASS = cn("max-w-[calc(100vw-24px)]");
 
 const popoverVariants = tv({
   slots: {
@@ -25,7 +32,8 @@ const popoverVariants = tv({
     // hairline ring, and twMerge cannot subtract `ring-foreground/10` (overlay-classes.ts).
     base: cn(
       overlayPopupFillClass,
-      "shadow-md max-w-[calc(100vw-1.5rem)] min-w-32 origin-(--trigger-anchor-point) rounded-md border border-border bg-clip-padding",
+      "shadow-md min-w-32 origin-(--trigger-anchor-point) rounded-md border border-border bg-clip-padding",
+      POPOVER_MAX_WIDTH_CLASS,
       overlayLayer
     ),
     arrow: "group my-0!",
@@ -46,7 +54,10 @@ const popoverArrowSvgClass = popoverSlots.arrowSvg();
 const popoverEnteringClass = popoverSlots.entering();
 const popoverExitingClass = popoverSlots.exiting();
 
-export type PopoverProps = Omit<AriaPopoverProps, "children" | "UNSTABLE_portalContainer"> & {
+export type PopoverProps = Omit<
+  AriaPopoverProps,
+  "children" | "containerPadding" | "UNSTABLE_portalContainer"
+> & {
   showArrow?: boolean;
   children: ReactNode;
   container?: OverlayContainerProps["container"];
@@ -84,9 +95,9 @@ export function Popover({
   return (
     <AriaPopover
       offset={offset}
-      containerPadding={CONTAINER_PADDING}
       UNSTABLE_portalContainer={resolvedContainer}
       {...props}
+      containerPadding={CONTAINER_PADDING}
       className={composeRenderProps(className, (resolved: string | undefined, renderProps) =>
         cn(
           popoverBaseClass,

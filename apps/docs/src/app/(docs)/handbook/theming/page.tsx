@@ -117,11 +117,11 @@ export default function ThemingPage(): ReactElement {
       <p>
         This site is a worked example of the split. Its own document theme is fixed at{" "}
         <code>internal-elma-private</code> and the chrome you are reading consumes that theme's light and dark
-        tokens. The variant, brand and segment selects in the header write docs-local preview state that only
-        demo stages and theme scopes consume. Every demo can be viewed in all twenty permutations while the
-        page keeps its Elmera identity. The header's colour-scheme select changes the whole document through
-        the library's colour-scheme API, offers light, dark and system, and remembers your choice. The matrix
-        mirrors the same three-way control.
+        tokens. The header's theme settings menu writes docs-local preview state from its labelled radio
+        groups (Appearance, Variant, Brand, Segment). Variant, Brand and Segment feed demo stages and theme
+        scopes only, so every demo can be viewed in all twenty permutations while the page keeps its Elmera
+        identity. Appearance changes the whole document through the library's colour-scheme API, offers light,
+        dark and system, and remembers your choice; the matrix mirrors the same three-way control.
       </p>
     </DocsPage>
   );

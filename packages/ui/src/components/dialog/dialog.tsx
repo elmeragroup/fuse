@@ -21,8 +21,8 @@ import {
 } from "../overlay/overlay-classes";
 import {
   OverlayCloseButton,
+  OverlayFooterCloseButton,
   overlayCornerCloseClass,
-  overlayFooterCloseButton,
 } from "../overlay/overlay-close-button";
 import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps } from "../overlay/overlay-props";
@@ -167,7 +167,7 @@ function DialogFooter({
   return (
     <div data-slot="dialog-footer" className={cn(overlayFooterClass, className)} {...props}>
       {children}
-      {showCloseButton ? <DialogPrimitive.Close render={overlayFooterCloseButton({ label })} /> : null}
+      {showCloseButton ? <DialogPrimitive.Close render={<OverlayFooterCloseButton label={label} />} /> : null}
     </div>
   );
 }

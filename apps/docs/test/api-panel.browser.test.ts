@@ -1,18 +1,10 @@
-import { chromium } from "playwright";
-import type { Browser, Page } from "playwright";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import type { Page } from "playwright";
+import { describe, expect, it } from "vitest";
 
+import { launchSuiteBrowser } from "./demo-page";
 import { docsBaseUrl } from "./docs-server";
 
-let browser: Browser;
-
-beforeAll(async () => {
-  browser = await chromium.launch({ headless: true });
-});
-
-afterAll(async () => {
-  await browser.close();
-});
+const browser = launchSuiteBrowser();
 
 /** Wide enough for Prop · Type · Default (52rem = 832px). */
 const DESKTOP = { width: 1280, height: 720 } as const;
@@ -63,7 +55,7 @@ async function headerCellVisibility(page: Page): Promise<HeaderVisibility> {
 
 describe("API panel layout (docs-site.md §8)", () => {
   it("shows the entire persisted country union in the expanded phone reference", async () => {
-    const page = await browser.newPage();
+    const page = await browser().newPage();
     try {
       await page.goto(`${docsBaseUrl()}/components/phone-number-field`, { waitUntil: "load" });
       const summary = page.locator('summary[aria-label*="Prop: defaultCountryCode,"]');
@@ -80,7 +72,7 @@ describe("API panel layout (docs-site.md §8)", () => {
   });
 
   it("shows Prop, Type, and Default header cells according to viewport width", async () => {
-    const page = await browser.newPage();
+    const page = await browser().newPage();
     await openScrollAreaApi(page);
 
     await page.setViewportSize(NARROW);
@@ -108,7 +100,7 @@ describe("API panel layout (docs-site.md §8)", () => {
   });
 
   it("lets an expanded panel span the table instead of shrinking to the Prop column", async () => {
-    const page = await browser.newPage();
+    const page = await browser().newPage();
     await openScrollAreaApi(page);
 
     // Native <summary> is not exposed as role=button here, and content-visibility:auto

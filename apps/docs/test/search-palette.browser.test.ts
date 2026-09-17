@@ -1,18 +1,10 @@
-import { chromium } from "playwright";
-import type { Browser, Page } from "playwright";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import type { Page } from "playwright";
+import { describe, expect, it } from "vitest";
 
+import { launchSuiteBrowser } from "./demo-page";
 import { docsBaseUrl } from "./docs-server";
 
-let browser: Browser;
-
-beforeAll(async () => {
-  browser = await chromium.launch({ headless: true });
-});
-
-afterAll(async () => {
-  await browser.close();
-});
+const browser = launchSuiteBrowser();
 
 const DIALOG = '[role="dialog"]';
 const FIELD = 'input[role="combobox"]';
@@ -26,7 +18,7 @@ type ActiveOption = {
 };
 
 async function openDocsPage(pathname = "/components/button"): Promise<Page> {
-  const page = await browser.newPage();
+  const page = await browser().newPage();
   await page.goto(`${docsBaseUrl()}${pathname}`, { waitUntil: "networkidle" });
   await page.locator("h1").first().waitFor();
   return page;

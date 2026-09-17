@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
+import type { ResolvedColorScheme } from "./color-scheme-types";
 import { composeTheme } from "./compose-theme";
-import { buildContrastMatrix, contrastRatio, pairId, TEXT_GRADE_PAIRS } from "./contrast";
+import { buildContrastMatrix, contrastRatio, TEXT_GRADE_PAIRS } from "./contrast";
+import type { TokenName } from "./tokens/contract";
 import { LEGAL_THEMES, themeSlug } from "./tokens/themes";
 import type { ThemeInput } from "./tokens/themes";
 
@@ -18,25 +20,88 @@ const DARK_PANEL_TEXT_PAIRS = [
 ] as const;
 
 /**
- * `muted-foreground` copy is classified by the accessibility deviations instead of the blanket
- * 4.5:1 text-grade floor: the shared internal light default measures 4.35:1 on `muted` and
- * 4.74:1 on `background`, and Telinet's locked light palette measures 4.35:1 on `muted` and
- * 4.41:1 on `background` (documented deviation 4). Every other theme/pair combination is owed
- * the full floor.
+ * The filled-feature pair. The external Figma dark sheets choose their own feature colors and
+ * do not meet the text floor; the internal dark palette is held to it.
  */
-const MUTED_FOREGROUND_POLICY = [
+const FEATURE_TEXT_PAIRS = [
+  ["feature-foreground", "feature"],
+  ["feature-foreground", "feature-bright"],
+] as const;
+
+/** The surfaces a chart, syntax or control role must separate itself from. */
+const CONTROL_SURFACES = ["background", "card", "card-soft"] as const;
+
+const CHART_ROLES = [
+  "chart-1",
+  "chart-2",
+  "chart-3",
+  "chart-4",
+  "chart-5",
+  "chart-6",
+  "chart-7",
+  "chart-8",
+] as const;
+
+const SYNTAX_ROLES = [
+  "sh-identifier",
+  "sh-keyword",
+  "sh-string",
+  "sh-class",
+  "sh-property",
+  "sh-entity",
+  "sh-jsxliterals",
+  "sh-sign",
+  "sh-comment",
+] as const;
+
+/** Every role/surface pair for the given roles, in policy order. */
+function roleOnSurfaces(roles: readonly TokenName[]): readonly (readonly [TokenName, TokenName])[] {
+  return roles.flatMap((role) => CONTROL_SURFACES.map((surface) => [role, surface] as const));
+}
+
+/** One contrast floor: every pair is measured on each theme the policy matches. */
+type ContrastPolicy = {
+  /** The color schemes the policy measures. */
+  readonly schemes: readonly ResolvedColorScheme[];
+
+  /** The themes the policy measures. */
+  readonly matches: (theme: ThemeInput) => boolean;
+
+  /** The foreground/background role pairs the floor applies to. */
+  readonly pairs: readonly (readonly [TokenName, TokenName])[];
+
+  /** The WCAG ratio every pair must reach. */
+  readonly floor: number;
+};
+
+/**
+ * `muted-foreground` copy is classified by the accessibility deviations instead of the blanket
+ * 4.5:1 text-grade floor in light: the shared internal light default measures 4.35:1 on `muted`
+ * and 4.74:1 on `background`, and Telinet's locked light palette measures 4.35:1 on `muted` and
+ * 4.41:1 on `background` (documented deviation 4). Every dark theme holds 4.5:1.
+ */
+const CONTRAST_POLICIES: readonly ContrastPolicy[] = [
   {
-    matches: (theme: ThemeInput): boolean => theme.variant === "internal",
+    schemes: ["light", "dark"],
+    matches: () => true,
+    pairs: TEXT_GRADE_PAIRS.filter(([foreground]) => foreground !== "muted-foreground"),
+    floor: 4.5,
+  },
+  {
+    schemes: ["light"],
+    matches: (theme) => theme.variant === "internal",
     pairs: [["muted-foreground", "muted"]],
     floor: 4.3,
   },
   {
-    matches: (theme: ThemeInput): boolean => theme.variant === "internal",
+    schemes: ["light"],
+    matches: (theme) => theme.variant === "internal",
     pairs: [["muted-foreground", "background"]],
     floor: 4.45,
   },
   {
-    matches: (theme: ThemeInput): boolean => theme.variant === "external" && theme.brand !== "fkse",
+    schemes: ["light"],
+    matches: (theme) => theme.variant === "external" && theme.brand !== "fkse",
     pairs: [
       ["muted-foreground", "muted"],
       ["muted-foreground", "background"],
@@ -44,156 +109,89 @@ const MUTED_FOREGROUND_POLICY = [
     floor: 4.5,
   },
   {
-    matches: (theme: ThemeInput): boolean => theme.variant === "external" && theme.brand === "fkse",
+    schemes: ["light"],
+    matches: (theme) => theme.variant === "external" && theme.brand === "fkse",
     pairs: [
       ["muted-foreground", "muted"],
       ["muted-foreground", "background"],
     ],
     floor: 4.3,
   },
-] as const satisfies readonly {
-  matches: (theme: ThemeInput) => boolean;
-  pairs: readonly (readonly ["muted-foreground", "muted" | "background"])[];
-  floor: number;
-}[];
+  {
+    schemes: ["dark"],
+    matches: () => true,
+    pairs: [
+      ["muted-foreground", "muted"],
+      ["muted-foreground", "background"],
+    ],
+    floor: 4.5,
+  },
+  {
+    schemes: ["dark"],
+    matches: () => true,
+    pairs: DARK_PANEL_TEXT_PAIRS,
+    floor: 4.5,
+  },
+  {
+    schemes: ["dark"],
+    matches: (theme) => theme.variant === "internal",
+    pairs: FEATURE_TEXT_PAIRS,
+    floor: 4.5,
+  },
+  { schemes: ["dark"], matches: () => true, pairs: roleOnSurfaces(CHART_ROLES), floor: 3 },
+  { schemes: ["dark"], matches: () => true, pairs: roleOnSurfaces(SYNTAX_ROLES), floor: 4.5 },
+  { schemes: ["dark"], matches: () => true, pairs: roleOnSurfaces(["input", "ring"]), floor: 3 },
+];
 
 describe("contrast matrix", () => {
-  const matrix = buildContrastMatrix();
+  const lightMatrix = buildContrastMatrix();
+  const darkMatrix = buildContrastMatrix("dark");
 
   it("snapshots text-grade pairs across the 20 themes", async () => {
     expect(LEGAL_THEMES).toHaveLength(20);
-    expect(Object.keys(matrix)).toHaveLength(20);
-    await expect(matrix).toMatchFileSnapshot("./__snapshots__/contrast-matrix.json");
+    expect(Object.keys(lightMatrix)).toHaveLength(20);
+    await expect(lightMatrix).toMatchFileSnapshot("./__snapshots__/contrast-matrix.json");
   });
 
-  it("meets 4.5:1 on text-grade pairs that are not the muted-foreground classification", () => {
-    for (const theme of LEGAL_THEMES) {
-      const slug = themeSlug(theme);
-      const row = matrix[slug];
-      for (const [foreground, background] of TEXT_GRADE_PAIRS) {
-        if (foreground === "muted-foreground") continue;
-        const id = pairId(foreground, background);
-        expect(row[id], `${slug} ${id}`).toBeGreaterThanOrEqual(4.5);
-      }
-      for (const { matches, pairs, floor } of MUTED_FOREGROUND_POLICY) {
-        if (!matches(theme)) continue;
-        for (const [foreground, background] of pairs) {
-          const id = pairId(foreground, background);
-          expect(row[id], `${slug} ${id}`).toBeGreaterThanOrEqual(floor);
-        }
-      }
+  it("snapshots the ten internal dark permutations as one shared body", async () => {
+    const themes = LEGAL_THEMES.filter((theme) => theme.variant === "internal");
+    expect(themes).toHaveLength(10);
+    const [firstTheme] = themes;
+    if (firstTheme === undefined) {
+      throw new Error("No internal themes are legal");
     }
-  });
-});
-
-describe("internal dark contrast matrix", () => {
-  const themes = LEGAL_THEMES.filter((theme) => theme.variant === "internal");
-
-  it("keeps input boundaries, focus rings and all chart colors at 3:1 on supported surfaces", () => {
+    const body = darkMatrix[themeSlug(firstTheme)];
     for (const theme of themes) {
-      const tokens = composeTheme(theme, "dark");
-      for (const role of [
-        "input",
-        "ring",
-        "chart-1",
-        "chart-2",
-        "chart-3",
-        "chart-4",
-        "chart-5",
-        "chart-6",
-        "chart-7",
-        "chart-8",
-      ] as const) {
-        for (const surface of ["background", "card", "card-soft"] as const) {
-          expect(contrastRatio(tokens[role], tokens[surface]), `${role}/${surface}`).toBeGreaterThanOrEqual(
-            3
-          );
-        }
-      }
+      // Internal themes share one dark palette; a body drifting per brand is a contract break.
+      expect(darkMatrix[themeSlug(theme)], themeSlug(theme)).toEqual(body);
     }
+    await expect({ themes: themes.map(themeSlug), body }).toMatchFileSnapshot(
+      "./__snapshots__/internal-dark-contrast-matrix.json"
+    );
   });
-
-  it("snapshots the ten internal dark permutations", async () => {
-    const matrix = buildContrastMatrix("dark");
-    const internal = Object.fromEntries(themes.map((theme) => [themeSlug(theme), matrix[themeSlug(theme)]]));
-    expect(Object.keys(internal)).toHaveLength(10);
-    await expect(internal).toMatchFileSnapshot("./__snapshots__/internal-dark-contrast-matrix.json");
-  });
-
-  it("meets 4.5:1 for paired text and syntax on supported dark panels", () => {
-    for (const theme of themes) {
-      const tokens = composeTheme(theme, "dark");
-      for (const [foreground, background] of [
-        ...TEXT_GRADE_PAIRS,
-        ...DARK_PANEL_TEXT_PAIRS,
-        ["feature-foreground", "feature"],
-        ["feature-foreground", "feature-bright"],
-      ] as const) {
-        expect(
-          contrastRatio(tokens[foreground], tokens[background]),
-          `${themeSlug(theme)} ${foreground}/${background}`
-        ).toBeGreaterThanOrEqual(4.5);
-      }
-      for (const syntax of [
-        "sh-identifier",
-        "sh-keyword",
-        "sh-string",
-        "sh-class",
-        "sh-property",
-        "sh-entity",
-        "sh-jsxliterals",
-        "sh-sign",
-        "sh-comment",
-      ] as const) {
-        for (const panel of ["background", "card", "card-soft"] as const) {
-          expect(contrastRatio(tokens[syntax], tokens[panel]), `${syntax}/${panel}`).toBeGreaterThanOrEqual(
-            4.5
-          );
-        }
-      }
-    }
-  });
-});
-
-describe("external dark contrast matrix", () => {
-  const matrix = buildContrastMatrix("dark");
-  const themes = LEGAL_THEMES.filter((theme) => theme.variant === "external");
 
   it("snapshots the 10 external dark themes", async () => {
-    const external = Object.fromEntries(themes.map((theme) => [themeSlug(theme), matrix[themeSlug(theme)]]));
+    const themes = LEGAL_THEMES.filter((theme) => theme.variant === "external");
+    const external = Object.fromEntries(
+      themes.map((theme) => [themeSlug(theme), darkMatrix[themeSlug(theme)]])
+    );
     expect(Object.keys(external)).toHaveLength(10);
     await expect(external).toMatchFileSnapshot("./__snapshots__/external-dark-contrast-matrix.json");
   });
 
-  it("meets the text-grade floor for dark roles including muted copy and shared panels", () => {
-    for (const theme of themes) {
-      const slug = themeSlug(theme);
-      const tokens = composeTheme(theme, "dark");
-      for (const [foreground, background] of TEXT_GRADE_PAIRS) {
-        const pair = pairId(foreground, background);
-        expect(
-          contrastRatio(tokens[foreground], tokens[background]),
-          `${slug} ${pair}`
-        ).toBeGreaterThanOrEqual(4.5);
-      }
-      for (const [foreground, background] of DARK_PANEL_TEXT_PAIRS) {
-        expect(
-          contrastRatio(tokens[foreground], tokens[background]),
-          `${slug} ${foreground}/${background}`
-        ).toBeGreaterThanOrEqual(4.5);
-      }
-    }
-  });
-
-  it("keeps input boundaries and focus rings at 3:1 on the dark control surfaces", () => {
-    for (const theme of themes) {
-      const tokens = composeTheme(theme, "dark");
-      for (const foreground of ["input", "ring"] as const) {
-        for (const background of ["background", "card", "card-soft"] as const) {
-          expect(
-            contrastRatio(tokens[foreground], tokens[background]),
-            `${themeSlug(theme)} ${foreground}/${background}`
-          ).toBeGreaterThanOrEqual(3);
+  it("holds every contrast floor for every theme and color scheme", () => {
+    for (const scheme of ["light", "dark"] as const) {
+      for (const theme of LEGAL_THEMES) {
+        const slug = themeSlug(theme);
+        const tokens = composeTheme(theme, scheme);
+        for (const policy of CONTRAST_POLICIES) {
+          if (!policy.schemes.includes(scheme) || !policy.matches(theme)) continue;
+          for (const [foreground, background] of policy.pairs) {
+            expect(
+              contrastRatio(tokens[foreground], tokens[background]),
+              `${scheme} ${slug} ${foreground}/${background}`
+            ).toBeGreaterThanOrEqual(policy.floor);
+          }
         }
       }
     }

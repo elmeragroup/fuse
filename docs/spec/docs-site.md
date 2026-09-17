@@ -133,6 +133,7 @@ Required scenarios live in `apps/docs/test/fixtures/component-demo-requirements.
 - Density is **locked to variant**: `internal` → `dense`, `external` → `comfortable`. The row's `attributes` stamp the three theme axes plus that density (`data-theme-variant`, `data-theme-brand`, `data-theme-segment`, `data-density`).
 - Token keys are CSS custom-property names (`--primary`, …). Each theme's `tokens` map has the **77** themable role tokens ([theming](theming.md) §2.2).
 - Values are CSS-honest `composeTheme` output, including `var(...)` aliases — never pre-resolved. `--brand` is `var(--brand-fkas)` on an `fkas` theme; `--destructive` is `var(--error)`; `--sidebar-brand` is `var(--brand)`.
+- The catalog is **light-only**: `composeTheme` defaults to light, and dark tokens are a documented follow-up ([dark theme matrix](../notes/dark-theme/external-dark-theme-matrix.md)), not a second token set at this endpoint.
 - Brand primitives appear **once at the payload root** (`primitives["--brand-fkas"]`, `"--brand-fkab": "var(--brand-fkas)"`), not copied onto every theme.
 
 ### 9.2 Figma import files
@@ -140,7 +141,7 @@ Required scenarios live in `apps/docs/test/fixtures/component-demo-requirements.
 Native Figma variable import takes **DTCG 2025.10 JSON, one file per mode** ([Modes for variables](https://help.figma.com/hc/en-us/articles/15343816063383-Modes-for-variables)). Color space is sRGB (not OKLCH); dimensions are `px`; aliases are `{group.name}`.
 
 - `GET /api/themes/figma` — index of the 20 legal slugs and their file URLs.
-- `GET /api/themes/figma/<slug>` — one DTCG document for that theme (`application/design-tokens+json`). Illegal slugs 404.
+- `GET /api/themes/figma/<slug>` — one DTCG document for that theme (`application/design-tokens+json`). The document carries **light tokens only**, for the same reason as §9.1. Illegal slugs 404.
 - Drag the 20 slug files onto a **new** variable collection. Tokens present in every file become variables; each file is a mode. Density is omitted (not a theme axis). Primitives are inlined in every file so first-import aliases resolve without cross-collection IDs.
 
 ## 10 Hosting

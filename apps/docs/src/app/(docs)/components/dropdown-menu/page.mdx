@@ -34,6 +34,9 @@ export const metadata = componentMetadata("dropdown-menu");
 `DropdownMenu.RadioItem` keeps the primitive's own value type, so a mistyped item value still
 compiles.
 
+`DropdownMenu.Label` renders the primitive's group label, so it must sit inside a
+`DropdownMenu.Group`; it labels the items of the group it belongs to.
+
 <Demo slug="dropdown-menu" id="submenu" title="Submenu" file="dropdown-menu-submenu.tsx">
   <DropdownMenuSubmenu />
 </Demo>

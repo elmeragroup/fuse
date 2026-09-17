@@ -16,5 +16,5 @@ Publishing `@elmeragroup/ui` needs orchestration this repository does not have: 
 ## Consequences
 
 - The repository gains canary publishing and a recorded, retryable publication protocol without maintaining a second publisher.
-- [Release](release.md) owns the UI policy: channels, publish gates, authentication, and activation prerequisites.
+- [Release](../spec/release.md) owns the UI policy: channels, publish gates, authentication, and activation prerequisites.
 - Engine behavior — eligibility, canary allocation, stable gating, promotion, recovery — is owned upstream; a needed change is a change request there, not a local fork. The release scripts type-check as part of `ci:checks` (`//#type-check:scripts`).

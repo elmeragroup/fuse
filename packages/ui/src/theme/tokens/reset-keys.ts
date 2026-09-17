@@ -1,10 +1,7 @@
 import { assignedTokenNames, TOKEN_NAMES } from "./contract";
 import type { TokenContract, TokenName } from "./contract";
 import { DEFAULTS } from "./defaults";
-import { externalDarkPalette } from "./external-dark-palettes";
-import { externalPalette } from "./external-palettes";
-import { INTERNAL_DARK_PALETTE } from "./internal-dark-palette";
-import { segmentSheet } from "./segment-sheets";
+import { paletteLayers } from "./palette-layers";
 import { LEGAL_THEMES } from "./themes";
 
 const VARIABLE_REFERENCE = /^var\(--([a-z0-9-]+)\)$/;
@@ -51,14 +48,10 @@ function resetKeysFor(layers: readonly (Partial<TokenContract> | undefined)[]): 
 // Seed from the palette layers themselves, so this module cannot claim a key no layer
 // supplies. The theme tests pin the light layers' key union to the documented
 // `EXTERNAL_RESET_KEYS` literal.
-const externalThemes = LEGAL_THEMES.filter((theme) => theme.variant === "external");
-
-const lightLayers = externalThemes.flatMap((theme) => [
-  externalPalette(theme.brand),
-  segmentSheet(theme)?.light,
+const paletteLayerList = LEGAL_THEMES.flatMap((theme) => [
+  ...paletteLayers(theme, "light"),
+  ...paletteLayers(theme, "dark"),
 ]);
 
-const darkLayers = [INTERNAL_DARK_PALETTE, ...externalThemes.map((theme) => externalDarkPalette(theme))];
-
 /** Every token name a light or dark palette can change, in `TOKEN_NAMES` order. */
-export const THEME_RESET_KEYS = resetKeysFor([...lightLayers, ...darkLayers]);
+export const THEME_RESET_KEYS = resetKeysFor(paletteLayerList);

@@ -1,18 +1,10 @@
-import { chromium } from "playwright";
-import type { Browser, Locator, Page } from "playwright";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import type { Locator, Page } from "playwright";
+import { describe, expect, it } from "vitest";
 
+import { launchSuiteBrowser, readThemeAttributes } from "./demo-page";
 import { docsBaseUrl } from "./docs-server";
 
-let browser: Browser;
-
-beforeAll(async () => {
-  browser = await chromium.launch({ headless: true });
-});
-
-afterAll(async () => {
-  await browser.close();
-});
+const browser = launchSuiteBrowser();
 
 async function openSettings(page: Page): Promise<Locator> {
   await page.goto(`${docsBaseUrl()}/components/button`, { waitUntil: "networkidle" });
@@ -29,27 +21,20 @@ function choice(menu: Locator, name: string): Locator {
 async function expectPreview(page: Page, variant: string, brand: string, segment: string): Promise<void> {
   // DOM audit: the preview stage and document own distinct theme attribute triples.
   await expect
-    .poll(() =>
-      page
-        .locator("[data-demo-stage]")
-        .first()
-        .evaluate((stage) => ({
-          variant: stage.getAttribute("data-theme-variant"),
-          brand: stage.getAttribute("data-theme-brand"),
-          segment: stage.getAttribute("data-theme-segment"),
-        }))
-    )
-    .toEqual({ variant, brand, segment });
+    .poll(() => readThemeAttributes(page.locator("[data-demo-stage]").first()))
+    .toEqual({
+      variant,
+      brand,
+      segment,
+    });
+  await expect.poll(() => page.locator("html").getAttribute("data-density")).toBe("dense");
   await expect
-    .poll(() =>
-      page.locator("html").evaluate((root) => ({
-        variant: root.getAttribute("data-theme-variant"),
-        brand: root.getAttribute("data-theme-brand"),
-        segment: root.getAttribute("data-theme-segment"),
-        density: root.getAttribute("data-density"),
-      }))
-    )
-    .toEqual({ variant: "internal", brand: "elma", segment: "private", density: "dense" });
+    .poll(() => readThemeAttributes(page.locator("html")))
+    .toEqual({
+      variant: "internal",
+      brand: "elma",
+      segment: "private",
+    });
 }
 
 async function expectFocused(locator: Locator): Promise<void> {
@@ -58,7 +43,7 @@ async function expectFocused(locator: Locator): Promise<void> {
 
 describe("docs theme settings", () => {
   it("labels each group and changes previews while the menu keeps the document theme", async () => {
-    const page = await browser.newPage({ colorScheme: "light" });
+    const page = await browser().newPage({ colorScheme: "light" });
     const menu = await openSettings(page);
     for (const name of ["Appearance", "Variant", "Brand", "Segment"]) {
       expect(await menu.getByRole("group", { name, exact: true }).count()).toBe(1);
@@ -90,7 +75,7 @@ describe("docs theme settings", () => {
   });
 
   it("coerces pinned brands, disables the unavailable segment, and resets only the preview", async () => {
-    const page = await browser.newPage({ colorScheme: "light" });
+    const page = await browser().newPage({ colorScheme: "light" });
     const menu = await openSettings(page);
     await choice(menu, "Dark").click();
     await choice(menu, "External").click();
@@ -118,7 +103,7 @@ describe("docs theme settings", () => {
   });
 
   it("supports keyboard selection, Escape focus return, and outside dismissal", async () => {
-    const page = await browser.newPage({ colorScheme: "light" });
+    const page = await browser().newPage({ colorScheme: "light" });
     await page.goto(`${docsBaseUrl()}/components/button`, { waitUntil: "networkidle" });
     const trigger = page.getByRole("button", { name: "Theme settings", exact: true });
     await trigger.focus();
@@ -148,7 +133,7 @@ describe("docs theme settings", () => {
   });
 
   it("persists appearance and keeps System selected as the device scheme changes", async () => {
-    const page = await browser.newPage({ colorScheme: "light" });
+    const page = await browser().newPage({ colorScheme: "light" });
     let menu = await openSettings(page);
     expect(await choice(menu, "System").getAttribute("aria-checked")).toBe("true");
     const lightPaint = await menu.evaluate((element) => getComputedStyle(element).backgroundColor);
@@ -172,7 +157,7 @@ describe("docs theme settings", () => {
   });
 
   it("fits a narrow, short viewport and scrolls to the reset action with the keyboard", async () => {
-    const page = await browser.newPage({ viewport: { width: 320, height: 480 }, colorScheme: "dark" });
+    const page = await browser().newPage({ viewport: { width: 320, height: 480 }, colorScheme: "dark" });
     const menu = await openSettings(page);
     const box = await menu.boundingBox();
     expect(box).not.toBeNull();

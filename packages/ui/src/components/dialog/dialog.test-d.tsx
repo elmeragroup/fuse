@@ -1,7 +1,7 @@
 import { expectTypeOf, test } from "vitest";
 
 import type { Dialog as RootDialog } from "@elmeragroup/ui";
-import type { DialogContentProps, DialogFooterProps } from "@elmeragroup/ui/dialog";
+import type { DialogContentProps, DialogFooterProps, DialogTitleProps } from "@elmeragroup/ui/dialog";
 import { Dialog } from "@elmeragroup/ui/dialog";
 
 test("the namespace ships all ten parts from the dialog entry and the root barrel", () => {
@@ -39,6 +39,7 @@ test("Content carries the 13-value overlay width axis and the close affordance p
   expectTypeOf<DialogContentProps["closeLabel"]>().toEqualTypeOf<string | undefined>();
   expectTypeOf<DialogFooterProps["showCloseButton"]>().toEqualTypeOf<boolean | undefined>();
   expectTypeOf<DialogFooterProps["closeLabel"]>().toEqualTypeOf<string | undefined>();
+  expectTypeOf<DialogTitleProps["isFocusable"]>().toEqualTypeOf<boolean | undefined>();
 
   const _content = <Dialog.Content size="10xl" showCloseButton={false} closeLabel="Dismiss" />;
   const _footer = <Dialog.Footer showCloseButton closeLabel="Dismiss" />;

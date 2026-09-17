@@ -1,6 +1,5 @@
 import { mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
-import { pathToFileURL } from "node:url";
 
 import { packageRootFromScript } from "./paths.ts";
 import { runCommand } from "./run-command.ts";
@@ -15,6 +14,6 @@ export function packTarball(packageRoot: string): string {
   return findTarball(packageRoot);
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
+if (import.meta.main) {
   packTarball(packageRootFromScript(import.meta.url));
 }

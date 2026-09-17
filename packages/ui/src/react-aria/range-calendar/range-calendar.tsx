@@ -14,7 +14,8 @@ import type { VariantProps } from "tailwind-variants";
 
 import { Text } from "../../components/text/text";
 import { rangeCalendarVariants } from "../../styles/range-calendar";
-import { CalendarHeader, LocaleCalendarGrid } from "../calendar/calendar";
+import { CalendarHeader } from "../calendar/calendar";
+import { LocaleCalendarGrid } from "../internal/calendar-grid";
 
 /**
  * Single-month range calendar composite over RAC `RangeCalendar`. The locale controls

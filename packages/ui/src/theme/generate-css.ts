@@ -1,13 +1,13 @@
 import type { ResolvedColorScheme } from "./color-scheme-types";
-import { composeTheme, internalReset } from "./compose-theme";
+import { composeTheme } from "./compose-theme";
 import { brandPointer } from "./tokens/brand-pointers";
 import { EXTERNAL_RESET_KEYS, TOKEN_NAMES } from "./tokens/contract";
 import type { TokenContract, TokenName } from "./tokens/contract";
 import { DEFAULTS } from "./tokens/defaults";
-import { INTERNAL_DARK_PALETTE } from "./tokens/internal-dark-palette";
 import { PRIMITIVE_NAMES, PRIMITIVES } from "./tokens/primitives";
 import { THEME_RESET_KEYS } from "./tokens/reset-keys";
 import { BRAND_CODES, BRANDS, LEGAL_THEMES } from "./tokens/themes";
+import type { ThemeInput } from "./tokens/themes";
 
 const GENERATED_FILE_HEADER = `/**
  * AUTO-GENERATED FILE — DO NOT EDIT DIRECTLY.
@@ -59,7 +59,7 @@ function rootDeclarations(): (readonly [string, string])[] {
 /**
  * Light layers declare `EXTERNAL_RESET_KEYS` only, so a host override of a role no
  * palette owns (`--ring`, `--popover`, `--chart-*`) inherits through the scope. Dark
- * layers materialize `THEME_RESET_KEYS`, every key any dark palette can change.
+ * layers materialize `THEME_RESET_KEYS`, every key any light or dark palette can change.
  */
 function resetDeclarations(
   overrides: Partial<TokenContract>,
@@ -95,17 +95,26 @@ function emitBrandPointers(): string {
 }
 
 function emitInternalReset(): string {
-  return themeRule(
-    `[data-theme-variant="internal"]`,
-    resetDeclarations(internalReset(), resetKeys("light")),
-    "light"
-  );
+  return themeRule(`[data-theme-variant="internal"]`, resetDeclarations({}, resetKeys("light")), "light");
+}
+
+/**
+ * The internal variant has one palette for every brand, so one composed internal dark
+ * theme names the dark scope's declarations. Its brand pointer is not part of
+ * `THEME_RESET_KEYS`, so the choice of brand and segment does not matter.
+ */
+function internalDarkTheme(): ThemeInput {
+  const theme = LEGAL_THEMES.find((candidate) => candidate.variant === "internal");
+  if (theme === undefined) {
+    throw new Error("No internal theme is legal");
+  }
+  return theme;
 }
 
 function emitInternalDarkPalette(): string {
   return themeRule(
     `[data-theme-variant="internal"]`,
-    resetDeclarations(INTERNAL_DARK_PALETTE, resetKeys("dark")),
+    resetDeclarations(composeTheme(internalDarkTheme(), "dark"), resetKeys("dark")),
     "dark"
   );
 }
@@ -114,11 +123,20 @@ function changedKeys(base: TokenContract, tokens: TokenContract): TokenName[] {
   return TOKEN_NAMES.filter((key) => tokens[key] !== base[key]);
 }
 
+/** True when the two compositions differ in any token. */
+function differsFrom(base: TokenContract, tokens: TokenContract): boolean {
+  return changedKeys(base, tokens).length > 0;
+}
+
 /**
- * Emit each brand's rule from its composed base theme, then a segment rule only where
- * the composed segment theme differs from that base. Light segment rules carry only those
- * differences; dark segment rules materialize the full reset set like every other dark
- * rule, so the cascade never depends on emission order.
+ * Emit each brand's rule from its composed base theme, then a segment rule wherever the
+ * segment departs from that base. Light segment rules carry only the changed keys; dark
+ * segment rules materialize the full reset set like every other dark rule.
+ *
+ * A segment that departs only in light still gets a dark rule: the light segment selector
+ * (`[variant][brand][segment]`) ties the dark brand selector (`[dark][variant][brand]`),
+ * so without the four-attribute dark segment rule a dark scope would resolve that tie by
+ * emission order instead of by specificity.
  */
 function emitBrandPalettes(colorScheme: ResolvedColorScheme): string {
   const keys = resetKeys(colorScheme);
@@ -135,22 +153,25 @@ function emitBrandPalettes(colorScheme: ResolvedColorScheme): string {
       throw new Error(`Brand ${brand} has no legal external themes`);
     }
     const base = composeTheme(baseTheme, colorScheme);
+    // The dark arm also asks whether the segment departs in light, so it needs the light
+    // base beside the composed base it already holds.
+    const lightBase = colorScheme === "dark" ? composeTheme(baseTheme, "light") : base;
     const selector = `[data-theme-variant="external"][data-theme-brand="${brand}"]`;
     rules.push(themeRule(selector, resetDeclarations(base, keys), colorScheme));
     for (const theme of themes.filter((candidate) => candidate !== baseTheme)) {
-      const tokens = composeTheme(theme, colorScheme);
-      const changed = changedKeys(base, tokens);
-      // A segment rule exists only where the segment differs from its brand base. tkas,
-      // guen and elma have a company segment but no sheet, so they get no rule in either
-      // scheme.
-      if (changed.length === 0) continue;
-      // Dark segment rules materialize the full reset set like every other dark rule, so
-      // specificity — never emission order — decides against the light segment rule, whose
-      // selector ties the dark brand selector.
+      const lightTokens = composeTheme(theme, "light");
+      const lightDeparts = differsFrom(lightBase, lightTokens);
+      const tokens = colorScheme === "light" ? lightTokens : composeTheme(theme, "dark");
+      // A light-only departure still gets its dark rule, so the four-attribute dark
+      // segment selector wins the tie with the light segment selector by specificity.
+      const departs = colorScheme === "light" ? lightDeparts : lightDeparts || differsFrom(base, tokens);
+      // tkas, guen and elma have a company segment but no sheet, so they get no rule in
+      // either scheme.
+      if (!departs) continue;
       const declarations =
         colorScheme === "dark"
           ? resetDeclarations(tokens, keys)
-          : changed.map((key) => [key, tokens[key]] as const);
+          : changedKeys(base, tokens).map((key) => [key, tokens[key]] as const);
       rules.push(themeRule(`${selector}[data-theme-segment="${theme.segment}"]`, declarations, colorScheme));
     }
   }
