@@ -1,5 +1,3 @@
-import type { CSSProperties } from "react";
-
 import { describe, expect, it } from "vitest";
 
 import { render } from "../../test/browser-render";
@@ -8,13 +6,6 @@ import { ElmeraGroupUiProvider } from "./elmera-group-ui";
 import { generateThemesCss } from "./generate-css";
 import { ThemeScope } from "./theme-scope";
 import type { ThemeVariant } from "./tokens/themes";
-
-type BrandStyle = CSSProperties & {
-  "--brand"?: string;
-  "--brand-foreground"?: string;
-  "--sidebar-brand"?: string;
-  "--sidebar-brand-foreground"?: string;
-};
 
 function SidebarColors() {
   return (
@@ -66,7 +57,7 @@ describe("scoped sidebar brand colors", () => {
 
   for (const variant of ["internal", "external"] satisfies ThemeVariant[]) {
     it(`${variant} resolves aliases through a host brand-pair override`, () => {
-      const style: BrandStyle = { "--brand": "rgb(10, 20, 30)", "--brand-foreground": "rgb(240, 230, 220)" };
+      const style = { "--brand": "rgb(10, 20, 30)", "--brand-foreground": "rgb(240, 230, 220)" };
       const { host } = render(
         <>
           <style>{generateThemesCss()}</style>

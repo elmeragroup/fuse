@@ -1,6 +1,6 @@
 "use client";
 
-import type { CSSProperties, ReactElement } from "react";
+import type { ReactElement } from "react";
 
 import { tv } from "tailwind-variants";
 
@@ -42,9 +42,7 @@ export function TokenSwatchList({ tokens }: TokenSwatchListProps): ReactElement 
             <span
               className={swatch()}
               data-token-swatch
-              // SAFETY: `CSSProperties` has no index signature for custom properties, and React
-              // passes an unknown `--*` key straight through to the inline style attribute.
-              style={{ "--swatch": `var(${token.name})` } as CSSProperties}
+              style={{ "--swatch": `var(${token.name})` }}
               aria-hidden="true"
             />
           ) : (

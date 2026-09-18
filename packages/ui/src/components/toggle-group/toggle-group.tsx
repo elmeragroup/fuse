@@ -1,13 +1,14 @@
 "use client";
 
 import { createContext, useContext, useMemo } from "react";
-import type { ComponentProps, CSSProperties, ReactElement } from "react";
+import type { ComponentProps, ReactElement } from "react";
 
 import { Toggle as TogglePrimitive } from "@base-ui/react/toggle";
 import { ToggleGroup as ToggleGroupPrimitive } from "@base-ui/react/toggle-group";
 import type { VariantProps } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
+import { mergeStyle } from "../../styles/merge-style";
 import { toggleVariants } from "../toggle/toggle-variants";
 
 type ToggleGroupContextValue = VariantProps<typeof toggleVariants> & {
@@ -61,8 +62,8 @@ function ToggleGroupRoot({
       data-size={size}
       data-spacing={spacing}
       data-orientation={orientation}
-      // SAFETY: React's CSSProperties does not model custom properties; `--gap` is a plain number.
-      style={{ "--gap": spacing, ...(style as CSSProperties | undefined) } as CSSProperties}
+      // oxlint-disable-next-line shadcn/no-inline-styles -- mergeStyle lifts the literal --gap over Base UI's state-callback style; the rule cannot read through the call
+      style={mergeStyle({ "--gap": spacing }, style)}
       className={cn(
         "group/toggle-group data-[spacing=0]:data-[variant=outline]:shadow-xs flex w-fit flex-row items-center gap-[--spacing(var(--gap))] rounded-md data-vertical:flex-col data-vertical:items-stretch",
         className

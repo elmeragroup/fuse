@@ -5,6 +5,10 @@
   "type": "module",
   "license": "MIT",
   "files": [
-    "*.json"
-  ]
+    "*.json",
+    "*.d.ts"
+  ],
+  "devDependencies": {
+    "csstype": "catalog:"
+  }
 }

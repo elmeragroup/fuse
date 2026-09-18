@@ -21,7 +21,7 @@
     "strict": true,
     "strictNullChecks": true,
     "noUncheckedIndexedAccess": true,
-    "types": ["node"]
+    "types": ["node", "@elmeragroup/typescript-config/css-custom-properties"]
   },
   "exclude": ["node_modules"]
 }

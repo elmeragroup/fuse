@@ -15,7 +15,7 @@
  */
 
 import { useEffect, useState } from "react";
-import type { CSSProperties, MouseEvent, ReactElement } from "react";
+import type { MouseEvent, ReactElement } from "react";
 
 import type { ApiPropView } from "../lib/api-row";
 import { NO_DEFAULT } from "../lib/api-row";
@@ -165,9 +165,7 @@ export function ApiPropRows({ partName, props }: ApiPropRowsProps): ReactElement
       aria-label={`${partName}: name, type, default. Each row expands.`}
       // Lets CSS size the offscreen placeholder from the real row count, so a long page's
       // skipped reference blocks do not collapse the scrollbar (`content-visibility: auto`).
-      // SAFETY: `CSSProperties` has no index signature for custom properties, and React
-      // passes an unknown `--*` key straight through to the inline style attribute.
-      style={{ "--api-rows": props.length } as CSSProperties}>
+      style={{ "--api-rows": props.length }}>
       <ApiRows.Header aria-hidden>
         <ApiRows.HeaderCell column="prop">Prop</ApiRows.HeaderCell>
         <ApiRows.HeaderCell column="type">Type</ApiRows.HeaderCell>

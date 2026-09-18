@@ -1,6 +1,6 @@
 "use client";
 
-import type { ComponentProps, CSSProperties, Dispatch, ReactElement, SetStateAction } from "react";
+import type { ComponentProps, Dispatch, ReactElement, SetStateAction } from "react";
 import {
   createContext,
   use,
@@ -210,14 +210,11 @@ function SidebarProvider({
     <SidebarContext.Provider value={contextValue}>
       <div
         data-slot="sidebar-wrapper"
-        // SAFETY: React's CSSProperties does not model custom properties; the two widths are plain lengths.
-        style={
-          {
-            "--sidebar-width": SIDEBAR_WIDTH,
-            "--sidebar-width-icon": SIDEBAR_WIDTH_ICON,
-            ...style,
-          } as CSSProperties
-        }
+        style={{
+          "--sidebar-width": SIDEBAR_WIDTH,
+          "--sidebar-width-icon": SIDEBAR_WIDTH_ICON,
+          ...style,
+        }}
         className={cn(
           "group/sidebar-wrapper flex min-h-svh w-full has-data-[variant=inset]:bg-sidebar",
           className
@@ -295,8 +292,7 @@ function SidebarRoot({
           data-mobile="true"
           showCloseButton={false}
           className={cn("w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground", className)}
-          // SAFETY: React's CSSProperties does not model custom properties; the width is a plain length.
-          style={{ "--sidebar-width": SIDEBAR_WIDTH_MOBILE } as CSSProperties}>
+          style={{ "--sidebar-width": SIDEBAR_WIDTH_MOBILE }}>
           <Sheet.Header className="sr-only">
             <Sheet.Title>{labels.title}</Sheet.Title>
             <Sheet.Description>{labels.description}</Sheet.Description>
