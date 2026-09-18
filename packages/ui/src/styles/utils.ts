@@ -91,5 +91,5 @@ export const disabledHatch = cn(
 export const iconCrossfadeTransition = cn(
   "transition-[opacity,filter,scale] duration-300 ease-[cubic-bezier(0.2,0,0,1)]"
 );
-export const iconCrossfadeShown = cn("blur-0 scale-100 opacity-100");
+export const iconCrossfadeShown = cn("scale-100 opacity-100 blur-none");
 export const iconCrossfadeHidden = cn("scale-[0.25] opacity-0 blur-[4px]");

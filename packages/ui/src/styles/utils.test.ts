@@ -31,7 +31,7 @@ describe("hatch and icon-crossfade constants", () => {
     expect(iconCrossfadeTransition).toBe(
       "transition-[opacity,filter,scale] duration-300 ease-[cubic-bezier(0.2,0,0,1)]"
     );
-    expect(iconCrossfadeShown).toBe("blur-0 scale-100 opacity-100");
+    expect(iconCrossfadeShown).toBe("scale-100 opacity-100 blur-none");
     expect(iconCrossfadeHidden).toBe("scale-[0.25] opacity-0 blur-[4px]");
   });
 });

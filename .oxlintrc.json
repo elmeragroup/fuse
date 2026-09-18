@@ -130,6 +130,15 @@
   "settings": {
     "react": {
       "version": "19"
+    },
+    "shadcn": {
+      "ui": "@elmeragroup/ui",
+      "ignoreImports": [
+        "^@elmeragroup/ui/(icons|emoji|illustrations|flags|theme)(/|$)",
+        "^@elmeragroup/ui/react-aria/ui-providers$"
+      ],
+      "mergeFunctions": ["mergeClassName"],
+      "note": "Design rules: docs/component-authoring.md. Variants and contracts are design decisions; review them, do not add exceptions inline."
     }
   },
   "ignorePatterns": [
@@ -212,6 +221,43 @@
         "elmera/no-primitive-colors": "error",
         "elmera/no-raw-class-map": "error"
       }
+    },
+    {
+      "files": ["apps/docs/src/**/*.{ts,tsx}", "apps/static-theme/src/**/*.{ts,tsx}"],
+      "rules": {
+        "shadcn/no-raw-colors": "error",
+        "shadcn/no-inline-styles": "error",
+        "shadcn/no-unknown-classes": ["error", { "allow": ["not-prose"] }]
+      }
+    },
+    {
+      "files": ["packages/ui/src/**/*.{ts,tsx}"],
+      "rules": {
+        "shadcn/no-raw-colors": "error",
+        "shadcn/no-inline-styles": "error",
+        "shadcn/no-unknown-classes": "error"
+      }
+    },
+    {
+      "files": ["packages/ui/src/react-aria/grid-list/grid-list.tsx"],
+      "rules": {
+        "shadcn/no-inline-styles": ["error", { "allow": ["pointerEvents"] }]
+      }
+    },
+    {
+      "files": [
+        "packages/ui/src/icons/**",
+        "packages/ui/src/illustrations/**",
+        "packages/ui/src/components/emoji/**"
+      ],
+      "rules": {
+        "shadcn/no-raw-colors": "off",
+        "shadcn/no-inline-styles": ["error", { "allow": ["maskType"] }]
+      }
+    },
+    {
+      "files": ["**/*.test.{ts,tsx}", "**/*.test-d.{ts,tsx}"],
+      "rules": { "shadcn/no-inline-styles": "off", "shadcn/no-unknown-classes": "off" }
     },
     {
       "files": ["packages/ui/test/**/*.{ts,tsx}"],
