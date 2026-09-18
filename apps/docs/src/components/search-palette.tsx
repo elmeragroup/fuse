@@ -14,7 +14,7 @@ import { matchSearchEntries } from "../lib/search";
 const searchPalette = tv({
   slots: {
     trigger: "font-mono",
-    keys: "font-mono text-muted-foreground",
+    keys: "text-muted-foreground",
     palette:
       "top-[10vh] block w-[min(34rem,calc(100vw_-_2rem))] translate-y-0 gap-0 overflow-hidden p-0 font-sans",
     input:
