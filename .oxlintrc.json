@@ -150,6 +150,7 @@
     "plop-templates/**",
     "**/.artifacts/**",
     "**/.cache/**",
+    ".scratch/**",
     "**/node_modules/**",
     ".ref/**",
     "packages/ui/scripts/*.mjs",
@@ -266,7 +267,7 @@
               {
                 "pattern": "^Collapsible(Trigger|Content)$",
                 "allow": ["layout", "color", "typography", "spacing", "shape", "effects", "motion"],
-                "message": "Collapsible is a headless passthrough (collapsible.tsx); style it freely or render a Button via `render`."
+                "message": "Collapsible is a headless passthrough (collapsible.tsx) apart from Content's height transition; style it freely or render a Button via `render`."
               },
               {
                 "pattern": "^Card(Content|Header|Footer)$|^Dialog(Header|Footer)$|^Field(Root|Item|Set)$",
@@ -290,10 +291,7 @@
             ]
           }
         ],
-        "shadcn/no-arbitrary-values": [
-          "error",
-          { "allow": ["layout", "transition-[height]", "rounded-[inherit]"] }
-        ]
+        "shadcn/no-arbitrary-values": ["error", { "allow": ["layout", "rounded-[inherit]"] }]
       }
     },
     {

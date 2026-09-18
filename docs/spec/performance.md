@@ -128,7 +128,7 @@ Run `pnpm --filter @elmeragroup/ui pack`, then `pnpm --filter @elmeragroup/ui si
 ## 6 Runtime practices
 
 - Animations touch **`transform` and `opacity` only** by default. Layout-property animations the library itself installs (the reviewed v1 exceptions) are:
-  - **Accordion.Content** panel **height**: `transition-[height] duration-200` against base-ui's `--accordion-panel-height`. Collapsible does **not** install a height transition; it is an unstyled passthrough that exposes `--collapsible-panel-height` / `--collapsible-panel-width` for consumers.
+  - **Accordion.Content** and **Collapsible.Content** panel **height**: the one shared `panelHeight` recipe (`styles/panel-height.ts`), 150 ms ease-out keyed on base-ui's `data-starting-style` / `data-ending-style` against `--accordion-panel-height` / `--collapsible-panel-height`. Collapsible stays an unstyled passthrough apart from that transition, which consumers can override through `Content`'s `className`, and still exposes `--collapsible-panel-width`. The central `prefers-reduced-motion` rule in `ui.css` strips `height` from `transition-property`.
   - **Accordion** default-variant Trigger **padding-bottom**: `transition-[padding-bottom]`.
   - **Sidebar** shell **width** during its 200 ms expand/collapse: gap and container `transition-[width] duration-200 ease-linear`. Offcanvas `left`/`right` offset, Rail position, and GroupLabel `-mt-8` snap. MenuButton color/background/box-shadow and GroupLabel opacity are non-layout.
   - **Item.Footer** content-reveal **grid track**: `grid-rows` `0fr↔1fr` plus `@starting-style`.

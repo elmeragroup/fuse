@@ -5,6 +5,7 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
+import { expectPanelHeightTransition, panelControlledBy } from "../../../test/panel-transition";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { Collapsible } from "./collapsible";
 
@@ -14,15 +15,6 @@ function triggerNamed(name: string): HTMLElement {
     throw new Error(`expected trigger ${name}`);
   }
   return element;
-}
-
-function panelControlledBy(trigger: HTMLElement): HTMLElement | null {
-  const id = trigger.getAttribute("aria-controls");
-  if (!id) {
-    return null;
-  }
-  const element = document.getElementById(id);
-  return element instanceof HTMLElement ? element : null;
 }
 
 describe("Collapsible", () => {
@@ -229,6 +221,33 @@ describe("Collapsible", () => {
     const keptPanel = kept instanceof HTMLElement ? kept.closest("[hidden]") : null;
     expect(keptPanel).not.toBeNull();
     expect(keptPanel?.hasAttribute("hidden")).toBe(true);
+  });
+
+  it("animates a keepMounted Content's height open and closed", async () => {
+    renderThemed(
+      <Collapsible.Root>
+        <Collapsible.Trigger>Show details</Collapsible.Trigger>
+        <Collapsible.Content keepMounted>
+          {/* A fixed content height keeps the settled value independent of font metrics. */}
+          <p style={{ height: 80 }}>Delivery window</p>
+        </Collapsible.Content>
+      </Collapsible.Root>
+    );
+
+    await expectPanelHeightTransition(triggerNamed("Show details"), "hidden");
+  });
+
+  it("animates a default unmounted Content and unmounts it after the close", async () => {
+    renderThemed(
+      <Collapsible.Root>
+        <Collapsible.Trigger>Show details</Collapsible.Trigger>
+        <Collapsible.Content>
+          <p style={{ height: 80 }}>Delivery window</p>
+        </Collapsible.Content>
+      </Collapsible.Root>
+    );
+
+    await expectPanelHeightTransition(triggerNamed("Show details"), "unmounted");
   });
 
   it("keeps hiddenUntilFound content in the DOM and opens on beforematch", async () => {
