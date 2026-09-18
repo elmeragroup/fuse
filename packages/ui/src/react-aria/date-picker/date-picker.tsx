@@ -23,8 +23,8 @@ import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { pickerVariants } from "../../styles/picker";
 import { Calendar } from "../calendar/calendar";
 import { DateInput } from "../date-field/date-field";
+import { composeTailwindRenderProps } from "../internal/compose-tailwind-render-props";
 import { PickerShell } from "../internal/picker-shell";
-import { composeTailwindRenderProps } from "../internal/utils";
 import { datePickerStrings } from "./intl";
 
 /**

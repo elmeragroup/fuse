@@ -10,8 +10,8 @@ import { MagnifyingGlass } from "../../icons/generated/magnifying-glass";
 import { X } from "../../icons/generated/x";
 import { searchFieldVariants } from "../../styles/search-field";
 import { Button } from "../internal/button";
+import { composeTailwindRenderProps } from "../internal/compose-tailwind-render-props";
 import { Description, FieldError, FieldGroup, Input, Label } from "../internal/field";
-import { composeTailwindRenderProps } from "../internal/utils";
 import { searchFieldStrings } from "./intl";
 
 /**

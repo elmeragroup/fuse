@@ -17,7 +17,7 @@ import { cn } from "../../styles/cn";
 import { controlInsetMdClass } from "../../styles/control-inset";
 import { fieldBoxChromeClass } from "../../styles/field-box";
 import { stateFocusRingClass, stateFocusRingVisibleClass } from "../../styles/utils";
-import { composeTailwindRenderProps } from "./utils";
+import { composeTailwindRenderProps } from "./compose-tailwind-render-props";
 
 /**
  * Package-private field chrome for the interim React Aria tier. FieldGroup pins the md

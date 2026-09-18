@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect } from "vitest";
@@ -9,6 +9,29 @@ import { asRecord, asRecordArray, asString } from "./json-object.mjs";
 
 /** Repository root, shared by the workflow suites. */
 export const repoRoot = fileURLToPath(new URL("..", import.meta.url));
+
+/** Directory names the shared file walker never descends into. */
+const SKIPPED_DIRECTORY_NAMES = new Set(["node_modules", "dist", "generated"]);
+
+/**
+ * Collects the absolute paths of every file under `directory` whose basename `matches`, skipping
+ * `node_modules`, `dist`, `generated` and dot-entries.
+ *
+ * @param {string} directory - Absolute directory to walk.
+ * @param {(name: string) => boolean} matches - Predicate over a file's basename.
+ * @returns {string[]} Absolute paths of matching files.
+ */
+export function findFiles(directory, matches) {
+  /** @type {string[]} */
+  const found = [];
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    if (SKIPPED_DIRECTORY_NAMES.has(entry.name) || entry.name.startsWith(".")) continue;
+    const path = join(directory, entry.name);
+    if (entry.isDirectory()) found.push(...findFiles(path, matches));
+    else if (matches(entry.name)) found.push(path);
+  }
+  return found;
+}
 
 /** @param {string} name */
 export function readWorkflow(name) {

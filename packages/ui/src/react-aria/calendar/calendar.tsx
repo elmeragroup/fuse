@@ -19,7 +19,7 @@ import { CaretRight } from "../../icons/generated/caret-right";
 import { calendarVariants, cellVariants } from "../../styles/calendar";
 import { Button } from "../internal/button";
 import { LocaleCalendarGrid } from "../internal/calendar-grid";
-import { composeTailwindRenderProps } from "../internal/utils";
+import { composeTailwindRenderProps } from "../internal/compose-tailwind-render-props";
 
 export { CalendarGridHeader } from "../internal/calendar-grid";
 

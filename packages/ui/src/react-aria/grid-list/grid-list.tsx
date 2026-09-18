@@ -22,7 +22,7 @@ import { isTextNode } from "../../internal/is-text-node";
 import { gridListVariants, itemStyles } from "../../styles/grid-list";
 import { Button } from "../internal/button";
 import { checkboxVariants } from "../internal/checkbox";
-import { composeTailwindRenderProps } from "../internal/utils";
+import { composeTailwindRenderProps } from "../internal/compose-tailwind-render-props";
 import { gridListStrings } from "./intl";
 
 /**

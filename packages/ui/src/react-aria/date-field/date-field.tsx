@@ -19,6 +19,7 @@ import type {
 
 import { cn } from "../../styles/cn";
 import { dateFieldVariants } from "../../styles/date-field";
+import { composeTailwindRenderProps } from "../internal/compose-tailwind-render-props";
 import {
   Description,
   FieldError,
@@ -26,7 +27,6 @@ import {
   Label,
   fieldGroupVariants,
 } from "../internal/field";
-import { composeTailwindRenderProps } from "../internal/utils";
 
 /**
  * Labeled date field composite over RAC `DateField`.

@@ -3,7 +3,7 @@ import { dirname, join, relative, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { asRecord, isString } from "./json-object.mjs";
-import { repoRoot } from "./workflow.mjs";
+import { findFiles, repoRoot } from "./workflow.mjs";
 
 /** The `types` entry that pulls the csstype custom-property augmentation into a program. */
 const AUGMENTATION = "@elmeragroup/typescript-config/css-custom-properties";
@@ -65,26 +65,6 @@ function isSharedConfigPreset(name) {
 }
 
 /**
- * Collects every file named by `matches` under `directory`, skipping `node_modules` and
- * dot-entries.
- *
- * @param {string} directory
- * @param {(name: string) => boolean} matches
- * @returns {string[]}
- */
-function findConfigs(directory, matches) {
-  /** @type {string[]} */
-  const found = [];
-  for (const entry of readdirSync(directory, { withFileTypes: true })) {
-    if (entry.name === "node_modules" || entry.name.startsWith(".")) continue;
-    const path = join(directory, entry.name);
-    if (entry.isDirectory()) found.push(...findConfigs(path, matches));
-    else if (matches(entry.name)) found.push(path);
-  }
-  return found;
-}
-
-/**
  * Every candidate tsconfig named by the repo-policy rule: the root and workspace trees by
  * `tsconfig*.json` name, plus every JSON preset in the shared config package.
  */
@@ -94,8 +74,8 @@ function localTsconfigs() {
     .map((entry) => join(repoRoot, entry.name));
   return [
     ...root,
-    ...WORKSPACE_TREES.flatMap((tree) => findConfigs(join(repoRoot, tree), isWorkspaceTsconfig)),
-    ...findConfigs(join(repoRoot, SHARED_CONFIG_DIRECTORY), isSharedConfigPreset),
+    ...WORKSPACE_TREES.flatMap((tree) => findFiles(join(repoRoot, tree), isWorkspaceTsconfig)),
+    ...findFiles(join(repoRoot, SHARED_CONFIG_DIRECTORY), isSharedConfigPreset),
   ];
 }
 
