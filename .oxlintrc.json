@@ -256,8 +256,58 @@
       }
     },
     {
+      "files": ["apps/docs/src/**/*.{ts,tsx}"],
+      "rules": {
+        "shadcn/no-restyle": [
+          "error",
+          {
+            "allow": ["layout"],
+            "contracts": [
+              {
+                "pattern": "^Collapsible(Trigger|Content)$",
+                "allow": ["layout", "color", "typography", "spacing", "shape", "effects", "motion"],
+                "message": "Collapsible is a headless passthrough (collapsible.tsx); style it freely or render a Button via `render`."
+              },
+              {
+                "pattern": "^Card(Content|Header|Footer)$|^Dialog(Header|Footer)$|^Field(Root|Item|Set)$",
+                "allow": ["layout", "spacing"]
+              },
+              {
+                "pattern": "^Skeleton$",
+                "allow": ["layout", "rounded"],
+                "message": {
+                  "default": "Skeleton is a shape-only placeholder: size and radius are yours, colour and motion are its own."
+                }
+              },
+              {
+                "pattern": "^AvatarRoot$",
+                "allow": ["layout", "ring-w", "ring-color", "ring-offset-w", "ring-offset-color"]
+              },
+              {
+                "pattern": "^ScrollAreaRoot$",
+                "allow": ["layout", "rounded", "border-w", "border-color"]
+              }
+            ]
+          }
+        ],
+        "shadcn/no-arbitrary-values": [
+          "error",
+          { "allow": ["layout", "transition-[height]", "rounded-[inherit]"] }
+        ]
+      }
+    },
+    {
+      "files": ["apps/docs/src/components/**/*.{ts,tsx}"],
+      "rules": { "shadcn/no-arbitrary-values": "off" }
+    },
+    {
       "files": ["**/*.test.{ts,tsx}", "**/*.test-d.{ts,tsx}"],
-      "rules": { "shadcn/no-inline-styles": "off", "shadcn/no-unknown-classes": "off" }
+      "rules": {
+        "shadcn/no-inline-styles": "off",
+        "shadcn/no-unknown-classes": "off",
+        "shadcn/no-restyle": "off",
+        "shadcn/no-arbitrary-values": "off"
+      }
     },
     {
       "files": ["packages/ui/test/**/*.{ts,tsx}"],

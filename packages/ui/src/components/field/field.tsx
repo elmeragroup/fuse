@@ -88,6 +88,10 @@ function FieldContent({ className, ...props }: ComponentProps<"div">): ReactElem
 
 const fieldHeadingClassName = fieldVariants().heading();
 
+/**
+ * A label whose direct child is a `Checkbox` renders as a choice row: centered, normal weight,
+ * pointer cursor; sibling labels next to a control keep the medium heading weight.
+ */
 function FieldLabel({ className, ...props }: ComponentProps<typeof FieldPrimitive.Label>): ReactElement {
   return (
     <FieldPrimitive.Label
@@ -97,6 +101,7 @@ function FieldLabel({ className, ...props }: ComponentProps<typeof FieldPrimitiv
         className,
         "group/field-label peer/field-label leading-snug has-data-checked:border-primary/30 has-[>[data-slot=field]]:rounded-md has-[>[data-slot=field]]:border *:data-[slot=field]:p-3",
         "has-[>[data-slot=field]]:w-full has-[>[data-slot=field]]:flex-col",
+        "has-[>[data-slot=checkbox]]:items-center has-[>[data-slot=checkbox]]:font-normal has-[>[data-slot=checkbox]]:cursor-pointer",
         fieldHeadingClassName
       )}
       {...props}

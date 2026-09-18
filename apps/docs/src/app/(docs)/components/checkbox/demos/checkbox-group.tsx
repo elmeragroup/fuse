@@ -34,7 +34,7 @@ export function CheckboxGroupDemo() {
         errorMessage={invalid ? "Pick at least one topping." : undefined}>
         {toppings.map((topping) => (
           <Field.Item key={topping.value} className="flex">
-            <Field.Label className="font-normal flex cursor-pointer items-center gap-2">
+            <Field.Label>
               <Checkbox value={topping.value} />
               {topping.label}
             </Field.Label>
@@ -49,7 +49,7 @@ export function CheckboxGroupDemo() {
         onChange={setHorizontal}>
         {sides.map((side) => (
           <Field.Item key={side.value} className="flex">
-            <Field.Label className="font-normal flex cursor-pointer items-center gap-2">
+            <Field.Label>
               <Checkbox value={side.value} />
               {side.label}
             </Field.Label>
