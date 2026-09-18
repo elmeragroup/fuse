@@ -5,7 +5,7 @@ import { tokenize } from "sugar-high/lang/javascript";
 import { tv } from "tailwind-variants";
 
 const docsCodeBlock = tv({
-  base: "overflow-x-auto font-mono [tab-size:2] text-sh-identifier [&_.sh__line]:block [&_.sh__line]:min-h-[1lh] [&_code]:block [&_code]:border-0 [&_code]:bg-transparent [&_code]:p-0 [&_code]:font-mono",
+  base: "overflow-x-auto font-mono [tab-size:2] text-sh-identifier [&_.sh__line]:block [&_.sh__line]:min-h-[1lh] [&_code]:block [&_code]:font-mono",
   variants: {
     variant: {
       standalone:

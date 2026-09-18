@@ -20,6 +20,7 @@ import type { MouseEvent, ReactElement } from "react";
 import type { ApiPropView } from "../lib/api-row";
 import { NO_DEFAULT } from "../lib/api-row";
 import { ApiRows } from "./api-rows";
+import { DocsInlineCode } from "./docs-inline-code";
 import { InlineCode } from "./inline-code";
 
 export type ApiPropRowsProps = {
@@ -90,7 +91,7 @@ function ApiPropRow({ prop, open, onClose }: ApiPropRowProps): ReactElement {
             <ApiRows.Term>Name</ApiRows.Term>
             <ApiRows.Definition>
               <ApiRows.PropLink href={`#${prop.id}`}>
-                <code>{prop.name}</code>
+                <DocsInlineCode>{prop.name}</DocsInlineCode>
               </ApiRows.PropLink>
               {prop.required ? " · required" : null}
             </ApiRows.Definition>
@@ -120,7 +121,7 @@ function ApiPropRow({ prop, open, onClose }: ApiPropRowProps): ReactElement {
               {prop.defaultValue === null ? (
                 <ApiRows.NoDefault>{NO_DEFAULT}</ApiRows.NoDefault>
               ) : (
-                <code>{prop.defaultValue}</code>
+                <DocsInlineCode>{prop.defaultValue}</DocsInlineCode>
               )}
             </ApiRows.Definition>
           </ApiRows.PanelItem>

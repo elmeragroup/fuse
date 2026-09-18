@@ -20,7 +20,7 @@ const apiRows = tv({
       "min-[34rem]:col-span-full min-[34rem]:grid min-[34rem]:grid-cols-subgrid min-[34rem]:items-baseline min-[34rem]:py-1",
     term: "font-medium text-xs tracking-wide text-muted-foreground min-[34rem]:col-start-1 min-[34rem]:px-3 min-[34rem]:text-right",
     definition:
-      "[&_code]:text-xs leading-relaxed [&_code]:docs-chip mt-[0.15rem] min-w-0 text-foreground min-[34rem]:col-start-2 min-[34rem]:col-end-[-1] min-[34rem]:m-0 min-[34rem]:pr-3 [&_code]:rounded-md [&_code]:border [&_code]:border-border [&_code]:bg-muted [&_code]:font-mono",
+      "leading-relaxed mt-[0.15rem] min-w-0 text-foreground min-[34rem]:col-start-2 min-[34rem]:col-end-[-1] min-[34rem]:m-0 min-[34rem]:pr-3",
     chevronCell:
       "ml-auto flex items-center overflow-visible px-3 py-2 text-muted-foreground min-[34rem]:ml-0 min-[34rem]:justify-center",
     chevron: "transition-transform duration-120 group-open:rotate-180 motion-reduce:transition-none",
