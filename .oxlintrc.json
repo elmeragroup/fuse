@@ -274,17 +274,6 @@
                 "allow": ["layout", "spacing"]
               },
               {
-                "pattern": "^Skeleton$",
-                "allow": ["layout", "rounded"],
-                "message": {
-                  "default": "Skeleton is a shape-only placeholder: size and radius are yours, colour and motion are its own."
-                }
-              },
-              {
-                "pattern": "^AvatarRoot$",
-                "allow": ["layout", "ring-w", "ring-color", "ring-offset-w", "ring-offset-color"]
-              },
-              {
                 "pattern": "^ScrollAreaRoot$",
                 "allow": ["layout", "rounded", "border-w", "border-color"]
               }

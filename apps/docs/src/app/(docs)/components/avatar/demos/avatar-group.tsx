@@ -21,7 +21,7 @@ export function AvatarGroup() {
   return (
     <div className="flex -space-x-2">
       {people.map((person) => (
-        <Avatar.Root key={person.initials} className="ring-2 ring-background">
+        <Avatar.Root key={person.initials} grouped>
           <Avatar.Image src={person.src} alt={person.alt} />
           <Avatar.Fallback>{person.initials}</Avatar.Fallback>
         </Avatar.Root>

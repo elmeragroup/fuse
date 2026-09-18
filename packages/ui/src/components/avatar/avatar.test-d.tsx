@@ -13,7 +13,7 @@ test("the namespace ships all three parts from the avatar entry and the root bar
   expectTypeOf(Avatar).toHaveProperty("Fallback");
 });
 
-test("public API exports only the namespace — flat parts stay private", () => {
+test("public API exports only the namespace — flat parts and the recipe stay private", () => {
   expectTypeOf(AvatarModule).not.toHaveProperty("avatarVariants");
   expectTypeOf(AvatarModule).not.toHaveProperty("AvatarRoot");
   expectTypeOf(AvatarModule).not.toHaveProperty("AvatarImage");
@@ -39,4 +39,14 @@ test("parts take the primitive passthrough surface and no as prop", () => {
 
   // @ts-expect-error polymorphism is never an as prop
   const _noAs = <Avatar.Root as="div" />;
+});
+
+test("Root takes the grouped ring prop without losing the primitive surface", () => {
+  const _grouped = <Avatar.Root grouped={true} />;
+  const _ungrouped = <Avatar.Root grouped={false} />;
+
+  expectTypeOf<ComponentProps<typeof Avatar.Root>>().toHaveProperty("grouped");
+  expectTypeOf<ComponentProps<typeof Avatar.Root>["grouped"]>().toEqualTypeOf<boolean | undefined>();
+  expectTypeOf<ComponentProps<typeof Avatar.Root>>().toHaveProperty("className");
+  expectTypeOf<ComponentProps<typeof Avatar.Root>>().toHaveProperty("render");
 });

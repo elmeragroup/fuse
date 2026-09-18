@@ -4,20 +4,25 @@ import type { ComponentProps, ReactElement } from "react";
 
 import { Avatar as AvatarPrimitive } from "@base-ui/react/avatar";
 
-import { cn } from "../../styles/cn";
 import { mergeClassName } from "../../styles/merge-class-name";
+import { avatarVariants } from "./avatar-variants";
 
-const ROOT_CLASSES = cn(
-  "text-sm font-medium inline-flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted align-middle text-muted-foreground select-none"
-);
+type AvatarRootProps = ComponentProps<typeof AvatarPrimitive.Root> & {
+  /** Separates stacked avatars with a background-coloured ring. */
+  grouped?: boolean;
+};
 
 /**
  * Client image-or-initials avatar. Base-ui Avatar owns image
  * loading state (performance.md §RSC classification).
  */
-function AvatarRoot({ className, ...props }: ComponentProps<typeof AvatarPrimitive.Root>): ReactElement {
+function AvatarRoot({ className, grouped, ...props }: AvatarRootProps): ReactElement {
   return (
-    <AvatarPrimitive.Root data-slot="avatar" className={mergeClassName(className, ROOT_CLASSES)} {...props} />
+    <AvatarPrimitive.Root
+      data-slot="avatar"
+      className={mergeClassName(className, avatarVariants({ grouped }))}
+      {...props}
+    />
   );
 }
 

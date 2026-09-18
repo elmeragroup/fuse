@@ -10,7 +10,17 @@
         "@types/react"
       ],
       "forwardedCount": 280,
-      "props": []
+      "props": [
+        {
+          "name": "silhouette",
+          "origin": "recipe-axis",
+          "type": "\"circle\" | \"rounded\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        }
+      ]
     }
   ]
 }
