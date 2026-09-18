@@ -2,4 +2,5 @@
 "@elmeragroup/ui": patch
 ---
 
-`ToggleGroup.Root` now honours a Base UI state-callback `style`, previously dropped.
+`ToggleGroup.Root` types `style` as `CSSProperties`; a Base UI state callback is now a type error
+where it was previously dropped silently.

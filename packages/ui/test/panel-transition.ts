@@ -25,13 +25,9 @@ export function panelControlledBy(trigger: HTMLElement): HTMLElement | null {
   return element instanceof HTMLElement ? element : null;
 }
 
-type HeightTransitionEvent = "transitionrun" | "transitionend" | "transitioncancel";
+const HEIGHT_TRANSITION_EVENTS = ["transitionrun", "transitionend", "transitioncancel"] as const;
 
-const HEIGHT_TRANSITION_EVENTS = [
-  "transitionrun",
-  "transitionend",
-  "transitioncancel",
-] as const satisfies readonly HeightTransitionEvent[];
+type HeightTransitionEvent = (typeof HEIGHT_TRANSITION_EVENTS)[number];
 
 type ObservedHeightTransition = {
   readonly type: HeightTransitionEvent;

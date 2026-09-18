@@ -3,7 +3,7 @@ import { dirname, join, relative, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { asRecord, isString } from "./json-object.mjs";
-import { findFiles, repoRoot } from "./workflow.mjs";
+import { findFiles, repoRoot } from "./repo-tree.mjs";
 
 /** The `types` entry that pulls the csstype custom-property augmentation into a program. */
 const AUGMENTATION = "@elmeragroup/typescript-config/css-custom-properties";

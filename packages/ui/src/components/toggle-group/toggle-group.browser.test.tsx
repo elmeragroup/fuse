@@ -169,22 +169,6 @@ describe("ToggleGroup", () => {
     expect(root.style.getPropertyValue("--gap")).toBe("3");
   });
 
-  it("keeps --gap when the consumer passes a state-callback style", () => {
-    renderThemed(
-      <ToggleGroup.Root
-        aria-label="Callback style"
-        spacing={3}
-        disabled
-        style={(state) => ({ opacity: state.disabled ? 0.5 : 1 })}>
-        <ToggleGroup.Item value="one">One</ToggleGroup.Item>
-      </ToggleGroup.Root>
-    );
-
-    const root = groupNamed("Callback style");
-    expect(root.style.getPropertyValue("--gap")).toBe("3");
-    expect(root.style.opacity).toBe("0.5");
-  });
-
   it("uses recipe defaults on a standalone Item", () => {
     renderThemed(<ToggleGroup.Item value="alone">Standalone</ToggleGroup.Item>);
 

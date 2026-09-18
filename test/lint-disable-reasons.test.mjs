@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { findFiles, repoRelativePath, repoRoot, SOURCE_EXTENSION, SOURCE_TREES } from "./workflow.mjs";
+import { findFiles, isSourceFile, repoRelativePath, repoRoot, SOURCE_TREES } from "./repo-tree.mjs";
 
 /**
  * A disable directive inside a line or block comment, in both spellings oxlint honours. Requiring
@@ -24,16 +24,6 @@ const RULE =
   `every disable comment carries \`${REASON_SEPARATOR}\` and a reason of at least ` +
   `${MINIMUM_REASON_LENGTH} non-space characters; a disable without a ` +
   `\`${REASON_SEPARATOR.trim()} reason\` fails \`pnpm test:repo-policy\` (docs/spec/tooling.md §7.6)`;
-
-/**
- * Whether a file basename is a JS/TS module that can carry a disable directive.
- *
- * @param {string} name
- * @returns {boolean}
- */
-function isLintableSource(name) {
-  return SOURCE_EXTENSION.test(name);
-}
 
 /**
  * Labels every directive in one file's text whose reason is missing or too short as
@@ -70,7 +60,7 @@ function bareDirectives(path, text) {
 describe("lint disable reasons", () => {
   it("requires a reason on every oxlint/eslint-disable directive", () => {
     const offenders = SOURCE_TREES.flatMap((tree) =>
-      findFiles(join(repoRoot, tree), isLintableSource).flatMap((path) =>
+      findFiles(join(repoRoot, tree), isSourceFile).flatMap((path) =>
         bareDirectives(path, readFileSync(path, "utf8"))
       )
     );

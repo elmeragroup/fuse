@@ -1,6 +1,6 @@
 # 0008 — Tests assert behaviour, not source spelling
 
-Date: 2026-09-02. Status: accepted; amended 2026-09-04 — one-owner spellings are lint `allow` lists, not source-line greps.
+Date: 2026-09-02. Status: accepted; amended 2026-09-04 — one-owner spellings are lint `allow` lists, not source-line greps; amended 2026-09-18 — repo-wide policies with no upstream lint rule yet live as `pnpm test:repo-policy` walkers.
 
 ## Context
 
@@ -38,3 +38,7 @@ Phase B added "only this file may spell or import that" contracts as exact-sourc
 - `elmera/no-field-part-jsx` forbids `<Field.Label|Description|Error|Root|Set|Legend` in the labeled composites FieldFrame already owns.
 
 The contracts suite walks the source tree once per run and keeps only what lint cannot see: file absence, RSC classification, and `ownedBy` exactly-one-owner counts for class strings. Exact `export const …` source-line assertions are value assertions against the recipe, or gone.
+
+## Amendment 2026-09-18 — repo-wide policies without an upstream lint rule yet
+
+Repo-wide policies that have no upstream lint rule yet live as `test/*.test.mjs` walkers under `pnpm test:repo-policy`: `module-names`, `lint-disable-reasons`, `tsconfig-types-augmentation` and `release-age-exclusions`. They are reviewed contracts in the sense above — each exists because no rule upstream owns it. `lint-disable-reasons` retires when `@elmeragroup/internal` anti-slop ships `require-disable-reason`; the `module-names` allowlist entry for `packages/ui/src/styles/utils.ts` retires when the `@elmeragroup/internal` focus-ring rules take the owner path as a rule option. The other two assert committed-configuration couplings that no upstream rule owns: every shared-config extender keeps the csstype augmentation in `compilerOptions.types`, and every `minimumReleaseAgeExclude` entry is catalog-paired or carries an unexpired `Temporary: …` comment.

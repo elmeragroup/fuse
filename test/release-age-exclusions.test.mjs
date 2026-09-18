@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { isScalar, isSeq, parseDocument } from "yaml";
 
 import { asRecord, asString, isString } from "./json-object.mjs";
-import { repoRoot } from "./workflow.mjs";
+import { repoRoot } from "./repo-tree.mjs";
 
 /**
  * A temporary exclusion's leading comment must say when the release-age guard admits its

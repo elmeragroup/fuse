@@ -1,14 +1,13 @@
 "use client";
 
 import { createContext, useContext, useMemo } from "react";
-import type { ComponentProps, ReactElement } from "react";
+import type { ComponentProps, CSSProperties, ReactElement } from "react";
 
 import { Toggle as TogglePrimitive } from "@base-ui/react/toggle";
 import { ToggleGroup as ToggleGroupPrimitive } from "@base-ui/react/toggle-group";
 import type { VariantProps } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
-import { mergeStyle } from "../../styles/merge-style";
 import { toggleVariants } from "../toggle/toggle-variants";
 
 type ToggleGroupContextValue = VariantProps<typeof toggleVariants> & {
@@ -20,9 +19,14 @@ type ToggleGroupContextValue = VariantProps<typeof toggleVariants> & {
 // Do not copy the ref's non-undefined createContext values.
 const ToggleGroupContext = createContext<ToggleGroupContextValue>({});
 
-export type ToggleGroupRootProps = Omit<ComponentProps<typeof ToggleGroupPrimitive>, "className"> & {
+export type ToggleGroupRootProps = Omit<
+  ComponentProps<typeof ToggleGroupPrimitive>,
+  "className" | "style"
+> & {
   /** Extra classes, merged last through `cn`. */
   className?: string;
+  /** Inline styles, merged after the library's `--gap` custom property. */
+  style?: CSSProperties;
   /**
    * Tailwind spacing units between items. `0` is segmented-control mode
    * @default 2
@@ -62,8 +66,7 @@ function ToggleGroupRoot({
       data-size={size}
       data-spacing={spacing}
       data-orientation={orientation}
-      // oxlint-disable-next-line shadcn/no-inline-styles -- mergeStyle lifts the literal --gap over Base UI's state-callback style; the rule cannot read through the call
-      style={mergeStyle({ "--gap": spacing }, style)}
+      style={{ "--gap": spacing, ...style }}
       className={cn(
         "group/toggle-group data-[spacing=0]:data-[variant=outline]:shadow-xs flex w-fit flex-row items-center gap-[--spacing(var(--gap))] rounded-md data-vertical:flex-col data-vertical:items-stretch",
         className

@@ -7,7 +7,8 @@ import { describe, expect, it } from "vitest";
 import { PUBLISH_GATES } from "../packages/ui/scripts/release-pack.ts";
 import { USAGE } from "../scripts/release.ts";
 import { asRecord, asString, readJsonObject } from "./json-object.mjs";
-import { jobSteps, readWorkflow, repoRoot, requiredRunStep, turboTasks } from "./workflow.mjs";
+import { repoRoot } from "./repo-tree.mjs";
+import { jobSteps, readWorkflow, requiredRunStep, turboTasks } from "./workflow.mjs";
 
 function rootScripts() {
   return asRecord(readJsonObject(join(repoRoot, "package.json")).scripts, "scripts");

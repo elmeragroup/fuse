@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { asRecord, asRecordArray, asString, isString, readJsonObject } from "./json-object.mjs";
-import { repoRoot } from "./workflow.mjs";
+import { repoRoot } from "./repo-tree.mjs";
 
 /**
  * @param {Record<string, unknown>} override
