@@ -3,6 +3,7 @@
   "plugins": ["typescript", "oxc", "import", "unicorn"],
   "jsPlugins": [
     "eslint-plugin-turbo",
+    "@shadcn/lint",
     {
       "name": "elmera",
       "specifier": "@elmeragroup/internal/oxlint"

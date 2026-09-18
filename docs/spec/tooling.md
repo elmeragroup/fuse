@@ -50,16 +50,18 @@ The ordering requirements are:
 ## 4 Formatting & linting
 
 - **oxfmt** formats everything. Required config: `sortTailwindcss.stylesheet` pointed at the library's source stylesheet (the file behind the `@elmeragroup/ui/css` entry, see [architecture](architecture.md) §5) so class sorting knows the custom tokens/utilities and `functions: ["tv", "cn"]` (so classes inside `tv` recipes and `cn` calls are sorted too). `oxfmt --check` gates merges; no prettier anywhere. Tracked `.vscode/settings.json` sets `tailwindCSS.classFunctions` to `["tv", "cn"]` so the Tailwind IntelliSense extension completes inside those same calls.
-- **oxlint, type-aware** (`oxlint-tsgolint`), configured in root `.oxlintrc.json`. Built-in plugins are `typescript`, `oxc`, `import`, and `unicorn` (`unicorn` is also listed on the apps/ui override that replaces the plugin set). `unicorn/filename-case` is `error` with `kebabCase` for every linted file; BCP 47 locale modules (`en-US.ts`, `nb-NO.ts`, …) are ignored so they keep the locale-id filenames required by [accessibility](accessibility.md) §4. Other unicorn correctness rules stay `off` so enabling the plugin does not pull in the rest of the category pack. Three JS plugins:
+- **oxlint, type-aware** (`oxlint-tsgolint`), configured in root `.oxlintrc.json`. Built-in plugins are `typescript`, `oxc`, `import`, and `unicorn` (`unicorn` is also listed on the apps/ui override that replaces the plugin set). `unicorn/filename-case` is `error` with `kebabCase` for every linted file; BCP 47 locale modules (`en-US.ts`, `nb-NO.ts`, …) are ignored so they keep the locale-id filenames required by [accessibility](accessibility.md) §4. Other unicorn correctness rules stay `off` so enabling the plugin does not pull in the rest of the category pack. Four JS plugins:
 
   ```json
   "jsPlugins": [
     "eslint-plugin-turbo",
+    "@shadcn/lint",
     { "name": "elmera", "specifier": "@elmeragroup/internal/oxlint" },
     { "name": "anti-slop", "specifier": "@elmeragroup/internal/oxlint/anti-slop" }
   ]
   ```
 
+- `@shadcn/lint` is registered with no `shadcn/*` rules enabled (rules and `settings.shadcn` discovery are configured later, per the upstream `SETUP.md`). It carries `@typescript-eslint/parser` as a hard dependency that is unused under Oxlint because the plugin prefers `oxc-parser`, so its unmet `typescript <6.1` peer warning on `pnpm install` is accepted and deliberately not silenced. _(Added 2026-09-18.)_
 - `ignorePatterns` in `.oxlintrc.json`: `**/dist/**`, `**/coverage/**`, `**/.turbo/**`, `**/.next/**`, `apps/docs/src/generated/**`, `plop-templates/**`, `**/.artifacts/**`, `**/.cache/**`, `**/node_modules/**`, `.ref/**`, `packages/ui/scripts/*.mjs`, and the agent-dot dirs (`.agent/**`, `.agents/**`, `.claude/**`, `.codex/**`, `.continue/**`, `.cursor/**`, `.gemini/**`, `.opencode/**`, `.pi/**`, `.roo/**`, `.windsurf/**`). _(Added 2026-09-04.)_
 - Overrides, in order, scoped exactly as `.oxlintrc.json`:
   - `apps/**/*.{ts,tsx}` and `packages/ui/**/*.{ts,tsx}` — React globals plus the `react` plugin (`react-hooks/rules-of-hooks` and both exhaustive-deps rules at `error`); this override also **replaces** the plugin set with `typescript`, `oxc`, `react`, `unicorn`.

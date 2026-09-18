@@ -25,6 +25,7 @@
     "@changesets/cli": "catalog:",
     "@elmeragroup/internal": "catalog:",
     "@elmeragroup/typescript-config": "workspace:*",
+    "@shadcn/lint": "catalog:",
     "@types/node": "catalog:",
     "@types/picomatch": "catalog:",
     "effect": "catalog:",
