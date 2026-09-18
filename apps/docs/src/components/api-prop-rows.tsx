@@ -68,17 +68,17 @@ function ApiPropRow({ prop, open, onClose }: ApiPropRowProps): ReactElement {
           }
         }}>
         <ApiRows.Cell column="name">
-          <code>{prop.name}</code>
+          <ApiRows.Code column="name">{prop.name}</ApiRows.Code>
           {prop.required ? <ApiRows.Required title="Required">*</ApiRows.Required> : null}
         </ApiRows.Cell>
         <ApiRows.Cell column="type">
-          <code>{prop.closedType}</code>
+          <ApiRows.Code column="type">{prop.closedType}</ApiRows.Code>
         </ApiRows.Cell>
         <ApiRows.Cell column="default">
           {prop.defaultValue === null ? (
             <ApiRows.NoDefault>{NO_DEFAULT}</ApiRows.NoDefault>
           ) : (
-            <code>{prop.defaultValue}</code>
+            <ApiRows.Code column="default">{prop.defaultValue}</ApiRows.Code>
           )}
         </ApiRows.Cell>
         <ApiRows.ChevronCell aria-hidden>
@@ -90,9 +90,9 @@ function ApiPropRow({ prop, open, onClose }: ApiPropRowProps): ReactElement {
           <ApiRows.PanelItem>
             <ApiRows.Term>Name</ApiRows.Term>
             <ApiRows.Definition>
-              <ApiRows.PropLink href={`#${prop.id}`}>
+              <a href={`#${prop.id}`}>
                 <DocsInlineCode>{prop.name}</DocsInlineCode>
-              </ApiRows.PropLink>
+              </a>
               {prop.required ? " · required" : null}
             </ApiRows.Definition>
           </ApiRows.PanelItem>

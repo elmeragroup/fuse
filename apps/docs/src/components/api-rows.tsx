@@ -11,7 +11,8 @@ const apiRows = tv({
     row: "group col-span-full border-b border-border last:border-b-0 min-[34rem]:col-span-full min-[34rem]:grid min-[34rem]:grid-cols-subgrid min-[34rem]:items-center min-[34rem]:[&::details-content]:col-span-full min-[34rem]:[&::details-content]:grid min-[34rem]:[&::details-content]:grid-cols-subgrid min-[34rem]:[&::details-content]:items-center",
     summary:
       "flex min-h-[2.5rem] cursor-pointer scroll-mt-[calc(var(--spacing-docs-header)_+_1rem)] list-none items-center hover:bg-accent hover:text-accent-foreground focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring min-[34rem]:col-span-full min-[34rem]:grid min-[34rem]:grid-cols-subgrid min-[34rem]:items-center [&::-webkit-details-marker]:hidden",
-    cell: "[&_code]:text-xs min-w-0 overflow-x-auto px-3 py-2 whitespace-nowrap [&_code]:font-mono",
+    cell: "min-w-0 overflow-x-auto px-3 py-2 whitespace-nowrap",
+    code: "text-xs",
     panel:
       "border-t border-dashed border-border bg-card min-[34rem]:col-span-full min-[34rem]:grid min-[34rem]:grid-cols-subgrid min-[34rem]:items-center",
     panelList:
@@ -26,7 +27,6 @@ const apiRows = tv({
     chevron: "transition-transform duration-120 group-open:rotate-180 motion-reduce:transition-none",
     required: "text-xs relative top-[-0.3em] text-error",
     noDefault: "text-xs font-mono text-muted-foreground",
-    propLink: "text-inherit",
   },
   variants: {
     headerColumn: {
@@ -35,9 +35,9 @@ const apiRows = tv({
       default: { headerCell: "hidden min-[52rem]:block" },
     },
     cellColumn: {
-      name: { cell: "[&_code]:font-medium block [&_code]:text-foreground" },
-      type: { cell: "hidden min-[34rem]:block [&_code]:text-muted-foreground" },
-      default: { cell: "hidden min-[52rem]:block [&_code]:text-muted-foreground" },
+      name: { cell: "block", code: "font-medium text-foreground" },
+      type: { cell: "hidden min-[34rem]:block", code: "text-muted-foreground" },
+      default: { cell: "hidden min-[52rem]:block", code: "text-muted-foreground" },
     },
   },
   defaultVariants: {
@@ -48,6 +48,9 @@ const apiRows = tv({
 
 const apiRowSlots = apiRows();
 
+/** The data column a summary `Cell`/`Code` renders; header cells carry a different axis. */
+type ApiRowsColumn = "name" | "type" | "default";
+
 export type ApiRowsRootProps = ComponentProps<"div">;
 export type ApiRowsHeaderProps = ComponentProps<"div">;
 export type ApiRowsHeaderCellProps = ComponentProps<"span"> & {
@@ -56,7 +59,10 @@ export type ApiRowsHeaderCellProps = ComponentProps<"span"> & {
 export type ApiRowsRowProps = ComponentProps<"details">;
 export type ApiRowsSummaryProps = ComponentProps<"summary">;
 export type ApiRowsCellProps = ComponentProps<"span"> & {
-  column?: "name" | "type" | "default";
+  column?: ApiRowsColumn;
+};
+export type ApiRowsCodeProps = ComponentProps<"code"> & {
+  column?: ApiRowsColumn;
 };
 export type ApiRowsPanelProps = ComponentProps<"div">;
 export type ApiRowsPanelListProps = ComponentProps<"dl">;
@@ -67,7 +73,6 @@ export type ApiRowsChevronCellProps = ComponentProps<"span">;
 export type ApiRowsChevronProps = SVGProps<SVGSVGElement>;
 export type ApiRowsRequiredProps = ComponentProps<"sup">;
 export type ApiRowsNoDefaultProps = ComponentProps<"span">;
-export type ApiRowsPropLinkProps = ComponentProps<"a">;
 
 function ApiRowsRoot({ className, ...props }: ApiRowsRootProps): ReactElement {
   return <div className={apiRowSlots.root({ className })} {...props} />;
@@ -93,6 +98,11 @@ function ApiRowsSummary({ className, ...props }: ApiRowsSummaryProps): ReactElem
 function ApiRowsCell({ className, column = "name", ...props }: ApiRowsCellProps): ReactElement {
   const { cell } = apiRows({ cellColumn: column });
   return <span className={cell({ className })} {...props} />;
+}
+
+function ApiRowsCode({ className, column = "name", ...props }: ApiRowsCodeProps): ReactElement {
+  const { code } = apiRows({ cellColumn: column });
+  return <code className={code({ className })} {...props} />;
 }
 
 function ApiRowsPanel({ className, ...props }: ApiRowsPanelProps): ReactElement {
@@ -141,16 +151,13 @@ function ApiRowsNoDefault({ className, ...props }: ApiRowsNoDefaultProps): React
   return <span className={apiRowSlots.noDefault({ className })} {...props} />;
 }
 
-function ApiRowsPropLink({ className, ...props }: ApiRowsPropLinkProps): ReactElement {
-  return <a className={apiRowSlots.propLink({ className })} {...props} />;
-}
-
 ApiRowsRoot.displayName = "ApiRows.Root";
 ApiRowsHeader.displayName = "ApiRows.Header";
 ApiRowsHeaderCell.displayName = "ApiRows.HeaderCell";
 ApiRowsRow.displayName = "ApiRows.Row";
 ApiRowsSummary.displayName = "ApiRows.Summary";
 ApiRowsCell.displayName = "ApiRows.Cell";
+ApiRowsCode.displayName = "ApiRows.Code";
 ApiRowsPanel.displayName = "ApiRows.Panel";
 ApiRowsPanelList.displayName = "ApiRows.PanelList";
 ApiRowsPanelItem.displayName = "ApiRows.PanelItem";
@@ -160,7 +167,6 @@ ApiRowsChevronCell.displayName = "ApiRows.ChevronCell";
 ApiRowsChevron.displayName = "ApiRows.Chevron";
 ApiRowsRequired.displayName = "ApiRows.Required";
 ApiRowsNoDefault.displayName = "ApiRows.NoDefault";
-ApiRowsPropLink.displayName = "ApiRows.PropLink";
 
 export const ApiRows = {
   Root: ApiRowsRoot,
@@ -169,6 +175,7 @@ export const ApiRows = {
   Row: ApiRowsRow,
   Summary: ApiRowsSummary,
   Cell: ApiRowsCell,
+  Code: ApiRowsCode,
   Panel: ApiRowsPanel,
   PanelList: ApiRowsPanelList,
   PanelItem: ApiRowsPanelItem,
@@ -178,5 +185,4 @@ export const ApiRows = {
   Chevron: ApiRowsChevron,
   Required: ApiRowsRequired,
   NoDefault: ApiRowsNoDefault,
-  PropLink: ApiRowsPropLink,
 };

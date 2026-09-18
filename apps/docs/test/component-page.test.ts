@@ -63,7 +63,7 @@ describe("component page anatomy (docs-site.md §3.4)", () => {
   it("collapses long types in closed rows, keeps the full signature in the panel", async () => {
     const html = await fetchText("/components/button");
     // `onIntent` prints as `(() => void) | undefined`; the closed row says `function`.
-    expect(html).toContain("<code>function</code>");
+    expect(html).toMatch(/<code[^>]*>function<\/code>/);
     expect(html).toContain('aria-label="Prop: onIntent, type: function"');
     const api = html.slice(html.indexOf('id="api-reference"'));
     // The expanded panel carries the real signature, highlighted by sugar-high.

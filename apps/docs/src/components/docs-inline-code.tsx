@@ -3,7 +3,7 @@ import type { ComponentProps, ReactElement } from "react";
 import { tv } from "tailwind-variants";
 
 const docsInlineCode = tv({
-  base: "text-xs docs-chip rounded-md border border-border bg-muted font-mono before:content-none after:content-none",
+  base: "text-xs docs-chip rounded-md border border-border bg-muted before:content-none after:content-none",
 });
 
 export type DocsInlineCodeProps = ComponentProps<"code">;

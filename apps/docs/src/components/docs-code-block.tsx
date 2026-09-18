@@ -5,14 +5,29 @@ import { tokenize } from "sugar-high/lang/javascript";
 import { tv } from "tailwind-variants";
 
 const docsCodeBlock = tv({
-  base: "overflow-x-auto font-mono [tab-size:2] text-sh-identifier [&_.sh__line]:block [&_.sh__line]:min-h-[1lh] [&_code]:block [&_code]:font-mono",
+  slots: {
+    pre: "overflow-x-auto [tab-size:2] text-sh-identifier [&_.sh__line]:block [&_.sh__line]:min-h-[1lh]",
+    code: "block",
+  },
   variants: {
     variant: {
-      standalone:
-        "text-xs leading-relaxed my-[1.1rem] rounded-xl border border-border bg-card px-4 py-3.5 [&_code]:min-w-max",
-      embedded: "text-xs leading-relaxed m-0 border-t border-border bg-card px-4.5 py-4 [&_code]:min-w-max",
-      signature:
-        "text-xs leading-relaxed m-0 rounded-lg border border-border bg-muted px-2.5 py-2 [&_code]:wrap-anywhere [&_code]:whitespace-pre-wrap",
+      // NOTE: `standalone` has no live instance — no `page.mdx` authors a fenced block — and
+      // inside `.prose.prose-sm` its inner `code` computes 10.29px (12px × .857): typography's
+      // `.prose-sm :where(code)` rule beats `.prose :where(pre code){font-size:inherit}` on
+      // source order. A fence needs `not-prose` on the block or an inheriting inner size before
+      // it ships.
+      standalone: {
+        pre: "text-xs leading-relaxed my-[1.1rem] rounded-xl border border-border bg-card px-4 py-3.5",
+        code: "min-w-max",
+      },
+      embedded: {
+        pre: "text-xs leading-relaxed m-0 border-t border-border bg-card px-4.5 py-4",
+        code: "min-w-max",
+      },
+      signature: {
+        pre: "text-xs leading-relaxed m-0 rounded-lg border border-border bg-muted px-2.5 py-2",
+        code: "wrap-anywhere whitespace-pre-wrap",
+      },
     },
   },
   defaultVariants: {
@@ -45,7 +60,8 @@ export type DocsCodeBlockProps = Omit<ComponentProps<"pre">, "children"> & {
  * The docs' one highlighted code renderer. MDX fences (`standalone`), the demo frame's
  * source region (`embedded`) and the API panel's full signature (`signature`) all hand over
  * raw source and get the same `pre > code` with sugar-high markup back, so highlighted code
- * cannot drift into three renderings.
+ * cannot drift into three renderings. Tailwind preflight's `code, kbd, samp, pre` rule owns
+ * the mono family for both elements, so neither slot restates it.
  */
 export function DocsCodeBlock({
   className,
@@ -53,9 +69,10 @@ export function DocsCodeBlock({
   source,
   ...props
 }: DocsCodeBlockProps): ReactElement {
+  const { pre, code } = docsCodeBlock({ variant });
   return (
-    <pre className={docsCodeBlock({ variant, className })} {...props}>
-      <code dangerouslySetInnerHTML={{ __html: highlight(source) }} />
+    <pre className={pre({ className })} {...props}>
+      <code className={code()} dangerouslySetInnerHTML={{ __html: highlight(source) }} />
     </pre>
   );
 }
