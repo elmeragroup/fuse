@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync, readdirSync } from "node:fs";
-import { join } from "node:path";
+import { join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect } from "vitest";
 import { parse } from "yaml";
@@ -9,6 +9,22 @@ import { asRecord, asRecordArray, asString } from "./json-object.mjs";
 
 /** Repository root, shared by the workflow suites. */
 export const repoRoot = fileURLToPath(new URL("..", import.meta.url));
+
+/** Repository trees the source-level policy tests walk, shared by the guards that read source. */
+export const SOURCE_TREES = ["apps", "packages", "scripts", "tooling", "test"];
+
+/** The JS/TS file kinds the source-level policy tests read. */
+export const SOURCE_EXTENSION = /\.[cm]?[jt]sx?$/;
+
+/**
+ * Renders an absolute path relative to the repository root, with forward slashes.
+ *
+ * @param {string} path - Absolute path inside the repository.
+ * @returns {string} The repository-relative POSIX path.
+ */
+export function repoRelativePath(path) {
+  return relative(repoRoot, path).split(sep).join("/");
+}
 
 /** Directory names the shared file walker never descends into. */
 const SKIPPED_DIRECTORY_NAMES = new Set(["node_modules", "dist", "generated"]);

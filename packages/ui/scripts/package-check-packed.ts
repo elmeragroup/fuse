@@ -232,8 +232,7 @@ process.stdout.write(JSON.stringify(urls));`,
     throw new Error(`Unexpected flagAssets URL payload: ${urlsResult.stdout}`);
   }
   for (const url of parsedUrls.value) {
-    // Packed JSON I/O boundary: the eval'd importer prints JSON.stringify of URL strings.
-    // oxlint-disable-next-line anti-slop/no-runtime-typeof
+    // oxlint-disable-next-line anti-slop/no-runtime-typeof -- packed JSON I/O boundary: the eval'd importer prints JSON.stringify of URL strings
     if (typeof url !== "string") {
       throw new Error(`flagAssets URL is not a string: ${JSON.stringify(url)}`);
     }

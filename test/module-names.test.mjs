@@ -1,16 +1,13 @@
-import { join, relative, sep } from "node:path";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { findFiles, repoRoot } from "./workflow.mjs";
-
-/** Repository trees whose module basenames the naming rule governs. */
-const SOURCE_TREES = ["apps", "packages", "scripts", "tooling", "test"];
+import { findFiles, repoRelativePath, repoRoot, SOURCE_EXTENSION, SOURCE_TREES } from "./workflow.mjs";
 
 /**
  * Vague module basenames the naming rule bans. A test suffix (`utils.test.ts`) names a test, not
  * the module, so it does not match.
  */
-const VAGUE_BASENAME = /^(utils|helpers|common|misc)\.[cm]?[jt]sx?$/;
+const VAGUE_BASENAME = new RegExp(`^(utils|helpers|common|misc)${SOURCE_EXTENSION.source}`);
 
 /**
  * The rule statement the failure message carries once, before the offending paths.
@@ -39,7 +36,7 @@ function isVagueModule(name) {
 describe("module names", () => {
   it("bans vague module basenames outside the allowlist", () => {
     const offenders = SOURCE_TREES.flatMap((tree) => findFiles(join(repoRoot, tree), isVagueModule))
-      .map((path) => relative(repoRoot, path).split(sep).join("/"))
+      .map((path) => repoRelativePath(path))
       .filter((path) => !ALLOWED_VAGUE_PATHS.has(path));
     expect(offenders, `${RULE}\n${offenders.join("\n")}`).toEqual([]);
   });
