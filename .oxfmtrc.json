@@ -48,6 +48,7 @@
     "**/next-env.d.ts",
     ".artifacts",
     ".cache",
+    ".scratch/**",
     ".ref",
     "**/__snapshots__/**",
     "pnpm-lock.yaml",

@@ -14,14 +14,14 @@ import { matchSearchEntries } from "../lib/search";
 const searchPalette = tv({
   slots: {
     trigger: "font-mono",
-    keys: "text-muted-foreground [font:inherit]",
+    keys: "font-mono text-muted-foreground",
     palette:
       "top-[10vh] block w-[min(34rem,calc(100vw_-_2rem))] translate-y-0 gap-0 overflow-hidden p-0 font-sans",
     input:
-      "text-base block w-full border-0 border-b border-border bg-transparent p-[0.9rem_1rem] text-foreground placeholder:text-muted-foreground focus:outline-none",
-    results: "m-0 max-h-[22rem] list-none overflow-y-auto p-[0.35rem]",
+      "text-base block w-full border-0 border-b border-border bg-transparent px-4 py-3.5 text-foreground placeholder:text-muted-foreground focus:outline-none",
+    results: "m-0 max-h-[22rem] list-none overflow-y-auto p-1.5",
     option:
-      "text-sm flex cursor-pointer items-baseline justify-between gap-4 rounded-lg p-[0.4rem_0.65rem] text-muted-foreground data-active:bg-accent data-active:text-accent-foreground",
+      "text-sm flex cursor-pointer items-baseline justify-between gap-4 rounded-lg px-2.5 py-1.5 text-muted-foreground data-active:bg-accent data-active:text-accent-foreground",
     optionTitle: "font-medium text-foreground",
     optionGroup: "font-medium text-xs font-mono text-muted-foreground",
     empty: "text-sm m-0 p-4 text-muted-foreground",

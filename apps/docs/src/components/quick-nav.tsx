@@ -14,8 +14,8 @@ const quickNav = tv({
   slots: {
     root: "min-[60rem]:top-docs-header min-[60rem]:text-xs hidden min-[60rem]:sticky min-[60rem]:block min-[60rem]:h-[calc(100vh_-_var(--spacing-docs-header))] min-[60rem]:px-4 min-[60rem]:py-10 min-[60rem]:text-muted-foreground",
     scroll: "h-full",
-    title: "font-semibold text-xs m-0 mb-[0.6rem] block tracking-[0.09em] text-muted-foreground uppercase",
-    link: "block py-[0.22rem] text-muted-foreground no-underline hover:text-foreground focus-visible:rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+    title: "font-semibold text-xs tracking-widest m-0 mb-[0.6rem] block text-muted-foreground uppercase",
+    link: "block py-1 text-muted-foreground no-underline hover:text-foreground focus-visible:rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
   },
 });
 

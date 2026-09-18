@@ -297,10 +297,6 @@
       }
     },
     {
-      "files": ["apps/docs/src/components/**/*.{ts,tsx}"],
-      "rules": { "shadcn/no-arbitrary-values": "off" }
-    },
-    {
       "files": ["**/*.test.{ts,tsx}", "**/*.test-d.{ts,tsx}"],
       "rules": {
         "shadcn/no-inline-styles": "off",

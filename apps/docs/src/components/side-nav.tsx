@@ -16,8 +16,8 @@ const sideNav = tv({
     root: "min-[45rem]:top-docs-header text-sm border-r border-border px-4 pt-6 pb-16 min-[45rem]:sticky min-[45rem]:h-[calc(100vh_-_var(--spacing-docs-header))] min-[45rem]:overflow-hidden",
     scroll: "h-auto max-h-48 min-[45rem]:h-full min-[45rem]:max-h-none",
     section: "mb-[1.4rem]",
-    heading: "text-sm font-normal mb-[0.4rem] block pl-[0.6rem] text-muted-foreground",
-    link: "data-active:font-medium block rounded-lg px-[0.6rem] py-[0.28rem] text-muted-foreground no-underline hover:bg-accent hover:text-accent-foreground focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring data-active:bg-accent data-active:text-accent-foreground",
+    heading: "text-sm font-normal mb-[0.4rem] block pl-2.5 text-muted-foreground",
+    link: "data-active:font-medium block rounded-lg px-2.5 py-1 text-muted-foreground no-underline hover:bg-accent hover:text-accent-foreground focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring data-active:bg-accent data-active:text-accent-foreground",
   },
 });
 

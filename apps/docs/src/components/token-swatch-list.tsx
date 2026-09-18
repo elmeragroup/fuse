@@ -15,11 +15,10 @@ export type TokenSwatchListProps = {
 
 const tokenSwatchList = tv({
   slots: {
-    list: "not-prose m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(190px,1fr))] gap-[0.35rem_1rem] p-0",
+    list: "not-prose m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(190px,1fr))] gap-x-4 gap-y-1.5 p-0",
     item: "[&_code]:text-xs flex min-w-0 items-center gap-2 [&_code]:overflow-hidden [&_code]:font-mono [&_code]:text-ellipsis [&_code]:whitespace-nowrap [&_code]:text-foreground",
     swatch: "size-[0.85rem] flex-none rounded-md border border-foreground/18 bg-(--swatch)",
-    swatchEmpty:
-      "size-[0.85rem] flex-none rounded-md border border-foreground/18 bg-[repeating-linear-gradient(45deg,transparent,transparent_3px,color-mix(in_oklab,var(--foreground)_14%,transparent)_3px,color-mix(in_oklab,var(--foreground)_14%,transparent)_6px)]",
+    swatchEmpty: "docs-swatch-empty size-[0.85rem] flex-none rounded-md border border-foreground/18",
   },
 });
 

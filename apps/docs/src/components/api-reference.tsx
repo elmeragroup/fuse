@@ -17,11 +17,11 @@ export type ApiReferenceProps = {
 const apiReference = tv({
   slots: {
     part: "mt-8",
-    partHeader: "mt-[1.6rem] mb-[0.7rem] flex items-center gap-[0.55rem]",
+    partHeader: "mt-[1.6rem] mb-[0.7rem] flex items-center gap-2",
     partHeading:
       "font-semibold text-base [&_code]:text-sm m-0 scroll-mt-[calc(var(--spacing-docs-header)_+_1rem)] [&_code]:font-mono",
     partNote: "text-xs mt-[0.6rem] text-muted-foreground",
-    propGroupHeading: "font-medium text-xs mt-[1.2rem] mb-[0.55rem] tracking-[0.01em] text-muted-foreground",
+    propGroupHeading: "font-medium text-xs mt-[1.2rem] mb-[0.55rem] text-muted-foreground",
   },
 });
 

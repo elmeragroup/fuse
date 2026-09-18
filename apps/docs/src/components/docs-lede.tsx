@@ -3,7 +3,7 @@ import type { ComponentProps, ReactElement } from "react";
 import { tv } from "tailwind-variants";
 
 const docsLede = tv({
-  base: "text-base m-0 max-w-[56ch] leading-[1.6] text-foreground",
+  base: "text-base leading-relaxed m-0 max-w-[56ch] text-foreground",
 });
 
 export type DocsLedeProps = ComponentProps<"p">;
