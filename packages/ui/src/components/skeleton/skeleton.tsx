@@ -1,23 +1,21 @@
 import type { ComponentProps, ReactElement } from "react";
 
-import type { VariantProps } from "tailwind-variants";
-
 import { cn } from "../../styles/cn";
-import { skeletonVariants } from "./skeleton-variants";
 
-/** Public props for `Skeleton`: native div attributes plus the `silhouette` recipe axis. */
-export type SkeletonProps = ComponentProps<"div"> & VariantProps<typeof skeletonVariants>;
+/** Public props for `Skeleton`: native div attributes. Size and radius come through `className`. */
+export type SkeletonProps = ComponentProps<"div">;
 
 /**
- * Shape-only loading placeholder. Server component — it owns no
- * state, no handlers, and no browser APIs (performance.md §RSC classification).
+ * Shape-only loading placeholder. Size and radius are the caller's through `className`; the pulse
+ * and muted surface are the component's. Server component — it owns no state, no handlers, and no
+ * browser APIs (performance.md §RSC classification).
  */
-export function Skeleton({ className, silhouette, ...props }: SkeletonProps): ReactElement {
+export function Skeleton({ className, ...props }: SkeletonProps): ReactElement {
   return (
     <div
       data-slot="skeleton"
       aria-hidden="true"
-      className={cn(skeletonVariants({ silhouette }), className)}
+      className={cn("animate-pulse rounded-md bg-muted", className)}
       {...props}
     />
   );

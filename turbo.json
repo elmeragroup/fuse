@@ -10,29 +10,11 @@
       "dependsOn": ["@elmeragroup/ui#build", "docs#generate"],
       "inputs": ["$TURBO_DEFAULT$"]
     },
+    // The policy suites read files across the workspace, so a complete input list would have
+    // to enumerate every source tree. Caching this task would mean maintaining a fragile,
+    // incomplete list for little gain, so it always runs.
     "//#test:repo-policy": {
-      "inputs": [
-        "test/**",
-        "plopfile.mjs",
-        "plop-templates/**",
-        "README.md",
-        "packages/ui/scripts/**",
-        "packages/ui/package.json",
-        "scripts/**",
-        "packages/ui/src/icons/roster.ts",
-        "packages/ui/src/theme/**",
-        ".changeset/config.json",
-        ".github/workflows/**",
-        "package.json",
-        ".oxlintrc.json",
-        "turbo.json",
-        "apps/docs/package.json",
-        "apps/docs/turbo.json",
-        "apps/static-theme/package.json",
-        "apps/static-theme/turbo.json",
-        "tooling/typescript/**",
-        "pnpm-workspace.yaml"
-      ]
+      "cache": false
     },
     "//#type-check:scripts": {
       "inputs": [

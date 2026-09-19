@@ -18,8 +18,11 @@ const tokenSwatchList = tv({
     list: "not-prose m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(190px,1fr))] gap-x-4 gap-y-1.5 p-0",
     item: "flex min-w-0 items-center gap-2",
     itemCode: "text-xs overflow-hidden text-ellipsis whitespace-nowrap text-foreground",
-    swatch: "size-[0.85rem] flex-none rounded-md border border-foreground/18 bg-(--swatch)",
-    swatchEmpty: "docs-swatch-empty size-[0.85rem] flex-none rounded-md border border-foreground/18",
+    swatch: "size-[0.85rem] flex-none rounded-md border border-foreground/18",
+    // The empty-swatch hatch has no scale neighbour; `.oxlintrc.json` allows its
+    // off-scale gradient for this file instead of declaring a CSS utility.
+    swatchEmpty:
+      "size-[0.85rem] flex-none rounded-md border border-foreground/18 bg-[repeating-linear-gradient(45deg,transparent,transparent_3px,color-mix(in_oklab,var(--foreground)_14%,transparent)_3px,color-mix(in_oklab,var(--foreground)_14%,transparent)_6px)]",
   },
 });
 
@@ -43,7 +46,7 @@ export function TokenSwatchList({ tokens }: TokenSwatchListProps): ReactElement 
             <span
               className={swatch()}
               data-token-swatch
-              style={{ "--swatch": `var(${token.name})` }}
+              style={{ backgroundColor: `var(${token.name})` }}
               aria-hidden="true"
             />
           ) : (

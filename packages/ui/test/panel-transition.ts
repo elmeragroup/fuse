@@ -3,7 +3,7 @@ import { userEvent } from "vitest/browser";
 
 /**
  * Frame-level observations for the two Base UI panels whose height animates through the
- * shared `panelHeight` recipe (`Collapsible.Content`, `Accordion.Content`). End-state
+ * shared `panelHeightTransition` constant (`Collapsible.Content`, `Accordion.Content`). End-state
  * assertions cannot tell a transition from a snap, so the assertion helper samples the
  * rendered box once per animation frame, watches the height transition events, and waits
  * for the animation to settle before checking either direction.
@@ -116,7 +116,7 @@ function hasIntermediateFrame(samples: readonly number[], settled: number): bool
  *
  * @param trigger - The trigger that opens and closes the panel under test.
  * @param closedState - `"hidden"` for a panel that stays mounted behind `hidden`, or
- * `"unmounted"` for one that leaves the accessibility tree when closed.
+ * `"unmounted"` for one that is removed from the DOM when closed.
  */
 export async function expectPanelHeightTransition(
   trigger: HTMLElement,
@@ -153,7 +153,7 @@ export async function expectPanelHeightTransition(
       expect(renderedHeight(panel)).toBe(0);
     } else {
       await vi.waitFor(() => {
-        expect(panelControlledBy(trigger)).toBeNull();
+        expect(panel.isConnected).toBe(false);
       });
     }
     // Base UI unmounts a default Content as its close animation finishes, so the panel is

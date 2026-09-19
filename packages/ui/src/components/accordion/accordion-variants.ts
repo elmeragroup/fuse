@@ -4,13 +4,13 @@
  * parts call this with the published axes for their own slot.
  *
  * Height on `content` is the approved layout exception, owned once by the shared
- * `panelHeight` recipe (`styles/panel-height.ts`) against base-ui's
+ * `panelHeightTransition` constant (`styles/panel-height.ts`) against base-ui's
  * `--accordion-panel-height` — not a control-box rung.
  */
 import { tv } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
-import { panelHeight } from "../../styles/panel-height";
+import { panelHeightTransition } from "../../styles/panel-height";
 import { selfFocusRingClass } from "../../styles/utils";
 
 export const accordionVariants = tv({
@@ -23,7 +23,7 @@ export const accordionVariants = tv({
       selfFocusRingClass
     ),
     icon: "size-4 shrink-0 text-foreground transition-transform duration-200 group-data-[panel-open]/accordion-trigger:rotate-180",
-    content: panelHeight({ panel: "accordion" }),
+    content: cn(panelHeightTransition, "h-(--accordion-panel-height)"),
     contentInner: "pt-1.5",
   },
   variants: {

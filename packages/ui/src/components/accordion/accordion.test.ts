@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
-import { panelHeight } from "../../styles/panel-height";
+import { panelHeightTransition } from "../../styles/panel-height";
 import { focusRing } from "../../styles/utils";
 import { Accordion } from "./accordion";
 import { accordionVariants } from "./accordion-variants";
@@ -76,7 +76,7 @@ describe("accordionVariants", () => {
     expect(xl.item()).not.toContain("rounded-lg");
   });
 
-  it("keeps the shared panel-height recipe, group chevron, and shared self focus ring", () => {
+  it("keeps the shared panel-height transition, group chevron, and shared self focus ring", () => {
     const slots = accordionVariants();
     expect(slots.header()).toContain("flex");
     expect(slots.trigger()).toContain("group/accordion-trigger");
@@ -86,7 +86,7 @@ describe("accordionVariants", () => {
       expect(slots.trigger()).toContain(token);
     }
     expect(slots.icon()).toContain("group-data-[panel-open]/accordion-trigger:rotate-180");
-    expect(slots.content()).toBe(panelHeight({ panel: "accordion" }));
+    expect(slots.content()).toBe(`${panelHeightTransition} h-(--accordion-panel-height)`);
     expect(slots.content()).not.toContain("motion-reduce");
     expect(slots.contentInner()).toContain("pt-1.5");
   });

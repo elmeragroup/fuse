@@ -44,24 +44,33 @@ describe("release wiring", () => {
     );
   });
 
-  it("keeps the scripts type-check program inside the turbo inputs of the tasks that run it", () => {
+  it("keeps the scripts program inside its cached task's inputs and the repo-policy task uncached", () => {
     // Evaluate the program against Turbo's own resolved inputs instead of a hand-copied allowlist:
     // a source glob that disappeared, or a new `!` exclusion, must fail here rather than stay green.
-    // The repo-policy suite runs the same program, so its inputs must cover the same sources.
+    // The repo-policy suite also runs this program, but its walkers read files across the workspace,
+    // so a complete input list is not practical and it is deliberately uncached (turbo.json) and
+    // has no cache key to verify — pin that instead of a list that would only look meaningful.
     const tasks = turboTasks(["run", "type-check:scripts", "test:repo-policy"]);
-    const resolvedInputs = [];
-    for (const taskId of ["//#type-check:scripts", "//#test:repo-policy"]) {
-      const task = tasks.find((candidate) => candidate.taskId === taskId);
-      if (task === undefined) throw new Error(`turbo has no ${taskId} task`);
-      const inputs = asRecord(task.resolvedTaskDefinition, "resolved task definition").inputs;
-      if (!Array.isArray(inputs)) throw new Error(`${taskId} inputs is not an array`);
-      const patterns = inputs.map((input) => asString(input, `${taskId} input`));
-      resolvedInputs.push({
-        taskId,
-        positives: patterns.filter((pattern) => !pattern.startsWith("!")),
-        negatives: patterns.filter((pattern) => pattern.startsWith("!")).map((pattern) => pattern.slice(1)),
-      });
-    }
+    const repoTests = tasks.find((candidate) => candidate.taskId === "//#test:repo-policy");
+    if (repoTests === undefined) throw new Error("turbo has no //#test:repo-policy task");
+    expect(
+      asRecord(repoTests.resolvedTaskDefinition, "resolved task definition").cache,
+      "//#test:repo-policy must stay uncached"
+    ).toBe(false);
+
+    const taskId = "//#type-check:scripts";
+    const task = tasks.find((candidate) => candidate.taskId === taskId);
+    if (task === undefined) throw new Error(`turbo has no ${taskId} task`);
+    const inputs = asRecord(task.resolvedTaskDefinition, "resolved task definition").inputs;
+    if (!Array.isArray(inputs)) throw new Error(`${taskId} inputs is not an array`);
+    const patterns = inputs.map((input) => asString(input, `${taskId} input`));
+    const positive = patterns
+      .filter((pattern) => !pattern.startsWith("!"))
+      .map((pattern) => picomatch(pattern, { dot: true }));
+    const negative = patterns
+      .filter((pattern) => pattern.startsWith("!"))
+      .map((pattern) => picomatch(pattern.slice(1), { dot: true }));
+
     // The program's import closure must stay inside those inputs; a new packages/ui/src import in
     // an adapter file would move a gate input outside the cache key.
     const listed = execFileSync(
@@ -74,19 +83,15 @@ describe("release wiring", () => {
       .filter((line) => line !== "" && !line.includes("/node_modules/"))
       .map((line) => relative(repoRoot, line));
     expect(programFiles.length, "the scripts program must list its source files").toBeGreaterThan(0);
-    for (const { taskId, positives, negatives } of resolvedInputs) {
-      const positive = positives.map((pattern) => picomatch(pattern, { dot: true }));
-      const negative = negatives.map((pattern) => picomatch(pattern, { dot: true }));
-      for (const file of programFiles) {
-        expect(
-          positive.some((matcher) => matcher(file)),
-          `${file} is outside the turbo inputs of ${taskId}`
-        ).toBe(true);
-        expect(
-          negative.some((matcher) => matcher(file)),
-          `${file} is excluded from the turbo inputs of ${taskId}`
-        ).toBe(false);
-      }
+    for (const file of programFiles) {
+      expect(
+        positive.some((matcher) => matcher(file)),
+        `${file} is outside the turbo inputs of ${taskId}`
+      ).toBe(true);
+      expect(
+        negative.some((matcher) => matcher(file)),
+        `${file} is excluded from the turbo inputs of ${taskId}`
+      ).toBe(false);
     }
   }, 60_000);
 

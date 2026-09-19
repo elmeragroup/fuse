@@ -24,15 +24,6 @@
           "required": false
         },
         {
-          "name": "grouped",
-          "origin": "declared",
-          "type": "boolean | undefined",
-          "shortType": null,
-          "defaultValue": null,
-          "description": "Separates stacked avatars with a background-coloured ring.",
-          "required": false
-        },
-        {
           "name": "render",
           "origin": {
             "packageName": "@base-ui/react"
@@ -55,6 +46,16 @@
           "required": false
         }
       ]
+    },
+    {
+      "name": "Avatar.Group",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/avatar/avatar.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
     },
     {
       "name": "Avatar.Image",

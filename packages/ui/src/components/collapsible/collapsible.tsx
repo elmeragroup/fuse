@@ -5,7 +5,7 @@ import type { ComponentProps, ReactElement } from "react";
 import { Collapsible as CollapsiblePrimitive } from "@base-ui/react/collapsible";
 
 import { mergeClassName } from "../../styles/merge-class-name";
-import { panelHeight } from "../../styles/panel-height";
+import { panelHeightTransition } from "../../styles/panel-height";
 import { selfFocusRingClass } from "../../styles/utils";
 
 /**
@@ -37,7 +37,7 @@ function CollapsibleContent({
   return (
     <CollapsiblePrimitive.Panel
       data-slot="collapsible-content"
-      className={mergeClassName(className, panelHeight({ panel: "collapsible" }))}
+      className={mergeClassName(className, panelHeightTransition, "h-(--collapsible-panel-height)")}
       {...props}
     />
   );

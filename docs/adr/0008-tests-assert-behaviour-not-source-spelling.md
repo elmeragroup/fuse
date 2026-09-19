@@ -1,6 +1,6 @@
 # 0008 — Tests assert behaviour, not source spelling
 
-Date: 2026-09-02. Status: accepted; amended 2026-09-04 — one-owner spellings are lint `allow` lists, not source-line greps; amended 2026-09-18 — repo-wide policies with no upstream lint rule yet live as `pnpm test:repo-policy` walkers.
+Date: 2026-09-02. Status: accepted; amended 2026-09-04 — one-owner spellings are lint `allow` lists, not source-line greps; amended 2026-09-18 — repo-wide policies with no upstream lint rule yet live as `pnpm test:repo-policy` walkers; amended 2026-09-19 — the release-age exclusion check is a deterministic set assertion, not a timestamped walker.
 
 ## Context
 
@@ -41,4 +41,6 @@ The contracts suite walks the source tree once per run and keeps only what lint 
 
 ## Amendment 2026-09-18 — repo-wide policies without an upstream lint rule yet
 
-Repo-wide policies that have no upstream lint rule yet live as `test/*.test.mjs` walkers under `pnpm test:repo-policy`: `module-names`, `lint-disable-reasons`, `tsconfig-types-augmentation` and `release-age-exclusions`. They are reviewed contracts in the sense above — each exists because no rule upstream owns it. `lint-disable-reasons` retires when `@elmeragroup/internal` anti-slop ships `require-disable-reason`; the `module-names` allowlist entry for `packages/ui/src/styles/utils.ts` retires when the `@elmeragroup/internal` focus-ring rules take the owner path as a rule option. The other two assert committed-configuration couplings that no upstream rule owns: every shared-config extender keeps the csstype augmentation in `compilerOptions.types`, and every `minimumReleaseAgeExclude` entry is catalog-paired or carries an unexpired `Temporary: …` comment.
+Repo-wide policies that have no upstream lint rule yet live as `test/*.test.mjs` walkers under `pnpm test:repo-policy`: `module-names` and `lint-disable-reasons`. They are reviewed contracts in the sense above — each exists because no rule upstream owns it. `lint-disable-reasons` retires when `@elmeragroup/internal` anti-slop ships `require-disable-reason`; the `module-names` allowlist entry for `packages/ui/src/styles/utils.ts` retires when the `@elmeragroup/internal` focus-ring rules take the owner path as a rule option.
+
+Two committed-configuration couplings live beside them as direct assertions rather than tree walkers: the `minimumReleaseAgeExclude` set is exactly the catalog-pinned `@elmeragroup/internal` and `effect` versions plus the temporary `@shadcn/lint` version (no timestamp logic), and the tsconfig-augmentation test names the one config that overrides `types` and checks it keeps the augmentation. _(Amended 2026-09-19.)_

@@ -150,7 +150,6 @@
     "plop-templates/**",
     "**/.artifacts/**",
     "**/.cache/**",
-    ".scratch/**",
     "**/node_modules/**",
     ".ref/**",
     "packages/ui/scripts/*.mjs",
@@ -274,6 +273,13 @@
                 "allow": ["layout", "spacing"]
               },
               {
+                "pattern": "^Skeleton$",
+                "allow": ["layout", "rounded"],
+                "message": {
+                  "default": "Skeleton is a shape-only placeholder: size and radius are yours, colour and motion are its own."
+                }
+              },
+              {
                 "pattern": "^ScrollAreaRoot$",
                 "allow": ["layout", "rounded", "border-w", "border-color"]
               }
@@ -281,6 +287,27 @@
           }
         ],
         "shadcn/no-arbitrary-values": ["error", { "allow": ["layout", "rounded-[inherit]"] }]
+      }
+    },
+    {
+      "files": ["apps/docs/src/components/docs-inline-code.tsx"],
+      "rules": {
+        "shadcn/no-arbitrary-values": ["error", { "allow": ["py-[0.1em]", "px-[0.35em]"] }]
+      }
+    },
+    {
+      "files": ["apps/docs/src/components/token-swatch-list.tsx"],
+      "rules": {
+        "shadcn/no-arbitrary-values": [
+          "error",
+          {
+            "allow": [
+              "layout",
+              "bg-[repeating-linear-gradient(45deg,transparent,transparent_3px,color-mix(in_oklab,var(--foreground)_14%,transparent)_3px,color-mix(in_oklab,var(--foreground)_14%,transparent)_6px)]"
+            ]
+          }
+        ],
+        "shadcn/no-inline-styles": ["error", { "allow": ["backgroundColor"] }]
       }
     },
     {

@@ -48,7 +48,7 @@ const apiRows = tv({
 
 const apiRowSlots = apiRows();
 
-/** The data column a summary `Cell`/`Code` renders; header cells carry a different axis. */
+/** The data column a summary `Cell` renders; header cells carry a different axis. */
 type ApiRowsColumn = "name" | "type" | "default";
 
 export type ApiRowsRootProps = ComponentProps<"div">;
@@ -60,9 +60,8 @@ export type ApiRowsRowProps = ComponentProps<"details">;
 export type ApiRowsSummaryProps = ComponentProps<"summary">;
 export type ApiRowsCellProps = ComponentProps<"span"> & {
   column?: ApiRowsColumn;
-};
-export type ApiRowsCodeProps = ComponentProps<"code"> & {
-  column?: ApiRowsColumn;
+  /** The cell's code literal, or `null` when the cell renders no code element. */
+  code: string | null;
 };
 export type ApiRowsPanelProps = ComponentProps<"div">;
 export type ApiRowsPanelListProps = ComponentProps<"dl">;
@@ -95,14 +94,20 @@ function ApiRowsSummary({ className, ...props }: ApiRowsSummaryProps): ReactElem
   return <summary className={apiRowSlots.summary({ className })} {...props} />;
 }
 
-function ApiRowsCell({ className, column = "name", ...props }: ApiRowsCellProps): ReactElement {
-  const { cell } = apiRows({ cellColumn: column });
-  return <span className={cell({ className })} {...props} />;
-}
-
-function ApiRowsCode({ className, column = "name", ...props }: ApiRowsCodeProps): ReactElement {
-  const { code } = apiRows({ cellColumn: column });
-  return <code className={code({ className })} {...props} />;
+function ApiRowsCell({
+  className,
+  column = "name",
+  code,
+  children,
+  ...props
+}: ApiRowsCellProps): ReactElement {
+  const { cell, code: codeClass } = apiRows({ cellColumn: column });
+  return (
+    <span className={cell({ className })} {...props}>
+      {code === null ? null : <code className={codeClass()}>{code}</code>}
+      {children}
+    </span>
+  );
 }
 
 function ApiRowsPanel({ className, ...props }: ApiRowsPanelProps): ReactElement {
@@ -157,7 +162,6 @@ ApiRowsHeaderCell.displayName = "ApiRows.HeaderCell";
 ApiRowsRow.displayName = "ApiRows.Row";
 ApiRowsSummary.displayName = "ApiRows.Summary";
 ApiRowsCell.displayName = "ApiRows.Cell";
-ApiRowsCode.displayName = "ApiRows.Code";
 ApiRowsPanel.displayName = "ApiRows.Panel";
 ApiRowsPanelList.displayName = "ApiRows.PanelList";
 ApiRowsPanelItem.displayName = "ApiRows.PanelItem";
@@ -175,7 +179,6 @@ export const ApiRows = {
   Row: ApiRowsRow,
   Summary: ApiRowsSummary,
   Cell: ApiRowsCell,
-  Code: ApiRowsCode,
   Panel: ApiRowsPanel,
   PanelList: ApiRowsPanelList,
   PanelItem: ApiRowsPanelItem,

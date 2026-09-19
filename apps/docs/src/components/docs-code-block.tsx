@@ -11,13 +11,13 @@ const docsCodeBlock = tv({
   },
   variants: {
     variant: {
-      // NOTE: `standalone` has no live instance — no `page.mdx` authors a fenced block — and
-      // inside `.prose.prose-sm` its inner `code` computes 10.29px (12px × .857): typography's
-      // `.prose-sm :where(code)` rule beats `.prose :where(pre code){font-size:inherit}` on
-      // source order. A fence needs `not-prose` on the block or an inheriting inner size before
-      // it ships.
+      // `standalone` has no live instance — no `page.mdx` authors a fenced block yet — and
+      // inside `.prose.prose-sm` its inner `code` would compute 10.29px (12px × .857):
+      // typography's `.prose-sm :where(code)` rule beats `.prose :where(pre code){font-size:
+      // inherit}` on source order. `not-prose` removes the block and its subtree from prose
+      // styling, so the `text-xs` on the `pre` is the whole type scale.
       standalone: {
-        pre: "text-xs leading-relaxed my-[1.1rem] rounded-xl border border-border bg-card px-4 py-3.5",
+        pre: "not-prose text-xs leading-relaxed my-[1.1rem] rounded-xl border border-border bg-card px-4 py-3.5",
         code: "min-w-max",
       },
       embedded: {

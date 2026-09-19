@@ -19,13 +19,13 @@ const people = [
 
 export function AvatarGroup() {
   return (
-    <div className="flex -space-x-2">
+    <Avatar.Group>
       {people.map((person) => (
-        <Avatar.Root key={person.initials} grouped>
+        <Avatar.Root key={person.initials}>
           <Avatar.Image src={person.src} alt={person.alt} />
           <Avatar.Fallback>{person.initials}</Avatar.Fallback>
         </Avatar.Root>
       ))}
-    </div>
+    </Avatar.Group>
   );
 }

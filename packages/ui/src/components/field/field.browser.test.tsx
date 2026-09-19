@@ -11,6 +11,7 @@ import {
   textNamed,
   textboxNamed,
 } from "../../../test/themed-browser-render";
+import { Checkbox } from "../checkbox/checkbox";
 import { Field } from "./field";
 
 describe("Field", () => {
@@ -94,6 +95,30 @@ describe("Field", () => {
     expect(title.hasAttribute("data-field-heading")).toBe(true);
     expect(getComputedStyle(label).opacity).toBe("0.5");
     expect(getComputedStyle(title).opacity).toBe("0.5");
+  });
+
+  it("keeps the heading weight on a checkbox row and lets a consumer font-* class win", () => {
+    renderThemed(
+      <>
+        <Field.Root>
+          <Field.Label>
+            <Checkbox />
+            Email
+          </Field.Label>
+        </Field.Root>
+        <Field.Root>
+          <Field.Label className="font-normal">
+            <Checkbox />
+            SMS
+          </Field.Label>
+        </Field.Root>
+      </>
+    );
+    const heading = textNamed("Email");
+    const overridden = textNamed("SMS");
+    expect(heading.getAttribute("data-slot")).toBe("field-label");
+    expect(getComputedStyle(heading).fontWeight).toBe("500");
+    expect(getComputedStyle(overridden).fontWeight).toBe("400");
   });
 
   it("reflects orientation and legend variant as data attributes", () => {

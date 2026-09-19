@@ -67,19 +67,12 @@ function ApiPropRow({ prop, open, onClose }: ApiPropRowProps): ReactElement {
             event.preventDefault();
           }
         }}>
-        <ApiRows.Cell column="name">
-          <ApiRows.Code column="name">{prop.name}</ApiRows.Code>
+        <ApiRows.Cell column="name" code={prop.name}>
           {prop.required ? <ApiRows.Required title="Required">*</ApiRows.Required> : null}
         </ApiRows.Cell>
-        <ApiRows.Cell column="type">
-          <ApiRows.Code column="type">{prop.closedType}</ApiRows.Code>
-        </ApiRows.Cell>
-        <ApiRows.Cell column="default">
-          {prop.defaultValue === null ? (
-            <ApiRows.NoDefault>{NO_DEFAULT}</ApiRows.NoDefault>
-          ) : (
-            <ApiRows.Code column="default">{prop.defaultValue}</ApiRows.Code>
-          )}
+        <ApiRows.Cell column="type" code={prop.closedType} />
+        <ApiRows.Cell column="default" code={prop.defaultValue}>
+          {prop.defaultValue === null ? <ApiRows.NoDefault>{NO_DEFAULT}</ApiRows.NoDefault> : null}
         </ApiRows.Cell>
         <ApiRows.ChevronCell aria-hidden>
           <ApiRows.Chevron />

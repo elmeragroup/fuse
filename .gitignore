@@ -12,8 +12,6 @@ dist/
 .artifacts/
 coverage/
 .cache/
-# Orchestration scratch workspace — run logs, handoffs, and reports are never committed
-.scratch/
 .vitest/
 .vitest-attachments/
 __screenshots__/
