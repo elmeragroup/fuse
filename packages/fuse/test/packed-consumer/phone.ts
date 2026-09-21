@@ -5,12 +5,12 @@ import { createRoot } from "react-dom/client";
 
 import { PhoneNumberField } from "@elmeragroup/fuse/phone-number-field";
 import "@elmeragroup/fuse/styles.css";
-import { FuseProvider } from "@elmeragroup/fuse/theme";
+import { LocaleProvider } from "@elmeragroup/fuse/theme";
 import "@elmeragroup/fuse/themes.css";
 
 function App() {
   const [country, setCountry] = useState<"NO" | "SE">("NO");
-  return h(FuseProvider, {
+  return h(LocaleProvider, {
     locale: "en-US",
     children: h(
       "div",

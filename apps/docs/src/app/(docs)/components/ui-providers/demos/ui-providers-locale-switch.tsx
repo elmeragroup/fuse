@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { Breadcrumb } from "@elmeragroup/fuse/breadcrumb";
 import { Pagination } from "@elmeragroup/fuse/pagination";
-import { FuseProvider } from "@elmeragroup/fuse/theme";
+import { LocaleProvider } from "@elmeragroup/fuse/theme";
 import type { SupportedLocale } from "@elmeragroup/fuse/theme";
 
 const LOCALES = [
@@ -16,7 +16,7 @@ export function UiProvidersLocaleSwitch() {
   const [locale, setLocale] = useState<SupportedLocale>("nb-NO");
 
   return (
-    <FuseProvider locale={locale}>
+    <LocaleProvider locale={locale}>
       <label>
         Language
         <select
@@ -60,6 +60,6 @@ export function UiProvidersLocaleSwitch() {
           </Breadcrumb.Item>
         </Breadcrumb.List>
       </Breadcrumb.Root>
-    </FuseProvider>
+    </LocaleProvider>
   );
 }

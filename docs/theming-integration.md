@@ -9,7 +9,7 @@ Minimal app setup (Next App Router shape; every host follows the same split):
 ```tsx
 import {
   ColorSchemeScript,
-  FuseProvider,
+  LocaleProvider,
   ThemeProvider,
   defaultDensityForVariant,
   densityAttributes,
@@ -46,7 +46,7 @@ export function RootLayout({ children }: { children: React.ReactNode }) {
           defaultColorScheme={colorScheme.defaultColorScheme}
           enableSystem={colorScheme.enableSystem}
           injectColorSchemeScript={false}>
-          <FuseProvider locale="nb-NO">{children}</FuseProvider>
+          <LocaleProvider locale="nb-NO">{children}</LocaleProvider>
         </ThemeProvider>
       </body>
     </html>
@@ -64,7 +64,7 @@ body {
 }
 ```
 
-`suppressHydrationWarning` on `<html>` is required wherever the color-scheme script mutates `data-theme` before hydration. Brand attributes match on server and client and do not themselves require it. Apps that omit color-scheme machinery omit the script, the warning, and the provider color-scheme props. RAC consumers replace `FuseProvider` with `UiProviders` from `@elmeragroup/fuse/react-aria/ui-providers`; they do not nest both locale providers. `UiProviders` requires a function-valued `navigate` prop, so a Next App Router layout renders a small app-owned `"use client"` wrapper that calls `useRouter()` and passes `url => router.push(url)` — it does not pass a server function through the layout boundary.
+`suppressHydrationWarning` on `<html>` is required wherever the color-scheme script mutates `data-theme` before hydration. Brand attributes match on server and client and do not themselves require it. Apps that omit color-scheme machinery omit the script, the warning, and the provider color-scheme props. RAC consumers replace `LocaleProvider` with `UiProviders` from `@elmeragroup/fuse/react-aria/ui-providers`; they do not nest both locale providers. `UiProviders` requires a function-valued `navigate` prop, so a Next App Router layout renders a small app-owned `"use client"` wrapper that calls `useRouter()` and passes `url => router.push(url)` — it does not pass a server function through the layout boundary.
 
 ## Host recipes
 

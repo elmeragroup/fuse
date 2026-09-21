@@ -12,7 +12,7 @@ const STYLES = `// app/layout.tsx — once, at the document root
 import "@elmeragroup/fuse/styles.css";
 import "@elmeragroup/fuse/themes.css";`;
 
-const SCAFFOLD = `import { ColorSchemeScript, FuseProvider, ThemeProvider } from "@elmeragroup/fuse/theme";
+const SCAFFOLD = `import { ColorSchemeScript, LocaleProvider, ThemeProvider } from "@elmeragroup/fuse/theme";
 import { defaultDensityForVariant, densityAttributes, themeAttributes } from "@elmeragroup/fuse/theme";
 
 const THEME = { variant: "external", brand: "fkas", segment: "private" } as const;
@@ -29,7 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <ThemeProvider theme={THEME} storageKey="color-scheme" injectColorSchemeScript={false}>
-          <FuseProvider locale="nb-NO">
+          <LocaleProvider locale="nb-NO">
             <a className="skip-link" href="#main">
               Hopp til innholdet
             </a>
@@ -37,7 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <nav aria-label="Hovedmeny">{/* primary navigation */}</nav>
             <main id="main">{children}</main>
             <footer>{/* site footer */}</footer>
-          </FuseProvider>
+          </LocaleProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -7,8 +7,8 @@ import { Meter as MeterPrimitive } from "@base-ui/react/meter";
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { CheckCircle } from "../../icons/generated/check-circle";
 import { Warning } from "../../icons/generated/warning";
+import { useLocale } from "../../intl/locale-context";
 import { cn } from "../../styles/cn";
-import { useFuse } from "../../theme/fuse";
 import { getMeterLevel, meterPercentage } from "./get-meter-level";
 import { meterStrings } from "./intl";
 import type { MeterMode } from "./meter-constants";
@@ -91,7 +91,7 @@ export function Meter({
   className,
   ...props
 }: MeterProps): ReactElement {
-  const { locale } = useFuse();
+  const { locale } = useLocale();
   const strings = useLocalizedStrings(meterStrings);
   const min = minValue ?? 0;
   const max = maxValue ?? 100;

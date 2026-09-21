@@ -7,7 +7,7 @@ import type {
   ColorSchemeScriptProps,
   Density,
   DensityAttributes,
-  FuseProviderProps,
+  LocaleProviderProps,
   ForceColorSchemeProps,
   SupportedLocale,
   ThemeInput,
@@ -75,8 +75,8 @@ test("ThemeInput and ThemeSlug reject illegal pinned-brand permutations", () => 
 
 test("SupportedLocale is the four shipped locales and locale is required", () => {
   expectTypeOf<SupportedLocale>().toEqualTypeOf<"nb-NO" | "sv-SE" | "en-US" | "fi-FI">();
-  expectTypeOf<FuseProviderProps>().toHaveProperty("locale");
-  expectTypeOf<FuseProviderProps["locale"]>().toEqualTypeOf<SupportedLocale>();
+  expectTypeOf<LocaleProviderProps>().toHaveProperty("locale");
+  expectTypeOf<LocaleProviderProps["locale"]>().toEqualTypeOf<SupportedLocale>();
   expectTypeOf<ThemeProviderProps["theme"]>().toEqualTypeOf<ThemeInput>();
   expectTypeOf<ThemeProviderProps>().toHaveProperty("children");
   expectTypeOf<ThemeProviderProps>().toHaveProperty("storageKey");
@@ -100,10 +100,10 @@ test("SupportedLocale is the four shipped locales and locale is required", () =>
   expectTypeOf<ThemeScopeProps>().not.toHaveProperty("density");
 
   // @ts-expect-error locale is required
-  const _missingLocale: FuseProviderProps = { children: null };
+  const _missingLocale: LocaleProviderProps = { children: null };
 
   // @ts-expect-error locale must be one of the four shipped values
-  const _badLocale: FuseProviderProps = { locale: "nn-NO", children: null };
+  const _badLocale: LocaleProviderProps = { locale: "nn-NO", children: null };
 
   const _fkabPrivate: ThemeProviderProps = {
     // @ts-expect-error fkab cannot be private

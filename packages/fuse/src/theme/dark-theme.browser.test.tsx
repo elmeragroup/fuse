@@ -7,9 +7,9 @@ import "../../dist/themes.css";
 import { render } from "../../test/browser-render";
 import { snapshotDocumentTheme, stampDocumentTheme, stampTheme } from "../../test/themed-browser-render";
 import { Dialog } from "../components/dialog/dialog";
+import { LocaleProvider } from "../intl/locale-context";
 import type { ResolvedColorScheme } from "./color-scheme-types";
 import { composeTheme } from "./compose-theme";
-import { FuseProvider } from "./fuse";
 import { ThemeScope } from "./theme-scope";
 import { TOKEN_NAMES } from "./tokens/contract";
 import { LEGAL_THEMES, themeSlug } from "./tokens/themes";
@@ -116,7 +116,7 @@ describe("dark CSS", () => {
       stampTheme(document.documentElement, { variant: "external", brand: "fkas", segment: "company" });
       const theme = { variant, brand: "guen", segment: "private" } as const;
       const { host } = render(
-        <FuseProvider locale="en-US">
+        <LocaleProvider locale="en-US">
           <ThemeScope theme={{ variant: "internal", brand: "elma", segment: "private" }}>
             <ThemeScope theme={theme} role="region" aria-label="Customer account">
               <Dialog.Root>
@@ -128,7 +128,7 @@ describe("dark CSS", () => {
               </Dialog.Root>
             </ThemeScope>
           </ThemeScope>
-        </FuseProvider>
+        </LocaleProvider>
       );
       await userEvent.click(page.getByRole("button", { name: "Open account details" }).element());
       const dialog = page.getByRole("dialog", { name: "Account details" }).element();

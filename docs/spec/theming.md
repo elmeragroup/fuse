@@ -328,7 +328,7 @@ Escape hatch for per-request/multi-theme subtrees (the sms-accept per-customer p
 
 ### 7.7 Locale provider
 
-`FuseProvider` is permanent and exported from `/theme`: `{ locale: SupportedLocale; children: ReactNode }`. It provides a memoized `{ locale }` value; `useFuse()` returns it and throws outside the provider. It performs no browser or user-agent detection. The interim `UiProviders` wrapper is documented by its public JSDoc and the authored docs page under `apps/docs/src/app/(docs)/components/ui-providers/`.
+`LocaleProvider` is permanent and exported from `/theme`: `{ locale: SupportedLocale; children: ReactNode }`. It owns locale, not theming, so the module lives at `src/intl/locale-context.tsx` next to the string machinery ([ADR 0006](../adr/0006-intl-strings.md)); `/theme` re-exports it because that is the one provider entry consumers already import. It provides a memoized `{ locale }` value; `useLocale()` returns it and throws outside the provider. It performs no browser or user-agent detection. The interim `UiProviders` wrapper is documented by its public JSDoc and the authored docs page under `apps/docs/src/app/(docs)/components/ui-providers/`.
 
 ### 7.8 Color-scheme axis
 

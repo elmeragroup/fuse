@@ -14,10 +14,10 @@ import { CaretDown } from "../../icons/generated/caret-down";
 import { Check } from "../../icons/generated/check";
 import { X } from "../../icons/generated/x";
 import { isTextValueNode } from "../../internal/is-text-node";
+import { useLocale } from "../../intl/locale-context";
 import { cn } from "../../styles/cn";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { withinFocusRingClass, withinFocusRingControlClass } from "../../styles/utils";
-import { useFuse } from "../../theme/fuse";
 import { Button } from "../button/button";
 import { InputGroup } from "../input-group/input-group";
 import {
@@ -50,7 +50,7 @@ export type ComboboxRootProps<Value = unknown, Multiple extends boolean | undefi
 function ComboboxRoot<Value = unknown, Multiple extends boolean | undefined = false>(
   props: ComboboxRootProps<Value, Multiple>
 ): ReactElement {
-  const { locale } = useFuse();
+  const { locale } = useLocale();
   const itemToStringLabel = props.itemToStringLabel;
   return (
     <ComboboxItemToStringLabelContext.Provider

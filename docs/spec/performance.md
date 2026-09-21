@@ -94,7 +94,7 @@ Run `pnpm --filter @elmeragroup/fuse pack`, then `pnpm --filter @elmeragroup/fus
   | toggle              | client                                                                                            |
   | toggle-group        | client                                                                                            |
   | tooltip             | client                                                                                            |
-  | ui-providers        | client (`FuseProvider`, `useFuse`, and RAC `RouterProvider` wiring all use React context)         |
+  | ui-providers        | client (`LocaleProvider`, `useLocale`, and RAC `RouterProvider` wiring all use React context)     |
 
   Bespoke SVG icons, illustrations, logos, emoji, flag assets, and curated Phosphor adapters are server-safe. The adapters import the pinned package's explicit `@phosphor-icons/react/dist/ssr/<Icon>` modules, never its client or root barrel ([icons](icons.md) §2); `/icons` is therefore a server-safe, directive-free facade.
 
@@ -108,7 +108,7 @@ Run `pnpm --filter @elmeragroup/fuse pack`, then `pnpm --filter @elmeragroup/fus
   | `ColorSchemeScript`, `colorSchemeScriptSource`                                                                                                                                                  | server     | host-placed first-paint bootstrap. `ColorSchemeScript` stays a server-safe `<script>` renderer so `<head>` placement remains true; `colorSchemeScriptSource` returns closed IIFE text for `transformIndexHtml` / `ScriptOnce` |
   | `ThemeProvider`, `useTheme`, `useColorScheme`, `ForceColorScheme`                                                                                                                               | client     | document writer, hooks, runtime force. Not first-paint adapters                                                                                                                                                               |
   | `ThemeScope`                                                                                                                                                                                    | client     | subtree brand writer                                                                                                                                                                                                          |
-  | `FuseProvider`, `useFuse`                                                                                                                                                                       | client     | locale context                                                                                                                                                                                                                |
+  | `LocaleProvider`, `useLocale`                                                                                                                                                                   | client     | locale context                                                                                                                                                                                                                |
 
   Hosts import the server bootstrap from a server or config module. Importing `ColorSchemeScript` through a client component and rendering it after `createRoot` is not a first-paint path.
 
@@ -134,7 +134,7 @@ Run `pnpm --filter @elmeragroup/fuse pack`, then `pnpm --filter @elmeragroup/fus
   - **Item.Footer** content-reveal **grid track**: `grid-rows` `0fr↔1fr` plus `@starting-style`.
   - **Meter** bar fill: `transition-all` on the absolutely positioned fill (width of the value bar).
 - Each of those exceptions is disabled by the central reduced-motion rule ([accessibility](accessibility.md) §7). New layout-property animation requires a spec amendment and measurement.
-- Context values are **memoized** (`FuseProvider` already does); no context provider re-renders its subtree on unrelated prop churn.
+- Context values are **memoized** (`LocaleProvider` already does); no context provider re-renders its subtree on unrelated prop churn.
 - No per-frame CSS-variable writes on shared ancestors (inherited-var recalc storms); transient interaction state writes `style.transform` on the element itself.
 - Tooltips/popovers reuse base-ui's shared positioning; components never install their own scroll/resize listeners. Overlay positioning listeners belong to base-ui internals.
 - **Document-level listeners the library installs** (and no others):

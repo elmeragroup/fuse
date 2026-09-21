@@ -7,8 +7,8 @@ export type {
   UseColorSchemeResult,
 } from "./theme/color-scheme";
 export { COLOR_SCHEMES } from "./theme/color-scheme-types";
-export { FuseProvider, useFuse } from "./theme/fuse";
-export type { FuseContextValue, FuseProviderProps, SupportedLocale } from "./theme/fuse";
+export { LocaleProvider, useLocale } from "./intl/locale-context";
+export type { LocaleContextValue, LocaleProviderProps, SupportedLocale } from "./intl/locale-context";
 export { ForceColorScheme } from "./theme/force-color-scheme";
 export type { ForceColorSchemeProps } from "./theme/force-color-scheme";
 export { defaultDensityForVariant, densityAttributes } from "./theme/density";

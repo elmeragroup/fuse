@@ -9,11 +9,11 @@ import { InputGroup } from "@elmeragroup/fuse/input-group";
 import { NumberField } from "@elmeragroup/fuse/number-field";
 import { PhoneNumberField } from "@elmeragroup/fuse/phone-number-field";
 import { Textarea } from "@elmeragroup/fuse/textarea";
-import { FuseProvider } from "@elmeragroup/fuse/theme";
+import { LocaleProvider } from "@elmeragroup/fuse/theme";
 
 process.stdout.write(
   renderToStaticMarkup(
-    h(FuseProvider, {
+    h(LocaleProvider, {
       locale: "en-US",
       children: h(
         "div",

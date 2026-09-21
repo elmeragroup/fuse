@@ -199,7 +199,7 @@ describe("bare-entry RAC declaration quarantine", () => {
         { subpath: ".", declaration: 'export { Button } from "./button";\n' },
         {
           subpath: "theme",
-          declaration: 'export type { SupportedLocale } from "./theme/fuse";\n',
+          declaration: 'export type { SupportedLocale } from "./intl/locale-context";\n',
         },
         { subpath: "button", declaration: 'export { Button } from "./components/button/button";\n' },
         {

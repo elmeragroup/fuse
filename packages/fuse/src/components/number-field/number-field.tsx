@@ -9,11 +9,11 @@ import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { useResetRemount } from "../../hooks/use-reset-remount";
 import { CaretDown } from "../../icons/generated/caret-down";
 import { CaretUp } from "../../icons/generated/caret-up";
+import { useLocale } from "../../intl/locale-context";
 import { cn } from "../../styles/cn";
 import { controlInsetMdClass } from "../../styles/control-inset";
 import { numberFieldGroupClass } from "../../styles/field-box";
 import { withinFocusRingControlClass } from "../../styles/utils";
-import { useFuse } from "../../theme/fuse";
 import { FieldFrame } from "../field/field-frame";
 import { numberFieldStrings } from "./intl";
 
@@ -109,7 +109,7 @@ export function NumberField({
   increaseLabel,
   decreaseLabel,
 }: NumberFieldProps): ReactElement {
-  const { locale } = useFuse();
+  const { locale } = useLocale();
   const strings = useLocalizedStrings(numberFieldStrings);
   const numberInputRef = useRef<HTMLInputElement>(null);
   const isControlled = value !== undefined;

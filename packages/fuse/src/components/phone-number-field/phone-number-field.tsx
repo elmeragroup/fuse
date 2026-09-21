@@ -14,9 +14,9 @@ import type { FlagAssetCode } from "../../flags";
 import { useFormReset } from "../../hooks/use-form-reset";
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { MagnifyingGlass } from "../../icons/generated/magnifying-glass";
+import { useLocale } from "../../intl/locale-context";
 import { cn } from "../../styles/cn";
 import { selfFocusRingClass } from "../../styles/utils";
-import { useFuse } from "../../theme/fuse";
 import { Combobox } from "../combobox/combobox";
 import { FieldFrame, fieldFrameRootClass } from "../field/field-frame";
 import { InputGroup } from "../input-group/input-group";
@@ -185,7 +185,7 @@ export function PhoneNumberField({
   const resolvedSelectCountryLabel = selectCountryLabel ?? strings.format("selectCountry");
   const resolvedSearchCountriesLabel = searchCountriesLabel ?? strings.format("searchCountries");
   const resolvedNoCountriesFoundText = noCountriesFoundText ?? strings.format("noCountries");
-  const { locale } = useFuse();
+  const { locale } = useLocale();
 
   const phone = usePhoneNumberFieldState({
     ...stateOptions,

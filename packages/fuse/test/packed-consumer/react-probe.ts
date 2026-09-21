@@ -26,7 +26,7 @@ assert.equal(root.PhoneNumberField, PhoneNumberField);
 assert.equal(root.Button, Button);
 
 const phone = renderToStaticMarkup(
-  React.createElement(root.FuseProvider, {
+  React.createElement(root.LocaleProvider, {
     locale: "en-US",
     children: React.createElement(PhoneNumberField, {
       "aria-label": "Phone",

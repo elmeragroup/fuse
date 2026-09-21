@@ -9,9 +9,9 @@ const HREF = "/handbook/localization";
 
 export const metadata = pageMetadata(HREF);
 
-const PROVIDER = `import { FuseProvider } from "@elmeragroup/fuse/theme";
+const PROVIDER = `import { LocaleProvider } from "@elmeragroup/fuse/theme";
 
-<FuseProvider locale="nb-NO">{children}</FuseProvider>;`;
+<LocaleProvider locale="nb-NO">{children}</LocaleProvider>;`;
 
 const OVERRIDE = `// The dictionary already returns "Ingen resultater." under nb-NO.
 // The prop exists for copy control, not for translation.
@@ -20,7 +20,7 @@ const OVERRIDE = `// The dictionary already returns "Ingen resultater." under nb
 const SWITCHER = `"use client";
 
 import { useState } from "react";
-import { FuseProvider } from "@elmeragroup/fuse/theme";
+import { LocaleProvider } from "@elmeragroup/fuse/theme";
 import type { SupportedLocale } from "@elmeragroup/fuse/theme";
 
 const LOCALES = [
@@ -34,7 +34,7 @@ export function LocalizedApp({ children }: { children: React.ReactNode }) {
   const [locale, setLocale] = useState<SupportedLocale>("nb-NO");
 
   return (
-    <FuseProvider locale={locale}>
+    <LocaleProvider locale={locale}>
       <label>
         <span>Language</span>
         <select
@@ -50,7 +50,7 @@ export function LocalizedApp({ children }: { children: React.ReactNode }) {
         </select>
       </label>
       {children}
-    </FuseProvider>
+    </LocaleProvider>
   );
 }`;
 
@@ -119,7 +119,7 @@ export default function LocalizationPage(): ReactElement {
 
       <h2 id="locale-source">Where locale comes from</h2>
       <p>
-        One place: <code>FuseProvider</code>, whose <code>locale</code> prop is <strong>required</strong>.
+        One place: <code>LocaleProvider</code>, whose <code>locale</code> prop is <strong>required</strong>.
         Apps never pass a locale to an individual component.
       </p>
       <pre>

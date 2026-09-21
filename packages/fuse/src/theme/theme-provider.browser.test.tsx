@@ -14,7 +14,6 @@ import {
   writeManifest,
 } from "../../test/theme-browser-fixtures";
 import { DEFAULT_COLOR_SCHEME_STORAGE_KEY } from "./color-scheme";
-import { FuseProvider, useFuse } from "./fuse";
 import { ThemeProvider, useTheme } from "./theme-provider";
 import { ThemeScope } from "./theme-scope";
 import { ThemeScopeContainerContext, useResolvedPortalContainer } from "./theme-scope-container";
@@ -50,17 +49,6 @@ function ThemeProbe() {
         {theme.variant}-{theme.brand}-{theme.segment}-{theme.slug}
       </span>
     );
-  } catch (error) {
-    return <span>{error instanceof Error ? error.message : "error"}</span>;
-  }
-}
-
-function LocaleProbe() {
-  try {
-    // oxlint-disable-next-line react-hooks/rules-of-hooks -- probe asserts the provider's synchronous throw path; the hook never commits
-    const { locale } = useFuse();
-    // oxlint-disable-next-line react/error-boundaries -- the probe renders the thrown message directly; the hook throws during this render
-    return <span>{locale}</span>;
   } catch (error) {
     return <span>{error instanceof Error ? error.message : "error"}</span>;
   }
@@ -399,41 +387,6 @@ describe("ThemeProvider / ThemeScope", () => {
       expect(host.textContent).toBe("Invalid theme: expected an object with variant, brand, and segment.");
       expect(host.textContent).not.toMatch(/Rendered fewer hooks|Rendered more hooks|hook/i);
     }
-  });
-});
-
-describe("FuseProvider", () => {
-  it("returns the provided locale and throws outside the provider", () => {
-    const { host, rerender } = render(<LocaleProbe />);
-    expect(host.textContent).toBe("useFuse must be used within FuseProvider");
-
-    rerender(
-      <FuseProvider locale="nb-NO">
-        <LocaleProbe />
-      </FuseProvider>
-    );
-    expect(host.textContent).toBe("nb-NO");
-  });
-
-  it("keeps the context value stable across rerenders with the same locale", () => {
-    const seen: object[] = [];
-    function StabilityProbe() {
-      seen.push(useFuse());
-      return null;
-    }
-
-    const { rerender } = render(
-      <FuseProvider locale="sv-SE">
-        <StabilityProbe />
-      </FuseProvider>
-    );
-    rerender(
-      <FuseProvider locale="sv-SE">
-        <StabilityProbe />
-      </FuseProvider>
-    );
-    expect(seen).toHaveLength(2);
-    expect(seen[0]).toBe(seen[1]);
   });
 });
 

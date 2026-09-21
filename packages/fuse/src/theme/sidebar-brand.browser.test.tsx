@@ -2,14 +2,14 @@ import { describe, expect, it } from "vitest";
 
 import { render } from "../../test/browser-render";
 import { Sidebar } from "../components/sidebar/sidebar";
-import { FuseProvider } from "./fuse";
+import { LocaleProvider } from "../intl/locale-context";
 import { generateThemesCss } from "./generate-css";
 import { ThemeScope } from "./theme-scope";
 import type { ThemeVariant } from "./tokens/themes";
 
 function SidebarColors() {
   return (
-    <FuseProvider locale="en-US">
+    <LocaleProvider locale="en-US">
       <Sidebar.Provider>
         <Sidebar.Root collapsible="none">
           <Sidebar.Header
@@ -24,7 +24,7 @@ function SidebarColors() {
           </span>
         </Sidebar.Root>
       </Sidebar.Provider>
-    </FuseProvider>
+    </LocaleProvider>
   );
 }
 

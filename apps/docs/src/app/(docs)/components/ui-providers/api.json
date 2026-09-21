@@ -24,7 +24,7 @@
           "type": "SupportedLocale",
           "shortType": null,
           "defaultValue": null,
-          "description": "Required locale forwarded to `FuseProvider` and RAC `I18nProvider`. One of the four shipped `SupportedLocale` values.",
+          "description": "Required locale forwarded to `LocaleProvider` and RAC `I18nProvider`. One of the four shipped `SupportedLocale` values.",
           "required": true
         },
         {

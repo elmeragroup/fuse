@@ -4,8 +4,8 @@ import type { ReactNode } from "react";
 
 import { I18nProvider, RouterProvider } from "react-aria-components";
 
-import { FuseProvider } from "../../theme/fuse";
-import type { SupportedLocale } from "../../theme/fuse";
+import { LocaleProvider } from "../../intl/locale-context";
+import type { SupportedLocale } from "../../intl/locale-context";
 
 export type UiProvidersProps = {
   /**
@@ -19,7 +19,7 @@ export type UiProvidersProps = {
    */
   navigate: (url: string) => void;
   /**
-   * Required locale forwarded to `FuseProvider` and RAC
+   * Required locale forwarded to `LocaleProvider` and RAC
    * `I18nProvider`. One of the four shipped `SupportedLocale` values.
    */
   locale: SupportedLocale;
@@ -31,11 +31,11 @@ export type UiProvidersProps = {
  */
 export function UiProviders({ children, navigate, locale }: UiProvidersProps) {
   return (
-    <FuseProvider locale={locale}>
+    <LocaleProvider locale={locale}>
       <I18nProvider locale={locale}>
         <RouterProvider navigate={navigate}>{children}</RouterProvider>
       </I18nProvider>
-    </FuseProvider>
+    </LocaleProvider>
   );
 }
 

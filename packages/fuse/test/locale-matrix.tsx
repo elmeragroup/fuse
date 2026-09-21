@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
-import { FuseProvider } from "../src/theme/fuse";
-import type { SupportedLocale } from "../src/theme/fuse";
+import { LocaleProvider } from "../src/intl/locale-context";
+import type { SupportedLocale } from "../src/intl/locale-context";
 
 export const SUPPORTED_LOCALES = [
   "nb-NO",
@@ -11,5 +11,5 @@ export const SUPPORTED_LOCALES = [
 ] as const satisfies readonly SupportedLocale[];
 
 export function withLocale(locale: SupportedLocale, children: ReactNode) {
-  return <FuseProvider locale={locale}>{children}</FuseProvider>;
+  return <LocaleProvider locale={locale}>{children}</LocaleProvider>;
 }

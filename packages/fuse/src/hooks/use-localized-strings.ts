@@ -3,7 +3,7 @@
 import { LocalizedStringFormatter } from "@internationalized/string";
 import type { LocalizedString, LocalizedStringDictionary } from "@internationalized/string";
 
-import { useFuse } from "../theme/fuse";
+import { useLocale } from "../intl/locale-context";
 
 const formattersByDictionary = new WeakMap<
   object,
@@ -30,7 +30,7 @@ function getCachedFormatter<K extends string, T extends LocalizedString>(
 }
 
 /**
- * Package-private string resolution. Locale comes only from FuseProvider.
+ * Package-private string resolution. Locale comes only from LocaleProvider.
  * Explicit component string props override the dictionary at the call site:
  * `override ?? strings.format(key)`. Formatters are cached per dictionary identity
  * and locale so chips, toasts, and pagination edges share one instance.
@@ -38,6 +38,6 @@ function getCachedFormatter<K extends string, T extends LocalizedString>(
 export function useLocalizedStrings<K extends string, T extends LocalizedString>(
   dictionary: LocalizedStringDictionary<K, T>
 ): LocalizedStringFormatter<K, T> {
-  const { locale } = useFuse();
+  const { locale } = useLocale();
   return getCachedFormatter(dictionary, locale);
 }

@@ -8,7 +8,7 @@ Several components carry user-facing or AT-facing strings (combobox empty state,
 
 ## Decision
 
-Adopt **the runtime, not the machinery**. String-bearing components own a co-located `intl/` directory of **plain TS locale modules** (`nb-NO.ts`, `sv-SE.ts`, `en-US.ts`, `fi-FI.ts`), explicitly imported into a per-component dictionary consumed via `LocalizedStringDictionary`/`LocalizedStringFormatter` from `@internationalized/string` (regular dependency). All four locales ship eagerly. Locale comes **only from context**: `FuseProvider` takes a required, union-typed `locale: SupportedLocale`; components read it via an internal hook — apps never pass locale per component. Explicit string props remain on components and **override** the dictionary. No ICU parser ships; plural/number cases use the formatter's helpers with hand-written message functions.
+Adopt **the runtime, not the machinery**. String-bearing components own a co-located `intl/` directory of **plain TS locale modules** (`nb-NO.ts`, `sv-SE.ts`, `en-US.ts`, `fi-FI.ts`), explicitly imported into a per-component dictionary consumed via `LocalizedStringDictionary`/`LocalizedStringFormatter` from `@internationalized/string` (regular dependency). All four locales ship eagerly. Locale comes **only from context**: `LocaleProvider` takes a required, union-typed `locale: SupportedLocale`; components read it via an internal hook — apps never pass locale per component. Explicit string props remain on components and **override** the dictionary. No ICU parser ships; plural/number cases use the formatter's helpers with hand-written message functions.
 
 ## Alternatives rejected
 
@@ -19,7 +19,7 @@ Adopt **the runtime, not the machinery**. String-bearing components own a co-loc
 
 ## Consequences
 
-- `FuseProvider` becomes required for string-bearing components. The internal reference's browser-detection field is intentionally not carried forward; the public provider contains only the typed, load-bearing locale contract.
+- `LocaleProvider` becomes required for string-bearing components. The internal reference's browser-detection field is intentionally not carried forward; the public provider contains only the typed, load-bearing locale contract.
 - Adding a locale = adding one TS module per string-bearing component + widening the `SupportedLocale` union — a mechanical, type-guided change.
 - All shipped locales are in every consumer bundle. Accepted at ≤ ~10 locales; past that, move to per-locale modules kept separate through the build + resolver-level subsetting (react-aria's model). The public API is unchanged by that switch.
 - `SupportedLocale` is the exact four-value public input union, so normal typed use selects a shipped module directly. The dictionary's `en-US` fallback remains defensive runtime behavior for untyped JavaScript input, not an additional supported-locale negotiation contract.

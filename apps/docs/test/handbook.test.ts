@@ -108,7 +108,7 @@ describe("localization page (accessibility.md §4)", () => {
     expect(html).toContain('id="supported-locales"');
     expect(html).toContain('id="override-precedence"');
     expect(html).toContain('id="language-switcher"');
-    expect(html).toContain("FuseProvider");
+    expect(html).toContain("LocaleProvider");
   });
 });
 

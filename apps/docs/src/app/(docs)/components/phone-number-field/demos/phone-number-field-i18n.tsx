@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { PhoneNumberField } from "@elmeragroup/fuse/phone-number-field";
-import { FuseProvider } from "@elmeragroup/fuse/theme";
+import { LocaleProvider } from "@elmeragroup/fuse/theme";
 import type { SupportedLocale } from "@elmeragroup/fuse/theme";
 
 const LOCALES = [
@@ -35,9 +35,9 @@ export function PhoneNumberFieldI18n() {
           ))}
         </select>
       </label>
-      <FuseProvider locale={locale}>
+      <LocaleProvider locale={locale}>
         <PhoneNumberField label="Mobile" />
-      </FuseProvider>
+      </LocaleProvider>
       <PhoneNumberField
         label="Override"
         selectCountryLabel="Pick a country"

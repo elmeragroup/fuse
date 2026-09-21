@@ -10,7 +10,7 @@ import type {
   SidebarProviderProps,
   SidebarRootProps,
 } from "../src/components/sidebar/sidebar";
-import type { SupportedLocale } from "../src/theme/fuse";
+import type { SupportedLocale } from "../src/intl/locale-context";
 import { withLocale } from "./locale-matrix";
 import { TOGGLE_COPY } from "./sidebar-contract";
 
