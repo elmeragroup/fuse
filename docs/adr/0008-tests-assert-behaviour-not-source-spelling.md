@@ -1,6 +1,6 @@
 # 0008 — Tests assert behaviour, not source spelling
 
-Date: 2026-09-02. Status: accepted; amended 2026-09-04 — one-owner spellings are lint `allow` lists, not source-line greps.
+Date: 2026-09-02. Status: accepted; amended 2026-09-04 — one-owner spellings are lint `allow` lists, not source-line greps; amended 2026-09-18 — repo-wide policies with no upstream lint rule yet live as `pnpm test:repo-policy` walkers; amended 2026-09-19 — the release-age exclusion check is a deterministic set assertion, not a timestamped walker; amended 2026-09-21, the aged `@shadcn/lint` exclusion is removed.
 
 ## Context
 
@@ -38,3 +38,9 @@ Phase B added "only this file may spell or import that" contracts as exact-sourc
 - `elmera/no-field-part-jsx` forbids `<Field.Label|Description|Error|Root|Set|Legend` in the labeled composites FieldFrame already owns.
 
 The contracts suite walks the source tree once per run and keeps only what lint cannot see: file absence, RSC classification, and `ownedBy` exactly-one-owner counts for class strings. Exact `export const …` source-line assertions are value assertions against the recipe, or gone.
+
+## Amendment 2026-09-18 — repo-wide policies without an upstream lint rule yet
+
+Repo-wide policies that have no upstream lint rule yet live as `test/*.test.mjs` walkers under `pnpm test:repo-policy`: `module-names` and `lint-disable-reasons`. They are reviewed contracts in the sense above — each exists because no rule upstream owns it. `lint-disable-reasons` retires when `@elmeragroup/internal` anti-slop ships `require-disable-reason`; the `module-names` allowlist entry for `packages/ui/src/styles/utils.ts` retires when the `@elmeragroup/internal` focus-ring rules take the owner path as a rule option.
+
+Two committed-configuration couplings live beside them as direct assertions rather than tree walkers: the `minimumReleaseAgeExclude` set is exactly the catalog-pinned `@elmeragroup/internal` and `effect` versions (no timestamp logic), and the tsconfig-augmentation test names the one config that overrides `types` and checks it keeps the augmentation. _(Amended 2026-09-19; amended 2026-09-21.)_

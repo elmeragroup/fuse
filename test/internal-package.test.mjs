@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { parse } from "yaml";
 
 import { asRecord, asRecordArray, asString, isString, readJsonObject } from "./json-object.mjs";
-import { repoRoot } from "./workflow.mjs";
+import { repoRoot } from "./repo-tree.mjs";
 
 const workspace = asRecord(
   parse(readFileSync(join(repoRoot, "pnpm-workspace.yaml"), "utf8")),
@@ -65,5 +65,13 @@ describe("@elmeragroup/internal", () => {
       "jsPlugins"
     ).map((plugin) => asString(plugin.specifier, "plugin specifier"));
     expect(specifiers).toEqual(["@elmeragroup/internal/oxlint", "@elmeragroup/internal/oxlint/anti-slop"]);
+  });
+});
+
+describe("minimumReleaseAgeExclude", () => {
+  it("holds exactly the catalog-pinned permanent versions", () => {
+    // A malformed extra entry fails the equality rather than being filtered away.
+    const permanent = ["effect", "@elmeragroup/internal"].map((name) => `${name}@${catalogEntry(name)}`);
+    expect(workspace.minimumReleaseAgeExclude).toEqual(permanent);
   });
 });

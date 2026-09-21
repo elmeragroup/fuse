@@ -3,7 +3,7 @@ import type { ComponentProps, ReactElement } from "react";
 import { tv } from "tailwind-variants";
 
 const docsProse = tv({
-  base: "prose prose-sm prose-docs prose-code:font-mono prose-pre:font-mono prose-headings:scroll-mt-[calc(var(--spacing-docs-header)_+_1rem)] max-w-none",
+  base: "prose prose-sm prose-docs prose-headings:scroll-mt-[calc(var(--spacing-docs-header)_+_1rem)] max-w-none",
   variants: {
     context: {
       page: "",

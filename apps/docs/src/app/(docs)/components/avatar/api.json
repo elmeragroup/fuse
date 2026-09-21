@@ -48,6 +48,16 @@
       ]
     },
     {
+      "name": "Avatar.Group",
+      "rsc": "client",
+      "sourcePath": "packages/ui/src/components/avatar/avatar.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
       "name": "Avatar.Image",
       "rsc": "client",
       "sourcePath": "packages/ui/src/components/avatar/avatar.tsx",

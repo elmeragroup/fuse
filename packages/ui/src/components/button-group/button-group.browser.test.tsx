@@ -1,5 +1,3 @@
-import type { CSSProperties } from "react";
-
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -10,8 +8,7 @@ import { Button } from "../button/button";
 import { ButtonGroup } from "./button-group";
 
 /** Browser suites load styles.css only; radius collapsing reads `--radius`. */
-// SAFETY: React's CSSProperties does not model custom properties; the value is a plain string.
-const radiusToken = { "--radius": "8px" } as CSSProperties;
+const radiusToken = { "--radius": "8px" };
 
 function groupNamed(name: string): HTMLElement {
   const element = page.getByRole("group", { name, exact: true }).element();

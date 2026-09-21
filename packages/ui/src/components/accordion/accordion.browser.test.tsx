@@ -7,6 +7,7 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { assertFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
+import { expectPanelHeightTransition } from "../../../test/panel-transition";
 import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
 import { Accordion } from "./accordion";
 
@@ -223,6 +224,12 @@ describe("Accordion", () => {
       ).toBe("true");
     });
     await expect.element(page.getByRole("region", { name: "Shipping" })).toBeInTheDocument();
+  });
+
+  it("animates a keepMounted panel's height open and closed", async () => {
+    renderThemed(<ShippingBilling keepMounted />);
+
+    await expectPanelHeightTransition(htmlControl("Shipping"), "hidden");
   });
 
   it("passes variant and radius from Root to Item, Trigger, and Content via context", () => {

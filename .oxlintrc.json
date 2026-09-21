@@ -3,6 +3,7 @@
   "plugins": ["typescript", "oxc", "import", "unicorn"],
   "jsPlugins": [
     "eslint-plugin-turbo",
+    "@shadcn/lint",
     {
       "name": "elmera",
       "specifier": "@elmeragroup/internal/oxlint"
@@ -129,6 +130,14 @@
   "settings": {
     "react": {
       "version": "19"
+    },
+    "shadcn": {
+      "ui": "@elmeragroup/ui",
+      "ignoreImports": [
+        "^@elmeragroup/ui/(icons|emoji|illustrations|flags|theme)(/|$)",
+        "^@elmeragroup/ui/react-aria/ui-providers$"
+      ],
+      "mergeFunctions": ["mergeClassName"]
     }
   },
   "ignorePatterns": [
@@ -210,6 +219,101 @@
       "rules": {
         "elmera/no-primitive-colors": "error",
         "elmera/no-raw-class-map": "error"
+      }
+    },
+    {
+      "files": ["apps/docs/src/**/*.{ts,tsx}", "apps/static-theme/src/**/*.{ts,tsx}"],
+      "rules": {
+        "shadcn/no-raw-colors": "error",
+        "shadcn/no-inline-styles": "error",
+        "shadcn/no-unknown-classes": ["error", { "allow": ["not-prose"] }]
+      }
+    },
+    {
+      "files": ["packages/ui/src/**/*.{ts,tsx}"],
+      "rules": {
+        "shadcn/no-raw-colors": "error",
+        "shadcn/no-inline-styles": "error",
+        "shadcn/no-unknown-classes": "error"
+      }
+    },
+    {
+      "files": ["packages/ui/src/react-aria/grid-list/grid-list.tsx"],
+      "rules": {
+        "shadcn/no-inline-styles": ["error", { "allow": ["pointerEvents"] }]
+      }
+    },
+    {
+      "files": [
+        "packages/ui/src/icons/**",
+        "packages/ui/src/illustrations/**",
+        "packages/ui/src/components/emoji/**"
+      ],
+      "rules": {
+        "shadcn/no-raw-colors": "off",
+        "shadcn/no-inline-styles": ["error", { "allow": ["maskType"] }]
+      }
+    },
+    {
+      "files": ["apps/docs/src/**/*.{ts,tsx}"],
+      "rules": {
+        "shadcn/no-restyle": [
+          "error",
+          {
+            "allow": ["layout"],
+            "contracts": [
+              {
+                "pattern": "^Collapsible(Trigger|Content)$",
+                "allow": ["layout", "color", "typography", "spacing", "shape", "effects", "motion"],
+                "message": "Collapsible is a headless passthrough (collapsible.tsx) apart from Content's height transition; style it freely or render a Button via `render`."
+              },
+              {
+                "pattern": "^Card(Content|Header|Footer)$|^Dialog(Header|Footer)$|^Field(Root|Item|Set)$",
+                "allow": ["layout", "spacing"]
+              },
+              {
+                "pattern": "^Skeleton$",
+                "allow": ["layout", "rounded"],
+                "message": "Skeleton is a shape-only placeholder: size and radius are yours, colour and motion are its own."
+              },
+              {
+                "pattern": "^ScrollAreaRoot$",
+                "allow": ["layout", "rounded", "border-w", "border-color"]
+              }
+            ]
+          }
+        ],
+        "shadcn/no-arbitrary-values": ["error", { "allow": ["layout", "rounded-[inherit]"] }]
+      }
+    },
+    {
+      "files": ["apps/docs/src/components/docs-inline-code.tsx"],
+      "rules": {
+        "shadcn/no-arbitrary-values": ["error", { "allow": ["py-[0.1em]", "px-[0.35em]"] }]
+      }
+    },
+    {
+      "files": ["apps/docs/src/components/token-swatch-list.tsx"],
+      "rules": {
+        "shadcn/no-arbitrary-values": [
+          "error",
+          {
+            "allow": [
+              "layout",
+              "bg-[repeating-linear-gradient(45deg,transparent,transparent_3px,color-mix(in_oklab,var(--foreground)_14%,transparent)_3px,color-mix(in_oklab,var(--foreground)_14%,transparent)_6px)]"
+            ]
+          }
+        ],
+        "shadcn/no-inline-styles": ["error", { "allow": ["backgroundColor"] }]
+      }
+    },
+    {
+      "files": ["**/*.test.{ts,tsx}", "**/*.test-d.{ts,tsx}"],
+      "rules": {
+        "shadcn/no-inline-styles": "off",
+        "shadcn/no-unknown-classes": "off",
+        "shadcn/no-restyle": "off",
+        "shadcn/no-arbitrary-values": "off"
       }
     },
     {

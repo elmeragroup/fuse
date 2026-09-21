@@ -39,6 +39,10 @@ Brand is a controlled host value: spread `themeAttributes(theme)` on `<html>` an
 
 Workspace apps import the same public subpaths. Do not deep-import `src/` internals.
 
+## Custom properties
+
+Component `style` props accept React's `CSSProperties`; to pass a custom property such as `--sidebar-width` without a cast, augment csstype's `Properties` interface in your app, with `csstype` installed so the augmentation resolves from the augmenting file — workspace apps inherit the augmentation from `@elmeragroup/typescript-config`.
+
 ## Flag assets
 
 PhoneNumberField and `@elmeragroup/ui/flags` use local external SVG images. Vite 8.2.1 production builds preserve them with default asset settings, including a non-root `base`; no `assetsInlineLimit` override is needed. The generated URLs include a `?no-inline` asset hint before bundling. Treat each value as an opaque image URL. Other bundlers must preserve external URL assets or disable asset inlining in their configuration.

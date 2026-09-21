@@ -1,14 +1,11 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { expect } from "vitest";
 import { parse } from "yaml";
 
 import { asRecord, asRecordArray, asString } from "./json-object.mjs";
-
-/** Repository root, shared by the workflow suites. */
-export const repoRoot = fileURLToPath(new URL("..", import.meta.url));
+import { repoRoot } from "./repo-tree.mjs";
 
 /** @param {string} name */
 export function readWorkflow(name) {

@@ -7,15 +7,15 @@ const docsTable = tv({
     wrap: "not-prose mb-[1.2rem] overflow-x-auto",
     root: "text-sm w-full border-collapse",
     headerCell:
-      "text-xs font-medium border-b border-border py-[0.45rem] pl-0 align-top text-muted-foreground normal-case",
-    bodyCell: "border-b border-border py-[0.45rem] pl-0 align-top",
+      "text-xs font-medium border-b border-border py-2 pl-0 align-top text-muted-foreground normal-case",
+    bodyCell: "border-b border-border py-2 pl-0 align-top",
     caption: "text-xs caption-top pb-2 text-left text-muted-foreground",
   },
   variants: {
     numeric: {
       false: {
-        headerCell: "pr-[0.7rem] text-left",
-        bodyCell: "pr-[0.7rem] text-left",
+        headerCell: "pr-3 text-left",
+        bodyCell: "pr-3 text-left",
       },
       true: {
         headerCell: "pr-0 text-right font-mono whitespace-nowrap tabular-nums",

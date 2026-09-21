@@ -4,7 +4,7 @@ Normative chapter for `@elmeragroup/ui`.
 
 ## 1 Principles
 
-- Budgets are **regression ratchets, not aspirations**: every published entry has a CI-enforced ceiling. **Per-component and per-icon** ceilings only move **down** (or are consciously raised in a reviewed PR that says why). **Shared/aggregate** entries (`styles.css`, the root barrel `.`) are the exception: they recalibrate to measured×1.5 in the PR that grows them (§2).
+- Budgets are **regression ratchets, not aspirations**: every published entry has a CI-enforced ceiling. **Per-component and per-icon** ceilings only move **down** (or are consciously raised in a reviewed PR that says why). **Shared/aggregate** entries (`styles.css`, the root barrel `.`) are the exception: they recalibrate to measured×1.5 in the change whose measurement exceeds the standing ceiling (§2). _(amended 2026-09-21)_
 - The library never trades app control for its own convenience: no internal lazy boundaries or self-scheduled work. Approved global listeners are enumerated in §6.
 - Weight is opt-in by architecture: per-icon exports, subpath entries, optional peers — importing `Button` must never pay for `Chart`.
 
@@ -15,7 +15,7 @@ Normative chapter for `@elmeragroup/ui`.
 - `size-limit` bundles consumer fixtures against the packed package and measures min+gzip. It exercises the exported dependency graph, excludes peers, and fails on a ceiling breach. Measuring an unbundled source facade is insufficient.
 - A new entry starts at measured × 1.5. Deferred entries have no published budget until they ship; the future chart measurement excludes its optional recharts peer.
 - Per-component and per-icon ceilings remain fixed as measurements grow beneath them. Raising a ceiling requires an explicit reviewed reason.
-- Shared entries, including `styles.css` and the root barrel, recalibrate to measured × 1.5 in a change that grows them.
+- Shared entries, including `styles.css` and the root barrel, recalibrate to measured × 1.5 in the change whose measurement exceeds the standing ceiling. _(amended 2026-09-21)_
 - When an entry shrinks, reduce its ceiling by the bytes saved to preserve its existing headroom. Record the new measurement without adding slack.
 - Flag assets have count, hash, and aggregate raw-byte checks. The packed Vite consumer also checks that flags remain external assets, stay out of JavaScript data URLs, and satisfy its JavaScript payload ceiling. Entry-level gzip checks alone cannot catch consumer-side asset inlining.
 
@@ -128,7 +128,7 @@ Run `pnpm --filter @elmeragroup/ui pack`, then `pnpm --filter @elmeragroup/ui si
 ## 6 Runtime practices
 
 - Animations touch **`transform` and `opacity` only** by default. Layout-property animations the library itself installs (the reviewed v1 exceptions) are:
-  - **Accordion.Content** panel **height**: `transition-[height] duration-200` against base-ui's `--accordion-panel-height`. Collapsible does **not** install a height transition; it is an unstyled passthrough that exposes `--collapsible-panel-height` / `--collapsible-panel-width` for consumers.
+  - **Accordion.Content** and **Collapsible.Content** panel **height**: the one shared `panelHeightTransition` constant (`styles/panel-height.ts`), 150 ms ease-out keyed on base-ui's `data-starting-style` / `data-ending-style` against `--accordion-panel-height` / `--collapsible-panel-height`. Collapsible stays an unstyled passthrough apart from that transition, which consumers can override through `Content`'s `className`, and still exposes `--collapsible-panel-width`. The central `prefers-reduced-motion` rule in `ui.css` strips `height` from `transition-property`.
   - **Accordion** default-variant Trigger **padding-bottom**: `transition-[padding-bottom]`.
   - **Sidebar** shell **width** during its 200 ms expand/collapse: gap and container `transition-[width] duration-200 ease-linear`. Offcanvas `left`/`right` offset, Rail position, and GroupLabel `-mt-8` snap. MenuButton color/background/box-shadow and GroupLabel opacity are non-layout.
   - **Item.Footer** content-reveal **grid track**: `grid-rows` `0fr↔1fr` plus `@starting-style`.

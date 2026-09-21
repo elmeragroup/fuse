@@ -1,7 +1,8 @@
 ---
 title: Collapsible
 lede: >
-  A single expandable section, with no styling of its own. Accordion is the styled version.
+  A single expandable section, with no styling of its own beyond the open/close height transition.
+  Accordion is the styled version.
 ---
 
 import { CollapsibleBasic } from "./demos/collapsible-basic";
@@ -13,6 +14,11 @@ import { componentMetadata } from "../../../../lib/component-page";
 export const metadata = componentMetadata("collapsible");
 
 <ComponentIntro slug="collapsible" />
+
+`Collapsible.Content` clips content that escapes the settled panel box, including popovers,
+absolutely positioned children, and focus rings past the edge. To disable both clipping and the
+height transition, set its `className` to
+`h-auto data-starting-style:h-auto data-ending-style:h-auto overflow-visible transition-none`.
 
 <Demo slug="collapsible" id="basic" title="Basic" file="collapsible-basic.tsx">
   <CollapsibleBasic />

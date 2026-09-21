@@ -15,15 +15,18 @@ export type TokenSwatchListProps = {
 
 const tokenSwatchList = tv({
   slots: {
-    list: "not-prose m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(190px,1fr))] gap-[0.35rem_1rem] p-0",
-    item: "[&_code]:text-xs flex min-w-0 items-center gap-2 [&_code]:overflow-hidden [&_code]:font-mono [&_code]:text-ellipsis [&_code]:whitespace-nowrap [&_code]:text-foreground",
+    list: "not-prose m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(190px,1fr))] gap-x-4 gap-y-1.5 p-0",
+    item: "flex min-w-0 items-center gap-2",
+    itemCode: "text-xs overflow-hidden text-ellipsis whitespace-nowrap text-foreground",
     swatch: "size-[0.85rem] flex-none rounded-md border border-foreground/18",
+    // The empty-swatch hatch has no scale neighbour; `.oxlintrc.json` allows its
+    // off-scale gradient for this file instead of declaring a CSS utility.
     swatchEmpty:
       "size-[0.85rem] flex-none rounded-md border border-foreground/18 bg-[repeating-linear-gradient(45deg,transparent,transparent_3px,color-mix(in_oklab,var(--foreground)_14%,transparent)_3px,color-mix(in_oklab,var(--foreground)_14%,transparent)_6px)]",
   },
 });
 
-const { list, item, swatch, swatchEmpty } = tokenSwatchList();
+const { list, item, itemCode, swatch, swatchEmpty } = tokenSwatchList();
 
 /**
  * The one way this site lists custom properties: a swatch beside the token name.
@@ -43,13 +46,13 @@ export function TokenSwatchList({ tokens }: TokenSwatchListProps): ReactElement 
             <span
               className={swatch()}
               data-token-swatch
-              style={{ background: `var(${token.name})` }}
+              style={{ backgroundColor: `var(${token.name})` }}
               aria-hidden="true"
             />
           ) : (
             <span className={swatchEmpty()} data-token-swatch aria-hidden="true" />
           )}
-          <code>{token.name}</code>
+          <code className={itemCode()}>{token.name}</code>
         </li>
       ))}
     </ThemeScope>

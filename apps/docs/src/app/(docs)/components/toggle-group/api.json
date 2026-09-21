@@ -107,13 +107,11 @@
         },
         {
           "name": "style",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "CSSProperties | ((state: ToggleGroupState) => CSSProperties | undefined) | undefined",
-          "shortType": "function",
+          "origin": "declared",
+          "type": "CSSProperties | undefined",
+          "shortType": null,
           "defaultValue": null,
-          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "description": "Inline styles, merged after the library's `--gap` custom property.",
           "required": false
         },
         {

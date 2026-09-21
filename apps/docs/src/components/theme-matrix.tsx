@@ -21,9 +21,9 @@ const themeMatrix = tv({
   slots: {
     grid: "not-prose m-[1.4rem_0_2rem] grid grid-cols-[repeat(auto-fill,minmax(210px,1fr))] gap-px overflow-hidden rounded-xl border border-border bg-border",
     cell: "flex min-w-0 flex-col bg-background",
-    slug: "text-xs overflow-hidden border-b border-border px-3 py-2 font-mono tracking-[0.01em] text-ellipsis whitespace-nowrap text-muted-foreground",
-    surface: "flex flex-col gap-[0.55rem] p-[0.85rem_0.75rem_1rem] text-foreground",
-    row: "flex flex-wrap items-center gap-[0.4rem]",
+    slug: "text-xs overflow-hidden border-b border-border px-3 py-2 font-mono text-ellipsis whitespace-nowrap text-muted-foreground",
+    surface: "flex flex-col gap-2 px-3 pt-3.5 pb-4 text-foreground",
+    row: "flex flex-wrap items-center gap-1.5",
     controls: "not-prose flex flex-wrap items-center gap-2",
     control: "min-h-10",
   },

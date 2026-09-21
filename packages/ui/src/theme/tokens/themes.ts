@@ -38,7 +38,7 @@ export const BRANDS = {
   }
 >;
 
-// oxlint-disable-next-line anti-slop/no-unknown-parameters
+// oxlint-disable-next-line anti-slop/no-unknown-parameters -- public predicate over untyped axis values
 export function isBrandCode(value: unknown): value is BrandCode {
   return BRAND_CODES.some((code) => code === value);
 }

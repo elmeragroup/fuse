@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { Avatar } from "./avatar";
 
-describe("Avatar root classes", () => {
+describe("Avatar classes", () => {
   it("paints from muted tokens and never a raw gray palette class", () => {
     const html = renderToStaticMarkup(
       createElement(Avatar.Root, null, createElement(Avatar.Fallback, null, "AL"))
@@ -24,5 +24,18 @@ describe("Avatar root classes", () => {
     );
     expect(html).toContain("size-10");
     expect(html).not.toContain("size-8");
+  });
+
+  it("stacks group children with negative spacing and the separating ring", () => {
+    const html = renderToStaticMarkup(
+      createElement(
+        Avatar.Group,
+        null,
+        createElement(Avatar.Root, null, createElement(Avatar.Fallback, null, "AL"))
+      )
+    );
+    expect(html).toContain('data-slot="avatar-group"');
+    expect(html).toContain("-space-x-2");
+    expect(html).toContain("ring-background");
   });
 });

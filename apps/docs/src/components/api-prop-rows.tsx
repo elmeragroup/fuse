@@ -15,11 +15,11 @@
  */
 
 import { useEffect, useState } from "react";
-import type { CSSProperties, MouseEvent, ReactElement } from "react";
+import type { MouseEvent, ReactElement } from "react";
 
 import type { ApiPropView } from "../lib/api-row";
-import { NO_DEFAULT } from "../lib/api-row";
 import { ApiRows } from "./api-rows";
+import { DocsInlineCode } from "./docs-inline-code";
 import { InlineCode } from "./inline-code";
 
 export type ApiPropRowsProps = {
@@ -66,19 +66,12 @@ function ApiPropRow({ prop, open, onClose }: ApiPropRowProps): ReactElement {
             event.preventDefault();
           }
         }}>
-        <ApiRows.Cell column="name">
-          <code>{prop.name}</code>
+        <ApiRows.Cell column="name" code={prop.name}>
           {prop.required ? <ApiRows.Required title="Required">*</ApiRows.Required> : null}
         </ApiRows.Cell>
-        <ApiRows.Cell column="type">
-          <code>{prop.closedType}</code>
-        </ApiRows.Cell>
-        <ApiRows.Cell column="default">
-          {prop.defaultValue === null ? (
-            <ApiRows.NoDefault>{NO_DEFAULT}</ApiRows.NoDefault>
-          ) : (
-            <code>{prop.defaultValue}</code>
-          )}
+        <ApiRows.Cell column="type" code={prop.closedType} />
+        <ApiRows.Cell column="default" code={prop.defaultValue}>
+          {prop.defaultValue === null ? <ApiRows.NoDefault /> : null}
         </ApiRows.Cell>
         <ApiRows.ChevronCell aria-hidden>
           <ApiRows.Chevron />
@@ -89,9 +82,9 @@ function ApiPropRow({ prop, open, onClose }: ApiPropRowProps): ReactElement {
           <ApiRows.PanelItem>
             <ApiRows.Term>Name</ApiRows.Term>
             <ApiRows.Definition>
-              <ApiRows.PropLink href={`#${prop.id}`}>
-                <code>{prop.name}</code>
-              </ApiRows.PropLink>
+              <a href={`#${prop.id}`}>
+                <DocsInlineCode>{prop.name}</DocsInlineCode>
+              </a>
               {prop.required ? " · required" : null}
             </ApiRows.Definition>
           </ApiRows.PanelItem>
@@ -118,9 +111,9 @@ function ApiPropRow({ prop, open, onClose }: ApiPropRowProps): ReactElement {
             <ApiRows.Term>Default</ApiRows.Term>
             <ApiRows.Definition>
               {prop.defaultValue === null ? (
-                <ApiRows.NoDefault>{NO_DEFAULT}</ApiRows.NoDefault>
+                <ApiRows.NoDefault />
               ) : (
-                <code>{prop.defaultValue}</code>
+                <DocsInlineCode>{prop.defaultValue}</DocsInlineCode>
               )}
             </ApiRows.Definition>
           </ApiRows.PanelItem>
@@ -165,9 +158,7 @@ export function ApiPropRows({ partName, props }: ApiPropRowsProps): ReactElement
       aria-label={`${partName}: name, type, default. Each row expands.`}
       // Lets CSS size the offscreen placeholder from the real row count, so a long page's
       // skipped reference blocks do not collapse the scrollbar (`content-visibility: auto`).
-      // SAFETY: `CSSProperties` has no index signature for custom properties, and React
-      // passes an unknown `--*` key straight through to the inline style attribute.
-      style={{ "--api-rows": props.length } as CSSProperties}>
+      style={{ "--api-rows": props.length }}>
       <ApiRows.Header aria-hidden>
         <ApiRows.HeaderCell column="prop">Prop</ApiRows.HeaderCell>
         <ApiRows.HeaderCell column="type">Type</ApiRows.HeaderCell>

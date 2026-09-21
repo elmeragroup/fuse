@@ -28,11 +28,18 @@ function workStem(name: string): string {
   return name.replaceAll("/", "-");
 }
 
+/**
+ * Budget breaches collected across the run so one failing measurement reports every overage
+ * instead of stopping at the first. Structural errors (a missing packed entry) still throw
+ * immediately, because no measurement can follow them.
+ */
+const breaches: string[] = [];
+
 function reportBudget(name: string, bytes: number, ceiling: number, unit: string): void {
   console.log(`${name}: ${bytes} ${unit} (ceiling ${ceiling})`);
-  const message = budgetFailure(name, bytes, ceiling);
-  if (message !== undefined) {
-    throw new Error(message);
+  const failure = budgetFailure(name, bytes, ceiling);
+  if (failure !== undefined) {
+    breaches.push(failure);
   }
 }
 
@@ -127,6 +134,9 @@ try {
       checkFlagRaw(extracted, budget.name, budget.ceilingBytes);
     }
   });
+  if (breaches.length > 0) {
+    throw new Error(`size budgets failed:\n${breaches.join("\n")}`);
+  }
 } catch (error) {
   fail(error instanceof Error ? error.message : String(error));
 }

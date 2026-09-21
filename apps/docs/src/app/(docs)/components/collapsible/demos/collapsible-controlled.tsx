@@ -17,7 +17,7 @@ export function CollapsibleControlled() {
         <Collapsible.Trigger className="font-medium rounded-md px-2 py-1 hover:bg-foreground/5">
           Toggle panel
         </Collapsible.Trigger>
-        <Collapsible.Content className="h-0 overflow-hidden transition-[height] data-open:h-(--collapsible-panel-height)">
+        <Collapsible.Content>
           <p className="pt-2">Controlled from the button above and from the trigger.</p>
         </Collapsible.Content>
       </Collapsible.Root>

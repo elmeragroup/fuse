@@ -7,8 +7,8 @@ import { buttonVariants } from "../../components/button/button-variants";
 import { numberFieldGroupClass } from "../../styles/field-box";
 import { fieldBox, fieldBoxChromeClass } from "../../styles/field-box";
 import { checkboxVariants } from "./checkbox";
+import { composeTailwindRenderProps } from "./compose-tailwind-render-props";
 import { fieldGroupVariants } from "./field";
-import { composeTailwindRenderProps } from "./utils";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const packageRoot = join(here, "../../..");

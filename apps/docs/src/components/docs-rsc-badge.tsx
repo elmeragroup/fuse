@@ -5,7 +5,7 @@ import { tv } from "tailwind-variants";
 import type { RscStatus } from "../lib/docs-model";
 
 const docsRscBadge = tv({
-  base: "text-xs rounded-full border border-border px-[0.55em] py-[0.15em] font-mono text-muted-foreground",
+  base: "text-xs rounded-full border border-border px-1.5 py-0.5 font-mono text-muted-foreground",
   variants: {
     variant: {
       intro: "",

@@ -110,8 +110,7 @@ function DocumentThemeWriter({
     }
     // Skip unforced preference writes until mounted so the host bootstrap is not overwritten.
     store.applyDocument();
-    // Axis primitives, not object identity: equal inline theme literals must not rewrite the document.
-    // oxlint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- axis primitives are the equality key; equal inline theme literals must not rewrite the document
   }, [injectColorSchemeScript, options, runtimeConfig, store, themeVariant, themeBrand, themeSegment]);
 
   useEffect(() => {

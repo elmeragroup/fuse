@@ -120,4 +120,54 @@ describe("Avatar", () => {
     }
     expect(getComputedStyle(avatar).width).toBe("40px");
   });
+
+  it("stacks group avatars with a background-coloured separating ring", () => {
+    renderThemed(
+      <Avatar.Group>
+        <Avatar.Root>
+          <Avatar.Fallback>AL</Avatar.Fallback>
+        </Avatar.Root>
+        <Avatar.Root>
+          <Avatar.Fallback>GH</Avatar.Fallback>
+        </Avatar.Root>
+      </Avatar.Group>
+    );
+
+    // DOM audit: the group and root parts emit data-slot; the stack overlap and ring are the
+    // group's observable contract, and both avatars share the same part markup.
+    const group = document.querySelector('[data-slot="avatar-group"]');
+    if (!(group instanceof HTMLElement)) {
+      throw new Error("expected the avatar group");
+    }
+    const avatars = [...group.querySelectorAll('[data-slot="avatar"]')];
+    const [first, second] = avatars;
+    if (!(first instanceof HTMLElement) || !(second instanceof HTMLElement)) {
+      throw new Error("expected two avatar roots");
+    }
+    expect(getComputedStyle(group).display).toBe("flex");
+    expect(second.getBoundingClientRect().left).toBeLessThan(first.getBoundingClientRect().right);
+    expect(getComputedStyle(first).boxShadow).toContain("2px");
+    expect(getComputedStyle(first).boxShadow).toContain(cssVarColor(first, "--background"));
+  });
+
+  it("lets an explicit child ring utility override the group's ring", () => {
+    const { rerender } = renderThemed(
+      <Avatar.Group>
+        <Avatar.Root className="ring-0">
+          <Avatar.Fallback>AL</Avatar.Fallback>
+        </Avatar.Root>
+      </Avatar.Group>
+    );
+    expect(getComputedStyle(slot("avatar")).boxShadow).not.toContain("2px");
+
+    rerender(
+      <Avatar.Group>
+        <Avatar.Root className="ring-1 ring-foreground">
+          <Avatar.Fallback>AL</Avatar.Fallback>
+        </Avatar.Root>
+      </Avatar.Group>
+    );
+    const ringed = slot("avatar");
+    expect(getComputedStyle(ringed).boxShadow).toContain("1px");
+  });
 });

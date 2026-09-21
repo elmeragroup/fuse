@@ -12,8 +12,8 @@ import type {
 import type { OverlayContainerProps } from "../../components/overlay/overlay-props";
 import { pickerVariants } from "../../styles/picker";
 import { DateInput } from "../date-field/date-field";
+import { composeTailwindRenderProps } from "../internal/compose-tailwind-render-props";
 import { PickerShell } from "../internal/picker-shell";
-import { composeTailwindRenderProps } from "../internal/utils";
 import { RangeCalendar } from "../range-calendar/range-calendar";
 
 /**

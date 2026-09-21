@@ -2,11 +2,13 @@ import type { ComponentProps, ReactElement } from "react";
 
 import { cn } from "../../styles/cn";
 
+/** Public props for `Skeleton`: native div attributes. Size and radius come through `className`. */
 export type SkeletonProps = ComponentProps<"div">;
 
 /**
- * Shape-only loading placeholder. Server component — it owns no
- * state, no handlers, and no browser APIs (performance.md §RSC classification).
+ * Shape-only loading placeholder. Size and radius are the caller's through `className`; the pulse
+ * and muted surface are the component's. Server component — it owns no state, no handlers, and no
+ * browser APIs (performance.md §RSC classification).
  */
 export function Skeleton({ className, ...props }: SkeletonProps): ReactElement {
   return (

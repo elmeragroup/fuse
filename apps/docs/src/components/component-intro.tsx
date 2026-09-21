@@ -15,12 +15,12 @@ export type ComponentIntroProps = {
 
 const componentIntro = tv({
   slots: {
-    importLine:
-      "[&_code]:text-xs m-[1rem_0_0] flex flex-wrap items-center gap-[0.55rem] [&_code]:rounded-lg [&_code]:border [&_code]:border-border [&_code]:bg-muted [&_code]:px-[0.6em] [&_code]:py-[0.4em] [&_code]:font-mono",
+    importLine: "m-[1rem_0_0] flex flex-wrap items-center gap-2",
+    importCode: "text-xs rounded-lg border border-border bg-muted px-2 py-1",
   },
 });
 
-const { importLine } = componentIntro();
+const { importLine, importCode } = componentIntro();
 
 /**
  * The head of a component page (docs-site.md §3.4, items 1–2): H1, the lede from the
@@ -42,7 +42,9 @@ export function ComponentIntro({ slug }: ComponentIntroProps): ReactElement {
         sourcePath={component.sourcePath}
       />
       <p className={importLine()}>
-        <code>{`import { ${component.exportName} } from "${component.entry}";`}</code>
+        <code className={importCode()}>
+          {`import { ${component.exportName} } from "${component.entry}";`}
+        </code>
         <DocsRscBadge rsc={component.rsc}>{component.rsc}</DocsRscBadge>
       </p>
     </>

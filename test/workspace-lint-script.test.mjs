@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { asRecord, asRecordArray, asString, isString, readJsonObject } from "./json-object.mjs";
-import { repoRoot } from "./workflow.mjs";
+import { repoRoot } from "./repo-tree.mjs";
 
 /**
  * @param {Record<string, unknown>} override
@@ -94,5 +94,24 @@ describe("workspace lint script", () => {
     expect(
       asRecord(dictionaryFactoryOverride?.rules, "dictionary factory override rules")["no-restricted-imports"]
     ).toBe("off");
+
+    const shadcnOverrideIndexes = overrides.flatMap((entry, index) =>
+      Object.keys(asRecord(entry.rules, "override rules")).some((rule) => rule.startsWith("shadcn/"))
+        ? [index]
+        : []
+    );
+    const testExemptionIndex = overrides.findIndex((entry) =>
+      overrideFiles(entry).includes("**/*.test.{ts,tsx}")
+    );
+    // Last-wins: the test exemption must be the final override that names a shadcn rule.
+    expect(testExemptionIndex).toBe(shadcnOverrideIndexes.at(-1));
+
+    // Deliberately off (tooling.md §4): the rule must not be named at the root or in any override.
+    expect(rules["shadcn/require-static-classes"]).toBeUndefined();
+    expect(
+      overrides.filter((entry) =>
+        Object.hasOwn(asRecord(entry.rules, "override rules"), "shadcn/require-static-classes")
+      )
+    ).toEqual([]);
   });
 });

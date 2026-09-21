@@ -19,9 +19,14 @@ type ToggleGroupContextValue = VariantProps<typeof toggleVariants> & {
 // Do not copy the ref's non-undefined createContext values.
 const ToggleGroupContext = createContext<ToggleGroupContextValue>({});
 
-export type ToggleGroupRootProps = Omit<ComponentProps<typeof ToggleGroupPrimitive>, "className"> & {
+export type ToggleGroupRootProps = Omit<
+  ComponentProps<typeof ToggleGroupPrimitive>,
+  "className" | "style"
+> & {
   /** Extra classes, merged last through `cn`. */
   className?: string;
+  /** Inline styles, merged after the library's `--gap` custom property. */
+  style?: CSSProperties;
   /**
    * Tailwind spacing units between items. `0` is segmented-control mode
    * @default 2
@@ -61,8 +66,7 @@ function ToggleGroupRoot({
       data-size={size}
       data-spacing={spacing}
       data-orientation={orientation}
-      // SAFETY: React's CSSProperties does not model custom properties; `--gap` is a plain number.
-      style={{ "--gap": spacing, ...(style as CSSProperties | undefined) } as CSSProperties}
+      style={{ "--gap": spacing, ...style }}
       className={cn(
         "group/toggle-group data-[spacing=0]:data-[variant=outline]:shadow-xs flex w-fit flex-row items-center gap-[--spacing(var(--gap))] rounded-md data-vertical:flex-col data-vertical:items-stretch",
         className

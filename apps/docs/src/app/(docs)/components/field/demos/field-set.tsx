@@ -9,13 +9,13 @@ export function FieldSetDemo() {
       <Field.Legend>Notifications</Field.Legend>
       <Field.Root>
         <Field.Item>
-          <Field.Label className="flex items-center gap-2">
+          <Field.Label>
             <Checkbox defaultChecked />
             Email
           </Field.Label>
         </Field.Item>
         <Field.Item>
-          <Field.Label className="flex items-center gap-2">
+          <Field.Label>
             <Checkbox />
             SMS
           </Field.Label>

@@ -19,7 +19,7 @@ test("SkeletonProps is ComponentProps of a div so ref passes through", () => {
 });
 
 test("the element takes native div props and no namespace or as prop", () => {
-  const _sized = <Skeleton className="h-4 w-full max-w-24" id="line" data-loading="row" />;
+  const _sized = <Skeleton className="h-4 w-full max-w-24 rounded-full" id="line" data-loading="row" />;
   const _ref = <Skeleton ref={null} />;
 
   expectTypeOf(Skeleton).not.toHaveProperty("Root");

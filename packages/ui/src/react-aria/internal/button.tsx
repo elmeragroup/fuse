@@ -6,7 +6,7 @@ import { Button as AriaButton } from "react-aria-components";
 import type { VariantProps } from "tailwind-variants";
 
 import { buttonVariants } from "../../components/button/button-variants";
-import { composeTailwindRenderProps } from "./utils";
+import { composeTailwindRenderProps } from "./compose-tailwind-render-props";
 
 /**
  * The private RAC Button exists solely because RAC slots — the DatePicker trigger and
