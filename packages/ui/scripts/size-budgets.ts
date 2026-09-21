@@ -52,9 +52,9 @@ function derive<T extends MeasuredRow>(rows: readonly T[]): Array<T & { ceilingG
 // 2026-09-19: all rows re-measured against the pinned toolchain. Growth below a written ceiling
 // keeps it; shrink ratchets it down by the saved bytes (scroll-area −73, illustrations −10,
 // sidebar −76). Collapsible measures 27627 (+351), still under its standing ceiling — no shrink to
-// record. The shared root barrel grew, so it recalibrates to measured × 1.5 (performance.md §2).
+// record. The shared root barrel grew within its standing ceiling, which stays unchanged (performance.md §2).
 export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
-  { name: ".", entryFile: "index.js", measuredGzip: 234557, ceilingGzip: 351836 },
+  { name: ".", entryFile: "index.js", measuredGzip: 234557, ceilingGzip: 257843 },
   { name: "theme", entryFile: "theme.js", measuredGzip: 6197, ceilingGzip: 9194 },
   { name: "badge", entryFile: "badge.js", measuredGzip: 15739, ceilingGzip: 23493 },
   { name: "button", entryFile: "button.js", measuredGzip: 25571, ceilingGzip: 37821 },
@@ -209,10 +209,10 @@ export const CSS_BUDGETS: readonly CssBudget[] = derive([
   // 2026-09-17: dark external company rules materialize the full reset set, so the cascade no
   // longer depends on emission order. themes.css re-measured at 4472 (+29 gzip over the
   // 2026-09-15 record); no token values changed and the ceiling stays at 6416.
-  // 2026-09-19: styles.css re-measured at 23421 (+456). As a shared entry it recalibrates to
-  // measured × 1.5 = 35132 (performance.md §2); themes.css is unchanged at 4472/6416.
+  // 2026-09-19: styles.css re-measured at 23421 (+456), within its standing ceiling of 24466
+  // (performance.md §2); themes.css is unchanged at 4472/6416.
   { name: "themes.css", file: "themes.css", measuredGzip: 4472, ceilingGzip: 6416 },
-  { name: "styles.css", file: "styles.css", measuredGzip: 23421, ceilingGzip: 35132 },
+  { name: "styles.css", file: "styles.css", measuredGzip: 23421, ceilingGzip: 24466 },
 ] satisfies readonly Measured<CssBudget>[]);
 
 export const FLAG_RAW_BUDGETS: readonly FlagRawBudget[] = [
