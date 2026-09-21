@@ -1,6 +1,6 @@
 "use client";
 
-import { Text } from "@elmeragroup/ui/text";
+import { Text } from "@elmeragroup/fuse/text";
 
 const LEADINGS = ["none", "tight", "snug", "relaxed", "loose"] as const;
 const WEIGHTS = ["normal", "medium", "bold"] as const;

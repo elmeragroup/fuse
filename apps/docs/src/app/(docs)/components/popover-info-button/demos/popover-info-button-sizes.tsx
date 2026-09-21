@@ -1,6 +1,6 @@
 "use client";
 
-import { PopoverInfoButton } from "@elmeragroup/ui/popover-info-button";
+import { PopoverInfoButton } from "@elmeragroup/fuse/popover-info-button";
 
 const sizes = ["sm", "default", "2xl"] as const;
 

@@ -2,7 +2,7 @@ import type { ReactElement, ReactNode } from "react";
 
 import { tv } from "tailwind-variants";
 
-import { ElmeraGroupUiProvider } from "@elmeragroup/ui/theme";
+import { FuseProvider } from "@elmeragroup/fuse/theme";
 
 import { Header } from "./header";
 import { PreviewThemeProvider } from "./preview-theme";
@@ -28,7 +28,7 @@ export type DocsShellProps = {
 export function DocsShell({ children }: DocsShellProps): ReactElement {
   return (
     <PreviewThemeProvider>
-      <ElmeraGroupUiProvider locale="en-US">
+      <FuseProvider locale="en-US">
         <div className={root()} data-docs-root>
           <Header />
           <div className={columns()}>
@@ -39,7 +39,7 @@ export function DocsShell({ children }: DocsShellProps): ReactElement {
             <QuickNav />
           </div>
         </div>
-      </ElmeraGroupUiProvider>
+      </FuseProvider>
     </PreviewThemeProvider>
   );
 }

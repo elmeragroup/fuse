@@ -1,11 +1,11 @@
 {
-  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
   "slug": "dialog",
   "parts": [
     {
       "name": "Dialog.Root",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/dialog/dialog.tsx",
+      "sourcePath": "packages/fuse/src/components/dialog/dialog.tsx",
       "forwardedFrom": [
         "@base-ui/react"
       ],
@@ -137,7 +137,7 @@
     {
       "name": "Dialog.Trigger",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/dialog/dialog.tsx",
+      "sourcePath": "packages/fuse/src/components/dialog/dialog.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -226,7 +226,7 @@
     {
       "name": "Dialog.Portal",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/dialog/dialog.tsx",
+      "sourcePath": "packages/fuse/src/components/dialog/dialog.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -293,7 +293,7 @@
     {
       "name": "Dialog.Close",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/dialog/dialog.tsx",
+      "sourcePath": "packages/fuse/src/components/dialog/dialog.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -349,7 +349,7 @@
     {
       "name": "Dialog.Overlay",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/dialog/dialog.tsx",
+      "sourcePath": "packages/fuse/src/components/dialog/dialog.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -405,7 +405,7 @@
     {
       "name": "Dialog.Content",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/dialog/dialog.tsx",
+      "sourcePath": "packages/fuse/src/components/dialog/dialog.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -508,7 +508,7 @@
     {
       "name": "Dialog.Header",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/dialog/dialog.tsx",
+      "sourcePath": "packages/fuse/src/components/dialog/dialog.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -518,7 +518,7 @@
     {
       "name": "Dialog.Footer",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/dialog/dialog.tsx",
+      "sourcePath": "packages/fuse/src/components/dialog/dialog.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -547,7 +547,7 @@
     {
       "name": "Dialog.Title",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/dialog/dialog.tsx",
+      "sourcePath": "packages/fuse/src/components/dialog/dialog.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -601,7 +601,7 @@
     {
       "name": "Dialog.Description",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/dialog/dialog.tsx",
+      "sourcePath": "packages/fuse/src/components/dialog/dialog.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"

@@ -30,7 +30,7 @@ export function parseReleaseCommand(argv: readonly string[]): ReleaseCommand {
 /** The one published package, resolved by the shared release engine (release.md §1). */
 function releasePackage(): ReleasePackage {
   const checkoutRoot = resolve(import.meta.dirname, "..");
-  return resolveReleasePackage(checkoutRoot, resolve(checkoutRoot, "packages/ui"), "@elmeragroup/ui");
+  return resolveReleasePackage(checkoutRoot, resolve(checkoutRoot, "packages/fuse"), "@elmeragroup/fuse");
 }
 
 /**
@@ -39,7 +39,7 @@ function releasePackage(): ReleasePackage {
  */
 function loadPackAdapter(): Effect.Effect<PackAndVerify, ReleaseError> {
   return Effect.tryPromise({
-    try: () => import("../packages/ui/scripts/release-pack.ts").then(({ pack }) => ({ pack })),
+    try: () => import("../packages/fuse/scripts/release-pack.ts").then(({ pack }) => ({ pack })),
     catch: (cause) => new ReleaseError({ message: "Could not load the release-pack adapter", cause }),
   });
 }

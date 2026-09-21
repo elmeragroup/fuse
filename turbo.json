@@ -4,10 +4,10 @@
   "globalEnv": ["NODE_ENV"],
   "tasks": {
     "//#lint": {
-      // apps/static-theme/vite.config.ts must import packages/ui/dist/theme.js (architecture.md:
+      // apps/static-theme/vite.config.ts must import packages/fuse/dist/theme.js (architecture.md:
       // colorSchemeScriptSource's Function#toString() has to be the packed IIFE, not re-emitted
-      // TypeScript), and import/no-cycle resolves that import — so lint needs the ui build.
-      "dependsOn": ["@elmeragroup/ui#build", "docs#generate"],
+      // TypeScript), and import/no-cycle resolves that import — so lint needs the Fuse build.
+      "dependsOn": ["@elmeragroup/fuse#build", "docs#generate"],
       "inputs": ["$TURBO_DEFAULT$"]
     },
     // The policy suites read files across the workspace, so a complete input list would have
@@ -19,11 +19,11 @@
     "//#type-check:scripts": {
       "inputs": [
         "scripts/**",
-        "packages/ui/scripts/**",
+        "packages/fuse/scripts/**",
         // entries.ts imports the roster and build-css.ts imports the theme generators, so a
         // roster or theme edit must miss this task's cache.
-        "packages/ui/src/icons/roster.ts",
-        "packages/ui/src/theme/**",
+        "packages/fuse/src/icons/roster.ts",
+        "packages/fuse/src/theme/**",
         "tooling/typescript/**",
         "package.json",
         "pnpm-workspace.yaml"
@@ -39,9 +39,9 @@
     "type-check": {
       "dependsOn": ["^build"]
     },
-    // Density-artifact tripwires assert dist output; without the ui build they skip silently.
+    // Density-artifact tripwires assert dist output; without the Fuse build they skip silently.
     "test": {
-      "dependsOn": ["@elmeragroup/ui#build"]
+      "dependsOn": ["@elmeragroup/fuse#build"]
     },
     "test:browser": {
       "dependsOn": ["build"]
@@ -68,7 +68,7 @@
       "persistent": true
     },
     // Aggregate leaf. Every real gate below is its own task, so a package's own `ci:checks`
-    // script has nothing left to run: `@elmeragroup/ui` defines it as a self-describing no-op
+    // script has nothing left to run: `@elmeragroup/fuse` defines it as a self-describing no-op
     // that exists only so `turbo run ci:checks` fans out to this dependency list.
     "ci:checks": {
       "dependsOn": [

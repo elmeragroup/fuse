@@ -9,9 +9,9 @@ const HREF = "/handbook/localization";
 
 export const metadata = pageMetadata(HREF);
 
-const PROVIDER = `import { ElmeraGroupUiProvider } from "@elmeragroup/ui/theme";
+const PROVIDER = `import { FuseProvider } from "@elmeragroup/fuse/theme";
 
-<ElmeraGroupUiProvider locale="nb-NO">{children}</ElmeraGroupUiProvider>;`;
+<FuseProvider locale="nb-NO">{children}</FuseProvider>;`;
 
 const OVERRIDE = `// The dictionary already returns "Ingen resultater." under nb-NO.
 // The prop exists for copy control, not for translation.
@@ -20,8 +20,8 @@ const OVERRIDE = `// The dictionary already returns "Ingen resultater." under nb
 const SWITCHER = `"use client";
 
 import { useState } from "react";
-import { ElmeraGroupUiProvider } from "@elmeragroup/ui/theme";
-import type { SupportedLocale } from "@elmeragroup/ui/theme";
+import { FuseProvider } from "@elmeragroup/fuse/theme";
+import type { SupportedLocale } from "@elmeragroup/fuse/theme";
 
 const LOCALES = [
   { code: "nb-NO", label: "Norsk" },
@@ -34,7 +34,7 @@ export function LocalizedApp({ children }: { children: React.ReactNode }) {
   const [locale, setLocale] = useState<SupportedLocale>("nb-NO");
 
   return (
-    <ElmeraGroupUiProvider locale={locale}>
+    <FuseProvider locale={locale}>
       <label>
         <span>Language</span>
         <select
@@ -50,7 +50,7 @@ export function LocalizedApp({ children }: { children: React.ReactNode }) {
         </select>
       </label>
       {children}
-    </ElmeraGroupUiProvider>
+    </FuseProvider>
   );
 }`;
 
@@ -119,8 +119,8 @@ export default function LocalizationPage(): ReactElement {
 
       <h2 id="locale-source">Where locale comes from</h2>
       <p>
-        One place: <code>ElmeraGroupUiProvider</code>, whose <code>locale</code> prop is{" "}
-        <strong>required</strong>. Apps never pass a locale to an individual component.
+        One place: <code>FuseProvider</code>, whose <code>locale</code> prop is <strong>required</strong>.
+        Apps never pass a locale to an individual component.
       </p>
       <pre>
         <code>{PROVIDER}</code>

@@ -1,11 +1,11 @@
 {
-  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
   "slug": "toggle-group",
   "parts": [
     {
       "name": "ToggleGroup.Root",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/toggle-group/toggle-group.tsx",
+      "sourcePath": "packages/fuse/src/components/toggle-group/toggle-group.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -139,7 +139,7 @@
     {
       "name": "ToggleGroup.Item",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/toggle-group/toggle-group.tsx",
+      "sourcePath": "packages/fuse/src/components/toggle-group/toggle-group.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"

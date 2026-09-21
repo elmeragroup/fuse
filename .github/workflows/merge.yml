@@ -74,7 +74,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Install Playwright Chromium
-        run: pnpm --filter @elmeragroup/ui exec playwright install --with-deps chromium
+        run: pnpm --filter @elmeragroup/fuse exec playwright install --with-deps chromium
 
       - name: turbo browser checks
         run: pnpm exec turbo run test:browser test:packed-consumer

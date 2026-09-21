@@ -1,7 +1,7 @@
 "use client";
 
-import { Button } from "@elmeragroup/ui/button";
-import { Sheet } from "@elmeragroup/ui/sheet";
+import { Button } from "@elmeragroup/fuse/button";
+import { Sheet } from "@elmeragroup/fuse/sheet";
 
 const sizes = ["sm", "md", "lg", "4xl", "8xl"] as const;
 

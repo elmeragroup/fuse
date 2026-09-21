@@ -8,7 +8,7 @@
       "dependsOn": ["^build"],
       // The Tokens page publishes the library's own recorded measurements, so a budget
       // recalibration must invalidate this task even though nothing in apps/docs moved.
-      "inputs": ["$TURBO_DEFAULT$", "../../packages/ui/scripts/size-budgets.ts"],
+      "inputs": ["$TURBO_DEFAULT$", "../../packages/fuse/scripts/size-budgets.ts"],
       // The committed per-component api.json is an output too. It is tracked, unlike
       // everything else here, but this task is what writes it — so a cache hit has to
       // restore it, or the drift check would read a file this run never produced (§8).

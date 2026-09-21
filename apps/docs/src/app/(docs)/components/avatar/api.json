@@ -1,11 +1,11 @@
 {
-  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
   "slug": "avatar",
   "parts": [
     {
       "name": "Avatar.Root",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/avatar/avatar.tsx",
+      "sourcePath": "packages/fuse/src/components/avatar/avatar.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -50,7 +50,7 @@
     {
       "name": "Avatar.Group",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/avatar/avatar.tsx",
+      "sourcePath": "packages/fuse/src/components/avatar/avatar.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -60,7 +60,7 @@
     {
       "name": "Avatar.Image",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/avatar/avatar.tsx",
+      "sourcePath": "packages/fuse/src/components/avatar/avatar.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -127,7 +127,7 @@
     {
       "name": "Avatar.Fallback",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/avatar/avatar.tsx",
+      "sourcePath": "packages/fuse/src/components/avatar/avatar.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"

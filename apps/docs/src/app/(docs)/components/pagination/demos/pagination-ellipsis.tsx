@@ -1,6 +1,6 @@
 "use client";
 
-import { Pagination } from "@elmeragroup/ui/pagination";
+import { Pagination } from "@elmeragroup/fuse/pagination";
 
 export function PaginationEllipsis() {
   return (

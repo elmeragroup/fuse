@@ -13,7 +13,7 @@ export default function AboutPage(): ReactElement {
     <DocsPage href={HREF}>
       <h2 id="what-it-is">What it is</h2>
       <p>
-        <code>@elmeragroup/ui</code> is the Elmera Group design system: one React component library that has
+        <code>@elmeragroup/fuse</code> is the Elmera Group design system: one React component library that has
         to look right for six brands across two customer segments and two visual variants — twenty legal
         themes in all — without forking a component or shipping twenty bundles.
       </p>

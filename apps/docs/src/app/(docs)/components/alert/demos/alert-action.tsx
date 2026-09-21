@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { Alert } from "@elmeragroup/ui/alert";
+import { Alert } from "@elmeragroup/fuse/alert";
 
 export function AlertAction() {
   const [retried, setRetried] = useState(false);

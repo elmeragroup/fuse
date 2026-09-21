@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { FileTrigger } from "@elmeragroup/ui/react-aria/file-trigger";
+import { FileTrigger } from "@elmeragroup/fuse/react-aria/file-trigger";
 
 export function FileTriggerBasic() {
   const [names, setNames] = useState<string[]>([]);

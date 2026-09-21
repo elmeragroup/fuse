@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 
-import { Link } from "@elmeragroup/ui/react-aria/link";
-import { UiProviders } from "@elmeragroup/ui/react-aria/ui-providers";
+import { Link } from "@elmeragroup/fuse/react-aria/link";
+import { UiProviders } from "@elmeragroup/fuse/react-aria/ui-providers";
 
 export function UiProvidersBasic() {
   const [lastUrl, setLastUrl] = useState<string | null>(null);

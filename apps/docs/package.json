@@ -5,7 +5,7 @@
   "scripts": {
     "build": "next build",
     "dev": "pnpm run generate && next dev --port 3000",
-    "generate": "node --experimental-strip-types --experimental-transform-types --import ../../packages/ui/scripts/ts-resolve.mjs scripts/generate.ts",
+    "generate": "node --experimental-strip-types --experimental-transform-types --import ../../packages/fuse/scripts/ts-resolve.mjs scripts/generate.ts",
     "start": "next start --port 3000",
     "test": "vitest run --project unit",
     "test:browser": "vitest run --project browser",
@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@base-ui/react": "catalog:",
-    "@elmeragroup/ui": "workspace:*",
+    "@elmeragroup/fuse": "workspace:*",
     "@internationalized/date": "catalog:",
     "@next/mdx": "catalog:",
     "next": "catalog:",

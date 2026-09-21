@@ -1,7 +1,7 @@
 "use client";
 
-import { Button } from "@elmeragroup/ui/button";
-import { Sheet } from "@elmeragroup/ui/sheet";
+import { Button } from "@elmeragroup/fuse/button";
+import { Sheet } from "@elmeragroup/fuse/sheet";
 
 const sides = [
   { side: "right", swipe: "right" },

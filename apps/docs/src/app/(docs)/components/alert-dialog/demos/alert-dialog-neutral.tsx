@@ -1,7 +1,7 @@
 "use client";
 
-import { AlertDialog } from "@elmeragroup/ui/alert-dialog";
-import { Button } from "@elmeragroup/ui/button";
+import { AlertDialog } from "@elmeragroup/fuse/alert-dialog";
+import { Button } from "@elmeragroup/fuse/button";
 
 export function AlertDialogNeutral() {
   return (

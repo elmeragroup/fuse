@@ -1,6 +1,6 @@
 "use client";
 
-import { TimelineList } from "@elmeragroup/ui/timeline-list";
+import { TimelineList } from "@elmeragroup/fuse/timeline-list";
 
 export function TimelineListRich() {
   return (

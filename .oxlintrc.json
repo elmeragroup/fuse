@@ -132,10 +132,10 @@
       "version": "19"
     },
     "shadcn": {
-      "ui": "@elmeragroup/ui",
+      "ui": "@elmeragroup/fuse",
       "ignoreImports": [
-        "^@elmeragroup/ui/(icons|emoji|illustrations|flags|theme)(/|$)",
-        "^@elmeragroup/ui/react-aria/ui-providers$"
+        "^@elmeragroup/fuse/(icons|emoji|illustrations|flags|theme)(/|$)",
+        "^@elmeragroup/fuse/react-aria/ui-providers$"
       ],
       "mergeFunctions": ["mergeClassName"]
     }
@@ -151,7 +151,7 @@
     "**/.cache/**",
     "**/node_modules/**",
     ".ref/**",
-    "packages/ui/scripts/*.mjs",
+    "packages/fuse/scripts/*.mjs",
     ".agent/**",
     ".agents/**",
     ".claude/**",
@@ -169,7 +169,7 @@
   },
   "overrides": [
     {
-      "files": ["apps/**/*.{ts,tsx}", "packages/ui/**/*.{ts,tsx}"],
+      "files": ["apps/**/*.{ts,tsx}", "packages/fuse/**/*.{ts,tsx}"],
       "globals": {
         "React": "writable"
       },
@@ -183,7 +183,7 @@
       }
     },
     {
-      "files": ["packages/ui/src/**/*.{ts,tsx}"],
+      "files": ["packages/fuse/src/**/*.{ts,tsx}"],
       "rules": {
         "elmera/no-primitive-colors": "error",
         "elmera/no-tailwind-dark-variant": "error",
@@ -215,6 +215,12 @@
       }
     },
     {
+      "files": ["packages/fuse/src/react-aria/**/*.{ts,tsx}"],
+      "rules": {
+        "elmera/no-rac-outside-quarantine": "off"
+      }
+    },
+    {
       "files": ["apps/docs/src/**/*.{ts,tsx}"],
       "rules": {
         "elmera/no-primitive-colors": "error",
@@ -230,7 +236,7 @@
       }
     },
     {
-      "files": ["packages/ui/src/**/*.{ts,tsx}"],
+      "files": ["packages/fuse/src/**/*.{ts,tsx}"],
       "rules": {
         "shadcn/no-raw-colors": "error",
         "shadcn/no-inline-styles": "error",
@@ -238,16 +244,16 @@
       }
     },
     {
-      "files": ["packages/ui/src/react-aria/grid-list/grid-list.tsx"],
+      "files": ["packages/fuse/src/react-aria/grid-list/grid-list.tsx"],
       "rules": {
         "shadcn/no-inline-styles": ["error", { "allow": ["pointerEvents"] }]
       }
     },
     {
       "files": [
-        "packages/ui/src/icons/**",
-        "packages/ui/src/illustrations/**",
-        "packages/ui/src/components/emoji/**"
+        "packages/fuse/src/icons/**",
+        "packages/fuse/src/illustrations/**",
+        "packages/fuse/src/components/emoji/**"
       ],
       "rules": {
         "shadcn/no-raw-colors": "off",
@@ -317,19 +323,19 @@
       }
     },
     {
-      "files": ["packages/ui/test/**/*.{ts,tsx}"],
+      "files": ["packages/fuse/test/**/*.{ts,tsx}"],
       "rules": {
         "elmera/restrict-browser-helper-copy": "error"
       }
     },
     {
-      "files": ["packages/ui/scripts/**"],
+      "files": ["packages/fuse/scripts/**"],
       "rules": {
         "elmera/restrict-package-root-from-script": "error"
       }
     },
     {
-      "files": ["packages/ui/src/intl/create-string-dictionary.ts"],
+      "files": ["packages/fuse/src/intl/create-string-dictionary.ts"],
       "rules": {
         "no-restricted-imports": "off"
       }

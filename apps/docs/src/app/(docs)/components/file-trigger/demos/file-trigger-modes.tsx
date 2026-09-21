@@ -1,6 +1,6 @@
 "use client";
 
-import { FileTrigger } from "@elmeragroup/ui/react-aria/file-trigger";
+import { FileTrigger } from "@elmeragroup/fuse/react-aria/file-trigger";
 
 export function FileTriggerModes() {
   return (

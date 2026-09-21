@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { ConfirmButton } from "@elmeragroup/ui/confirm-button";
+import { ConfirmButton } from "@elmeragroup/fuse/confirm-button";
 
 export function ConfirmButtonSuccess() {
   const [approved, setApproved] = useState(false);

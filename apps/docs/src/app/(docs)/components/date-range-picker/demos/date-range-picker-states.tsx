@@ -2,8 +2,8 @@
 
 import { CalendarDate } from "@internationalized/date";
 
-import { DateRangePicker } from "@elmeragroup/ui/react-aria/date-range-picker";
-import { UiProviders } from "@elmeragroup/ui/react-aria/ui-providers";
+import { DateRangePicker } from "@elmeragroup/fuse/react-aria/date-range-picker";
+import { UiProviders } from "@elmeragroup/fuse/react-aria/ui-providers";
 
 const deliveryWindow = { start: new CalendarDate(2026, 7, 14), end: new CalendarDate(2026, 7, 18) };
 

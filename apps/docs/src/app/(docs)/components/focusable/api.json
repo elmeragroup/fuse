@@ -1,11 +1,11 @@
 {
-  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
   "slug": "focusable",
   "parts": [
     {
       "name": "Focusable",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/react-aria/focusable/focusable.tsx",
+      "sourcePath": "packages/fuse/src/react-aria/focusable/focusable.tsx",
       "forwardedFrom": [
         "@react-types/shared",
         "@types/react",
@@ -17,7 +17,7 @@
     {
       "name": "useFocusable",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/react-aria/focusable/focusable.tsx",
+      "sourcePath": "packages/fuse/src/react-aria/focusable/focusable.tsx",
       "forwardedFrom": [
         "@react-types/shared",
         "react-aria"

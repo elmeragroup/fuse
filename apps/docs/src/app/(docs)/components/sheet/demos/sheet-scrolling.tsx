@@ -1,7 +1,7 @@
 "use client";
 
-import { Button } from "@elmeragroup/ui/button";
-import { Sheet } from "@elmeragroup/ui/sheet";
+import { Button } from "@elmeragroup/fuse/button";
+import { Sheet } from "@elmeragroup/fuse/sheet";
 
 const clauses = Array.from({ length: 24 }, (_, index) => index + 1);
 

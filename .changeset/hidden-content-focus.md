@@ -1,5 +1,5 @@
 ---
-"@elmeragroup/ui": patch
+"@elmeragroup/fuse": patch
 ---
 
 Hidden sidebar panels and item footers are no longer reachable from the keyboard.

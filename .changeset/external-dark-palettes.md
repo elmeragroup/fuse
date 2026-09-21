@@ -1,5 +1,5 @@
 ---
-"@elmeragroup/ui": minor
+"@elmeragroup/fuse": minor
 ---
 
 Add dark palettes for all ten external brand/segment themes, activated by `data-theme="dark"`.

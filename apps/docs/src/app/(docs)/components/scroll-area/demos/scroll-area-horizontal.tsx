@@ -1,6 +1,6 @@
 "use client";
 
-import { ScrollArea } from "@elmeragroup/ui/scroll-area";
+import { ScrollArea } from "@elmeragroup/fuse/scroll-area";
 
 const PHOTOS = ["Harbor", "Ridge", "Fjord", "Valley", "Coast", "Forest"];
 

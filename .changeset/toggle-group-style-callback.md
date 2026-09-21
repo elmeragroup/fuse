@@ -1,5 +1,5 @@
 ---
-"@elmeragroup/ui": patch
+"@elmeragroup/fuse": patch
 ---
 
 `ToggleGroup.Root` types `style` as plain `CSSProperties`. A Base UI state callback was never

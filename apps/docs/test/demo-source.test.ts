@@ -9,7 +9,7 @@ describe("demo source read at render time (docs-site.md §6)", () => {
       "apps/docs/src/app/(docs)/components/button/demos/button-variant-matrix.tsx"
     );
     expect(demo.source).toContain('"use client"');
-    expect(demo.source).toContain('from "@elmeragroup/ui/button"');
+    expect(demo.source).toContain('from "@elmeragroup/fuse/button"');
     expect(demo.source.endsWith("\n")).toBe(false);
   });
 
@@ -21,7 +21,7 @@ describe("demo source read at render time (docs-site.md §6)", () => {
 
   it("composes Table.Root in the frame-with-table demo", async () => {
     const demo = await readDemoSource("frame", "frame-with-table.tsx");
-    expect(demo.source).toContain('from "@elmeragroup/ui/table"');
+    expect(demo.source).toContain('from "@elmeragroup/fuse/table"');
     expect(demo.source).toContain("Table.Root");
     expect(demo.source).not.toContain("Table is not shipped");
   });

@@ -1,6 +1,6 @@
 "use client";
 
-import { Avatar } from "@elmeragroup/ui/avatar";
+import { Avatar } from "@elmeragroup/fuse/avatar";
 
 function portrait(fill: string): string {
   return (

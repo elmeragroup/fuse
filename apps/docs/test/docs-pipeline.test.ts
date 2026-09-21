@@ -16,8 +16,8 @@ import { slugifyHeading } from "../src/lib/slug";
 const here = dirname(fileURLToPath(import.meta.url));
 const docsRoot = join(here, "..");
 const repoRoot = join(here, "../../..");
-const uiCss = readFileSync(join(repoRoot, "packages/ui/src/styles/ui.css"), "utf8");
-const colors = readColorTokenMap(uiCss);
+const fuseCss = readFileSync(join(repoRoot, "packages/fuse/src/styles/fuse.css"), "utf8");
+const colors = readColorTokenMap(fuseCss);
 
 describe("docs generation ownership", () => {
   const parsed: unknown = JSON.parse(readFileSync(join(docsRoot, "package.json"), "utf8"));
@@ -142,14 +142,14 @@ describe("RSC classification", () => {
 
   it("matches the library sources it classifies", () => {
     expect(
-      readRscStatus(readFileSync(join(repoRoot, "packages/ui/src/components/button/button.tsx"), "utf8"))
+      readRscStatus(readFileSync(join(repoRoot, "packages/fuse/src/components/button/button.tsx"), "utf8"))
     ).toBe("client");
     expect(
-      readRscStatus(readFileSync(join(repoRoot, "packages/ui/src/components/badge/badge.tsx"), "utf8"))
+      readRscStatus(readFileSync(join(repoRoot, "packages/fuse/src/components/badge/badge.tsx"), "utf8"))
     ).toBe("server");
     expect(
       readRscStatus(
-        readFileSync(join(repoRoot, "packages/ui/src/react-aria/focusable/focusable.tsx"), "utf8")
+        readFileSync(join(repoRoot, "packages/fuse/src/react-aria/focusable/focusable.tsx"), "utf8")
       )
     ).toBe("client");
   });
@@ -179,7 +179,7 @@ describe("token extraction", () => {
   });
 
   it("extracts the tokens consumed by Button", () => {
-    const recipe = collectRecipeSources(join(repoRoot, "packages/ui/src/components/button"));
+    const recipe = collectRecipeSources(join(repoRoot, "packages/fuse/src/components/button"));
     const names = extractTokens({
       sources: recipe.sources,
       stylesheets: recipe.stylesheets,
@@ -205,7 +205,7 @@ describe("token extraction", () => {
   });
 
   it("extracts the smaller token set consumed by ScrollArea", () => {
-    const recipe = collectRecipeSources(join(repoRoot, "packages/ui/src/components/scroll-area"));
+    const recipe = collectRecipeSources(join(repoRoot, "packages/fuse/src/components/scroll-area"));
     const names = extractTokens({
       sources: recipe.sources,
       stylesheets: recipe.stylesheets,
@@ -220,9 +220,9 @@ describe("markdown endpoint rendering", () => {
     slug: "widget",
     title: "Widget",
     lede: "A widget.",
-    entry: "@elmeragroup/ui/widget",
+    entry: "@elmeragroup/fuse/widget",
     exportName: "Widget",
-    sourcePath: "packages/ui/src/components/widget/widget.tsx",
+    sourcePath: "packages/fuse/src/components/widget/widget.tsx",
     sourceUrl: "https://example.invalid/widget.tsx",
     markdownUrl: "/components/widget.md",
     rsc: "client",
@@ -239,7 +239,7 @@ describe("markdown endpoint rendering", () => {
       {
         name: "Widget",
         rsc: "client",
-        sourcePath: "packages/ui/src/components/widget/widget.tsx",
+        sourcePath: "packages/fuse/src/components/widget/widget.tsx",
         forwardedFrom: ["@types/react"],
         forwardedCount: 3,
         props: [
@@ -301,11 +301,11 @@ describe("Collapsible settle override (collapsible/page.mdx)", () => {
 
   const applied = [
     readOne(
-      "packages/ui/src/styles/panel-height.ts",
+      "packages/fuse/src/styles/panel-height.ts",
       /export const panelHeightTransition = cn\(\s*"([^"]+)"/
     ),
     readOne(
-      "packages/ui/src/components/collapsible/collapsible.tsx",
+      "packages/fuse/src/components/collapsible/collapsible.tsx",
       /mergeClassName\(className, panelHeightTransition, "([^"]+)"\)/
     ),
   ].join(" ");

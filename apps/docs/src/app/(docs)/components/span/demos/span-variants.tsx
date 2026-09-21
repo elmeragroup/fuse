@@ -1,7 +1,7 @@
 "use client";
 
-import { Span } from "@elmeragroup/ui/span";
-import { Text } from "@elmeragroup/ui/text";
+import { Span } from "@elmeragroup/fuse/span";
+import { Text } from "@elmeragroup/fuse/text";
 
 export function SpanVariants() {
   return (

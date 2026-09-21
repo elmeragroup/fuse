@@ -1,6 +1,6 @@
 "use client";
 
-import { Alert } from "@elmeragroup/ui/alert";
+import { Alert } from "@elmeragroup/fuse/alert";
 
 export function AlertHeadingLevel() {
   return (

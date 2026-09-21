@@ -1,6 +1,6 @@
 "use client";
 
-import { Accordion } from "@elmeragroup/ui/accordion";
+import { Accordion } from "@elmeragroup/fuse/accordion";
 
 export function AccordionMultiple() {
   return (

@@ -1,11 +1,11 @@
 {
-  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
   "slug": "combobox",
   "parts": [
     {
       "name": "Combobox.Root",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/combobox/combobox.tsx",
+      "sourcePath": "packages/fuse/src/components/combobox/combobox.tsx",
       "forwardedFrom": [
         "@base-ui/react"
       ],
@@ -412,7 +412,7 @@
     {
       "name": "Combobox.Input",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/combobox/combobox.tsx",
+      "sourcePath": "packages/fuse/src/components/combobox/combobox.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -500,7 +500,7 @@
     {
       "name": "Combobox.Trigger",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/combobox/combobox.tsx",
+      "sourcePath": "packages/fuse/src/components/combobox/combobox.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -567,7 +567,7 @@
     {
       "name": "Combobox.Clear",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/combobox/combobox.tsx",
+      "sourcePath": "packages/fuse/src/components/combobox/combobox.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -654,7 +654,7 @@
     {
       "name": "Combobox.Content",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/combobox/combobox.tsx",
+      "sourcePath": "packages/fuse/src/components/combobox/combobox.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -775,7 +775,7 @@
     {
       "name": "Combobox.List",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/combobox/combobox.tsx",
+      "sourcePath": "packages/fuse/src/components/combobox/combobox.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -820,7 +820,7 @@
     {
       "name": "Combobox.Item",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/combobox/combobox.tsx",
+      "sourcePath": "packages/fuse/src/components/combobox/combobox.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -920,7 +920,7 @@
     {
       "name": "Combobox.Group",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/combobox/combobox.tsx",
+      "sourcePath": "packages/fuse/src/components/combobox/combobox.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -976,7 +976,7 @@
     {
       "name": "Combobox.Label",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/combobox/combobox.tsx",
+      "sourcePath": "packages/fuse/src/components/combobox/combobox.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -1021,7 +1021,7 @@
     {
       "name": "Combobox.Collection",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/combobox/combobox.tsx",
+      "sourcePath": "packages/fuse/src/components/combobox/combobox.tsx",
       "forwardedFrom": [
         "@base-ui/react"
       ],
@@ -1031,7 +1031,7 @@
     {
       "name": "Combobox.Empty",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/combobox/combobox.tsx",
+      "sourcePath": "packages/fuse/src/components/combobox/combobox.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -1076,7 +1076,7 @@
     {
       "name": "Combobox.Separator",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/combobox/combobox.tsx",
+      "sourcePath": "packages/fuse/src/components/combobox/combobox.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -1132,7 +1132,7 @@
     {
       "name": "Combobox.Chips",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/combobox/combobox.tsx",
+      "sourcePath": "packages/fuse/src/components/combobox/combobox.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -1177,7 +1177,7 @@
     {
       "name": "Combobox.Chip",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/combobox/combobox.tsx",
+      "sourcePath": "packages/fuse/src/components/combobox/combobox.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -1240,7 +1240,7 @@
     {
       "name": "Combobox.ChipsInput",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/combobox/combobox.tsx",
+      "sourcePath": "packages/fuse/src/components/combobox/combobox.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -1296,7 +1296,7 @@
     {
       "name": "Combobox.Value",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/combobox/combobox.tsx",
+      "sourcePath": "packages/fuse/src/components/combobox/combobox.tsx",
       "forwardedFrom": [
         "@base-ui/react"
       ],
@@ -1329,7 +1329,7 @@
     {
       "name": "useComboboxAnchor",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/combobox/combobox.tsx",
+      "sourcePath": "packages/fuse/src/components/combobox/combobox.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": []

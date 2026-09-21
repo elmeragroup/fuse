@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { Item } from "@elmeragroup/ui/item";
+import { Item } from "@elmeragroup/fuse/item";
 
 /** A toggle button reports its selected product and can be pressed again to reset. */
 export function ItemAsButton() {

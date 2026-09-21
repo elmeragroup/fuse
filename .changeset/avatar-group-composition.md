@@ -1,5 +1,5 @@
 ---
-"@elmeragroup/ui": minor
+"@elmeragroup/fuse": minor
 ---
 
 `Avatar` ships `Avatar.Group`, which stacks its avatars and separates them with a background-coloured

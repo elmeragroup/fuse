@@ -6,13 +6,13 @@ const HREF = "/handbook/icons";
 
 export const metadata = pageMetadata(HREF);
 
-const IMPORT = `import { Check, MagnifyingGlass } from "@elmeragroup/ui/icons";
+const IMPORT = `import { Check, MagnifyingGlass } from "@elmeragroup/fuse/icons";
 
 <Check />                       // decorative: aria-hidden, focusable="false"
 <Check title="Bekreftet" />     // meaningful: role="img" with a <title>
 <Check weight="fill" />         // selected or active state`;
 
-const BRAND_LOGO = `import { BrandLogo } from "@elmeragroup/ui/icons";
+const BRAND_LOGO = `import { BrandLogo } from "@elmeragroup/fuse/icons";
 
 <BrandLogo brand="fkas" />              // Fjordkraft wordmark
 <BrandLogo brand="tkas" variant="mark" />`;
@@ -23,14 +23,14 @@ export default function IconsPage(): ReactElement {
       <h2 id="entries">The entries</h2>
       <ul>
         <li>
-          <code>@elmeragroup/ui/icons</code> — curated Phosphor adapters, bespoke marks, brand logos and{" "}
+          <code>@elmeragroup/fuse/icons</code> — curated Phosphor adapters, bespoke marks, brand logos and{" "}
           <code>BrandLogo</code>.
         </li>
         <li>
-          <code>@elmeragroup/ui/illustrations</code> — brand artwork.
+          <code>@elmeragroup/fuse/illustrations</code> — brand artwork.
         </li>
         <li>
-          <code>@elmeragroup/ui/flags</code> — the generated flag-asset manifest, plus one static SVG per
+          <code>@elmeragroup/fuse/flags</code> — the generated flag-asset manifest, plus one static SVG per
           two-letter country code.
         </li>
       </ul>

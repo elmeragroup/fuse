@@ -1,6 +1,6 @@
 "use client";
 
-import { PhoneNumberField } from "@elmeragroup/ui/phone-number-field";
+import { PhoneNumberField } from "@elmeragroup/fuse/phone-number-field";
 
 export function PhoneNumberFieldBasic() {
   return <PhoneNumberField label="Mobile" description="Norwegian number by default." />;

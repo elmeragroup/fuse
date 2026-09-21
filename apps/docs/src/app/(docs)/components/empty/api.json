@@ -1,11 +1,11 @@
 {
-  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
   "slug": "empty",
   "parts": [
     {
       "name": "Empty.Root",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/empty/empty.tsx",
+      "sourcePath": "packages/fuse/src/components/empty/empty.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -25,7 +25,7 @@
     {
       "name": "Empty.Header",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/empty/empty.tsx",
+      "sourcePath": "packages/fuse/src/components/empty/empty.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -35,7 +35,7 @@
     {
       "name": "Empty.Media",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/empty/empty.tsx",
+      "sourcePath": "packages/fuse/src/components/empty/empty.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -55,7 +55,7 @@
     {
       "name": "Empty.Title",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/empty/empty.tsx",
+      "sourcePath": "packages/fuse/src/components/empty/empty.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -65,7 +65,7 @@
     {
       "name": "Empty.Description",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/empty/empty.tsx",
+      "sourcePath": "packages/fuse/src/components/empty/empty.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -75,7 +75,7 @@
     {
       "name": "Empty.Content",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/empty/empty.tsx",
+      "sourcePath": "packages/fuse/src/components/empty/empty.tsx",
       "forwardedFrom": [
         "@types/react"
       ],

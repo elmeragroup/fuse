@@ -1,7 +1,7 @@
 "use client";
 
-import { Lock, User } from "@elmeragroup/ui/icons";
-import { Tabs } from "@elmeragroup/ui/tabs";
+import { Lock, User } from "@elmeragroup/fuse/icons";
+import { Tabs } from "@elmeragroup/fuse/tabs";
 
 export function TabsWithIcons() {
   return (

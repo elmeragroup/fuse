@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 
-import { House, List, Stack } from "@elmeragroup/ui/icons";
-import { RadioGroup, RadioIconButton } from "@elmeragroup/ui/radio-group";
+import { House, List, Stack } from "@elmeragroup/fuse/icons";
+import { RadioGroup, RadioIconButton } from "@elmeragroup/fuse/radio-group";
 
 const SIZES = ["icon-xxs", "icon-xs", "icon-sm", "icon", "icon-lg"] as const;
 

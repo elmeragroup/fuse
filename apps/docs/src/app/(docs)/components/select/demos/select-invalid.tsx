@@ -1,7 +1,7 @@
 "use client";
 
-import { Field } from "@elmeragroup/ui/field";
-import { Select } from "@elmeragroup/ui/select";
+import { Field } from "@elmeragroup/fuse/field";
+import { Select } from "@elmeragroup/fuse/select";
 
 const plans = { basic: "Basic", plus: "Plus", pro: "Pro" } as const;
 const regions = { oslo: "Oslo", bergen: "Bergen" } as const;

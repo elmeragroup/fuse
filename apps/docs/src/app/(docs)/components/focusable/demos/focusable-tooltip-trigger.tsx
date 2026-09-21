@@ -1,7 +1,7 @@
 "use client";
 
-import { Focusable } from "@elmeragroup/ui/react-aria/focusable";
-import { Tooltip } from "@elmeragroup/ui/tooltip";
+import { Focusable } from "@elmeragroup/fuse/react-aria/focusable";
+import { Tooltip } from "@elmeragroup/fuse/tooltip";
 
 export function FocusableTooltipTrigger() {
   return (

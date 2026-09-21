@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 
-import { Star } from "@elmeragroup/ui/icons";
-import { Toggle } from "@elmeragroup/ui/toggle";
+import { Star } from "@elmeragroup/fuse/icons";
+import { Toggle } from "@elmeragroup/fuse/toggle";
 
 export function ToggleControlled() {
   const [pressed, setPressed] = useState(true);

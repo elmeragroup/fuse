@@ -1,7 +1,7 @@
 "use client";
 
-import { Field } from "@elmeragroup/ui/field";
-import { Switch } from "@elmeragroup/ui/switch";
+import { Field } from "@elmeragroup/fuse/field";
+import { Switch } from "@elmeragroup/fuse/switch";
 
 export function SwitchSizes() {
   return (

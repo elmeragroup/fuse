@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { MouseEvent } from "react";
 
-import { Pagination } from "@elmeragroup/ui/pagination";
+import { Pagination } from "@elmeragroup/fuse/pagination";
 
 const PAGES = [1, 2, 3, 4, 5];
 

@@ -4,7 +4,7 @@ import type { ReactElement } from "react";
 
 import { tv } from "tailwind-variants";
 
-import { ThemeScope } from "@elmeragroup/ui/theme";
+import { ThemeScope } from "@elmeragroup/fuse/theme";
 
 import type { TokenRef } from "../lib/docs-model";
 import { usePreviewTheme } from "./preview-theme";

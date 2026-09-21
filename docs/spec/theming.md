@@ -1,6 +1,6 @@
 # Theming
 
-Current token, cascade, provider, and scope contracts for `@elmeragroup/ui`. Token data lives in code; integration recipes live in [theme integration](../theming-integration.md). Rationale lives in ADRs [0001](../adr/0001-canonical-token-contract.md), [0002](../adr/0002-theme-attributes.md), and [0003](../adr/0003-data-only-theme-provider.md).
+Current token, cascade, provider, and scope contracts for `@elmeragroup/fuse`. Token data lives in code; integration recipes live in [theme integration](../theming-integration.md). Rationale lives in ADRs [0001](../adr/0001-canonical-token-contract.md), [0002](../adr/0002-theme-attributes.md), and [0003](../adr/0003-data-only-theme-provider.md).
 
 Cross-links: package layout, exports, and where `themes.css` ships → [architecture](architecture.md). Contrast obligations of token pairings (text-grade roles, documented deviations, contrast-matrix snapshot) → [accessibility](accessibility.md) §6. CSS size budget for the emitted theme stylesheet → [performance](performance.md).
 
@@ -114,7 +114,7 @@ A third classification exists **outside** the two public contract tiers. Density
 
 They must not enter `TOKEN_NAMES` or `EXTERNAL_RESET_KEYS`. The generator, the 20-theme matrix, nested-scope isolation, and the contrast matrix do not mention them. Brand themes do not override them. Direct consumer override is unsupported.
 
-Names and values live in the non-generated portion of `ui.css` as `:root` (dense) and `:root[data-density="comfortable"]` (comfortable) declarations. The density attribute is `data-density`, not a `data-theme-*` key (ADR [0002](../adr/0002-theme-attributes.md)). See ADR [0001](../adr/0001-canonical-token-contract.md) amendment 2026-08-20. Hosts stamp the attribute with `densityAttributes` after resolving `defaultDensityForVariant(theme.variant)`.
+Names and values live in the non-generated portion of `fuse.css` as `:root` (dense) and `:root[data-density="comfortable"]` (comfortable) declarations. The density attribute is `data-density`, not a `data-theme-*` key (ADR [0002](../adr/0002-theme-attributes.md)). See ADR [0001](../adr/0001-canonical-token-contract.md) amendment 2026-08-20. Hosts stamp the attribute with `densityAttributes` after resolving `defaultDensityForVariant(theme.variant)`.
 
 Wave 1 is deployment-fixed density only. User preference, persistence, cross-tab sync, a pre-paint density bootstrap, and a public density hook are deferred ([roadmap](roadmap.md) §10). The host seam for a later override is `densityAttributes(preference ?? defaultDensityForVariant(theme.variant))`. `ThemeProvider` does not grow a `density` prop in Wave 1. Table row density is outside this axis.
 
@@ -156,13 +156,13 @@ Permutations without distinct palettes get **no CSS rule** and resolve from lowe
 
 ### 3.4 Specificity and Tailwind interop
 
-`[data-x="y"]` has class specificity (0,1,0); attribute compounds appear only at genuine axis intersections (layers 4–5), so the layer order above is also cascade order without `!important` or `@layer` tricks. Tailwind v4 `@theme inline` maps each color utility to its backing role variable so values re-resolve at the use site and inside nested scopes. The [raw CSS entry](../../packages/ui/src/styles/ui.css) owns the utility definitions and locked metrics. For example, `--color-card: var(--card)` in `@theme inline` lets a `bg-card` utility resolve the nearest scope's card value.
+`[data-x="y"]` has class specificity (0,1,0); attribute compounds appear only at genuine axis intersections (layers 4–5), so the layer order above is also cascade order without `!important` or `@layer` tricks. Tailwind v4 `@theme inline` maps each color utility to its backing role variable so values re-resolve at the use site and inside nested scopes. The [raw CSS entry](../../packages/fuse/src/styles/fuse.css) owns the utility definitions and locked metrics. For example, `--color-card: var(--card)` in `@theme inline` lets a `bg-card` utility resolve the nearest scope's card value.
 
 Font and button-radius utilities are explicit because their public backing-token names would otherwise self-reference Tailwind theme variables. This contract follows Tailwind's documented [`@theme inline`](https://tailwindcss.com/docs/theme#referencing-other-variables) behavior. Component source uses the named radius utilities; it does not rely on Tailwind's unrelated default radii.
 
-The [raw entry](../../packages/ui/src/styles/ui.css) owns the `@theme inline` mapping, explicit font and button-radius utilities, state variants, hit-area and scrollbar utilities, and the central reduced-motion rule. It imports `tw-animate-css` and, while the interim tier exists, the React Aria Tailwind plugin. It does not import Tailwind itself; the consumer recipe does that.
+The [raw entry](../../packages/fuse/src/styles/fuse.css) owns the `@theme inline` mapping, explicit font and button-radius utilities, state variants, hit-area and scrollbar utilities, and the central reduced-motion rule. It imports `tw-animate-css` and, while the interim tier exists, the React Aria Tailwind plugin. It does not import Tailwind itself; the consumer recipe does that.
 
-The original selector/utility source is `.ref/OrderModuleInternalWeb/packages/ui/src/styles/ui.css`. Its legacy theme blocks, base reset, product-hub rules, dark/inverted variants, debug utility, and unused keyframes remain excluded. See [reference sources](../reference-sources.md) before lifting more code.
+The original selector/utility source is `.ref/OrderModuleInternalWeb/packages/fuse/src/styles/fuse.css`. Its legacy theme blocks, base reset, product-hub rules, dark/inverted variants, debug utility, and unused keyframes remain excluded. See [reference sources](../reference-sources.md) before lifting more code.
 
 The standalone-CSS build uses a build-only wrapper that imports `tailwindcss/theme.css` and `tailwindcss/utilities.css` with `source(none)` (never `tailwindcss/preflight.css`), imports this raw entry, and names `dist/**/*.js` as its **only** `@source`. Source detection is off on purpose: with it on, Tailwind also scans the working tree, so a class spelled only in a test or an unshipped module lands in the published sheet. The wrapper carries exactly one `@source` line and no `@source not` exclusions — nothing under `src/` is scanned, so nothing under `src/` has to be excluded. _(Amended 2026-09-02, ADR [0005](../adr/0005-package-architecture.md) amendment 2026-09-02: source detection off, so the sheet describes the published JavaScript and needs no `@source not` exclusion; distribution contract in [architecture](architecture.md) §5.)_ That wrapper is compiler input only; the output is the published `styles.css`. Raw-source consumers instead use the recipe in [architecture](architecture.md) §5.
 
@@ -178,22 +178,22 @@ None of the three attributes is `data-theme`. That attribute selects the documen
 
 TypeScript is the source of truth for token names, values, and composition. Edit the owning module and review the generated CSS snapshot; do not maintain a second value table in Markdown.
 
-| Data                                                                            | Owner                                                                                |
-| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| Role names, types, the literal `EXTERNAL_RESET_KEYS`, and override requirements | [Token contract](../../packages/ui/src/theme/tokens/contract.ts)                     |
-| Neutral and brand primitives                                                    | [Primitives](../../packages/ui/src/theme/tokens/primitives.ts)                       |
-| Complete neutral defaults                                                       | [Defaults](../../packages/ui/src/theme/tokens/defaults.ts)                           |
-| Brand aliases and accent pointers                                               | [Brand pointers](../../packages/ui/src/theme/tokens/brand-pointers.ts)               |
-| External palettes                                                               | [External palettes](../../packages/ui/src/theme/tokens/external-palettes.ts)         |
-| External dark palettes                                                          | [Dark palettes](../../packages/ui/src/theme/tokens/external-dark-palettes.ts)        |
-| Internal dark palette                                                           | [Internal dark palette](../../packages/ui/src/theme/tokens/internal-dark-palette.ts) |
-| Shared dark support roles                                                       | [Dark defaults](../../packages/ui/src/theme/tokens/dark-defaults.ts)                 |
-| Derived dark-inclusive `THEME_RESET_KEYS` (the complete scope reset set)        | [Reset keys](../../packages/ui/src/theme/tokens/reset-keys.ts)                       |
-| fkas-company palette in both schemes                                            | [Segment sheets](../../packages/ui/src/theme/tokens/segment-sheets.ts)               |
-| Brand names and allowed segments                                                | [Theme metadata](../../packages/ui/src/theme/tokens/themes.ts)                       |
-| Reviewed emitted CSS                                                            | [CSS snapshot](../../packages/ui/src/theme/__snapshots__/themes.css)                 |
+| Data                                                                            | Owner                                                                                  |
+| ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Role names, types, the literal `EXTERNAL_RESET_KEYS`, and override requirements | [Token contract](../../packages/fuse/src/theme/tokens/contract.ts)                     |
+| Neutral and brand primitives                                                    | [Primitives](../../packages/fuse/src/theme/tokens/primitives.ts)                       |
+| Complete neutral defaults                                                       | [Defaults](../../packages/fuse/src/theme/tokens/defaults.ts)                           |
+| Brand aliases and accent pointers                                               | [Brand pointers](../../packages/fuse/src/theme/tokens/brand-pointers.ts)               |
+| External palettes                                                               | [External palettes](../../packages/fuse/src/theme/tokens/external-palettes.ts)         |
+| External dark palettes                                                          | [Dark palettes](../../packages/fuse/src/theme/tokens/external-dark-palettes.ts)        |
+| Internal dark palette                                                           | [Internal dark palette](../../packages/fuse/src/theme/tokens/internal-dark-palette.ts) |
+| Shared dark support roles                                                       | [Dark defaults](../../packages/fuse/src/theme/tokens/dark-defaults.ts)                 |
+| Derived dark-inclusive `THEME_RESET_KEYS` (the complete scope reset set)        | [Reset keys](../../packages/fuse/src/theme/tokens/reset-keys.ts)                       |
+| fkas-company palette in both schemes                                            | [Segment sheets](../../packages/fuse/src/theme/tokens/segment-sheets.ts)               |
+| Brand names and allowed segments                                                | [Theme metadata](../../packages/fuse/src/theme/tokens/themes.ts)                       |
+| Reviewed emitted CSS                                                            | [CSS snapshot](../../packages/fuse/src/theme/__snapshots__/themes.css)                 |
 
-The docs site's Tokens page and theme matrix are generated from this data. [Theme contract tests](../../packages/ui/src/theme/theme-contract.test.ts) check the emitted layer structure and reset-key coverage; the [browser matrix](../../packages/ui/src/theme/dark-theme.browser.test.tsx) checks computed values for all 20 themes in both schemes and all 400 nested outer/inner combinations. [Contrast tests](../../packages/ui/src/theme/contrast-matrix.test.ts) check the separate accessibility obligations. Changing a value still requires those reviews. Source ownership does not make an accidental value change acceptable.
+The docs site's Tokens page and theme matrix are generated from this data. [Theme contract tests](../../packages/fuse/src/theme/theme-contract.test.ts) check the emitted layer structure and reset-key coverage; the [browser matrix](../../packages/fuse/src/theme/dark-theme.browser.test.tsx) checks computed values for all 20 themes in both schemes and all 400 nested outer/inner combinations. [Contrast tests](../../packages/fuse/src/theme/contrast-matrix.test.ts) check the separate accessibility obligations. Changing a value still requires those reviews. Source ownership does not make an accidental value change acceptable.
 
 ## 5 Value policy rulings
 
@@ -216,7 +216,7 @@ The docs site's Tokens page and theme matrix are generated from this data. [Them
 
 ## 7 Theme provider API
 
-Single entry **`@elmeragroup/ui/theme`** — no per-framework entry points (`/theme/next`, `/theme/vite`, and the rest would be byte-identical aliases; ADR 0003). next-themes is **not vendored**; color-scheme ideas and MIT-notice text are copied, not taken as an npm dependency.
+Single entry **`@elmeragroup/fuse/theme`** — no per-framework entry points (`/theme/next`, `/theme/vite`, and the rest would be byte-identical aliases; ADR 0003). next-themes is **not vendored**; color-scheme ideas and MIT-notice text are copied, not taken as an npm dependency.
 
 Brand and color scheme are separate writers. Treating `ThemeProvider` as a portable first-paint adapter is false: it cannot stamp `<html>` from `_app`, and React 19 `createRoot` `<script>` nodes do not execute on Vite.
 
@@ -280,7 +280,7 @@ type ThemeAttributes = {
 
 It validates untyped input before returning the three attributes. The headline brand recipe is spreading it on `<html>` from one host-owned configuration that is also passed to `ThemeProvider.theme`. Brand first paint is those attributes, never a script and never provider injection.
 
-Document roots compose `themeAttributes(theme)` with `densityAttributes(defaultDensityForVariant(theme.variant))`. Both density values are stamped explicitly, including `dense`. `ThemeProvider` and `ThemeScope` have no `density` prop. `ThemeScope` does not compute density, does not own it, and has no `density` prop. Hosts may still spread `densityAttributes(...)` onto the ThemeScope host element as a DOM attribute (the docs `DemoFrame` sandbox does this). Library CSS ignores nested `data-density`; that sandbox imports the generated `@elmeragroup/ui/demo-stage-comfortable.css` artifact, which re-scopes the library comfortable block onto `[data-demo-stage]` ([docs-site](docs-site.md) §4).
+Document roots compose `themeAttributes(theme)` with `densityAttributes(defaultDensityForVariant(theme.variant))`. Both density values are stamped explicitly, including `dense`. `ThemeProvider` and `ThemeScope` have no `density` prop. `ThemeScope` does not compute density, does not own it, and has no `density` prop. Hosts may still spread `densityAttributes(...)` onto the ThemeScope host element as a DOM attribute (the docs `DemoFrame` sandbox does this). Library CSS ignores nested `data-density`; that sandbox imports the generated `@elmeragroup/fuse/demo-stage-comfortable.css` artifact, which re-scopes the library comfortable block onto `[data-demo-stage]` ([docs-site](docs-site.md) §4).
 
 ```ts
 type Density = "dense" | "comfortable";
@@ -315,11 +315,11 @@ Escape hatch for per-request/multi-theme subtrees (the sms-accept per-customer p
 
 ### 7.5 `BRANDS`
 
-`BRANDS` is the public readonly metadata record in [theme metadata](../../packages/ui/src/theme/tokens/themes.ts). It owns display names and legal segments. Consumers import it rather than copying the record. Logo components use the same brand codes.
+`BRANDS` is the public readonly metadata record in [theme metadata](../../packages/fuse/src/theme/tokens/themes.ts). It owns display names and legal segments. Consumers import it rather than copying the record. Logo components use the same brand codes.
 
 ### 7.6 Types
 
-- `ThemeInput` is a discriminated union that makes pinned-brand mistakes unrepresentable. [Theme axes](../../packages/ui/src/theme/theme-axes.ts) and [theme metadata](../../packages/ui/src/theme/tokens/themes.ts) own the declarations; [public type tests](../../packages/ui/src/theme/theme-api.test-d.tsx) protect their compatibility.
+- `ThemeInput` is a discriminated union that makes pinned-brand mistakes unrepresentable. [Theme axes](../../packages/fuse/src/theme/theme-axes.ts) and [theme metadata](../../packages/fuse/src/theme/tokens/themes.ts) own the declarations; [public type tests](../../packages/fuse/src/theme/theme-api.test-d.tsx) protect their compatibility.
 - `THEME_VARIANTS` (`["internal", "external"]`), `THEME_SEGMENTS` (`["private", "company"]`) and `COLOR_SCHEMES` (`["light", "dark", "system"]`) are the axis tuples. `LEGAL_THEMES` is the 20-permutation list derived from the pin table, in variant → brand → segment order. Hosts that need the legal set (docs, pickers) import these from `/theme` rather than re-deriving them.
 - `themeSlug(theme: ThemeInput): ThemeSlug` is total. `parseThemeSlug(slug: string): ThemeInput | null` returns `null` for malformed axes and illegal pinned-brand combinations; it never coerces or logs.
 - `coerceTheme(input: unknown): ThemeInput | null` is the env-free pin-table parse: `null` for non-objects and unknown/missing axes; a pinned brand with the wrong segment returns the same variant/brand with `BRANDS[brand].segments[0]`. It never throws or logs. Host pickers that need silent pinning (docs `ThemePicker`) call this, not `validateTheme`.
@@ -328,7 +328,7 @@ Escape hatch for per-request/multi-theme subtrees (the sms-accept per-customer p
 
 ### 7.7 Locale provider
 
-`ElmeraGroupUiProvider` is permanent and exported from `/theme`: `{ locale: SupportedLocale; children: ReactNode }`. It provides a memoized `{ locale }` value; `useElmeraGroupUi()` returns it and throws outside the provider. It performs no browser or user-agent detection. The interim `UiProviders` wrapper is documented by its public JSDoc and the authored docs page under `apps/docs/src/app/(docs)/components/ui-providers/`.
+`FuseProvider` is permanent and exported from `/theme`: `{ locale: SupportedLocale; children: ReactNode }`. It provides a memoized `{ locale }` value; `useFuse()` returns it and throws outside the provider. It performs no browser or user-agent detection. The interim `UiProviders` wrapper is documented by its public JSDoc and the authored docs page under `apps/docs/src/app/(docs)/components/ui-providers/`.
 
 ### 7.8 Color-scheme axis
 

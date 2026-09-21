@@ -1,6 +1,6 @@
 # Maintained library contracts
 
-These documents describe obligations that future changes to `@elmeragroup/ui` must preserve. They are current maintenance references, not the completed v1 implementation plan. Read the chapter relevant to your change; routine component work starts with [component authoring](../component-authoring.md).
+These documents describe obligations that future changes to `@elmeragroup/fuse` must preserve. They are current maintenance references, not the completed v1 implementation plan. Read the chapter relevant to your change; routine component work starts with [component authoring](../component-authoring.md).
 
 ## Where to look
 

@@ -2,7 +2,7 @@
 
 import { Fragment } from "react";
 
-import { Combobox } from "@elmeragroup/ui/combobox";
+import { Combobox } from "@elmeragroup/fuse/combobox";
 
 const groups = [
   { value: "Citrus", items: ["Lemon", "Lime", "Orange"] },

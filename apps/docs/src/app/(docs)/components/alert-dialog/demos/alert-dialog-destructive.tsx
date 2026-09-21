@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 
-import { AlertDialog } from "@elmeragroup/ui/alert-dialog";
-import { Button } from "@elmeragroup/ui/button";
+import { AlertDialog } from "@elmeragroup/fuse/alert-dialog";
+import { Button } from "@elmeragroup/fuse/button";
 
 export function AlertDialogDestructive() {
   const [open, setOpen] = useState(false);

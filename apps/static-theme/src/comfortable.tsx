@@ -1,4 +1,4 @@
-import { Button } from "@elmeragroup/ui/button";
+import { Button } from "@elmeragroup/fuse/button";
 
 import { renderFixture } from "./render";
 import { DOCUMENT_COLOR_SCHEME, DOCUMENT_THEME } from "./theme";

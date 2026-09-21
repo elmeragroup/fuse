@@ -1,6 +1,6 @@
 "use client";
 
-import { Toggle } from "@elmeragroup/ui/toggle";
+import { Toggle } from "@elmeragroup/fuse/toggle";
 
 export function ToggleVariants() {
   return (

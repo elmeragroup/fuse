@@ -1,7 +1,7 @@
 "use client";
 
-import { Frame } from "@elmeragroup/ui/frame";
-import { Table } from "@elmeragroup/ui/table";
+import { Frame } from "@elmeragroup/fuse/frame";
+import { Table } from "@elmeragroup/fuse/table";
 
 export function FrameWithTable() {
   return (

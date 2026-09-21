@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { CheckboxGroup, CheckboxItem } from "@elmeragroup/ui/checkbox";
+import { CheckboxGroup, CheckboxItem } from "@elmeragroup/fuse/checkbox";
 
 const ALL_VALUES = ["pepperoni", "mushroom", "olive"];
 

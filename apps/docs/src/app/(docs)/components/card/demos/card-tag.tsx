@@ -1,7 +1,7 @@
 "use client";
 
-import { Card } from "@elmeragroup/ui/card";
-import { Lightning } from "@elmeragroup/ui/icons";
+import { Card } from "@elmeragroup/fuse/card";
+import { Lightning } from "@elmeragroup/fuse/icons";
 
 export function CardTag() {
   return (

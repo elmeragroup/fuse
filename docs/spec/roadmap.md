@@ -1,6 +1,6 @@
 # Post-v1 roadmap
 
-Directional chapter for `@elmeragroup/ui`: work deliberately deferred out of v1, with the trigger that unlocks each item and what the v1 architecture already has in place for it — nothing here is normative until it graduates into a spec chapter of its own.
+Directional chapter for `@elmeragroup/fuse`: work deliberately deferred out of v1, with the trigger that unlocks each item and what the v1 architecture already has in place for it — nothing here is normative until it graduates into a spec chapter of its own.
 
 **Explicitly not on this roadmap**: migrations of the two OrderModule apps (OrderModuleInternalWeb / OrderModuleWeb) were ruled out of this effort entirely — the spec carries no compat assessment for them, and they do not return here.
 
@@ -80,10 +80,10 @@ Directional chapter for `@elmeragroup/ui`: work deliberately deferred out of v1,
 
 ## 11 Chart (Wave 9)
 
-- **What**: ship `@elmeragroup/ui/chart` — recharts composition wrappers (`Chart.Container` / tooltip / legend / style). `recharts` becomes an optional peer; the entry is removed from `DEFERRED_ENTRIES` and joins the exports map, barrel, packed-name assertions, and size budgets.
+- **What**: ship `@elmeragroup/fuse/chart` — recharts composition wrappers (`Chart.Container` / tooltip / legend / style). `recharts` becomes an optional peer; the entry is removed from `DEFERRED_ENTRIES` and joins the exports map, barrel, packed-name assertions, and size budgets.
 - **Why deferred**: No consuming product has committed to a charted surface. Chart is not required for the first publish.
 - **Trigger**: a consuming product committing to a charted surface, with `recharts` accepted as an optional peer.
-- **Already prepared**: `--chart-1..8` tokens, and the exports-codegen deferred-entry seam (`DEFERRED_ENTRIES` in `packages/ui/scripts/entries.ts`). No docs page or nav entry until the component exists.
+- **Already prepared**: `--chart-1..8` tokens, and the exports-codegen deferred-entry seam (`DEFERRED_ENTRIES` in `packages/fuse/scripts/entries.ts`). No docs page or nav entry until the component exists.
 - **Completion criteria**: `chart.ts` source; `recharts` in published optional-peer ranges; size-limit row excluding recharts; docs page and reviewed demos; `DEFERRED_ENTRIES` empty or without `chart`.
 
 ## 12 Effect 4 RC → stable

@@ -1,11 +1,11 @@
 {
-  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
   "slug": "input-group",
   "parts": [
     {
       "name": "InputGroup.Root",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/input-group/input-group.tsx",
+      "sourcePath": "packages/fuse/src/components/input-group/input-group.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -15,7 +15,7 @@
     {
       "name": "InputGroup.Addon",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/input-group/input-group.tsx",
+      "sourcePath": "packages/fuse/src/components/input-group/input-group.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -35,7 +35,7 @@
     {
       "name": "InputGroup.Button",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/input-group/input-group.tsx",
+      "sourcePath": "packages/fuse/src/components/input-group/input-group.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -172,7 +172,7 @@
     {
       "name": "InputGroup.Text",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/input-group/input-group.tsx",
+      "sourcePath": "packages/fuse/src/components/input-group/input-group.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -182,7 +182,7 @@
     {
       "name": "InputGroup.Input",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/input-group/input-group.tsx",
+      "sourcePath": "packages/fuse/src/components/input-group/input-group.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -192,7 +192,7 @@
     {
       "name": "InputGroup.Textarea",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/input-group/input-group.tsx",
+      "sourcePath": "packages/fuse/src/components/input-group/input-group.tsx",
       "forwardedFrom": [
         "@types/react"
       ],

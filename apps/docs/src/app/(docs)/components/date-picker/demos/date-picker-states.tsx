@@ -2,8 +2,8 @@
 
 import { CalendarDate } from "@internationalized/date";
 
-import { DatePicker } from "@elmeragroup/ui/react-aria/date-picker";
-import { UiProviders } from "@elmeragroup/ui/react-aria/ui-providers";
+import { DatePicker } from "@elmeragroup/fuse/react-aria/date-picker";
+import { UiProviders } from "@elmeragroup/fuse/react-aria/ui-providers";
 
 const invoiceDate = new CalendarDate(2026, 7, 14);
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { Heading } from "@elmeragroup/ui/heading";
+import { Heading } from "@elmeragroup/fuse/heading";
 
 const SIZES = ["default", "sm", "lg", "xl", "2xl", "3xl", "4xl", "5xl", "6xl"] as const;
 

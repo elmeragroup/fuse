@@ -1,11 +1,11 @@
 {
-  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
   "slug": "date-range-picker",
   "parts": [
     {
       "name": "DateRangePicker",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/react-aria/date-range-picker/date-range-picker.tsx",
+      "sourcePath": "packages/fuse/src/react-aria/date-range-picker/date-range-picker.tsx",
       "forwardedFrom": [
         "@react-types/shared",
         "react-aria-components",

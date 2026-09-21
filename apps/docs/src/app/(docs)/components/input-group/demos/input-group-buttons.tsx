@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 
-import { Button } from "@elmeragroup/ui/button";
-import { X } from "@elmeragroup/ui/icons";
-import { InputGroup } from "@elmeragroup/ui/input-group";
+import { Button } from "@elmeragroup/fuse/button";
+import { X } from "@elmeragroup/fuse/icons";
+import { InputGroup } from "@elmeragroup/fuse/input-group";
 
 const initialMeter = "707057500012345678";
 

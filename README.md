@@ -1,10 +1,18 @@
-# Elmera UI
+# Fuse
 
 Whitelabel React components for Elmera Group's energy brands and corporate Elmera. One public package, 20 theme permutations (variant × brand × segment), ESM-only.
 
 Density is a document-level control-metric axis, independent of theme. Variant supplies only the deployment default (`internal → dense`, `external → comfortable`). Brand is host-owned: spread `themeAttributes(theme)` on `<html>`, then stamp density with `densityAttributes(defaultDensityForVariant(theme.variant))`.
 
 Current cross-component contracts live in [docs/spec/](docs/spec/README.md); the glossary is [CONTEXT.md](CONTEXT.md). Read only the chapter your change affects.
+
+## Why Fuse
+
+An electrical fuse connects the name to Elmera's energy business. To fuse means bringing things together, which reflects teams sharing components and solutions across brands and markets.
+
+- **Simplify.** Solve common interface problems once and make those solutions easy to reuse.
+- **Be friendly.** Build accessible, understandable interfaces for customers, with approachable tools and documentation for teams.
+- **Create value.** Reduce duplicated work so teams can spend more time improving customer experiences.
 
 ## Prerequisites
 
@@ -25,7 +33,7 @@ Root scripts fan out through turbo unless noted.
 
 | Script                    | Does                                                                                                                  |
 | ------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `pnpm build`              | Builds every package (`@elmeragroup/ui` via tsdown, the Next apps, static-theme)                                      |
+| `pnpm build`              | Builds every package (`@elmeragroup/fuse` via tsdown, the Next apps, static-theme)                                    |
 | `pnpm dev`                | Runs the dev servers                                                                                                  |
 | `pnpm lint`               | `oxlint . --deny-warnings` over the tree, including the two local plugins                                             |
 | `pnpm lint:fix`           | The same with `--fix`                                                                                                 |
@@ -44,21 +52,21 @@ Root scripts fan out through turbo unless noted.
 
 Package-scoped scripts worth knowing:
 
-| Script                                           | Does                                                                         |
-| ------------------------------------------------ | ---------------------------------------------------------------------------- |
-| `pnpm --filter @elmeragroup/ui generate:exports` | Regenerates the root barrel and runtime export names from the entry facades  |
-| `pnpm --filter @elmeragroup/ui pack`             | Produces the single tarball that `package:check` and `size-limit` consume    |
-| `pnpm --filter @elmeragroup/ui package:check`    | publint / attw / exports-map / emitted-directive checks against that tarball |
-| `pnpm --filter @elmeragroup/ui size-limit`       | Bundle budgets against that tarball                                          |
-| `pnpm --filter docs generate`                    | Regenerates the docs API tables and each component's committed `api.json`    |
+| Script                                             | Does                                                                         |
+| -------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `pnpm --filter @elmeragroup/fuse generate:exports` | Regenerates the root barrel and runtime export names from the entry facades  |
+| `pnpm --filter @elmeragroup/fuse pack`             | Produces the single tarball that `package:check` and `size-limit` consume    |
+| `pnpm --filter @elmeragroup/fuse package:check`    | publint / attw / exports-map / emitted-directive checks against that tarball |
+| `pnpm --filter @elmeragroup/fuse size-limit`       | Bundle budgets against that tarball                                          |
+| `pnpm --filter docs generate`                      | Regenerates the docs API tables and each component's committed `api.json`    |
 
-`@elmeragroup/ui` has no work of its own to do under `ci:checks`: its gates are separate turbo tasks that the aggregate already depends on. Its `ci:checks` script is therefore a no-op anchor that lets `turbo run ci:checks` fan out, and it says so; the same note is in [`turbo.json`](turbo.json).
+`@elmeragroup/fuse` has no work of its own to do under `ci:checks`: its gates are separate turbo tasks that the aggregate already depends on. Its `ci:checks` script is therefore a no-op anchor that lets `turbo run ci:checks` fan out, and it says so; the same note is in [`turbo.json`](turbo.json).
 
 ## Package map
 
 | Path                 | Name                             | What it is                                                                               |
 | -------------------- | -------------------------------- | ---------------------------------------------------------------------------------------- |
-| `packages/ui`        | `@elmeragroup/ui`                | The one published package: components, `/theme`, `/icons`, `/illustrations`, CSS entries |
+| `packages/fuse`      | `@elmeragroup/fuse`              | The one published package: components, `/theme`, `/icons`, `/illustrations`, CSS entries |
 | `apps/docs`          | `docs`                           | Next docs site, generated API reference, demo corpus, llms.txt                           |
 | `apps/static-theme`  | `static-theme`                   | Vite host proving standalone-CSS mode and first-paint theme attributes                   |
 | `tooling/typescript` | `@elmeragroup/typescript-config` | Shared tsconfig bases                                                                    |
@@ -84,7 +92,7 @@ Once publishing is activated, every push to `main` publishes a **canary** and th
 | Task                              | Start here                                                                                             |
 | --------------------------------- | ------------------------------------------------------------------------------------------------------ |
 | Change or add a component         | [Component authoring](docs/component-authoring.md), then that component's source, tests, and docs page |
-| Integrate the library into an app | [Package README](packages/ui/README.md) and [theme integration](docs/theming-integration.md)           |
+| Integrate the library into an app | [Package README](packages/fuse/README.md) and [theme integration](docs/theming-integration.md)         |
 | Change library-wide behavior      | [Contract index](docs/spec/README.md), which maps changes to one owning chapter                        |
 | Diagnose build or test failures   | [Tooling](docs/spec/tooling.md), the failing workspace's scripts, and its Turbo config                 |
 | Understand a decision             | [ADRs](docs/adr/) and [domain glossary](CONTEXT.md)                                                    |

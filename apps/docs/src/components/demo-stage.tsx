@@ -4,7 +4,7 @@ import type { ReactElement, ReactNode } from "react";
 
 import { tv } from "tailwind-variants";
 
-import { defaultDensityForVariant, densityAttributes, ThemeScope, themeSlug } from "@elmeragroup/ui/theme";
+import { defaultDensityForVariant, densityAttributes, ThemeScope, themeSlug } from "@elmeragroup/fuse/theme";
 
 import { usePreviewTheme } from "./preview-theme";
 

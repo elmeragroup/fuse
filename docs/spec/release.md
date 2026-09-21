@@ -4,10 +4,10 @@ Current state: once publishing is activated, every push to `main` publishes a ca
 
 ## 1 Scope & home
 
-- **One public package, one version.** `@elmeragroup/ui` is a single package (see [architecture](architecture.md)); `/theme`, `/icons`, `/illustrations`, per-component subpaths, and the CSS entries are exports of it. There is no independent-versioning question — no cross-package skew is possible. `tooling/*` packages are internal and are **not** published by this pipeline.
+- **One public package, one version.** `@elmeragroup/fuse` is a single package (see [architecture](architecture.md)); `/theme`, `/icons`, `/illustrations`, per-component subpaths, and the CSS entries are exports of it. There is no independent-versioning question — no cross-package skew is possible. `tooling/*` packages are internal and are **not** published by this pipeline.
 - **Home**: a **public repository in the existing Elmera GitHub org**. CI is **GitHub Actions**. Publishes go to **public npmjs.com** under the `@elmeragroup` org, with the maintainer (Tommy Barvåg) as npm org owner — he holds the open-distribution authority (§4).
 - Versioning follows **semver**; the changelog is generated from changesets (§2), never hand-edited.
-- The release engine ships in `@elmeragroup/internal` as its `release` export, not as a workspace package ([ADR 0011](../adr/0011-release-runs-on-the-internal-engine.md)). It owns eligibility, canary allocation, GitHub release records, archive verification, promotion, and retry. This repository owns the [pack adapter](../../packages/ui/scripts/release-pack.ts) and the workflows.
+- The release engine ships in `@elmeragroup/internal` as its `release` export, not as a workspace package ([ADR 0011](../adr/0011-release-runs-on-the-internal-engine.md)). It owns eligibility, canary allocation, GitHub release records, archive verification, promotion, and retry. This repository owns the [pack adapter](../../packages/fuse/scripts/release-pack.ts) and the workflows.
 
 ## 2 Versioning: changesets and the Version Packages PR
 
@@ -42,7 +42,7 @@ These facts bound what the published tarball may contain; they are settled, not 
 
 - **Code license: MIT**, matching the entire dependency stack (base-ui, Phosphor, Tailwind ecosystem). The `LICENSE` file and `"license": "MIT"` field ship in the package. Approver of open distribution: **Tommy Barvåg** — recorded here; no further sign-off gate exists.
 - **The library never ships font files.** Fonts are app-supplied via the themable `--font-sans`/`--font-heading` tokens; themes reference font-family _names_ only. This keeps Fjordkraft's commercially licensed Neo Sans (and any future licensed font) out of the published package permanently. Any PR adding `woff2`/`ttf`/font binaries to the package is rejected on licensing grounds. There is no `@elmeragroup/fonts` package.
-- **Logos ship publicly** in `@elmeragroup/ui/icons` (full decided roster). They are publicly visible marks already served in every brand site's bundles; npm changes discoverability, not exposure. Escalation only if brand/legal objects later.
+- **Logos ship publicly** in `@elmeragroup/fuse/icons` (full decided roster). They are publicly visible marks already served in every brand site's bundles; npm changes discoverability, not exposure. Escalation only if brand/legal objects later.
 - **Nothing stays private.** No public/private repo split, no private registry, no CI split.
 
 ## 5 Publish-time gates
@@ -75,7 +75,7 @@ The adapter runs `package:check` (publint, attw, exports-map, directives, packed
 The account owner must complete the following before the first publish. Track completion in a shared issue with the resulting org/repo URLs, owner accounts, and any deviations.
 
 1. **npm org**: the `@elmeragroup` org exists and publishes `@elmeragroup/internal`; require 2FA for all members.
-2. **Name-collision check**: `@elmeragroup/ui` is unclaimed on the public registry as of 2026-09-13; record a **reserved-names policy** for future public names.
+2. **Name-collision check**: `@elmeragroup/fuse` is unclaimed on the public registry as of 2026-09-13; record a **reserved-names policy** for future public names.
 3. **GitHub**: make the repository public in the Elmera GitHub org; enable GitHub Actions, and under **Settings → Actions → General** allow GitHub Actions to create and approve pull requests (`changesets/action` opens the Version Packages PR with `GITHUB_TOKEN`). Require branches to be up to date before merging, so the bot's refresh blocks a stale Version Packages PR merge.
 4. **Trusted Publishing (after the OIDC pivot, §6)**: bind the npm Trusted Publisher for the repo's `publish-release.yml` workflow, set provenance, and delete the `NPM_TOKEN` secret.
 5. **Vercel**: create the docs-site project wired to the repo, PR previews on.

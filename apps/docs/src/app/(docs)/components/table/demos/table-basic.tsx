@@ -1,6 +1,6 @@
 "use client";
 
-import { Table } from "@elmeragroup/ui/table";
+import { Table } from "@elmeragroup/fuse/table";
 
 export function TableBasic() {
   return (

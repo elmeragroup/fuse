@@ -1,6 +1,6 @@
 "use client";
 
-import { TextareaField } from "@elmeragroup/ui/textarea-field";
+import { TextareaField } from "@elmeragroup/fuse/textarea-field";
 
 export function TextareaFieldUncontrolled() {
   return (

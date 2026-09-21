@@ -1,8 +1,8 @@
 "use client";
 
-import { Button } from "@elmeragroup/ui/button";
-import { DropdownMenu } from "@elmeragroup/ui/dropdown-menu";
-import { Trash, User } from "@elmeragroup/ui/icons";
+import { Button } from "@elmeragroup/fuse/button";
+import { DropdownMenu } from "@elmeragroup/fuse/dropdown-menu";
+import { Trash, User } from "@elmeragroup/fuse/icons";
 
 export function DropdownMenuDestructive() {
   return (

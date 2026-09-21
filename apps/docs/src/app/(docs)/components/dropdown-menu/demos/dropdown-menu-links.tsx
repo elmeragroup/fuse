@@ -2,8 +2,8 @@
 
 import type { ComponentProps } from "react";
 
-import { Button } from "@elmeragroup/ui/button";
-import { DropdownMenu } from "@elmeragroup/ui/dropdown-menu";
+import { Button } from "@elmeragroup/fuse/button";
+import { DropdownMenu } from "@elmeragroup/fuse/dropdown-menu";
 
 function Link({ href, ...props }: ComponentProps<"a"> & { href: string }) {
   return <a href={href} {...props} />;

@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 
-import { ConfirmButton } from "@elmeragroup/ui/confirm-button";
-import { Trash } from "@elmeragroup/ui/icons";
+import { ConfirmButton } from "@elmeragroup/fuse/confirm-button";
+import { Trash } from "@elmeragroup/fuse/icons";
 
 export function ConfirmButtonIcon() {
   const [deleted, setDeleted] = useState(false);

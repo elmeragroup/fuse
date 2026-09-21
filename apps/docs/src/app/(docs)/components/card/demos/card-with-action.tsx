@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 
-import { Button } from "@elmeragroup/ui/button";
-import { Card } from "@elmeragroup/ui/card";
+import { Button } from "@elmeragroup/fuse/button";
+import { Card } from "@elmeragroup/fuse/card";
 
 /** Previews a disposable invoice export without downloading customer data. */
 export function CardWithAction() {

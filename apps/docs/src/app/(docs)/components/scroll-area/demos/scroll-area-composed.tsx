@@ -2,7 +2,7 @@
 
 import { ScrollArea as ScrollAreaPrimitive } from "@base-ui/react/scroll-area";
 
-import { ScrollArea } from "@elmeragroup/ui/scroll-area";
+import { ScrollArea } from "@elmeragroup/fuse/scroll-area";
 
 export function ScrollAreaComposed() {
   return (

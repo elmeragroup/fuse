@@ -2,7 +2,7 @@
  * Measured bundle sizes for the Tokens page (docs-site.md §3.3, performance.md §2).
  *
  * The docs never carry their own numbers: both columns come out of
- * `packages/ui/scripts/size-budgets.ts`, the module `size-limit` enforces in the merge
+ * `packages/fuse/scripts/size-budgets.ts`, the module `size-limit` enforces in the merge
  * gate. Each budget row stores `measuredGzip`; `ceilingGzip` is derived as measured × 1.5
  * unless a standing ratchet ceiling is written on the row. A budgeted entry with no
  * recorded measurement fails docs generation, so the published table cannot quietly fall
@@ -99,7 +99,7 @@ export function readBundleSizes(budgetsFile: string, problems: ProblemLog): Bund
   for (const budget of parseBudgets(source, budgetsFile)) {
     if (budget.measuredGzip <= 0) {
       problems.add(
-        `size budget "${budget.name}" has no recorded measurement in packages/ui/scripts/size-budgets.ts`
+        `size budget "${budget.name}" has no recorded measurement in packages/fuse/scripts/size-budgets.ts`
       );
       continue;
     }

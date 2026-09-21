@@ -1,11 +1,11 @@
 {
-  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
   "slug": "description-list",
   "parts": [
     {
       "name": "DescriptionList.Root",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/description-list/description-list.tsx",
+      "sourcePath": "packages/fuse/src/components/description-list/description-list.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -15,7 +15,7 @@
     {
       "name": "DescriptionList.Heading",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/description-list/description-list-heading.tsx",
+      "sourcePath": "packages/fuse/src/components/description-list/description-list-heading.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -35,7 +35,7 @@
     {
       "name": "DescriptionList.Content",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/description-list/description-list.tsx",
+      "sourcePath": "packages/fuse/src/components/description-list/description-list.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -45,7 +45,7 @@
     {
       "name": "DescriptionList.Term",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/description-list/description-list.tsx",
+      "sourcePath": "packages/fuse/src/components/description-list/description-list.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -55,7 +55,7 @@
     {
       "name": "DescriptionList.Details",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/description-list/description-list.tsx",
+      "sourcePath": "packages/fuse/src/components/description-list/description-list.tsx",
       "forwardedFrom": [
         "@types/react"
       ],

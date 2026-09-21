@@ -4,8 +4,8 @@ import { useState } from "react";
 
 import { CalendarDate } from "@internationalized/date";
 
-import { DateField } from "@elmeragroup/ui/react-aria/date-field";
-import { UiProviders } from "@elmeragroup/ui/react-aria/ui-providers";
+import { DateField } from "@elmeragroup/fuse/react-aria/date-field";
+import { UiProviders } from "@elmeragroup/fuse/react-aria/ui-providers";
 
 const minValue = new CalendarDate(2026, 7, 1);
 const maxValue = new CalendarDate(2026, 12, 31);

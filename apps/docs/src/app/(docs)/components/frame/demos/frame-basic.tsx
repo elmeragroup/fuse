@@ -1,6 +1,6 @@
 "use client";
 
-import { Frame } from "@elmeragroup/ui/frame";
+import { Frame } from "@elmeragroup/fuse/frame";
 
 export function FrameBasic() {
   return (

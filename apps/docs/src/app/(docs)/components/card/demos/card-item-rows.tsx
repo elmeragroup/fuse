@@ -1,7 +1,7 @@
 "use client";
 
-import { Card } from "@elmeragroup/ui/card";
-import { Item } from "@elmeragroup/ui/item";
+import { Card } from "@elmeragroup/fuse/card";
+import { Item } from "@elmeragroup/fuse/item";
 
 /**
  * The external rich card's `CardSectionAnchor` rows land here: real anchors via

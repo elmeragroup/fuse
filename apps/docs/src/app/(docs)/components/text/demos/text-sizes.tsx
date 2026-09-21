@@ -1,6 +1,6 @@
 "use client";
 
-import { Text } from "@elmeragroup/ui/text";
+import { Text } from "@elmeragroup/fuse/text";
 
 const SIZES = ["xs", "sm", "default", "lg", "xl", "2xl"] as const;
 

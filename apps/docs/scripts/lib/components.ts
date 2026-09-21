@@ -14,7 +14,7 @@
 import { existsSync, readdirSync } from "node:fs";
 import path from "node:path";
 
-import { componentRoutesDir, uiSrc } from "./paths.ts";
+import { componentRoutesDir, fuseSrc } from "./paths.ts";
 
 function pascalCase(slug: string): string {
   return slug
@@ -83,14 +83,16 @@ function apiExportNamesFor(slug: string, exportName: string): readonly string[] 
 export function resolveComponentPaths(slug: string): ComponentPaths {
   const routeDir = path.join(componentRoutesDir, slug);
   const exportName = pascalCase(slug);
-  const racFacade = path.join(uiSrc, "react-aria", `${slug}.ts`);
+  const racFacade = path.join(fuseSrc, "react-aria", `${slug}.ts`);
   const isRac = existsSync(racFacade);
-  const componentDir = isRac ? path.join(uiSrc, "react-aria", slug) : path.join(uiSrc, "components", slug);
+  const componentDir = isRac
+    ? path.join(fuseSrc, "react-aria", slug)
+    : path.join(fuseSrc, "components", slug);
   return {
     pageFile: path.join(routeDir, "page.mdx"),
     apiFile: path.join(routeDir, "api.json"),
-    entryFile: isRac ? racFacade : path.join(uiSrc, `${slug}.ts`),
-    entry: isRac ? `@elmeragroup/ui/react-aria/${slug}` : `@elmeragroup/ui/${slug}`,
+    entryFile: isRac ? racFacade : path.join(fuseSrc, `${slug}.ts`),
+    entry: isRac ? `@elmeragroup/fuse/react-aria/${slug}` : `@elmeragroup/fuse/${slug}`,
     exportName,
     apiExportNames: apiExportNamesFor(slug, exportName),
     sourceFile: path.join(componentDir, `${slug}.tsx`),

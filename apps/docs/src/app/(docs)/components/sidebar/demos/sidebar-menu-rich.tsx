@@ -1,8 +1,8 @@
 "use client";
 
-import { DropdownMenu } from "@elmeragroup/ui/dropdown-menu";
-import { DotsThree, Package, Receipt, Users } from "@elmeragroup/ui/icons";
-import { Sidebar } from "@elmeragroup/ui/sidebar";
+import { DropdownMenu } from "@elmeragroup/fuse/dropdown-menu";
+import { DotsThree, Package, Receipt, Users } from "@elmeragroup/fuse/icons";
+import { Sidebar } from "@elmeragroup/fuse/sidebar";
 
 export function SidebarMenuRich() {
   return (

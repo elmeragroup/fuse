@@ -1,7 +1,7 @@
 "use client";
 
-import { Button } from "@elmeragroup/ui/button";
-import { SpinnerGap } from "@elmeragroup/ui/icons";
+import { Button } from "@elmeragroup/fuse/button";
+import { SpinnerGap } from "@elmeragroup/fuse/icons";
 
 export function ButtonPending() {
   return (

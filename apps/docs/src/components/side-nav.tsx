@@ -6,7 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { tv } from "tailwind-variants";
 
-import { ScrollArea } from "@elmeragroup/ui/scroll-area";
+import { ScrollArea } from "@elmeragroup/fuse/scroll-area";
 
 import { NAV_GROUPS } from "../lib/nav";
 import { docsNavList } from "./docs-nav-list";

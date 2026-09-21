@@ -11,7 +11,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@elmeragroup/ui": "workspace:*",
+    "@elmeragroup/fuse": "workspace:*",
     "react": "catalog:",
     "react-dom": "catalog:"
   },

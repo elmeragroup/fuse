@@ -4,7 +4,7 @@ Date: 2026-08-17. Status: accepted; amended 2026-08-18 after the accepted shared
 
 ## Context
 
-`@elmeragroup/ui` inherits two reference codebases with **incompatible token vocabularies**: OrderModuleInternalWeb is shadcn-style (`--background/--foreground`, `--card`, neutral ramp, `--brand-<code>` accents), OrderModuleWeb is Material-3-style (`--surface/--on-surface`, `--primary-container/--on-primary-container`, four-status `-container` system). Names like `--primary`, `--ring`, `--radius` exist in both with different meanings. The library must have exactly one contract, and 20 theme permutations (variant × brand × segment) must supply it. Usage analysis of the external app showed the M3 names were not used as M3 intends: `--surface-text` was never consumed, `--primary-container` (white everywhere) was the de-facto default Card, `--tertiary`/`--secondary-variant` were value-coincident aliases of one dark anchor tone, and `--destructive` was a dead alias of `--error`.
+`@elmeragroup/fuse` inherits two reference codebases with **incompatible token vocabularies**: OrderModuleInternalWeb is shadcn-style (`--background/--foreground`, `--card`, neutral ramp, `--brand-<code>` accents), OrderModuleWeb is Material-3-style (`--surface/--on-surface`, `--primary-container/--on-primary-container`, four-status `-container` system). Names like `--primary`, `--ring`, `--radius` exist in both with different meanings. The library must have exactly one contract, and 20 theme permutations (variant × brand × segment) must supply it. Usage analysis of the external app showed the M3 names were not used as M3 intends: `--surface-text` was never consumed, `--primary-container` (white everywhere) was the de-facto default Card, `--tertiary`/`--secondary-variant` were value-coincident aliases of one dark anchor tone, and `--destructive` was a dead alias of `--error`.
 
 ## Decision
 
@@ -50,7 +50,7 @@ Normative detail: [theming](../spec/theming.md) §2.7. Deferred preference/persi
 
 Recorded from the density spec-amendment ticket (ruling 82, 2026-08-22: component size axes that are not control boxes stay off the density ladder; field boxes pin `md`):
 
-1. **Comfortable source.** Dense control metrics come from the internal-ref lift (`:root` defaults; Button §8.5). Comfortable is the signed `--control-*` column in `ui.css`, never derived from the external ref. External deployments render comfortable via `defaultDensityForVariant` only.
+1. **Comfortable source.** Dense control metrics come from the internal-ref lift (`:root` defaults; Button §8.5). Comfortable is the signed `--control-*` column in `fuse.css`, never derived from the external ref. External deployments render comfortable via `defaultDensityForVariant` only.
 2. **Single-height field boxes pin `md`.** Input-class fixed-height surfaces (no `size` axis) read `h-(--control-h-md)`, `--control-px-md`, and the control-type pair where type is density-owned. They do not gain a `size` axis so density can retarget them.
 
 Normative detail: [component authoring](../component-authoring.md) density metrics.

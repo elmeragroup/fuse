@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 
-import { Button } from "@elmeragroup/ui/button";
-import { DropdownMenu } from "@elmeragroup/ui/dropdown-menu";
+import { Button } from "@elmeragroup/fuse/button";
+import { DropdownMenu } from "@elmeragroup/fuse/dropdown-menu";
 
 export function DropdownMenuCheckboxes() {
   const [showToolbar, setShowToolbar] = useState(true);

@@ -1,11 +1,11 @@
 {
-  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
   "slug": "field",
   "parts": [
     {
       "name": "Field.Root",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/field/field.tsx",
+      "sourcePath": "packages/fuse/src/components/field/field.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -158,7 +158,7 @@
     {
       "name": "Field.Label",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/field/field.tsx",
+      "sourcePath": "packages/fuse/src/components/field/field.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -214,7 +214,7 @@
     {
       "name": "Field.Description",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/field/field.tsx",
+      "sourcePath": "packages/fuse/src/components/field/field.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -259,7 +259,7 @@
     {
       "name": "Field.Error",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/field/field.tsx",
+      "sourcePath": "packages/fuse/src/components/field/field.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -315,7 +315,7 @@
     {
       "name": "Field.Control",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/field/field.tsx",
+      "sourcePath": "packages/fuse/src/components/field/field.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -371,7 +371,7 @@
     {
       "name": "Field.Item",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/field/field.tsx",
+      "sourcePath": "packages/fuse/src/components/field/field.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -427,7 +427,7 @@
     {
       "name": "Field.Content",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/field/field.tsx",
+      "sourcePath": "packages/fuse/src/components/field/field.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -437,7 +437,7 @@
     {
       "name": "Field.Group",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/field/field.tsx",
+      "sourcePath": "packages/fuse/src/components/field/field.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -447,7 +447,7 @@
     {
       "name": "Field.Set",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/field/field.tsx",
+      "sourcePath": "packages/fuse/src/components/field/field.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -492,7 +492,7 @@
     {
       "name": "Field.Legend",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/field/field.tsx",
+      "sourcePath": "packages/fuse/src/components/field/field.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -546,7 +546,7 @@
     {
       "name": "Field.Separator",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/field/field.tsx",
+      "sourcePath": "packages/fuse/src/components/field/field.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -566,7 +566,7 @@
     {
       "name": "Field.Title",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/field/field.tsx",
+      "sourcePath": "packages/fuse/src/components/field/field.tsx",
       "forwardedFrom": [
         "@types/react"
       ],

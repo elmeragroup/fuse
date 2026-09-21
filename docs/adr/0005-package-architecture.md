@@ -4,11 +4,11 @@ Date: 2026-08-17. Status: accepted; amended 2026-08-18 to preserve source-level 
 
 ## Context
 
-Both reference monorepos ship raw TSX consumed via `transpilePackages` — a shape that cannot survive public npm. The library publishes publicly under `@elmeragroup/ui` (MIT, everything-public per the licensing decision). References examined: kumo (tsdown two-pass, dual CSS distribution, exports codegen) and base-ui (`publishConfig.directory`, unbundled babel+tsc). The repo's fixed toolchain already standardizes tsdown with an ESM-only template.
+Both reference monorepos ship raw TSX consumed via `transpilePackages` — a shape that cannot survive public npm. The library publishes publicly under `@elmeragroup/fuse` (MIT, everything-public per the licensing decision). References examined: kumo (tsdown two-pass, dual CSS distribution, exports codegen) and base-ui (`publishConfig.directory`, unbundled babel+tsc). The repo's fixed toolchain already standardizes tsdown with an ESM-only template.
 
 ## Decision
 
-- **One public package**: `@elmeragroup/ui` with subpath exports (`/theme`, `/icons`, `/illustrations`, per-component paths, CSS entries). Tooling lives in separate `tooling/*` packages. No `/tokens` or `/icons` sibling packages.
+- **One public package**: `@elmeragroup/fuse` with subpath exports (`/theme`, `/icons`, `/illustrations`, per-component paths, CSS entries). Tooling lives in separate `tooling/*` packages. No `/tokens` or `/icons` sibling packages.
 - **Build**: tsdown/rolldown, unbundled ESM-only — one JS+d.ts pass preserves a one-source/one-output module graph and each source module's own `'use client'` directive; npm dependencies remain external. `publint` + `arethetypeswrong` gate CI; the exports map is code-generated with a test asserting every subpath resolves.
 - **Exports**: per-component subpaths plus a root barrel scoped to the 55 shipped bare components + `/theme`; `chart` is deferred (Wave 9); the 11 interim `react-aria/*` entries, icons, and illustrations remain subpath-only; `sideEffects: false` except `*.css`.
 - **CSS**: dual distribution — raw Tailwind v4 source (consumer adds one `@source` line so utilities survive node_modules non-scanning) and a precompiled standalone bundle for non-Tailwind apps; theme CSS is its own entry in both.

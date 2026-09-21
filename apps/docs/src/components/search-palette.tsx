@@ -6,8 +6,8 @@ import type { ChangeEvent, KeyboardEvent, ReactElement } from "react";
 import { useRouter } from "next/navigation";
 import { tv } from "tailwind-variants";
 
-import { Button } from "@elmeragroup/ui/button";
-import { Dialog } from "@elmeragroup/ui/dialog";
+import { Button } from "@elmeragroup/fuse/button";
+import { Dialog } from "@elmeragroup/fuse/dialog";
 
 import { matchSearchEntries } from "../lib/search";
 

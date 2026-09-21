@@ -1,6 +1,6 @@
 "use client";
 
-import { Heading } from "@elmeragroup/ui/heading";
+import { Heading } from "@elmeragroup/fuse/heading";
 
 export function HeadingModifiers() {
   return (

@@ -1,6 +1,6 @@
 "use client";
 
-import { Span } from "@elmeragroup/ui/span";
+import { Span } from "@elmeragroup/fuse/span";
 
 export function SpanTruncate() {
   return (

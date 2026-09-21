@@ -2,7 +2,7 @@
 
 import type { ComponentProps } from "react";
 
-import { Breadcrumb } from "@elmeragroup/ui/breadcrumb";
+import { Breadcrumb } from "@elmeragroup/fuse/breadcrumb";
 
 function RouterLink({ href = "#", ...props }: ComponentProps<"a">) {
   return <a href={href} {...props} />;

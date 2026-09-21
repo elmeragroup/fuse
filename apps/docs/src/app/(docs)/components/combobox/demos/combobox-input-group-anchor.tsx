@@ -1,7 +1,7 @@
 "use client";
 
-import { Combobox, useComboboxAnchor } from "@elmeragroup/ui/combobox";
-import { InputGroup } from "@elmeragroup/ui/input-group";
+import { Combobox, useComboboxAnchor } from "@elmeragroup/fuse/combobox";
+import { InputGroup } from "@elmeragroup/fuse/input-group";
 
 const countries = ["Norway", "Sweden", "Finland", "Denmark"] as const;
 

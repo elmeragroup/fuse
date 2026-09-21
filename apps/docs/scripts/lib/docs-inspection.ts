@@ -17,11 +17,11 @@ import type { ComponentPaths } from "./components.ts";
 import type { ProblemLog } from "./errors.ts";
 import { readComponentPage } from "./page-source.ts";
 import type { ComponentPageSource } from "./page-source.ts";
-import { repoRelative, sizeBudgetsFile, uiRoot } from "./paths.ts";
+import { repoRelative, sizeBudgetsFile, fuseRoot } from "./paths.ts";
 import { missingNavRoutes, staticRouteFile } from "./routes.ts";
 import { readBundleSizes } from "./sizes.ts";
 import type { BundleSizeReport } from "./sizes.ts";
-import { assertDocsUiCssExports } from "./workspace-css.ts";
+import { assertDocsFuseCssExports } from "./workspace-css.ts";
 
 /**
  * RSC classification of a module from its own leading directive (performance.md §3).
@@ -158,7 +158,7 @@ export function inspectComponentDemos(
 
 /** Validates global read-only inputs and reads the canonical bundle-size report. */
 export function inspectGlobalDocs(problems: ProblemLog): BundleSizeReport {
-  assertDocsUiCssExports(uiRoot);
+  assertDocsFuseCssExports(fuseRoot);
   for (const href of missingNavRoutes()) {
     problems.add(`nav entry ${href} has no route at ${repoRelative(staticRouteFile(href))}`);
   }

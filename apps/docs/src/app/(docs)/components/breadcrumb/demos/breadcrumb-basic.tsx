@@ -1,6 +1,6 @@
 "use client";
 
-import { Breadcrumb } from "@elmeragroup/ui/breadcrumb";
+import { Breadcrumb } from "@elmeragroup/fuse/breadcrumb";
 
 export function BreadcrumbBasic() {
   return (

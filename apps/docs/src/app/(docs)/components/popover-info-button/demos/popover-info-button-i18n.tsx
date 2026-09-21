@@ -1,8 +1,8 @@
 "use client";
 
-import { Field } from "@elmeragroup/ui/field";
-import { Popover } from "@elmeragroup/ui/popover";
-import { PopoverInfoButton } from "@elmeragroup/ui/popover-info-button";
+import { Field } from "@elmeragroup/fuse/field";
+import { Popover } from "@elmeragroup/fuse/popover";
+import { PopoverInfoButton } from "@elmeragroup/fuse/popover-info-button";
 
 export function PopoverInfoButtonI18n() {
   return (

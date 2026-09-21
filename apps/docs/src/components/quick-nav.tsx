@@ -5,7 +5,7 @@ import type { ReactElement } from "react";
 import { usePathname } from "next/navigation";
 import { tv } from "tailwind-variants";
 
-import { ScrollArea } from "@elmeragroup/ui/scroll-area";
+import { ScrollArea } from "@elmeragroup/fuse/scroll-area";
 
 import { tocForPath } from "../lib/nav";
 import { docsNavList } from "./docs-nav-list";

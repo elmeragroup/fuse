@@ -1,11 +1,11 @@
 {
-  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
   "slug": "card",
   "parts": [
     {
       "name": "Card.Root",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/card/card.tsx",
+      "sourcePath": "packages/fuse/src/components/card/card.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -25,7 +25,7 @@
     {
       "name": "Card.Header",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/card/card.tsx",
+      "sourcePath": "packages/fuse/src/components/card/card.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -45,7 +45,7 @@
     {
       "name": "Card.Tag",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/card/card.tsx",
+      "sourcePath": "packages/fuse/src/components/card/card.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -65,7 +65,7 @@
     {
       "name": "Card.Title",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/card/card.tsx",
+      "sourcePath": "packages/fuse/src/components/card/card.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -112,7 +112,7 @@
     {
       "name": "Card.Description",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/card/card.tsx",
+      "sourcePath": "packages/fuse/src/components/card/card.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -141,7 +141,7 @@
     {
       "name": "Card.Action",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/card/card.tsx",
+      "sourcePath": "packages/fuse/src/components/card/card.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -161,7 +161,7 @@
     {
       "name": "Card.Content",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/card/card.tsx",
+      "sourcePath": "packages/fuse/src/components/card/card.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -181,7 +181,7 @@
     {
       "name": "Card.Footer",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/card/card.tsx",
+      "sourcePath": "packages/fuse/src/components/card/card.tsx",
       "forwardedFrom": [
         "@types/react"
       ],

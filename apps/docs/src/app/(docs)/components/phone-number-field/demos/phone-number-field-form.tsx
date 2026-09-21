@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 
-import { Button } from "@elmeragroup/ui/button";
-import { PhoneNumberField } from "@elmeragroup/ui/phone-number-field";
+import { Button } from "@elmeragroup/fuse/button";
+import { PhoneNumberField } from "@elmeragroup/fuse/phone-number-field";
 
 export function PhoneNumberFieldForm() {
   const [submitted, setSubmitted] = useState("");

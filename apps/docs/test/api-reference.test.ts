@@ -144,7 +144,7 @@ describe("reference row presentation (docs-site.md §8)", () => {
     const part: ApiPart = {
       name: "Dialog.Root",
       rsc: "client",
-      sourcePath: "packages/ui/src/components/dialog/dialog.tsx",
+      sourcePath: "packages/fuse/src/components/dialog/dialog.tsx",
       forwardedFrom: [],
       forwardedCount: 0,
       props: [

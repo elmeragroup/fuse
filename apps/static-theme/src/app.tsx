@@ -1,4 +1,4 @@
-import { useColorScheme, useTheme } from "@elmeragroup/ui/theme";
+import { useColorScheme, useTheme } from "@elmeragroup/fuse/theme";
 
 export function App() {
   const theme = useTheme();

@@ -1,11 +1,11 @@
 {
-  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
   "slug": "ui-providers",
   "parts": [
     {
       "name": "UiProviders",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/react-aria/ui-providers/ui-providers.tsx",
+      "sourcePath": "packages/fuse/src/react-aria/ui-providers/ui-providers.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [
@@ -24,7 +24,7 @@
           "type": "SupportedLocale",
           "shortType": null,
           "defaultValue": null,
-          "description": "Required locale forwarded to `ElmeraGroupUiProvider` and RAC `I18nProvider`. One of the four shipped `SupportedLocale` values.",
+          "description": "Required locale forwarded to `FuseProvider` and RAC `I18nProvider`. One of the four shipped `SupportedLocale` values.",
           "required": true
         },
         {

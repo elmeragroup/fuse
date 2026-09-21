@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 
-import { Button } from "@elmeragroup/ui/button";
-import { Popover } from "@elmeragroup/ui/popover";
+import { Button } from "@elmeragroup/fuse/button";
+import { Popover } from "@elmeragroup/fuse/popover";
 
 export function PopoverControlled() {
   const [open, setOpen] = useState(false);

@@ -1,6 +1,6 @@
 "use client";
 
-import { Input } from "@elmeragroup/ui/input";
+import { Input } from "@elmeragroup/fuse/input";
 
 export function InputBasic() {
   return <Input aria-label="Email" placeholder="name@example.com" />;

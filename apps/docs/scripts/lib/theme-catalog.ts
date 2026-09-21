@@ -1,7 +1,7 @@
 /**
  * The `/api/themes` catalog builder (docs-site.md §9).
  *
- * Imports through the workspace-only `@elmeragroup/ui/theme-catalog` tooling entry —
+ * Imports through the workspace-only `@elmeragroup/fuse/theme-catalog` tooling entry —
  * Node generate cannot load `/theme` because that facade re-exports client TSX.
  */
 
@@ -15,7 +15,7 @@ import {
   themeAttributes,
   themeSlug,
   TOKEN_NAMES,
-} from "@elmeragroup/ui/theme-catalog";
+} from "@elmeragroup/fuse/theme-catalog";
 
 import type { ThemeCatalog, ThemeCatalogEntry } from "../../src/lib/docs-model.ts";
 

@@ -49,16 +49,16 @@ describe("workspace lint script", () => {
     expect(rules["anti-slop/no-runtime-typeof"]).toBe("warn");
 
     const overrides = asRecordArray(parsed.overrides, "overrides");
-    const appsUiOverride = overrides.find((entry) => overrideFiles(entry).includes("apps/**/*.{ts,tsx}"));
-    expect(appsUiOverride?.plugins).toEqual(["typescript", "oxc", "react", "unicorn"]);
+    const appsFuseOverride = overrides.find((entry) => overrideFiles(entry).includes("apps/**/*.{ts,tsx}"));
+    expect(appsFuseOverride?.plugins).toEqual(["typescript", "oxc", "react", "unicorn"]);
 
-    const uiSrcOverride = overrides.find((entry) =>
-      overrideFiles(entry).includes("packages/ui/src/**/*.{ts,tsx}")
+    const fuseSrcOverride = overrides.find((entry) =>
+      overrideFiles(entry).includes("packages/fuse/src/**/*.{ts,tsx}")
     );
-    const uiSrcRules = asRecord(uiSrcOverride?.rules, "ui src override rules");
-    expect(uiSrcRules["elmera/no-hardcoded-density-metrics"]).toBe("warn");
-    expect(uiSrcRules["elmera/no-raw-class-map"]).toBe("error");
-    expect(uiSrcRules["elmera/facade-reexport-grammar"]).toBe("error");
+    const fuseSrcRules = asRecord(fuseSrcOverride?.rules, "Fuse source override rules");
+    expect(fuseSrcRules["elmera/no-hardcoded-density-metrics"]).toBe("warn");
+    expect(fuseSrcRules["elmera/no-raw-class-map"]).toBe("error");
+    expect(fuseSrcRules["elmera/facade-reexport-grammar"]).toBe("error");
 
     const docsSrcOverride = overrides.find((entry) =>
       overrideFiles(entry).includes("apps/docs/src/**/*.{ts,tsx}")
@@ -66,30 +66,30 @@ describe("workspace lint script", () => {
     expect(asRecord(docsSrcOverride?.rules, "docs src override rules")["elmera/no-raw-class-map"]).toBe(
       "error"
     );
-    expect(uiSrcRules["elmera/no-rac-outside-quarantine"]).toBe("error");
-    expect(uiSrcRules["elmera/restrict-focus-ring-call"]).toBe("error");
-    expect(uiSrcRules["elmera/restrict-browser-helper-copy"]).toBe("error");
-    expect(uiSrcRules["elmera/no-field-part-jsx"]).toBe("error");
+    expect(fuseSrcRules["elmera/no-rac-outside-quarantine"]).toBe("error");
+    expect(fuseSrcRules["elmera/restrict-focus-ring-call"]).toBe("error");
+    expect(fuseSrcRules["elmera/restrict-browser-helper-copy"]).toBe("error");
+    expect(fuseSrcRules["elmera/no-field-part-jsx"]).toBe("error");
 
-    const uiTestOverride = overrides.find((entry) =>
-      overrideFiles(entry).includes("packages/ui/test/**/*.{ts,tsx}")
+    const fuseTestOverride = overrides.find((entry) =>
+      overrideFiles(entry).includes("packages/fuse/test/**/*.{ts,tsx}")
     );
     expect(
-      asRecord(uiTestOverride?.rules, "ui test override rules")["elmera/restrict-browser-helper-copy"]
+      asRecord(fuseTestOverride?.rules, "Fuse test override rules")["elmera/restrict-browser-helper-copy"]
     ).toBe("error");
 
-    const uiScriptsOverride = overrides.find((entry) =>
-      overrideFiles(entry).includes("packages/ui/scripts/**")
+    const fuseScriptsOverride = overrides.find((entry) =>
+      overrideFiles(entry).includes("packages/fuse/scripts/**")
     );
     expect(
-      asRecord(uiScriptsOverride?.rules, "ui scripts override rules")[
+      asRecord(fuseScriptsOverride?.rules, "Fuse scripts override rules")[
         "elmera/restrict-package-root-from-script"
       ]
     ).toBe("error");
-    expect(uiSrcRules["no-restricted-imports"]?.[0]).toBe("error");
+    expect(fuseSrcRules["no-restricted-imports"]?.[0]).toBe("error");
 
     const dictionaryFactoryOverride = overrides.find((entry) =>
-      overrideFiles(entry).includes("packages/ui/src/intl/create-string-dictionary.ts")
+      overrideFiles(entry).includes("packages/fuse/src/intl/create-string-dictionary.ts")
     );
     expect(
       asRecord(dictionaryFactoryOverride?.rules, "dictionary factory override rules")["no-restricted-imports"]

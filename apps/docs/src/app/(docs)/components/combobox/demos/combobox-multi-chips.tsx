@@ -1,6 +1,6 @@
 "use client";
 
-import { Combobox, useComboboxAnchor } from "@elmeragroup/ui/combobox";
+import { Combobox, useComboboxAnchor } from "@elmeragroup/fuse/combobox";
 
 const fruits = ["Apple", "Banana", "Cherry", "Date"] as const;
 

@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-import { themeSlug } from "@elmeragroup/ui/theme";
+import { themeSlug } from "@elmeragroup/fuse/theme";
 
 import { sizeBudgetsFile } from "../scripts/lib/paths.ts";
 import { parseBudgets } from "../scripts/lib/sizes.ts";
@@ -76,7 +76,7 @@ describe("tokens page (docs-site.md §3.3, performance.md §2)", () => {
     expect(BUNDLE_SIZES.length).toBeGreaterThan(0);
     expect(html).toContain(BUNDLE_SIZES_MEASURED_ON);
     for (const entry of BUNDLE_SIZES) {
-      const label = entry.name === "." ? "@elmeragroup/ui" : `@elmeragroup/ui/${entry.name}`;
+      const label = entry.name === "." ? "@elmeragroup/fuse" : `@elmeragroup/fuse/${entry.name}`;
       expect(html, entry.name).toContain(label);
       expect(entry.measuredGzip).toBeGreaterThan(0);
       expect(entry.ceilingGzip).toBeGreaterThan(0);
@@ -108,7 +108,7 @@ describe("localization page (accessibility.md §4)", () => {
     expect(html).toContain('id="supported-locales"');
     expect(html).toContain('id="override-precedence"');
     expect(html).toContain('id="language-switcher"');
-    expect(html).toContain("ElmeraGroupUiProvider");
+    expect(html).toContain("FuseProvider");
   });
 });
 

@@ -2,10 +2,10 @@
 
 import { CalendarDate } from "@internationalized/date";
 
-import { Button } from "@elmeragroup/ui/button";
-import { Dialog } from "@elmeragroup/ui/dialog";
-import { DatePicker } from "@elmeragroup/ui/react-aria/date-picker";
-import { UiProviders } from "@elmeragroup/ui/react-aria/ui-providers";
+import { Button } from "@elmeragroup/fuse/button";
+import { Dialog } from "@elmeragroup/fuse/dialog";
+import { DatePicker } from "@elmeragroup/fuse/react-aria/date-picker";
+import { UiProviders } from "@elmeragroup/fuse/react-aria/ui-providers";
 
 /**
  * A picker inside a dialog: the popover is a separate overlay layer, and choosing a day

@@ -234,7 +234,7 @@ describe("component page manifest", () => {
 
   it("links View source at the implementation on the repo host", () => {
     expect(page("button").sourceUrl).toBe(
-      "https://github.com/elmeragroup/ui/blob/main/packages/ui/src/components/button/button.tsx"
+      "https://github.com/elmeragroup/ui/blob/main/packages/fuse/src/components/button/button.tsx"
     );
     expect(page("button").markdownUrl).toBe("/components/button.md");
   });
@@ -285,38 +285,38 @@ describe("committed api.json", () => {
     expect(resolveComponentPaths("pagination").apiExportNames).toEqual(["Pagination"]);
     expect(resolveComponentPaths("breadcrumb").apiExportNames).toEqual(["Breadcrumb"]);
     expect(resolveComponentPaths("alert").apiExportNames).toEqual(["Alert"]);
-    expect(resolveComponentPaths("ui-providers").entry).toBe("@elmeragroup/ui/react-aria/ui-providers");
+    expect(resolveComponentPaths("ui-providers").entry).toBe("@elmeragroup/fuse/react-aria/ui-providers");
     expect(resolveComponentPaths("ui-providers").exportName).toBe("UiProviders");
     expect(resolveComponentPaths("ui-providers").apiExportNames).toEqual(["UiProviders"]);
-    expect(resolveComponentPaths("link").entry).toBe("@elmeragroup/ui/react-aria/link");
+    expect(resolveComponentPaths("link").entry).toBe("@elmeragroup/fuse/react-aria/link");
     expect(resolveComponentPaths("link").exportName).toBe("Link");
     expect(resolveComponentPaths("link").apiExportNames).toEqual(["Link"]);
-    expect(resolveComponentPaths("search-field").entry).toBe("@elmeragroup/ui/react-aria/search-field");
+    expect(resolveComponentPaths("search-field").entry).toBe("@elmeragroup/fuse/react-aria/search-field");
     expect(resolveComponentPaths("search-field").exportName).toBe("SearchField");
     expect(resolveComponentPaths("search-field").apiExportNames).toEqual(["SearchField"]);
-    expect(resolveComponentPaths("file-trigger").entry).toBe("@elmeragroup/ui/react-aria/file-trigger");
+    expect(resolveComponentPaths("file-trigger").entry).toBe("@elmeragroup/fuse/react-aria/file-trigger");
     expect(resolveComponentPaths("file-trigger").exportName).toBe("FileTrigger");
     expect(resolveComponentPaths("file-trigger").apiExportNames).toEqual(["FileTrigger"]);
-    expect(resolveComponentPaths("focusable").entry).toBe("@elmeragroup/ui/react-aria/focusable");
+    expect(resolveComponentPaths("focusable").entry).toBe("@elmeragroup/fuse/react-aria/focusable");
     expect(resolveComponentPaths("focusable").exportName).toBe("Focusable");
     expect(resolveComponentPaths("focusable").apiExportNames).toEqual(["Focusable", "useFocusable"]);
-    expect(resolveComponentPaths("grid-list").entry).toBe("@elmeragroup/ui/react-aria/grid-list");
+    expect(resolveComponentPaths("grid-list").entry).toBe("@elmeragroup/fuse/react-aria/grid-list");
     expect(resolveComponentPaths("grid-list").exportName).toBe("GridList");
     expect(resolveComponentPaths("grid-list").apiExportNames).toEqual(["GridList", "GridListItem"]);
-    expect(resolveComponentPaths("date-field").entry).toBe("@elmeragroup/ui/react-aria/date-field");
+    expect(resolveComponentPaths("date-field").entry).toBe("@elmeragroup/fuse/react-aria/date-field");
     expect(resolveComponentPaths("date-field").exportName).toBe("DateField");
     expect(resolveComponentPaths("date-field").apiExportNames).toEqual(["DateField", "DateInput"]);
-    expect(resolveComponentPaths("calendar").entry).toBe("@elmeragroup/ui/react-aria/calendar");
+    expect(resolveComponentPaths("calendar").entry).toBe("@elmeragroup/fuse/react-aria/calendar");
     expect(resolveComponentPaths("calendar").exportName).toBe("Calendar");
     expect(resolveComponentPaths("calendar").apiExportNames).toEqual([
       "Calendar",
       "CalendarHeader",
       "CalendarGridHeader",
     ]);
-    expect(resolveComponentPaths("range-calendar").entry).toBe("@elmeragroup/ui/react-aria/range-calendar");
+    expect(resolveComponentPaths("range-calendar").entry).toBe("@elmeragroup/fuse/react-aria/range-calendar");
     expect(resolveComponentPaths("range-calendar").exportName).toBe("RangeCalendar");
     expect(resolveComponentPaths("range-calendar").apiExportNames).toEqual(["RangeCalendar"]);
-    expect(resolveComponentPaths("date-picker").entry).toBe("@elmeragroup/ui/react-aria/date-picker");
+    expect(resolveComponentPaths("date-picker").entry).toBe("@elmeragroup/fuse/react-aria/date-picker");
     expect(resolveComponentPaths("date-picker").exportName).toBe("DatePicker");
     expect(resolveComponentPaths("date-picker").apiExportNames).toEqual([
       "DatePicker",
@@ -324,7 +324,7 @@ describe("committed api.json", () => {
       "DatePickerPresetItem",
     ]);
     expect(resolveComponentPaths("date-range-picker").entry).toBe(
-      "@elmeragroup/ui/react-aria/date-range-picker"
+      "@elmeragroup/fuse/react-aria/date-range-picker"
     );
     expect(resolveComponentPaths("date-range-picker").exportName).toBe("DateRangePicker");
     expect(resolveComponentPaths("date-range-picker").apiExportNames).toEqual(["DateRangePicker"]);

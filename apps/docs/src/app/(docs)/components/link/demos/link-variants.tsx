@@ -1,6 +1,6 @@
 "use client";
 
-import { Link } from "@elmeragroup/ui/react-aria/link";
+import { Link } from "@elmeragroup/fuse/react-aria/link";
 
 const VARIANTS = [
   "default",

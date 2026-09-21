@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { NumberField } from "@elmeragroup/ui/number-field";
+import { NumberField } from "@elmeragroup/fuse/number-field";
 
 export function NumberFieldUncontrolled() {
   const [log, setLog] = useState("");

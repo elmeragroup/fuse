@@ -6,7 +6,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { DOCUMENT_COLOR_SCHEME, DOCUMENT_THEME } from "../src/theme";
 
 const fixtureRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
-const packedThemeHref = pathToFileURL(path.join(fixtureRoot, "../../packages/ui/dist/theme.js")).href;
+const packedThemeHref = pathToFileURL(path.join(fixtureRoot, "../../packages/fuse/dist/theme.js")).href;
 
 export const BOOTSTRAP_MANIFEST_KEY = "__ELMERA_COLOR_SCHEME_BOOTSTRAP__";
 export const INJECTED_BOOTSTRAP_SOURCE_KEY = "elmera.colorScheme.bootstrapSource";

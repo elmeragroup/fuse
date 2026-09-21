@@ -3,14 +3,14 @@ import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
 import type { Plugin } from "vite";
 
-import type { ColorScheme, ColorSchemeOptions } from "@elmeragroup/ui/theme";
+import type { ColorScheme, ColorSchemeOptions } from "@elmeragroup/fuse/theme";
 
 import {
   colorSchemeScriptSource,
   defaultDensityForVariant,
   densityAttributes,
   themeAttributes,
-} from "../../packages/ui/dist/theme.js";
+} from "../../packages/fuse/dist/theme.js";
 import { applyHostRootAttributes } from "./src/host-html.ts";
 import { DOCUMENT_COLOR_SCHEME, DOCUMENT_THEME } from "./src/theme.ts";
 

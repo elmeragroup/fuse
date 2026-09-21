@@ -10,7 +10,7 @@
   "arrowParens": "always",
   "endOfLine": "lf",
   "sortTailwindcss": {
-    "stylesheet": "./packages/ui/src/styles/ui.css",
+    "stylesheet": "./packages/fuse/src/styles/fuse.css",
     "functions": ["tv", "cn"]
   },
   "sortImports": {

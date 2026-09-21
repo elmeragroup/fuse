@@ -1,6 +1,6 @@
 # Performance guidelines
 
-Normative chapter for `@elmeragroup/ui`.
+Normative chapter for `@elmeragroup/fuse`.
 
 ## 1 Principles
 
@@ -10,7 +10,7 @@ Normative chapter for `@elmeragroup/ui`.
 
 ## 2 Bundle budgets
 
-[Size budgets](../../packages/ui/scripts/size-budgets.ts) own recorded measurements and ceilings. The docs site generates its size reference from that module. [Flag payload policy](../../packages/ui/scripts/flag-payload.ts) owns the separate aggregate raw-SVG ceiling. This chapter owns how budgets change, not a copy of their current numbers.
+[Size budgets](../../packages/fuse/scripts/size-budgets.ts) own recorded measurements and ceilings. The docs site generates its size reference from that module. [Flag payload policy](../../packages/fuse/scripts/flag-payload.ts) owns the separate aggregate raw-SVG ceiling. This chapter owns how budgets change, not a copy of their current numbers.
 
 - `size-limit` bundles consumer fixtures against the packed package and measures min+gzip. It exercises the exported dependency graph, excludes peers, and fails on a ceiling breach. Measuring an unbundled source facade is insufficient.
 - A new entry starts at measured × 1.5. Deferred entries have no published budget until they ship; the future chart measurement excludes its optional recharts peer.
@@ -19,82 +19,82 @@ Normative chapter for `@elmeragroup/ui`.
 - When an entry shrinks, reduce its ceiling by the bytes saved to preserve its existing headroom. Record the new measurement without adding slack.
 - Flag assets have count, hash, and aggregate raw-byte checks. The packed Vite consumer also checks that flags remain external assets, stay out of JavaScript data URLs, and satisfy its JavaScript payload ceiling. Entry-level gzip checks alone cannot catch consumer-side asset inlining.
 
-Run `pnpm --filter @elmeragroup/ui pack`, then `pnpm --filter @elmeragroup/ui size-limit` after building. Review changes to the budget module alongside the implementation that caused them.
+Run `pnpm --filter @elmeragroup/fuse pack`, then `pnpm --filter @elmeragroup/fuse size-limit` after building. Review changes to the budget module alongside the implementation that caused them.
 
 ## 3 RSC / client boundaries
 
 - **Default server-safe.** A component carries `"use client"` (at source; tsdown preserves it) only when it owns interactivity — state, effects, event handlers, browser APIs.
 - **Authoritative classification** follows the policy above. This table owns the expected status; the generated docs are checked against it. **On conflict this table wins**:
 
-  | Component           | RSC status                                                                                                  |
-  | ------------------- | ----------------------------------------------------------------------------------------------------------- |
-  | accordion           | client                                                                                                      |
-  | alert               | server (static composite; the optional `onAction` button is a client base-ui `Button` child)                |
-  | alert-dialog        | client                                                                                                      |
-  | avatar              | client (base-ui Avatar owns image loading state)                                                            |
-  | badge               | server                                                                                                      |
-  | breadcrumb          | client (`useRender` polymorphism)                                                                           |
-  | button              | client (pending/visually-disabled state, `usePredictedEvents` wiring)                                       |
-  | button-group        | client (`useRender` polymorphism)                                                                           |
-  | calendar            | client                                                                                                      |
-  | card                | server                                                                                                      |
-  | chart               | deferred (Wave 9) — client when shipped                                                                     |
-  | checkbox            | client                                                                                                      |
-  | checkbox-card       | client                                                                                                      |
-  | code                | server                                                                                                      |
-  | collapsible         | client                                                                                                      |
-  | combobox            | client                                                                                                      |
-  | confirm-button      | client                                                                                                      |
-  | date-field          | client                                                                                                      |
-  | date-picker         | client                                                                                                      |
-  | date-range-picker   | client                                                                                                      |
-  | description-list    | server                                                                                                      |
-  | dialog              | client                                                                                                      |
-  | dropdown-menu       | client                                                                                                      |
-  | emoji               | server                                                                                                      |
-  | empty               | server                                                                                                      |
-  | field               | client (base-ui Field validity wiring)                                                                      |
-  | file-trigger        | client                                                                                                      |
-  | focusable           | client                                                                                                      |
-  | frame               | server                                                                                                      |
-  | grid-list           | client                                                                                                      |
-  | heading             | client (`useRender` polymorphism)                                                                           |
-  | input               | client (base-ui Field-wired control)                                                                        |
-  | input-group         | client                                                                                                      |
-  | item                | client (`useRender` polymorphism and group-context semantics)                                               |
-  | link                | client (RAC press handling + router context)                                                                |
-  | loader              | server                                                                                                      |
-  | meter               | client (base-ui Meter primitive)                                                                            |
-  | number-field        | client                                                                                                      |
-  | pagination          | client (provider-only locale context supplies built-in navigation copy)                                     |
-  | phone-number-field  | client                                                                                                      |
-  | popover             | client                                                                                                      |
-  | popover-info-button | client                                                                                                      |
-  | radio-group         | client                                                                                                      |
-  | range-calendar      | client                                                                                                      |
-  | scroll-area         | client                                                                                                      |
-  | search-field        | client                                                                                                      |
-  | select              | client                                                                                                      |
-  | selection-item      | client                                                                                                      |
-  | separator           | client (base-ui Separator primitive)                                                                        |
-  | sheet               | client                                                                                                      |
-  | show                | server                                                                                                      |
-  | sidebar             | client                                                                                                      |
-  | skeleton            | server                                                                                                      |
-  | span                | client (`useRender` polymorphism)                                                                           |
-  | switch              | client                                                                                                      |
-  | table               | server (`VerticalTable.Header` and `VerticalTable.Key` are client `useRender` islands)                      |
-  | tabs                | client                                                                                                      |
-  | text                | client (`useRender` polymorphism)                                                                           |
-  | text-field          | client                                                                                                      |
-  | textarea            | server (plain native element, no owned state; Field wiring comes from the client `TextareaField`)           |
-  | textarea-field      | client                                                                                                      |
-  | timeline-list       | server (presentational list rendering)                                                                      |
-  | toast               | client                                                                                                      |
-  | toggle              | client                                                                                                      |
-  | toggle-group        | client                                                                                                      |
-  | tooltip             | client                                                                                                      |
-  | ui-providers        | client (`ElmeraGroupUiProvider`, `useElmeraGroupUi`, and RAC `RouterProvider` wiring all use React context) |
+  | Component           | RSC status                                                                                        |
+  | ------------------- | ------------------------------------------------------------------------------------------------- |
+  | accordion           | client                                                                                            |
+  | alert               | server (static composite; the optional `onAction` button is a client base-ui `Button` child)      |
+  | alert-dialog        | client                                                                                            |
+  | avatar              | client (base-ui Avatar owns image loading state)                                                  |
+  | badge               | server                                                                                            |
+  | breadcrumb          | client (`useRender` polymorphism)                                                                 |
+  | button              | client (pending/visually-disabled state, `usePredictedEvents` wiring)                             |
+  | button-group        | client (`useRender` polymorphism)                                                                 |
+  | calendar            | client                                                                                            |
+  | card                | server                                                                                            |
+  | chart               | deferred (Wave 9) — client when shipped                                                           |
+  | checkbox            | client                                                                                            |
+  | checkbox-card       | client                                                                                            |
+  | code                | server                                                                                            |
+  | collapsible         | client                                                                                            |
+  | combobox            | client                                                                                            |
+  | confirm-button      | client                                                                                            |
+  | date-field          | client                                                                                            |
+  | date-picker         | client                                                                                            |
+  | date-range-picker   | client                                                                                            |
+  | description-list    | server                                                                                            |
+  | dialog              | client                                                                                            |
+  | dropdown-menu       | client                                                                                            |
+  | emoji               | server                                                                                            |
+  | empty               | server                                                                                            |
+  | field               | client (base-ui Field validity wiring)                                                            |
+  | file-trigger        | client                                                                                            |
+  | focusable           | client                                                                                            |
+  | frame               | server                                                                                            |
+  | grid-list           | client                                                                                            |
+  | heading             | client (`useRender` polymorphism)                                                                 |
+  | input               | client (base-ui Field-wired control)                                                              |
+  | input-group         | client                                                                                            |
+  | item                | client (`useRender` polymorphism and group-context semantics)                                     |
+  | link                | client (RAC press handling + router context)                                                      |
+  | loader              | server                                                                                            |
+  | meter               | client (base-ui Meter primitive)                                                                  |
+  | number-field        | client                                                                                            |
+  | pagination          | client (provider-only locale context supplies built-in navigation copy)                           |
+  | phone-number-field  | client                                                                                            |
+  | popover             | client                                                                                            |
+  | popover-info-button | client                                                                                            |
+  | radio-group         | client                                                                                            |
+  | range-calendar      | client                                                                                            |
+  | scroll-area         | client                                                                                            |
+  | search-field        | client                                                                                            |
+  | select              | client                                                                                            |
+  | selection-item      | client                                                                                            |
+  | separator           | client (base-ui Separator primitive)                                                              |
+  | sheet               | client                                                                                            |
+  | show                | server                                                                                            |
+  | sidebar             | client                                                                                            |
+  | skeleton            | server                                                                                            |
+  | span                | client (`useRender` polymorphism)                                                                 |
+  | switch              | client                                                                                            |
+  | table               | server (`VerticalTable.Header` and `VerticalTable.Key` are client `useRender` islands)            |
+  | tabs                | client                                                                                            |
+  | text                | client (`useRender` polymorphism)                                                                 |
+  | text-field          | client                                                                                            |
+  | textarea            | server (plain native element, no owned state; Field wiring comes from the client `TextareaField`) |
+  | textarea-field      | client                                                                                            |
+  | timeline-list       | server (presentational list rendering)                                                            |
+  | toast               | client                                                                                            |
+  | toggle              | client                                                                                            |
+  | toggle-group        | client                                                                                            |
+  | tooltip             | client                                                                                            |
+  | ui-providers        | client (`FuseProvider`, `useFuse`, and RAC `RouterProvider` wiring all use React context)         |
 
   Bespoke SVG icons, illustrations, logos, emoji, flag assets, and curated Phosphor adapters are server-safe. The adapters import the pinned package's explicit `@phosphor-icons/react/dist/ssr/<Icon>` modules, never its client or root barrel ([icons](icons.md) §2); `/icons` is therefore a server-safe, directive-free facade.
 
@@ -108,7 +108,7 @@ Run `pnpm --filter @elmeragroup/ui pack`, then `pnpm --filter @elmeragroup/ui si
   | `ColorSchemeScript`, `colorSchemeScriptSource`                                                                                                                                                  | server     | host-placed first-paint bootstrap. `ColorSchemeScript` stays a server-safe `<script>` renderer so `<head>` placement remains true; `colorSchemeScriptSource` returns closed IIFE text for `transformIndexHtml` / `ScriptOnce` |
   | `ThemeProvider`, `useTheme`, `useColorScheme`, `ForceColorScheme`                                                                                                                               | client     | document writer, hooks, runtime force. Not first-paint adapters                                                                                                                                                               |
   | `ThemeScope`                                                                                                                                                                                    | client     | subtree brand writer                                                                                                                                                                                                          |
-  | `ElmeraGroupUiProvider`, `useElmeraGroupUi`                                                                                                                                                     | client     | locale context                                                                                                                                                                                                                |
+  | `FuseProvider`, `useFuse`                                                                                                                                                                       | client     | locale context                                                                                                                                                                                                                |
 
   Hosts import the server bootstrap from a server or config module. Importing `ColorSchemeScript` through a client component and rendering it after `createRoot` is not a first-paint path.
 
@@ -128,13 +128,13 @@ Run `pnpm --filter @elmeragroup/ui pack`, then `pnpm --filter @elmeragroup/ui si
 ## 6 Runtime practices
 
 - Animations touch **`transform` and `opacity` only** by default. Layout-property animations the library itself installs (the reviewed v1 exceptions) are:
-  - **Accordion.Content** and **Collapsible.Content** panel **height**: the one shared `panelHeightTransition` constant (`styles/panel-height.ts`), 150 ms ease-out keyed on base-ui's `data-starting-style` / `data-ending-style` against `--accordion-panel-height` / `--collapsible-panel-height`. Collapsible stays an unstyled passthrough apart from that transition, which consumers can override through `Content`'s `className`, and still exposes `--collapsible-panel-width`. The central `prefers-reduced-motion` rule in `ui.css` strips `height` from `transition-property`.
+  - **Accordion.Content** and **Collapsible.Content** panel **height**: the one shared `panelHeightTransition` constant (`styles/panel-height.ts`), 150 ms ease-out keyed on base-ui's `data-starting-style` / `data-ending-style` against `--accordion-panel-height` / `--collapsible-panel-height`. Collapsible stays an unstyled passthrough apart from that transition, which consumers can override through `Content`'s `className`, and still exposes `--collapsible-panel-width`. The central `prefers-reduced-motion` rule in `fuse.css` strips `height` from `transition-property`.
   - **Accordion** default-variant Trigger **padding-bottom**: `transition-[padding-bottom]`.
   - **Sidebar** shell **width** during its 200 ms expand/collapse: gap and container `transition-[width] duration-200 ease-linear`. Offcanvas `left`/`right` offset, Rail position, and GroupLabel `-mt-8` snap. MenuButton color/background/box-shadow and GroupLabel opacity are non-layout.
   - **Item.Footer** content-reveal **grid track**: `grid-rows` `0fr↔1fr` plus `@starting-style`.
   - **Meter** bar fill: `transition-all` on the absolutely positioned fill (width of the value bar).
 - Each of those exceptions is disabled by the central reduced-motion rule ([accessibility](accessibility.md) §7). New layout-property animation requires a spec amendment and measurement.
-- Context values are **memoized** (`ElmeraGroupUiProvider` already does); no context provider re-renders its subtree on unrelated prop churn.
+- Context values are **memoized** (`FuseProvider` already does); no context provider re-renders its subtree on unrelated prop churn.
 - No per-frame CSS-variable writes on shared ancestors (inherited-var recalc storms); transient interaction state writes `style.transform` on the element itself.
 - Tooltips/popovers reuse base-ui's shared positioning; components never install their own scroll/resize listeners. Overlay positioning listeners belong to base-ui internals.
 - **Document-level listeners the library installs** (and no others):

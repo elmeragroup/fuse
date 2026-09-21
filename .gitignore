@@ -1,7 +1,7 @@
 .ref/
 .DS_Store
 # Generated theme CSS — the snapshot is the reviewable artifact
-packages/ui/src/styles/themes.css
+packages/fuse/src/styles/themes.css
 node_modules/
 .pnpm-store/
 .pnp

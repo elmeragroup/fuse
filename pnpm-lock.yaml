@@ -221,9 +221,9 @@ importers:
       '@base-ui/react':
         specifier: 'catalog:'
         version: 1.8.0(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-      '@elmeragroup/ui':
+      '@elmeragroup/fuse':
         specifier: workspace:*
-        version: link:../../packages/ui
+        version: link:../../packages/fuse
       '@internationalized/date':
         specifier: 'catalog:'
         version: 3.12.4
@@ -294,9 +294,9 @@ importers:
 
   apps/static-theme:
     dependencies:
-      '@elmeragroup/ui':
+      '@elmeragroup/fuse':
         specifier: workspace:*
-        version: link:../../packages/ui
+        version: link:../../packages/fuse
       react:
         specifier: 'catalog:'
         version: 19.3.0
@@ -329,7 +329,7 @@ importers:
         specifier: 'catalog:'
         version: 5.0.0(@types/node@25.9.5)(@vitest/browser-playwright@5.0.0)(@vitest/ui@5.0.0)(vite@8.3.0(@types/node@25.9.5)(jiti@2.7.0)(yaml@2.9.1))
 
-  packages/ui:
+  packages/fuse:
     dependencies:
       '@base-ui/react':
         specifier: 'catalog:'
