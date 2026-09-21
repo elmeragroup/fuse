@@ -137,8 +137,7 @@
         "^@elmeragroup/ui/(icons|emoji|illustrations|flags|theme)(/|$)",
         "^@elmeragroup/ui/react-aria/ui-providers$"
       ],
-      "mergeFunctions": ["mergeClassName"],
-      "note": "Design rules: docs/component-authoring.md. Variants and contracts are design decisions; review them, do not add exceptions inline."
+      "mergeFunctions": ["mergeClassName"]
     }
   },
   "ignorePatterns": [
@@ -275,9 +274,7 @@
               {
                 "pattern": "^Skeleton$",
                 "allow": ["layout", "rounded"],
-                "message": {
-                  "default": "Skeleton is a shape-only placeholder: size and radius are yours, colour and motion are its own."
-                }
+                "message": "Skeleton is a shape-only placeholder: size and radius are yours, colour and motion are its own."
               },
               {
                 "pattern": "^ScrollAreaRoot$",

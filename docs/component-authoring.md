@@ -13,6 +13,8 @@ Component behavior lives in the implementation, public JSDoc, authored docs page
 
 ## Styling
 
+Variants and styling contracts are design decisions. Review changes to them instead of adding inline exceptions.
+
 - Use role-token colors, including `error`, `info`, `success`, and `warning`. Input-like surfaces use `bg-card`. Raw palette colors and `dark:` variants are forbidden in library styles; themes own color values.
 - Merge classes through the shared `cn` helper. Use typed `tv` recipes for any class map with an axis or at least two slots, and `cn` for a single axis-less string. Recipes with axes declare `variants` and `defaultVariants`; axis-less recipes omit them. `spanVariants` retains an empty `variants` object to preserve inherited-axis extraction.
 - Put shared recipes in their own modules. A part's independent type scale gets a separate recipe so another slot variant cannot overwrite it through Tailwind merging. Card's title and description recipes demonstrate the merge order.
