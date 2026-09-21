@@ -2,8 +2,8 @@ import type { ReactNode } from "react";
 
 import { createRoot } from "react-dom/client";
 
-import { ThemeProvider } from "@elmeragroup/ui/theme";
-import type { ColorSchemeOptions, ThemeInput } from "@elmeragroup/ui/theme";
+import { ThemeProvider } from "@elmeragroup/fuse/theme";
+import type { ColorSchemeOptions, ThemeInput } from "@elmeragroup/fuse/theme";
 
 import { App } from "./app";
 

@@ -1,11 +1,11 @@
 {
-  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
   "slug": "sheet",
   "parts": [
     {
       "name": "Sheet.Root",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/sheet/sheet.tsx",
+      "sourcePath": "packages/fuse/src/components/sheet/sheet.tsx",
       "forwardedFrom": [
         "@base-ui/react"
       ],
@@ -199,7 +199,7 @@
     {
       "name": "Sheet.Trigger",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/sheet/sheet.tsx",
+      "sourcePath": "packages/fuse/src/components/sheet/sheet.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -288,7 +288,7 @@
     {
       "name": "Sheet.Close",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/sheet/sheet.tsx",
+      "sourcePath": "packages/fuse/src/components/sheet/sheet.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -344,7 +344,7 @@
     {
       "name": "Sheet.Portal",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/sheet/sheet.tsx",
+      "sourcePath": "packages/fuse/src/components/sheet/sheet.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -411,7 +411,7 @@
     {
       "name": "Sheet.Overlay",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/sheet/sheet.tsx",
+      "sourcePath": "packages/fuse/src/components/sheet/sheet.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -467,7 +467,7 @@
     {
       "name": "Sheet.Content",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/sheet/sheet.tsx",
+      "sourcePath": "packages/fuse/src/components/sheet/sheet.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -570,7 +570,7 @@
     {
       "name": "Sheet.Header",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/sheet/sheet.tsx",
+      "sourcePath": "packages/fuse/src/components/sheet/sheet.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -580,7 +580,7 @@
     {
       "name": "Sheet.Body",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/sheet/sheet.tsx",
+      "sourcePath": "packages/fuse/src/components/sheet/sheet.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -590,7 +590,7 @@
     {
       "name": "Sheet.Footer",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/sheet/sheet.tsx",
+      "sourcePath": "packages/fuse/src/components/sheet/sheet.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -600,7 +600,7 @@
     {
       "name": "Sheet.Title",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/sheet/sheet.tsx",
+      "sourcePath": "packages/fuse/src/components/sheet/sheet.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -645,7 +645,7 @@
     {
       "name": "Sheet.Description",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/sheet/sheet.tsx",
+      "sourcePath": "packages/fuse/src/components/sheet/sheet.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"

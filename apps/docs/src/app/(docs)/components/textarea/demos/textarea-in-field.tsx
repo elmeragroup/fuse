@@ -1,7 +1,7 @@
 "use client";
 
-import { Field } from "@elmeragroup/ui/field";
-import { Textarea } from "@elmeragroup/ui/textarea";
+import { Field } from "@elmeragroup/fuse/field";
+import { Textarea } from "@elmeragroup/fuse/textarea";
 
 export function TextareaInField() {
   return (

@@ -1,7 +1,7 @@
 "use client";
 
-import { Checkbox, CheckboxDescription } from "@elmeragroup/ui/checkbox";
-import { Field } from "@elmeragroup/ui/field";
+import { Checkbox, CheckboxDescription } from "@elmeragroup/fuse/checkbox";
+import { Field } from "@elmeragroup/fuse/field";
 
 export function CheckboxDescriptionDemo() {
   return (

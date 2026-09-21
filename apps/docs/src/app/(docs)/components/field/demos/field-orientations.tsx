@@ -1,7 +1,7 @@
 "use client";
 
-import { Field } from "@elmeragroup/ui/field";
-import { Input } from "@elmeragroup/ui/input";
+import { Field } from "@elmeragroup/fuse/field";
+import { Input } from "@elmeragroup/fuse/input";
 
 export function FieldOrientations() {
   return (

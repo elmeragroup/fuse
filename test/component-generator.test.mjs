@@ -25,8 +25,8 @@ function fixture() {
   for (const path of [
     "plopfile.mjs",
     "plop-templates",
-    "packages/ui/scripts",
-    "packages/ui/src/icons/roster.ts",
+    "packages/fuse/scripts",
+    "packages/fuse/src/icons/roster.ts",
   ]) {
     mkdirSync(dirname(join(directory, path)), { recursive: true });
     cpSync(join(root, path), join(directory, path), { recursive: true });
@@ -91,19 +91,19 @@ describe("component generator", () => {
     const result = generate(directory, "status-light");
     expect(result.stderr + result.stdout).not.toContain("[FAILED]");
     expect(result.status, result.stdout + result.stderr).toBe(0);
-    expect(readFileSync(join(directory, "packages/ui/scripts/size-budgets.ts"), "utf8")).toContain(
+    expect(readFileSync(join(directory, "packages/fuse/scripts/size-budgets.ts"), "utf8")).toContain(
       'name: "status-light", entryFile: "status-light.js", measuredGzip: 0'
     );
-    writeFileSync(join(directory, "packages/ui/src/index.ts"), "export {};\n");
+    writeFileSync(join(directory, "packages/fuse/src/index.ts"), "export {};\n");
     const discovery = execFileSync(
       process.execPath,
       [
         "--input-type=module",
         "-e",
         `
-      import { BARE_COMPONENT_ENTRIES, discoverJsEntriesFromAllowlist } from './packages/ui/scripts/entries.ts';
+      import { BARE_COMPONENT_ENTRIES, discoverJsEntriesFromAllowlist } from './packages/fuse/scripts/entries.ts';
       if (!BARE_COMPONENT_ENTRIES.includes('status-light')) throw new Error('entry not registered');
-      const entries = discoverJsEntriesFromAllowlist('./packages/ui', ['.', 'status-light']);
+      const entries = discoverJsEntriesFromAllowlist('./packages/fuse', ['.', 'status-light']);
       process.stdout.write(JSON.stringify(entries));
     `,
       ],
@@ -152,7 +152,7 @@ describe("component generator", () => {
     const before = snapshot(directory);
     expect(generate(directory, "status-light").stdout).toContain("already has source or documentation");
     expect(snapshot(directory)).toEqual(before);
-    const budget = join(directory, "packages/ui/scripts/size-budgets.ts");
+    const budget = join(directory, "packages/fuse/scripts/size-budgets.ts");
     writeFileSync(budget, readFileSync(budget, "utf8").replace("// plop:js-entry-budget", ""));
     const missingMarker = snapshot(directory);
     expect(generate(directory, "new-component").stdout).toContain("Expected one // plop:js-entry-budget");

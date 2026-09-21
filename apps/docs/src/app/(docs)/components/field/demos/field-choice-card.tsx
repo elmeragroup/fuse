@@ -1,7 +1,7 @@
 "use client";
 
-import { Checkbox } from "@elmeragroup/ui/checkbox";
-import { Field } from "@elmeragroup/ui/field";
+import { Checkbox } from "@elmeragroup/fuse/checkbox";
+import { Field } from "@elmeragroup/fuse/field";
 
 export function FieldChoiceCard() {
   return (

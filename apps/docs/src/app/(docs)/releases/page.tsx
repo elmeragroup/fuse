@@ -16,7 +16,7 @@ export default function ReleasesPage(): ReactElement {
         Automated npm publishing and per-PR preview infrastructure are <strong>not active yet</strong>.
         Publishing stays off until activation: the repository needs its npm token secret and the{" "}
         <code>RELEASE_ENABLED</code> variable, alongside the pending org and repository setup (the{" "}
-        <code>@elmeragroup/ui</code> name claim, the repository going public, and required org 2FA). Until
+        <code>@elmeragroup/fuse</code> name claim, the repository going public, and required org 2FA). Until
         then nothing publishes and no release PR is opened. Per-PR installable package previews and docs
         previews are planned, not available for every PR today; they wait on Vercel and pkg-pr-new.
       </p>
@@ -30,7 +30,7 @@ export default function ReleasesPage(): ReactElement {
         Packages PR by applying the pending notes (<code>pnpm exec changeset version</code>); merging that PR
         publishes the stable line. The changelog is generated and never hand-edited; the rest of the procedure
         lives in the{" "}
-        <Link href="https://github.com/elmeragroup/ui/blob/main/docs/spec/release.md" rel="noreferrer">
+        <Link href="https://github.com/elmeragroup/fuse/blob/main/docs/spec/release.md" rel="noreferrer">
           release runbook
         </Link>
         .
@@ -113,7 +113,7 @@ export default function ReleasesPage(): ReactElement {
         The code is MIT, matching the whole dependency stack. Two constraints follow from that and bound what
         the tarball may contain: <strong>the library never ships font files</strong> — fonts are app-supplied
         through the <code>--font-sans</code> and <code>--font-heading</code> tokens, and themes reference
-        family names only — and brand logos do ship publicly in <code>@elmeragroup/ui/icons</code>.
+        family names only — and brand logos do ship publicly in <code>@elmeragroup/fuse/icons</code>.
       </p>
     </DocsPage>
   );

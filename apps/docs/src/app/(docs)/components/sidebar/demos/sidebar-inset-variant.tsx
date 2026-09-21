@@ -1,8 +1,8 @@
 "use client";
 
-import { Button } from "@elmeragroup/ui/button";
-import { House, Package, Users } from "@elmeragroup/ui/icons";
-import { Sidebar } from "@elmeragroup/ui/sidebar";
+import { Button } from "@elmeragroup/fuse/button";
+import { House, Package, Users } from "@elmeragroup/fuse/icons";
+import { Sidebar } from "@elmeragroup/fuse/sidebar";
 
 function NavMenu() {
   return (

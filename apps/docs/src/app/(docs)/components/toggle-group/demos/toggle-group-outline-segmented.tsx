@@ -1,7 +1,7 @@
 "use client";
 
-import { CaretLeft, CaretRight, Equals } from "@elmeragroup/ui/icons";
-import { ToggleGroup } from "@elmeragroup/ui/toggle-group";
+import { CaretLeft, CaretRight, Equals } from "@elmeragroup/fuse/icons";
+import { ToggleGroup } from "@elmeragroup/fuse/toggle-group";
 
 export function ToggleGroupOutlineSegmented() {
   return (

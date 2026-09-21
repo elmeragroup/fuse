@@ -1,6 +1,6 @@
 "use client";
 
-import { VerticalTable } from "@elmeragroup/ui/table";
+import { VerticalTable } from "@elmeragroup/fuse/table";
 
 export function VerticalTableData() {
   return (

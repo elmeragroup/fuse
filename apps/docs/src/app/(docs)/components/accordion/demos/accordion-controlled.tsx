@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 
-import { Accordion } from "@elmeragroup/ui/accordion";
-import { Button } from "@elmeragroup/ui/button";
+import { Accordion } from "@elmeragroup/fuse/accordion";
+import { Button } from "@elmeragroup/fuse/button";
 
 const ALL = ["shipping", "billing", "returns"] as const;
 

@@ -1,6 +1,6 @@
 # Docs theme compliance
 
-Implemented 2026-09-15. The docs shell consumes `internal × elma × private` from `@elmeragroup/ui/theme` in both light and dark mode.
+Implemented 2026-09-15. The docs shell consumes `internal × elma × private` from `@elmeragroup/fuse/theme` in both light and dark mode.
 
 ## Cause and fix
 

@@ -4,12 +4,12 @@ import type { ReactElement } from "react";
 
 import { tv } from "tailwind-variants";
 
-import { Button } from "@elmeragroup/ui/button";
-import { DropdownMenu } from "@elmeragroup/ui/dropdown-menu";
-import type { DropdownMenuRadioGroupProps } from "@elmeragroup/ui/dropdown-menu";
-import { ArrowsClockwise, SlidersHorizontal } from "@elmeragroup/ui/icons";
-import { BRANDS, coerceTheme, useColorScheme } from "@elmeragroup/ui/theme";
-import type { ThemeInput, ThemeSegment } from "@elmeragroup/ui/theme";
+import { Button } from "@elmeragroup/fuse/button";
+import { DropdownMenu } from "@elmeragroup/fuse/dropdown-menu";
+import type { DropdownMenuRadioGroupProps } from "@elmeragroup/fuse/dropdown-menu";
+import { ArrowsClockwise, SlidersHorizontal } from "@elmeragroup/fuse/icons";
+import { BRANDS, coerceTheme, useColorScheme } from "@elmeragroup/fuse/theme";
+import type { ThemeInput, ThemeSegment } from "@elmeragroup/fuse/theme";
 
 import {
   COLOR_SCHEME_LABELS,

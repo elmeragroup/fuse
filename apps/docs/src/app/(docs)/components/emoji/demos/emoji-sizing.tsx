@@ -1,6 +1,6 @@
 "use client";
 
-import { Emoji } from "@elmeragroup/ui/emoji";
+import { Emoji } from "@elmeragroup/fuse/emoji";
 
 export function EmojiSizing() {
   return (

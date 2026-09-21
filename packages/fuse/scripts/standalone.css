@@ -1,0 +1,4 @@
+@import "tailwindcss/theme.css";
+@import "tailwindcss/utilities.css" source(none);
+@import "../src/styles/fuse.css";
+@source "../dist/**/*.js";

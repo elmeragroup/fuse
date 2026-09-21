@@ -1,11 +1,11 @@
 {
-  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
   "slug": "pagination",
   "parts": [
     {
       "name": "Pagination.Root",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/pagination/pagination.tsx",
+      "sourcePath": "packages/fuse/src/components/pagination/pagination.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -25,7 +25,7 @@
     {
       "name": "Pagination.Content",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/pagination/pagination.tsx",
+      "sourcePath": "packages/fuse/src/components/pagination/pagination.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -35,7 +35,7 @@
     {
       "name": "Pagination.Item",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/pagination/pagination.tsx",
+      "sourcePath": "packages/fuse/src/components/pagination/pagination.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -45,7 +45,7 @@
     {
       "name": "Pagination.Link",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/pagination/pagination.tsx",
+      "sourcePath": "packages/fuse/src/components/pagination/pagination.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -74,7 +74,7 @@
     {
       "name": "Pagination.Previous",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/pagination/pagination.tsx",
+      "sourcePath": "packages/fuse/src/components/pagination/pagination.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -112,7 +112,7 @@
     {
       "name": "Pagination.Next",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/pagination/pagination.tsx",
+      "sourcePath": "packages/fuse/src/components/pagination/pagination.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -150,7 +150,7 @@
     {
       "name": "Pagination.Ellipsis",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/pagination/pagination.tsx",
+      "sourcePath": "packages/fuse/src/components/pagination/pagination.tsx",
       "forwardedFrom": [
         "@types/react"
       ],

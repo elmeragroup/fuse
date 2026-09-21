@@ -2,9 +2,9 @@
 
 import { useSyncExternalStore } from "react";
 
-import { Button } from "@elmeragroup/ui/button";
-import { ChartBar, ElmeraGroupLogo, Gear, House, Package, Receipt, Users } from "@elmeragroup/ui/icons";
-import { SIDEBAR_COOKIE_NAME, Sidebar } from "@elmeragroup/ui/sidebar";
+import { Button } from "@elmeragroup/fuse/button";
+import { ChartBar, ElmeraGroupLogo, Gear, House, Package, Receipt, Users } from "@elmeragroup/fuse/icons";
+import { SIDEBAR_COOKIE_NAME, Sidebar } from "@elmeragroup/fuse/sidebar";
 
 const NAV = [
   { label: "Dashboard", icon: House, href: "#dashboard" },

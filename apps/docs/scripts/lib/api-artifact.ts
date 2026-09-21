@@ -21,7 +21,7 @@ import { API_REGEN_COMMAND } from "../../src/lib/docs-model.ts";
 import type { DocsApiComponent } from "./docs-inspection.ts";
 import { docsApiInventory } from "./docs-inspection.ts";
 import { DocsGenerationError } from "./errors.ts";
-import { repoRelative, repoRoot, uiTsconfig } from "./paths.ts";
+import { repoRelative, repoRoot, fuseTsconfig } from "./paths.ts";
 
 export { API_REGEN_COMMAND };
 
@@ -29,7 +29,7 @@ export { API_REGEN_COMMAND };
 export const STALE_HINT = `Run \`${API_REGEN_COMMAND}\` and commit the updated api.json files.`;
 
 const GENERATED_BANNER =
-  `Generated from packages/ui types and JSDoc by ${API_REGEN_COMMAND} (docs-site.md §8). ` +
+  `Generated from packages/fuse types and JSDoc by ${API_REGEN_COMMAND} (docs-site.md §8). ` +
   "Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.";
 
 export type GeneratedApi = {
@@ -58,7 +58,7 @@ export async function generateDocsApiArtifacts(
   try {
     const result = await generateApiArtifacts({
       projectRoot: repoRoot,
-      tsconfigPath: path.relative(repoRoot, uiTsconfig),
+      tsconfigPath: path.relative(repoRoot, fuseTsconfig),
       generatedBy: GENERATED_BANNER,
       mode,
       components: inventory.map((component) => ({

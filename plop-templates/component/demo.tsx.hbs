@@ -2,7 +2,7 @@
 
 // SCAFFOLD — one plain runnable demo per reviewed scenario,
 // living next to the page that renders it (docs-site.md §6) and imported through public
-// specifiers (`@elmeragroup/ui/…`), never `src/` relatives.
+// specifiers (`@elmeragroup/fuse/…`), never `src/` relatives.
 //
 // The `"use client"` directive above is authored, not injected: nothing copies or rewrites
 // this file — `page.mdx` imports it as an ordinary ESM module and the demo frame reads this
@@ -11,7 +11,7 @@
 // Rename/duplicate this file per scenario (`{{name}}-<scenario>.tsx`) and render each one
 // from its own `<Demo …>` element in `page.mdx`. A demo file no page renders fails
 // generation, and so does a `<Demo>` naming a file that is not here.
-import { {{pascalCase name}} } from "@elmeragroup/ui/{{name}}";
+import { {{pascalCase name}} } from "@elmeragroup/fuse/{{name}}";
 
 export function {{pascalCase name}}Basic() {
   return <{{pascalCase name}}>{{pascalCase name}}</{{pascalCase name}}>;

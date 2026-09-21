@@ -5,8 +5,8 @@ import { useState } from "react";
 import { CalendarDate, isWeekend } from "@internationalized/date";
 import type { DateValue } from "@internationalized/date";
 
-import { DateRangePicker } from "@elmeragroup/ui/react-aria/date-range-picker";
-import { UiProviders } from "@elmeragroup/ui/react-aria/ui-providers";
+import { DateRangePicker } from "@elmeragroup/fuse/react-aria/date-range-picker";
+import { UiProviders } from "@elmeragroup/fuse/react-aria/ui-providers";
 
 type Range = { start: DateValue; end: DateValue };
 

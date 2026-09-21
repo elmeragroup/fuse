@@ -21,7 +21,7 @@ const RULE =
  * The one path the rule lets through. It stays allowlisted until the `@elmeragroup/internal`
  * focus-ring rules take the owner path as a rule option.
  */
-const ALLOWED_VAGUE_PATHS = new Set(["packages/ui/src/styles/utils.ts"]);
+const ALLOWED_VAGUE_PATHS = new Set(["packages/fuse/src/styles/utils.ts"]);
 
 /**
  * Whether a module basename is banned as vague.

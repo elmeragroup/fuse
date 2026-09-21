@@ -3,7 +3,7 @@ import type { ReactElement } from "react";
 import Link from "next/link";
 import { tv } from "tailwind-variants";
 
-import { BRANDS, themeSlug } from "@elmeragroup/ui/theme";
+import { BRANDS, themeSlug } from "@elmeragroup/fuse/theme";
 
 import { DocsPage, pageMetadata } from "../../../../components/docs-page";
 import { DocsTable } from "../../../../components/docs-table";

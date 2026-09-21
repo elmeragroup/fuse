@@ -3,7 +3,7 @@
 import { createContext, use, useMemo, useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 
-import type { ThemeInput } from "@elmeragroup/ui/theme";
+import type { ThemeInput } from "@elmeragroup/fuse/theme";
 
 import { DEFAULT_THEME } from "../lib/theme";
 

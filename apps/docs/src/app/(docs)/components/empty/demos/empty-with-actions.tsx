@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 
-import { Button } from "@elmeragroup/ui/button";
-import { Empty } from "@elmeragroup/ui/empty";
-import { Tray } from "@elmeragroup/ui/icons";
+import { Button } from "@elmeragroup/fuse/button";
+import { Empty } from "@elmeragroup/fuse/empty";
+import { Tray } from "@elmeragroup/fuse/icons";
 
 /** Replaces the empty state with local sample orders and supports reset. */
 export function EmptyWithActions() {

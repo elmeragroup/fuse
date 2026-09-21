@@ -1,6 +1,6 @@
 "use client";
 
-import { Badge } from "@elmeragroup/ui/badge";
+import { Badge } from "@elmeragroup/fuse/badge";
 
 export function BadgeStatus() {
   return (

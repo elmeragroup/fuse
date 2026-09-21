@@ -1,7 +1,7 @@
 "use client";
 
-import { Card } from "@elmeragroup/ui/card";
-import { Skeleton } from "@elmeragroup/ui/skeleton";
+import { Card } from "@elmeragroup/fuse/card";
+import { Skeleton } from "@elmeragroup/fuse/skeleton";
 
 export function SkeletonCard() {
   return (

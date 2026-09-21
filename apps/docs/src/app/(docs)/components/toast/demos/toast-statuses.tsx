@@ -2,8 +2,8 @@
 
 import { useRef } from "react";
 
-import { Button } from "@elmeragroup/ui/button";
-import { Toast } from "@elmeragroup/ui/toast";
+import { Button } from "@elmeragroup/fuse/button";
+import { Toast } from "@elmeragroup/fuse/toast";
 
 function StatusButtons() {
   const toastManager = Toast.useToastManager();

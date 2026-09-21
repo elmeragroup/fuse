@@ -162,7 +162,7 @@ describe("static theme built HTML", () => {
 
   it("uses Vite transformIndexHtml against the public packed theme entry", () => {
     const config = readFixtureFile("vite.config.ts");
-    expect(config).toContain("packages/ui/dist/theme.js");
+    expect(config).toContain("packages/fuse/dist/theme.js");
     expect(config).toContain("colorSchemeScriptSource");
     expect(config).toContain("themeAttributes");
     expect(config).toContain("densityAttributes");

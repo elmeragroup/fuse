@@ -1,5 +1,5 @@
 ---
-"@elmeragroup/ui": patch
+"@elmeragroup/fuse": patch
 ---
 
 `Toast.Title` and `Toast.Description` on the error, info, success and warning statuses now render in

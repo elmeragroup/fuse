@@ -1,7 +1,7 @@
 "use client";
 
-import { SearchField } from "@elmeragroup/ui/react-aria/search-field";
-import { UiProviders } from "@elmeragroup/ui/react-aria/ui-providers";
+import { SearchField } from "@elmeragroup/fuse/react-aria/search-field";
+import { UiProviders } from "@elmeragroup/fuse/react-aria/ui-providers";
 
 export function SearchFieldBasic() {
   return (

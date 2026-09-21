@@ -1,6 +1,6 @@
 "use client";
 
-import { Item } from "@elmeragroup/ui/item";
+import { Item } from "@elmeragroup/fuse/item";
 
 export function ItemFooterReveal() {
   return (

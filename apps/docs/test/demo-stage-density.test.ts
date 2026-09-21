@@ -6,11 +6,11 @@ import { describe, expect, it } from "vitest";
 const here = dirname(fileURLToPath(import.meta.url));
 const docsRoot = join(here, "..");
 const globalsCss = readFileSync(join(docsRoot, "src/styles/globals.css"), "utf8");
-const artifactPath = join(docsRoot, "../../packages/ui/dist/demo-stage-comfortable.css");
+const artifactPath = join(docsRoot, "../../packages/fuse/dist/demo-stage-comfortable.css");
 
 describe("DemoStage comfortable density", () => {
   it("imports the generated library artifact and carries no hand-copied metrics", () => {
-    expect(globalsCss).toMatch(/@import\s+"@elmeragroup\/ui\/demo-stage-comfortable\.css"/);
+    expect(globalsCss).toMatch(/@import\s+"@elmeragroup\/fuse\/demo-stage-comfortable\.css"/);
     expect(globalsCss).not.toMatch(/--control-/);
     expect(existsSync(join(docsRoot, "src/components/DemoFrame.comfortable.css"))).toBe(false);
     expect(existsSync(join(docsRoot, "scripts/elmera-demo-stage-density.ts"))).toBe(false);
@@ -23,7 +23,7 @@ describe("DemoStage comfortable density", () => {
 
   it("the imported artifact exists after the ui build", () => {
     // apps/docs/turbo.json shadows the root `test` task, so the guarantee is transitive:
-    // docs#test -> docs#build -> docs#generate -> ^build -> @elmeragroup/ui#build, through
+    // docs#test -> docs#build -> docs#generate -> ^build -> @elmeragroup/fuse#build, through
     // the workspace dependency in package.json. Its absence is the regression, not a skip.
     expect(existsSync(artifactPath), artifactPath).toBe(true);
     expect(readFileSync(artifactPath, "utf8")).toContain('[data-demo-stage][data-density="comfortable"]');

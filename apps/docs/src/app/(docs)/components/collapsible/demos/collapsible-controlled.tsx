@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 
-import { Button } from "@elmeragroup/ui/button";
-import { Collapsible } from "@elmeragroup/ui/collapsible";
+import { Button } from "@elmeragroup/fuse/button";
+import { Collapsible } from "@elmeragroup/fuse/collapsible";
 
 export function CollapsibleControlled() {
   const [open, setOpen] = useState(false);

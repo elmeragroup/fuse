@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader } from "@elmeragroup/ui/loader";
+import { Loader } from "@elmeragroup/fuse/loader";
 
 const SIZES = ["default", "small", "medium", "large", "xl"] as const;
 

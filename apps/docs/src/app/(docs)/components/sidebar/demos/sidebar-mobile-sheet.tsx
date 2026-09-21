@@ -1,7 +1,7 @@
 "use client";
 
-import { House, Package, Users } from "@elmeragroup/ui/icons";
-import { Sidebar, useSidebar } from "@elmeragroup/ui/sidebar";
+import { House, Package, Users } from "@elmeragroup/fuse/icons";
+import { Sidebar, useSidebar } from "@elmeragroup/fuse/sidebar";
 
 function ViewportNote() {
   const { isMobile } = useSidebar();

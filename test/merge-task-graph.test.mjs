@@ -33,12 +33,12 @@ it("the merge checks schedule all required gates without browser work", () => {
     "//#lint",
     "//#test:repo-policy",
     "//#type-check:scripts",
-    "@elmeragroup/ui#build",
-    "@elmeragroup/ui#type-check",
-    "@elmeragroup/ui#test",
-    "@elmeragroup/ui#test:types",
-    "@elmeragroup/ui#package:check",
-    "@elmeragroup/ui#size-limit",
+    "@elmeragroup/fuse#build",
+    "@elmeragroup/fuse#type-check",
+    "@elmeragroup/fuse#test",
+    "@elmeragroup/fuse#test:types",
+    "@elmeragroup/fuse#package:check",
+    "@elmeragroup/fuse#size-limit",
     "docs#build",
     "docs#type-check",
     "docs#test",
@@ -60,19 +60,19 @@ it("splits the ci:checks aggregate exactly between the checks and browser jobs",
   // task added to one list and not the other would silently run on no PR, so pin the split
   // against the aggregate Turbo resolves rather than against a hand-copied second list.
   const tasks = turboTasks(["run", "ci:checks"]);
-  const uiChecks = asRecord(
-    tasks.find((task) => task.taskId === "@elmeragroup/ui#ci:checks"),
-    "@elmeragroup/ui#ci:checks"
+  const fuseChecks = asRecord(
+    tasks.find((task) => task.taskId === "@elmeragroup/fuse#ci:checks"),
+    "@elmeragroup/fuse#ci:checks"
   );
-  const dependsOn = asRecord(uiChecks.resolvedTaskDefinition, "resolved task definition").dependsOn;
+  const dependsOn = asRecord(fuseChecks.resolvedTaskDefinition, "resolved task definition").dependsOn;
   if (!Array.isArray(dependsOn)) throw new Error("ci:checks dependsOn is not an array");
   const names = dependsOn.map((entry) => asString(entry, "ci:checks dependency"));
   const scheduled = [...requestedTasks("checks"), ...requestedTasks("browser")];
   expect([...scheduled].sort()).toEqual([...names].sort());
 }, 30_000);
 
-it("builds @elmeragroup/ui before every test task, including the app overrides", () => {
-  // The root `test.dependsOn` names @elmeragroup/ui#build, but both apps replace the array
+it("builds @elmeragroup/fuse before every test task, including the app overrides", () => {
+  // The root `test.dependsOn` names @elmeragroup/fuse#build, but both apps replace the array
   // with their own `["build"]`; the density tripwires then rely on the transitive edge.
   const tasks = turboTasks(["run", "test"]);
   const dependenciesById = new Map(
@@ -85,7 +85,7 @@ it("builds @elmeragroup/ui before every test task, including the app overrides",
    * @param {string} taskId
    * @returns {boolean}
    */
-  const reachesUiBuild = (taskId) => {
+  const reachesFuseBuild = (taskId) => {
     const seen = new Set();
     /**
      * @param {string} currentId
@@ -95,15 +95,15 @@ it("builds @elmeragroup/ui before every test task, including the app overrides",
       if (seen.has(currentId)) return false;
       seen.add(currentId);
       for (const dependency of dependenciesById.get(currentId) ?? []) {
-        if (dependency === "@elmeragroup/ui#build" || walk(dependency)) return true;
+        if (dependency === "@elmeragroup/fuse#build" || walk(dependency)) return true;
       }
       return false;
     };
     return walk(taskId);
   };
 
-  for (const taskId of ["@elmeragroup/ui#test", "docs#test", "static-theme#test"]) {
-    expect(reachesUiBuild(taskId), `${taskId} must transitively build @elmeragroup/ui`).toBe(true);
+  for (const taskId of ["@elmeragroup/fuse#test", "docs#test", "static-theme#test"]) {
+    expect(reachesFuseBuild(taskId), `${taskId} must transitively build @elmeragroup/fuse`).toBe(true);
   }
 }, 30_000);
 
@@ -127,8 +127,8 @@ it("runs docs build before type-check, not against the same .next", () => {
 it("the browser job schedules the browser and packed-consumer gates", () => {
   const ids = scheduledTasks("browser").map((task) => asString(task.taskId, "task id"));
   for (const required of [
-    "@elmeragroup/ui#test:browser",
-    "@elmeragroup/ui#test:packed-consumer",
+    "@elmeragroup/fuse#test:browser",
+    "@elmeragroup/fuse#test:packed-consumer",
     "docs#test:browser",
     "static-theme#test:browser",
   ]) {

@@ -1,11 +1,11 @@
 {
-  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
   "slug": "radio-group",
   "parts": [
     {
       "name": "RadioGroup",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/radio-group/radio-group.tsx",
+      "sourcePath": "packages/fuse/src/components/radio-group/radio-group.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [
@@ -158,7 +158,7 @@
     {
       "name": "RadioGroupItem",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/radio-group/radio-group.tsx",
+      "sourcePath": "packages/fuse/src/components/radio-group/radio-group.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -269,7 +269,7 @@
     {
       "name": "Radio",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/radio-group/radio-group.tsx",
+      "sourcePath": "packages/fuse/src/components/radio-group/radio-group.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [
@@ -314,7 +314,7 @@
     {
       "name": "RadioItem",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/radio-group/radio-group.tsx",
+      "sourcePath": "packages/fuse/src/components/radio-group/radio-group.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [
@@ -368,7 +368,7 @@
     {
       "name": "RadioItemGroup",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/radio-group/radio-group.tsx",
+      "sourcePath": "packages/fuse/src/components/radio-group/radio-group.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [
@@ -521,7 +521,7 @@
     {
       "name": "RadioIconButton",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/radio-group/radio-group.tsx",
+      "sourcePath": "packages/fuse/src/components/radio-group/radio-group.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"

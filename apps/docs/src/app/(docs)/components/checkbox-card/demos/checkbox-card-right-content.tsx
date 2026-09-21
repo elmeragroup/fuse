@@ -1,8 +1,8 @@
 "use client";
 
-import { Button } from "@elmeragroup/ui/button";
-import { CheckboxGroup } from "@elmeragroup/ui/checkbox";
-import { CheckboxCard } from "@elmeragroup/ui/checkbox-card";
+import { Button } from "@elmeragroup/fuse/button";
+import { CheckboxGroup } from "@elmeragroup/fuse/checkbox";
+import { CheckboxCard } from "@elmeragroup/fuse/checkbox-card";
 
 export function CheckboxCardRightContent() {
   return (

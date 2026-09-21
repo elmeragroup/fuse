@@ -1,6 +1,6 @@
 "use client";
 
-import { NumberField } from "@elmeragroup/ui/number-field";
+import { NumberField } from "@elmeragroup/fuse/number-field";
 
 export function NumberFieldStates() {
   return (

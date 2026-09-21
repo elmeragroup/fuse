@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 
-import { CheckboxGroup } from "@elmeragroup/ui/checkbox";
-import { CheckboxCard } from "@elmeragroup/ui/checkbox-card";
+import { CheckboxGroup } from "@elmeragroup/fuse/checkbox";
+import { CheckboxCard } from "@elmeragroup/fuse/checkbox-card";
 
 export function CheckboxCardGroup() {
   const [value, setValue] = useState<string[]>(["insurance"]);

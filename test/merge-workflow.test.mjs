@@ -17,9 +17,9 @@ describe("merge workflow", () => {
     expect(format.run).toBe("pnpm exec oxfmt --check");
 
     const browser = requiredJobSteps(workflow, "browser");
-    const install = requiredRunStep(browser, "pnpm --filter @elmeragroup/ui exec playwright");
+    const install = requiredRunStep(browser, "pnpm --filter @elmeragroup/fuse exec playwright");
     expect(install.if).toBeUndefined();
-    expect(install.run).toBe("pnpm --filter @elmeragroup/ui exec playwright install --with-deps chromium");
+    expect(install.run).toBe("pnpm --filter @elmeragroup/fuse exec playwright install --with-deps chromium");
     const gate = requiredRunStep(browser, "pnpm exec turbo run ");
     expect(browser.indexOf(install)).toBeLessThan(browser.indexOf(gate));
   });

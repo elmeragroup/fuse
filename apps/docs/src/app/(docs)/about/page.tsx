@@ -13,7 +13,7 @@ export default function AboutPage(): ReactElement {
     <DocsPage href={HREF}>
       <h2 id="what-it-is">What it is</h2>
       <p>
-        <code>@elmeragroup/ui</code> is the Elmera Group design system: one React component library that has
+        <code>@elmeragroup/fuse</code> is the Elmera Group design system: one React component library that has
         to look right for six brands across two customer segments and two visual variants — twenty legal
         themes in all — without forking a component or shipping twenty bundles.
       </p>
@@ -22,6 +22,27 @@ export default function AboutPage(): ReactElement {
         resolve through a small cascade of CSS layers, and the brand is decided by three attributes on a
         single element. Re-theming a subtree is one wrapper, not a second build.
       </p>
+
+      <h2 id="why-fuse">Why Fuse</h2>
+      <p>
+        An electrical fuse connects the name to Elmera&apos;s energy business. To fuse also means bringing
+        things together, which is what the library is for: teams sharing components and solutions across
+        brands and markets.
+      </p>
+      <ul>
+        <li>
+          <strong>Simplify.</strong> Solve common interface problems once and make those solutions easy to
+          reuse.
+        </li>
+        <li>
+          <strong>Be friendly.</strong> Build accessible, understandable interfaces for customers, with
+          approachable tools and documentation for teams.
+        </li>
+        <li>
+          <strong>Create value.</strong> Reduce duplicated work so teams can spend more time improving
+          customer experiences.
+        </li>
+      </ul>
 
       <h2 id="how-it-is-built">How it is built</h2>
       <ul>

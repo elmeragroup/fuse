@@ -2,8 +2,8 @@
 
 import { CalendarDate, isWeekend } from "@internationalized/date";
 
-import { RangeCalendar } from "@elmeragroup/ui/react-aria/range-calendar";
-import { UiProviders } from "@elmeragroup/ui/react-aria/ui-providers";
+import { RangeCalendar } from "@elmeragroup/fuse/react-aria/range-calendar";
+import { UiProviders } from "@elmeragroup/fuse/react-aria/ui-providers";
 
 /**
  * The range starts on a Saturday while weekends are unavailable, so RAC marks the

@@ -1,11 +1,11 @@
 {
-  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
   "slug": "alert-dialog",
   "parts": [
     {
       "name": "AlertDialog.Root",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/alert-dialog/alert-dialog.tsx",
+      "sourcePath": "packages/fuse/src/components/alert-dialog/alert-dialog.tsx",
       "forwardedFrom": [
         "@base-ui/react"
       ],
@@ -137,7 +137,7 @@
     {
       "name": "AlertDialog.Trigger",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/alert-dialog/alert-dialog.tsx",
+      "sourcePath": "packages/fuse/src/components/alert-dialog/alert-dialog.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -226,7 +226,7 @@
     {
       "name": "AlertDialog.Content",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/alert-dialog/alert-dialog.tsx",
+      "sourcePath": "packages/fuse/src/components/alert-dialog/alert-dialog.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"

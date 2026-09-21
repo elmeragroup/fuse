@@ -1,11 +1,11 @@
 {
-  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
   "slug": "frame",
   "parts": [
     {
       "name": "Frame.Root",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/frame/frame.tsx",
+      "sourcePath": "packages/fuse/src/components/frame/frame.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -25,7 +25,7 @@
     {
       "name": "Frame.Panel",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/frame/frame.tsx",
+      "sourcePath": "packages/fuse/src/components/frame/frame.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -35,7 +35,7 @@
     {
       "name": "Frame.Header",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/frame/frame.tsx",
+      "sourcePath": "packages/fuse/src/components/frame/frame.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -45,7 +45,7 @@
     {
       "name": "Frame.Title",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/frame/frame.tsx",
+      "sourcePath": "packages/fuse/src/components/frame/frame.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -55,7 +55,7 @@
     {
       "name": "Frame.Description",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/frame/frame.tsx",
+      "sourcePath": "packages/fuse/src/components/frame/frame.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -65,7 +65,7 @@
     {
       "name": "Frame.Footer",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/frame/frame.tsx",
+      "sourcePath": "packages/fuse/src/components/frame/frame.tsx",
       "forwardedFrom": [
         "@types/react"
       ],

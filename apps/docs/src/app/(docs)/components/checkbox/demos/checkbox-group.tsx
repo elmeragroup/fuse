@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 
-import { Button } from "@elmeragroup/ui/button";
-import { Checkbox, CheckboxGroup } from "@elmeragroup/ui/checkbox";
-import { Field } from "@elmeragroup/ui/field";
+import { Button } from "@elmeragroup/fuse/button";
+import { Checkbox, CheckboxGroup } from "@elmeragroup/fuse/checkbox";
+import { Field } from "@elmeragroup/fuse/field";
 
 const toppings = [
   { value: "pepperoni", label: "Pepperoni" },

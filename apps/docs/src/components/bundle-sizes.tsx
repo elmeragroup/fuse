@@ -55,7 +55,7 @@ export function BundleSizes(): ReactElement {
             {BUNDLE_SIZES.map((entry) => (
               <tr key={entry.name}>
                 <DocsTable.BodyCell>
-                  <code>{entry.name === "." ? "@elmeragroup/ui" : `@elmeragroup/ui/${entry.name}`}</code>
+                  <code>{entry.name === "." ? "@elmeragroup/fuse" : `@elmeragroup/fuse/${entry.name}`}</code>
                 </DocsTable.BodyCell>
                 <DocsTable.BodyCell numeric>{kib(entry.measuredGzip)}</DocsTable.BodyCell>
                 <DocsTable.BodyCell numeric>{kib(entry.ceilingGzip)}</DocsTable.BodyCell>

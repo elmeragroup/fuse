@@ -1,11 +1,11 @@
 {
-  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
   "slug": "popover",
   "parts": [
     {
       "name": "Popover.Root",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/popover/popover.tsx",
+      "sourcePath": "packages/fuse/src/components/popover/popover.tsx",
       "forwardedFrom": [
         "@base-ui/react"
       ],
@@ -126,7 +126,7 @@
     {
       "name": "Popover.Trigger",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/popover/popover.tsx",
+      "sourcePath": "packages/fuse/src/components/popover/popover.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -248,7 +248,7 @@
     {
       "name": "Popover.Content",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/popover/popover.tsx",
+      "sourcePath": "packages/fuse/src/components/popover/popover.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -369,7 +369,7 @@
     {
       "name": "Popover.Header",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/popover/popover.tsx",
+      "sourcePath": "packages/fuse/src/components/popover/popover.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -379,7 +379,7 @@
     {
       "name": "Popover.Title",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/popover/popover.tsx",
+      "sourcePath": "packages/fuse/src/components/popover/popover.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -424,7 +424,7 @@
     {
       "name": "Popover.Description",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/popover/popover.tsx",
+      "sourcePath": "packages/fuse/src/components/popover/popover.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"

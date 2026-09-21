@@ -42,7 +42,7 @@ const docsCodeBlock = tv({
  *
  * The preset is called without parse-level overrides: its own defaults carry JSX, regex
  * and template scanning, and its packaged types do not accept `parse`'s options object.
- * Mirrors packages/ui/src/components/code/code.tsx — delete both copies when sugar-high
+ * Mirrors packages/fuse/src/components/code/code.tsx — delete both copies when sugar-high
  * fixes its tokenize types.
  */
 function highlight(source: string): string {

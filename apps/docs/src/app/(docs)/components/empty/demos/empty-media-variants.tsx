@@ -1,8 +1,8 @@
 "use client";
 
-import { Empty } from "@elmeragroup/ui/empty";
-import { Tray } from "@elmeragroup/ui/icons";
-import { FkasMeter } from "@elmeragroup/ui/illustrations";
+import { Empty } from "@elmeragroup/fuse/empty";
+import { Tray } from "@elmeragroup/fuse/icons";
+import { FkasMeter } from "@elmeragroup/fuse/illustrations";
 
 export function EmptyMediaVariants() {
   return (

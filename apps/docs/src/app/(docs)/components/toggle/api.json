@@ -1,11 +1,11 @@
 {
-  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
   "slug": "toggle",
   "parts": [
     {
       "name": "Toggle",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/toggle/toggle.tsx",
+      "sourcePath": "packages/fuse/src/components/toggle/toggle.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"

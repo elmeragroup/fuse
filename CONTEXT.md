@@ -1,6 +1,6 @@
 # CONTEXT
 
-Ubiquitous language for the `@elmeragroup/ui` whitelabel component library effort.
+Ubiquitous language for the `@elmeragroup/fuse` whitelabel component library effort.
 
 ## Glossary
 

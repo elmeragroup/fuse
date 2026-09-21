@@ -1,8 +1,8 @@
 "use client";
 
-import { Button } from "@elmeragroup/ui/button";
-import { Info } from "@elmeragroup/ui/icons";
-import { Tooltip } from "@elmeragroup/ui/tooltip";
+import { Button } from "@elmeragroup/fuse/button";
+import { Info } from "@elmeragroup/fuse/icons";
+import { Tooltip } from "@elmeragroup/fuse/tooltip";
 
 export function TooltipBasic() {
   return (

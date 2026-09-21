@@ -1,4 +1,4 @@
-import type { ColorSchemeOptions, ThemeInput } from "@elmeragroup/ui/theme";
+import type { ColorSchemeOptions, ThemeInput } from "@elmeragroup/fuse/theme";
 
 export const DOCUMENT_THEME = {
   variant: "internal",

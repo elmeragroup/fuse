@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { Button } from "@elmeragroup/ui/button";
+import { Button } from "@elmeragroup/fuse/button";
 
 export function ButtonVisuallyDisabled() {
   const [explanation, setExplanation] = useState<string | null>(null);

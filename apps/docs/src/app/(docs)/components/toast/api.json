@@ -1,11 +1,11 @@
 {
-  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
   "slug": "toast",
   "parts": [
     {
       "name": "Toast.Provider",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/toast/toast.tsx",
+      "sourcePath": "packages/fuse/src/components/toast/toast.tsx",
       "forwardedFrom": [
         "@base-ui/react"
       ],
@@ -25,7 +25,7 @@
     {
       "name": "Toast.Viewport",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/toast/toast.tsx",
+      "sourcePath": "packages/fuse/src/components/toast/toast.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -46,7 +46,7 @@
     {
       "name": "Toast.Root",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/toast/toast.tsx",
+      "sourcePath": "packages/fuse/src/components/toast/toast.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -57,7 +57,7 @@
     {
       "name": "Toast.Content",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/toast/toast.tsx",
+      "sourcePath": "packages/fuse/src/components/toast/toast.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -68,7 +68,7 @@
     {
       "name": "Toast.Title",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/toast/toast.tsx",
+      "sourcePath": "packages/fuse/src/components/toast/toast.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -79,7 +79,7 @@
     {
       "name": "Toast.Description",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/toast/toast.tsx",
+      "sourcePath": "packages/fuse/src/components/toast/toast.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -90,7 +90,7 @@
     {
       "name": "Toast.Action",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/toast/toast.tsx",
+      "sourcePath": "packages/fuse/src/components/toast/toast.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -101,7 +101,7 @@
     {
       "name": "Toast.Close",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/toast/toast.tsx",
+      "sourcePath": "packages/fuse/src/components/toast/toast.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -122,7 +122,7 @@
     {
       "name": "Toast.useToastManager",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/toast/toast.tsx",
+      "sourcePath": "packages/fuse/src/components/toast/toast.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": []
@@ -130,7 +130,7 @@
     {
       "name": "Toast.createToastManager",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/toast/toast.tsx",
+      "sourcePath": "packages/fuse/src/components/toast/toast.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": []

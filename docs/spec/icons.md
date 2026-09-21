@@ -1,12 +1,12 @@
 # Icons, logos, illustrations, and flags
 
-Normative asset contract for `@elmeragroup/ui`.
+Normative asset contract for `@elmeragroup/fuse`.
 
 ## 1 Public entries
 
-- `@elmeragroup/ui/icons` exports curated Phosphor adapters, bespoke marks, logos, and `BrandLogo`. It is subpath-only and is not re-exported from the package root.
-- `@elmeragroup/ui/illustrations` exports brand artwork such as `FkasMeter`; it is subpath-only.
-- `@elmeragroup/ui/flags` exports the generated `flagAssets` manifest and `FlagAssetCode`. `@elmeragroup/ui/flags/<CC>.svg` exposes each static asset. The packaging and phone-country resolution details are in [architecture](architecture.md) §6a.
+- `@elmeragroup/fuse/icons` exports curated Phosphor adapters, bespoke marks, logos, and `BrandLogo`. It is subpath-only and is not re-exported from the package root.
+- `@elmeragroup/fuse/illustrations` exports brand artwork such as `FkasMeter`; it is subpath-only.
+- `@elmeragroup/fuse/flags` exports the generated `flagAssets` manifest and `FlagAssetCode`. `@elmeragroup/fuse/flags/<CC>.svg` exposes each static asset. The packaging and phone-country resolution details are in [architecture](architecture.md) §6a.
 - There is no `Icon` namespace, SVG loader, SVGR consumer requirement, icon font, default export, Unicode-flag mode, or remote asset mode.
 
 ## 2 Phosphor adapters
@@ -94,21 +94,21 @@ These are hand-authored SVG React components under `/icons`, copied from the pin
 
 The source-to-export mapping is exact:
 
-| Public export   | Pinned source                                                        |
-| --------------- | -------------------------------------------------------------------- |
-| `BankIdDna`     | `.ref/OrderModuleWeb/packages/ui/src/icons/bankid-dna.svg`           |
-| `BankIdSweden`  | `.ref/OrderModuleWeb/packages/ui/src/icons/bankid-sweden.svg`        |
-| `Vipps`         | `.ref/OrderModuleWeb/packages/ui/src/icons/vipps.svg`                |
-| `Signing`       | `.ref/OrderModuleWeb/packages/ui/src/icons/signing.tsx`              |
-| `Contract`      | `.ref/OrderModuleWeb/packages/ui/src/icons/contract.svg`             |
-| `StromSmart`    | `.ref/OrderModuleWeb/packages/ui/src/icons/strom-smart.svg`          |
-| `AlertMark`     | `.ref/OrderModuleWeb/packages/ui/src/icons/alert.svg`                |
-| `HomeTitleIcon` | `.ref/OrderModuleWeb/packages/ui/src/icons/home-title-icon.svg`      |
-| `OrderLogo`     | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/order-logo.tsx`   |
-| `CollectLogo`   | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/collect-logo.tsx` |
-| `DeviateLogo`   | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/deviate-logo.tsx` |
-| `FunnelLogo`    | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/funnel-logo.tsx`  |
-| `DoubleCheck`   | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/double-check.tsx` |
+| Public export   | Pinned source                                                          |
+| --------------- | ---------------------------------------------------------------------- |
+| `BankIdDna`     | `.ref/OrderModuleWeb/packages/fuse/src/icons/bankid-dna.svg`           |
+| `BankIdSweden`  | `.ref/OrderModuleWeb/packages/fuse/src/icons/bankid-sweden.svg`        |
+| `Vipps`         | `.ref/OrderModuleWeb/packages/fuse/src/icons/vipps.svg`                |
+| `Signing`       | `.ref/OrderModuleWeb/packages/fuse/src/icons/signing.tsx`              |
+| `Contract`      | `.ref/OrderModuleWeb/packages/fuse/src/icons/contract.svg`             |
+| `StromSmart`    | `.ref/OrderModuleWeb/packages/fuse/src/icons/strom-smart.svg`          |
+| `AlertMark`     | `.ref/OrderModuleWeb/packages/fuse/src/icons/alert.svg`                |
+| `HomeTitleIcon` | `.ref/OrderModuleWeb/packages/fuse/src/icons/home-title-icon.svg`      |
+| `OrderLogo`     | `.ref/OrderModuleInternalWeb/packages/fuse/src/icons/order-logo.tsx`   |
+| `CollectLogo`   | `.ref/OrderModuleInternalWeb/packages/fuse/src/icons/collect-logo.tsx` |
+| `DeviateLogo`   | `.ref/OrderModuleInternalWeb/packages/fuse/src/icons/deviate-logo.tsx` |
+| `FunnelLogo`    | `.ref/OrderModuleInternalWeb/packages/fuse/src/icons/funnel-logo.tsx`  |
+| `DoubleCheck`   | `.ref/OrderModuleInternalWeb/packages/fuse/src/icons/double-check.tsx` |
 
 The generic external `Alert` asset is named `AlertMark` to avoid collision with the `Alert` component. Every component accepts `ComponentPropsWithoutRef<"svg"> & { title?: string }`. With `title`, it renders `role="img"` and an associated `<title>`; without one it renders `aria-hidden="true"` and `focusable="false"`. Decorative uses must not acquire an accessible name accidentally.
 
@@ -135,21 +135,21 @@ type BrandLogoProps = Omit<ComponentPropsWithoutRef<"span">, "children"> & {
 
 The variant-to-source mapping is exact and prefers the internal snapshot where both references contain an asset:
 
-| Public export            | `full` source                                                                    | `mark` source                                                                          |
-| ------------------------ | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| `FjordkraftLogo`         | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/fjordkraft-logo.tsx`          | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/fjordkraft-logo-small.tsx`          |
-| `TrondelagkraftLogo`     | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/trondelagkraft-logo.tsx`      | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/trondelagkraft-logo-small.tsx`      |
-| `GudbrandsdalEnergiLogo` | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/gudbrandsdal-energi-logo.tsx` | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/gudbrandsdal-energi-logo-small.tsx` |
-| `TelinetLogo`            | `.ref/OrderModuleWeb/packages/ui/src/icons/telinet-logo.tsx`                     | `.ref/OrderModuleWeb/packages/ui/src/icons/telinet-logo-mini.tsx`                      |
-| `ElmeraGroupLogo`        | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/elmera-group-logo.tsx`        | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/elmera-group-logo-small.tsx`        |
-| `SteddiLogo`             | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/steddi-logo.tsx`              | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/steddi-logo.tsx`                    |
-| `TrumfLogo`              | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/trumf-logo.tsx`               | `.ref/OrderModuleInternalWeb/packages/ui/src/icons/trumf-logo-small.tsx`               |
+| Public export            | `full` source                                                                      | `mark` source                                                                            |
+| ------------------------ | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `FjordkraftLogo`         | `.ref/OrderModuleInternalWeb/packages/fuse/src/icons/fjordkraft-logo.tsx`          | `.ref/OrderModuleInternalWeb/packages/fuse/src/icons/fjordkraft-logo-small.tsx`          |
+| `TrondelagkraftLogo`     | `.ref/OrderModuleInternalWeb/packages/fuse/src/icons/trondelagkraft-logo.tsx`      | `.ref/OrderModuleInternalWeb/packages/fuse/src/icons/trondelagkraft-logo-small.tsx`      |
+| `GudbrandsdalEnergiLogo` | `.ref/OrderModuleInternalWeb/packages/fuse/src/icons/gudbrandsdal-energi-logo.tsx` | `.ref/OrderModuleInternalWeb/packages/fuse/src/icons/gudbrandsdal-energi-logo-small.tsx` |
+| `TelinetLogo`            | `.ref/OrderModuleWeb/packages/fuse/src/icons/telinet-logo.tsx`                     | `.ref/OrderModuleWeb/packages/fuse/src/icons/telinet-logo-mini.tsx`                      |
+| `ElmeraGroupLogo`        | `.ref/OrderModuleInternalWeb/packages/fuse/src/icons/elmera-group-logo.tsx`        | `.ref/OrderModuleInternalWeb/packages/fuse/src/icons/elmera-group-logo-small.tsx`        |
+| `SteddiLogo`             | `.ref/OrderModuleInternalWeb/packages/fuse/src/icons/steddi-logo.tsx`              | `.ref/OrderModuleInternalWeb/packages/fuse/src/icons/steddi-logo.tsx`                    |
+| `TrumfLogo`              | `.ref/OrderModuleInternalWeb/packages/fuse/src/icons/trumf-logo.tsx`               | `.ref/OrderModuleInternalWeb/packages/fuse/src/icons/trumf-logo-small.tsx`               |
 
 Steddi has only one pinned glyph, so both variants intentionally render that same source until a separately licensed wordmark is added. All logo variants use the same optional-title accessibility behavior as bespoke icons. Their SVG paint is copied unchanged: fixed official colors stay fixed, while existing `currentColor` artwork remains consumer-colorable. Neither form is remapped to theme role tokens.
 
 `BrandLogo` maps `fkas` and `fkab` to Fjordkraft, `tkas` to TrøndelagKraft, `guen` to Gudbrandsdal Energi, and `fkse` to Telinet. Energy-brand codes render the matching SVG mark inside the same accessible `<span>` host for both `full` and `mark`. `elma` keeps the text/`displayName` fallback and invents no SVG. Public props are that host's props, not SVG attributes; advertised host props are applied on the span. The host stamps `data-variant` with the resolved `"full"` or `"mark"` value. `title` is the accessible name (`aria-label`), defaulting to the brand display name. It reads `BRANDS[brand].displayName`, is exhaustive over `BrandCode`, and reads no context; consumers pass the brand explicitly. Adding `elma` does not leave a hole in the mapping.
 
-`@elmeragroup/ui/illustrations` initially exports `FkasMeter`, copied from `.ref/OrderModuleWeb/packages/ui/src/illustrations/fkas-meter.tsx`. Illustrations accept SVG props plus the same optional-title accessibility contract. New artwork joins only with recorded public-distribution rights.
+`@elmeragroup/fuse/illustrations` initially exports `FkasMeter`, copied from `.ref/OrderModuleWeb/packages/fuse/src/illustrations/fkas-meter.tsx`. Illustrations accept SVG props plus the same optional-title accessibility contract. New artwork joins only with recorded public-distribution rights.
 
 ## 5 Flags
 

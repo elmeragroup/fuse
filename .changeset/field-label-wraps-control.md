@@ -1,5 +1,5 @@
 ---
-"@elmeragroup/ui": minor
+"@elmeragroup/fuse": minor
 ---
 
 `Field.Label` now owns the row treatment when a `Checkbox` is its direct child: the row centers and

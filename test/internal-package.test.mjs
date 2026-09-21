@@ -25,7 +25,7 @@ describe("@elmeragroup/internal", () => {
     for (const manifest of [
       "package.json",
       join("apps", "docs", "package.json"),
-      join("packages", "ui", "package.json"),
+      join("packages", "fuse", "package.json"),
     ]) {
       const devDependencies = asRecord(readJsonObject(join(repoRoot, manifest)).devDependencies, manifest);
       expect(asString(devDependencies["@elmeragroup/internal"], manifest)).toBe("catalog:");

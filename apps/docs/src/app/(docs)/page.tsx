@@ -26,7 +26,7 @@ const { groupHeading, list } = docsHome();
 export default function DocsHomePage(): ReactElement {
   return (
     <>
-      <DocsPageTitle>elmera/ui</DocsPageTitle>
+      <DocsPageTitle>Fuse</DocsPageTitle>
       <DocsLede>
         The Elmera Group design system: one themed React component library covering six brands, two customer
         segments and two variants — twenty legal themes — without forking a component. Docs pages are thin

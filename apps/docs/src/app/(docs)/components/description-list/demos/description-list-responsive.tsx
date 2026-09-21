@@ -1,6 +1,6 @@
 "use client";
 
-import { DescriptionList } from "@elmeragroup/ui/description-list";
+import { DescriptionList } from "@elmeragroup/fuse/description-list";
 
 export function DescriptionListResponsive() {
   return (

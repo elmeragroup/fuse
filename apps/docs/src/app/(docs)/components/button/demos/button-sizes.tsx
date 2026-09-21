@@ -1,7 +1,7 @@
 "use client";
 
-import { Button } from "@elmeragroup/ui/button";
-import { ArrowRight, MagnifyingGlass } from "@elmeragroup/ui/icons";
+import { Button } from "@elmeragroup/fuse/button";
+import { ArrowRight, MagnifyingGlass } from "@elmeragroup/fuse/icons";
 
 export function ButtonSizes() {
   return (

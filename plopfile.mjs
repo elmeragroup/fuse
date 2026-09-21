@@ -14,16 +14,16 @@ import {
   NON_COMPONENT_JS_ENTRIES,
   TOOLING_ONLY_JS_ENTRIES,
   CSS_ENTRY_NAMES,
-} from "./packages/ui/scripts/entries.ts";
+} from "./packages/fuse/scripts/entries.ts";
 
-const UI = "packages/ui";
+const FUSE = "packages/fuse";
 /** One route directory per component page — the page, its demos and its `api.json` (§6). */
 const DOCS_ROUTE = "apps/docs/src/app/(docs)/components/{{name}}";
 const TEMPLATES = "plop-templates/component";
-const BUDGETS = `${UI}/scripts/size-budgets.ts`;
+const BUDGETS = `${FUSE}/scripts/size-budgets.ts`;
 const BUDGET_MARKER = "// plop:js-entry-budget";
 
-const ENTRIES = `${UI}/scripts/entries.ts`;
+const ENTRIES = `${FUSE}/scripts/entries.ts`;
 const ENTRY_MARKER = "// plop:component-entry";
 const RESERVED_NAMES = new Set([
   ...NON_COMPONENT_JS_ENTRIES,
@@ -52,9 +52,9 @@ function validateName(name, root) {
     return `"${name}" is already registered or reserved.`;
   }
   const targets = [
-    `${UI}/src/${name}`,
-    ...["ts", "tsx", "js", "jsx"].map((extension) => `${UI}/src/${name}.${extension}`),
-    `${UI}/src/components/${name}`,
+    `${FUSE}/src/${name}`,
+    ...["ts", "tsx", "js", "jsx"].map((extension) => `${FUSE}/src/${name}.${extension}`),
+    `${FUSE}/src/components/${name}`,
     DOCS_ROUTE.replace("{{name}}", name),
   ];
   if (targets.some((target) => existsSync(join(root, target)))) {
@@ -101,13 +101,13 @@ export default function plopfile(plop) {
     ],
     actions: [
       preflight,
-      add("variants.ts.hbs", `${UI}/src/components/{{name}}/{{name}}-variants.ts`),
-      add("component.tsx.hbs", `${UI}/src/components/{{name}}/{{name}}.tsx`),
-      add("unit-test.ts.hbs", `${UI}/src/components/{{name}}/{{name}}.test.ts`),
-      add("browser-test.tsx.hbs", `${UI}/src/components/{{name}}/{{name}}.browser.test.tsx`),
+      add("variants.ts.hbs", `${FUSE}/src/components/{{name}}/{{name}}-variants.ts`),
+      add("component.tsx.hbs", `${FUSE}/src/components/{{name}}/{{name}}.tsx`),
+      add("unit-test.ts.hbs", `${FUSE}/src/components/{{name}}/{{name}}.test.ts`),
+      add("browser-test.tsx.hbs", `${FUSE}/src/components/{{name}}/{{name}}.browser.test.tsx`),
       add("demo.tsx.hbs", `${DOCS_ROUTE}/demos/{{name}}-basic.tsx`),
       add("page.mdx.hbs", `${DOCS_ROUTE}/page.mdx`),
-      add("facade.ts.hbs", `${UI}/src/{{name}}.ts`),
+      add("facade.ts.hbs", `${FUSE}/src/{{name}}.ts`),
       {
         type: "append",
         path: ENTRIES,
@@ -130,8 +130,8 @@ export default function plopfile(plop) {
           [
             "exec",
             "oxfmt",
-            `${UI}/src/${answers.name}.ts`,
-            `${UI}/src/components/${answers.name}`,
+            `${FUSE}/src/${answers.name}.ts`,
+            `${FUSE}/src/components/${answers.name}`,
             // Only the demos directory: `page.mdx` is not oxfmt's to format.
             `${DOCS_ROUTE.replace("{{name}}", answers.name)}/demos`,
             BUDGETS,
@@ -145,11 +145,11 @@ export default function plopfile(plop) {
         [
           "next steps",
           `  1. Implement ${answers.name} using docs/component-authoring.md; replace every failing placeholder.`,
-          "  2. pnpm --filter @elmeragroup/ui generate:exports  # rewrites tracked package.json#exports and src/index.ts",
-          "  3. pnpm --filter @elmeragroup/ui build             # dist + publish manifest; does not rewrite source exports",
+          "  2. pnpm --filter @elmeragroup/fuse generate:exports  # rewrites tracked package.json#exports and src/index.ts",
+          "  3. pnpm --filter @elmeragroup/fuse build             # dist + publish manifest; does not rewrite source exports",
           `  4. Author the page and demos; record required scenarios in apps/docs/test/fixtures/component-demo-requirements.json.`,
           "  5. pnpm --filter docs generate                    # writes the committed api.json next to the page",
-          "  6. Record measuredGzip in packages/ui/scripts/size-budgets.ts.",
+          "  6. Record measuredGzip in packages/fuse/scripts/size-budgets.ts.",
           "  7. Add the component to independent RSC expectations and public type/API contract checks.",
           "  8. pnpm ci:checks",
         ].join("\n"),

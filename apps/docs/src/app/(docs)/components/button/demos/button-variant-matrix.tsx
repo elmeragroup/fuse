@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@elmeragroup/ui/button";
+import { Button } from "@elmeragroup/fuse/button";
 
 const VARIANTS = ["default", "outline", "secondary", "ghost", "destructive", "success", "link"] as const;
 

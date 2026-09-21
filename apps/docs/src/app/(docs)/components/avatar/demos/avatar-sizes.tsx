@@ -1,6 +1,6 @@
 "use client";
 
-import { Avatar } from "@elmeragroup/ui/avatar";
+import { Avatar } from "@elmeragroup/fuse/avatar";
 
 const sizes = ["size-6", "size-8", "size-10", "size-12"] as const;
 

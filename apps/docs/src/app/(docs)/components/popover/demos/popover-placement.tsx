@@ -1,7 +1,7 @@
 "use client";
 
-import { Button } from "@elmeragroup/ui/button";
-import { Popover } from "@elmeragroup/ui/popover";
+import { Button } from "@elmeragroup/fuse/button";
+import { Popover } from "@elmeragroup/fuse/popover";
 
 const placements = [
   { label: "start", align: "start", sideOffset: 4, alignOffset: 0 },

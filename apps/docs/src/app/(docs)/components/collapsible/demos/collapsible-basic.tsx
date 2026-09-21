@@ -1,6 +1,6 @@
 "use client";
 
-import { Collapsible } from "@elmeragroup/ui/collapsible";
+import { Collapsible } from "@elmeragroup/fuse/collapsible";
 
 export function CollapsibleBasic() {
   return (

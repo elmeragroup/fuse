@@ -6,19 +6,19 @@
  */
 
 import type {
+  Density,
+  DensityAttributes,
+  ThemeAttributes,
+  ThemeInput,
+  ThemeSlug,
+} from "@elmeragroup/fuse/theme";
+import type {
   ApiPart,
   ApiProp,
   ApiPropOrigin,
   ComponentApiArtifact,
   RscStatus,
 } from "@elmeragroup/internal/api-artifacts/model";
-import type {
-  Density,
-  DensityAttributes,
-  ThemeAttributes,
-  ThemeInput,
-  ThemeSlug,
-} from "@elmeragroup/ui/theme";
 
 /**
  * The API artifact model is the generator's (`@elmeragroup/internal`), re-exported so the
@@ -26,7 +26,7 @@ import type {
  * (`api-source.ts`) share one shape with the package that produces it. In brief:
  *
  * - `RscStatus` — RSC classification of the module that declares a part (performance.md §3).
- * - `ApiPropOrigin` — `declared` (written in `packages/ui`, so JSDoc-gated), `recipe-axis`
+ * - `ApiPropOrigin` — `declared` (written in `packages/fuse`, so JSDoc-gated), `recipe-axis`
  *   (synthesised by `VariantProps` over a `tv` recipe; the printed type *is* the
  *   documentation) or `{ packageName }` (inherited from that dependency's declaration).
  * - `ApiProp` — one table row. `shortType` is the one-line stand-in a *closed* row shows
@@ -115,7 +115,7 @@ export type ComponentPageEntry = {
   slug: string;
   title: string;
   lede: string;
-  /** Public import specifier, e.g. `@elmeragroup/ui/button`. */
+  /** Public import specifier, e.g. `@elmeragroup/fuse/button`. */
   entry: string;
   /** The identifier the entry facade exports, e.g. `Button` or `Dialog`. */
   exportName: string;

@@ -1,7 +1,7 @@
 "use client";
 
-import { Star } from "@elmeragroup/ui/icons";
-import { Toggle } from "@elmeragroup/ui/toggle";
+import { Star } from "@elmeragroup/fuse/icons";
+import { Toggle } from "@elmeragroup/fuse/toggle";
 
 export function ToggleIconOnly() {
   return (

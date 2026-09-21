@@ -4,7 +4,7 @@ import { join, relative } from "node:path";
 import picomatch from "picomatch";
 import { describe, expect, it } from "vitest";
 
-import { PUBLISH_GATES } from "../packages/ui/scripts/release-pack.ts";
+import { PUBLISH_GATES } from "../packages/fuse/scripts/release-pack.ts";
 import { USAGE } from "../scripts/release.ts";
 import { asRecord, asString, readJsonObject } from "./json-object.mjs";
 import { repoRoot } from "./repo-tree.mjs";
@@ -32,10 +32,10 @@ describe("release wiring", () => {
     expect(tokens[0], "release must launch node").toBe("node");
     expect(tokens.at(-1), "release must run its committed entry point").toBe(entryPoint);
     // The release CLI preloads the package loader so extension-less imports under
-    // packages/ui/scripts resolve; dropping it would only fail on the bot branch in CI.
+    // packages/fuse/scripts resolve; dropping it would only fail on the bot branch in CI.
     const loader = tokens.indexOf("--import");
     expect(loader, "release must preload the package loader").toBeGreaterThan(0);
-    expect(tokens[loader + 1]).toBe("./packages/ui/scripts/ts-resolve.mjs");
+    expect(tokens[loader + 1]).toBe("./packages/fuse/scripts/ts-resolve.mjs");
     const typeCheck = asString(scripts["type-check:scripts"], "scripts.type-check:scripts").split(/\s+/);
     expect(typeCheck[0], "script checking must run tsc").toBe("tsc");
     expect(typeCheck, "script checking must not emit").toContain("--noEmit");
@@ -71,7 +71,7 @@ describe("release wiring", () => {
       .filter((pattern) => pattern.startsWith("!"))
       .map((pattern) => picomatch(pattern.slice(1), { dot: true }));
 
-    // The program's import closure must stay inside those inputs; a new packages/ui/src import in
+    // The program's import closure must stay inside those inputs; a new packages/fuse/src import in
     // an adapter file would move a gate input outside the cache key.
     const listed = execFileSync(
       join(repoRoot, "node_modules/.bin/tsc"),
@@ -112,15 +112,15 @@ describe("release wiring", () => {
     // `browser` job; this pins the aggregate a local `pnpm ci:checks` fans out.
     expect([...PUBLISH_GATES]).toEqual(["package:check", "size-limit", "test:packed-consumer"]);
     const tasks = turboTasks(["run", "ci:checks"]);
-    const uiChecks = asRecord(
-      tasks.find((task) => task.taskId === "@elmeragroup/ui#ci:checks"),
-      "@elmeragroup/ui#ci:checks"
+    const fuseChecks = asRecord(
+      tasks.find((task) => task.taskId === "@elmeragroup/fuse#ci:checks"),
+      "@elmeragroup/fuse#ci:checks"
     );
-    const dependencies = uiChecks.dependencies;
+    const dependencies = fuseChecks.dependencies;
     if (!Array.isArray(dependencies)) throw new Error("ci:checks dependencies is not an array");
     for (const gate of PUBLISH_GATES) {
       expect(dependencies, `${gate} must also run in the ci:checks aggregate`).toContain(
-        `@elmeragroup/ui#${gate}`
+        `@elmeragroup/fuse#${gate}`
       );
     }
   }, 30_000);
@@ -156,9 +156,9 @@ describe("release wiring", () => {
     });
     // test:packed-consumer launches Playwright Chromium on this fresh runner, so the browser
     // install must precede the engine run (release.md §5).
-    const browser = requiredRunStep(steps, "pnpm --filter @elmeragroup/ui exec playwright install");
+    const browser = requiredRunStep(steps, "pnpm --filter @elmeragroup/fuse exec playwright install");
     expect(browser.if).toBe("inputs.record_tag == ''");
-    expect(browser.run).toBe("pnpm --filter @elmeragroup/ui exec playwright install --with-deps chromium");
+    expect(browser.run).toBe("pnpm --filter @elmeragroup/fuse exec playwright install --with-deps chromium");
     expect(steps.indexOf(browser)).toBeLessThan(steps.indexOf(engine));
   });
 

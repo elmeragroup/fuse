@@ -1,11 +1,11 @@
 {
-  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
   "slug": "button-group",
   "parts": [
     {
       "name": "ButtonGroup.Root",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/button-group/button-group.tsx",
+      "sourcePath": "packages/fuse/src/components/button-group/button-group.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -25,7 +25,7 @@
     {
       "name": "ButtonGroup.Separator",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/button-group/button-group.tsx",
+      "sourcePath": "packages/fuse/src/components/button-group/button-group.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -79,7 +79,7 @@
     {
       "name": "ButtonGroup.Text",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/button-group/button-group.tsx",
+      "sourcePath": "packages/fuse/src/components/button-group/button-group.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"

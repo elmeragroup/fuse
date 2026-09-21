@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 
-import { Button } from "@elmeragroup/ui/button";
-import { Show } from "@elmeragroup/ui/show";
+import { Button } from "@elmeragroup/fuse/button";
+import { Show } from "@elmeragroup/fuse/show";
 
 export function ShowBasic() {
   const [visible, setVisible] = useState(true);

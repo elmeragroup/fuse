@@ -1,11 +1,11 @@
 {
-  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
   "slug": "item",
   "parts": [
     {
       "name": "Item.Root",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/item/item.tsx",
+      "sourcePath": "packages/fuse/src/components/item/item.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -46,7 +46,7 @@
     {
       "name": "Item.Media",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/item/item.tsx",
+      "sourcePath": "packages/fuse/src/components/item/item.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -66,7 +66,7 @@
     {
       "name": "Item.Content",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/item/item.tsx",
+      "sourcePath": "packages/fuse/src/components/item/item.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -76,7 +76,7 @@
     {
       "name": "Item.Actions",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/item/item.tsx",
+      "sourcePath": "packages/fuse/src/components/item/item.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -86,7 +86,7 @@
     {
       "name": "Item.Group",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/item/item.tsx",
+      "sourcePath": "packages/fuse/src/components/item/item.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -96,7 +96,7 @@
     {
       "name": "Item.Separator",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/item/item.tsx",
+      "sourcePath": "packages/fuse/src/components/item/item.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -152,7 +152,7 @@
     {
       "name": "Item.Title",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/item/item.tsx",
+      "sourcePath": "packages/fuse/src/components/item/item.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -162,7 +162,7 @@
     {
       "name": "Item.Description",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/item/item.tsx",
+      "sourcePath": "packages/fuse/src/components/item/item.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -172,7 +172,7 @@
     {
       "name": "Item.Header",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/item/item.tsx",
+      "sourcePath": "packages/fuse/src/components/item/item.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -182,7 +182,7 @@
     {
       "name": "Item.Footer",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/item/item.tsx",
+      "sourcePath": "packages/fuse/src/components/item/item.tsx",
       "forwardedFrom": [
         "@types/react"
       ],

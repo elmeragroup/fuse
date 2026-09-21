@@ -7,7 +7,7 @@ import { docsRoot } from "../scripts/lib/paths.ts";
 const componentsDir = path.join(docsRoot, "src/app/(docs)/components");
 
 /** Specifiers any consumer writes: React, the public entries, and the date-cluster value type. */
-const CONSUMER_SPECIFIERS = [/^react$/u, /^@elmeragroup\/ui\//u, /^@internationalized\/date$/u];
+const CONSUMER_SPECIFIERS = [/^react$/u, /^@elmeragroup\/fuse\//u, /^@internationalized\/date$/u];
 
 /**
  * The docs-site.md §6 carve-out, verbatim: the demos whose required scenario the public API

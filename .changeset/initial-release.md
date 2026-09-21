@@ -1,8 +1,8 @@
 ---
-"@elmeragroup/ui": minor
+"@elmeragroup/fuse": minor
 ---
 
-Initial release of the Elmera Group React component library.
+Initial release of Fuse, the Elmera Group React component library.
 
 - Typography, layout, forms, selection controls, overlays, feedback, navigation, and the application sidebar.
 - Theme and locale providers, brand tokens, light and dark color schemes, and dense and comfortable controls.

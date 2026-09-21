@@ -6,14 +6,14 @@ const HREF = "/quick-start";
 
 export const metadata = pageMetadata(HREF);
 
-const INSTALL = `pnpm add @elmeragroup/ui`;
+const INSTALL = `pnpm add @elmeragroup/fuse`;
 
 const STYLES = `// app/layout.tsx — once, at the document root
-import "@elmeragroup/ui/styles.css";
-import "@elmeragroup/ui/themes.css";`;
+import "@elmeragroup/fuse/styles.css";
+import "@elmeragroup/fuse/themes.css";`;
 
-const SCAFFOLD = `import { ColorSchemeScript, ElmeraGroupUiProvider, ThemeProvider } from "@elmeragroup/ui/theme";
-import { defaultDensityForVariant, densityAttributes, themeAttributes } from "@elmeragroup/ui/theme";
+const SCAFFOLD = `import { ColorSchemeScript, LocaleProvider, ThemeProvider } from "@elmeragroup/fuse/theme";
+import { defaultDensityForVariant, densityAttributes, themeAttributes } from "@elmeragroup/fuse/theme";
 
 const THEME = { variant: "external", brand: "fkas", segment: "private" } as const;
 
@@ -29,7 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <ThemeProvider theme={THEME} storageKey="color-scheme" injectColorSchemeScript={false}>
-          <ElmeraGroupUiProvider locale="nb-NO">
+          <LocaleProvider locale="nb-NO">
             <a className="skip-link" href="#main">
               Hopp til innholdet
             </a>
@@ -37,14 +37,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <nav aria-label="Hovedmeny">{/* primary navigation */}</nav>
             <main id="main">{children}</main>
             <footer>{/* site footer */}</footer>
-          </ElmeraGroupUiProvider>
+          </LocaleProvider>
         </ThemeProvider>
       </body>
     </html>
   );
 }`;
 
-const USAGE = `import { Button } from "@elmeragroup/ui/button";
+const USAGE = `import { Button } from "@elmeragroup/fuse/button";
 
 export function SaveButton() {
   return <Button variant="primary">Lagre</Button>;

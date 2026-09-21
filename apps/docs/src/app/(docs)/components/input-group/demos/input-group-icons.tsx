@@ -1,7 +1,7 @@
 "use client";
 
-import { MagnifyingGlass } from "@elmeragroup/ui/icons";
-import { InputGroup } from "@elmeragroup/ui/input-group";
+import { MagnifyingGlass } from "@elmeragroup/fuse/icons";
+import { InputGroup } from "@elmeragroup/fuse/input-group";
 
 export function InputGroupIcons() {
   return (

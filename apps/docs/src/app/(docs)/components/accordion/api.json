@@ -1,11 +1,11 @@
 {
-  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
   "slug": "accordion",
   "parts": [
     {
       "name": "Accordion.Root",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/accordion/accordion.tsx",
+      "sourcePath": "packages/fuse/src/components/accordion/accordion.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -165,7 +165,7 @@
     {
       "name": "Accordion.Item",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/accordion/accordion.tsx",
+      "sourcePath": "packages/fuse/src/components/accordion/accordion.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -241,7 +241,7 @@
     {
       "name": "Accordion.Header",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/accordion/accordion.tsx",
+      "sourcePath": "packages/fuse/src/components/accordion/accordion.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -284,7 +284,7 @@
     {
       "name": "Accordion.Trigger",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/accordion/accordion.tsx",
+      "sourcePath": "packages/fuse/src/components/accordion/accordion.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -338,7 +338,7 @@
     {
       "name": "Accordion.Content",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/accordion/accordion.tsx",
+      "sourcePath": "packages/fuse/src/components/accordion/accordion.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"

@@ -24,8 +24,8 @@ export type StaticPage = {
 /** The site root. Reachable from the wordmark, indexed by `llms.txt`, not in a nav group. */
 export const HOME_PAGE = {
   href: "/",
-  label: "elmera/ui",
-  description: "Overview of the elmera/ui docs site: what the library is and how the docs are generated.",
+  label: "Fuse",
+  description: "Overview of the Fuse docs site: what the library is and how the docs are generated.",
 } as const;
 
 export const STATIC_PAGES: readonly StaticPage[] = [
@@ -52,7 +52,7 @@ export const STATIC_PAGES: readonly StaticPage[] = [
   {
     href: "/about",
     label: "About",
-    description: "What elmera/ui is, who it is for, and the decisions that shape it.",
+    description: "What Fuse is, who it is for, and the decisions that shape it.",
     group: "overview",
   },
   {

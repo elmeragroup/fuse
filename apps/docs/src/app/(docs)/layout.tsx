@@ -2,7 +2,7 @@ import type { ReactElement, ReactNode } from "react";
 
 import type { Metadata } from "next";
 
-import { ColorSchemeScript, ThemeProvider } from "@elmeragroup/ui/theme";
+import { ColorSchemeScript, ThemeProvider } from "@elmeragroup/fuse/theme";
 
 import { DocsShell } from "../../components/docs-shell";
 import { DocumentRoot } from "../../components/document-root";
@@ -12,8 +12,8 @@ import "../../styles/globals.css";
 
 export const metadata: Metadata = {
   title: {
-    template: "%s · elmera/ui",
-    default: "elmera/ui",
+    template: "%s · Fuse",
+    default: "Fuse",
   },
 };
 

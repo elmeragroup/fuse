@@ -5,8 +5,8 @@ import { useState } from "react";
 import { CalendarDate } from "@internationalized/date";
 import type { DateValue } from "@internationalized/date";
 
-import { Calendar } from "@elmeragroup/ui/react-aria/calendar";
-import { UiProviders } from "@elmeragroup/ui/react-aria/ui-providers";
+import { Calendar } from "@elmeragroup/fuse/react-aria/calendar";
+import { UiProviders } from "@elmeragroup/fuse/react-aria/ui-providers";
 
 export function CalendarControlled() {
   const [value, setValue] = useState<DateValue | null>(new CalendarDate(2026, 7, 14));

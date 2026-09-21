@@ -1,7 +1,7 @@
 "use client";
 
-import { Button } from "@elmeragroup/ui/button";
-import { Tooltip } from "@elmeragroup/ui/tooltip";
+import { Button } from "@elmeragroup/fuse/button";
+import { Tooltip } from "@elmeragroup/fuse/tooltip";
 
 const sides = ["top", "right", "bottom", "left"] as const;
 

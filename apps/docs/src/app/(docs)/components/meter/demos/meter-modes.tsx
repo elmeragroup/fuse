@@ -1,6 +1,6 @@
 "use client";
 
-import { Meter } from "@elmeragroup/ui/meter";
+import { Meter } from "@elmeragroup/fuse/meter";
 
 const MODES = ["default", "inverted", "success-only-when-full", "neutral"] as const;
 

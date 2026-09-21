@@ -58,7 +58,7 @@ Every row requires `data-theme-variant="external"` and resolves dark when the do
 | `external-elma-private` | elma  | private | Elmera custom dark         | 90–95%                       | High, 95%                       |
 | `external-elma-company` | elma  | company | Same as private            | 90–95%                       | High, 95%                       |
 
-`fkab-private` and `fkse-company` remain illegal. The ten internal themes still exist; in this external-only rollout, selecting dark did not invent an internal dark palette. Brand/segment policy comes from [theme metadata](../../../packages/ui/src/theme/tokens/themes.ts), [segment deltas](../../../packages/ui/src/theme/tokens/segment-sheets.ts) and [CONTEXT](../../../CONTEXT.md).
+`fkab-private` and `fkse-company` remain illegal. The ten internal themes still exist; in this external-only rollout, selecting dark did not invent an internal dark palette. Brand/segment policy comes from [theme metadata](../../../packages/fuse/src/theme/tokens/themes.ts), [segment deltas](../../../packages/fuse/src/theme/tokens/segment-sheets.ts) and [CONTEXT](../../../CONTEXT.md).
 
 ## Core color matrix
 
@@ -219,7 +219,7 @@ The selector family for Fjordkraft company is:
 
 The direct form handles attributes on the same element. The descendant form handles `ThemeScope`, which stamps variant, brand and segment but does not own the document's color scheme. Local light/dark islands are not part of this API; `ForceColorScheme` changes the document scheme.
 
-[Dark palettes](../../../packages/ui/src/theme/tokens/external-dark-palettes.ts) and [external dark defaults](../../../packages/ui/src/theme/tokens/dark-defaults.ts) own values. [Composition](../../../packages/ui/src/theme/compose-theme.ts) layers them over the existing external theme. [The generator](../../../packages/ui/src/theme/generate-css.ts) produces 23 rules (15 light, 8 dark). [Reset keys](../../../packages/ui/src/theme/tokens/reset-keys.ts) derive 72 reset roles from actual palette assignments and dependent aliases. Each external theme supplies 66 explicit dark overrides; the complete resolved contract still has 77 tokens.
+[Dark palettes](../../../packages/fuse/src/theme/tokens/external-dark-palettes.ts) and [external dark defaults](../../../packages/fuse/src/theme/tokens/dark-defaults.ts) own values. [Composition](../../../packages/fuse/src/theme/compose-theme.ts) layers them over the existing external theme. [The generator](../../../packages/fuse/src/theme/generate-css.ts) produces 23 rules (15 light, 8 dark). [Reset keys](../../../packages/fuse/src/theme/tokens/reset-keys.ts) derive 72 reset roles from actual palette assignments and dependent aliases. Each external theme supplies 66 explicit dark overrides; the complete resolved contract still has 77 tokens.
 
 Native controls follow scoped CSS `color-scheme: dark` for external dark surfaces and `color-scheme: light` for internal/base light surfaces. No new JavaScript color-scheme writer was introduced. Existing preference persistence, system detection, forced schemes and pre-paint bootstrap remain in use.
 

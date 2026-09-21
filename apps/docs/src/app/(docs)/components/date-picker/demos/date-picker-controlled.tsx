@@ -4,9 +4,9 @@ import { useState } from "react";
 
 import { CalendarDate } from "@internationalized/date";
 
-import { DatePicker } from "@elmeragroup/ui/react-aria/date-picker";
-import { UiProviders } from "@elmeragroup/ui/react-aria/ui-providers";
-import { Text } from "@elmeragroup/ui/text";
+import { DatePicker } from "@elmeragroup/fuse/react-aria/date-picker";
+import { UiProviders } from "@elmeragroup/fuse/react-aria/ui-providers";
+import { Text } from "@elmeragroup/fuse/text";
 
 export function DatePickerControlled() {
   const [value, setValue] = useState<CalendarDate | null>(new CalendarDate(2026, 7, 14));

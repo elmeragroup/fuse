@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 
-import { Button } from "@elmeragroup/ui/button";
-import { Field } from "@elmeragroup/ui/field";
-import { Switch } from "@elmeragroup/ui/switch";
+import { Button } from "@elmeragroup/fuse/button";
+import { Field } from "@elmeragroup/fuse/field";
+import { Switch } from "@elmeragroup/fuse/switch";
 
 export function SwitchForm() {
   const [submitted, setSubmitted] = useState<string>("");

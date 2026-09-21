@@ -1,6 +1,6 @@
 import type { ReactElement, ReactNode } from "react";
 
-import { defaultDensityForVariant, densityAttributes, themeAttributes } from "@elmeragroup/ui/theme";
+import { defaultDensityForVariant, densityAttributes, themeAttributes } from "@elmeragroup/fuse/theme";
 
 import { DOCUMENT_THEME } from "../lib/theme";
 

@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 
-import { Breadcrumb } from "@elmeragroup/ui/breadcrumb";
-import { Pagination } from "@elmeragroup/ui/pagination";
-import { ElmeraGroupUiProvider } from "@elmeragroup/ui/theme";
-import type { SupportedLocale } from "@elmeragroup/ui/theme";
+import { Breadcrumb } from "@elmeragroup/fuse/breadcrumb";
+import { Pagination } from "@elmeragroup/fuse/pagination";
+import { LocaleProvider } from "@elmeragroup/fuse/theme";
+import type { SupportedLocale } from "@elmeragroup/fuse/theme";
 
 const LOCALES = [
   { code: "nb-NO", label: "Norsk" },
@@ -16,7 +16,7 @@ export function UiProvidersLocaleSwitch() {
   const [locale, setLocale] = useState<SupportedLocale>("nb-NO");
 
   return (
-    <ElmeraGroupUiProvider locale={locale}>
+    <LocaleProvider locale={locale}>
       <label>
         Language
         <select
@@ -60,6 +60,6 @@ export function UiProvidersLocaleSwitch() {
           </Breadcrumb.Item>
         </Breadcrumb.List>
       </Breadcrumb.Root>
-    </ElmeraGroupUiProvider>
+    </LocaleProvider>
   );
 }

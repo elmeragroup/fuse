@@ -103,12 +103,13 @@ describe("theme catalog payload", () => {
 });
 
 const SOURCE_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".mjs"]);
-const DEEP_UI_SRC_IMPORT = /(?:from|import)\s+["'][^"']*packages\/ui\/src/;
+const DEEP_FUSE_SRC_IMPORT = /(?:from|import)\s+["'][^"']*packages\/fuse\/src/;
 
 function walkSourceFiles(directory: string): string[] {
   const files: string[] = [];
   for (const entry of readdirSync(directory)) {
-    if (entry === "node_modules" || entry === "generated") {
+    // Inspect authored source only; build output can contain entire bundled dependencies.
+    if (["node_modules", "generated", ".next", "dist", ".turbo"].includes(entry)) {
       continue;
     }
     const absolute = join(directory, entry);
@@ -124,9 +125,9 @@ function walkSourceFiles(directory: string): string[] {
 }
 
 describe("workspace package boundary", () => {
-  it("does not deep-import packages/ui/src from apps", () => {
+  it("does not deep-import packages/fuse/src from apps", () => {
     const offenders = walkSourceFiles(appsRoot)
-      .filter((file) => DEEP_UI_SRC_IMPORT.test(readFileSync(file, "utf8")))
+      .filter((file) => DEEP_FUSE_SRC_IMPORT.test(readFileSync(file, "utf8")))
       .map((file) => file.slice(appsRoot.length));
     expect(offenders).toEqual([]);
   });

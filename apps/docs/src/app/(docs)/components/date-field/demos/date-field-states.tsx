@@ -2,8 +2,8 @@
 
 import { CalendarDate } from "@internationalized/date";
 
-import { DateField } from "@elmeragroup/ui/react-aria/date-field";
-import { UiProviders } from "@elmeragroup/ui/react-aria/ui-providers";
+import { DateField } from "@elmeragroup/fuse/react-aria/date-field";
+import { UiProviders } from "@elmeragroup/fuse/react-aria/ui-providers";
 
 export function DateFieldStates() {
   return (

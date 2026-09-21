@@ -21,7 +21,7 @@ Variants and styling contracts are design decisions. Review changes to them inst
 - State classes belong on the element that emits the state. Bare `data-open:` and related variants are self-scoped. Ancestor state requires an explicit named group, peer, or `in-data-*` variant.
 - Use the shared focus constants in `styles/utils` for fixed `self`, `within`, and `state` targets. A `within` group marks only its owned focus receiver with `data-focus-ring-control`; addon buttons retain their own rings. React Aria Link is the sole dynamic `focusRing` caller. Invalid rings and popup hairlines are separate from focus indicators.
 - Reuse `disabledHatch` and the icon crossfade constants from `styles/utils`, and `isTextNode`/`isTextValueNode` from `internal/is-text-node` for ReactNode text checks.
-- Derive radii from the brand radius variables. Import curated Phosphor icons from `@elmeragroup/ui/icons`. Use regular weight normally and fill for selected or active states. Asset licenses and provenance remain required by [architecture](spec/architecture.md) and [icons](spec/icons.md).
+- Derive radii from the brand radius variables. Import curated Phosphor icons from `@elmeragroup/fuse/icons`. Use regular weight normally and fill for selected or active states. Asset licenses and provenance remain required by [architecture](spec/architecture.md) and [icons](spec/icons.md).
 
 ## Density
 
@@ -31,13 +31,13 @@ Pin the default control height. Fixed-height recipes own `box-sizing: border-box
 
 Single-height field boxes pin the `md` rung without adding a `size` prop. Type scales, overlay widths, decorative sizes, layout spacing, glyph dimensions, shadows, transitions, and table-cell padding are outside the control-box ladder. Document optical or shell-specific exceptions beside the code and retain a reason on each lint suppression.
 
-Density retargets variables on `:root[data-density="comfortable"]`. Nested density attributes and ThemeScope variants do not rescope them. Values live in `ui.css`; do not introduce literal metric ladders or density variants. These variables are implementation details, not consumer override tokens. See [theming](spec/theming.md) and [ADR 0001](adr/0001-canonical-token-contract.md).
+Density retargets variables on `:root[data-density="comfortable"]`. Nested density attributes and ThemeScope variants do not rescope them. Values live in `fuse.css`; do not introduce literal metric ladders or density variants. These variables are implementation details, not consumer override tokens. See [theming](spec/theming.md) and [ADR 0001](adr/0001-canonical-token-contract.md).
 
 ## Tests and demos
 
 - Co-locate unit tests in `*.test.ts`, browser tests in `*.browser.test.tsx`, and public type contracts in `*.test-d.tsx`. Unit tests assert recipe output and pure logic. Browser tests exercise real components, including keyboard behavior, labels, focus, disabled states, and localized copy. See [accessibility](spec/accessibility.md) and [testing strategy](spec/tooling.md#7-testing-strategy).
 - Locate elements by role or label. DOM structure checks may use slots or document queries when a nearby `DOM audit:` comment explains the contract that needs inspection. The shared browser-helper gate requires the comment on the query line or within the previous 16 lines.
-- Import shared queries and density helpers from `packages/ui/test/themed-browser-render.tsx` and focus assertions from `packages/ui/test/assert-focus-ring.ts`. Test computed metrics at both document density stamps and prove nested stamps do not rescope them. Token-color assertions need an element inside ThemeScope and `dist/themes.css`.
+- Import shared queries and density helpers from `packages/fuse/test/themed-browser-render.tsx` and focus assertions from `packages/fuse/test/assert-focus-ring.ts`. Test computed metrics at both document density stamps and prove nested stamps do not rescope them. Token-color assertions need an element inside ThemeScope and `dist/themes.css`.
 - Demos are runnable client `.tsx` modules beside their authored page in `apps/docs/src/app/(docs)/components/<slug>/demos/`. Each page imports the same file displayed as source. Use public package imports, subject to the three documented exceptions in [docs-site](spec/docs-site.md#6-demo-pipeline).
 - Maintain `apps/docs/test/fixtures/component-demo-requirements.json` as the reviewed coverage list. It is independent of the page and generated manifest; update expectations deliberately when adding or changing scenarios. A sibling demo reference belongs to the component named in the filename.
 - The docs site's SideNav and QuickNav compose docs-local navigation over ScrollArea. They do not import the library Sidebar.

@@ -9,8 +9,8 @@ import {
   DatePicker,
   DatePickerPresetGroup,
   DatePickerPresetItem,
-} from "@elmeragroup/ui/react-aria/date-picker";
-import { UiProviders } from "@elmeragroup/ui/react-aria/ui-providers";
+} from "@elmeragroup/fuse/react-aria/date-picker";
+import { UiProviders } from "@elmeragroup/fuse/react-aria/ui-providers";
 
 /**
  * Presets are radios: one shortcut is in effect at a time. Their visible copy is their

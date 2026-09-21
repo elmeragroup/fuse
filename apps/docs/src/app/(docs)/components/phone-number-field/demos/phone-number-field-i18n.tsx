@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 
-import { PhoneNumberField } from "@elmeragroup/ui/phone-number-field";
-import { ElmeraGroupUiProvider } from "@elmeragroup/ui/theme";
-import type { SupportedLocale } from "@elmeragroup/ui/theme";
+import { PhoneNumberField } from "@elmeragroup/fuse/phone-number-field";
+import { LocaleProvider } from "@elmeragroup/fuse/theme";
+import type { SupportedLocale } from "@elmeragroup/fuse/theme";
 
 const LOCALES = [
   { code: "nb-NO", label: "Norsk" },
@@ -35,9 +35,9 @@ export function PhoneNumberFieldI18n() {
           ))}
         </select>
       </label>
-      <ElmeraGroupUiProvider locale={locale}>
+      <LocaleProvider locale={locale}>
         <PhoneNumberField label="Mobile" />
-      </ElmeraGroupUiProvider>
+      </LocaleProvider>
       <PhoneNumberField
         label="Override"
         selectCountryLabel="Pick a country"

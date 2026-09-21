@@ -1,6 +1,6 @@
 "use client";
 
-import { Span } from "@elmeragroup/ui/span";
+import { Span } from "@elmeragroup/fuse/span";
 
 const SIZES = ["xs", "sm", "default", "lg", "xl", "2xl"] as const;
 

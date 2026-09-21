@@ -23,7 +23,7 @@ function pageRow(page: Pick<StaticPage, "href" | "label" | "description">): stri
 /** Renders the whole site index. */
 export function renderLlmsTxt(components: readonly DocsComponent[]): string {
   const lines: string[] = [
-    "# elmera/ui",
+    "# Fuse",
     "",
     "> The Elmera Group design system: a themed React component library covering six brands, two",
     "> segments and two variants. Every component page below has a plain-markdown twin containing",

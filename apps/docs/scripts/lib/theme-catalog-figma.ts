@@ -7,7 +7,7 @@
  * is no second, per-slug JSON serialisation.
  */
 
-import { oklchToLinearSrgb, parseOklch } from "@elmeragroup/ui/theme-catalog";
+import { oklchToLinearSrgb, parseOklch } from "@elmeragroup/fuse/theme-catalog";
 
 import type {
   FigmaColorToken,

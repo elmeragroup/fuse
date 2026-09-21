@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { TextareaField } from "@elmeragroup/ui/textarea-field";
+import { TextareaField } from "@elmeragroup/fuse/textarea-field";
 
 export function TextareaFieldCounter() {
   const [value, setValue] = useState("");

@@ -1,6 +1,6 @@
 # Theme integration
 
-Host setup recipes for `@elmeragroup/ui/theme`. The [theme contract](spec/theming.md#7-theme-provider-api) owns provider behavior and first-paint requirements. Next App Router and Vite have fixture coverage; the other frameworks below remain written guidance.
+Host setup recipes for `@elmeragroup/fuse/theme`. The [theme contract](spec/theming.md#7-theme-provider-api) owns provider behavior and first-paint requirements. Next App Router and Vite have fixture coverage; the other frameworks below remain written guidance.
 
 ## Shared setup
 
@@ -9,14 +9,14 @@ Minimal app setup (Next App Router shape; every host follows the same split):
 ```tsx
 import {
   ColorSchemeScript,
-  ElmeraGroupUiProvider,
+  LocaleProvider,
   ThemeProvider,
   defaultDensityForVariant,
   densityAttributes,
   themeAttributes,
-} from "@elmeragroup/ui/theme";
-import "@elmeragroup/ui/styles.css";
-import "@elmeragroup/ui/themes.css";
+} from "@elmeragroup/fuse/theme";
+import "@elmeragroup/fuse/styles.css";
+import "@elmeragroup/fuse/themes.css";
 
 const theme = { variant: "external", brand: "fkas", segment: "private" } as const;
 const colorScheme = {
@@ -46,7 +46,7 @@ export function RootLayout({ children }: { children: React.ReactNode }) {
           defaultColorScheme={colorScheme.defaultColorScheme}
           enableSystem={colorScheme.enableSystem}
           injectColorSchemeScript={false}>
-          <ElmeraGroupUiProvider locale="nb-NO">{children}</ElmeraGroupUiProvider>
+          <LocaleProvider locale="nb-NO">{children}</LocaleProvider>
         </ThemeProvider>
       </body>
     </html>
@@ -64,7 +64,7 @@ body {
 }
 ```
 
-`suppressHydrationWarning` on `<html>` is required wherever the color-scheme script mutates `data-theme` before hydration. Brand attributes match on server and client and do not themselves require it. Apps that omit color-scheme machinery omit the script, the warning, and the provider color-scheme props. RAC consumers replace `ElmeraGroupUiProvider` with `UiProviders` from `@elmeragroup/ui/react-aria/ui-providers`; they do not nest both locale providers. `UiProviders` requires a function-valued `navigate` prop, so a Next App Router layout renders a small app-owned `"use client"` wrapper that calls `useRouter()` and passes `url => router.push(url)` — it does not pass a server function through the layout boundary.
+`suppressHydrationWarning` on `<html>` is required wherever the color-scheme script mutates `data-theme` before hydration. Brand attributes match on server and client and do not themselves require it. Apps that omit color-scheme machinery omit the script, the warning, and the provider color-scheme props. RAC consumers replace `LocaleProvider` with `UiProviders` from `@elmeragroup/fuse/react-aria/ui-providers`; they do not nest both locale providers. `UiProviders` requires a function-valued `navigate` prop, so a Next App Router layout renders a small app-owned `"use client"` wrapper that calls `useRouter()` and passes `url => router.push(url)` — it does not pass a server function through the layout boundary.
 
 ## Host recipes
 
@@ -110,7 +110,7 @@ import {
   defaultDensityForVariant,
   densityAttributes,
   themeAttributes,
-} from "@elmeragroup/ui/theme";
+} from "@elmeragroup/fuse/theme";
 import { colorScheme, theme } from "../lib/theme";
 
 export default function Document() {
@@ -137,7 +137,7 @@ export default function Document() {
 
 // pages/_app.tsx
 import type { AppProps } from "next/app";
-import { ThemeProvider } from "@elmeragroup/ui/theme";
+import { ThemeProvider } from "@elmeragroup/fuse/theme";
 import { colorScheme, theme } from "../lib/theme";
 
 export default function App({ Component, pageProps }: AppProps) {
@@ -168,7 +168,7 @@ import {
   densityAttributes,
   ThemeProvider,
   themeAttributes,
-} from "@elmeragroup/ui/theme";
+} from "@elmeragroup/fuse/theme";
 import { colorScheme, theme } from "./theme";
 
 export function RootDocument({ children }: { children: React.ReactNode }) {
@@ -205,7 +205,7 @@ import {
   densityAttributes,
   ThemeProvider,
   themeAttributes,
-} from "@elmeragroup/ui/theme";
+} from "@elmeragroup/fuse/theme";
 import { colorScheme, theme } from "./theme";
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -249,7 +249,7 @@ Brand attributes are substituted into `index.html` at **build time**. Color sche
 
 The proven adapter is Vite’s `transformIndexHtml` hook (`order: "post"`) in `vite.config.ts`:
 
-1. Import `themeAttributes`, `defaultDensityForVariant`, `densityAttributes`, and `colorSchemeScriptSource` from `@elmeragroup/ui/theme` **in the Vite config**, not from the client graph. Call them at config/build time with the same `DOCUMENT_THEME` / `DOCUMENT_COLOR_SCHEME` the React tree will receive. This import resolves into the built `dist` output, which is why the workspace lint task depends on the UI package build having run first (`import/no-cycle` resolves imports).
+1. Import `themeAttributes`, `defaultDensityForVariant`, `densityAttributes`, and `colorSchemeScriptSource` from `@elmeragroup/fuse/theme` **in the Vite config**, not from the client graph. Call them at config/build time with the same `DOCUMENT_THEME` / `DOCUMENT_COLOR_SCHEME` the React tree will receive. This import resolves into the built `dist` output, which is why the workspace lint task depends on the Fuse package build having run first (`import/no-cycle` resolves imports).
 2. Stamp the three brand attributes and `data-density` on `<html>`. Source HTML must not already contain them; the adapter throws with a clear message if the opening `<html>` tag already has `data-theme-variant`, `data-theme-brand`, `data-theme-segment`, or `data-density`. It does not strip-and-restamp.
 3. Inject `<script>${colorSchemeScriptSource(options)}</script>` immediately before the first `type="module"` tag. Do **not** hand-copy the generated IIFE into `index.html`. Do **not** render `ColorSchemeScript` from `createRoot`.
 4. Token CSS that **defines** `--background` must precede that parser-blocking script. Vite production builds often emit the hashed `themes.css` link at or after the module entry; hoist those `rel="stylesheet"` links to immediately before the bootstrap. Keep `html, body { background: var(--background) }`.

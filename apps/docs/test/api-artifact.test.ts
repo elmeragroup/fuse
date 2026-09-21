@@ -2,7 +2,7 @@
  * The `api.json` drift check (docs-site.md §8).
  *
  * `api.json` is generated *and* committed, so it can go stale: someone edits a JSDoc
- * comment or a prop's type in `packages/ui` and the artifact next to the page still
+ * comment or a prop's type in `packages/fuse` and the artifact next to the page still
  * describes the old API. This is the check that refuses to let that land, and it looks
  * at staleness from both sides:
  *
@@ -23,7 +23,7 @@ import { API_ARTIFACTS_REWRITTEN } from "../src/generated/api-drift";
 
 describe("committed api.json", () => {
   // The long timeout is the regeneration itself: the package opens a full TypeScript
-  // program over packages/ui and re-derives every component's API through the checker.
+  // program over packages/fuse and re-derives every component's API through the checker.
   it("matches a fresh regeneration from the library's types and JSDoc", { timeout: 180_000 }, async () => {
     const slugs = componentSlugs();
     expect(slugs.length).toBeGreaterThan(0);
@@ -51,7 +51,7 @@ describe("committed api.json", () => {
   it("was already up to date when the last generation pass ran", () => {
     expect(
       API_ARTIFACTS_REWRITTEN,
-      `The committed api.json of ${API_ARTIFACTS_REWRITTEN.join(", ")} did not match packages/ui. ${STALE_HINT}`
+      `The committed api.json of ${API_ARTIFACTS_REWRITTEN.join(", ")} did not match packages/fuse. ${STALE_HINT}`
     ).toEqual([]);
   });
 

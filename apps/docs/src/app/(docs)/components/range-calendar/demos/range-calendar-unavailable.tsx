@@ -4,10 +4,10 @@ import { useState } from "react";
 
 import { CalendarDate, isWeekend } from "@internationalized/date";
 
-import { Field } from "@elmeragroup/ui/field";
-import { RangeCalendar } from "@elmeragroup/ui/react-aria/range-calendar";
-import { UiProviders } from "@elmeragroup/ui/react-aria/ui-providers";
-import { Switch } from "@elmeragroup/ui/switch";
+import { Field } from "@elmeragroup/fuse/field";
+import { RangeCalendar } from "@elmeragroup/fuse/react-aria/range-calendar";
+import { UiProviders } from "@elmeragroup/fuse/react-aria/ui-providers";
+import { Switch } from "@elmeragroup/fuse/switch";
 
 export function RangeCalendarUnavailable() {
   const [allowsNonContiguousRanges, setAllowsNonContiguousRanges] = useState(false);

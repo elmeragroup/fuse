@@ -5,9 +5,9 @@ import { useState } from "react";
 import { CalendarDate } from "@internationalized/date";
 import type { DateValue } from "@internationalized/date";
 
-import { DateRangePicker } from "@elmeragroup/ui/react-aria/date-range-picker";
-import { UiProviders } from "@elmeragroup/ui/react-aria/ui-providers";
-import { Text } from "@elmeragroup/ui/text";
+import { DateRangePicker } from "@elmeragroup/fuse/react-aria/date-range-picker";
+import { UiProviders } from "@elmeragroup/fuse/react-aria/ui-providers";
+import { Text } from "@elmeragroup/fuse/text";
 
 type Range = { start: DateValue; end: DateValue };
 

@@ -1,11 +1,11 @@
 {
-  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
   "slug": "checkbox",
   "parts": [
     {
       "name": "Checkbox",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/checkbox/checkbox.tsx",
+      "sourcePath": "packages/fuse/src/components/checkbox/checkbox.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -215,7 +215,7 @@
     {
       "name": "CheckboxGroup",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/checkbox/checkbox.tsx",
+      "sourcePath": "packages/fuse/src/components/checkbox/checkbox.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [
@@ -350,7 +350,7 @@
     {
       "name": "CheckboxItem",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/checkbox/checkbox.tsx",
+      "sourcePath": "packages/fuse/src/components/checkbox/checkbox.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [
@@ -422,7 +422,7 @@
     {
       "name": "CheckboxItemGroup",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/checkbox/checkbox.tsx",
+      "sourcePath": "packages/fuse/src/components/checkbox/checkbox.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [
@@ -557,7 +557,7 @@
     {
       "name": "CheckboxDescription",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/checkbox/checkbox.tsx",
+      "sourcePath": "packages/fuse/src/components/checkbox/checkbox.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [

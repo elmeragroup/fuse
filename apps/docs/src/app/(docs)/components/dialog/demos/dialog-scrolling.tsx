@@ -2,8 +2,8 @@
 
 import { useRef } from "react";
 
-import { Button } from "@elmeragroup/ui/button";
-import { Dialog } from "@elmeragroup/ui/dialog";
+import { Button } from "@elmeragroup/fuse/button";
+import { Dialog } from "@elmeragroup/fuse/dialog";
 
 const clauses = Array.from({ length: 24 }, (_, index) => index + 1);
 

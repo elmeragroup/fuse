@@ -1,11 +1,11 @@
 {
-  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
   "slug": "calendar",
   "parts": [
     {
       "name": "Calendar",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/react-aria/calendar/calendar.tsx",
+      "sourcePath": "packages/fuse/src/react-aria/calendar/calendar.tsx",
       "forwardedFrom": [
         "@react-types/shared",
         "react-aria-components",
@@ -27,7 +27,7 @@
     {
       "name": "CalendarHeader",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/react-aria/calendar/calendar.tsx",
+      "sourcePath": "packages/fuse/src/react-aria/calendar/calendar.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": []
@@ -35,7 +35,7 @@
     {
       "name": "CalendarGridHeader",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/react-aria/internal/calendar-grid.tsx",
+      "sourcePath": "packages/fuse/src/react-aria/internal/calendar-grid.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": []

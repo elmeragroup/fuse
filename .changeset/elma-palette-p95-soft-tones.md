@@ -1,5 +1,5 @@
 ---
-"@elmeragroup/ui": patch
+"@elmeragroup/fuse": patch
 ---
 
 External `elma` themes now carry the Elmera palette from the brand's Figma

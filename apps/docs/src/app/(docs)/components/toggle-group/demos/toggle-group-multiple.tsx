@@ -1,6 +1,6 @@
 "use client";
 
-import { ToggleGroup } from "@elmeragroup/ui/toggle-group";
+import { ToggleGroup } from "@elmeragroup/fuse/toggle-group";
 
 export function ToggleGroupMultiple() {
   return (

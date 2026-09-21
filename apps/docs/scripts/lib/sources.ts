@@ -9,7 +9,7 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 
-import { uiSrc } from "./paths.ts";
+import { fuseSrc } from "./paths.ts";
 
 const SOURCE_EXTENSIONS = [".ts", ".tsx"] as const;
 const EXCLUDED_DIRECTORIES = new Set(["intl", "__snapshots__"]);
@@ -48,7 +48,7 @@ function resolveRelative(fromFile: string, specifier: string): string | null {
 }
 
 function isInsideLibrary(file: string): boolean {
-  const relative = path.relative(uiSrc, file);
+  const relative = path.relative(fuseSrc, file);
   return relative !== "" && !relative.startsWith("..") && !path.isAbsolute(relative);
 }
 
@@ -57,7 +57,7 @@ function isExcluded(file: string): boolean {
     return true;
   }
   return path
-    .relative(uiSrc, file)
+    .relative(fuseSrc, file)
     .split(path.sep)
     .some((segment) => EXCLUDED_DIRECTORIES.has(segment));
 }

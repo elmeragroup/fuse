@@ -4,7 +4,7 @@ import type {
   ThemeInput,
   ThemeSegment,
   ThemeVariant,
-} from "@elmeragroup/ui/theme";
+} from "@elmeragroup/fuse/theme";
 
 export {
   BRAND_CODES as THEME_BRANDS,
@@ -12,7 +12,7 @@ export {
   LEGAL_THEMES,
   THEME_SEGMENTS,
   THEME_VARIANTS,
-} from "@elmeragroup/ui/theme";
+} from "@elmeragroup/fuse/theme";
 
 export const DOCUMENT_THEME = {
   variant: "internal",

@@ -1,7 +1,7 @@
 "use client";
 
-import { Button } from "@elmeragroup/ui/button";
-import { DropdownMenu } from "@elmeragroup/ui/dropdown-menu";
+import { Button } from "@elmeragroup/fuse/button";
+import { DropdownMenu } from "@elmeragroup/fuse/dropdown-menu";
 
 export function DropdownMenuSubmenu() {
   return (

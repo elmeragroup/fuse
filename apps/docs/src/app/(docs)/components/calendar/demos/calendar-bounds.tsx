@@ -2,8 +2,8 @@
 
 import { CalendarDate, isWeekend } from "@internationalized/date";
 
-import { Calendar } from "@elmeragroup/ui/react-aria/calendar";
-import { UiProviders } from "@elmeragroup/ui/react-aria/ui-providers";
+import { Calendar } from "@elmeragroup/fuse/react-aria/calendar";
+import { UiProviders } from "@elmeragroup/fuse/react-aria/ui-providers";
 
 export function CalendarBounds() {
   return (

@@ -1,11 +1,11 @@
 {
-  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
   "slug": "range-calendar",
   "parts": [
     {
       "name": "RangeCalendar",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/react-aria/range-calendar/range-calendar.tsx",
+      "sourcePath": "packages/fuse/src/react-aria/range-calendar/range-calendar.tsx",
       "forwardedFrom": [
         "@react-types/shared",
         "react-aria",

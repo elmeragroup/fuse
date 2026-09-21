@@ -1,11 +1,11 @@
 {
-  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
   "slug": "timeline-list",
   "parts": [
     {
       "name": "TimelineList.Root",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/timeline-list/timeline-list.tsx",
+      "sourcePath": "packages/fuse/src/components/timeline-list/timeline-list.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -15,7 +15,7 @@
     {
       "name": "TimelineList.Item",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/timeline-list/timeline-list.tsx",
+      "sourcePath": "packages/fuse/src/components/timeline-list/timeline-list.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -25,7 +25,7 @@
     {
       "name": "TimelineList.Title",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/timeline-list/timeline-list.tsx",
+      "sourcePath": "packages/fuse/src/components/timeline-list/timeline-list.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -102,7 +102,7 @@
     {
       "name": "TimelineList.Time",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/timeline-list/timeline-list.tsx",
+      "sourcePath": "packages/fuse/src/components/timeline-list/timeline-list.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -122,7 +122,7 @@
     {
       "name": "TimelineList.Description",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/timeline-list/timeline-list.tsx",
+      "sourcePath": "packages/fuse/src/components/timeline-list/timeline-list.tsx",
       "forwardedFrom": [
         "@types/react"
       ],

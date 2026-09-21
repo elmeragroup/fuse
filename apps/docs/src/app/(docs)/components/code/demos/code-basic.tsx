@@ -1,6 +1,6 @@
 "use client";
 
-import { Code } from "@elmeragroup/ui/code";
+import { Code } from "@elmeragroup/fuse/code";
 
 export function CodeBasic() {
   return (

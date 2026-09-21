@@ -1,0 +1,388 @@
+{
+  "name": "@elmeragroup/fuse",
+  "version": "0.0.0",
+  "private": false,
+  "description": "Fuse — whitelabel React components for Elmera Group's energy brands. One package, twenty theme permutations, ESM-only.",
+  "keywords": [
+    "react",
+    "components",
+    "design-system",
+    "component-library",
+    "whitelabel",
+    "theming",
+    "tailwindcss",
+    "accessibility",
+    "elmera",
+    "fuse"
+  ],
+  "homepage": "https://github.com/elmeragroup/fuse#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/elmeragroup/fuse.git",
+    "directory": "packages/fuse"
+  },
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts"
+    },
+    "./accordion": {
+      "types": "./src/accordion.ts",
+      "import": "./src/accordion.ts"
+    },
+    "./alert": {
+      "types": "./src/alert.ts",
+      "import": "./src/alert.ts"
+    },
+    "./alert-dialog": {
+      "types": "./src/alert-dialog.ts",
+      "import": "./src/alert-dialog.ts"
+    },
+    "./avatar": {
+      "types": "./src/avatar.ts",
+      "import": "./src/avatar.ts"
+    },
+    "./badge": {
+      "types": "./src/badge.ts",
+      "import": "./src/badge.ts"
+    },
+    "./breadcrumb": {
+      "types": "./src/breadcrumb.ts",
+      "import": "./src/breadcrumb.ts"
+    },
+    "./button": {
+      "types": "./src/button.ts",
+      "import": "./src/button.ts"
+    },
+    "./button-group": {
+      "types": "./src/button-group.ts",
+      "import": "./src/button-group.ts"
+    },
+    "./card": {
+      "types": "./src/card.ts",
+      "import": "./src/card.ts"
+    },
+    "./checkbox": {
+      "types": "./src/checkbox.ts",
+      "import": "./src/checkbox.ts"
+    },
+    "./checkbox-card": {
+      "types": "./src/checkbox-card.ts",
+      "import": "./src/checkbox-card.ts"
+    },
+    "./code": {
+      "types": "./src/code.ts",
+      "import": "./src/code.ts"
+    },
+    "./collapsible": {
+      "types": "./src/collapsible.ts",
+      "import": "./src/collapsible.ts"
+    },
+    "./combobox": {
+      "types": "./src/combobox.ts",
+      "import": "./src/combobox.ts"
+    },
+    "./confirm-button": {
+      "types": "./src/confirm-button.ts",
+      "import": "./src/confirm-button.ts"
+    },
+    "./css": "./src/styles/fuse.css",
+    "./demo-stage-comfortable.css": "./dist/demo-stage-comfortable.css",
+    "./description-list": {
+      "types": "./src/description-list.ts",
+      "import": "./src/description-list.ts"
+    },
+    "./dialog": {
+      "types": "./src/dialog.ts",
+      "import": "./src/dialog.ts"
+    },
+    "./dropdown-menu": {
+      "types": "./src/dropdown-menu.ts",
+      "import": "./src/dropdown-menu.ts"
+    },
+    "./emoji": {
+      "types": "./src/emoji.ts",
+      "import": "./src/emoji.ts"
+    },
+    "./empty": {
+      "types": "./src/empty.ts",
+      "import": "./src/empty.ts"
+    },
+    "./field": {
+      "types": "./src/field.ts",
+      "import": "./src/field.ts"
+    },
+    "./flags": {
+      "types": "./src/flags.ts",
+      "import": "./src/flags.ts"
+    },
+    "./flags/*.svg": "./src/flags/*.svg",
+    "./frame": {
+      "types": "./src/frame.ts",
+      "import": "./src/frame.ts"
+    },
+    "./heading": {
+      "types": "./src/heading.ts",
+      "import": "./src/heading.ts"
+    },
+    "./icons": {
+      "types": "./src/icons.ts",
+      "import": "./src/icons.ts"
+    },
+    "./illustrations": {
+      "types": "./src/illustrations.ts",
+      "import": "./src/illustrations.ts"
+    },
+    "./input": {
+      "types": "./src/input.ts",
+      "import": "./src/input.ts"
+    },
+    "./input-group": {
+      "types": "./src/input-group.ts",
+      "import": "./src/input-group.ts"
+    },
+    "./item": {
+      "types": "./src/item.ts",
+      "import": "./src/item.ts"
+    },
+    "./loader": {
+      "types": "./src/loader.ts",
+      "import": "./src/loader.ts"
+    },
+    "./meter": {
+      "types": "./src/meter.ts",
+      "import": "./src/meter.ts"
+    },
+    "./number-field": {
+      "types": "./src/number-field.ts",
+      "import": "./src/number-field.ts"
+    },
+    "./pagination": {
+      "types": "./src/pagination.ts",
+      "import": "./src/pagination.ts"
+    },
+    "./phone-number-field": {
+      "types": "./src/phone-number-field.ts",
+      "import": "./src/phone-number-field.ts"
+    },
+    "./popover": {
+      "types": "./src/popover.ts",
+      "import": "./src/popover.ts"
+    },
+    "./popover-info-button": {
+      "types": "./src/popover-info-button.ts",
+      "import": "./src/popover-info-button.ts"
+    },
+    "./radio-group": {
+      "types": "./src/radio-group.ts",
+      "import": "./src/radio-group.ts"
+    },
+    "./react-aria/calendar": {
+      "types": "./src/react-aria/calendar.ts",
+      "import": "./src/react-aria/calendar.ts"
+    },
+    "./react-aria/date-field": {
+      "types": "./src/react-aria/date-field.ts",
+      "import": "./src/react-aria/date-field.ts"
+    },
+    "./react-aria/date-picker": {
+      "types": "./src/react-aria/date-picker.ts",
+      "import": "./src/react-aria/date-picker.ts"
+    },
+    "./react-aria/date-range-picker": {
+      "types": "./src/react-aria/date-range-picker.ts",
+      "import": "./src/react-aria/date-range-picker.ts"
+    },
+    "./react-aria/file-trigger": {
+      "types": "./src/react-aria/file-trigger.ts",
+      "import": "./src/react-aria/file-trigger.ts"
+    },
+    "./react-aria/focusable": {
+      "types": "./src/react-aria/focusable.ts",
+      "import": "./src/react-aria/focusable.ts"
+    },
+    "./react-aria/grid-list": {
+      "types": "./src/react-aria/grid-list.ts",
+      "import": "./src/react-aria/grid-list.ts"
+    },
+    "./react-aria/link": {
+      "types": "./src/react-aria/link.ts",
+      "import": "./src/react-aria/link.ts"
+    },
+    "./react-aria/range-calendar": {
+      "types": "./src/react-aria/range-calendar.ts",
+      "import": "./src/react-aria/range-calendar.ts"
+    },
+    "./react-aria/search-field": {
+      "types": "./src/react-aria/search-field.ts",
+      "import": "./src/react-aria/search-field.ts"
+    },
+    "./react-aria/ui-providers": {
+      "types": "./src/react-aria/ui-providers.ts",
+      "import": "./src/react-aria/ui-providers.ts"
+    },
+    "./scroll-area": {
+      "types": "./src/scroll-area.ts",
+      "import": "./src/scroll-area.ts"
+    },
+    "./select": {
+      "types": "./src/select.ts",
+      "import": "./src/select.ts"
+    },
+    "./selection-item": {
+      "types": "./src/selection-item.ts",
+      "import": "./src/selection-item.ts"
+    },
+    "./separator": {
+      "types": "./src/separator.ts",
+      "import": "./src/separator.ts"
+    },
+    "./sheet": {
+      "types": "./src/sheet.ts",
+      "import": "./src/sheet.ts"
+    },
+    "./show": {
+      "types": "./src/show.ts",
+      "import": "./src/show.ts"
+    },
+    "./sidebar": {
+      "types": "./src/sidebar.ts",
+      "import": "./src/sidebar.ts"
+    },
+    "./skeleton": {
+      "types": "./src/skeleton.ts",
+      "import": "./src/skeleton.ts"
+    },
+    "./span": {
+      "types": "./src/span.ts",
+      "import": "./src/span.ts"
+    },
+    "./styles.css": "./dist/styles.css",
+    "./switch": {
+      "types": "./src/switch.ts",
+      "import": "./src/switch.ts"
+    },
+    "./table": {
+      "types": "./src/table.ts",
+      "import": "./src/table.ts"
+    },
+    "./tabs": {
+      "types": "./src/tabs.ts",
+      "import": "./src/tabs.ts"
+    },
+    "./text": {
+      "types": "./src/text.ts",
+      "import": "./src/text.ts"
+    },
+    "./text-field": {
+      "types": "./src/text-field.ts",
+      "import": "./src/text-field.ts"
+    },
+    "./textarea": {
+      "types": "./src/textarea.ts",
+      "import": "./src/textarea.ts"
+    },
+    "./textarea-field": {
+      "types": "./src/textarea-field.ts",
+      "import": "./src/textarea-field.ts"
+    },
+    "./theme": {
+      "types": "./src/theme.ts",
+      "import": "./src/theme.ts"
+    },
+    "./theme-catalog": {
+      "types": "./src/theme/catalog.ts",
+      "import": "./src/theme/catalog.ts"
+    },
+    "./themes.css": "./dist/themes.css",
+    "./timeline-list": {
+      "types": "./src/timeline-list.ts",
+      "import": "./src/timeline-list.ts"
+    },
+    "./toast": {
+      "types": "./src/toast.ts",
+      "import": "./src/toast.ts"
+    },
+    "./toggle": {
+      "types": "./src/toggle.ts",
+      "import": "./src/toggle.ts"
+    },
+    "./toggle-group": {
+      "types": "./src/toggle-group.ts",
+      "import": "./src/toggle-group.ts"
+    },
+    "./tooltip": {
+      "types": "./src/tooltip.ts",
+      "import": "./src/tooltip.ts"
+    }
+  },
+  "publishConfig": {
+    "directory": "dist",
+    "access": "public",
+    "linkDirectory": false
+  },
+  "scripts": {
+    "build": "node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/build.ts",
+    "ci:checks": "echo '@elmeragroup/fuse ci:checks is a no-op anchor; its gates run as turbo dependsOn (see turbo.json)'",
+    "generate:exports": "node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/write-source-exports.ts",
+    "pack": "node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/pack.ts",
+    "package:check": "node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/package-check.ts",
+    "size-limit": "node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/size-limit.ts",
+    "test": "vitest run --project unit",
+    "test:browser": "vitest run --project browser",
+    "test:packed-consumer": "node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/package-check-standalone.ts && node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/package-check-flags-consumer.ts",
+    "test:types": "vitest --config vitest.types.config.ts --typecheck.only --run",
+    "type-check": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "tailwindcss": "catalog:"
+  },
+  "peerDependenciesMeta": {
+    "tailwindcss": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@base-ui/react": "catalog:",
+    "@internationalized/date": "catalog:",
+    "@internationalized/string": "catalog:",
+    "@phosphor-icons/react": "catalog:",
+    "clsx": "catalog:",
+    "libphonenumber-js": "catalog:",
+    "react-aria": "catalog:",
+    "react-aria-components": "catalog:",
+    "sugar-high": "catalog:",
+    "tailwind-merge": "catalog:",
+    "tailwind-variants": "catalog:",
+    "tailwindcss-react-aria-components": "catalog:",
+    "tw-animate-css": "catalog:"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/cli": "catalog:",
+    "@arethetypeswrong/core": "catalog:",
+    "@elmeragroup/internal": "catalog:",
+    "@elmeragroup/typescript-config": "workspace:*",
+    "@tailwindcss/cli": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitest/browser-playwright": "catalog:",
+    "playwright": "catalog:",
+    "publint": "catalog:",
+    "rolldown": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "tailwindcss": "catalog:",
+    "tsdown": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  }
+}

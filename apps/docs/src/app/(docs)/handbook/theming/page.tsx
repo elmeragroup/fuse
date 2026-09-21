@@ -8,8 +8,8 @@ const HREF = "/handbook/theming";
 
 export const metadata = pageMetadata(HREF);
 
-const DOCUMENT_THEME = `import { ThemeProvider, themeAttributes } from "@elmeragroup/ui/theme";
-import { defaultDensityForVariant, densityAttributes } from "@elmeragroup/ui/theme";
+const DOCUMENT_THEME = `import { ThemeProvider, themeAttributes } from "@elmeragroup/fuse/theme";
+import { defaultDensityForVariant, densityAttributes } from "@elmeragroup/fuse/theme";
 
 const THEME = { variant: "external", brand: "fkas", segment: "private" } as const;
 
@@ -19,7 +19,7 @@ const THEME = { variant: "external", brand: "fkas", segment: "private" } as cons
   </body>
 </html>;`;
 
-const SCOPE = `import { ThemeScope } from "@elmeragroup/ui/theme";
+const SCOPE = `import { ThemeScope } from "@elmeragroup/fuse/theme";
 
 // Re-themes this subtree only. Overlays opened inside it portal into it.
 <ThemeScope theme={{ variant: "external", brand: "tkas", segment: "company" }}>

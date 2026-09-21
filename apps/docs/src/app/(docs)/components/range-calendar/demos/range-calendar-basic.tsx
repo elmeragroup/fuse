@@ -2,8 +2,8 @@
 
 import { CalendarDate } from "@internationalized/date";
 
-import { RangeCalendar } from "@elmeragroup/ui/react-aria/range-calendar";
-import { UiProviders } from "@elmeragroup/ui/react-aria/ui-providers";
+import { RangeCalendar } from "@elmeragroup/fuse/react-aria/range-calendar";
+import { UiProviders } from "@elmeragroup/fuse/react-aria/ui-providers";
 
 export function RangeCalendarBasic() {
   return (

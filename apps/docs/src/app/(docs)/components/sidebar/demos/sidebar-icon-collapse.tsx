@@ -1,7 +1,7 @@
 "use client";
 
-import { ChartBar, House, Package, Receipt, Users } from "@elmeragroup/ui/icons";
-import { Sidebar } from "@elmeragroup/ui/sidebar";
+import { ChartBar, House, Package, Receipt, Users } from "@elmeragroup/fuse/icons";
+import { Sidebar } from "@elmeragroup/fuse/sidebar";
 
 const NAV = [
   { label: "Dashboard", icon: House },

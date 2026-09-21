@@ -49,7 +49,7 @@ import {
   markdownOutDir,
   REPO_BLOB_BASE,
   repoRelative,
-  uiSrc,
+  fuseSrc,
 } from "./lib/paths.ts";
 import { renderSearchIndex } from "./lib/search.ts";
 import type { BundleSizeReport } from "./lib/sizes.ts";
@@ -239,7 +239,7 @@ async function main(): Promise<void> {
   // input checks (docs-site.md §6).
   const problems = new ProblemLog();
   const sizes = inspectGlobalDocs(problems);
-  const colors = readColorTokenMapFromFile(path.join(uiSrc, "styles/ui.css"));
+  const colors = readColorTokenMapFromFile(path.join(fuseSrc, "styles/fuse.css"));
   const inspections = componentInspections();
   const inspected = inspections.map((inspection) => ({
     inspection,

@@ -1,5 +1,5 @@
 ---
-"@elmeragroup/ui": minor
+"@elmeragroup/fuse": minor
 ---
 
 `DropdownMenu.RadioGroup` now ties `value`, `defaultValue` and `onValueChange` to one

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { Button } from "@elmeragroup/ui/button";
+import { Button } from "@elmeragroup/fuse/button";
 
 export function ButtonPredictiveIntent() {
   const [prefetched, setPrefetched] = useState(false);

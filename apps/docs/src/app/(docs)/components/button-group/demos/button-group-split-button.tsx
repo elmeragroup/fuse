@@ -1,9 +1,9 @@
 "use client";
 
-import { Button } from "@elmeragroup/ui/button";
-import { ButtonGroup } from "@elmeragroup/ui/button-group";
-import { DropdownMenu } from "@elmeragroup/ui/dropdown-menu";
-import { CaretDown } from "@elmeragroup/ui/icons";
+import { Button } from "@elmeragroup/fuse/button";
+import { ButtonGroup } from "@elmeragroup/fuse/button-group";
+import { DropdownMenu } from "@elmeragroup/fuse/dropdown-menu";
+import { CaretDown } from "@elmeragroup/fuse/icons";
 
 export function ButtonGroupSplitButton() {
   return (

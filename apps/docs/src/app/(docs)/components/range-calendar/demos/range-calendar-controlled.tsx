@@ -5,9 +5,9 @@ import { useState } from "react";
 import { CalendarDate } from "@internationalized/date";
 import type { DateValue } from "@internationalized/date";
 
-import { RangeCalendar } from "@elmeragroup/ui/react-aria/range-calendar";
-import { UiProviders } from "@elmeragroup/ui/react-aria/ui-providers";
-import { Text } from "@elmeragroup/ui/text";
+import { RangeCalendar } from "@elmeragroup/fuse/react-aria/range-calendar";
+import { UiProviders } from "@elmeragroup/fuse/react-aria/ui-providers";
+import { Text } from "@elmeragroup/fuse/text";
 
 type Range = { start: DateValue; end: DateValue };
 

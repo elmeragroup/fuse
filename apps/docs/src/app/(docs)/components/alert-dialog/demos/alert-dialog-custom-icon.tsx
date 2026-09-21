@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 
-import { AlertDialog } from "@elmeragroup/ui/alert-dialog";
-import { Button } from "@elmeragroup/ui/button";
-import { Trash } from "@elmeragroup/ui/icons";
+import { AlertDialog } from "@elmeragroup/fuse/alert-dialog";
+import { Button } from "@elmeragroup/fuse/button";
+import { Trash } from "@elmeragroup/fuse/icons";
 
 /** Demonstrates a local removal with an explicit restore action. */
 export function AlertDialogCustomIcon() {

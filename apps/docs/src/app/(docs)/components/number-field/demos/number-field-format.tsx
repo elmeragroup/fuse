@@ -1,11 +1,11 @@
 "use client";
 
-import { NumberField } from "@elmeragroup/ui/number-field";
-import { ElmeraGroupUiProvider } from "@elmeragroup/ui/theme";
+import { NumberField } from "@elmeragroup/fuse/number-field";
+import { LocaleProvider } from "@elmeragroup/fuse/theme";
 
 export function NumberFieldFormat() {
   return (
-    <ElmeraGroupUiProvider locale="en-US">
+    <LocaleProvider locale="en-US">
       <div className="flex flex-col gap-3">
         <NumberField
           label="Price"
@@ -18,6 +18,6 @@ export function NumberFieldFormat() {
           formatOptions={{ style: "percent", maximumFractionDigits: 0 }}
         />
       </div>
-    </ElmeraGroupUiProvider>
+    </LocaleProvider>
   );
 }

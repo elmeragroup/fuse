@@ -1,6 +1,6 @@
 "use client";
 
-import { Separator } from "@elmeragroup/ui/separator";
+import { Separator } from "@elmeragroup/fuse/separator";
 
 export function SeparatorVertical() {
   return (

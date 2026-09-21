@@ -1,6 +1,6 @@
 "use client";
 
-import { Card } from "@elmeragroup/ui/card";
+import { Card } from "@elmeragroup/fuse/card";
 
 export function CardBasic() {
   return (

@@ -1,8 +1,8 @@
 "use client";
 
-import { Button } from "@elmeragroup/ui/button";
-import { ButtonGroup } from "@elmeragroup/ui/button-group";
-import { CaretDown, CaretUp } from "@elmeragroup/ui/icons";
+import { Button } from "@elmeragroup/fuse/button";
+import { ButtonGroup } from "@elmeragroup/fuse/button-group";
+import { CaretDown, CaretUp } from "@elmeragroup/fuse/icons";
 
 export function ButtonGroupVertical() {
   return (

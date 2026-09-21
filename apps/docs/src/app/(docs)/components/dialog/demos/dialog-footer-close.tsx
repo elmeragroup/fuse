@@ -1,7 +1,7 @@
 "use client";
 
-import { Button } from "@elmeragroup/ui/button";
-import { Dialog } from "@elmeragroup/ui/dialog";
+import { Button } from "@elmeragroup/fuse/button";
+import { Dialog } from "@elmeragroup/fuse/dialog";
 
 export function DialogFooterClose() {
   return (

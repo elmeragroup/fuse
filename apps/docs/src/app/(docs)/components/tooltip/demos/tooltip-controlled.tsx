@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 
-import { Button } from "@elmeragroup/ui/button";
-import { Tooltip } from "@elmeragroup/ui/tooltip";
+import { Button } from "@elmeragroup/fuse/button";
+import { Tooltip } from "@elmeragroup/fuse/tooltip";
 
 export function TooltipControlled() {
   const [open, setOpen] = useState(true);

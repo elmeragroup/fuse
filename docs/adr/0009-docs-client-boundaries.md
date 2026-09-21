@@ -4,7 +4,7 @@ Date: 2026-09-02. Status: **proposed — pending owner confirmation**. Decisions
 
 ## Context
 
-[docs-site](../spec/docs-site.md) §6 requires every demo file to begin with `"use client"`, and the generator fails generation when one does not. The rule was enforced but never written down, so a reader could not tell whether it was a deliberate contract or an artefact. Three demos additionally import specifiers a consumer could not reach through `@elmeragroup/ui/*`, and `apps/docs/package.json` carries two dependencies for those three files alone.
+[docs-site](../spec/docs-site.md) §6 requires every demo file to begin with `"use client"`, and the generator fails generation when one does not. The rule was enforced but never written down, so a reader could not tell whether it was a deliberate contract or an artefact. Three demos additionally import specifiers a consumer could not reach through `@elmeragroup/fuse/*`, and `apps/docs/package.json` carries two dependencies for those three files alone.
 
 Separately, highlighted code on the site had three renderings (the API panel's signature, the demo frame's source region, MDX fences) while a `DocsCodeBlock` component already existed, and the per-component markdown endpoint printed RSC as a per-prop column where the HTML page prints it once per part ([performance](../spec/performance.md) §3 makes RSC a per-part fact).
 

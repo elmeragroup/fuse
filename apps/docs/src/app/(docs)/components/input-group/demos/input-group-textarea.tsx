@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 
-import { Button } from "@elmeragroup/ui/button";
-import { InputGroup } from "@elmeragroup/ui/input-group";
+import { Button } from "@elmeragroup/fuse/button";
+import { InputGroup } from "@elmeragroup/fuse/input-group";
 
 /** Records a support message locally and lets the reader start again. */
 export function InputGroupTextarea() {

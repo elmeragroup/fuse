@@ -71,7 +71,7 @@ describe("version workflow", () => {
           timeout: 5_000,
           env: {
             ...process.env,
-            GITHUB_REPOSITORY: "elmeragroup/ui",
+            GITHUB_REPOSITORY: "elmeragroup/fuse",
             GITHUB_SHA: "a".repeat(40),
             GITHUB_OUTPUT: output,
             TEST_GH_ARGS: args,
@@ -83,7 +83,7 @@ describe("version workflow", () => {
       expect(result.error).toBeUndefined();
       expect(result.status, result.stderr).toBe(status);
       expect(readFileSync(args, "utf8").trim()).toBe(
-        "api repos/elmeragroup/ui/git/ref/heads/main --jq .object.sha"
+        "api repos/elmeragroup/fuse/git/ref/heads/main --jq .object.sha"
       );
       const outputs = existsSync(output) ? readFileSync(output, "utf8").split("\n") : [];
       expect(outputs.includes("current=true")).toBe(current);

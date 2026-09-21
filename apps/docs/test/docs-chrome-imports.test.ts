@@ -39,11 +39,11 @@ function isSidebarDemo(file: string): boolean {
   return path.relative(docsRoot, file).split(path.sep).join("/").startsWith(`${SIDEBAR_ROUTE}demos/`);
 }
 
-const SIDEBAR_IMPORT = /from\s+["']@elmeragroup\/ui\/sidebar["']/u;
-const SIDEBAR_FROM_BARREL = /import\s*\{[^}]*\bSidebar\b[^}]*\}\s*from\s+["']@elmeragroup\/ui["']/u;
+const SIDEBAR_IMPORT = /from\s+["']@elmeragroup\/fuse\/sidebar["']/u;
+const SIDEBAR_FROM_BARREL = /import\s*\{[^}]*\bSidebar\b[^}]*\}\s*from\s+["']@elmeragroup\/fuse["']/u;
 
 describe("docs chrome never composes the library Sidebar", () => {
-  it("imports @elmeragroup/ui/sidebar only from the Sidebar page's own demos", () => {
+  it("imports @elmeragroup/fuse/sidebar only from the Sidebar page's own demos", () => {
     const offenders = docsSourceFiles(path.join(docsRoot, "src"))
       .filter((file) => !isSidebarPage(file))
       .filter((file) => {

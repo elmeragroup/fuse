@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { Radio, RadioGroup } from "@elmeragroup/ui/radio-group";
+import { Radio, RadioGroup } from "@elmeragroup/fuse/radio-group";
 
 export function RadioGroupBasic() {
   const [vertical, setVertical] = useState("fixed");

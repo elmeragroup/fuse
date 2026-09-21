@@ -1,11 +1,11 @@
 {
-  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
   "slug": "sidebar",
   "parts": [
     {
       "name": "Sidebar.Provider",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "sourcePath": "packages/fuse/src/components/sidebar/sidebar.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -52,7 +52,7 @@
     {
       "name": "Sidebar.Root",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "sourcePath": "packages/fuse/src/components/sidebar/sidebar.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -99,7 +99,7 @@
     {
       "name": "Sidebar.Trigger",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "sourcePath": "packages/fuse/src/components/sidebar/sidebar.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -227,7 +227,7 @@
     {
       "name": "Sidebar.Rail",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "sourcePath": "packages/fuse/src/components/sidebar/sidebar.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -237,7 +237,7 @@
     {
       "name": "Sidebar.Inset",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "sourcePath": "packages/fuse/src/components/sidebar/sidebar.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -247,7 +247,7 @@
     {
       "name": "Sidebar.Input",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "sourcePath": "packages/fuse/src/components/sidebar/sidebar.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -257,7 +257,7 @@
     {
       "name": "Sidebar.Header",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "sourcePath": "packages/fuse/src/components/sidebar/sidebar.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -267,7 +267,7 @@
     {
       "name": "Sidebar.Footer",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "sourcePath": "packages/fuse/src/components/sidebar/sidebar.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -277,7 +277,7 @@
     {
       "name": "Sidebar.Separator",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "sourcePath": "packages/fuse/src/components/sidebar/sidebar.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -333,7 +333,7 @@
     {
       "name": "Sidebar.Content",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "sourcePath": "packages/fuse/src/components/sidebar/sidebar.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -343,7 +343,7 @@
     {
       "name": "Sidebar.Group",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "sourcePath": "packages/fuse/src/components/sidebar/sidebar.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -353,7 +353,7 @@
     {
       "name": "Sidebar.GroupLabel",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "sourcePath": "packages/fuse/src/components/sidebar/sidebar.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -376,7 +376,7 @@
     {
       "name": "Sidebar.GroupAction",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "sourcePath": "packages/fuse/src/components/sidebar/sidebar.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -399,7 +399,7 @@
     {
       "name": "Sidebar.GroupContent",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "sourcePath": "packages/fuse/src/components/sidebar/sidebar.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -409,7 +409,7 @@
     {
       "name": "Sidebar.Menu",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "sourcePath": "packages/fuse/src/components/sidebar/sidebar.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -419,7 +419,7 @@
     {
       "name": "Sidebar.MenuItem",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "sourcePath": "packages/fuse/src/components/sidebar/sidebar.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -429,7 +429,7 @@
     {
       "name": "Sidebar.MenuButton",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "sourcePath": "packages/fuse/src/components/sidebar/sidebar.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -488,7 +488,7 @@
     {
       "name": "Sidebar.MenuAction",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "sourcePath": "packages/fuse/src/components/sidebar/sidebar.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -520,7 +520,7 @@
     {
       "name": "Sidebar.MenuBadge",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "sourcePath": "packages/fuse/src/components/sidebar/sidebar.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -530,7 +530,7 @@
     {
       "name": "Sidebar.MenuSkeleton",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "sourcePath": "packages/fuse/src/components/sidebar/sidebar.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -550,7 +550,7 @@
     {
       "name": "Sidebar.MenuSub",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "sourcePath": "packages/fuse/src/components/sidebar/sidebar.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -560,7 +560,7 @@
     {
       "name": "Sidebar.MenuSubItem",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "sourcePath": "packages/fuse/src/components/sidebar/sidebar.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -570,7 +570,7 @@
     {
       "name": "Sidebar.MenuSubButton",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "sourcePath": "packages/fuse/src/components/sidebar/sidebar.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -611,7 +611,7 @@
     {
       "name": "Sidebar.Icon",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "sourcePath": "packages/fuse/src/components/sidebar/sidebar.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -621,7 +621,7 @@
     {
       "name": "useSidebar",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/sidebar/sidebar.tsx",
+      "sourcePath": "packages/fuse/src/components/sidebar/sidebar.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": []

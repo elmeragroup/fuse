@@ -10,7 +10,7 @@ describe("component page anatomy (docs-site.md §3.4)", () => {
     expect(html).toContain('href="/components/button.md"');
     expect(html).toContain("View as Markdown");
     expect(html).toContain(
-      'href="https://github.com/elmeragroup/ui/blob/main/packages/ui/src/components/button/button.tsx"'
+      'href="https://github.com/elmeragroup/fuse/blob/main/packages/fuse/src/components/button/button.tsx"'
     );
     expect(html).toContain("View source");
   });

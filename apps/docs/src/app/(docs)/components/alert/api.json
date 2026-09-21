@@ -1,11 +1,11 @@
 {
-  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
   "slug": "alert",
   "parts": [
     {
       "name": "Alert.Root",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/alert/alert.tsx",
+      "sourcePath": "packages/fuse/src/components/alert/alert.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -43,7 +43,7 @@
     {
       "name": "Alert.Icon",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/alert/alert.tsx",
+      "sourcePath": "packages/fuse/src/components/alert/alert.tsx",
       "forwardedFrom": [
         "@phosphor-icons/react",
         "@types/react"
@@ -73,7 +73,7 @@
     {
       "name": "Alert.Title",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/alert/alert.tsx",
+      "sourcePath": "packages/fuse/src/components/alert/alert.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -93,7 +93,7 @@
     {
       "name": "Alert.Description",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/alert/alert.tsx",
+      "sourcePath": "packages/fuse/src/components/alert/alert.tsx",
       "forwardedFrom": [
         "@types/react"
       ],

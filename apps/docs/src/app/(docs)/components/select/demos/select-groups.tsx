@@ -1,6 +1,6 @@
 "use client";
 
-import { Select } from "@elmeragroup/ui/select";
+import { Select } from "@elmeragroup/fuse/select";
 
 const fruits = {
   lemon: "Lemon",

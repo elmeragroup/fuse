@@ -114,10 +114,10 @@ describe("docs Tailwind migration contract", () => {
   it("keeps globals.css as the Tailwind entry with the library and demo-stage imports", () => {
     const globals = readFileSync(join(docsRoot, "src/styles/globals.css"), "utf8");
     expect(globals).toContain('@import "tailwindcss";');
-    expect(globals).toContain('@import "@elmeragroup/ui/css";');
-    expect(globals).toContain('@import "@elmeragroup/ui/themes.css";');
-    expect(globals).toContain('@import "@elmeragroup/ui/demo-stage-comfortable.css";');
-    expect(globals).toContain('@source "../../../../packages/ui/src";');
+    expect(globals).toContain('@import "@elmeragroup/fuse/css";');
+    expect(globals).toContain('@import "@elmeragroup/fuse/themes.css";');
+    expect(globals).toContain('@import "@elmeragroup/fuse/demo-stage-comfortable.css";');
+    expect(globals).toContain('@source "../../../../packages/fuse/src";');
     expect(globals).toContain('@source "../../src";');
     expect(globals).not.toContain("@apply");
     expect(globals).not.toMatch(/--control-/);
@@ -260,16 +260,16 @@ function componentVarFailures(source: string, defined: Set<string>): string[] {
 describe("docs component CSS variables", () => {
   it("references only defined custom properties", () => {
     const globals = readFileSync(join(docsRoot, "src/styles/globals.css"), "utf8");
-    const uiCss = readFileSync(join(workspaceRoot, "packages/ui/src/styles/ui.css"), "utf8");
+    const fuseCss = readFileSync(join(workspaceRoot, "packages/fuse/src/styles/fuse.css"), "utf8");
     // The role vocabulary comes from the sheet the app actually imports, not from the
-    // library's vitest snapshot: `turbo test` builds `@elmeragroup/ui` first.
+    // library's vitest snapshot: `turbo test` builds `@elmeragroup/fuse` first.
     const themesCss = readFileSync(
-      createRequire(import.meta.url).resolve("@elmeragroup/ui/themes.css"),
+      createRequire(import.meta.url).resolve("@elmeragroup/fuse/themes.css"),
       "utf8"
     );
     const defined = new Set([
       ...definedCustomProperties(globals),
-      ...definedCustomProperties(uiCss),
+      ...definedCustomProperties(fuseCss),
       ...definedCustomProperties(themesCss),
     ]);
 

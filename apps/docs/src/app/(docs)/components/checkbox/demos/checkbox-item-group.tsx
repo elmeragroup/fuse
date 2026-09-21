@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { CheckboxItem, CheckboxItemGroup } from "@elmeragroup/ui/checkbox";
+import { CheckboxItem, CheckboxItemGroup } from "@elmeragroup/fuse/checkbox";
 
 export function CheckboxItemGroupDemo() {
   const [value, setValue] = useState<string[]>(["fixed"]);

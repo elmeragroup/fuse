@@ -1,5 +1,5 @@
 ---
-"@elmeragroup/ui": minor
+"@elmeragroup/fuse": minor
 ---
 
 `Collapsible.Content` now ships the open/close height transition (150 ms ease-out, keyed on Base UI's

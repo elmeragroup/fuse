@@ -1,11 +1,11 @@
 {
-  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
   "slug": "table",
   "parts": [
     {
       "name": "Table.Root",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/table/table.tsx",
+      "sourcePath": "packages/fuse/src/components/table/table.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -15,7 +15,7 @@
     {
       "name": "Table.Header",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/table/table.tsx",
+      "sourcePath": "packages/fuse/src/components/table/table.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -25,7 +25,7 @@
     {
       "name": "Table.Body",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/table/table.tsx",
+      "sourcePath": "packages/fuse/src/components/table/table.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -35,7 +35,7 @@
     {
       "name": "Table.Footer",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/table/table.tsx",
+      "sourcePath": "packages/fuse/src/components/table/table.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -45,7 +45,7 @@
     {
       "name": "Table.Row",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/table/table.tsx",
+      "sourcePath": "packages/fuse/src/components/table/table.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -55,7 +55,7 @@
     {
       "name": "Table.Head",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/table/table.tsx",
+      "sourcePath": "packages/fuse/src/components/table/table.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -65,7 +65,7 @@
     {
       "name": "Table.Cell",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/table/table-cell.tsx",
+      "sourcePath": "packages/fuse/src/components/table/table-cell.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -75,7 +75,7 @@
     {
       "name": "Table.Caption",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/table/table.tsx",
+      "sourcePath": "packages/fuse/src/components/table/table.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -85,7 +85,7 @@
     {
       "name": "VerticalTable.Root",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/table/table.tsx",
+      "sourcePath": "packages/fuse/src/components/table/table.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -105,7 +105,7 @@
     {
       "name": "VerticalTable.Header",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/table/vertical-table-header.tsx",
+      "sourcePath": "packages/fuse/src/components/table/vertical-table-header.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -125,7 +125,7 @@
     {
       "name": "VerticalTable.Body",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/table/table.tsx",
+      "sourcePath": "packages/fuse/src/components/table/table.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -154,7 +154,7 @@
     {
       "name": "VerticalTable.Row",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/table/table.tsx",
+      "sourcePath": "packages/fuse/src/components/table/table.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -183,7 +183,7 @@
     {
       "name": "VerticalTable.Key",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/table/vertical-table-key.tsx",
+      "sourcePath": "packages/fuse/src/components/table/vertical-table-key.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -221,7 +221,7 @@
     {
       "name": "VerticalTable.Value",
       "rsc": "server",
-      "sourcePath": "packages/ui/src/components/table/table.tsx",
+      "sourcePath": "packages/fuse/src/components/table/table.tsx",
       "forwardedFrom": [
         "@types/react"
       ],

@@ -1,6 +1,6 @@
 "use client";
 
-import { Tabs } from "@elmeragroup/ui/tabs";
+import { Tabs } from "@elmeragroup/fuse/tabs";
 
 export function TabsDisabled() {
   return (

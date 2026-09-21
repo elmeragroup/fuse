@@ -1,5 +1,5 @@
 ---
-"@elmeragroup/ui": patch
+"@elmeragroup/fuse": patch
 ---
 
 `themes.css`: the external dark company rule (`fkas` + `company`) now materializes the complete

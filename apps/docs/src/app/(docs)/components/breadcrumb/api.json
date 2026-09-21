@@ -1,11 +1,11 @@
 {
-  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
   "slug": "breadcrumb",
   "parts": [
     {
       "name": "Breadcrumb.Root",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/breadcrumb/breadcrumb.tsx",
+      "sourcePath": "packages/fuse/src/components/breadcrumb/breadcrumb.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -25,7 +25,7 @@
     {
       "name": "Breadcrumb.List",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/breadcrumb/breadcrumb.tsx",
+      "sourcePath": "packages/fuse/src/components/breadcrumb/breadcrumb.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -35,7 +35,7 @@
     {
       "name": "Breadcrumb.Item",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/breadcrumb/breadcrumb.tsx",
+      "sourcePath": "packages/fuse/src/components/breadcrumb/breadcrumb.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -45,7 +45,7 @@
     {
       "name": "Breadcrumb.Link",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/breadcrumb/breadcrumb.tsx",
+      "sourcePath": "packages/fuse/src/components/breadcrumb/breadcrumb.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -68,7 +68,7 @@
     {
       "name": "Breadcrumb.Page",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/breadcrumb/breadcrumb.tsx",
+      "sourcePath": "packages/fuse/src/components/breadcrumb/breadcrumb.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -78,7 +78,7 @@
     {
       "name": "Breadcrumb.Separator",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/breadcrumb/breadcrumb.tsx",
+      "sourcePath": "packages/fuse/src/components/breadcrumb/breadcrumb.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -88,7 +88,7 @@
     {
       "name": "Breadcrumb.Ellipsis",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/breadcrumb/breadcrumb.tsx",
+      "sourcePath": "packages/fuse/src/components/breadcrumb/breadcrumb.tsx",
       "forwardedFrom": [
         "@types/react"
       ],

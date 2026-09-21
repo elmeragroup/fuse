@@ -1,7 +1,7 @@
 "use client";
 
-import { Empty } from "@elmeragroup/ui/empty";
-import { Tray } from "@elmeragroup/ui/icons";
+import { Empty } from "@elmeragroup/fuse/empty";
+import { Tray } from "@elmeragroup/fuse/icons";
 
 export function EmptyBasic() {
   return (

@@ -1,11 +1,11 @@
 {
-  "$generated": "Generated from packages/ui types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate (docs-site.md §8). Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
   "slug": "tooltip",
   "parts": [
     {
       "name": "Tooltip.Provider",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/tooltip/tooltip.tsx",
+      "sourcePath": "packages/fuse/src/components/tooltip/tooltip.tsx",
       "forwardedFrom": [
         "@base-ui/react"
       ],
@@ -47,7 +47,7 @@
     {
       "name": "Tooltip.Root",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/tooltip/tooltip.tsx",
+      "sourcePath": "packages/fuse/src/components/tooltip/tooltip.tsx",
       "forwardedFrom": [
         "@base-ui/react"
       ],
@@ -199,7 +199,7 @@
     {
       "name": "Tooltip.Trigger",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/tooltip/tooltip.tsx",
+      "sourcePath": "packages/fuse/src/components/tooltip/tooltip.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -310,7 +310,7 @@
     {
       "name": "Tooltip.Content",
       "rsc": "client",
-      "sourcePath": "packages/ui/src/components/tooltip/tooltip.tsx",
+      "sourcePath": "packages/fuse/src/components/tooltip/tooltip.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"

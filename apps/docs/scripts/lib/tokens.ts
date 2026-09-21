@@ -7,7 +7,7 @@
  *   1. `var(--token)` written directly in a recipe or CSS file,
  *   2. Tailwind v4's CSS-variable shorthand, `h-(--control-h-md)`,
  *   3. Tailwind colour utilities (`bg-primary`, `ring-error/20`), resolved through the
- *      `@theme inline` block of `packages/ui/src/styles/ui.css` — the library's own
+ *      `@theme inline` block of `packages/fuse/src/styles/fuse.css` — the library's own
  *      utility → token map, so no token name is ever hand-listed here.
  *
  * Only the utility *prefixes* in `COLOR_UTILITY_PREFIXES` are Tailwind knowledge; a
@@ -57,16 +57,16 @@ export type ColorTokenMap = ReadonlyMap<string, string>;
  * `@theme inline` block. The keys are Tailwind utility suffixes; the values are the
  * theme tokens those utilities actually read.
  */
-export function readColorTokenMap(uiCssText: string): ColorTokenMap {
-  const start = THEME_INLINE_START.exec(uiCssText);
+export function readColorTokenMap(fuseCssText: string): ColorTokenMap {
+  const start = THEME_INLINE_START.exec(fuseCssText);
   if (start === null) {
-    throw new Error("packages/ui/src/styles/ui.css has no `@theme inline` block to derive tokens from");
+    throw new Error("packages/fuse/src/styles/fuse.css has no `@theme inline` block to derive tokens from");
   }
   const from = start.index + start[0].length;
   let depth = 1;
   let cursor = from;
-  while (cursor < uiCssText.length && depth > 0) {
-    const character = uiCssText[cursor];
+  while (cursor < fuseCssText.length && depth > 0) {
+    const character = fuseCssText[cursor];
     if (character === "{") {
       depth += 1;
     } else if (character === "}") {
@@ -74,7 +74,7 @@ export function readColorTokenMap(uiCssText: string): ColorTokenMap {
     }
     cursor += 1;
   }
-  const block = uiCssText.slice(from, cursor - 1);
+  const block = fuseCssText.slice(from, cursor - 1);
   const map = new Map<string, string>();
   const pattern = /--color-([a-z0-9-]+)\s*:\s*var\(\s*(--[a-z0-9-]+)\s*\)/gi;
   let match = pattern.exec(block);
@@ -87,7 +87,7 @@ export function readColorTokenMap(uiCssText: string): ColorTokenMap {
     match = pattern.exec(block);
   }
   if (map.size === 0) {
-    throw new Error("packages/ui/src/styles/ui.css `@theme inline` block declared no colour tokens");
+    throw new Error("packages/fuse/src/styles/fuse.css `@theme inline` block declared no colour tokens");
   }
   return map;
 }
@@ -202,6 +202,6 @@ export function extractTokens(input: TokenScanInput): readonly TokenRef[] {
     .map((name) => ({ name, isColor: colorTokens.has(name) }));
 }
 
-export function readColorTokenMapFromFile(uiCssPath: string): ColorTokenMap {
-  return readColorTokenMap(readFileSync(uiCssPath, "utf8"));
+export function readColorTokenMapFromFile(fuseCssPath: string): ColorTokenMap {
+  return readColorTokenMap(readFileSync(fuseCssPath, "utf8"));
 }

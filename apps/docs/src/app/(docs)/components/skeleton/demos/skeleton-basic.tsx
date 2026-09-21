@@ -1,6 +1,6 @@
 "use client";
 
-import { Skeleton } from "@elmeragroup/ui/skeleton";
+import { Skeleton } from "@elmeragroup/fuse/skeleton";
 
 export function SkeletonBasic() {
   return (

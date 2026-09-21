@@ -8,12 +8,12 @@ import type { ReactElement } from "react";
 
 import { tv } from "tailwind-variants";
 
-import { Badge } from "@elmeragroup/ui/badge";
-import { Button } from "@elmeragroup/ui/button";
-import { Dialog } from "@elmeragroup/ui/dialog";
-import { Separator } from "@elmeragroup/ui/separator";
-import { ThemeScope, themeSlug, useColorScheme } from "@elmeragroup/ui/theme";
-import type { ThemeInput } from "@elmeragroup/ui/theme";
+import { Badge } from "@elmeragroup/fuse/badge";
+import { Button } from "@elmeragroup/fuse/button";
+import { Dialog } from "@elmeragroup/fuse/dialog";
+import { Separator } from "@elmeragroup/fuse/separator";
+import { ThemeScope, themeSlug, useColorScheme } from "@elmeragroup/fuse/theme";
+import type { ThemeInput } from "@elmeragroup/fuse/theme";
 
 import { COLOR_SCHEME_LABELS, COLOR_SCHEMES, LEGAL_THEMES } from "../lib/theme";
 

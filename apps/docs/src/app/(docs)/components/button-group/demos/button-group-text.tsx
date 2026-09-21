@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 
-import { Button } from "@elmeragroup/ui/button";
-import { ButtonGroup } from "@elmeragroup/ui/button-group";
-import { MagnifyingGlass } from "@elmeragroup/ui/icons";
-import { Input } from "@elmeragroup/ui/input";
+import { Button } from "@elmeragroup/fuse/button";
+import { ButtonGroup } from "@elmeragroup/fuse/button-group";
+import { MagnifyingGlass } from "@elmeragroup/fuse/icons";
+import { Input } from "@elmeragroup/fuse/input";
 
 export function ButtonGroupText() {
   const [amount, setAmount] = useState("120");

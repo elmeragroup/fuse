@@ -1,8 +1,8 @@
 "use client";
 
-import { Card } from "@elmeragroup/ui/card";
-import { Loader } from "@elmeragroup/ui/loader";
-import { Text } from "@elmeragroup/ui/text";
+import { Card } from "@elmeragroup/fuse/card";
+import { Loader } from "@elmeragroup/fuse/loader";
+import { Text } from "@elmeragroup/fuse/text";
 
 export function LoaderInline() {
   return (

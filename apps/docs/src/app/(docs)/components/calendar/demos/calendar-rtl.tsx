@@ -3,7 +3,7 @@
 import { CalendarDate } from "@internationalized/date";
 import { I18nProvider } from "react-aria-components";
 
-import { Calendar } from "@elmeragroup/ui/react-aria/calendar";
+import { Calendar } from "@elmeragroup/fuse/react-aria/calendar";
 
 export function CalendarRtl() {
   return (

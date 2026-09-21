@@ -1,6 +1,6 @@
 "use client";
 
-import { ScrollArea } from "@elmeragroup/ui/scroll-area";
+import { ScrollArea } from "@elmeragroup/fuse/scroll-area";
 
 const TAGS = Array.from({ length: 24 }, (_, index) => `Tag ${String(index + 1)}`);
 

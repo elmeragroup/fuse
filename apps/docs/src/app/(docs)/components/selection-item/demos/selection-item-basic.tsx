@@ -1,7 +1,7 @@
 "use client";
 
-import { Field } from "@elmeragroup/ui/field";
-import { SelectionItem } from "@elmeragroup/ui/selection-item";
+import { Field } from "@elmeragroup/fuse/field";
+import { SelectionItem } from "@elmeragroup/fuse/selection-item";
 
 export function SelectionItemBasic() {
   return (

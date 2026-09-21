@@ -69,7 +69,7 @@ describe("search matching", () => {
   });
 
   it("finds a component page by its import specifier", () => {
-    expect(matchSearchEntries("@elmeragroup/ui/scroll-area")[0]?.href).toBe("/components/scroll-area");
+    expect(matchSearchEntries("@elmeragroup/fuse/scroll-area")[0]?.href).toBe("/components/scroll-area");
   });
 
   it("narrows on every token rather than widening", () => {

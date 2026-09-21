@@ -1,7 +1,7 @@
 "use client";
 
-import { Lightning } from "@elmeragroup/ui/icons";
-import { Item } from "@elmeragroup/ui/item";
+import { Lightning } from "@elmeragroup/fuse/icons";
+import { Item } from "@elmeragroup/fuse/item";
 
 export function ItemBasic() {
   return (

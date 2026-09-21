@@ -3,8 +3,8 @@
 import { CalendarDate } from "@internationalized/date";
 import { DateField, Label } from "react-aria-components";
 
-import { DateInput } from "@elmeragroup/ui/react-aria/date-field";
-import { UiProviders } from "@elmeragroup/ui/react-aria/ui-providers";
+import { DateInput } from "@elmeragroup/fuse/react-aria/date-field";
+import { UiProviders } from "@elmeragroup/fuse/react-aria/ui-providers";
 
 export function DateFieldDateInput() {
   return (

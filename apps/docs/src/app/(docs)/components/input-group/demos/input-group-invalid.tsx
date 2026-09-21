@@ -1,6 +1,6 @@
 "use client";
 
-import { InputGroup } from "@elmeragroup/ui/input-group";
+import { InputGroup } from "@elmeragroup/fuse/input-group";
 
 export function InputGroupInvalid() {
   return (
