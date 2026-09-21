@@ -50,7 +50,7 @@ The ordering requirements are:
 ## 4 Formatting & linting
 
 - **oxfmt** formats everything. Required config: `sortTailwindcss.stylesheet` pointed at the library's source stylesheet (the file behind the `@elmeragroup/fuse/css` entry, see [architecture](architecture.md) §5) so class sorting knows the custom tokens/utilities and `functions: ["tv", "cn"]` (so classes inside `tv` recipes and `cn` calls are sorted too). `oxfmt --check` gates merges; no prettier anywhere. Tracked `.vscode/settings.json` sets `tailwindCSS.classFunctions` to `["tv", "cn"]` so the Tailwind IntelliSense extension completes inside those same calls.
-- **oxlint, type-aware** (`oxlint-tsgolint`), configured in root `.oxlintrc.json`. Built-in plugins are `typescript`, `oxc`, `import`, and `unicorn` (`unicorn` is also listed on the apps/Fuse override that replaces the plugin set). `unicorn/filename-case` is `error` with `kebabCase` for every linted file; BCP 47 locale modules (`en-US.ts`, `nb-NO.ts`, …) are ignored so they keep the locale-id filenames required by [accessibility](accessibility.md) §4. Other unicorn correctness rules stay `off` so enabling the plugin does not pull in the rest of the category pack. Four JS plugins:
+- **oxlint, type-aware** (`oxlint-tsgolint`), configured in root `.oxlintrc.json`. Built-in plugins are `typescript`, `oxc`, `import`, and `unicorn` (`unicorn` is also listed on the `apps/**` + `packages/fuse/**` override that replaces the plugin set). `unicorn/filename-case` is `error` with `kebabCase` for every linted file; BCP 47 locale modules (`en-US.ts`, `nb-NO.ts`, …) are ignored so they keep the locale-id filenames required by [accessibility](accessibility.md) §4. Other unicorn correctness rules stay `off` so enabling the plugin does not pull in the rest of the category pack. Four JS plugins:
 
   ```json
   "jsPlugins": [
@@ -66,11 +66,11 @@ The ordering requirements are:
   `shadcn/require-static-classes` is deliberately off: house `tv()` recipes invoked at the call site are the sanctioned class-map style, so the rule contradicts `elmera/no-raw-class-map`. The plugin carries `@typescript-eslint/parser` as a hard dependency that is unused under Oxlint because the plugin prefers `oxc-parser`, so its unmet `typescript <6.1` peer warning on `pnpm install` is accepted and deliberately not silenced. _(amended 2026-09-18)_
 - **Typed custom properties**: the csstype augmentation in `@elmeragroup/typescript-config` (`tooling/typescript/css-custom-properties.d.ts`) types `` `--*` `` keys once. Plain-DOM sites write literal custom properties with no cast, no SAFETY comment, and no disable. A child tsconfig that overrides `compilerOptions.types` must re-list `@elmeragroup/typescript-config/css-custom-properties`; `pnpm test:repo-policy` enforces it. _(amended 2026-09-18)_
 - `ignorePatterns` in `.oxlintrc.json`: `**/dist/**`, `**/coverage/**`, `**/.turbo/**`, `**/.next/**`, `apps/docs/src/generated/**`, `plop-templates/**`, `**/.artifacts/**`, `**/.cache/**`, `**/node_modules/**`, `.ref/**`, `packages/fuse/scripts/*.mjs`, and the agent-dot dirs (`.agent/**`, `.agents/**`, `.claude/**`, `.codex/**`, `.continue/**`, `.cursor/**`, `.gemini/**`, `.opencode/**`, `.pi/**`, `.roo/**`, `.windsurf/**`). _(Added 2026-09-04.)_
-  The pinned internal lint plugin hard-codes the former package directory for the React Aria quarantine. A local override exempts only `packages/fuse/src/react-aria/**`; the rule remains enabled for all other Fuse source files. Remove the override when the plugin recognizes the renamed directory.
 
 - Overrides, in order, scoped exactly as `.oxlintrc.json`:
   - `apps/**/*.{ts,tsx}` and `packages/fuse/**/*.{ts,tsx}` — React globals plus the `react` plugin (`react-hooks/rules-of-hooks` and both exhaustive-deps rules at `error`); this override also **replaces** the plugin set with `typescript`, `oxc`, `react`, `unicorn`.
   - `packages/fuse/src/**/*.{ts,tsx}` — every `elmera/*` library rule in §5, plus the `LocalizedStringDictionary` `no-restricted-imports` path.
+  - `packages/fuse/src/react-aria/**/*.{ts,tsx}` — `elmera/no-rac-outside-quarantine` **off**. This override, not the rule, is the quarantine boundary (§5.6). Two repo-policy tests hold it: one pins this scope as the only exemption, the other fails once the pinned plugin stops hard-coding the old path — the signal to delete the override if the plugin learned the new directory, or to configure the option if it gained one.
   - `apps/docs/src/**/*.{ts,tsx}` — `elmera/no-primitive-colors` and `elmera/no-raw-class-map` at `error`.
   - `apps/docs/src/**/*.{ts,tsx}` and `apps/static-theme/src/**/*.{ts,tsx}` — `shadcn/no-raw-colors`, `shadcn/no-inline-styles` and `shadcn/no-unknown-classes` at `error`; the `not-prose` allow applies to both scopes.
   - `packages/fuse/src/**/*.{ts,tsx}` — the same three shadcn rules at `error`, with no allows.
@@ -139,7 +139,9 @@ The forbidden specifier list is `packages/fuse/scripts/forbidden-rac-packages.js
 - `@react-aria`
 - `@react-stately`
 
-Each name also matches its subpaths (`name/...`). Those specifiers may be imported only from `packages/fuse/src/react-aria/**`. Imports from `src/components/**` and every other library path fail. The rule is the quarantine; it lands before any RAC source exists.
+Each name also matches its subpaths (`name/...`). Those specifiers may be imported only from `packages/fuse/src/react-aria/**`. Imports from `src/components/**` and every other library path fail.
+
+The **config override owns that boundary, not the rule.** The pinned plugin hard-codes the pre-rename directory (`packages/ui/src/react-aria/`) and takes no option for it, so the rule now reports every RAC import in the package and the `packages/fuse/src/react-aria/**` override is what allows the quarantine. Net enforcement is unchanged, with one wart: a violation's message still names `packages/ui/src/react-aria/**`, a path this repo no longer has — read it as the quarantine's current location. Removing the override is a plugin bump away; the two repo-policy tests named in the §4 override list pin the exemption's scope and fail once that bump lands.
 
 ### 5.7 `no-restricted-imports` for `LocalizedStringDictionary` — `error`
 

@@ -46,7 +46,7 @@ export const llmsTxtFile = path.join(docsRoot, "public/llms.txt");
 export const sizeBudgetsFile = path.join(fuseRoot, "scripts/size-budgets.ts");
 
 /** Repo host base for **View source** links. */
-export const REPO_BLOB_BASE = "https://github.com/elmeragroup/ui/blob/main";
+export const REPO_BLOB_BASE = "https://github.com/elmeragroup/fuse/blob/main";
 
 export function repoRelative(absolutePath: string): string {
   return path.relative(repoRoot, absolutePath).split(path.sep).join("/");

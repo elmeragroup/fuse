@@ -234,7 +234,7 @@ describe("component page manifest", () => {
 
   it("links View source at the implementation on the repo host", () => {
     expect(page("button").sourceUrl).toBe(
-      "https://github.com/elmeragroup/ui/blob/main/packages/fuse/src/components/button/button.tsx"
+      "https://github.com/elmeragroup/fuse/blob/main/packages/fuse/src/components/button/button.tsx"
     );
     expect(page("button").markdownUrl).toBe("/components/button.md");
   });

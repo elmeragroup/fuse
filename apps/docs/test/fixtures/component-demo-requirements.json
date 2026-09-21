@@ -466,7 +466,6 @@
     "navigate.tsx",
     "locale.tsx",
     "Link.tsx",
-    "ui-providers-locale-switch.tsx",
-    "ElmeraGroupUiProvider.tsx"
+    "ui-providers-locale-switch.tsx"
   ]
 }
