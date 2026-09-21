@@ -79,7 +79,15 @@ type WorkspaceDevDependencies = {
   vitest: string;
 };
 
-type WorkspaceManifest = {
+/** npm registry metadata. Carried verbatim from the workspace manifest into the published one. */
+type PackageMetadata = {
+  description: string;
+  keywords: string[];
+  homepage: string;
+  repository: { type: string; url: string; directory: string };
+};
+
+type WorkspaceManifest = PackageMetadata & {
   name: string;
   version: string;
   private: boolean;
@@ -171,6 +179,33 @@ function requiredString(value: string | undefined, field: string): string {
   return value;
 }
 
+function requiredStringArray(value: string[] | undefined, field: string): string[] {
+  if (!Array.isArray(value) || value.length === 0) {
+    throw new Error(`package.json missing string array field ${field}`);
+  }
+  return value;
+}
+
+/**
+ * The npm metadata block, validated at the one boundary that reads it and spread into both
+ * manifests. Every field carries the same presence guarantee the other required fields do: an
+ * unvalidated pass-through is dropped silently by `JSON.stringify`, so a typo publishes a package
+ * with no repository link rather than failing the build.
+ */
+function packageMetadata(raw: Partial<PackageMetadata>): PackageMetadata {
+  return {
+    description: requiredString(raw.description, "description"),
+    keywords: requiredStringArray(raw.keywords, "keywords"),
+    homepage: requiredString(raw.homepage, "homepage"),
+    // Reading through the three fields also rejects a missing or string-valued `repository`.
+    repository: {
+      type: requiredString(raw.repository?.type, "repository.type"),
+      url: requiredString(raw.repository?.url, "repository.url"),
+      directory: requiredString(raw.repository?.directory, "repository.directory"),
+    },
+  };
+}
+
 function readWorkspaceManifest(path: string): WorkspaceManifest {
   const parsed: unknown = JSON.parse(readFileSync(path, "utf8"));
   if (parsed === null || Array.isArray(parsed)) {
@@ -182,6 +217,7 @@ function readWorkspaceManifest(path: string): WorkspaceManifest {
     name: requiredString(raw.name, "name"),
     version: requiredString(raw.version, "version"),
     private: raw.private,
+    ...packageMetadata(raw),
     license: requiredString(raw.license, "license"),
     type: requiredString(raw.type, "type"),
     sideEffects: raw.sideEffects,
@@ -223,7 +259,7 @@ export type ReleaseStamp = {
   readonly channel: "canary" | "stable";
 };
 
-type PublishManifest = {
+type PublishManifest = PackageMetadata & {
   name: string;
   version: string;
   license: string;
@@ -310,6 +346,7 @@ export function writePublishManifest(packageRoot: string, release?: ReleaseStamp
   const published: PublishManifest = {
     name: workspace.name,
     version: release?.version ?? workspace.version,
+    ...packageMetadata(workspace),
     license: workspace.license,
     type: "module",
     sideEffects: ["**/*.css"],

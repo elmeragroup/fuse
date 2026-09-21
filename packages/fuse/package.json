@@ -2,6 +2,25 @@
   "name": "@elmeragroup/fuse",
   "version": "0.0.0",
   "private": false,
+  "description": "Fuse — whitelabel React components for Elmera Group's energy brands. One package, twenty theme permutations, ESM-only.",
+  "keywords": [
+    "react",
+    "components",
+    "design-system",
+    "component-library",
+    "whitelabel",
+    "theming",
+    "tailwindcss",
+    "accessibility",
+    "elmera",
+    "fuse"
+  ],
+  "homepage": "https://github.com/elmeragroup/fuse#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/elmeragroup/fuse.git",
+    "directory": "packages/fuse"
+  },
   "license": "MIT",
   "type": "module",
   "sideEffects": [
