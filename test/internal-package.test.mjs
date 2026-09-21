@@ -69,14 +69,9 @@ describe("@elmeragroup/internal", () => {
 });
 
 describe("minimumReleaseAgeExclude", () => {
-  it("holds exactly the catalog-pinned permanent versions and the temporary @shadcn/lint version", () => {
-    // The dated comment on the @shadcn/lint entry names when it can be deleted; deletion is a
-    // maintenance step (tooling.md §2), so this check has no timestamp logic of its own. A
-    // malformed extra entry fails the equality rather than being filtered away.
+  it("holds exactly the catalog-pinned permanent versions", () => {
+    // A malformed extra entry fails the equality rather than being filtered away.
     const permanent = ["effect", "@elmeragroup/internal"].map((name) => `${name}@${catalogEntry(name)}`);
-    expect(workspace.minimumReleaseAgeExclude).toEqual([
-      ...permanent,
-      `@shadcn/lint@${catalogEntry("@shadcn/lint")}`,
-    ]);
+    expect(workspace.minimumReleaseAgeExclude).toEqual(permanent);
   });
 });

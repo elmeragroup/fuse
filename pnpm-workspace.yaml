@@ -69,7 +69,3 @@ minimumReleaseAgeExclude:
   - effect@4.0.0-rc.115
   # Canary line of the in-house tooling package; each bump names the exact version (tooling.md §2).
   - "@elmeragroup/internal@0.2.0-canary.3"
-  # Temporary: stable 0.1.1 (published 2026-09-17) ages past the guard on 2026-09-20T16:53Z; the
-  # maintenance bump after that date deletes this entry and the tooling.md §2 clause. No gate fails
-  # on the timestamp.
-  - "@shadcn/lint@0.1.1"
