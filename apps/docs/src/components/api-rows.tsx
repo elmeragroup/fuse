@@ -2,6 +2,8 @@ import type { ComponentProps, ReactElement, SVGProps } from "react";
 
 import { tv } from "tailwind-variants";
 
+import { NO_DEFAULT } from "../lib/api-row";
+
 const apiRows = tv({
   slots: {
     root: "grid grid-cols-[var(--api-cols)] overflow-clip rounded-xl border border-border [--api-cols:minmax(0,1fr)] [contain-intrinsic-height:auto_calc((var(--api-rows,8)_+_1)*(2.5rem_+_1px)_-_1px)] [content-visibility:auto] min-[34rem]:[--api-cols:11rem_minmax(0,1fr)_2.5rem] min-[52rem]:[--api-cols:5fr_7fr_4fr_2.5rem]",
@@ -71,7 +73,7 @@ export type ApiRowsDefinitionProps = ComponentProps<"dd">;
 export type ApiRowsChevronCellProps = ComponentProps<"span">;
 export type ApiRowsChevronProps = SVGProps<SVGSVGElement>;
 export type ApiRowsRequiredProps = ComponentProps<"sup">;
-export type ApiRowsNoDefaultProps = ComponentProps<"span">;
+export type ApiRowsNoDefaultProps = Omit<ComponentProps<"span">, "children">;
 
 function ApiRowsRoot({ className, ...props }: ApiRowsRootProps): ReactElement {
   return <div className={apiRowSlots.root({ className })} {...props} />;
@@ -152,8 +154,13 @@ function ApiRowsRequired({ className, ...props }: ApiRowsRequiredProps): ReactEl
   return <sup className={apiRowSlots.required({ className })} {...props} />;
 }
 
+/** The glyph a row shows in place of a default; it is the same mark wherever a default is absent. */
 function ApiRowsNoDefault({ className, ...props }: ApiRowsNoDefaultProps): ReactElement {
-  return <span className={apiRowSlots.noDefault({ className })} {...props} />;
+  return (
+    <span className={apiRowSlots.noDefault({ className })} {...props}>
+      {NO_DEFAULT}
+    </span>
+  );
 }
 
 ApiRowsRoot.displayName = "ApiRows.Root";

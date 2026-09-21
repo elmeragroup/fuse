@@ -18,7 +18,6 @@ import { useEffect, useState } from "react";
 import type { MouseEvent, ReactElement } from "react";
 
 import type { ApiPropView } from "../lib/api-row";
-import { NO_DEFAULT } from "../lib/api-row";
 import { ApiRows } from "./api-rows";
 import { DocsInlineCode } from "./docs-inline-code";
 import { InlineCode } from "./inline-code";
@@ -72,7 +71,7 @@ function ApiPropRow({ prop, open, onClose }: ApiPropRowProps): ReactElement {
         </ApiRows.Cell>
         <ApiRows.Cell column="type" code={prop.closedType} />
         <ApiRows.Cell column="default" code={prop.defaultValue}>
-          {prop.defaultValue === null ? <ApiRows.NoDefault>{NO_DEFAULT}</ApiRows.NoDefault> : null}
+          {prop.defaultValue === null ? <ApiRows.NoDefault /> : null}
         </ApiRows.Cell>
         <ApiRows.ChevronCell aria-hidden>
           <ApiRows.Chevron />
@@ -112,7 +111,7 @@ function ApiPropRow({ prop, open, onClose }: ApiPropRowProps): ReactElement {
             <ApiRows.Term>Default</ApiRows.Term>
             <ApiRows.Definition>
               {prop.defaultValue === null ? (
-                <ApiRows.NoDefault>{NO_DEFAULT}</ApiRows.NoDefault>
+                <ApiRows.NoDefault />
               ) : (
                 <DocsInlineCode>{prop.defaultValue}</DocsInlineCode>
               )}
