@@ -121,6 +121,29 @@ describe("Field", () => {
     expect(getComputedStyle(overridden).fontWeight).toBe("400");
   });
 
+  it("centers a checkbox row on a pointer cursor and leaves a plain label alone", () => {
+    renderThemed(
+      <>
+        <Field.Root>
+          <Field.Label>
+            <Checkbox />
+            Email
+          </Field.Label>
+        </Field.Root>
+        <Field.Root>
+          <Field.Label>Name</Field.Label>
+          <Field.Control render={<input />} />
+        </Field.Root>
+      </>
+    );
+    const checkboxRow = getComputedStyle(textNamed("Email"));
+    expect(checkboxRow.alignItems).toBe("center");
+    expect(checkboxRow.cursor).toBe("pointer");
+    const plainLabel = getComputedStyle(textNamed("Name"));
+    expect(plainLabel.alignItems).not.toBe("center");
+    expect(plainLabel.cursor).not.toBe("pointer");
+  });
+
   it("reflects orientation and legend variant as data attributes", () => {
     renderThemed(
       <Field.Group>
