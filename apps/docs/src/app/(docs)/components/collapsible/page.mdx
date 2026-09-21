@@ -15,6 +15,11 @@ export const metadata = componentMetadata("collapsible");
 
 <ComponentIntro slug="collapsible" />
 
+`Collapsible.Content` clips content that escapes the settled panel box, including popovers,
+absolutely positioned children, and focus rings past the edge. To disable both clipping and the
+height transition, set its `className` to
+`h-auto data-starting-style:h-auto data-ending-style:h-auto overflow-visible transition-none`.
+
 <Demo slug="collapsible" id="basic" title="Basic" file="collapsible-basic.tsx">
   <CollapsibleBasic />
 </Demo>

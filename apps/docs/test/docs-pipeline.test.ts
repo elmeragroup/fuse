@@ -284,3 +284,61 @@ describe("markdown endpoint rendering", () => {
     expect(renderComponentMarkdown(component)).toContain("Recipe axis.");
   });
 });
+
+describe("Collapsible settle override (collapsible/page.mdx)", () => {
+  // The page hands readers the exact utilities that settle `Collapsible.Content`. That sentence
+  // is only true while each one cancels what the library actually applies, and the library side
+  // is spread over two files — `panelHeightTransition` and the height variable `Content`
+  // appends. So read all three strings from source rather than restating any of them here: a
+  // change to either library file fails this test instead of quietly rotting the prose.
+  const readOne = (file: string, pattern: RegExp): string => {
+    const match = pattern.exec(readFileSync(join(repoRoot, file), "utf8"));
+    if (match?.[1] === undefined) {
+      throw new Error(`No match for ${String(pattern)} in ${file}`);
+    }
+    return match[1];
+  };
+
+  const applied = [
+    readOne(
+      "packages/ui/src/styles/panel-height.ts",
+      /export const panelHeightTransition = cn\(\s*"([^"]+)"/
+    ),
+    readOne(
+      "packages/ui/src/components/collapsible/collapsible.tsx",
+      /mergeClassName\(className, panelHeightTransition, "([^"]+)"\)/
+    ),
+  ].join(" ");
+
+  const documented = readOne(
+    "apps/docs/src/app/(docs)/components/collapsible/page.mdx",
+    /set its `className` to\s+`([^`]+)`/
+  );
+
+  // Clipping and the height animation are the two things the page promises to switch off;
+  // `ease-out` and `duration-150` need no counterpart once `transition` is cancelled.
+  const SETTLED = new Set(["overflow", "transition", "h"]);
+
+  /** Index utilities by the variant and property each one sets, keeping only the settled ones. */
+  const byTarget = (classes: string): Map<string, string> => {
+    const targets = new Map<string, string>();
+    for (const utility of classes.split(/\s+/).filter(Boolean)) {
+      const colon = utility.lastIndexOf(":");
+      const variant = colon === -1 ? "" : utility.slice(0, colon);
+      const base = utility.slice(colon + 1);
+      const property = base.slice(0, base.indexOf("-"));
+      if (SETTLED.has(property)) {
+        targets.set(`${variant}|${property}`, base);
+      }
+    }
+    return targets;
+  };
+
+  it("cancels every clipping and height utility Collapsible.Content applies", () => {
+    const overrides = byTarget(documented);
+    for (const [target, base] of byTarget(applied)) {
+      expect(overrides.get(target), `documented override is missing ${target}`).toBeDefined();
+      expect(overrides.get(target)).not.toBe(base);
+    }
+  });
+});
