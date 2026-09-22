@@ -105,10 +105,9 @@ export type FieldFrameProps = {
  * `heading="legend"` is the fieldset skeleton CheckboxGroup and
  * RadioGroup used to rebuild beside this module.
  *
- * It is not exported through `package.json#exports` and carries no client directive: it
- * owns no state, and its consumers are client modules already, so a directive here
- * would only widen the client graph (performance.md §3; `source-contracts.test.ts` pins
- * the classification).
+ * It is not exported through `package.json#exports` and has no client directive. It owns
+ * no state and its consumers are already client modules, so a directive would only widen
+ * the client graph. `source-contracts.test.ts` keeps it directive-free.
  *
  * Keep exactly one `Field.Root` per composite so a nested root cannot break label wiring.
  */

@@ -5,11 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { parseStyleRules } from "./css-rules";
 import { generateThemesCss } from "./generate-css";
-import {
-  DEMO_STAGE_COMFORTABLE_SELECTOR,
-  LIBRARY_COMFORTABLE_SELECTOR,
-  generateDemoStageComfortableCss,
-} from "./generate-demo-stage-css";
+import { LIBRARY_COMFORTABLE_SELECTOR, generateDemoStageComfortableCss } from "./generate-demo-stage-css";
 import { EXTERNAL_RESET_KEYS, TOKEN_NAMES } from "./tokens/contract";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -118,24 +114,20 @@ describe("density CSS", () => {
   });
 });
 
-function controlPairs(css: string, selector: string): string[] {
-  const atTheme = css.indexOf("@theme");
-  const source = atTheme === -1 ? css : css.slice(0, atTheme);
-  const rule = parseStyleRules(source).find((entry) => entry.selector === selector);
-  if (rule === undefined) {
-    throw new Error(`missing ${selector}`);
-  }
-  return rule.declarations
-    .filter((declaration) => declaration.name.startsWith("control-"))
-    .map((declaration) => `--${declaration.name}:${declaration.value}`);
-}
-
 describe("DemoStage comfortable density artifact", () => {
   it("re-scopes the library comfortable block onto [data-demo-stage]", () => {
-    const derived = generateDemoStageComfortableCss(fuseCss);
-    expect(controlPairs(derived, DEMO_STAGE_COMFORTABLE_SELECTOR)).toEqual(
-      controlPairs(fuseCss, LIBRARY_COMFORTABLE_SELECTOR)
+    const derived = generateDemoStageComfortableCss(
+      ':root[data-density="comfortable"] { --control-h-md: 2.75rem; --control-text: 1.125rem; }'
     );
+    expect(parseStyleRules(derived)).toEqual([
+      {
+        selector: '[data-demo-stage][data-density="comfortable"]',
+        declarations: [
+          { name: "control-h-md", value: "2.75rem" },
+          { name: "control-text", value: "1.125rem" },
+        ],
+      },
+    ]);
   });
 
   it("throws when the library comfortable block is missing", () => {
@@ -144,10 +136,13 @@ describe("DemoStage comfortable density artifact", () => {
     );
   });
 
-  it("is emitted next to themes.css", () => {
+  it("is emitted next to themes.css with every density variable", () => {
     // Guaranteed by the root `test` task's direct `@elmeragroup/fuse#build` dependency.
     expect(existsSync(demoStageCssPath), demoStageCssPath).toBe(true);
-    const emitted = readFileSync(demoStageCssPath, "utf8");
-    expect(emitted).toBe(generateDemoStageComfortableCss(fuseCss));
+    const rules = parseStyleRules(readFileSync(demoStageCssPath, "utf8"));
+    expect(rules.map((rule) => rule.selector)).toEqual(['[data-demo-stage][data-density="comfortable"]']);
+    const declarations = rules[0]?.declarations ?? [];
+    expect(declarations.map((declaration) => `--${declaration.name}`)).toEqual([...DENSITY_VARIABLE_NAMES]);
+    expect(declarations.find((declaration) => declaration.name === "control-h-md")?.value).toBe("2.75rem");
   });
 });

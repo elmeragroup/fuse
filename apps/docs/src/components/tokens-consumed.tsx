@@ -10,7 +10,7 @@ export type TokensConsumedProps = {
 };
 
 /**
- * The generated Tokens-consumed section (docs-site.md §3.4): every custom property the
+ * The generated Tokens-consumed section: every custom property the
  * component's recipe reads, collected statically at docs build. Colour swatches render
  * inside a `ThemeScope` on the preview theme, so a swatch shows the value the demo
  * stages above are actually painting with.

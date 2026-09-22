@@ -58,7 +58,7 @@ jobs:
         if: inputs.record_tag == ''
         run: pnpm --filter @elmeragroup/fuse exec playwright install --with-deps chromium
 
-      # GH_TOKEN authenticates the engine's GitHub API calls; NPM_TOKEN remains until the OIDC pivot (release.md §6).
+      # GH_TOKEN authenticates the engine's GitHub API calls; NPM_TOKEN remains until the OIDC pivot.
       - name: Publish checked commit or retry recorded archive
         env:
           GH_TOKEN: ${{ github.token }}

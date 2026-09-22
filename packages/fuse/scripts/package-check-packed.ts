@@ -85,7 +85,7 @@ type PackedManifestRead = {
  * object, and nothing but the runtime tag separates them. Asked once, honestly, with a
  * named disable — the `Object.prototype.toString.call(…) === "[object String]"` and
  * `Object(target) === target` spellings that used to sit here evaded the rule rather
- * than answering it (spec 08, S21). This is not the shared `isTextNode`: that helper
+ * than answering it. This is not the shared `isTextNode`: that helper
  * narrows a consumer-supplied `ReactNode`, and an export condition is not one.
  *
  * One guard, not two: the condition arm is this predicate negated, which TypeScript

@@ -4,8 +4,8 @@ import type { ReactNode, RefObject } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { render } from "../../test/browser-render";
+import { DEFAULT_BOOTSTRAP_MANIFEST } from "../../test/color-scheme-contract";
 import {
-  defaultManifest,
   fkasPrivate,
   guenPrivate,
   readDocumentBrand,
@@ -20,7 +20,7 @@ import { ThemeScopeContainerContext, useResolvedPortalContainer } from "./theme-
 import type { ThemeInput } from "./tokens/themes";
 
 beforeEach(() => {
-  writeManifest(defaultManifest);
+  writeManifest(DEFAULT_BOOTSTRAP_MANIFEST);
 });
 
 afterEach(() => {
@@ -235,7 +235,7 @@ describe("ThemeProvider / ThemeScope", () => {
 
   it("throws the validator error for an illegal nested theme without a hooks-count mismatch", () => {
     stampDocumentBrand(fkasPrivate);
-    // @ts-expect-error untyped CMS/env input is the §7.6 runtime boundary
+    // @ts-expect-error untyped CMS/env input is the runtime boundary
     const illegalPinned: ThemeInput = { variant: "internal", brand: "fkab", segment: "private" };
     const { host } = render(
       <ThemeProvider theme={fkasPrivate}>
@@ -254,7 +254,7 @@ describe("ThemeProvider / ThemeScope", () => {
 
   it("throws the validator error for an unknown nested brand without a hooks-count mismatch", () => {
     stampDocumentBrand(fkasPrivate);
-    // @ts-expect-error untyped CMS/env input is the §7.6 runtime boundary
+    // @ts-expect-error untyped CMS/env input is the runtime boundary
     const unknownBrand: ThemeInput = { variant: "internal", brand: "zz", segment: "private" };
     const { host } = render(
       <ThemeProvider theme={fkasPrivate}>
@@ -363,7 +363,7 @@ describe("ThemeProvider / ThemeScope", () => {
   });
 
   it("throws the validator error — not a hooks-count mismatch — after a valid-then-illegal update", () => {
-    // @ts-expect-error untyped CMS/env input is the §7.6 runtime boundary
+    // @ts-expect-error untyped CMS/env input is the runtime boundary
     const untyped: ThemeInput = null;
     const trees = [
       (theme: ThemeInput) => (

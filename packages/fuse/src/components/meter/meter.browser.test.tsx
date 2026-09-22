@@ -46,14 +46,13 @@ describe("Meter", () => {
   });
 
   it("renders the formatted Meter.Value by default and lets valueLabel replace it", () => {
-    const formatted = new Intl.NumberFormat("en-US", { style: "percent" }).format(0.42);
     const { unmount: unmountDefault } = renderMeter(<Meter label="Used" value={42} />);
-    expect(slot("meter-value").textContent).toContain(formatted);
+    expect(slot("meter-value").textContent).toContain("42%");
     unmountDefault();
 
     renderMeter(<Meter label="Custom" value={82} maxValue={120} valueLabel="82 of 120 GB" />);
     expect(slot("meter-value").textContent).toContain("82 of 120 GB");
-    expect(slot("meter-value").textContent).not.toContain(formatted);
+    expect(slot("meter-value").textContent).not.toContain("42%");
   });
 
   it("emits all five data-slots", () => {

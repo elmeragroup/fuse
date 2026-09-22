@@ -1,7 +1,7 @@
 /**
  * Inline `--*` custom properties are typed once here instead of at each call site.
  *
- * See `docs/spec/tooling.md` §4 for the lint rationale behind this augmentation.
+ * Call sites can use literal custom properties without casts or lint suppressions.
  *
  * The empty export marks this file as a module: in a script, `declare module "csstype"` would
  * shadow the library's own types instead of augmenting them.

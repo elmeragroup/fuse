@@ -35,9 +35,10 @@ const VARIANT_SLOTS = {
 
 describe("alertVariants", () => {
   it("defaults to the default variant and keeps slot bases", () => {
-    expect(alertVariants().base()).toBe(alertVariants({ variant: "default" }).base());
     const slots = alertVariants();
     expect(slots.base()).toContain("relative");
+    expect(slots.base()).toContain("bg-background");
+    expect(slots.base()).toContain("text-foreground");
     expect(slots.icon()).toContain("block");
     expect(slots.icon()).toContain("size-5");
     expect(slots.icon()).toContain("shrink-0");

@@ -67,5 +67,5 @@ minimumReleaseAge: 4320
 
 minimumReleaseAgeExclude:
   - effect@4.0.0-rc.115
-  # Canary line of the in-house tooling package; each bump names the exact version (tooling.md §2).
+  # Canary line of the in-house tooling package; each bump names the exact version.
   - "@elmeragroup/internal@0.2.0-canary.3"

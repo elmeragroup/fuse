@@ -3,6 +3,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
+import { resolveComponentPaths } from "../scripts/lib/components.ts";
 import { readRscStatus } from "../scripts/lib/docs-inspection.ts";
 import { renderComponentMarkdown } from "../scripts/lib/markdown.ts";
 import { parseComponentPage } from "../scripts/lib/page-source.ts";
@@ -11,7 +12,6 @@ import { collectRecipeSources } from "../scripts/lib/sources.ts";
 import { extractTokens, readColorTokenMap } from "../scripts/lib/tokens.ts";
 import type { DocsComponent } from "../src/lib/docs-model";
 import { STATIC_PAGES } from "../src/lib/pages";
-import { slugifyHeading } from "../src/lib/slug";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const docsRoot = join(here, "..");
@@ -48,9 +48,7 @@ describe("docs generation ownership", () => {
 
 describe("authored page.mdx as generation input", () => {
   function page(...body: readonly string[]): string {
-    return ["---", "title: Button", "lede: >", "  First line", "  second line", "---", "", ...body].join(
-      "\n"
-    );
+    return ["---", "lede: >", "  First line", "  second line", "---", "", ...body].join("\n");
   }
 
   it("folds a `>` lede and reads the demos the page renders, in order", () => {
@@ -67,7 +65,6 @@ describe("authored page.mdx as generation input", () => {
       "button",
       "button/page.mdx"
     );
-    expect(parsed.title).toBe("Button");
     expect(parsed.lede).toBe("First line second line");
     expect(parsed.demos).toEqual([
       { id: "variants", title: "Variants", file: "button-variant-matrix.tsx" },
@@ -76,13 +73,19 @@ describe("authored page.mdx as generation input", () => {
   });
 
   it("rejects an unknown frontmatter key rather than ignoring it", () => {
-    expect(() => parseComponentPage("---\ntitle: X\nlede: Y\nnope: 1\n---\n", "x", "x.mdx")).toThrow(
+    // `title` is the one that used to be legal: the page title is derived from the slug
+    // so a page that still declares one fails instead of carrying a
+    // second name. An arbitrary key is rejected by the same branch, named in the message.
+    expect(() => parseComponentPage("---\ntitle: Button\nlede: Y\n---\n", "button", "x.mdx")).toThrow(
       /unknown frontmatter key/
+    );
+    expect(() => parseComponentPage("---\nlede: Y\nnope: 1\n---\n", "button", "x.mdx")).toThrow(
+      /unknown frontmatter key "nope"/
     );
   });
 
-  it("requires a title and a lede", () => {
-    expect(() => parseComponentPage("---\ntitle: X\n---\n", "x", "x.mdx")).toThrow(/"lede" is required/);
+  it("requires a lede", () => {
+    expect(() => parseComponentPage("---\nlede:\n---\n", "x", "x.mdx")).toThrow(/"lede" is required/);
   });
 
   it("refuses a <Demo> that is missing an attribute, or names another page's slug", () => {
@@ -110,14 +113,24 @@ describe("authored page.mdx as generation input", () => {
       "button/page.mdx"
     );
     expect(parsed.headings).toEqual([
-      { id: slugifyHeading("Composition limits"), title: "Composition limits", depth: 2 },
+      { id: "composition-limits", title: "Composition limits", depth: 2 },
       { id: "details", title: "Details", depth: 3 },
     ]);
     expect(parsed.demos).toEqual([]);
   });
 });
 
-describe("nav destination verification (docs-site.md §3.3)", () => {
+describe("component page titles", () => {
+  it("spells the slug as words a reader says, never the exported identifier", () => {
+    expect(resolveComponentPaths("button").title).toBe("Button");
+    expect(resolveComponentPaths("alert-dialog").title).toBe("Alert Dialog");
+    expect(resolveComponentPaths("date-range-picker").title).toBe("Date Range Picker");
+    // The fixed-casing part: the identifier is `UiProviders`, the label is `UI Providers`.
+    expect(resolveComponentPaths("ui-providers").title).toBe("UI Providers");
+  });
+});
+
+describe("nav destination verification", () => {
   it("passes for the authored nav as it stands: every entry has a route module", () => {
     expect(missingNavRoutes()).toEqual([]);
   });
@@ -221,7 +234,6 @@ describe("markdown endpoint rendering", () => {
     title: "Widget",
     lede: "A widget.",
     entry: "@elmeragroup/fuse/widget",
-    exportName: "Widget",
     sourcePath: "packages/fuse/src/components/widget/widget.tsx",
     sourceUrl: "https://example.invalid/widget.tsx",
     markdownUrl: "/components/widget.md",
@@ -270,7 +282,7 @@ describe("markdown endpoint rendering", () => {
   it("carries the demo source, RSC per part on the heading, and the tokens list", () => {
     const markdown = renderComponentMarkdown(component);
     expect(markdown).toContain("export function WidgetBasic() {}");
-    // RSC is a per-part fact (docs-site.md §8): a badge on the part heading, not a column.
+    // RSC is a per-part fact: a badge on the part heading, not a column.
     expect(markdown).toContain("### Widget · RSC: client");
     expect(markdown).toContain("| Prop | Type | Default | Required | Description |");
     expect(markdown).not.toContain("| RSC |");

@@ -50,7 +50,7 @@ function highlight(source: string): string {
 }
 
 export type DocsCodeBlockProps = Omit<ComponentProps<"pre">, "children"> & {
-  /** Raw source. Highlighted here, by the one highlighter the docs use (docs-site.md §8). */
+  /** Raw source. Highlighted here, by the one highlighter the docs use. */
   source: string;
   /** MDX fence, demo-frame source region, or the API panel's full type signature. */
   variant?: "standalone" | "embedded" | "signature";

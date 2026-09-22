@@ -2,7 +2,7 @@
  * Shared shapes for the docs generation pipeline.
  *
  * Everything here is produced at docs build time from library sources; nothing in
- * this model is ever hand-authored (docs-site.md §3.4, §6, §8).
+ * this model is ever hand-authored.
  */
 
 import type {
@@ -25,7 +25,7 @@ import type {
  * writer (`scripts/lib/api-artifact.ts`), the drift check and the render-time reader
  * (`api-source.ts`) share one shape with the package that produces it. In brief:
  *
- * - `RscStatus` — RSC classification of the module that declares a part (performance.md §3).
+ * - `RscStatus` — RSC classification of the module that declares a part.
  * - `ApiPropOrigin` — `declared` (written in `packages/fuse`, so JSDoc-gated), `recipe-axis`
  *   (synthesised by `VariantProps` over a `tv` recipe; the printed type *is* the
  *   documentation) or `{ packageName }` (inherited from that dependency's declaration).
@@ -45,7 +45,7 @@ export type { ApiPart, ApiProp, ApiPropOrigin, ComponentApiArtifact, RscStatus }
 export const BASE_UI_PACKAGE_NAME = "@base-ui/react";
 
 /** The command that rewrites every committed `api.json` — named by the artifact's own banner
- * and by every failure that blames a stale or missing one (docs-site.md §8). */
+ * and by every failure that blames a stale or missing one. */
 export const API_REGEN_COMMAND = "pnpm --filter docs generate";
 
 /** A CSS custom property the component's recipe reads. */
@@ -67,7 +67,7 @@ export type DemoRef = {
 
 /**
  * One authored `.tsx` demo as the *generated markdown* sees it: the endpoint and `llms.txt`
- * embed its source verbatim (§9), so the generation pass reads the file the page imports.
+ * embed its source verbatim, so the generation pass reads the file the page imports.
  *
  * This never reaches the browser — it exists only inside the generation pass and the
  * markdown it writes.
@@ -100,32 +100,30 @@ export type ContentHeading = {
 };
 
 /**
- * One component page in the site manifest the browser gets (docs-site.md §3.3, §3.4).
+ * One component page in the site manifest the browser gets.
  *
  * Deliberately *not* the page's content: the prose, the demo frames and the API reference
  * all come from the authored `page.mdx`, the demo files and the committed `api.json`. What
- * is left is the metadata no single artifact owns — the page's identity (title, lede, import
- * line, source links), its TOC skeleton, and the tokens its recipe reads — read by the nav,
+ * is left is the metadata no single artifact owns — the page's identity (title, lede,
+ * source links), its TOC skeleton, and the tokens its recipe reads — read by the nav,
  * the intro, the QuickNav and the page's `metadata` export.
  *
+ * The import specifier and the page's RSC status are absent on purpose: the generation pass
+ * is their only reader, so they live on `DocsComponent` and never reach the browser.
+ *
  * `partNames` is TOC material, not API data: an anchor per part heading the reference
- * renders. The reference itself never reads this — it reads `api.json` (§8).
+ * renders. The reference itself never reads this — it reads `api.json`.
  */
 export type ComponentPageEntry = {
   slug: string;
   title: string;
   lede: string;
-  /** Public import specifier, e.g. `@elmeragroup/fuse/button`. */
-  entry: string;
-  /** The identifier the entry facade exports, e.g. `Button` or `Dialog`. */
-  exportName: string;
   /** Repo-relative path of the component implementation, for **View source**. */
   sourcePath: string;
   /** Absolute URL of the component implementation on the repo host. */
   sourceUrl: string;
-  /** Site-relative URL of the generated markdown endpoint (docs-site.md §9). */
+  /** Site-relative URL of the generated markdown endpoint. */
   markdownUrl: string;
-  rsc: RscStatus;
   headings: readonly ContentHeading[];
   demos: readonly DemoRef[];
   /** Names of the API parts the reference renders, in order — one TOC anchor each. */
@@ -134,14 +132,22 @@ export type ComponentPageEntry = {
 };
 
 /**
- * One component as the *generation pass* holds it: the manifest entry plus the two things
- * only the generated markdown needs — every demo's verbatim source and the full API model.
+ * One component as the *generation pass* holds it: the manifest entry plus the facts only
+ * the generated markdown and the search index need — the import specifier, the page's RSC
+ * status, every demo's verbatim source and the full API model.
  *
- * Neither of those is shipped to the browser: the manifest carries the page's metadata, the
+ * None of those is shipped to the browser: the manifest carries the page's metadata, the
  * page reads its demos and its `api.json` at render time. This type exists for the length of
  * one generation run, feeding the markdown endpoints, `llms.txt` and the search index.
  */
 export type DocsComponent = Omit<ComponentPageEntry, "demos" | "partNames"> & {
+  /** Public import specifier, e.g. `@elmeragroup/fuse/button`. */
+  entry: string;
+  /**
+   * The page's RSC status, read from its implementation module's own directive
+   * and published by the markdown endpoint.
+   */
+  rsc: RscStatus;
   demos: readonly DocsDemo[];
   parts: readonly ApiPart[];
 };
@@ -152,12 +158,9 @@ export function toPageEntry(component: DocsComponent): ComponentPageEntry {
     slug: component.slug,
     title: component.title,
     lede: component.lede,
-    entry: component.entry,
-    exportName: component.exportName,
     sourcePath: component.sourcePath,
     sourceUrl: component.sourceUrl,
     markdownUrl: component.markdownUrl,
-    rsc: component.rsc,
     headings: component.headings,
     demos: component.demos.map((demo) => ({ id: demo.id, title: demo.title })),
     partNames: component.parts.map((part) => part.name),
@@ -169,7 +172,7 @@ export function toPageEntry(component: DocsComponent): ComponentPageEntry {
 export type SearchGroup = "Overview" | "Handbook" | "Components";
 
 /**
- * One destination in the ⌘K palette index (docs-site.md §3.2).
+ * One destination in the ⌘K palette index.
  *
  * Emitted by the docs generation pass from the two inventories the SideNav and `llms.txt`
  * already share — the authored page manifest and the globbed component pages — so the
@@ -202,7 +205,7 @@ export type ThemeCatalogEntry = {
   tokens: ThemeCatalogTokenMap;
 };
 
-/** Static `GET /api/themes` payload (docs-site.md §9). */
+/** Static `GET /api/themes` payload. */
 export type ThemeCatalog = {
   legalThemeCount: number;
   themes: readonly ThemeCatalogEntry[];
@@ -232,7 +235,7 @@ export type FigmaFontToken = {
   $value: string;
 };
 
-/** One DTCG file = one Figma variable mode (docs-site.md §9.2). */
+/** One DTCG file = one Figma variable mode. */
 export type FigmaThemeDocument = {
   color: {
     $type: "color";
@@ -263,7 +266,7 @@ export type BundleEntryKind = "js" | "css";
 
 /**
  * One published entry's measured min+gzip size against the ceiling `size-limit`
- * enforces (performance.md §2). Both numbers come from the library's budget module.
+ * enforces. Both numbers come from the library's budget module.
  */
 export type BundleSize = {
   /** Budget name, e.g. `button`, `icons/Check`, `styles.css`, or `.` for the root barrel. */

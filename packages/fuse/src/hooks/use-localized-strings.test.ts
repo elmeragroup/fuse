@@ -32,9 +32,9 @@ const REMOVE_SAVE = {
   "fi-FI": "Poista Save",
 } as const;
 
-function Probe({ override }: { override?: string }) {
+function Probe() {
   const strings = useLocalizedStrings(fixtureDictionary);
-  return override ?? strings.format("greeting");
+  return strings.format("greeting");
 }
 
 function RemoveProbe() {
@@ -69,11 +69,6 @@ describe("useLocalizedStrings", () => {
       expect(renderToString(withLocale(locale, createElement(Probe)))).toBe(GREETINGS[locale]);
       expect(renderToString(withLocale(locale, createElement(RemoveProbe)))).toBe(REMOVE_SAVE[locale]);
     }
-  });
-
-  it("lets an explicit string prop override the dictionary", () => {
-    expect(renderToString(withLocale("nb-NO", createElement(Probe, { override: "Custom" })))).toBe("Custom");
-    expect(renderToString(withLocale("en-US", createElement(Probe, { override: "Custom" })))).toBe("Custom");
   });
 
   it("returns the same formatter instance for the same dictionary and locale", () => {

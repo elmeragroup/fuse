@@ -5,8 +5,8 @@ import { describe, expect, it } from "vitest";
 
 import { Input } from "../components/input/input";
 import { Textarea } from "../components/textarea/textarea";
-import { fieldBox } from "./field-box";
-import { focusRing } from "./utils";
+import { fieldBox, fieldBoxChromeClass } from "./field-box";
+import { selfFocusRingClass } from "./utils";
 
 function tokens(classes: string): string[] {
   return classes.split(/\s+/).filter(Boolean);
@@ -19,6 +19,20 @@ function renderedClasses(element: ReturnType<typeof createElement>): string[] {
   }
   return tokens(match[1]);
 }
+
+describe("fieldBoxChromeClass", () => {
+  it("is the one elevation, radius, border, fill and transition every field box shares", () => {
+    expect(tokens(fieldBoxChromeClass)).toEqual([
+      "shadow-xs",
+      "box-border",
+      "rounded-md",
+      "border",
+      "border-input",
+      "bg-card",
+      "transition-[color,border-color,box-shadow]",
+    ]);
+  });
+});
 
 describe("fieldBox recipe", () => {
   it("owns shared chrome, one transition list, and invalid styling", () => {
@@ -42,14 +56,14 @@ describe("fieldBox recipe", () => {
       expect(classes).toContain(token);
     }
     expect(classes).not.toContain("transition-[color,box-shadow,border-color]");
-    for (const token of tokens(focusRing({ target: "self" }).root())) {
+    // Oracle: the shared focus recipe, which utils.test.ts pins by hand.
+    for (const token of selfFocusRingClass.split(" ")) {
       expect(classes).toContain(token);
     }
   });
 
   it("pins the control rung by default and swaps to content sizing on the box axis", () => {
     const control = tokens(fieldBox());
-    expect(control).toEqual(tokens(fieldBox({ box: "control" })));
     expect(control).toContain("h-(--control-h-md)");
     expect(control).not.toContain("min-h-16");
     expect(control).not.toContain("py-2");

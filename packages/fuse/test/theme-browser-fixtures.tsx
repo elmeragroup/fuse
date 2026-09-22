@@ -1,6 +1,5 @@
 import { expect, vi } from "vitest";
 
-import { resolveColorSchemeOptions } from "../src/theme/color-scheme";
 import type { ColorScheme, ColorSchemeBootstrapManifest } from "../src/theme/color-scheme";
 import { useTheme } from "../src/theme/theme-provider";
 import type { ThemeInput } from "../src/theme/tokens/themes";
@@ -8,8 +7,6 @@ import { useColorScheme } from "../src/theme/use-color-scheme";
 import { stampTheme } from "./theme-fixtures";
 
 export { fkasPrivate, guenPrivate, tkasCompany } from "./theme-fixtures";
-
-export const defaultManifest = resolveColorSchemeOptions();
 
 export function writeManifest(manifest: ColorSchemeBootstrapManifest | undefined) {
   if (manifest === undefined) {

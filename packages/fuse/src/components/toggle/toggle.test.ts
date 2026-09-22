@@ -1,10 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
-import { focusRing } from "../../styles/utils";
+import { selfFocusRingClass } from "../../styles/utils";
 import { toggleVariants } from "./toggle-variants";
-
-const focusSelf = focusRing({ target: "self" }).root();
 
 const VARIANTS = ["default", "outline"] as const;
 const SIZES = ["xs", "sm", "default", "lg"] as const;
@@ -18,7 +16,6 @@ const SIZE_TO_RUNG = {
 describe("toggleVariants", () => {
   it("defaults to variant=default and size=default", () => {
     const resolved = toggleVariants();
-    expect(resolved).toBe(toggleVariants({ variant: "default", size: "default" }));
     expect(resolved).toContain("bg-transparent");
     expect(resolved).toContain("h-(--control-h-md)");
     expect(resolved).toContain("gap-(--control-gap-md)");
@@ -91,7 +88,8 @@ describe("toggleVariants", () => {
     const classes = toggleVariants();
     expect(classes).toContain("aria-pressed:bg-muted");
     expect(classes).toContain("data-pressed:bg-muted");
-    for (const token of focusSelf.split(/\s+/).filter(Boolean)) {
+    // Oracle: the shared focus recipe, which utils.test.ts pins by hand.
+    for (const token of selfFocusRingClass.split(" ")) {
       expect(classes).toContain(token);
     }
     expect(classes).toContain("aria-invalid:border-error");
@@ -101,8 +99,6 @@ describe("toggleVariants", () => {
   });
 
   it("covers every public variant and size value without raw palette, dark, or density variants", () => {
-    expect(VARIANTS).toHaveLength(2);
-    expect(SIZES).toHaveLength(4);
     for (const variant of VARIANTS) {
       const resolved = toggleVariants({ variant });
       expect(resolved.length).toBeGreaterThan(0);

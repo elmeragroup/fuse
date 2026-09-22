@@ -9,7 +9,7 @@ import { DocsInlineCode } from "./docs-inline-code";
  * The element overrides `@next/mdx` applies to every authored `page.mdx`
  * (`mdx-components.tsx`). They exist for two reasons only: heading anchors, so the
  * QuickNav TOC and the rendered page agree on ids without a rehype plugin, and fenced code
- * rendered through `DocsCodeBlock` — the one highlighted code renderer (docs-site.md §8).
+ * rendered through `DocsCodeBlock` — the one highlighted code renderer.
  */
 
 const HEADING_LEVELS = [2, 3, 4] as const;

@@ -28,11 +28,11 @@ const demoStage = tv({
 const { stage, meta, slug: slugClass, density: densityClass, sourcePath: sourcePathClass } = demoStage();
 
 /**
- * The two theme-dependent regions of a §3.5 frame: the theme-tinted stage and the
+ * The two theme-dependent regions of a frame: the theme-tinted stage and the
  * meta row naming the coordinate it renders under.
  *
  * This is the client half of the frame — the only part that consumes the docs-local
- * preview context (§4), so driving the header picker re-renders the stage and its label
+ * preview context, so driving the header picker re-renders the stage and its label
  * while the frame shell and the source region stay server-rendered. Density is the
  * *deployment default* for the previewed variant, stamped on the stage so the
  * comfortable re-scope in `globals.css` can take effect inside the sandbox.

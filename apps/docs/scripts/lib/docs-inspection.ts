@@ -24,7 +24,7 @@ import type { BundleSizeReport } from "./sizes.ts";
 import { assertDocsFuseCssExports } from "./workspace-css.ts";
 
 /**
- * RSC classification of a module from its own leading directive (performance.md §3).
+ * RSC classification of a module from its own leading directive.
  *
  * Only a directive in the module prologue counts: comments and other directives
  * (`"use strict"`) may precede it, but the first statement ends the prologue, so a
@@ -45,8 +45,6 @@ export function readRscStatus(source: string): RscStatus {
 export type DocsApiComponent = {
   readonly slug: string;
   readonly entryFile: string;
-  /** Primary page export, used for the page's source and display identity. */
-  readonly exportName: string;
   /** Exact public exports the API generator walks. */
   readonly exportNames: readonly string[];
   readonly sourceFile: string;
@@ -91,7 +89,6 @@ export function docsApiInventory(
     return {
       slug,
       entryFile: paths.entryFile,
-      exportName: paths.exportName,
       exportNames: paths.apiExportNames,
       sourceFile: paths.sourceFile,
       apiFile: paths.apiFile,

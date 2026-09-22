@@ -1,9 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { focusRing } from "../../styles/utils";
+import { selfFocusRingClass } from "../../styles/utils";
 import { buttonVariants } from "./button-variants";
-
-const focusSelf = focusRing({ target: "self" }).root();
 
 const VARIANTS = ["default", "outline", "secondary", "ghost", "destructive", "success", "link"] as const;
 const SIZES = ["default", "xs", "sm", "lg", "icon", "icon-xs", "icon-sm", "icon-inline", "icon-lg"] as const;
@@ -74,7 +72,8 @@ describe("buttonVariants", () => {
 
   it("composes the shared self focus ring and keeps invalid rings on error tokens", () => {
     const classes = buttonVariants();
-    for (const token of focusSelf.split(/\s+/).filter(Boolean)) {
+    // Oracle: the shared focus recipe, which utils.test.ts pins by hand.
+    for (const token of selfFocusRingClass.split(" ")) {
       expect(classes).toContain(token);
     }
     expect(classes).toContain("aria-invalid:border-error");
@@ -83,8 +82,6 @@ describe("buttonVariants", () => {
   });
 
   it("covers every public variant and size value", () => {
-    expect(VARIANTS).toHaveLength(7);
-    expect(SIZES).toHaveLength(9);
     for (const variant of VARIANTS) {
       expect(buttonVariants({ variant }).length).toBeGreaterThan(0);
     }

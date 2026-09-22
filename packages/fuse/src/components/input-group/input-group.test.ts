@@ -11,7 +11,6 @@ function tokens(classes: string): string[] {
 
 describe("inputGroupAddonVariants", () => {
   it("defaults to the inline-start rail", () => {
-    expect(inputGroupAddonVariants()).toBe(inputGroupAddonVariants({ align: "inline-start" }));
     expect(inputGroupAddonVariants()).toContain("order-first");
     expect(inputGroupAddonVariants()).toContain("pl-2");
   });
@@ -36,8 +35,7 @@ describe("inputGroupAddonVariants", () => {
 
 describe("inputGroupButtonVariants", () => {
   it("defaults to the compact xs addon size", () => {
-    expect(inputGroupButtonVariants()).toBe(inputGroupButtonVariants({ size: "xs" }));
-    expect(tokens(inputGroupButtonVariants({ size: "xs" }))).toContain("h-6");
+    expect(tokens(inputGroupButtonVariants())).toContain("h-6");
   });
 
   it("lets Button's own sm metrics pass through untouched", () => {

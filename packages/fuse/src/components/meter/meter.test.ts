@@ -102,7 +102,7 @@ describe("meter dictionary", () => {
     }
   });
 
-  it("carries no key beyond the two rows accessibility.md §4.1 assigns to Meter", () => {
+  it("carries no key beyond the two rows owned by Meter", () => {
     for (const locale of SUPPORTED_LOCALES) {
       expect(Object.keys(meterStrings.getStringsForLocale(locale)).sort(), locale).toEqual([
         "success",
@@ -143,8 +143,8 @@ describe("METER_TONE_TABLE", () => {
     for (const mode of MODES) {
       const atEighty = meterToneCell(mode, getMeterLevel(80, undefined, meterPercentage(80, 0, 100)));
       const pastEighty = meterToneCell(mode, getMeterLevel(81, undefined, meterPercentage(81, 0, 100)));
-      expect(atEighty, mode).toBe(METER_TONE_TABLE[mode].LOW);
-      expect(pastEighty, mode).toBe(METER_TONE_TABLE[mode].MEDIUM);
+      expect(atEighty, mode).toEqual(MATRIX[mode].LOW);
+      expect(pastEighty, mode).toEqual(MATRIX[mode].MEDIUM);
     }
   });
 

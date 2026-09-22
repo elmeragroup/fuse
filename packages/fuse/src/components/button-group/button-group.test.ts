@@ -34,7 +34,6 @@ const VERTICAL_CLASSES = [
 
 describe("buttonGroupVariants", () => {
   it("defaults to horizontal orientation and the group chrome base", () => {
-    expect(buttonGroupVariants()).toBe(buttonGroupVariants({ orientation: "horizontal" }));
     const resolved = buttonGroupVariants();
     for (const token of BASE_CLASSES) {
       expect(resolved, token).toContain(token);

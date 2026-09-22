@@ -7,7 +7,7 @@ export type ThemeAxisDeps = readonly [
 ];
 
 export function themeAxisDeps(theme: ThemeInput): ThemeAxisDeps {
-  // SAFETY: untyped CMS/env input is the §7.6 boundary; optional axis reads keep insertion/memo
+  // SAFETY: untyped CMS/env input is the boundary; optional axis reads keep insertion/memo
   // deps from throwing before remaining hooks register.
   const axes = theme as ThemeInput | null;
   return [axes?.variant, axes?.brand, axes?.segment];

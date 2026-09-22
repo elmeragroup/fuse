@@ -51,7 +51,7 @@ describe("combobox dictionary", () => {
     }
   });
 
-  it("carries no key beyond the four rows accessibility.md §4.1 assigns to Combobox", () => {
+  it("carries no key beyond the four rows owned by Combobox", () => {
     for (const locale of SUPPORTED_LOCALES) {
       expect(Object.keys(comboboxStrings.getStringsForLocale(locale)).sort(), locale).toEqual([
         "clear",

@@ -1,18 +1,16 @@
-import { DOCUMENT_COLOR_SCHEME, DOCUMENT_THEME } from "../src/lib/theme";
-
 export const BOOTSTRAP_MANIFEST_KEY = "__ELMERA_COLOR_SCHEME_BOOTSTRAP__";
 export const INJECTED_BOOTSTRAP_SOURCE_KEY = "elmera.colorScheme.bootstrapSource";
 
 export const DOCUMENT_BRAND = {
-  variant: DOCUMENT_THEME.variant,
-  brand: DOCUMENT_THEME.brand,
-  segment: DOCUMENT_THEME.segment,
+  variant: "internal",
+  brand: "elma",
+  segment: "private",
 } as const;
 
 export const EXPECTED_BOOTSTRAP_MANIFEST = {
-  storageKey: DOCUMENT_COLOR_SCHEME.storageKey,
-  defaultColorScheme: DOCUMENT_COLOR_SCHEME.defaultColorScheme,
-  enableSystem: DOCUMENT_COLOR_SCHEME.enableSystem,
+  storageKey: "elmera-color-scheme",
+  defaultColorScheme: "system",
+  enableSystem: true,
   forcedColorScheme: undefined,
 } as const;
 

@@ -1,5 +1,5 @@
 /**
- * The per-component markdown endpoint (docs-site.md §9): the same generated API model
+ * The per-component markdown endpoint: the same generated API model
  * and the same extracted demo source the HTML page renders, emitted as markdown so the
  * page's **View as Markdown** link and any AI consumer read one pipeline, not two.
  */
@@ -25,7 +25,7 @@ function escapeCell(value: string): string {
 
 /**
  * One compound part. RSC status is a per-part fact, so it rides on the heading as a badge
- * — the markdown twin of the HTML page's part-header indicator (docs-site.md §8) — and
+ * — the markdown twin of the HTML page's part-header indicator — and
  * the prop table does not repeat it down a column.
  */
 function renderPart(part: ApiPart): string {

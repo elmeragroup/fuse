@@ -102,7 +102,7 @@ export type PaginationEllipsisProps = Omit<ComponentProps<"span">, "children"> &
 /**
  * Client page-navigation compound. Anchors are styled via
  * the borrowed public `buttonVariants`; landmark, Previous/Next, and ellipsis
- * copy come from the provider dictionary (performance.md §RSC classification).
+ * copy come from the provider dictionary.
  */
 function PaginationRoot({
   className,

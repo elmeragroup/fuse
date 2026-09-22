@@ -14,7 +14,7 @@ export const ThemeContext = createContext<Theme | undefined>(undefined);
 export function useResolvedTheme(theme: ThemeInput): Theme {
   const [variant, brand, segment] = themeAxisDeps(theme);
   return useMemo((): Theme => {
-    // theming.md §7.6: throw at the provider boundary, but only after this hook is registered.
+    // Throw at the provider boundary, but only after this hook is registered.
     const validated = validateTheme(theme);
     // SAFETY: validateTheme already coerced pinned segments, so validated satisfies ThemeInput's
     // pin invariant; themeSlug returns the matching slug literal for that member.

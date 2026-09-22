@@ -4,5 +4,5 @@ import { fiFI } from "./fi-FI";
 import { nbNO } from "./nb-NO";
 import { svSE } from "./sv-SE";
 
-/** Pagination's own dictionary: it owns the `pagination.*` rows of accessibility.md §4.1. */
+/** Pagination's own dictionary: it owns the `pagination.*` keys. */
 export const paginationStrings = createStringDictionary({ enUS, fiFI, nbNO, svSE });

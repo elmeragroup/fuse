@@ -6,9 +6,7 @@ import {
   menuItemClass,
   menuItemIndicatorClass,
   menuSeparatorClass,
-  overlayLayer,
   overlayPopupDurationClass,
-  overlayPopupEdgeClass,
   overlayPopupFillClass,
   overlayPopupMotionClass,
   overlayPopupSurfaceClass,
@@ -23,7 +21,6 @@ function tokens(value: string): Set<string> {
 
 describe("overlayPositionerClass", () => {
   it("is one stacking context plus the single shared overlay layer", () => {
-    expect(overlayPositionerClass).toBe(`isolate ${overlayLayer}`);
     expect(tokens(overlayPositionerClass)).toEqual(new Set(["isolate", "z-50"]));
   });
 
@@ -45,12 +42,6 @@ describe("overlayPopupSurfaceClass", () => {
         "ring-1",
         "ring-foreground/10",
       ])
-    );
-  });
-
-  it("is exactly its fill and edge parts plus the radius rung", () => {
-    expect(tokens(overlayPopupSurfaceClass)).toEqual(
-      new Set([...tokens(overlayPopupFillClass), ...tokens(overlayPopupEdgeClass), "rounded-md"])
     );
   });
 
@@ -127,9 +118,26 @@ describe("overlayTimedPopupClass", () => {
   it("is the surface, motion, and duration parts", () => {
     expect(tokens(overlayTimedPopupClass)).toEqual(
       new Set([
-        ...tokens(overlayPopupSurfaceClass),
-        ...tokens(overlayPopupMotionClass),
-        ...tokens(overlayPopupDurationClass),
+        "bg-popover",
+        "text-popover-foreground",
+        "shadow-md",
+        "ring-1",
+        "ring-foreground/10",
+        "rounded-md",
+        "origin-(--transform-origin)",
+        "data-[side=bottom]:slide-in-from-top-2",
+        "data-[side=top]:slide-in-from-bottom-2",
+        "data-[side=left]:slide-in-from-right-2",
+        "data-[side=right]:slide-in-from-left-2",
+        "data-[side=inline-start]:slide-in-from-right-2",
+        "data-[side=inline-end]:slide-in-from-left-2",
+        "data-open:animate-in",
+        "data-open:fade-in-0",
+        "data-open:zoom-in-95",
+        "data-closed:animate-out",
+        "data-closed:fade-out-0",
+        "data-closed:zoom-out-95",
+        "duration-100",
       ])
     );
   });

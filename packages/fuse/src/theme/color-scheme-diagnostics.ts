@@ -8,13 +8,13 @@ import {
 import type { ColorSchemeBootstrapManifest } from "./color-scheme";
 import { isThemeDevelopment } from "./validate-theme";
 
-export const COLOR_SCHEME_BOOTSTRAP_MISSING_MESSAGE =
+const COLOR_SCHEME_BOOTSTRAP_MISSING_MESSAGE =
   "ThemeProvider did not find the color-scheme bootstrap manifest. Place ColorSchemeScript or colorSchemeScriptSource in the host document before paintable content.";
 
-export const COLOR_SCHEME_BOOTSTRAP_DUPLICATE_MESSAGE =
+const COLOR_SCHEME_BOOTSTRAP_DUPLICATE_MESSAGE =
   "ThemeProvider injectColorSchemeScript is enabled, but a color-scheme bootstrap already ran. Disable injection when the host places the script.";
 
-export function colorSchemeBootstrapMismatchMessage(
+function colorSchemeBootstrapMismatchMessage(
   expected: ColorSchemeBootstrapManifest,
   found: ColorSchemeBootstrapManifest
 ): string {

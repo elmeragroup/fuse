@@ -23,7 +23,7 @@ describe("grid-list dictionary", () => {
     }
   });
 
-  it("carries no key beyond the one row accessibility.md §4.1 assigns to GridList", () => {
+  it("carries no key beyond the one row owned by GridList", () => {
     for (const locale of SUPPORTED_LOCALES) {
       expect(Object.keys(gridListStrings.getStringsForLocale(locale)), locale).toEqual(["drag"]);
     }

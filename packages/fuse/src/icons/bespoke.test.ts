@@ -216,6 +216,7 @@ describe("bespoke icons", () => {
   });
 
   it("routes logo variant switching through createLogo", () => {
+    // Oracles: the Mark/Full fixtures, independent of createLogo (the unit under test).
     expect(renderToStaticMarkup(createElement(TelinetLogo, { variant: "mark", title: "Telinet" }))).toBe(
       renderToStaticMarkup(createElement(TelinetLogoMark, { title: "Telinet" }))
     );

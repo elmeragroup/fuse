@@ -1,5 +1,5 @@
 /**
- * The `llms.txt` site index (docs-site.md §9).
+ * The `llms.txt` site index.
  *
  * Generated at docs build from the same two inventories the SideNav renders: the authored
  * page manifest and the component pages the generation pass globbed off the route group.

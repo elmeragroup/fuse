@@ -1,14 +1,15 @@
 /**
- * SCAFFOLD: implement the component using docs/component-authoring.md.
+ * SCAFFOLD: implement the component using AGENTS.md.
  *
  * This file deliberately does not render: the scaffold must not guess an anatomy, a
  * base-ui primitive, or a prop surface. `{{pascalCase name}}Props` carries only the two members
  * every component has (`className`, `children`) plus the recipe's variant props; add the
  * documented public props, then delete the throw.
  *
- * Reminders: `"use client"` only if this module owns state/effects/handlers/context or a
- * browser API (performance.md classification, not intuition); polymorphism is base-ui
- * `useRender`, never an `as` prop; classes merge through `cn`; tokens only.
+ * Reminders: add `"use client"` only if this module owns state, effects, handlers, context
+ * or a browser API, and record the status in `apps/docs/test/fixtures/component-inventory.json`.
+ * Polymorphism is base-ui `useRender`, never an `as` prop. Classes merge through `cn`.
+ * Use tokens only.
  */
 import type { ReactElement, ReactNode } from "react";
 
@@ -25,7 +26,7 @@ export type {{pascalCase name}}Props = VariantProps<typeof {{camelCase name}}Var
 
 export function {{pascalCase name}}(_props: {{pascalCase name}}Props): ReactElement {
   throw new Error(
-    "{{pascalCase name}} is scaffolded but not implemented. See docs/component-authoring.md."
+    "{{pascalCase name}} is scaffolded but not implemented. See AGENTS.md."
   );
 }
 

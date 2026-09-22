@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { fetchText } from "./docs-server";
 
-describe("component page anatomy (docs-site.md §3.4)", () => {
+describe("component page anatomy", () => {
   it("renders H1, lede and the two meta links", async () => {
     const html = await fetchText("/components/button");
     expect(html).toMatch(/<h1[^>]*>Button<\/h1>/);
@@ -13,6 +13,10 @@ describe("component page anatomy (docs-site.md §3.4)", () => {
       'href="https://github.com/elmeragroup/fuse/blob/main/packages/fuse/src/components/button/button.tsx"'
     );
     expect(html).toContain("View source");
+    // The import line and the page's own RSC status appear only on the markdown endpoint.
+    const intro = html.slice(html.indexOf("<h1"), html.indexOf("data-demo-frame"));
+    expect(intro).not.toContain("@elmeragroup/fuse/button");
+    expect(intro).not.toMatch(/>(?:client|server)</u);
   });
 
   it("renders the MDX shell's own prose", async () => {
@@ -37,7 +41,7 @@ describe("component page anatomy (docs-site.md §3.4)", () => {
     const html = await fetchText("/components/button");
     expect(html).toContain('id="api-reference"');
     expect(html).toContain('id="api-button"');
-    // details/summary rows, deep-linkable per prop (docs-site.md §8).
+    // details/summary rows, deep-linkable per prop.
     expect(html).toMatch(/<details[\s\S]*?<summary[^>]*id="api-button-isVisuallyDisabled"/);
     expect(html).toContain('id="api-button-isVisuallyDisabled"');
     expect(html).toContain('href="#api-button-isVisuallyDisabled"');
@@ -102,7 +106,7 @@ describe("component page anatomy (docs-site.md §3.4)", () => {
     const markdown = await fetchText("/components/button.md");
     expect(markdown.startsWith("# Button")).toBe(true);
     expect(markdown).toContain("- RSC: client");
-    // RSC status per part, as a heading badge — never a per-prop column (docs-site.md §8).
+    // RSC status per part, as a heading badge — never a per-prop column.
     expect(markdown).toContain("### Button · RSC: client");
     expect(markdown).toContain("| Prop | Type | Default | Required | Description |");
     expect(markdown).not.toContain("| RSC |");

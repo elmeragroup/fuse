@@ -16,10 +16,10 @@ import { SelectionGroupLayout, SelectionItem, SelectionItemGroup } from "../sele
 import { selectionGroupOrientationVariants } from "../selection-item/selection-item-variants";
 
 /**
- * Unlabeled 16px checkbox over the base-ui primitive. Client —
- * base-ui Checkbox owns checked state (performance.md §RSC classification). The
- * indicator is internal: Phosphor regular `Minus` when indeterminate, `Check`
- * otherwise. Labeled usage composes `Field.Root` + `Field.Label`, or `CheckboxItem`.
+ * Unlabeled 16px checkbox over the base-ui primitive. Client component, because base-ui
+ * Checkbox owns the checked state. The indicator is internal: Phosphor regular `Minus`
+ * when indeterminate, `Check` otherwise. Labeled usage composes `Field.Root` and
+ * `Field.Label`, or `CheckboxItem`.
  */
 export function Checkbox({
   className,
@@ -90,9 +90,8 @@ export type CheckboxGroupProps = {
 };
 
 /**
- * Labeled checkbox group composite over Field + base-ui CheckboxGroup.
- * Client — Field validity wiring and the group primitive
- * (performance.md §RSC classification).
+ * Labeled checkbox group composite over Field and base-ui CheckboxGroup. Client component,
+ * because it wires Field validity and the group primitive.
  */
 export function CheckboxGroup({
   label,
@@ -219,11 +218,10 @@ export type CheckboxItemProps = CheckboxItemBaseProps &
   );
 
 /**
- * Labeled selection row over `SelectionItem.Shell`. Client —
- * Field.Item / label wiring (performance.md §RSC classification). Namespace
- * aliases `Title` / `Description` / `Content` / `Actions` / `SubSection` are the
- * exact `SelectionItem.*` objects so `child.type` partitioning works across both
- * spellings.
+ * Labeled selection row over `SelectionItem.Shell`. Client component, because it wires
+ * Field.Item and the label. The namespace aliases `Title`, `Description`, `Content`,
+ * `Actions` and `SubSection` are the exact `SelectionItem.*` objects, so `child.type`
+ * partitioning works with either spelling.
  */
 export function CheckboxItem({
   value,

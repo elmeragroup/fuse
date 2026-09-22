@@ -68,9 +68,12 @@ export default function AccessibilityPage(): ReactElement {
           recolours or redefines it.
         </li>
         <li>
-          Keyboard behaviour inherits base-ui verbatim: arrow-key roving with roving tabindex in composites,
-          typeahead where base-ui provides it, <code>Escape</code> dismissing the topmost open overlay only,
-          modal overlays trapping focus and returning it to the trigger on close.
+          Keyboard behaviour follows base-ui, with the documented component defaults: arrow-key roving with
+          roving tabindex in composites, typeahead where base-ui provides it, <code>Escape</code> dismissing
+          the topmost open overlay only, modal overlays trapping focus and returning it to the trigger on
+          close. DropdownMenu submenus close the whole tree on Escape by default;{" "}
+          <code>closeParentOnEsc=false</code> limits dismissal to the submenu. Tabs activate on arrow-key
+          focus by default; set <code>activateOnFocus=false</code> for manual activation.
         </li>
         <li>
           No component sets a positive <code>tabindex</code>; <code>tabindex={"{-1}"}</code> appears only for
@@ -96,7 +99,9 @@ export default function AccessibilityPage(): ReactElement {
         One central <code>prefers-reduced-motion: reduce</code> block in the library stylesheet removes
         transform, translate and scale motion while retaining opacity fades — comprehension-aiding transitions
         survive, movement does not. No component opts out. UI transitions sit in a 150–300 ms ease-out band
-        and animate only <code>transform</code> and <code>opacity</code>.
+        and normally animate <code>transform</code> and <code>opacity</code>. Reviewed layout transitions are
+        accordion and collapsible height, accordion trigger padding, sidebar width and meter fill. The central
+        reduced-motion rule disables those exceptions too.
       </p>
 
       <h2 id="target-size">Target size</h2>
@@ -111,8 +116,14 @@ export default function AccessibilityPage(): ReactElement {
       <p>Documented honestly rather than quietly fixed away:</p>
       <ul>
         <li>
-          Default <code>--muted-foreground</code> on white sits at roughly 4.5:1 — at the AA line with no
-          margin. Do not use it below 14 px.
+          Internal light <code>--muted-foreground</code> measures 4.74:1 on white and 4.35:1 on{" "}
+          <code>--muted</code>. Use the muted pairing only for non-essential secondary copy, never as the sole
+          carrier of required information. Keep muted copy at least 14 px.
+        </li>
+        <li>
+          Telinet light external muted copy measures 4.35–4.41:1 after sRGB alpha compositing. The same
+          restriction to non-essential secondary copy applies. Other light external muted pairs measure
+          4.93–7.17:1.
         </li>
         <li>
           The brand-independent violet <code>--ring</code> falls below 3:1 non-text contrast against some
@@ -125,8 +136,11 @@ export default function AccessibilityPage(): ReactElement {
         </li>
       </ul>
       <p>
-        Every text-grade token pair is checked against 4.5:1 across all 20 themes by a generated contrast
-        matrix, snapshot-tested next to the token pipeline.
+        Contrast snapshots cover all twenty themes. Text pairs target 4.5:1, with the accepted light
+        exceptions above pinned against further regression. Both dark variants pass their paired-text checks;
+        additional tests cover panel text, input boundaries and focus colors. Decorative dark borders cannot
+        be the sole control boundary. These checks do not establish chart-series distinction or whole-page
+        conformance; review states, artwork and charts in their product context.
       </p>
     </DocsPage>
   );

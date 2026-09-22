@@ -12,6 +12,7 @@ import type {
   FigmaColorToken,
   FigmaDimensionToken,
   FigmaFontToken,
+  FigmaThemeDocument,
   ThemeCatalogEntry,
 } from "../src/lib/docs-model";
 import { docsBaseUrl } from "./docs-server";
@@ -38,11 +39,18 @@ async function expectThemeFile(response: Response, slug: string) {
 
 function catalogTheme(slug: string): ThemeCatalogEntry {
   const theme = THEME_CATALOG.themes.find((entry) => entry.slug === slug);
-  expect(theme, slug).toBeDefined();
   if (theme === undefined) {
     throw new Error(`missing theme ${slug}`);
   }
   return theme;
+}
+
+function figmaDocument(slug: string): FigmaThemeDocument {
+  const document = FIGMA_THEME_FILES[slug];
+  if (document === undefined) {
+    throw new Error(`missing Figma document ${slug}`);
+  }
+  return document;
 }
 
 async function getThemeFileDirect(slug: string): Promise<Response> {
@@ -70,19 +78,10 @@ describe("Figma DTCG documents", () => {
       expect(LEGAL_SLUGS).not.toContain(slug);
     }
 
-    const internal = FIGMA_THEME_FILES["internal-fkas-private"];
-    expect(internal).toBeDefined();
-    if (internal === undefined) {
-      throw new Error("missing Figma document internal-fkas-private");
-    }
-    const names = Object.keys(internal.color).filter((key) => key !== "$type");
+    const names = Object.keys(figmaDocument("internal-fkas-private").color).filter((key) => key !== "$type");
     expect(names.length).toBeGreaterThan(70);
     for (const slug of LEGAL_SLUGS) {
-      const file = FIGMA_THEME_FILES[slug];
-      expect(file).toBeDefined();
-      if (file === undefined) {
-        throw new Error(`missing Figma document ${slug}`);
-      }
+      const file = figmaDocument(slug);
       expect(Object.keys(file.color).filter((key) => key !== "$type")).toEqual(names);
       expect(file.color.$type).toBe("color");
       expect(file.size.$type).toBe("dimension");
@@ -142,19 +141,35 @@ describe("Figma DTCG documents", () => {
   });
 
   it("is a projection of the catalog", () => {
+    // Unit under test: the committed module's serialisation of every document. Oracle: the
+    // converter it serialised. The converter's own output is pinned by hand above and below.
     expect(buildFigmaThemeIndex(THEME_CATALOG)).toEqual(FIGMA_THEME_INDEX);
     expect(FIGMA_THEME_INDEX.files.map((file) => file.slug)).toEqual(
       THEME_CATALOG.themes.map((theme) => theme.slug)
     );
     expect(Object.keys(FIGMA_THEME_FILES)).toEqual(THEME_CATALOG.themes.map((theme) => theme.slug));
-    expect(figmaDocumentFromCatalog(catalogTheme("external-fkas-private"), THEME_CATALOG.primitives)).toEqual(
-      FIGMA_THEME_FILES["external-fkas-private"]
-    );
     for (const theme of THEME_CATALOG.themes) {
-      expect(figmaDocumentFromCatalog(theme, THEME_CATALOG.primitives)).toEqual(
+      expect(figmaDocumentFromCatalog(theme, THEME_CATALOG.primitives), theme.slug).toEqual(
         FIGMA_THEME_FILES[theme.slug]
       );
     }
+  });
+
+  it("emits the Elma theme's own values, not the Fjordkraft ones", () => {
+    const document = figmaDocument("external-elma-company");
+    expect(token<FigmaColorToken>(document.color, "brand")).toEqual({
+      $type: "color",
+      $value: "{color.brand-elma}",
+    });
+    expect(token<FigmaColorToken>(document.color, "primary").$value).toMatchObject({ hex: "#3C6470" });
+    expect(token<FigmaDimensionToken>(document.size, "radius")).toEqual({
+      $type: "dimension",
+      $value: { value: 6, unit: "px" },
+    });
+    expect(token<FigmaFontToken>(document.font, "heading")).toEqual({
+      $type: "fontFamily",
+      $value: "{font.sans}",
+    });
   });
 });
 

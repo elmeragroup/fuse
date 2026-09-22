@@ -6,23 +6,10 @@ import { MDX_HEADINGS, MdxCode, MdxPre } from "./src/components/mdx-elements";
 import { Prose } from "./src/components/prose";
 
 /**
- * The MDX component scope, resolved by `@next/mdx` for every authored `page.mdx`
- * (docs-site.md §1).
- *
- * Two kinds of entry live here:
- *
- *   • **element overrides** — `h2`–`h4` carry the anchor id the QuickNav TOC links to,
- *     and `code`/`pre` highlight fenced blocks with sugar-high (the single highlighter,
- *     §8). Anchors are computed from the heading text with the same `slugifyHeading` the
- *     generator uses for the TOC, so the two cannot drift.
- *   • **the page vocabulary** — the components a component page composes its §3.4
- *     anatomy from. They are in scope everywhere so a page's own imports stay limited to
- *     the thing only that page knows: its demos.
- *
- * Demos are never listed here; a page imports each demo as a plain ESM module (§6).
- *
- * MDX calls this with no arguments and merges a file's own `components` prop over the
- * result, so this scope is the site-wide default rather than the last word.
+ * Shared MDX elements and page components for authored component routes.
+ * Heading anchors use the same slugger as the generated TOC. Fenced code uses
+ * the shared server highlighter. Each page imports its own runnable demos.
+ * MDX merges a page's components prop over these defaults.
  */
 export function useMDXComponents() {
   return {
@@ -32,7 +19,7 @@ export function useMDXComponents() {
     ApiReference,
     ComponentIntro,
     ComponentTokens,
-    /** `<Demo …>` is the page-facing name of the §3.5 frame. */
+    /** `<Demo …>` is the page-facing name of the frame. */
     Demo: DemoFrame,
     Prose,
   };

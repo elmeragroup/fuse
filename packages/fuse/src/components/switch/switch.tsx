@@ -19,7 +19,7 @@ export type SwitchProps = Omit<ComponentProps<typeof SwitchPrimitive.Root>, "cla
 
 /**
  * Unlabeled two-state switch. Client — base-ui Switch owns
- * checked state (performance.md §RSC classification). Labeled usage composes
+ * checked state. Labeled usage composes
  * `Field.Root` + `Field.Label`.
  */
 export function Switch({ className, size = "default", ...props }: SwitchProps): ReactElement {

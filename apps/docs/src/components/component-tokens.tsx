@@ -9,7 +9,7 @@ export type ComponentTokensProps = {
 };
 
 /**
- * The generated Tokens-consumed section of a component page (docs-site.md §3.4 item 5).
+ * The generated Tokens-consumed section of a component page.
  * The page names the slug; the token list itself is never hand-authored.
  */
 export function ComponentTokens({ slug }: ComponentTokensProps): ReactElement | null {

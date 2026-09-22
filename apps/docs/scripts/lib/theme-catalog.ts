@@ -1,5 +1,5 @@
 /**
- * The `/api/themes` catalog builder (docs-site.md §9).
+ * The `/api/themes` catalog builder.
  *
  * Imports through the workspace-only `@elmeragroup/fuse/theme-catalog` tooling entry —
  * Node generate cannot load `/theme` because that facade re-exports client TSX.
@@ -61,7 +61,7 @@ export function buildThemeCatalog(): ThemeCatalog {
 export function renderThemeCatalog(catalog: ThemeCatalog): string {
   return `import type { ThemeCatalog } from "../lib/docs-model";
 
-/** Twenty legal themes with CSS-honest token values (docs-site.md §9.1). */
+/** Twenty legal themes with CSS-honest token values. */
 export const THEME_CATALOG: ThemeCatalog = ${JSON.stringify(catalog, null, 2)};
 `;
 }

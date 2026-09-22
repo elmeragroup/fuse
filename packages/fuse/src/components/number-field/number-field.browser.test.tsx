@@ -215,6 +215,12 @@ describe("NumberField", () => {
       maximumFractionDigits: 1,
     };
     const value = 1234.5;
+    const formatted = {
+      "en-US": "1,234.5",
+      "nb-NO": "1\u00a0234,5",
+      "sv-SE": "1\u00a0234,5",
+      "fi-FI": "1\u00a0234,5",
+    };
     const originalLanguage = Object.getOwnPropertyDescriptor(navigator, "language");
     Object.defineProperty(navigator, "language", {
       configurable: true,
@@ -227,22 +233,16 @@ describe("NumberField", () => {
           <NumberField label="Amount" defaultValue={value} formatOptions={formatOptions} />,
           locale
         );
-        expect(textboxNamed("Amount")).toHaveProperty(
-          "value",
-          new Intl.NumberFormat(locale, formatOptions).format(value)
-        );
+        expect(textboxNamed("Amount")).toHaveProperty("value", formatted[locale]);
         unmount();
       }
 
-      const german = new Intl.NumberFormat("de-DE", formatOptions).format(value);
-      const english = new Intl.NumberFormat("en-US", formatOptions).format(value);
-      expect(german).not.toBe(english);
       renderField(
         <NumberField label="Conflicting" defaultValue={value} formatOptions={formatOptions} />,
         "en-US"
       );
-      expect(textboxNamed("Conflicting")).toHaveProperty("value", english);
-      expect(textboxNamed("Conflicting")).not.toHaveProperty("value", german);
+      expect(textboxNamed("Conflicting")).toHaveProperty("value", "1,234.5");
+      expect(textboxNamed("Conflicting")).not.toHaveProperty("value", "1.234,5");
     } finally {
       if (originalLanguage === undefined) {
         Reflect.deleteProperty(navigator, "language");
@@ -407,12 +407,12 @@ describe("NumberField", () => {
     const { rerender } = renderField(<NumberField label="Amount" defaultValue={1234.5} />, "en-US");
     expect(page.getByRole("button", { name: INCREASE_COPY["en-US"], exact: true }).query()).toBeTruthy();
     expect(page.getByRole("button", { name: DECREASE_COPY["en-US"], exact: true }).query()).toBeTruthy();
-    expect(textboxNamed("Amount")).toHaveProperty("value", new Intl.NumberFormat("en-US").format(1234.5));
+    expect(textboxNamed("Amount")).toHaveProperty("value", "1,234.5");
 
     rerender(withLocale("nb-NO", <NumberField label="Amount" defaultValue={1234.5} />));
     expect(page.getByRole("button", { name: INCREASE_COPY["nb-NO"], exact: true }).query()).toBeTruthy();
     expect(page.getByRole("button", { name: DECREASE_COPY["nb-NO"], exact: true }).query()).toBeTruthy();
-    expect(textboxNamed("Amount")).toHaveProperty("value", new Intl.NumberFormat("nb-NO").format(1234.5));
+    expect(textboxNamed("Amount")).toHaveProperty("value", "1\u00a0234,5");
   });
 
   it("lets increaseLabel and decreaseLabel override dictionary names and survive a locale change", () => {

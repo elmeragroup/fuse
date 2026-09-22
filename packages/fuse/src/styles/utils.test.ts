@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 
 import {
   disabledHatch,
-  focusRing,
   iconCrossfadeHidden,
   iconCrossfadeShown,
   iconCrossfadeTransition,
@@ -13,15 +12,26 @@ import {
   withinFocusRingControlClass,
 } from "./utils";
 
+/* oxlint-disable elmera/no-local-focus-ring -- independent test expectations for the focus recipe */
 describe("focus-ring constants", () => {
-  it("resolves each fixed rung from the shared recipe", () => {
-    expect(selfFocusRingClass).toBe(focusRing({ target: "self" }).root());
-    expect(withinFocusRingClass).toBe(focusRing({ target: "within" }).root());
-    expect(withinFocusRingControlClass).toBe(focusRing({ target: "within" }).control());
-    expect(stateFocusRingClass).toBe(focusRing({ target: "state" }).root());
-    expect(stateFocusRingVisibleClass).toBe(focusRing({ target: "state", isFocusVisible: true }).root());
+  it("uses the documented focus selectors, ring width, and offset", () => {
+    expect(selfFocusRingClass).toBe(
+      "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+    );
+    expect(withinFocusRingClass).toBe(
+      "has-[[data-focus-ring-control]:focus-visible]:ring-2 has-[[data-focus-ring-control]:focus-visible]:ring-ring has-[[data-focus-ring-control]:focus-visible]:ring-offset-2 has-[[data-focus-ring-control]:focus-visible]:ring-offset-background has-[[data-focus-ring-control]:focus-visible]:outline-none"
+    );
+    expect(withinFocusRingControlClass).toBe(
+      "focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none"
+    );
+    expect(stateFocusRingClass).toBe("outline-none");
+    expect(stateFocusRingVisibleClass).toBe(
+      "outline-none ring-2 ring-ring ring-offset-2 ring-offset-background"
+    );
   });
 });
+
+/* oxlint-enable elmera/no-local-focus-ring */
 
 describe("hatch and icon-crossfade constants", () => {
   it("pins the hatch as one token and the three icon-crossfade faces", () => {

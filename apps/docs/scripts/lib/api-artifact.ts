@@ -1,5 +1,5 @@
 /**
- * The committed per-component API artifact (docs-site.md §8).
+ * The committed per-component API artifact.
  *
  * Each component page has an `api.json` next to it, generated from the library's types
  * and JSDoc by `@elmeragroup/internal` and **committed**: an API change then shows up as
@@ -29,7 +29,7 @@ export { API_REGEN_COMMAND };
 export const STALE_HINT = `Run \`${API_REGEN_COMMAND}\` and commit the updated api.json files.`;
 
 const GENERATED_BANNER =
-  `Generated from packages/fuse types and JSDoc by ${API_REGEN_COMMAND} (docs-site.md §8). ` +
+  `Generated from packages/fuse types and JSDoc by ${API_REGEN_COMMAND}. ` +
   "Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.";
 
 export type GeneratedApi = {

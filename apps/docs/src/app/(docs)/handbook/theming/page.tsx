@@ -26,6 +26,127 @@ const SCOPE = `import { ThemeScope } from "@elmeragroup/fuse/theme";
   <TrackSummary />
 </ThemeScope>;`;
 
+const NEXT_PAGES = `// pages/_document.tsx
+import { Head, Html, Main, NextScript } from "next/document";
+import {
+  ColorSchemeScript,
+  defaultDensityForVariant,
+  densityAttributes,
+  themeAttributes,
+} from "@elmeragroup/fuse/theme";
+import { colorScheme, theme } from "../lib/theme";
+
+export default function Document() {
+  return (
+    <Html
+      lang="nb"
+      {...themeAttributes(theme)}
+      {...densityAttributes(defaultDensityForVariant(theme.variant))}
+      suppressHydrationWarning>
+      <Head>
+        <ColorSchemeScript
+          storageKey={colorScheme.storageKey}
+          defaultColorScheme={colorScheme.defaultColorScheme}
+          enableSystem={colorScheme.enableSystem}
+        />
+      </Head>
+      <body>
+        <Main />
+        <NextScript />
+      </body>
+    </Html>
+  );
+}
+
+// pages/_app.tsx
+import type { AppProps } from "next/app";
+import { ThemeProvider } from "@elmeragroup/fuse/theme";
+import { colorScheme, theme } from "../lib/theme";
+
+export default function App({ Component, pageProps }: AppProps) {
+  return (
+    <ThemeProvider
+      theme={theme}
+      storageKey={colorScheme.storageKey}
+      defaultColorScheme={colorScheme.defaultColorScheme}
+      enableSystem={colorScheme.enableSystem}
+      injectColorSchemeScript={false}>
+      <Component {...pageProps} />
+    </ThemeProvider>
+  );
+}`;
+
+const TANSTACK_START = `import { ScriptOnce } from "@tanstack/react-router";
+import {
+  colorSchemeScriptSource,
+  defaultDensityForVariant,
+  densityAttributes,
+  ThemeProvider,
+  themeAttributes,
+} from "@elmeragroup/fuse/theme";
+import { colorScheme, theme } from "./theme";
+
+export function RootDocument({ children }: { children: React.ReactNode }) {
+  return (
+    <html
+      lang="nb"
+      {...themeAttributes(theme)}
+      {...densityAttributes(defaultDensityForVariant(theme.variant))}
+      suppressHydrationWarning>
+      <head>
+        <ScriptOnce>{colorSchemeScriptSource(colorScheme)}</ScriptOnce>
+      </head>
+      <body>
+        <ThemeProvider theme={theme} {...colorScheme} injectColorSchemeScript={false}>
+          {children}
+        </ThemeProvider>
+      </body>
+    </html>
+  );
+}`;
+
+const REACT_ROUTER = `import { Links, Meta, Scripts, ScrollRestoration } from "react-router";
+import {
+  ColorSchemeScript,
+  defaultDensityForVariant,
+  densityAttributes,
+  ThemeProvider,
+  themeAttributes,
+} from "@elmeragroup/fuse/theme";
+import { colorScheme, theme } from "./theme";
+
+export function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <html
+      lang="nb"
+      {...themeAttributes(theme)}
+      {...densityAttributes(defaultDensityForVariant(theme.variant))}
+      suppressHydrationWarning>
+      <head>
+        <ColorSchemeScript
+          storageKey={colorScheme.storageKey}
+          defaultColorScheme={colorScheme.defaultColorScheme}
+          enableSystem={colorScheme.enableSystem}
+        />
+        <Meta />
+        <Links />
+      </head>
+      <body>
+        <ThemeProvider
+          theme={theme}
+          storageKey={colorScheme.storageKey}
+          defaultColorScheme={colorScheme.defaultColorScheme}
+          enableSystem={colorScheme.enableSystem}
+          injectColorSchemeScript={false}>
+          {children}
+        </ThemeProvider>
+        <ScrollRestoration />
+        <Scripts />
+      </body>
+    </html>
+  );
+}`;
+
 export default function ThemingPage(): ReactElement {
   return (
     <DocsPage href={HREF}>
@@ -106,6 +227,116 @@ export default function ThemingPage(): ReactElement {
         <code>injectColorSchemeScript={"{false}"}</code> to the provider so the bootstrap is emitted exactly
         once.
       </p>
+
+      <h2 id="first-paint">First paint in your framework</h2>
+      <p>
+        Use the <Link href="/quick-start#page-scaffold">Quick start scaffold</Link> for the shared setup. Pass
+        the same resolved theme to the document attributes and provider, and stamp density on the document
+        root. Keep <code>storageKey</code>, <code>defaultColorScheme</code>, <code>enableSystem</code> and any{" "}
+        <code>forcedColorScheme</code> identical on the bootstrap and provider. ThemeProvider supplies context
+        and runtime updates; the host places the classic bootstrap before paintable content.
+      </p>
+      <pre>
+        <code>{`html, body {
+  background: var(--background);
+  color: var(--foreground);
+}`}</code>
+      </pre>
+      <p>
+        Import <code>themes.css</code> alongside your chosen CSS mode. The token-backed canvas prevents a
+        default browser background flash. Put <code>suppressHydrationWarning</code> on the React-owned html
+        element when the bootstrap changes data-theme before hydration. If you omit colour-scheme support,
+        omit the script, warning and provider colour-scheme options together.
+      </p>
+      <p>
+        Pass a nonce to the bootstrap for nonce-based CSP. Keep the generated bootstrap in a server or
+        build-time module rather than copying its IIFE into application source. The library uses local
+        storage, not cookies, and CSS owns native colour-scheme. Hash-based CSP is unsupported. React-created
+        script nodes do not provide first paint.
+      </p>
+      <p>
+        A route that must first-paint in a forced scheme needs a document adapter that knows the force while
+        generating HTML and passes forcedColorScheme to both bootstrap and provider. A descendant
+        ForceColorScheme changes the document only at runtime.
+      </p>
+      <p>
+        Next App Router and Vite have production first-paint fixtures in apps/docs and apps/static-theme,
+        including delayed or blocked React execution. Next Pages, TanStack Start and React Router below are
+        written recipes without fixture verification. These first-paint proofs are separate from
+        packed-package release fixtures.
+      </p>
+
+      <h2 id="next-app-router">Next App Router</h2>
+      <p>
+        The Quick start layout puts ColorSchemeScript in head. This also avoids the hidden streaming preamble
+        Next can insert at the start of body. Set <code>injectColorSchemeScript</code> to false on the
+        provider. A forced route needs a route-group layout or other document that supplies the same force to
+        both. React Aria consumers use UiProviders instead of nesting it with LocaleProvider. Put its
+        function-valued navigate prop in an app-owned client wrapper that calls useRouter and passes
+        router.push.
+      </p>
+
+      <h2 id="next-pages">Next Pages</h2>
+      <p>
+        The document owns html attributes and the classic script; the app owns the provider. Share theme and
+        colour-scheme options through an app-owned module. Put the script in Head or before Main. A route
+        force must be known to the document and the app provider.
+      </p>
+      <pre>
+        <code>{NEXT_PAGES}</code>
+      </pre>
+
+      <h2 id="tanstack-start">TanStack Start</h2>
+      <p>
+        The root document owns attributes. Call colorSchemeScriptSource at document-render time and place
+        ScriptOnce before children and module scripts. A route-specific force goes into both that call and
+        ThemeProvider.
+      </p>
+      <pre>
+        <code>{TANSTACK_START}</code>
+      </pre>
+
+      <h2 id="react-router">React Router 7 framework mode</h2>
+      <p>
+        The root Layout owns attributes and emits ColorSchemeScript in head before Meta or Links content that
+        depends on the marker. A route force must reach both the head script and provider while rendering the
+        document.
+      </p>
+      <pre>
+        <code>{REACT_ROUTER}</code>
+      </pre>
+
+      <h2 id="vite">Vite and client-rendered apps</h2>
+      <p>
+        Stamp brand and density into index.html at build time. Inject a raw classic script before the module
+        entry through transformIndexHtml with order set to post. The apps/static-theme fixture demonstrates
+        this adapter.
+      </p>
+      <ol>
+        <li>
+          Import themeAttributes, densityAttributes, defaultDensityForVariant and colorSchemeScriptSource in
+          vite.config.ts. Use the same document options as the React provider. Keep these calls out of the
+          client graph.
+        </li>
+        <li>
+          Stamp the three brand attributes and data-density on html. Reject source HTML that already has them
+          so configuration cannot silently overwrite another owner.
+        </li>
+        <li>
+          Put the generated classic bootstrap before the first module script. Hoist the generated stylesheet
+          links before it so background tokens exist before first paint. Keep the token-backed canvas rule in
+          the global stylesheet.
+        </li>
+        <li>
+          Mount ThemeProvider with matching options and injectColorSchemeScript set to false. A bundling
+          config loader can rewrite Function.prototype.toString and break the closed IIFE. The fixture uses
+          the native config loader with the built theme module.
+        </li>
+        <li>
+          For route-specific forced first paint, use a separate HTML entry or a transform that resolves the
+          route and passes the same force to bootstrap and provider.
+        </li>
+      </ol>
 
       <h2 id="in-these-docs">In these docs</h2>
       <p>

@@ -67,7 +67,7 @@ export type DatePickerProps<T extends DateValue> = {
   shouldForceLeadingZeros?: boolean;
   /**
    * Portal target for the popover. Defaults to the nearest `ThemeScope`, so the overlay
-   * inherits the theme it was opened from (theming.md §7.4); an explicit element or ref
+   * inherits the theme it was opened from; an explicit element or ref
    * wins.
    */
   container?: OverlayContainerProps["container"];
@@ -164,7 +164,7 @@ export function DatePicker<T extends DateValue>({
 export type DatePickerPresetGroupProps = ComponentProps<typeof AriaRadioGroup> & {
   /**
    * Accessible name for the preset pane. Defaults to the `datePicker.presets` row of
-   * the locale dictionary (accessibility.md §4.1); an explicit string wins.
+   * the locale dictionary; an explicit string wins.
    */
   label?: string;
 };

@@ -281,7 +281,7 @@ describe("SelectionItem", () => {
             control={
               // Inline, not utility classes: the browser suite loads `styles.css`, which is
               // compiled from `dist/**/*.js` only, so a class spelled solely in a test never
-              // reaches the sheet (architecture.md §5).
+              // reaches the sheet.
               <span
                 role="img"
                 aria-label="Wide indicator"
@@ -367,6 +367,7 @@ describe("SelectionItem", () => {
     const shellStyle = getComputedStyle(shell);
     expect(shellStyle.cursor).toBe("not-allowed");
     expect(shellStyle.backgroundColor).toBe(tokenBackgroundColor(shell, "bg-muted"));
+    // Oracle: the shared hatch, which utils.test.ts pins by hand.
     expect(shellStyle.backgroundImage).toBe(tokenBackgroundImage(shell, disabledHatch));
     expect(shellStyle.backgroundImage).not.toBe("none");
 

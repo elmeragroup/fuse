@@ -28,7 +28,6 @@ describe("radioIconButtonVariants", () => {
     const classes = radioIconButtonVariants();
     expect(classes).toContain("size-(--control-h-md)");
     expect(classes).toContain("[&_svg:not([class*='size-'])]:size-4");
-    expect(classes).toBe(radioIconButtonVariants({ size: "icon" }));
   });
 
   it("renders each size rung", () => {

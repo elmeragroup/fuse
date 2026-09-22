@@ -26,7 +26,7 @@ test("Root takes the three-value orientation axis and Legend the two-value varia
   const _legend = <Field.Legend variant="label" />;
   const _legendDefault = <Field.Legend variant="legend" />;
 
-  // @ts-expect-error orientation is the three spec'd values only
+  // @ts-expect-error orientation is the three public values only
   const _badOrientation = <Field.Root orientation="inline" />;
   // @ts-expect-error the legend axis is legend | label
   const _badLegend = <Field.Legend variant="title" />;

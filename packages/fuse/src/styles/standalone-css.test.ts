@@ -29,7 +29,7 @@ function selectorLines(css: string): Set<string> {
   return selectors;
 }
 
-describe("standalone stylesheet source set (architecture.md §5)", () => {
+describe("standalone stylesheet source set", () => {
   it("compiles from dist/**/*.js with automatic source detection off", () => {
     const wrapper = readFileSync(wrapperPath, "utf8");
     expect(wrapper).toContain('@import "tailwindcss/utilities.css" source(none)');

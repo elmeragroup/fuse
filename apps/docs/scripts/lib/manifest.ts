@@ -1,5 +1,5 @@
 /**
- * The generated component-page manifest (docs-site.md §3.3, §3.4).
+ * The generated component-page manifest.
  *
  * The one module the *site* imports about its component pages: what the SideNav lists, what
  * a page's intro and `metadata` say, what the QuickNav outlines, and which tokens the
@@ -17,7 +17,7 @@ export function renderComponentPages(components: readonly DocsComponent[]): stri
   const entries: readonly ComponentPageEntry[] = components.map(toPageEntry);
   return `import type { ComponentPageEntry } from "../lib/docs-model";
 
-/** Every component page the site serves, in route order (docs-site.md §3.3). */
+/** Every component page the site serves, in route order. */
 export const COMPONENT_PAGES: readonly ComponentPageEntry[] = ${JSON.stringify(entries, null, 2)};
 `;
 }

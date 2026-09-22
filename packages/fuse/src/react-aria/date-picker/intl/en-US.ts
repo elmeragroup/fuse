@@ -1,4 +1,4 @@
-/** accessibility.md §4.1 — locked copy for the `datePicker.presets` row. */
+/** Default localized copy for the `datePicker.presets` row. */
 export const enUS = {
   presets: "Date presets",
 };

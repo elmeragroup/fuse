@@ -43,8 +43,8 @@ const PRODUCT_EXCLUDED_COUNTRY_CODES = new Set<CountryCode>([
 
 // The four libphonenumber@1.13.9 codes with no packaged flag SVG — AC, BQ, EH, TA — are not
 // listed here: `isPhoneCountryCode` filters on the flag manifest itself, so a fifth code
-// appearing upstream needs no edit. The four are named in architecture.md §6a, and the picker
-// suites assert their absence from their own copy of the list (test/phone-picker-contract.ts).
+// appearing upstream needs no edit. The picker suites assert their absence from an
+// independent list in test/phone-picker-contract.ts.
 
 const DEFAULT_COUNTRY_CODE = "NO";
 

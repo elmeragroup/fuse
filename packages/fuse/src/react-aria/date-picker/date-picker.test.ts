@@ -23,7 +23,7 @@ describe("date-picker dictionary", () => {
     }
   });
 
-  it("carries no key beyond the single row accessibility.md §4.1 assigns to DatePicker", () => {
+  it("carries no key beyond the single row owned by DatePicker", () => {
     for (const locale of SUPPORTED_LOCALES) {
       expect(Object.keys(datePickerStrings.getStringsForLocale(locale)), locale).toEqual(["presets"]);
     }

@@ -1,5 +1,5 @@
 /**
- * Tokens-consumed extraction (docs-site.md §3.4).
+ * Tokens-consumed extraction.
  *
  * Purely lexical and therefore reproducible: every token comes from something the
  * recipe source literally says. Three shapes are recognised —

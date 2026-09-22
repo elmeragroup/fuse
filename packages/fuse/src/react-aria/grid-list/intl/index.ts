@@ -6,6 +6,6 @@ import { svSE } from "./sv-SE";
 
 /**
  * GridList's own dictionary: it owns the `gridList.drag` row of
- * accessibility.md §4.1 — the drag handle's default accessible name.
+ * the drag handle's default accessible name.
  */
 export const gridListStrings = createStringDictionary({ enUS, fiFI, nbNO, svSE });

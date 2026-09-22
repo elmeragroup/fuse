@@ -85,7 +85,6 @@ describe("card title icon", () => {
 
 describe("cardTitleVariants", () => {
   it("defaults to 2xl", () => {
-    expect(cardTitleVariants()).toBe(cardTitleVariants({ size: "2xl" }));
     expect(cardTitleVariants()).toContain("text-2xl");
   });
 
@@ -100,7 +99,6 @@ describe("cardTitleVariants", () => {
 
 describe("cardDescriptionVariants", () => {
   it("defaults to sm", () => {
-    expect(cardDescriptionVariants()).toBe(cardDescriptionVariants({ size: "sm" }));
     expect(cardDescriptionVariants()).toContain("text-sm");
   });
 

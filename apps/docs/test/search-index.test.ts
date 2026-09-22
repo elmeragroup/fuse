@@ -1,15 +1,16 @@
 import { describe, expect, it } from "vitest";
 
+import { resolveComponentPaths } from "../scripts/lib/components.ts";
 import { COMPONENT_PAGES } from "../src/generated/component-pages";
 import { SEARCH_ENTRIES } from "../src/generated/search-index";
 import { NAV_GROUPS } from "../src/lib/nav";
 import { HOME_PAGE, STATIC_PAGES } from "../src/lib/pages";
-import { matchSearchEntries, SEARCH_RESULT_LIMIT } from "../src/lib/search";
+import { matchSearchEntries } from "../src/lib/search";
 import { docsBaseUrl } from "./docs-server";
 
 const NAV_HREFS = NAV_GROUPS.flatMap((group) => group.items.map((item) => item.href));
 
-describe("search index (docs-site.md §3.2)", () => {
+describe("search index", () => {
   it("is generated from the two page manifests, with nothing else in it", () => {
     expect(SEARCH_ENTRIES.map((entry) => entry.href)).toEqual([
       HOME_PAGE.href,
@@ -38,7 +39,7 @@ describe("search index (docs-site.md §3.2)", () => {
     for (const component of COMPONENT_PAGES) {
       const entry = SEARCH_ENTRIES.find((candidate) => candidate.title === component.title);
       expect(entry, component.slug).toBeDefined();
-      expect(entry?.keywords).toContain(component.entry);
+      expect(entry?.keywords).toContain(resolveComponentPaths(component.slug).entry);
       for (const name of component.partNames) {
         expect(entry?.keywords, name).toContain(name);
       }
@@ -55,8 +56,8 @@ describe("search index (docs-site.md §3.2)", () => {
 describe("search matching", () => {
   it("lists the site in nav order for an empty query, capped at the result limit", () => {
     const results = matchSearchEntries("");
-    expect(results.length).toBe(Math.min(SEARCH_ENTRIES.length, SEARCH_RESULT_LIMIT));
-    expect(results[0]?.href).toBe(HOME_PAGE.href);
+    expect(results.length).toBe(20);
+    expect(results[0]?.href).toBe("/");
   });
 
   it("ranks a title prefix above a body mention", () => {

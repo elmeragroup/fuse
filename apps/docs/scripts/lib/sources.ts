@@ -3,7 +3,7 @@
  * package-relative module they pull in (shared style utilities, overlay class
  * vocabulary, …). Tests and locale dictionaries are excluded — they are not part of
  * what the component renders. (Demos need no exclusion: they live in the docs app,
- * outside this walk, per docs-site.md §6.)
+ * outside this walk.)
  */
 
 import { readdirSync, readFileSync, statSync } from "node:fs";

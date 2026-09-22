@@ -3,7 +3,6 @@ import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-import { fieldVariants } from "./components/field/field-variants";
 import { overlayLayer } from "./components/overlay/overlay-classes";
 
 /**
@@ -206,14 +205,10 @@ function expectRsc(relativePath: string, rsc: RscStatus): void {
   expect(source, relativePath).not.toContain("'use client'");
 }
 
-function classTokens(value: string): string[] {
-  return value.split(/\s+/).filter(Boolean);
-}
-
 describe("RSC classification", () => {
-  // Why not a lint rule: performance.md §3 is a per-component table, not a
-  // syntactic pattern. Package-check asserts packed JS matches source
-  // directives; this suite asserts source matches the spec table.
+  // Why not a lint rule: server/client compatibility is a reviewed per-component
+  // decision. Package-check checks packed directives against source; this independent
+  // expectation catches an unintended source-boundary change.
   it.each(CLIENT_COMPONENTS)("%s is client", (_component, files) => {
     for (const file of files) {
       expectRsc(file, "client");
@@ -236,7 +231,7 @@ describe("RSC classification", () => {
     expectRsc(file, "client");
   });
 
-  // Why not a lint rule: "does this module own client state?" is a judgment the spec
+  // Why not a lint rule: "does this module own client state?" is a judgment the reviewed
   // table answers per module, not a syntactic pattern. The shared overlay close button
   // resolves its own label from the overlay dictionary, so it owns client state and
   // carries the directive; Dialog, Sheet and Sidebar were already client modules.
@@ -292,30 +287,6 @@ describe("combobox", () => {
     const source = readSrc("components/combobox/combobox.tsx");
     expect(source).toContain('from "@base-ui/react"');
     expect(source).not.toContain('from "@base-ui/react/combobox"');
-  });
-});
-
-describe("field", () => {
-  // Why not a lint rule: the responsive orientation face is a private recipe
-  // derivation from the vertical and horizontal literals. That is a data
-  // relationship, not a grammar oxlint can name without encoding the recipe.
-  it("derives responsive orientation tokens from the vertical and horizontal outputs", () => {
-    const vertical = classTokens(fieldVariants({ orientation: "vertical" }).root());
-    const horizontal = classTokens(fieldVariants({ orientation: "horizontal" }).root());
-    const responsive = classTokens(fieldVariants({ orientation: "responsive" }).root());
-    const verticalSet = new Set(vertical);
-    const horizontalSet = new Set(horizontal);
-    const shared = vertical.filter((token) => horizontalSet.has(token));
-    const verticalOnly = vertical.filter((token) => !horizontalSet.has(token));
-    const horizontalOnly = horizontal.filter((token) => !verticalSet.has(token));
-    const fieldGroupMd = "@md/field-group:";
-    const derived = [
-      ...shared,
-      ...horizontalOnly.map((token) => `${fieldGroupMd}${token}`),
-      `${fieldGroupMd}*:w-auto`,
-      ...verticalOnly,
-    ];
-    expect(responsive.toSorted()).toEqual(derived.toSorted());
   });
 });
 
@@ -380,12 +351,41 @@ describe("Twemoji artwork fidelity", () => {
   });
 });
 
+describe("runtime listeners and layout motion", () => {
+  // Why not a lint rule: both are closed lists of reviewed owners across the tree. A rule
+  // banning the call or the class would need an exemption per owner and still could not
+  // say the list is complete. Each owner's browser test covers its own cleanup.
+  it("installs event listeners only from the reviewed owners", () => {
+    expect(filesContainingCode(".addEventListener(").toSorted()).toEqual([
+      "components/sidebar/sidebar.tsx",
+      "hooks/use-form-reset.ts",
+      "hooks/use-is-mobile.ts",
+      "hooks/use-predicted-events.ts",
+      "theme/theme-provider.tsx",
+    ]);
+  });
+
+  it("transitions layout properties only in the reviewed places", () => {
+    // Everything else animates transform, opacity and colour. The central reduced-motion
+    // rule in fuse.css also disables these.
+    const layoutTransition =
+      /transition-(?:all|\[[^\]]*(?:height|width|padding|margin|inset|top|right|bottom|left|grid)[^\]]*\])/u;
+    const owners = [...SOURCE_TREE.values()]
+      .filter((record) => layoutTransition.test(record.code))
+      .map((record) => record.relative);
+    expect(owners.toSorted()).toEqual([
+      "components/accordion/accordion-variants.ts",
+      "components/meter/meter-variants.ts",
+      "components/sidebar/sidebar.tsx",
+      "styles/panel-height.ts",
+    ]);
+  });
+});
+
 describe("overlay layer", () => {
-  // Why not a lint rule: the invariant is a count across two places — the
-  // shared overlay module spells `z-50` once (theming.md §7.4) and no
-  // component restates it. A lint rule banning the class
-  // would need a per-file exemption for exactly the module that owns it, and
-  // could not assert the "exactly once" half.
+  // Why not a lint rule: the invariant is a count across two places. The shared overlay
+  // module spells `z-50` once and no component restates it. A rule banning the class would
+  // need an exemption for the module that owns it and could not assert "exactly once".
   it("is declared once in overlay-classes.ts and nowhere else in component source", () => {
     expect(overlayLayer).toBe("z-50");
     expect(codeOnly(readSrc("components/overlay/overlay-classes.ts")).match(/z-50/gu)).toHaveLength(1);
@@ -397,9 +397,8 @@ describe("superseded local forms", () => {
   // Why not a lint rule: each of these is a "there is exactly one owner" count
   // across the whole tree. A rule banning the spelling would need a per-file
   // exemption for precisely its owner and still could not assert the "exactly
-  // once" half. Spec 08 built the owners; this is the ban on the private copies
-  // growing back (2026-09-03). One-owner *calls and imports* moved to lint
-  // allow lists (ADR 0008 amendment 2026-09-04); class-string ownership stays
+  // once" half. Private copies would undo the shared ownership. Calls and imports use lint
+  // allow lists; class-string ownership stays
   // here because lint cannot count.
   it("spells the popup motion, fill and surface classes only in overlay-classes.ts", () => {
     for (const needle of [

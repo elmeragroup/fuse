@@ -9,9 +9,8 @@ import { selfFocusRingClass } from "../../styles/utils";
  * `ring-sidebar-ring` focus literals are the canonical `focusRing`.
  *
  * The `h-8` / `h-7` / `h-12` ladder is shell-local navigation-rail geometry, exempt from
- * the `--control-*` density rungs. Collapse
- * motion is color/shadow only; layout keys are not in the shell-width exception
- * (performance.md §6).
+ * the `--control-*` density rungs. Collapse motion animates colour and shadow only. The
+ * shell width is the one sidebar layout transition `source-contracts.test.ts` allows.
  */
 export const sidebarMenuButtonVariants = tv({
   base: [

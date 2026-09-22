@@ -7,7 +7,7 @@ const sourceRoot = dirname(fileURLToPath(import.meta.url));
 
 /**
  * Both test tiers — the base-ui components and the quarantined react-aria interim tier, which is
- * held to the same test standards (tooling §7.2, amended 2026-09-03) — plus the package-private
+ * held to the same test standards — plus the package-private
  * hooks, whose browser suites mount real controls and are held to the same shape.
  */
 const suiteRoots = ["components", "react-aria", "hooks"].map((tier) => join(sourceRoot, tier));
@@ -16,7 +16,7 @@ const hooksRoot = join(sourceRoot, "hooks");
 /**
  * Shared browser fixtures live outside `src`, so the suite-shape gates below do not apply to
  * them — but a locator extracted into one is the same locator it was in the suite, and would
- * otherwise leave the gate the moment it moved (tooling §8).
+ * otherwise leave the gate the moment it moved.
  */
 const sharedFixtureRoot = join(sourceRoot, "../test");
 

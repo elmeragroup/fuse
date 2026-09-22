@@ -4,8 +4,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { buttonVariants } from "../../components/button/button-variants";
-import { numberFieldGroupClass } from "../../styles/field-box";
-import { fieldBox, fieldBoxChromeClass } from "../../styles/field-box";
+import { fieldBox, fieldBoxChromeClass, numberFieldGroupClass } from "../../styles/field-box";
 import { checkboxVariants } from "./checkbox";
 import { composeTailwindRenderProps } from "./compose-tailwind-render-props";
 import { fieldGroupVariants } from "./field";
@@ -66,12 +65,9 @@ describe("fieldGroupVariants", () => {
 });
 
 describe("field-box chrome parity", () => {
-  // The interim tier's field
-  // box, the base-ui recipe, and NumberField's group are the same chrome, so a DateField,
-  // a SearchField, an Input and a NumberField in one form read as one family. A
-  // `satisfies` cannot express this — it would pin keys, not the rendered tokens — so
-  // the constant is asserted to survive twMerge on every consumer, and the absence of a
-  // competing rung is asserted separately.
+  // Unit under test: each field box's merged classes. Oracle: the shared chrome they
+  // compose, whose tokens field-box.test.ts pins by hand. A consumer class that cancels a
+  // chrome token in the merge fails here.
   const tokens = fieldBoxChromeClass.split(" ");
 
   it("lands every shared chrome token on every field box's computed output", () => {

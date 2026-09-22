@@ -5,7 +5,7 @@ import { cn } from "../../styles/cn";
 import { typographyFragments } from "../../styles/typography-fragments";
 import { textVariants } from "./text-variants";
 
-const VARIANTS = [
+const FRAGMENT_VARIANTS = [
   "default",
   "foreground",
   "primary",
@@ -14,12 +14,7 @@ const VARIANTS = [
   "muted",
   "inherit",
   "destructive",
-  "success",
 ] as const;
-
-function expectedVariantClass(variant: (typeof VARIANTS)[number]): string {
-  return variant === "success" ? "text-success" : typographyFragments({ variant });
-}
 
 const SIZES = ["xs", "sm", "default", "lg", "xl", "2xl"] as const;
 const SIZE_TOKEN = {
@@ -34,9 +29,6 @@ const SIZE_TOKEN = {
 describe("textVariants", () => {
   it("defaults to variant/size default, leading relaxed, and weight normal", () => {
     const resolved = textVariants();
-    expect(resolved).toBe(
-      textVariants({ variant: "default", size: "default", leading: "relaxed", weight: "normal" })
-    );
     expect(resolved).toContain("font-sans");
     expect(resolved).toContain("text-inherit");
     expect(resolved).toContain("text-base");
@@ -44,11 +36,16 @@ describe("textVariants", () => {
     expect(resolved).toContain("font-normal");
   });
 
-  it.each(VARIANTS)("resolves variant %s onto its token class", (variant) => {
+  it.each(FRAGMENT_VARIANTS)("resolves variant %s onto the shared fragment class", (variant) => {
     const resolved = textVariants({ variant });
-    expect(resolved.split(/\s+/)).toContain(expectedVariantClass(variant));
+    // Oracle: the shared fragment, which typography-fragments.test.ts pins by hand.
+    expect(resolved.split(/\s+/)).toContain(typographyFragments({ variant }));
     expect(resolved, variant).not.toContain("dark:");
     expect(resolved, variant).not.toMatch(RAW_PALETTE_RE);
+  });
+
+  it("adds a success variant on the success role token", () => {
+    expect(textVariants({ variant: "success" }).split(/\s+/)).toContain("text-success");
   });
 
   it("renames destructive onto the error token and keeps the value name", () => {
@@ -98,11 +95,9 @@ describe("textVariants", () => {
   });
 
   it("surfaces align as a first-class axis", () => {
-    expect(textVariants({ align: "left" }).split(/\s+/)).toContain(typographyFragments({ align: "left" }));
-    expect(textVariants({ align: "center" }).split(/\s+/)).toContain(
-      typographyFragments({ align: "center" })
-    );
-    expect(textVariants({ align: "right" }).split(/\s+/)).toContain(typographyFragments({ align: "right" }));
+    expect(textVariants({ align: "left" }).split(/\s+/)).toContain("text-left");
+    expect(textVariants({ align: "center" }).split(/\s+/)).toContain("text-center");
+    expect(textVariants({ align: "right" }).split(/\s+/)).toContain("text-right");
     expect(textVariants({ align: "justify" }).split(/\s+/)).toContain("text-justify");
     expect(textVariants().split(/\s+/)).not.toContain("text-left");
   });

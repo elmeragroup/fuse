@@ -61,7 +61,7 @@ describe("pagination dictionary", () => {
     }
   });
 
-  it("carries no key beyond the six rows accessibility.md §4.1 assigns to Pagination", () => {
+  it("carries no key beyond the six rows owned by Pagination", () => {
     for (const locale of SUPPORTED_LOCALES) {
       expect(Object.keys(paginationStrings.getStringsForLocale(locale)).sort(), locale).toEqual([
         "goToNext",
@@ -85,7 +85,7 @@ describe("paginationVariants", () => {
     expect(paginationVariants({ direction: "next" }).link()).toContain("pr-2.5");
   });
 
-  it("keeps the spec-named layout slots and drops the dead item/button slots", () => {
+  it("keeps the reviewed layout slots and drops the dead item/button slots", () => {
     const slots = paginationVariants();
     expect(slots.base()).toContain("mx-auto");
     expect(slots.content()).toContain("flex-row");

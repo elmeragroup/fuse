@@ -30,7 +30,7 @@ export type CodeProps = Omit<ComponentProps<"pre">, "children"> & {
 
 /**
  * Syntax-highlighted code block. Server component — it owns no
- * state, no handlers, and no browser APIs (performance.md §RSC classification).
+ * state, no handlers, and no browser APIs.
  *
  * The inner `<code>` receives highlighter HTML via `dangerouslySetInnerHTML`. That
  * markup is `sugar-high` output over the caller-supplied `code` string;

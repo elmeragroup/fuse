@@ -1,4 +1,4 @@
-/** accessibility.md §4.1 — locked copy for the `pagination.*` rows. */
+/** Default localized copy for the `pagination.*` rows. */
 export const svSE = {
   landmark: "Sidnavigering",
   previous: "Föregående",

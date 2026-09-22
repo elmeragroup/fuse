@@ -1,5 +1,5 @@
 /**
- * RAC interim stack from architecture.md Appendix A, plus the scoped packages
+ * RAC interim dependencies, plus the scoped packages
  * those entries pull in (`@react-aria/*`, `@react-stately/*`).
  *
  * One owner, imported by `entries.ts` (package-check) and

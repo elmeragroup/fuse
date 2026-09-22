@@ -7,7 +7,7 @@ const workspaceRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), ".
 
 const nextConfig: NextConfig = {
   outputFileTracingRoot: workspaceRoot,
-  /** Component pages are authored as `page.mdx` route files (docs-site.md §1). */
+  /** Component pages are authored as `page.mdx` route files. */
   pageExtensions: ["ts", "tsx", "mdx"],
   /**
    * `next dev` otherwise writes `AGENTS.md`/`CLAUDE.md` into this app on every start.
@@ -23,7 +23,7 @@ const nextConfig: NextConfig = {
  * through one configuration.
  *
  * - `remark-frontmatter` claims the `---` block, so it is metadata for the build to read
- *   (title and lede — see `scripts/lib/page-source.ts`) rather than rendered prose.
+ *   (the lede — see `scripts/lib/page-source.ts`) rather than rendered prose.
  * - `remark-gfm` keeps tables, strikethrough and autolinks available to page authors.
  */
 const withMdx = createMdx({

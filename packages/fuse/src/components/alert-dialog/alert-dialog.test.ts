@@ -17,7 +17,7 @@ describe("alert-dialog dictionary", () => {
     }
   });
 
-  it("carries no key beyond the one row accessibility.md §4.1 assigns to AlertDialog", () => {
+  it("carries no key beyond the one row owned by AlertDialog", () => {
     for (const locale of SUPPORTED_LOCALES) {
       expect(Object.keys(alertDialogStrings.getStringsForLocale(locale)), locale).toEqual(["cancel"]);
     }

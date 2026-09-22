@@ -2,7 +2,7 @@
  * Package-private class vocabulary shared by every overlay family — the public base-ui
  * Dialog/Sheet and the interim RAC Dialog alike. Nothing here is exported through
  * `package.json#exports`; it reaches the standalone stylesheet only through the emitted
- * dist modules that import it, which are that sheet's only source (architecture.md §5).
+ * dist modules that import it, which are that sheet's only source.
  *
  * Resolved constants are derived from the recipes below. Export names stay so the
  * thirteen overlay consumers compile without edits.

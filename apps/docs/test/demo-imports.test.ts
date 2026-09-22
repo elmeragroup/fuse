@@ -10,9 +10,8 @@ const componentsDir = path.join(docsRoot, "src/app/(docs)/components");
 const CONSUMER_SPECIFIERS = [/^react$/u, /^@elmeragroup\/fuse\//u, /^@internationalized\/date$/u];
 
 /**
- * The docs-site.md §6 carve-out, verbatim: the demos whose required scenario the public API
- * cannot express, and the one non-public specifier each may import. Closed list — a new
- * entry amends §6 first.
+ * Reviewed demos whose scenarios the public API cannot express, with the allowed
+ * non-public imports. Review a new exception here rather than deriving it from demos.
  */
 const CARVE_OUTS = new Map<string, readonly string[]>([
   ["calendar/demos/calendar-rtl.tsx", ["react-aria-components"]],
@@ -55,8 +54,8 @@ function relativeDemo(file: string): string {
   return path.relative(componentsDir, file).split(path.sep).join("/");
 }
 
-describe("demos import only what a consumer could (docs-site.md §6)", () => {
-  it("keeps every non-public specifier inside the §6 carve-out", () => {
+describe("demos import only what a consumer could", () => {
+  it("keeps every non-public specifier inside the carve-out", () => {
     const offenders: string[] = [];
     for (const file of demoFiles()) {
       const allowed = CARVE_OUTS.get(relativeDemo(file)) ?? [];

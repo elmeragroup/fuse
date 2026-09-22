@@ -21,7 +21,6 @@ const SIZES = ["default", "sm", "lg", "xl", "2xl", "3xl", "4xl", "5xl", "6xl"] a
 describe("headingVariants", () => {
   it("defaults to variant/size/font default", () => {
     const resolved = headingVariants();
-    expect(resolved).toBe(headingVariants({ variant: "default", size: "default", font: "default" }));
     expect(resolved).toContain("font-heading");
     expect(resolved).toContain("text-inherit");
     expect(resolved).toContain("text-base");
@@ -32,6 +31,7 @@ describe("headingVariants", () => {
   it("resolves each variant class; destructive is text-error and never a destructive class", () => {
     for (const variant of VARIANTS) {
       const resolved = headingVariants({ variant });
+      // Oracle: the shared fragment, which typography-fragments.test.ts pins by hand.
       expect(resolved, variant).toContain(typographyFragments({ variant }));
       expect(resolved, variant).not.toContain("dark:");
       expect(resolved, variant).not.toMatch(RAW_PALETTE_RE);
@@ -39,7 +39,6 @@ describe("headingVariants", () => {
     const destructive = headingVariants({ variant: "destructive" });
     expect(destructive).toContain("text-error");
     expect(destructive).not.toContain("destructive");
-    expect(VARIANTS).toHaveLength(8);
   });
 
   it("resolves each type-scale size without density control metrics", () => {
@@ -59,15 +58,14 @@ describe("headingVariants", () => {
       }
       expect(headingVariants({ size }), size).not.toContain("--control-");
     }
-    expect(SIZES).toHaveLength(9);
   });
 
   it("toggles noMargin, uppercase, and align", () => {
     expect(headingVariants({ noMargin: true })).toContain("mb-0");
     expect(headingVariants({ uppercase: true })).toContain("uppercase");
-    expect(headingVariants({ align: "left" })).toContain(typographyFragments({ align: "left" }));
-    expect(headingVariants({ align: "center" })).toContain(typographyFragments({ align: "center" }));
-    expect(headingVariants({ align: "right" })).toContain(typographyFragments({ align: "right" }));
+    expect(headingVariants({ align: "left" })).toContain("text-left");
+    expect(headingVariants({ align: "center" })).toContain("text-center");
+    expect(headingVariants({ align: "right" })).toContain("text-right");
   });
 
   it("lets a className merge win over a conflicting recipe class through cn", () => {

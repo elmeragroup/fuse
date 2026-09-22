@@ -6,8 +6,8 @@ import { useResolvedPortalContainer } from "../../theme/theme-scope-container";
 import type { OverlayContainerProps } from "./overlay-props";
 
 /**
- * Package-private portal owner (theming.md §7.4): resolve the target, render
- * nothing while a scope is unattached, never fall through to `document.body`.
+ * Package-private portal owner. It resolves the target, renders nothing while a scope is
+ * unattached, and never falls back to `document.body`.
  */
 export function OverlayPortal({
   portal: Portal,

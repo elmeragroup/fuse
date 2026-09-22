@@ -3,12 +3,10 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { focusRing } from "../../styles/utils";
+import { selfFocusRingClass } from "../../styles/utils";
 import { Item } from "./item";
 import { ITEM_TITLE_CLASSES } from "./item-title-classes";
 import { itemVariants } from "./item-variants";
-
-const focusSelf = focusRing({ target: "self" }).root();
 
 describe("itemVariants", () => {
   it("defaults to the default variant and size", () => {
@@ -27,7 +25,8 @@ describe("itemVariants", () => {
 
   it("composes the shared self focus ring and never a dark variant", () => {
     const classes = itemVariants();
-    for (const token of focusSelf.split(/\s+/).filter(Boolean)) {
+    // Oracle: the shared focus recipe, which utils.test.ts pins by hand.
+    for (const token of selfFocusRingClass.split(" ")) {
       expect(classes).toContain(token);
     }
     expect(classes).not.toContain("dark:");

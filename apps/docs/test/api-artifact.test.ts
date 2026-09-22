@@ -1,5 +1,5 @@
 /**
- * The `api.json` drift check (docs-site.md §8).
+ * The `api.json` drift check.
  *
  * `api.json` is generated *and* committed, so it can go stale: someone edits a JSDoc
  * comment or a prop's type in `packages/fuse` and the artifact next to the page still

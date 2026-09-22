@@ -1,7 +1,6 @@
 /**
- * Generation failures are hard failures: an unresolvable type or a public prop
- * without JSDoc fails the docs build rather than rendering an empty cell
- * (docs-site.md §8).
+ * Generation failures are hard failures. An unresolvable type or a public prop without
+ * JSDoc fails the docs build instead of rendering an empty cell.
  */
 export class DocsGenerationError extends Error {
   readonly problems: readonly string[];

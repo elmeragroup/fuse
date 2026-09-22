@@ -46,7 +46,7 @@ export type DateRangePickerProps<T extends DateValue> = {
   shouldForceLeadingZeros?: boolean;
   /**
    * Portal target for the popover. Defaults to the nearest `ThemeScope`, so the overlay
-   * inherits the theme it was opened from (theming.md §7.4); an explicit element or ref
+   * inherits the theme it was opened from; an explicit element or ref
    * wins.
    */
   container?: OverlayContainerProps["container"];

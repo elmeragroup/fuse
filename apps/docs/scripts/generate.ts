@@ -2,26 +2,26 @@
  * The docs generation pass.
  *
  * Runs before `next build`, `next dev` and `tsc`. The site's component pages are
- * hand-authored `page.mdx` route files compiled by `@next/mdx` (§1); this pass discovers
+ * hand-authored `page.mdx` route files compiled by `@next/mdx`; this pass discovers
  * them by globbing the components route group, reads each page as *data* — its frontmatter,
  * its headings, the `<Demo>` elements it renders — and writes the artifacts that no page
  * owns:
  *
  *   • each component's `api.json`, written *next to its page* and **committed**, so an API
- *     change is a reviewable diff; a drift check fails when a committed one is stale (§8);
- *   • the component-page manifest the nav, page intros and QuickNav import (§3.3, §3.4);
- *   • the tokens each component's recipe reads, and the site-wide token reference (§3.4);
- *   • the `/api/themes` catalog of the 20 legal permutations, plus Figma DTCG files (§9);
- *   • the measured bundle sizes the Tokens page publishes (performance.md §2);
- *   • `/components/<slug>.md` — the markdown endpoint each page links to (§9);
- *   • `llms.txt`, the site-root AI index (§9);
- *   • the ⌘K search index (§3.2);
- *   • and it verifies that every authored nav destination is a real route (§3.3).
+ *     change is a reviewable diff; a drift check fails when a committed one is stale;
+ *   • the component-page manifest the nav, page intros and QuickNav import;
+ *   • the tokens each component's recipe reads, and the site-wide token reference;
+ *   • the `/api/themes` catalog of the 20 legal permutations, plus Figma DTCG files;
+ *   • the measured bundle sizes the Tokens page publishes;
+ *   • `/components/<slug>.md` — the markdown endpoint each page links to;
+ *   • `llms.txt`, the site-root AI index;
+ *   • the ⌘K search index;
+ *   • and it verifies that every authored nav destination is a real route.
  *
  * Nothing is copied or compiled here: a demo is one file, imported by the page and read
- * both by the frame at render time and by this pass for the markdown it embeds (§6). Any
+ * both by the frame at render time and by this pass for the markdown it embeds. Any
  * unresolvable type or undocumented public prop fails this pass, and therefore the docs
- * build (§8).
+ * build.
  */
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
@@ -112,15 +112,15 @@ function buildComponent(
 
   return {
     slug,
-    title: page.title,
+    title: paths.title,
     lede: page.lede,
     entry: paths.entry,
-    exportName: paths.exportName,
     sourcePath: repoRelative(paths.sourceFile),
     sourceUrl: `${REPO_BLOB_BASE}/${repoRelative(paths.sourceFile)}`,
     markdownUrl: `/components/${slug}.md`,
-    // The page's status is the implementation module's own directive (performance.md §3),
-    // whether or not the artifact has a part declared there.
+    // The page's status is the implementation module's own directive,
+    // whether or not the artifact has a part declared there; the markdown endpoint
+    // publishes it.
     rsc: readRscStatus(readFileSync(paths.sourceFile, "utf8")),
     headings: page.headings,
     demos,
@@ -129,13 +129,13 @@ function buildComponent(
   };
 }
 
-/** The component-page manifest the site imports (§3.3, §3.4). */
+/** The component-page manifest the site imports. */
 function emitComponentPages(components: readonly DocsComponent[]): void {
   writeFile(path.join(generatedDir, "component-pages.ts"), `${BANNER}${renderComponentPages(components)}`);
 }
 
 /**
- * Records which committed `api.json` files the generation pass had to rewrite (§8).
+ * Records which committed `api.json` files the generation pass had to rewrite.
  *
  * The artifacts are tracked, unlike everything under `src/generated`: the point is the
  * reviewable diff. That makes staleness possible, so the pass records which artifacts
@@ -166,7 +166,7 @@ function emitMarkdownEndpoints(components: readonly DocsComponent[]): void {
   }
 }
 
-/** The measured bundle sizes the Tokens page publishes (performance.md §2). */
+/** The measured bundle sizes the Tokens page publishes. */
 function emitBundleSizes(report: BundleSizeReport): void {
   writeFile(
     path.join(generatedDir, "bundle-sizes.ts"),
@@ -191,12 +191,12 @@ export const COLOR_TOKENS: readonly string[] = ${JSON.stringify(tokens, null, 2)
   );
 }
 
-/** The static `GET /api/themes` catalog (docs-site.md §9.1). */
+/** The static `GET /api/themes` catalog. */
 function emitThemeCatalog(catalog: ThemeCatalog): void {
   writeFile(path.join(generatedDir, "theme-catalog.ts"), `${BANNER}${renderThemeCatalog(catalog)}`);
 }
 
-/** Per-mode DTCG documents for native Figma import, inlined in one module (docs-site.md §9.2). */
+/** Per-mode DTCG documents for native Figma import, inlined in one module. */
 function emitFigmaThemeCatalog(catalog: ThemeCatalog): void {
   writeFile(
     path.join(generatedDir, "theme-catalog-figma.ts"),
@@ -204,12 +204,12 @@ function emitFigmaThemeCatalog(catalog: ThemeCatalog): void {
   );
 }
 
-/** The ⌘K palette index (§3.2). */
+/** The ⌘K palette index. */
 function emitSearchIndex(components: readonly DocsComponent[]): void {
   writeFile(path.join(generatedDir, "search-index.ts"), `${BANNER}${renderSearchIndex(components)}`);
 }
 
-/** The site-root AI index (§9). */
+/** The site-root AI index. */
 function emitLlmsTxt(components: readonly DocsComponent[]): void {
   writeFile(llmsTxtFile, renderLlmsTxt(components));
 }
@@ -236,7 +236,7 @@ async function main(): Promise<void> {
   // committed api.json files and the generated site exactly as it found them. Global
   // inputs (workspace CSS exports, nav destinations, bundle sizes), demo inventory and
   // `"use client"` validation all belong to `docs-inspection`, the one owner of the docs
-  // input checks (docs-site.md §6).
+  // input checks.
   const problems = new ProblemLog();
   const sizes = inspectGlobalDocs(problems);
   const colors = readColorTokenMapFromFile(path.join(fuseSrc, "styles/fuse.css"));

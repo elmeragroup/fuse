@@ -71,11 +71,11 @@ export type PopoverProps = Omit<
  * OverlayPortal cannot wrap this popover: RAC has no Portal component and instead
  * takes `UNSTABLE_portalContainer` on the popover itself. The wait-not-body rule
  * still runs through {@link useResolvedPortalContainer}; this is the documented
- * exception (theming.md §7.4).
+ * exception.
  *
  * It carries no overlay-container stamp. That stamp existed solely so the private RAC
  * `Modal`'s `shouldCloseOnInteractOutside` could recognise its own popovers; the modal
- * stack was deleted with spec 08, and the public base-ui
+ * stack was replaced by the shared picker shell, and the public base-ui
  * `Dialog` that now hosts a picker tracks nesting through the React tree instead.
  */
 export function Popover({

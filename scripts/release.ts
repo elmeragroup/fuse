@@ -27,7 +27,7 @@ export function parseReleaseCommand(argv: readonly string[]): ReleaseCommand {
   throw new Error(USAGE);
 }
 
-/** The one published package, resolved by the shared release engine (release.md §1). */
+/** The one published package, resolved by the shared release engine. */
 function releasePackage(): ReleasePackage {
   const checkoutRoot = resolve(import.meta.dirname, "..");
   return resolveReleasePackage(checkoutRoot, resolve(checkoutRoot, "packages/fuse"), "@elmeragroup/fuse");

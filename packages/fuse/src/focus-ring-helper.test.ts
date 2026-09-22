@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 const sourceRoot = dirname(fileURLToPath(import.meta.url));
 
-/** Components plus the quarantined react-aria interim tier (tooling §7.2, amended 2026-09-03). */
+/** Components plus the quarantined react-aria interim tier. */
 const suiteRoots = ["components", "react-aria"].map((tier) => join(sourceRoot, tier));
 
 function walk(directory: string): string[] {

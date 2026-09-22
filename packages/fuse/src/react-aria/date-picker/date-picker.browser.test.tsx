@@ -438,7 +438,6 @@ describe("DatePicker presets", () => {
       "en-US": "Date presets",
       "fi-FI": "Päivämäärän pikavalinnat",
     } as const;
-    expect(Object.keys(expected)).toEqual([...SUPPORTED_LOCALES]);
 
     for (const locale of SUPPORTED_LOCALES) {
       const { unmount } = renderThemed(

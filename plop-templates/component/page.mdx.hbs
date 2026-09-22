@@ -1,8 +1,7 @@
 ---
-title: {{pascalCase name}}
 lede: >
   TODO({{name}}): one or two sentences explaining what this component
-  is and when to reach for it. Frontmatter declares title and lede, and nothing else.
+  is and when to reach for it. Frontmatter declares the lede and nothing else.
 ---
 
 import { {{pascalCase name}}Basic } from "./demos/{{name}}-basic";
@@ -15,7 +14,7 @@ export const metadata = componentMetadata("{{name}}");
 
 <Prose>
 
-SCAFFOLD — a hand-authored component page (docs-site.md §1), composing the §3.4 anatomy in
+SCAFFOLD — a hand-authored component page, composing the anatomy in
 the order below: intro, prose, one frame per reviewed scenario, API reference, tokens. Only this
 prose and the frames are authored; the intro, the reference and the token list read
 generated data, so never hand-write them.

@@ -39,7 +39,7 @@ const BUTTON_API = "/components/button";
 const DEEP_LINK = "api-button-isVisuallyDisabled";
 const SECOND_ROW = "api-button-onIntent";
 
-describe("API prop rows share one hash listener (docs-site.md §8)", () => {
+describe("API prop rows share one hash listener", () => {
   it("registers one hashchange listener per prop group, however many rows the page mounts", async () => {
     const page = await browser().newPage();
 

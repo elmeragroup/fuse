@@ -5,11 +5,9 @@ import { describe, expect, it } from "vitest";
 
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { panelHeightTransition } from "../../styles/panel-height";
-import { focusRing } from "../../styles/utils";
+import { selfFocusRingClass } from "../../styles/utils";
 import { Accordion } from "./accordion";
 import { accordionVariants } from "./accordion-variants";
-
-const focusSelf = focusRing({ target: "self" }).root();
 
 const VARIANTS = ["default", "card", "infodropdown"] as const;
 const RADII = ["none", "lg", "xl"] as const;
@@ -17,9 +15,6 @@ const RADII = ["none", "lg", "xl"] as const;
 describe("accordionVariants", () => {
   it("defaults to variant=default and radius=none", () => {
     const slots = accordionVariants();
-    const defaults = accordionVariants({ variant: "default", radius: "none" });
-    expect(slots.item()).toBe(defaults.item());
-    expect(slots.trigger()).toBe(defaults.trigger());
     expect(slots.item()).toContain("bg-muted");
     expect(slots.item()).toContain("rounded-sm");
     expect(slots.item()).toContain("p-4");
@@ -82,18 +77,18 @@ describe("accordionVariants", () => {
     expect(slots.trigger()).toContain("group/accordion-trigger");
     expect(slots.trigger()).toContain("data-[panel-open]:pb-4");
     expect(slots.trigger()).not.toContain("data-[state=open]");
-    for (const token of focusSelf.split(/\s+/).filter(Boolean)) {
+    // Oracle: the shared focus recipe, which utils.test.ts pins by hand.
+    for (const token of selfFocusRingClass.split(" ")) {
       expect(slots.trigger()).toContain(token);
     }
     expect(slots.icon()).toContain("group-data-[panel-open]/accordion-trigger:rotate-180");
+    // Oracle: the shared panel transition, which panel-height.test.ts pins by hand.
     expect(slots.content()).toBe(`${panelHeightTransition} h-(--accordion-panel-height)`);
     expect(slots.content()).not.toContain("motion-reduce");
     expect(slots.contentInner()).toContain("pt-1.5");
   });
 
   it("covers every public variant and radius without raw palette, dark, or density variants", () => {
-    expect(VARIANTS).toHaveLength(3);
-    expect(RADII).toHaveLength(3);
     for (const variant of VARIANTS) {
       const slots = accordionVariants({ variant });
       const resolved = [

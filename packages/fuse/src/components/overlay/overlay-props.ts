@@ -1,7 +1,7 @@
 import type { RefObject } from "react";
 
 /**
- * The portal-target prop every overlay carries (theming.md §7.4). Declared once so the
+ * The portal-target prop every overlay carries. Declared once so the
  * default — the nearest enclosing `ThemeScope` element — is documented in one place.
  *
  * The prop's own sentence is deliberately overlay-neutral: a consumer may portal a

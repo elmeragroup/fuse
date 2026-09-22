@@ -23,7 +23,7 @@ describe("search-field dictionary", () => {
     }
   });
 
-  it("carries no key beyond the single row accessibility.md §4.1 assigns to SearchField", () => {
+  it("carries no key beyond the single row owned by SearchField", () => {
     for (const locale of SUPPORTED_LOCALES) {
       expect(Object.keys(searchFieldStrings.getStringsForLocale(locale)), locale).toEqual(["clear"]);
     }

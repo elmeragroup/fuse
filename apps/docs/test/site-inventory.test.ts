@@ -3,16 +3,17 @@ import { describe, expect, it } from "vitest";
 import { COMPONENT_PAGES } from "../src/generated/component-pages";
 import { COMPONENT_NAV, NAV_GROUPS } from "../src/lib/nav";
 import { HOME_PAGE, STATIC_PAGES } from "../src/lib/pages";
+import { COMPONENT_INVENTORY } from "./component-inventory";
 import { fetchOk, fetchText } from "./docs-server";
 
 const NAV_HREFS = NAV_GROUPS.flatMap((group) => group.items.map((item) => item.href));
 
-describe("SideNav inventory (docs-site.md §3.3)", () => {
+describe("SideNav inventory", () => {
   it("carries exactly the three groups, in order", () => {
     expect(NAV_GROUPS.map((group) => group.label)).toEqual(["Overview", "Handbook", "Components"]);
   });
 
-  it("lists the Overview and Handbook pages the spec names", () => {
+  it("lists the Overview and Handbook pages in the reviewed inventory", () => {
     expect(NAV_GROUPS[0]?.items.map((item) => item.label)).toEqual([
       "Quick start",
       "Accessibility",
@@ -30,14 +31,13 @@ describe("SideNav inventory (docs-site.md §3.3)", () => {
     ]);
   });
 
-  it("generates the Components group from the page manifest, flat and alphabetical", () => {
+  it("generates the Components group from the reviewed titles, flat and alphabetical", () => {
     expect(NAV_GROUPS[2]?.items).toBe(COMPONENT_NAV);
+    // Unit under test: the nav labels and their order. Oracle: the reviewed inventory
+    // titles in the order the fixture lists them, which is alphabetical.
     expect(COMPONENT_NAV.map((item) => item.label)).toEqual(
-      [...COMPONENT_PAGES.map((component) => component.title)].sort((left, right) =>
-        left.localeCompare(right)
-      )
+      [...COMPONENT_INVENTORY.values()].map((entry) => entry.title)
     );
-    expect(COMPONENT_NAV.length).toBe(COMPONENT_PAGES.length);
   });
 
   it.each(NAV_HREFS)("resolves %s instead of 404ing", async (href) => {
@@ -51,7 +51,7 @@ describe("SideNav inventory (docs-site.md §3.3)", () => {
   });
 });
 
-describe("llms.txt (docs-site.md §9)", () => {
+describe("llms.txt", () => {
   it("is served from the site root", async () => {
     const response = await fetchOk("/llms.txt");
     expect(response.headers.get("content-type")).toContain("text/plain");
@@ -76,7 +76,7 @@ describe("llms.txt (docs-site.md §9)", () => {
   });
 });
 
-describe("markdown endpoints (docs-site.md §9)", () => {
+describe("markdown endpoints", () => {
   it.each(COMPONENT_PAGES.map((component) => component.markdownUrl))(
     "serves the View-as-Markdown target %s",
     async (markdownUrl) => {

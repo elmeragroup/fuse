@@ -25,6 +25,8 @@ afterEach(() => {
   restoreDocumentTheme();
 });
 
+// Unit under test: the document cascade stamped by stampTheme. Oracle: composeTheme,
+// whose resolved token map the emitted CSS must reproduce per permutation.
 function expectedElement(
   parent: HTMLElement,
   theme: ThemeInput,

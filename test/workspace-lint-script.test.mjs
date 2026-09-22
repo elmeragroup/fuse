@@ -106,7 +106,7 @@ describe("workspace lint script", () => {
     // Last-wins: the test exemption must be the final override that names a shadcn rule.
     expect(testExemptionIndex).toBe(shadcnOverrideIndexes.at(-1));
 
-    // Deliberately off (tooling.md §4): the rule must not be named at the root or in any override.
+    // Deliberately off: the rule must not be named at the root or in any override.
     expect(rules["shadcn/require-static-classes"]).toBeUndefined();
     expect(
       overrides.filter((entry) =>
@@ -117,7 +117,7 @@ describe("workspace lint script", () => {
 
   /**
    * The React Aria quarantine boundary moved from the plugin into this config when the package
-   * directory was renamed (tooling.md §5.6). Nothing upstream enforces the exemption's scope, so
+   * directory was renamed. Nothing upstream enforces the exemption's scope, so
    * these two tests are the boundary: one pins the exemption, the other retires it.
    */
   it("exempts react-aria from the RAC quarantine rule in exactly one place, scoped to the quarantine", () => {
@@ -137,10 +137,10 @@ describe("workspace lint script", () => {
     // description, violation message), which would keep a looser assertion green long after the
     // behaviour was fixed.
     const quarantineRegexSource = String.raw`packages\/ui\/src\/react-aria\/`;
-    // A failure means the plugin stopped hard-coding the old path, which has two possible shapes.
-    // If it learned the renamed directory, delete the override, this test, and the tooling.md
-    // §5.6 caveat. If it made the quarantine directory configurable instead, set that option and
-    // keep a scoped rule — deleting the override would drop the boundary. Either way, bump the pin.
+    // A failure means the plugin stopped hard-coding the old path, in one of two ways. If it
+    // learned the renamed directory, delete the override and this test. If it made the
+    // quarantine directory configurable, set that option and keep a scoped rule, because
+    // deleting the override would drop the boundary. Either way, bump the pin.
     expect(plugin).toContain(quarantineRegexSource);
   });
 });

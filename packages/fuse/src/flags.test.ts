@@ -5,7 +5,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-import { discoverEntries, PUBLISHED_DEPENDENCY_RANGES, runtimeDependencies } from "../scripts/entries";
+import { discoverEntries, runtimeDependencies } from "../scripts/entries";
 import {
   flagHashFailure,
   flagPayload,
@@ -85,7 +85,7 @@ describe("flag assets", () => {
     expect(publishedDependencies(required)["react-aria-components"]).toBeUndefined();
     expect(
       publishedDependencies({ ...required, "react-aria-components": "catalog:" })["react-aria-components"]
-    ).toBe(PUBLISHED_DEPENDENCY_RANGES["react-aria-components"]);
+    ).toBe("1.21.1");
     expect(
       publishedDependencies({
         ...required,

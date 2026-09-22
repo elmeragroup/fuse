@@ -18,12 +18,11 @@ const MINIMUM_REASON_LENGTH = 8;
 
 /**
  * The rule statement the failure message carries once, before the offenders.
- * `docs/spec/tooling.md` §7.6 is its canonical statement.
  */
 const RULE =
   `every disable comment carries \`${REASON_SEPARATOR}\` and a reason of at least ` +
   `${MINIMUM_REASON_LENGTH} non-space characters; a disable without a ` +
-  `\`${REASON_SEPARATOR.trim()} reason\` fails \`pnpm test:repo-policy\` (docs/spec/tooling.md §7.6)`;
+  `\`${REASON_SEPARATOR.trim()} reason\` fails \`pnpm test:repo-policy\``;
 
 /**
  * Labels every directive in one file's text whose reason is missing or too short as

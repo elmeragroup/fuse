@@ -15,10 +15,8 @@ const ICON_SIZE_CLASS = {
 } as const;
 
 describe("loaderVariants", () => {
-  it("returns base and icon slot functions with the spec defaults", () => {
+  it("returns base and icon slot functions with the default recipe values", () => {
     const slots = loaderVariants();
-    expect(slots.base()).toBe(loaderVariants({ variant: "default", size: "default" }).base());
-    expect(slots.icon()).toBe(loaderVariants({ variant: "default", size: "default" }).icon());
     expect(slots.base()).toContain("flex");
     expect(slots.base()).toContain("items-center");
     expect(slots.base()).toContain("justify-center");

@@ -40,7 +40,7 @@ describe("Collapsible", () => {
     const openPanel = panelControlledBy(trigger);
     expect(controls).toBeTruthy();
     expect(openPanel).not.toBeNull();
-    expect(openPanel?.id).toBe(controls);
+    expect(openPanel).toBe(page.getByText("Delivery window", { exact: true }).element());
 
     await userEvent.click(trigger);
     await vi.waitFor(() => {
@@ -299,7 +299,7 @@ describe("Collapsible", () => {
     });
     const controls = trigger.getAttribute("aria-controls");
     expect(controls).toBeTruthy();
-    expect(panelControlledBy(trigger)?.id).toBe(controls);
+    expect(panelControlledBy(trigger)).toBe(page.getByText("Delivery window", { exact: true }).element());
   });
 
   it("gives the trigger the shared keyboard focus ring", async () => {

@@ -9,7 +9,7 @@ export type BadgeProps = HTMLAttributes<HTMLDivElement> & VariantProps<typeof ba
 
 /**
  * Non-interactive status pill. Server component — it owns no state,
- * no handlers, and no browser APIs (performance.md §RSC classification).
+ * no handlers, and no browser APIs.
  */
 export function Badge({ className, variant, size, ...props }: BadgeProps): ReactElement {
   return <div data-slot="badge" className={cn(badgeVariants({ variant, size }), className)} {...props} />;
