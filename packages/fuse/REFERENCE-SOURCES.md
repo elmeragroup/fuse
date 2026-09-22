@@ -21,11 +21,10 @@ References supply code and source artwork. Adapt copied code to Fuse's current p
 
 ## Copying styles and assets
 
-Translate legacy Material roles into Fuse's semantic roles. `surface/on-surface`
-becomes `background/foreground`, `primary-container` becomes `card`,
-`surface-bright` becomes `card-soft`, and `surface-variant` becomes `feature`.
-Status containers become the matching `*-soft` pair. Choose new roles by usage;
-only the `destructive` pair remains a compatibility alias to `error`.
+Translate legacy Material roles into Fuse's semantic roles with the mapping in
+[token provenance](src/theme/tokens/PROVENANCE.md#external-mappings-and-unresolved-choices).
+Choose new roles by usage. Only the `destructive` pair remains a compatibility
+alias to `error`.
 
 Prefer the internal snapshot when both company references contain a logo. Telinet
 comes from OrderModuleWeb. Steddi intentionally uses the same glyph for full and

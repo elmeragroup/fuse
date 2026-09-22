@@ -10,9 +10,9 @@ export type DescriptionListDetailsProps = ComponentProps<"dd">;
 export type { DescriptionListHeadingProps } from "./description-list-heading";
 
 /**
- * Semantic `<dl>/<dt>/<dd>` composite. Server compound —
- * it owns no state, no handlers, and no browser APIs. `Heading` is a client `useRender` island so other outline levels
- * stay possible without flipping this module to a client boundary.
+ * Semantic `<dl>/<dt>/<dd>` composite. A server compound: it owns no state, handlers or
+ * browser APIs. `Heading` is a client `useRender` island, so other outline levels stay
+ * possible without making this module a client boundary.
  */
 function DescriptionListRoot(props: DescriptionListRootProps): ReactElement {
   return <div data-slot="description-list" {...props} />;

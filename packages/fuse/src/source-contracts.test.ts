@@ -351,12 +351,41 @@ describe("Twemoji artwork fidelity", () => {
   });
 });
 
+describe("runtime listeners and layout motion", () => {
+  // Why not a lint rule: both are closed lists of reviewed owners across the tree. A rule
+  // banning the call or the class would need an exemption per owner and still could not
+  // say the list is complete. Each owner's browser test covers its own cleanup.
+  it("installs event listeners only from the reviewed owners", () => {
+    expect(filesContainingCode(".addEventListener(").toSorted()).toEqual([
+      "components/sidebar/sidebar.tsx",
+      "hooks/use-form-reset.ts",
+      "hooks/use-is-mobile.ts",
+      "hooks/use-predicted-events.ts",
+      "theme/theme-provider.tsx",
+    ]);
+  });
+
+  it("transitions layout properties only in the reviewed places", () => {
+    // Everything else animates transform, opacity and colour. The central reduced-motion
+    // rule in fuse.css also disables these.
+    const layoutTransition =
+      /transition-(?:all|\[[^\]]*(?:height|width|padding|margin|inset|top|right|bottom|left|grid)[^\]]*\])/u;
+    const owners = [...SOURCE_TREE.values()]
+      .filter((record) => layoutTransition.test(record.code))
+      .map((record) => record.relative);
+    expect(owners.toSorted()).toEqual([
+      "components/accordion/accordion-variants.ts",
+      "components/meter/meter-variants.ts",
+      "components/sidebar/sidebar.tsx",
+      "styles/panel-height.ts",
+    ]);
+  });
+});
+
 describe("overlay layer", () => {
-  // Why not a lint rule: the invariant is a count across two places — the
-  // shared overlay module spells `z-50` once and no
-  // component restates it. A lint rule banning the class
-  // would need a per-file exemption for exactly the module that owns it, and
-  // could not assert the "exactly once" half.
+  // Why not a lint rule: the invariant is a count across two places. The shared overlay
+  // module spells `z-50` once and no component restates it. A rule banning the class would
+  // need an exemption for the module that owns it and could not assert "exactly once".
   it("is declared once in overlay-classes.ts and nowhere else in component source", () => {
     expect(overlayLayer).toBe("z-50");
     expect(codeOnly(readSrc("components/overlay/overlay-classes.ts")).match(/z-50/gu)).toHaveLength(1);

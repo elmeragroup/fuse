@@ -19,8 +19,8 @@ const apiReference = tv({
     partHeader: "mt-[1.6rem] mb-[0.7rem] flex items-center gap-2",
     partHeading: "font-semibold text-base m-0 scroll-mt-[calc(var(--spacing-docs-header)_+_1rem)]",
     partHeadingCode: "text-sm",
-    // RSC status is a per-part fact: the reference wears
-    // it next to the part heading, so it is styled here rather than in a shared badge.
+    // RSC status is a per-part fact, so the reference shows it beside each part heading and
+    // styles it here rather than in a shared badge.
     partRsc:
       "text-xs rounded-full border border-border px-1.5 py-0.5 font-mono whitespace-nowrap text-muted-foreground data-[rsc=server]:border-success/30 data-[rsc=server]:bg-success-soft data-[rsc=server]:text-success-soft-foreground",
     partNote: "text-xs mt-[0.6rem] text-muted-foreground",

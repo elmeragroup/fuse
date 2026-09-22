@@ -15,9 +15,11 @@ missing roles. Token modules own the resulting values.
 
 ## External mappings and unresolved choices
 
-- Surface / On Surface map to background / foreground. Primary Container maps
-  to card, Surface Bright to card-soft, and Surface Variant to feature.
-  Primary-soft uses Secondary Container with On Primary Container.
+- Surface and On Surface map to background and foreground. Primary Container
+  maps to card, Surface Bright to card-soft, and Surface Variant to feature.
+  Primary-soft uses Secondary Container with On Primary Container. Status
+  containers map to the matching `*-soft` pair. Code copied from a reference
+  uses the same mapping.
 - Telinet's live Dark variables override its older neutral dark sheet. Telinet
   card-soft falls back to background; Telinet and Elmera feature-bright use card
   because those aliases are absent. Confirm Telinet's collection with design.

@@ -9,9 +9,9 @@ import { loaderVariants } from "./loader-variants";
 export type LoaderProps = HTMLAttributes<HTMLDivElement> & VariantProps<typeof loaderVariants>;
 
 /**
- * Server spinner. A polite `role="status"` wrapper around a
- * decorative spinning `SpinnerGap`. Consumers pass a translated `aria-label`;
- * there is no baked English name. Owns no state, handlers, or browser APIs
+ * Server spinner: a polite `role="status"` wrapper around a decorative spinning
+ * `SpinnerGap`. Consumers pass a translated `aria-label`, since there is no built-in
+ * English name. It owns no state, handlers or browser APIs.
  */
 export function Loader({ className, variant, size, ...props }: LoaderProps): ReactElement {
   const { base, icon } = loaderVariants({ variant, size });

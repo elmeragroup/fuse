@@ -534,7 +534,7 @@
           "type": "string",
           "shortType": null,
           "defaultValue": null,
-          "description": "Required accessible name. `RadioIconButton` is mechanically icon-only",
+          "description": "Required accessible name, because `RadioIconButton` renders only an icon.",
           "required": true
         },
         {

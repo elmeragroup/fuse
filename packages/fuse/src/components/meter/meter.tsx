@@ -75,8 +75,8 @@ function MeterIcon({
 }
 
 /**
- * Labeled meter composite over base-ui Meter. Read-only value
- * display — never an input. Client — it reads locale from the provider
+ * Labeled meter composite over base-ui Meter. It displays a read-only value and is never
+ * an input. Client component, because it reads the locale from the provider.
  */
 export function Meter({
   label,

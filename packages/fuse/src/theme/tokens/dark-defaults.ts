@@ -1,9 +1,7 @@
 import type { TokenContract } from "./contract";
 
-// Shared dark additions for roles absent from the supplied palettes.
-// Provenance and inferred roles: PROVENANCE.md.
-// Error uses the shared M3 error ramp; info/success use Telinet schematic pairs.
-// Warning, chart order and syntax assignments are provisional accessible mappings.
+// Shared dark values for roles the supplied palettes lack. PROVENANCE.md records where
+// each one came from and which are still provisional.
 export const DARK_DEFAULTS = {
   "muted-foreground": "oklch(0.8280204 0.0042636 121.5755)", // #C6C7C4
   error: "oklch(0.8383036 0.089085 26.7575)", // #FFB4AB

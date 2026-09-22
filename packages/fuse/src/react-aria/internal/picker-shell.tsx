@@ -13,11 +13,10 @@ import { Description, FieldError, FieldGroup, Label } from "./field";
 import { Popover } from "./popover";
 
 /**
- * The chrome both date pickers wear: label,
- * field box, trigger, help text, and the popover/dialog the grid opens into. Only the
- * segment row(s) and the popover body differ between DatePicker and DateRangePicker, so
- * those two are the `children` and `popover` props and everything else lives here once
- *
+ * The chrome both date pickers share: label, field box, trigger, help text, and the
+ * popover and dialog the grid opens into. Only the segment rows and the popover body
+ * differ between DatePicker and DateRangePicker, so those are the `children` and
+ * `popover` props and everything else lives here.
  *
  * Package-private, like every module in this directory.
  *

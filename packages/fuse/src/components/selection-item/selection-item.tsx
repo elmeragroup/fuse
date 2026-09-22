@@ -139,9 +139,9 @@ type SelectionItemShellProps = Omit<ComponentProps<typeof Field.Item>, "classNam
 };
 
 /**
- * Shared card-row shell that CheckboxItem and RadioItem plug a control into.
- * Client — Field.Item context. Control and sub-section columns share one parent grid so the
- * spacer tracks the control slot without measuring it.
+ * Shared card-row shell that CheckboxItem and RadioItem plug a control into. Client
+ * component, because it reads Field.Item context. The control and sub-section columns
+ * share one parent grid, so the spacer tracks the control slot without measuring it.
  *
  * Vertical and default shells, in either group shape or outside any group, collapse
  * borders with `not-first:border-t-0`. A checked non-first shell then repaints its top border in

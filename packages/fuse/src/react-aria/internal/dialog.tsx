@@ -14,13 +14,13 @@ import { cn } from "../../styles/cn";
 import { Button } from "./button";
 
 /**
- * The interim tier's styled dialog chrome: RAC Dialog plus the
- * heading/close affordance the DatePicker popover renders with `closeButton={false}`.
- * Package-private — the public dialog family is the base-ui `@elmeragroup/fuse/dialog`
- * entry and this module never reaches `package.json#exports`.
+ * The interim tier's styled dialog chrome: RAC Dialog plus the heading and close button
+ * that the DatePicker popover renders with `closeButton={false}`. Package-private. The
+ * public dialog family is the base-ui `@elmeragroup/fuse/dialog` entry, and this module
+ * never reaches `package.json#exports`.
  *
- * The close copy is the shared `overlay.close` key, read from
- * Dialog's own dictionary rather than re-declared here.
+ * The close copy is the family-owned `overlay.close` key, read from the overlay
+ * dictionary in `components/overlay/intl` rather than declared here.
  */
 const dialogVariants = tv({
   slots: {

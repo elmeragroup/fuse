@@ -137,9 +137,10 @@ describe("workspace lint script", () => {
     // description, violation message), which would keep a looser assertion green long after the
     // behaviour was fixed.
     const quarantineRegexSource = String.raw`packages\/ui\/src\/react-aria\/`;
-    // A failure means the plugin stopped hard-coding the old path, which has two possible shapes.
-    // If it learned the renamed directory, delete the override and this test. If it made the quarantine directory configurable instead, set that option and
-    // keep a scoped rule — deleting the override would drop the boundary. Either way, bump the pin.
+    // A failure means the plugin stopped hard-coding the old path, in one of two ways. If it
+    // learned the renamed directory, delete the override and this test. If it made the
+    // quarantine directory configurable, set that option and keep a scoped rule, because
+    // deleting the override would drop the boundary. Either way, bump the pin.
     expect(plugin).toContain(quarantineRegexSource);
   });
 });

@@ -99,9 +99,9 @@ export default function AccessibilityPage(): ReactElement {
         One central <code>prefers-reduced-motion: reduce</code> block in the library stylesheet removes
         transform, translate and scale motion while retaining opacity fades — comprehension-aiding transitions
         survive, movement does not. No component opts out. UI transitions sit in a 150–300 ms ease-out band
-        and normally animate <code>transform</code> and <code>opacity</code>. Reviewed layout transitions
-        include accordion/collapsible height, accordion trigger padding, sidebar width, item-footer grid
-        tracks and meter fill. The central reduced-motion rule disables those exceptions too.
+        and normally animate <code>transform</code> and <code>opacity</code>. Reviewed layout transitions are
+        accordion and collapsible height, accordion trigger padding, sidebar width and meter fill. The central
+        reduced-motion rule disables those exceptions too.
       </p>
 
       <h2 id="target-size">Target size</h2>

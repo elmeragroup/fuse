@@ -17,10 +17,9 @@ import { selectionGroupOrientationVariants } from "../selection-item/selection-i
 import { radioIconButtonVariants } from "./radio-group-variants";
 
 /**
- * Unlabeled 16px radio over the base-ui primitive. Client —
- * base-ui Radio owns checked state. The
- * indicator is an 8px primary-foreground dot. Labeled usage composes `Radio` or
- * `RadioItem`.
+ * Unlabeled 16px radio over the base-ui primitive. Client component, because base-ui
+ * Radio owns the checked state. The indicator is an 8px primary-foreground dot. Labeled
+ * usage composes `Radio` or `RadioItem`.
  */
 export function RadioGroupItem({
   className,
@@ -105,8 +104,8 @@ export type RadioGroupProps = {
 };
 
 /**
- * Labeled radio group composite over Field + base-ui RadioGroup.
- * Client — Field validity wiring and the group primitive
+ * Labeled radio group composite over Field and base-ui RadioGroup. Client component,
+ * because it wires Field validity and the group primitive.
  */
 export function RadioGroup({
   label,
@@ -215,11 +214,10 @@ export type RadioItemProps = {
 };
 
 /**
- * Labeled selection row over `SelectionItem.Shell`. Client —
- * Field.Item / label wiring. Namespace
- * aliases `Title` / `Description` / `Content` / `Actions` / `SubSection` are the
- * exact `SelectionItem.*` objects so `child.type` partitioning works across both
- * spellings.
+ * Labeled selection row over `SelectionItem.Shell`. Client component, because it wires
+ * Field.Item and the label. The namespace aliases `Title`, `Description`, `Content`,
+ * `Actions` and `SubSection` are the exact `SelectionItem.*` objects, so `child.type`
+ * partitioning works with either spelling.
  */
 export function RadioItem({
   value,
@@ -260,7 +258,7 @@ export type RadioIconButtonProps = Omit<
   /** The icon. */
   children?: ReactNode;
   /**
-   * Required accessible name. `RadioIconButton` is mechanically icon-only
+   * Required accessible name, because `RadioIconButton` renders only an icon.
    */
   "aria-label": string;
 };

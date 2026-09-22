@@ -5,7 +5,7 @@ import { nbNO } from "./nb-NO";
 import { svSE } from "./sv-SE";
 
 /**
- * SearchField's own dictionary: it owns the `searchField.clear` row of
- * the clear button's default accessible name.
+ * SearchField's dictionary. It owns the `searchField.clear` row, the clear button's
+ * default accessible name.
  */
 export const searchFieldStrings = createStringDictionary({ enUS, fiFI, nbNO, svSE });

@@ -21,8 +21,8 @@ import type { RefObject } from "react";
  * is whatever `element.current.form` is at that moment, so a control that moves between
  * forms or changes its `form` attribute is followed without a resubscribe, and a reset on
  * any other form is ignored. The listener is registered in capture phase, so a form that
- * stops propagation during dispatch cannot hide its own reset. The subscription lifecycle
- * is part of the runtime listener policy.
+ * stops propagation during dispatch cannot hide its own reset. `source-contracts.test.ts`
+ * lists this hook among the reviewed listener owners.
  */
 export function useFormReset(
   element: RefObject<HTMLInputElement | HTMLTextAreaElement | null>,
