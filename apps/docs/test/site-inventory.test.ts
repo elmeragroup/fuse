@@ -3,8 +3,8 @@ import { describe, expect, it } from "vitest";
 import { COMPONENT_PAGES } from "../src/generated/component-pages";
 import { COMPONENT_NAV, NAV_GROUPS } from "../src/lib/nav";
 import { HOME_PAGE, STATIC_PAGES } from "../src/lib/pages";
-import { fetchOk, fetchText } from "./docs-server";
 import { COMPONENT_INVENTORY } from "./component-inventory";
+import { fetchOk, fetchText } from "./docs-server";
 
 const NAV_HREFS = NAV_GROUPS.flatMap((group) => group.items.map((item) => item.href));
 

@@ -3,10 +3,10 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
+import { selfFocusRingClass } from "../../styles/utils";
 import { Item } from "./item";
 import { ITEM_TITLE_CLASSES } from "./item-title-classes";
 import { itemVariants } from "./item-variants";
-import { selfFocusRingClass } from "../../styles/utils";
 
 describe("itemVariants", () => {
   it("defaults to the default variant and size", () => {

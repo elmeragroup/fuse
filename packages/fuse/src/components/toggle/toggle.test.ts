@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
-import { toggleVariants } from "./toggle-variants";
 import { selfFocusRingClass } from "../../styles/utils";
+import { toggleVariants } from "./toggle-variants";
 
 const VARIANTS = ["default", "outline"] as const;
 const SIZES = ["xs", "sm", "default", "lg"] as const;

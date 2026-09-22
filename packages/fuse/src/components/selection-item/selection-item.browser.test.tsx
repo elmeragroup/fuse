@@ -5,9 +5,9 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import { assertHorizontalItemList, radiusToken } from "../../../test/assert-selection-item-group-layout";
 import { headingNamed, renderThemed, roleNamed, textNamed } from "../../../test/themed-browser-render";
+import { disabledHatch } from "../../styles/utils";
 import { Checkbox as UiCheckbox, CheckboxGroup, CheckboxItem, CheckboxItemGroup } from "../checkbox/checkbox";
 import { Field } from "../field/field";
-import { disabledHatch } from "../../styles/utils";
 import { Radio, RadioGroup, RadioItem, RadioItemGroup } from "../radio-group/radio-group";
 import { SelectionItem } from "./selection-item";
 

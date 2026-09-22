@@ -15,7 +15,9 @@ const VARIANTS = [
 
 describe("typographyFragments", () => {
   it("maps each colour variant onto its role token", () => {
-    expect(Object.fromEntries(VARIANTS.map((variant) => [variant, typographyFragments({ variant })]))).toEqual({
+    expect(
+      Object.fromEntries(VARIANTS.map((variant) => [variant, typographyFragments({ variant })]))
+    ).toEqual({
       default: "text-inherit",
       foreground: "text-foreground",
       primary: "text-primary",

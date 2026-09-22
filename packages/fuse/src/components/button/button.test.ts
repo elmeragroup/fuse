@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { buttonVariants } from "./button-variants";
 import { selfFocusRingClass } from "../../styles/utils";
+import { buttonVariants } from "./button-variants";
 
 const VARIANTS = ["default", "outline", "secondary", "ghost", "destructive", "success", "link"] as const;
 const SIZES = ["default", "xs", "sm", "lg", "icon", "icon-xs", "icon-sm", "icon-inline", "icon-lg"] as const;

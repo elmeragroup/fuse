@@ -36,10 +36,7 @@ export function documentBrandDisagrees(found: DocumentBrandSnapshot, expected: T
   );
 }
 
-function documentBrandMismatchMessage(
-  found: DocumentBrandSnapshot,
-  expected: ThemeAttributes
-): string {
+function documentBrandMismatchMessage(found: DocumentBrandSnapshot, expected: ThemeAttributes): string {
   return (
     "ThemeProvider controlled theme does not match document brand attributes. " +
     `Expected data-theme-variant="${expected["data-theme-variant"]}" ` +

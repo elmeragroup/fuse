@@ -51,23 +51,12 @@
   "avatar": {
     "title": "Avatar",
     "rsc": "client",
-    "demos": [
-      "avatar-basic.tsx",
-      "avatar-fallback.tsx",
-      "delay.tsx",
-      "avatar-sizes.tsx",
-      "avatar-group.tsx"
-    ]
+    "demos": ["avatar-basic.tsx", "avatar-fallback.tsx", "delay.tsx", "avatar-sizes.tsx", "avatar-group.tsx"]
   },
   "badge": {
     "title": "Badge",
     "rsc": "server",
-    "demos": [
-      "badge-basic.tsx",
-      "badge-variants.tsx",
-      "badge-status.tsx",
-      "badge-sizes.tsx"
-    ]
+    "demos": ["badge-basic.tsx", "badge-variants.tsx", "badge-status.tsx", "badge-sizes.tsx"]
   },
   "breadcrumb": {
     "title": "Breadcrumb",
@@ -170,12 +159,7 @@
   "code": {
     "title": "Code",
     "rsc": "server",
-    "demos": [
-      "code-basic.tsx",
-      "code-scroll.tsx",
-      "max-h-160.tsx",
-      "aria-label.tsx"
-    ]
+    "demos": ["code-basic.tsx", "code-scroll.tsx", "max-h-160.tsx", "aria-label.tsx"]
   },
   "collapsible": {
     "title": "Collapsible",
@@ -334,9 +318,7 @@
   "focusable": {
     "title": "Focusable",
     "rsc": "client",
-    "demos": [
-      "focusable-tooltip-trigger.tsx"
-    ]
+    "demos": ["focusable-tooltip-trigger.tsx"]
   },
   "frame": {
     "title": "Frame",
@@ -352,31 +334,17 @@
   "grid-list": {
     "title": "Grid List",
     "rsc": "client",
-    "demos": [
-      "grid-list-selection.tsx",
-      "grid-list-empty.tsx",
-      "renderEmptyState.tsx"
-    ]
+    "demos": ["grid-list-selection.tsx", "grid-list-empty.tsx", "renderEmptyState.tsx"]
   },
   "heading": {
     "title": "Heading",
     "rsc": "client",
-    "demos": [
-      "heading-basic.tsx",
-      "heading-sizes.tsx",
-      "heading-variants.tsx",
-      "heading-modifiers.tsx"
-    ]
+    "demos": ["heading-basic.tsx", "heading-sizes.tsx", "heading-variants.tsx", "heading-modifiers.tsx"]
   },
   "input": {
     "title": "Input",
     "rsc": "client",
-    "demos": [
-      "input-basic.tsx",
-      "input-types.tsx",
-      "input-states.tsx",
-      "input-in-field.tsx"
-    ]
+    "demos": ["input-basic.tsx", "input-types.tsx", "input-states.tsx", "input-in-field.tsx"]
   },
   "input-group": {
     "title": "Input Group",
@@ -408,21 +376,12 @@
   "link": {
     "title": "Link",
     "rsc": "client",
-    "demos": [
-      "link-variants.tsx",
-      "truncate.tsx",
-      "weight.tsx",
-      "link-router.tsx"
-    ]
+    "demos": ["link-variants.tsx", "truncate.tsx", "weight.tsx", "link-router.tsx"]
   },
   "loader": {
     "title": "Loader",
     "rsc": "server",
-    "demos": [
-      "loader-sizes.tsx",
-      "loader-inline.tsx",
-      "aria-label.tsx"
-    ]
+    "demos": ["loader-sizes.tsx", "loader-inline.tsx", "aria-label.tsx"]
   },
   "meter": {
     "title": "Meter",
@@ -454,12 +413,7 @@
   "pagination": {
     "title": "Pagination",
     "rsc": "client",
-    "demos": [
-      "pagination-basic.tsx",
-      "pagination-ellipsis.tsx",
-      "pagination-controlled.tsx",
-      "isActive.tsx"
-    ]
+    "demos": ["pagination-basic.tsx", "pagination-ellipsis.tsx", "pagination-controlled.tsx", "isActive.tsx"]
   },
   "phone-number-field": {
     "title": "Phone Number Field",
@@ -537,12 +491,7 @@
   "search-field": {
     "title": "Search Field",
     "rsc": "client",
-    "demos": [
-      "search-field-basic.tsx",
-      "search-field-validation.tsx",
-      "isRequired.tsx",
-      "errorMessage.tsx"
-    ]
+    "demos": ["search-field-basic.tsx", "search-field-validation.tsx", "isRequired.tsx", "errorMessage.tsx"]
   },
   "select": {
     "title": "Select",
@@ -574,11 +523,7 @@
   "separator": {
     "title": "Separator",
     "rsc": "client",
-    "demos": [
-      "separator-horizontal.tsx",
-      "separator-vertical.tsx",
-      "self-stretch.tsx"
-    ]
+    "demos": ["separator-horizontal.tsx", "separator-vertical.tsx", "self-stretch.tsx"]
   },
   "sheet": {
     "title": "Sheet",
@@ -596,9 +541,7 @@
   "show": {
     "title": "Show",
     "rsc": "server",
-    "demos": [
-      "show-basic.tsx"
-    ]
+    "demos": ["show-basic.tsx"]
   },
   "sidebar": {
     "title": "Sidebar",
@@ -635,12 +578,7 @@
   "span": {
     "title": "Span",
     "rsc": "client",
-    "demos": [
-      "span-basic.tsx",
-      "span-sizes.tsx",
-      "span-variants.tsx",
-      "span-truncate.tsx"
-    ]
+    "demos": ["span-basic.tsx", "span-sizes.tsx", "span-variants.tsx", "span-truncate.tsx"]
   },
   "switch": {
     "title": "Switch",
@@ -706,12 +644,7 @@
   "textarea": {
     "title": "Textarea",
     "rsc": "server",
-    "demos": [
-      "textarea-basic.tsx",
-      "textarea-states.tsx",
-      "textarea-in-field.tsx",
-      "TextareaField.tsx"
-    ]
+    "demos": ["textarea-basic.tsx", "textarea-states.tsx", "textarea-in-field.tsx", "TextareaField.tsx"]
   },
   "textarea-field": {
     "title": "Textarea Field",
@@ -727,10 +660,7 @@
   "timeline-list": {
     "title": "Timeline List",
     "rsc": "server",
-    "demos": [
-      "timeline-list-basic.tsx",
-      "timeline-list-rich.tsx"
-    ]
+    "demos": ["timeline-list-basic.tsx", "timeline-list-rich.tsx"]
   },
   "toast": {
     "title": "Toast",
