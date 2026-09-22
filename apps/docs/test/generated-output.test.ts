@@ -148,6 +148,11 @@ describe("component page manifest", () => {
     expect(serialized).not.toContain('"source"');
     expect(serialized).not.toContain('"props"');
     expect(serialized).not.toContain("use client");
+    // The import specifier and the page's RSC status are generation-pass facts: the
+    // markdown endpoint and the search index read them, the browser never does.
+    expect(serialized).not.toContain('"entry"');
+    expect(serialized).not.toContain('"exportName"');
+    expect(serialized).not.toContain('"rsc"');
     for (const entry of COMPONENT_PAGES) {
       // What the manifest does carry about the API is TOC material — one anchor per part —
       // and it has to name exactly the parts the committed artifact describes.
@@ -234,10 +239,11 @@ describe("component page manifest", () => {
       for (const part of api(entry.slug).parts) {
         expect(part.rsc, `${entry.slug} ${part.name}`).toBe(declaredRsc(part.sourcePath));
       }
-      // The reviewed fixture stays independent of the generated API artifact.
-      const expected = authoritative.get(entry.slug);
-      expect(expected, `the RSC fixture does not classify ${entry.slug}`).toBeDefined();
-      expect(entry.rsc, entry.slug).toBe(expected);
+      // The page's own status surfaces on the markdown endpoint, not in the browser
+      // manifest. The reviewed fixture stays independent of the generated API artifact.
+      const expected = authoritative.get(entry.slug) ?? "";
+      expect(expected, `the RSC fixture does not classify ${entry.slug}`).not.toBe("");
+      expect(endpoint(entry.slug), entry.slug).toContain(`- RSC: ${expected}`);
     }
   });
 });

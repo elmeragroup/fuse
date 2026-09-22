@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { resolveComponentPaths } from "../scripts/lib/components.ts";
 import { COMPONENT_PAGES } from "../src/generated/component-pages";
 import { SEARCH_ENTRIES } from "../src/generated/search-index";
 import { NAV_GROUPS } from "../src/lib/nav";
@@ -38,7 +39,7 @@ describe("search index", () => {
     for (const component of COMPONENT_PAGES) {
       const entry = SEARCH_ENTRIES.find((candidate) => candidate.title === component.title);
       expect(entry, component.slug).toBeDefined();
-      expect(entry?.keywords).toContain(component.entry);
+      expect(entry?.keywords).toContain(resolveComponentPaths(component.slug).entry);
       for (const name of component.partNames) {
         expect(entry?.keywords, name).toContain(name);
       }

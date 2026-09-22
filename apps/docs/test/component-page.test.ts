@@ -13,6 +13,10 @@ describe("component page anatomy", () => {
       'href="https://github.com/elmeragroup/fuse/blob/main/packages/fuse/src/components/button/button.tsx"'
     );
     expect(html).toContain("View source");
+    // The import line and the page's own RSC status appear only on the markdown endpoint.
+    const intro = html.slice(html.indexOf("<h1"), html.indexOf("data-demo-frame"));
+    expect(intro).not.toContain("@elmeragroup/fuse/button");
+    expect(intro).not.toMatch(/>(?:client|server)</u);
   });
 
   it("renders the MDX shell's own prose", async () => {

@@ -115,12 +115,12 @@ function buildComponent(
     title: paths.title,
     lede: page.lede,
     entry: paths.entry,
-    exportName: paths.exportName,
     sourcePath: repoRelative(paths.sourceFile),
     sourceUrl: `${REPO_BLOB_BASE}/${repoRelative(paths.sourceFile)}`,
     markdownUrl: `/components/${slug}.md`,
     // The page's status is the implementation module's own directive,
-    // whether or not the artifact has a part declared there.
+    // whether or not the artifact has a part declared there; the markdown endpoint
+    // publishes it.
     rsc: readRscStatus(readFileSync(paths.sourceFile, "utf8")),
     headings: page.headings,
     demos,

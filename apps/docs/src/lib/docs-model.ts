@@ -104,9 +104,12 @@ export type ContentHeading = {
  *
  * Deliberately *not* the page's content: the prose, the demo frames and the API reference
  * all come from the authored `page.mdx`, the demo files and the committed `api.json`. What
- * is left is the metadata no single artifact owns — the page's identity (title, lede, import
- * line, source links), its TOC skeleton, and the tokens its recipe reads — read by the nav,
+ * is left is the metadata no single artifact owns — the page's identity (title, lede,
+ * source links), its TOC skeleton, and the tokens its recipe reads — read by the nav,
  * the intro, the QuickNav and the page's `metadata` export.
+ *
+ * The import specifier and the page's RSC status are absent on purpose: the generation pass
+ * is their only reader, so they live on `DocsComponent` and never reach the browser.
  *
  * `partNames` is TOC material, not API data: an anchor per part heading the reference
  * renders. The reference itself never reads this — it reads `api.json`.
@@ -115,17 +118,12 @@ export type ComponentPageEntry = {
   slug: string;
   title: string;
   lede: string;
-  /** Public import specifier, e.g. `@elmeragroup/fuse/button`. */
-  entry: string;
-  /** The identifier the entry facade exports, e.g. `Button` or `Dialog`. */
-  exportName: string;
   /** Repo-relative path of the component implementation, for **View source**. */
   sourcePath: string;
   /** Absolute URL of the component implementation on the repo host. */
   sourceUrl: string;
   /** Site-relative URL of the generated markdown endpoint. */
   markdownUrl: string;
-  rsc: RscStatus;
   headings: readonly ContentHeading[];
   demos: readonly DemoRef[];
   /** Names of the API parts the reference renders, in order — one TOC anchor each. */
@@ -134,14 +132,22 @@ export type ComponentPageEntry = {
 };
 
 /**
- * One component as the *generation pass* holds it: the manifest entry plus the two things
- * only the generated markdown needs — every demo's verbatim source and the full API model.
+ * One component as the *generation pass* holds it: the manifest entry plus the facts only
+ * the generated markdown and the search index need — the import specifier, the page's RSC
+ * status, every demo's verbatim source and the full API model.
  *
- * Neither of those is shipped to the browser: the manifest carries the page's metadata, the
+ * None of those is shipped to the browser: the manifest carries the page's metadata, the
  * page reads its demos and its `api.json` at render time. This type exists for the length of
  * one generation run, feeding the markdown endpoints, `llms.txt` and the search index.
  */
 export type DocsComponent = Omit<ComponentPageEntry, "demos" | "partNames"> & {
+  /** Public import specifier, e.g. `@elmeragroup/fuse/button`. */
+  entry: string;
+  /**
+   * The page's RSC status, read from its implementation module's own directive
+   * and published by the markdown endpoint.
+   */
+  rsc: RscStatus;
   demos: readonly DocsDemo[];
   parts: readonly ApiPart[];
 };
@@ -152,12 +158,9 @@ export function toPageEntry(component: DocsComponent): ComponentPageEntry {
     slug: component.slug,
     title: component.title,
     lede: component.lede,
-    entry: component.entry,
-    exportName: component.exportName,
     sourcePath: component.sourcePath,
     sourceUrl: component.sourceUrl,
     markdownUrl: component.markdownUrl,
-    rsc: component.rsc,
     headings: component.headings,
     demos: component.demos.map((demo) => ({ id: demo.id, title: demo.title })),
     partNames: component.parts.map((part) => part.name),
